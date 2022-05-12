@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{fd0e48a4-e8d4-4899-921e-06eeabb2bcd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objects">
+      <UniqueIdentifier>{97917a83-111f-44e8-8ce0-923e000300ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Base">
+      <UniqueIdentifier>{61f482f1-192c-4a2b-82d5-01b63f039be3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base\Headers">
+      <UniqueIdentifier>{04bbfd9c-ee81-40bc-8ccb-f820ce7d49bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base\CppFiles">
+      <UniqueIdentifier>{d9dbff95-85f9-4d07-a44a-b550ef13f5e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Headers">
+      <UniqueIdentifier>{add67752-e522-4ebd-9d3d-c24dda1f0a42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objects\Headers">
+      <UniqueIdentifier>{402fde24-dff9-452e-a97d-1c0881e781f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\CppFiles">
+      <UniqueIdentifier>{1ea57532-f319-4d55-b900-49a450131998}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Objects\CppFiles">
+      <UniqueIdentifier>{93b13781-9910-41bb-8423-3c4749dde82d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HLSLResources">
+      <UniqueIdentifier>{ab3bf208-a492-4c31-9a2c-b6dc7f7f14d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HLSLResources\Common">
+      <UniqueIdentifier>{45e88702-5acd-4e6a-86a5-6cb9e37a2d70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HLSLResources\Object">
+      <UniqueIdentifier>{1e57125c-b11a-4484-83e1-c8bd46750063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\HLSLResources\RenderPipeline">
+      <UniqueIdentifier>{fff1280f-e16b-4c69-b8cd-e625550e729d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Entry">
+      <UniqueIdentifier>{3799fcee-0a03-431c-8755-61c0a634360c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="HLSLResources\Object\DebugPolygon2DAlpha.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\FieldDeferredPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\FieldFrontPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\FieldPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\FieldVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\Polygon2DPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\Polygon2DVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\RayMarchingPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\RayMarchingVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\SkyPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\SkyVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\WaterFieldPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\WaterFieldVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\RenderPipeline\GBuffer.hlsl">
+      <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\RenderPipeline\PostEffect.hlsl">
+      <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Headers\Base\CInput.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CManager.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CReadFBX.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CReadOBJ.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CShader.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CTexture.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CRenderDevice.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CTimer.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CCamera.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CDeferredBuffer.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CScene.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CDebugScreen.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CField.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CGameObject.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CPolygon.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CPolygon2D.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CRayMarching.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CSky.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CWaterField.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Entry\MyMain.h">
+      <Filter>Entry</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CppFiles\Base\CInput.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CManager.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CReadFBX.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CReadOBJ.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CShader.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CTexture.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CRenderDevice.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CTimer.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CCamera.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CDeferredBuffer.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CDebugScreen.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CField.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CPolygon.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CPolygon2D.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CRayMarching.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CSky.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CWaterField.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Entry\MyMain.cpp">
+      <Filter>Entry</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderNoises.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+  </ItemGroup>
+</Project>
