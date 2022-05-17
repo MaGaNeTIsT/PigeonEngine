@@ -25,6 +25,9 @@
     <None Include="HLSLResources\Common\ShaderNoises.hlsl">
       <FileType>Document</FileType>
     </None>
+    <None Include="HLSLResources\Common\ShaderVariables.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <FxCompile Include="HLSLResources\Object\DebugPolygon2DAlpha.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
@@ -148,16 +151,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Entry\MyMain.h" />
+    <ClInclude Include="Headers\Base\CBaseType.h" />
     <ClInclude Include="Headers\Base\CInput.h" />
     <ClInclude Include="Headers\Base\CManager.h" />
     <ClInclude Include="Headers\Base\CReadFBX.h" />
     <ClInclude Include="Headers\Base\CReadOBJ.h" />
     <ClInclude Include="Headers\Base\CShader.h" />
+    <ClInclude Include="Headers\Base\CStructCommon.h" />
     <ClInclude Include="Headers\Base\CTexture.h" />
     <ClInclude Include="Headers\Base\CRenderDevice.h" />
     <ClInclude Include="Headers\Base\CTimer.h" />
     <ClInclude Include="Headers\Game\CCamera.h" />
     <ClInclude Include="Headers\Game\CDeferredBuffer.h" />
+    <ClInclude Include="Headers\Game\CLight.h" />
     <ClInclude Include="Headers\Game\CScene.h" />
     <ClInclude Include="Headers\Object\CDebugScreen.h" />
     <ClInclude Include="Headers\Object\CField.h" />
@@ -169,6 +175,7 @@
     <ClInclude Include="Headers\Object\CWaterField.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CppFiles\Base\CBaseType.cpp" />
     <ClCompile Include="CppFiles\Base\CInput.cpp" />
     <ClCompile Include="CppFiles\Base\CManager.cpp" />
     <ClCompile Include="CppFiles\Base\CReadFBX.cpp" />
@@ -179,6 +186,7 @@
     <ClCompile Include="CppFiles\Base\CTimer.cpp" />
     <ClCompile Include="CppFiles\Game\CCamera.cpp" />
     <ClCompile Include="CppFiles\Game\CDeferredBuffer.cpp" />
+    <ClCompile Include="CppFiles\Game\CLight.cpp" />
     <ClCompile Include="CppFiles\Object\CDebugScreen.cpp" />
     <ClCompile Include="CppFiles\Object\CField.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon.cpp" />

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./CGameObject.h"
+#include "../Game/CGameObject.h"
 
 class CPolygon2D;
 

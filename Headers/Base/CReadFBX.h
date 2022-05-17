@@ -69,7 +69,7 @@
 //    BOOL                mHasUV;
 //    BOOL                mAllByControlPoint; // Save data in VBO by control point or by polygon vertex.
 //
-//    vector<VERTEX_3D>   m_Vertex;
+//    vector<CustomStruct::CVertex3DData>   m_Vertex;
 //    vector<UINT>        m_Index;
 //
 //    ID3D11Buffer*       m_VertexBuffer;

@@ -93,8 +93,7 @@ void CShader::Init(const CHAR* VertexShader, const CHAR* PixelShader)
 
 	DirectX::XMStoreFloat4(&m_Light.Direction, direction);
 
-	m_Light.Diffuse = COLOR(1.f, 1.f, 1.f, 1.f);
-	m_Light.Ambient = COLOR(1.f, 1.f, 1.f, 1.f);
+	m_Light.Color = COLOR(1.f, 1.f, 1.f, 1.f);
 }
 
 void CShader::Uninit()

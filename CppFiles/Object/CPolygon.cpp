@@ -7,40 +7,40 @@
 
 void CPolygon::Init()
 {
-	VERTEX_3D vertex[4];
+	CustomStruct::CVertex3DData vertex[4];
 
 	//vertex[0].Position = XMFLOAT3( 100.f, 100.f, 0.f );
-	//vertex[0].Diffuse  = XMFLOAT4( 1.f, 0.f, 0.f, 1.f );
+	//vertex[0].Color  = XMFLOAT4( 1.f, 0.f, 0.f, 1.f );
 
 	//vertex[1].Position = XMFLOAT3( 300.f, 100.f, 0.f );
-	//vertex[1].Diffuse  = XMFLOAT4( 0.f, 1.f, 0.f, 1.f );
+	//vertex[1].Color  = XMFLOAT4( 0.f, 1.f, 0.f, 1.f );
 
 	//vertex[2].Position = XMFLOAT3( 100.f, 300.f, 0.f );
-	//vertex[2].Diffuse  = XMFLOAT4( 0.f, 0.f, 1.f, 1.f );
+	//vertex[2].Color  = XMFLOAT4( 0.f, 0.f, 1.f, 1.f );
 
 	//vertex[3].Position = XMFLOAT3( 300.f, 300.f, 0.f );
-	//vertex[3].Diffuse  = XMFLOAT4( 1.f, 1.f, 1.f, 1.f );
+	//vertex[3].Color  = XMFLOAT4( 1.f, 1.f, 1.f, 1.f );
 
 	vertex[0].Position = XMFLOAT3(0.f, 0.f, 0.f);
-	vertex[0].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
+	vertex[0].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
 
 	vertex[1].Position = XMFLOAT3(200.f, 0.f, 0.f);
-	vertex[1].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	vertex[1].TexCoord = XMFLOAT2(10.f, 0.f);
+	vertex[1].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	vertex[1].UV0 = XMFLOAT2(10.f, 0.f);
 
 	vertex[2].Position = XMFLOAT3(0.f, 200.f, 0.f);
-	vertex[2].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	vertex[2].TexCoord = XMFLOAT2(0.f, 10.f);
+	vertex[2].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	vertex[2].UV0 = XMFLOAT2(0.f, 10.f);
 
 	vertex[3].Position = XMFLOAT3(200.f, 200.f, 0.f);
-	vertex[3].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	vertex[3].TexCoord = XMFLOAT2(10.f, 10.f);
+	vertex[3].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	vertex[3].UV0 = XMFLOAT2(10.f, 10.f);
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory( &bd, sizeof(bd) );
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof( VERTEX_3D ) * 4;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 4;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -80,7 +80,7 @@ void CPolygon::Update()
 
 void CPolygon::Draw()
 {
-	UINT stride = sizeof( VERTEX_3D );
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers( 0, 1, &m_VertexBuffer, &stride, &offset );
 

@@ -14,11 +14,11 @@ BOOL Linear_Interpolation(const FLOAT& x0, const FLOAT& y0, const FLOAT& x1, con
 	return true;
 }
 
-VERTEX_3D* CreateWaterField(FLOAT wid, FLOAT len, UINT w, UINT l, INT u, INT v)
+CustomStruct::CVertex3DData* CreateWaterField(FLOAT wid, FLOAT len, UINT w, UINT l, INT u, INT v)
 {
 	FLOAT posx, posz, posy;
 	FLOAT tu, tv;
-	VERTEX_3D* data = new VERTEX_3D[w * l];
+	CustomStruct::CVertex3DData* data = new CustomStruct::CVertex3DData[w * l];
 
 	for (UINT y = 0; y < l; ++y)
 	{
@@ -28,7 +28,7 @@ VERTEX_3D* CreateWaterField(FLOAT wid, FLOAT len, UINT w, UINT l, INT u, INT v)
 			Linear_Interpolation(0.f, -1.f * 0.5f * wid, (FLOAT)(w - 1), 0.5f * wid, (FLOAT)x, posx);
 			Linear_Interpolation(0.f, 0.5f * len, (FLOAT)(l - 1), -1.f * 0.5f * len, (FLOAT)y, posz);
 			data[y * w + x].Position = XMFLOAT3(posx, posy, posz);
-			data[y * w + x].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+			data[y * w + x].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
 			data[y * w + x].Normal = XMFLOAT3(0.f, 1.f, 0.f);
 		}
 	}
@@ -40,7 +40,7 @@ VERTEX_3D* CreateWaterField(FLOAT wid, FLOAT len, UINT w, UINT l, INT u, INT v)
 			tu = 0.f; tv = 0.f;
 			Linear_Interpolation(0.f, 0.f, (FLOAT)(w - 1), (FLOAT)u, (FLOAT)x, tu);
 			Linear_Interpolation(0.f, 0.f, (FLOAT)(l - 1), (FLOAT)v, (FLOAT)y, tv);
-			data[y * w + x].TexCoord = XMFLOAT2(tu, tv);
+			data[y * w + x].UV0 = XMFLOAT2(tu, tv);
 		}
 	}
 
@@ -87,7 +87,7 @@ void CWater::Init()
 {
 	SetTransparent();
 
-	VERTEX_3D* vertex;
+	CustomStruct::CVertex3DData* vertex;
 	UINT* Indices;
 	UINT w = 50, l = 50;
 	vertex = CreateWaterField(51.2f, 51.2f, w, l, 10, 10);
@@ -96,7 +96,7 @@ void CWater::Init()
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * w * l;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * w * l;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -164,7 +164,7 @@ void CWater::Update()
 
 void CWater::Draw()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 	CRenderDevice::GetDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);

@@ -1,4 +1,3 @@
-#include "../../Entry/MyMain.h"
 #include "../../Headers/Base/CRenderDevice.h"
 #include "../../Headers/Base/CTexture.h"
 #include "../../Headers/Game/CDeferredBuffer.h"

@@ -20,8 +20,8 @@ void CSky::Init()
 			m_Vertex[z * SKY_X + x].Position.x = sinf((FLOAT)x / (SKY_X - 1) * XM_2PI) * (sinf((FLOAT)z / (SKY_Z - 1) * XM_PI)) * sizeXZ;
 			m_Vertex[z * SKY_X + x].Position.z = cosf((FLOAT)x / (SKY_X - 1) * XM_2PI) * (sinf((FLOAT)z / (SKY_Z - 1) * XM_PI)) * sizeXZ;
 			m_Vertex[z * SKY_X + x].Position.y = cosf((FLOAT)z / (SKY_Z - 1) * XM_PI) * sizeY;
-			m_Vertex[z * SKY_X + x].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-			m_Vertex[z * SKY_X + x].TexCoord = XMFLOAT2((FLOAT)x, (FLOAT)z);
+			m_Vertex[z * SKY_X + x].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+			m_Vertex[z * SKY_X + x].UV0 = XMFLOAT2((FLOAT)x, (FLOAT)z);
 			m_Vertex[z * SKY_X + x].Normal.x = m_Vertex[z * SKY_X + x].Position.x / sizeXZ;
 			m_Vertex[z * SKY_X + x].Normal.y = m_Vertex[z * SKY_X + x].Position.y / sizeXZ;
 			m_Vertex[z * SKY_X + x].Normal.z = m_Vertex[z * SKY_X + x].Position.z / sizeY;
@@ -32,7 +32,7 @@ void CSky::Init()
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX_3D) * SKY_X * SKY_Z;
+		bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * SKY_X * SKY_Z;
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 
@@ -116,7 +116,7 @@ void CSky::Update()
 
 void CSky::Draw()
 {
-	UINT stride = sizeof( VERTEX_3D );
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers( 0, 1, &m_VertexBuffer, &stride, &offset );
 

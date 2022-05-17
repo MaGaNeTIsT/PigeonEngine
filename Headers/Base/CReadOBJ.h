@@ -1,7 +1,7 @@
 #pragma once
 
 #include "./CRenderDevice.h"
-#include "../Object/CGameObject.h"
+#include "../Game/CGameObject.h"
 
 struct MODEL_MATERIAL
 {
@@ -19,7 +19,7 @@ struct SUBSET
 
 struct MODEL
 {
-	VERTEX_3D*			VertexArray;
+	CustomStruct::CVertex3DData*			VertexArray;
 	USHORT				VertexNum;
 	USHORT*				IndexArray;
 	USHORT				IndexNum;

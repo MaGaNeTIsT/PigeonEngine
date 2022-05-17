@@ -116,7 +116,7 @@ struct GerstnerWaveParam
 	float2 Direction;
 };
 
-float3 GerstnerWaveCaculatePos(float3 Pos, float Time)
+float3 GerstnerWaveCalculatePos(float3 Pos, float Time)
 {
 	GerstnerWaveParam gWaveData[3];
 	gWaveData[0].Amplitude = 0.25;
@@ -152,7 +152,7 @@ float3 GerstnerWaveCaculatePos(float3 Pos, float Time)
 	return float3(PosXOffset, Height, PosZOffset);
 }
 
-void GerstnerWaveCaculateTBN(
+void GerstnerWaveCalculateTBN(
 	float3 Pos, float Time,
 	out float3 T, out float3 B, out float3 N)
 {

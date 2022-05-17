@@ -156,6 +156,15 @@
     <ClInclude Include="Entry\MyMain.h">
       <Filter>Entry</Filter>
     </ClInclude>
+    <ClInclude Include="Headers\Game\CLight.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CStructCommon.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CBaseType.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CInput.cpp">
@@ -212,12 +221,21 @@
     <ClCompile Include="Entry\MyMain.cpp">
       <Filter>Entry</Filter>
     </ClCompile>
+    <ClCompile Include="CppFiles\Game\CLight.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CBaseType.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
     <None Include="HLSLResources\Common\ShaderNoises.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderVariables.hlsl">
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
   </ItemGroup>

@@ -6,24 +6,24 @@
 
 void CPolygon2D::Init()
 {
-	VERTEX_3D vertex[4];
+	CustomStruct::CVertex3DData vertex[4];
 	vertex[0].Position = XMFLOAT3(m_Position.x, m_Position.y, 0.f);
-	vertex[0].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
+	vertex[0].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
 	vertex[1].Position = XMFLOAT3(m_Position.z, m_Position.y, 0.f);
-	vertex[1].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[1].TexCoord = XMFLOAT2(1.f, 0.f);
+	vertex[1].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
 	vertex[2].Position = XMFLOAT3(m_Position.x, m_Position.w, 0.f);
-	vertex[2].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[2].TexCoord = XMFLOAT2(0.f, 1.f);
+	vertex[2].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
 	vertex[3].Position = XMFLOAT3(m_Position.z, m_Position.w, 0.f);
-	vertex[3].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[3].TexCoord = XMFLOAT2(1.f, 1.f);
+	vertex[3].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 4;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -69,7 +69,7 @@ void CPolygon2D::Update()
 
 void CPolygon2D::Draw()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 
@@ -98,24 +98,24 @@ XMFLOAT4 CPolygon2D::GetScreenPosition()
 
 void DebugQuadAlpha::Init()
 {
-	VERTEX_3D vertex[4];
+	CustomStruct::CVertex3DData vertex[4];
 	vertex[0].Position = XMFLOAT3(m_Position.x, m_Position.y, 0.f);
-	vertex[0].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
+	vertex[0].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
 	vertex[1].Position = XMFLOAT3(m_Position.z, m_Position.y, 0.f);
-	vertex[1].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[1].TexCoord = XMFLOAT2(1.f, 0.f);
+	vertex[1].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
 	vertex[2].Position = XMFLOAT3(m_Position.x, m_Position.w, 0.f);
-	vertex[2].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[2].TexCoord = XMFLOAT2(0.f, 1.f);
+	vertex[2].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
 	vertex[3].Position = XMFLOAT3(m_Position.z, m_Position.w, 0.f);
-	vertex[3].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[3].TexCoord = XMFLOAT2(1.f, 1.f);
+	vertex[3].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 4;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -141,24 +141,24 @@ void DebugQuadAlpha::Init()
 
 void QuadBefore::Init()
 {
-	VERTEX_3D vertex[4];
+	CustomStruct::CVertex3DData vertex[4];
 	vertex[0].Position = XMFLOAT3(m_Position.x, m_Position.y, 0.f);
-	vertex[0].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
+	vertex[0].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
 	vertex[1].Position = XMFLOAT3(m_Position.z, m_Position.y, 0.f);
-	vertex[1].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[1].TexCoord = XMFLOAT2(1.f, 0.f);
+	vertex[1].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
 	vertex[2].Position = XMFLOAT3(m_Position.x, m_Position.w, 0.f);
-	vertex[2].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[2].TexCoord = XMFLOAT2(0.f, 1.f);
+	vertex[2].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
 	vertex[3].Position = XMFLOAT3(m_Position.z, m_Position.w, 0.f);
-	vertex[3].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[3].TexCoord = XMFLOAT2(1.f, 1.f);
+	vertex[3].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 4;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -184,7 +184,7 @@ void QuadBefore::Init()
 
 void QuadBefore::Draw()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 
@@ -212,24 +212,24 @@ void QuadBefore::Draw()
 
 void QuadAfter::Init()
 {
-	VERTEX_3D vertex[4];
+	CustomStruct::CVertex3DData vertex[4];
 	vertex[0].Position = XMFLOAT3(m_Position.x, m_Position.y, 0.f);
-	vertex[0].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
+	vertex[0].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
 	vertex[1].Position = XMFLOAT3(m_Position.z, m_Position.y, 0.f);
-	vertex[1].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[1].TexCoord = XMFLOAT2(1.f, 0.f);
+	vertex[1].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
 	vertex[2].Position = XMFLOAT3(m_Position.x, m_Position.w, 0.f);
-	vertex[2].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[2].TexCoord = XMFLOAT2(0.f, 1.f);
+	vertex[2].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
 	vertex[3].Position = XMFLOAT3(m_Position.z, m_Position.w, 0.f);
-	vertex[3].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
-	vertex[3].TexCoord = XMFLOAT2(1.f, 1.f);
+	vertex[3].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+	vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 4;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 4;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 

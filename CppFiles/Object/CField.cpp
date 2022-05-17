@@ -15,8 +15,8 @@ void CField::Init()
 			m_Vertex[z * FIELD_X + x].Position.x = x / 2.f - FIELD_X / 2.f / 2;
 			m_Vertex[z * FIELD_X + x].Position.z = -z / 2.f + FIELD_Z / 2.f / 2;
 			m_Vertex[z * FIELD_X + x].Position.y = 0.f;
-			m_Vertex[z * FIELD_X + x].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-			m_Vertex[z * FIELD_X + x].TexCoord = XMFLOAT2(x / 2.f, z / 2.f);
+			m_Vertex[z * FIELD_X + x].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+			m_Vertex[z * FIELD_X + x].UV0 = XMFLOAT2(x / 2.f, z / 2.f);
 			m_Vertex[z * FIELD_X + x].Normal = XMFLOAT3(0.f, 1.f, 0.f);
 		}
 	}
@@ -25,7 +25,7 @@ void CField::Init()
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX_3D) * FIELD_X * FIELD_Z;
+		bd.ByteWidth = sizeof(CustomStruct::CVertex3D) * FIELD_X * FIELD_Z;
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 
@@ -109,7 +109,7 @@ void CField::Update()
 
 void CField::Draw()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3D);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers( 0, 1, &m_VertexBuffer, &stride, &offset );
 
@@ -142,7 +142,7 @@ void CField::Draw()
 
 void CField::DrawDeferred()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3D);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 
@@ -174,7 +174,7 @@ void CField::DrawDeferred()
 
 void CField::DrawShadow()
 {
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3D);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 

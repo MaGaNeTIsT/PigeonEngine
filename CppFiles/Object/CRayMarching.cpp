@@ -7,12 +7,12 @@
 void CRayMarching::Init()
 {
 
-	VERTEX_3D Vertex[24];
+	CustomStruct::CVertex3DData Vertex[24];
 	UINT Indices[36];
 
 	for (int i = 0; i < 24; ++i)
 	{
-		Vertex[i].Diffuse = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+		Vertex[i].Color = XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 	}
 
 	XMFLOAT3 Normal[8];
@@ -43,10 +43,10 @@ void CRayMarching::Init()
 	Vertex[1].Normal = Normal[1];
 	Vertex[2].Normal = Normal[2];
 	Vertex[3].Normal = Normal[3];
-	Vertex[0].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[1].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[2].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[3].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Vertex[4].Position = XMFLOAT3(length, length, length);
 	Vertex[5].Position = XMFLOAT3(-length, length, length);
@@ -56,10 +56,10 @@ void CRayMarching::Init()
 	Vertex[5].Normal = Normal[5];
 	Vertex[6].Normal = Normal[6];
 	Vertex[7].Normal = Normal[7];
-	Vertex[4].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[5].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[6].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[7].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[4].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[5].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[6].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[7].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Vertex[8].Position = Vertex[1].Position;
 	Vertex[9].Position = Vertex[4].Position;
@@ -69,10 +69,10 @@ void CRayMarching::Init()
 	Vertex[9].Normal = Normal[4];
 	Vertex[10].Normal = Normal[3];
 	Vertex[11].Normal = Normal[6];
-	Vertex[8].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[9].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[10].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[11].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[8].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[9].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[10].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[11].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Vertex[12].Position = Vertex[1].Position;
 	Vertex[13].Position = Vertex[0].Position;
@@ -82,10 +82,10 @@ void CRayMarching::Init()
 	Vertex[13].Normal = Normal[0];
 	Vertex[14].Normal = Normal[4];
 	Vertex[15].Normal = Normal[5];
-	Vertex[12].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[13].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[14].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[15].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[12].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[13].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[14].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[15].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Vertex[16].Position = Vertex[5].Position;
 	Vertex[17].Position = Vertex[0].Position;
@@ -95,10 +95,10 @@ void CRayMarching::Init()
 	Vertex[17].Normal = Normal[0];
 	Vertex[18].Normal = Normal[7];
 	Vertex[19].Normal = Normal[2];
-	Vertex[16].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[17].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[18].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[19].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[16].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[17].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[18].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[19].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Vertex[20].Position = Vertex[2].Position;
 	Vertex[21].Position = Vertex[3].Position;
@@ -108,10 +108,10 @@ void CRayMarching::Init()
 	Vertex[21].Normal = Normal[3];
 	Vertex[22].Normal = Normal[7];
 	Vertex[23].Normal = Normal[6];
-	Vertex[20].TexCoord = XMFLOAT2(0.f, 0.f);
-	Vertex[21].TexCoord = XMFLOAT2(1.f, 0.f);
-	Vertex[22].TexCoord = XMFLOAT2(0.f, 1.f);
-	Vertex[23].TexCoord = XMFLOAT2(1.f, 1.f);
+	Vertex[20].UV0 = XMFLOAT2(0.f, 0.f);
+	Vertex[21].UV0 = XMFLOAT2(1.f, 0.f);
+	Vertex[22].UV0 = XMFLOAT2(0.f, 1.f);
+	Vertex[23].UV0 = XMFLOAT2(1.f, 1.f);
 
 	Indices[0] = 0; Indices[1] = 1; Indices[2] = 2; Indices[3] = 1; Indices[4] = 3; Indices[5] = 2;
 	Indices[6] = 4; Indices[7] = 5; Indices[8] = 6; Indices[9] = 5; Indices[10] = 7; Indices[11] = 6;
@@ -123,7 +123,7 @@ void CRayMarching::Init()
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(VERTEX_3D) * 24;
+	bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * 24;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 
@@ -203,7 +203,7 @@ void CRayMarching::Draw()
 {
 	//CRenderer::GetDeviceContext()->RSSetState(m_RenderStateNoCull);
 
-	UINT stride = sizeof(VERTEX_3D);
+	UINT stride = sizeof(CustomStruct::CVertex3DData);
 	UINT offset = 0;
 	CRenderDevice::GetDeviceContext()->IASetVertexBuffers(0, 1, &m_VertexBuffer, &stride, &offset);
 	CRenderDevice::GetDeviceContext()->IASetIndexBuffer(m_IndexBuffer, DXGI_FORMAT_R32_UINT, 0);

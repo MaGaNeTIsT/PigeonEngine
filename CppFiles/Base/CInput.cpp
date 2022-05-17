@@ -21,12 +21,12 @@ void CInput::Update()
 	GetKeyboardState(m_KeyState);
 }
 
-bool CInput::GetKeyPress(BYTE KeyCode)
+BOOL CInput::GetKeyPress(BYTE KeyCode)
 {
 	return (m_KeyState[KeyCode] & 0x80);
 }
 
-bool CInput::GetKeyTrigger(BYTE KeyCode)
+BOOL CInput::GetKeyTrigger(BYTE KeyCode)
 {
 	return ((m_KeyState[KeyCode] & 0x80) && !(m_OldKeyState[KeyCode] & 0x80));
 }

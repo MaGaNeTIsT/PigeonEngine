@@ -342,7 +342,7 @@
 //
 //					if (mHasUV)
 //					{
-//						bool lUnmappedUV;
+//						BOOL lUnmappedUV;
 //						pMesh->GetPolygonVertexUV(lPolygonIndex, lVerticeIndex, lUVName, lCurrentUV, lUnmappedUV);
 //						lUVs[lVertexCount * UV_STRIDE] = static_cast<FLOAT>(lCurrentUV[0]);
 //						lUVs[lVertexCount * UV_STRIDE + 1] = static_cast<FLOAT>(lCurrentUV[1]);
@@ -373,8 +373,8 @@
 //		}
 //		if (mHasUV)
 //		{
-//			m_Vertex[i].TexCoord.x = lUVs[i * UV_STRIDE];
-//			m_Vertex[i].TexCoord.y = lUVs[i * UV_STRIDE + 1];
+//			m_Vertex[i].UV0.x = lUVs[i * UV_STRIDE];
+//			m_Vertex[i].UV0.y = lUVs[i * UV_STRIDE + 1];
 //		}
 //	}
 //
@@ -389,7 +389,7 @@
 //	D3D11_BUFFER_DESC bd;
 //	ZeroMemory(&bd, sizeof(bd));
 //	bd.Usage = D3D11_USAGE_DEFAULT;
-//	bd.ByteWidth = sizeof(VERTEX_3D) * m_Vertex.size();
+//	bd.ByteWidth = sizeof(CVertex3DData) * m_Vertex.size();
 //	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 //	bd.CPUAccessFlags = 0;
 //
@@ -480,7 +480,7 @@
 //		D3D11_BUFFER_DESC bd;
 //		ZeroMemory(&bd, sizeof(bd));
 //		bd.Usage = D3D11_USAGE_DEFAULT;
-//		bd.ByteWidth = sizeof(VERTEX_3D) * m_Vertex.size();
+//		bd.ByteWidth = sizeof(CVertex3DData) * m_Vertex.size();
 //		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 //		bd.CPUAccessFlags = 0;
 //

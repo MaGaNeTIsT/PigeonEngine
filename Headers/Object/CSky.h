@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./CGameObject.h"
+#include "../Game/CGameObject.h"
 
 class CShader;
 
@@ -13,7 +13,7 @@ private:
 	ID3D11Buffer*		m_VertexBuffer	= NULL;
 	ID3D11Buffer*		m_IndexBuffer	= NULL;
 
-	VERTEX_3D			m_Vertex[SKY_X * SKY_Z];
+	CustomStruct::CVertex3DData			m_Vertex[SKY_X * SKY_Z];
 
 	CShader*			m_Shader;
 

@@ -33,13 +33,13 @@ void main(  in  float4 inPosition		: POSITION0,
 	wvp = mul(wvp, Projection);
 
 	float3 Pos = inPosition.xyz;
-	Pos += GerstnerWaveCaculatePos(inPosition.xyz, Parameter.x);
+	Pos += GerstnerWaveCalculatePos(inPosition.xyz, Parameter.x);
 
 	outPosition = mul(float4(Pos, 1.0), wvp);
 	outWorldPosition = mul(float4(Pos, 1.0), World);
 
 	float3 T = float3(0.0, 0.0, 0.0), B = float3(0.0, 0.0, 0.0), N = float3(0.0, 0.0, 0.0);
-	GerstnerWaveCaculateTBN(inPosition.xyz, Parameter.x, T, B, N);
+	GerstnerWaveCalculateTBN(inPosition.xyz, Parameter.x, T, B, N);
 
 	N = mul(float4(N, 0.0), WorldInvTranspose).xyz;
 	N = normalize(N);

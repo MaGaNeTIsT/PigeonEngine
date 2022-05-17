@@ -165,7 +165,7 @@ void CReadOBJ::Load(const CHAR* FileName)
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = sizeof(VERTEX_3D) * model.VertexNum;
+		bd.ByteWidth = sizeof(CustomStruct::CVertex3DData) * model.VertexNum;
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 
@@ -291,7 +291,7 @@ void CReadOBJ::LoadObj(const CHAR* FileName, MODEL* Model)
 	normalArray = new XMFLOAT3[normalNum];
 	texcoordArray = new XMFLOAT2[texcoordNum];
 
-	Model->VertexArray = new VERTEX_3D[vertexNum];
+	Model->VertexArray = new CustomStruct::CVertex3DData[vertexNum];
 	Model->VertexNum = vertexNum;
 
 	Model->IndexArray = new USHORT[indexNum];
@@ -391,12 +391,12 @@ void CReadOBJ::LoadObj(const CHAR* FileName, MODEL* Model)
 				if (s[strlen(s) + 1] != '/')
 				{
 					s = strtok(NULL, "/");
-					Model->VertexArray[vc].TexCoord = texcoordArray[atoi(s) - 1];
+					Model->VertexArray[vc].UV0 = texcoordArray[atoi(s) - 1];
 				}
 				s = strtok(NULL, "/");
 				Model->VertexArray[vc].Normal = normalArray[atoi(s) - 1];
 
-				Model->VertexArray[vc].Diffuse = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+				Model->VertexArray[vc].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
 
 				Model->IndexArray[ic] = vc;
 				ic++;

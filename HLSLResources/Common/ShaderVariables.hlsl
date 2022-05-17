@@ -1,0 +1,6 @@
+#ifndef _SHADER_VARIABLES_HLSL
+#define _SHADER_VARIABLES_HLSL
+
+
+
+#endif

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Entry/MyMain.h"
-#include "../../Headers/Object/CGameObject.h"
+#include "../../Headers/Game/CGameObject.h"
 #include "../../Headers/Base/CReadOBJ.h"
 #include "../../Headers/Game/CCamera.h"
 #include "../../Headers/Game/CDeferredBuffer.h"
@@ -29,8 +29,9 @@ class CScene
 {
 protected:
 	std::list<CGameObject*>	m_GameObject[SCENELAYOUT_COUNT];
+	ULONGLONG				m_GameObjectID;
 public:
-	CScene(){}
+	CScene() { m_GameObjectID = 0; }
 	virtual ~CScene(){}
 
 	virtual void Init()
@@ -39,7 +40,7 @@ public:
 
 		AddGameObject<CCamera>(SCENELAYOUT_CAMERA);
 		AddGameObject<CField>(SCENELAYOUT_TERRAIN);
-		AddGameObject<CSky>(SCENELAYOUT_SKY);
+		//AddGameObject<CSky>(SCENELAYOUT_SKY);
 		AddGameObject<CWater>(SCENELAYOUT_TRANSPARENT);
 	}
 
@@ -131,7 +132,7 @@ public:
 
 	virtual void Draw()
 	{
-		CRenderDevice::SetDepthState(DSSE_TESTENABLEWRITEENABLE);
+		CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEENABLE);
 		CRenderDevice::BeginShadow();
 		CRenderDevice::ClrShadowDeferred();
 		DrawShadow();
@@ -139,12 +140,12 @@ public:
 
 
 		CRenderDevice::BeginDeferred();
-		CRenderDevice::SetBlendState(BSE_BLENDOFF);
+		CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
 		DrawOpaqueDeferred();
 
 
 
-		CRenderDevice::SetDepthState(DSSE_ALLDISABLE);
+		CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
 		CRenderDevice::BeginGBuffer();
 		CRenderDevice::SetTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_WORLDPOSITION), 0);
 		CRenderDevice::SetTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_WORLDNORMAL), 1);
@@ -155,14 +156,14 @@ public:
 
 
 
-		CRenderDevice::SetDepthState(DSSE_TESTENABLEWRITEDISABLE);
-		CRenderDevice::SetBlendState(BSE_BLENDALPHA);
+		CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEDISABLE);
+		CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDALPHA);
 		DrawSky();
 		DrawTransparent();
 
 
 
-		CRenderDevice::SetDepthState(DSSE_ALLDISABLE);
+		CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
 		CRenderDevice::Begin();
 		CRenderDevice::SetTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_GBUFFER), 5);
 		CRenderDevice::GetDeferredQuadAfter()->Draw();
@@ -179,9 +180,11 @@ public:
 	template <typename T>
 	T* AddGameObject(UINT layout)
 	{
-		T* gameObject = new T();
+		T* gameObject = new T(m_GameObjectID);
 		gameObject->Init();
 		m_GameObject[layout].push_back(gameObject);
+
+		m_GameObjectID += 1;
 
 		return gameObject;
 	}
