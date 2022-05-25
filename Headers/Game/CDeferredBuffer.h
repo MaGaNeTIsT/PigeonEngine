@@ -1,21 +1,22 @@
 #pragma once
 
-class DeferredBuffer
+class CDeferredBuffer
 {
 public:
 	enum DeferredBufferEnum
 	{
-		DEFERREDBUFFER_WORLDPOSITION	= 0,
-		DEFERREDBUFFER_WORLDNORMAL		= 1,
-		DEFERREDBUFFER_DIFFUSE			= 2,
-		DEFERREDBUFFER_SPECULAR			= 3,
-		DEFERREDBUFFER_GBUFFER			= 4,
+		DEFERREDBUFFER_WORLDNORMAL		= 0,
+		DEFERREDBUFFER_ALBEDO			= 1,
+		DEFERREDBUFFER_PROPERTY			= 2,
+		DEFERREDBUFFER_ID				= 3,
+		DEFERREDBUFFER_EXTRA			= 4,
 		DEFERREDBUFFER_COUNT
 	};
 	enum DepthStencilBufferEnum
 	{
-		DEPTHSTENCILBUFFER_CAMERA	= 0,
-		DEPTHSTENCILBUFFER_LIGHT	= 1,
+		DEPTHSTENCILBUFFER_CAMERA		= 0,
+		DEPTHSTENCILBUFFER_LIGHT		= 1,
+		DEPTHSTENCILBUFFER_EXTRA		= 2,
 		DEPTHSTENCILBUFFER_COUNT
 	};
 public:
@@ -29,18 +30,18 @@ public:
 	void						SetDepthStencilRenderTarget(DepthStencilBufferEnum idx, ID3D11RenderTargetView* rtv = NULL);
 	ID3D11ShaderResourceView*	GetDepthStencilShaderResourceView(DepthStencilBufferEnum idx);
 private:
-	ID3D11RenderTargetView*		mRenderTargetViewArray[DEFERREDBUFFER_COUNT];
-	ID3D11Texture2D*			mRenderTargetTextureArray[DEFERREDBUFFER_COUNT];
-	ID3D11ShaderResourceView*	mRT_SRV[DEFERREDBUFFER_COUNT];
+	ID3D11RenderTargetView*		m_RenderTargetViewArray[DEFERREDBUFFER_COUNT];
+	ID3D11Texture2D*			m_RenderTargetTextureArray[DEFERREDBUFFER_COUNT];
+	ID3D11ShaderResourceView*	m_RT_SRV[DEFERREDBUFFER_COUNT];
 
-	ID3D11DepthStencilView*		mDepthStencilView[DEPTHSTENCILBUFFER_COUNT];
-	ID3D11Texture2D*			mDepthStencilTexture[DEPTHSTENCILBUFFER_COUNT];
-	ID3D11ShaderResourceView*	mDS_SRV[DEPTHSTENCILBUFFER_COUNT];
+	ID3D11DepthStencilView*		m_DepthStencilView[DEPTHSTENCILBUFFER_COUNT];
+	ID3D11Texture2D*			m_DepthStencilTexture[DEPTHSTENCILBUFFER_COUNT];
+	ID3D11ShaderResourceView*	m_DS_SRV[DEPTHSTENCILBUFFER_COUNT];
 private:
-	INT							mTextureWidth;
-	INT							mTextureHeight;
-	D3D11_VIEWPORT				mViewPort;
+	INT							m_TextureWidth;
+	INT							m_TextureHeight;
+	D3D11_VIEWPORT				m_ViewPort;
 public:
-	DeferredBuffer();
-	~DeferredBuffer();
+	CDeferredBuffer();
+	~CDeferredBuffer();
 };

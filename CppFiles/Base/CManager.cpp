@@ -3,45 +3,50 @@
 #include "../../Headers/Base/CTimer.h"
 #include "../../Headers/Base/CInput.h"
 #include "../../Headers/Base/CRenderDevice.h"
-#include "../../Headers/Base/CShader.h"
-#include "../../Headers/Base/CReadOBJ.h"
+#include "../../Headers/Base/CShaderManager.h"
+#include "../../Headers/Base/CTextureManager.h"
+#include "../../Headers/Game/CMeshManager.h"
+#include "../../Headers/Game/CGameObjectManager.h"
 #include "../../Headers/Game/CScene.h"
-#include "../../Headers/Object/CField.h"
-#include "../../Headers/Object/CPolygon2D.h"
-#include "../../Headers/Object/CPolygon.h"
+#include "../../Headers/Object/CScreenPolygon2D.h"
 
 CScene*		CManager::m_Scene;
-CTimer		CManager::m_Timer;
+CGameTimer* CManager::m_Timer;
 
 void CManager::Init()
 {
 	CRenderDevice::Init();
 	CInput::Init();
+	CGameObjectManager::Init();
 
+	m_Timer = new CGameTimer(GetMainWindowTimer());
+	m_Timer->Reset();
 	m_Scene = new CScene();
 	m_Scene->Init();
-
-	m_Timer.Init();
 }
 
 void CManager::Uninit()
 {
 	m_Scene->Uninit();
 	delete m_Scene;
+	delete m_Timer;
 
 	CInput::Uninit();
+	CShaderManager::Uninit();
+	CMeshManager::Uninit();
+	CTextureManager::Uninit();
 	CRenderDevice::Uninit();
 }
 
 void CManager::Update()
 {
-	m_Timer.Update();
+	m_Timer->Update();
 	CalculateFrameStats();
 
 	CInput::Update();
 
-	CRenderDevice::GetDeferredQuadBefore()->Update();
-	CRenderDevice::GetDeferredQuadAfter()->Update();
+	CRenderDevice::GetDeferredResolve()->Update();
+	CRenderDevice::GetPostEffect()->Update();
 
 	m_Scene->Update();
 }
@@ -53,18 +58,19 @@ void CManager::Draw()
 
 void CManager::CalculateFrameStats()
 {
-	static INT frameCnt = 0;
+	static UINT frameCnt = 0;
 	static FLOAT timeElapsed = 0.f;
-	DOUBLE totT = m_Timer.GetClockTime();
+	FLOAT totT = static_cast<FLOAT>(m_Timer->GetClockTime());
+
 	frameCnt++;
 	if ((totT - timeElapsed) >= 1.f)
 	{
-		FLOAT fps = (FLOAT)frameCnt;
+		FLOAT fps = static_cast<FLOAT>(frameCnt);
 		FLOAT mspf = 1000.f / fps;
 		std::strstream outs;
 		outs << "  DirectX113DGame  " << "    FPS: " << fps
 			<< "    Frame Time: " << mspf << "(ms)" << std::ends;
-		SetWindowText(GetWindow(), outs.str());
+		SetWindowText(GetMainWindowHandle(), outs.str());
 		frameCnt = 0;
 		timeElapsed += 1.f;
 	}

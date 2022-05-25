@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Entry/MyMain.h"
+#include "../Base/CBaseType.h"
 
 class CMesh;
 
@@ -8,15 +9,21 @@ class CMeshManager
 {
 public:
 	static const CMeshManager* const GetMeshManager() { return m_MeshManager; }
-	static void					Uninit() { delete m_MeshManager; }
+	static void					Uninit();
 public:
 	static void					ClearMeshData();
-	static shared_ptr<CMesh>	LoadCubeMesh(const std::string& name);
+	static CMesh*				LoadOBJMesh(const std::string& name);
+	static CMesh*				LoadCubeMesh();
+	static CMesh*				LoadPolygonMesh();
+	static CMesh*				LoadPolygon2DMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT));
 private:
-	static BOOL					AddMeshData(const std::string& name, const shared_ptr<CMesh>& mesh);
-	static shared_ptr<CMesh>	FindMeshData(const std::string& name);
+	template<typename vertexType, typename indexType>
+	static CMesh*				CreateMeshObject(const std::string& name, std::vector<vertexType>& vertexData, std::vector<indexType>& indexData);
 private:
-	std::map<std::string, shared_ptr<CMesh>> m_Data;
+	static void					AddMeshData(const std::string& name, CMesh* mesh);
+	static CMesh*				FindMeshData(const std::string& name);
+private:
+	std::map<std::string, CMesh*> m_Data;
 private:
 	CMeshManager() {}
 	CMeshManager(const CMeshManager&) {}

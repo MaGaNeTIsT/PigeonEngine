@@ -10,18 +10,18 @@ const char* WINDOW_NAME = "DX11";
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
-HWND g_Window;
+HWND _Window;
 
-HWND GetWindow()
+HWND GetMainWindowHandle()
 {
-	return g_Window;
+	return _Window;
 }
 
-CTimer g_Timer;
+CTimer _Timer;
 
-CTimer GetTimer()
+CTimer* GetMainWindowTimer()
 {
-	return g_Timer;
+	return (&_Timer);
 }
 
 
@@ -45,14 +45,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	RegisterClassEx(&wcex);
 
-	g_Window = CreateWindowEx(0,
+	_Window = CreateWindowEx(0,
 		CLASS_NAME,
 		WINDOW_NAME,
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		(SCREEN_WIDTH + GetSystemMetrics(SM_CXDLGFRAME) * 2),
-		(SCREEN_HEIGHT + GetSystemMetrics(SM_CXDLGFRAME) * 2 + GetSystemMetrics(SM_CYCAPTION)),
+		(ENGINE_SCREEN_WIDTH + GetSystemMetrics(SM_CXDLGFRAME) * 2),
+		(ENGINE_SCREEN_HEIGHT + GetSystemMetrics(SM_CXDLGFRAME) * 2 + GetSystemMetrics(SM_CYCAPTION)),
 		NULL,
 		NULL,
 		hInstance,
@@ -60,12 +60,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	CManager::Init();
 
-	ShowWindow(g_Window, nCmdShow);
-	UpdateWindow(g_Window);
+	ShowWindow(_Window, nCmdShow);
+	UpdateWindow(_Window);
 
 	DOUBLE dCurrentTime, dExecLastTime;
-	g_Timer.Init();
-	dCurrentTime = dExecLastTime = g_Timer.GetClockTime();
+	_Timer.Init();
+	dCurrentTime = dExecLastTime = _Timer.GetClockTime();
 
 	MSG msg;
 	while(1)
@@ -84,9 +84,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         }
 		else
 		{
-			g_Timer.Update();
+			_Timer.Update();
 
-			dCurrentTime = g_Timer.GetClockTime();
+			dCurrentTime = _Timer.GetClockTime();
 
 			if ((dCurrentTime - dExecLastTime) >= (1.f / 60.f))
 			{

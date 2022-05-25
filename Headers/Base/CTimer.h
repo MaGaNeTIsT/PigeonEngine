@@ -5,19 +5,36 @@
 class CTimer
 {
 public:
-					CTimer();
-	virtual			~CTimer();
-public:
 	void			Init();
 	void			Update();
 public:
 	DOUBLE			GetClockTime()const;
 	DOUBLE			GetDeltaTime()const;
-private:
+public:
+	CTimer();
+	virtual ~CTimer();
+protected:
 	LARGE_INTEGER	m_T1;
 	LARGE_INTEGER	m_T2;
 	LARGE_INTEGER	m_Ticks;
-private:
+protected:
 	DOUBLE			m_Delta;
 	DOUBLE			m_Clock;
+};
+
+class CGameTimer
+{
+public:
+	void	Reset();
+	void	Update();
+public:
+	DOUBLE	GetClockTime()const;
+	DOUBLE	GetDeltaTime()const;
+public:
+	CGameTimer(CTimer* timer);
+	virtual ~CGameTimer();
+protected:
+	CTimer*	m_Timer;
+	DOUBLE	m_Total;
+	DOUBLE	m_Delta;
 };

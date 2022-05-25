@@ -1,13 +1,13 @@
 #pragma once
 
 class CScene;
-class CTimer;
+class CGameTimer;
 
 class CManager
 {
 private:
 	static CScene*				m_Scene;
-	static CTimer				m_Timer;
+	static CGameTimer*			m_Timer;
 public:
 	static void					Init();
 	static void					Uninit();
@@ -16,5 +16,6 @@ public:
 
 	static void					CalculateFrameStats();
 
-	static CScene*				GetScene() { return m_Scene; }
+	static const CScene*		GetScene() { return m_Scene; }
+	static const CGameTimer*	GetTimer() { return m_Timer; }
 };

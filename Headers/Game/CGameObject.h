@@ -1,8 +1,11 @@
 #pragma once
 
 #include "../../Entry/MyMain.h"
-#include "../../Headers/Base/CBaseType.h"
-#include "../../Headers/Base/CRenderDevice.h"
+#include "../Base/CBaseType.h"
+#include "../Base/CRenderDevice.h"
+#include "./CGameObjectManager.h"
+#include "./CMeshManager.h"
+#include "./CMeshRenderer.h"
 
 class CScene;
 
@@ -36,34 +39,35 @@ protected:
 			RecurWorldMatrix(obj->m_Parent, m);
 	}
 public:
-	CustomType::Vector3& GetForwardVector()
+	CustomType::Vector3 GetForwardVector()
 	{
 		CustomType::Vector3 result(0.f, 0.f, 1.f);
 		return (m_Rotation.MultiplyVector(result));
 	}
-	CustomType::Vector3& GetUpVector()
+	CustomType::Vector3 GetUpVector()
 	{
 		CustomType::Vector3 result(0.f, 1.f, 0.f);
 		return (m_Rotation.MultiplyVector(result));
 	}
-	CustomType::Vector3& GetRightVector()
+	CustomType::Vector3 GetRightVector()
 	{
 		CustomType::Vector3 result(1.f, 0.f, 0.f);
 		return (m_Rotation.MultiplyVector(result));
 	}
-	CustomType::Matrix4x4& GetLocalToWorldMatrix()
+	CustomType::Matrix4x4 GetLocalToWorldMatrix()
 	{
 		CustomType::Matrix4x4 result(m_Position, m_Rotation, m_Scale);
 		if (m_Parent != NULL)
 			RecurWorldMatrix(m_Parent, result);
 		return result;
 	}
-	CustomType::Matrix4x4& GetWorldToLocalMatrix()
+	CustomType::Matrix4x4 GetWorldToLocalMatrix()
 	{
 		CustomType::Matrix4x4 result(GetLocalToWorldMatrix().Inverse());
 		return result;
 	}
 public:
+	const ULONGLONG& GetGameObjectID()const { return m_UID; }
 	void SetScene(CScene* scene) { m_Scene = scene; }
 	void SetParent(CGameObject* parent)
 	{
@@ -72,8 +76,13 @@ public:
 		m_Parent = parent;
 		parent->AddChild(this);
 	}
-	void AddChild(CGameObject* child) { m_Child.insert_or_assign(child->m_UID, child); }
+	void AddChild(CGameObject* child) { m_Child[child->m_UID] = child; }
 	void RemoveChild(CGameObject* child) { m_Child.erase(child->m_UID); }
+public:
+	void AddMesh(CMesh* mesh) { m_Mesh = mesh; }
+	void AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
+	CMesh*			GetMesh()const { return m_Mesh; }
+	CMeshRenderer*	GetMeshRenderer()const { return m_MeshRenderer; }
 protected:
 	GameObjectTransparencyEnum			m_Transparency	= GAMEOBJECT_OPAQUE;
 
@@ -82,16 +91,27 @@ protected:
 	CGameObject*						m_Parent		= NULL;
 	std::map<ULONGLONG,CGameObject*>	m_Child;
 
+	CMesh*								m_Mesh			= NULL;
+	CMeshRenderer*						m_MeshRenderer	= NULL;
+
 	CustomType::Vector3					m_Position;
 	CustomType::Quaternion				m_Rotation;
-	CustomType::Vector3					m_Scale;
+	CustomType::Vector3					m_Scale			= CustomType::Vector3(1.f, 1.f, 1.f);
 public:
-	CGameObject(ULONGLONG uid) { m_UID = uid; }
-	virtual ~CGameObject() {}
+	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); }
+	virtual ~CGameObject()
+	{
+		if (m_MeshRenderer != NULL)
+		{
+			delete m_MeshRenderer;
+			m_MeshRenderer = NULL;
+		}
+	}
 	virtual void	Init()			= 0;
 	virtual void	Uninit()		= 0;
 	virtual void	Update()		= 0;
-	virtual void	Draw()			= 0;
-	virtual void	DrawDeferred()	= 0;
-	virtual void	DrawShadow()	= 0;
+	virtual void	Draw()			{}
+	virtual void	DrawExtra()		{}
+protected:
+	virtual void	PrepareDraw()	{}
 };

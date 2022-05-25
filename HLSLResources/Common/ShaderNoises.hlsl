@@ -1,8 +1,6 @@
 #ifndef _SHADER_NOISES_HLSL
 #define _SHADER_NOISES_HLSL
 
-#define CUSTOM_SHADER_PI (3.141592653)
-
 float random2(in float2 vec)
 {
 	return frac(sin(dot(vec.xy, float2(12.9898, 78.233))) * 43758.5453123);

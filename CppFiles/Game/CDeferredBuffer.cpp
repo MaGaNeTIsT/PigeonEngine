@@ -2,72 +2,72 @@
 #include "../../Headers/Base/CRenderDevice.h"
 #include "../../Headers/Game/CDeferredBuffer.h"
 
-DeferredBuffer::DeferredBuffer()
+CDeferredBuffer::CDeferredBuffer()
 {
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		mRenderTargetViewArray[i] = NULL;
-		mRenderTargetTextureArray[i] = NULL;
-		mRT_SRV[i] = NULL;
+		m_RenderTargetViewArray[i] = NULL;
+		m_RenderTargetTextureArray[i] = NULL;
+		m_RT_SRV[i] = NULL;
 	}
 
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		mDepthStencilView[i] = NULL;
-		mDepthStencilTexture[i] = NULL;
-		mDS_SRV[i] = NULL;
+		m_DepthStencilView[i] = NULL;
+		m_DepthStencilTexture[i] = NULL;
+		m_DS_SRV[i] = NULL;
 	}
 
-	mTextureWidth = 0;
-	mTextureHeight = 0;
-	ZeroMemory(&mViewPort, sizeof(D3D11_VIEWPORT));
+	m_TextureWidth = 0;
+	m_TextureHeight = 0;
+	ZeroMemory(&m_ViewPort, sizeof(D3D11_VIEWPORT));
 }
 
-DeferredBuffer::~DeferredBuffer()
+CDeferredBuffer::~CDeferredBuffer()
 {
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		if (mRenderTargetViewArray[i])
+		if (m_RenderTargetViewArray[i])
 		{
-			mRenderTargetViewArray[i]->Release();
-			mRenderTargetViewArray[i] = NULL;
+			m_RenderTargetViewArray[i]->Release();
+			m_RenderTargetViewArray[i] = NULL;
 		}
-		if (mRenderTargetTextureArray[i])
+		if (m_RenderTargetTextureArray[i])
 		{
-			mRenderTargetTextureArray[i]->Release();
-			mRenderTargetTextureArray[i] = NULL;
+			m_RenderTargetTextureArray[i]->Release();
+			m_RenderTargetTextureArray[i] = NULL;
 		}
-		if (mRT_SRV[i])
+		if (m_RT_SRV[i])
 		{
-			mRT_SRV[i]->Release();
-			mRT_SRV[i] = NULL;
+			m_RT_SRV[i]->Release();
+			m_RT_SRV[i] = NULL;
 		}
 	}
 
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		if (mDepthStencilView[i])
+		if (m_DepthStencilView[i])
 		{
-			mDepthStencilView[i]->Release();
-			mDepthStencilView[i] = NULL;
+			m_DepthStencilView[i]->Release();
+			m_DepthStencilView[i] = NULL;
 		}
-		if (mDepthStencilTexture[i])
+		if (m_DepthStencilTexture[i])
 		{
-			mDepthStencilTexture[i]->Release();
-			mDepthStencilTexture[i] = NULL;
+			m_DepthStencilTexture[i]->Release();
+			m_DepthStencilTexture[i] = NULL;
 		}
-		if (mDS_SRV[i])
+		if (m_DS_SRV[i])
 		{
-			mDS_SRV[i]->Release();
-			mDS_SRV[i] = NULL;
+			m_DS_SRV[i]->Release();
+			m_DS_SRV[i] = NULL;
 		}
 	}
 }
 
-BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
+BOOL CDeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 {
-	mTextureWidth = iTextureWidth;
-	mTextureHeight = iTexureHeight;
+	m_TextureWidth = iTextureWidth;
+	m_TextureHeight = iTexureHeight;
 	HRESULT hr;
 
 	D3D11_TEXTURE2D_DESC textureDesc;
@@ -84,7 +84,7 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	textureDesc.MiscFlags = 0;
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateTexture2D(&textureDesc, NULL, &mRenderTargetTextureArray[i]);
+		hr = CRenderDevice::GetDevice()->CreateTexture2D(&textureDesc, NULL, &m_RenderTargetTextureArray[i]);
 		if (FAILED(hr))return false;
 	}
 
@@ -95,7 +95,7 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	renderTargetViewDesc.Texture2D.MipSlice = 0;
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateRenderTargetView(mRenderTargetTextureArray[i], &renderTargetViewDesc, &mRenderTargetViewArray[i]);
+		hr = CRenderDevice::GetDevice()->CreateRenderTargetView(m_RenderTargetTextureArray[i], &renderTargetViewDesc, &m_RenderTargetViewArray[i]);
 		if (FAILED(hr))return false;
 	}
 
@@ -107,7 +107,7 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	shaderResourceViewDesc.Texture2D.MipLevels = 1;
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateShaderResourceView(mRenderTargetTextureArray[i], &shaderResourceViewDesc, &mRT_SRV[i]);
+		hr = CRenderDevice::GetDevice()->CreateShaderResourceView(m_RenderTargetTextureArray[i], &shaderResourceViewDesc, &m_RT_SRV[i]);
 		if (FAILED(hr))return false;
 	}
 
@@ -126,7 +126,7 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	depthStencilDesc.MiscFlags = 0;
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateTexture2D(&depthStencilDesc, NULL, &mDepthStencilTexture[i]);
+		hr = CRenderDevice::GetDevice()->CreateTexture2D(&depthStencilDesc, NULL, &m_DepthStencilTexture[i]);
 		if (FAILED(hr))return false;
 	}
 
@@ -137,7 +137,7 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	depthStencilViewDesc.Texture2D.MipSlice = 0;
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateDepthStencilView(mDepthStencilTexture[i], &depthStencilViewDesc, &mDepthStencilView[i]);
+		hr = CRenderDevice::GetDevice()->CreateDepthStencilView(m_DepthStencilTexture[i], &depthStencilViewDesc, &m_DepthStencilView[i]);
 		if (FAILED(hr))return false;
 	}
 
@@ -148,101 +148,101 @@ BOOL DeferredBuffer::Initialize(INT iTextureWidth, INT iTexureHeight)
 	shaderResourceViewDesc.Texture2D.MipLevels = depthStencilDesc.MipLevels;
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		hr = CRenderDevice::GetDevice()->CreateShaderResourceView(mDepthStencilTexture[i], &shaderResourceViewDesc, &mDS_SRV[i]);
+		hr = CRenderDevice::GetDevice()->CreateShaderResourceView(m_DepthStencilTexture[i], &shaderResourceViewDesc, &m_DS_SRV[i]);
 		if (FAILED(hr))return false;
 	}
 
-	mViewPort.Width = static_cast<FLOAT>(iTextureWidth);
-	mViewPort.Height = static_cast<FLOAT>(iTexureHeight);
-	mViewPort.MinDepth = 0.0f;
-	mViewPort.MaxDepth = 1.0f;
-	mViewPort.TopLeftX = 0.0f;
-	mViewPort.TopLeftY = 0.0f;
+	m_ViewPort.Width = static_cast<FLOAT>(iTextureWidth);
+	m_ViewPort.Height = static_cast<FLOAT>(iTexureHeight);
+	m_ViewPort.MinDepth = 0.0f;
+	m_ViewPort.MaxDepth = 1.0f;
+	m_ViewPort.TopLeftX = 0.0f;
+	m_ViewPort.TopLeftY = 0.0f;
 
 	return true;
 }
 
-void DeferredBuffer::ShutDown()
+void CDeferredBuffer::ShutDown()
 {
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
 	{
-		if (mRenderTargetViewArray[i])
+		if (m_RenderTargetViewArray[i])
 		{
-			mRenderTargetViewArray[i]->Release();
-			mRenderTargetViewArray[i] = NULL;
+			m_RenderTargetViewArray[i]->Release();
+			m_RenderTargetViewArray[i] = NULL;
 		}
-		if (mRenderTargetTextureArray[i])
+		if (m_RenderTargetTextureArray[i])
 		{
-			mRenderTargetTextureArray[i]->Release();
-			mRenderTargetTextureArray[i] = NULL;
+			m_RenderTargetTextureArray[i]->Release();
+			m_RenderTargetTextureArray[i] = NULL;
 		}
-		if (mRT_SRV[i])
+		if (m_RT_SRV[i])
 		{
-			mRT_SRV[i]->Release();
-			mRT_SRV[i] = NULL;
+			m_RT_SRV[i]->Release();
+			m_RT_SRV[i] = NULL;
 		}
 	}
 
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 	{
-		if (mDepthStencilView[i])
+		if (m_DepthStencilView[i])
 		{
-			mDepthStencilView[i]->Release();
-			mDepthStencilView[i] = NULL;
+			m_DepthStencilView[i]->Release();
+			m_DepthStencilView[i] = NULL;
 		}
-		if (mDepthStencilTexture[i])
+		if (m_DepthStencilTexture[i])
 		{
-			mDepthStencilTexture[i]->Release();
-			mDepthStencilTexture[i] = NULL;
+			m_DepthStencilTexture[i]->Release();
+			m_DepthStencilTexture[i] = NULL;
 		}
-		if (mDS_SRV[i])
+		if (m_DS_SRV[i])
 		{
-			mDS_SRV[i]->Release();
-			mDS_SRV[i] = NULL;
+			m_DS_SRV[i]->Release();
+			m_DS_SRV[i] = NULL;
 		}
 	}
 }
 
-void DeferredBuffer::ClearRenderTarget(FLOAT R, FLOAT G, FLOAT B, FLOAT A)
+void CDeferredBuffer::ClearRenderTarget(FLOAT R, FLOAT G, FLOAT B, FLOAT A)
 {
 	FLOAT color[4] = { R,G,B,A };
 	for (INT i = 0; i < DEFERREDBUFFER_COUNT; ++i)
-		CRenderDevice::GetDeviceContext()->ClearRenderTargetView(mRenderTargetViewArray[i], color);
+		CRenderDevice::GetDeviceContext()->ClearRenderTargetView(m_RenderTargetViewArray[i], color);
 	for (INT i = 0; i < DEPTHSTENCILBUFFER_COUNT; ++i)
 		CRenderDevice::GetDeviceContext()->ClearDepthStencilView(
-			mDepthStencilView[i], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+			m_DepthStencilView[i], D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
 
-void DeferredBuffer::SetDeferredRenderTarget()
+void CDeferredBuffer::SetDeferredRenderTarget()
 {
 	ID3D11RenderTargetView* rtv[4] = {
-		mRenderTargetViewArray[DEFERREDBUFFER_WORLDPOSITION]	,
-		mRenderTargetViewArray[DEFERREDBUFFER_WORLDNORMAL]		,
-		mRenderTargetViewArray[DEFERREDBUFFER_DIFFUSE]			,
-		mRenderTargetViewArray[DEFERREDBUFFER_SPECULAR]			};
-	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(DEFERREDBUFFER_COUNT - 1, rtv, mDepthStencilView[DEPTHSTENCILBUFFER_CAMERA]);
-	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &mViewPort);
+		m_RenderTargetViewArray[DEFERREDBUFFER_WORLDNORMAL],
+		m_RenderTargetViewArray[DEFERREDBUFFER_ALBEDO],
+		m_RenderTargetViewArray[DEFERREDBUFFER_PROPERTY],
+		m_RenderTargetViewArray[DEFERREDBUFFER_ID] };
+	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(DEFERREDBUFFER_COUNT - 1, rtv, m_DepthStencilView[DEPTHSTENCILBUFFER_CAMERA]);
+	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &m_ViewPort);
 }
 
-void DeferredBuffer::SetGBufferRenderTarget()
+void CDeferredBuffer::SetGBufferRenderTarget()
 {
-	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(1, &mRenderTargetViewArray[DEFERREDBUFFER_GBUFFER], mDepthStencilView[DEPTHSTENCILBUFFER_CAMERA]);
+	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(1, &m_RenderTargetViewArray[DEFERREDBUFFER_EXTRA], m_DepthStencilView[DEPTHSTENCILBUFFER_EXTRA]);
 
-	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &mViewPort);
+	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &m_ViewPort);
 }
 
-ID3D11ShaderResourceView* DeferredBuffer::GetDeferredShaderResourceView(DeferredBufferEnum idx)
+ID3D11ShaderResourceView* CDeferredBuffer::GetDeferredShaderResourceView(DeferredBufferEnum idx)
 {
-	return mRT_SRV[idx];
+	return m_RT_SRV[idx];
 }
 
-void DeferredBuffer::SetDepthStencilRenderTarget(DepthStencilBufferEnum idx, ID3D11RenderTargetView* rtv)
+void CDeferredBuffer::SetDepthStencilRenderTarget(DepthStencilBufferEnum idx, ID3D11RenderTargetView* rtv)
 {
-	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(1, &rtv, mDepthStencilView[idx]);
-	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &mViewPort);
+	CRenderDevice::GetDeviceContext()->OMSetRenderTargets(1, &rtv, m_DepthStencilView[idx]);
+	CRenderDevice::GetDeviceContext()->RSSetViewports(1, &m_ViewPort);
 }
 
-ID3D11ShaderResourceView* DeferredBuffer::GetDepthStencilShaderResourceView(DepthStencilBufferEnum idx)
+ID3D11ShaderResourceView* CDeferredBuffer::GetDepthStencilShaderResourceView(DepthStencilBufferEnum idx)
 {
-	return mDS_SRV[idx];
+	return m_DS_SRV[idx];
 }

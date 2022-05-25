@@ -49,50 +49,29 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="HLSLResources\Object\DebugPolygon2DAlpha.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\FieldDeferredPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\FieldFrontPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\FieldPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\FieldVS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\Polygon2DPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\Polygon2DVS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\RayMarchingPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\RayMarchingVS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\SkyPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\SkyVS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\WaterFieldPS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\WaterFieldVS.hlsl">
-      <Filter>Shaders\HLSLResources\Object</Filter>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\RenderPipeline\GBuffer.hlsl">
+    <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
       <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\RenderPipeline\PostEffect.hlsl">
+    <FxCompile Include="HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">
       <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\EngineCubeVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\EngineCubePS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DVS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\EngineEmptyPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
+      <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DPS.hlsl">
+      <Filter>Shaders\HLSLResources\Object</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -111,7 +90,7 @@
     <ClInclude Include="Headers\Base\CShader.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Base\CTexture.h">
+    <ClInclude Include="Headers\Base\CTexture2D.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\Base\CRenderDevice.h">
@@ -135,13 +114,10 @@
     <ClInclude Include="Headers\Object\CField.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Object\CGameObject.h">
-      <Filter>Objects\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Headers\Object\CPolygon.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Object\CPolygon2D.h">
+    <ClInclude Include="Headers\Object\CPolygon2DBase.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\Object\CRayMarching.h">
@@ -165,6 +141,36 @@
     <ClInclude Include="Headers\Base\CBaseType.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Headers\Game\CGameObject.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CMesh.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CMeshRenderer.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CMeshManager.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CShaderManager.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CCube.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Game\CGameObjectManager.h">
+      <Filter>Game\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CPolygon2D.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Object\CScreenPolygon2D.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CTextureManager.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CInput.cpp">
@@ -182,7 +188,7 @@
     <ClCompile Include="CppFiles\Base\CShader.cpp">
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="CppFiles\Base\CTexture.cpp">
+    <ClCompile Include="CppFiles\Base\CTexture2D.cpp">
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Base\CRenderDevice.cpp">
@@ -206,7 +212,7 @@
     <ClCompile Include="CppFiles\Object\CPolygon.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="CppFiles\Object\CPolygon2D.cpp">
+    <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Object\CRayMarching.cpp">
@@ -227,6 +233,36 @@
     <ClCompile Include="CppFiles\Base\CBaseType.cpp">
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="CppFiles\Game\CMeshRenderer.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CMesh.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CMeshManager.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CShaderManager.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CCube.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CPolygon2D.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CScene.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Game\CGameObjectManager.cpp">
+      <Filter>Game\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CTextureManager.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
@@ -236,6 +272,15 @@
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
     <None Include="HLSLResources\Common\ShaderVariables.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderDefCommon.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderCommon.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderSpaceTransform.hlsl">
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
   </ItemGroup>

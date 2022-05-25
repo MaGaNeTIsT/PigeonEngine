@@ -2,20 +2,23 @@
 
 #include "../Game/CGameObject.h"
 
-class CPolygon2D;
+class CScreenPolygon2D;
 
-class DebugScreen : public CGameObject
+class CDebugScreen : public CGameObject
 {
 public:
-	virtual void	Init();
-	virtual void	Uninit();
-	virtual void	Update();
-	virtual void	Draw();
-
-	void			SetShaderResourceView(INT num, ID3D11ShaderResourceView** srv);
-private:
-	static const UINT				DEBUGPOLYGON_COUNT = 7;
-
-	CPolygon2D*						m_Polygon[DEBUGPOLYGON_COUNT];
-	ID3D11ShaderResourceView*		m_SRV[DEBUGPOLYGON_COUNT];
+	virtual void	Init()override;
+	virtual void	Uninit()override;
+	virtual void	Update()override;
+	virtual void	Draw()override;
+protected:
+	virtual void	PrepareDraw()override;
+public:
+	CDebugScreen();
+	virtual ~CDebugScreen();
+protected:
+	static UINT		DEBUGPOLYGON_COUNT;
+protected:
+	std::vector<CScreenPolygon2D*>			m_Polygons;
+	std::vector<ID3D11ShaderResourceView*>	m_SRVs;
 };

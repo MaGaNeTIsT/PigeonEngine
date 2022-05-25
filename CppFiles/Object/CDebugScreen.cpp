@@ -1,80 +1,67 @@
 #include "../../Headers/Object/CDebugScreen.h"
 #include "../../Headers/Base/CRenderDevice.h"
 #include "../../Headers/Game/CDeferredBuffer.h"
-#include "../../Headers/Object/CPolygon2D.h"
+#include "../../Headers/Game/CScene.h"
+#include "../../Headers/Game/CCamera.h"
+#include "../../Headers/Object/CScreenPolygon2D.h"
 
-BOOL Linear_Interpolation(const INT& x0, const INT& y0, const INT& x1, const INT& y1, const INT& t, INT& Phi)
+UINT CDebugScreen::DEBUGPOLYGON_COUNT = 6u;
+CDebugScreen::CDebugScreen()
 {
-	if (t < x0 || t > x1)
-		return false;
-	Phi = (INT)(((FLOAT)(t - x1)) / ((FLOAT)(x0 - x1)) * (FLOAT)y0 + ((FLOAT)(t - x0)) / ((FLOAT)(x1 - x0)) * (FLOAT)y1);
-	return true;
 }
-
-void DebugScreen::Init()
+CDebugScreen::~CDebugScreen()
 {
-	ID3D11ShaderResourceView* srv[DEBUGPOLYGON_COUNT] = {
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_WORLDPOSITION),
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_WORLDNORMAL),
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_DIFFUSE),
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_SPECULAR),
-		CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(DeferredBuffer::DEPTHSTENCILBUFFER_LIGHT),
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_WORLDPOSITION),
-		CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(DeferredBuffer::DEFERREDBUFFER_DIFFUSE)
-	};
-	SetShaderResourceView(DEBUGPOLYGON_COUNT, srv);
-
-	INT x = 0, y = 0, l = SCREEN_HEIGHT / DEBUGPOLYGON_COUNT - 1;
-	for (INT i = 0; i < DEBUGPOLYGON_COUNT; ++i)
+}
+void CDebugScreen::Init()
+{
+	CCamera* sceneCamera = this->m_Scene->GetGameObjectFirst<CCamera>(CScene::SCENELAYOUT_CAMERA);
+	CustomType::Vector4 sceneViewport = sceneCamera->GetViewport();
+	INT length = static_cast<INT>((sceneViewport.W() - sceneViewport.Y()) / CDebugScreen::DEBUGPOLYGON_COUNT);
+	INT polygonCount = static_cast<INT>(CDebugScreen::DEBUGPOLYGON_COUNT);
+	for (INT i = 0; i < polygonCount; i++)
 	{
-		if (i == 5 || i == 6)
+		CustomType::Vector4 tempScreenAnchor = CustomType::Vector4(0, length * i, length, length * (i + 1));
+		CScreenPolygon2D* tempScreenPolygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, tempScreenAnchor);
+		tempScreenPolygon2D->SetScene(this->m_Scene);
+		tempScreenPolygon2D->SetParent(this);
+		tempScreenPolygon2D->Init();
+		m_Polygons.push_back(tempScreenPolygon2D);
+	}
+}
+void CDebugScreen::Uninit()
+{
+	UINT size = static_cast<UINT>(m_Polygons.size());
+	if (size > 0u)
+	{
+		for (UINT i = 0u; i < size; i++)
 		{
-			m_Polygon[i] = new DebugQuadAlpha();
-			Linear_Interpolation(0, 0, DEBUGPOLYGON_COUNT, SCREEN_HEIGHT, i, y);
-			m_Polygon[i]->SetScreenPosition(XMFLOAT4(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(x + l), static_cast<FLOAT>(y + l)));
-			m_Polygon[i]->Init();
-		}
-		else
-		{
-			m_Polygon[i] = new CPolygon2D();
-			Linear_Interpolation(0, 0, DEBUGPOLYGON_COUNT, SCREEN_HEIGHT, i, y);
-			m_Polygon[i]->SetScreenPosition(XMFLOAT4(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(x + l), static_cast<FLOAT>(y + l)));
-			m_Polygon[i]->Init();
+			if (m_Polygons[i] != NULL)
+				delete (m_Polygons[i]);
 		}
 	}
+	m_Polygons.clear();
+	m_SRVs.clear();
 }
-
-void DebugScreen::Uninit()
+void CDebugScreen::Update()
 {
-	for (INT i = 0; i < DEBUGPOLYGON_COUNT; ++i)
+}
+void CDebugScreen::PrepareDraw()
+{
+	if (static_cast<UINT>(m_SRVs.size()) != CDebugScreen::DEBUGPOLYGON_COUNT)
+		m_SRVs.resize(static_cast<size_t>(CDebugScreen::DEBUGPOLYGON_COUNT));
+	m_SRVs[0] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL);
+	m_SRVs[1] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO);
+	m_SRVs[2] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY);
+	m_SRVs[3] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID);
+	m_SRVs[4] = CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_LIGHT);
+	m_SRVs[5] = CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA);
+}
+void CDebugScreen::Draw()
+{
+	this->PrepareDraw();
+	for (UINT i = 0; i < CDebugScreen::DEBUGPOLYGON_COUNT; i++)
 	{
-		m_Polygon[i]->Uninit();
-		delete m_Polygon[i];
-	}
-}
-
-void DebugScreen::Update()
-{
-	for (INT i = 0; i < DEBUGPOLYGON_COUNT; ++i)
-		m_Polygon[i]->Update();
-}
-
-void DebugScreen::Draw()
-{
-	for (INT i = 0; i < DEBUGPOLYGON_COUNT; ++i)
-	{
-		CRenderDevice::SetTexture(m_SRV[i], 6);
-		m_Polygon[i]->Draw();
-	}
-}
-
-void DebugScreen::SetShaderResourceView(INT num, ID3D11ShaderResourceView** srv)
-{
-	if (num < 0)
-		return;
-	INT n = num > DEBUGPOLYGON_COUNT ? DEBUGPOLYGON_COUNT : num;
-	for (INT i = 0; i < n; ++i)
-	{
-		m_SRV[i] = srv[i];
+		CRenderDevice::BindTexture(m_SRVs[i], 8u);
+		m_Polygons[i]->Draw();
 	}
 }
