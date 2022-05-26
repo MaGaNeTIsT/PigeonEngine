@@ -80,22 +80,12 @@ void CScene::Init()
 {
 	CRenderDevice::CreateConstantBuffer(this->m_ConstantBuffer, sizeof(CustomStruct::ConstantBufferPerFrame));
 
-	ID3D11SamplerState* sceneSampler[] = {
-		(CRenderDevice::GetSamplerState(CRenderDevice::SSE_CLAMP_POINT)),
-		(CRenderDevice::GetSamplerState(CRenderDevice::SSE_CLAMP_LINEAR)),
-		(CRenderDevice::GetSamplerState(CRenderDevice::SSE_WRAP_POINT)),
-		(CRenderDevice::GetSamplerState(CRenderDevice::SSE_WRAP_LINEAR))
-	};
-	CRenderDevice::GetDeviceContext()->PSSetSamplers(0u, 4u, sceneSampler);
-
-
 	CCamera* mainCamera = this->AddGameObject<CCamera>(SCENELAYOUT_CAMERA);
 	CLight* mainLight = this->AddGameObject<CLight>(SCENELAYOUT_LIGHT);
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SCENELAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
 	//this->AddGameObject<CSky>(SCENELAYOUT_SKY);
 	//this->AddGameObject<CWater>(SCENELAYOUT_TRANSPARENT);
-
 
 	this->m_DebugScreen.SetScene(this);
 	this->m_DebugScreen.Init();

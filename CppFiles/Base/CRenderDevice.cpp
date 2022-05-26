@@ -185,6 +185,13 @@ void CRenderDevice::Init()
 
 	m_ImmediateContext->OMSetDepthStencilState(m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE], NULL);
 
+	ID3D11SamplerState* sceneSampler[] = {
+		m_SamplerState[SSE_CLAMP_POINT],
+		m_SamplerState[SSE_CLAMP_LINEAR],
+		m_SamplerState[SSE_WRAP_POINT],
+		m_SamplerState[SSE_WRAP_LINEAR] };
+	CRenderDevice::GetDeviceContext()->PSSetSamplers(0u, 4u, sceneSampler);
+
 
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_WHITE);
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLACK]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLACK);
