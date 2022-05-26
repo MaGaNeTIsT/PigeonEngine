@@ -12,7 +12,9 @@ public:
 	static void					Uninit();
 public:
 	static void					ClearMeshData();
+public:
 	static CMesh*				LoadOBJMesh(const std::string& name);
+	static CMesh*				LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	static CMesh*				LoadCubeMesh();
 	static CMesh*				LoadPolygonMesh();
 	static CMesh*				LoadPolygon2DMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT));

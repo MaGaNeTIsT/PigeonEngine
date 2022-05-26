@@ -5,8 +5,9 @@
 #include "../../Headers/Game/CCamera.h"
 #include "../../Headers/Game/CDeferredBuffer.h"
 #include "../../Headers/Game/CLight.h"
-#include "../../Headers/Object/CCube.h"
 #include "../../Headers/Object/CScreenPolygon2D.h"
+#include "../../Headers/Object/CPlane.h"
+#include "../../Headers/Object/CCube.h"
 
 CScene::CScene()
 {
@@ -90,8 +91,8 @@ void CScene::Init()
 
 	CCamera* mainCamera = this->AddGameObject<CCamera>(SCENELAYOUT_CAMERA);
 	CLight* mainLight = this->AddGameObject<CLight>(SCENELAYOUT_LIGHT);
-	//this->AddGameObject<CField>(SCENELAYOUT_TERRAIN);
-	this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
+	CPlane* terrainPlane = this->AddGameObject<CPlane>(SCENELAYOUT_TERRAIN);
+	CCube* cube = this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
 	//this->AddGameObject<CSky>(SCENELAYOUT_SKY);
 	//this->AddGameObject<CWater>(SCENELAYOUT_TRANSPARENT);
 
@@ -99,8 +100,10 @@ void CScene::Init()
 	this->m_DebugScreen.SetScene(this);
 	this->m_DebugScreen.Init();
 
-	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.f, -3.f));
+	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
 	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
+	terrainPlane->SetMeshInfo(100.f, 50, 50.f);
+	cube->SetPosition(CustomType::Vector3(0.f, 0.5f, 0.f));
 }
 void CScene::Uninit()
 {
@@ -126,25 +129,31 @@ void CScene::Update()
 
 	this->m_DebugScreen.Update();
 }
-void CScene::DrawOpaque()
-{
-	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
-		{
-			if (object.second->GetTransparency() == CGameObject::GameObjectTransparencyEnum::GAMEOBJECT_OPAQUE)
-				object.second->Draw();
-		}
-	}
-}
 void CScene::DrawOpaqueDeferred()
 {
 	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
-			if (object.second->GetTransparency() == CGameObject::GameObjectTransparencyEnum::GAMEOBJECT_OPAQUE)
-				object.second->Draw();
+			if (object.second->GetMeshRenderer() != NULL)
+			{
+				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_DEFERRED)
+					object.second->Draw();
+			}
+		}
+	}
+}
+void CScene::DrawOpaqueForward()
+{
+	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
+	{
+		for (const auto& object : this->m_GameObject[i])
+		{
+			if (object.second->GetMeshRenderer() != NULL)
+			{
+				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
+					object.second->Draw();
+			}
 		}
 	}
 }
@@ -154,8 +163,11 @@ void CScene::DrawTransparent()
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
-			if (object.second->GetTransparency() == CGameObject::GameObjectTransparencyEnum::GAMEOBJECT_TRANSPARENT)
-				object.second->Draw();
+			if (object.second->GetMeshRenderer() != NULL)
+			{
+				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_TRANSPARENT)
+					object.second->Draw();
+			}
 		}
 	}
 }
@@ -163,18 +175,26 @@ void CScene::DrawSky()
 {
 	for (const auto& object : this->m_GameObject[SCENELAYOUT_SKY])
 	{
-		if (object.second->GetTransparency() == CGameObject::GameObjectTransparencyEnum::GAMEOBJECT_SKY)
-			object.second->Draw();
+		if (object.second->GetMeshRenderer() != NULL)
+		{
+			if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_SKY)
+				object.second->Draw();
+		}
 	}
 }
 void CScene::DrawShadow()
 {
+	CMeshRenderer::CRenderTypeEnum renderType;
 	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
-			if (object.second->GetTransparency() == CGameObject::GameObjectTransparencyEnum::GAMEOBJECT_OPAQUE)
-				object.second->DrawExtra();
+			if (object.second->GetMeshRenderer() != NULL)
+			{
+				renderType = object.second->GetMeshRenderer()->GetRenderType();
+				if (renderType == CMeshRenderer::RENDER_TYPE_OPAQUE_DEFERRED || renderType == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
+					object.second->Draw();
+			}
 		}
 	}
 }
@@ -204,51 +224,37 @@ void CScene::PrepareDraw()
 }
 void CScene::Draw()
 {
+	CRenderDevice::ResetRenderTarget();
 	this->PrepareDraw();
 
 
-	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEENABLE);
 	CRenderDevice::BeginShadow();
-	CRenderDevice::ClrShadowDeferred();
-
-
 	this->DrawShadow();
+	CRenderDevice::EndShadow();
 
 
 	CRenderDevice::BeginDeferred();
-	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
-
-
 	this->DrawOpaqueDeferred();
+	CRenderDevice::EndDeferred();
 
 
-	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
-	CRenderDevice::BeginGBuffer();
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL), ENGINE_GBUFFER_WORLD_NORMAL_START_SLOT);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO), ENGINE_GBUFFER_ALBEDO_START_SLOT);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY), ENGINE_GBUFFER_PROPERTY_START_SLOT);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID), ENGINE_GBUFFER_ID_START_SLOT);
-	CRenderDevice::SetShadowMap(ENGINE_LIGHT_SHADOW_MAP_START_SLOT);
+	CRenderDevice::BeginDeferredResolve();
+	CRenderDevice::SetShadowMap(ENGINE_SRV_LIGHT_SHADOW_MAP_START_SLOT);
 	CRenderDevice::GetDeferredResolve()->Draw();
+	CRenderDevice::EndDeferredResolve();
 
 
+	CRenderDevice::BeginForward();
+	this->DrawSky();
+	this->DrawOpaqueForward();
 	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEDISABLE);
 	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDALPHA);
-
-
-	this->DrawSky();
 	this->DrawTransparent();
+	CRenderDevice::EndForward();
 
 
-	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
-	CRenderDevice::Begin();
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), ENGINE_POST_EFFECT_PING_START_SLOT);
+	CRenderDevice::BeginFinal();
 	CRenderDevice::GetPostEffect()->Draw();
-
-
 	this->m_DebugScreen.Draw();
-	this->DrawShadow();
-
-
-	CRenderDevice::End();
+	CRenderDevice::EndFinal();
 }

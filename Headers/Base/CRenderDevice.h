@@ -53,12 +53,17 @@ public:
 public:
 	static void		Init();
 	static void		Uninit();
-	static void		ClrShadowDeferred();
+	static void		ResetRenderTarget();
 	static void		BeginShadow();
+	static void		EndShadow();
 	static void		BeginDeferred();
-	static void		BeginGBuffer();
-	static void		Begin();
-	static void		End();
+	static void		EndDeferred();
+	static void		BeginDeferredResolve();
+	static void		EndDeferredResolve();
+	static void		BeginForward();
+	static void		EndForward();
+	static void		BeginFinal();
+	static void		EndFinal();
 public:
 	static void		SetBlendState(BlendStateEnum bse);
 	static void		SetDepthState(DepthStencilStateEnum dsse);

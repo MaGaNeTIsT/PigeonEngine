@@ -41,8 +41,8 @@ public:
 	virtual void	Update();
 	virtual void	Draw();
 protected:
-	virtual void	DrawOpaque();
 	virtual void	DrawOpaqueDeferred();
+	virtual void	DrawOpaqueForward();
 	virtual void	DrawTransparent();
 	virtual void	DrawSky();
 	virtual void	DrawShadow();

@@ -37,7 +37,7 @@
     <None Include="HLSLResources\Common\ShaderSpaceTransform.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="HLSLResources\Object\EngineCubePS.hlsl">
+    <FxCompile Include="HLSLResources\Object\EngineDefaultPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -45,7 +45,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineCubeVS.hlsl">
+    <FxCompile Include="HLSLResources\Object\EngineDefaultVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -127,14 +127,13 @@
     <ClInclude Include="Headers\Game\CScene.h" />
     <ClInclude Include="Headers\Object\CCube.h" />
     <ClInclude Include="Headers\Object\CDebugScreen.h" />
-    <ClInclude Include="Headers\Object\CField.h" />
+    <ClInclude Include="Headers\Object\CPlane.h" />
     <ClInclude Include="Headers\Object\CPolygon.h" />
     <ClInclude Include="Headers\Object\CPolygon2D.h" />
     <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
     <ClInclude Include="Headers\Object\CRayMarching.h" />
     <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
     <ClInclude Include="Headers\Object\CSky.h" />
-    <ClInclude Include="Headers\Object\CWaterField.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CBaseType.cpp" />
@@ -158,14 +157,13 @@
     <ClCompile Include="CppFiles\Game\CScene.cpp" />
     <ClCompile Include="CppFiles\Object\CCube.cpp" />
     <ClCompile Include="CppFiles\Object\CDebugScreen.cpp" />
-    <ClCompile Include="CppFiles\Object\CField.cpp" />
+    <ClCompile Include="CppFiles\Object\CPlane.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2D.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
     <ClCompile Include="CppFiles\Object\CRayMarching.cpp" />
     <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
     <ClCompile Include="CppFiles\Object\CSky.cpp" />
-    <ClCompile Include="CppFiles\Object\CWaterField.cpp" />
     <ClCompile Include="Entry\MyMain.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

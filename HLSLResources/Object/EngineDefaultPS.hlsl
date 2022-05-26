@@ -1,5 +1,5 @@
-#ifndef _ENGINE_CUBE_VS_HLSL
-#define _ENGINE_CUBE_VS_HLSL
+#ifndef _ENGINE_DEFAULT_PS_HLSL
+#define _ENGINE_DEFAULT_PS_HLSL
 
 #include "../Common/ShaderCommon.hlsl"
 

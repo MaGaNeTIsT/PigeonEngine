@@ -6,8 +6,9 @@
 #include "../../Headers/Game/CMesh.h"
 #include "../../Headers/Game/CCamera.h"
 
-CMeshRenderer::CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName)
+CMeshRenderer::CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, CRenderTypeEnum type)
 {
+	this->m_RenderType			= type;
 	this->m_VertexShaderName	= vertexShaderName;
 	this->m_PixelShaderName		= pixelShaderName;
 	this->m_Shader				= NULL;

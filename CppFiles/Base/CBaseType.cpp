@@ -165,6 +165,164 @@ namespace CustomType
 	}
 
 
+	Vector2 Vector2::m_Zero = Vector2::GetZero();
+	Vector2::Vector2()
+	{
+		(*this) = Vector2::m_Zero;
+	}
+	Vector2::Vector2(const Vector2& v)
+	{
+		(*this) = v;
+	}
+	Vector2::Vector2(DirectX::CXMVECTOR v)
+	{
+		this->SetXMVECTOR(v);
+	}
+	Vector2::Vector2(DirectX::XMFLOAT2 v)
+	{
+		this->m_Value = v;
+	}
+	Vector2::Vector2(const FLOAT& v)
+	{
+		this->m_Value.x = v;
+		this->m_Value.y = v;
+	}
+	Vector2::Vector2(const FLOAT& x, const FLOAT& y)
+	{
+		this->m_Value.x = x;
+		this->m_Value.y = y;
+	}
+	Vector2::~Vector2()
+	{
+	}
+	void Vector2::Normalize()
+	{
+		this->SetXMVECTOR(DirectX::XMVector2Normalize(this->GetXMVECTOR()));
+	}
+	Vector2 Vector2::Normalize(const Vector2& v)
+	{
+		Vector2 result(DirectX::XMVector2Normalize(v.GetXMVECTOR()));
+		return result;
+	}
+	Vector2 Vector2::operator+(const Vector2& v)
+	{
+		Vector2 result(
+			this->m_Value.x + v.m_Value.x,
+			this->m_Value.y + v.m_Value.y);
+		return result;
+	}
+	Vector2 Vector2::operator-(const Vector2& v)
+	{
+		Vector2 result(
+			this->m_Value.x - v.m_Value.x,
+			this->m_Value.y - v.m_Value.y);
+		return result;
+	}
+	Vector2 Vector2::operator*(const Vector2& v)
+	{
+		Vector2 result(
+			this->m_Value.x * v.m_Value.x,
+			this->m_Value.y * v.m_Value.y);
+		return result;
+	}
+	Vector2 Vector2::operator/(const Vector2& v)
+	{
+		Vector2 result(
+			this->m_Value.x / v.m_Value.x,
+			this->m_Value.y / v.m_Value.y);
+		return result;
+	}
+	Vector2 Vector2::operator+(const FLOAT& v)
+	{
+		Vector2 result(
+			this->m_Value.x + v,
+			this->m_Value.y + v);
+		return result;
+	}
+	Vector2 Vector2::operator-(const FLOAT& v)
+	{
+		Vector2 result(
+			this->m_Value.x - v,
+			this->m_Value.y - v);
+		return result;
+	}
+	Vector2 Vector2::operator*(const FLOAT& v)
+	{
+		Vector2 result(
+			this->m_Value.x * v,
+			this->m_Value.y * v);
+		return result;
+	}
+	Vector2 Vector2::operator/(const FLOAT& v)
+	{
+		Vector2 result(
+			this->m_Value.x / v,
+			this->m_Value.y / v);
+		return result;
+	}
+	Vector2 Vector2::operator-()
+	{
+		Vector2 result(
+			-this->m_Value.x,
+			-this->m_Value.y);
+		return result;
+	}
+	void Vector2::operator=(const Vector2& v)
+	{
+		this->m_Value = v.m_Value;
+	}
+	void Vector2::operator+=(const Vector2& v)
+	{
+		this->m_Value.x = this->m_Value.x + v.m_Value.x;
+		this->m_Value.y = this->m_Value.y + v.m_Value.y;
+	}
+	void Vector2::operator-=(const Vector2& v)
+	{
+		this->m_Value.x = this->m_Value.x - v.m_Value.x;
+		this->m_Value.y = this->m_Value.y - v.m_Value.y;
+	}
+	void Vector2::operator*=(const Vector2& v)
+	{
+		this->m_Value.x = this->m_Value.x * v.m_Value.x;
+		this->m_Value.y = this->m_Value.y * v.m_Value.y;
+	}
+	void Vector2::operator/=(const Vector2& v)
+	{
+		this->m_Value.x = this->m_Value.x / v.m_Value.x;
+		this->m_Value.y = this->m_Value.y / v.m_Value.y;
+	}
+	void Vector2::operator=(const FLOAT& v)
+	{
+		this->m_Value.x = v;
+		this->m_Value.y = v;
+	}
+	void Vector2::operator+=(const FLOAT& v)
+	{
+		this->m_Value.x = this->m_Value.x + v;
+		this->m_Value.y = this->m_Value.y + v;
+	}
+	void Vector2::operator-=(const FLOAT& v)
+	{
+		this->m_Value.x = this->m_Value.x - v;
+		this->m_Value.y = this->m_Value.y - v;
+	}
+	void Vector2::operator*=(const FLOAT& v)
+	{
+		this->m_Value.x = this->m_Value.x * v;
+		this->m_Value.y = this->m_Value.y * v;
+	}
+	void Vector2::operator/=(const FLOAT& v)
+	{
+		this->m_Value.x = this->m_Value.x / v;
+		this->m_Value.y = this->m_Value.y / v;
+	}
+	Vector2 Vector2::GetZero()
+	{
+		Vector2 result(0.f, 0.f);
+		return result;
+	}
+
+
 	Vector3 Vector3::m_Zero = Vector3::GetZero();
 	Vector3::Vector3()
 	{
@@ -222,6 +380,14 @@ namespace CustomType
 	Vector3 Vector3::Cross(const Vector3& v1, const Vector3& v2)
 	{
 		Vector3 result(DirectX::XMVector3Cross(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
+		return result;
+	}
+	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t)
+	{
+		Vector3 result(
+			v1.X() * (1.f - t) + v2.X() * t,
+			v1.Y() * (1.f - t) + v2.Y() * t,
+			v1.Z() * (1.f - t) + v2.Z() * t);
 		return result;
 	}
 	Vector3 Vector3::operator+(const Vector3& v)
@@ -588,6 +754,156 @@ namespace CustomType
 	}
 
 
+	Vector2Int Vector2Int::m_Zero = Vector2Int::GetZero();
+	Vector2Int::Vector2Int()
+	{
+		(*this) = Vector2Int::m_Zero;
+	}
+	Vector2Int::Vector2Int(const Vector2Int& v)
+	{
+		(*this) = v;
+	}
+	Vector2Int::Vector2Int(const INT& v)
+	{
+		this->x = v;
+		this->y = v;
+	}
+	Vector2Int::Vector2Int(const INT& x, const INT& y)
+	{
+		this->x = x;
+		this->y = y;
+	}
+	Vector2Int::Vector2Int(const FLOAT& v)
+	{
+		this->x = static_cast<INT>(v);
+		this->y = static_cast<INT>(v);
+	}
+	Vector2Int::Vector2Int(const FLOAT& x, const FLOAT& y)
+	{
+		this->x = static_cast<INT>(x);
+		this->y = static_cast<INT>(y);
+	}
+	Vector2Int::~Vector2Int()
+	{
+	}
+	Vector2Int Vector2Int::operator+(const Vector2Int& v)
+	{
+		Vector2Int result(
+			this->x + v.x,
+			this->y + v.y);
+		return result;
+	}
+	Vector2Int Vector2Int::operator-(const Vector2Int& v)
+	{
+		Vector2Int result(
+			this->x - v.x,
+			this->y - v.y);
+		return result;
+	}
+	Vector2Int Vector2Int::operator*(const Vector2Int& v)
+	{
+		Vector2Int result(
+			this->x * v.x,
+			this->y * v.y);
+		return result;
+	}
+	Vector2Int Vector2Int::operator/(const Vector2Int& v)
+	{
+		Vector2Int result(
+			this->x / v.x,
+			this->y / v.y);
+		return result;
+	}
+	Vector2Int Vector2Int::operator+(const INT& v)
+	{
+		Vector2Int result(
+			this->x + v,
+			this->y + v);
+		return result;
+	}
+	Vector2Int Vector2Int::operator-(const INT& v)
+	{
+		Vector2Int result(
+			this->x - v,
+			this->y - v);
+		return result;
+	}
+	Vector2Int Vector2Int::operator*(const INT& v)
+	{
+		Vector2Int result(
+			this->x * v,
+			this->y * v);
+		return result;
+	}
+	Vector2Int Vector2Int::operator/(const INT& v)
+	{
+		Vector2Int result(
+			this->x / v,
+			this->y / v);
+		return result;
+	}
+	Vector2Int Vector2Int::operator-()
+	{
+		Vector2Int result(-this->x, -this->y);
+		return result;
+	}
+	void Vector2Int::operator=(const Vector2Int& v)
+	{
+		this->x = v.x;
+		this->y = v.y;
+	}
+	void Vector2Int::operator+=(const Vector2Int& v)
+	{
+		this->x = this->x + v.x;
+		this->y = this->y + v.y;
+	}
+	void Vector2Int::operator-=(const Vector2Int& v)
+	{
+		this->x = this->x - v.x;
+		this->y = this->y - v.y;
+	}
+	void Vector2Int::operator*=(const Vector2Int& v)
+	{
+		this->x = this->x * v.x;
+		this->y = this->y * v.y;
+	}
+	void Vector2Int::operator/=(const Vector2Int& v)
+	{
+		this->x = this->x / v.x;
+		this->y = this->y / v.y;
+	}
+	void Vector2Int::operator=(const INT& v)
+	{
+		this->x = v;
+		this->y = v;
+	}
+	void Vector2Int::operator+=(const INT& v)
+	{
+		this->x = this->x + v;
+		this->y = this->y + v;
+	}
+	void Vector2Int::operator-=(const INT& v)
+	{
+		this->x = this->x - v;
+		this->y = this->y - v;
+	}
+	void Vector2Int::operator*=(const INT& v)
+	{
+		this->x = this->x * v;
+		this->y = this->y * v;
+	}
+	void Vector2Int::operator/=(const INT& v)
+	{
+		this->x = this->x / v;
+		this->y = this->y / v;
+	}
+	Vector2Int Vector2Int::GetZero()
+	{
+		Vector2Int result(0, 0);
+		return result;
+	}
+
+
 	Vector4Int Vector4Int::m_Zero = Vector4Int::GetZero();
 	Vector4Int::Vector4Int()
 	{
@@ -813,24 +1129,21 @@ namespace CustomType
 		return result;
 	}
 
+
 	FLOAT CMath::m_PI		= 3.1415926536f;
 	FLOAT CMath::m_RadToDeg = 57.2957795f;
 	FLOAT CMath::m_DegToRad = 0.0174532925f;
-	template<typename T>
-	T CMath::Max(const T& v0, const T& v1)
+	const FLOAT& CMath::GetPI()
 	{
-		if (v0 < v1)
-			return v1;
-		else
-			return v0;
+		return CMath::m_PI;
 	}
-	template<typename T>
-	T CMath::Min(const T& v0, const T& v1)
+	const FLOAT& CMath::GetDegToRad()
 	{
-		if (v0 > v1)
-			return v1;
-		else
-			return v0;
+		return CMath::m_DegToRad;
+	}
+	const FLOAT& CMath::GetRadToDeg()
+	{
+		return CMath::m_RadToDeg;
 	}
 	BOOL CMath::Lerp(const INT& x0, const INT& y0, const INT& x1, const INT& y1, const INT& t, INT& phi)
 	{

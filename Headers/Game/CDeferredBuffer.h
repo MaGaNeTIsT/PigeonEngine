@@ -25,8 +25,9 @@ public:
 public:
 	void						ClearRenderTarget(FLOAT R, FLOAT G, FLOAT B, FLOAT A);
 	void						SetDeferredRenderTarget();
-	void						SetGBufferRenderTarget();
-	ID3D11ShaderResourceView*	GetDeferredShaderResourceView(DeferredBufferEnum idx);
+	void						SetExtraRenderTarget();
+	void						SetRenderTarget(DeferredBufferEnum rtv, DepthStencilBufferEnum dsv);
+	ID3D11ShaderResourceView*	GetRenderTargetShaderResourceView(DeferredBufferEnum idx);
 	void						SetDepthStencilRenderTarget(DepthStencilBufferEnum idx, ID3D11RenderTargetView* rtv = NULL);
 	ID3D11ShaderResourceView*	GetDepthStencilShaderResourceView(DepthStencilBufferEnum idx);
 private:

@@ -55,10 +55,10 @@
     <FxCompile Include="HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">
       <Filter>Shaders\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineCubeVS.hlsl">
+    <FxCompile Include="HLSLResources\Object\EngineDefaultVS.hlsl">
       <Filter>Shaders\HLSLResources\Object</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineCubePS.hlsl">
+    <FxCompile Include="HLSLResources\Object\EngineDefaultPS.hlsl">
       <Filter>Shaders\HLSLResources\Object</Filter>
     </FxCompile>
     <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DVS.hlsl">
@@ -111,7 +111,7 @@
     <ClInclude Include="Headers\Object\CDebugScreen.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Object\CField.h">
+    <ClInclude Include="Headers\Object\CPlane.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\Object\CPolygon.h">
@@ -124,9 +124,6 @@
       <Filter>Objects\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Headers\Object\CSky.h">
-      <Filter>Objects\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Headers\Object\CWaterField.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Entry\MyMain.h">
@@ -206,7 +203,7 @@
     <ClCompile Include="CppFiles\Object\CDebugScreen.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="CppFiles\Object\CField.cpp">
+    <ClCompile Include="CppFiles\Object\CPlane.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Object\CPolygon.cpp">
@@ -219,9 +216,6 @@
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Object\CSky.cpp">
-      <Filter>Objects\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="CppFiles\Object\CWaterField.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Entry\MyMain.cpp">

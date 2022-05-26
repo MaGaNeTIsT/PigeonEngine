@@ -230,6 +230,86 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name)
 
 	return NULL;
 }
+CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
+{
+	if (length.X() <= 0.f || length.Y() <= 0.f || vertexCount.X() < 2 || vertexCount.Y() < 2)
+		return NULL;
+	if (fabsf(uv.X()) < 0.01f || fabsf(uv.Y()) < 0.01f)
+		return NULL;
+	std::string tempName = ENGINE_MESH_PLANE_NAME;
+	tempName = tempName +
+		"_cx_" + std::to_string(vertexCount.X()) +
+		"_cz_" + std::to_string(vertexCount.Y()) +
+		"_lx_" + std::to_string(length.X()) +
+		"_lz_" + std::to_string(length.Y()) +
+		"_u_" + std::to_string(uv.X()) +
+		"_v_" + std::to_string(uv.Y());
+	CMesh* findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != NULL)
+		return findResult;
+	std::vector<CustomStruct::CVertex3D> vertex;
+	{
+		vertex.resize(vertexCount.X() * vertexCount.Y());
+		//
+		//                  Y
+		//                  ^
+		//                  |     Z
+		//                  |    /
+		//             0----|---/------1
+		//            /     |  /      /
+		//           /      | /      /
+		//          /       0---------------->X
+		//         /               /
+		//        /               /
+		//       2---------------3
+		//
+		XMFLOAT4 normal(0.f, 1.f, 0.f, 0.f);
+		XMFLOAT4 tangent(1.f, 0.f, 0.f, 0.f);
+		XMFLOAT4 color(1.f, 1.f, 1.f, 1.f);
+		for (INT i = 0; i < vertex.size(); i++)
+		{
+			vertex[i].Normal = normal;
+			vertex[i].Tangent = tangent;
+			vertex[i].Color = color;
+		}
+		FLOAT tx = 0.f, tz = 0.f, px = 0.f, pz = 0.f, u = 0.f, v = 0.f;
+		for (INT z = 0; z < vertexCount.Y(); z++)
+		{
+			for (INT x = 0; x < vertexCount.X(); x++)
+			{
+				tx = static_cast<FLOAT>(x) / static_cast<FLOAT>(vertexCount.X() - 1);
+				px = CustomType::CMath::Lerp(length.X() * (-0.5f), length.X() * 0.5f, tx);
+				u = CustomType::CMath::Lerp(fminf(0.f, uv.X()), fmaxf(0.f, uv.X()), tx);
+
+				tz = static_cast<FLOAT>(z) / static_cast<FLOAT>(vertexCount.Y() - 1);
+				pz = CustomType::CMath::Lerp(length.Y() * 0.5f, length.Y() * (-0.5f), tz);
+				v = CustomType::CMath::Lerp(fminf(0.f, uv.Y()), fmaxf(0.f, uv.Y()), tz);
+
+				vertex[z * vertexCount.X() + x].Position = XMFLOAT4(px, 0.f, pz, 1.f);
+				vertex[z * vertexCount.X() + x].UV0 = XMFLOAT2(u, v);
+			}
+		}
+	}
+	std::vector<UINT> index;
+	{
+		index.resize((vertexCount.X() - 1) * (vertexCount.Y() - 1) * 6);
+		for (INT z = 0; z < (vertexCount.Y() - 1); z++)
+		{
+			for (INT x = 0; x < (vertexCount.X() - 1); x++)
+			{
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 0] = (z + 0) * vertexCount.X() + (x + 0);
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 1] = (z + 0) * vertexCount.X() + (x + 1);
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 2] = (z + 1) * vertexCount.X() + (x + 0);
+
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 3] = (z + 0) * vertexCount.X() + (x + 1);
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 4] = (z + 1) * vertexCount.X() + (x + 1);
+				index[(z * (vertexCount.X() - 1) + x) * 6 + 5] = (z + 1) * vertexCount.X() + (x + 0);
+			}
+		}
+	}
+	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index);
+	return mesh;
+}
 CMesh* CMeshManager::LoadCubeMesh()
 {
 	std::string tempName = ENGINE_MESH_CUBE_NAME;

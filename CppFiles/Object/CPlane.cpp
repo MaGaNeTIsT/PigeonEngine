@@ -1,5 +1,5 @@
 #include "../../Entry/MyMain.h"
-#include "../../Headers/Object/CCube.h"
+#include "../../Headers/Object/CPlane.h"
 #include "../../Headers/Base/CManager.h"
 #include "../../Headers/Base/CShader.h"
 #include "../../Headers/Base/CTexture2D.h"
@@ -10,28 +10,40 @@
 #include "../../Headers/Game/CCamera.h"
 #include "../../Headers/Game/CScene.h"
 
-CCube::CCube()
+CPlane::CPlane()
 {
-	this->m_AlbedoTexture = NULL;
-	this->m_NormalTexture = NULL;
+	this->m_AlbedoTexture	= NULL;
+	this->m_NormalTexture	= NULL;
+	this->m_PropertyTexture	= NULL;
+	this->m_PlaneMeshInfo.Length		= 1.f;
+	this->m_PlaneMeshInfo.UV			= 1.f;
+	this->m_PlaneMeshInfo.VertexCount	= 2;
+}
+CPlane::CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
+{
+	this->m_AlbedoTexture	= NULL;
+	this->m_NormalTexture	= NULL;
 	this->m_PropertyTexture = NULL;
+	this->m_PlaneMeshInfo.Length		= length;
+	this->m_PlaneMeshInfo.UV			= uv;
+	this->m_PlaneMeshInfo.VertexCount	= vertexCount;
 }
-CCube::~CCube()
+CPlane::~CPlane()
 {
 }
-void CCube::Init()
+void CPlane::Init()
 {
 	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
-	this->m_Mesh = CMeshManager::LoadCubeMesh();
+	this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
 	this->m_MeshRenderer->LoadShader();
 	this->m_MeshRenderer->CreateConstantBuffer(sizeof(CustomStruct::ConstantBufferPerDraw));
 	this->m_MeshRenderer->LoadExtraShader(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_EMPTY_PS);
 
-	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Assets/EngineTextures/Test/Cloud.tga");
+	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Assets/EngineTextures/Test/Field001.tga");
 	this->m_NormalTexture = CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_BUMP);
 	this->m_PropertyTexture = CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
 }
-void CCube::Uninit()
+void CPlane::Uninit()
 {
 	if (this->m_MeshRenderer != NULL)
 	{
@@ -39,11 +51,10 @@ void CCube::Uninit()
 		this->m_MeshRenderer = NULL;
 	}
 }
-void CCube::Update()
+void CPlane::Update()
 {
-
 }
-void CCube::PrepareDraw()
+void CPlane::PrepareDraw()
 {
 	CustomType::Matrix4x4 tempWorldMatrix(this->GetLocalToWorldMatrix());
 	CustomType::Matrix4x4 tempWorldInverseMatrix(tempWorldMatrix.Inverse());
@@ -57,13 +68,21 @@ void CCube::PrepareDraw()
 	CRenderDevice::BindTexture(this->m_NormalTexture, ENGINE_TEXTURE2D_NORMAL_START_SLOT);
 	CRenderDevice::BindTexture(this->m_PropertyTexture, ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
 }
-void CCube::Draw()
+void CPlane::Draw()
 {
 	this->PrepareDraw();
 	this->m_MeshRenderer->Draw();
 }
-void CCube::DrawExtra()
+void CPlane::DrawExtra()
 {
 	this->PrepareDraw();
 	this->m_MeshRenderer->DrawExtra();
+}
+void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
+{
+	this->m_PlaneMeshInfo.Length		= length;
+	this->m_PlaneMeshInfo.UV			= uv;
+	this->m_PlaneMeshInfo.VertexCount	= vertexCount;
+	if (this->m_Mesh != NULL)
+		this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
 }

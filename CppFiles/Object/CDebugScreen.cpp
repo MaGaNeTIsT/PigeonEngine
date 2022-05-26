@@ -49,10 +49,10 @@ void CDebugScreen::PrepareDraw()
 {
 	if (static_cast<UINT>(m_SRVs.size()) != CDebugScreen::DEBUGPOLYGON_COUNT)
 		m_SRVs.resize(static_cast<size_t>(CDebugScreen::DEBUGPOLYGON_COUNT));
-	m_SRVs[0] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL);
-	m_SRVs[1] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO);
-	m_SRVs[2] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY);
-	m_SRVs[3] = CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID);
+	m_SRVs[0] = CRenderDevice::GetDeferredBuffer()->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL);
+	m_SRVs[1] = CRenderDevice::GetDeferredBuffer()->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO);
+	m_SRVs[2] = CRenderDevice::GetDeferredBuffer()->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY);
+	m_SRVs[3] = CRenderDevice::GetDeferredBuffer()->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID);
 	m_SRVs[4] = CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_LIGHT);
 	m_SRVs[5] = CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA);
 }

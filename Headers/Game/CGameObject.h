@@ -12,17 +12,6 @@ class CScene;
 class CGameObject
 {
 public:
-	enum GameObjectTransparencyEnum
-	{
-		GAMEOBJECT_OPAQUE		= 0,
-		GAMEOBJECT_TRANSPARENT	= 1,
-		GAMEOBJECT_SKY			= 2
-	};
-public:
-	void SetTransparent(GameObjectTransparencyEnum transparent = GAMEOBJECT_TRANSPARENT) { m_Transparency = transparent; }
-public:
-	GameObjectTransparencyEnum		GetTransparency()const { return m_Transparency; }
-
 	const CustomType::Vector3&		GetPosition()const { return m_Position; }
 	const CustomType::Quaternion&	GetRotation()const { return m_Rotation; }
 	const CustomType::Vector3&		GetScale()const { return m_Scale; }
@@ -84,8 +73,6 @@ public:
 	CMesh*			GetMesh()const { return m_Mesh; }
 	CMeshRenderer*	GetMeshRenderer()const { return m_MeshRenderer; }
 protected:
-	GameObjectTransparencyEnum			m_Transparency	= GAMEOBJECT_OPAQUE;
-
 	ULONGLONG							m_UID;
 	CScene*								m_Scene			= NULL;
 	CGameObject*						m_Parent		= NULL;

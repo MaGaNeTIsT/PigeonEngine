@@ -42,9 +42,9 @@ using namespace DirectX;
 #define ENGINE_GBUFFER_ALBEDO_START_SLOT					(1u)
 #define ENGINE_GBUFFER_PROPERTY_START_SLOT					(2u)
 #define ENGINE_GBUFFER_ID_START_SLOT						(3u)
-#define ENGINE_POST_EFFECT_PING_START_SLOT					(4u)
-#define ENGINE_POST_EFFECT_PONG_START_SLOT					(5u)
-#define ENGINE_LIGHT_SHADOW_MAP_START_SLOT					(6u)
+#define ENGINE_SRV_CAMERA_COLOR								(4u)
+#define ENGINE_SRV_CAMERA_DEPTH								(5u)
+#define ENGINE_SRV_LIGHT_SHADOW_MAP_START_SLOT				(6u)
 #define ENGINE_TEXTURE2D_ALBEDO_START_SLOT					(8u)
 #define ENGINE_TEXTURE2D_NORMAL_START_SLOT					(9u)
 #define ENGINE_TEXTURE2D_PROPERTY_START_SLOT				(10u)
@@ -58,6 +58,8 @@ using namespace DirectX;
 #define ENGINE_TEXTURE2D_DEFAULT_PROPERTY					("./Assets/EngineTextures/Default/EngineDefaultProperty.tga")
 
 #define ENGINE_SHADER_NONE									("CustomEngine/Shader/None")
+#define ENGINE_SHADER_DEFAULT_VS							("./HLSLCSO/EngineDefaultVS.cso")
+#define ENGINE_SHADER_DEFAULT_PS							("./HLSLCSO/EngineDefaultPS.cso")
 #define ENGINE_SHADER_EMPTY_PS								("./HLSLCSO/EngineEmptyPS.cso")
 #define ENGINE_SHADER_GBUFFER_WRITE_PS						("./HLSLCSO/EngineGBufferWritePS.cso")
 #define ENGINE_SHADER_GBUFFER_RESOLVE_PS					("./HLSLCSO/EngineGBufferResolvePS.cso")
@@ -66,6 +68,7 @@ using namespace DirectX;
 #define ENGINE_SHADER_SCREEN_POLYGON_2D_PS					("./HLSLCSO/EngineScreenPolygon2DPS.cso")
 
 #define ENGINE_MESH_CUBE_NAME								("CustomEngine/Mesh/CubeMesh")
+#define ENGINE_MESH_PLANE_NAME								("CustomEngine/Mesh/PlaneMesh")
 #define ENGINE_MESH_POLYGON_NAME							("CustomEngine/Mesh/PolygonMesh")
 #define ENGINE_MESH_POLYGON_2D_NAME							("CustomEngine/Mesh/Polygon2DMesh")
 

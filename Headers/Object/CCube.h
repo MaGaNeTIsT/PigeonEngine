@@ -20,5 +20,7 @@ public:
 	virtual ~CCube();
 protected:
 	CustomStruct::ConstantBufferPerDraw m_ConstantBuffer;
-	CTexture2D*							m_AlbedoTexture;
+	CTexture2D*	m_AlbedoTexture;
+	CTexture2D*	m_NormalTexture;
+	CTexture2D*	m_PropertyTexture;
 };

@@ -242,32 +242,67 @@ void CRenderDevice::Uninit()
 	if (m_D3DDevice)
 		m_D3DDevice->Release();
 }
-void CRenderDevice::ClrShadowDeferred()
+void CRenderDevice::ResetRenderTarget()
 {
 	m_DeferredBuffer->ClearRenderTarget(0.f, 0.f, 0.f, 1.f);
 }
 void CRenderDevice::BeginShadow()
 {
+	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEENABLE);
+	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
 	m_DeferredBuffer->SetDepthStencilRenderTarget(CDeferredBuffer::DEPTHSTENCILBUFFER_LIGHT, m_RenderTargetView);
+}
+void CRenderDevice::EndShadow()
+{
+
 }
 void CRenderDevice::BeginDeferred()
 {
+	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEENABLE);
+	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
 	m_DeferredBuffer->SetDeferredRenderTarget();
 }
-void CRenderDevice::BeginGBuffer()
+void CRenderDevice::EndDeferred()
 {
-	m_DeferredBuffer->SetGBufferRenderTarget();
-}
-void CRenderDevice::Begin()
-{
-	m_ImmediateContext->OMSetRenderTargets(1, &m_RenderTargetView, m_DepthStencilView);
-	m_ImmediateContext->RSSetViewports(1, &m_ViewPort);
 
+}
+void CRenderDevice::BeginDeferredResolve()
+{
+	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
+	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
+	m_DeferredBuffer->SetExtraRenderTarget();
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL), ENGINE_GBUFFER_WORLD_NORMAL_START_SLOT);
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO), ENGINE_GBUFFER_ALBEDO_START_SLOT);
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY), ENGINE_GBUFFER_PROPERTY_START_SLOT);
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID), ENGINE_GBUFFER_ID_START_SLOT);
+}
+void CRenderDevice::EndDeferredResolve()
+{
+
+}
+void CRenderDevice::BeginForward()
+{
+	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEENABLE);
+	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
+	m_DeferredBuffer->SetRenderTarget(CDeferredBuffer::DEFERREDBUFFER_EXTRA, CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA);
+}
+void CRenderDevice::EndForward()
+{
+
+}
+void CRenderDevice::BeginFinal()
+{
 	FLOAT ClearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 	m_ImmediateContext->ClearRenderTargetView(m_RenderTargetView, ClearColor);
 	m_ImmediateContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
+	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
+	m_ImmediateContext->OMSetRenderTargets(1, &m_RenderTargetView, m_DepthStencilView);
+	m_ImmediateContext->RSSetViewports(1, &m_ViewPort);
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), ENGINE_SRV_CAMERA_COLOR);
+	CRenderDevice::BindTexture(m_DeferredBuffer->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA), ENGINE_SRV_CAMERA_DEPTH);
 }
-void CRenderDevice::End()
+void CRenderDevice::EndFinal()
 {
 	m_SwapChain->Present(1, 0);
 }
@@ -286,16 +321,27 @@ void CRenderDevice::SetRasterizerState(RasterizerStateEnum rse)
 }
 void CRenderDevice::BindTexture(CTexture2D* ptrTexture, const UINT& startSlot)
 {
-	m_ImmediateContext->PSSetShaderResources(startSlot, 1u, ptrTexture->GetShaderResourceView().GetAddressOf());
+	if (ptrTexture == NULL)
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView().GetAddressOf());
+	else
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, ptrTexture->GetShaderResourceView().GetAddressOf());
 }
 void CRenderDevice::BindTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ptrSRV, const UINT& startSlot)
 {
-	m_ImmediateContext->PSSetShaderResources(startSlot, 1u, ptrSRV.GetAddressOf());
+	if (ptrSRV == NULL)
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView().GetAddressOf());
+	else
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, ptrSRV.GetAddressOf());
 }
 void CRenderDevice::BindTexture(ID3D11ShaderResourceView* ptrSRV, const UINT& startSlot)
 {
-	ID3D11ShaderResourceView* srv[1] = { ptrSRV };
-	m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv);
+	if (ptrSRV == NULL)
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView().GetAddressOf());
+	else
+	{
+		ID3D11ShaderResourceView* srv[1] = { ptrSRV };
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv);
+	}
 }
 void CRenderDevice::SetShadowMap(UINT Slot)
 {
