@@ -33,8 +33,9 @@ Texture2D		_EngineGBufferWorldNormal	: register(t0);
 Texture2D		_EngineGBufferAlbedo		: register(t1);
 Texture2D		_EngineGBufferProperty		: register(t2);
 Texture2D		_EngineGBufferID			: register(t3);
-Texture2D		_EngineGBufferResult		: register(t4);
-Texture2D		_EngineShadowMap			: register(t5);
+Texture2D		_EnginePostEffectPing		: register(t4);
+Texture2D		_EnginePostEffectPong		: register(t5);
+Texture2D		_EngineLightShadowMap		: register(t6);
 
 Texture2D		_AlbedoTexture				: register(t8);
 Texture2D		_NormalTexture				: register(t9);

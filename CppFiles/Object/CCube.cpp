@@ -50,9 +50,11 @@ void CCube::PrepareDraw()
 	this->m_MeshRenderer->BindConstantBuffer(ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
 
 	if (this->m_AlbedoTexture != NULL)
-		CRenderDevice::BindTexture(this->m_AlbedoTexture, 8u);
-	CRenderDevice::BindTexture(CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_BUMP), 9u);
-	CRenderDevice::BindTexture(CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_PROPERTY), 10u);
+		CRenderDevice::BindTexture(this->m_AlbedoTexture, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	else
+		CRenderDevice::BindTexture(CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_WHITE), ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	CRenderDevice::BindTexture(CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_BUMP), ENGINE_TEXTURE2D_NORMAL_START_SLOT);
+	CRenderDevice::BindTexture(CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_PROPERTY), ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
 }
 void CCube::Draw()
 {

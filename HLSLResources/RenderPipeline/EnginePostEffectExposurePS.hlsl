@@ -5,8 +5,7 @@
 
 float4 main(VaryingScreenPolygon2D input) : SV_Target
 {
-	float4 color = 1;
-	color.a = 1;
+	float4 color = float4(_EnginePostEffectPing.Sample(_LinearClampSampler, input.uv0).rgb, 1);
 	return color;
 }
 

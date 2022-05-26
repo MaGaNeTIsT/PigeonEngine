@@ -224,11 +224,11 @@ void CScene::Draw()
 
 	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
 	CRenderDevice::BeginGBuffer();
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL), 0);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO), 1);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY), 2);
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID), 3);
-	CRenderDevice::SetShadowMap(5);
+	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_WORLDNORMAL), ENGINE_GBUFFER_WORLD_NORMAL_START_SLOT);
+	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ALBEDO), ENGINE_GBUFFER_ALBEDO_START_SLOT);
+	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_PROPERTY), ENGINE_GBUFFER_PROPERTY_START_SLOT);
+	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_ID), ENGINE_GBUFFER_ID_START_SLOT);
+	CRenderDevice::SetShadowMap(ENGINE_LIGHT_SHADOW_MAP_START_SLOT);
 	CRenderDevice::GetDeferredResolve()->Draw();
 
 
@@ -242,7 +242,7 @@ void CScene::Draw()
 
 	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
 	CRenderDevice::Begin();
-	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), 4);
+	CRenderDevice::BindTexture(CRenderDevice::GetDeferredBuffer()->GetDeferredShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), ENGINE_POST_EFFECT_PING_START_SLOT);
 	CRenderDevice::GetPostEffect()->Draw();
 
 

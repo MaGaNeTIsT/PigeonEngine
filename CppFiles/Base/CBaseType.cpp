@@ -392,7 +392,7 @@ namespace CustomType
 	}
 	Vector4::Vector4(const Vector4& v)
 	{
-		(*this) = Vector4::m_Zero;
+		(*this) = v.m_Value;
 	}
 	Vector4::Vector4(DirectX::CXMVECTOR v)
 	{

@@ -20,10 +20,10 @@ public:
 		FLOAT	LookSpeed;
 	};
 public:
-	CustomType::Vector4 GetViewport() { return this->m_CameraInfo.Viewport; }
-	FLOAT				GetFov() { return this->m_CameraInfo.Fov; }
-	FLOAT				GetNear() { return this->m_CameraInfo.Near; }
-	FLOAT				GetFar() { return this->m_CameraInfo.Far; }
+	CustomType::Vector4		GetViewport() { return this->m_CameraInfo.Viewport; }
+	FLOAT					GetFov() { return this->m_CameraInfo.Fov; }
+	FLOAT					GetNear() { return this->m_CameraInfo.Near; }
+	FLOAT					GetFar() { return this->m_CameraInfo.Far; }
 public:
 	CustomType::Matrix4x4	GetViewMatrix() { return m_ViewMatrix; }
 	CustomType::Matrix4x4	GetViewInverseMatrix() { return m_ViewInvMatrix; }

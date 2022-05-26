@@ -61,7 +61,7 @@ void CDebugScreen::Draw()
 	this->PrepareDraw();
 	for (UINT i = 0; i < CDebugScreen::DEBUGPOLYGON_COUNT; i++)
 	{
-		CRenderDevice::BindTexture(m_SRVs[i], 8u);
+		CRenderDevice::BindTexture(m_SRVs[i], ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 		m_Polygons[i]->Draw();
 	}
 }
