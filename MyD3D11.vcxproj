@@ -128,12 +128,10 @@
     <ClInclude Include="Headers\Object\CCube.h" />
     <ClInclude Include="Headers\Object\CDebugScreen.h" />
     <ClInclude Include="Headers\Object\CPlane.h" />
-    <ClInclude Include="Headers\Object\CPolygon.h" />
     <ClInclude Include="Headers\Object\CPolygon2D.h" />
     <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
-    <ClInclude Include="Headers\Object\CRayMarching.h" />
     <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
-    <ClInclude Include="Headers\Object\CSky.h" />
+    <ClInclude Include="VolumetricClouds\Headers\CVolumetricClouds.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CBaseType.cpp" />
@@ -158,13 +156,11 @@
     <ClCompile Include="CppFiles\Object\CCube.cpp" />
     <ClCompile Include="CppFiles\Object\CDebugScreen.cpp" />
     <ClCompile Include="CppFiles\Object\CPlane.cpp" />
-    <ClCompile Include="CppFiles\Object\CPolygon.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2D.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
-    <ClCompile Include="CppFiles\Object\CRayMarching.cpp" />
     <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
-    <ClCompile Include="CppFiles\Object\CSky.cpp" />
     <ClCompile Include="Entry\MyMain.cpp" />
+    <ClCompile Include="VolumetricClouds\CppFiles\CVolumetricClouds.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -16,9 +16,9 @@ public:
 	const CustomType::Quaternion&	GetRotation()const { return m_Rotation; }
 	const CustomType::Vector3&		GetScale()const { return m_Scale; }
 
-	void SetPosition(const CustomType::Vector3 Position) { m_Position = Position; }
+	void SetPosition(const CustomType::Vector3& Position) { m_Position = Position; }
 	void SetRotation(const CustomType::Quaternion& Rotation) { m_Rotation = Rotation; }
-	void SetScale(const CustomType::Vector3 Scale) { m_Scale = Scale; }
+	void SetScale(const CustomType::Vector3& Scale) { m_Scale = Scale; }
 protected:
 	void RecurWorldMatrix(CGameObject* obj, CustomType::Matrix4x4& m)
 	{
@@ -96,7 +96,8 @@ public:
 	}
 	virtual void	Init()			= 0;
 	virtual void	Uninit()		= 0;
-	virtual void	Update()		= 0;
+	virtual void	Update()		{}
+	virtual void	FixedUpdate()	{}
 	virtual void	Draw()			{}
 	virtual void	DrawExtra()		{}
 protected:

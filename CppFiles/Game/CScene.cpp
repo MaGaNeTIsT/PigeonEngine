@@ -119,6 +119,14 @@ void CScene::Update()
 
 	this->m_DebugScreen.Update();
 }
+void CScene::FixedUpdate()
+{
+	for (INT i = 0; i < SCENELAYOUT_COUNT; ++i)
+	{
+		for (const auto& object : this->m_GameObject[i])
+			object.second->FixedUpdate();
+	}
+}
 void CScene::DrawOpaqueDeferred()
 {
 	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
@@ -197,7 +205,7 @@ void CScene::PrepareDraw()
 	this->m_ConstantBufferData.ProjectionInvMatrix = tempCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.ViewProjectionMatrix = tempCamera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.ViewProjectionInvMatrix = tempCamera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetTimer()->GetDeltaTime()), 1.f, 1.f);
+	this->m_ConstantBufferData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
 	this->m_ConstantBufferData.ScreenParams = XMFLOAT4(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT, 1.f / ENGINE_SCREEN_WIDTH, 1.f / ENGINE_SCREEN_HEIGHT);
 	this->m_ConstantBufferData.CameraWorldPosition = tempCamera->GetPosition().GetXMFLOAT3();
 

@@ -17,22 +17,7 @@ CScreenPolygon2D::~CScreenPolygon2D()
 		this->m_MeshRenderer = NULL;
 	}
 }
-void CScreenPolygon2D::Init()
-{
-	m_Time = 0.f;
-}
-void CScreenPolygon2D::Uninit()
-{
-}
-void CScreenPolygon2D::Update()
-{
-	m_Time += static_cast<FLOAT>(CManager::GetTimer()->GetDeltaTime());
-}
-void CScreenPolygon2D::PrepareDraw()
-{
-}
 void CScreenPolygon2D::Draw()
 {
-	this->PrepareDraw();
 	this->m_MeshRenderer->Draw();
 }

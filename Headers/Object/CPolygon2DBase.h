@@ -8,6 +8,7 @@ public:
 	virtual void	Init()override			{}
 	virtual void	Uninit()override		{}
 	virtual void	Update()override		{}
+	virtual void	FixedUpdate()override	{}
 	virtual void	Draw()override			{}
 	virtual void	DrawExtra()override		{}
 protected:
@@ -20,5 +21,4 @@ public:
 	virtual ~CPolygon2DBase();
 protected:
 	CustomType::Vector4		m_2DPosition;
-	FLOAT					m_Time;
 };

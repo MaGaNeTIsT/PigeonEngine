@@ -13,13 +13,13 @@ class CRenderDevice
 public:
 	enum EngineDefaultTexture2DEnum
 	{
-		ENGINE_DEFAULT_TEXTURE2D_WHITE,
-		ENGINE_DEFAULT_TEXTURE2D_BLACK,
-		ENGINE_DEFAULT_TEXTURE2D_RED,
-		ENGINE_DEFAULT_TEXTURE2D_GREEN,
-		ENGINE_DEFAULT_TEXTURE2D_BLUE,
-		ENGINE_DEFAULT_TEXTURE2D_BUMP,
-		ENGINE_DEFAULT_TEXTURE2D_PROPERTY,
+		ENGINE_DEFAULT_TEXTURE2D_WHITE		= 0,
+		ENGINE_DEFAULT_TEXTURE2D_BLACK		= 1,
+		ENGINE_DEFAULT_TEXTURE2D_RED		= 2,
+		ENGINE_DEFAULT_TEXTURE2D_GREEN		= 3,
+		ENGINE_DEFAULT_TEXTURE2D_BLUE		= 4,
+		ENGINE_DEFAULT_TEXTURE2D_BUMP		= 5,
+		ENGINE_DEFAULT_TEXTURE2D_PROPERTY	= 6,
 		ENGINE_DEFAULT_TEXTURE2D_COUNT
 	};
 	enum SamplerStateEnum
@@ -71,7 +71,7 @@ public:
 	static void		BindTexture(CTexture2D* ptrTexture, const UINT& startSlot);
 	static void		BindTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ptrSRV, const UINT& startSlot);
 	static void		BindTexture(ID3D11ShaderResourceView* ptrSRV, const UINT& startSlot);
-	static void		SetShadowMap(UINT Slot = 0);
+	static void		SetShadowMap(const UINT& Slot);
 	static void		DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation = 0u, const INT& baseVertexLocation = 0);
 public:
 	static BOOL		CreateD3DBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuffer, const void* ptrData, const UINT& stride, const UINT& count, UINT flag, D3D11_USAGE usage = D3D11_USAGE_DEFAULT);

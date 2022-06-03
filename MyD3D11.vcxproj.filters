@@ -47,6 +47,15 @@
     <Filter Include="Entry">
       <UniqueIdentifier>{3799fcee-0a03-431c-8755-61c0a634360c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VolumetricClouds">
+      <UniqueIdentifier>{d3f4a0a0-5292-4fe2-8a4b-342d5f5f59ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VolumetricClouds\CppFiles">
+      <UniqueIdentifier>{d23b7842-2e79-4370-809c-86ee20bc1c11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VolumetricClouds\Headers">
+      <UniqueIdentifier>{6816d818-e5aa-439b-927e-0fb598a77485}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
@@ -114,16 +123,7 @@
     <ClInclude Include="Headers\Object\CPlane.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Object\CPolygon.h">
-      <Filter>Objects\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Headers\Object\CPolygon2DBase.h">
-      <Filter>Objects\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Headers\Object\CRayMarching.h">
-      <Filter>Objects\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Headers\Object\CSky.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Entry\MyMain.h">
@@ -168,6 +168,9 @@
     <ClInclude Include="Headers\Base\CTextureManager.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="VolumetricClouds\Headers\CVolumetricClouds.h">
+      <Filter>VolumetricClouds\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CInput.cpp">
@@ -206,16 +209,7 @@
     <ClCompile Include="CppFiles\Object\CPlane.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="CppFiles\Object\CPolygon.cpp">
-      <Filter>Objects\CppFiles</Filter>
-    </ClCompile>
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp">
-      <Filter>Objects\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="CppFiles\Object\CRayMarching.cpp">
-      <Filter>Objects\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="CppFiles\Object\CSky.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Entry\MyMain.cpp">
@@ -256,6 +250,9 @@
     </ClCompile>
     <ClCompile Include="CppFiles\Base\CTextureManager.cpp">
       <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="VolumetricClouds\CppFiles\CVolumetricClouds.cpp">
+      <Filter>VolumetricClouds\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

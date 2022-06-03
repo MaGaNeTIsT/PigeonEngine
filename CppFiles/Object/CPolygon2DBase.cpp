@@ -4,7 +4,6 @@
 CPolygon2DBase::CPolygon2DBase()
 {
 	m_2DPosition = CustomType::Vector4(0, 0, 0, 0);
-	m_Time = 0.f;
 }
 CPolygon2DBase::~CPolygon2DBase()
 {

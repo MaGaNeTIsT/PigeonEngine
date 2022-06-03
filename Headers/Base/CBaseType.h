@@ -74,7 +74,7 @@ namespace CustomType
 		static const Quaternion&	Identity() { return Quaternion::m_Identity; }
 		static Quaternion			Normalize(const Quaternion& v);
 		static Quaternion			MultiplyQuaternion(const Quaternion& q1, const Quaternion& q2);
-		static Quaternion			RotationAxis(const Vector3& axis, const FLOAT& radius);
+		static Quaternion			RotationAxis(const Vector3& axis, const FLOAT& radian);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -92,7 +92,7 @@ namespace CustomType
 		Quaternion(const Quaternion& v);
 		Quaternion(DirectX::CXMVECTOR v);
 		Quaternion(DirectX::CXMMATRIX m);
-		Quaternion(const Vector3& axis, const FLOAT& radius);
+		Quaternion(const Vector3& axis, const FLOAT& radian);
 		Quaternion(const FLOAT& x, const FLOAT& y, const FLOAT& z, const FLOAT& w);
 		virtual ~Quaternion();
 	protected:

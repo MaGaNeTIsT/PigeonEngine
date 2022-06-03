@@ -2,31 +2,13 @@
 #include "../Headers/Base/CManager.h"
 #include "../Headers/Base/CTimer.h"
 
-
-const char* CLASS_NAME = "DX11AppClass";
-const char* WINDOW_NAME = "DX11";
-
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-
-HWND _Window;
-
-HWND GetMainWindowHandle()
+INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow)
 {
-	return _Window;
-}
+	const CHAR* CLASS_NAME = "EngineClass_D3D11_0";
+	const CHAR* WINDOW_NAME	= "Engine_D3D11_0";
 
-CTimer _Timer;
-
-CTimer* GetMainWindowTimer()
-{
-	return (&_Timer);
-}
-
-
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
 	WNDCLASSEX wcex =
 	{
 		sizeof(WNDCLASSEX),
@@ -45,7 +27,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 	RegisterClassEx(&wcex);
 
-	_Window = CreateWindowEx(0,
+	HWND windowHandle = CreateWindowEx(0,
 		CLASS_NAME,
 		WINDOW_NAME,
 		WS_OVERLAPPEDWINDOW,
@@ -58,21 +40,25 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		hInstance,
 		NULL);
 
-	CManager::Init();
+	CManager::Initialize(windowHandle);
+	CManager* gameManager = CManager::GetManager();
 
-	ShowWindow(_Window, nCmdShow);
-	UpdateWindow(_Window);
+	ShowWindow(windowHandle, nCmdShow);
+	UpdateWindow(windowHandle);
 
-	DOUBLE dCurrentTime, dExecLastTime;
-	_Timer.Init();
-	dCurrentTime = dExecLastTime = _Timer.GetClockTime();
+	gameManager->Init();
+
+	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
+	fixedStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
+	updateStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
+	currentTime = fixedLastTime = updateLastTime = gameManager->GetWindowTimer().GetClockTime();
 
 	MSG msg;
-	while(1)
+	while (true)
 	{
-        if(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if(msg.message == WM_QUIT)
+			if (msg.message == WM_QUIT)
 			{
 				break;
 			}
@@ -81,29 +67,32 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
-        }
+		}
 		else
 		{
-			_Timer.Update();
-
-			dCurrentTime = _Timer.GetClockTime();
-
-			if ((dCurrentTime - dExecLastTime) >= (1.f / 60.f))
+			CManager::StaticUpdate();
+			currentTime = gameManager->GetWindowTimer().GetClockTime();
+			if ((currentTime - fixedLastTime) >= fixedStepTime)
 			{
-				dExecLastTime = dCurrentTime;
-
-				CManager::Update();
-
-				CManager::Draw();
+				fixedLastTime = currentTime;
+				gameManager->FixedUpdate();
+			}
+			if ((currentTime - updateLastTime) >= updateStepTime)
+			{
+				updateLastTime = currentTime;
+				gameManager->Update();
+				gameManager->Draw();
 			}
 		}
 	}
 
+	gameManager->Uninit();
+
 	UnregisterClass(CLASS_NAME, wcex.hInstance);
 
-	CManager::Uninit();
+	CManager::ShutDown();
 
-	return (int)msg.wParam;
+	return (INT)msg.wParam;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

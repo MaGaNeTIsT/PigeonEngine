@@ -94,9 +94,9 @@ namespace CustomType
 	{
 		this->SetXMVECTOR(DirectX::XMQuaternionRotationMatrix(m));
 	}
-	Quaternion::Quaternion(const Vector3& axis, const FLOAT& radius)
+	Quaternion::Quaternion(const Vector3& axis, const FLOAT& radian)
 	{
-		this->SetXMVECTOR(DirectX::XMQuaternionRotationAxis(axis.GetXMVECTOR(), radius));
+		this->SetXMVECTOR(DirectX::XMQuaternionRotationAxis(axis.GetXMVECTOR(), radian));
 	}
 	Quaternion::Quaternion(const FLOAT& x, const FLOAT& y, const FLOAT& z, const FLOAT& w)
 	{
@@ -134,9 +134,9 @@ namespace CustomType
 		Quaternion result(DirectX::XMQuaternionMultiply(q1.GetXMVECTOR(), q2.GetXMVECTOR()));
 		return result;
 	}
-	Quaternion Quaternion::RotationAxis(const Vector3& axis, const FLOAT& radius)
+	Quaternion Quaternion::RotationAxis(const Vector3& axis, const FLOAT& radian)
 	{
-		Quaternion result(axis, radius);
+		Quaternion result(axis, radian);
 		return result;
 	}
 	Matrix4x4 Quaternion::GetMatrix()

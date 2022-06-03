@@ -43,6 +43,10 @@ void CCube::Update()
 {
 
 }
+void CCube::FixedUpdate()
+{
+
+}
 void CCube::PrepareDraw()
 {
 	CustomType::Matrix4x4 tempWorldMatrix(this->GetLocalToWorldMatrix());

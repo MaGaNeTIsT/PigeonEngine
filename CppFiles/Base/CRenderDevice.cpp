@@ -1,4 +1,5 @@
 #include "../../Headers/Base/CRenderDevice.h"
+#include "../../Headers/Base/CManager.h"
 #include "../../Headers/Base/CTextureManager.h"
 #include "../../Headers/Base/CTexture2D.h"
 #include "../../Headers/Game/CDeferredBuffer.h"
@@ -33,34 +34,37 @@ void CRenderDevice::Init()
 	sd.BufferDesc.Width = ENGINE_SCREEN_WIDTH;
 	sd.BufferDesc.Height = ENGINE_SCREEN_HEIGHT;
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferDesc.RefreshRate.Numerator = 60;
+	sd.BufferDesc.RefreshRate.Numerator = ENGINE_UPDATE_FRAME;
 	sd.BufferDesc.RefreshRate.Denominator = 1;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.OutputWindow = GetMainWindowHandle();
-	sd.SampleDesc.Count = 1;
-	sd.SampleDesc.Quality = 0;
+	sd.OutputWindow = CManager::GetManager()->GetWindowHandle();
+	sd.SampleDesc.Count = 1u;
+	sd.SampleDesc.Quality = 0u;
 	sd.Windowed = TRUE;
 
-	hr = D3D11CreateDeviceAndSwapChain(NULL,
+	hr = D3D11CreateDeviceAndSwapChain(
+		NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
-		0,
+		0u,
 		NULL,
-		0,
+		0u,
 		D3D11_SDK_VERSION,
 		&sd,
 		&m_SwapChain,
 		&m_D3DDevice,
 		&m_FeatureLevel,
 		&m_ImmediateContext);
-	if (FAILED(hr))return;
-
+	if (FAILED(hr))
+		return;
 
 	ID3D11Texture2D* pBackBuffer = NULL;
-	hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
-	if (FAILED(hr))return;
+	hr = m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
+	if (FAILED(hr))
+		return;
 	hr = m_D3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_RenderTargetView);
-	if (FAILED(hr))return;
+	if (FAILED(hr))
+		return;
 	pBackBuffer->Release();
 
 	{
@@ -69,8 +73,8 @@ void CRenderDevice::Init()
 		ZeroMemory(&td, sizeof(td));
 		td.Width = sd.BufferDesc.Width;
 		td.Height = sd.BufferDesc.Height;
-		td.MipLevels = 1;
-		td.ArraySize = 1;
+		td.MipLevels = 1u;
+		td.ArraySize = 1u;
 		td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
 		td.SampleDesc = sd.SampleDesc;
 		td.Usage = D3D11_USAGE_DEFAULT;
@@ -78,28 +82,28 @@ void CRenderDevice::Init()
 		td.CPUAccessFlags = 0;
 		td.MiscFlags = 0;
 		hr = m_D3DDevice->CreateTexture2D(&td, NULL, &depthTexture);
-		if (FAILED(hr))return;
-
-
+		if (FAILED(hr))
+			return;
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
 		ZeroMemory(&dsvd, sizeof(dsvd));
 		dsvd.Format = td.Format;
 		dsvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-		dsvd.Flags = 0;
+		dsvd.Flags = 0u;
 		hr = m_D3DDevice->CreateDepthStencilView(depthTexture, &dsvd, &m_DepthStencilView);
-		if (FAILED(hr))return;
-
-		m_ImmediateContext->OMSetRenderTargets(1, &m_RenderTargetView, m_DepthStencilView);
+		if (FAILED(hr))
+			return;
+		
+		m_ImmediateContext->OMSetRenderTargets(1u, &m_RenderTargetView, m_DepthStencilView);
 	}
 
 	m_ViewPort.Width = static_cast<FLOAT>(ENGINE_SCREEN_WIDTH);
 	m_ViewPort.Height = static_cast<FLOAT>(ENGINE_SCREEN_HEIGHT);
 	m_ViewPort.MinDepth = 0.f;
 	m_ViewPort.MaxDepth = 1.f;
-	m_ViewPort.TopLeftX = 0;
-	m_ViewPort.TopLeftY = 0;
-	m_ImmediateContext->RSSetViewports(1, &m_ViewPort);
-
+	m_ViewPort.TopLeftX = 0.f;
+	m_ViewPort.TopLeftY = 0.f;
+	
+	m_ImmediateContext->RSSetViewports(1u, &m_ViewPort);
 
 	D3D11_RASTERIZER_DESC rd;
 	ZeroMemory(&rd, sizeof(rd));
@@ -115,19 +119,17 @@ void CRenderDevice::Init()
 
 	m_ImmediateContext->RSSetState(m_RasterizerStateCull[RSE_BACK]);
 
-
 	D3D11_SAMPLER_DESC samplerDesc;
 	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
 	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0.0f;
-	samplerDesc.BorderColor[1] = 0.0f;
-	samplerDesc.BorderColor[2] = 0.0f;
-	samplerDesc.BorderColor[3] = 0.0f;
-	samplerDesc.MinLOD = 0;
+	samplerDesc.BorderColor[0] = 0.f;
+	samplerDesc.BorderColor[1] = 0.f;
+	samplerDesc.BorderColor[2] = 0.f;
+	samplerDesc.BorderColor[3] = 0.f;
+	samplerDesc.MinLOD = 0.f;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	samplerDesc.MipLODBias = 0;
-	samplerDesc.MaxAnisotropy = 1;
-
+	samplerDesc.MipLODBias = 0.f;
+	samplerDesc.MaxAnisotropy = 1u;
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -135,7 +137,6 @@ void CRenderDevice::Init()
 	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_POINT]);
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_LINEAR]);
-
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -143,7 +144,6 @@ void CRenderDevice::Init()
 	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_POINT]);
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_LINEAR]);
-
 
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(blendDesc));
@@ -157,32 +157,25 @@ void CRenderDevice::Init()
 	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
 	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-
 	m_D3DDevice->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDALPHA]);
-
 	blendDesc.RenderTarget[0].BlendEnable = FALSE;
-
 	m_D3DDevice->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDOFF]);
-
+	
+	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 	m_ImmediateContext->OMSetBlendState(m_BlendState[BSE_BLENDALPHA], blendFactor, 0xffffffff);
-
 
 	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
 	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
 	depthStencilDesc.DepthEnable = FALSE;
 	depthStencilDesc.StencilEnable = FALSE;
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_ALLDISABLE]);
-
 	depthStencilDesc.DepthEnable = TRUE;
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE]);
-
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEDISABLE]);
-
+	
 	m_ImmediateContext->OMSetDepthStencilState(m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE], NULL);
 
 	ID3D11SamplerState* sceneSampler[] = {
@@ -190,8 +183,9 @@ void CRenderDevice::Init()
 		m_SamplerState[SSE_CLAMP_LINEAR],
 		m_SamplerState[SSE_WRAP_POINT],
 		m_SamplerState[SSE_WRAP_LINEAR] };
+	CRenderDevice::GetDeviceContext()->VSSetSamplers(0u, 4u, sceneSampler);
 	CRenderDevice::GetDeviceContext()->PSSetSamplers(0u, 4u, sceneSampler);
-
+	CRenderDevice::GetDeviceContext()->CSSetSamplers(0u, 4u, sceneSampler);
 
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_WHITE);
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLACK]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLACK);
@@ -200,7 +194,6 @@ void CRenderDevice::Init()
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLUE]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLUE);
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BUMP]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BUMP);
 	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_PROPERTY]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_PROPERTY);
-
 
 	m_DeferredBuffer = new CDeferredBuffer();
 	m_DeferredBuffer->Initialize(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
@@ -301,11 +294,11 @@ void CRenderDevice::BeginFinal()
 {
 	FLOAT ClearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 	m_ImmediateContext->ClearRenderTargetView(m_RenderTargetView, ClearColor);
-	m_ImmediateContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+	m_ImmediateContext->ClearDepthStencilView(m_DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0u);
 	CRenderDevice::SetDepthState(CRenderDevice::DSSE_ALLDISABLE);
 	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDOFF);
-	m_ImmediateContext->OMSetRenderTargets(1, &m_RenderTargetView, m_DepthStencilView);
-	m_ImmediateContext->RSSetViewports(1, &m_ViewPort);
+	m_ImmediateContext->OMSetRenderTargets(1u, &m_RenderTargetView, m_DepthStencilView);
+	m_ImmediateContext->RSSetViewports(1u, &m_ViewPort);
 	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), ENGINE_SRV_CAMERA_COLOR);
 	CRenderDevice::BindTexture(m_DeferredBuffer->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA), ENGINE_SRV_CAMERA_DEPTH);
 }
@@ -315,7 +308,7 @@ void CRenderDevice::EndFinal()
 }
 void CRenderDevice::SetBlendState(BlendStateEnum bse)
 {
-	FLOAT blendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 	m_ImmediateContext->OMSetBlendState(m_BlendState[bse], blendFactor, 0xffffffff);
 }
 void CRenderDevice::SetDepthState(DepthStencilStateEnum dsse)
@@ -350,10 +343,10 @@ void CRenderDevice::BindTexture(ID3D11ShaderResourceView* ptrSRV, const UINT& st
 		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv);
 	}
 }
-void CRenderDevice::SetShadowMap(UINT Slot)
+void CRenderDevice::SetShadowMap(const UINT& Slot)
 {
 	ID3D11ShaderResourceView* srv[1] = { m_DeferredBuffer->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_LIGHT) };
-	m_ImmediateContext->PSSetShaderResources(Slot, 1, srv);
+	m_ImmediateContext->PSSetShaderResources(Slot, 1u, srv);
 }
 void CRenderDevice::DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation, const INT& baseVertexLocation)
 {
@@ -367,7 +360,7 @@ BOOL CRenderDevice::CreateD3DBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuf
 	bd.Usage = usage;
 	bd.ByteWidth = stride * count;
 	bd.BindFlags = flag;
-	bd.CPUAccessFlags = 0;
+	bd.CPUAccessFlags = 0u;
 
 	D3D11_SUBRESOURCE_DATA sd;
 	ZeroMemory(&sd, sizeof(sd));
@@ -466,8 +459,8 @@ BOOL CRenderDevice::CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& p
 	hBufferDesc.Usage = usage;
 	hBufferDesc.ByteWidth = sizeData;
 	hBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	hBufferDesc.CPUAccessFlags = 0;
-	hBufferDesc.MiscFlags = 0;
+	hBufferDesc.CPUAccessFlags = 0u;
+	hBufferDesc.MiscFlags = 0u;
 	hBufferDesc.StructureByteStride = sizeof(FLOAT);
 
 	HRESULT hr = m_D3DDevice->CreateBuffer(&hBufferDesc, NULL, ptrBuffer.ReleaseAndGetAddressOf());
@@ -504,8 +497,8 @@ BOOL CRenderDevice::CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>& ptr
 	desc.SampleDesc.Quality = 0u;
 	desc.Usage = usage;
 	desc.BindFlags = flag;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = 0;	//D3D11_RESOURCE_MISC_FLAG
+	desc.CPUAccessFlags = 0u;
+	desc.MiscFlags = 0u;	//D3D11_RESOURCE_MISC_FLAG
 
 	D3D11_SUBRESOURCE_DATA initData;
 	initData.pSysMem = ptrData;

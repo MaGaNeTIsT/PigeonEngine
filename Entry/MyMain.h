@@ -26,11 +26,11 @@ using namespace DirectX;
 //#pragma comment (lib, "libxml2-mt.lib")
 //#pragma comment (lib, "zlib-mt.lib")
 
-#include "../Headers/Base/CTimer.h"
-
-
 #define ENGINE_SCREEN_WIDTH									(800)
 #define ENGINE_SCREEN_HEIGHT								(450)
+
+#define ENGINE_FIXED_UPDATE_FRAME							(60)
+#define ENGINE_UPDATE_FRAME									(75)
 
 #define ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT			(0u)
 #define ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT			(1u)
@@ -73,7 +73,3 @@ using namespace DirectX;
 #define ENGINE_CAMERA_FAR									(1000.f)
 #define ENGINE_CAMERA_MOVE_SPEED							(20.f)
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)
-
-
-HWND			GetMainWindowHandle();
-CTimer*			GetMainWindowTimer();

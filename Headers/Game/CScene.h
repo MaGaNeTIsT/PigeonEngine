@@ -39,6 +39,7 @@ public:
 	virtual void	Init();
 	virtual void	Uninit();
 	virtual void	Update();
+	virtual void	FixedUpdate();
 	virtual void	Draw();
 protected:
 	virtual void	DrawOpaqueDeferred();
