@@ -47,13 +47,19 @@
     <Filter Include="Entry">
       <UniqueIdentifier>{3799fcee-0a03-431c-8755-61c0a634360c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="VolumetricClouds">
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{f5db1716-1b1b-4a61-8727-52c7d84286e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\imgui">
+      <UniqueIdentifier>{4f895fec-955d-42ea-89f8-227924fb03ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VolumetricCloud">
       <UniqueIdentifier>{d3f4a0a0-5292-4fe2-8a4b-342d5f5f59ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="VolumetricClouds\CppFiles">
+    <Filter Include="VolumetricCloud\CppFiles">
       <UniqueIdentifier>{d23b7842-2e79-4370-809c-86ee20bc1c11}</UniqueIdentifier>
     </Filter>
-    <Filter Include="VolumetricClouds\Headers">
+    <Filter Include="VolumetricCloud\Headers">
       <UniqueIdentifier>{6816d818-e5aa-439b-927e-0fb598a77485}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -81,6 +87,12 @@
     </FxCompile>
     <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DPS.hlsl">
       <Filter>Shaders\HLSLResources\Object</Filter>
+    </FxCompile>
+    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIPS.hlsl">
+      <Filter>ThirdParty\imgui</Filter>
+    </FxCompile>
+    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
+      <Filter>ThirdParty\imgui</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -168,8 +180,29 @@
     <ClInclude Include="Headers\Base\CTextureManager.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="VolumetricClouds\Headers\CVolumetricClouds.h">
-      <Filter>VolumetricClouds\Headers</Filter>
+    <ClInclude Include="ThirdParty\imgui\imconfig.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui\imgui.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui\imgui_internal.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui\imstb_rectpack.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui\imstb_textedit.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui\imstb_truetype.h">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Headers\Base\CimGUIManager.h">
+      <Filter>Base\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="VolumetricCloud\Headers\CVolumetricCloud.h">
+      <Filter>VolumetricCloud\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -251,8 +284,26 @@
     <ClCompile Include="CppFiles\Base\CTextureManager.cpp">
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="VolumetricClouds\CppFiles\CVolumetricClouds.cpp">
-      <Filter>VolumetricClouds\CppFiles</Filter>
+    <ClCompile Include="ThirdParty\imgui\imgui.cpp">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp">
+      <Filter>ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Base\CimGUIManager.cpp">
+      <Filter>Base\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="VolumetricCloud\CppFiles\CVolumetricCloud.cpp">
+      <Filter>VolumetricCloud\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

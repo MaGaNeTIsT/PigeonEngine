@@ -2,6 +2,7 @@
 #include "../../Headers/Base/CManager.h"
 #include "../../Headers/Base/CInput.h"
 #include "../../Headers/Base/CRenderDevice.h"
+#include "../../Headers/Base/CimGUIManager.h"
 #include "../../Headers/Base/CShaderManager.h"
 #include "../../Headers/Base/CTextureManager.h"
 #include "../../Headers/Game/CMeshManager.h"
@@ -45,6 +46,7 @@ void CManager::Initialize(HWND hWnd)
 
 	CInput::Init();
 	CRenderDevice::Init();
+	CimGUIManager::Initialize();
 	CGameObjectManager::Init();
 
 	m_Manager->m_WindowTimer.Init();
@@ -55,6 +57,7 @@ void CManager::ShutDown()
 	CMeshManager::Uninit();
 	CTextureManager::Uninit();
 
+	CimGUIManager::ShutDown();
 	CRenderDevice::Uninit();
 	CInput::Uninit();
 
@@ -63,7 +66,6 @@ void CManager::ShutDown()
 void CManager::StaticUpdate()
 {
 	m_Manager->m_WindowTimer.Update();
-	m_Manager->CalculateFrameStats();
 	CRenderDevice::GetDeferredResolve()->Update();
 	CRenderDevice::GetPostEffect()->Update();
 }
@@ -91,6 +93,7 @@ void CManager::Update()
 {
 	CInput::Update();
 	this->m_GameTimer->Update();
+	CimGUIManager::Update();
 	this->m_Scene->Update();
 }
 void CManager::FixedUpdate()
@@ -100,13 +103,15 @@ void CManager::FixedUpdate()
 void CManager::Draw()
 {
 	this->m_Scene->Draw();
+	CimGUIManager::Draw();
+	CRenderDevice::Present();
 }
 void CManager::CalculateFrameStats()
 {
 	static UINT		frameCnt	= 0u;
 	static FLOAT	timeElapsed	= 0.f;
 
-	FLOAT totT = static_cast<FLOAT>(this->m_WindowTimer.GetClockTime());
+	FLOAT totT = static_cast<FLOAT>(this->m_GameTimer->GetClockTime());
 	frameCnt++;
 	if ((totT - timeElapsed) >= 1.f)
 	{

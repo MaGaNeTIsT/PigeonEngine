@@ -35,7 +35,7 @@ void CRenderDevice::Init()
 	sd.BufferDesc.Height = ENGINE_SCREEN_HEIGHT;
 	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	sd.BufferDesc.RefreshRate.Numerator = ENGINE_UPDATE_FRAME;
-	sd.BufferDesc.RefreshRate.Denominator = 1;
+	sd.BufferDesc.RefreshRate.Denominator = 1u;
 	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	sd.OutputWindow = CManager::GetManager()->GetWindowHandle();
 	sd.SampleDesc.Count = 1u;
@@ -79,8 +79,8 @@ void CRenderDevice::Init()
 		td.SampleDesc = sd.SampleDesc;
 		td.Usage = D3D11_USAGE_DEFAULT;
 		td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		td.CPUAccessFlags = 0;
-		td.MiscFlags = 0;
+		td.CPUAccessFlags = 0u;
+		td.MiscFlags = 0u;
 		hr = m_D3DDevice->CreateTexture2D(&td, NULL, &depthTexture);
 		if (FAILED(hr))
 			return;
@@ -290,7 +290,7 @@ void CRenderDevice::EndForward()
 {
 
 }
-void CRenderDevice::BeginFinal()
+void CRenderDevice::SetOutputRTV()
 {
 	FLOAT ClearColor[4] = { 0.f, 0.f, 0.f, 1.f };
 	m_ImmediateContext->ClearRenderTargetView(m_RenderTargetView, ClearColor);
@@ -302,9 +302,9 @@ void CRenderDevice::BeginFinal()
 	CRenderDevice::BindTexture(m_DeferredBuffer->GetRenderTargetShaderResourceView(CDeferredBuffer::DEFERREDBUFFER_EXTRA), ENGINE_SRV_CAMERA_COLOR);
 	CRenderDevice::BindTexture(m_DeferredBuffer->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA), ENGINE_SRV_CAMERA_DEPTH);
 }
-void CRenderDevice::EndFinal()
+void CRenderDevice::Present()
 {
-	m_SwapChain->Present(1, 0);
+	m_SwapChain->Present(1u, 0u);
 }
 void CRenderDevice::SetBlendState(BlendStateEnum bse)
 {
@@ -368,8 +368,8 @@ BOOL CRenderDevice::CreateD3DBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuf
 
 	HRESULT hr = m_D3DDevice->CreateBuffer(&bd, &sd, ptrBuffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
-		return false;
-	return true;
+		return FALSE;
+	return TRUE;
 }
 BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout)
 {
@@ -379,19 +379,19 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 	{
 		fopen_s(&file, name.c_str(), "rb");
 		if (file == NULL)
-			return false;
+			return FALSE;
 		fsize = _filelength(_fileno(file));
 		buffer = new BYTE[fsize];
-		fread_s(buffer, fsize, fsize, 1, file);
+		fread_s(buffer, fsize, fsize, 1u, file);
 		fclose(file);
 	}
 
 	{
-		HRESULT hr = CRenderDevice::GetDevice()->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, vertexShader.ReleaseAndGetAddressOf());
+		HRESULT hr = m_D3DDevice->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, vertexShader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -400,12 +400,12 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 		std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayout;
 		if (layout == NULL)
 		{
-			tempLayout.resize(5);
-			tempLayout[0] = { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-			tempLayout[1] = { "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-			tempLayout[2] = { "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-			tempLayout[3] = { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
-			tempLayout[4] = { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 };
+			tempLayout.resize(5u);
+			tempLayout[0] = { "POSITION", 0u, DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u };
+			tempLayout[1] = { "NORMAL",   0u, DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u };
+			tempLayout[2] = { "TANGENT",  0u, DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u };
+			tempLayout[3] = { "COLOR",    0u, DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u };
+			tempLayout[4] = { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,       0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u };
 		}
 		else
 		{
@@ -415,16 +415,16 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 				tempLayout[i] = (*layout)[i];
 		}
 		
-		HRESULT hr = CRenderDevice::GetDevice()->CreateInputLayout(tempLayout.data(), numElements, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
+		HRESULT hr = m_D3DDevice->CreateInputLayout(tempLayout.data(), numElements, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
-			return false;
+			return FALSE;
 		}
 	}
 
 	delete[]buffer;
-	return true;
+	return TRUE;
 }
 BOOL CRenderDevice::LoadPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader>& pixelShader)
 {
@@ -434,24 +434,24 @@ BOOL CRenderDevice::LoadPixelShader(const std::string& name, Microsoft::WRL::Com
 	{
 		fopen_s(&file, name.c_str(), "rb");
 		if (file == NULL)
-			return false;
+			return FALSE;
 		fsize = _filelength(_fileno(file));
 		buffer = new BYTE[fsize];
-		fread_s(buffer, fsize, fsize, 1, file);
+		fread_s(buffer, fsize, fsize, 1u, file);
 		fclose(file);
 	}
 
 	{
-		HRESULT hr = CRenderDevice::GetDevice()->CreatePixelShader(static_cast<void*>(buffer), fsize, NULL, pixelShader.ReleaseAndGetAddressOf());
+		HRESULT hr = m_D3DDevice->CreatePixelShader(static_cast<void*>(buffer), fsize, NULL, pixelShader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
-			return false;
+			return FALSE;
 		}
 	}
 
 	delete[] buffer;
-	return true;
+	return TRUE;
 }
 BOOL CRenderDevice::CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuffer, const UINT& sizeData, D3D11_USAGE usage)
 {
@@ -465,8 +465,8 @@ BOOL CRenderDevice::CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& p
 
 	HRESULT hr = m_D3DDevice->CreateBuffer(&hBufferDesc, NULL, ptrBuffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
-		return false;
-	return true;
+		return FALSE;
+	return TRUE;
 }
 void CRenderDevice::UploadConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const void* ptrData)
 {
@@ -507,8 +507,8 @@ BOOL CRenderDevice::CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>& ptr
 
 	HRESULT hr = m_D3DDevice->CreateTexture2D(&desc, &initData, ptrTexture.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
-		return false;
-	return true;
+		return FALSE;
+	return TRUE;
 }
 BOOL CRenderDevice::CreateTexture2DShaderResourceView(Microsoft::WRL::ComPtr<ID3D11Texture2D> ptrTexture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& ptrSRV, DXGI_FORMAT format, D3D_SRV_DIMENSION viewDimension, const UINT& mipLevels, const UINT& mostDetailedMip)
 {
@@ -520,6 +520,6 @@ BOOL CRenderDevice::CreateTexture2DShaderResourceView(Microsoft::WRL::ComPtr<ID3
 
 	HRESULT hr = m_D3DDevice->CreateShaderResourceView(ptrTexture.Get(), &srvDesc, ptrSRV.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
-		return false;
-	return true;
+		return FALSE;
+	return TRUE;
 }

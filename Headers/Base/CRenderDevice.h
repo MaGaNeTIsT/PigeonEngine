@@ -62,8 +62,8 @@ public:
 	static void		EndDeferredResolve();
 	static void		BeginForward();
 	static void		EndForward();
-	static void		BeginFinal();
-	static void		EndFinal();
+	static void		SetOutputRTV();
+	static void		Present();
 public:
 	static void		SetBlendState(BlendStateEnum bse);
 	static void		SetDepthState(DepthStencilStateEnum dsse);

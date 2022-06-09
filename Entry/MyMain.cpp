@@ -1,6 +1,7 @@
 #include "MyMain.h"
 #include "../Headers/Base/CManager.h"
 #include "../Headers/Base/CTimer.h"
+#include "../Headers/Base/CimGUIManager.h"
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -54,7 +55,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	currentTime = fixedLastTime = updateLastTime = gameManager->GetWindowTimer().GetClockTime();
 
 	MSG msg;
-	while (true)
+	while (TRUE)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -97,6 +98,9 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	if (CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return TRUE;
+
 	switch(uMsg)
 	{
 	case WM_DESTROY:

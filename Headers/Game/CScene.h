@@ -18,11 +18,11 @@ public:
 		SCENELAYOUT_COUNT
 	};
 protected:
-	CDebugScreen										m_DebugScreen;
-	CustomStruct::ConstantBufferPerFrame				m_ConstantBufferData;
-	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_ConstantBuffer;
+	CDebugScreen								m_DebugScreen;
+	CustomStruct::ConstantBufferPerFrame		m_ConstantBufferData;
+	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
 protected:
-	std::map<ULONGLONG, CGameObject*>					m_GameObject[SCENELAYOUT_COUNT];
+	std::map<ULONGLONG, CGameObject*>			m_GameObject[SCENELAYOUT_COUNT];
 public:
 	CScene();
 	virtual ~CScene();

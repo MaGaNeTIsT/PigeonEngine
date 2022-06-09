@@ -251,8 +251,7 @@ void CScene::Draw()
 	CRenderDevice::EndForward();
 
 
-	CRenderDevice::BeginFinal();
+	CRenderDevice::SetOutputRTV();
 	CRenderDevice::GetPostEffect()->Draw();
 	this->m_DebugScreen.Draw();
-	CRenderDevice::EndFinal();
 }

@@ -3,10 +3,13 @@
 #include <SDKDDKVer.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <windowsx.h>
 #include <wrl/client.h>
 #include <stdio.h>
 #include <assert.h>
 #include <io.h>
+#include <tchar.h>
+#include <dwmapi.h>
 #include <strstream>
 #include <string>
 #include <vector>
@@ -26,8 +29,10 @@ using namespace DirectX;
 //#pragma comment (lib, "libxml2-mt.lib")
 //#pragma comment (lib, "zlib-mt.lib")
 
-#define ENGINE_SCREEN_WIDTH									(800)
-#define ENGINE_SCREEN_HEIGHT								(450)
+#include "../ThirdParty/imgui/imgui.h"
+
+#define ENGINE_SCREEN_WIDTH									(1600)
+#define ENGINE_SCREEN_HEIGHT								(900)
 
 #define ENGINE_FIXED_UPDATE_FRAME							(60)
 #define ENGINE_UPDATE_FRAME									(75)

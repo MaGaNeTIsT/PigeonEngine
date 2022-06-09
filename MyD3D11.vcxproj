@@ -19,6 +19,22 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
     <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -105,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="Entry\MyMain.h" />
     <ClInclude Include="Headers\Base\CBaseType.h" />
+    <ClInclude Include="Headers\Base\CimGUIManager.h" />
     <ClInclude Include="Headers\Base\CInput.h" />
     <ClInclude Include="Headers\Base\CManager.h" />
     <ClInclude Include="Headers\Base\CReadFBX.h" />
@@ -131,10 +148,17 @@
     <ClInclude Include="Headers\Object\CPolygon2D.h" />
     <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
     <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
-    <ClInclude Include="VolumetricClouds\Headers\CVolumetricClouds.h" />
+    <ClInclude Include="ThirdParty\imgui\imconfig.h" />
+    <ClInclude Include="ThirdParty\imgui\imgui.h" />
+    <ClInclude Include="ThirdParty\imgui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="VolumetricCloud\Headers\CVolumetricCloud.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CBaseType.cpp" />
+    <ClCompile Include="CppFiles\Base\CimGUIManager.cpp" />
     <ClCompile Include="CppFiles\Base\CInput.cpp" />
     <ClCompile Include="CppFiles\Base\CManager.cpp" />
     <ClCompile Include="CppFiles\Base\CReadFBX.cpp" />
@@ -160,7 +184,12 @@
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
     <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
     <ClCompile Include="Entry\MyMain.cpp" />
-    <ClCompile Include="VolumetricClouds\CppFiles\CVolumetricClouds.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="VolumetricCloud\CppFiles\CVolumetricCloud.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
