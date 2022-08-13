@@ -105,9 +105,6 @@
     <ClInclude Include="Headers\Base\CReadFBX.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Headers\Base\CReadOBJ.h">
-      <Filter>Base\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Headers\Base\CShader.h">
       <Filter>Base\Headers</Filter>
     </ClInclude>
@@ -204,6 +201,9 @@
     <ClInclude Include="VolumetricCloud\Headers\CVolumetricCloud.h">
       <Filter>VolumetricCloud\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Headers\Object\CTestModel.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CInput.cpp">
@@ -213,9 +213,6 @@
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Base\CReadFBX.cpp">
-      <Filter>Base\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="CppFiles\Base\CReadOBJ.cpp">
       <Filter>Base\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="CppFiles\Base\CShader.cpp">
@@ -304,6 +301,9 @@
     </ClCompile>
     <ClCompile Include="VolumetricCloud\CppFiles\CVolumetricCloud.cpp">
       <Filter>VolumetricCloud\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="CppFiles\Object\CTestModel.cpp">
+      <Filter>Objects\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

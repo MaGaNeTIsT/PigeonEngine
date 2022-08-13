@@ -52,6 +52,7 @@ using namespace DirectX;
 
 #define ENGINE_TEXTURE2D_DEFAULT_WHITE						("./Assets/EngineTextures/Default/EngineDefaultWhite.tga")
 #define ENGINE_TEXTURE2D_DEFAULT_BLACK						("./Assets/EngineTextures/Default/EngineDefaultBlack.tga")
+#define ENGINE_TEXTURE2D_DEFAULT_GRAY						("./Assets/EngineTextures/Default/EngineDefaultGray.tga")
 #define ENGINE_TEXTURE2D_DEFAULT_RED						("./Assets/EngineTextures/Default/EngineDefaultRed.tga")
 #define ENGINE_TEXTURE2D_DEFAULT_GREEN						("./Assets/EngineTextures/Default/EngineDefaultGreen.tga")
 #define ENGINE_TEXTURE2D_DEFAULT_BLUE						("./Assets/EngineTextures/Default/EngineDefaultBlue.tga")

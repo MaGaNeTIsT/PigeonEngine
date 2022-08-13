@@ -40,5 +40,12 @@ void CLight::Uninit()
 }
 void CLight::Update()
 {
+	FLOAT tempLightColor[3] = { this->m_Data.Color.r,this->m_Data.Color.g,this->m_Data.Color.b };
+	ImGui::Begin("Light data");
+	ImGui::ColorEdit3("Color", (FLOAT*)&tempLightColor);
+	ImGui::End();
+	this->m_Data.Color.r = tempLightColor[0];
+	this->m_Data.Color.g = tempLightColor[1];
+	this->m_Data.Color.b = tempLightColor[2];
 	this->m_Data.Direction = this->GetForwardVector().GetXMFLOAT4();
 }

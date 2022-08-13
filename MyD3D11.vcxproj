@@ -125,7 +125,6 @@
     <ClInclude Include="Headers\Base\CInput.h" />
     <ClInclude Include="Headers\Base\CManager.h" />
     <ClInclude Include="Headers\Base\CReadFBX.h" />
-    <ClInclude Include="Headers\Base\CReadOBJ.h" />
     <ClInclude Include="Headers\Base\CShader.h" />
     <ClInclude Include="Headers\Base\CShaderManager.h" />
     <ClInclude Include="Headers\Base\CStructCommon.h" />
@@ -148,6 +147,7 @@
     <ClInclude Include="Headers\Object\CPolygon2D.h" />
     <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
     <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
+    <ClInclude Include="Headers\Object\CTestModel.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_internal.h" />
@@ -162,7 +162,6 @@
     <ClCompile Include="CppFiles\Base\CInput.cpp" />
     <ClCompile Include="CppFiles\Base\CManager.cpp" />
     <ClCompile Include="CppFiles\Base\CReadFBX.cpp" />
-    <ClCompile Include="CppFiles\Base\CReadOBJ.cpp" />
     <ClCompile Include="CppFiles\Base\CShader.cpp" />
     <ClCompile Include="CppFiles\Base\CShaderManager.cpp" />
     <ClCompile Include="CppFiles\Base\CTexture2D.cpp" />
@@ -183,6 +182,7 @@
     <ClCompile Include="CppFiles\Object\CPolygon2D.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
     <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
+    <ClCompile Include="CppFiles\Object\CTestModel.cpp" />
     <ClCompile Include="Entry\MyMain.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />

@@ -13,7 +13,7 @@ float4 main(VaryingScreenPolygon2D input) : SV_Target
 	for (uint i = 0u; i < (uint)_DirectionalLightCount; i++)
 	{
 		float NdotL = saturate(dot(normal, -_DirectionalLightData[i].forward.xyz));
-		color.rgb += albedo * NdotL;
+		color.rgb += albedo * _DirectionalLightData[i].color.rgb * NdotL;
 	}
 	color.a = 1;
 	return color;

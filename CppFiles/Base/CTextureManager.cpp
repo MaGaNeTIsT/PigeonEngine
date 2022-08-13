@@ -40,10 +40,11 @@ CTexture2D* CTextureManager::LoadTexture2D(const std::string& name)
 			resultTexture = (CTextureManager::LoadTGATexture2D(name));
 		else
 			return NULL;
+
+		if (resultTexture == NULL)
+			return NULL;
+		CTextureManager::AddTexture2DData(name, resultTexture);
 	}
-	if (resultTexture == NULL)
-		return NULL;
-	CTextureManager::AddTexture2DData(name, resultTexture);
 	return resultTexture;
 }
 CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name)

@@ -8,6 +8,7 @@
 #include "../../Headers/Object/CScreenPolygon2D.h"
 #include "../../Headers/Object/CPlane.h"
 #include "../../Headers/Object/CCube.h"
+#include "../../Headers/Object/CTestModel.h"
 
 CScene::CScene()
 {
@@ -84,8 +85,7 @@ void CScene::Init()
 	CLight* mainLight = this->AddGameObject<CLight>(SCENELAYOUT_LIGHT);
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SCENELAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
-	//this->AddGameObject<CSky>(SCENELAYOUT_SKY);
-	//this->AddGameObject<CWater>(SCENELAYOUT_TRANSPARENT);
+	CTestModel* sphere = this->AddGameObject<CTestModel>(SCENELAYOUT_OPAQUE);
 
 	this->m_DebugScreen.SetScene(this);
 	this->m_DebugScreen.Init();
@@ -94,6 +94,7 @@ void CScene::Init()
 	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(100.f, 50, 50.f);
 	cube->SetPosition(CustomType::Vector3(0.f, 0.5f, 0.f));
+	sphere->SetPosition(CustomType::Vector3(0.f, 0.5f, 1.f));
 }
 void CScene::Uninit()
 {

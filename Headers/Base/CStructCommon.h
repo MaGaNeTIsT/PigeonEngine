@@ -62,26 +62,12 @@ namespace CustomStruct
 		XMFLOAT2	UV0;
 	};
 
-	struct CMaterial
+	struct CSubMeshInfo
 	{
-		CColor		Ambient;
-		CColor		Diffuse;
-		CColor		Specular;
-		CColor		Emission;
-		FLOAT		Shininess;
-		FLOAT		Dummy[3];
-	};
-
-	struct DX11_MODEL_MATERIAL
-	{
-		CMaterial			Material;
-		class CTexture2D*	Texture;
-	};
-
-	struct DX11_SUBSET
-	{
-		USHORT				StartIndex;
-		USHORT				IndexNum;
-		DX11_MODEL_MATERIAL	Material;
+		CSubMeshInfo() { ZeroMemory(this, sizeof(*this)); }
+		UINT		VertexStart;
+		UINT		VertexCount;
+		UINT		IndexStart;
+		UINT		IndexCount;
 	};
 }
