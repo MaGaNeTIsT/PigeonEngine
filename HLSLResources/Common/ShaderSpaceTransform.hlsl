@@ -54,6 +54,13 @@ float3 TransformClipToWorld(const float4 position)
 	float4 positionWS = mul(position, ENGINE_MATRIX_I_VP);
 	return (positionWS.xyz / positionWS.w);
 }
+float3 TransformScreenToView(float2 uv, float viewZ)
+{
+	float2 projViewPos;
+	projViewPos.x = uv.x * _ScreenToViewSpaceParams.x + _ScreenToViewSpaceParams.z;
+	projViewPos.y = uv.y * _ScreenToViewSpaceParams.y + _ScreenToViewSpaceParams.w;
+	return float3(projViewPos * viewZ, viewZ);
+}
 float3 TransformObjectToWorldNormal(const float3 normal, uniform bool normalize = true)
 {
 	float3 normalWS = mul(normal, (float3x3)ENGINE_MATRIX_I_T_W);
@@ -104,6 +111,10 @@ float3 TransformTangentToSpaceDir(const float3 dir, const float3x3 tangentMatrix
 	if (normalize == true)
 		targetDir = SafeNormalize(targetDir);
 	return targetDir;
+}
+float ConvertDeviceZToViewZ(float deviceZ)
+{
+	return rcp(deviceZ * _DepthMultiAdd.x + _DepthMultiAdd.y);
 }
 
 #endif

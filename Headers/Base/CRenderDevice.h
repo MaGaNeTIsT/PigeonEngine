@@ -52,6 +52,22 @@ public:
 		DSSE_COUNT
 	};
 public:
+	struct RenderTexture2DViewInfo
+	{
+		RenderTexture2DViewInfo() { ZeroMemory(this, sizeof(*this)); }
+		void Release()
+		{
+			if (Texture2D)Texture2D->Release();
+			if (RenderTargetView)RenderTargetView->Release();
+			if (UnorderedAccessView)UnorderedAccessView->Release();
+			if (ShaderResourceView)ShaderResourceView->Release();
+		};
+		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2D;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		RenderTargetView;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
+	};
+public:
 	static void		Init();
 	static void		Uninit();
 	static void		ResetRenderTarget();
@@ -72,18 +88,23 @@ public:
 	static void		BindTexture(CTexture2D* ptrTexture, const UINT& startSlot);
 	static void		BindTexture(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ptrSRV, const UINT& startSlot);
 	static void		BindTexture(ID3D11ShaderResourceView* ptrSRV, const UINT& startSlot);
+	static void		BindComputeShaderResourceView(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ptrSRV, const UINT& startSlot);
+	static void		BindComputeUnorderedAccessView(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> ptrUAV, const UINT& startSlot);
 	static void		SetShadowMap(const UINT& Slot);
 	static void		DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation = 0u, const INT& baseVertexLocation = 0);
 public:
 	static BOOL		CreateD3DBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuffer, const void* ptrData, const UINT& stride, const UINT& count, UINT flag, D3D11_USAGE usage = D3D11_USAGE_DEFAULT);
 	static BOOL		LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout = NULL);
 	static BOOL		LoadPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader>& pixelShader);
+	static BOOL		LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
 	static BOOL		CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuffer, const UINT& sizeData, D3D11_USAGE usage = D3D11_USAGE_DEFAULT);
 	static void		UploadConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const void* ptrData);
 	static void		BindConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const UINT& startSlot);
+	static void		BindComputeShaderConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const UINT& startSlot);
 	static void		BindVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const UINT& startSlot = 0u, const UINT& stride = sizeof(CustomStruct::CVertex3D), const UINT& offset = 0u);
 	static void		BindIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, DXGI_FORMAT format = DXGI_FORMAT_R32_UINT, const UINT& offset = 0u);
 public:
+	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, const UINT& width, const UINT& height, DXGI_FORMAT format, const BOOL& randomWirte = FALSE, D3D11_USAGE usage = D3D11_USAGE_DEFAULT, const UINT& mipLevels = 1u, const UINT& arraySize = 1u);
 	static BOOL		CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>& ptrTexture, const UINT& width, const UINT& height, DXGI_FORMAT format, const void* ptrData, const UINT& memPitch, const UINT& memSlicePitch, UINT flag = D3D11_BIND_SHADER_RESOURCE, D3D11_USAGE usage = D3D11_USAGE_DEFAULT, const UINT& mipLevels = 1u, const UINT& arraySize = 1u);
 	static BOOL		CreateTexture2DShaderResourceView(Microsoft::WRL::ComPtr<ID3D11Texture2D> ptrTexture, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& ptrSRV, DXGI_FORMAT format, D3D_SRV_DIMENSION viewDimension, const UINT& mipLevels = 1u, const UINT& mostDetailedMip = 0u);
 public:
@@ -93,6 +114,7 @@ public:
 public:
 	static ID3D11Device*			GetDevice(void) { return m_D3DDevice; }
 	static ID3D11DeviceContext*		GetDeviceContext(void) { return m_ImmediateContext; }
+	static D3D11_VIEWPORT			GetViewport(void) { return m_ViewPort; }
 
 	static CDeferredBuffer*			GetDeferredBuffer() { return m_DeferredBuffer; }
 	static CScreenPolygon2D*		GetDeferredResolve() { return m_DeferredResolve; }

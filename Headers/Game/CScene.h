@@ -3,6 +3,7 @@
 #include "../../Entry/MyMain.h"
 #include "../../Headers/Game/CGameObject.h"
 #include "../Object/CDebugScreen.h"
+#include "../Object/CGTAOComputeShader.h"
 
 class CScene
 {
@@ -19,6 +20,7 @@ public:
 	};
 protected:
 	CDebugScreen								m_DebugScreen;
+	CGTAOComputeShader							m_GTAOComputeShader;
 	CustomStruct::ConstantBufferPerFrame		m_ConstantBufferData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
 protected:

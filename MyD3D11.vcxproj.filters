@@ -62,6 +62,9 @@
     <Filter Include="VolumetricCloud\Headers">
       <UniqueIdentifier>{6816d818-e5aa-439b-927e-0fb598a77485}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\HLSLResources\Test">
+      <UniqueIdentifier>{23c73d40-efb7-40d6-b4a8-0e3c6208671a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
@@ -93,6 +96,9 @@
     </FxCompile>
     <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
       <Filter>ThirdParty\imgui</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Test\GTAOCS.hlsl">
+      <Filter>Shaders\HLSLResources\Test</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -204,6 +210,9 @@
     <ClInclude Include="Headers\Object\CTestModel.h">
       <Filter>Objects\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Headers\Object\CGTAOComputeShader.h">
+      <Filter>Objects\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CppFiles\Base\CInput.cpp">
@@ -305,6 +314,9 @@
     <ClCompile Include="CppFiles\Object\CTestModel.cpp">
       <Filter>Objects\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="CppFiles\Object\CGTAOComputeShader.cpp">
+      <Filter>Objects\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
@@ -323,6 +335,12 @@
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
     <None Include="HLSLResources\Common\ShaderSpaceTransform.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderGlobalFunctions.hlsl">
+      <Filter>Shaders\HLSLResources\Common</Filter>
+    </None>
+    <None Include="HLSLResources\Common\ShaderFastMath.hlsl">
       <Filter>Shaders\HLSLResources\Common</Filter>
     </None>
   </ItemGroup>

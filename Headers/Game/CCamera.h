@@ -9,6 +9,7 @@ public:
 	{
 		CCameraInfo() { ZeroMemory(this, sizeof(*this)); }
 		CustomType::Vector4	Viewport;
+		CustomType::Vector2 Depth;
 		FLOAT	Fov;
 		FLOAT	Near;
 		FLOAT	Far;
@@ -31,6 +32,10 @@ public:
 	CustomType::Matrix4x4	GetProjectionInverseMatrix() { return m_ProjectionInvMatrix; }
 	CustomType::Matrix4x4	GetViewProjectionMatrix() { return m_ViewProjectionMatrix; }
 	CustomType::Matrix4x4	GetViewProjectionInverseMatrix() { return m_ViewProjectionInvMatrix; }
+public:
+	CustomType::Vector4		GetViewportSizeAndInvSize() { return m_ViewportSizeAndInvSize; }
+	CustomType::Vector2		GetDeviceZToViewZMulAdd() { return m_DeviceZToViewZMulAdd; }
+	CustomType::Vector4		GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize);
 protected:
 	void			ReCalculateProjectionMatrix();
 	void			ReCalculateViewMatrix();
@@ -53,4 +58,6 @@ protected:
 	CustomType::Matrix4x4	m_ProjectionInvMatrix;
 	CustomType::Matrix4x4	m_ViewProjectionMatrix;
 	CustomType::Matrix4x4	m_ViewProjectionInvMatrix;
+	CustomType::Vector4		m_ViewportSizeAndInvSize;
+	CustomType::Vector2		m_DeviceZToViewZMulAdd;
 };

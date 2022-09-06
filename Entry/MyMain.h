@@ -75,7 +75,7 @@ using namespace DirectX;
 #define ENGINE_MESH_POLYGON_2D_NAME							("CustomEngine/Mesh/Polygon2DMesh")
 
 #define ENGINE_CAMERA_FOV									(60.f)
-#define ENGINE_CAMERA_NEAR									(0.1f)
+#define ENGINE_CAMERA_NEAR									(5.f)
 #define ENGINE_CAMERA_FAR									(1000.f)
 #define ENGINE_CAMERA_MOVE_SPEED							(20.f)
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)

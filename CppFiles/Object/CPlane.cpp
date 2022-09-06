@@ -53,6 +53,18 @@ void CPlane::Uninit()
 }
 void CPlane::Update()
 {
+	FLOAT tempR = this->m_TestRotate;
+
+	CHAR tempName[256];
+	_itoa_s(static_cast<INT>(this->m_UID), tempName, 256, 10);
+	std::string name = tempName;
+	name = "Plane data : " + name;
+	ImGui::Begin(name.c_str());
+	ImGui::SliderFloat("Rotation", &tempR, 0.f, 360.f);
+	ImGui::End();
+
+	this->m_TestRotate = tempR;
+	this->SetRotation(CustomType::Quaternion(CustomType::Vector3(0.f, 1.f, 0.f), this->m_TestRotate * CustomType::CMath::GetDegToRad()));
 }
 void CPlane::PrepareDraw()
 {

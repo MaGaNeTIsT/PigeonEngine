@@ -20,8 +20,8 @@ template <typename T>
 T* CScene::AddGameObject(const UINT& layout)
 {
 	CGameObject* gameObject = new T();
-	gameObject->Init();
 	gameObject->SetScene(this);
+	gameObject->Init();
 	this->m_GameObject[layout][gameObject->GetGameObjectID()] = gameObject;
 	return  (reinterpret_cast<T*>(gameObject));
 }
@@ -82,11 +82,22 @@ void CScene::Init()
 	CRenderDevice::CreateConstantBuffer(this->m_ConstantBuffer, sizeof(CustomStruct::ConstantBufferPerFrame));
 
 	CCamera* mainCamera = this->AddGameObject<CCamera>(SCENELAYOUT_CAMERA);
+
+	this->m_ConstantBufferData.ProjectionMatrix = mainCamera->GetProjectionMatrix().GetGPUUploadFloat4x4();
+	this->m_ConstantBufferData.ProjectionInvMatrix = mainCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
+	this->m_ConstantBufferData.DepthMultiAdd = mainCamera->GetDeviceZToViewZMulAdd().GetXMFLOAT4();
+	this->m_ConstantBufferData.ScreenToViewSpaceParams = mainCamera->GetScreenToViewParameters(CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height), CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height)).GetXMFLOAT4();
+	this->m_ConstantBufferData.CameraViewportSizeAndInvSize = mainCamera->GetViewportSizeAndInvSize().GetXMFLOAT4();
+	this->m_ConstantBufferData.CameraViewportRect = mainCamera->GetViewport().GetXMFLOAT4();
+
 	CLight* mainLight = this->AddGameObject<CLight>(SCENELAYOUT_LIGHT);
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SCENELAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
 	CTestModel* sphere = this->AddGameObject<CTestModel>(SCENELAYOUT_OPAQUE);
+	CPlane* testPlane = this->AddGameObject<CPlane>(SCENELAYOUT_OPAQUE);
 
+	this->m_GTAOComputeShader.SetScene(this);
+	this->m_GTAOComputeShader.Init();
 	this->m_DebugScreen.SetScene(this);
 	this->m_DebugScreen.Init();
 
@@ -94,10 +105,14 @@ void CScene::Init()
 	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(100.f, 50, 50.f);
 	cube->SetPosition(CustomType::Vector3(0.f, 0.5f, 0.f));
-	sphere->SetPosition(CustomType::Vector3(0.f, 0.5f, 1.f));
+	sphere->SetPosition(CustomType::Vector3(0.f, 0.5f, 2.f));
+	//testPlane->SetRotation(CustomType::Quaternion(testPlane->GetUpVector(), 30.f * CustomType::CMath::GetDegToRad()));
+	testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));;
+	testPlane->SetScale(CustomType::Vector3(3.f, 3.f, 3.f));;
 }
 void CScene::Uninit()
 {
+	this->m_GTAOComputeShader.Uninit();
 	this->m_DebugScreen.Uninit();
 
 	for (INT i = 0; i < SCENELAYOUT_COUNT; ++i)
@@ -119,6 +134,7 @@ void CScene::Update()
 	}
 
 	this->m_DebugScreen.Update();
+	this->m_GTAOComputeShader.Update();
 }
 void CScene::FixedUpdate()
 {
@@ -202,12 +218,9 @@ void CScene::PrepareDraw()
 	CCamera* tempCamera = this->GetGameObjectFirst<CCamera>(SCENELAYOUT_CAMERA);
 	this->m_ConstantBufferData.ViewMatrix = tempCamera->GetViewMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.ViewInvMatrix = tempCamera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ProjectionMatrix = tempCamera->GetProjectionMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ProjectionInvMatrix = tempCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.ViewProjectionMatrix = tempCamera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.ViewProjectionInvMatrix = tempCamera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
 	this->m_ConstantBufferData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
-	this->m_ConstantBufferData.ScreenParams = XMFLOAT4(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT, 1.f / ENGINE_SCREEN_WIDTH, 1.f / ENGINE_SCREEN_HEIGHT);
 	this->m_ConstantBufferData.CameraWorldPosition = tempCamera->GetPosition().GetXMFLOAT3();
 
 	std::vector<CLight*> tempLightList = this->GetGameObjectAll<CLight>(SCENELAYOUT_LIGHT);
@@ -220,6 +233,7 @@ void CScene::PrepareDraw()
 
 	CRenderDevice::UploadConstantBuffer(this->m_ConstantBuffer, &(this->m_ConstantBufferData));
 	CRenderDevice::BindConstantBuffer(this->m_ConstantBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+	CRenderDevice::BindComputeShaderConstantBuffer(this->m_ConstantBuffer, 0u);
 }
 void CScene::Draw()
 {
@@ -233,6 +247,7 @@ void CScene::Draw()
 
 
 	CRenderDevice::BeginDeferred();
+	this->DrawOpaqueDeferred();
 	this->DrawOpaqueDeferred();
 	CRenderDevice::EndDeferred();
 
@@ -255,4 +270,6 @@ void CScene::Draw()
 	CRenderDevice::SetOutputRTV();
 	CRenderDevice::GetPostEffect()->Draw();
 	this->m_DebugScreen.Draw();
+
+	this->m_GTAOComputeShader.Draw();
 }

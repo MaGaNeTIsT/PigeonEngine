@@ -19,6 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="HLSLResources\Common\ShaderGlobalFunctions.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="HLSLResources\Common\ShaderFastMath.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="HLSLResources\Test\GTAOCS.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="ThirdParty\imgui\HLSL\imGUIPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -147,6 +161,7 @@
     <ClInclude Include="Headers\Object\CPolygon2D.h" />
     <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
     <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
+    <ClInclude Include="Headers\Object\CGTAOComputeShader.h" />
     <ClInclude Include="Headers\Object\CTestModel.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
@@ -182,6 +197,7 @@
     <ClCompile Include="CppFiles\Object\CPolygon2D.cpp" />
     <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
     <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
+    <ClCompile Include="CppFiles\Object\CGTAOComputeShader.cpp" />
     <ClCompile Include="CppFiles\Object\CTestModel.cpp" />
     <ClCompile Include="Entry\MyMain.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />

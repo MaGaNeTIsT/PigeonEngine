@@ -35,4 +35,5 @@ protected:
 	CTexture2D*		m_PropertyTexture;
 protected:
 	CPlaneMeshInfo	m_PlaneMeshInfo;
+	FLOAT m_TestRotate = 0;
 };

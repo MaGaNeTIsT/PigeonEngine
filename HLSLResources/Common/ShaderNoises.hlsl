@@ -192,21 +192,35 @@ float noise(in float3 x)
 	return -1.0 + 2.0 * lerp(rg.x, rg.y, f.z);
 }
 
-float cloud5(in float3 p, float time = 0.0)
+float InterleavedGradientNoise(int2 coord)
 {
-	return clamp(fbm3(p, 5, time), 0.0, 1.0);
+	return frac(52.9829189f * frac((coord.x * 0.06711056f) + (coord.y * 0.00583715f)));
 }
-float cloud4(in float3 p, float time = 0.0)
+
+float3 GetRandomVectorFromCoord(int2 coord)
 {
-	return clamp(fbm3(p, 4, time), 0.0, 1.0);
-}
-float cloud3(in float3 p, float time = 0.0)
-{
-	return clamp(fbm3(p, 3, time), 0.0, 1.0);
-}
-float cloud2(in float3 p, float time = 0.0)
-{
-	return clamp(fbm3(p, 2, time), 0.0, 1.0);
+	coord.y = 16384 - coord.y;
+
+	float3 randomVec = 0.0;
+	float3 randomTexVec = 0.0;
+	float scaleOffset;
+
+	const float temporalCos = 0.8660253882f;
+	const float temporalSin = 0.5;
+
+	float GradientNoise = InterleavedGradientNoise(coord);
+
+	randomTexVec.x = cos((GradientNoise * CUSTOM_SHADER_PI));
+	randomTexVec.y = sin((GradientNoise * CUSTOM_SHADER_PI));
+
+	scaleOffset = (1.0 / 4.0) * ((coord.y - coord.x) & 3);
+	//	scaleOffset = (1.0/5.0)  *  (( coord.y - coord.x) % 5);
+
+	randomVec.x = dot(randomTexVec.xy, float2(temporalCos, -temporalSin));
+	randomVec.y = dot(randomTexVec.xy, float2(temporalSin, temporalCos));
+	randomVec.z = frac(scaleOffset + 0.025);
+
+	return randomVec;
 }
 
 #endif

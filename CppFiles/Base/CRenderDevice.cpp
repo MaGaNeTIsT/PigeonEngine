@@ -171,7 +171,7 @@ void CRenderDevice::Init()
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_ALLDISABLE]);
 	depthStencilDesc.DepthEnable = TRUE;
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE]);
 	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEDISABLE]);
@@ -344,6 +344,17 @@ void CRenderDevice::BindTexture(ID3D11ShaderResourceView* ptrSRV, const UINT& st
 		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv);
 	}
 }
+void CRenderDevice::BindComputeShaderResourceView(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ptrSRV, const UINT& startSlot)
+{
+	if (ptrSRV == NULL)
+		m_ImmediateContext->CSSetShaderResources(startSlot, 1u, m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView().GetAddressOf());
+	else
+		m_ImmediateContext->CSSetShaderResources(startSlot, 1u, ptrSRV.GetAddressOf());
+}
+void CRenderDevice::BindComputeUnorderedAccessView(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> ptrUAV, const UINT& startSlot)
+{
+	m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, ptrUAV.GetAddressOf(), NULL);
+}
 void CRenderDevice::SetShadowMap(const UINT& Slot)
 {
 	ID3D11ShaderResourceView* srv[1] = { m_DeferredBuffer->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_LIGHT) };
@@ -454,6 +465,33 @@ BOOL CRenderDevice::LoadPixelShader(const std::string& name, Microsoft::WRL::Com
 	delete[] buffer;
 	return TRUE;
 }
+BOOL CRenderDevice::LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader)
+{
+	FILE* file;
+	LONG fsize;
+	BYTE* buffer;
+	{
+		fopen_s(&file, name.c_str(), "rb");
+		if (file == NULL)
+			return FALSE;
+		fsize = _filelength(_fileno(file));
+		buffer = new BYTE[fsize];
+		fread_s(buffer, fsize, fsize, 1u, file);
+		fclose(file);
+	}
+
+	{
+		HRESULT hr = m_D3DDevice->CreateComputeShader(static_cast<void*>(buffer), fsize, NULL, computeShader.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+		{
+			delete[]buffer;
+			return FALSE;
+		}
+	}
+
+	delete[] buffer;
+	return TRUE;
+}
 BOOL CRenderDevice::CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuffer, const UINT& sizeData, D3D11_USAGE usage)
 {
 	D3D11_BUFFER_DESC hBufferDesc;
@@ -478,6 +516,10 @@ void CRenderDevice::BindConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrB
 	m_ImmediateContext->VSSetConstantBuffers(startSlot, 1u, ptrBuffer.GetAddressOf());
 	m_ImmediateContext->PSSetConstantBuffers(startSlot, 1u, ptrBuffer.GetAddressOf());
 }
+void CRenderDevice::BindComputeShaderConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const UINT& startSlot)
+{
+	m_ImmediateContext->CSSetConstantBuffers(startSlot, 1u, ptrBuffer.GetAddressOf());
+}
 void CRenderDevice::BindVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, const UINT& startSlot, const UINT& stride, const UINT& offset)
 {
 	m_ImmediateContext->IASetVertexBuffers(startSlot, 1u, ptrBuffer.GetAddressOf(), &stride, &offset);
@@ -485,6 +527,54 @@ void CRenderDevice::BindVertexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuf
 void CRenderDevice::BindIndexBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> ptrBuffer, DXGI_FORMAT format, const UINT& offset)
 {
 	m_ImmediateContext->IASetIndexBuffer(ptrBuffer.Get(), format, offset);
+}
+BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, const UINT& width, const UINT& height, DXGI_FORMAT format, const BOOL& randomWirte, D3D11_USAGE usage, const UINT& mipLevels, const UINT& arraySize)
+{
+	D3D11_TEXTURE2D_DESC texture2DDesc;
+	ZeroMemory(&texture2DDesc, sizeof(texture2DDesc));
+	texture2DDesc.Width = width;
+	texture2DDesc.Height = height;
+	texture2DDesc.MipLevels = mipLevels;
+	texture2DDesc.ArraySize = arraySize;
+	texture2DDesc.Format = format;
+	texture2DDesc.SampleDesc.Count = 1u;
+	texture2DDesc.SampleDesc.Quality = 0u;
+	texture2DDesc.Usage = usage;
+	texture2DDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	texture2DDesc.CPUAccessFlags = 0u;	//D3D11_CPU_ACCESS_FLAG
+	texture2DDesc.MiscFlags = 0u;		//D3D11_RESOURCE_MISC_FLAG
+	HRESULT hr = m_D3DDevice->CreateTexture2D(&texture2DDesc, NULL, textureInfo.Texture2D.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return FALSE;
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+	ZeroMemory(&renderTargetViewDesc, sizeof(renderTargetViewDesc));
+	renderTargetViewDesc.Format = texture2DDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0u;
+	hr = m_D3DDevice->CreateRenderTargetView(textureInfo.Texture2D.Get(), &renderTargetViewDesc, textureInfo.RenderTargetView.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return FALSE;
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
+	ZeroMemory(&shaderResourceViewDesc, sizeof(shaderResourceViewDesc));
+	shaderResourceViewDesc.Format = texture2DDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0u;
+	shaderResourceViewDesc.Texture2D.MipLevels = mipLevels;
+	hr = m_D3DDevice->CreateShaderResourceView(textureInfo.Texture2D.Get(), &shaderResourceViewDesc, textureInfo.ShaderResourceView.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return FALSE;
+	if (randomWirte)
+	{
+		D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc;
+		ZeroMemory(&unorderedAccessViewDesc, sizeof(unorderedAccessViewDesc));
+		unorderedAccessViewDesc.Format = texture2DDesc.Format;
+		unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+		unorderedAccessViewDesc.Texture2D.MipSlice = 0u;
+		hr = m_D3DDevice->CreateUnorderedAccessView(textureInfo.Texture2D.Get(), &unorderedAccessViewDesc, textureInfo.UnorderedAccessView.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+			return FALSE;
+	}
+	return TRUE;
 }
 BOOL CRenderDevice::CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>& ptrTexture, const UINT& width, const UINT& height, DXGI_FORMAT format, const void* ptrData, const UINT& memPitch, const UINT& memSlicePitch, UINT flag, D3D11_USAGE usage, const UINT& mipLevels, const UINT& arraySize)
 {

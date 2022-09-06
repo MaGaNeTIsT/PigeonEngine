@@ -111,6 +111,7 @@ namespace CustomType
 		virtual void				Reset()override { (*this) = Vector2::m_Zero; }
 
 		const DirectX::XMFLOAT2&	GetXMFLOAT2()const { return m_Value; }
+		DirectX::XMFLOAT4			GetXMFLOAT4()const { return XMFLOAT4(m_Value.x, m_Value.y, 0.f, 0.f); }
 	public:
 		static const Vector2&		Zero() { return Vector2::m_Zero; }
 		static Vector2				Normalize(const Vector2& v);
@@ -378,5 +379,10 @@ namespace CustomType
 	public:
 		static BOOL		Lerp(const INT& x0, const INT& y0, const INT& x1, const INT& y1, const INT& t, INT& phi);
 		static FLOAT	Lerp(const FLOAT& v0, const FLOAT& v1, const FLOAT& t);
+		static FLOAT	Max(const FLOAT& v0, const FLOAT& v1);
+		static FLOAT	Min(const FLOAT& v0, const FLOAT& v1);
+		static FLOAT	Abs(const FLOAT& v);
+		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
+		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
 	};
 }

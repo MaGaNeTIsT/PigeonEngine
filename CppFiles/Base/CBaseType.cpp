@@ -1156,4 +1156,25 @@ namespace CustomType
 	{
 		return (v0 * (1.f - t) + v1 * t);
 	}
+	FLOAT CMath::Max(const FLOAT& v0, const FLOAT& v1)
+	{
+		return fmaxf(v0, v1);
+	}
+	FLOAT CMath::Min(const FLOAT& v0, const FLOAT& v1)
+	{
+		return fminf(v0, v1);
+	}
+	FLOAT CMath::Abs(const FLOAT& v)
+	{
+		return fabsf(v);
+	}
+	FLOAT CMath::Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max)
+	{
+		return fmaxf(min, fminf(max, v));
+	}
+	void CMath::SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v)
+	{
+		sinValue = sinf(v);
+		cosValue = cosf(v);
+	}
 }

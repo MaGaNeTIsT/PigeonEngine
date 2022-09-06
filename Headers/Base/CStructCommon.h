@@ -37,7 +37,10 @@ namespace CustomStruct
 		XMFLOAT4X4	ViewProjectionMatrix;
 		XMFLOAT4X4	ViewProjectionInvMatrix;
 		XMFLOAT4	TimeParams;
-		XMFLOAT4	ScreenParams;
+		XMFLOAT4	DepthMultiAdd;
+		XMFLOAT4	ScreenToViewSpaceParams;
+		XMFLOAT4	CameraViewportSizeAndInvSize;
+		XMFLOAT4	CameraViewportRect;
 		XMFLOAT3	CameraWorldPosition;
 		FLOAT		DirectionalLightCount;
 		CLightData	DirectionalLightData[4];
