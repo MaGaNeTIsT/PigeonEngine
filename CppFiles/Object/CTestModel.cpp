@@ -22,7 +22,7 @@ CTestModel::~CTestModel()
 void CTestModel::Init()
 {
 	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
-	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Assets/EngineModels/Base/sphere.obj");
+	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Assets/EngineModels/Base/torus.obj", TRUE);
 	this->m_MeshRenderer->LoadShader();
 	this->m_MeshRenderer->CreateConstantBuffer(sizeof(CustomStruct::ConstantBufferPerDraw));
 	this->m_MeshRenderer->LoadExtraShader(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_EMPTY_PS);

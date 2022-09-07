@@ -187,9 +187,9 @@ int fastClamp(int x, int Min, int Max)
 float acosFast(float inX)
 {
 	float x = abs(inX);
-	float res = -0.156583f * x + (0.5 * CUSTOM_SHADER_PI);
+	float res = -0.156583f * x + (0.5 * (CUSTOM_SHADER_PI));
 	res *= sqrt(1.0f - x);
-	return (inX >= 0) ? res : CUSTOM_SHADER_PI - res;
+	return (inX >= 0) ? res : (CUSTOM_SHADER_PI) - res;
 }
 
 float2 acosFast(float2 x)
@@ -212,7 +212,7 @@ float4 acosFast(float4 x)
 // input [-1, 1] and output [-PI/2, PI/2]
 float asinFast(float x)
 {
-	return (0.5 * CUSTOM_SHADER_PI) - acosFast(x);
+	return (0.5 * (CUSTOM_SHADER_PI)) - acosFast(x);
 }
 
 float2 asinFast(float2 x)
@@ -242,7 +242,7 @@ float atanFastPos(float x)
 	poly = -0.301895f + poly * t1;
 	poly = 1.0f + poly * t1;
 	poly = poly * t0;
-	return (x < 1.0f) ? poly : (0.5 * CUSTOM_SHADER_PI) - poly;
+	return (x < 1.0f) ? poly : (0.5 * (CUSTOM_SHADER_PI)) - poly;
 }
 
 // 4 VGPR, 16 FR (12 FR, 1 QR), 2 scalar
@@ -281,8 +281,8 @@ float atan2Fast(float y, float x)
 	t0 = t0 * t4 + 1.0;
 	t3 = t0 * t3;
 
-	t3 = abs(y) > abs(x) ? (0.5 * CUSTOM_SHADER_PI) - t3 : t3;
-	t3 = x < 0 ? CUSTOM_SHADER_PI - t3 : t3;
+	t3 = abs(y) > abs(x) ? (0.5 * (CUSTOM_SHADER_PI)) - t3 : t3;
+	t3 = x < 0 ? (CUSTOM_SHADER_PI) - t3 : t3;
 	t3 = y < 0 ? -t3 : t3;
 
 	return t3;
@@ -321,7 +321,7 @@ float acosFast4(float inX)
 
 	// acos function mirroring
 	// check per platform if compiles to a selector - no branch neeeded
-	return inX >= 0.0f ? s : CUSTOM_SHADER_PI - s;
+	return inX >= 0.0f ? s : (CUSTOM_SHADER_PI) - s;
 }
 
 // 4th order polynomial approximation
@@ -329,7 +329,7 @@ float acosFast4(float inX)
 // 7 * 10^-5 radians precision 
 float asinFast4(float x)
 {
-	return (0.5 * CUSTOM_SHADER_PI) - acosFast4(x);
+	return (0.5 * (CUSTOM_SHADER_PI)) - acosFast4(x);
 }
 
 // @param A doesn't have to be normalized, output could be NaN if this is near 0,0,0

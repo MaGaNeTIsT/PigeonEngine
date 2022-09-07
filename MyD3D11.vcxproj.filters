@@ -97,7 +97,13 @@
     <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
       <Filter>ThirdParty\imgui</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Test\GTAOCS.hlsl">
+    <FxCompile Include="HLSLResources\Test\GTAOSpatialIntegral.hlsl">
+      <Filter>Shaders\HLSLResources\Test</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Test\GTAOSpatialFilter.hlsl">
+      <Filter>Shaders\HLSLResources\Test</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSLResources\Test\GTAODebugType.hlsl">
       <Filter>Shaders\HLSLResources\Test</Filter>
     </FxCompile>
   </ItemGroup>

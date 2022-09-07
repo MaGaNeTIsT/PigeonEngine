@@ -36,16 +36,13 @@ CMesh* CMeshManager::LoadMeshFromFile(const std::string& name, const BOOL& recal
 		std::string typeName = name.substr(pos + 1, name.length());
 
 		if (typeName == _objName)
-			resultMesh = (CMeshManager::LoadOBJMesh(name));
+			resultMesh = (CMeshManager::LoadOBJMesh(name, recalculateTangent));
 		else
 			return NULL;
 
 		if (resultMesh == NULL)
 			return NULL;
-		if (recalculateTangent)
-		{
-			//TODO re-calculate mesh's tangent.
-		}
+
 		CMeshManager::AddMeshData(name, resultMesh);
 	}
 	return resultMesh;
@@ -54,7 +51,7 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 {
 	if (length.X() <= 0.f || length.Y() <= 0.f || vertexCount.X() < 2 || vertexCount.Y() < 2)
 		return NULL;
-	if (fabsf(uv.X()) < 0.01f || fabsf(uv.Y()) < 0.01f)
+	if (CustomType::CMath::Abs(uv.X()) < 0.01f || CustomType::CMath::Abs(uv.Y()) < 0.01f)
 		return NULL;
 	std::string tempName = ENGINE_MESH_PLANE_NAME;
 	tempName = tempName +
@@ -99,11 +96,11 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 			{
 				tx = static_cast<FLOAT>(x) / static_cast<FLOAT>(vertexCount.X() - 1);
 				px = CustomType::CMath::Lerp(length.X() * (-0.5f), length.X() * 0.5f, tx);
-				u = CustomType::CMath::Lerp(fminf(0.f, uv.X()), fmaxf(0.f, uv.X()), tx);
+				u = CustomType::CMath::Lerp(CustomType::CMath::Min(0.f, uv.X()), CustomType::CMath::Max(0.f, uv.X()), tx);
 
 				tz = static_cast<FLOAT>(z) / static_cast<FLOAT>(vertexCount.Y() - 1);
 				pz = CustomType::CMath::Lerp(length.Y() * 0.5f, length.Y() * (-0.5f), tz);
-				v = CustomType::CMath::Lerp(fminf(0.f, uv.Y()), fmaxf(0.f, uv.Y()), tz);
+				v = CustomType::CMath::Lerp(CustomType::CMath::Min(0.f, uv.Y()), CustomType::CMath::Max(0.f, uv.Y()), tz);
 
 				vertex[z * vertexCount.X() + x].Position = XMFLOAT4(px, 0.f, pz, 1.f);
 				vertex[z * vertexCount.X() + x].UV0 = XMFLOAT2(u, v);
@@ -381,11 +378,28 @@ CMesh* CMeshManager::LoadPolygon2DMesh(const CustomType::Vector4Int& customSize)
 	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index, submesh);
 	return mesh;
 }
-CMesh* CMeshManager::LoadOBJMesh(const std::string& name)
+CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2)
 {
-	CMesh* findResult = CMeshManager::FindMeshData(name);
-	if (findResult != NULL)
-		return findResult;
+	FLOAT scale;
+	CustomType::Vector3 q1 = p1;
+	CustomType::Vector3 q2 = p2;
+	CustomType::Vector2 st1 = uv1;
+	CustomType::Vector2 st2 = uv2;
+	q1 = q1 - p0;
+	q2 = q2 - p0;
+	st1 = st1 - uv0;
+	st2 = st2 - uv0;
+	scale = (st1.X() * st2.Y()) - (st2.X() * st1.Y());
+	if (CustomType::CMath::Abs(scale) < 1e-6f)
+		scale = scale > 0.f ? 1e-6f : (-1e-6f);
+	scale = 1.f / scale;
+	return (CustomType::Vector3(
+		st2.Y() * q1.X() + (-st1.Y()) * q2.X(),
+		st2.Y() * q1.Y() + (-st1.Y()) * q2.Y(),
+		st2.Y() * q1.Z() + (-st1.Y()) * q2.Z()) * scale);
+}
+CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculateTangent)
+{
 	std::vector<CustomStruct::CVertex3D> vertex;
 	std::vector<UINT> index;
 	std::vector<CustomStruct::CSubMeshInfo> submesh;
@@ -570,6 +584,82 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name)
 		}
 		if (sc != 0u)
 			submesh[sc - 1u].IndexCount = ic - submesh[sc - 1u].IndexStart;
+	}
+	if (recalculateTangent)
+	{
+		for (INT i = 0; i < vertex.size(); i++)
+		{
+			vertex[i].Tangent = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+		}
+		if (submesh.size() > 1)
+		{
+			CustomStruct::CSubMeshInfo subInfo;
+			CustomType::Vector3 p0, p1, p2;
+			CustomType::Vector2 uv0, uv1, uv2;
+			CustomType::Vector3 newT, oldT;
+			INT triangleNum, triangleIndex;
+			for (INT subIndex = 0; subIndex < submesh.size(); subIndex++)
+			{
+				subInfo = submesh[subIndex];
+				triangleNum = subInfo.IndexCount / 3;
+				for (INT i = 0; i < triangleNum; i++)
+				{
+					triangleIndex = subInfo.IndexStart + i * 3;
+					p0 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
+					uv0 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
+					triangleIndex = subInfo.IndexStart + i * 3 + 1;
+					p1 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
+					uv1 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
+					triangleIndex = subInfo.IndexStart + i * 3 + 2;
+					p2 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
+					uv2 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
+					newT = CMeshManager::CalculateTangentForTriangle(p0, p1, p2, uv0, uv1, uv2);
+					triangleIndex = subInfo.IndexStart + i * 3;
+					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
+					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+					triangleIndex = subInfo.IndexStart + i * 3 + 1;
+					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
+					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+					triangleIndex = subInfo.IndexStart + i * 3 + 2;
+					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
+					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+				}
+			}
+		}
+		else
+		{
+			CustomType::Vector3 p0, p1, p2;
+			CustomType::Vector2 uv0, uv1, uv2;
+			CustomType::Vector3 newT, oldT;
+			INT triangleIndex;
+			INT triangleNum = static_cast<INT>(index.size()) / 3;
+			for (INT i = 0; i < triangleNum; i++)
+			{
+				triangleIndex = i * 3;
+				p0 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
+				uv0 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
+				triangleIndex = i * 3 + 1;
+				p1 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
+				uv1 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
+				triangleIndex = i * 3 + 2;
+				p2 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
+				uv2 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
+				newT = CMeshManager::CalculateTangentForTriangle(p0, p1, p2, uv0, uv1, uv2);
+				triangleIndex = i * 3;
+				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
+				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+				triangleIndex = i * 3 + 1;
+				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
+				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+				triangleIndex = i * 3 + 2;
+				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
+				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
+			}
+		}
+		for (INT i = 0; i < vertex.size(); i++)
+		{
+			vertex[i].Tangent = CustomType::Vector3::Normalize(CustomType::Vector3(vertex[i].Tangent)).GetXMFLOAT4();
+		}
 	}
 	CMesh* mesh = CMeshManager::CreateMeshObject(name, vertex, index, submesh);
 	return mesh;

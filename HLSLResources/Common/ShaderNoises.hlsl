@@ -155,7 +155,7 @@ float fbm3(in float3 vec, int octave, float offset = 0.0)
 
 float stripes(float x, float f)
 {
-	float t = 0.5 + 0.5 * sin(f * 2 * CUSTOM_SHADER_PI * x);
+	float t = 0.5 + 0.5 * sin(f * 2 * (CUSTOM_SHADER_PI) * x);
 	return t * t - 0.5;
 }
 
@@ -210,8 +210,8 @@ float3 GetRandomVectorFromCoord(int2 coord)
 
 	float GradientNoise = InterleavedGradientNoise(coord);
 
-	randomTexVec.x = cos((GradientNoise * CUSTOM_SHADER_PI));
-	randomTexVec.y = sin((GradientNoise * CUSTOM_SHADER_PI));
+	randomTexVec.x = cos((GradientNoise * (CUSTOM_SHADER_PI)));
+	randomTexVec.y = sin((GradientNoise * (CUSTOM_SHADER_PI)));
 
 	scaleOffset = (1.0 / 4.0) * ((coord.y - coord.x) & 3);
 	//	scaleOffset = (1.0/5.0)  *  (( coord.y - coord.x) % 5);

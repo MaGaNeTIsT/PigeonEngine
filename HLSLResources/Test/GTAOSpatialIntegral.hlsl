@@ -1,19 +1,19 @@
-#ifndef _GTAO_CS_HLSL
-#define _GTAO_CS_HLSL
+#ifndef _GTAO_SPATIAL_INTEGRAL_HLSL
+#define _GTAO_SPATIAL_INTEGRAL_HLSL
 
 #include "../Common/ShaderCommon.hlsl"
 
-#define GTAO_NUMTAPS						(8)
-#define GTAO_MAX_PIXEL_SCREEN_RADIUS		(256.0)
-#define GROUP_THREAD_SIZE_X					(8)
-#define GROUP_THREAD_SIZE_Y					(8)
-const static int  MAX_THREAD_GROUP_SIZE = GROUP_THREAD_SIZE_X * GROUP_THREAD_SIZE_Y;
-#define GROUP_SHARED_ARRAY_SIZE				(2 * MAX_THREAD_GROUP_SIZE)
+#define GTAO_NUMTAPS							(8)
+#define GROUP_THREAD_SIZE_X						(8)
+#define GROUP_THREAD_SIZE_Y						(8)
+#define GTAO_MAX_PIXEL_SCREEN_RADIUS			(256.0)
 
-const static int2 CALCULATE_DEVICE_Z_GROUP_THREAD_OFFSET		= int2(1, 1);
-const static uint CALCULATE_DEVICE_Z_GROUP_THREAD_COLUMN_OFFSET	= GROUP_THREAD_SIZE_X + 2;
-const static int  CALCULATE_DEVICE_Z_GROUP_THREAD_MAX			= (GROUP_THREAD_SIZE_X + 2) * (GROUP_THREAD_SIZE_Y + 2);
+const static int2 GROUP_THREAD_OFFSET			= int2(1, 1);
+const static uint GROUP_THREAD_COLUMN_OFFSET	= GROUP_THREAD_SIZE_X + 2;
+const static uint GROUP_THREAD_MAX				= (GROUP_THREAD_SIZE_X + 2) * (GROUP_THREAD_SIZE_Y + 2);
+const static uint MAX_THREAD_GROUP_SIZE			= GROUP_THREAD_SIZE_X * GROUP_THREAD_SIZE_Y;
 
+#define GROUP_SHARED_ARRAY_SIZE					(MAX_THREAD_GROUP_SIZE * 2u)
 
 
 cbuffer	ConstantComputeBuffer : register(b1)
@@ -22,6 +22,7 @@ cbuffer	ConstantComputeBuffer : register(b1)
 	float4 _DepthBufferParams;
 	float4 _FadeAttenParams;			// x y is fade radius mul add coefficient. z is fade distance. w is falloff's attenuation factory.
 	float4 _AdjustAngleThicknessParams;	// x is world space radius adjust. y is sin rotatation delta angle. z is cos rotatation delta angle. w is thickness blend factory.
+	float4 _IntensityPowerParams;
 };
 Texture2D<float> _CameraDepth : register(t0);
 RWTexture2D<float4> _ResultBuffer : register(u0);
@@ -29,13 +30,24 @@ groupshared float _DeviceZBuffer[GROUP_SHARED_ARRAY_SIZE];
 
 
 
-void SetDeviceZ(float deviceZ, int index)
+float4 EncodeFloatRGBA(float v)
+{
+	float4 enc = float4(1.0, 255.0, 65025.0, 16581375.0) * v;
+	float4 encValue = frac(enc);
+	encValue -= encValue.yzww * float4(0.0039215686275, 0.0039215686275, 0.0039215686275, 0.0);
+	return encValue;
+}
+float DecodeFloatRGBA(float4 rgba)
+{
+	return dot(rgba, float4(1.0, 0.0039215686275, 1.53787e-5, 6.03086294e-8));
+}
+void SetDeviceZ(float deviceZ, uint index)
 {
 	_DeviceZBuffer[index] = deviceZ;
 }
 float GetCachedDeviceZFromSharedMemory(int2 coord)
 {
-	return _DeviceZBuffer[coord.x + (coord.y * CALCULATE_DEVICE_Z_GROUP_THREAD_COLUMN_OFFSET)];
+	return _DeviceZBuffer[coord.x + (coord.y * GROUP_THREAD_COLUMN_OFFSET)];
 }
 float GetCachedViewZFromSharedMemory(int2 coord)
 {
@@ -53,9 +65,9 @@ float GetViewZFromInput(float2 uv)
 {
 	return ConvertDeviceZToViewZ(GetDeviceZFromInput(uv));
 }
-void CacheDeviceZ(int index, int2 groupOrigin)
+void CacheDeviceZ(uint index, int2 groupOrigin)
 {
-	int2 coord = int2(index % CALCULATE_DEVICE_Z_GROUP_THREAD_COLUMN_OFFSET, index / CALCULATE_DEVICE_Z_GROUP_THREAD_COLUMN_OFFSET) + groupOrigin;
+	int2 coord = groupOrigin + int2(index % GROUP_THREAD_COLUMN_OFFSET, index / GROUP_THREAD_COLUMN_OFFSET);
 	float2 uv = BufferPositionToUV(coord);
 	uv += _DepthBufferParams.zw * 0.125;	
 	SetDeviceZ(GetDeviceZFromInput(uv), index);
@@ -63,22 +75,11 @@ void CacheDeviceZ(int index, int2 groupOrigin)
 
 
 
-float4 EncodeFloatRGBA(float v)
-{
-	float4 enc = float4(1.0, 255.0, 65025.0, 16581375.0) * v;
-	float4 encValue = frac(enc);
-	encValue -= encValue.yzww * float4(0.0039215686275f, 0.0039215686275f, 0.0039215686275f, 0.0f);
-	return encValue;
-}
-float DecodeFloatRGBA(float4 rgba)
-{
-	return dot(rgba, float4(1.0, 0.0039215686275f, 1.53787e-5f, 6.03086294e-8f));
-}
 float3 GetNormalVS(float2 uv, int2 groupThreadID, float3 posMidVS)
 {
 	int2 offsetX = int2(1, 0);
 	int2 offsetY = int2(0, 1);
-	int2 coord = groupThreadID + CALCULATE_DEVICE_Z_GROUP_THREAD_OFFSET;
+	int2 coord = groupThreadID + GROUP_THREAD_OFFSET;
 
 	float deviceZMid = GetCachedDeviceZFromSharedMemory(coord);
 	float deviceZLeft = GetCachedDeviceZFromSharedMemory(coord - offsetX);
@@ -106,7 +107,7 @@ float2 SearchForLargestAngleDual(float2 baseUV, float2 screenDir, float searchRa
 	float2 bestAngle = float2(-1.0, -1.0);
 	float  thickness = _AdjustAngleThicknessParams.w;
 
-	for (uint i = 0; i < GTAO_NUMTAPS; i++)
+	for (uint i = 0u; i < GTAO_NUMTAPS; i++)
 	{
 		float fi = (float)i;
 
@@ -155,7 +156,7 @@ float ComputeInnerIntegral(float2 angles, float3 screenDir, float3 viewDirVS, fl
 
 	float cosAng = dot(projNormal, perp) * recipMag;
 
-	float gamma = acosFast(cosAng) - CUSTOM_SHADER_PI_HALF;
+	float gamma = acosFast(cosAng) - (CUSTOM_SHADER_PI_HALF);
 	float cosGamma = dot(projNormal, viewDirVS) * recipMag;
 	float sinGamma = cosAng * -2.0;
 
@@ -171,7 +172,7 @@ float ComputeInnerIntegral(float2 angles, float3 screenDir, float3 viewDirVS, fl
 }
 float CalculateGTAO(float2 uv, int2 dispatchThreadID, int2 groupThreadID)
 {
-	float viewZ = GetCachedViewZFromSharedMemory(groupThreadID + CALCULATE_DEVICE_Z_GROUP_THREAD_OFFSET);
+	float viewZ = GetCachedViewZFromSharedMemory(groupThreadID + GROUP_THREAD_OFFSET);
 
 	if (viewZ > _FadeAttenParams.z)
 	{
@@ -204,7 +205,7 @@ float CalculateGTAO(float2 uv, int2 dispatchThreadID, int2 groupThreadID)
 
 		float3 screenDir = float3(randomVec.x, randomVec.y, 0.0);
 
-		for (uint angle = 0; angle < numAngles; angle++)
+		for (uint angle = 0u; angle < numAngles; angle++)
 		{
 			float2 angles = SearchForLargestAngleDual(uv, screenDir.xy * _ResultBufferParams.zw, stepRadius, offset, posVS, viewDirVS, attenFactor);
 
@@ -234,24 +235,27 @@ float CalculateGTAO(float2 uv, int2 dispatchThreadID, int2 groupThreadID)
 [numthreads(GROUP_THREAD_SIZE_X, GROUP_THREAD_SIZE_Y, 1)]
 void main(uint2 dispatchThreadID :SV_DispatchThreadID, uint2 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint2 groupThreadID : SV_GroupThreadID)
 {
-	int2 groupOrigin = int2(groupID.x * GROUP_THREAD_SIZE_X, groupID.y * GROUP_THREAD_SIZE_Y) - CALCULATE_DEVICE_Z_GROUP_THREAD_OFFSET;
-	int index = groupIndex * 2;
-	if (index < CALCULATE_DEVICE_Z_GROUP_THREAD_MAX)
 	{
-		CacheDeviceZ(index, groupOrigin);
-		CacheDeviceZ(index + 1, groupOrigin);
+		int2 groupOrigin = int2(groupID.x * GROUP_THREAD_SIZE_X, groupID.y * GROUP_THREAD_SIZE_Y) - GROUP_THREAD_OFFSET;
+		uint index = groupIndex * 2u;
+		if (index < GROUP_THREAD_MAX)
+		{
+			CacheDeviceZ(index, groupOrigin);
+			CacheDeviceZ(index + 1u, groupOrigin);
+		}
+		GroupMemoryBarrierWithGroupSync();
 	}
-	GroupMemoryBarrierWithGroupSync();
+	if (any(dispatchThreadID >= uint2(_ResultBufferParams.xy)))
+		return;
 
 	int2 groupThreadPos = int2(groupThreadID);
 	int2 dispatchThreadPos = int2(dispatchThreadID);
 	float2 uv = BufferPositionToUV(dispatchThreadID);
 	float ao = CalculateGTAO(uv, dispatchThreadPos, groupThreadPos);
-	float deviceZ = GetCachedDeviceZFromSharedMemory(groupThreadPos + CALCULATE_DEVICE_Z_GROUP_THREAD_OFFSET);
-
+	float deviceZ = GetCachedDeviceZFromSharedMemory(groupThreadPos + GROUP_THREAD_OFFSET);
 	float4 encodeZ = EncodeFloatRGBA(deviceZ);
 	encodeZ.a = ao;
-	_ResultBuffer[dispatchThreadPos + _CameraViewportRect.xy] = float4(ao.xxx, 1.0);
+	_ResultBuffer[dispatchThreadPos + _CameraViewportRect.xy] = encodeZ;
 }
 
 #endif
