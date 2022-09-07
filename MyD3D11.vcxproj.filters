@@ -62,8 +62,8 @@
     <Filter Include="VolumetricCloud\Headers">
       <UniqueIdentifier>{6816d818-e5aa-439b-927e-0fb598a77485}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\HLSLResources\Test">
-      <UniqueIdentifier>{23c73d40-efb7-40d6-b4a8-0e3c6208671a}</UniqueIdentifier>
+    <Filter Include="Shaders\HLSLResources\GTAO">
+      <UniqueIdentifier>{11f246ce-3b5b-4682-b0d8-3f942d820a1d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -97,14 +97,14 @@
     <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
       <Filter>ThirdParty\imgui</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Test\GTAOSpatialIntegral.hlsl">
-      <Filter>Shaders\HLSLResources\Test</Filter>
+    <FxCompile Include="HLSLResources\GTAO\GTAODebugType.hlsl">
+      <Filter>Shaders\HLSLResources\GTAO</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Test\GTAOSpatialFilter.hlsl">
-      <Filter>Shaders\HLSLResources\Test</Filter>
+    <FxCompile Include="HLSLResources\GTAO\GTAOSpatialFilter.hlsl">
+      <Filter>Shaders\HLSLResources\GTAO</Filter>
     </FxCompile>
-    <FxCompile Include="HLSLResources\Test\GTAODebugType.hlsl">
-      <Filter>Shaders\HLSLResources\Test</Filter>
+    <FxCompile Include="HLSLResources\GTAO\GTAOSpatialIntegral.hlsl">
+      <Filter>Shaders\HLSLResources\GTAO</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
