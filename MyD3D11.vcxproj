@@ -19,209 +19,222 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="HLSLResources\Common\ShaderGlobalFunctions.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderFastMath.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <FxCompile Include="HLSLResources\GTAO\GTAODebugType.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\GTAO\GTAOSpatialFilter.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\GTAO\GTAOSpatialIntegral.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="ThirdParty\imgui\HLSL\imGUIVS.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <None Include="HLSLResources\Common\ShaderFunctions.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderNoises.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderVariables.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderDefCommon.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderCommon.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="HLSLResources\Common\ShaderSpaceTransform.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <FxCompile Include="HLSLResources\Object\EngineDefaultPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineDefaultVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineEmptyPS.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DPS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\Object\EngineScreenPolygon2DVS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./HLSLCSO/%(Filename).cso</ObjectFileOutput>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Entry\MyMain.h" />
-    <ClInclude Include="Headers\Base\CBaseType.h" />
-    <ClInclude Include="Headers\Base\CimGUIManager.h" />
-    <ClInclude Include="Headers\Base\CInput.h" />
-    <ClInclude Include="Headers\Base\CManager.h" />
-    <ClInclude Include="Headers\Base\CReadFBX.h" />
-    <ClInclude Include="Headers\Base\CShader.h" />
-    <ClInclude Include="Headers\Base\CShaderManager.h" />
-    <ClInclude Include="Headers\Base\CStructCommon.h" />
-    <ClInclude Include="Headers\Base\CTexture2D.h" />
-    <ClInclude Include="Headers\Base\CRenderDevice.h" />
-    <ClInclude Include="Headers\Base\CTextureManager.h" />
-    <ClInclude Include="Headers\Base\CTimer.h" />
-    <ClInclude Include="Headers\Game\CCamera.h" />
-    <ClInclude Include="Headers\Game\CDeferredBuffer.h" />
-    <ClInclude Include="Headers\Game\CGameObject.h" />
-    <ClInclude Include="Headers\Game\CGameObjectManager.h" />
-    <ClInclude Include="Headers\Game\CLight.h" />
-    <ClInclude Include="Headers\Game\CMesh.h" />
-    <ClInclude Include="Headers\Game\CMeshManager.h" />
-    <ClInclude Include="Headers\Game\CMeshRenderer.h" />
-    <ClInclude Include="Headers\Game\CScene.h" />
-    <ClInclude Include="Headers\Object\CCube.h" />
-    <ClInclude Include="Headers\Object\CDebugScreen.h" />
-    <ClInclude Include="Headers\Object\CPlane.h" />
-    <ClInclude Include="Headers\Object\CPolygon2D.h" />
-    <ClInclude Include="Headers\Object\CPolygon2DBase.h" />
-    <ClInclude Include="Headers\Object\CScreenPolygon2D.h" />
-    <ClInclude Include="Headers\Object\CGTAOComputeShader.h" />
-    <ClInclude Include="Headers\Object\CTestModel.h" />
+    <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CTestModel.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CTimer.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectManager.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLight.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMesh.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CReadFBX.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTexture2D.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CDeferredBuffer.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOComputeShader.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBBuffer.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
+    <ClInclude Include="Entry\EngineMain.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
     <ClInclude Include="ThirdParty\imgui\imgui_internal.h" />
     <ClInclude Include="ThirdParty\imgui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\imgui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h" />
-    <ClInclude Include="VolumetricCloud\Headers\CVolumetricCloud.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CppFiles\Base\CBaseType.cpp" />
-    <ClCompile Include="CppFiles\Base\CimGUIManager.cpp" />
-    <ClCompile Include="CppFiles\Base\CInput.cpp" />
-    <ClCompile Include="CppFiles\Base\CManager.cpp" />
-    <ClCompile Include="CppFiles\Base\CReadFBX.cpp" />
-    <ClCompile Include="CppFiles\Base\CShader.cpp" />
-    <ClCompile Include="CppFiles\Base\CShaderManager.cpp" />
-    <ClCompile Include="CppFiles\Base\CTexture2D.cpp" />
-    <ClCompile Include="CppFiles\Base\CRenderDevice.cpp" />
-    <ClCompile Include="CppFiles\Base\CTextureManager.cpp" />
-    <ClCompile Include="CppFiles\Base\CTimer.cpp" />
-    <ClCompile Include="CppFiles\Game\CCamera.cpp" />
-    <ClCompile Include="CppFiles\Game\CDeferredBuffer.cpp" />
-    <ClCompile Include="CppFiles\Game\CGameObjectManager.cpp" />
-    <ClCompile Include="CppFiles\Game\CLight.cpp" />
-    <ClCompile Include="CppFiles\Game\CMesh.cpp" />
-    <ClCompile Include="CppFiles\Game\CMeshManager.cpp" />
-    <ClCompile Include="CppFiles\Game\CMeshRenderer.cpp" />
-    <ClCompile Include="CppFiles\Game\CScene.cpp" />
-    <ClCompile Include="CppFiles\Object\CCube.cpp" />
-    <ClCompile Include="CppFiles\Object\CDebugScreen.cpp" />
-    <ClCompile Include="CppFiles\Object\CPlane.cpp" />
-    <ClCompile Include="CppFiles\Object\CPolygon2D.cpp" />
-    <ClCompile Include="CppFiles\Object\CPolygon2DBase.cpp" />
-    <ClCompile Include="CppFiles\Object\CScreenPolygon2D.cpp" />
-    <ClCompile Include="CppFiles\Object\CGTAOComputeShader.cpp" />
-    <ClCompile Include="CppFiles\Object\CTestModel.cpp" />
-    <ClCompile Include="Entry\MyMain.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CTestModel.cpp" />
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CBaseType.cpp" />
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CTimer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObjectManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLight.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPlane.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2DBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMesh.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CReadFBX.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTexture2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CDeferredBuffer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRenderer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOComputeShader.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBBuffer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />
+    <ClCompile Include="Entry\EngineMain.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="VolumetricCloud\CppFiles\CVolumetricCloud.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderDefCommon.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFastMath.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderGlobalFunctions.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderSpaceTransform.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderVariables.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
