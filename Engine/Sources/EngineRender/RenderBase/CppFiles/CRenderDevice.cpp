@@ -1,247 +1,296 @@
 #include "../Headers/CRenderDevice.h"
-#include "../../../EngineBase/Headers/CManager.h"
-#include "../Headers/CDeferredBuffer.h"
-#include "../../AssetsManager/Headers/CTextureManager.h"
-#include "../../AssetsManager/Headers/CTexture2D.h"
-#include "../../../EngineGame/Headers/CScreenPolygon2D.h"
 
-CTexture2D*					CRenderDevice::m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_COUNT];
-CDeferredBuffer*			CRenderDevice::m_DeferredBuffer			= NULL;
-CScreenPolygon2D*			CRenderDevice::m_DeferredResolve		= NULL;
-CScreenPolygon2D*			CRenderDevice::m_PostEffect				= NULL;
-
-D3D_FEATURE_LEVEL			CRenderDevice::m_FeatureLevel			= D3D_FEATURE_LEVEL_11_0;
-
-ID3D11Device*				CRenderDevice::m_D3DDevice				= NULL;
-ID3D11DeviceContext*		CRenderDevice::m_ImmediateContext		= NULL;
-IDXGISwapChain*				CRenderDevice::m_SwapChain				= NULL;
-ID3D11RenderTargetView*		CRenderDevice::m_RenderTargetView		= NULL;
-ID3D11DepthStencilView*		CRenderDevice::m_DepthStencilView		= NULL;
-D3D11_VIEWPORT				CRenderDevice::m_ViewPort;
-
-ID3D11SamplerState*			CRenderDevice::m_SamplerState[SSE_COUNT];
-ID3D11BlendState*			CRenderDevice::m_BlendState[BSE_COUNT];
-ID3D11RasterizerState*		CRenderDevice::m_RasterizerStateCull[RSE_COUNT];
-ID3D11DepthStencilState*	CRenderDevice::m_DepthStencilStateTestWrite[DSSE_COUNT];
-
-void CRenderDevice::Init()
+CRenderDevice* CRenderDevice::m_RenderDevice = NULL;
+void CRenderDevice::Initialize()
 {
-	HRESULT hr = S_OK;
+	if (CRenderDevice::m_RenderDevice == NULL)
+	{
+		CRenderDevice::m_RenderDevice = new CRenderDevice();
+	}
+}
+void CRenderDevice::ShutDown()
+{
+	if (CRenderDevice::m_RenderDevice != NULL)
+	{
+		CRenderDevice::m_RenderDevice->Uninit();
+		delete (CRenderDevice::m_RenderDevice);
+	}
+}
+void CRenderDevice::Init(HWND hWnd, const CustomType::Vector2Int& bufferSize, const UINT& bufferDepth, const UINT& frameNum, const BOOL& windowed)
+{
+	if (bufferSize.X() < 1 || bufferSize.Y() < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
+	{
+		//TODO Invalid Arguments log.
+		return;
+	}
+
+	UINT bufferWidth = static_cast<UINT>(bufferSize.X());
+	UINT bufferHeight = static_cast<UINT>(bufferSize.Y());
+	HRESULT hr = S_FALSE;
 
 	DXGI_SWAP_CHAIN_DESC sd;
-	ZeroMemory(&sd, sizeof(sd));
-	sd.BufferCount = 1;
-	sd.BufferDesc.Width = ENGINE_SCREEN_WIDTH;
-	sd.BufferDesc.Height = ENGINE_SCREEN_HEIGHT;
-	sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	sd.BufferDesc.RefreshRate.Numerator = ENGINE_UPDATE_FRAME;
-	sd.BufferDesc.RefreshRate.Denominator = 1u;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.OutputWindow = CManager::GetManager()->GetWindowHandle();
-	sd.SampleDesc.Count = 1u;
-	sd.SampleDesc.Quality = 0u;
-	sd.Windowed = TRUE;
-
+	{
+		::ZeroMemory(&sd, sizeof(sd));
+		sd.BufferCount = 1u;
+		sd.BufferDesc.Width = bufferWidth;
+		sd.BufferDesc.Height = bufferHeight;
+		sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.BufferDesc.RefreshRate.Numerator = frameNum;
+		sd.BufferDesc.RefreshRate.Denominator = 1u;
+		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		sd.OutputWindow = hWnd;
+		sd.SampleDesc.Count = 1u;
+		sd.SampleDesc.Quality = 0u;
+		sd.Windowed = windowed;
+	}
+	D3D_FEATURE_LEVEL featureLevels[4] = {
+		D3D_FEATURE_LEVEL_11_1,
+		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0 };
 	hr = D3D11CreateDeviceAndSwapChain(
 		NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
 		0u,
-		NULL,
+		featureLevels,
 		0u,
 		D3D11_SDK_VERSION,
 		&sd,
-		&m_SwapChain,
-		&m_D3DDevice,
+		m_SwapChain.ReleaseAndGetAddressOf(),
+		m_Device.ReleaseAndGetAddressOf(),
 		&m_FeatureLevel,
-		&m_ImmediateContext);
-	if (FAILED(hr))
+		m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
+	if (FAILED(hr) || !(m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
+	{
+		//TODO Create d3d device failed log.
 		return;
+	}
+
+	m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
+	m_Viewport.Height = static_cast<FLOAT>(bufferHeight);
+	m_Viewport.MinDepth = 0.f;
+	m_Viewport.MaxDepth = 1.f;
+	m_Viewport.TopLeftX = 0.f;
+	m_Viewport.TopLeftY = 0.f;
 
 	ID3D11Texture2D* pBackBuffer = NULL;
 	hr = m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
 	if (FAILED(hr))
+	{
+		//TODO Get buffer failed from swap chain log.
 		return;
-	hr = m_D3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_RenderTargetView);
-	if (FAILED(hr))
-		return;
+	}
+	hr = m_Device->CreateRenderTargetView(pBackBuffer, NULL, m_RenderTargetView.ReleaseAndGetAddressOf());
 	pBackBuffer->Release();
+	if (FAILED(hr))
+	{
+		//TODO Create buffer RTV failed from swap chain log.
+		return;
+	}
 
 	{
-		ID3D11Texture2D* depthTexture = NULL;
+		ID3D11Texture2D* depthBuffer = NULL;
 		D3D11_TEXTURE2D_DESC td;
-		ZeroMemory(&td, sizeof(td));
-		td.Width = sd.BufferDesc.Width;
-		td.Height = sd.BufferDesc.Height;
-		td.MipLevels = 1u;
-		td.ArraySize = 1u;
-		td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-		td.SampleDesc = sd.SampleDesc;
-		td.Usage = D3D11_USAGE_DEFAULT;
-		td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-		td.CPUAccessFlags = 0u;
-		td.MiscFlags = 0u;
-		hr = m_D3DDevice->CreateTexture2D(&td, NULL, &depthTexture);
+		{
+			::ZeroMemory(&td, sizeof(td));
+			td.Width = sd.BufferDesc.Width;
+			td.Height = sd.BufferDesc.Height;
+			td.MipLevels = 1u;
+			td.ArraySize = 1u;
+			if (bufferDepth == 24u)
+			{
+				td.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			}
+			else if (bufferDepth == 32u)
+			{
+				td.Format = DXGI_FORMAT_D32_FLOAT;
+			}
+			td.SampleDesc = sd.SampleDesc;
+			td.Usage = D3D11_USAGE_DEFAULT;
+			td.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			td.CPUAccessFlags = 0u;
+			td.MiscFlags = 0u;
+		}
+		hr = m_Device->CreateTexture2D(&td, NULL, &depthBuffer);
 		if (FAILED(hr))
+		{
+			//TODO Create depth buffer failed log.
 			return;
+		}
 		D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
-		ZeroMemory(&dsvd, sizeof(dsvd));
+		::ZeroMemory(&dsvd, sizeof(dsvd));
 		dsvd.Format = td.Format;
 		dsvd.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		dsvd.Flags = 0u;
-		hr = m_D3DDevice->CreateDepthStencilView(depthTexture, &dsvd, &m_DepthStencilView);
+		hr = m_Device->CreateDepthStencilView(depthBuffer, &dsvd, m_DepthStencilView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
+		{
+			//TODO Create depth stencil view failed log.
 			return;
-		
-		m_ImmediateContext->OMSetRenderTargets(1u, &m_RenderTargetView, m_DepthStencilView);
+		}
 	}
 
-	m_ViewPort.Width = static_cast<FLOAT>(ENGINE_SCREEN_WIDTH);
-	m_ViewPort.Height = static_cast<FLOAT>(ENGINE_SCREEN_HEIGHT);
-	m_ViewPort.MinDepth = 0.f;
-	m_ViewPort.MaxDepth = 1.f;
-	m_ViewPort.TopLeftX = 0.f;
-	m_ViewPort.TopLeftY = 0.f;
-	
-	m_ImmediateContext->RSSetViewports(1u, &m_ViewPort);
+	//D3D11_SAMPLER_DESC samplerDesc;
+	//ZeroMemory(&samplerDesc, sizeof(samplerDesc));
+	//samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	//samplerDesc.BorderColor[0] = 0.f;
+	//samplerDesc.BorderColor[1] = 0.f;
+	//samplerDesc.BorderColor[2] = 0.f;
+	//samplerDesc.BorderColor[3] = 0.f;
+	//samplerDesc.MinLOD = 0.f;
+	//samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	//samplerDesc.MipLODBias = 0.f;
+	//samplerDesc.MaxAnisotropy = 1u;
+	//samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	//m_Device->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_POINT]);
+	//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	//m_Device->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_LINEAR]);
+	//samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	//samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	//samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	//m_Device->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_POINT]);
+	//samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	//m_Device->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_LINEAR]);
 
-	D3D11_RASTERIZER_DESC rd;
-	ZeroMemory(&rd, sizeof(rd));
-	rd.FillMode = D3D11_FILL_SOLID;
-	rd.CullMode = D3D11_CULL_BACK;
-	rd.DepthClipEnable = TRUE;
-	rd.MultisampleEnable = FALSE;
-	m_D3DDevice->CreateRasterizerState(&rd, &m_RasterizerStateCull[RSE_BACK]);
-	rd.CullMode = D3D11_CULL_NONE;
-	m_D3DDevice->CreateRasterizerState(&rd, &m_RasterizerStateCull[RSE_NONE]);
-	rd.CullMode = D3D11_CULL_FRONT;
-	m_D3DDevice->CreateRasterizerState(&rd, &m_RasterizerStateCull[RSE_FRONT]);
+	//D3D11_BLEND_DESC blendDesc;
+	//ZeroMemory(&blendDesc, sizeof(blendDesc));
+	//blendDesc.AlphaToCoverageEnable = FALSE;
+	//blendDesc.IndependentBlendEnable = FALSE;
+	//blendDesc.RenderTarget[0].BlendEnable = TRUE;
+	//blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	//blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	//blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	//blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	//blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	//blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	//blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	//m_Device->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDALPHA]);
+	//blendDesc.RenderTarget[0].BlendEnable = FALSE;
+	//m_Device->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDOFF]);
+	//
+	//FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+	//m_ImmediateContext->OMSetBlendState(m_BlendState[BSE_BLENDALPHA], blendFactor, 0xffffffff);
 
-	m_ImmediateContext->RSSetState(m_RasterizerStateCull[RSE_BACK]);
+	//D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+	//ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
+	//depthStencilDesc.DepthEnable = FALSE;
+	//depthStencilDesc.StencilEnable = FALSE;
+	//m_Device->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_ALLDISABLE]);
+	//depthStencilDesc.DepthEnable = TRUE;
+	//depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	//depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	//m_Device->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE]);
+	//depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	//m_Device->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEDISABLE]);
+	//
+	//m_ImmediateContext->OMSetDepthStencilState(m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE], NULL);
 
-	D3D11_SAMPLER_DESC samplerDesc;
-	ZeroMemory(&samplerDesc, sizeof(samplerDesc));
-	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-	samplerDesc.BorderColor[0] = 0.f;
-	samplerDesc.BorderColor[1] = 0.f;
-	samplerDesc.BorderColor[2] = 0.f;
-	samplerDesc.BorderColor[3] = 0.f;
-	samplerDesc.MinLOD = 0.f;
-	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	samplerDesc.MipLODBias = 0.f;
-	samplerDesc.MaxAnisotropy = 1u;
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_POINT]);
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_CLAMP_LINEAR]);
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_POINT]);
-	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	m_D3DDevice->CreateSamplerState(&samplerDesc, &m_SamplerState[SSE_WRAP_LINEAR]);
+	//ID3D11SamplerState* sceneSampler[] = {
+	//	m_SamplerState[SSE_CLAMP_POINT],
+	//	m_SamplerState[SSE_CLAMP_LINEAR],
+	//	m_SamplerState[SSE_WRAP_POINT],
+	//	m_SamplerState[SSE_WRAP_LINEAR] };
+	//CRenderDevice::GetDeviceContext()->VSSetSamplers(0u, 4u, sceneSampler);
+	//CRenderDevice::GetDeviceContext()->PSSetSamplers(0u, 4u, sceneSampler);
+	//CRenderDevice::GetDeviceContext()->CSSetSamplers(0u, 4u, sceneSampler);
 
-	D3D11_BLEND_DESC blendDesc;
-	ZeroMemory(&blendDesc, sizeof(blendDesc));
-	blendDesc.AlphaToCoverageEnable = FALSE;
-	blendDesc.IndependentBlendEnable = FALSE;
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	m_D3DDevice->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDALPHA]);
-	blendDesc.RenderTarget[0].BlendEnable = FALSE;
-	m_D3DDevice->CreateBlendState(&blendDesc, &m_BlendState[BSE_BLENDOFF]);
-	
-	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-	m_ImmediateContext->OMSetBlendState(m_BlendState[BSE_BLENDALPHA], blendFactor, 0xffffffff);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_WHITE);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLACK]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLACK);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_GRAY]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_GRAY);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_RED]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_RED);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_GREEN]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_GREEN);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLUE]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLUE);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BUMP]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BUMP);
+	//m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_PROPERTY]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_PROPERTY);
 
-	D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-	ZeroMemory(&depthStencilDesc, sizeof(depthStencilDesc));
-	depthStencilDesc.DepthEnable = FALSE;
-	depthStencilDesc.StencilEnable = FALSE;
-	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_ALLDISABLE]);
-	depthStencilDesc.DepthEnable = TRUE;
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE]);
-	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-	m_D3DDevice->CreateDepthStencilState(&depthStencilDesc, &m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEDISABLE]);
-	
-	m_ImmediateContext->OMSetDepthStencilState(m_DepthStencilStateTestWrite[DSSE_TESTENABLEWRITEENABLE], NULL);
+	//m_DeferredBuffer = new CDeferredBuffer();
+	//m_DeferredBuffer->Initialize(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
 
-	ID3D11SamplerState* sceneSampler[] = {
-		m_SamplerState[SSE_CLAMP_POINT],
-		m_SamplerState[SSE_CLAMP_LINEAR],
-		m_SamplerState[SSE_WRAP_POINT],
-		m_SamplerState[SSE_WRAP_LINEAR] };
-	CRenderDevice::GetDeviceContext()->VSSetSamplers(0u, 4u, sceneSampler);
-	CRenderDevice::GetDeviceContext()->PSSetSamplers(0u, 4u, sceneSampler);
-	CRenderDevice::GetDeviceContext()->CSSetSamplers(0u, 4u, sceneSampler);
-
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_WHITE]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_WHITE);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLACK]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLACK);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_GRAY]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_GRAY);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_RED]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_RED);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_GREEN]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_GREEN);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BLUE]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BLUE);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_BUMP]		= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_BUMP);
-	m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_PROPERTY]	= CTextureManager::LoadTexture2D(ENGINE_TEXTURE2D_DEFAULT_PROPERTY);
-
-	m_DeferredBuffer = new CDeferredBuffer();
-	m_DeferredBuffer->Initialize(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
-
-	m_DeferredResolve = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_GBUFFER_RESOLVE_PS);
-	m_DeferredResolve->Init();
-	m_PostEffect = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_POST_EFFECT_EXPOSURE_PS);
-	m_PostEffect->Init();
+	//m_DeferredResolve = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_GBUFFER_RESOLVE_PS);
+	//m_DeferredResolve->Init();
+	//m_PostEffect = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_POST_EFFECT_EXPOSURE_PS);
+	//m_PostEffect->Init();
 }
 void CRenderDevice::Uninit()
 {
-	m_DeferredResolve->Uninit();
-	delete m_DeferredResolve;
-	m_PostEffect->Uninit();
-	delete m_PostEffect;
-	m_DeferredBuffer->ShutDown();
-	delete m_DeferredBuffer;
-
-	for (INT i = 0; i < SSE_COUNT; ++i)
-	{
-		m_SamplerState[i]->Release();
-	}
-	for (INT i = 0; i < BSE_COUNT; ++i)
-	{
-		m_BlendState[i]->Release();
-	}
-	for (INT i = 0; i < RSE_COUNT; ++i)
-	{
-		m_RasterizerStateCull[i]->Release();
-	}
-	for (INT i = 0; i < DSSE_COUNT; ++i)
-	{
-		m_DepthStencilStateTestWrite[i]->Release();
-	}
-
-	if (m_ImmediateContext)
-		m_ImmediateContext->ClearState();
 	if (m_RenderTargetView)
+	{
 		m_RenderTargetView->Release();
+		m_RenderTargetView = nullptr;
+	}
 	if (m_DepthStencilView)
+	{
 		m_DepthStencilView->Release();
+		m_DepthStencilView = nullptr;
+	}
 	if (m_SwapChain)
+	{
 		m_SwapChain->Release();
+		m_SwapChain = nullptr;
+	}
 	if (m_ImmediateContext)
+	{
 		m_ImmediateContext->Release();
-	if (m_D3DDevice)
-		m_D3DDevice->Release();
+		m_ImmediateContext = nullptr;
+	}
+	if (m_Device)
+	{
+		m_Device->Release();
+		m_Device = nullptr;
+	}
+}
+BOOL CRenderDevice::CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, D3D11_CULL_MODE cullMode, D3D11_FILL_MODE fillMode)
+{
+	D3D11_RASTERIZER_DESC rd;
+	{
+		::ZeroMemory(&rd, sizeof(rd));
+		rd.FillMode = fillMode;
+		rd.CullMode = cullMode;
+		rd.FrontCounterClockwise = FALSE;
+		rd.DepthBias = D3D11_DEFAULT_DEPTH_BIAS;
+		rd.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
+		rd.SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+		rd.DepthClipEnable = TRUE;
+		rd.ScissorEnable = FALSE;
+		rd.MultisampleEnable = FALSE;
+		rd.AntialiasedLineEnable = FALSE;
+	}
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return FALSE;
+	return TRUE;
+}
+BOOL CRenderDevice::CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs)
+{
+	D3D11_BLEND_DESC bd;
+	{
+		::ZeroMemory(&bd, sizeof(bd));
+		bd.AlphaToCoverageEnable = FALSE;
+		bd.IndependentBlendEnable = FALSE;
+		bd.RenderTarget[0].BlendEnable = TRUE;
+		bd.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		bd.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		bd.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		bd.RenderTarget[0].BlendEnable = FALSE;
+	}
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+		return FALSE;
+	return TRUE;
+}
+D3D11_VIEWPORT CRenderDevice::GetViewport()
+{
+	return (CRenderDevice::m_RenderDevice->m_Viewport);
 }
 void CRenderDevice::ResetRenderTarget()
 {
@@ -378,7 +427,7 @@ BOOL CRenderDevice::CreateD3DBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& ptrBuf
 	ZeroMemory(&sd, sizeof(sd));
 	sd.pSysMem = ptrData;
 
-	HRESULT hr = m_D3DDevice->CreateBuffer(&bd, &sd, ptrBuffer.ReleaseAndGetAddressOf());
+	HRESULT hr = m_Device->CreateBuffer(&bd, &sd, ptrBuffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	return TRUE;
@@ -399,7 +448,7 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 	}
 
 	{
-		HRESULT hr = m_D3DDevice->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, vertexShader.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, vertexShader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
@@ -427,7 +476,7 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 				tempLayout[i] = (*layout)[i];
 		}
 		
-		HRESULT hr = m_D3DDevice->CreateInputLayout(tempLayout.data(), numElements, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateInputLayout(tempLayout.data(), numElements, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
@@ -454,7 +503,7 @@ BOOL CRenderDevice::LoadPixelShader(const std::string& name, Microsoft::WRL::Com
 	}
 
 	{
-		HRESULT hr = m_D3DDevice->CreatePixelShader(static_cast<void*>(buffer), fsize, NULL, pixelShader.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, NULL, pixelShader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
@@ -481,7 +530,7 @@ BOOL CRenderDevice::LoadComputeShader(const std::string& name, Microsoft::WRL::C
 	}
 
 	{
-		HRESULT hr = m_D3DDevice->CreateComputeShader(static_cast<void*>(buffer), fsize, NULL, computeShader.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, NULL, computeShader.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
@@ -502,7 +551,7 @@ BOOL CRenderDevice::CreateConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& p
 	hBufferDesc.MiscFlags = 0u;
 	hBufferDesc.StructureByteStride = sizeof(FLOAT);
 
-	HRESULT hr = m_D3DDevice->CreateBuffer(&hBufferDesc, NULL, ptrBuffer.ReleaseAndGetAddressOf());
+	HRESULT hr = m_Device->CreateBuffer(&hBufferDesc, NULL, ptrBuffer.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	return TRUE;
@@ -543,7 +592,7 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, 
 	texture2DDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
 	texture2DDesc.CPUAccessFlags = 0u;	//D3D11_CPU_ACCESS_FLAG
 	texture2DDesc.MiscFlags = 0u;		//D3D11_RESOURCE_MISC_FLAG
-	HRESULT hr = m_D3DDevice->CreateTexture2D(&texture2DDesc, NULL, textureInfo.Texture2D.ReleaseAndGetAddressOf());
+	HRESULT hr = m_Device->CreateTexture2D(&texture2DDesc, NULL, textureInfo.Texture2D.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
@@ -551,7 +600,7 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, 
 	renderTargetViewDesc.Format = texture2DDesc.Format;
 	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	renderTargetViewDesc.Texture2D.MipSlice = 0u;
-	hr = m_D3DDevice->CreateRenderTargetView(textureInfo.Texture2D.Get(), &renderTargetViewDesc, textureInfo.RenderTargetView.ReleaseAndGetAddressOf());
+	hr = m_Device->CreateRenderTargetView(textureInfo.Texture2D.Get(), &renderTargetViewDesc, textureInfo.RenderTargetView.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc;
@@ -560,7 +609,7 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, 
 	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0u;
 	shaderResourceViewDesc.Texture2D.MipLevels = mipLevels;
-	hr = m_D3DDevice->CreateShaderResourceView(textureInfo.Texture2D.Get(), &shaderResourceViewDesc, textureInfo.ShaderResourceView.ReleaseAndGetAddressOf());
+	hr = m_Device->CreateShaderResourceView(textureInfo.Texture2D.Get(), &shaderResourceViewDesc, textureInfo.ShaderResourceView.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	if (randomWirte)
@@ -570,7 +619,7 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& textureInfo, 
 		unorderedAccessViewDesc.Format = texture2DDesc.Format;
 		unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 		unorderedAccessViewDesc.Texture2D.MipSlice = 0u;
-		hr = m_D3DDevice->CreateUnorderedAccessView(textureInfo.Texture2D.Get(), &unorderedAccessViewDesc, textureInfo.UnorderedAccessView.ReleaseAndGetAddressOf());
+		hr = m_Device->CreateUnorderedAccessView(textureInfo.Texture2D.Get(), &unorderedAccessViewDesc, textureInfo.UnorderedAccessView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 			return FALSE;
 	}
@@ -596,7 +645,7 @@ BOOL CRenderDevice::CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>& ptr
 	initData.SysMemPitch = memPitch;
 	initData.SysMemSlicePitch = memSlicePitch;
 
-	HRESULT hr = m_D3DDevice->CreateTexture2D(&desc, &initData, ptrTexture.ReleaseAndGetAddressOf());
+	HRESULT hr = m_Device->CreateTexture2D(&desc, &initData, ptrTexture.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	return TRUE;
@@ -609,7 +658,7 @@ BOOL CRenderDevice::CreateTexture2DShaderResourceView(Microsoft::WRL::ComPtr<ID3
 	srvDesc.Texture2D.MipLevels = mipLevels;
 	srvDesc.Texture2D.MostDetailedMip = mostDetailedMip;
 
-	HRESULT hr = m_D3DDevice->CreateShaderResourceView(ptrTexture.Get(), &srvDesc, ptrSRV.ReleaseAndGetAddressOf());
+	HRESULT hr = m_Device->CreateShaderResourceView(ptrTexture.Get(), &srvDesc, ptrSRV.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 		return FALSE;
 	return TRUE;

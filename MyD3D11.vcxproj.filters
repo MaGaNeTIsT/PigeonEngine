@@ -225,6 +225,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -331,6 +334,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

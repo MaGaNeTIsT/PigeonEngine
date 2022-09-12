@@ -46,6 +46,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CDeferredBuffer.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOComputeShader.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBBuffer.h" />
@@ -85,6 +86,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CDeferredBuffer.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOComputeShader.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBBuffer.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />

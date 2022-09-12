@@ -2,7 +2,6 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "./CStructCommon.h"
 
 class CTexture2D;
 class CDeferredBuffer;
@@ -68,8 +67,16 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
 public:
-	static void		Init();
-	static void		Uninit();
+	static void				Initialize();
+	static void				ShutDown();
+public:
+	void					Init(HWND hWnd, const CustomType::Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
+	void					Uninit();
+public:
+	static BOOL				CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, D3D11_CULL_MODE cullMode = D3D11_CULL_BACK, D3D11_FILL_MODE fillMode = D3D11_FILL_SOLID);
+	static BOOL				CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs);
+public:
+	static D3D11_VIEWPORT	GetViewport();
 	static void		ResetRenderTarget();
 	static void		BeginShadow();
 	static void		EndShadow();
@@ -111,31 +118,30 @@ public:
 	static CTexture2D*				GetEngineDefaultTexture2D(EngineDefaultTexture2DEnum idx) { return m_EngineDefaultTexture2D[idx]; }
 public:
 	static ID3D11SamplerState*		GetSamplerState(SamplerStateEnum idx) { return m_SamplerState[idx]; }
-public:
-	static ID3D11Device*			GetDevice(void) { return m_D3DDevice; }
-	static ID3D11DeviceContext*		GetDeviceContext(void) { return m_ImmediateContext; }
-	static D3D11_VIEWPORT			GetViewport(void) { return m_ViewPort; }
-
-	static CDeferredBuffer*			GetDeferredBuffer() { return m_DeferredBuffer; }
-	static CScreenPolygon2D*		GetDeferredResolve() { return m_DeferredResolve; }
-	static CScreenPolygon2D*		GetPostEffect() { return m_PostEffect; }
 private:
-	static CTexture2D*				m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_COUNT];
+	//static CTexture2D*				m_EngineDefaultTexture2D[ENGINE_DEFAULT_TEXTURE2D_COUNT];
 private:
-	static CDeferredBuffer*			m_DeferredBuffer;
-	static CScreenPolygon2D*		m_PostEffect;
-	static CScreenPolygon2D*		m_DeferredResolve;
+	//static CDeferredBuffer*			m_DeferredBuffer;
+	//static CScreenPolygon2D*		m_PostEffect;
+	//static CScreenPolygon2D*		m_DeferredResolve;
 private:
-	static D3D_FEATURE_LEVEL		m_FeatureLevel;
-	static ID3D11Device*			m_D3DDevice;
-	static ID3D11DeviceContext*		m_ImmediateContext;
-	static IDXGISwapChain*			m_SwapChain;
-	static ID3D11RenderTargetView*	m_RenderTargetView;
-	static ID3D11DepthStencilView*	m_DepthStencilView;
-	static D3D11_VIEWPORT			m_ViewPort;
+	//static ID3D11SamplerState*		m_SamplerState[SSE_COUNT];
+	//static ID3D11BlendState*		m_BlendState[BSE_COUNT];
+	//static ID3D11RasterizerState*	m_RasterizerStateCull[RSE_COUNT];
+	//static ID3D11DepthStencilState* m_DepthStencilStateTestWrite[DSSE_COUNT];
 private:
-	static ID3D11SamplerState*		m_SamplerState[SSE_COUNT];
-	static ID3D11BlendState*		m_BlendState[BSE_COUNT];
-	static ID3D11RasterizerState*	m_RasterizerStateCull[RSE_COUNT];
-	static ID3D11DepthStencilState* m_DepthStencilStateTestWrite[DSSE_COUNT];
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		m_RenderTargetView;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>		m_DepthStencilView;
+	D3D11_VIEWPORT										m_Viewport;
+private:
+	Microsoft::WRL::ComPtr<IDXGISwapChain>				m_SwapChain;
+	D3D_FEATURE_LEVEL									m_FeatureLevel;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext>			m_ImmediateContext;
+	Microsoft::WRL::ComPtr<ID3D11Device>				m_Device;
+private:
+	CRenderDevice() {}
+	CRenderDevice(const CRenderDevice&) {}
+	~CRenderDevice() {}
+private:
+	static CRenderDevice* m_RenderDevice;
 };

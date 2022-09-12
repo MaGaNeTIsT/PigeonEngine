@@ -30,13 +30,13 @@ CGTAOComputeShader::~CGTAOComputeShader()
 void CGTAOComputeShader::Init()
 {
 	CCamera* sceneCamera = this->m_Scene->GetGameObjectFirst<CCamera>(CScene::SCENELAYOUT_CAMERA);
-	CustomType::Vector4 viewPort = sceneCamera->GetViewport();
+	CustomType::Vector4 viewport = sceneCamera->GetViewport();
 
 	CRenderDevice::CreateConstantBuffer(this->m_ConstantBuffer, sizeof(GTAOConstantBuffer));
 
-	CRenderDevice::CreateRenderTexture2D(this->m_IntegralBuffer, static_cast<UINT>(viewPort.Z()), static_cast<UINT>(viewPort.W()), DXGI_FORMAT_R8G8B8A8_UNORM, TRUE);
-	CRenderDevice::CreateRenderTexture2D(this->m_FilterBuffer, static_cast<UINT>(viewPort.Z()), static_cast<UINT>(viewPort.W()), DXGI_FORMAT_R8_UNORM, TRUE);
-	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, viewPort);
+	CRenderDevice::CreateRenderTexture2D(this->m_IntegralBuffer, static_cast<UINT>(viewport.Z()), static_cast<UINT>(viewport.W()), DXGI_FORMAT_R8G8B8A8_UNORM, TRUE);
+	CRenderDevice::CreateRenderTexture2D(this->m_FilterBuffer, static_cast<UINT>(viewport.Z()), static_cast<UINT>(viewport.W()), DXGI_FORMAT_R8_UNORM, TRUE);
+	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, viewport);
 	this->m_Polygon2D->SetScene(this->m_Scene);
 	this->m_Polygon2D->SetParent(this);
 	this->m_Polygon2D->Init();
@@ -45,7 +45,7 @@ void CGTAOComputeShader::Init()
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAOSpatialFilter.cso", this->m_FilterComputeShader);
 	
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAODebugType.cso", this->m_DebugComputeShader);
-	CRenderDevice::CreateRenderTexture2D(this->m_DebugBuffer, static_cast<UINT>(viewPort.Z()), static_cast<UINT>(viewPort.W()), DXGI_FORMAT_R8G8B8A8_UNORM, TRUE);
+	CRenderDevice::CreateRenderTexture2D(this->m_DebugBuffer, static_cast<UINT>(viewport.Z()), static_cast<UINT>(viewport.W()), DXGI_FORMAT_R8G8B8A8_UNORM, TRUE);
 }
 void CGTAOComputeShader::Uninit()
 {
@@ -76,9 +76,9 @@ void CGTAOComputeShader::Update()
 	}
 
 	CCamera* sceneCamera = this->m_Scene->GetGameObjectFirst<CCamera>(CScene::SCENELAYOUT_CAMERA);
-	CustomType::Vector4Int viewPort(sceneCamera->GetViewport());
-	FLOAT bufferSizeW = static_cast<FLOAT>(viewPort.Z() - viewPort.X());
-	FLOAT bufferSizeH = static_cast<FLOAT>(viewPort.W() - viewPort.Y());
+	CustomType::Vector4Int viewport(sceneCamera->GetViewport());
+	FLOAT bufferSizeW = static_cast<FLOAT>(viewport.Z() - viewport.X());
+	FLOAT bufferSizeH = static_cast<FLOAT>(viewport.W() - viewport.Y());
 
 	FLOAT fallOffEnd = this->m_UserArguments.FallOffEnd;
 	//FLOAT fallOffStartRatio = this->m_UserArguments.FallOffStartRatio;
@@ -110,7 +110,7 @@ void CGTAOComputeShader::Update()
 void CGTAOComputeShader::PrepareDraw()
 {
 	CCamera* sceneCamera = this->m_Scene->GetGameObjectFirst<CCamera>(CScene::SCENELAYOUT_CAMERA);
-	CustomType::Vector4Int viewPort(sceneCamera->GetViewport());
+	CustomType::Vector4Int viewport(sceneCamera->GetViewport());
 
 	CRenderDevice::UploadConstantBuffer(this->m_ConstantBuffer, &(this->m_ConstantData));
 	CRenderDevice::BindComputeShaderConstantBuffer(this->m_ConstantBuffer, 1u);
@@ -118,14 +118,14 @@ void CGTAOComputeShader::PrepareDraw()
 	CRenderDevice::BindComputeShaderResourceView(CRenderDevice::GetDeferredBuffer()->GetDepthStencilShaderResourceView(CDeferredBuffer::DEPTHSTENCILBUFFER_CAMERA), 0u);
 	CRenderDevice::BindComputeUnorderedAccessView(this->m_IntegralBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::GetDeviceContext()->CSSetShader(this->m_IntegralComputeShader.Get(), NULL, 0u);
-	CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewPort.Z() + 7) / 8), static_cast<UINT>((viewPort.W() + 7) / 8), 1u);
+	CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewport.Z() + 7) / 8), static_cast<UINT>((viewport.W() + 7) / 8), 1u);
 	CRenderDevice::BindComputeUnorderedAccessView(NULL, 0u);
 	CRenderDevice::GetDeviceContext()->CSSetShader(NULL, NULL, 0u);
 
 	CRenderDevice::BindComputeShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 0u);
 	CRenderDevice::BindComputeUnorderedAccessView(this->m_FilterBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::GetDeviceContext()->CSSetShader(this->m_FilterComputeShader.Get(), NULL, 0u);
-	CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewPort.Z() + 7) / 8), static_cast<UINT>((viewPort.W() + 7) / 8), 1u);
+	CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewport.Z() + 7) / 8), static_cast<UINT>((viewport.W() + 7) / 8), 1u);
 	CRenderDevice::BindComputeUnorderedAccessView(NULL, 0u);
 	CRenderDevice::GetDeviceContext()->CSSetShader(NULL, NULL, 0u);
 
@@ -135,7 +135,7 @@ void CGTAOComputeShader::PrepareDraw()
 		CRenderDevice::BindComputeShaderResourceView(this->m_FilterBuffer.ShaderResourceView, 1u);
 		CRenderDevice::BindComputeUnorderedAccessView(this->m_DebugBuffer.UnorderedAccessView, 0u);
 		CRenderDevice::GetDeviceContext()->CSSetShader(this->m_DebugComputeShader.Get(), NULL, 0u);
-		CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewPort.Z() + 7) / 8), static_cast<UINT>((viewPort.W() + 7) / 8), 1u);
+		CRenderDevice::GetDeviceContext()->Dispatch(static_cast<UINT>((viewport.Z() + 7) / 8), static_cast<UINT>((viewport.W() + 7) / 8), 1u);
 		CRenderDevice::BindComputeUnorderedAccessView(NULL, 0u);
 		CRenderDevice::GetDeviceContext()->CSSetShader(NULL, NULL, 0u);
 	}
