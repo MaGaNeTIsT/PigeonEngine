@@ -1174,9 +1174,25 @@ namespace CustomType
 	{
 		return fmaxf(v0, v1);
 	}
+	UINT CMath::Max(const UINT& v0, const UINT& v1)
+	{
+		return ((v0 > v1) ? v0 : v1);
+	}
+	INT CMath::Max(const INT& v0, const INT& v1)
+	{
+		return ((v0 > v1) ? v0 : v1);
+	}
 	FLOAT CMath::Min(const FLOAT& v0, const FLOAT& v1)
 	{
 		return fminf(v0, v1);
+	}
+	UINT CMath::Min(const UINT& v0, const UINT& v1)
+	{
+		return ((v0 < v1) ? v0 : v1);
+	}
+	INT CMath::Min(const INT& v0, const INT& v1)
+	{
+		return ((v0 < v1) ? v0 : v1);
 	}
 	FLOAT CMath::Abs(const FLOAT& v)
 	{
