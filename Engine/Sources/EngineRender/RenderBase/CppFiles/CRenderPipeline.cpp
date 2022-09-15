@@ -1,6 +1,5 @@
 #include "../Headers/CRenderPipeline.h"
 #include "../../../EngineBase/Headers/CManager.h"
-#include "../../../EngineGame/Headers/CScene.h"
 #include "../../../EngineGame/Headers/CGameObject.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CLight.h"
@@ -18,6 +17,7 @@
 #include "../../../Development/Headers/CDebugScreen.h"
 
 CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_ScreenPolygonShader	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DirectLightShader	= nullptr;
@@ -33,6 +33,10 @@ CRenderPipeline::CRenderPipeline()
 		{
 			CRenderPipeline::m_DefaultTexture[i] = CTextureManager::LoadTexture2D(CustomStruct::CEngineDefaultDefines::GetDefaultTexturePath(i));
 		}
+	}
+	if (CRenderPipeline::m_DefaultEmptyPS == nullptr)
+	{
+		CRenderPipeline::m_DefaultEmptyPS = CShaderManager::LoadPixelShader(ENGINE_SHADER_EMPTY_PS);
 	}
 	if (CRenderPipeline::m_FullScreenPolygonVS == nullptr)
 	{
@@ -177,7 +181,16 @@ void CRenderPipeline::PostInit()
 		return;
 
 	{
-		CLight* sceneMainLight = m_CurrentScene->GetGameObjectFirst<CLight>(CScene::SceneLayout::LAYOUT_LIGHT);
+		std::vector<CLight*> rawSceneLights = m_CurrentScene->GetGameObjectAll<CLight>(CScene::SceneLayout::LAYOUT_LIGHT);
+		CLight* sceneMainLight = NULL;
+		for (INT i = 0; i < rawSceneLights.size(); i++)
+		{
+			if (rawSceneLights[i]->IsActive())
+			{
+				sceneMainLight = rawSceneLights[i];
+				break;
+			}
+		}
 		UINT bufferWidth = static_cast<UINT>(sceneMainLight->GetLightShadowSize().X());
 		UINT bufferHeight = static_cast<UINT>(sceneMainLight->GetLightShadowSize().Y());
 		CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_UNKNOWN;
@@ -192,14 +205,19 @@ void CRenderPipeline::PostInit()
 	}
 
 	{
-		m_DebugScreen->SetScene(m_CurrentScene);
-		m_DebugScreen->Init();
-
-		m_GTAOComputeShader->SetScene(m_CurrentScene);
-		m_GTAOComputeShader->Init();
-
-		m_HZB->SetScene(m_CurrentScene);
-		m_HZB->Init();
+		std::vector<CCamera*> rawSceneCameras = m_CurrentScene->GetGameObjectAll<CCamera>(CScene::SceneLayout::LAYOUT_CAMERA);
+		CCamera* sceneMainCamera = NULL;
+		for (INT i = 0; i < rawSceneCameras.size(); i++)
+		{
+			if (rawSceneCameras[i]->IsActive())
+			{
+				sceneMainCamera = rawSceneCameras[i];
+				break;
+			}
+		}
+		m_DebugScreen->Init(m_GlobalBufferSize);
+		m_GTAOComputeShader->Init(sceneMainCamera, CustomType::Vector2Int((m_GlobalBufferSize.X() + 1) / 2, (m_GlobalBufferSize.Y() + 1) / 2), m_GlobalBufferSize);
+		m_HZB->Init(CustomType::Vector2Int((m_GlobalBufferSize.X() + 1) / 2, (m_GlobalBufferSize.Y() + 1) / 2), m_GlobalBufferSize);
 	}
 }
 void CRenderPipeline::Uninit()
@@ -374,12 +392,20 @@ void CRenderPipeline::Render()
 		}
 
 		{
+			//Post process pass
+		}
+
+		{
 			//Final output
 			CRenderDevice::SetDepthStencilState(nullptr);
 			CRenderDevice::SetBlendState(nullptr);
 			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			CRenderDevice::SetFinalOutput();
 			this->DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
+
+			m_DebugScreen->Draw();
+			m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView);
+			m_HZB->Draw(m_SceneDepth.ShaderResourceView);
 		}
 	}
 }
@@ -407,7 +433,7 @@ void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
 	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = camera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = camera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = camera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
+	m_RenderPerFrameInfo.PerFrameData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
 	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = camera->GetPosition().GetXMFLOAT3();
 
 	m_RenderPerFrameInfo.PerFrameData.DirectionalLightCount = static_cast<FLOAT>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT]).size());
@@ -422,4 +448,12 @@ void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
 	CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 	CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 	CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+}
+CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
+{
+	return (CRenderPipeline::m_DefaultTexture[input]);
+}
+std::shared_ptr<CPixelShader> CRenderPipeline::GetDefaultEmptyPS()
+{
+	return (CRenderPipeline::m_DefaultEmptyPS);
 }

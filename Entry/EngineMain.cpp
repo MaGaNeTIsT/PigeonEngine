@@ -43,14 +43,13 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	}
 
 	CManager::Initialize(windowHandle);
-	CManager* gameManager = CManager::GetManager();
 
-	gameManager->Init();
+	CManager::Init();
 
 	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
 	fixedStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
 	updateStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
-	currentTime = fixedLastTime = updateLastTime = gameManager->GetWindowTimer().GetClockTime();
+	currentTime = fixedLastTime = updateLastTime = CManager::GetWindowTimer().GetClockTime();
 
 	::ShowWindow(windowHandle, nCmdShow);
 	::UpdateWindow(windowHandle);
@@ -73,22 +72,22 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		else
 		{
 			CManager::StaticUpdate();
-			currentTime = gameManager->GetWindowTimer().GetClockTime();
+			currentTime = CManager::GetWindowTimer().GetClockTime();
 			if ((currentTime - fixedLastTime) >= fixedStepTime)
 			{
 				fixedLastTime = currentTime;
-				gameManager->FixedUpdate();
+				CManager::FixedUpdate();
 			}
 			if ((currentTime - updateLastTime) >= updateStepTime)
 			{
 				updateLastTime = currentTime;
-				gameManager->Update();
-				gameManager->Draw();
+				CManager::Update();
+				CManager::Draw();
 			}
 		}
 	}
 
-	gameManager->Uninit();
+	CManager::Uninit();
 
 	UnregisterClass(CLASS_NAME, wcex.hInstance);
 

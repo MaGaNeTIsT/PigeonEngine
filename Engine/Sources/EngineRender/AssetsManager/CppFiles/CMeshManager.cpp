@@ -3,7 +3,7 @@
 #include "../Headers/CMesh.h"
 
 CMeshManager* CMeshManager::m_MeshManager = new CMeshManager();
-void CMeshManager::Uninit()
+void CMeshManager::ShutDown()
 {
 	CMeshManager::ClearMeshData();
 	delete m_MeshManager;
@@ -669,23 +669,27 @@ CMesh* CMeshManager::CreateMeshObject(const std::string& name, std::vector<verte
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 	{
-		if (CRenderDevice::CreateD3DBuffer(
+		if (!CRenderDevice::CreateBuffer(
 			vertexBuffer,
-			vertexData.data(),
-			sizeof(vertexType),
-			static_cast<UINT>(vertexData.size()),
-			D3D11_BIND_VERTEX_BUFFER) == false)
+			CustomStruct::CRenderBufferDesc(
+				static_cast<UINT>(sizeof(vertexType) * vertexData.size()),
+				CustomStruct::CRenderBindFlag::BIND_VERTEX_BUFFER, 0u),
+			&CustomStruct::CRenderSubresourceData(vertexData.data(), 0u, 0u)))
+		{
 			return NULL;
+		}
 	}
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer = nullptr;
 	{
-		if (CRenderDevice::CreateD3DBuffer(
+		if (!CRenderDevice::CreateBuffer(
 			indexBuffer,
-			indexData.data(),
-			sizeof(indexType),
-			static_cast<UINT>(indexData.size()),
-			D3D11_BIND_INDEX_BUFFER) == false)
+			CustomStruct::CRenderBufferDesc(
+				static_cast<UINT>(sizeof(indexType) * indexData.size()),
+				CustomStruct::CRenderBindFlag::BIND_INDEX_BUFFER, 0u),
+			&CustomStruct::CRenderSubresourceData(indexData.data(), 0u, 0u)))
+		{
 			return NULL;
+		}
 	}
 	CMesh* mesh = new CMesh(name, vertexData, indexData, submeshData, vertexBuffer, indexBuffer);
 	CMeshManager::AddMeshData(name, mesh);

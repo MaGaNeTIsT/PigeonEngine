@@ -1,13 +1,12 @@
 #include "../Headers/CScene.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CManager.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "../../EngineRender/RenderBase/Headers/CDeferredBuffer.h"
 #include "../Headers/CCamera.h"
 #include "../Headers/CLight.h"
 #include "../Headers/CScreenPolygon2D.h"
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
+
 #include "../../Development/Headers/CTestModel.h"
 
 CScene::CScene()
@@ -17,13 +16,14 @@ CScene::~CScene()
 {
 }
 template <typename T>
-T* CScene::AddGameObject(const UINT& layout)const
+T* CScene::AddGameObject(const UINT& layout)
 {
 	CGameObject* gameObject = new T();
 	gameObject->SetScene(this);
 	gameObject->Active();
 	gameObject->Init();
-	this->m_GameObject[layout][gameObject->GetGameObjectID()] = gameObject;
+	ULONGLONG id = gameObject->GetGameObjectID();
+	(this->m_GameObject[layout])[id] = gameObject;
 	return  (reinterpret_cast<T*>(gameObject));
 }
 template <typename T>
@@ -122,74 +122,5 @@ void CScene::FixedUpdate()
 	{
 		for (const auto& object : this->m_GameObject[i])
 			object.second->FixedUpdate();
-	}
-}
-void CScene::DrawOpaqueDeferred()
-{
-	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
-		{
-			if (object.second->GetMeshRenderer() != NULL)
-			{
-				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_DEFERRED)
-					object.second->Draw();
-			}
-		}
-	}
-}
-void CScene::DrawOpaqueForward()
-{
-	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
-		{
-			if (object.second->GetMeshRenderer() != NULL)
-			{
-				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
-					object.second->Draw();
-			}
-		}
-	}
-}
-void CScene::DrawTransparent()
-{
-	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
-		{
-			if (object.second->GetMeshRenderer() != NULL)
-			{
-				if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_TRANSPARENT)
-					object.second->Draw();
-			}
-		}
-	}
-}
-void CScene::DrawSky()
-{
-	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_SKY])
-	{
-		if (object.second->GetMeshRenderer() != NULL)
-		{
-			if (object.second->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_SKY)
-				object.second->Draw();
-		}
-	}
-}
-void CScene::DrawShadow()
-{
-	CMeshRenderer::CRenderTypeEnum renderType;
-	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
-		{
-			if (object.second->GetMeshRenderer() != NULL)
-			{
-				renderType = object.second->GetMeshRenderer()->GetRenderType();
-				if (renderType == CMeshRenderer::RENDER_TYPE_OPAQUE_DEFERRED || renderType == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
-					object.second->Draw();
-			}
-		}
 	}
 }

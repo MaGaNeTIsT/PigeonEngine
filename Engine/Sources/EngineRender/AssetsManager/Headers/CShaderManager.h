@@ -6,7 +6,7 @@ class CShaderManager
 {
 public:
 	static const CShaderManager* const GetShaderManager() { return m_ShaderManager; }
-	static void		Uninit() { delete m_ShaderManager; }
+	static void ShutDown();
 public:
 	static std::shared_ptr<class CVertexShader>		LoadVertexShader(const std::string& name, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout = NULL);
 	static std::shared_ptr<class CPixelShader>		LoadPixelShader(const std::string& name);

@@ -1,15 +1,14 @@
 #pragma once
 
-#include "../../../EngineGame/Headers/CGameObject.h"
+#include "../../../../../Entry/EngineMain.h"
+#include "../../RenderBase/Headers/CRenderDevice.h"
 
-class CScreenPolygon2D;
-
-class CGTAOComputeShader : public CGameObject
+class CGTAOComputeShader
 {
 public:
 	struct GTAOConstantBuffer
 	{
-		GTAOConstantBuffer() { ZeroMemory(this, sizeof(*this)); }
+		GTAOConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
 		DirectX::XMFLOAT4 ResultBufferParams;
 		DirectX::XMFLOAT4 DepthBufferParams;
 		DirectX::XMFLOAT4 FadeAttenParams;				// x y is fade radius mul add coefficient. z is fade distance. w is falloff's attenuation factory.
@@ -18,7 +17,7 @@ public:
 	};
 	struct GTAOUserArguments
 	{
-		GTAOUserArguments() { ZeroMemory(this, sizeof(*this)); }
+		GTAOUserArguments() { ::ZeroMemory(this, sizeof(*this)); }
 		UINT	NumAngles;
 		FLOAT	FallOffEnd;
 		//FLOAT	FallOffStartRatio;
@@ -29,22 +28,25 @@ public:
 		FLOAT	Power;
 	};
 public:
-	virtual void	Init()override;
-	virtual void	Uninit()override;
-	virtual void	Update()override;
-	virtual void	Draw()override;
+	void	Init(class CCamera* mainCamera, const CustomType::Vector2Int& bufferSize, const CustomType::Vector2Int& pipelineSize);
+	void	Uninit();
+	void	Update();
+	void	Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
 protected:
-	virtual void	PrepareDraw()override;
+	void	PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
 public:
 	CGTAOComputeShader();
-	virtual ~CGTAOComputeShader();
+	~CGTAOComputeShader();
 protected:
-	CScreenPolygon2D*							m_Polygon2D;
+	class CScreenPolygon2D*						m_Polygon2D;
 
 	INT											m_DebugType;
 	CRenderDevice::RenderTexture2DViewInfo		m_DebugBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_DebugComputeShader;
 
+	class CCamera*								m_MainCamera;
+	CustomType::Vector2Int						m_BufferSize;
+	CustomType::Vector2Int						m_PipelineSize;
 	GTAOUserArguments							m_UserArguments;
 	GTAOConstantBuffer							m_ConstantData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;

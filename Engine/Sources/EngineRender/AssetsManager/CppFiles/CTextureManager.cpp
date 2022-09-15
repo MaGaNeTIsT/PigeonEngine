@@ -5,7 +5,7 @@
 #include "../../RenderBase/Headers/CRenderDevice.h"
 
 CTextureManager* CTextureManager::m_TextureManager = new CTextureManager();
-void CTextureManager::Uninit()
+void CTextureManager::ShutDown()
 {
 	CTextureManager::ClearTexture2DData();
 	delete m_TextureManager;

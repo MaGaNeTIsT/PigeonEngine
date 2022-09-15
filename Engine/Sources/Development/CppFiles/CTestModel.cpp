@@ -1,6 +1,9 @@
 #include "../../../../Entry/EngineMain.h"
 #include "../Headers/CTestModel.h"
 #include "../../EngineBase/Headers/CManager.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
+#include "../../EngineRender/AssetsManager/Headers/CShader.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTexture2D.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
@@ -24,12 +27,10 @@ void CTestModel::Init()
 	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
 	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/BaseShape/Donut.obj", TRUE);
 	this->m_MeshRenderer->LoadShader();
-	this->m_MeshRenderer->CreateConstantBuffer(sizeof(CustomStruct::ConstantBufferPerDraw));
-	this->m_MeshRenderer->LoadExtraShader(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_EMPTY_PS);
 
-	this->m_AlbedoTexture = CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_GRAY);
-	this->m_NormalTexture = CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_BUMP);
-	this->m_PropertyTexture = CRenderDevice::GetEngineDefaultTexture2D(CRenderDevice::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+	this->m_AlbedoTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY);
+	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
+	this->m_PropertyTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
 }
 void CTestModel::Uninit()
 {
@@ -54,20 +55,20 @@ void CTestModel::PrepareDraw()
 	this->m_ConstantBuffer.WorldMatrix = tempWorldMatrix.GetGPUUploadFloat4x4();
 	this->m_ConstantBuffer.WorldInvMatrix = tempWorldInverseMatrix.GetGPUUploadFloat4x4();
 	this->m_ConstantBuffer.WorldInvTransposeMatrix = tempWorldInverseMatrix.GetXMFLOAT4X4();
-	this->m_MeshRenderer->UploadConstantBuffer(&(this->m_ConstantBuffer));
-	this->m_MeshRenderer->BindConstantBuffer(ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
 
-	CRenderDevice::BindTexture(this->m_AlbedoTexture, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-	CRenderDevice::BindTexture(this->m_NormalTexture, ENGINE_TEXTURE2D_NORMAL_START_SLOT);
-	CRenderDevice::BindTexture(this->m_PropertyTexture, ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
+	this->m_MeshRenderer->UploadPerDrawConstantBuffer(this->m_ConstantBuffer);
 }
 void CTestModel::Draw()
 {
 	this->PrepareDraw();
+	CRenderDevice::BindPSShaderResourceView(this->m_AlbedoTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	CRenderDevice::BindPSShaderResourceView(this->m_NormalTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_NORMAL_START_SLOT);
+	CRenderDevice::BindPSShaderResourceView(this->m_PropertyTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
 	this->m_MeshRenderer->Draw();
 }
 void CTestModel::DrawExtra()
 {
 	this->PrepareDraw();
-	this->m_MeshRenderer->DrawExtra();
+	CRenderPipeline::GetDefaultEmptyPS()->Bind();
+	this->m_MeshRenderer->Draw(FALSE);
 }

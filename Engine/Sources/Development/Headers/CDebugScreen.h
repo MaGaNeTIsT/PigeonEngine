@@ -1,24 +1,23 @@
 #pragma once
 
-#include "../../EngineGame/Headers/CGameObject.h"
+#include "../../../../Entry/EngineMain.h"
+#include "../../EngineBase/Headers/CBaseType.h"
 
-class CScreenPolygon2D;
-
-class CDebugScreen : public CGameObject
+class CDebugScreen
 {
 public:
-	virtual void	Init()override;
-	virtual void	Uninit()override;
-	virtual void	Update()override;
-	virtual void	Draw()override;
+	void	Init(const CustomType::Vector2Int& pipelineSize);
+	void	Uninit();
+	void	Update();
+	void	Draw();
 protected:
-	virtual void	PrepareDraw()override;
+	void	PrepareDraw();
 public:
 	CDebugScreen();
-	virtual ~CDebugScreen();
+	~CDebugScreen();
 protected:
-	static UINT		DEBUGPOLYGON_COUNT;
+	static UINT DEBUGPOLYGON_COUNT;
 protected:
-	std::vector<CScreenPolygon2D*>			m_Polygons;
-	std::vector<ID3D11ShaderResourceView*>	m_SRVs;
+	std::vector<class CScreenPolygon2D*> m_Polygons;
+	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> m_SRVs;
 };

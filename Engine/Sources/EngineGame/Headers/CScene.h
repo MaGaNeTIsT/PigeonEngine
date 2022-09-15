@@ -2,9 +2,6 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "./CGameObject.h"
-#include "../../EngineRender/RenderFeatures/Headers/CGTAOComputeShader.h"
-#include "../../EngineRender/RenderFeatures/Headers/CHZBBuffer.h"
-#include "../../Development/Headers/CDebugScreen.h"
 
 class CScene
 {
@@ -26,7 +23,7 @@ public:
 	virtual ~CScene();
 public:
 	template <typename T>
-	T* AddGameObject(const UINT& layout)const;
+	T* AddGameObject(const UINT& layout);
 	template <typename T>
 	T* GetGameObjectFirst(const UINT& layout)const;
 	template <typename T>

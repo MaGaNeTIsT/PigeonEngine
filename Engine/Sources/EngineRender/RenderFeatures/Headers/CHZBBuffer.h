@@ -1,26 +1,27 @@
 #pragma once
 
-#include "../../../EngineGame/Headers/CGameObject.h"
+#include "../../../../../Entry/EngineMain.h"
+#include "../../RenderBase/Headers/CRenderDevice.h"
 
-class CScreenPolygon2D;
-
-class CHZBBuffer : public CGameObject
+class CHZBBuffer
 {
 public:
 
 public:
-	virtual void	Init()override;
-	virtual void	Uninit()override;
-	virtual void	Update()override;
-	virtual void	Draw()override;
+	void	Init(const CustomType::Vector2Int& bufferSize, const CustomType::Vector2Int& pipelineSize);
+	void	Uninit();
+	void	Update();
+	void	Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
 protected:
-	virtual void	PrepareDraw()override;
+	void	PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
 public:
 	CHZBBuffer();
-	virtual ~CHZBBuffer();
+	~CHZBBuffer();
 protected:
-	CScreenPolygon2D*							m_Polygon2D;
+	class CScreenPolygon2D*						m_Polygon2D;
 
+	CustomType::Vector2Int						m_BufferSize;
+	CustomType::Vector2Int						m_PipelineSize;
 	INT											m_HZBMipLevels;
 	CRenderDevice::RenderTexture2DViewInfo		m_HZBBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_BuildHZBComputeShader;

@@ -5,7 +5,7 @@
 
 float4 main(VaryingScreenPolygon2D input) : SV_Target
 {
-	float3 normal = SafeNormalize(_EngineGBufferWorldNormal.Sample(_LinearClampSampler,input.uv0).rgb);
+	float3 normal = SafeNormalize(_EngineGBufferNormal.Sample(_LinearClampSampler,input.uv0).rgb);
 	float3 albedo = _EngineGBufferAlbedo.Sample(_LinearClampSampler, input.uv0).rgb;
 	float4 property = _EngineGBufferProperty.Sample(_LinearClampSampler, input.uv0).rgba;
 	

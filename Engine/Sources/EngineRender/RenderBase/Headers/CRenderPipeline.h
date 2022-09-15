@@ -55,9 +55,15 @@ protected:
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 	static std::shared_ptr<class CGTAOComputeShader>	m_GTAOComputeShader;
 	static std::shared_ptr<class CHZBBuffer>			m_HZB;
+public:
+	static class CTexture2D* GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
+	static std::shared_ptr<class CPixelShader> GetDefaultEmptyPS();
 protected:
 	static class CTexture2D* m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
+	static std::shared_ptr<class CPixelShader> m_DefaultEmptyPS;
 public:
 	CRenderPipeline();
 	virtual ~CRenderPipeline();
+private:
+	friend class CDebugScreen;
 };

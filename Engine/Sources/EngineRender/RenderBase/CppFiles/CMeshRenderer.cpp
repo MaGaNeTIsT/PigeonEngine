@@ -19,10 +19,7 @@ CMeshRenderer::CMeshRenderer(CGameObject* gameObject, const std::string& vertexS
 	this->m_InputLayoutDesc[2] = { "TANGENT",  0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
 	this->m_InputLayoutDesc[3] = { "COLOR",    0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
 	this->m_InputLayoutDesc[4] = { "TEXCOORD", 0u, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT,       0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
-	if (!CRenderDevice::CreateBuffer(this->m_PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::ConstantBufferPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT))))
-	{
-		//TODO log.
-	}
+	CRenderDevice::CreateBuffer(this->m_PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::ConstantBufferPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 }
 CMeshRenderer::~CMeshRenderer()
 {

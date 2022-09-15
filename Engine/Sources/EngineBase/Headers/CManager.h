@@ -3,29 +3,26 @@
 #include "./CTimer.h"
 #include "./CBaseType.h"
 
-class CScene;
-class CGameTimer;
-
 class CManager
 {
 public:
-	static CManager*	GetManager() { return m_Manager; }
-	static void			Initialize(HWND hWnd);
-	static void			ShutDown();
-	static void			StaticUpdate();
+	static void		Initialize(HWND hWnd);
+	static void		ShutDown();
+	static void		StaticUpdate();
 public:
-	void				Init();
-	void				Uninit();
-	void				Update();
-	void				FixedUpdate();
-	void				Draw();
-
-	void				CalculateFrameStats();
+	static void		Init();
+	static void		Uninit();
+	static void		Update();
+	static void		FixedUpdate();
+	static void		Draw();
 public:
-	HWND				GetWindowHandle() { return this->m_HWND; }
-	const CTimer&		GetWindowTimer()const { return (this->m_WindowTimer); }
-	const CScene*		GetScene()const { return this->m_Scene; }
-	const CGameTimer*	GetGameTimer()const { return (this->m_GameTimer); }
+	static void				CalculateFrameStats();
+	static HWND				GetWindowHandle();
+	static const CTimer&	GetWindowTimer();
+public:
+	static const class CRenderPipeline*	GetRenderPipeline();
+	static const class CGameTimer*		GetGameTimer();
+	static const class CScene*			GetScene();
 private:
 	HWND					m_HWND;
 	CustomType::Vector2Int	m_WindowSize;
@@ -33,12 +30,13 @@ private:
 	UINT					m_FrameRate;
 	CTimer					m_WindowTimer;
 	BOOL					m_Windowed;
-	CGameTimer*				m_GameTimer	= NULL;
-	CScene*					m_Scene		= NULL;
+	class CGameTimer*		m_GameTimer			= NULL;
+	class CRenderPipeline*	m_RenderPipeline	= NULL;
+	class CScene*			m_Scene				= NULL;
 private:
 	CManager();
 	CManager(const CManager& manager);
 	~CManager();
 private:
-	static CManager*	m_Manager;
+	static CManager* m_Manager;
 };

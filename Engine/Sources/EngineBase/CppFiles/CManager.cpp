@@ -3,22 +3,23 @@
 #include "../Headers/CInput.h"
 #include "../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineGame/Headers/CGameObjectManager.h"
 #include "../../EngineGame/Headers/CScene.h"
-#include "../../EngineGame/Headers/CScreenPolygon2D.h"
 
 CManager* CManager::m_Manager = new CManager();
+
 CManager::CManager()
 {
-	this->m_HWND = NULL;
-	this->m_WindowSize = CustomType::Vector2Int(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
-	this->m_GraphicDepth = 24u;
-	this->m_FrameRate = ENGINE_UPDATE_FRAME;
-	this->m_Windowed = ENGINE_WINDOWED;
-	this->m_GameTimer = new CGameTimer(&(this->m_WindowTimer));
+	this->m_HWND			= NULL;
+	this->m_WindowSize		= CustomType::Vector2Int(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
+	this->m_GraphicDepth	= 24u;
+	this->m_FrameRate		= ENGINE_UPDATE_FRAME;
+	this->m_Windowed		= ENGINE_WINDOWED;
+	this->m_GameTimer		= new CGameTimer(&(this->m_WindowTimer));
 }
 CManager::CManager(const CManager& manager)
 {
@@ -27,13 +28,13 @@ CManager::CManager(const CManager& manager)
 		delete (this->m_GameTimer);
 		this->m_GameTimer = NULL;
 	}
-	this->m_HWND = manager.m_HWND;
-	this->m_WindowSize = manager.m_WindowSize;
-	this->m_GraphicDepth = manager.m_GraphicDepth;
-	this->m_FrameRate = manager.m_FrameRate;
-	this->m_Windowed = manager.m_Windowed;
-	this->m_WindowTimer = manager.m_WindowTimer;
-	this->m_GameTimer = new CGameTimer(&(this->m_WindowTimer));
+	this->m_HWND			= manager.m_HWND;
+	this->m_WindowSize		= manager.m_WindowSize;
+	this->m_GraphicDepth	= manager.m_GraphicDepth;
+	this->m_FrameRate		= manager.m_FrameRate;
+	this->m_Windowed		= manager.m_Windowed;
+	this->m_WindowTimer		= manager.m_WindowTimer;
+	this->m_GameTimer		= new CGameTimer(&(this->m_WindowTimer));
 }
 CManager::~CManager()
 {
@@ -41,6 +42,11 @@ CManager::~CManager()
 	{
 		delete (this->m_GameTimer);
 		this->m_GameTimer = NULL;
+	}
+	if (this->m_RenderPipeline != NULL)
+	{
+		delete (this->m_RenderPipeline);
+		this->m_RenderPipeline = NULL;
 	}
 	if (this->m_Scene != NULL)
 	{
@@ -50,69 +56,96 @@ CManager::~CManager()
 }
 void CManager::Initialize(HWND hWnd)
 {
-	m_Manager->m_HWND = hWnd;
+	CManager::m_Manager->m_HWND = hWnd;
 
-	CInput::Init();
+	CInput::Initialize();
 	CRenderDevice::Initialize();
 	CimGUIManager::Initialize();
-	CGameObjectManager::Init();
 
-	m_Manager->m_WindowTimer.Init();
+	CGameObjectManager::Initialize();
+
+	CManager::m_Manager->m_WindowTimer.Init();
 }
 void CManager::ShutDown()
 {
-	CShaderManager::Uninit();
-	CMeshManager::Uninit();
-	CTextureManager::Uninit();
+	CShaderManager::ShutDown();
+	CMeshManager::ShutDown();
+	CTextureManager::ShutDown();
 
 	CimGUIManager::ShutDown();
 	CRenderDevice::ShutDown();
-	CInput::Uninit();
+	CInput::ShutDown();
 
-	delete (m_Manager);
+	delete (CManager::m_Manager);
 }
 void CManager::StaticUpdate()
 {
-	m_Manager->m_WindowTimer.Update();
+	CManager::m_Manager->m_WindowTimer.Update();
+	CInput::Update();
 }
 void CManager::Init()
 {
-	CRenderDevice::Init(this->m_HWND, this->m_WindowSize, this->m_GraphicDepth, this->m_FrameRate, this->m_Windowed);
+	CRenderDevice::Init(
+		CManager::m_Manager->m_HWND,
+		CManager::m_Manager->m_WindowSize,
+		CManager::m_Manager->m_GraphicDepth,
+		CManager::m_Manager->m_FrameRate,
+		CManager::m_Manager->m_Windowed);
 
-	if (this->m_Scene != NULL)
+	if (CManager::m_Manager->m_Scene != NULL)
 	{
-		delete (this->m_Scene);
-		this->m_Scene = NULL;
+		delete (CManager::m_Manager->m_Scene);
+		CManager::m_Manager->m_Scene = NULL;
 	}
-	this->m_Scene = new CScene();
-	this->m_Scene->Init();
-	this->m_GameTimer->Reset();
+	if (CManager::m_Manager->m_RenderPipeline != NULL)
+	{
+		delete (CManager::m_Manager->m_RenderPipeline);
+		CManager::m_Manager->m_RenderPipeline = NULL;
+	}
+	CManager::m_Manager->m_RenderPipeline = new CRenderPipeline();
+	CManager::m_Manager->m_Scene = new CScene();
+	CManager::m_Manager->m_RenderPipeline->Init(CManager::m_Manager->m_Scene, CManager::m_Manager->m_WindowSize);
+	CManager::m_Manager->m_Scene->Init();
+	CManager::m_Manager->m_RenderPipeline->PostInit();
+	CManager::m_Manager->m_GameTimer->Reset();
 }
 void CManager::Uninit()
 {
-	this->m_Scene->Uninit();
-	if (this->m_Scene != NULL)
+	CManager::m_Manager->m_Scene->Uninit();
+	CManager::m_Manager->m_RenderPipeline->Uninit();
+
+	if (CManager::m_Manager->m_Scene != NULL)
 	{
-		delete (this->m_Scene);
-		this->m_Scene = NULL;
+		delete (CManager::m_Manager->m_Scene);
+		CManager::m_Manager->m_Scene = NULL;
+	}
+	if (CManager::m_Manager->m_RenderPipeline != NULL)
+	{
+		delete (CManager::m_Manager->m_RenderPipeline);
+		CManager::m_Manager->m_RenderPipeline = NULL;
+	}
+	if (CManager::m_Manager->m_GameTimer != NULL)
+	{
+		delete (CManager::m_Manager->m_GameTimer);
+		CManager::m_Manager->m_GameTimer = NULL;
 	}
 
 	CRenderDevice::Uninit();
 }
 void CManager::Update()
 {
-	CInput::Update();
-	this->m_GameTimer->Update();
+	CManager::m_Manager->m_GameTimer->Update();
 	CimGUIManager::Update();
-	this->m_Scene->Update();
+	CManager::m_Manager->m_Scene->Update();
+	CManager::m_Manager->m_RenderPipeline->PostUpdate();
 }
 void CManager::FixedUpdate()
 {
-	this->m_Scene->FixedUpdate();
+	CManager::m_Manager->m_Scene->FixedUpdate();
 }
 void CManager::Draw()
 {
-	this->m_Scene->Draw();
+	CManager::m_Manager->m_RenderPipeline->Render();
 	CimGUIManager::Draw();
 	CRenderDevice::Present();
 }
@@ -121,7 +154,7 @@ void CManager::CalculateFrameStats()
 	static UINT		frameCnt	= 0u;
 	static FLOAT	timeElapsed	= 0.f;
 
-	FLOAT totT = static_cast<FLOAT>(this->m_GameTimer->GetClockTime());
+	FLOAT totT = static_cast<FLOAT>(CManager::m_Manager->m_GameTimer->GetClockTime());
 	frameCnt++;
 	if ((totT - timeElapsed) >= 1.f)
 	{
@@ -129,8 +162,28 @@ void CManager::CalculateFrameStats()
 		FLOAT mspf = 1000.f / fps;
 		std::strstream outs;
 		outs << "Engine_D3D11" << " FPS: " << fps << " Frame Time: " << mspf << "(ms)" << std::ends;
-		SetWindowText(this->m_HWND, outs.str());
+		SetWindowText(CManager::m_Manager->m_HWND, outs.str());
 		frameCnt = 0u;
 		timeElapsed += 1.f;
 	}
+}
+HWND CManager::GetWindowHandle()
+{
+	return (CManager::m_Manager->m_HWND);
+}
+const CTimer& CManager::GetWindowTimer()
+{
+	return (CManager::m_Manager->m_WindowTimer);
+}
+const CRenderPipeline* CManager::GetRenderPipeline()
+{
+	return (CManager::m_Manager->m_RenderPipeline);
+}
+const CGameTimer* CManager::GetGameTimer()
+{
+	return (CManager::m_Manager->m_GameTimer);
+}
+const CScene* CManager::GetScene()
+{
+	return (CManager::m_Manager->m_Scene);
 }

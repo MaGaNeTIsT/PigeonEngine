@@ -132,7 +132,7 @@ void CCamera::Update()
 	BOOL lookRight			= CInput::GetKeyPress('L');
 	BOOL lookRotClock		= CInput::GetKeyPress('O');
 	BOOL lookRotAntiClock	= CInput::GetKeyPress('U');
-	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime());
+	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
 	if (moveForward || moveBack)
 	{
 		CustomType::Vector3 moveVector = this->GetForwardVector();

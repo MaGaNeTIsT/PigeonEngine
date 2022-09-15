@@ -4,7 +4,14 @@
 
 CShaderManager* CShaderManager::m_ShaderManager = new CShaderManager();
 
-std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout = NULL)
+void CShaderManager::ShutDown()
+{
+	CShaderManager::ClearVertexShaderData();
+	CShaderManager::ClearPixelShaderData();
+	CShaderManager::ClearComputeShaderData();
+	delete (CShaderManager::m_ShaderManager);
+}
+std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout)
 {
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> shader = nullptr;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout = nullptr;

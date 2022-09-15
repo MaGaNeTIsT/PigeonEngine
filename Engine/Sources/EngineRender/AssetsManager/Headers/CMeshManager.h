@@ -10,7 +10,7 @@ class CMeshManager
 {
 public:
 	static const CMeshManager* const GetMeshManager() { return m_MeshManager; }
-	static void					Uninit();
+	static void					ShutDown();
 public:
 	static void					ClearMeshData();
 public:

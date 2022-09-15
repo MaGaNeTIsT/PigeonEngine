@@ -4,13 +4,13 @@
 BYTE CInput::m_OldKeyState[256];
 BYTE CInput::m_KeyState[256];
 
-void CInput::Init()
+void CInput::Initialize()
 {
 	memset(m_OldKeyState, 0, 256);
 	memset(m_KeyState, 0, 256);
 }
 
-void CInput::Uninit()
+void CInput::ShutDown()
 {
 
 }

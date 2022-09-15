@@ -33,7 +33,7 @@ public:
 public:
 	virtual void	Draw(const BOOL& needPixelShader = TRUE);
 public:
-	CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, CRenderTypeEnum type = RENDER_TYPE_OPAQUE_DEFERRED);
+	CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, CRenderTypeEnum type = CRenderTypeEnum::RENDER_TYPE_DEFERRED);
 	virtual ~CMeshRenderer();
 protected:
 	CGameObject*							m_GameObject;

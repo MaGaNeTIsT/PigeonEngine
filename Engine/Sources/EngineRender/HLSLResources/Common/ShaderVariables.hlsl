@@ -33,16 +33,17 @@ SamplerState	_LinearClampSampler			: register(s1);
 SamplerState	_PointWrapSampler			: register(s2);
 SamplerState	_LinearWrapSampler			: register(s3);
 
-Texture2D		_EngineGBufferWorldNormal	: register(t0);
-Texture2D		_EngineGBufferAlbedo		: register(t1);
-Texture2D		_EngineGBufferProperty		: register(t2);
-Texture2D		_EngineGBufferID			: register(t3);
-Texture2D		_EngineCameraColor			: register(t4);
-Texture2D		_EngineCameraDepth			: register(t5);
-Texture2D		_EngineLightShadowMap		: register(t6);
+Texture2D		_EngineGBufferColor			: register(t0);
+Texture2D		_EngineGBufferNormal		: register(t1);
+Texture2D		_EngineGBufferAlbedo		: register(t2);
+Texture2D		_EngineGBufferProperty		: register(t3);
 
-Texture2D		_AlbedoTexture				: register(t8);
-Texture2D		_NormalTexture				: register(t9);
-Texture2D		_PropertyTexture			: register(t10);
+Texture2D		_EngineCameraColor			: register(t0);
+Texture2D		_EngineCameraDepth			: register(t1);
+Texture2D		_EngineLightShadowMap		: register(t2);
+
+Texture2D		_AlbedoTexture				: register(t3);
+Texture2D		_NormalTexture				: register(t4);
+Texture2D		_PropertyTexture			: register(t5);
 
 #endif

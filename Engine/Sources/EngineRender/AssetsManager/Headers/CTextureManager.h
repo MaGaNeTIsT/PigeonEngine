@@ -4,7 +4,7 @@ class CTextureManager
 {
 public:
 	static const CTextureManager* const GetTextureManager() { return m_TextureManager; }
-	static void					Uninit();
+	static void					ShutDown();
 public:
 	static void					ClearTexture2DData();
 	static class CTexture2D*	LoadTexture2D(const std::string& name);

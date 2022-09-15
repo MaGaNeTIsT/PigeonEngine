@@ -2,7 +2,7 @@
 #include "../Headers/CGameObjectManager.h"
 
 ULONGLONG CGameObjectManager::m_GameObjectID = 1u;
-void CGameObjectManager::Init()
+void CGameObjectManager::Initialize()
 {
 	m_GameObjectID = 1u;
 }

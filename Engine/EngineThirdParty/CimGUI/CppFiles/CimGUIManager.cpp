@@ -45,7 +45,7 @@ void CimGUIManager::Update()
 {
     ImGuiIO& io = ImGui::GetIO();
 
-    io.DeltaTime = static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime());
+    io.DeltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
 
     CimGUIManager::WndProcessKeyEventsWorkarounds();
 
@@ -112,7 +112,7 @@ void CimGUIManager::InitWnd()
     io.BackendPlatformName = "imgui_impl_win32";
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 
-    HWND hWnd = CManager::GetManager()->GetWindowHandle();
+    HWND hWnd = CManager::GetWindowHandle();
     CimGUIManager::m_imGUIManager->m_WndData.hWnd = hWnd;
     CimGUIManager::m_imGUIManager->m_WndData.WantUpdateHasGamepad = FALSE;
     CimGUIManager::m_imGUIManager->m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;

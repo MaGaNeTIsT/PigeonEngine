@@ -3,8 +3,6 @@
 #include "../../EngineRender/RenderBase/Headers/CStructCommon.h"
 #include "../../EngineGame/Headers/CGameObject.h"
 
-class CTexture2D;
-
 class CTestModel : public CGameObject
 {
 public:
@@ -21,7 +19,7 @@ public:
 	virtual ~CTestModel();
 protected:
 	CustomStruct::ConstantBufferPerDraw m_ConstantBuffer;
-	CTexture2D*	m_AlbedoTexture;
-	CTexture2D*	m_NormalTexture;
-	CTexture2D*	m_PropertyTexture;
+	class CTexture2D*	m_AlbedoTexture;
+	class CTexture2D*	m_NormalTexture;
+	class CTexture2D*	m_PropertyTexture;
 };

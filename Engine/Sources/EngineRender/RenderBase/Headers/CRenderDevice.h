@@ -124,6 +124,8 @@ public:
 	static void		SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology topology = CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	static void		Draw(const UINT& vertexCount, const UINT& startVertexLocation = 0u);
 	static void		DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation = 0u, const INT& baseVertexLocation = 0);
+	static void		Dispatch(const UINT& x, const UINT& y, const UINT& z);
+	static void		DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs = 0u);
 public:
 	static BOOL		CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const CustomStruct::CRenderDepthState& depthState, const CustomStruct::CRenderStencilState* stencilState = NULL);
 	static BOOL		CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const std::vector<CustomStruct::CRenderBlendState>& blendStates);

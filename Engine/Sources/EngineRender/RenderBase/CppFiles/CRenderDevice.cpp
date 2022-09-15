@@ -552,7 +552,7 @@ BOOL CRenderDevice::CreateTexture2D(Texture2DViewInfo& output, const CustomStruc
 	}
 	return TRUE;
 }
-void CRenderDevice::Present(const UINT& syncInterval = 0u)
+void CRenderDevice::Present(const UINT& syncInterval)
 {
 	HRESULT hr = CRenderDevice::m_RenderDevice->m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
 }
@@ -775,6 +775,14 @@ void CRenderDevice::Draw(const UINT& vertexCount, const UINT& startVertexLocatio
 void CRenderDevice::DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation, const INT& baseVertexLocation)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+}
+void CRenderDevice::Dispatch(const UINT& x, const UINT& y, const UINT& z)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->Dispatch(x, y, z);
+}
+void CRenderDevice::DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
 }
 BOOL CRenderDevice::CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const CustomStruct::CRenderDepthState& depthState, const CustomStruct::CRenderStencilState* stencilState)
 {
@@ -1060,14 +1068,10 @@ void CRenderDevice::TranslateDepthStencilState(D3D11_DEPTH_STENCIL_DESC& output,
 	static std::map<CustomStruct::CRenderDepthWriteMask, D3D11_DEPTH_WRITE_MASK> depthWriteMap = {
 		{ CustomStruct::CRenderDepthWriteMask::DEPTH_WRITE_MASK_ZERO, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO },
 		{ CustomStruct::CRenderDepthWriteMask::DEPTH_WRITE_MASK_ALL, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL } };
-	static std::map<CustomStruct::CRenderDepthWriteMask, D3D11_DEPTH_WRITE_MASK> depthWriteMap = {
-		{ CustomStruct::CRenderDepthWriteMask::DEPTH_WRITE_MASK_ZERO, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO },
-		{ CustomStruct::CRenderDepthWriteMask::DEPTH_WRITE_MASK_ALL, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL } };
 
 	output.DepthEnable = depthInput.DepthEnable;
 	output.DepthWriteMask = depthWriteMap[depthInput.DepthWriteMask];
 	TranslateComparisonFunction(output.DepthFunc, depthInput.DepthFunc);
-
 
 	output.StencilEnable = FALSE;
 	if (stencilInput)

@@ -6,8 +6,8 @@ private:
 	static BYTE m_OldKeyState[256];
 	static BYTE m_KeyState[256];
 public:
-	static void	Init();
-	static void	Uninit();
+	static void	Initialize();
+	static void	ShutDown();
 	static void	Update();
 
 	static BOOL	GetKeyPress( BYTE KeyCode );

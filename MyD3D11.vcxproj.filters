@@ -177,9 +177,6 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h">
-      <Filter>Engine\Sources\EngineGame\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
@@ -204,9 +201,6 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CDeferredBuffer.h">
-      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
@@ -227,6 +221,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h">
+      <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -316,9 +313,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CDeferredBuffer.cpp">
-      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRenderer.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>

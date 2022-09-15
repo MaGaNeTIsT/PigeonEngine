@@ -11,10 +11,10 @@ DeferredOutput main(Varying input)
 	float4 property			= _PropertyTexture.Sample(_LinearWrapSampler, input.uv0).rgba;
 
 	DeferredOutput output;
-	output.normalWS	= float4(normalWS, 0);
+	output.color	= float4(albedo * 0.2, 1);
+	output.normal	= float4(normalWS, 0);
 	output.albedo	= float4(albedo, 1);
 	output.property = property;
-	output.id		= 0;
 	return output;
 }
 

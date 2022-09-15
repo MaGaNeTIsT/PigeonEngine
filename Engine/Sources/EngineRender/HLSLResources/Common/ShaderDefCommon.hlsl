@@ -26,10 +26,10 @@ struct Varying
 };
 struct DeferredOutput
 {
-	float4 normalWS		: SV_Target0;
-	float4 albedo		: SV_Target1;
-	float4 property		: SV_Target2;
-	float4 id			: SV_Target3;
+	float4 color		: SV_Target0;
+	float4 normal		: SV_Target1;
+	float4 albedo		: SV_Target2;
+	float4 property		: SV_Target3;
 };
 struct VaryingScreenPolygon2D
 {
