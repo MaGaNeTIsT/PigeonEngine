@@ -1,14 +1,16 @@
 #pragma once
 
+#include "../../../../../Entry/EngineMain.h"
+#include "../../RenderBase/Headers/CRenderDevice.h"
+
 class CTexture2D
 {
 public:
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView() { return (this->m_ShaderResourceView); }
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView() { return (this->m_Texture.ShaderResourceView); }
 public:
-	CTexture2D(const std::string& name, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv);
+	CTexture2D(const std::string& name, const CRenderDevice::Texture2DViewInfo& tex);
 	virtual ~CTexture2D();
 protected:
-	std::string											m_TexturePath;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D>				m_Texture2D;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	m_ShaderResourceView;
+	std::string							m_Name;
+	CRenderDevice::Texture2DViewInfo	m_Texture;
 };

@@ -14,6 +14,10 @@ CManager* CManager::m_Manager = new CManager();
 CManager::CManager()
 {
 	this->m_HWND = NULL;
+	this->m_WindowSize = CustomType::Vector2Int(ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
+	this->m_GraphicDepth = 24u;
+	this->m_FrameRate = ENGINE_UPDATE_FRAME;
+	this->m_Windowed = ENGINE_WINDOWED;
 	this->m_GameTimer = new CGameTimer(&(this->m_WindowTimer));
 }
 CManager::CManager(const CManager& manager)
@@ -24,6 +28,10 @@ CManager::CManager(const CManager& manager)
 		this->m_GameTimer = NULL;
 	}
 	this->m_HWND = manager.m_HWND;
+	this->m_WindowSize = manager.m_WindowSize;
+	this->m_GraphicDepth = manager.m_GraphicDepth;
+	this->m_FrameRate = manager.m_FrameRate;
+	this->m_Windowed = manager.m_Windowed;
 	this->m_WindowTimer = manager.m_WindowTimer;
 	this->m_GameTimer = new CGameTimer(&(this->m_WindowTimer));
 }
@@ -45,7 +53,7 @@ void CManager::Initialize(HWND hWnd)
 	m_Manager->m_HWND = hWnd;
 
 	CInput::Init();
-	CRenderDevice::Init();
+	CRenderDevice::Initialize();
 	CimGUIManager::Initialize();
 	CGameObjectManager::Init();
 
@@ -58,7 +66,7 @@ void CManager::ShutDown()
 	CTextureManager::Uninit();
 
 	CimGUIManager::ShutDown();
-	CRenderDevice::Uninit();
+	CRenderDevice::ShutDown();
 	CInput::Uninit();
 
 	delete (m_Manager);
@@ -66,11 +74,11 @@ void CManager::ShutDown()
 void CManager::StaticUpdate()
 {
 	m_Manager->m_WindowTimer.Update();
-	CRenderDevice::GetDeferredResolve()->Update();
-	CRenderDevice::GetPostEffect()->Update();
 }
 void CManager::Init()
 {
+	CRenderDevice::Init(this->m_HWND, this->m_WindowSize, this->m_GraphicDepth, this->m_FrameRate, this->m_Windowed);
+
 	if (this->m_Scene != NULL)
 	{
 		delete (this->m_Scene);
@@ -88,6 +96,8 @@ void CManager::Uninit()
 		delete (this->m_Scene);
 		this->m_Scene = NULL;
 	}
+
+	CRenderDevice::Uninit();
 }
 void CManager::Update()
 {
@@ -118,7 +128,7 @@ void CManager::CalculateFrameStats()
 		FLOAT fps = static_cast<FLOAT>(frameCnt);
 		FLOAT mspf = 1000.f / fps;
 		std::strstream outs;
-		outs << "Engine_D3D11_0" << " FPS: " << fps << " Frame Time: " << mspf << "(ms)" << std::ends;
+		outs << "Engine_D3D11" << " FPS: " << fps << " Frame Time: " << mspf << "(ms)" << std::ends;
 		SetWindowText(this->m_HWND, outs.str());
 		frameCnt = 0u;
 		timeElapsed += 1.f;

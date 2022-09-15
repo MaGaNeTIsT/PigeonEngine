@@ -46,6 +46,7 @@ namespace CustomStruct
 		XMFLOAT4	TimeParams;
 		XMFLOAT4	DepthMultiAdd;
 		XMFLOAT4	ScreenToViewSpaceParams;
+		XMFLOAT4	CameraViewportMinSizeAndInvBufferSize;
 		XMFLOAT4	CameraViewportSizeAndInvSize;
 		XMFLOAT4	CameraViewportRect;
 		XMFLOAT3	CameraWorldPosition;
@@ -79,6 +80,19 @@ namespace CustomStruct
 		UINT		VertexCount;
 		UINT		IndexStart;
 		UINT		IndexCount;
+	};
+
+	enum CEngineDefaultTexture2DEnum
+	{
+		ENGINE_DEFAULT_TEXTURE2D_WHITE		= 0,
+		ENGINE_DEFAULT_TEXTURE2D_BLACK		= 1,
+		ENGINE_DEFAULT_TEXTURE2D_GRAY		= 2,
+		ENGINE_DEFAULT_TEXTURE2D_RED		= 3,
+		ENGINE_DEFAULT_TEXTURE2D_GREEN		= 4,
+		ENGINE_DEFAULT_TEXTURE2D_BLUE		= 5,
+		ENGINE_DEFAULT_TEXTURE2D_BUMP		= 6,
+		ENGINE_DEFAULT_TEXTURE2D_PROPERTY	= 7,
+		ENGINE_DEFAULT_TEXTURE2D_COUNT
 	};
 
 	enum CRenderComparisonFunction
@@ -136,7 +150,7 @@ namespace CustomStruct
 			DepthWriteMask	= CRenderDepthWriteMask::DEPTH_WRITE_MASK_ZERO;
 			DepthFunc		= CRenderComparisonFunction::COMPARISON_NEVER;
 		}
-		CRenderDepthState(CRenderDepthWriteMask writeMask = CRenderDepthWriteMask::DEPTH_WRITE_MASK_ALL, CRenderComparisonFunction func = CRenderComparisonFunction::COMPARISON_LESS_EQUAL)
+		CRenderDepthState(CRenderComparisonFunction func, CRenderDepthWriteMask writeMask = CRenderDepthWriteMask::DEPTH_WRITE_MASK_ALL)
 		{
 			DepthEnable		= TRUE;
 			DepthWriteMask	= writeMask;
@@ -357,15 +371,18 @@ namespace CustomStruct
 
 	enum CRenderBindFlag
 	{
-		BIND_NONE				= 0x0,
-		BIND_VERTEX_BUFFER		= 0x1,
-		BIND_INDEX_BUFFER		= 0x2,
-		BIND_CONSTANT_BUFFER	= 0x4,
-		BIND_SHADER_RESOURCE	= 0x8,
-		BIND_STREAM_OUTPUT		= 0x10,
-		BIND_RENDER_TARGET		= 0x20,
-		BIND_DEPTH_STENCIL		= 0x40,
-		BIND_UNORDERED_ACCESS	= 0x80
+		BIND_NONE				= 0,
+		BIND_VERTEX_BUFFER		= 1,
+		BIND_INDEX_BUFFER		= 2,
+		BIND_CONSTANT_BUFFER	= 3,
+		BIND_SHADER_RESOURCE	= 4,
+		BIND_STREAM_OUTPUT		= 5,
+		BIND_RENDER_TARGET		= 6,
+		BIND_DEPTH_STENCIL		= 7,
+		BIND_UNORDERED_ACCESS	= 8,
+		BIND_SRV_UAV			= 9,
+		BIND_RTV_SRV			= 10,
+		BIND_RTV_SRV_UAV		= 11,
 	};
 
 	enum CRenderResourceMiscFlag
@@ -388,9 +405,10 @@ namespace CustomStruct
 
 	enum CRenderCPUAccessFlag
 	{
-		CPU_ACCESS_NONE		= 0,
-		CPU_ACCESS_WRITE	= 1,
-		CPU_ACCESS_READ		= 2
+		CPU_ACCESS_NONE			= 0,
+		CPU_ACCESS_WRITE		= 1,
+		CPU_ACCESS_READ			= 2,
+		CPU_ACCESS_READ_WRITE	= 3
 	};
 
 	struct CRenderBufferDesc
@@ -476,10 +494,6 @@ namespace CustomStruct
 		FORMAT_R32G32_FLOAT					= 16,
 		FORMAT_R32G32_UINT					= 17,
 		FORMAT_R32G32_SINT					= 18,
-		FORMAT_R32G8X24_TYPELESS			= 19,
-		FORMAT_D32_FLOAT_S8X24_UINT			= 20,
-		FORMAT_R32_FLOAT_X8X24_TYPELESS		= 21,
-		FORMAT_X32_TYPELESS_G8X24_UINT		= 22,
 		FORMAT_R10G10B10A2_TYPELESS			= 23,
 		FORMAT_R10G10B10A2_UNORM			= 24,
 		FORMAT_R10G10B10A2_UINT				= 25,
@@ -497,14 +511,10 @@ namespace CustomStruct
 		FORMAT_R16G16_SNORM					= 37,
 		FORMAT_R16G16_SINT					= 38,
 		FORMAT_R32_TYPELESS					= 39,
-		FORMAT_D32_FLOAT					= 40,
 		FORMAT_R32_FLOAT					= 41,
 		FORMAT_R32_UINT						= 42,
 		FORMAT_R32_SINT						= 43,
 		FORMAT_R24G8_TYPELESS				= 44,
-		FORMAT_D24_UNORM_S8_UINT			= 45,
-		FORMAT_R24_UNORM_X8_TYPELESS		= 46,
-		FORMAT_X24_TYPELESS_G8_UINT			= 47,
 		FORMAT_R8G8_TYPELESS				= 48,
 		FORMAT_R8G8_UNORM					= 49,
 		FORMAT_R8G8_UINT					= 50,
@@ -512,7 +522,6 @@ namespace CustomStruct
 		FORMAT_R8G8_SINT					= 52,
 		FORMAT_R16_TYPELESS					= 53,
 		FORMAT_R16_FLOAT					= 54,
-		FORMAT_D16_UNORM					= 55,
 		FORMAT_R16_UNORM					= 56,
 		FORMAT_R16_UINT						= 57,
 		FORMAT_R16_SNORM					= 58,
@@ -604,37 +613,88 @@ namespace CustomStruct
 			Depth			= 0u;
 			MipLevels		= 1u;
 			ArraySize		= 1u;
-			Format			= CRenderFormat::FORMAT_UNKNOWN;
+			TextureFormat	= CRenderFormat::FORMAT_UNKNOWN;
+			SRVFormat		= CRenderFormat::FORMAT_UNKNOWN;
+			RTVFormat		= CRenderFormat::FORMAT_UNKNOWN;
+			UAVFormat		= CRenderFormat::FORMAT_UNKNOWN;
 			SampleDesc		= CRenderTextureSampleDesc(1u, 0u);
 			Usage			= CRenderUsage::USAGE_DEFAULT;
 			BindFlags		= CRenderBindFlag::BIND_NONE;
 			CPUAccessFlags	= CRenderCPUAccessFlag::CPU_ACCESS_NONE;
 			MiscFlags		= CRenderResourceMiscFlag::RESOURCE_MISC_NONE;
 		}
-		CRenderTextureDesc(const UINT& width, const UINT& height, CRenderBindFlag bindFlags, CRenderFormat format, const UINT& depth = 0u, const UINT& mipLevels = 1u, const UINT& arraySize = 1u, CRenderUsage usage = CRenderUsage::USAGE_DEFAULT, CRenderCPUAccessFlag cpuAccessFlags = CRenderCPUAccessFlag::CPU_ACCESS_NONE, CRenderResourceMiscFlag miscFlags = CRenderResourceMiscFlag::RESOURCE_MISC_NONE, CRenderTextureSampleDesc sampleDesc = CRenderTextureSampleDesc(1u, 0u))
+		CRenderTextureDesc(const UINT& width, const UINT& height, CRenderBindFlag bindFlags, CRenderFormat texFormat, const CRenderFormat* srvFormat = NULL, const CRenderFormat* rtvFormat = NULL, const CRenderFormat* uavFormat = NULL, const UINT& depth = 0u, const UINT& mipLevels = 1u, const UINT& arraySize = 1u, CRenderUsage usage = CRenderUsage::USAGE_DEFAULT, CRenderCPUAccessFlag cpuAccessFlags = CRenderCPUAccessFlag::CPU_ACCESS_NONE, CRenderResourceMiscFlag miscFlags = CRenderResourceMiscFlag::RESOURCE_MISC_NONE, CRenderTextureSampleDesc sampleDesc = CRenderTextureSampleDesc(1u, 0u))
 		{
 			Width			= width;
 			Height			= height;
 			Depth			= depth;
 			MipLevels		= mipLevels;
 			ArraySize		= arraySize;
-			Format			= format;
 			SampleDesc		= sampleDesc;
 			Usage			= usage;
 			BindFlags		= bindFlags;
 			CPUAccessFlags	= cpuAccessFlags;
 			MiscFlags		= miscFlags;
+			TextureFormat = SRVFormat = UAVFormat = RTVFormat = texFormat;
+			if (srvFormat != NULL)
+				SRVFormat = (*srvFormat);
+			if (rtvFormat != NULL)
+				RTVFormat = (*rtvFormat);
+			if (uavFormat != NULL)
+				UAVFormat = (*uavFormat);
 		}
 		UINT						Width;
 		UINT						Height;
 		UINT						Depth;
 		UINT						MipLevels;
 		UINT						ArraySize;
-		CRenderFormat				Format;
+		CRenderFormat				TextureFormat;
+		CRenderFormat				SRVFormat;
+		CRenderFormat				RTVFormat;
+		CRenderFormat				UAVFormat;
 		CRenderTextureSampleDesc	SampleDesc;
 		CRenderUsage				Usage;
 		CRenderBindFlag				BindFlags;
 		CRenderCPUAccessFlag		CPUAccessFlags;
 		CRenderResourceMiscFlag		MiscFlags;
+	};
+
+	enum CRenderClearDepthStencilFlag
+	{
+		CLEAR_DEPTH			= 1,
+		CLEAR_STENCIL		= 2,
+		CLEAR_DEPTH_STENCIL	= 3
+	};
+
+	enum CRenderPrimitiveTopology
+	{
+		PRIMITIVE_TOPOLOGY_UNDEFINED		= 0,
+		PRIMITIVE_TOPOLOGY_POINTLIST		= 1,
+		PRIMITIVE_TOPOLOGY_LINELIST			= 2,
+		PRIMITIVE_TOPOLOGY_LINESTRIP		= 3,
+		PRIMITIVE_TOPOLOGY_TRIANGLELIST		= 4,
+		PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	= 5
+	};
+
+	class CEngineDefaultDefines
+	{
+	public:
+		CEngineDefaultDefines() {}
+		~CEngineDefaultDefines() {}
+	public:
+		static std::string GetDefaultTexturePath(const INT& input)
+		{
+			static std::map<CEngineDefaultTexture2DEnum, std::string> engineDefaultTexturePathMap = {
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE, std::string(ENGINE_TEXTURE2D_DEFAULT_WHITE) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BLACK, std::string(ENGINE_TEXTURE2D_DEFAULT_BLACK) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY, std::string(ENGINE_TEXTURE2D_DEFAULT_GRAY) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_RED, std::string(ENGINE_TEXTURE2D_DEFAULT_RED) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GREEN, std::string(ENGINE_TEXTURE2D_DEFAULT_GREEN) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BLUE, std::string(ENGINE_TEXTURE2D_DEFAULT_BLUE) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP, std::string(ENGINE_TEXTURE2D_DEFAULT_BUMP) },
+				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY, std::string(ENGINE_TEXTURE2D_DEFAULT_PROPERTY) } };
+
+			return engineDefaultTexturePathMap[static_cast<CEngineDefaultTexture2DEnum>(input)];
+		}
 	};
 }

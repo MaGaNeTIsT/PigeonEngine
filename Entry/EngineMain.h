@@ -39,10 +39,12 @@ using namespace DirectX;
 #define ENGINE_SCREEN_HEIGHT								(900)
 
 #define ENGINE_FIXED_UPDATE_FRAME							(60)
-#define ENGINE_UPDATE_FRAME									(75)
+#define ENGINE_UPDATE_FRAME									(60)
+#define ENGINE_WINDOWED										(1)
 
 #define ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT			(0u)
 #define ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT			(1u)
+#define ENGINE_GBUFFER_ALL_START_SLOT						(0u)
 #define ENGINE_GBUFFER_WORLD_NORMAL_START_SLOT				(0u)
 #define ENGINE_GBUFFER_ALBEDO_START_SLOT					(1u)
 #define ENGINE_GBUFFER_PROPERTY_START_SLOT					(2u)
@@ -68,7 +70,7 @@ using namespace DirectX;
 #define ENGINE_SHADER_DEFAULT_PS							("./Engine/Assets/EngineShaders/EngineDefaultPS.cso")
 #define ENGINE_SHADER_EMPTY_PS								("./Engine/Assets/EngineShaders/EngineEmptyPS.cso")
 #define ENGINE_SHADER_GBUFFER_WRITE_PS						("./Engine/Assets/EngineShaders/EngineGBufferWritePS.cso")
-#define ENGINE_SHADER_GBUFFER_RESOLVE_PS					("./Engine/Assets/EngineShaders/EngineGBufferResolvePS.cso")
+#define ENGINE_SHADER_DIRECT_LIGHT_PS						("./Engine/Assets/EngineShaders/EngineDirectLightPS.cso")
 #define ENGINE_SHADER_POST_EFFECT_EXPOSURE_PS				("./Engine/Assets/EngineShaders/EnginePostEffectExposurePS.cso")
 #define ENGINE_SHADER_SCREEN_POLYGON_2D_VS					("./Engine/Assets/EngineShaders/EngineScreenPolygon2DVS.cso")
 #define ENGINE_SHADER_SCREEN_POLYGON_2D_PS					("./Engine/Assets/EngineShaders/EngineScreenPolygon2DPS.cso")
@@ -83,3 +85,5 @@ using namespace DirectX;
 #define ENGINE_CAMERA_FAR									(1000.f)
 #define ENGINE_CAMERA_MOVE_SPEED							(20.f)
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)
+
+#define ENGINE_SHADOW_MAP_SIZE								(4096)

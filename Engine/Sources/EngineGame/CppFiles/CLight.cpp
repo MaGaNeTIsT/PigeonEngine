@@ -7,6 +7,7 @@ CLight::CLight()
 	this->m_Rotation.Reset();
 	this->m_Scale = 1.f;
 	this->m_Data.Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
+	this->m_ShadowSize = CustomType::Vector2Int(ENGINE_SHADOW_MAP_SIZE, ENGINE_SHADOW_MAP_SIZE);
 }
 CLight::CLight(const CustomType::Quaternion& rotation)
 {
@@ -14,6 +15,23 @@ CLight::CLight(const CustomType::Quaternion& rotation)
 	this->m_Rotation = rotation;
 	this->m_Scale = 1.f;
 	this->m_Data.Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
+	this->m_ShadowSize = CustomType::Vector2Int(ENGINE_SHADOW_MAP_SIZE, ENGINE_SHADOW_MAP_SIZE);
+}
+CLight::CLight(const CustomType::Vector2Int& shadowSize)
+{
+	this->m_Position.Reset();
+	this->m_Rotation.Reset();
+	this->m_Scale = 1.f;
+	this->m_Data.Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
+	this->m_ShadowSize = shadowSize;
+}
+CLight::CLight(const CustomType::Quaternion& rotation, const CustomType::Vector2Int& shadowSize)
+{
+	this->m_Position.Reset();
+	this->m_Rotation = rotation;
+	this->m_Scale = 1.f;
+	this->m_Data.Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
+	this->m_ShadowSize = shadowSize;
 }
 CLight::CLight(const CustomType::Quaternion& rotation, const CustomStruct::CColor& color)
 {
@@ -21,6 +39,15 @@ CLight::CLight(const CustomType::Quaternion& rotation, const CustomStruct::CColo
 	this->m_Rotation = rotation;
 	this->m_Scale = 1.f;
 	this->m_Data.Color = color;
+	this->m_ShadowSize = CustomType::Vector2Int(ENGINE_SHADOW_MAP_SIZE, ENGINE_SHADOW_MAP_SIZE);
+}
+CLight::CLight(const CustomType::Quaternion& rotation, const CustomStruct::CColor& color, const CustomType::Vector2Int& shadowSize)
+{
+	this->m_Position.Reset();
+	this->m_Rotation = rotation;
+	this->m_Scale = 1.f;
+	this->m_Data.Color = color;
+	this->m_ShadowSize = shadowSize;
 }
 CLight::CLight(const CLight& light)
 {
@@ -28,6 +55,7 @@ CLight::CLight(const CLight& light)
 	this->m_Rotation = light.m_Rotation;
 	this->m_Scale = 1.f;
 	this->m_Data = light.m_Data;
+	this->m_ShadowSize = light.m_ShadowSize;
 }
 CLight::~CLight()
 {

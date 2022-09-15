@@ -1,6 +1,7 @@
 #include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CTextureManager.h"
 #include "../Headers/CTexture2D.h"
+#include "../../RenderBase/Headers/CStructCommon.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 
 CTextureManager* CTextureManager::m_TextureManager = new CTextureManager();
@@ -83,24 +84,17 @@ CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name)
 		}
 	}
 	fclose(file);
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> tempTexture2D = nullptr;
+	CRenderDevice::Texture2DViewInfo tempTexture2D;
 	{
-		if (CRenderDevice::CreateTexture2D(tempTexture2D, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, image, width * 4u, size) == false)
-		{
-			delete[]image;
-			return NULL;
-		}
-	}
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempSRV = nullptr;
-	{
-		if (CRenderDevice::CreateTexture2DShaderResourceView(tempTexture2D, tempSRV, DXGI_FORMAT_R8G8B8A8_UNORM, D3D11_SRV_DIMENSION_TEXTURE2D) == false)
+		CustomStruct::CRenderFormat srvFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
+		if (CRenderDevice::CreateTexture2D(tempTexture2D, CustomStruct::CRenderTextureDesc(width, height, CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE, CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM, &srvFormat), &CustomStruct::CRenderSubresourceData(image, width * 4u, size)) == FALSE)
 		{
 			delete[]image;
 			return NULL;
 		}
 	}
 	delete[]image;
-	CTexture2D* resultTexture2D = new CTexture2D(name, tempTexture2D, tempSRV);
+	CTexture2D* resultTexture2D = new CTexture2D(name, tempTexture2D);
 	return resultTexture2D;
 }
 void CTextureManager::AddTexture2DData(const std::string& name, CTexture2D* ptrData)

@@ -17,16 +17,17 @@ CScene::~CScene()
 {
 }
 template <typename T>
-T* CScene::AddGameObject(const UINT& layout)
+T* CScene::AddGameObject(const UINT& layout)const
 {
 	CGameObject* gameObject = new T();
 	gameObject->SetScene(this);
+	gameObject->Active();
 	gameObject->Init();
 	this->m_GameObject[layout][gameObject->GetGameObjectID()] = gameObject;
 	return  (reinterpret_cast<T*>(gameObject));
 }
 template <typename T>
-T* CScene::GetGameObjectFirst(const UINT& layout)
+T* CScene::GetGameObjectFirst(const UINT& layout)const
 {
 	if (this->m_GameObject[layout].size() < 1)
 		return NULL;
@@ -41,7 +42,7 @@ T* CScene::GetGameObjectFirst(const UINT& layout)
 	return NULL;
 }
 template <typename T>
-T* CScene::GetGameObjectByIndex(const UINT& layout, const UINT& idx)
+T* CScene::GetGameObjectByIndex(const UINT& layout, const UINT& idx)const
 {
 	if (this->m_GameObject[layout].size() < 1)
 		return NULL;
@@ -62,7 +63,7 @@ T* CScene::GetGameObjectByIndex(const UINT& layout, const UINT& idx)
 	return NULL;
 }
 template <typename T>
-std::vector<T*> CScene::GetGameObjectAll(const UINT& layout)
+std::vector<T*> CScene::GetGameObjectAll(const UINT& layout)const
 {
 	std::vector<T*> listObj;
 	if (this->m_GameObject[layout].size() < 1)
@@ -79,43 +80,25 @@ std::vector<T*> CScene::GetGameObjectAll(const UINT& layout)
 }
 void CScene::Init()
 {
-	CRenderDevice::CreateConstantBuffer(this->m_ConstantBuffer, sizeof(CustomStruct::ConstantBufferPerFrame));
+	CCamera* mainCamera = this->AddGameObject<CCamera>(SceneLayout::LAYOUT_CAMERA);
 
-	CCamera* mainCamera = this->AddGameObject<CCamera>(SCENELAYOUT_CAMERA);
-
-	this->m_ConstantBufferData.ProjectionMatrix = mainCamera->GetProjectionMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ProjectionInvMatrix = mainCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.DepthMultiAdd = mainCamera->GetDeviceZToViewZMulAdd().GetXMFLOAT4();
-	this->m_ConstantBufferData.ScreenToViewSpaceParams = mainCamera->GetScreenToViewParameters(CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height), CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height)).GetXMFLOAT4();
-	this->m_ConstantBufferData.CameraViewportSizeAndInvSize = mainCamera->GetViewportSizeAndInvSize().GetXMFLOAT4();
-	this->m_ConstantBufferData.CameraViewportRect = mainCamera->GetViewport().GetXMFLOAT4();
-
-	CLight* mainLight = this->AddGameObject<CLight>(SCENELAYOUT_LIGHT);
-	CPlane* terrainPlane = this->AddGameObject<CPlane>(SCENELAYOUT_TERRAIN);
-	CCube* cube = this->AddGameObject<CCube>(SCENELAYOUT_OPAQUE);
-	CTestModel* sphere = this->AddGameObject<CTestModel>(SCENELAYOUT_OPAQUE);
-	CPlane* testPlane = this->AddGameObject<CPlane>(SCENELAYOUT_OPAQUE);
-
-	this->m_GTAOComputeShader.SetScene(this);
-	this->m_GTAOComputeShader.Init();
-	this->m_DebugScreen.SetScene(this);
-	this->m_DebugScreen.Init();
+	CLight* mainLight = this->AddGameObject<CLight>(SceneLayout::LAYOUT_LIGHT);
+	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
+	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
+	CTestModel* sphere = this->AddGameObject<CTestModel>(SceneLayout::LAYOUT_OPAQUE);
+	CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);
 
 	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
 	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(100.f, 50, 50.f);
 	cube->SetPosition(CustomType::Vector3(0.f, 0.5f, 0.f));
 	sphere->SetPosition(CustomType::Vector3(0.f, 0.5f, 2.f));
-	//testPlane->SetRotation(CustomType::Quaternion(testPlane->GetUpVector(), 30.f * CustomType::CMath::GetDegToRad()));
 	testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));;
 	testPlane->SetScale(CustomType::Vector3(3.f, 3.f, 3.f));;
 }
 void CScene::Uninit()
 {
-	this->m_GTAOComputeShader.Uninit();
-	this->m_DebugScreen.Uninit();
-
-	for (INT i = 0; i < SCENELAYOUT_COUNT; ++i)
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
@@ -127,18 +110,15 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
-	for (INT i = 0; i < SCENELAYOUT_COUNT; ++i)
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 			object.second->Update();
 	}
-
-	this->m_DebugScreen.Update();
-	this->m_GTAOComputeShader.Update();
 }
 void CScene::FixedUpdate()
 {
-	for (INT i = 0; i < SCENELAYOUT_COUNT; ++i)
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 			object.second->FixedUpdate();
@@ -146,7 +126,7 @@ void CScene::FixedUpdate()
 }
 void CScene::DrawOpaqueDeferred()
 {
-	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
+	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
@@ -160,7 +140,7 @@ void CScene::DrawOpaqueDeferred()
 }
 void CScene::DrawOpaqueForward()
 {
-	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
+	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
@@ -174,7 +154,7 @@ void CScene::DrawOpaqueForward()
 }
 void CScene::DrawTransparent()
 {
-	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
+	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
@@ -188,7 +168,7 @@ void CScene::DrawTransparent()
 }
 void CScene::DrawSky()
 {
-	for (const auto& object : this->m_GameObject[SCENELAYOUT_SKY])
+	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_SKY])
 	{
 		if (object.second->GetMeshRenderer() != NULL)
 		{
@@ -200,7 +180,7 @@ void CScene::DrawSky()
 void CScene::DrawShadow()
 {
 	CMeshRenderer::CRenderTypeEnum renderType;
-	for (INT i = SCENELAYOUT_TERRAIN; i < SCENELAYOUT_SKY; ++i)
+	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_SKY; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
 		{
@@ -212,64 +192,4 @@ void CScene::DrawShadow()
 			}
 		}
 	}
-}
-void CScene::PrepareDraw()
-{
-	CCamera* tempCamera = this->GetGameObjectFirst<CCamera>(SCENELAYOUT_CAMERA);
-	this->m_ConstantBufferData.ViewMatrix = tempCamera->GetViewMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ViewInvMatrix = tempCamera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ViewProjectionMatrix = tempCamera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.ViewProjectionInvMatrix = tempCamera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
-	this->m_ConstantBufferData.TimeParams = XMFLOAT4(static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetManager()->GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
-	this->m_ConstantBufferData.CameraWorldPosition = tempCamera->GetPosition().GetXMFLOAT3();
-
-	std::vector<CLight*> tempLightList = this->GetGameObjectAll<CLight>(SCENELAYOUT_LIGHT);
-	this->m_ConstantBufferData.DirectionalLightCount = static_cast<FLOAT>(tempLightList.size());
-	for (INT i = 0; i < tempLightList.size() && i < 4; i++)
-	{
-		this->m_ConstantBufferData.DirectionalLightData[i].Direction = tempLightList[i]->GetLightData()->Direction;
-		this->m_ConstantBufferData.DirectionalLightData[i].Color = tempLightList[i]->GetLightData()->Color;
-	}
-
-	CRenderDevice::UploadConstantBuffer(this->m_ConstantBuffer, &(this->m_ConstantBufferData));
-	CRenderDevice::BindConstantBuffer(this->m_ConstantBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-	CRenderDevice::BindComputeShaderConstantBuffer(this->m_ConstantBuffer, 0u);
-}
-void CScene::Draw()
-{
-	CRenderDevice::ResetRenderTarget();
-	this->PrepareDraw();
-
-
-	CRenderDevice::BeginShadow();
-	this->DrawShadow();
-	CRenderDevice::EndShadow();
-
-
-	CRenderDevice::BeginDeferred();
-	this->DrawOpaqueDeferred();
-	this->DrawOpaqueDeferred();
-	CRenderDevice::EndDeferred();
-
-
-	CRenderDevice::BeginDeferredResolve();
-	CRenderDevice::SetShadowMap(ENGINE_SRV_LIGHT_SHADOW_MAP_START_SLOT);
-	CRenderDevice::GetDeferredResolve()->Draw();
-	CRenderDevice::EndDeferredResolve();
-
-
-	CRenderDevice::BeginForward();
-	this->DrawSky();
-	this->DrawOpaqueForward();
-	CRenderDevice::SetDepthState(CRenderDevice::DSSE_TESTENABLEWRITEDISABLE);
-	CRenderDevice::SetBlendState(CRenderDevice::BSE_BLENDALPHA);
-	this->DrawTransparent();
-	CRenderDevice::EndForward();
-
-
-	CRenderDevice::SetOutputRTV();
-	CRenderDevice::GetPostEffect()->Draw();
-	this->m_DebugScreen.Draw();
-
-	this->m_GTAOComputeShader.Draw();
 }

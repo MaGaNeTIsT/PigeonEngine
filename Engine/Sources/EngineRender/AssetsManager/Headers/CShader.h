@@ -1,28 +1,49 @@
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
+#include "../../RenderBase/Headers/CStructCommon.h"
 
 class CShader
 {
 public:
-	void	SetVertexShader(const string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout);
-	void	SetPixelShader(const string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader);
-	BOOL	CreateConstantBuffer(const UINT& sizeData);
-	BOOL	CreateConstantBufferExtra(const UINT& sizeData);
-	void	UploadConstantBuffer(const void* ptrData);
-	void	UploadConstantBufferExtra(const void* ptrData);
-	void	BindConstantBuffer(const UINT& startSlot);
-	void	BindConstantBufferExtra(const UINT& startSlot);
-	void	BindShaderInputLayout();
-private:
-	std::string									m_VertexShaderPath;
-	std::string									m_PixelShaderPath;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader>	m_VertexShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader>	m_PixelShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_InputLayout;
-	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
-	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBufferExtra;
+	virtual void Bind() = 0;
 public:
-	CShader();
+	CShader(const std::string& name);
 	virtual ~CShader();
+protected:
+	std::string	m_Name;
+};
+
+class CVertexShader : public CShader
+{
+public:
+	virtual void Bind()override;
+public:
+	CVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader> shader, Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout);
+	virtual ~CVertexShader();
+protected:
+	Microsoft::WRL::ComPtr<ID3D11VertexShader>	m_Shader;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout>	m_InputLayout;
+};
+
+class CPixelShader : public CShader
+{
+public:
+	virtual void Bind()override;
+public:
+	CPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader> shader);
+	virtual ~CPixelShader();
+protected:
+	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_Shader;
+};
+
+class CComputeShader : public CShader
+{
+public:
+	virtual void Bind()override;
+public:
+	CComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader> shader);
+	virtual ~CComputeShader();
+protected:
+	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_Shader;
 };

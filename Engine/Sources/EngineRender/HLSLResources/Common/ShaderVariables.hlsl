@@ -14,6 +14,7 @@ cbuffer ConstantBufferPerFrame : register(b0)
 	float4					_TimeParams;
 	float4					_DepthMultiAdd;
 	float4					_ScreenToViewSpaceParams;
+	float4					_CameraViewportMinSizeAndInvBufferSize;
 	float4					_CameraViewportSizeAndInvSize;
 	float4					_CameraViewportRect;
 	float3					_CameraWorldPosition;

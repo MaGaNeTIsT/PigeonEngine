@@ -33,6 +33,7 @@ public:
 	CustomType::Matrix4x4	GetViewProjectionMatrix() { return m_ViewProjectionMatrix; }
 	CustomType::Matrix4x4	GetViewProjectionInverseMatrix() { return m_ViewProjectionInvMatrix; }
 public:
+	CustomType::Vector2		GetViewportMinSize() { return m_ViewportMinSize; }
 	CustomType::Vector4		GetViewportSizeAndInvSize() { return m_ViewportSizeAndInvSize; }
 	CustomType::Vector2		GetDeviceZToViewZMulAdd() { return m_DeviceZToViewZMulAdd; }
 	CustomType::Vector4		GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize);
@@ -58,6 +59,7 @@ protected:
 	CustomType::Matrix4x4	m_ProjectionInvMatrix;
 	CustomType::Matrix4x4	m_ViewProjectionMatrix;
 	CustomType::Matrix4x4	m_ViewProjectionInvMatrix;
+	CustomType::Vector2		m_ViewportMinSize;
 	CustomType::Vector4		m_ViewportSizeAndInvSize;
 	CustomType::Vector2		m_DeviceZToViewZMulAdd;
 };

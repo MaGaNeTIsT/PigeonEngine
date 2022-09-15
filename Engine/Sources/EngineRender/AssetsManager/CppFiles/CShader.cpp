@@ -1,57 +1,56 @@
 #include "../Headers/CShader.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 
-CShader::CShader()
+
+
+CShader::CShader(const std::string& name)
 {
-	this->m_VertexShaderPath	= ENGINE_SHADER_NONE;
-	this->m_PixelShaderPath		= ENGINE_SHADER_NONE;
-	this->m_VertexShader		= nullptr;
-	this->m_PixelShader			= nullptr;
-	this->m_InputLayout			= nullptr;
-	this->m_ConstantBuffer		= nullptr;
-	this->m_ConstantBufferExtra	= nullptr;
+	this->m_Name = name;
 }
 CShader::~CShader()
 {
 }
-void CShader::SetVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout)
+
+
+
+CVertexShader::CVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader> shader, Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout) : CShader(name)
 {
-	this->m_VertexShaderPath	= name;
-	this->m_VertexShader		= vertexShader;
-	this->m_InputLayout			= inputLayout;
+	this->m_Shader		= shader;
+	this->m_InputLayout	= inputLayout;
 }
-void CShader::SetPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader)
+CVertexShader::~CVertexShader()
 {
-	this->m_PixelShaderPath	= name;
-	this->m_PixelShader		= pixelShader;
 }
-BOOL CShader::CreateConstantBuffer(const UINT& sizeData)
+void CVertexShader::Bind()
 {
-	return (CRenderDevice::CreateConstantBuffer(this->m_ConstantBuffer, sizeData));
+	CRenderDevice::SetVSShader(this->m_Shader);
+	CRenderDevice::SetInputLayout(this->m_InputLayout);
 }
-BOOL CShader::CreateConstantBufferExtra(const UINT& sizeData)
+
+
+
+CPixelShader::CPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader> shader) : CShader(name)
 {
-	return (CRenderDevice::CreateConstantBuffer(this->m_ConstantBufferExtra, sizeData));
+	this->m_Shader = shader;
 }
-void CShader::UploadConstantBuffer(const void* ptrData)
+CPixelShader::~CPixelShader()
 {
-	CRenderDevice::UploadConstantBuffer(this->m_ConstantBuffer, ptrData);
 }
-void CShader::UploadConstantBufferExtra(const void* ptrData)
+void CPixelShader::Bind()
 {
-	CRenderDevice::UploadConstantBuffer(this->m_ConstantBufferExtra, ptrData);
+	CRenderDevice::SetPSShader(this->m_Shader);
 }
-void CShader::BindConstantBuffer(const UINT& startSlot)
+
+
+
+CComputeShader::CComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader> shader) : CShader(name)
 {
-	CRenderDevice::BindConstantBuffer(this->m_ConstantBuffer, startSlot);
+	this->m_Shader = shader;
 }
-void CShader::BindConstantBufferExtra(const UINT& startSlot)
+CComputeShader::~CComputeShader()
 {
-	CRenderDevice::BindConstantBuffer(this->m_ConstantBufferExtra, startSlot);
 }
-void CShader::BindShaderInputLayout()
+void CComputeShader::Bind()
 {
-	CRenderDevice::GetDeviceContext()->IASetInputLayout(this->m_InputLayout.Get());
-	CRenderDevice::GetDeviceContext()->VSSetShader(this->m_VertexShader.Get(), NULL, 0u);
-	CRenderDevice::GetDeviceContext()->PSSetShader(this->m_PixelShader.Get(), NULL, 0u);
+	CRenderDevice::SetCSShader(this->m_Shader);
 }

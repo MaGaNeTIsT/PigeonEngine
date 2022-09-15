@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./CTimer.h"
+#include "./CBaseType.h"
 
 class CScene;
 class CGameTimer;
@@ -26,10 +27,14 @@ public:
 	const CScene*		GetScene()const { return this->m_Scene; }
 	const CGameTimer*	GetGameTimer()const { return (this->m_GameTimer); }
 private:
-	HWND				m_HWND;
-	CTimer				m_WindowTimer;
-	CGameTimer*			m_GameTimer	= NULL;
-	CScene*				m_Scene		= NULL;
+	HWND					m_HWND;
+	CustomType::Vector2Int	m_WindowSize;
+	UINT					m_GraphicDepth;
+	UINT					m_FrameRate;
+	CTimer					m_WindowTimer;
+	BOOL					m_Windowed;
+	CGameTimer*				m_GameTimer	= NULL;
+	CScene*					m_Scene		= NULL;
 private:
 	CManager();
 	CManager(const CManager& manager);

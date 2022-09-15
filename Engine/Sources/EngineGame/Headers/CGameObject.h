@@ -57,7 +57,10 @@ public:
 	}
 public:
 	const ULONGLONG& GetGameObjectID()const { return m_UID; }
-	void SetScene(CScene* scene) { m_Scene = scene; }
+	const BOOL& IsActive()const { return m_Active; }
+	void Active() { m_Active = TRUE; }
+	void Inactive() { m_Active = FALSE; }
+	void SetScene(const CScene* scene) { m_Scene = scene; }
 	void SetParent(CGameObject* parent)
 	{
 		if (m_Parent != NULL)
@@ -74,7 +77,8 @@ public:
 	CMeshRenderer*	GetMeshRenderer()const { return m_MeshRenderer; }
 protected:
 	ULONGLONG							m_UID;
-	CScene*								m_Scene			= NULL;
+	BOOL								m_Active;
+	const CScene*						m_Scene			= NULL;
 	CGameObject*						m_Parent		= NULL;
 	std::map<ULONGLONG,CGameObject*>	m_Child;
 
@@ -85,7 +89,7 @@ protected:
 	CustomType::Quaternion				m_Rotation;
 	CustomType::Vector3					m_Scale			= CustomType::Vector3(1.f, 1.f, 1.f);
 public:
-	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); }
+	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); m_Active = FALSE; }
 	virtual ~CGameObject()
 	{
 		if (m_MeshRenderer != NULL)

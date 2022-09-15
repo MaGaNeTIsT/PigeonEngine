@@ -1,7 +1,5 @@
 #pragma once
 
-class CTexture2D;
-
 class CTextureManager
 {
 public:
@@ -9,14 +7,14 @@ public:
 	static void					Uninit();
 public:
 	static void					ClearTexture2DData();
-	static CTexture2D*			LoadTexture2D(const std::string& name);
+	static class CTexture2D*	LoadTexture2D(const std::string& name);
 private:
-	static CTexture2D*			LoadTGATexture2D(const std::string& name);
+	static class CTexture2D*	LoadTGATexture2D(const std::string& name);
 private:
-	static void					AddTexture2DData(const std::string& name, CTexture2D* ptrData);
-	static CTexture2D*			FindTexture2DData(const std::string& name);
+	static void					AddTexture2DData(const std::string& name, class CTexture2D* ptrData);
+	static class CTexture2D*	FindTexture2DData(const std::string& name);
 private:
-	std::map<std::string, CTexture2D*> m_Texture2DData;
+	std::map<std::string, class CTexture2D*> m_Texture2DData;
 private:
 	CTextureManager() {}
 	CTextureManager(const CTextureManager&) {}

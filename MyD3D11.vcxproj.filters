@@ -361,7 +361,7 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferResolvePS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">

@@ -57,6 +57,7 @@ CCamera::CCamera(const CCamera& camera)
 	this->m_ProjectionInvMatrix		= camera.m_ProjectionInvMatrix;
 	this->m_ViewProjectionMatrix	= camera.m_ViewProjectionMatrix;
 	this->m_ViewProjectionInvMatrix	= camera.m_ViewProjectionInvMatrix;
+	this->m_ViewportMinSize			= camera.m_ViewportMinSize;
 	this->m_ViewportSizeAndInvSize	= camera.m_ViewportSizeAndInvSize;
 	this->m_DeviceZToViewZMulAdd	= camera.m_DeviceZToViewZMulAdd;
 }
@@ -98,6 +99,7 @@ void CCamera::ReCalculateProjectionMatrix()
 	this->m_DeviceZToViewZMulAdd = CustomType::Vector2(depthMul, depthAdd);
 
 	this->m_ViewportSizeAndInvSize = CustomType::Vector4(viewportW, viewportH, 1.f / viewportW, 1.f / viewportH);
+	this->m_ViewportMinSize = CustomType::Vector2(this->m_CameraInfo.Viewport.X(), this->m_CameraInfo.Viewport.Y());
 }
 void CCamera::ReCalculateViewMatrix()
 {

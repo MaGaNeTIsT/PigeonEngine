@@ -1,5 +1,5 @@
-#ifndef _ENGINE_GBUFFER_RESOLVE_PS_HLSL
-#define _ENGINE_GBUFFER_RESOLVE_PS_HLSL
+#ifndef _ENGINE_DIRECT_LIGHT_PS_HLSL
+#define _ENGINE_DIRECT_LIGHT_PS_HLSL
 
 #include "../Common/ShaderCommon.hlsl"
 

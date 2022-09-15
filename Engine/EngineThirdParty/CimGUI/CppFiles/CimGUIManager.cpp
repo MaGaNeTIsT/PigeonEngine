@@ -63,7 +63,7 @@ void CimGUIManager::Update()
 }
 void CimGUIManager::Draw()
 {
-    static ImVec4   clearColor          = ImVec4(0.45f, 0.55f, 0.6f, 1.0f);
+    static ImVec4   clearColor          = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
     static bool     showDemoWindow      = FALSE;
     static bool     showAnotherWindow   = FALSE;
     static FLOAT    f                   = 0.f;
@@ -421,10 +421,10 @@ void CimGUIManager::InitD3D()
 }
 void CimGUIManager::D3DSetupRenderState(ImDrawData* drawData)
 {
-    ID3D11DeviceContext* ctx = CRenderDevice::GetDeviceContext();
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = CRenderDevice::GetRenderDeviceContext();
 
     D3D11_VIEWPORT vp;
-    ZeroMemory(&vp, sizeof(vp));
+    ::ZeroMemory(&vp, sizeof(vp));
     vp.Width = drawData->DisplaySize.x;
     vp.Height = drawData->DisplaySize.y;
     vp.MinDepth = 0.f;
@@ -457,15 +457,15 @@ void CimGUIManager::D3DRenderDrawData(ImDrawData* drawData)
     if (drawData->DisplaySize.x <= 0.f || drawData->DisplaySize.y <= 0.f)
         return;
 
-    ID3D11DeviceContext* ctx = CRenderDevice::GetDeviceContext();
-    ID3D11Device* dvc = CRenderDevice::GetDevice();
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = CRenderDevice::GetRenderDeviceContext();
+    Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
 
     if (!CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer || CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize < drawData->TotalVtxCount)
     {
         if (CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer = NULL; }
         CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize = drawData->TotalVtxCount + 5000;
         D3D11_BUFFER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.Usage = D3D11_USAGE_DYNAMIC;
         desc.ByteWidth = CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize * sizeof(ImDrawVert);
         desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -480,7 +480,7 @@ void CimGUIManager::D3DRenderDrawData(ImDrawData* drawData)
         if (CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer = NULL; }
         CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize = drawData->TotalIdxCount + 10000;
         D3D11_BUFFER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.Usage = D3D11_USAGE_DYNAMIC;
         desc.ByteWidth = CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize * sizeof(ImDrawIdx);
         desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -629,7 +629,7 @@ void CimGUIManager::D3DRenderDrawData(ImDrawData* drawData)
 }
 void CimGUIManager::D3DCreateFontsTexture()
 {
-    ID3D11Device* dvc = CRenderDevice::GetDevice();
+    Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
     ImGuiIO& io = ImGui::GetIO();
     UCHAR* pixels;
     INT width, height;
@@ -637,7 +637,7 @@ void CimGUIManager::D3DCreateFontsTexture()
 
     {
         D3D11_TEXTURE2D_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.Width = width;
         desc.Height = height;
         desc.MipLevels = 1u;
@@ -659,7 +659,7 @@ void CimGUIManager::D3DCreateFontsTexture()
             return;
 
         D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-        ZeroMemory(&srvDesc, sizeof(srvDesc));
+        ::ZeroMemory(&srvDesc, sizeof(srvDesc));
         srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
         srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
         srvDesc.Texture2D.MipLevels = desc.MipLevels;
@@ -674,7 +674,7 @@ void CimGUIManager::D3DCreateFontsTexture()
 
     {
         D3D11_SAMPLER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
         desc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
         desc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -690,7 +690,7 @@ void CimGUIManager::D3DCreateFontsTexture()
 }
 BOOL CimGUIManager::D3DCreateDeviceObjects()
 {
-    ID3D11Device* dvc = CRenderDevice::GetDevice();
+    Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
     if (!dvc)
         return FALSE;
     if (CimGUIManager::m_imGUIManager->m_D3DData.FontSampler)
@@ -712,7 +712,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
         }
 
         {
-            HRESULT hr = CRenderDevice::GetDevice()->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.VertexShader);
+            HRESULT hr = dvc->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.VertexShader);
             if (FAILED(hr))
             {
                 delete[]buffer;
@@ -728,7 +728,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
                 tempLayout[1] = { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u };
                 tempLayout[2] = { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u };
             }
-            HRESULT hr = CRenderDevice::GetDevice()->CreateInputLayout(tempLayout.data(), 3u, static_cast<void*>(buffer), fsize, &CimGUIManager::m_imGUIManager->m_D3DData.InputLayout);
+            HRESULT hr = dvc->CreateInputLayout(tempLayout.data(), 3u, static_cast<void*>(buffer), fsize, &CimGUIManager::m_imGUIManager->m_D3DData.InputLayout);
             if (FAILED(hr))
             {
                 delete[]buffer;
@@ -738,7 +738,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
         delete[]buffer;
         {
             D3D11_BUFFER_DESC desc;
-            ZeroMemory(&desc, sizeof(desc));
+            ::ZeroMemory(&desc, sizeof(desc));
             desc.ByteWidth = sizeof(D3DConstantBuffer);
             desc.Usage = D3D11_USAGE_DYNAMIC;
             desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -778,7 +778,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
 
     {
         D3D11_BLEND_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.AlphaToCoverageEnable = FALSE;
         desc.RenderTarget[0].BlendEnable = TRUE;
         desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
@@ -793,7 +793,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
 
     {
         D3D11_RASTERIZER_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.FillMode = D3D11_FILL_SOLID;
         desc.CullMode = D3D11_CULL_NONE;
         desc.ScissorEnable = TRUE;
@@ -803,7 +803,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
 
     {
         D3D11_DEPTH_STENCIL_DESC desc;
-        ZeroMemory(&desc, sizeof(desc));
+        ::ZeroMemory(&desc, sizeof(desc));
         desc.DepthEnable = FALSE;
         desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
         desc.DepthFunc = D3D11_COMPARISON_ALWAYS;

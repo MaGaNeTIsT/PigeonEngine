@@ -3,7 +3,7 @@
 class CDeferredBuffer
 {
 public:
-	enum DeferredBufferEnum
+	enum DeferredBufferIndex
 	{
 		DEFERREDBUFFER_WORLDNORMAL		= 0,
 		DEFERREDBUFFER_ALBEDO			= 1,

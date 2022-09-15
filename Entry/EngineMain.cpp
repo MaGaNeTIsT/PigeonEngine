@@ -7,8 +7,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow)
 {
-	const CHAR* CLASS_NAME = "EngineClass_D3D11_0";
-	const CHAR* WINDOW_NAME = "Engine_D3D11_0";
+	const CHAR* CLASS_NAME = "EngineClass_D3D11";
+	const CHAR* WINDOW_NAME = "Engine_D3D11";
 	HWND windowHandle; WNDCLASSEX wcex = {};
 	{
 		wcex.cbSize = sizeof(WNDCLASSEX);
