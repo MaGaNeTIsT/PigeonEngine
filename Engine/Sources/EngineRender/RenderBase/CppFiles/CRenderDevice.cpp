@@ -43,18 +43,21 @@ void CRenderDevice::Init(HWND hWnd, const CustomType::Vector2Int& bufferSize, co
 		sd.SampleDesc.Quality = 0u;
 		sd.Windowed = windowed;
 	}
-	D3D_FEATURE_LEVEL featureLevels[4] = {
+	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_11_1,
 		D3D_FEATURE_LEVEL_11_0,
 		D3D_FEATURE_LEVEL_10_1,
-		D3D_FEATURE_LEVEL_10_0 };
+		D3D_FEATURE_LEVEL_10_0,
+		D3D_FEATURE_LEVEL_9_3,
+		D3D_FEATURE_LEVEL_9_2,
+		D3D_FEATURE_LEVEL_9_1, };
 	hr = D3D11CreateDeviceAndSwapChain(
 		NULL,
 		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
 		0u,
 		featureLevels,
-		0u,
+		7u,
 		D3D11_SDK_VERSION,
 		&sd,
 		CRenderDevice::m_RenderDevice->m_SwapChain.ReleaseAndGetAddressOf(),
@@ -556,17 +559,45 @@ void CRenderDevice::Present(const UINT& syncInterval)
 {
 	HRESULT hr = CRenderDevice::m_RenderDevice->m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
 }
+void CRenderDevice::SetDefaultDepthStencilState()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetDepthStencilState(NULL, 0x0u);
+}
 void CRenderDevice::SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT& stencilRef)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
+}
+void CRenderDevice::SetDefaultBlendState()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetBlendState(NULL, NULL, 0xffffffff);
 }
 void CRenderDevice::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const CustomStruct::CColor& blendFactor, const UINT& sampleMask)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
 }
+void CRenderDevice::SetNoRenderTarget()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(0u, NULL, NULL);
+}
+void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), NULL);
+}
+void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(0u, NULL, dsv.Get());
+}
 void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), dsv.Get());
+}
+void CRenderDevice::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum)
+{
+	std::vector<ID3D11RenderTargetView*> rtvs(rtvNum);
+	for (UINT i = 0u; i < rtvNum; i++)
+		rtvs[i] = rtv[i].Get();
+
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), NULL);
 }
 void CRenderDevice::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 {
@@ -587,6 +618,18 @@ void CRenderDevice::SetViewport(const D3D11_VIEWPORT& viewport)
 void CRenderDevice::SetViewports(std::vector<D3D11_VIEWPORT> viewports)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+}
+void CRenderDevice::SetNoVSShader()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->VSSetShader(NULL, NULL, 0u);
+}
+void CRenderDevice::SetNoPSShader()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->PSSetShader(NULL, NULL, 0u);
+}
+void CRenderDevice::SetNoCSShader()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetShader(NULL, NULL, 0u);
 }
 void CRenderDevice::SetVSShader(const Microsoft::WRL::ComPtr<ID3D11VertexShader>& vs)
 {
@@ -707,6 +750,10 @@ void CRenderDevice::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D1
 		srvs[i] = srv[i].Get();
 
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.data());
+}
+void CRenderDevice::BindNoCSUnorderedAccessView(const UINT& startSlot)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 0u, NULL, NULL);
 }
 void CRenderDevice::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot)
 {
@@ -1182,11 +1229,15 @@ void CRenderDevice::TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, C
 
 	output = primitiveTopologyMap[input];
 }
-void CRenderDevice::SetFinalOutput()
+void CRenderDevice::ClearFinalOutput()
 {
 	CRenderDevice::ClearRenderTargetView(CRenderDevice::m_RenderDevice->m_RenderTargetView);
 	CRenderDevice::ClearDepthStencilView(CRenderDevice::m_RenderDevice->m_DepthStencilView);
+}
+void CRenderDevice::SetFinalOutput()
+{
 	CRenderDevice::SetRenderTarget(CRenderDevice::m_RenderDevice->m_RenderTargetView, CRenderDevice::m_RenderDevice->m_DepthStencilView);
+	CRenderDevice::SetViewport(CRenderDevice::m_RenderDevice->m_Viewport);
 }
 D3D11_VIEWPORT CRenderDevice::GetViewport()
 {

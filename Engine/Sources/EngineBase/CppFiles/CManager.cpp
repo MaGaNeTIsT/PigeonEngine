@@ -3,12 +3,12 @@
 #include "../Headers/CInput.h"
 #include "../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineGame/Headers/CGameObjectManager.h"
 #include "../../EngineGame/Headers/CScene.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 
 CManager* CManager::m_Manager = new CManager();
 
@@ -160,9 +160,14 @@ void CManager::CalculateFrameStats()
 	{
 		FLOAT fps = static_cast<FLOAT>(frameCnt);
 		FLOAT mspf = 1000.f / fps;
-		std::strstream outs;
-		outs << "Engine_D3D11" << " FPS: " << fps << " Frame Time: " << mspf << "(ms)" << std::ends;
-		SetWindowText(CManager::m_Manager->m_HWND, outs.str());
+		std::string outs;
+		outs = "Engine_D3D11";
+		outs += " FPS: ";
+		outs += std::to_string(fps);
+		outs += " Frame Time: ";
+		outs += std::to_string(mspf);
+		outs += "(ms)";
+		SetWindowText(CManager::m_Manager->m_HWND, outs.c_str());
 		frameCnt = 0u;
 		timeElapsed += 1.f;
 	}

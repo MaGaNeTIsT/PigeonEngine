@@ -6,9 +6,13 @@
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineGame/Headers/CScreenPolygon2D.h"
 
-UINT CDebugScreen::DEBUGPOLYGON_COUNT = (CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1u + 2u);
+UINT CDebugScreen::DEBUGPOLYGON_COUNT = 0u;
 CDebugScreen::CDebugScreen()
 {
+	if (CDebugScreen::DEBUGPOLYGON_COUNT == 0u)
+	{
+		CDebugScreen::DEBUGPOLYGON_COUNT = (CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1u + 2u);
+	}
 }
 CDebugScreen::~CDebugScreen()
 {

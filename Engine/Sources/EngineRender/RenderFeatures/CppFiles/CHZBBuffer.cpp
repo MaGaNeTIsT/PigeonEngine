@@ -57,8 +57,8 @@ void CHZBBuffer::PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceVi
 	CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::SetCSShader(this->m_BuildHZBComputeShader);
 	CRenderDevice::Dispatch(static_cast<UINT>((this->m_BufferSize.X() + 7) / 8), static_cast<UINT>((this->m_BufferSize.Y() + 7) / 8), 1u);
-	CRenderDevice::BindCSUnorderedAccessView(nullptr, 0u);
-	CRenderDevice::SetCSShader(nullptr);
+	CRenderDevice::BindNoCSUnorderedAccessView(0u);
+	CRenderDevice::SetNoCSShader();
 
 	CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 }

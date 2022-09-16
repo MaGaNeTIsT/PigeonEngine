@@ -7,9 +7,9 @@ public:
 	static void					ShutDown();
 public:
 	static void					ClearTexture2DData();
-	static class CTexture2D*	LoadTexture2D(const std::string& name);
+	static class CTexture2D*	LoadTexture2D(const std::string& name, const BOOL& isSRGB = TRUE);
 private:
-	static class CTexture2D*	LoadTGATexture2D(const std::string& name);
+	static class CTexture2D*	LoadTGATexture2D(const std::string& name, const BOOL& isSRGB);
 private:
 	static void					AddTexture2DData(const std::string& name, class CTexture2D* ptrData);
 	static class CTexture2D*	FindTexture2DData(const std::string& name);

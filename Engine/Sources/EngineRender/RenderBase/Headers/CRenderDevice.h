@@ -79,14 +79,23 @@ public:
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
 	static void		Present(const UINT& syncInterval = 0u);
+	static void		SetDefaultDepthStencilState();
 	static void		SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT& stencilRef = 0x0u);
+	static void		SetDefaultBlendState();
 	static void		SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const CustomStruct::CColor& blendFactor = CustomStruct::CColor(0.f, 0.f, 0.f, 0.f), const UINT& sampleMask = 0xffffffff);
+	static void		SetNoRenderTarget();
+	static void		SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv);
+	static void		SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
 	static void		SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
+	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum);
 	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
 	static void		SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs);
 	static void		SetViewport(const D3D11_VIEWPORT& viewport);
 	static void		SetViewports(std::vector<D3D11_VIEWPORT> viewports);
 public:
+	static void		SetNoVSShader();
+	static void		SetNoPSShader();
+	static void		SetNoCSShader();
 	static void		SetVSShader(const Microsoft::WRL::ComPtr<ID3D11VertexShader>& vs);
 	static void		SetPSShader(const Microsoft::WRL::ComPtr<ID3D11PixelShader>& ps);
 	static void		SetCSShader(const Microsoft::WRL::ComPtr<ID3D11ComputeShader>& cs);
@@ -109,6 +118,7 @@ public:
 	static void		BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum);
 	static void		BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot);
 	static void		BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum);
+	static void		BindNoCSUnorderedAccessView(const UINT& startSlot);
 	static void		BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot);
 	static void		BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum);
 public:
@@ -119,7 +129,7 @@ public:
 public:
 	static void		SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride = 0u, const UINT& offset = 0u);
 	static void		SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout);
-	static void		SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride = 0u, const UINT& offset = 0u);
+	static void		SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset = 0u);
 	static void		SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT& offset = 0u, CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_R32_UINT);
 	static void		SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology topology = CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	static void		Draw(const UINT& vertexCount, const UINT& startVertexLocation = 0u);
@@ -146,6 +156,7 @@ private:
 	static void		TranslateClearDepthStencilFlag(UINT& output, CustomStruct::CRenderClearDepthStencilFlag input);
 	static void		TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, CustomStruct::CRenderPrimitiveTopology input);
 public:
+	static void		ClearFinalOutput();
 	static void		SetFinalOutput();
 public:
 	static D3D11_VIEWPORT		GetViewport();
@@ -167,6 +178,7 @@ private:
 private:
 	static CRenderDevice* m_RenderDevice;
 private:
+	friend class CRenderPipeline;
 	friend class CimGUIManager;
 	static Microsoft::WRL::ComPtr<ID3D11DeviceContext>	GetRenderDeviceContext();
 	static Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice();

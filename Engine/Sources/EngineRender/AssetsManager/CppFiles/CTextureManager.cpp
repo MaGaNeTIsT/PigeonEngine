@@ -7,7 +7,6 @@
 CTextureManager* CTextureManager::m_TextureManager = new CTextureManager();
 void CTextureManager::ShutDown()
 {
-	CTextureManager::ClearTexture2DData();
 	delete m_TextureManager;
 }
 void CTextureManager::ClearTexture2DData()
@@ -24,7 +23,7 @@ void CTextureManager::ClearTexture2DData()
 		m_TextureManager->m_Texture2DData.clear();
 	}
 }
-CTexture2D* CTextureManager::LoadTexture2D(const std::string& name)
+CTexture2D* CTextureManager::LoadTexture2D(const std::string& name, const BOOL& isSRGB)
 {
 	const static std::string _tgaName = "tga";
 
@@ -38,7 +37,7 @@ CTexture2D* CTextureManager::LoadTexture2D(const std::string& name)
 		std::string typeName = name.substr(pos + 1, name.length());
 
 		if (typeName == _tgaName)
-			resultTexture = (CTextureManager::LoadTGATexture2D(name));
+			resultTexture = (CTextureManager::LoadTGATexture2D(name, isSRGB));
 		else
 			return NULL;
 
@@ -48,7 +47,7 @@ CTexture2D* CTextureManager::LoadTexture2D(const std::string& name)
 	}
 	return resultTexture;
 }
-CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name)
+CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOOL& isSRGB)
 {
 	TBYTE	header[18];
 	TBYTE*	image;
@@ -86,8 +85,12 @@ CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name)
 	fclose(file);
 	CRenderDevice::Texture2DViewInfo tempTexture2D;
 	{
-		CustomStruct::CRenderFormat srvFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
-		if (CRenderDevice::CreateTexture2D(tempTexture2D, CustomStruct::CRenderTextureDesc(width, height, CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE, CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM, &srvFormat), &CustomStruct::CRenderSubresourceData(image, width * 4u, size)) == FALSE)
+		CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM;
+		if (isSRGB)
+		{
+			CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
+		}
+		if (CRenderDevice::CreateTexture2D(tempTexture2D, CustomStruct::CRenderTextureDesc(width, height, CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE, sourceFormat, &sourceFormat), &CustomStruct::CRenderSubresourceData(static_cast<const void*>(image), width * 4u, size)) == FALSE)
 		{
 			delete[]image;
 			return NULL;

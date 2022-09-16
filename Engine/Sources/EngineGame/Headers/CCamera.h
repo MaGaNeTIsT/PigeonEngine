@@ -22,6 +22,7 @@ public:
 	};
 public:
 	CustomType::Vector4		GetViewport() { return this->m_CameraInfo.Viewport; }
+	CustomType::Vector2		GetViewportDepth() { return this->m_CameraInfo.Depth; }
 	FLOAT					GetFov() { return this->m_CameraInfo.Fov; }
 	FLOAT					GetNear() { return this->m_CameraInfo.Near; }
 	FLOAT					GetFar() { return this->m_CameraInfo.Far; }

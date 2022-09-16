@@ -174,6 +174,33 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 			CustomStruct::CRenderDepthState(
 				CustomStruct::CRenderComparisonFunction::COMPARISON_ALWAYS));
 	}
+
+	{
+		CRenderDevice::CreateSamplerState(m_PipelineSampler[0],
+			CustomStruct::CRenderSamplerState(
+				CustomStruct::CRenderFilter::FILTER_POINT,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP));
+		CRenderDevice::CreateSamplerState(m_PipelineSampler[1],
+			CustomStruct::CRenderSamplerState(
+				CustomStruct::CRenderFilter::FILTER_POINT,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP));
+		CRenderDevice::CreateSamplerState(m_PipelineSampler[2],
+			CustomStruct::CRenderSamplerState(
+				CustomStruct::CRenderFilter::FILTER_LINEAR,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_CLAMP));
+		CRenderDevice::CreateSamplerState(m_PipelineSampler[3],
+			CustomStruct::CRenderSamplerState(
+				CustomStruct::CRenderFilter::FILTER_LINEAR,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP,
+				CustomStruct::CRenderTextureAddressMode::TEXTURE_ADDRESS_WRAP));
+	}
 }
 void CRenderPipeline::PostInit()
 {
@@ -240,12 +267,6 @@ void CRenderPipeline::PostUpdate()
 		return;
 
 	{
-		std::vector<CCamera*>		rawSceneCameras			= m_CurrentScene->GetGameObjectAll<CCamera>(CScene::SceneLayout::LAYOUT_CAMERA);
-		std::vector<CLight*>		rawSceneLights			= m_CurrentScene->GetGameObjectAll<CLight>(CScene::SceneLayout::LAYOUT_LIGHT);
-		std::vector<CGameObject*>	rawSceneTerrains		= m_CurrentScene->GetGameObjectAll<CGameObject>(CScene::SceneLayout::LAYOUT_TERRAIN);
-		std::vector<CGameObject*>	rawSceneOpaques			= m_CurrentScene->GetGameObjectAll<CGameObject>(CScene::SceneLayout::LAYOUT_OPAQUE);
-		std::vector<CGameObject*>	rawSceneTransparents	= m_CurrentScene->GetGameObjectAll<CGameObject>(CScene::SceneLayout::LAYOUT_TRANSPARENT);
-		std::vector<CGameObject*>	rawSceneSkys			= m_CurrentScene->GetGameObjectAll<CGameObject>(CScene::SceneLayout::LAYOUT_SKY);
 		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
 			if (m_CurrentScenePrimitives[i].size() != 0)
@@ -253,46 +274,46 @@ void CRenderPipeline::PostUpdate()
 				m_CurrentScenePrimitives[i].clear();
 			}
 		}
-		for (INT i = 0; i < rawSceneCameras.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_CAMERA])
 		{
-			if (rawSceneCameras[i]->IsActive())
+			if (obj.second->IsActive())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA].push_back(rawSceneCameras[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA].push_back(obj.second);
 			}
 		}
-		for (INT i = 0; i < rawSceneLights.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_LIGHT])
 		{
-			if (rawSceneLights[i]->IsActive())
+			if (obj.second->IsActive())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT].push_back(rawSceneLights[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT].push_back(obj.second);
 			}
 		}
-		for (INT i = 0; i < rawSceneTerrains.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_TERRAIN])
 		{
-			if (rawSceneTerrains[i]->IsActive() && rawSceneTerrains[i]->GetMeshRenderer())
+			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(rawSceneTerrains[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 			}
 		}
-		for (INT i = 0; i < rawSceneOpaques.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_OPAQUE])
 		{
-			if (rawSceneOpaques[i]->IsActive() && rawSceneOpaques[i]->GetMeshRenderer())
+			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(rawSceneOpaques[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
 			}
 		}
-		for (INT i = 0; i < rawSceneTransparents.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_TRANSPARENT])
 		{
-			if (rawSceneTransparents[i]->IsActive() && rawSceneTransparents[i]->GetMeshRenderer())
+			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(rawSceneTransparents[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
 			}
 		}
-		for (INT i = 0; i < rawSceneSkys.size(); i++)
+		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_SKY])
 		{
-			if (rawSceneSkys[i]->IsActive() && rawSceneSkys[i]->GetMeshRenderer())
+			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY].push_back(rawSceneSkys[i]);
+				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY].push_back(obj.second);
 			}
 		}
 	}
@@ -306,15 +327,55 @@ void CRenderPipeline::Render()
 	if (m_CurrentScene == NULL)
 		return;
 
+	D3D11_VIEWPORT viewport;
+
+	{
+		::ZeroMemory(&viewport, sizeof(viewport));
+
+		CRenderDevice::ClearRenderTargetView(m_SceneColor.RenderTargetView);
+		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+		{
+			CRenderDevice::ClearRenderTargetView(m_GBuffer[i].RenderTargetView);
+		}
+		for (UINT i = 0u; i < 2u; i++)
+		{
+			CRenderDevice::ClearRenderTargetView(m_PostProcessColor[i].RenderTargetView);
+		}
+		CRenderDevice::ClearDepthStencilView(m_SceneDepth.DepthStencilView);
+		CRenderDevice::ClearDepthStencilView(m_ShadowBuffer.DepthStencilView, CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH);
+		CRenderDevice::ClearFinalOutput();
+
+		CRenderDevice::BindVSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
+		CRenderDevice::BindPSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
+		CRenderDevice::BindCSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
+	}
+
 	for (INT i = 0; i < (m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA]).size(); i++)
 	{
 		{
-			CCamera* camera = reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])[i]);
+			CCamera* camera = reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA])[i]);
 			if (!camera)
 				continue;
 
-			this->PreparePerFrameRender(camera);
+			{
+				this->PreparePerFrameRender(camera);
+
+				CustomType::Vector4 cameraViewport = camera->GetViewport();
+				CustomType::Vector2 cameraViewportDepth = camera->GetViewportDepth();
+				viewport.TopLeftX = cameraViewport.X();
+				viewport.TopLeftY = cameraViewport.Y();
+				viewport.Width = cameraViewport.Z() - cameraViewport.X();
+				viewport.Height = cameraViewport.W() - cameraViewport.Y();
+				viewport.MinDepth = cameraViewportDepth.X();
+				viewport.MaxDepth = cameraViewportDepth.Y();
+			}
+
+			CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
+			CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+			CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+			CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 			CRenderDevice::SetRasterizerState(m_PipelineRS);
+			CRenderDevice::SetViewport(viewport);
 		}
 
 		{
@@ -322,7 +383,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
 			CRenderDevice::SetBlendState(m_ShadowPrePassBS);
 			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			CRenderDevice::SetRenderTarget(nullptr, m_ShadowBuffer.DepthStencilView);
+			CRenderDevice::SetRenderTarget(m_ShadowBuffer.DepthStencilView);
 			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 			{
 				for (CGameObject* obj : m_CurrentScenePrimitives[i])
@@ -334,7 +395,7 @@ void CRenderPipeline::Render()
 
 		{
 			//Pre depth pass
-			CRenderDevice::SetRenderTarget(nullptr, m_SceneDepth.DepthStencilView);
+			CRenderDevice::SetRenderTarget(m_SceneDepth.DepthStencilView);
 			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 			{
 				for (CGameObject* obj : m_CurrentScenePrimitives[i])
@@ -380,7 +441,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
 			CRenderDevice::SetBlendState(m_DirectLightPassBS);
 			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, nullptr);
+			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersSRV[0] = m_SceneColor.ShaderResourceView;
 			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
@@ -392,20 +453,39 @@ void CRenderPipeline::Render()
 		}
 
 		{
+			//Opaque forward pass
+			CRenderDevice::SetDepthStencilState(m_GBufferPassDSS);
+			CRenderDevice::SetBlendState(m_GBufferPassBS);
+			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
+			//for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+			//{
+			//	for (CGameObject* obj : m_CurrentScenePrimitives[i])
+			//	{
+			//		if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+			//			obj->Draw();
+			//	}
+			//}
+		}
+
+		{
+			m_DebugScreen->Draw();
+			m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView);
+			//m_HZB->Draw(m_SceneDepth.ShaderResourceView);
+		}
+
+		{
 			//Post process pass
 		}
 
 		{
 			//Final output
-			CRenderDevice::SetDepthStencilState(nullptr);
-			CRenderDevice::SetBlendState(nullptr);
+			CRenderDevice::SetDefaultDepthStencilState();
+			CRenderDevice::SetDefaultBlendState();
 			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			CRenderDevice::SetFinalOutput();
+			CRenderDevice::BindPSShaderResourceView(m_SceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 			this->DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
-
-			m_DebugScreen->Draw();
-			m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView);
-			m_HZB->Draw(m_SceneDepth.ShaderResourceView);
 		}
 	}
 }
@@ -413,7 +493,7 @@ void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<class CPixelSh
 {
 	CRenderPipeline::m_FullScreenPolygonVS->Bind();
 	shader->Bind();
-	CRenderDevice::SetVertexBuffer(CRenderPipeline::m_FullScreenPolygon->GetVertexBuffer());
+	CRenderDevice::SetVertexBuffer(CRenderPipeline::m_FullScreenPolygon->GetVertexBuffer(), CRenderPipeline::m_FullScreenPolygon->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(CRenderPipeline::m_FullScreenPolygon->GetIndexBuffer());
 	CRenderDevice::DrawIndexed(CRenderPipeline::m_FullScreenPolygon->GetIndexCount());
 }
@@ -443,11 +523,6 @@ void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
 		m_RenderPerFrameInfo.PerFrameData.DirectionalLightData[i].Direction = light->GetLightData()->Direction;
 		m_RenderPerFrameInfo.PerFrameData.DirectionalLightData[i].Color = light->GetLightData()->Color;
 	}
-
-	CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-	CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-	CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-	CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 }
 CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
 {

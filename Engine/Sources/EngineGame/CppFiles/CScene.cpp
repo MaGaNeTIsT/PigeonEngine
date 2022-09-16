@@ -15,69 +15,6 @@ CScene::CScene()
 CScene::~CScene()
 {
 }
-template <typename T>
-T* CScene::AddGameObject(const UINT& layout)
-{
-	CGameObject* gameObject = new T();
-	gameObject->SetScene(this);
-	gameObject->Active();
-	gameObject->Init();
-	ULONGLONG id = gameObject->GetGameObjectID();
-	(this->m_GameObject[layout])[id] = gameObject;
-	return  (reinterpret_cast<T*>(gameObject));
-}
-template <typename T>
-T* CScene::GetGameObjectFirst(const UINT& layout)const
-{
-	if (this->m_GameObject[layout].size() < 1)
-		return NULL;
-	for (const auto& obj : (this->m_GameObject[layout]))
-	{
-		if ((obj.second) != NULL)
-		{
-			if (typeid(*(obj.second)) == typeid(T))
-				return (reinterpret_cast<T*>(obj.second));
-		}
-	}
-	return NULL;
-}
-template <typename T>
-T* CScene::GetGameObjectByIndex(const UINT& layout, const UINT& idx)const
-{
-	if (this->m_GameObject[layout].size() < 1)
-		return NULL;
-	UINT number = idx;
-	for (const auto& obj : (this->m_GameObject[layout]))
-	{
-		if ((obj.second) != NULL)
-		{
-			if (typeid(*(obj.second)) == typeid(T))
-			{
-				if (number == 0)
-					return (reinterpret_cast<T*>(obj.second));
-				else
-					number -= 1;
-			}
-		}
-	}
-	return NULL;
-}
-template <typename T>
-std::vector<T*> CScene::GetGameObjectAll(const UINT& layout)const
-{
-	std::vector<T*> listObj;
-	if (this->m_GameObject[layout].size() < 1)
-		return listObj;
-	for (const auto& obj : (this->m_GameObject[layout]))
-	{
-		if ((obj.second) != NULL)
-		{
-			if (typeid(*(obj.second)) == typeid(T))
-				listObj.push_back((reinterpret_cast<T*>(obj.second)));
-		}
-	}
-	return listObj;
-}
 void CScene::Init()
 {
 	CCamera* mainCamera = this->AddGameObject<CCamera>(SceneLayout::LAYOUT_CAMERA);

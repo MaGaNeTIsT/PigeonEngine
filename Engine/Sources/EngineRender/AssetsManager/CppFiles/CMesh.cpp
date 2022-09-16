@@ -8,6 +8,7 @@ CMesh::CMesh(const std::string& name, const std::vector<CustomStruct::CVertex3D>
 	this->m_IndexData		= idata;
 	this->m_VertexBuffer	= vbuffer;
 	this->m_IndexBuffer		= ibuffer;
+	this->m_VertexStride	= sizeof(vdata[0]);
 	this->m_VertexCount		= static_cast<UINT>(vdata.size());
 	this->m_IndexCount		= static_cast<UINT>(idata.size());
 }

@@ -40,6 +40,7 @@ protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_GBuffer[GEOMETRY_BUFFER_COUNT];
 	CRenderDevice::RenderTexture2DViewInfo	m_ShadowBuffer;
 protected:
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>			m_PipelineSampler[4];
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_ShadowPrePassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_GBufferPassBS;

@@ -29,8 +29,8 @@ cbuffer ConstantBufferPerDraw : register(b1)
 	float4		_CustomParameter;
 };
 SamplerState	_PointClampSampler			: register(s0);
-SamplerState	_LinearClampSampler			: register(s1);
-SamplerState	_PointWrapSampler			: register(s2);
+SamplerState	_PointWrapSampler			: register(s1);
+SamplerState	_LinearClampSampler			: register(s2);
 SamplerState	_LinearWrapSampler			: register(s3);
 
 Texture2D		_EngineGBufferColor			: register(t0);

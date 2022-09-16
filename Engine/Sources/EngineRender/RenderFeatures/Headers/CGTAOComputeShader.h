@@ -28,6 +28,8 @@ public:
 		FLOAT	Power;
 	};
 public:
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetResultShaderResourceView() { return m_DebugBuffer.ShaderResourceView; }
+public:
 	void	Init(class CCamera* mainCamera, const CustomType::Vector2Int& bufferSize, const CustomType::Vector2Int& pipelineSize);
 	void	Uninit();
 	void	Update();

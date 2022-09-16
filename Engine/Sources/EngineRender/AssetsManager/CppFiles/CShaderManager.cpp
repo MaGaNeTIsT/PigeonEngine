@@ -6,9 +6,6 @@ CShaderManager* CShaderManager::m_ShaderManager = new CShaderManager();
 
 void CShaderManager::ShutDown()
 {
-	CShaderManager::ClearVertexShaderData();
-	CShaderManager::ClearPixelShaderData();
-	CShaderManager::ClearComputeShaderData();
 	delete (CShaderManager::m_ShaderManager);
 }
 std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout)

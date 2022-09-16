@@ -5,7 +5,6 @@
 CMeshManager* CMeshManager::m_MeshManager = new CMeshManager();
 void CMeshManager::ShutDown()
 {
-	CMeshManager::ClearMeshData();
 	delete m_MeshManager;
 }
 void CMeshManager::ClearMeshData()
@@ -125,7 +124,7 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index, submesh);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
 	return mesh;
 }
 CMesh* CMeshManager::LoadCubeMesh()
@@ -263,7 +262,7 @@ CMesh* CMeshManager::LoadCubeMesh()
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index, submesh);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
 	return mesh;
 }
 CMesh* CMeshManager::LoadPolygonMesh()
@@ -317,7 +316,7 @@ CMesh* CMeshManager::LoadPolygonMesh()
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index, submesh);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
 	return mesh;
 }
 CMesh* CMeshManager::LoadPolygon2DMesh(const CustomType::Vector4Int& customSize)
@@ -375,7 +374,7 @@ CMesh* CMeshManager::LoadPolygon2DMesh(const CustomType::Vector4Int& customSize)
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject(tempName, vertex, index, submesh);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
 	return mesh;
 }
 CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2)
@@ -661,7 +660,7 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculat
 			vertex[i].Tangent = CustomType::Vector3::Normalize(CustomType::Vector3(vertex[i].Tangent)).GetXMFLOAT4();
 		}
 	}
-	CMesh* mesh = CMeshManager::CreateMeshObject(name, vertex, index, submesh);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(name, vertex, index, submesh);
 	return mesh;
 }
 template<typename vertexType, typename indexType>
@@ -674,7 +673,7 @@ CMesh* CMeshManager::CreateMeshObject(const std::string& name, std::vector<verte
 			CustomStruct::CRenderBufferDesc(
 				static_cast<UINT>(sizeof(vertexType) * vertexData.size()),
 				CustomStruct::CRenderBindFlag::BIND_VERTEX_BUFFER, 0u),
-			&CustomStruct::CRenderSubresourceData(vertexData.data(), 0u, 0u)))
+			&CustomStruct::CRenderSubresourceData(static_cast<const void*>(vertexData.data()), 0u, 0u)))
 		{
 			return NULL;
 		}
@@ -686,7 +685,7 @@ CMesh* CMeshManager::CreateMeshObject(const std::string& name, std::vector<verte
 			CustomStruct::CRenderBufferDesc(
 				static_cast<UINT>(sizeof(indexType) * indexData.size()),
 				CustomStruct::CRenderBindFlag::BIND_INDEX_BUFFER, 0u),
-			&CustomStruct::CRenderSubresourceData(indexData.data(), 0u, 0u)))
+			&CustomStruct::CRenderSubresourceData(static_cast<const void*>(indexData.data()), 0u, 0u)))
 		{
 			return NULL;
 		}

@@ -53,7 +53,7 @@ void CMeshRenderer::Bind(const BOOL& needPixelShader)
 	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
 	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
 	this->m_VertexShader->Bind();
-	CRenderDevice::SetVertexBuffer(this->m_GameObject->GetMesh()->GetVertexBuffer());
+	CRenderDevice::SetVertexBuffer(this->m_GameObject->GetMesh()->GetVertexBuffer(), this->m_GameObject->GetMesh()->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(this->m_GameObject->GetMesh()->GetIndexBuffer());
 	if (needPixelShader && this->m_PixelShader != nullptr)
 		this->m_PixelShader->Bind();
@@ -62,7 +62,9 @@ void CMeshRenderer::Draw(const BOOL& needPixelShader)
 {
 	this->Bind(needPixelShader);
 	if (this->m_GameObject->GetMesh()->GetSubMeshInfo().size() < 1)
+	{
 		CRenderDevice::DrawIndexed(this->m_GameObject->GetMesh()->GetIndexCount());
+	}
 	else
 	{
 		for (UINT i = 0; i < static_cast<UINT>(this->m_GameObject->GetMesh()->GetSubMeshInfo().size()); i++)

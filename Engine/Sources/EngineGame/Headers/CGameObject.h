@@ -7,8 +7,6 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
 
-class CScene;
-
 class CGameObject
 {
 public:
@@ -60,7 +58,7 @@ public:
 	const BOOL& IsActive()const { return m_Active; }
 	void Active() { m_Active = TRUE; }
 	void Inactive() { m_Active = FALSE; }
-	void SetScene(const CScene* scene) { m_Scene = scene; }
+	void SetScene(class CScene* scene) { m_Scene = scene; }
 	void SetParent(CGameObject* parent)
 	{
 		if (m_Parent != NULL)
@@ -71,14 +69,14 @@ public:
 	void AddChild(CGameObject* child) { m_Child[child->m_UID] = child; }
 	void RemoveChild(CGameObject* child) { m_Child.erase(child->m_UID); }
 public:
-	void AddMesh(CMesh* mesh) { m_Mesh = mesh; }
-	void AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
+	void			AddMesh(CMesh* mesh) { m_Mesh = mesh; }
+	void			AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
 	CMesh*			GetMesh()const { return m_Mesh; }
 	CMeshRenderer*	GetMeshRenderer()const { return m_MeshRenderer; }
 protected:
 	ULONGLONG							m_UID;
 	BOOL								m_Active;
-	const CScene*						m_Scene			= NULL;
+	class CScene*						m_Scene			= NULL;
 	CGameObject*						m_Parent		= NULL;
 	std::map<ULONGLONG,CGameObject*>	m_Child;
 

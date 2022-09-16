@@ -1,5 +1,6 @@
 #include "../Headers/CGTAOComputeShader.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
+#include "../../AssetsManager/Headers/CTexture2D.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CScene.h"
 #include "../../../EngineGame/Headers/CScreenPolygon2D.h"
@@ -148,15 +149,15 @@ void CGTAOComputeShader::PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderRe
 	CRenderDevice::BindCSUnorderedAccessView(this->m_IntegralBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::SetCSShader(this->m_IntegralComputeShader);
 	CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
-	CRenderDevice::BindCSUnorderedAccessView(nullptr, 0u);
-	CRenderDevice::SetCSShader(nullptr);
+	CRenderDevice::BindNoCSUnorderedAccessView(0u);
+	CRenderDevice::SetNoCSShader();
 
 	CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 0u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_FilterBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::SetCSShader(this->m_FilterComputeShader);
 	CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
-	CRenderDevice::BindCSUnorderedAccessView(nullptr, 0u);
-	CRenderDevice::SetCSShader(nullptr);
+	CRenderDevice::BindNoCSUnorderedAccessView(0u);
+	CRenderDevice::SetNoCSShader();
 
 	//Debug
 	{
@@ -165,11 +166,11 @@ void CGTAOComputeShader::PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderRe
 		CRenderDevice::BindCSUnorderedAccessView(this->m_DebugBuffer.UnorderedAccessView, 0u);
 		CRenderDevice::SetCSShader(this->m_DebugComputeShader);
 		CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
-		CRenderDevice::BindCSUnorderedAccessView(nullptr, 0u);
-		CRenderDevice::SetCSShader(nullptr);
+		CRenderDevice::BindNoCSUnorderedAccessView(0u);
+		CRenderDevice::SetNoCSShader();
 	}
 
-	CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	//CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 	//CRenderDevice::BindTexture(this->m_FilterBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 }
 void CGTAOComputeShader::Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
@@ -178,5 +179,6 @@ void CGTAOComputeShader::Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceV
 	{
 		this->PrepareDraw(sceneDepth);
 		this->m_Polygon2D->Draw();
+		CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 	}
 }
