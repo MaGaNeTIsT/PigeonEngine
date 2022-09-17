@@ -170,8 +170,8 @@ void CGTAOComputeShader::PrepareDraw(const Microsoft::WRL::ComPtr<ID3D11ShaderRe
 		CRenderDevice::SetNoCSShader();
 	}
 
-	//CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-	//CRenderDevice::BindTexture(this->m_FilterBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+	//CRenderDevice::BindPSShaderResourceView(this->m_FilterBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 }
 void CGTAOComputeShader::Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
@@ -179,6 +179,5 @@ void CGTAOComputeShader::Draw(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceV
 	{
 		this->PrepareDraw(sceneDepth);
 		this->m_Polygon2D->Draw();
-		CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 	}
 }

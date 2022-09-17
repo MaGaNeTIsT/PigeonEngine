@@ -43,10 +43,11 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			m_PipelineSampler[4];
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_ShadowPrePassBS;
-	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_GBufferPassBS;
+	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_GBufferForwardPassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_DirectLightPassBS;
+	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_TransparentPassBS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_ShadowPrePassDSS;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferPassDSS;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferForwardPassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPassDSS;
 protected:
 	static std::shared_ptr<class CVertexShader>			m_FullScreenPolygonVS;

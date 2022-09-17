@@ -81,7 +81,6 @@ void CManager::ShutDown()
 void CManager::StaticUpdate()
 {
 	CManager::m_Manager->m_WindowTimer.Update();
-	CInput::Update();
 }
 void CManager::Init()
 {
@@ -135,6 +134,7 @@ void CManager::Uninit()
 void CManager::Update()
 {
 	CManager::m_Manager->m_GameTimer->Update();
+	CInput::Update();
 	CimGUIManager::Update();
 	CManager::m_Manager->m_Scene->Update();
 	CManager::m_Manager->m_RenderPipeline->PostUpdate();

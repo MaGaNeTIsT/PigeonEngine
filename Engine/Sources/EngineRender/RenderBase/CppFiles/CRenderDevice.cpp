@@ -577,7 +577,8 @@ void CRenderDevice::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>
 }
 void CRenderDevice::SetNoRenderTarget()
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(0u, NULL, NULL);
+	ID3D11RenderTargetView* rtvs[] = { NULL };
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtvs, NULL);
 }
 void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv)
 {
@@ -585,7 +586,8 @@ void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTar
 }
 void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(0u, NULL, dsv.Get());
+	ID3D11RenderTargetView* rtvs[] = { NULL };
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtvs, dsv.Get());
 }
 void CRenderDevice::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 {
@@ -753,7 +755,8 @@ void CRenderDevice::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D1
 }
 void CRenderDevice::BindNoCSUnorderedAccessView(const UINT& startSlot)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 0u, NULL, NULL);
+	ID3D11UnorderedAccessView* uavs[] = { NULL };
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, NULL);
 }
 void CRenderDevice::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot)
 {

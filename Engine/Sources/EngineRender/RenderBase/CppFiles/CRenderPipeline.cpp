@@ -153,7 +153,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		blendStates[1] = CustomStruct::CRenderBlendState();
 		blendStates[2] = CustomStruct::CRenderBlendState();
 		blendStates[3] = CustomStruct::CRenderBlendState();
-		CRenderDevice::CreateBlendState(m_GBufferPassBS, blendStates);
+		CRenderDevice::CreateBlendState(m_GBufferForwardPassBS, blendStates);
 		blendStates.resize(1);
 		blendStates[0] = CustomStruct::CRenderBlendState(
 			CustomStruct::CRenderBlendOption::BLEND_ONE,
@@ -163,11 +163,20 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 			CustomStruct::CRenderBlendOption::BLEND_ONE,
 			CustomStruct::CRenderBlendOperation::BLEND_OP_MAX);
 		CRenderDevice::CreateBlendState(m_DirectLightPassBS, blendStates);
+		blendStates.resize(1);
+		blendStates[0] = CustomStruct::CRenderBlendState(
+			CustomStruct::CRenderBlendOption::BLEND_SRC_ALPHA,
+			CustomStruct::CRenderBlendOption::BLEND_INV_SRC_ALPHA,
+			CustomStruct::CRenderBlendOperation::BLEND_OP_ADD,
+			CustomStruct::CRenderBlendOption::BLEND_ONE,
+			CustomStruct::CRenderBlendOption::BLEND_ONE,
+			CustomStruct::CRenderBlendOperation::BLEND_OP_MAX);
+		CRenderDevice::CreateBlendState(m_TransparentPassBS, blendStates);
 
 		CRenderDevice::CreateDepthStencilState(m_ShadowPrePassDSS,
 			CustomStruct::CRenderDepthState(
 				CustomStruct::CRenderComparisonFunction::COMPARISON_LESS));
-		CRenderDevice::CreateDepthStencilState(m_GBufferPassDSS,
+		CRenderDevice::CreateDepthStencilState(m_GBufferForwardPassDSS,
 			CustomStruct::CRenderDepthState(
 				CustomStruct::CRenderComparisonFunction::COMPARISON_LESS_EQUAL));
 		CRenderDevice::CreateDepthStencilState(m_DirectLightPassDSS,
@@ -218,8 +227,13 @@ void CRenderPipeline::PostInit()
 				break;
 			}
 		}
-		UINT bufferWidth = static_cast<UINT>(sceneMainLight->GetLightShadowSize().X());
-		UINT bufferHeight = static_cast<UINT>(sceneMainLight->GetLightShadowSize().Y());
+		UINT bufferWidth = 1u;
+		UINT bufferHeight = 1u;
+		if (sceneMainLight)
+		{
+			bufferWidth = static_cast<UINT>(sceneMainLight->GetLightShadowSize().X());
+			bufferHeight = static_cast<UINT>(sceneMainLight->GetLightShadowSize().Y());
+		}
 		CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_UNKNOWN;
 		CRenderDevice::CreateRenderTexture2D(
 			m_ShadowBuffer,
@@ -374,15 +388,15 @@ void CRenderPipeline::Render()
 			CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 			CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 			CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-			CRenderDevice::SetRasterizerState(m_PipelineRS);
 			CRenderDevice::SetViewport(viewport);
+			CRenderDevice::SetRasterizerState(m_PipelineRS);
+			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		}
 
 		{
 			//Shadow pass
 			CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
 			CRenderDevice::SetBlendState(m_ShadowPrePassBS);
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			CRenderDevice::SetRenderTarget(m_ShadowBuffer.DepthStencilView);
 			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 			{
@@ -411,9 +425,8 @@ void CRenderPipeline::Render()
 
 		{
 			//Geometry buffer pass
-			CRenderDevice::SetDepthStencilState(m_GBufferPassDSS);
-			CRenderDevice::SetBlendState(m_GBufferPassBS);
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersRTV[0] = m_SceneColor.RenderTargetView;
 			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
@@ -440,7 +453,6 @@ void CRenderPipeline::Render()
 			//Direct light pass
 			CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
 			CRenderDevice::SetBlendState(m_DirectLightPassBS);
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersSRV[0] = m_SceneColor.ShaderResourceView;
@@ -454,18 +466,27 @@ void CRenderPipeline::Render()
 
 		{
 			//Opaque forward pass
-			CRenderDevice::SetDepthStencilState(m_GBufferPassDSS);
-			CRenderDevice::SetBlendState(m_GBufferPassBS);
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			//CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
-			//for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-			//{
-			//	for (CGameObject* obj : m_CurrentScenePrimitives[i])
-			//	{
-			//		if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
-			//			obj->Draw();
-			//	}
-			//}
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
+			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+			{
+				for (CGameObject* obj : m_CurrentScenePrimitives[i])
+				{
+					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+						obj->Draw();
+				}
+			}
+		}
+
+		{
+			//Transparent forward pass
+			CRenderDevice::SetBlendState(m_TransparentPassBS);
+			for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT])
+			{
+				if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+					obj->Draw();
+			}
 		}
 
 		{
@@ -482,7 +503,6 @@ void CRenderPipeline::Render()
 			//Final output
 			CRenderDevice::SetDefaultDepthStencilState();
 			CRenderDevice::SetDefaultBlendState();
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			CRenderDevice::SetFinalOutput();
 			CRenderDevice::BindPSShaderResourceView(m_SceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 			this->DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
