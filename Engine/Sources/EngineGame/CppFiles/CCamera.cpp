@@ -120,18 +120,18 @@ void CCamera::Uninit()
 }
 void CCamera::Update()
 {
-	BOOL moveForward		= CInput::GetKeyPress('W');
-	BOOL moveBack			= CInput::GetKeyPress('S');
-	BOOL moveRight			= CInput::GetKeyPress('D');
-	BOOL moveLeft			= CInput::GetKeyPress('A');
-	BOOL moveUp				= CInput::GetKeyPress('Q');
-	BOOL moveDown			= CInput::GetKeyPress('E');
-	BOOL lookUp				= CInput::GetKeyPress('I');
-	BOOL lookDown			= CInput::GetKeyPress('K');
-	BOOL lookLeft			= CInput::GetKeyPress('J');
-	BOOL lookRight			= CInput::GetKeyPress('L');
-	BOOL lookRotClock		= CInput::GetKeyPress('O');
-	BOOL lookRotAntiClock	= CInput::GetKeyPress('U');
+	BOOL moveForward	= CInput::GetKeyPress('W');
+	BOOL moveBack		= CInput::GetKeyPress('S');
+	BOOL moveRight		= CInput::GetKeyPress('D');
+	BOOL moveLeft		= CInput::GetKeyPress('A');
+	BOOL moveUp			= CInput::GetKeyPress('Q');
+	BOOL moveDown		= CInput::GetKeyPress('E');
+	BOOL lookUp			= CInput::GetKeyPress('I');
+	BOOL lookDown		= CInput::GetKeyPress('K');
+	BOOL lookLeft		= CInput::GetKeyPress('J');
+	BOOL lookRight		= CInput::GetKeyPress('L');
+	//BOOL lookRotClock		= CInput::GetKeyPress('O');
+	//BOOL lookRotAntiClock	= CInput::GetKeyPress('U');
 	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
 	if (moveForward || moveBack)
 	{
@@ -144,6 +144,8 @@ void CCamera::Update()
 	if (moveRight || moveLeft)
 	{
 		CustomType::Vector3 moveVector = this->GetRightVector();
+		moveVector = CustomType::Vector3(moveVector.X(), 0.f, moveVector.Z());
+		moveVector.Normalize();
 		if (moveRight)
 			this->m_Position += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
 		if (moveLeft)
@@ -151,7 +153,7 @@ void CCamera::Update()
 	}
 	if (moveUp || moveDown)
 	{
-		CustomType::Vector3 moveVector = this->GetUpVector();
+		CustomType::Vector3 moveVector = CustomType::Vector3(0.f, 1.f, 0.f);
 		if (moveUp)
 			this->m_Position += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
 		if (moveDown)
@@ -160,6 +162,8 @@ void CCamera::Update()
 	if (lookUp || lookDown)
 	{
 		CustomType::Vector3 lookAxis = this->GetRightVector();
+		lookAxis = CustomType::Vector3(lookAxis.X(), 0.f, lookAxis.Z());
+		lookAxis.Normalize();
 		if (lookUp)
 		{
 			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
@@ -173,7 +177,7 @@ void CCamera::Update()
 	}
 	if (lookLeft || lookRight)
 	{
-		CustomType::Vector3 lookAxis = this->GetUpVector();
+		CustomType::Vector3 lookAxis = CustomType::Vector3(0.f, 1.f, 0.f);
 		if (lookLeft)
 		{
 			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
@@ -185,20 +189,20 @@ void CCamera::Update()
 			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
 		}
 	}
-	if (lookRotClock || lookRotAntiClock)
-	{
-		CustomType::Vector3 lookAxis = this->GetForwardVector();
-		if (lookRotClock)
-		{
-			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-		}
-		if (lookRotAntiClock)
-		{
-			CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-		}
-	}
+	//if (lookRotClock || lookRotAntiClock)
+	//{
+	//	CustomType::Vector3 lookAxis = this->GetForwardVector();
+	//	if (lookRotClock)
+	//	{
+	//		CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
+	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+	//	}
+	//	if (lookRotAntiClock)
+	//	{
+	//		CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
+	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+	//	}
+	//}
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();
 }

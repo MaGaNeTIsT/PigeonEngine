@@ -4,6 +4,7 @@
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../Headers/CGameObjectManager.h"
+#include "../../EngineRender/AssetsManager/Headers/CMesh.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
 

@@ -23,11 +23,11 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		wcex.lpszMenuName = NULL;
 		wcex.lpszClassName = CLASS_NAME;
 		wcex.hIconSm = NULL;
-		if (!RegisterClassEx(&wcex))
+		if (!::RegisterClassEx(&wcex))
 			return TRUE;
 		RECT clientRect = { 0,0,ENGINE_SCREEN_WIDTH,ENGINE_SCREEN_HEIGHT };
 		::AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME), FALSE);
-		windowHandle = CreateWindowEx(
+		windowHandle = ::CreateWindowEx(
 			0,
 			CLASS_NAME,
 			WINDOW_NAME,
@@ -57,7 +57,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	MSG msg;
 	while (TRUE)
 	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (msg.message == WM_QUIT)
 			{
@@ -66,7 +66,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			else
 			{
 				::TranslateMessage(&msg);
-				DispatchMessage(&msg);
+				::DispatchMessage(&msg);
 			}
 		}
 		else
@@ -89,7 +89,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	CManager::Uninit();
 
-	UnregisterClass(CLASS_NAME, wcex.hInstance);
+	::UnregisterClass(CLASS_NAME, wcex.hInstance);
 
 	CManager::ShutDown();
 
@@ -119,5 +119,5 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	default:
 		break;
 	}
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
