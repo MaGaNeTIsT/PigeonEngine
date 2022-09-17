@@ -490,6 +490,9 @@ void CRenderPipeline::Render()
 		}
 
 		{
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
 			m_DebugScreen->Draw();
 			m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView);
 			//m_HZB->Draw(m_SceneDepth.ShaderResourceView);
