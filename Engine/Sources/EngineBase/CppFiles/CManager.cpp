@@ -10,6 +10,10 @@
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 
+#include "../../EngineRender/RenderBase/Headers/CGPUQuery.h"
+#include "../../EngineRender/RenderBase/Headers/CGPUQueryManager.h"
+#include "../../Development/Headers/CGPUProfiler.h"
+
 CManager* CManager::m_Manager = new CManager();
 
 CManager::CManager()
@@ -68,6 +72,9 @@ void CManager::Initialize(HWND hWnd)
 }
 void CManager::ShutDown()
 {
+	CGPUProfilerManager::ShutDown();
+	CGPUQueryManager::ShutDown();
+
 	CShaderManager::ShutDown();
 	CMeshManager::ShutDown();
 	CTextureManager::ShutDown();

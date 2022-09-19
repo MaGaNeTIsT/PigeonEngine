@@ -141,6 +141,11 @@ public:
 	static BOOL		CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const std::vector<CustomStruct::CRenderBlendState>& blendStates);
 	static BOOL		CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, const CustomStruct::CRenderRasterizerState& rasterizerState);
 	static BOOL		CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const CustomStruct::CRenderSamplerState& samplerState);
+public:
+	static BOOL		CreateQuery(Microsoft::WRL::ComPtr<ID3D11Query>& q, const CustomStruct::CRenderQueryDesc& queryDesc);
+	static BOOL		GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, CustomStruct::CRenderAsyncGetDataFlag flag = CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DEFAULT);
+	static void		Begin(ID3D11Asynchronous* pAsync);
+	static void		End(ID3D11Asynchronous* pAsync);
 private:
 	static void		TranslateBindFlag(UINT& output, CustomStruct::CRenderBindFlag input);
 	static void		TranslateUsage(D3D11_USAGE& output, CustomStruct::CRenderUsage input);
@@ -155,6 +160,8 @@ private:
 	static void		TranslateSamplerState(D3D11_SAMPLER_DESC& output, const CustomStruct::CRenderSamplerState& input);
 	static void		TranslateClearDepthStencilFlag(UINT& output, CustomStruct::CRenderClearDepthStencilFlag input);
 	static void		TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, CustomStruct::CRenderPrimitiveTopology input);
+	static void		TranslateQueryDesc(D3D11_QUERY_DESC& output, const CustomStruct::CRenderQueryDesc& input);
+	static void		TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input);
 public:
 	static void		ClearFinalOutput();
 	static void		SetFinalOutput();

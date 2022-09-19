@@ -659,6 +659,70 @@ namespace CustomStruct
 		CRenderResourceMiscFlag		MiscFlags;
 	};
 
+	enum CRenderQueryType
+	{
+		QUERY_EVENT							= 0,
+		QUERY_OCCLUSION						= 1,
+		QUERY_TIMESTAMP						= 2,
+		QUERY_TIMESTAMP_DISJOINT			= 3,
+		QUERY_PIPELINE_STATISTICS			= 4,
+		QUERY_OCCLUSION_PREDICATE			= 5,
+		QUERY_SO_STATISTICS					= 6,
+		QUERY_SO_OVERFLOW_PREDICATE			= 7,
+		QUERY_SO_STATISTICS_STREAM0			= 8,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM0	= 9,
+		QUERY_SO_STATISTICS_STREAM1			= 10,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM1	= 11,
+		QUERY_SO_STATISTICS_STREAM2			= 12,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM2	= 13,
+		QUERY_SO_STATISTICS_STREAM3			= 14,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM3	= 15
+	};
+
+	enum CRenderQueryMiscFlag
+	{
+		QUERY_MISC_DEFAULT			= 0x0,
+		QUERY_MISC_PREDICATEHINT	= 0x1
+	};
+
+	struct CRenderQueryDesc
+	{
+		CRenderQueryDesc()
+		{
+			Query		= CRenderQueryType::QUERY_EVENT;
+			MiscFlags	= CRenderQueryMiscFlag::QUERY_MISC_DEFAULT;
+		}
+		CRenderQueryDesc(CRenderQueryType type, CRenderQueryMiscFlag flag = CRenderQueryMiscFlag::QUERY_MISC_DEFAULT)
+		{
+			Query		= type;
+			MiscFlags	= flag;
+		}
+		CRenderQueryType		Query;
+		CRenderQueryMiscFlag	MiscFlags;
+	};
+
+	enum CRenderAsyncGetDataFlag
+	{
+		D3D11_ASYNC_GETDATA_DEFAULT		= 0x0,
+		D3D11_ASYNC_GETDATA_DONOTFLUSH	= 0x1
+	};
+
+	struct CRenderQueryTimestampDisjoint
+	{
+		CRenderQueryTimestampDisjoint()
+		{
+			Frequency	= 1u;
+			Disjoint	= TRUE;
+		}
+		void Reset()
+		{
+			Frequency	= 1u;
+			Disjoint	= TRUE;
+		}
+		ULONGLONG	Frequency;
+		BOOL		Disjoint;
+	};
+
 	enum CRenderClearDepthStencilFlag
 	{
 		CLEAR_DEPTH			= 1,

@@ -29,6 +29,7 @@ protected:
 	const CScene*						m_CurrentScene;
 	std::vector<class CGameObject*>		m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
 protected:
+	ULONGLONG							m_FrameIndex;
 	RenderPerFrameInfo					m_RenderPerFrameInfo;
 	CustomType::Vector2Int				m_GlobalBufferSize;
 protected:
@@ -49,6 +50,13 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_ShadowPrePassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferForwardPassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPassDSS;
+protected:
+	std::shared_ptr<class CGPUQuery>					m_GPUTimeStart[10];
+	std::shared_ptr<class CGPUQuery>					m_GPUTimeEnd[10];
+	std::shared_ptr<class CGPUQuery>					m_GPUDisjoint[10];
+	ULONGLONG											m_GPUTimeStartData[10];
+	ULONGLONG											m_GPUTimeEndData[10];
+	CustomStruct::CRenderQueryTimestampDisjoint			m_GPUDisjointData[10];
 protected:
 	static std::shared_ptr<class CVertexShader>			m_FullScreenPolygonVS;
 	static std::shared_ptr<class CPixelShader>			m_ScreenPolygonShader;

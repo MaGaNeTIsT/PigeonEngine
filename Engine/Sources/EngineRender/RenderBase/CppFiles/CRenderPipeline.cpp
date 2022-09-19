@@ -4,6 +4,8 @@
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CLight.h"
 #include "../Headers/CRenderDevice.h"
+#include "../Headers/CGPUQuery.h"
+#include "../Headers/CGPUQueryManager.h"
 #include "../../AssetsManager/Headers/CMesh.h"
 #include "../../AssetsManager/Headers/CMeshManager.h"
 #include "../Headers/CMeshRenderer.h"
@@ -15,6 +17,7 @@
 #include "../../RenderFeatures/Headers/CHZBBuffer.h"
 
 #include "../../../Development/Headers/CDebugScreen.h"
+#include "../../../Development/Headers/CGPUProfiler.h"
 
 CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
@@ -256,9 +259,51 @@ void CRenderPipeline::PostInit()
 				break;
 			}
 		}
+
+		m_FrameIndex = 0u;
+
 		m_DebugScreen->Init(m_GlobalBufferSize);
 		m_GTAOComputeShader->Init(sceneMainCamera, CustomType::Vector2Int((m_GlobalBufferSize.X() + 1) / 2, (m_GlobalBufferSize.Y() + 1) / 2), m_GlobalBufferSize);
 		m_HZB->Init(CustomType::Vector2Int((m_GlobalBufferSize.X() + 1) / 2, (m_GlobalBufferSize.Y() + 1) / 2), m_GlobalBufferSize);
+
+		{
+			for (INT i = 0; i < 10; i++)
+			{
+				if (m_GPUTimeStart[i] == nullptr)
+				{
+					std::string name = "GTAO_Pass_Time_Start_";
+					name += std::to_string(i);
+					m_GPUTimeStart[i] = CGPUQueryManager::CreateQuery(name, CustomStruct::CRenderQueryDesc(CustomStruct::CRenderQueryType::QUERY_TIMESTAMP));
+				}
+				if (m_GPUTimeEnd[i] == nullptr)
+				{
+					std::string name = "GTAO_Pass_Time_End_";
+					name += std::to_string(i);
+					m_GPUTimeEnd[i] = CGPUQueryManager::CreateQuery(name, CustomStruct::CRenderQueryDesc(CustomStruct::CRenderQueryType::QUERY_TIMESTAMP));
+				}
+				m_GPUTimeStartData[i] = 0u;
+				m_GPUTimeEndData[i] = 0u;
+
+				if (m_GPUDisjoint[i] == nullptr)
+				{
+					std::string name = "GTAO_Pass_Disjoint_";
+					name += std::to_string(i);
+					m_GPUDisjoint[i] = CGPUQueryManager::CreateQuery(name, CustomStruct::CRenderQueryDesc(CustomStruct::CRenderQueryType::QUERY_TIMESTAMP_DISJOINT));
+				}
+				m_GPUDisjointData[i] = CustomStruct::CRenderQueryTimestampDisjoint();
+			}
+			for (INT i = 0; i < 10; i++)
+			{
+				if (m_GPUTimeStart[i] != nullptr)
+				{
+					CRenderDevice::m_RenderDevice->m_ImmediateContext->Begin(m_GPUTimeStart[i]->GetQuery().Get());
+				}
+				if (m_GPUTimeEnd[i] != nullptr)
+				{
+					CRenderDevice::m_RenderDevice->m_ImmediateContext->Begin(m_GPUTimeEnd[i]->GetQuery().Get());
+				}
+			}
+		}
 	}
 }
 void CRenderPipeline::Uninit()
@@ -281,6 +326,8 @@ void CRenderPipeline::PostUpdate()
 		return;
 
 	{
+		m_FrameIndex += 1u;
+
 		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
 			if (m_CurrentScenePrimitives[i].size() != 0)
@@ -395,111 +442,131 @@ void CRenderPipeline::Render()
 
 		{
 			//Shadow pass
-			CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
-			CRenderDevice::SetBlendState(m_ShadowPrePassBS);
-			CRenderDevice::SetRenderTarget(m_ShadowBuffer.DepthStencilView);
-			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-			{
-				for (CGameObject* obj : m_CurrentScenePrimitives[i])
+			CGPUProfilerManager::AddPass("Shadow_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
+				CRenderDevice::SetBlendState(m_ShadowPrePassBS);
+				CRenderDevice::SetRenderTarget(m_ShadowBuffer.DepthStencilView);
+				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 				{
-					obj->DrawExtra();
-				}
-			}
+					for (CGameObject* obj : m_CurrentScenePrimitives[i])
+					{
+						obj->DrawExtra();
+					}
+				}});
 		}
 
 		{
 			//Pre depth pass
-			CRenderDevice::SetRenderTarget(m_SceneDepth.DepthStencilView);
-			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-			{
-				for (CGameObject* obj : m_CurrentScenePrimitives[i])
+			CGPUProfilerManager::AddPass("Pre-Depth_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetRenderTarget(m_SceneDepth.DepthStencilView);
+				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+				{
+					for (CGameObject* obj : m_CurrentScenePrimitives[i])
+					{
+						obj->DrawExtra();
+					}
+				}
+				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
 				{
 					obj->DrawExtra();
-				}
-			}
-			for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
-			{
-				obj->DrawExtra();
-			}
+				}});
 		}
 
 		{
 			//Geometry buffer pass
-			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
-			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
-			tempGBuffersRTV[0] = m_SceneColor.RenderTargetView;
-			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
-			{
-				tempGBuffersRTV[i + 1u] = m_GBuffer[i].RenderTargetView;
-			}
-			CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_SceneDepth.DepthStencilView);
-			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-			{
-				for (CGameObject* obj : m_CurrentScenePrimitives[i])
+			CGPUProfilerManager::AddPass("Geometry_Buffer_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
+				tempGBuffersRTV[0] = m_SceneColor.RenderTargetView;
+				for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 				{
-					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_DEFERRED)
-						obj->Draw();
+					tempGBuffersRTV[i + 1u] = m_GBuffer[i].RenderTargetView;
 				}
-			}
-			for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
-			{
-				if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_SKY)
-					obj->Draw();
-			}
+				CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_SceneDepth.DepthStencilView);
+				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+				{
+					for (CGameObject* obj : m_CurrentScenePrimitives[i])
+					{
+						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_DEFERRED)
+							obj->Draw();
+					}
+				}
+				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
+				{
+					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_SKY)
+						obj->Draw();
+				}});
 		}
 
 		{
 			//Direct light pass
-			CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
-			CRenderDevice::SetBlendState(m_DirectLightPassBS);
-			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
-			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
-			tempGBuffersSRV[0] = m_SceneColor.ShaderResourceView;
-			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
-			{
-				tempGBuffersSRV[i + 1u] = m_GBuffer[i].ShaderResourceView;
-			}
-			CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
-			this->DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader);
+			CGPUProfilerManager::AddPass("Direct_Light_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
+				CRenderDevice::SetBlendState(m_DirectLightPassBS);
+				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
+				Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
+				tempGBuffersSRV[0] = m_SceneColor.ShaderResourceView;
+				for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+				{
+					tempGBuffersSRV[i + 1u] = m_GBuffer[i].ShaderResourceView;
+				}
+				CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
+				this->DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
 		}
 
 		{
 			//Opaque forward pass
-			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
-			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
-			for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-			{
-				for (CGameObject* obj : m_CurrentScenePrimitives[i])
+			CGPUProfilerManager::AddPass("Opaque_Forward_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
+				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 				{
-					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
-						obj->Draw();
-				}
-			}
+					for (CGameObject* obj : m_CurrentScenePrimitives[i])
+					{
+						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+							obj->Draw();
+					}
+				}});
 		}
 
 		{
 			//Transparent forward pass
-			CRenderDevice::SetBlendState(m_TransparentPassBS);
-			for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT])
-			{
-				if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
-					obj->Draw();
-			}
+			CGPUProfilerManager::AddPass("Transparent_Forward_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetBlendState(m_TransparentPassBS);
+				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT])
+				{
+					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+						obj->Draw();
+				}});
 		}
 
 		{
-			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-			CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
-			CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
-			m_DebugScreen->Draw();
-			m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView);
-			//m_HZB->Draw(m_SceneDepth.ShaderResourceView);
+			//TODO Test GTAO and debug.
+			CGPUProfilerManager::AddPass("GTAO_Pass", m_FrameIndex, [&]() {
+				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
+				m_DebugScreen->Draw();
+				//m_HZB->Draw(m_SceneDepth.ShaderResourceView);
+				m_GTAOComputeShader->Draw(m_SceneDepth.ShaderResourceView); });
 		}
 
 		{
 			//Post process pass
+		}
+		
+		{
+			ImGui::Begin("GPU Profiler");
+			ImGui::Text("Shadow Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Shadow_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Pre-Depth Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Geometry Buffer Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Direct Light Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Opaque Forward Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Transparent Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("GTAO Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::End();
 		}
 
 		{

@@ -916,6 +916,36 @@ BOOL CRenderDevice::CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState
 	}
 	return TRUE;
 }
+BOOL CRenderDevice::CreateQuery(Microsoft::WRL::ComPtr<ID3D11Query>& q, const CustomStruct::CRenderQueryDesc& queryDesc)
+{
+	D3D11_QUERY_DESC qd;
+	{
+		::ZeroMemory(&qd, sizeof(qd));
+		CRenderDevice::TranslateQueryDesc(qd, queryDesc);
+	}
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+	{
+		//TODO Create query object failed log.
+		return FALSE;
+	}
+	return TRUE;
+}
+BOOL CRenderDevice::GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, CustomStruct::CRenderAsyncGetDataFlag flag)
+{
+	UINT getDataFlag = 0u;
+	CRenderDevice::TranslateGetDataFlag(getDataFlag, flag);
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
+	return (!(FAILED(hr)));
+}
+void CRenderDevice::Begin(ID3D11Asynchronous* pAsync)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->Begin(pAsync);
+}
+void CRenderDevice::End(ID3D11Asynchronous* pAsync)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->End(pAsync);
+}
 void CRenderDevice::TranslateBindFlag(UINT& output, CustomStruct::CRenderBindFlag input)
 {
 	static std::map<CustomStruct::CRenderBindFlag, UINT> bindFlagMap = {
@@ -1231,6 +1261,40 @@ void CRenderDevice::TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, C
 		{ CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP } };
 
 	output = primitiveTopologyMap[input];
+}
+void CRenderDevice::TranslateQueryDesc(D3D11_QUERY_DESC& output, const CustomStruct::CRenderQueryDesc& input)
+{
+	std::map<CustomStruct::CRenderQueryType, D3D11_QUERY> queryTypeMap = {
+		{ CustomStruct::CRenderQueryType::QUERY_EVENT, D3D11_QUERY::D3D11_QUERY_EVENT },
+		{ CustomStruct::CRenderQueryType::QUERY_OCCLUSION, D3D11_QUERY::D3D11_QUERY_OCCLUSION },
+		{ CustomStruct::CRenderQueryType::QUERY_TIMESTAMP, D3D11_QUERY::D3D11_QUERY_TIMESTAMP },
+		{ CustomStruct::CRenderQueryType::QUERY_TIMESTAMP_DISJOINT, D3D11_QUERY::D3D11_QUERY_TIMESTAMP_DISJOINT },
+		{ CustomStruct::CRenderQueryType::QUERY_PIPELINE_STATISTICS, D3D11_QUERY::D3D11_QUERY_PIPELINE_STATISTICS },
+		{ CustomStruct::CRenderQueryType::QUERY_OCCLUSION_PREDICATE, D3D11_QUERY::D3D11_QUERY_OCCLUSION_PREDICATE },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM0, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM0 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM0, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM1, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM1 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM1, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM1 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM2, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM2 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM2, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM3, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM3 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM3, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3 } };
+	std::map<CustomStruct::CRenderQueryMiscFlag, UINT> queryMiscFlagMap = {
+		{ CustomStruct::CRenderQueryMiscFlag::QUERY_MISC_DEFAULT, 0u },
+		{ CustomStruct::CRenderQueryMiscFlag::QUERY_MISC_PREDICATEHINT, D3D11_QUERY_MISC_FLAG::D3D11_QUERY_MISC_PREDICATEHINT } };
+
+	output.Query = queryTypeMap[input.Query];
+	output.MiscFlags = queryMiscFlagMap[input.MiscFlags];
+}
+void CRenderDevice::TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input)
+{
+	std::map<CustomStruct::CRenderAsyncGetDataFlag, UINT> getDataFlagMap = {
+	{ CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DEFAULT, 0u },
+	{ CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DONOTFLUSH, D3D11_ASYNC_GETDATA_FLAG::D3D11_ASYNC_GETDATA_DONOTFLUSH } };
+
+	output = getDataFlagMap[input];
 }
 void CRenderDevice::ClearFinalOutput()
 {

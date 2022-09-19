@@ -22,6 +22,7 @@
     <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CTestModel.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
@@ -43,6 +44,8 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTexture2D.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
@@ -61,6 +64,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CTestModel.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CBaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
@@ -82,6 +86,8 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTexture2D.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />

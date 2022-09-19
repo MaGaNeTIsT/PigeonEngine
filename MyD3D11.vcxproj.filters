@@ -225,6 +225,15 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h">
+      <Filter>Engine\Sources\Development\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -331,6 +340,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp">
+      <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

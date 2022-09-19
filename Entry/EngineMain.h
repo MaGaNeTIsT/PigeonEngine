@@ -15,6 +15,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <functional>
 using namespace std;
 
 #include <d3d11.h>
@@ -86,6 +87,10 @@ using namespace DirectX;
 #define ENGINE_MESH_PLANE_NAME								("EngineBase/Mesh/PlaneMesh")
 #define ENGINE_MESH_POLYGON_NAME							("EngineBase/Mesh/PolygonMesh")
 #define ENGINE_MESH_POLYGON_2D_NAME							("EngineBase/Mesh/Polygon2DMesh")
+
+#define ENGINE_GPU_PROFILER_NONE							("EngineBase/GPUProfiler/None")
+#define ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
+#define ENGINE_GPU_QUERY_NONE								("EngineBase/GPUQuery/None")
 
 #define ENGINE_CAMERA_FOV									(60.f)
 #define ENGINE_CAMERA_NEAR									(5.f)
