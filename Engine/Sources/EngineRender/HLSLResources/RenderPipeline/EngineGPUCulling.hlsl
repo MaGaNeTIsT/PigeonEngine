@@ -18,7 +18,7 @@ cbuffer ConstantBufferGPUCulling : register(b1)
 
 };
 
-StructuredBuffer<AABBBoxInfo> _CullingTestBuffer : register(u0);
+StructuredBuffer<AABBBoxInfo> _CullingTestBuffer : register(t0);
 
 [numthreads(GROUP_THREAD_SIZE_X, GROUP_THREAD_SIZE_Y, 1)]
 void main(uint2 dispatchThreadID :SV_DispatchThreadID, uint2 groupID : SV_GroupID, uint groupIndex : SV_GroupIndex, uint2 groupThreadID : SV_GroupThreadID)

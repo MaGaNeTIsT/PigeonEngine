@@ -45,7 +45,7 @@ void CGPUCulling::Init(CHZBPass* hzb)
 			//	UINT NumElements;
 			//	UINT ElementWidth;
 			//};;
-			hr = CRenderDevice::m_RenderDevice->m_Device->CreateShaderResourceView(m_CullingTestBuffer.Buffer.Get(), , m_CullingTestBuffer.ShaderResourceView.ReleaseAndGetAddressOf());
+			//hr = CRenderDevice::m_RenderDevice->m_Device->CreateShaderResourceView(m_CullingTestBuffer.Buffer.Get(), , m_CullingTestBuffer.ShaderResourceView.ReleaseAndGetAddressOf());
 		}
 
 		{
@@ -79,12 +79,12 @@ void CGPUCulling::ComputeCulling()
 }
 void CGPUCulling::ReadBackFromResource()
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->Map();
-	HRESULT Map(
-		[in]            ID3D11Resource * pResource,
-		[in]            UINT                     Subresource,
-		[in]            D3D11_MAP                MapType,
-		[in]            UINT                     MapFlags,
-		[out, optional] D3D11_MAPPED_SUBRESOURCE * pMappedResource
-	);
+	//CRenderDevice::m_RenderDevice->m_ImmediateContext->Map();
+	//HRESULT Map(
+	//	[in]            ID3D11Resource * pResource,
+	//	[in]            UINT                     Subresource,
+	//	[in]            D3D11_MAP                MapType,
+	//	[in]            UINT                     MapFlags,
+	//	[out, optional] D3D11_MAPPED_SUBRESOURCE * pMappedResource
+	//);
 }
