@@ -92,9 +92,12 @@ using namespace DirectX;
 #define ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
 #define ENGINE_GPU_QUERY_NONE								("EngineBase/GPUQuery/None")
 
+#define ENGINE_DEFAULT_CULLING_DISTANCE						(1500.f)
+#define ENGINE_DEFAULT_CULLING_OFFSET						(-50.f)
+
 #define ENGINE_CAMERA_FOV									(60.f)
 #define ENGINE_CAMERA_NEAR									(5.f)
-#define ENGINE_CAMERA_FAR									(1000.f)
+#define ENGINE_CAMERA_FAR									(2000.f)
 #define ENGINE_CAMERA_MOVE_SPEED							(20.f)
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)
 

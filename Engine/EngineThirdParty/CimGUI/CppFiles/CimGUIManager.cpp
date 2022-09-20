@@ -63,42 +63,38 @@ void CimGUIManager::Update()
 }
 void CimGUIManager::Draw()
 {
-    static ImVec4   clearColor          = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
-    static bool     showDemoWindow      = FALSE;
-    static bool     showAnotherWindow   = FALSE;
-    static FLOAT    f                   = 0.f;
-    static INT      counter             = 0;
+    //{
+    //    static ImVec4   clearColor = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    //    static bool     showDemoWindow = FALSE;
+    //    static bool     showAnotherWindow = FALSE;
+    //    static FLOAT    f = 0.f;
+    //    static INT      counter = 0;
 
-    {
-        if (showDemoWindow)
-            ImGui::ShowDemoWindow(&showDemoWindow);
-    }
+    //    if (showDemoWindow)
+    //        ImGui::ShowDemoWindow(&showDemoWindow);
 
-    {
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is some useful text.");
-        ImGui::Checkbox("Demo Window", &showDemoWindow);
-        ImGui::Checkbox("Another Window", &showAnotherWindow);
-        ImGui::SliderFloat("float", &f, 0.f, 1.f);
-        ImGui::ColorEdit3("clear color", (FLOAT*)&clearColor);
-        if (ImGui::Button("Button"))
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-        ImGui::End();
-    }
+    //    ImGui::Begin("Hello, world!");
+    //    ImGui::Text("This is some useful text.");
+    //    ImGui::Checkbox("Demo Window", &showDemoWindow);
+    //    ImGui::Checkbox("Another Window", &showAnotherWindow);
+    //    ImGui::SliderFloat("float", &f, 0.f, 1.f);
+    //    ImGui::ColorEdit3("clear color", (FLOAT*)&clearColor);
+    //    if (ImGui::Button("Button"))
+    //        counter++;
+    //    ImGui::SameLine();
+    //    ImGui::Text("counter = %d", counter);
+    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    //    ImGui::End();
 
-    {
-        if (showAnotherWindow)
-        {
-            ImGui::Begin("Another Window", &showAnotherWindow);
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                showAnotherWindow = FALSE;
-            ImGui::End();
-        }
-    }
+    //    if (showAnotherWindow)
+    //    {
+    //        ImGui::Begin("Another Window", &showAnotherWindow);
+    //        ImGui::Text("Hello from another window!");
+    //        if (ImGui::Button("Close Me"))
+    //            showAnotherWindow = FALSE;
+    //        ImGui::End();
+    //    }
+    //}
 
     ImGui::Render();
     CimGUIManager::D3DRenderDrawData(ImGui::GetDrawData());

@@ -210,10 +210,10 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOComputeShader.h">
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBBuffer.h">
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h">
@@ -233,6 +233,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h">
       <Filter>Engine\Sources\Development\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -329,10 +332,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOComputeShader.cpp">
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBBuffer.cpp">
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp">
@@ -349,6 +352,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp">
       <Filter>Engine\Sources\Development\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -393,6 +399,9 @@
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

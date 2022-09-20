@@ -50,6 +50,7 @@ CCamera::CCamera(const CCamera& camera)
 
 	this->m_CameraInfo				= camera.m_CameraInfo;
 	this->m_CameraControlInfo		= camera.m_CameraControlInfo;
+	this->m_FrustumPlane			= camera.m_FrustumPlane;
 
 	this->m_ViewMatrix				= camera.m_ViewMatrix;
 	this->m_ViewInvMatrix			= camera.m_ViewInvMatrix;
@@ -64,6 +65,16 @@ CCamera::CCamera(const CCamera& camera)
 CCamera::~CCamera()
 {
 }
+std::vector<CustomType::Vector3> CCamera::GetCullingPlane()
+{
+	CustomType::Quaternion wR(this->GetRotation());
+	std::vector<CustomType::Vector3> plane = {
+		wR.MultiplyVector(this->m_FrustumPlane[0]),
+		wR.MultiplyVector(this->m_FrustumPlane[1]),
+		wR.MultiplyVector(this->m_FrustumPlane[2]),
+		wR.MultiplyVector(this->m_FrustumPlane[3]) };
+	return plane;
+}
 CustomType::Vector4 CCamera::GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize)
 {
 	FLOAT aspectRatio	= static_cast<FLOAT>(finalViewport.X()) / static_cast<FLOAT>(finalViewport.Y());
@@ -77,6 +88,45 @@ CustomType::Vector4 CCamera::GetScreenToViewParameters(const CustomType::Vector2
 		sizeY * this->m_ViewportSizeAndInvSize.W() * -2.f * invFovFixY,
 		-((this->m_CameraInfo.Viewport.X() * this->m_ViewportSizeAndInvSize.Z() * 2.f * invFovFixX) + invFovFixX),
 		(this->m_CameraInfo.Viewport.Y() * this->m_ViewportSizeAndInvSize.W() * 2.f * invFovFixY) + invFovFixY);
+}
+void CCamera::ReCalculateFrustumPlane(std::vector<CustomType::Vector3>& plane, const FLOAT& fovAngleY, const FLOAT& aspectRatio, const FLOAT& farPlane)
+{
+	FLOAT sinHalfAngleY, cosHalfAngleY;
+	CustomType::CMath::SinCos(sinHalfAngleY, cosHalfAngleY, (0.5f * fovAngleY) * CustomType::CMath::GetDegToRad());
+	FLOAT halfHeight = (sinHalfAngleY / cosHalfAngleY) * farPlane;
+	FLOAT halfWidth = aspectRatio * halfHeight;
+	//
+	//          Y
+	//          ^
+	//          |
+	//          |
+	//  0---------------1
+	//  |               |
+	//  |               |----->X
+	//  |               |
+	//  2---------------3
+	//
+	CustomType::Vector3 pointVec[4] = {
+		CustomType::Vector3(-halfWidth, halfHeight, farPlane),
+		CustomType::Vector3(halfWidth, halfHeight, farPlane),
+		CustomType::Vector3(-halfWidth, -halfHeight, farPlane),
+		CustomType::Vector3(halfWidth, -halfHeight, farPlane) };
+	for (INT i = 0; i < 4; i++)
+	{
+		pointVec[i].Normalize();
+	}
+	if (plane.size() != 4u)
+	{
+		plane.resize(4u);
+	}
+	plane[0u] = CustomType::Vector3::Cross(pointVec[0], pointVec[1]);
+	plane[1u] = CustomType::Vector3::Cross(pointVec[3], pointVec[2]);
+	plane[2u] = CustomType::Vector3::Cross(pointVec[2], pointVec[0]);
+	plane[3u] = CustomType::Vector3::Cross(pointVec[1], pointVec[3]);
+	for (INT i = 0; i < 4; i++)
+	{
+		plane[i].Normalize();
+	}
 }
 void CCamera::ReCalculateProjectionMatrix()
 {
@@ -100,6 +150,8 @@ void CCamera::ReCalculateProjectionMatrix()
 
 	this->m_ViewportSizeAndInvSize = CustomType::Vector4(viewportW, viewportH, 1.f / viewportW, 1.f / viewportH);
 	this->m_ViewportMinSize = CustomType::Vector2(this->m_CameraInfo.Viewport.X(), this->m_CameraInfo.Viewport.Y());
+
+	this->ReCalculateFrustumPlane(this->m_FrustumPlane, this->m_CameraInfo.Fov, aspectRatio, this->m_CameraInfo.Far);
 }
 void CCamera::ReCalculateViewMatrix()
 {

@@ -171,9 +171,14 @@ namespace CustomType
 	public:
 		static const Vector3&		Zero() { return Vector3::m_Zero; }
 		static Vector3				Normalize(const Vector3& v);
-		static Vector3				Dot(const Vector3& v1, const Vector3& v2);
+		static FLOAT				Dot(const Vector3& v1, const Vector3& v2);
 		static Vector3				Cross(const Vector3& v1, const Vector3& v2);
+		static FLOAT				Length(const Vector3& v);
+		static FLOAT				Distance(const Vector3& v1, const Vector3& v2);
 		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t);
+	public:
+		FLOAT						Length();
+		FLOAT						Distance(const Vector3& v);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -395,5 +400,11 @@ namespace CustomType
 		static FLOAT	Abs(const FLOAT& v);
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
+		static FLOAT	Exp2(const FLOAT& v);
+		static INT		Exp2(const INT& v);
+		static INT		Log2Floor(const INT& v);
+		static INT		Log2Floor(const FLOAT& v);
+		static INT		PowerOfTwoFloor(FLOAT& output, const FLOAT& input);
+		static INT		PowerOfTwoFloor(INT& output, const INT& input);
 	};
 }

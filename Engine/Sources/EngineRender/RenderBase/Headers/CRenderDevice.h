@@ -7,6 +7,31 @@
 class CRenderDevice
 {
 public:
+	struct RenderStructuredBufferViewInfo
+	{
+		RenderStructuredBufferViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		void Release()
+		{
+			if (Buffer)
+			{
+				Buffer->Release();
+				Buffer = nullptr;
+			}
+			if (UnorderedAccessView)
+			{
+				UnorderedAccessView->Release();
+				UnorderedAccessView = nullptr;
+			}
+			if (ShaderResourceView)
+			{
+				ShaderResourceView->Release();
+				ShaderResourceView = nullptr;
+			}
+		};
+		Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
+	};
 	struct RenderTexture2DViewInfo
 	{
 		RenderTexture2DViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
@@ -75,6 +100,7 @@ public:
 	static BOOL		LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
 	static BOOL		CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const CustomStruct::CRenderBufferDesc& bufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static void		UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = NULL);
+	//static BOOL		CreateStructuredBuffer(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
@@ -185,7 +211,7 @@ private:
 private:
 	static CRenderDevice* m_RenderDevice;
 private:
-	friend class CRenderPipeline;
+	friend class CGPUCulling;
 	friend class CimGUIManager;
 	static Microsoft::WRL::ComPtr<ID3D11DeviceContext>	GetRenderDeviceContext();
 	static Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice();

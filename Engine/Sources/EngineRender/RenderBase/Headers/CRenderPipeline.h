@@ -8,6 +8,26 @@
 class CRenderPipeline
 {
 public:
+	struct CRenderCameraCullingInfo
+	{
+		CRenderCameraCullingInfo()
+		{
+			Distance		= 0.f;
+			OriginPosition	= CustomType::Vector3::Zero();
+			ClipOffset		= 0.f;
+			for (INT i = 0; i < 5; i++)
+			{
+				ClipDot[i]		= 0.f;
+				ClipPlane[i]	= CustomType::Vector3::Zero();
+			}
+		}
+		FLOAT				Distance;
+		CustomType::Vector3 OriginPosition;
+		FLOAT				ClipOffset;
+		FLOAT				ClipDot[5];
+		CustomType::Vector3 ClipPlane[5];
+	};
+public:
 	struct RenderPerFrameInfo
 	{
 		RenderPerFrameInfo() { ::ZeroMemory(this, sizeof(*this)); }
@@ -23,15 +43,20 @@ public:
 	virtual void	PostUpdate();
 	virtual void	Render();
 protected:
-	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 	virtual void	PreparePerFrameRender(class CCamera* camera);
+	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
+	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const CRenderCameraCullingInfo& cullingInfo);
+	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::map<ULONGLONG, class CGameObject*>& primitives);
+	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 protected:
 	const CScene*						m_CurrentScene;
 	std::vector<class CGameObject*>		m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
 protected:
 	ULONGLONG							m_FrameIndex;
+	CRenderCameraCullingInfo			m_GlobalCullingInfo;
 	RenderPerFrameInfo					m_RenderPerFrameInfo;
 	CustomType::Vector2Int				m_GlobalBufferSize;
+	
 protected:
 	class CMesh*						m_FullScreenPolygon;
 protected:
@@ -51,20 +76,13 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferForwardPassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPassDSS;
 protected:
-	std::shared_ptr<class CGPUQuery>					m_GPUTimeStart[10];
-	std::shared_ptr<class CGPUQuery>					m_GPUTimeEnd[10];
-	std::shared_ptr<class CGPUQuery>					m_GPUDisjoint[10];
-	ULONGLONG											m_GPUTimeStartData[10];
-	ULONGLONG											m_GPUTimeEndData[10];
-	CustomStruct::CRenderQueryTimestampDisjoint			m_GPUDisjointData[10];
-protected:
 	static std::shared_ptr<class CVertexShader>			m_FullScreenPolygonVS;
 	static std::shared_ptr<class CPixelShader>			m_ScreenPolygonShader;
 	static std::shared_ptr<class CPixelShader>			m_DirectLightShader;
 protected:
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
-	static std::shared_ptr<class CGTAOComputeShader>	m_GTAOComputeShader;
-	static std::shared_ptr<class CHZBBuffer>			m_HZB;
+	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;
+	static std::shared_ptr<class CHZBPass>				m_HZBPass;
 public:
 	static class CTexture2D* GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
 	static std::shared_ptr<class CPixelShader> GetDefaultEmptyPS();

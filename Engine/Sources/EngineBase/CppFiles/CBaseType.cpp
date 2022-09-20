@@ -372,15 +372,23 @@ namespace CustomType
 		Vector3 result(DirectX::XMVector3Normalize(v.GetXMVECTOR()));
 		return result;
 	}
-	Vector3 Vector3::Dot(const Vector3& v1, const Vector3& v2)
+	FLOAT Vector3::Dot(const Vector3& v1, const Vector3& v2)
 	{
-		Vector3 result(DirectX::XMVector3Dot(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
-		return result;
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
 	}
 	Vector3 Vector3::Cross(const Vector3& v1, const Vector3& v2)
 	{
 		Vector3 result(DirectX::XMVector3Cross(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
 		return result;
+	}
+	FLOAT Vector3::Length(const Vector3& v)
+	{
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v.GetXMVECTOR()));
+	}
+	FLOAT Vector3::Distance(const Vector3& v1, const Vector3& v2)
+	{
+		Vector3 v = v1;
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length((v - v2).GetXMVECTOR()));
 	}
 	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t)
 	{
@@ -389,6 +397,15 @@ namespace CustomType
 			v1.Y() * (1.f - t) + v2.Y() * t,
 			v1.Z() * (1.f - t) + v2.Z() * t);
 		return result;
+	}
+	FLOAT Vector3::Length()
+	{
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(this->GetXMVECTOR()));
+	}
+	FLOAT Vector3::Distance(const Vector3& v)
+	{
+		Vector3 tv = v;
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length((tv - (*this)).GetXMVECTOR()));
 	}
 	Vector3 Vector3::operator+(const Vector3& v)
 	{
@@ -1206,5 +1223,38 @@ namespace CustomType
 	{
 		sinValue = sinf(v);
 		cosValue = cosf(v);
+	}
+	FLOAT CMath::Exp2(const FLOAT& v)
+	{
+		return exp2f(v);
+	}
+	INT CMath::Exp2(const INT& v)
+	{
+		return static_cast<INT>(exp2f(static_cast<FLOAT>(v)));
+	}
+	INT CMath::Log2Floor(const INT& v)
+	{
+		FLOAT e = log2f(static_cast<FLOAT>(v));
+		e = floorf(e);
+		return static_cast<INT>(e);
+	}
+	INT CMath::Log2Floor(const FLOAT& v)
+	{
+		FLOAT e = log2f(v);
+		return static_cast<INT>(floorf(e));
+	}
+	INT CMath::PowerOfTwoFloor(FLOAT& output, const FLOAT& input)
+	{
+		FLOAT e = log2f(input);
+		e = floorf(e);
+		output = exp2(e);
+		return static_cast<INT>(e);
+	}
+	INT CMath::PowerOfTwoFloor(INT& output, const INT& input)
+	{
+		FLOAT e = log2f(static_cast<FLOAT>(input));
+		e = floorf(e);
+		output = static_cast<INT>(exp2f(e));
+		return static_cast<INT>(e);
 	}
 }

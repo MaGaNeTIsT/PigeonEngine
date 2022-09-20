@@ -27,6 +27,9 @@ public:
 	FLOAT					GetNear() { return this->m_CameraInfo.Near; }
 	FLOAT					GetFar() { return this->m_CameraInfo.Far; }
 public:
+	//The culling plane's normal of Camera' frustum with (top, down, left, right) order.
+	std::vector<CustomType::Vector3> GetCullingPlane();
+public:
 	CustomType::Matrix4x4	GetViewMatrix() { return m_ViewMatrix; }
 	CustomType::Matrix4x4	GetViewInverseMatrix() { return m_ViewInvMatrix; }
 	CustomType::Matrix4x4	GetProjectionMatrix() { return m_ProjectionMatrix; }
@@ -39,6 +42,8 @@ public:
 	CustomType::Vector2		GetDeviceZToViewZMulAdd() { return m_DeviceZToViewZMulAdd; }
 	CustomType::Vector4		GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize);
 protected:
+	//Calculate plane's normal of Camera' frustum with (top, down, left, right) order.
+	void			ReCalculateFrustumPlane(std::vector<CustomType::Vector3>& plane, const FLOAT& fovAngleY, const FLOAT& aspectRatio, const FLOAT& farPlane);
 	void			ReCalculateProjectionMatrix();
 	void			ReCalculateViewMatrix();
 	void			ReCalculateViewProjectionMatrix();
@@ -52,15 +57,16 @@ public:
 	CCamera(const CCamera& camera);
 	virtual ~CCamera();
 protected:
-	CCameraInfo				m_CameraInfo;
-	CCameraControlInfo		m_CameraControlInfo;
-	CustomType::Matrix4x4	m_ViewMatrix;
-	CustomType::Matrix4x4	m_ViewInvMatrix;
-	CustomType::Matrix4x4	m_ProjectionMatrix;
-	CustomType::Matrix4x4	m_ProjectionInvMatrix;
-	CustomType::Matrix4x4	m_ViewProjectionMatrix;
-	CustomType::Matrix4x4	m_ViewProjectionInvMatrix;
-	CustomType::Vector2		m_ViewportMinSize;
-	CustomType::Vector4		m_ViewportSizeAndInvSize;
-	CustomType::Vector2		m_DeviceZToViewZMulAdd;
+	CCameraInfo							m_CameraInfo;
+	CCameraControlInfo					m_CameraControlInfo;
+	std::vector<CustomType::Vector3>	m_FrustumPlane;
+	CustomType::Matrix4x4				m_ViewMatrix;
+	CustomType::Matrix4x4				m_ViewInvMatrix;
+	CustomType::Matrix4x4				m_ProjectionMatrix;
+	CustomType::Matrix4x4				m_ProjectionInvMatrix;
+	CustomType::Matrix4x4				m_ViewProjectionMatrix;
+	CustomType::Matrix4x4				m_ViewProjectionInvMatrix;
+	CustomType::Vector2					m_ViewportMinSize;
+	CustomType::Vector4					m_ViewportSizeAndInvSize;
+	CustomType::Vector2					m_DeviceZToViewZMulAdd;
 };
