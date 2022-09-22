@@ -46,6 +46,7 @@ public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
 	virtual void	Update()override;
+
 public:
 	CCamera();
 	CCamera(const CustomType::Vector3& position, const CustomType::Quaternion& rotation);
@@ -63,4 +64,5 @@ protected:
 	CustomType::Vector2		m_ViewportMinSize;
 	CustomType::Vector4		m_ViewportSizeAndInvSize;
 	CustomType::Vector2		m_DeviceZToViewZMulAdd;
+
 };

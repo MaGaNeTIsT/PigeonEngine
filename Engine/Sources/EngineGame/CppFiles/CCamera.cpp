@@ -3,7 +3,7 @@
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CInput.h"
 #include "../../EngineBase/Headers/CManager.h"
-
+#include "../../Library/CMathLibrary.h"
 CCamera::CCamera()
 {
 	this->m_CameraInfo.Viewport	= CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
@@ -197,6 +197,33 @@ void CCamera::Update()
 		{
 			CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
 			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+		}
+	}
+
+	BOOL MouseControll = CInput::GetKeyPress('B');
+	if (MouseControll)
+	{
+		if (CInput::Controller.IsCursorEnabled())
+		{
+			CInput::Controller.DisableCursor();
+			CInput::Controller.EnableMouseRaw();
+		}
+		else
+		{
+			CInput::Controller.DisableCursor();
+			CInput::Controller.DisabaleMouseRaw();
+
+		}
+	}
+
+	while (const auto delta = CInput::ReadRawDelta())
+	{
+		if (!CInput::Controller.IsCursorEnabled())
+		{
+			CustomType::Quaternion TargetRotation = GetRotation(); 
+			TargetRotation = TargetRotation * TargetRotation.RotationAxis(CustomType::Vector3(0.f, 1.f, 0.f), delta->x * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
+			TargetRotation = TargetRotation *TargetRotation.RotationAxis(GetRightVector(), delta->y * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
+			SetRotation(TargetRotation);
 		}
 	}
 	this->ReCalculateViewMatrix();

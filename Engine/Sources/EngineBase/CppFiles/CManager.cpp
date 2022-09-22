@@ -54,11 +54,15 @@ CManager::~CManager()
 		this->m_Scene = NULL;
 	}
 }
+LRESULT CManager::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	return CInput::HandleMsg(hWnd, msg, wParam, lParam);
+}
 void CManager::Initialize(HWND hWnd)
 {
 	CManager::m_Manager->m_HWND = hWnd;
 
-	CInput::Initialize();
+	CInput::Initialize(hWnd);
 	CRenderDevice::Initialize();
 	CimGUIManager::Initialize();
 
