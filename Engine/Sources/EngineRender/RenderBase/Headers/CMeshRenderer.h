@@ -16,9 +16,10 @@ public:
 public:
 	enum CRenderTypeEnum
 	{
-		RENDER_TYPE_DEFERRED	= 0,
-		RENDER_TYPE_FORWARD		= 1,
-		RENDER_TYPE_SKY			= 2
+		RENDER_TYPE_OPAQUE				= 0,
+		RENDER_TYPE_OPAQUE_FORWARD		= 1,
+		RENDER_TYPE_TRANSPARENT_FORWARD	= 2,
+		RENDER_TYPE_SKY					= 3
 	};
 public:
 	CRenderTypeEnum	GetRenderType() { return this->m_RenderType; }
@@ -33,7 +34,7 @@ public:
 public:
 	virtual void	Draw(const BOOL& needPixelShader = TRUE);
 public:
-	CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, CRenderTypeEnum type = CRenderTypeEnum::RENDER_TYPE_DEFERRED);
+	CMeshRenderer(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, CRenderTypeEnum type = CRenderTypeEnum::RENDER_TYPE_OPAQUE);
 	virtual ~CMeshRenderer();
 protected:
 	CGameObject*							m_GameObject;

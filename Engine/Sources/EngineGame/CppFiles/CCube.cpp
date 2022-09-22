@@ -42,7 +42,14 @@ void CCube::Uninit()
 }
 void CCube::Update()
 {
-
+	//FLOAT pos[3] = { this->GetPosition().X(), this->GetPosition().Y(), this->GetPosition().Z() };
+	//FLOAT scale[3] = { this->GetScale().X(), this->GetScale().Y(), this->GetScale().Z() };
+	//ImGui::Begin("Cube properties");
+	//ImGui::InputFloat3(" Position", pos);
+	//ImGui::InputFloat3(" Scale", scale);
+	//ImGui::End();
+	//this->SetPosition(CustomType::Vector3(pos[0], pos[1], pos[2]));
+	//this->SetScale(CustomType::Vector3(scale[0], scale[1], scale[2]));
 }
 void CCube::FixedUpdate()
 {

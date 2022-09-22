@@ -399,6 +399,8 @@ namespace CustomType
 		static INT		Min(const INT& v0, const INT& v1);
 		static FLOAT	Abs(const FLOAT& v);
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
+		static INT		Clamp(const INT& v, const INT& min, const INT& max);
+		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
 		static FLOAT	Exp2(const FLOAT& v);
 		static INT		Exp2(const INT& v);

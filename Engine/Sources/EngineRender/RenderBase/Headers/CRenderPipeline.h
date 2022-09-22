@@ -46,11 +46,12 @@ protected:
 	virtual void	PreparePerFrameRender(class CCamera* camera);
 	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
 	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const CRenderCameraCullingInfo& cullingInfo);
-	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::map<ULONGLONG, class CGameObject*>& primitives);
+	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<class CGameObject*>& primitives);
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 protected:
 	const CScene*						m_CurrentScene;
 	std::vector<class CGameObject*>		m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
+	std::vector<class CGameObject*>		m_CurrentCPUCullingPrimitives;
 protected:
 	ULONGLONG							m_FrameIndex;
 	CRenderCameraCullingInfo			m_GlobalCullingInfo;
@@ -80,9 +81,10 @@ protected:
 	static std::shared_ptr<class CPixelShader>			m_ScreenPolygonShader;
 	static std::shared_ptr<class CPixelShader>			m_DirectLightShader;
 protected:
-	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
+	static std::shared_ptr<class CGPUCulling>			m_GPUCulling;
 	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
+	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 public:
 	static class CTexture2D* GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
 	static std::shared_ptr<class CPixelShader> GetDefaultEmptyPS();

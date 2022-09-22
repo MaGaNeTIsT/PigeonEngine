@@ -9,6 +9,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer() { return (this->m_VertexBuffer); }
 	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer() { return (this->m_IndexBuffer); }
 	const std::vector<CustomStruct::CSubMeshInfo>& GetSubMeshInfo() const { return (this->m_SubMeshInfo); }
+	const std::vector<CustomStruct::CVertex3D>& GetVertexData() const { return (this->m_VertexData); }
 	UINT			GetVertexStride() { return (this->m_VertexStride); }
 	UINT			GetVertexCount() { return (this->m_VertexCount); }
 	UINT			GetIndexCount() { return (this->m_IndexCount); }

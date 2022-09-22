@@ -6,6 +6,7 @@
 #include "../Headers/CRenderDevice.h"
 #include "../Headers/CGPUQuery.h"
 #include "../Headers/CGPUQueryManager.h"
+#include "../Headers/CGPUCulling.h"
 #include "../../AssetsManager/Headers/CMesh.h"
 #include "../../AssetsManager/Headers/CMeshManager.h"
 #include "../Headers/CMeshRenderer.h"
@@ -24,9 +25,10 @@ std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_ScreenPolygonShader	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DirectLightShader	= nullptr;
-std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
+std::shared_ptr<CGPUCulling>		CRenderPipeline::m_GPUCulling			= nullptr;
 std::shared_ptr<CGTAOPass>			CRenderPipeline::m_GTAOPass				= nullptr;
 std::shared_ptr<CHZBPass>			CRenderPipeline::m_HZBPass				= nullptr;
+std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
 
 CRenderPipeline::CRenderPipeline()
 {
@@ -53,9 +55,9 @@ CRenderPipeline::CRenderPipeline()
 	{
 		CRenderPipeline::m_DirectLightShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_DIRECT_LIGHT_PS);
 	}
-	if (CRenderPipeline::m_DebugScreen == nullptr)
+	if (CRenderPipeline::m_GPUCulling == nullptr)
 	{
-		CRenderPipeline::m_DebugScreen = std::shared_ptr<CDebugScreen>(new CDebugScreen());
+		CRenderPipeline::m_GPUCulling = std::shared_ptr<CGPUCulling>(new CGPUCulling());
 	}
 	if (CRenderPipeline::m_GTAOPass == nullptr)
 	{
@@ -64,6 +66,10 @@ CRenderPipeline::CRenderPipeline()
 	if (CRenderPipeline::m_HZBPass == nullptr)
 	{
 		CRenderPipeline::m_HZBPass = std::shared_ptr<CHZBPass>(new CHZBPass());
+	}
+	if (CRenderPipeline::m_DebugScreen == nullptr)
+	{
+		CRenderPipeline::m_DebugScreen = std::shared_ptr<CDebugScreen>(new CDebugScreen());
 	}
 
 	m_CurrentScene		= NULL;
@@ -91,6 +97,10 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		{
 			m_CurrentScenePrimitives[i].clear();
 		}
+	}
+	if (m_CurrentCPUCullingPrimitives.size() != 0)
+	{
+		m_CurrentCPUCullingPrimitives.clear();
 	}
 
 	{
@@ -264,9 +274,10 @@ void CRenderPipeline::PostInit()
 
 		m_FrameIndex = 0u;
 
-		m_DebugScreen->Init(m_GlobalBufferSize);
 		m_GTAOPass->Init(sceneMainCamera, m_GlobalBufferSize);
 		m_HZBPass->Init(m_GlobalBufferSize);
+		m_GPUCulling->Init(m_HZBPass, 1u, 50u);
+		m_DebugScreen->Init(m_GlobalBufferSize);
 	}
 }
 void CRenderPipeline::Uninit()
@@ -278,10 +289,15 @@ void CRenderPipeline::Uninit()
 			m_CurrentScenePrimitives[i].clear();
 		}
 	}
+	if (m_CurrentCPUCullingPrimitives.size() != 0)
+	{
+		m_CurrentCPUCullingPrimitives.clear();
+	}
 
 	m_DebugScreen->Uninit();
 	m_GTAOPass->Uninit();
 	m_HZBPass->Uninit();
+	m_GPUCulling->Uninit();
 }
 void CRenderPipeline::PostUpdate()
 {
@@ -297,6 +313,10 @@ void CRenderPipeline::PostUpdate()
 			{
 				m_CurrentScenePrimitives[i].clear();
 			}
+		}
+		if (m_CurrentCPUCullingPrimitives.size() != 0)
+		{
+			m_CurrentCPUCullingPrimitives.clear();
 		}
 		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_CAMERA])
 		{
@@ -320,9 +340,40 @@ void CRenderPipeline::PostUpdate()
 				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 			}
 		}
-		this->PrepareCameraCullingInfo(this->m_GlobalCullingInfo, reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA])[0]));
-		CRenderPipeline::Culling(m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE], this->m_GlobalCullingInfo, m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_OPAQUE]);
-		CRenderPipeline::Culling(m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT], this->m_GlobalCullingInfo, m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_TRANSPARENT]);
+
+		{
+			std::vector<CGameObject*> objectLayer;
+			for (INT i = CScene::SceneLayout::LAYOUT_OPAQUE; i <= CScene::SceneLayout::LAYOUT_TRANSPARENT; i++)
+			{
+				for (auto obj : m_CurrentScene->m_GameObject[i])
+				{
+					if (obj.second->IsActive() && obj.second->GetMeshRenderer())
+					{
+						objectLayer.push_back(obj.second);
+					}
+				}
+			}
+			PrepareCameraCullingInfo(m_GlobalCullingInfo, reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA])[0]));
+			CRenderPipeline::Culling(m_CurrentCPUCullingPrimitives, m_GlobalCullingInfo, objectLayer);
+			std::vector<BOOL> objectGPUCullingResult;
+			m_GPUCulling->ReadBackAndPrepareCullingResult(m_FrameIndex, m_CurrentCPUCullingPrimitives, objectGPUCullingResult);
+			for (UINT i = 0; i < m_CurrentCPUCullingPrimitives.size(); i++)
+			{
+				if (objectGPUCullingResult[i] == TRUE)
+				{
+					if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_OPAQUE
+						|| m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
+					{
+						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(m_CurrentCPUCullingPrimitives[i]);
+					}
+					else if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_TRANSPARENT_FORWARD)
+					{
+						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(m_CurrentCPUCullingPrimitives[i]);
+					}
+				}
+			}
+		}
+
 		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_SKY])
 		{
 			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
@@ -333,9 +384,9 @@ void CRenderPipeline::PostUpdate()
 		}
 	}
 
-	m_DebugScreen->Update();
 	m_GTAOPass->Update();
 	m_HZBPass->Update();
+	m_DebugScreen->Update();
 }
 void CRenderPipeline::Render()
 {
@@ -372,7 +423,7 @@ void CRenderPipeline::Render()
 				continue;
 
 			{
-				this->PreparePerFrameRender(camera);
+				PreparePerFrameRender(camera);
 
 				CustomType::Vector4 cameraViewport = camera->GetViewport();
 				CustomType::Vector2 cameraViewportDepth = camera->GetViewportDepth();
@@ -435,6 +486,12 @@ void CRenderPipeline::Render()
 		}
 
 		{
+			//Occlusion culling pass
+			CGPUProfilerManager::AddPass("Occlusion_Culling_Pass", m_FrameIndex, [&]() {
+				m_GPUCulling->ComputeCulling(m_FrameIndex); });
+		}
+
+		{
 			//Geometry buffer pass
 			CGPUProfilerManager::AddPass("Geometry_Buffer_Pass", m_FrameIndex, [&]() {
 				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
@@ -451,7 +508,7 @@ void CRenderPipeline::Render()
 				{
 					for (CGameObject* obj : m_CurrentScenePrimitives[i])
 					{
-						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_DEFERRED)
+						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE)
 							obj->Draw();
 					}
 				}
@@ -475,7 +532,7 @@ void CRenderPipeline::Render()
 					tempGBuffersSRV[i + 1u] = m_GBuffer[i].ShaderResourceView;
 				}
 				CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
-				this->DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
+				DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
 		}
 
 		{
@@ -488,7 +545,7 @@ void CRenderPipeline::Render()
 				{
 					for (CGameObject* obj : m_CurrentScenePrimitives[i])
 					{
-						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
 							obj->Draw();
 					}
 				}});
@@ -500,7 +557,7 @@ void CRenderPipeline::Render()
 				CRenderDevice::SetBlendState(m_TransparentPassBS);
 				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT])
 				{
-					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_FORWARD)
+					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_TRANSPARENT_FORWARD)
 						obj->Draw();
 				}});
 		}
@@ -525,13 +582,14 @@ void CRenderPipeline::Render()
 			ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::Text("Shadow Pass          : %f ms.", CGPUProfilerManager::GetPassAverageTime("Shadow_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Pre-Depth Pass       : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("HZB Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("GTAO Pass            : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Geometry Buffer Pass : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Build HZB            : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Debug Pass           : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::End();
 		}
 
@@ -541,7 +599,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetDefaultBlendState();
 			CRenderDevice::SetFinalOutput();
 			CRenderDevice::BindPSShaderResourceView(m_SceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-			this->DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
+			DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
 		}
 	}
 }
@@ -597,19 +655,16 @@ BOOL CRenderPipeline::CullingCameraPlane(const CustomType::Vector3& pos, const C
 	}
 	return TRUE;
 }
-void CRenderPipeline::Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::map<ULONGLONG, class CGameObject*>& primitives)
+void CRenderPipeline::Culling(std::vector<CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<CGameObject*>& primitives)
 {
-	for (auto obj : primitives)
+	for (UINT i = 0u; i < primitives.size(); i++)
 	{
-		if (obj.second->IsActive() && obj.second->GetMeshRenderer())
+		CustomType::Vector3 objPos = primitives[i]->GetPosition();
+		if (CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) < cullingInfo.Distance)
 		{
-			CustomType::Vector3 objPos = obj.second->GetPosition();
-			if (CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) < cullingInfo.Distance)
+			if (CullingCameraPlane(objPos, cullingInfo))
 			{
-				if (CullingCameraPlane(objPos, cullingInfo))
-				{
-					cullingResult.push_back(obj.second);
-				}
+				cullingResult.push_back(primitives[i]);
 			}
 		}
 	}

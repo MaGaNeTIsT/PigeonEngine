@@ -6,6 +6,7 @@
 #include <windowsx.h>
 #include <wrl/client.h>
 #include <stdio.h>
+#include <ctime>
 #include <assert.h>
 #include <io.h>
 #include <tchar.h>

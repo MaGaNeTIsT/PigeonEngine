@@ -1219,6 +1219,14 @@ namespace CustomType
 	{
 		return fmaxf(min, fminf(max, v));
 	}
+	INT CMath::Clamp(const INT& v, const INT& min, const INT& max)
+	{
+		return CMath::Max(min, CMath::Min(max, v));
+	}
+	UINT CMath::Clamp(const UINT& v, const UINT& min, const UINT& max)
+	{
+		return CMath::Max(min, CMath::Min(max, v));
+	}
 	void CMath::SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v)
 	{
 		sinValue = sinf(v);

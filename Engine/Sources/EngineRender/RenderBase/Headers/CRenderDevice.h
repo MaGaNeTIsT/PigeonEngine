@@ -7,11 +7,13 @@
 class CRenderDevice
 {
 public:
-	struct RenderStructuredBufferViewInfo
+	struct StructuredBufferInfo
 	{
-		RenderStructuredBufferViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		StructuredBufferInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		void Release()
 		{
+			AccessMapRead = FALSE;
+			AccessMapWrite = FALSE;
 			if (Buffer)
 			{
 				Buffer->Release();
@@ -28,6 +30,8 @@ public:
 				ShaderResourceView = nullptr;
 			}
 		};
+		BOOL												AccessMapRead;
+		BOOL												AccessMapWrite;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
@@ -100,7 +104,7 @@ public:
 	static BOOL		LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
 	static BOOL		CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const CustomStruct::CRenderBufferDesc& bufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static void		UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = NULL);
-	//static BOOL		CreateStructuredBuffer(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
+	static BOOL		CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
@@ -172,12 +176,15 @@ public:
 	static BOOL		GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, CustomStruct::CRenderAsyncGetDataFlag flag = CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DEFAULT);
 	static void		Begin(ID3D11Asynchronous* pAsync);
 	static void		End(ID3D11Asynchronous* pAsync);
+	static BOOL		Map(const StructuredBufferInfo& input, const UINT& indexSubResource, CustomStruct::CRenderMapType mapType, CustomStruct::CRenderMapFlag mapFlag, CustomStruct::CRenderMappedResource& output);
+	static void		Unmap(const StructuredBufferInfo& input, const UINT& indexSubResource);
 private:
 	static void		TranslateBindFlag(UINT& output, CustomStruct::CRenderBindFlag input);
 	static void		TranslateUsage(D3D11_USAGE& output, CustomStruct::CRenderUsage input);
 	static void		TranslateCPUAccessFlag(UINT& output, CustomStruct::CRenderCPUAccessFlag input);
 	static void		TranslateResourceMiscFlag(UINT& output, CustomStruct::CRenderResourceMiscFlag input);
 	static void		TranslateResourceFormat(DXGI_FORMAT& output, CustomStruct::CRenderFormat input);
+	static void		TranslateBufferUAVFlag(UINT& output, CustomStruct::CRenderBufferUAVFlag input);
 	static void		TranslateComparisonFunction(D3D11_COMPARISON_FUNC& output, CustomStruct::CRenderComparisonFunction input);
 	static void		TranslateStencilOperation(D3D11_DEPTH_STENCILOP_DESC& output, const CustomStruct::CRenderStencilOp& input);
 	static void		TranslateDepthStencilState(D3D11_DEPTH_STENCIL_DESC& output, const CustomStruct::CRenderDepthState& depthInput, const CustomStruct::CRenderStencilState* stencilInput = NULL);
@@ -188,6 +195,8 @@ private:
 	static void		TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, CustomStruct::CRenderPrimitiveTopology input);
 	static void		TranslateQueryDesc(D3D11_QUERY_DESC& output, const CustomStruct::CRenderQueryDesc& input);
 	static void		TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input);
+	static void		TranslateMapType(D3D11_MAP& output, CustomStruct::CRenderMapType input);
+	static void		TranslateMapFlag(UINT& output, CustomStruct::CRenderMapFlag input);
 public:
 	static void		ClearFinalOutput();
 	static void		SetFinalOutput();
@@ -211,7 +220,6 @@ private:
 private:
 	static CRenderDevice* m_RenderDevice;
 private:
-	friend class CGPUCulling;
 	friend class CimGUIManager;
 	static Microsoft::WRL::ComPtr<ID3D11DeviceContext>	GetRenderDeviceContext();
 	static Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice();

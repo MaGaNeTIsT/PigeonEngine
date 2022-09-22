@@ -66,6 +66,14 @@ namespace CustomStruct
 	struct CVertex3D
 	{
 		CVertex3D() { ::ZeroMemory(this, sizeof(*this)); }
+		CVertex3D(const CVertex3D& v)
+		{
+			Position	= v.Position;
+			Normal		= v.Normal;
+			Tangent		= v.Tangent;
+			Color		= v.Color;
+			UV0			= v.UV0;
+		}
 		XMFLOAT4	Position;
 		XMFLOAT4	Normal;
 		XMFLOAT4	Tangent;
@@ -411,6 +419,14 @@ namespace CustomStruct
 		CPU_ACCESS_READ_WRITE	= 3
 	};
 
+	enum CRenderBufferUAVFlag
+	{
+		BUFFER_UAV_FLAG_NONE	= 0,
+		BUFFER_UAV_FLAG_RAW		= 1,
+		BUFFER_UAV_FLAG_APPEND	= 2,
+		BUFFER_UAV_FLAG_COUNTER	= 3
+	};
+
 	struct CRenderBufferDesc
 	{
 		CRenderBufferDesc()
@@ -657,6 +673,49 @@ namespace CustomStruct
 		CRenderBindFlag				BindFlags;
 		CRenderCPUAccessFlag		CPUAccessFlags;
 		CRenderResourceMiscFlag		MiscFlags;
+	};
+
+	struct CRenderStructuredBufferDesc
+	{
+		CRenderStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, CRenderCPUAccessFlag accessFlag = CRenderCPUAccessFlag::CPU_ACCESS_NONE, const UINT& firstElement = 0u, CRenderBufferUAVFlag uavFlag = CRenderBufferUAVFlag::BUFFER_UAV_FLAG_NONE)
+		{
+			GPUWritable		= writableGPU;
+			AccessFlag		= accessFlag;
+			StructureSize	= structureSize;
+			FirstElement	= firstElement;
+			NumElements		= numElements;
+			BufferFlag		= uavFlag;
+		}
+
+		BOOL					GPUWritable;
+		CRenderCPUAccessFlag	AccessFlag;
+		UINT					StructureSize;
+		UINT					FirstElement;
+		UINT					NumElements;
+		CRenderBufferUAVFlag	BufferFlag;
+	};
+
+	enum CRenderMapType
+	{
+		MAP_READ				= 0,
+		MAP_WRITE				= 1,
+		MAP_READ_WRITE			= 2,
+		MAP_WRITE_DISCARD		= 3,
+		MAP_WRITE_NO_OVERWRITE	= 4
+	};
+
+	enum CRenderMapFlag
+	{
+		MAP_FLAG_NONE			= 0,
+		MAP_FLAG_DO_NOT_WAIT	= 1
+	};
+
+	struct CRenderMappedResource
+	{
+		CRenderMappedResource() { ::ZeroMemory(this, sizeof(*this)); }
+		void*	pData;
+		UINT	RowPitch;
+		UINT	DepthPitch;
 	};
 
 	enum CRenderQueryType
