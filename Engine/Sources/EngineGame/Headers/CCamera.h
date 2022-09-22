@@ -58,20 +58,7 @@ public:
 	CCamera(const CCamera& camera);
 	virtual ~CCamera();
 protected:
-<<<<<<< HEAD
-	CCameraInfo				m_CameraInfo;
-	CCameraControlInfo		m_CameraControlInfo;
-	CustomType::Matrix4x4	m_ViewMatrix;
-	CustomType::Matrix4x4	m_ViewInvMatrix;
-	CustomType::Matrix4x4	m_ProjectionMatrix;
-	CustomType::Matrix4x4	m_ProjectionInvMatrix;
-	CustomType::Matrix4x4	m_ViewProjectionMatrix;
-	CustomType::Matrix4x4	m_ViewProjectionInvMatrix;
-	CustomType::Vector2		m_ViewportMinSize;
-	CustomType::Vector4		m_ViewportSizeAndInvSize;
-	CustomType::Vector2		m_DeviceZToViewZMulAdd;
 
-=======
 	CCameraInfo							m_CameraInfo;
 	CCameraControlInfo					m_CameraControlInfo;
 	std::vector<CustomType::Vector3>	m_FrustumPlane;
@@ -84,5 +71,5 @@ protected:
 	CustomType::Vector2					m_ViewportMinSize;
 	CustomType::Vector4					m_ViewportSizeAndInvSize;
 	CustomType::Vector2					m_DeviceZToViewZMulAdd;
->>>>>>> origin/main
+
 };

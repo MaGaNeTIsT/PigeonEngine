@@ -241,21 +241,21 @@ void CCamera::Update()
 			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
 		}
 	}
-<<<<<<< HEAD
-	if (lookRotClock || lookRotAntiClock)
-	{
-		CustomType::Vector3 lookAxis = this->GetForwardVector();
-		if (lookRotClock)
-		{
-			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-		}
-		if (lookRotAntiClock)
-		{
-			CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-		}
-	}
+
+	//if (lookRotClock || lookRotAntiClock)
+	//{
+	//	CustomType::Vector3 lookAxis = this->GetForwardVector();
+	//	if (lookRotClock)
+	//	{
+	//		CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
+	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+	//	}
+	//	if (lookRotAntiClock)
+	//	{
+	//		CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
+	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+	//	}
+	//}`
 
 	BOOL MouseControll = CInput::GetKeyPress('B');
 	if (MouseControll)
@@ -283,7 +283,7 @@ void CCamera::Update()
 			SetRotation(TargetRotation);
 		}
 	}
-=======
+
 	//if (lookRotClock || lookRotAntiClock)
 	//{
 	//	CustomType::Vector3 lookAxis = this->GetForwardVector();
@@ -298,7 +298,7 @@ void CCamera::Update()
 	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
 	//	}
 	//}
->>>>>>> origin/main
+
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();
 }
