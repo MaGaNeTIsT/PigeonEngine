@@ -3,7 +3,7 @@
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CInput.h"
 #include "../../EngineBase/Headers/CManager.h"
-#include "../../Library/CMathLibrary.h"
+
 CCamera::CCamera()
 {
 	this->m_CameraInfo.Viewport	= CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
