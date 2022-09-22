@@ -213,10 +213,10 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOComputeShader.h">
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBBuffer.h">
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h">
@@ -228,11 +228,25 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CMouse.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\Library\CMathLibrary.h">
       <Filter>Engine\Sources\Library</Filter>
+=======
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h">
+      <Filter>Engine\Sources\Development\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h">
+      <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+>>>>>>> origin/main
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -329,10 +343,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOComputeShader.cpp">
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBBuffer.cpp">
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp">
       <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp">
@@ -341,8 +355,22 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
+<<<<<<< HEAD
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
+=======
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp">
+      <Filter>Engine\Sources\Development\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+>>>>>>> origin/main
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -387,6 +415,9 @@
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

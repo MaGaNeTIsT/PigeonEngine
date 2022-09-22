@@ -4,7 +4,7 @@ CScreenPolygon2D::CScreenPolygon2D(const std::string& vertexShaderName, const st
 {
 	this->m_2DPosition = screenPosition;
 	this->m_Mesh = CMeshManager::LoadPolygon2DMesh(this->m_2DPosition);
-	this->m_MeshRenderer = new CMeshRenderer(this, vertexShaderName, pixelShaderName);
+	this->m_MeshRenderer = new CMeshRenderer(this, vertexShaderName, pixelShaderName, CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD);
 	this->m_MeshRenderer->LoadShader();
 }
 CScreenPolygon2D::~CScreenPolygon2D()

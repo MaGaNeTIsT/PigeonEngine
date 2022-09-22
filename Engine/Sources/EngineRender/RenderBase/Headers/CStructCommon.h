@@ -66,6 +66,14 @@ namespace CustomStruct
 	struct CVertex3D
 	{
 		CVertex3D() { ::ZeroMemory(this, sizeof(*this)); }
+		CVertex3D(const CVertex3D& v)
+		{
+			Position	= v.Position;
+			Normal		= v.Normal;
+			Tangent		= v.Tangent;
+			Color		= v.Color;
+			UV0			= v.UV0;
+		}
 		XMFLOAT4	Position;
 		XMFLOAT4	Normal;
 		XMFLOAT4	Tangent;
@@ -411,6 +419,14 @@ namespace CustomStruct
 		CPU_ACCESS_READ_WRITE	= 3
 	};
 
+	enum CRenderBufferUAVFlag
+	{
+		BUFFER_UAV_FLAG_NONE	= 0,
+		BUFFER_UAV_FLAG_RAW		= 1,
+		BUFFER_UAV_FLAG_APPEND	= 2,
+		BUFFER_UAV_FLAG_COUNTER	= 3
+	};
+
 	struct CRenderBufferDesc
 	{
 		CRenderBufferDesc()
@@ -657,6 +673,113 @@ namespace CustomStruct
 		CRenderBindFlag				BindFlags;
 		CRenderCPUAccessFlag		CPUAccessFlags;
 		CRenderResourceMiscFlag		MiscFlags;
+	};
+
+	struct CRenderStructuredBufferDesc
+	{
+		CRenderStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, CRenderCPUAccessFlag accessFlag = CRenderCPUAccessFlag::CPU_ACCESS_NONE, const UINT& firstElement = 0u, CRenderBufferUAVFlag uavFlag = CRenderBufferUAVFlag::BUFFER_UAV_FLAG_NONE)
+		{
+			GPUWritable		= writableGPU;
+			AccessFlag		= accessFlag;
+			StructureSize	= structureSize;
+			FirstElement	= firstElement;
+			NumElements		= numElements;
+			BufferFlag		= uavFlag;
+		}
+
+		BOOL					GPUWritable;
+		CRenderCPUAccessFlag	AccessFlag;
+		UINT					StructureSize;
+		UINT					FirstElement;
+		UINT					NumElements;
+		CRenderBufferUAVFlag	BufferFlag;
+	};
+
+	enum CRenderMapType
+	{
+		MAP_READ				= 0,
+		MAP_WRITE				= 1,
+		MAP_READ_WRITE			= 2,
+		MAP_WRITE_DISCARD		= 3,
+		MAP_WRITE_NO_OVERWRITE	= 4
+	};
+
+	enum CRenderMapFlag
+	{
+		MAP_FLAG_NONE			= 0,
+		MAP_FLAG_DO_NOT_WAIT	= 1
+	};
+
+	struct CRenderMappedResource
+	{
+		CRenderMappedResource() { ::ZeroMemory(this, sizeof(*this)); }
+		void*	pData;
+		UINT	RowPitch;
+		UINT	DepthPitch;
+	};
+
+	enum CRenderQueryType
+	{
+		QUERY_EVENT							= 0,
+		QUERY_OCCLUSION						= 1,
+		QUERY_TIMESTAMP						= 2,
+		QUERY_TIMESTAMP_DISJOINT			= 3,
+		QUERY_PIPELINE_STATISTICS			= 4,
+		QUERY_OCCLUSION_PREDICATE			= 5,
+		QUERY_SO_STATISTICS					= 6,
+		QUERY_SO_OVERFLOW_PREDICATE			= 7,
+		QUERY_SO_STATISTICS_STREAM0			= 8,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM0	= 9,
+		QUERY_SO_STATISTICS_STREAM1			= 10,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM1	= 11,
+		QUERY_SO_STATISTICS_STREAM2			= 12,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM2	= 13,
+		QUERY_SO_STATISTICS_STREAM3			= 14,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM3	= 15
+	};
+
+	enum CRenderQueryMiscFlag
+	{
+		QUERY_MISC_DEFAULT			= 0x0,
+		QUERY_MISC_PREDICATEHINT	= 0x1
+	};
+
+	struct CRenderQueryDesc
+	{
+		CRenderQueryDesc()
+		{
+			Query		= CRenderQueryType::QUERY_EVENT;
+			MiscFlags	= CRenderQueryMiscFlag::QUERY_MISC_DEFAULT;
+		}
+		CRenderQueryDesc(CRenderQueryType type, CRenderQueryMiscFlag flag = CRenderQueryMiscFlag::QUERY_MISC_DEFAULT)
+		{
+			Query		= type;
+			MiscFlags	= flag;
+		}
+		CRenderQueryType		Query;
+		CRenderQueryMiscFlag	MiscFlags;
+	};
+
+	enum CRenderAsyncGetDataFlag
+	{
+		D3D11_ASYNC_GETDATA_DEFAULT		= 0x0,
+		D3D11_ASYNC_GETDATA_DONOTFLUSH	= 0x1
+	};
+
+	struct CRenderQueryTimestampDisjoint
+	{
+		CRenderQueryTimestampDisjoint()
+		{
+			Frequency	= 1u;
+			Disjoint	= TRUE;
+		}
+		void Reset()
+		{
+			Frequency	= 1u;
+			Disjoint	= TRUE;
+		}
+		ULONGLONG	Frequency;
+		BOOL		Disjoint;
 	};
 
 	enum CRenderClearDepthStencilFlag

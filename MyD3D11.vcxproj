@@ -23,6 +23,7 @@
     <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CTestModel.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
@@ -44,12 +45,15 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTexture2D.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOComputeShader.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBBuffer.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
     <ClInclude Include="Engine\Sources\Library\CMathLibrary.h" />
     <ClInclude Include="Entry\EngineMain.h" />
@@ -64,6 +68,7 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CTestModel.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CBaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
@@ -85,11 +90,14 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTexture2D.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOComputeShader.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBBuffer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />
     <ClCompile Include="Entry\EngineMain.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
@@ -228,6 +236,14 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">

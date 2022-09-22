@@ -50,36 +50,67 @@ CTexture2D* CTextureManager::LoadTexture2D(const std::string& name, const BOOL& 
 CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOOL& isSRGB)
 {
 	TBYTE	header[18];
+	TBYTE*	rawData;
 	TBYTE*	image;
 	TBYTE	depth;
 	UINT	width, height, bpp, size;
 	FILE*	file;
 	fopen_s(&file, name.c_str(), "rb");
 	if (file == NULL)
+	{
 		return NULL;
-	fread_s(header, sizeof(header), sizeof(header), 1, file);
+	}
+	fread_s(header, sizeof(header), sizeof(header), 1u, file);
 	width	= header[13] * 256 + header[12];
 	height	= header[15] * 256 + header[14];
 	depth	= header[16];
 	if (depth == 32)
-		bpp = 4;
-	else if (depth == 24)
-		bpp = 3;
-	else
-		bpp = 0;
-	if (bpp != 4)
-		return NULL;
-	size	= width * height * bpp;
-	image	= new TBYTE[size];
-	fread_s(image, size, size, 1, file);
-	// R<->B
-	for (UINT y = 0; y < height; y++)
 	{
-		for (UINT x = 0; x < width; x++)
+		bpp = 4u;
+	}
+	else if (depth == 24)
+	{
+		bpp = 3u;
+	}
+	else
+	{
+		bpp = 0u;
+	}
+	if (!(bpp == 4u || bpp == 3u))
+	{
+		return NULL;
+	}
+	size	= width * height * bpp;
+	rawData	= new TBYTE[size];
+	image = rawData;
+	fread_s(rawData, size, size, 1u, file);
+	if (bpp == 3u)
+	{
+		image = new TBYTE[width * height * 4u];
+		// Copy to new buffer
+		// R<->B
+		for (UINT y = 0u; y < height; y++)
 		{
-			TBYTE c = image[(y * width + x) * bpp + 0];
-			image[(y * width + x) * bpp + 0] = image[(y * width + x) * bpp + 2];
-			image[(y * width + x) * bpp + 2] = c;
+			for (UINT x = 0u; x < width; x++)
+			{
+				image[(y * width + x) * 4u + 0u] = rawData[(y * width + x) * 3u + 2u];
+				image[(y * width + x) * 4u + 1u] = rawData[(y * width + x) * 3u + 1u];
+				image[(y * width + x) * 4u + 2u] = rawData[(y * width + x) * 3u + 0u];
+				image[(y * width + x) * 4u + 3u] = 0xff;
+			}
+		}
+	}
+	else if (bpp == 4u)
+	{
+		// R<->B
+		for (UINT y = 0u; y < height; y++)
+		{
+			for (UINT x = 0u; x < width; x++)
+			{
+				TBYTE c = rawData[(y * width + x) * 4u + 0u];
+				rawData[(y * width + x) * 4u + 0u] = rawData[(y * width + x) * 4u + 2u];
+				rawData[(y * width + x) * 4u + 2u] = c;
+			}
 		}
 	}
 	fclose(file);
@@ -90,13 +121,21 @@ CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOO
 		{
 			CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
 		}
-		if (CRenderDevice::CreateTexture2D(tempTexture2D, CustomStruct::CRenderTextureDesc(width, height, CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE, sourceFormat, &sourceFormat), &CustomStruct::CRenderSubresourceData(static_cast<const void*>(image), width * 4u, size)) == FALSE)
+		if (CRenderDevice::CreateTexture2D(tempTexture2D, CustomStruct::CRenderTextureDesc(width, height, CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE, sourceFormat, &sourceFormat), &CustomStruct::CRenderSubresourceData(static_cast<const void*>(image), width * 4u, width * height * 4u)) == FALSE)
 		{
-			delete[]image;
+			if (bpp == 3u)
+			{
+				delete[]image;
+			}
+			delete[]rawData;
 			return NULL;
 		}
 	}
-	delete[]image;
+	if (bpp == 3u)
+	{
+		delete[]image;
+	}
+	delete[]rawData;
 	CTexture2D* resultTexture2D = new CTexture2D(name, tempTexture2D);
 	return resultTexture2D;
 }

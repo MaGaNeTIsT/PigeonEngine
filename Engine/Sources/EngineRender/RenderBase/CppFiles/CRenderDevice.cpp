@@ -331,6 +331,106 @@ void CRenderDevice::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dst
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 }
+BOOL CRenderDevice::CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData)
+{
+	if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
+	{
+		//TODO Error desc log.
+		return FALSE;
+	}
+
+	{
+		output.AccessMapRead = structuredBufferDesc.AccessFlag == CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_READ || structuredBufferDesc.AccessFlag == CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_READ_WRITE;
+		output.AccessMapWrite = structuredBufferDesc.AccessFlag == CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_WRITE || structuredBufferDesc.AccessFlag == CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_READ_WRITE;
+		if (structuredBufferDesc.GPUWritable && output.AccessMapWrite)
+		{
+			//TODO Error access ability log.
+			return FALSE;
+		}
+		D3D11_BUFFER_DESC bd;
+		::ZeroMemory(&bd, sizeof(bd));
+		bd.ByteWidth = structuredBufferDesc.StructureSize * structuredBufferDesc.NumElements;
+		bd.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
+		if (!(structuredBufferDesc.GPUWritable) && !(output.AccessMapWrite))
+		{
+			if (structuredBufferDesc.AccessFlag == CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_NONE)
+			{
+				bd.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+			}
+			else
+			{
+				bd.Usage = D3D11_USAGE::D3D11_USAGE_IMMUTABLE;
+			}
+		}
+		else if (!(structuredBufferDesc.GPUWritable) && output.AccessMapWrite)
+		{
+			bd.Usage = D3D11_USAGE::D3D11_USAGE_DYNAMIC;
+		}
+		else if (structuredBufferDesc.GPUWritable && !(output.AccessMapWrite))
+		{
+			bd.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+			bd.BindFlags = bd.BindFlags | D3D11_BIND_FLAG::D3D11_BIND_UNORDERED_ACCESS;
+		}
+		TranslateCPUAccessFlag(bd.CPUAccessFlags, structuredBufferDesc.AccessFlag);
+		bd.MiscFlags = D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		bd.StructureByteStride = structuredBufferDesc.StructureSize;
+		HRESULT hr = S_FALSE;
+		if (subData)
+		{
+			D3D11_SUBRESOURCE_DATA sd;
+			::ZeroMemory(&sd, sizeof(sd));
+			sd.pSysMem = subData->pSysMem;
+			sd.SysMemPitch = subData->SysMemPitch;
+			sd.SysMemSlicePitch = subData->SysMemSlicePitch;
+			hr = CRenderDevice::m_RenderDevice->m_Device->CreateBuffer(&bd, &sd, output.Buffer.ReleaseAndGetAddressOf());
+		}
+		else
+		{
+			hr = CRenderDevice::m_RenderDevice->m_Device->CreateBuffer(&bd, NULL, output.Buffer.ReleaseAndGetAddressOf());
+		}
+		if (FAILED(hr))
+		{
+			//TODO Create structured buffer failed log.
+			return FALSE;
+		}
+	}
+
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
+		::ZeroMemory(&srvd, sizeof(srvd));
+		srvd.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_BUFFER;
+		srvd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
+		srvd.Buffer.NumElements = structuredBufferDesc.NumElements;
+		HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+		{
+			//TODO Create structured buffer SRV failed log.
+			return FALSE;
+		}
+	}
+
+	{
+		if (structuredBufferDesc.GPUWritable)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
+			::ZeroMemory(&uavd, sizeof(uavd));
+			uavd.Format = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+			uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_BUFFER;
+			uavd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
+			uavd.Buffer.NumElements = structuredBufferDesc.NumElements;
+			CRenderDevice::TranslateBufferUAVFlag(uavd.Buffer.Flags, structuredBufferDesc.BufferFlag);
+			HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create structured buffer UAV failed log.
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
 BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc)
 {
 	BOOL isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
@@ -916,6 +1016,80 @@ BOOL CRenderDevice::CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState
 	}
 	return TRUE;
 }
+BOOL CRenderDevice::CreateQuery(Microsoft::WRL::ComPtr<ID3D11Query>& q, const CustomStruct::CRenderQueryDesc& queryDesc)
+{
+	D3D11_QUERY_DESC qd;
+	{
+		::ZeroMemory(&qd, sizeof(qd));
+		CRenderDevice::TranslateQueryDesc(qd, queryDesc);
+	}
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+	{
+		//TODO Create query object failed log.
+		return FALSE;
+	}
+	return TRUE;
+}
+BOOL CRenderDevice::GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, CustomStruct::CRenderAsyncGetDataFlag flag)
+{
+	UINT getDataFlag = 0u;
+	CRenderDevice::TranslateGetDataFlag(getDataFlag, flag);
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
+	return (!(FAILED(hr)));
+}
+void CRenderDevice::Begin(ID3D11Asynchronous* pAsync)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->Begin(pAsync);
+}
+void CRenderDevice::End(ID3D11Asynchronous* pAsync)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->End(pAsync);
+}
+BOOL CRenderDevice::Map(const StructuredBufferInfo& input, const UINT& indexSubResource, CustomStruct::CRenderMapType mapType, CustomStruct::CRenderMapFlag mapFlag, CustomStruct::CRenderMappedResource& output)
+{
+	if (!(input.AccessMapRead || input.AccessMapWrite))
+	{
+		//TODO Error resource type log.
+		return FALSE;
+	}
+	D3D11_MAPPED_SUBRESOURCE ms;
+	{
+		D3D11_MAP d3dMapType;
+		{
+			BOOL needRead = mapType == CustomStruct::CRenderMapType::MAP_READ || mapType == CustomStruct::CRenderMapType::MAP_READ_WRITE;
+			BOOL needWrite = mapType == CustomStruct::CRenderMapType::MAP_WRITE || mapType == CustomStruct::CRenderMapType::MAP_READ_WRITE || mapType == CustomStruct::CRenderMapType::MAP_WRITE_DISCARD || mapType == CustomStruct::CRenderMapType::MAP_WRITE_NO_OVERWRITE;
+			if (input.AccessMapRead != needRead || input.AccessMapWrite != needWrite)
+			{
+				//TODO Error map type log.
+				return FALSE;
+			}
+		}
+		UINT d3dMapFlag;
+		::ZeroMemory(&ms, sizeof(ms));
+		CRenderDevice::TranslateMapType(d3dMapType, mapType);
+		CRenderDevice::TranslateMapFlag(d3dMapFlag, mapFlag);
+		HRESULT hr = CRenderDevice::m_RenderDevice->m_ImmediateContext->Map(
+			input.Buffer.Get(),
+			indexSubResource,
+			d3dMapType,
+			d3dMapFlag,
+			&ms);
+		if (hr != S_OK)
+		{
+			//TODO Access failed log.
+			return FALSE;
+		}
+	}
+	output.pData = ms.pData;
+	output.RowPitch = ms.RowPitch;
+	output.DepthPitch = ms.DepthPitch;
+	return TRUE;
+}
+void CRenderDevice::Unmap(const StructuredBufferInfo& input, const UINT& indexSubResource)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
+}
 void CRenderDevice::TranslateBindFlag(UINT& output, CustomStruct::CRenderBindFlag input)
 {
 	static std::map<CustomStruct::CRenderBindFlag, UINT> bindFlagMap = {
@@ -1082,6 +1256,16 @@ void CRenderDevice::TranslateResourceFormat(DXGI_FORMAT& output, CustomStruct::C
 
 		output = formatMap[input];
 }
+void CRenderDevice::TranslateBufferUAVFlag(UINT& output, CustomStruct::CRenderBufferUAVFlag input)
+{
+	static std::map<CustomStruct::CRenderBufferUAVFlag, UINT> bufferUAVFlagMap = {
+	{ CustomStruct::CRenderBufferUAVFlag::BUFFER_UAV_FLAG_NONE, 0u },
+	{ CustomStruct::CRenderBufferUAVFlag::BUFFER_UAV_FLAG_RAW, D3D11_BUFFER_UAV_FLAG::D3D11_BUFFER_UAV_FLAG_RAW },
+	{ CustomStruct::CRenderBufferUAVFlag::BUFFER_UAV_FLAG_APPEND, D3D11_BUFFER_UAV_FLAG::D3D11_BUFFER_UAV_FLAG_APPEND },
+	{ CustomStruct::CRenderBufferUAVFlag::BUFFER_UAV_FLAG_COUNTER, D3D11_BUFFER_UAV_FLAG::D3D11_BUFFER_UAV_FLAG_COUNTER } };
+
+	output = bufferUAVFlagMap[input];
+}
 void CRenderDevice::TranslateComparisonFunction(D3D11_COMPARISON_FUNC& output, CustomStruct::CRenderComparisonFunction input)
 {
 	static std::map<CustomStruct::CRenderComparisonFunction, D3D11_COMPARISON_FUNC> comparisonFuncMap = {
@@ -1231,6 +1415,59 @@ void CRenderDevice::TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, C
 		{ CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLESTRIP, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP } };
 
 	output = primitiveTopologyMap[input];
+}
+void CRenderDevice::TranslateQueryDesc(D3D11_QUERY_DESC& output, const CustomStruct::CRenderQueryDesc& input)
+{
+	static std::map<CustomStruct::CRenderQueryType, D3D11_QUERY> queryTypeMap = {
+		{ CustomStruct::CRenderQueryType::QUERY_EVENT, D3D11_QUERY::D3D11_QUERY_EVENT },
+		{ CustomStruct::CRenderQueryType::QUERY_OCCLUSION, D3D11_QUERY::D3D11_QUERY_OCCLUSION },
+		{ CustomStruct::CRenderQueryType::QUERY_TIMESTAMP, D3D11_QUERY::D3D11_QUERY_TIMESTAMP },
+		{ CustomStruct::CRenderQueryType::QUERY_TIMESTAMP_DISJOINT, D3D11_QUERY::D3D11_QUERY_TIMESTAMP_DISJOINT },
+		{ CustomStruct::CRenderQueryType::QUERY_PIPELINE_STATISTICS, D3D11_QUERY::D3D11_QUERY_PIPELINE_STATISTICS },
+		{ CustomStruct::CRenderQueryType::QUERY_OCCLUSION_PREDICATE, D3D11_QUERY::D3D11_QUERY_OCCLUSION_PREDICATE },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM0, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM0 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM0, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM0 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM1, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM1 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM1, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM1 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM2, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM2 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM2, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM2 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_STATISTICS_STREAM3, D3D11_QUERY::D3D11_QUERY_SO_STATISTICS_STREAM3 },
+		{ CustomStruct::CRenderQueryType::QUERY_SO_OVERFLOW_PREDICATE_STREAM3, D3D11_QUERY::D3D11_QUERY_SO_OVERFLOW_PREDICATE_STREAM3 } };
+	static std::map<CustomStruct::CRenderQueryMiscFlag, UINT> queryMiscFlagMap = {
+		{ CustomStruct::CRenderQueryMiscFlag::QUERY_MISC_DEFAULT, 0u },
+		{ CustomStruct::CRenderQueryMiscFlag::QUERY_MISC_PREDICATEHINT, D3D11_QUERY_MISC_FLAG::D3D11_QUERY_MISC_PREDICATEHINT } };
+
+	output.Query = queryTypeMap[input.Query];
+	output.MiscFlags = queryMiscFlagMap[input.MiscFlags];
+}
+void CRenderDevice::TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input)
+{
+	static std::map<CustomStruct::CRenderAsyncGetDataFlag, UINT> getDataFlagMap = {
+		{ CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DEFAULT, 0u },
+		{ CustomStruct::CRenderAsyncGetDataFlag::D3D11_ASYNC_GETDATA_DONOTFLUSH, D3D11_ASYNC_GETDATA_FLAG::D3D11_ASYNC_GETDATA_DONOTFLUSH } };
+
+	output = getDataFlagMap[input];
+}
+void CRenderDevice::TranslateMapType(D3D11_MAP& output, CustomStruct::CRenderMapType input)
+{
+	static std::map<CustomStruct::CRenderMapType, D3D11_MAP> mapTypeMap = {
+		{ CustomStruct::CRenderMapType::MAP_READ, D3D11_MAP::D3D11_MAP_READ },
+		{ CustomStruct::CRenderMapType::MAP_WRITE, D3D11_MAP::D3D11_MAP_WRITE },
+		{ CustomStruct::CRenderMapType::MAP_READ_WRITE, D3D11_MAP::D3D11_MAP_READ_WRITE },
+		{ CustomStruct::CRenderMapType::MAP_WRITE_DISCARD, D3D11_MAP::D3D11_MAP_WRITE_DISCARD },
+		{ CustomStruct::CRenderMapType::MAP_WRITE_NO_OVERWRITE, D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE } };
+
+	output = mapTypeMap[input];
+}
+void CRenderDevice::TranslateMapFlag(UINT& output, CustomStruct::CRenderMapFlag input)
+{
+	static std::map<CustomStruct::CRenderMapFlag, UINT> mapFlagMap = {
+		{ CustomStruct::CRenderMapFlag::MAP_FLAG_NONE, 0u },
+		{ CustomStruct::CRenderMapFlag::MAP_FLAG_DO_NOT_WAIT, D3D11_MAP_FLAG::D3D11_MAP_FLAG_DO_NOT_WAIT } };
+
+	output = mapFlagMap[input];
 }
 void CRenderDevice::ClearFinalOutput()
 {

@@ -25,12 +25,32 @@ CTestModel::~CTestModel()
 void CTestModel::Init()
 {
 	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
-	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/BaseShape/Donut.obj", TRUE);
+	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Engine/Assets/Robot/Object/Robot.obj", TRUE);
 	this->m_MeshRenderer->LoadShader();
 
-	this->m_AlbedoTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY);
-	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
-	this->m_PropertyTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_BaseColor.tga", TRUE);
+	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_Normal.tga", FALSE);
+	this->m_PropertyTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_MR.tga", FALSE);
+
+	{
+		auto compare = [](std::vector<FLOAT>& output, const CustomStruct::CVertex3D& input)
+		{
+			output[0 * 3 + 0] = (input.Position.x < output[0 * 3 + 0]) ? input.Position.x : output[0 * 3 + 0];
+			output[0 * 3 + 1] = (input.Position.y < output[0 * 3 + 1]) ? input.Position.y : output[0 * 3 + 1];
+			output[0 * 3 + 2] = (input.Position.z < output[0 * 3 + 2]) ? input.Position.z : output[0 * 3 + 2];
+
+			output[1 * 3 + 0] = (input.Position.x > output[1 * 3 + 0]) ? input.Position.x : output[1 * 3 + 0];
+			output[1 * 3 + 1] = (input.Position.y > output[1 * 3 + 1]) ? input.Position.y : output[1 * 3 + 1];
+			output[1 * 3 + 2] = (input.Position.z > output[1 * 3 + 2]) ? input.Position.z : output[1 * 3 + 2];
+		};
+		std::vector<FLOAT> minmax(6u, 0.f);
+		for (UINT i = 0u; i < this->m_Mesh->GetVertexData().size(); i++)
+		{
+			const CustomStruct::CVertex3D& vertex = (this->m_Mesh->GetVertexData())[i];
+			compare(minmax, vertex);
+		}
+		this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3], minmax[4], minmax[5]));
+	}
 }
 void CTestModel::Uninit()
 {
