@@ -2,6 +2,24 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "./CGameObject.h"
+//
+//class CSceneNode
+//{
+//
+//public:
+//
+//	BOOL IsHiddenInGame()const;
+//	void SetHiddenInGame(BOOL HiddenInGame);
+//
+//	std::string GetNodeName()const;
+//	void SetNodeName(const std::string& NewNodeName);
+//
+//private:
+//
+//	BOOL bHiddenInGame;
+//	std::string Name;
+//
+//};
 
 class CScene
 {

@@ -109,6 +109,9 @@
     <Filter Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling">
       <UniqueIdentifier>{df824d15-d2e8-424c-ba9f-0b7153dcbd58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Sources\Library">
+      <UniqueIdentifier>{0dec78c2-96b5-4614-8891-2340edb6c059}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -225,6 +228,13 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
+<<<<<<< HEAD
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CMouse.h">
+      <Filter>Engine\Sources\EngineBase\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\Library\CMathLibrary.h">
+      <Filter>Engine\Sources\Library</Filter>
+=======
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
@@ -236,6 +246,7 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
+>>>>>>> origin/main
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -344,6 +355,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
+<<<<<<< HEAD
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp">
+      <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
+=======
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
@@ -355,6 +370,7 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
+>>>>>>> origin/main
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -39,4 +39,8 @@ private:
 	~CManager();
 private:
 	static CManager* m_Manager;
+
+public:
+	static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 };
