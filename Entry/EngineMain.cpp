@@ -5,6 +5,7 @@
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+
 INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow)
 {
 	const CHAR* CLASS_NAME = "EngineClass_D3D11";
@@ -50,6 +51,15 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	fixedStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
 	updateStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
 	currentTime = fixedLastTime = updateLastTime = CManager::GetWindowTimer().GetClockTime();
+
+
+	// register mouse raw input device
+	RAWINPUTDEVICE rid;
+	rid.usUsagePage = 0x01; // mouse page
+	rid.usUsage = 0x02; // mouse usage
+	rid.dwFlags = 0;
+	rid.hwndTarget = nullptr;
+	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 	::ShowWindow(windowHandle, nCmdShow);
 	::UpdateWindow(windowHandle);
@@ -100,6 +110,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
 		return TRUE;
+	CManager::HandleMsg(hWnd, uMsg, wParam, lParam);
 
 	switch(uMsg)
 	{
@@ -115,7 +126,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		break;
-
 	default:
 		break;
 	}

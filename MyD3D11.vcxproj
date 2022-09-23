@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CMouse.h" />
     <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CTestModel.h" />
@@ -63,6 +64,7 @@
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp" />
