@@ -104,7 +104,7 @@ namespace CustomType
 		static Quaternion	GetIdentity();
 	protected:
 		static Quaternion	m_Identity;
-		XMFLOAT4			m_Value;
+		DirectX::XMFLOAT4	m_Value;
 	};
 
 	class Vector2 : public VectorBase

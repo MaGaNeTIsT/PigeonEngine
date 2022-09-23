@@ -3,16 +3,12 @@
 
 BYTE CInput::m_OldKeyState[256];
 BYTE CInput::m_KeyState[256];
-MOUSEMOVEPOINT CInput::m_OldMouseMove;
-MOUSEMOVEPOINT CInput::m_MouseMove;
 CController CInput::Controller;
 
 void CInput::Initialize(HWND hWnd)
 {
 	memset(m_OldKeyState, 0, 256);
 	memset(m_KeyState, 0, 256);
-	::ZeroMemory(&m_OldMouseMove, sizeof(MOUSEMOVEPOINT));
-	::ZeroMemory(&m_MouseMove, sizeof(MOUSEMOVEPOINT));
 
 	// Controller Initialization
 	Controller.Initialize(hWnd, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
@@ -25,7 +21,6 @@ void CInput::Update()
 {
 	{
 		memcpy(m_OldKeyState, m_KeyState, 256);
-		memcpy(&m_OldMouseMove, &m_MouseMove, sizeof(MOUSEMOVEPOINT));
 	}
 
 	{
