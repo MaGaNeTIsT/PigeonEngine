@@ -1,12 +1,10 @@
 #pragma once
 #include "CMouse.h"
+#include "CKeyboard.h"
 #include <vector>
 
 class CController
 {
-public:
-
-	CController() = default;
 
 public:
 
@@ -18,8 +16,9 @@ private:
 	INT WindowSizeY = ENGINE_SCREEN_HEIGHT;
 	HWND hWnd;
 
+	/*Mouse part start*/
 public:
-
+	
 	void EnableCursor();
 	void DisableCursor();
 	BOOL IsCursorEnabled() const;
@@ -30,7 +29,7 @@ public:
 	void ShowCursor();
 
 	void EnableMouseRaw();
-	void DisabaleMouseRaw();
+	void DisableMouseRaw();
 	BOOL IsMouseRawEnabled() const;
 
 	std::optional<CMouse::RawDelta> ReadRawDelta();
@@ -40,9 +39,31 @@ private:
 	CMouse Mouse;
 	BOOL bCursorEnabled = false;
 	std::vector<BYTE> rawBuffer;
+	/*Mouse part end*/
+
+	/*Keyboard Part Start*/
+public:
+	// key event stuff
+	BOOL IsKeyPressed(unsigned char keycode) const;
+	std::optional<CKeyboard::Event> ReadKey();
+	BOOL IsKeyEmpty() const;
+	void FlushKey();
+	// char event stuff
+	std::optional<char> ReadChar();
+	BOOL IsCharEmpty() const;
+	void FlushChar();
+	void Flush();
+	// autorepeat control
+	void EnableAutorepeat();
+	void DisableAutorepeat();
+	BOOL IsAutorepeatEnabled() const;
+private:
+	CKeyboard Keyboard;
+
+	/*Keyboard Part End*/
 
 public:
-
+	// WIndow message handler
 	LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 };
@@ -54,7 +75,9 @@ private:
 	static BYTE m_KeyState[256];
 	static MOUSEMOVEPOINT m_OldMouseMove;
 	static MOUSEMOVEPOINT m_MouseMove;
+
 public:
+
 	static void	Initialize(HWND hWnd);
 	static void	ShutDown();
 	static void	Update();
@@ -67,7 +90,7 @@ public:
 	static std::optional<CMouse::RawDelta> ReadRawDelta();
 
 public:
-
+	// WIndow message handler
 	static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 public:

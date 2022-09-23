@@ -151,7 +151,7 @@ void CController::EnableMouseRaw()
 	Mouse.EnableRaw();
 }
 
-void CController::DisabaleMouseRaw()
+void CController::DisableMouseRaw()
 {
 	Mouse.DisableRaw();
 }
@@ -171,6 +171,60 @@ LRESULT CController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 {
 	switch (msg)
 	{
+	case WM_KILLFOCUS:
+		Keyboard.ClearState();
+		break;
+
+	case WM_ACTIVATE:
+		OutputDebugString("activeate\n");
+		// confine/free cursor on window to foreground/background if cursor disabled
+		if (!IsCursorEnabled())
+		{
+			if (wParam & WA_ACTIVE)
+			{
+				OutputDebugString("activeate => confine\n");
+				ConfineCursor();
+				HideCursor();
+
+			}
+			else
+			{
+				OutputDebugString("activeate => free\n");
+				FreeCursor();
+				ShowCursor();
+
+			}
+		}
+		break;
+		/*********** KEYBOARD MESSAGES ***********/
+	case WM_KEYDOWN:
+		// syskey commands need to be handled to track ALT key (VK_MENU) and F10
+	case WM_SYSKEYDOWN:
+		/*if (imio.WantCaptureKeyboard)
+		{
+			break;
+		}*/
+		if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
+		{
+			Keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
+		}
+		break;
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		/*if (imio.WantCaptureKeyboard)
+		{
+			break;
+		}*/
+		Keyboard.OnKeyReleased(static_cast<unsigned char>(wParam));
+		break;
+	case WM_CHAR:
+		/*if (imio.WantCaptureKeyboard)
+		{
+			break;
+		}*/
+		Keyboard.OnChar(static_cast<unsigned char>(wParam));
+		break;
+		/*********** END KEYBOARD MESSAGES ***********/
 		/************* MOUSE MESSAGES ****************/
 	case WM_MOUSEMOVE:
 	{
@@ -327,4 +381,59 @@ LRESULT CController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 	}
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+BOOL CController::IsKeyPressed(unsigned char keycode) const
+{
+	return Keyboard.IsKeyPressed(keycode);
+}
+
+std::optional<CKeyboard::Event> CController::ReadKey()
+{
+	return Keyboard.ReadKey();
+}
+
+BOOL CController::IsKeyEmpty() const
+{
+	return Keyboard.IsKeyEmpty();
+}
+
+void CController::FlushKey()
+{
+	Keyboard.FlushKey();
+}
+
+std::optional<char> CController::ReadChar()
+{
+	return Keyboard.ReadChar();
+}
+
+BOOL CController::IsCharEmpty() const
+{
+	return Keyboard.IsCharEmpty();
+}
+
+void CController::FlushChar()
+{
+	Keyboard.FlushChar();
+}
+
+void CController::Flush()
+{
+	Keyboard.Flush();
+}
+
+void CController::EnableAutorepeat()
+{
+	Keyboard.EnableAutorepeat();
+}
+
+void CController::DisableAutorepeat()
+{
+	Keyboard.DisableAutorepeat();
+}
+
+BOOL CController::IsAutorepeatEnabled() const
+{
+	return Keyboard.IsAutorepeatEnabled();
 }
