@@ -25,7 +25,7 @@ void SetDstBufferValue(uint2 dstCoord, float value)
 }
 float CompareSrcValue(float v0, float v1, float v2, float v3)
 {
-	return min(min(min(v0, v1), v2), v3);
+	return max(max(max(v0, v1), v2), v3);
 }
 uint2 ConvertCoordDstToSrc(uint2 coord, uint2 srcCoordMax, uint2 dstCoordMax)
 {

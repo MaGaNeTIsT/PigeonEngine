@@ -36,6 +36,10 @@ float3 TransformWorldToView(const float3 position)
 {
 	return mul(float4(position, 1), ENGINE_MATRIX_V).xyz;
 }
+float4 TransformWorldToClip(const float3 position)
+{
+	return mul(float4(position, 1), ENGINE_MATRIX_VP);
+}
 float3 TransformViewToWorld(const float3 position)
 {
 	return mul(float4(position, 1), ENGINE_MATRIX_I_V).xyz;

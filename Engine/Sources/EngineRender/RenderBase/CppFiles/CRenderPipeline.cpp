@@ -386,6 +386,7 @@ void CRenderPipeline::PostUpdate()
 
 	m_GTAOPass->Update();
 	m_HZBPass->Update();
+	m_GPUCulling->Update(m_FrameIndex);
 	m_DebugScreen->Update();
 }
 void CRenderPipeline::Render()

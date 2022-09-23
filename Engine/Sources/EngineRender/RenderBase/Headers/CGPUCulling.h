@@ -31,6 +31,7 @@ public:
 	*/
 	void	Init(std::shared_ptr<class CHZBPass> hzb, const UINT& waitingFrameNum, const UINT& baseSceneObjectsNum);
 	void	Uninit();
+	void	Update(const ULONGLONG& frameIndex);
 	/*
 	* inputCullingResult  : Data from cpu culling result.
 	* outputCullingResult : Value true means pass culling. Value false means be occluded.
@@ -51,9 +52,15 @@ public:
 	~CGPUCulling();
 private:
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_GPUCullingComputeShader;
+	std::shared_ptr<class CHZBPass>					m_HZBPass;
 	UINT											m_CachedCount;
+	INT												m_MostDetailHZBIndex;
+	INT												m_UsedHZBNum;
 	std::vector<CachedCullingInfo>					m_CachedCullingInfo;
+	UINT											m_CachedAABBNum;
+	std::vector<PrimitivesAABBBoxInfo>				m_CachedAABBInfo;
 	std::map<ULONGLONG, UINT>						m_MappedUIDCullingResult;
+	UINT											m_PassingCount;
 	CullingConstantBufferData						m_CullingData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>			m_CullingConstantBuffer;
 };

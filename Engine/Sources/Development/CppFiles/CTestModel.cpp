@@ -49,7 +49,7 @@ void CTestModel::Init()
 			const CustomStruct::CVertex3D& vertex = (this->m_Mesh->GetVertexData())[i];
 			compare(minmax, vertex);
 		}
-		this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3], minmax[4], minmax[5]));
+		this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3] - minmax[0], minmax[4] - minmax[1], minmax[5] - minmax[2]));
 	}
 }
 void CTestModel::Uninit()
