@@ -172,16 +172,40 @@ void CCamera::Uninit()
 }
 void CCamera::Update()
 {
-	BOOL moveForward	= CInput::GetKeyPress('W');
-	BOOL moveBack		= CInput::GetKeyPress('S');
-	BOOL moveRight		= CInput::GetKeyPress('D');
-	BOOL moveLeft		= CInput::GetKeyPress('A');
-	BOOL moveUp			= CInput::GetKeyPress('Q');
-	BOOL moveDown		= CInput::GetKeyPress('E');
-	BOOL lookUp			= CInput::GetKeyPress('I');
-	BOOL lookDown		= CInput::GetKeyPress('K');
-	BOOL lookLeft		= CInput::GetKeyPress('J');
-	BOOL lookRight		= CInput::GetKeyPress('L');
+	while (const auto e = CInput::Controller.ReadKey())
+	{
+		if (!e->IsPress())
+		{
+			continue;
+		}
+
+		switch (e->GetCode())
+		{
+
+		case VK_PAUSE:
+			if (CInput::Controller.IsCursorEnabled())
+			{
+				CInput::Controller.DisableCursor();
+				CInput::Controller.EnableMouseRaw();
+			}
+			else
+			{
+				CInput::Controller.EnableCursor();
+				CInput::Controller.DisableMouseRaw();
+			}
+			break;
+		}
+	}
+	BOOL moveForward	= CInput::Controller.IsKeyPressed('W');
+	BOOL moveBack		= CInput::Controller.IsKeyPressed('S');
+	BOOL moveRight		= CInput::Controller.IsKeyPressed('D');
+	BOOL moveLeft		= CInput::Controller.IsKeyPressed('A');
+	BOOL moveUp			= CInput::Controller.IsKeyPressed('Q');
+	BOOL moveDown		= CInput::Controller.IsKeyPressed('E');
+	BOOL lookUp			= CInput::Controller.IsKeyPressed('I');
+	BOOL lookDown		= CInput::Controller.IsKeyPressed('K');
+	BOOL lookLeft		= CInput::Controller.IsKeyPressed('J');
+	BOOL lookRight		= CInput::Controller.IsKeyPressed('L');
 	//BOOL lookRotClock		= CInput::GetKeyPress('O');
 	//BOOL lookRotAntiClock	= CInput::GetKeyPress('U');
 	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
@@ -257,47 +281,19 @@ void CCamera::Update()
 	//	}
 	//}`
 
-	BOOL MouseControll = CInput::GetKeyPress('B');
-	if (MouseControll)
+	
+	if (!CInput::Controller.IsCursorEnabled())
 	{
-		if (CInput::Controller.IsCursorEnabled())
+		while (const auto delta = CInput::ReadRawDelta())
 		{
-			CInput::Controller.DisableCursor();
-			CInput::Controller.EnableMouseRaw();
-		}
-		else
-		{
-			CInput::Controller.DisableCursor();
-			CInput::Controller.DisabaleMouseRaw();
-
-		}
-	}
-
-	while (const auto delta = CInput::ReadRawDelta())
-	{
-		if (!CInput::Controller.IsCursorEnabled())
-		{
-			CustomType::Quaternion TargetRotation = GetRotation(); 
+			CustomType::Quaternion TargetRotation = GetRotation();
+			// Rotate around world vector (0,1,0) , whitch is world up vector
 			TargetRotation = TargetRotation * TargetRotation.RotationAxis(CustomType::Vector3(0.f, 1.f, 0.f), delta->x * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
-			TargetRotation = TargetRotation *TargetRotation.RotationAxis(GetRightVector(), delta->y * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
+			// Rotate around object's right vector
+			TargetRotation = TargetRotation * TargetRotation.RotationAxis(GetRightVector(), delta->y * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
 			SetRotation(TargetRotation);
 		}
 	}
-
-	//if (lookRotClock || lookRotAntiClock)
-	//{
-	//	CustomType::Vector3 lookAxis = this->GetForwardVector();
-	//	if (lookRotClock)
-	//	{
-	//		CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
-	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-	//	}
-	//	if (lookRotAntiClock)
-	//	{
-	//		CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
-	//		this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
-	//	}
-	//}
 
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();

@@ -240,6 +240,9 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CMouse.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CKeyboard.h">
+      <Filter>Engine\Sources\EngineBase\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -360,6 +363,9 @@
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp">
+      <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CKeyboard.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
