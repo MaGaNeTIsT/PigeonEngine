@@ -645,11 +645,11 @@ void CRenderPipeline::PrepareCameraCullingInfo(CRenderCameraCullingInfo& culling
 		cullingInfo.ClipDot[i] = CustomType::Vector3::Dot(cullingInfo.ClipPlane[i], cullingInfo.OriginPosition) + cullingInfo.ClipOffset;
 	}
 }
-BOOL CRenderPipeline::CullingCameraPlane(const CustomType::Vector3& pos, const CRenderCameraCullingInfo& cullingInfo)
+BOOL CRenderPipeline::CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo)
 {
 	for (UINT i = 0u; i < 5u; i++)
 	{
-		if (CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) < cullingInfo.ClipDot[i])
+		if ((CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) + radius) < cullingInfo.ClipDot[i])
 		{
 			return FALSE;
 		}
@@ -660,10 +660,11 @@ void CRenderPipeline::Culling(std::vector<CGameObject*>& cullingResult, const CR
 {
 	for (UINT i = 0u; i < primitives.size(); i++)
 	{
-		CustomType::Vector3 objPos = primitives[i]->GetPosition();
-		if (CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) < cullingInfo.Distance)
+		CustomType::Vector3 objPos; FLOAT objRadius;
+		primitives[i]->GetBoundingSphere(objPos, objRadius);
+		if ((CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) - objRadius) < cullingInfo.Distance)
 		{
-			if (CullingCameraPlane(objPos, cullingInfo))
+			if (CullingCameraPlane(objPos, objRadius, cullingInfo))
 			{
 				cullingResult.push_back(primitives[i]);
 			}

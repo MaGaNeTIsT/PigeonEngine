@@ -211,7 +211,7 @@ BOOL CGPUCulling::ReadBackFromResource(const ULONGLONG& frameIndex)
 	{
 		for (UINT i = 0u; i < currentUsedInfo->NumObjects; i++)
 		{
-			this->m_MappedUIDCullingResult[currentUsedInfo->MappingCullingResult[i]] = currentCullingResult[i];
+			this->m_MappedUIDCullingResult[currentUsedInfo->MappingCullingResult[i]] = currentCullingResult[i] & 0x1u;
 		}
 	}
 	return result;

@@ -45,7 +45,7 @@ public:
 protected:
 	virtual void	PreparePerFrameRender(class CCamera* camera);
 	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
-	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const CRenderCameraCullingInfo& cullingInfo);
+	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo);
 	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<class CGameObject*>& primitives);
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 protected:

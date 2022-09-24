@@ -21,6 +21,16 @@ public:
 		CustomType::Vector3 Anchor;
 		CustomType::Vector3 Dimensions;
 	};
+	struct CGameBoundingSphere
+	{
+		CGameBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
+		{
+			Anchor = anchor;
+			Radius = radius;
+		}
+		CustomType::Vector3 Anchor;
+		FLOAT				Radius;
+	};
 public:
 	const CustomType::Vector3&		GetPosition()const { return m_Position; }
 	const CustomType::Quaternion&	GetRotation()const { return m_Rotation; }
@@ -88,18 +98,19 @@ public:
 protected:
 	ULONGLONG							m_UID;
 	BOOL								m_Active;
-	class CScene*						m_Scene			= NULL;
-	CGameObject*						m_Parent		= NULL;
+	class CScene*						m_Scene				= NULL;
+	CGameObject*						m_Parent			= NULL;
 	std::map<ULONGLONG,CGameObject*>	m_Child;
 
-	CMesh*								m_Mesh			= NULL;
-	CMeshRenderer*						m_MeshRenderer	= NULL;
+	CMesh*								m_Mesh				= NULL;
+	CMeshRenderer*						m_MeshRenderer		= NULL;
 
-	CGameBoundingBox*					m_BoundingBox	= NULL;
+	CGameBoundingBox*					m_BoundingBox		= NULL;
+	CGameBoundingSphere*				m_BoundingSphere	= NULL;
 
 	CustomType::Vector3					m_Position;
 	CustomType::Quaternion				m_Rotation;
-	CustomType::Vector3					m_Scale			= CustomType::Vector3(1.f, 1.f, 1.f);
+	CustomType::Vector3					m_Scale				= CustomType::Vector3(1.f, 1.f, 1.f);
 public:
 	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); m_Active = FALSE; }
 	virtual ~CGameObject()
@@ -113,6 +124,11 @@ public:
 		{
 			delete m_BoundingBox;
 			m_BoundingBox = NULL;
+		}
+		if (m_BoundingSphere != NULL)
+		{
+			delete m_BoundingSphere;
+			m_BoundingSphere = NULL;
 		}
 	}
 	virtual void	Init()			= 0;
@@ -218,5 +234,49 @@ public:
 			boundingMin = CustomType::Vector3(minPoint[0], minPoint[1], minPoint[2]);
 			boundingMax = CustomType::Vector3(maxPoint[0], maxPoint[1], maxPoint[2]);
 		}
+	}
+	void SetBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
+	{
+		if (m_BoundingSphere == NULL)
+		{
+			m_BoundingSphere = new CGameBoundingSphere(anchor, radius);
+			return;
+		}
+		m_BoundingSphere->Anchor = anchor;
+		m_BoundingSphere->Radius = radius;
+	}
+	void SetBoundingSphere(const FLOAT& radius)
+	{
+		if (m_BoundingSphere == NULL)
+		{
+			m_BoundingSphere = new CGameBoundingSphere(CustomType::Vector3::Zero(), radius);
+			return;
+		}
+		m_BoundingSphere->Anchor = CustomType::Vector3::Zero();
+		m_BoundingSphere->Radius = radius;
+	}
+	void SetBoundingSphere(const CGameBoundingBox* boundingBox)
+	{
+		CustomType::Vector3 tempVec = boundingBox->Dimensions;
+		tempVec = tempVec * 0.5f;
+		if (m_BoundingSphere == NULL)
+		{
+			m_BoundingSphere = new CGameBoundingSphere(tempVec + boundingBox->Anchor, tempVec.Length());
+			return;
+		}
+		m_BoundingSphere->Anchor = tempVec + boundingBox->Anchor;
+		m_BoundingSphere->Radius = tempVec.Length();
+	}
+	CGameBoundingSphere* GetBoundingSphere() { return m_BoundingSphere; }
+	void GetBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)
+	{
+		if (m_BoundingSphere == NULL)
+		{
+			anchor = m_Position;
+			radius = 1.f;
+			return;
+		}
+		anchor = (m_BoundingSphere->Anchor * m_Scale) + m_Position;
+		radius = m_BoundingSphere->Radius * CustomType::CMath::Max(m_Scale.X(), CustomType::CMath::Max(m_Scale.Y(), m_Scale.Z()));
 	}
 };

@@ -89,7 +89,7 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 		}
 		if (outScreen)
 		{
-			_CullingResultBuffer[dispatchThreadID] = 0u;
+			_CullingResultBuffer[dispatchThreadID] = 0x2u;
 			return;
 		}
 		nearestZ = posWS[0].z;
@@ -139,12 +139,14 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 		{
 			if (!ZTestForAABB(nearestZ, minCoord[i], maxCoord[i], float2(bufferMax[i]), hzbBuffers[i]))
 			{
-				_CullingResultBuffer[dispatchThreadID] = 0u;
+				//0000 0000 0000 0000 0000 0000 0000 0011
+				uint result = 0xfu & uint(i + 1);
+				_CullingResultBuffer[dispatchThreadID] = result << 2;
 				return;
 			}
 		}
 	}
-	_CullingResultBuffer[dispatchThreadID] = 1u;
+	_CullingResultBuffer[dispatchThreadID] = 0x1u;
 }
 
 #endif
