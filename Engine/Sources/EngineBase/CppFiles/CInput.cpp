@@ -156,6 +156,16 @@ BOOL CController::IsMouseRawEnabled() const
 	return Mouse.IsRawEnabled();
 }
 
+BOOL CController::IsLeftMouseButtonDown() const
+{
+	return Mouse.LeftIsPressed();
+}
+
+BOOL CController::IsRightMouseButtonDown() const
+{
+	return Mouse.RightIsPressed();
+}
+
 std::optional<CMouse::RawDelta> CController::ReadRawDelta()
 {
 	return Mouse.ReadRawDelta();

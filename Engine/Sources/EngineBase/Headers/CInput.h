@@ -32,6 +32,8 @@ public:
 	void DisableMouseRaw();
 	BOOL IsMouseRawEnabled() const;
 
+	BOOL IsLeftMouseButtonDown()const;
+	BOOL IsRightMouseButtonDown()const;
 	std::optional<CMouse::RawDelta> ReadRawDelta();
 
 private:
