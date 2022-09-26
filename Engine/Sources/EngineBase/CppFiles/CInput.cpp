@@ -96,6 +96,11 @@ void CController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
 
 }
 
+std::pair<INT, INT> CController::GetMousePosition() const
+{
+	return Mouse.GetPos();
+}
+
 void CController::EnableCursor()
 {
 	bCursorEnabled = true;
