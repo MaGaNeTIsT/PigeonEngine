@@ -18,7 +18,8 @@ private:
 
 	/*Mouse part start*/
 public:
-	
+	std::pair<INT, INT> GetMousePosition() const;
+
 	void EnableCursor();
 	void DisableCursor();
 	BOOL IsCursorEnabled() const;
