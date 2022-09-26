@@ -94,7 +94,7 @@ using namespace DirectX;
 #define ENGINE_GPU_QUERY_NONE								("EngineBase/GPUQuery/None")
 
 #define ENGINE_DEFAULT_CULLING_DISTANCE						(1500.f)
-#define ENGINE_DEFAULT_CULLING_OFFSET						(-10.f)
+#define ENGINE_DEFAULT_CULLING_OFFSET						(-15.f)
 
 #define ENGINE_CAMERA_FOV									(60.f)
 #define ENGINE_CAMERA_NEAR									(5.f)

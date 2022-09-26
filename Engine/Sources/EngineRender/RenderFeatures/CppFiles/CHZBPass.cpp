@@ -24,6 +24,7 @@ void CHZBPass::Init(const CustomType::Vector2Int& pipelineSize)
 	this->m_PipelineSize = pipelineSize;
 	this->CalculateHZBLevels();
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/BuildHZBComputeShader.cso", this->m_BuildHZBComputeShader);
+	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/RawDownSamplingComputeShader.cso", this->m_RawDownSamplingComputeShader);
 	this->InitHZBBuffers();
 	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
 	this->m_Polygon2D->Init();
@@ -53,11 +54,14 @@ void CHZBPass::Update()
 }
 void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
-	CRenderDevice::SetCSShader(this->m_BuildHZBComputeShader);
+	CRenderDevice::SetCSShader(this->m_RawDownSamplingComputeShader);
 	CRenderDevice::BindCSShaderResourceView(sceneDepth, 0u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffers[0].UnorderedAccessView, 0u);
 	CRenderDevice::Dispatch(static_cast<UINT>((this->m_HZBSizes[0].X() + 7) / 8), static_cast<UINT>((this->m_HZBSizes[0].Y() + 7) / 8), 1u);
 	CRenderDevice::BindNoCSUnorderedAccessView(0u);
+	CRenderDevice::SetNoCSShader();
+
+	CRenderDevice::SetCSShader(this->m_BuildHZBComputeShader);
 	for (UINT i = 1u; i < this->m_HZBBuffers.size(); i++)
 	{
 		CRenderDevice::BindCSShaderResourceView(this->m_HZBBuffers[i - 1u].ShaderResourceView, 0u);

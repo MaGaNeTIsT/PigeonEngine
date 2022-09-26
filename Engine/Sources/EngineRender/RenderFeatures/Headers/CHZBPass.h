@@ -29,6 +29,7 @@ private:
 	INT							m_DebugLevel;
 
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_BuildHZBComputeShader;
+	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_RawDownSamplingComputeShader;
 	CustomType::Vector2Int							m_PipelineSize;
 
 	std::vector<CRenderDevice::RenderTexture2DViewInfo>		m_HZBBuffers;

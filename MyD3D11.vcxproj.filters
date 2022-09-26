@@ -415,6 +415,9 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

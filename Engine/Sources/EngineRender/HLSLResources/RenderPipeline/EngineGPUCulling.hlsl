@@ -66,42 +66,42 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 	float nearestZ;
 	float2 minClamp, maxClamp;
 	{
-		float4 posWS[8];
+		float4 position[8];
 		{
 			AABBBoxInfo testInfo = _CullingTestBuffer[dispatchThreadID.x];
-			posWS[0] = float4(testInfo.Min, 1.0);
-			posWS[1] = float4(testInfo.Min.xy, testInfo.Max.z, 1.0);
-			posWS[2] = float4(testInfo.Max.x, testInfo.Min.y, testInfo.Max.z, 1.0);
-			posWS[3] = float4(testInfo.Max.x, testInfo.Min.yz, 1.0);
-			posWS[4] = float4(testInfo.Min.x, testInfo.Max.y, testInfo.Min.z, 1.0);
-			posWS[5] = float4(testInfo.Min.x, testInfo.Max.yz, 1.0);
-			posWS[6] = float4(testInfo.Max, 1.0);
-			posWS[7] = float4(testInfo.Max.xy, testInfo.Min.z, 1.0);
+			position[0] = float4(testInfo.Min, 1.0);
+			position[1] = float4(testInfo.Min.xy, testInfo.Max.z, 1.0);
+			position[2] = float4(testInfo.Max.x, testInfo.Min.y, testInfo.Max.z, 1.0);
+			position[3] = float4(testInfo.Max.x, testInfo.Min.yz, 1.0);
+			position[4] = float4(testInfo.Min.x, testInfo.Max.y, testInfo.Min.z, 1.0);
+			position[5] = float4(testInfo.Min.x, testInfo.Max.yz, 1.0);
+			position[6] = float4(testInfo.Max, 1.0);
+			position[7] = float4(testInfo.Max.xy, testInfo.Min.z, 1.0);
 		}
 		bool outScreen = true;
 		[unroll(8)] for (uint indexPoint = 0u; indexPoint < 8u; indexPoint++)
 		{
-			posWS[indexPoint] = TransformWorldToClip(posWS[indexPoint].xyz);
-			posWS[indexPoint] = float4(posWS[indexPoint].xyz / posWS[indexPoint].w, posWS[indexPoint].w);
-			outScreen = outScreen && (any(posWS[indexPoint].xy < -1.0 || posWS[indexPoint].xy > 1.0) ? true : false);
-			posWS[indexPoint].y = -posWS[indexPoint].y;
-			posWS[indexPoint].xy = clamp((posWS[indexPoint].xy * 0.5) + 0.5, 0.0, 1.0);
+			position[indexPoint] = TransformWorldToClip(position[indexPoint].xyz);
+			position[indexPoint] = float4(position[indexPoint].xyz / position[indexPoint].w, position[indexPoint].w);
+			outScreen = outScreen && (any(position[indexPoint].xy < -1.0 || position[indexPoint].xy > 1.0) ? true : false);
+			position[indexPoint].y = -position[indexPoint].y;
+			position[indexPoint].xy = clamp((position[indexPoint].xy * 0.5) + 0.5, 0.0, 1.0);
 		}
 		if (outScreen)
 		{
 			_CullingResultBuffer[dispatchThreadID] = 0x2u;
 			return;
 		}
-		nearestZ = posWS[0].z;
-		minClamp = posWS[0].xy;
-		maxClamp = posWS[0].xy;
+		nearestZ = position[0].z;
+		minClamp = position[0].xy;
+		maxClamp = position[0].xy;
 		[unroll(7)] for (uint c = 1u; c < 8u; c++)
 		{
-			minClamp.x = min(posWS[c].x, minClamp.x);
-			minClamp.y = min(posWS[c].y, minClamp.y);
-			maxClamp.x = max(posWS[c].x, maxClamp.x);
-			maxClamp.y = max(posWS[c].y, maxClamp.y);
-			nearestZ = min(posWS[c].z, nearestZ);
+			minClamp.x = min(position[c].x, minClamp.x);
+			minClamp.y = min(position[c].y, minClamp.y);
+			maxClamp.x = max(position[c].x, maxClamp.x);
+			maxClamp.y = max(position[c].y, maxClamp.y);
+			nearestZ = min(position[c].z, nearestZ);
 		}
 	}
 

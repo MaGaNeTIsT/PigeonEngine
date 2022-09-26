@@ -1,6 +1,7 @@
 #include "../Headers/CScene.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CManager.h"
+#include "../../EngineBase/Headers/CInput.h"
 #include "../Headers/CCamera.h"
 #include "../Headers/CLight.h"
 #include "../Headers/CScreenPolygon2D.h"
@@ -37,12 +38,12 @@ void CScene::Init()
 		::srand(12415u);
 
 		const INT randomMax = 3000;
-		//const FLOAT rangePos = 80.f;
-		const FLOAT rangePos = 200.f;
+		const FLOAT rangePos = 50.f;
+		//const FLOAT rangePos = 200.f;
 		const FLOAT baseScale = 0.05f;
 		const FLOAT rangeScale = 0.15f;
-		//const UINT countModel = 10u;
-		const UINT countModel = 200u;
+		const UINT countModel = 4u;
+		//const UINT countModel = 200u;
 		const BOOL showOBB = FALSE;
 
 		INT random[3] = { 0, 0, 0 };
