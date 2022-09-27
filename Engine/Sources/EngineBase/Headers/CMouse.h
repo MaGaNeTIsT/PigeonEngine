@@ -42,7 +42,7 @@ public:
 		Event(EType INType, const CMouse& Parent)
 			:
 			Type(INType),
-			bLeftIsPressed()
+			bLeftIsPressed(), x(0), y(0)
 		{
 
 		}
@@ -113,8 +113,8 @@ public:
 private:  
 
 	const UINT BufferSize = 16u;
-	INT x;
-	INT y;
+	INT x = 0;
+	INT y = 0;
 	BOOL bLeftIsPressed = false;
 	BOOL bRightIsPressed = false;
 	BOOL bIsInWindow = false;

@@ -172,6 +172,17 @@ void CCamera::Uninit()
 }
 void CCamera::Update()
 {
+	{
+		FLOAT moveSpeed = this->m_CameraControlInfo.MoveSpeed;
+		FLOAT lookSpeed = this->m_CameraControlInfo.LookSpeed;
+		ImGui::Begin("Camera properties");
+		ImGui::InputFloat("Move speed", &moveSpeed);
+		ImGui::InputFloat("Look speed", &lookSpeed);
+		ImGui::End();
+		this->m_CameraControlInfo.MoveSpeed = CustomType::CMath::Max(0.001f, moveSpeed);
+		this->m_CameraControlInfo.LookSpeed = CustomType::CMath::Max(0.001f, lookSpeed);
+	}
+
 	/*while (const auto e = CInput::Controller.ReadKey())
 	{
 		if (!e->IsPress())

@@ -28,12 +28,31 @@ Texture2D<float>	_HierarchicalZBuffer_4	: register(t5);
 Texture2D<float>	_HierarchicalZBuffer_5	: register(t6);
 Texture2D<float>	_HierarchicalZBuffer_6	: register(t7);
 
-bool ZTestForAABB(float inputZ, uint2 min, uint2 max, float2 size, Texture2D<float> buffer)
+bool ZTestForAABB(float2 minUV, float2 maxUV, float inputZ, uint2 minCoord, uint2 maxCoord, Texture2D<float> buffer)
 {
-	float testZ;
-	[loop] for (uint y = min.y; y <= max.y; y++)
+#if 1
+	uint loopY = maxCoord.y - minCoord.y;
+	uint loopX = maxCoord.x - minCoord.x;
+	float testZ; float tX, tY; float2 uv;
+	[loop] for (uint y = 0u; y <= loopY; y++)
 	{
-		[loop] for (uint x = min.x; x <= max.x; x++)
+		tY = float(y) / float(max(1u, loopY));
+		[loop] for (uint x = 0u; x <= loopX; x++)
+		{
+			tX = float(x) / float(max(1u, loopX));
+			uv = lerp(minUV, maxUV, float2(tX, tY));
+			testZ = buffer.SampleLevel(_PointClampSampler, uv, 0).r;
+			if (inputZ <= testZ)
+			{
+				return true;
+			}
+		}
+	}
+#else
+	float testZ;
+	[loop] for (uint y = minCoord.y; y <= maxCoord.y; y++)
+	{
+		[loop] for (uint x = minCoord.x; x <= maxCoord.x; x++)
 		{
 			testZ = buffer[uint2(x, y)];
 			if (inputZ <= testZ)
@@ -42,6 +61,7 @@ bool ZTestForAABB(float inputZ, uint2 min, uint2 max, float2 size, Texture2D<flo
 			}
 		}
 	}
+#endif
 	return false;
 }
 
@@ -78,20 +98,26 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 			position[6] = float4(testInfo.Max, 1.0);
 			position[7] = float4(testInfo.Max.xy, testInfo.Min.z, 1.0);
 		}
+#if 0
 		bool outScreen = true;
+#endif
 		[unroll(8)] for (uint indexPoint = 0u; indexPoint < 8u; indexPoint++)
 		{
 			position[indexPoint] = TransformWorldToClip(position[indexPoint].xyz);
 			position[indexPoint] = float4(position[indexPoint].xyz / position[indexPoint].w, position[indexPoint].w);
+#if 0
 			outScreen = outScreen && (any(position[indexPoint].xy < -1.0 || position[indexPoint].xy > 1.0) ? true : false);
+#endif
 			position[indexPoint].y = -position[indexPoint].y;
 			position[indexPoint].xy = clamp((position[indexPoint].xy * 0.5) + 0.5, 0.0, 1.0);
 		}
+#if 0
 		if (outScreen)
 		{
 			_CullingResultBuffer[dispatchThreadID] = 0x2u;
 			return;
 		}
+#endif
 		nearestZ = position[0].z;
 		minClamp = position[0].xy;
 		maxClamp = position[0].xy;
@@ -127,8 +153,8 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 		{
 			indexHZB = (h > indexMax) ? 0 : h;
 			bufferMax[h] = max(1u, bufferSize[indexHZB].xy - 1u);
-			minCoord[h] = uint2(bufferMax[h] * minClamp.xy);
-			maxCoord[h] = uint2(bufferMax[h] * maxClamp.xy);
+			minCoord[h] = uint2(floor(bufferMax[h] * minClamp.xy));
+			maxCoord[h] = uint2(ceil(bufferMax[h] * maxClamp.xy));
 		}
 	}
 
@@ -137,7 +163,7 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 	{
 		if (indexMax >= i)
 		{
-			if (!ZTestForAABB(nearestZ, minCoord[i], maxCoord[i], float2(bufferMax[i]), hzbBuffers[i]))
+			if (!ZTestForAABB(minClamp, maxClamp, nearestZ, minCoord[i], maxCoord[i], hzbBuffers[i]))
 			{
 				//0000 0000 0000 0000 0000 0000 0000 0011
 				uint result = 0xfu & uint(i + 1);

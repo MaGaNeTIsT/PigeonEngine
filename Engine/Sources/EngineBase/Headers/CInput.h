@@ -14,7 +14,7 @@ private:
 
 	INT WindowSizeX = ENGINE_SCREEN_WIDTH;
 	INT WindowSizeY = ENGINE_SCREEN_HEIGHT;
-	HWND hWnd;
+	HWND hWnd = NULL;
 
 	/*Mouse part start*/
 public:
@@ -83,8 +83,8 @@ public:
 	static void	ShutDown();
 	static void	Update();
 public:
-	static BOOL	GetKeyPress( BYTE KeyCode );
-	static BOOL	GetKeyTrigger( BYTE KeyCode );
+	static BOOL	GetKeyPress(BYTE KeyCode);
+	static BOOL	GetKeyTrigger(BYTE KeyCode);
 
 public:
 

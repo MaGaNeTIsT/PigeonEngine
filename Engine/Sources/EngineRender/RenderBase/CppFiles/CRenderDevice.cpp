@@ -34,7 +34,7 @@ void CRenderDevice::Init(HWND hWnd, const CustomType::Vector2Int& bufferSize, co
 		sd.BufferCount = 1u;
 		sd.BufferDesc.Width = bufferWidth;
 		sd.BufferDesc.Height = bufferHeight;
-		sd.BufferDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		sd.BufferDesc.Format = DXGI_FORMAT::DXGI_FORMAT_R10G10B10A2_UNORM;
 		sd.BufferDesc.RefreshRate.Numerator = frameNum;
 		sd.BufferDesc.RefreshRate.Denominator = 1u;
 		sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;

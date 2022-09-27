@@ -38,12 +38,12 @@ void CScene::Init()
 		::srand(12415u);
 
 		const INT randomMax = 3000;
-		const FLOAT rangePos = 50.f;
-		//const FLOAT rangePos = 200.f;
+		//const FLOAT rangePos = 50.f;
+		const FLOAT rangePos = 200.f;
 		const FLOAT baseScale = 0.05f;
 		const FLOAT rangeScale = 0.15f;
-		const UINT countModel = 4u;
-		//const UINT countModel = 200u;
+		//const UINT countModel = 4u;
+		const UINT countModel = 200u;
 		const BOOL showOBB = FALSE;
 
 		INT random[3] = { 0, 0, 0 };
@@ -91,6 +91,13 @@ void CScene::Update()
 	{
 		for (const auto& object : this->m_GameObject[i])
 			object.second->Update();
+	}
+
+	{
+		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+		ImGui::Begin("Scene Manager");
+		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
+		ImGui::End();
 	}
 }
 void CScene::FixedUpdate()

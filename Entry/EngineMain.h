@@ -41,7 +41,7 @@ using namespace DirectX;
 #define ENGINE_SCREEN_HEIGHT								(900)
 
 #define ENGINE_FIXED_UPDATE_FRAME							(60)
-#define ENGINE_UPDATE_FRAME									(60)
+#define ENGINE_UPDATE_FRAME									(90)
 #define ENGINE_WINDOWED										(1)
 
 #define ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT			(0u)
@@ -94,7 +94,7 @@ using namespace DirectX;
 #define ENGINE_GPU_QUERY_NONE								("EngineBase/GPUQuery/None")
 
 #define ENGINE_DEFAULT_CULLING_DISTANCE						(1500.f)
-#define ENGINE_DEFAULT_CULLING_OFFSET						(-15.f)
+#define ENGINE_DEFAULT_CULLING_OFFSET						(-5.f)
 
 #define ENGINE_CAMERA_FOV									(60.f)
 #define ENGINE_CAMERA_NEAR									(5.f)

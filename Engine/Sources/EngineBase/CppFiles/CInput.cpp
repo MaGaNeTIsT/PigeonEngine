@@ -354,7 +354,7 @@ LRESULT CController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 		{
 			break;
 		}
-		UINT size;
+		UINT size = 0u;
 		// first get the size of the input data
 		if (GetRawInputData(
 			reinterpret_cast<HRAWINPUT>(lParam),
