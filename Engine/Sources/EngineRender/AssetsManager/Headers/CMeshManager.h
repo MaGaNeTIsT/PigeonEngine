@@ -16,7 +16,8 @@ public:
 	static class CMesh*			LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	static class CMesh*			LoadCubeMesh();
 	static class CMesh*			LoadPolygonMesh();
-	static class CMesh*			LoadPolygon2DMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT));
+	static class CMesh*			LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT));
+	static class CMesh*			LoadPolygon2DWithInputLayoutMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT));
 private:
 	static CustomType::Vector3	CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2);
 	static class CMesh*			LoadOBJMesh(const std::string& name, const BOOL& recalculateTangent);

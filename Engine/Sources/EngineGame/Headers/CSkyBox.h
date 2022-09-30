@@ -24,7 +24,7 @@ public:
 	virtual ~CSkyBox() {}
 protected:
 	SkyBoxInfo	m_SkyBoxInfo;
+	std::shared_ptr<class CPixelShader> m_PixelShader;
 protected:
-	std::shared_ptr<class CVertexShader>	m_VertexShader;
-	std::shared_ptr<class CPixelShader>		m_PixelShader;
+	static std::shared_ptr<class CVertexShader> m_VertexShader;
 };

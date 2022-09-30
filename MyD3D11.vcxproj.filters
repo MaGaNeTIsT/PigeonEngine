@@ -243,6 +243,9 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CKeyboard.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h">
+      <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -368,6 +371,9 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CKeyboard.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp">
+      <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -417,6 +423,9 @@
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultSkyBoxVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

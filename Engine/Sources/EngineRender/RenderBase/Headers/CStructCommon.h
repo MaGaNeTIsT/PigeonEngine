@@ -695,6 +695,36 @@ namespace CustomStruct
 		CRenderBufferUAVFlag	BufferFlag;
 	};
 
+	enum CRenderShaderSemantic
+	{
+		SHADER_SEMANTIC_POSITION		= 0,
+		SHADER_SEMANTIC_TEXCOORD		= 1,
+		SHADER_SEMANTIC_NORMAL			= 2,
+		SHADER_SEMANTIC_TANGENT			= 3,
+		SHADER_SEMANTIC_COLOR			= 4,
+		SHADER_SEMANTIC_BLENDINDICES	= 5,
+		SHADER_SEMANTIC_BLENDWEIGHT		= 6,
+		SHADER_SEMANTIC_POSITIONT		= 7,
+		SHADER_SEMANTIC_PSIZE			= 8,
+		SHADER_SEMANTIC_BINORMAL		= 9
+	};
+
+	enum CRenderInputClassification
+	{
+		D3D11_INPUT_PER_VERTEX_DATA		= 0,
+		D3D11_INPUT_PER_INSTANCE_DATA	= 1
+	};
+
+	struct CRenderInputLayoutDesc
+	{
+		CRenderShaderSemantic		SemanticName;
+		UINT						SemanticIndex;
+		CRenderFormat				Format;
+		UINT						InputSlot;
+		CRenderInputClassification	InputSlotClass;
+		UINT						InstanceDataStepRate;
+	};
+
 	enum CRenderMapType
 	{
 		MAP_READ				= 0,

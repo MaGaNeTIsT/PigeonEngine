@@ -319,7 +319,65 @@ CMesh* CMeshManager::LoadPolygonMesh()
 	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
 	return mesh;
 }
-CMesh* CMeshManager::LoadPolygon2DMesh(const CustomType::Vector4Int& customSize)
+CMesh* CMeshManager::LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& customSize)
+{
+	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
+	tempName = tempName +
+		"_x_" + std::to_string(customSize.X()) +
+		"_y_" + std::to_string(customSize.Y()) +
+		"_z_" + std::to_string(customSize.Z()) +
+		"_w_" + std::to_string(customSize.W());
+	CMesh* findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != NULL)
+		return findResult;
+	std::vector<CustomStruct::CVertex3D> vertex;
+	{
+		vertex.resize(4);
+		//
+		//  (x, y)
+		//     0--------1
+		//     |       /|
+		//     | (1)  /	|
+		//     |     /	|
+		//     |    /	|
+		//     |   /    |
+		//     |  /     |
+		//     | /  (2) |
+		//     |/       |
+		//     2--------3
+		//            (z, w)
+		//
+		XMFLOAT4 white(1.f, 1.f, 1.f, 1.f);
+		for (UINT i = 0u; i < 4; i++)
+			vertex[i].Color = white;
+		vertex[0].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
+		vertex[1].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
+		vertex[2].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
+		vertex[3].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
+		vertex[0].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
+		vertex[1].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
+		vertex[2].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
+		vertex[3].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
+		vertex[0].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+		vertex[1].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+		vertex[2].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+		vertex[3].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+		vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
+		vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
+		vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
+		vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
+	}
+	std::vector<UINT> index;
+	{
+		index.resize(6);
+		index[0] = 0; index[1] = 1; index[2] = 2;
+		index[3] = 1; index[4] = 3; index[5] = 2;
+	}
+	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
+	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
+	return mesh;
+}
+CMesh* CMeshManager::LoadPolygon2DWithInputLayoutMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT))
 {
 	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
 	tempName = tempName +
