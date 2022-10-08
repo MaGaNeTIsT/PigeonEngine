@@ -14,7 +14,6 @@ struct Attribute
 	float4 position		: POSITION0;
 	float4 normal		: NORMAL0;
 	float4 tangent		: TANGENT0;
-	float4 color		: COLOR0;
 	float2 uv0			: TEXCOORD0;
 };
 struct Varying
@@ -30,6 +29,25 @@ struct DeferredOutput
 	float4 normal		: SV_Target1;
 	float4 albedo		: SV_Target2;
 	float4 property		: SV_Target3;
+};
+struct AttributeTerrain
+{
+	float4 position		: POSITION0;
+	float4 normal		: NORMAL0;
+	float4 tangent		: TANGENT0;
+	float2 uv0			: TEXCOORD0;
+};
+struct VaryingTerrain
+{
+	float4 positionCS	: SV_POSITION;
+	float4 normal		: NORMAL0;
+	float4 tangent		: TANGENT0;
+	float2 uv0			: TEXCOORD0;
+};
+struct AttributeScreenPolygon2D
+{
+	float4 position		: POSITION0;
+	float2 uv0			: TEXCOORD0;
 };
 struct VaryingScreenPolygon2D
 {

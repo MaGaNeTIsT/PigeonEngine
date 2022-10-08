@@ -170,7 +170,7 @@ void CRenderDevice::Uninit()
 		CRenderDevice::m_RenderDevice->m_Device = nullptr;
 	}
 }
-BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout)
+BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum)
 {
 	FILE* file;
 	LONG fsize;
@@ -199,26 +199,18 @@ BOOL CRenderDevice::LoadVertexShader(const std::string& name, Microsoft::WRL::Co
 	}
 
 	{
-		UINT numElements = 5u;
-		std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayout;
-		if (layout == NULL)
+		if (layouts == NULL)
 		{
-			tempLayout.resize(5u);
-			tempLayout[0] = { "POSITION", 0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
-			tempLayout[1] = { "NORMAL",   0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
-			tempLayout[2] = { "TANGENT",  0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
-			tempLayout[3] = { "COLOR",    0u, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
-			tempLayout[4] = { "TEXCOORD", 0u, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT,       0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0u };
+			delete[]buffer;
+			//TODO Input layout format error log.
+			return FALSE;
 		}
-		else
+		std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(layoutNum);
+		for (UINT i = 0u; i < layoutNum; i++)
 		{
-			numElements = static_cast<UINT>(layout->size());
-			tempLayout.resize(layout->size());
-			for (UINT i = 0u; i < numElements; i++)
-				tempLayout[i] = (*layout)[i];
+			CRenderDevice::TranslateInputLayoutDesc(tempLayouts[i], layouts[i]);
 		}
-		
-		HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateInputLayout(tempLayout.data(), numElements, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
+		HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), layoutNum, static_cast<void*>(buffer), fsize, inputLayout.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			delete[]buffer;
@@ -1468,6 +1460,42 @@ void CRenderDevice::TranslateMapFlag(UINT& output, CustomStruct::CRenderMapFlag 
 		{ CustomStruct::CRenderMapFlag::MAP_FLAG_DO_NOT_WAIT, D3D11_MAP_FLAG::D3D11_MAP_FLAG_DO_NOT_WAIT } };
 
 	output = mapFlagMap[input];
+}
+void CRenderDevice::TranslateInputLayoutDesc(D3D11_INPUT_ELEMENT_DESC& output, const CustomStruct::CRenderInputLayoutDesc& input)
+{
+	static std::map<CustomStruct::CRenderShaderSemantic, std::string> semanticMap = {
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, "POSITION" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, "TEXCOORD" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, "NORMAL" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, "TANGENT" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, "COLOR" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, "BLENDINDICES" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, "BLENDWEIGHT" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, "POSITIONT" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, "PSIZE" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, "BINORMAL" } };
+	static std::map<CustomStruct::CRenderInputClassification, D3D11_INPUT_CLASSIFICATION> classificationMap = {
+		{ CustomStruct::CRenderInputClassification::INPUT_PER_VERTEX_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA },
+		{ CustomStruct::CRenderInputClassification::INPUT_PER_INSTANCE_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA } };
+	static std::map<CustomStruct::CRenderShaderSemantic, DXGI_FORMAT> semanticFormatMap = {
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT } };
+
+	output.SemanticName			= semanticMap[input.SemanticName].c_str();
+	output.SemanticIndex		= input.SemanticIndex;
+	output.Format				= semanticFormatMap[input.SemanticName];
+	output.InputSlot			= input.InputSlot;
+	output.AlignedByteOffset	= D3D11_APPEND_ALIGNED_ELEMENT;
+	output.InputSlotClass		= classificationMap[input.InputSlotClass];
+	output.InstanceDataStepRate	= input.InstanceDataStepRate;
 }
 void CRenderDevice::ClearFinalOutput()
 {

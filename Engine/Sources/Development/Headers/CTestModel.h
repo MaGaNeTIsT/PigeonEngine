@@ -18,7 +18,6 @@ public:
 	CTestModel();
 	virtual ~CTestModel();
 protected:
-	CustomStruct::ConstantBufferPerDraw m_ConstantBuffer;
 	class CTexture2D*	m_AlbedoTexture;
 	class CTexture2D*	m_NormalTexture;
 	class CTexture2D*	m_PropertyTexture;

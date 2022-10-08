@@ -3,7 +3,7 @@
 
 #include "../Common/ShaderCommon.hlsl"
 
-VaryingScreenPolygon2D main(Attribute input)
+VaryingScreenPolygon2D main(AttributeScreenPolygon2D input)
 {
 	float4 positionCS = float4(input.position.xy * _CameraViewportMinSizeAndInvBufferSize.zw * 2.0 - 1.0, 0.0, 1.0);
 	positionCS.y = -positionCS.y;

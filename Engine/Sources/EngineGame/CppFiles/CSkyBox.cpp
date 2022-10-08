@@ -11,7 +11,7 @@ CSkyBox::CSkyBox()
 {
 	if (!m_VertexShader)
 	{
-		m_VertexShader = CShaderManager::LoadVertexShader();
+		//m_VertexShader = CShaderManager::LoadVertexShader();
 	}
 	this->m_SkyBoxInfo = SkyBoxInfo(static_cast<FLOAT>(1000000));
 }

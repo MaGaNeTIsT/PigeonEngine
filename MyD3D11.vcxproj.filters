@@ -314,9 +314,6 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMesh.cpp">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
     </ClCompile>
@@ -425,6 +422,12 @@
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultSkyBoxVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>

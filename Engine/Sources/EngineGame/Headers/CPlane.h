@@ -29,7 +29,6 @@ public:
 	CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	virtual ~CPlane();
 protected:
-	CustomStruct::ConstantBufferPerDraw	m_ConstantBuffer;
 	CTexture2D*		m_AlbedoTexture;
 	CTexture2D*		m_NormalTexture;
 	CTexture2D*		m_PropertyTexture;

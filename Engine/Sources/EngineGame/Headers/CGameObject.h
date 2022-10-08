@@ -91,9 +91,9 @@ public:
 	void AddChild(CGameObject* child) { m_Child[child->m_UID] = child; }
 	void RemoveChild(CGameObject* child) { m_Child.erase(child->m_UID); }
 public:
-	void AddMesh(CMesh* mesh) { m_Mesh = mesh; }
+	void AddMesh(std::shared_ptr<CMesh<UINT>> mesh) { m_Mesh = mesh; }
 	void AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
-	CMesh* GetMesh()const { return m_Mesh; }
+	std::shared_ptr<CMesh<UINT>> GetMesh()const { return m_Mesh; }
 	CMeshRenderer* GetMeshRenderer()const { return m_MeshRenderer; }
 protected:
 	ULONGLONG							m_UID;
@@ -102,7 +102,7 @@ protected:
 	CGameObject*						m_Parent			= NULL;
 	std::map<ULONGLONG,CGameObject*>	m_Child;
 
-	CMesh*								m_Mesh				= NULL;
+	std::shared_ptr<CMesh<UINT>>		m_Mesh				= nullptr;
 	CMeshRenderer*						m_MeshRenderer		= NULL;
 
 	CGameBoundingBox*					m_BoundingBox		= NULL;

@@ -60,7 +60,7 @@ namespace CustomStruct
 		XMFLOAT4X4	WorldMatrix;
 		XMFLOAT4X4	WorldInvMatrix;
 		XMFLOAT4X4	WorldInvTransposeMatrix;
-		XMFLOAT4	_CustomParameter;
+		XMFLOAT4	CustomParameter;
 	};
 
 	struct CVertex3D
@@ -711,18 +711,79 @@ namespace CustomStruct
 
 	enum CRenderInputClassification
 	{
-		D3D11_INPUT_PER_VERTEX_DATA		= 0,
-		D3D11_INPUT_PER_INSTANCE_DATA	= 1
+		INPUT_PER_VERTEX_DATA	= 0,
+		INPUT_PER_INSTANCE_DATA	= 1
 	};
 
 	struct CRenderInputLayoutDesc
 	{
+		CRenderInputLayoutDesc()
+		{
+			SemanticName			= CRenderShaderSemantic::SHADER_SEMANTIC_POSITION;
+			SemanticIndex			= 0u;
+			InputSlot				= 0u;
+			InputSlotClass			= CRenderInputClassification::INPUT_PER_VERTEX_DATA;
+			InstanceDataStepRate	= 0u;
+		}
+		CRenderInputLayoutDesc(CRenderShaderSemantic name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, CRenderInputClassification inputSlotClass = CRenderInputClassification::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u)
+		{
+			SemanticName			= name;
+			SemanticIndex			= semanticIndex;
+			InputSlot				= inputSlot;
+			InputSlotClass			= inputSlotClass;
+			InstanceDataStepRate	= instanceDataStepRate;
+		}
+		const UINT& GetSemanticSizeByByte()const
+		{
+			static std::map<CRenderShaderSemantic, UINT> semanticSizeByByteMap = {
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, 8u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, 8u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, 16u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, 16u } };
+
+			return semanticSizeByByteMap[SemanticName];
+		}
+		const UINT& GetSemanticSizeByFloat()const
+		{
+			static std::map<CRenderShaderSemantic, UINT> semanticSizeByFloatMap = {
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, 2u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, 4u },
+				{ CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, 4u } };
+
+			return semanticSizeByFloatMap[SemanticName];
+		}
 		CRenderShaderSemantic		SemanticName;
 		UINT						SemanticIndex;
-		CRenderFormat				Format;
 		UINT						InputSlot;
 		CRenderInputClassification	InputSlotClass;
 		UINT						InstanceDataStepRate;
+		static const CRenderInputLayoutDesc* GetFullLayouts()
+		{
+			const static CRenderInputLayoutDesc fullLayouts[5] = {
+				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_COLOR),
+				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+			return fullLayouts;
+		}
+		static const UINT& GetFullLayoutNum()
+		{
+			const static UINT fullLayoutNum = 5u;
+			return fullLayoutNum;
+		}
 	};
 
 	enum CRenderMapType

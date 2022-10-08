@@ -77,6 +77,8 @@ using namespace DirectX;
 #define ENGINE_SHADER_NONE									("EngineBase/Shader/None")
 #define ENGINE_SHADER_DEFAULT_VS							("./Engine/Assets/EngineShaders/EngineDefaultVS.cso")
 #define ENGINE_SHADER_DEFAULT_PS							("./Engine/Assets/EngineShaders/EngineDefaultPS.cso")
+#define ENGINE_SHADER_DEFAULT_TERRAIN_VS					("./Engine/Assets/EngineShaders/EngineDefaultTerrainVS.cso")
+#define ENGINE_SHADER_DEFAULT_TERRAIN_PS					("./Engine/Assets/EngineShaders/EngineDefaultTerrainPS.cso")
 #define ENGINE_SHADER_EMPTY_PS								("./Engine/Assets/EngineShaders/EngineEmptyPS.cso")
 #define ENGINE_SHADER_GBUFFER_WRITE_PS						("./Engine/Assets/EngineShaders/EngineGBufferWritePS.cso")
 #define ENGINE_SHADER_DIRECT_LIGHT_PS						("./Engine/Assets/EngineShaders/EngineDirectLightPS.cso")

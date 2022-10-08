@@ -99,7 +99,7 @@ public:
 	static void		Init(HWND hWnd, const CustomType::Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
 	static void		Uninit();
 public:
-	static BOOL		LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout = NULL);
+	static BOOL		LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum);
 	static BOOL		LoadPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader>& pixelShader);
 	static BOOL		LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
 	static BOOL		CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const CustomStruct::CRenderBufferDesc& bufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
@@ -197,6 +197,7 @@ private:
 	static void		TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input);
 	static void		TranslateMapType(D3D11_MAP& output, CustomStruct::CRenderMapType input);
 	static void		TranslateMapFlag(UINT& output, CustomStruct::CRenderMapFlag input);
+	static void		TranslateInputLayoutDesc(D3D11_INPUT_ELEMENT_DESC& output, const CustomStruct::CRenderInputLayoutDesc& input);
 public:
 	static void		ClearFinalOutput();
 	static void		SetFinalOutput();

@@ -24,9 +24,14 @@ CCube::~CCube()
 }
 void CCube::Init()
 {
-	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
-	this->m_Mesh = CMeshManager::LoadCubeMesh();
-	this->m_MeshRenderer->LoadShader();
+	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+	this->m_Mesh = CMeshManager::LoadCubeMesh(desc, 4u);
+	this->m_MeshRenderer = new CMeshRenderer();
+	this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
 
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Cloud001.tga");
 	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
@@ -59,11 +64,7 @@ void CCube::PrepareDraw()
 {
 	CustomType::Matrix4x4 tempWorldMatrix(this->GetLocalToWorldMatrix());
 	CustomType::Matrix4x4 tempWorldInverseMatrix(tempWorldMatrix.Inverse());
-	this->m_ConstantBuffer.WorldMatrix = tempWorldMatrix.GetGPUUploadFloat4x4();
-	this->m_ConstantBuffer.WorldInvMatrix = tempWorldInverseMatrix.GetGPUUploadFloat4x4();
-	this->m_ConstantBuffer.WorldInvTransposeMatrix = tempWorldInverseMatrix.GetXMFLOAT4X4();
-
-	this->m_MeshRenderer->UploadPerDrawConstantBuffer(this->m_ConstantBuffer);
+	this->m_MeshRenderer->SetPerDrawInfo(tempWorldMatrix, tempWorldInverseMatrix, CustomType::Vector4::Zero());
 }
 void CCube::Draw()
 {

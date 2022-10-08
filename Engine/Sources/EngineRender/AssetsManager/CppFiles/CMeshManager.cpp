@@ -1,6 +1,5 @@
 #include "../Headers/CMeshManager.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
-#include "../Headers/CMesh.h"
 
 CMeshManager* CMeshManager::m_MeshManager = new CMeshManager();
 void CMeshManager::ShutDown()
@@ -9,49 +8,45 @@ void CMeshManager::ShutDown()
 }
 void CMeshManager::ClearMeshData()
 {
-	if (m_MeshManager->m_Data.size() > 0)
+	if (m_MeshManager->m_Data.size() > 0u)
 	{
-		for (const auto& data : (m_MeshManager->m_Data))
-		{
-			if ((data.second) != NULL)
-			{
-				delete (data.second);
-			}
-		}
 		m_MeshManager->m_Data.clear();
 	}
 }
-CMesh* CMeshManager::LoadMeshFromFile(const std::string& name, const BOOL& recalculateTangent)
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	const static std::string _objName = "obj";
 
-	CMesh* resultMesh = CMeshManager::FindMeshData(name);
-	if (resultMesh != NULL)
+	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	std::shared_ptr<CMesh<UINT>> resultMesh = CMeshManager::FindMeshData((name + descName));
+	if (resultMesh != nullptr)
 		return resultMesh;
 	{
 		size_t pos = name.find_last_of('.');
 		if (pos == std::string::npos)
-			return NULL;
+			return nullptr;
 		std::string typeName = name.substr(pos + 1, name.length());
 
 		if (typeName == _objName)
-			resultMesh = (CMeshManager::LoadOBJMesh(name, recalculateTangent));
+			resultMesh = (CMeshManager::LoadOBJMesh(name, inputLayoutDesc, inputLayoutNum, needVertexData));
 		else
-			return NULL;
+			return nullptr;
 
-		if (resultMesh == NULL)
-			return NULL;
+		if (resultMesh == nullptr)
+			return nullptr;
 
-		CMeshManager::AddMeshData(name, resultMesh);
+		CMeshManager::AddMeshData((name + descName), resultMesh);
 	}
 	return resultMesh;
 }
-CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
+	if (inputLayoutNum < 1u || inputLayoutDesc == NULL)
+		return nullptr;
 	if (length.X() <= 0.f || length.Y() <= 0.f || vertexCount.X() < 2 || vertexCount.Y() < 2)
-		return NULL;
+		return nullptr;
 	if (CustomType::CMath::Abs(uv.X()) < 0.01f || CustomType::CMath::Abs(uv.Y()) < 0.01f)
-		return NULL;
+		return nullptr;
 	std::string tempName = ENGINE_MESH_PLANE_NAME;
 	tempName = tempName +
 		"_cx_" + std::to_string(vertexCount.X()) +
@@ -60,12 +55,21 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 		"_lz_" + std::to_string(length.Y()) +
 		"_u_" + std::to_string(uv.X()) +
 		"_v_" + std::to_string(uv.Y());
-	CMesh* findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != NULL)
+	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != nullptr)
 		return findResult;
-	std::vector<CustomStruct::CVertex3D> vertex;
+
+	void* vertices = nullptr;
+	UINT vertexNum = 0u;
 	{
-		vertex.resize(vertexCount.X() * vertexCount.Y());
+		vertexNum = static_cast<UINT>(vertexCount.X() * vertexCount.Y());
+		UINT vertexStride = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
 		//
 		//                  Y
 		//                  ^
@@ -79,15 +83,11 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 		//        /               /
 		//       2---------------3
 		//
-		XMFLOAT4 normal(0.f, 1.f, 0.f, 0.f);
-		XMFLOAT4 tangent(1.f, 0.f, 0.f, 0.f);
-		XMFLOAT4 color(1.f, 1.f, 1.f, 1.f);
-		for (INT i = 0; i < vertex.size(); i++)
-		{
-			vertex[i].Normal = normal;
-			vertex[i].Tangent = tangent;
-			vertex[i].Color = color;
-		}
+		const static FLOAT normal[4u]	= { 0.f, 1.f, 0.f, 0.f };
+		const static FLOAT tangent[4u]	= { 1.f, 0.f, 0.f, 0.f };
+		const static FLOAT color[4u]	= { 0.5f, 0.5f, 0.5f, 1.f };
+		FLOAT* position = new FLOAT[4u * vertexNum];
+		FLOAT* texcoord = new FLOAT[2u * vertexNum];
 		FLOAT tx = 0.f, tz = 0.f, px = 0.f, pz = 0.f, u = 0.f, v = 0.f;
 		for (INT z = 0; z < vertexCount.Y(); z++)
 		{
@@ -101,10 +101,66 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 				pz = CustomType::CMath::Lerp(length.Y() * 0.5f, length.Y() * (-0.5f), tz);
 				v = CustomType::CMath::Lerp(CustomType::CMath::Min(0.f, uv.Y()), CustomType::CMath::Max(0.f, uv.Y()), tz);
 
-				vertex[z * vertexCount.X() + x].Position = XMFLOAT4(px, 0.f, pz, 1.f);
-				vertex[z * vertexCount.X() + x].UV0 = XMFLOAT2(u, v);
+				position[(z * vertexCount.X() + x) * 4 + 0] = px;
+				position[(z * vertexCount.X() + x) * 4 + 1] = 0.f;
+				position[(z * vertexCount.X() + x) * 4 + 2] = pz;
+				position[(z * vertexCount.X() + x) * 4 + 3] = 1.f;
+				texcoord[(z * vertexCount.X() + x) * 2 + 0] = u;
+				texcoord[(z * vertexCount.X() + x) * 2 + 1] = v;
 			}
 		}
+		for (UINT vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
+		{
+			CHAR* tempVertex = &((static_cast<CHAR*>(vertices))[vertexIndex * vertexStride]);
+			for (UINT layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
+			{
+				if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+				{
+					FLOAT* tempPosition = (FLOAT*)tempVertex;
+					tempPosition[0u] = position[vertexIndex * 4u + 0u];
+					tempPosition[1u] = position[vertexIndex * 4u + 1u];
+					tempPosition[2u] = position[vertexIndex * 4u + 2u];
+					tempPosition[3u] = position[vertexIndex * 4u + 3u];
+					tempVertex = &(tempVertex[16]);
+				}
+				else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD)
+				{
+					FLOAT* tempTexcoord = (FLOAT*)tempVertex;
+					tempTexcoord[0u] = texcoord[vertexIndex * 2u + 0u];
+					tempTexcoord[1u] = texcoord[vertexIndex * 2u + 1u];
+					tempVertex = &(tempVertex[8]);
+				}
+				else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL)
+				{
+					FLOAT* tempNormal = (FLOAT*)tempVertex;
+					tempNormal[0u] = normal[0u];
+					tempNormal[1u] = normal[1u];
+					tempNormal[2u] = normal[2u];
+					tempNormal[3u] = normal[3u];
+					tempVertex = &(tempVertex[16]);
+				}
+				else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT)
+				{
+					FLOAT* tempTangent = (FLOAT*)tempVertex;
+					tempTangent[0u] = tangent[0u];
+					tempTangent[1u] = tangent[1u];
+					tempTangent[2u] = tangent[2u];
+					tempTangent[3u] = tangent[3u];
+					tempVertex = &(tempVertex[16]);
+				}
+				else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR)
+				{
+					FLOAT* tempColor = (FLOAT*)tempVertex;
+					tempColor[0u] = color[0u];
+					tempColor[1u] = color[1u];
+					tempColor[2u] = color[2u];
+					tempColor[3u] = color[3u];
+					tempVertex = &(tempVertex[16]);
+				}
+			}
+		}
+		delete[]position;
+		delete[]texcoord;
 	}
 	std::vector<UINT> index;
 	{
@@ -124,18 +180,19 @@ CMesh* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const Cust
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
+	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	return mesh;
 }
-CMesh* CMeshManager::LoadCubeMesh()
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_CUBE_NAME;
-	CMesh* findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != NULL)
+	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != nullptr)
 		return findResult;
-	std::vector<CustomStruct::CVertex3D> vertex;
+	void* vertices = nullptr;
+	UINT vertexNum = 24u;
 	{
-		vertex.resize(24);
 		//
 		// Back->Right->Forward->Left->Top->Bottom
 		//                  Y
@@ -147,133 +204,104 @@ CMesh* CMeshManager::LoadCubeMesh()
 		//     |        |   | /
 		//     2--------3   0---------------->X
 		//
-		XMFLOAT4 white(1.f, 1.f, 1.f, 1.f);
-		for (UINT i = 0u; i < 24u; i++)
-			vertex[i].Color = white;
-		vertex[0].Position = XMFLOAT4(-0.5f, 0.5f, -0.5f, 1.f);
-		vertex[1].Position = XMFLOAT4(0.5f, 0.5f, -0.5f, 1.f);
-		vertex[2].Position = XMFLOAT4(-0.5f, -0.5f, -0.5f, 1.f);
-		vertex[3].Position = XMFLOAT4(0.5f, -0.5f, -0.5f, 1.f);
-		vertex[0].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[1].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[2].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[3].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[0].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[1].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[2].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[3].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
-		vertex[4].Position = XMFLOAT4(0.5f, 0.5f, -0.5f, 1.f);
-		vertex[5].Position = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.f);
-		vertex[6].Position = XMFLOAT4(0.5f, -0.5f, -0.5f, 1.f);
-		vertex[7].Position = XMFLOAT4(0.5f, -0.5f, 0.5f, 1.f);
-		vertex[4].Normal = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[5].Normal = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[6].Normal = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[7].Normal = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[4].Tangent = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[5].Tangent = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[6].Tangent = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[7].Tangent = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[4].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[5].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[6].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[7].UV0 = XMFLOAT2(1.f, 1.f);
-		vertex[8].Position = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.f);
-		vertex[9].Position = XMFLOAT4(-0.5f, 0.5f, 0.5f, 1.f);
-		vertex[10].Position = XMFLOAT4(0.5f, -0.5f, 0.5f, 1.f);
-		vertex[11].Position = XMFLOAT4(-0.5f, -0.5f, 0.5f, 1.f);
-		vertex[8].Normal = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[9].Normal = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[10].Normal = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[11].Normal = XMFLOAT4(0.f, 0.f, 1.f, 0.f);
-		vertex[8].Tangent = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[9].Tangent = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[10].Tangent = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[11].Tangent = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[8].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[9].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[10].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[11].UV0 = XMFLOAT2(1.f, 1.f);
-		vertex[12].Position = XMFLOAT4(-0.5f, 0.5f, 0.5f, 1.f);
-		vertex[13].Position = XMFLOAT4(-0.5f, 0.5f, -0.5f, 1.f);
-		vertex[14].Position = XMFLOAT4(-0.5f, -0.5f, 0.5f, 1.f);
-		vertex[15].Position = XMFLOAT4(-0.5f, -0.5f, -0.5f, 1.f);
-		vertex[12].Normal = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[13].Normal = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[14].Normal = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[15].Normal = XMFLOAT4(-1.f, 0.f, 0.f, 0.f);
-		vertex[12].Tangent = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[13].Tangent = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[14].Tangent = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[15].Tangent = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[12].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[13].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[14].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[15].UV0 = XMFLOAT2(1.f, 1.f);
-		vertex[16].Position = XMFLOAT4(-0.5f, 0.5f, 0.5f, 1.f);
-		vertex[17].Position = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.f);
-		vertex[18].Position = XMFLOAT4(-0.5f, 0.5f, -0.5f, 1.f);
-		vertex[19].Position = XMFLOAT4(0.5f, 0.5f, -0.5f, 1.f);
-		vertex[16].Normal = XMFLOAT4(0.f, 1.f, 0.f, 0.f);
-		vertex[17].Normal = XMFLOAT4(0.f, 1.f, 0.f, 0.f);
-		vertex[18].Normal = XMFLOAT4(0.f, 1.f, 0.f, 0.f);
-		vertex[19].Normal = XMFLOAT4(0.f, 1.f, 0.f, 0.f);
-		vertex[16].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[17].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[18].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[19].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[16].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[17].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[18].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[19].UV0 = XMFLOAT2(1.f, 1.f);
-		vertex[20].Position = XMFLOAT4(-0.5f, -0.5f, -0.5f, 1.f);
-		vertex[21].Position = XMFLOAT4(0.5f, -0.5f, -0.5f, 1.f);
-		vertex[22].Position = XMFLOAT4(-0.5f, -0.5f, 0.5f, 1.f);
-		vertex[23].Position = XMFLOAT4(0.5f, -0.5f, 0.5f, 1.f);
-		vertex[20].Normal = XMFLOAT4(0.f, -1.f, 0.f, 0.f);
-		vertex[21].Normal = XMFLOAT4(0.f, -1.f, 0.f, 0.f);
-		vertex[22].Normal = XMFLOAT4(0.f, -1.f, 0.f, 0.f);
-		vertex[23].Normal = XMFLOAT4(0.f, -1.f, 0.f, 0.f);
-		vertex[20].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[21].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[22].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[23].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[20].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[21].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[22].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[23].UV0 = XMFLOAT2(1.f, 1.f);
+		const static FLOAT position[24u * 4u] = {
+			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
+
+			0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
+			0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f,
+
+			0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, 0.5f, 1.f,
+			0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, 0.5f, 1.f,
+
+			-0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, -0.5f, 1.f,
+
+			-0.5f, 0.5f, 0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
+			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
+
+			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, 0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f };
+		const static FLOAT normal[24u * 4u] = {
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+
+			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+
+			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f,
+			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f };
+		const static FLOAT tangent[24u * 4u] = {
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
+		const static FLOAT texcoord[24u * 2u] = {
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+		UINT vertexStride = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
+		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
+			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
 	std::vector<UINT> index;
 	{
 		index.resize(36);
 		for (UINT i = 0u; i < 6u; i++)
 		{
-			index[i * 6u + 0u] = i * 4u + 0;
-			index[i * 6u + 1u] = i * 4u + 1;
-			index[i * 6u + 2u] = i * 4u + 2;
+			index[i * 6u + 0u] = i * 4u + 0u;
+			index[i * 6u + 1u] = i * 4u + 1u;
+			index[i * 6u + 2u] = i * 4u + 2u;
 
-			index[i * 6u + 3u] = i * 4u + 1;
-			index[i * 6u + 4u] = i * 4u + 3;
-			index[i * 6u + 5u] = i * 4u + 2;
+			index[i * 6u + 3u] = i * 4u + 1u;
+			index[i * 6u + 4u] = i * 4u + 3u;
+			index[i * 6u + 5u] = i * 4u + 2u;
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
+	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	return mesh;
 }
-CMesh* CMeshManager::LoadPolygonMesh()
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_NAME;
-	CMesh* findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != NULL)
+	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != nullptr)
 		return findResult;
-	std::vector<CustomStruct::CVertex3D> vertex;
+	void* vertices = nullptr;
+	UINT vertexNum = 4u;
 	{
-		vertex.resize(4);
 		//
 		//          Y
 		//  (0, 0)  ^
@@ -289,25 +317,24 @@ CMesh* CMeshManager::LoadPolygonMesh()
 		//     2--------3
 		//            (1, 1)
 		//
-		XMFLOAT4 white(1.f, 1.f, 1.f, 1.f);
-		for (UINT i = 0u; i < 4; i++)
-			vertex[i].Color = white;
-		vertex[0].Position = XMFLOAT4(-0.5f, 0.5f, 0.f, 1.f);
-		vertex[1].Position = XMFLOAT4(0.5f, 0.5f, 0.f, 1.f);
-		vertex[2].Position = XMFLOAT4(-0.5f, -0.5f, 0.f, 1.f);
-		vertex[3].Position = XMFLOAT4(0.5f, -0.5f, 0.f, 1.f);
-		vertex[0].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[1].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[2].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[3].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[0].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[1].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[2].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[3].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
+		const static FLOAT position[4u * 4u] = {
+			-0.5f, 0.5f, 0.f, 1.f, 0.5f, 0.5f, 0.f, 1.f,
+			-0.5f, -0.5f, 0.f, 1.f, 0.5f, -0.5f, 0.f, 1.f };
+		const static FLOAT normal[4u * 4u] = {
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f };
+		const static FLOAT tangent[4u * 4u] = {
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
+		const static FLOAT texcoord[4u * 2u] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+		UINT vertexStride = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
+		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
+			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
 	std::vector<UINT> index;
 	{
@@ -316,10 +343,10 @@ CMesh* CMeshManager::LoadPolygonMesh()
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
+	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	return mesh;
 }
-CMesh* CMeshManager::LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& customSize)
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
 	tempName = tempName +
@@ -327,12 +354,13 @@ CMesh* CMeshManager::LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& 
 		"_y_" + std::to_string(customSize.Y()) +
 		"_z_" + std::to_string(customSize.Z()) +
 		"_w_" + std::to_string(customSize.W());
-	CMesh* findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != NULL)
+	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
+	if (findResult != nullptr)
 		return findResult;
-	std::vector<CustomStruct::CVertex3D> vertex;
+	void* vertices = nullptr;
+	UINT vertexNum = 4u;
 	{
-		vertex.resize(4);
 		//
 		//  (x, y)
 		//     0--------1
@@ -347,25 +375,26 @@ CMesh* CMeshManager::LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& 
 		//     2--------3
 		//            (z, w)
 		//
-		XMFLOAT4 white(1.f, 1.f, 1.f, 1.f);
-		for (UINT i = 0u; i < 4; i++)
-			vertex[i].Color = white;
-		vertex[0].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
-		vertex[1].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
-		vertex[2].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
-		vertex[3].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
-		vertex[0].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[1].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[2].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[3].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[0].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[1].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[2].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[3].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
+		const static FLOAT normal[4u * 4u] = {
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f };
+		const static FLOAT tangent[4u * 4u] = {
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
+		const static FLOAT texcoord[4u * 2u] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+		FLOAT position[4u * 4u] = {
+			static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f,
+			static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f,
+			static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f,
+			static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f };
+		UINT vertexStride = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
+		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
+			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
 	std::vector<UINT> index;
 	{
@@ -374,65 +403,7 @@ CMesh* CMeshManager::LoadPolygon2DWithTangentMesh(const CustomType::Vector4Int& 
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
-	return mesh;
-}
-CMesh* CMeshManager::LoadPolygon2DWithInputLayoutMesh(const CustomType::Vector4Int& customSize = CustomType::Vector4Int(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT))
-{
-	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
-	tempName = tempName +
-		"_x_" + std::to_string(customSize.X()) +
-		"_y_" + std::to_string(customSize.Y()) +
-		"_z_" + std::to_string(customSize.Z()) +
-		"_w_" + std::to_string(customSize.W());
-	CMesh* findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != NULL)
-		return findResult;
-	std::vector<CustomStruct::CVertex3D> vertex;
-	{
-		vertex.resize(4);
-		//
-		//  (x, y)
-		//     0--------1
-		//     |       /|
-		//     | (1)  /	|
-		//     |     /	|
-		//     |    /	|
-		//     |   /    |
-		//     |  /     |
-		//     | /  (2) |
-		//     |/       |
-		//     2--------3
-		//            (z, w)
-		//
-		XMFLOAT4 white(1.f, 1.f, 1.f, 1.f);
-		for (UINT i = 0u; i < 4; i++)
-			vertex[i].Color = white;
-		vertex[0].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
-		vertex[1].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f);
-		vertex[2].Position = XMFLOAT4(static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
-		vertex[3].Position = XMFLOAT4(static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f);
-		vertex[0].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[1].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[2].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[3].Normal = XMFLOAT4(0.f, 0.f, -1.f, 0.f);
-		vertex[0].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[1].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[2].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[3].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertex[0].UV0 = XMFLOAT2(0.f, 0.f);
-		vertex[1].UV0 = XMFLOAT2(1.f, 0.f);
-		vertex[2].UV0 = XMFLOAT2(0.f, 1.f);
-		vertex[3].UV0 = XMFLOAT2(1.f, 1.f);
-	}
-	std::vector<UINT> index;
-	{
-		index.resize(6);
-		index[0] = 0; index[1] = 1; index[2] = 2;
-		index[3] = 1; index[4] = 3; index[5] = 2;
-	}
-	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(tempName, vertex, index, submesh);
+	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	return mesh;
 }
 CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2)
@@ -455,9 +426,216 @@ CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::
 		st2.Y() * q1.Y() + (-st1.Y()) * q2.Y(),
 		st2.Y() * q1.Z() + (-st1.Y()) * q2.Z()) * scale);
 }
-CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculateTangent)
+template<typename IndexType>
+void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubMeshInfo>& submesh, const std::vector<IndexType>& indices, void* vertices, const UINT& vertexNum, const UINT& vertexStride, const UINT& offsetPosition, const UINT& offsetTexcoord, const UINT& offsetTangent)
 {
-	std::vector<CustomStruct::CVertex3D> vertex;
+	for (UINT i = 0u; i < vertexNum; i++)
+	{
+		CHAR* tempVertex = (&(((CHAR*)vertices)[i * vertexStride]));
+		FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
+		tempTangent[0u] = 0.f;
+		tempTangent[1u] = 0.f;
+		tempTangent[2u] = 0.f;
+		tempTangent[3u] = 0.f;
+	}
+	if (submesh.size() > 1)
+	{
+		CustomType::Vector3 p[3u];
+		CustomType::Vector2 uv[3u];
+		CustomType::Vector3 newT, tempT;
+		UINT triangleNum, triangleIndex, vertexIndex;
+		CHAR* tempVertex; FLOAT* tempPosition; FLOAT* tempTexcoord; FLOAT* tempTangent;
+		for (UINT subIndex = 0u; subIndex < submesh.size(); subIndex++)
+		{
+			const CustomStruct::CSubMeshInfo& subInfo = submesh[subIndex];
+			triangleNum = subInfo.IndexCount / 3u;
+			for (UINT i = 0u; i < triangleNum; i++)
+			{
+				for (UINT j = 0u; j < 3u; j++)
+				{
+					triangleIndex = subInfo.IndexStart + i * 3u + j;
+					vertexIndex = subInfo.VertexStart + static_cast<UINT>(indices[triangleIndex]);
+					tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
+					tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
+					tempTexcoord = (FLOAT*)(&(tempVertex[offsetTexcoord]));
+					p[j] = CustomType::Vector3(tempPosition[0u], tempPosition[1u], tempPosition[2u]);
+					uv[j] = CustomType::Vector2(tempTexcoord[0u], tempTexcoord[1u]);
+				}
+				newT = CMeshManager::CalculateTangentForTriangle(p[0u], p[1u], p[2u], uv[0u], uv[1u], uv[2u]);
+				for (UINT j = 0u; j < 3u; j++)
+				{
+					triangleIndex = subInfo.IndexStart + i * 3u + j;
+					vertexIndex = subInfo.VertexStart + static_cast<UINT>(indices[triangleIndex]);
+					tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
+					tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
+					tempT = CustomType::Vector3(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
+					tempT += newT;
+					tempTangent[0u] = tempT.X();
+					tempTangent[1u] = tempT.Y();
+					tempTangent[2u] = tempT.Z();
+					tempTangent[3u] = 0.f;
+				}
+			}
+		}
+	}
+	else
+	{
+		CustomType::Vector3 p[3u];
+		CustomType::Vector2 uv[3u];
+		CustomType::Vector3 newT, tempT;
+		UINT triangleIndex, vertexIndex;
+		CHAR* tempVertex; FLOAT* tempPosition; FLOAT* tempTexcoord; FLOAT* tempTangent;
+		UINT triangleNum = static_cast<UINT>(indices.size()) / 3u;
+		for (UINT i = 0u; i < triangleNum; i++)
+		{
+			for (UINT j = 0u; j < 3u; j++)
+			{
+				triangleIndex = i * 3u + j;
+				vertexIndex = static_cast<UINT>(indices[triangleIndex]);
+				tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
+				tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
+				tempTexcoord = (FLOAT*)(&(tempVertex[offsetTexcoord]));
+				p[j] = CustomType::Vector3(tempPosition[0u], tempPosition[1u], tempPosition[2u]);
+				uv[j] = CustomType::Vector2(tempTexcoord[0u], tempTexcoord[1u]);
+			}
+			newT = CMeshManager::CalculateTangentForTriangle(p[0u], p[1u], p[2u], uv[0u], uv[1u], uv[2u]);
+			for (UINT j = 0u; j < 3u; j++)
+			{
+				triangleIndex = i * 3u + j;
+				vertexIndex = static_cast<UINT>(indices[triangleIndex]);
+				tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
+				tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
+				tempT = CustomType::Vector3(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
+				tempT += newT;
+				tempTangent[0u] = tempT.X();
+				tempTangent[1u] = tempT.Y();
+				tempTangent[2u] = tempT.Z();
+				tempTangent[3u] = 0.f;
+			}
+		}
+	}
+	for (UINT i = 0u; i < vertexNum; i++)
+	{
+		CHAR* tempVertex = (&(((CHAR*)vertices)[i * vertexStride]));
+		FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
+		CustomType::Vector3 normalizedT(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
+		normalizedT.Normalize();
+		tempTangent[0u] = normalizedT.X();
+		tempTangent[1u] = normalizedT.Y();
+		tempTangent[2u] = normalizedT.Z();
+		tempTangent[3u] = 0.f;
+	}
+}
+void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, const UINT& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color)
+{
+	const static FLOAT defaultPosition[4] = { 0.f, 0.f, 0.f, 1.f };
+	const static FLOAT defaultTexcoord[2] = { 0.f, 0.f };
+	const static FLOAT defaultNormal[4] = { 0.f, 1.f, 0.f, 0.f };
+	const static FLOAT defaultTangent[4] = { 1.f, 0.f, 0.f, 0.f };
+	const static FLOAT defaultColor[4] = { 0.5f, 0.5f, 0.5f, 1.f };
+	for (UINT vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
+	{
+		CHAR* tempVertex = &((static_cast<CHAR*>(vertices))[vertexIndex * vertexStride]);
+		for (UINT layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
+		{
+			if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+			{
+				FLOAT* tempPosition = (FLOAT*)tempVertex;
+				if (position != NULL)
+				{
+					tempPosition[0u] = position[vertexIndex * 4u + 0u];
+					tempPosition[1u] = position[vertexIndex * 4u + 1u];
+					tempPosition[2u] = position[vertexIndex * 4u + 2u];
+					tempPosition[3u] = position[vertexIndex * 4u + 3u];
+				}
+				else
+				{
+					tempPosition[0u] = defaultPosition[0u];
+					tempPosition[1u] = defaultPosition[1u];
+					tempPosition[2u] = defaultPosition[2u];
+					tempPosition[3u] = defaultPosition[3u];
+				}
+				tempVertex = &(tempVertex[16]);
+			}
+			else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD)
+			{
+				FLOAT* tempTexcoord = (FLOAT*)tempVertex;
+				if (texcoord != NULL)
+				{
+					tempTexcoord[0u] = texcoord[vertexIndex * 2u + 0u];
+					tempTexcoord[1u] = texcoord[vertexIndex * 2u + 1u];
+				}
+				else
+				{
+					tempTexcoord[0u] = defaultTexcoord[0u];
+					tempTexcoord[1u] = defaultTexcoord[1u];
+				}
+				tempVertex = &(tempVertex[8]);
+			}
+			else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL)
+			{
+				FLOAT* tempNormal = (FLOAT*)tempVertex;
+				if (normal != NULL)
+				{
+					tempNormal[0u] = normal[vertexIndex * 4u + 0u];
+					tempNormal[1u] = normal[vertexIndex * 4u + 1u];
+					tempNormal[2u] = normal[vertexIndex * 4u + 2u];
+					tempNormal[3u] = normal[vertexIndex * 4u + 3u];
+				}
+				else
+				{
+					tempNormal[0u] = defaultNormal[0u];
+					tempNormal[1u] = defaultNormal[1u];
+					tempNormal[2u] = defaultNormal[2u];
+					tempNormal[3u] = defaultNormal[3u];
+				}
+				tempVertex = &(tempVertex[16]);
+			}
+			else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT)
+			{
+				FLOAT* tempTangent = (FLOAT*)tempVertex;
+				if (tangent != NULL)
+				{
+					tempTangent[0u] = tangent[vertexIndex * 4u + 0u];
+					tempTangent[1u] = tangent[vertexIndex * 4u + 1u];
+					tempTangent[2u] = tangent[vertexIndex * 4u + 2u];
+					tempTangent[3u] = tangent[vertexIndex * 4u + 3u];
+				}
+				else
+				{
+					tempTangent[0u] = defaultTangent[0u];
+					tempTangent[1u] = defaultTangent[1u];
+					tempTangent[2u] = defaultTangent[2u];
+					tempTangent[3u] = defaultTangent[3u];
+				}
+				tempVertex = &(tempVertex[16]);
+			}
+			else if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR)
+			{
+				FLOAT* tempColor = (FLOAT*)tempVertex;
+				if (color != NULL)
+				{
+					tempColor[0u] = color[vertexIndex * 4u + 0u];
+					tempColor[1u] = color[vertexIndex * 4u + 1u];
+					tempColor[2u] = color[vertexIndex * 4u + 2u];
+					tempColor[3u] = color[vertexIndex * 4u + 3u];
+				}
+				else
+				{
+					tempColor[0u] = defaultColor[0u];
+					tempColor[1u] = defaultColor[1u];
+					tempColor[2u] = defaultColor[2u];
+					tempColor[3u] = defaultColor[3u];
+				}
+				tempVertex = &(tempVertex[16]);
+			}
+		}
+	}
+}
+std::shared_ptr<CMesh<UINT>> CMeshManager::LoadOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+{
+	void* vertices = nullptr;
+	UINT verticesNum = 0u;
 	std::vector<UINT> index;
 	std::vector<CustomStruct::CSubMeshInfo> submesh;
 	{
@@ -525,7 +703,40 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculat
 		std::vector<CustomType::Vector3> normalArray(normalNum);
 		std::vector<CustomType::Vector2> texcoordArray(texcoordNum);
 
-		vertex.resize(vertexNum);
+		verticesNum = vertexNum;
+		UINT vertexStride = 0u;
+		BOOL needPosition = FALSE, needTexcoord = FALSE, needNormal = FALSE, needTangent = FALSE, needColor = FALSE;
+		UINT offsetPosition = 0u, offsetTexcoord = 0u, offsetNormal = 0u, offsetTangent = 0u, offsetColor = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+			{
+				needPosition = TRUE;
+				offsetPosition = vertexStride;
+			}
+			else if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD)
+			{
+				needTexcoord = TRUE;
+				offsetTexcoord = vertexStride;
+			}
+			else if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL)
+			{
+				needNormal = TRUE;
+				offsetNormal = vertexStride;
+			}
+			else if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT)
+			{
+				needTangent = TRUE;
+				offsetTangent = vertexStride;
+			}
+			else if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR)
+			{
+				needColor = TRUE;
+				offsetColor = vertexStride;
+			}
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
 		index.resize(indexNum);
 		submesh.resize(subMeshNum);
 
@@ -608,18 +819,54 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculat
 				{
 					fscanf_s(file, "%s", str, 256);
 
+					CHAR* tempVertex = &(((CHAR*)vertices)[vc * vertexStride]);
+
 					s = strtok_s(str, "/", &tok);
-					vertex[vc].Position = positionArray[atoi(s) - 1].GetXMFLOAT4();
+					if (needPosition)
+					{
+						FLOAT* tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
+						tempPosition[0u] = positionArray[atoi(s) - 1].X();
+						tempPosition[1u] = positionArray[atoi(s) - 1].Y();
+						tempPosition[2u] = positionArray[atoi(s) - 1].Z();
+						tempPosition[3u] = 1.f;
+					}
 					if (s[strnlen_s(s, 256) + 1] != '/')
 					{
 						s = strtok_s(NULL, "/", &tok);
-						vertex[vc].UV0 = texcoordArray[atoi(s) - 1].GetXMFLOAT2();
+						if (needTexcoord)
+						{
+							FLOAT* tempTexcoord = (FLOAT*)(&(tempVertex[offsetTexcoord]));
+							tempTexcoord[0u] = texcoordArray[atoi(s) - 1].X();
+							tempTexcoord[1u] = texcoordArray[atoi(s) - 1].Y();
+						}
 					}
 					s = strtok_s(NULL, "/", &tok);
-					vertex[vc].Normal = normalArray[atoi(s) - 1].GetXMFLOAT4();
-
-					vertex[vc].Color = XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-					vertex[vc].Tangent = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+					if (needNormal)
+					{
+						FLOAT* tempNormal = (FLOAT*)(&(tempVertex[offsetNormal]));
+						tempNormal[0u] = normalArray[atoi(s) - 1].X();
+						tempNormal[1u] = normalArray[atoi(s) - 1].Y();
+						tempNormal[2u] = normalArray[atoi(s) - 1].Z();
+						tempNormal[3u] = 0.f;
+					}
+					if (needColor)
+					{
+						FLOAT* tempColor = (FLOAT*)(&(tempVertex[offsetColor]));
+						tempColor[0u] = 0.5f;
+						tempColor[1u] = 0.5f;
+						tempColor[2u] = 0.5f;
+						tempColor[3u] = 1.f;
+					}
+#if 0
+					if (needTangent)
+					{
+						FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
+						tempTangent[0u] = 1.f;
+						tempTangent[1u] = 0.f;
+						tempTangent[2u] = 0.f;
+						tempTangent[3u] = 0.f;
+					}
+#endif
 
 					index[ic] = vc;
 
@@ -641,99 +888,56 @@ CMesh* CMeshManager::LoadOBJMesh(const std::string& name, const BOOL& recalculat
 		}
 		if (sc != 0u)
 			submesh[sc - 1u].IndexCount = ic - submesh[sc - 1u].IndexStart;
-	}
-	if (recalculateTangent)
-	{
-		for (INT i = 0; i < vertex.size(); i++)
+
+		if (needTangent)
 		{
-			vertex[i].Tangent = XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-		}
-		if (submesh.size() > 1)
-		{
-			CustomStruct::CSubMeshInfo subInfo;
-			CustomType::Vector3 p0, p1, p2;
-			CustomType::Vector2 uv0, uv1, uv2;
-			CustomType::Vector3 newT, oldT;
-			INT triangleNum, triangleIndex;
-			for (INT subIndex = 0; subIndex < submesh.size(); subIndex++)
-			{
-				subInfo = submesh[subIndex];
-				triangleNum = subInfo.IndexCount / 3;
-				for (INT i = 0; i < triangleNum; i++)
-				{
-					triangleIndex = subInfo.IndexStart + i * 3;
-					p0 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
-					uv0 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
-					triangleIndex = subInfo.IndexStart + i * 3 + 1;
-					p1 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
-					uv1 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
-					triangleIndex = subInfo.IndexStart + i * 3 + 2;
-					p2 = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Position);
-					uv2 = CustomType::Vector2(vertex[subInfo.VertexStart + index[triangleIndex]].UV0);
-					newT = CMeshManager::CalculateTangentForTriangle(p0, p1, p2, uv0, uv1, uv2);
-					triangleIndex = subInfo.IndexStart + i * 3;
-					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
-					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-					triangleIndex = subInfo.IndexStart + i * 3 + 1;
-					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
-					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-					triangleIndex = subInfo.IndexStart + i * 3 + 2;
-					oldT = CustomType::Vector3(vertex[subInfo.VertexStart + index[triangleIndex]].Tangent);
-					vertex[subInfo.VertexStart + index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-				}
-			}
-		}
-		else
-		{
-			CustomType::Vector3 p0, p1, p2;
-			CustomType::Vector2 uv0, uv1, uv2;
-			CustomType::Vector3 newT, oldT;
-			INT triangleIndex;
-			INT triangleNum = static_cast<INT>(index.size()) / 3;
-			for (INT i = 0; i < triangleNum; i++)
-			{
-				triangleIndex = i * 3;
-				p0 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
-				uv0 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
-				triangleIndex = i * 3 + 1;
-				p1 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
-				uv1 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
-				triangleIndex = i * 3 + 2;
-				p2 = CustomType::Vector3(vertex[index[triangleIndex]].Position);
-				uv2 = CustomType::Vector2(vertex[index[triangleIndex]].UV0);
-				newT = CMeshManager::CalculateTangentForTriangle(p0, p1, p2, uv0, uv1, uv2);
-				triangleIndex = i * 3;
-				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
-				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-				triangleIndex = i * 3 + 1;
-				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
-				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-				triangleIndex = i * 3 + 2;
-				oldT = CustomType::Vector3(vertex[index[triangleIndex]].Tangent);
-				vertex[index[triangleIndex]].Tangent = (oldT + newT).GetXMFLOAT4();
-			}
-		}
-		for (INT i = 0; i < vertex.size(); i++)
-		{
-			vertex[i].Tangent = CustomType::Vector3::Normalize(CustomType::Vector3(vertex[i].Tangent)).GetXMFLOAT4();
+			CMeshManager::CalculateTangentForMesh<UINT>(submesh, index, vertices, verticesNum, vertexStride, offsetPosition, offsetTexcoord, offsetTangent);
 		}
 	}
-	CMesh* mesh = CMeshManager::CreateMeshObject<CustomStruct::CVertex3D, UINT>(name, vertex, index, submesh);
+	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData);
 	return mesh;
 }
-template<typename vertexType, typename indexType>
-CMesh* CMeshManager::CreateMeshObject(const std::string& name, std::vector<vertexType>& vertexData, std::vector<indexType>& indexData, std::vector<CustomStruct::CSubMeshInfo> submeshData)
+std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+{
+	static std::map<CustomStruct::CRenderShaderSemantic, std::string> semanticStringMap = {
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, "Position" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, "Texcoord" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, "Normal" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, "Tangent" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, "Color" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, "BlendIndices" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, "BlendWeight" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, "PositionT" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, "PSize" },
+		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, "Binormal" } };
+
+	std::string result = "_";
+	result += std::to_string(inputLayoutNum);
+	for (UINT i = 0u; i < inputLayoutNum; i++)
+	{
+		result += "_";
+		result += semanticStringMap[inputLayoutDesc[i].SemanticName];
+	}
+	return result;
+}
+template<typename IndexType>
+std::shared_ptr<CMesh<IndexType>> CMeshManager::CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL& needVertexData)
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 	{
+		UINT vertexSize = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexSize += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
 		if (!CRenderDevice::CreateBuffer(
 			vertexBuffer,
 			CustomStruct::CRenderBufferDesc(
-				static_cast<UINT>(sizeof(vertexType) * vertexData.size()),
+				static_cast<UINT>(vertexSize * vertexNum),
 				CustomStruct::CRenderBindFlag::BIND_VERTEX_BUFFER, 0u),
-			&CustomStruct::CRenderSubresourceData(static_cast<const void*>(vertexData.data()), 0u, 0u)))
+			&CustomStruct::CRenderSubresourceData(vertexData, 0u, 0u)))
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
 	Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer = nullptr;
@@ -741,25 +945,35 @@ CMesh* CMeshManager::CreateMeshObject(const std::string& name, std::vector<verte
 		if (!CRenderDevice::CreateBuffer(
 			indexBuffer,
 			CustomStruct::CRenderBufferDesc(
-				static_cast<UINT>(sizeof(indexType) * indexData.size()),
+				static_cast<UINT>(sizeof(IndexType) * indexData.size()),
 				CustomStruct::CRenderBindFlag::BIND_INDEX_BUFFER, 0u),
 			&CustomStruct::CRenderSubresourceData(static_cast<const void*>(indexData.data()), 0u, 0u)))
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
-	CMesh* mesh = new CMesh(name, vertexData, indexData, submeshData, vertexBuffer, indexBuffer);
-	CMeshManager::AddMeshData(name, mesh);
-	return mesh;
+	if (needVertexData)
+	{
+		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer));
+		CMeshManager::AddMeshData(name, mesh);
+		return mesh;
+	}
+	else
+	{
+		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, nullptr, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer));
+		CMeshManager::AddMeshData(name, mesh);
+		delete[]vertexData;
+		return mesh;
+	}
 }
-void CMeshManager::AddMeshData(const std::string& name, CMesh* mesh)
+void CMeshManager::AddMeshData(const std::string& name, std::shared_ptr<CMesh<UINT>> mesh)
 {
 	m_MeshManager->m_Data[name] = mesh;
 }
-CMesh* CMeshManager::FindMeshData(const std::string& name)
+std::shared_ptr<CMesh<UINT>> CMeshManager::FindMeshData(const std::string& name)
 {
-	std::map<std::string, CMesh*>::iterator element = m_MeshManager->m_Data.find(name);
+	std::map<std::string, std::shared_ptr<CMesh<UINT>>>::iterator element = m_MeshManager->m_Data.find(name);
 	if (element == m_MeshManager->m_Data.end())
-		return NULL;
+		return nullptr;
 	return (element->second);
 }

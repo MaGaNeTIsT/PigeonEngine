@@ -24,9 +24,15 @@ CTestModel::~CTestModel()
 }
 void CTestModel::Init()
 {
-	this->m_MeshRenderer = new CMeshRenderer(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS);
-	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Engine/Assets/Robot/Object/Robot.obj", TRUE);
-	this->m_MeshRenderer->LoadShader();
+	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+
+	this->m_Mesh = CMeshManager::LoadMeshFromFile("./Engine/Assets/Robot/Object/Robot.obj", desc, 4u, TRUE);
+	this->m_MeshRenderer = new CMeshRenderer();
+	this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
 
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_BaseColor.tga", TRUE);
 	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_Normal.tga", FALSE);
@@ -35,22 +41,43 @@ void CTestModel::Init()
 	{
 		std::vector<FLOAT> minmax(6u, 0.f);
 
+		BOOL havePosition = FALSE;
+		UINT offsetPosition = 0u;
+		if (this->m_Mesh->IsHaveVertexData())
 		{
-			auto compare = [&minmax](const CustomStruct::CVertex3D& input)
+			UINT vertexStride = 0u;
+			for (UINT i = 0u; i < this->m_Mesh->GetInputLayoutDesc().size(); i++)
 			{
-				minmax[0 * 3 + 0] = CustomType::CMath::Min(input.Position.x, minmax[0 * 3 + 0]);
-				minmax[0 * 3 + 1] = CustomType::CMath::Min(input.Position.y, minmax[0 * 3 + 1]);
-				minmax[0 * 3 + 2] = CustomType::CMath::Min(input.Position.z, minmax[0 * 3 + 2]);
-				minmax[1 * 3 + 0] = CustomType::CMath::Max(input.Position.x, minmax[1 * 3 + 0]);
-				minmax[1 * 3 + 1] = CustomType::CMath::Max(input.Position.y, minmax[1 * 3 + 1]);
-				minmax[1 * 3 + 2] = CustomType::CMath::Max(input.Position.z, minmax[1 * 3 + 2]);
-			};
-			for (UINT i = 0u; i < this->m_Mesh->GetVertexData().size(); i++)
-			{
-				const CustomStruct::CVertex3D& vertex = (this->m_Mesh->GetVertexData())[i];
-				compare(vertex);
+				if (this->m_Mesh->GetInputLayoutDesc()[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+				{
+					havePosition = TRUE;
+					offsetPosition = vertexStride;
+				}
+				vertexStride += this->m_Mesh->GetInputLayoutDesc()[i].GetSemanticSizeByByte();
 			}
-			this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3] - minmax[0], minmax[4] - minmax[1], minmax[5] - minmax[2]));
+		}
+
+		{
+			auto compare = [&](const FLOAT* input)
+			{
+				minmax[0 * 3 + 0] = CustomType::CMath::Min(input[0u], minmax[0 * 3 + 0]);
+				minmax[0 * 3 + 1] = CustomType::CMath::Min(input[1u], minmax[0 * 3 + 1]);
+				minmax[0 * 3 + 2] = CustomType::CMath::Min(input[2u], minmax[0 * 3 + 2]);
+				minmax[1 * 3 + 0] = CustomType::CMath::Max(input[0u], minmax[1 * 3 + 0]);
+				minmax[1 * 3 + 1] = CustomType::CMath::Max(input[1u], minmax[1 * 3 + 1]);
+				minmax[1 * 3 + 2] = CustomType::CMath::Max(input[2u], minmax[1 * 3 + 2]);
+			};
+
+			if (havePosition)
+			{
+				for (UINT i = 0u; i < this->m_Mesh->GetVertexCount(); i++)
+				{
+					const CHAR* tempVertex = &(((const CHAR*)(this->m_Mesh->GetVertexData()))[i * this->m_Mesh->GetVertexStride()]);
+					const FLOAT* tempPosition = (const FLOAT*)(&(tempVertex[offsetPosition]));
+					compare(tempPosition);
+				}
+				this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3] - minmax[0], minmax[4] - minmax[1], minmax[5] - minmax[2]));
+			}
 		}
 
 		{
@@ -63,10 +90,14 @@ void CTestModel::Init()
 				anchor = tempVec + tempAnchor;
 				radius = tempVec.Length();
 			};
-			FLOAT radius;
-			CustomType::Vector3 anchor;
-			boundingSphere(anchor, radius);
-			this->SetBoundingSphere(anchor, radius);
+
+			if (havePosition)
+			{
+				FLOAT radius;
+				CustomType::Vector3 anchor;
+				boundingSphere(anchor, radius);
+				this->SetBoundingSphere(anchor, radius);
+			}
 		}
 	}
 }
@@ -90,11 +121,7 @@ void CTestModel::PrepareDraw()
 {
 	CustomType::Matrix4x4 tempWorldMatrix(this->GetLocalToWorldMatrix());
 	CustomType::Matrix4x4 tempWorldInverseMatrix(tempWorldMatrix.Inverse());
-	this->m_ConstantBuffer.WorldMatrix = tempWorldMatrix.GetGPUUploadFloat4x4();
-	this->m_ConstantBuffer.WorldInvMatrix = tempWorldInverseMatrix.GetGPUUploadFloat4x4();
-	this->m_ConstantBuffer.WorldInvTransposeMatrix = tempWorldInverseMatrix.GetXMFLOAT4X4();
-
-	this->m_MeshRenderer->UploadPerDrawConstantBuffer(this->m_ConstantBuffer);
+	this->m_MeshRenderer->SetPerDrawInfo(tempWorldMatrix, tempWorldInverseMatrix, CustomType::Vector4::Zero());
 }
 void CTestModel::Draw()
 {

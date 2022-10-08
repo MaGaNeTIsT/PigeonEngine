@@ -8,7 +8,7 @@ void CShaderManager::ShutDown()
 {
 	delete (CShaderManager::m_ShaderManager);
 }
-std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const std::vector<D3D11_INPUT_ELEMENT_DESC>* layout)
+std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum)
 {
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> shader = nullptr;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout = nullptr;
@@ -16,7 +16,7 @@ std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::strin
 	if (shader != nullptr && inputLayout != nullptr)
 		return (std::shared_ptr<CVertexShader>(new CVertexShader(name, shader, inputLayout)));
 
-	if (CRenderDevice::LoadVertexShader(name, shader, inputLayout, layout))
+	if (CRenderDevice::LoadVertexShader(name, shader, inputLayout, layouts, layoutNum))
 	{
 		CShaderManager::AddVertexShaderData(name, shader, inputLayout);
 		return (std::shared_ptr<CVertexShader>(new CVertexShader(name, shader, inputLayout)));

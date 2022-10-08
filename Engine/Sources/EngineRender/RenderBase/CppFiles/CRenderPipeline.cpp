@@ -7,7 +7,6 @@
 #include "../Headers/CGPUQuery.h"
 #include "../Headers/CGPUQueryManager.h"
 #include "../Headers/CGPUCulling.h"
-#include "../../AssetsManager/Headers/CMesh.h"
 #include "../../AssetsManager/Headers/CMeshManager.h"
 #include "../Headers/CMeshRenderer.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -45,7 +44,10 @@ CRenderPipeline::CRenderPipeline()
 	}
 	if (CRenderPipeline::m_FullScreenPolygonVS == nullptr)
 	{
-		CRenderPipeline::m_FullScreenPolygonVS = CShaderManager::LoadVertexShader(ENGINE_SHADER_SCREEN_POLYGON_2D_VS);
+		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+		CRenderPipeline::m_FullScreenPolygonVS = CShaderManager::LoadVertexShader(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, desc, 2u);
 	}
 	if (CRenderPipeline::m_ScreenPolygonShader == nullptr)
 	{
@@ -88,7 +90,10 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 
 	{
 		CustomType::Vector4Int fullScreenSize(0, 0, bufferSize.X(), bufferSize.Y());
-		m_FullScreenPolygon = CMeshManager::LoadPolygon2DMesh(fullScreenSize);
+		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+		m_FullScreenPolygon = CMeshManager::LoadPolygon2D(fullScreenSize, desc, 2u);
 	}
 
 	for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
@@ -361,12 +366,12 @@ void CRenderPipeline::PostUpdate()
 			{
 				if (objectGPUCullingResult[i] == TRUE)
 				{
-					if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_OPAQUE
-						|| m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
+					if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE
+						|| m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
 					{
 						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(m_CurrentCPUCullingPrimitives[i]);
 					}
-					else if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::CRenderTypeEnum::RENDER_TYPE_TRANSPARENT_FORWARD)
+					else if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_TRANSPARENT_FORWARD)
 					{
 						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(m_CurrentCPUCullingPrimitives[i]);
 					}
@@ -673,11 +678,11 @@ void CRenderPipeline::Culling(std::vector<CGameObject*>& cullingResult, const CR
 }
 void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)
 {
-	CRenderPipeline::m_FullScreenPolygonVS->Bind();
+	m_FullScreenPolygonVS->Bind();
 	shader->Bind();
-	CRenderDevice::SetVertexBuffer(CRenderPipeline::m_FullScreenPolygon->GetVertexBuffer(), CRenderPipeline::m_FullScreenPolygon->GetVertexStride());
-	CRenderDevice::SetIndexBuffer(CRenderPipeline::m_FullScreenPolygon->GetIndexBuffer());
-	CRenderDevice::DrawIndexed(CRenderPipeline::m_FullScreenPolygon->GetIndexCount());
+	CRenderDevice::SetVertexBuffer(m_FullScreenPolygon->GetVertexBuffer(), m_FullScreenPolygon->GetVertexStride());
+	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
+	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
 }
 CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
 {
