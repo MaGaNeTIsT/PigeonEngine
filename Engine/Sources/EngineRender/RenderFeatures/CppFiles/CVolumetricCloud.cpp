@@ -3,7 +3,7 @@
 #include "../../../EngineBase/Headers/CManager.h"
 #include "../../AssetsManager/Headers/CShader.h"
 #include "../../AssetsManager/Headers/CShaderManager.h"
-#include "../../AssetsManager/Headers/CTexture2D.h"
+#include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../AssetsManager/Headers/CTextureManager.h"
 #include "../../AssetsManager/Headers/CMesh.h"
 #include "../../AssetsManager/Headers/CMeshManager.h"

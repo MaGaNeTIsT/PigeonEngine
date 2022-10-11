@@ -92,15 +92,15 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2D;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
-	struct CubeTextureViewInfo
+	struct TextureCubeViewInfo
 	{
-		CubeTextureViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		TextureCubeViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		void Release()
 		{
-			if (Texture2DArray)
+			if (TextureCube)
 			{
-				Texture2DArray->Release();
-				Texture2DArray = nullptr;
+				TextureCube->Release();
+				TextureCube = nullptr;
 			}
 			if (ShaderResourceView)
 			{
@@ -108,7 +108,7 @@ public:
 				ShaderResourceView = nullptr;
 			}
 		};
-		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2DArray;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D>				TextureCube;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
 public:
@@ -126,7 +126,7 @@ public:
 	static BOOL		CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
-	static BOOL		CreateCubeTexture(CubeTextureViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
+	static BOOL		CreateTextureCube(TextureCubeViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
 	static void		Present(const UINT& syncInterval = 0u);
 	static void		SetDefaultDepthStencilState();

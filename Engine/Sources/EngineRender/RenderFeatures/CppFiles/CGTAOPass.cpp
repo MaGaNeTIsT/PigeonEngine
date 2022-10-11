@@ -1,6 +1,6 @@
 #include "../Headers/CGTAOPass.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
-#include "../../AssetsManager/Headers/CTexture2D.h"
+#include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CScene.h"
 #include "../../../EngineGame/Headers/CScreenPolygon2D.h"

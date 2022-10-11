@@ -45,7 +45,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CReadFBX.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTexture2D.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureType.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h" />
@@ -90,7 +90,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CReadFBX.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTexture2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureType.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp" />

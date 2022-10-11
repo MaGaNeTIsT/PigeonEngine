@@ -5,7 +5,7 @@
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 #include "../../EngineRender/AssetsManager/Headers/CShader.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CTexture2D.h"
+#include "../../EngineRender/AssetsManager/Headers/CTextureType.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMesh.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"

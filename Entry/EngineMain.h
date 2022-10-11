@@ -17,14 +17,12 @@
 #include <map>
 #include <memory>
 #include <functional>
-using namespace std;
 
 #include <d3d11.h>
 #include <DirectXMath.h>
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "xaudio2.lib")
-using namespace DirectX;
 
 //#include <fbxsdk.h>
 //#pragma comment (lib, "libfbxsdk-mt.lib")

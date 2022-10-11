@@ -195,9 +195,6 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTexture2D.h">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
@@ -245,6 +242,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureType.h">
+      <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -326,9 +326,6 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTexture2D.cpp">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
     </ClCompile>
@@ -370,6 +367,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureType.cpp">
+      <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

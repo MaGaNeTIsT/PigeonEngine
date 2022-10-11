@@ -11,7 +11,7 @@
 #include "../Headers/CMeshRenderer.h"
 #include "../../AssetsManager/Headers/CShader.h"
 #include "../../AssetsManager/Headers/CShaderManager.h"
-#include "../../AssetsManager/Headers/CTexture2D.h"
+#include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../AssetsManager/Headers/CTextureManager.h"
 #include "../../../EngineGame/Headers/CSkyBox.h"
 #include "../../RenderFeatures/Headers/CGTAOPass.h"

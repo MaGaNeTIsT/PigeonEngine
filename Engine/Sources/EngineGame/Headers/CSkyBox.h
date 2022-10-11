@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/AssetsManager/Headers/CMesh.h"
 
 class CSkyBox
@@ -28,6 +29,7 @@ public:
 protected:
 	SkyBoxInfo									m_SkyBoxInfo;
 	std::shared_ptr<class CPixelShader>			m_PixelShader;
+	class CTextureCube*							m_CubeMap;
 protected:
 	static std::shared_ptr<CMesh<UINT>>			m_FullScreenMesh;
 	static std::shared_ptr<class CVertexShader>	m_VertexShader;
