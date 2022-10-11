@@ -31,7 +31,6 @@ public:
 		LAYOUT_TERRAIN		= 2,
 		LAYOUT_OPAQUE		= 3,
 		LAYOUT_TRANSPARENT	= 4,
-		LAYOUT_SKY			= 5,
 		LAYOUT_COUNT
 	};
 protected:

@@ -92,6 +92,25 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2D;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
+	struct CubeTextureViewInfo
+	{
+		CubeTextureViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		void Release()
+		{
+			if (Texture2DArray)
+			{
+				Texture2DArray->Release();
+				Texture2DArray = nullptr;
+			}
+			if (ShaderResourceView)
+			{
+				ShaderResourceView->Release();
+				ShaderResourceView = nullptr;
+			}
+		};
+		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2DArray;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
+	};
 public:
 	static void		Initialize();
 	static void		ShutDown();
@@ -107,6 +126,7 @@ public:
 	static BOOL		CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
+	static BOOL		CreateCubeTexture(CubeTextureViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
 	static void		Present(const UINT& syncInterval = 0u);
 	static void		SetDefaultDepthStencilState();

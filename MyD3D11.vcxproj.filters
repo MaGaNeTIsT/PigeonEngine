@@ -421,13 +421,16 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultSkyBoxVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>

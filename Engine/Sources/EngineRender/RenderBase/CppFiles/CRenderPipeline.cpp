@@ -13,6 +13,7 @@
 #include "../../AssetsManager/Headers/CShaderManager.h"
 #include "../../AssetsManager/Headers/CTexture2D.h"
 #include "../../AssetsManager/Headers/CTextureManager.h"
+#include "../../../EngineGame/Headers/CSkyBox.h"
 #include "../../RenderFeatures/Headers/CGTAOPass.h"
 #include "../../RenderFeatures/Headers/CHZBPass.h"
 
@@ -24,6 +25,7 @@ std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_ScreenPolygonShader	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DirectLightShader	= nullptr;
+std::shared_ptr<CSkyBox>			CRenderPipeline::m_SkyBox				= nullptr;
 std::shared_ptr<CGPUCulling>		CRenderPipeline::m_GPUCulling			= nullptr;
 std::shared_ptr<CGTAOPass>			CRenderPipeline::m_GTAOPass				= nullptr;
 std::shared_ptr<CHZBPass>			CRenderPipeline::m_HZBPass				= nullptr;
@@ -56,6 +58,10 @@ CRenderPipeline::CRenderPipeline()
 	if (CRenderPipeline::m_DirectLightShader == nullptr)
 	{
 		CRenderPipeline::m_DirectLightShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_DIRECT_LIGHT_PS);
+	}
+	if (CRenderPipeline::m_SkyBox == nullptr)
+	{
+		CRenderPipeline::m_SkyBox = std::shared_ptr<CSkyBox>(new CSkyBox());
 	}
 	if (CRenderPipeline::m_GPUCulling == nullptr)
 	{
@@ -167,13 +173,13 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		std::vector<CustomStruct::CRenderBlendState> blendStates;
 		blendStates.resize(1);
 		blendStates[0] = CustomStruct::CRenderBlendState();
-		CRenderDevice::CreateBlendState(m_ShadowPrePassBS, blendStates);
+		CRenderDevice::CreateBlendState(m_ShadowSkyForwardPrePassBS, blendStates);
 		blendStates.resize(4);
 		blendStates[0] = CustomStruct::CRenderBlendState();
 		blendStates[1] = CustomStruct::CRenderBlendState();
 		blendStates[2] = CustomStruct::CRenderBlendState();
 		blendStates[3] = CustomStruct::CRenderBlendState();
-		CRenderDevice::CreateBlendState(m_GBufferForwardPassBS, blendStates);
+		CRenderDevice::CreateBlendState(m_GBufferPassBS, blendStates);
 		blendStates.resize(1);
 		blendStates[0] = CustomStruct::CRenderBlendState(
 			CustomStruct::CRenderBlendOption::BLEND_ONE,
@@ -279,6 +285,8 @@ void CRenderPipeline::PostInit()
 
 		m_FrameIndex = 0u;
 
+		m_SkyBox->Init(m_GlobalBufferSize, CSkyBox::SkyBoxInfo(1000000.f));
+
 		m_GTAOPass->Init(sceneMainCamera, m_GlobalBufferSize);
 		m_HZBPass->Init(m_GlobalBufferSize);
 		m_GPUCulling->Init(m_HZBPass, 1u, 50u);
@@ -303,6 +311,8 @@ void CRenderPipeline::Uninit()
 	m_GTAOPass->Uninit();
 	m_HZBPass->Uninit();
 	m_GPUCulling->Uninit();
+
+	m_SkyBox->Uninit();
 }
 void CRenderPipeline::PostUpdate()
 {
@@ -378,16 +388,9 @@ void CRenderPipeline::PostUpdate()
 				}
 			}
 		}
-
-		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_SKY])
-		{
-			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
-			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY].push_back(obj.second);
-				break;
-			}
-		}
 	}
+
+	m_SkyBox->Update();
 
 	m_GTAOPass->Update();
 	m_HZBPass->Update();
@@ -454,7 +457,7 @@ void CRenderPipeline::Render()
 			//Shadow pass
 			CGPUProfilerManager::AddPass("Shadow_Pass", m_FrameIndex, [&]() {
 				CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
-				CRenderDevice::SetBlendState(m_ShadowPrePassBS);
+				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 				CRenderDevice::SetRenderTarget(m_ShadowBuffer.DepthStencilView);
 				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 				{
@@ -475,10 +478,6 @@ void CRenderPipeline::Render()
 					{
 						obj->DrawExtra();
 					}
-				}
-				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
-				{
-					obj->DrawExtra();
 				}});
 		}
 
@@ -501,7 +500,7 @@ void CRenderPipeline::Render()
 			//Geometry buffer pass
 			CGPUProfilerManager::AddPass("Geometry_Buffer_Pass", m_FrameIndex, [&]() {
 				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				CRenderDevice::SetBlendState(m_GBufferPassBS);
 				Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 				tempGBuffersRTV[0] = m_SceneColor.RenderTargetView;
 				for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
@@ -518,11 +517,7 @@ void CRenderPipeline::Render()
 							obj->Draw();
 					}
 				}
-				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_SKY])
-				{
-					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_SKY)
-						obj->Draw();
-				}});
+				});
 		}
 
 		{
@@ -545,7 +540,7 @@ void CRenderPipeline::Render()
 			//Opaque forward pass
 			CGPUProfilerManager::AddPass("Opaque_Forward_Pass", m_FrameIndex, [&]() {
 				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
 				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
 				{
@@ -555,6 +550,12 @@ void CRenderPipeline::Render()
 							obj->Draw();
 					}
 				}});
+		}
+
+		{
+			//Sky box pass
+			CGPUProfilerManager::AddPass("Sky_Box_Pass", m_FrameIndex, [&]() {
+				m_SkyBox->Draw(); });
 		}
 
 		{
@@ -572,7 +573,7 @@ void CRenderPipeline::Render()
 			//TODO Test and debug.
 			CGPUProfilerManager::AddPass("Debug_Pass", m_FrameIndex, [&]() {
 				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-				CRenderDevice::SetBlendState(m_GBufferForwardPassBS);
+				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
 				m_DebugScreen->Draw();
 				m_HZBPass->DrawDebug();
@@ -592,6 +593,7 @@ void CRenderPipeline::Render()
 			ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
+			ImGui::Text("Sky Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
 			ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));

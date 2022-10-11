@@ -85,6 +85,8 @@ using namespace DirectX;
 #define ENGINE_SHADER_POST_EFFECT_EXPOSURE_PS				("./Engine/Assets/EngineShaders/EnginePostEffectExposurePS.cso")
 #define ENGINE_SHADER_SCREEN_POLYGON_2D_VS					("./Engine/Assets/EngineShaders/EngineScreenPolygon2DVS.cso")
 #define ENGINE_SHADER_SCREEN_POLYGON_2D_PS					("./Engine/Assets/EngineShaders/EngineScreenPolygon2DPS.cso")
+#define ENGINE_SHADER_SKY_BOX_VS							("./Engine/Assets/EngineShaders/EngineSkyBoxVS.cso")
+#define ENGINE_SHADER_SKY_BOX_PS							("./Engine/Assets/EngineShaders/EngineSkyBoxPS.cso")
 
 #define ENGINE_MESH_CUBE_NAME								("EngineBase/Mesh/CubeMesh")
 #define ENGINE_MESH_PLANE_NAME								("EngineBase/Mesh/PlaneMesh")

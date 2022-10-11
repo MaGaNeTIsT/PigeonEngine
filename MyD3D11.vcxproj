@@ -157,7 +157,6 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultSkyBoxVS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -199,6 +198,22 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

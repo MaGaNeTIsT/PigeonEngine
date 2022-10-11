@@ -18,8 +18,7 @@ public:
 	{
 		RENDER_TYPE_OPAQUE				= 0,
 		RENDER_TYPE_OPAQUE_FORWARD		= 1,
-		RENDER_TYPE_TRANSPARENT_FORWARD = 2,
-		RENDER_TYPE_SKY					= 3
+		RENDER_TYPE_TRANSPARENT_FORWARD = 2
 	};
 public:
 	RenderTypeEnum	GetRenderType() { return this->m_RenderType; }

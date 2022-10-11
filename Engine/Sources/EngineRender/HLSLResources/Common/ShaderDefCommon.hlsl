@@ -54,5 +54,15 @@ struct VaryingScreenPolygon2D
 	float4 positionCS	: SV_POSITION;
 	float2 uv0			: TEXCOORD0;
 };
+struct AttributeSkyBox
+{
+	float4 position		: POSITION0;
+	float2 uv0			: TEXCOORD0;
+};
+struct VaryingSkyBox
+{
+	float4 positionCS	: SV_POSITION;
+	float2 uv0			: TEXCOORD0;
+};
 
 #endif

@@ -647,6 +647,42 @@ BOOL CRenderDevice::CreateTexture2D(Texture2DViewInfo& output, const CustomStruc
 	}
 	return TRUE;
 }
+BOOL CRenderDevice::CreateCubeTexture(CubeTextureViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData)
+{
+	D3D11_TEXTURE2D_DESC td;
+	td.Width = 2048u;
+	td.Height = 2048u;
+	td.MipLevels = 1u;
+	td.ArraySize = 6u;
+	td.Format = DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	td.SampleDesc.Count = 1u;
+	td.SampleDesc.Quality = 0u;
+	td.Usage = D3D11_USAGE::D3D11_USAGE_DEFAULT;
+	td.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
+	td.CPUAccessFlags = 0u;
+	td.MiscFlags = D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+	if (subData != NULL)
+	{
+		D3D11_SUBRESOURCE_DATA sd;
+		sd.pSysMem = subData->pSysMem;
+		sd.SysMemPitch = subData->SysMemPitch;
+		sd.SysMemSlicePitch = subData->SysMemSlicePitch;
+		HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, &sd, output.Texture2DArray.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, NULL, output.Texture2DArray.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+	{
+		return FALSE;
+	}
+	return TRUE;
+}
 void CRenderDevice::Present(const UINT& syncInterval)
 {
 	HRESULT hr = CRenderDevice::m_RenderDevice->m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
