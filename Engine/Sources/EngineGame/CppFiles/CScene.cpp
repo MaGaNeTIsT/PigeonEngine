@@ -26,8 +26,8 @@ void CScene::Init()
 	//CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);
 
 	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
-	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
-	//terrainPlane->SetMeshInfo(100.f, 50, 50.f);
+	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 60.f * CustomType::CMath::GetDegToRad()));
+	terrainPlane->SetMeshInfo(100.f, 8, 3.f);
 	//cube->SetPosition(CustomType::Vector3(0.f, 0.f, -70.f));
 	//cube->SetScale(CustomType::Vector3(150.f, 150.f, 10.f));
 	//testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));

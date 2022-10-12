@@ -45,9 +45,9 @@ void CPlane::Init()
 	this->m_MeshRenderer = new CMeshRenderer();
 	this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
 
-	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Field001.tga");
-	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
-	this->m_PropertyTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga");
+	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga");
+	this->m_PropertyTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga");
 }
 void CPlane::Uninit()
 {
