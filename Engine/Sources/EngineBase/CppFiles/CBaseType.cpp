@@ -567,7 +567,7 @@ namespace CustomType
 	}
 	Vector4::Vector4(const Vector3& v)
 	{
-		XMFLOAT3 temp = v.GetXMFLOAT3();
+		DirectX::XMFLOAT3 temp = v.GetXMFLOAT3();
 		this->m_Value.x = temp.x;
 		this->m_Value.y = temp.y;
 		this->m_Value.z = temp.z;

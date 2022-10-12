@@ -116,7 +116,7 @@ namespace CustomType
 		virtual void				Reset()override { (*this) = Vector2::m_Zero; }
 
 		const DirectX::XMFLOAT2&	GetXMFLOAT2()const { return m_Value; }
-		DirectX::XMFLOAT4			GetXMFLOAT4()const { return XMFLOAT4(m_Value.x, m_Value.y, 0.f, 0.f); }
+		DirectX::XMFLOAT4			GetXMFLOAT4()const { return DirectX::XMFLOAT4(m_Value.x, m_Value.y, 0.f, 0.f); }
 	public:
 		static const Vector2&		Zero() { return Vector2::m_Zero; }
 		static Vector2				Normalize(const Vector2& v);

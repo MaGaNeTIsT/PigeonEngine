@@ -677,14 +677,15 @@ BOOL CRenderDevice::CreateTextureCube(TextureCubeViewInfo& output, const CustomS
 		}
 		if (subData != NULL)
 		{
-			D3D11_SUBRESOURCE_DATA sd;
+			D3D11_SUBRESOURCE_DATA sd[6u];
+			for (UINT i = 0u; i < 6u; i++)
 			{
-				::ZeroMemory(&sd, sizeof(sd));
-				sd.pSysMem = subData->pSysMem;
-				sd.SysMemPitch = subData->SysMemPitch;
-				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
+				::ZeroMemory(&(sd[i]), sizeof(sd[i]));
+				sd[i].pSysMem = subData[i].pSysMem;
+				sd[i].SysMemPitch = subData[i].SysMemPitch;
+				sd[i].SysMemSlicePitch = subData[i].SysMemSlicePitch;
 			}
-			HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, &sd, output.TextureCube.ReleaseAndGetAddressOf());
+			HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, sd, output.TextureCube.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				//TODO Create texture cube object failed log.

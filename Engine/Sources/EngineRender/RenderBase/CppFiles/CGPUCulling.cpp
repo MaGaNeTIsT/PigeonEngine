@@ -32,7 +32,7 @@ void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT& waitingFrameNu
 	{
 		CGPUCulling::ReCreateBufferSize(i, baseSceneObjectsNum);
 	}
-	this->m_CullingData.Parameters = XMINT4(baseSceneObjectsNum, 0, 0, 0);
+	this->m_CullingData.Parameters = DirectX::XMINT4(baseSceneObjectsNum, 0, 0, 0);
 	CRenderDevice::CreateBuffer(
 		this->m_CullingConstantBuffer,
 		CustomStruct::CRenderBufferDesc(
@@ -113,7 +113,7 @@ void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 			hzbBuffers[(numLayer - 1) - i] = usedHZBBuffer.ShaderResourceView;
 			indexHZB++;
 		}
-		this->m_CullingData.Parameters = XMINT4(static_cast<int32_t>(this->m_CachedCullingInfo[index].NumObjects), mostDetail, numLayer, 0);
+		this->m_CullingData.Parameters = DirectX::XMINT4(static_cast<int32_t>(this->m_CachedCullingInfo[index].NumObjects), mostDetail, numLayer, 0);
 		CRenderDevice::UploadBuffer(this->m_CachedCullingInfo[index].CullingBoundingInfo.Buffer, static_cast<void*>(this->m_CachedAABBInfo.data()), sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum, sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum);
 		CRenderDevice::UploadBuffer(this->m_CullingConstantBuffer, static_cast<void*>(&(this->m_CullingData)));
 		CRenderDevice::BindCSConstantBuffer(this->m_CullingConstantBuffer, 1u);

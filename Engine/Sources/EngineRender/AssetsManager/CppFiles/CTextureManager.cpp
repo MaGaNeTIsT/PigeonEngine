@@ -132,7 +132,15 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 				CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM;
 				if (isSRGB)
 				{
-					CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
+					sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
+				}
+				TBYTE* ptrCubeData = cubeData.data();
+				CustomStruct::CRenderSubresourceData subResourceDatas[6u];
+				for (UINT i = 0u; i < 6u; i++)
+				{
+					subResourceDatas[i].pSysMem = static_cast<const void*>(&(ptrCubeData[i * cubeWidth * cubeHeight * 4u]));
+					subResourceDatas[i].SysMemPitch = cubeWidth * 4u;
+					subResourceDatas[i].SysMemSlicePitch = cubeWidth * cubeHeight * 4u;
 				}
 				if (!CRenderDevice::CreateTextureCube(
 					tempTextureCube,
@@ -142,10 +150,7 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 						CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE,
 						sourceFormat,
 						&sourceFormat),
-					&CustomStruct::CRenderSubresourceData(
-						static_cast<const void*>(cubeData.data()),
-						cubeWidth * 4u,
-						cubeWidth * cubeHeight * 4u)))
+					subResourceDatas))
 				{
 					return NULL;
 				}
@@ -168,7 +173,7 @@ CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOO
 		CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM;
 		if (isSRGB)
 		{
-			CustomStruct::CRenderFormat sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
+			sourceFormat = CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM_SRGB;
 		}
 		if (!CRenderDevice::CreateTexture2D(
 			tempTexture2D,

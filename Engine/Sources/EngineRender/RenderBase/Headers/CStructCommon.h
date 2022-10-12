@@ -30,26 +30,26 @@ namespace CustomStruct
 	struct CLightData
 	{
 		CLightData() { ::ZeroMemory(this, sizeof(*this)); }
-		XMFLOAT4	Direction;
-		CColor		Color;
+		DirectX::XMFLOAT4	Direction;
+		CColor				Color;
 	};
 
 	struct ConstantBufferPerFrame
 	{
 		ConstantBufferPerFrame() { ::ZeroMemory(this, sizeof(*this)); }
-		XMFLOAT4X4	ViewMatrix;
-		XMFLOAT4X4	ViewInvMatrix;
-		XMFLOAT4X4	ProjectionMatrix;
-		XMFLOAT4X4	ProjectionInvMatrix;
-		XMFLOAT4X4	ViewProjectionMatrix;
-		XMFLOAT4X4	ViewProjectionInvMatrix;
-		XMFLOAT4	TimeParams;
-		XMFLOAT4	DepthMultiAdd;
-		XMFLOAT4	ScreenToViewSpaceParams;
-		XMFLOAT4	CameraViewportMinSizeAndInvBufferSize;
-		XMFLOAT4	CameraViewportSizeAndInvSize;
-		XMFLOAT4	CameraViewportRect;
-		XMFLOAT3	CameraWorldPosition;
+		DirectX::XMFLOAT4X4	ViewMatrix;
+		DirectX::XMFLOAT4X4	ViewInvMatrix;
+		DirectX::XMFLOAT4X4	ProjectionMatrix;
+		DirectX::XMFLOAT4X4	ProjectionInvMatrix;
+		DirectX::XMFLOAT4X4	ViewProjectionMatrix;
+		DirectX::XMFLOAT4X4	ViewProjectionInvMatrix;
+		DirectX::XMFLOAT4	TimeParams;
+		DirectX::XMFLOAT4	DepthMultiAdd;
+		DirectX::XMFLOAT4	ScreenToViewSpaceParams;
+		DirectX::XMFLOAT4	CameraViewportMinSizeAndInvBufferSize;
+		DirectX::XMFLOAT4	CameraViewportSizeAndInvSize;
+		DirectX::XMFLOAT4	CameraViewportRect;
+		DirectX::XMFLOAT3	CameraWorldPosition;
 		FLOAT		DirectionalLightCount;
 		CLightData	DirectionalLightData[4];
 	};
@@ -57,28 +57,10 @@ namespace CustomStruct
 	struct ConstantBufferPerDraw
 	{
 		ConstantBufferPerDraw() { ::ZeroMemory(this, sizeof(*this)); }
-		XMFLOAT4X4	WorldMatrix;
-		XMFLOAT4X4	WorldInvMatrix;
-		XMFLOAT4X4	WorldInvTransposeMatrix;
-		XMFLOAT4	CustomParameter;
-	};
-
-	struct CVertex3D
-	{
-		CVertex3D() { ::ZeroMemory(this, sizeof(*this)); }
-		CVertex3D(const CVertex3D& v)
-		{
-			Position	= v.Position;
-			Normal		= v.Normal;
-			Tangent		= v.Tangent;
-			Color		= v.Color;
-			UV0			= v.UV0;
-		}
-		XMFLOAT4	Position;
-		XMFLOAT4	Normal;
-		XMFLOAT4	Tangent;
-		XMFLOAT4	Color;
-		XMFLOAT2	UV0;
+		DirectX::XMFLOAT4X4	WorldMatrix;
+		DirectX::XMFLOAT4X4	WorldInvMatrix;
+		DirectX::XMFLOAT4X4	WorldInvTransposeMatrix;
+		DirectX::XMFLOAT4	CustomParameter;
 	};
 
 	struct CSubMeshInfo

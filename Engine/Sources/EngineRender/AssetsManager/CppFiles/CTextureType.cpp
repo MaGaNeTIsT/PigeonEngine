@@ -23,7 +23,6 @@ CTexture2D::CTexture2D(const std::string& name, const CRenderDevice::Texture2DVi
 }
 CTexture2D::CTexture2D(const CTexture2D& v) : CTextureBase(v.m_Name)
 {
-	this->m_Name = v.m_Name;
 	this->m_Texture2D = v.m_Texture2D;
 }
 
@@ -31,11 +30,11 @@ CTexture2D::CTexture2D(const CTexture2D& v) : CTextureBase(v.m_Name)
 
 CTextureCube::CTextureCube(const std::string& name, const CRenderDevice::TextureCubeViewInfo& v) : CTextureBase(name)
 {
-	this->m_Name = name;
+	this->m_TextureCube = v;
 }
 CTextureCube::CTextureCube(const CTextureCube& v) : CTextureBase(v.m_Name)
 {
-	this->m_Name = v.m_Name;
+	this->m_TextureCube = v.m_TextureCube;
 }
 Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CTextureCube::GetShaderResourceView()
 {

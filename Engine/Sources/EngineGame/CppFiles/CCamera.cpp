@@ -134,7 +134,7 @@ void CCamera::ReCalculateProjectionMatrix()
 	FLOAT viewportH		= static_cast<FLOAT>(this->m_CameraInfo.Viewport.W() - this->m_CameraInfo.Viewport.Y());
 	FLOAT aspectRatio	= viewportW / viewportH;
 
-	this->m_ProjectionMatrix = CustomType::Matrix4x4(XMMatrixPerspectiveFovLH(
+	this->m_ProjectionMatrix = CustomType::Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(
 		this->m_CameraInfo.Fov * CustomType::CMath::GetDegToRad(),
 		aspectRatio,
 		this->m_CameraInfo.Near, this->m_CameraInfo.Far));

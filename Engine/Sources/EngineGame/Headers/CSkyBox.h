@@ -15,6 +15,10 @@ public:
 		}
 		FLOAT Radius;
 	};
+	struct SkyBoxConstantBuffer
+	{
+		CustomType::Vector4 Parameter;
+	};
 public:
 	virtual void	Init(const CustomType::Vector2Int& bufferSize, const SkyBoxInfo& skyBoxInfo);
 	virtual void	Uninit();
@@ -30,6 +34,8 @@ protected:
 	SkyBoxInfo									m_SkyBoxInfo;
 	std::shared_ptr<class CPixelShader>			m_PixelShader;
 	class CTextureCube*							m_CubeMap;
+	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
+	SkyBoxConstantBuffer						m_ConstantData;
 protected:
 	static std::shared_ptr<CMesh<UINT>>			m_FullScreenMesh;
 	static std::shared_ptr<class CVertexShader>	m_VertexShader;

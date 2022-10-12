@@ -21,6 +21,7 @@ CSkyBox::CSkyBox()
 	}
 	this->m_PixelShader = nullptr;
 	this->m_CubeMap = NULL;
+	this->m_ConstantBuffer = nullptr;
 }
 CSkyBox::CSkyBox(const CSkyBox& skyBox)
 {
@@ -34,6 +35,7 @@ CSkyBox::CSkyBox(const CSkyBox& skyBox)
 	this->m_SkyBoxInfo = skyBox.m_SkyBoxInfo;
 	this->m_PixelShader = skyBox.m_PixelShader;
 	this->m_CubeMap = skyBox.m_CubeMap;
+	this->m_ConstantBuffer = skyBox.m_ConstantBuffer;
 }
 void CSkyBox::Init(const CustomType::Vector2Int& bufferSize, const SkyBoxInfo& skyBoxInfo)
 {
@@ -44,8 +46,11 @@ void CSkyBox::Init(const CustomType::Vector2Int& bufferSize, const SkyBoxInfo& s
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		CSkyBox::m_FullScreenMesh = CMeshManager::LoadPolygon2D(CustomType::Vector4Int(0, 0, bufferSize.X(), bufferSize.Y()), desc, 2u);
 	}
-	this->m_SkyBoxInfo = skyBoxInfo;
-	this->m_PixelShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_SKY_BOX_PS);
+	if (!(this->m_PixelShader))
+	{
+		this->m_PixelShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_SKY_BOX_PS);
+	}
+	if (!(this->m_CubeMap))
 	{
 		// Face[0] : +X Right face.
 		// Face[1] : -X Left face.
@@ -56,11 +61,18 @@ void CSkyBox::Init(const CustomType::Vector2Int& bufferSize, const SkyBoxInfo& s
 		std::vector<std::string> cubeName = {
 			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Right.tga",
 			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Left.tga",
-			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Up.tga",
+			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Top.tga",
 			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Bottom.tga",
 			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Forward.tga",
 			"./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/Sky_001_Back.tga" };
-		this->m_CubeMap = CTextureManager::LoadTextureCubeCombine(cubeName, TRUE);
+		this->m_CubeMap = CTextureManager::LoadTextureCubeCombine(cubeName);
+	}
+	this->m_SkyBoxInfo = skyBoxInfo;
+	if (!(this->m_ConstantBuffer))
+	{
+		this->m_ConstantData.Parameter = CustomType::Vector4(0.f, 0.f, 0.f, this->m_SkyBoxInfo.Radius);
+		DirectX::XMFLOAT4 tempData(this->m_ConstantData.Parameter.GetXMFLOAT4());
+		CRenderDevice::CreateBuffer(this->m_ConstantBuffer, CustomStruct::CRenderBufferDesc(sizeof(DirectX::XMFLOAT4), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)), &(CustomStruct::CRenderSubresourceData(&tempData, 0u, 0u)));
 	}
 }
 void CSkyBox::Uninit()
@@ -77,6 +89,7 @@ void CSkyBox::PrepareDraw()
 	CRenderDevice::SetVertexBuffer(CSkyBox::m_FullScreenMesh->GetVertexBuffer(), CSkyBox::m_FullScreenMesh->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(CSkyBox::m_FullScreenMesh->GetIndexBuffer());
 	this->m_PixelShader->Bind();
+	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, 1u);
 	CRenderDevice::BindPSShaderResourceView(this->m_CubeMap->GetShaderResourceView(), 3u);
 }
 void CSkyBox::Draw()

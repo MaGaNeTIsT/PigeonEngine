@@ -129,16 +129,16 @@ void CGTAOPass::Update()
 	FLOAT sinDeltaAngle, cosDeltaAngle;
 	CustomType::CMath::SinCos(sinDeltaAngle, cosDeltaAngle, CustomType::CMath::GetPI() / numAngles);
 
-	this->m_ConstantData.AdjustAngleThicknessParams = XMFLOAT4(fallOffEnd * pipelineSizeH * this->m_MainCamera->GetProjectionMatrix().GetXMFLOAT4X4()._11, sinDeltaAngle, cosDeltaAngle, thicknessBlend);
+	this->m_ConstantData.AdjustAngleThicknessParams = DirectX::XMFLOAT4(fallOffEnd * pipelineSizeH * this->m_MainCamera->GetProjectionMatrix().GetXMFLOAT4X4()._11, sinDeltaAngle, cosDeltaAngle, thicknessBlend);
 
 	FLOAT fadeRadius = CustomType::CMath::Max(1.f, this->m_UserArguments.FadeRadius);
 	FLOAT invFadeRadius = 1.f / fadeRadius;
 
-	this->m_ConstantData.FadeAttenParams = XMFLOAT4(invFadeRadius, -(this->m_UserArguments.FadeDistance - fadeRadius) * invFadeRadius, this->m_UserArguments.FadeDistance, 2.f / (fallOffEnd * fallOffEnd));
+	this->m_ConstantData.FadeAttenParams = DirectX::XMFLOAT4(invFadeRadius, -(this->m_UserArguments.FadeDistance - fadeRadius) * invFadeRadius, this->m_UserArguments.FadeDistance, 2.f / (fallOffEnd * fallOffEnd));
 
-	this->m_ConstantData.ResultBufferParams = XMFLOAT4(bufferSizeW, bufferSizeH, 1.f / bufferSizeW, 1.f / bufferSizeH);
-	this->m_ConstantData.DepthBufferParams = XMFLOAT4(pipelineSizeW, pipelineSizeH, 1.f / pipelineSizeW, 1.f / pipelineSizeH);
-	this->m_ConstantData.IntensityPowerParams = XMFLOAT4(this->m_UserArguments.Intensity, this->m_UserArguments.Power * 0.5f, static_cast<FLOAT>(this->m_DebugType), 0.f);
+	this->m_ConstantData.ResultBufferParams = DirectX::XMFLOAT4(bufferSizeW, bufferSizeH, 1.f / bufferSizeW, 1.f / bufferSizeH);
+	this->m_ConstantData.DepthBufferParams = DirectX::XMFLOAT4(pipelineSizeW, pipelineSizeH, 1.f / pipelineSizeW, 1.f / pipelineSizeH);
+	this->m_ConstantData.IntensityPowerParams = DirectX::XMFLOAT4(this->m_UserArguments.Intensity, this->m_UserArguments.Power * 0.5f, static_cast<FLOAT>(this->m_DebugType), 0.f);
 }
 void CGTAOPass::ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
