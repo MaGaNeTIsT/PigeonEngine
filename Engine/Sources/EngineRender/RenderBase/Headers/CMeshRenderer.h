@@ -10,7 +10,7 @@ class CMeshRenderer
 public:
 	struct RenderPerDrawInfo
 	{
-		CustomStruct::ConstantBufferPerDraw		PerDrawData;
+		CustomStruct::CShaderGlobalPerDraw		PerDrawData;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	PerDrawBuffer;
 	};
 public:

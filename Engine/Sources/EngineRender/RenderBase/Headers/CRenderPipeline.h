@@ -32,8 +32,8 @@ public:
 	struct RenderPerFrameInfo
 	{
 		RenderPerFrameInfo() { ::ZeroMemory(this, sizeof(*this)); }
-		CustomStruct::ConstantBufferPerFrame PerFrameData;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> PerFrameBuffer;
+		CustomStruct::CShaderGlobalPerFrame		PerFrameData;
+		Microsoft::WRL::ComPtr<ID3D11Buffer>	PerFrameBuffer;
 	};
 public:
 	const static UINT GEOMETRY_BUFFER_COUNT = 3;

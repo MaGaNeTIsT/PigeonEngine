@@ -41,7 +41,7 @@ void CMeshRenderer::Init(CGameObject* gameObject, const std::string& vertexShade
 	this->m_PixelShaderName		= pixelShaderName;
 	this->m_GameObject			= gameObject;
 	this->SetInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	CRenderDevice::CreateBuffer(this->m_PerDrawInfo.PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::ConstantBufferPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+	CRenderDevice::CreateBuffer(this->m_PerDrawInfo.PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::CShaderGlobalPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 	this->LoadShader();
 }
 void CMeshRenderer::SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)

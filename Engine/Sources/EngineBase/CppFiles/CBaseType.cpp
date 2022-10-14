@@ -921,6 +921,10 @@ namespace CustomType
 		this->x = this->x / v;
 		this->y = this->y / v;
 	}
+	BOOL Vector2Int::operator==(const Vector2Int& v)
+	{
+		return ((this->x == v.x) && (this->y == v.y));
+	}
 	Vector2Int Vector2Int::GetZero()
 	{
 		Vector2Int result(0, 0);
@@ -1226,6 +1230,14 @@ namespace CustomType
 	UINT CMath::Clamp(const UINT& v, const UINT& min, const UINT& max)
 	{
 		return CMath::Max(min, CMath::Min(max, v));
+	}
+	FLOAT CMath::Sin(const FLOAT& v)
+	{
+		return sinf(v);
+	}
+	FLOAT CMath::Cos(const FLOAT& v)
+	{
+		return cosf(v);
 	}
 	void CMath::SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v)
 	{

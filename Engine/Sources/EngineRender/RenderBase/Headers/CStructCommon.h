@@ -27,49 +27,48 @@ namespace CustomStruct
 		};
 	};
 
-	struct CLightData
-	{
-		CLightData() { ::ZeroMemory(this, sizeof(*this)); }
-		DirectX::XMFLOAT4	Direction;
-		CColor				Color;
-	};
-
-	struct ConstantBufferPerFrame
-	{
-		ConstantBufferPerFrame() { ::ZeroMemory(this, sizeof(*this)); }
-		DirectX::XMFLOAT4X4	ViewMatrix;
-		DirectX::XMFLOAT4X4	ViewInvMatrix;
-		DirectX::XMFLOAT4X4	ProjectionMatrix;
-		DirectX::XMFLOAT4X4	ProjectionInvMatrix;
-		DirectX::XMFLOAT4X4	ViewProjectionMatrix;
-		DirectX::XMFLOAT4X4	ViewProjectionInvMatrix;
-		DirectX::XMFLOAT4	TimeParams;
-		DirectX::XMFLOAT4	DepthMultiAdd;
-		DirectX::XMFLOAT4	ScreenToViewSpaceParams;
-		DirectX::XMFLOAT4	CameraViewportMinSizeAndInvBufferSize;
-		DirectX::XMFLOAT4	CameraViewportSizeAndInvSize;
-		DirectX::XMFLOAT4	CameraViewportRect;
-		DirectX::XMFLOAT3	CameraWorldPosition;
-		FLOAT		DirectionalLightCount;
-		CLightData	DirectionalLightData[4];
-	};
-
-	struct ConstantBufferPerDraw
-	{
-		ConstantBufferPerDraw() { ::ZeroMemory(this, sizeof(*this)); }
-		DirectX::XMFLOAT4X4	WorldMatrix;
-		DirectX::XMFLOAT4X4	WorldInvMatrix;
-		DirectX::XMFLOAT4X4	WorldInvTransposeMatrix;
-		DirectX::XMFLOAT4	CustomParameter;
-	};
-
 	struct CSubMeshInfo
 	{
 		CSubMeshInfo() { ::ZeroMemory(this, sizeof(*this)); }
-		UINT		VertexStart;
-		UINT		VertexCount;
-		UINT		IndexStart;
-		UINT		IndexCount;
+		UINT	VertexStart;
+		UINT	VertexCount;
+		UINT	IndexStart;
+		UINT	IndexCount;
+	};
+
+	struct CShaderLightParams
+	{
+		DirectX::XMFLOAT4	Params0;
+		DirectX::XMFLOAT4	Params1;
+	};
+
+	struct CShaderGlobalPerFrame
+	{
+		CShaderGlobalPerFrame() { ::ZeroMemory(this, sizeof(*this)); }
+		DirectX::XMFLOAT4X4		ViewMatrix;
+		DirectX::XMFLOAT4X4		ViewInvMatrix;
+		DirectX::XMFLOAT4X4		ProjectionMatrix;
+		DirectX::XMFLOAT4X4		ProjectionInvMatrix;
+		DirectX::XMFLOAT4X4		ViewProjectionMatrix;
+		DirectX::XMFLOAT4X4		ViewProjectionInvMatrix;
+		DirectX::XMFLOAT4		TimeParams;
+		DirectX::XMFLOAT4		DepthMultiAdd;
+		DirectX::XMFLOAT4		ScreenToViewSpaceParams;
+		DirectX::XMFLOAT4		CameraViewportMinSizeAndInvBufferSize;
+		DirectX::XMFLOAT4		CameraViewportSizeAndInvSize;
+		DirectX::XMFLOAT4		CameraViewportRect;
+		DirectX::XMFLOAT4		CameraWorldPosition;
+		DirectX::XMINT4			LightCount;
+		CShaderLightParams		LightParams[16];
+	};
+
+	struct CShaderGlobalPerDraw
+	{
+		CShaderGlobalPerDraw() { ::ZeroMemory(this, sizeof(*this)); }
+		DirectX::XMFLOAT4X4		WorldMatrix;
+		DirectX::XMFLOAT4X4		WorldInvMatrix;
+		DirectX::XMFLOAT4X4		WorldInvTransposeMatrix;
+		DirectX::XMFLOAT4		CustomParameter;
 	};
 
 	enum CEngineDefaultTexture2DEnum
@@ -83,6 +82,26 @@ namespace CustomStruct
 		ENGINE_DEFAULT_TEXTURE2D_BUMP		= 6,
 		ENGINE_DEFAULT_TEXTURE2D_PROPERTY	= 7,
 		ENGINE_DEFAULT_TEXTURE2D_COUNT
+	};
+
+	struct CRenderViewport
+	{
+		CRenderViewport() { ::ZeroMemory(this, sizeof(*this)); }
+		CRenderViewport(const CustomType::Vector4& rectSize, const CustomType::Vector2& depthSize)
+		{
+			TopLeftX	= rectSize.X();
+			TopLeftY	= rectSize.Y();
+			Width		= rectSize.Z();
+			Height		= rectSize.W();
+			MinDepth	= depthSize.X();
+			MaxDepth	= depthSize.Y();
+		}
+		FLOAT TopLeftX;
+		FLOAT TopLeftY;
+		FLOAT Width;
+		FLOAT Height;
+		FLOAT MinDepth;
+		FLOAT MaxDepth;
 	};
 
 	enum CRenderComparisonFunction

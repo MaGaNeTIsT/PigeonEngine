@@ -780,13 +780,27 @@ void CRenderDevice::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11Raster
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetState(rs.Get());
 }
-void CRenderDevice::SetViewport(const D3D11_VIEWPORT& viewport)
+void CRenderDevice::SetViewport(const CustomStruct::CRenderViewport& viewport)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &viewport);
+	D3D11_VIEWPORT vp = {
+		viewport.TopLeftX, viewport.TopLeftY,
+		viewport.Width, viewport.Height,
+		viewport.MinDepth, viewport.MaxDepth };
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &vp);
 }
-void CRenderDevice::SetViewports(std::vector<D3D11_VIEWPORT> viewports)
+void CRenderDevice::SetViewports(const CustomStruct::CRenderViewport* viewports, const UINT& viewportNum)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+	std::vector<D3D11_VIEWPORT> vps(viewportNum);
+	for (UINT i = 0u; i < viewportNum; i++)
+	{
+		vps[i].TopLeftX = viewports[i].TopLeftX;
+		vps[i].TopLeftY = viewports[i].TopLeftY;
+		vps[i].Width = viewports[i].Width;
+		vps[i].Height = viewports[i].Height;
+		vps[i].MinDepth = viewports[i].MinDepth;
+		vps[i].MaxDepth = viewports[i].MaxDepth;
+	}
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(viewportNum, vps.data());
 }
 void CRenderDevice::SetNoVSShader()
 {

@@ -6,8 +6,7 @@
 
 CCamera::CCamera()
 {
-	this->m_CameraInfo.Viewport	= CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
-	this->m_CameraInfo.Depth	= CustomType::Vector2(0.f, 1.f);
+	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
 	this->m_CameraInfo.Fov		= ENGINE_CAMERA_FOV;
 	this->m_CameraInfo.Near		= ENGINE_CAMERA_NEAR;
 	this->m_CameraInfo.Far		= ENGINE_CAMERA_FAR;
@@ -25,8 +24,7 @@ CCamera::CCamera()
 }
 CCamera::CCamera(const CustomType::Vector3& position, const CustomType::Quaternion& rotation)
 {
-	this->m_CameraInfo.Viewport	= CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
-	this->m_CameraInfo.Depth	= CustomType::Vector2(0.f, 1.f);
+	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
 	this->m_CameraInfo.Fov		= ENGINE_CAMERA_FOV;
 	this->m_CameraInfo.Near		= ENGINE_CAMERA_NEAR;
 	this->m_CameraInfo.Far		= ENGINE_CAMERA_FAR;
@@ -86,8 +84,8 @@ CustomType::Vector4 CCamera::GetScreenToViewParameters(const CustomType::Vector2
 	return CustomType::Vector4(
 		sizeX * this->m_ViewportSizeAndInvSize.Z() * 2.f * invFovFixX,
 		sizeY * this->m_ViewportSizeAndInvSize.W() * -2.f * invFovFixY,
-		-((this->m_CameraInfo.Viewport.X() * this->m_ViewportSizeAndInvSize.Z() * 2.f * invFovFixX) + invFovFixX),
-		(this->m_CameraInfo.Viewport.Y() * this->m_ViewportSizeAndInvSize.W() * 2.f * invFovFixY) + invFovFixY);
+		-((this->m_CameraInfo.Viewport.TopLeftX * this->m_ViewportSizeAndInvSize.Z() * 2.f * invFovFixX) + invFovFixX),
+		(this->m_CameraInfo.Viewport.TopLeftY * this->m_ViewportSizeAndInvSize.W() * 2.f * invFovFixY) + invFovFixY);
 }
 void CCamera::ReCalculateFrustumPlane(std::vector<CustomType::Vector3>& plane, const FLOAT& fovAngleY, const FLOAT& aspectRatio, const FLOAT& farPlane)
 {
@@ -130,8 +128,8 @@ void CCamera::ReCalculateFrustumPlane(std::vector<CustomType::Vector3>& plane, c
 }
 void CCamera::ReCalculateProjectionMatrix()
 {
-	FLOAT viewportW		= static_cast<FLOAT>(this->m_CameraInfo.Viewport.Z() - this->m_CameraInfo.Viewport.X());
-	FLOAT viewportH		= static_cast<FLOAT>(this->m_CameraInfo.Viewport.W() - this->m_CameraInfo.Viewport.Y());
+	FLOAT viewportW		= this->m_CameraInfo.Viewport.Width;
+	FLOAT viewportH		= this->m_CameraInfo.Viewport.Height;
 	FLOAT aspectRatio	= viewportW / viewportH;
 
 	this->m_ProjectionMatrix = CustomType::Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(
@@ -149,7 +147,7 @@ void CCamera::ReCalculateProjectionMatrix()
 	this->m_DeviceZToViewZMulAdd = CustomType::Vector2(depthMul, depthAdd);
 
 	this->m_ViewportSizeAndInvSize = CustomType::Vector4(viewportW, viewportH, 1.f / viewportW, 1.f / viewportH);
-	this->m_ViewportMinSize = CustomType::Vector2(this->m_CameraInfo.Viewport.X(), this->m_CameraInfo.Viewport.Y());
+	this->m_ViewportMinSize = CustomType::Vector2(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY);
 
 	this->ReCalculateFrustumPlane(this->m_FrustumPlane, this->m_CameraInfo.Fov, aspectRatio, this->m_CameraInfo.Far);
 }

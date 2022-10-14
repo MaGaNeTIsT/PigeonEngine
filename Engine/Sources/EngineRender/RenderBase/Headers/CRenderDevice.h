@@ -140,8 +140,8 @@ public:
 	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum);
 	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
 	static void		SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs);
-	static void		SetViewport(const D3D11_VIEWPORT& viewport);
-	static void		SetViewports(std::vector<D3D11_VIEWPORT> viewports);
+	static void		SetViewport(const CustomStruct::CRenderViewport& viewport);
+	static void		SetViewports(const CustomStruct::CRenderViewport* viewports, const UINT& viewportNum);
 public:
 	static void		SetNoVSShader();
 	static void		SetNoPSShader();

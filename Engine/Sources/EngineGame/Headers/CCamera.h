@@ -8,11 +8,10 @@ public:
 	struct CCameraInfo
 	{
 		CCameraInfo() { ZeroMemory(this, sizeof(*this)); }
-		CustomType::Vector4	Viewport;
-		CustomType::Vector2 Depth;
-		FLOAT	Fov;
-		FLOAT	Near;
-		FLOAT	Far;
+		CustomStruct::CRenderViewport	Viewport;
+		FLOAT							Fov;
+		FLOAT							Near;
+		FLOAT							Far;
 	};
 	struct CCameraControlInfo
 	{
@@ -21,11 +20,10 @@ public:
 		FLOAT	LookSpeed;
 	};
 public:
-	CustomType::Vector4		GetViewport() { return this->m_CameraInfo.Viewport; }
-	CustomType::Vector2		GetViewportDepth() { return this->m_CameraInfo.Depth; }
-	FLOAT					GetFov() { return this->m_CameraInfo.Fov; }
-	FLOAT					GetNear() { return this->m_CameraInfo.Near; }
-	FLOAT					GetFar() { return this->m_CameraInfo.Far; }
+	CustomStruct::CRenderViewport	GetViewport() { return this->m_CameraInfo.Viewport; }
+	FLOAT							GetFov() { return this->m_CameraInfo.Fov; }
+	FLOAT							GetNear() { return this->m_CameraInfo.Near; }
+	FLOAT							GetFar() { return this->m_CameraInfo.Far; }
 public:
 	//The culling plane's normal of Camera' frustum with (top, down, left, right) order.
 	std::vector<CustomType::Vector3> GetCullingPlane();

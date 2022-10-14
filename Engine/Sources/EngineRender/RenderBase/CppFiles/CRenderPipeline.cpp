@@ -118,7 +118,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		CRenderDevice::CreateBuffer(
 			m_RenderPerFrameInfo.PerFrameBuffer,
 			CustomStruct::CRenderBufferDesc(
-				sizeof(CustomStruct::ConstantBufferPerFrame),
+				sizeof(CustomStruct::CShaderGlobalPerFrame),
 				CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER,
 				sizeof(FLOAT)));
 	}
@@ -243,8 +243,8 @@ void CRenderPipeline::PostInit()
 		return;
 
 	{
-		std::vector<CLight*> rawSceneLights = m_CurrentScene->GetGameObjectAll<CLight>(CScene::SceneLayout::LAYOUT_LIGHT);
-		CLight* sceneMainLight = NULL;
+		std::vector<CLightBase*> rawSceneLights = m_CurrentScene->GetGameObjectAll<CLightBase>(CScene::SceneLayout::LAYOUT_LIGHT);
+		CLightBase* sceneMainLight = NULL;
 		for (INT i = 0; i < rawSceneLights.size(); i++)
 		{
 			if (rawSceneLights[i]->IsActive())

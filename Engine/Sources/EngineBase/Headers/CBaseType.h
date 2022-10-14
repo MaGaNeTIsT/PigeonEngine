@@ -305,6 +305,7 @@ namespace CustomType
 		void			operator-=(const INT& v);
 		void			operator*=(const INT& v);
 		void			operator/=(const INT& v);
+		BOOL			operator==(const Vector2Int& v);
 	public:
 		Vector2Int();
 		Vector2Int(const Vector2Int& v);
@@ -401,6 +402,8 @@ namespace CustomType
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
 		static INT		Clamp(const INT& v, const INT& min, const INT& max);
 		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
+		static FLOAT	Sin(const FLOAT& v);
+		static FLOAT	Cos(const FLOAT& v);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
 		static FLOAT	Exp2(const FLOAT& v);
 		static INT		Exp2(const INT& v);
