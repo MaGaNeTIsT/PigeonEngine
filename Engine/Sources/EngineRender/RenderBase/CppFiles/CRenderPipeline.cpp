@@ -91,6 +91,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 {
 	m_CurrentScene = scene;
 	m_GlobalBufferSize = bufferSize;
+	m_ShadowBufferSize = CustomType::Vector2Int(2048, 2048);
 	m_GlobalCullingInfo.Distance = ENGINE_DEFAULT_CULLING_DISTANCE;
 	m_GlobalCullingInfo.ClipOffset = ENGINE_DEFAULT_CULLING_OFFSET;
 
@@ -119,6 +120,12 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 			m_RenderPerFrameInfo.PerFrameBuffer,
 			CustomStruct::CRenderBufferDesc(
 				sizeof(CustomStruct::CShaderGlobalPerFrame),
+				CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER,
+				sizeof(FLOAT)));
+		CRenderDevice::CreateBuffer(
+			m_RenderLightDataInfo.LightDataBuffer,
+			CustomStruct::CRenderBufferDesc(
+				sizeof(CustomStruct::CShaderGlobalLightData),
 				CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER,
 				sizeof(FLOAT)));
 	}
@@ -257,8 +264,8 @@ void CRenderPipeline::PostInit()
 		UINT bufferHeight = 1u;
 		if (sceneMainLight)
 		{
-			bufferWidth = static_cast<UINT>(sceneMainLight->GetLightShadowSize().X());
-			bufferHeight = static_cast<UINT>(sceneMainLight->GetLightShadowSize().Y());
+			bufferWidth = static_cast<UINT>(m_ShadowBufferSize.X());
+			bufferHeight = static_cast<UINT>(m_ShadowBufferSize.Y());
 		}
 		CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_UNKNOWN;
 		CRenderDevice::CreateRenderTexture2D(
@@ -402,10 +409,7 @@ void CRenderPipeline::Render()
 	if (m_CurrentScene == NULL)
 		return;
 
-	D3D11_VIEWPORT viewport;
 	{
-		::ZeroMemory(&viewport, sizeof(viewport));
-
 		CRenderDevice::ClearRenderTargetView(m_SceneColor.RenderTargetView);
 		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 		{
@@ -431,24 +435,21 @@ void CRenderPipeline::Render()
 			if (!camera)
 				continue;
 
-			{
-				PreparePerFrameRender(camera);
-
-				CustomType::Vector4 cameraViewport = camera->GetViewport();
-				CustomType::Vector2 cameraViewportDepth = camera->GetViewportDepth();
-				viewport.TopLeftX = cameraViewport.X();
-				viewport.TopLeftY = cameraViewport.Y();
-				viewport.Width = cameraViewport.Z() - cameraViewport.X();
-				viewport.Height = cameraViewport.W() - cameraViewport.Y();
-				viewport.MinDepth = cameraViewportDepth.X();
-				viewport.MaxDepth = cameraViewportDepth.Y();
-			}
+			PreparePerFrameRender(camera);
+			PrepareLightDataRender();
 
 			CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
+			CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
+
 			CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 			CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
 			CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-			CRenderDevice::SetViewport(viewport);
+
+			CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+			CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+			CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+
+			CRenderDevice::SetViewport(camera->GetViewport());
 			CRenderDevice::SetRasterizerState(m_PipelineRS);
 			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		}
@@ -614,6 +615,7 @@ void CRenderPipeline::Render()
 void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
 {
 	CustomType::Vector2 cameraViewportMin = camera->GetViewportMinSize();
+	CustomStruct::CRenderViewport vp = camera->GetViewport();
 
 	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = camera->GetProjectionMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = camera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
@@ -621,22 +623,14 @@ void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
 	m_RenderPerFrameInfo.PerFrameData.ScreenToViewSpaceParams = camera->GetScreenToViewParameters(CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height), CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height)).GetXMFLOAT4();
 	m_RenderPerFrameInfo.PerFrameData.CameraViewportMinSizeAndInvBufferSize = DirectX::XMFLOAT4(cameraViewportMin.X(), cameraViewportMin.Y(), 1.f / static_cast<FLOAT>(m_GlobalBufferSize.X()), 1.f / static_cast<FLOAT>(m_GlobalBufferSize.Y()));
 	m_RenderPerFrameInfo.PerFrameData.CameraViewportSizeAndInvSize = camera->GetViewportSizeAndInvSize().GetXMFLOAT4();
-	m_RenderPerFrameInfo.PerFrameData.CameraViewportRect = camera->GetViewport().GetXMFLOAT4();
+	m_RenderPerFrameInfo.PerFrameData.CameraViewportRect = DirectX::XMFLOAT4(vp.TopLeftX, vp.TopLeftY, vp.Width, vp.Height);
 
 	m_RenderPerFrameInfo.PerFrameData.ViewMatrix = camera->GetViewMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = camera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = camera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = camera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.TimeParams = DirectX::XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
-	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = camera->GetPosition().GetXMFLOAT3();
-
-	m_RenderPerFrameInfo.PerFrameData.DirectionalLightCount = static_cast<FLOAT>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT]).size());
-	for (INT i = 0; i < (m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT]).size() && i < 4; i++)
-	{
-		CLight* light = reinterpret_cast<CLight*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT])[i]);
-		m_RenderPerFrameInfo.PerFrameData.DirectionalLightData[i].Direction = light->GetLightData()->Direction;
-		m_RenderPerFrameInfo.PerFrameData.DirectionalLightData[i].Color = light->GetLightData()->Color;
-	}
+	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = camera->GetPosition().GetXMFLOAT4();
 }
 void CRenderPipeline::PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, CCamera* camera)
 {
@@ -676,6 +670,103 @@ void CRenderPipeline::Culling(std::vector<CGameObject*>& cullingResult, const CR
 				cullingResult.push_back(primitives[i]);
 			}
 		}
+	}
+}
+void CRenderPipeline::PrepareLightDataRender()
+{
+	std::vector<CLightDirectional*> lightDirectional;
+	std::vector<CLightPoint*> lightPoint;
+	std::vector<CLightSpot*> lightSpot;
+	for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT])
+	{
+		if (!obj)
+		{
+			continue;
+		}
+		CLightBase* lightObj = reinterpret_cast<CLightBase*>(obj);
+		if (!lightObj)
+		{
+			continue;
+		}
+		CLightBase::LightType lightType = lightObj->GetLightType();
+		if (lightType == CLightBase::LightType::LIGHT_TYPE_DIRECTIONAL)
+		{
+			CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(lightObj);
+			if (tempLight)
+			{
+				lightDirectional.push_back(tempLight);
+			}
+		}
+		else if (lightType == CLightBase::LightType::LIGHT_TYPE_POINT)
+		{
+			CLightPoint* tempLight = reinterpret_cast<CLightPoint*>(lightObj);
+			if (tempLight)
+			{
+				lightPoint.push_back(tempLight);
+			}
+		}
+		else if (lightType == CLightBase::LightType::LIGHT_TYPE_SPOT)
+		{
+			CLightSpot* tempLight = reinterpret_cast<CLightSpot*>(lightObj);
+			if (tempLight)
+			{
+				lightSpot.push_back(tempLight);
+			}
+		}
+	}
+	m_RenderLightDataInfo.LightData.LightCount = DirectX::XMINT4(static_cast<INT>(lightDirectional.size()), static_cast<INT>(lightPoint.size()), static_cast<INT>(lightSpot.size()), 0);
+	UINT lightIndex = 0u;
+	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.x; i++)
+	{
+		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
+		{
+			break;
+		}
+
+		CustomStruct::CColor color; FLOAT intensity;
+		lightDirectional[i]->GetColor(color, intensity);
+		CustomType::Vector3 direction(lightDirectional[i]->GetForwardVector());
+
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Color = DirectX::XMFLOAT4(color.r, color.g, color.b, intensity);
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params0 = DirectX::XMFLOAT4(direction.X(), direction.Y(), direction.Z(), 0.f);
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params1 = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+
+		lightIndex += 1u;
+	}
+	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.y; i++)
+	{
+		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
+		{
+			break;
+		}
+
+		CustomStruct::CColor color; FLOAT intensity;
+		lightPoint[i]->GetColor(color, intensity);
+		CustomType::Vector3 position(lightPoint[i]->GetPosition());
+
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Color = DirectX::XMFLOAT4(color.r, color.g, color.b, intensity);
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params0 = DirectX::XMFLOAT4(position.X(), position.Y(), position.Z(), lightPoint[i]->GetRadius());
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params1 = DirectX::XMFLOAT4(0.f, 0.f, 0.f, lightPoint[i]->GetAttenuationExponent());
+
+		lightIndex += 1u;
+	}
+	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.z; i++)
+	{
+		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
+		{
+			break;
+		}
+
+		CustomStruct::CColor color; FLOAT intensity;
+		lightSpot[i]->GetColor(color, intensity);
+		CustomType::Vector3 position(lightSpot[i]->GetPosition());
+		CustomType::Vector3 direction(lightSpot[i]->GetForwardVector());
+
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Color = DirectX::XMFLOAT4(color.r, color.g, color.b, intensity);
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params0 = DirectX::XMFLOAT4(position.X(), position.Y(), position.Z(), lightSpot[i]->GetRange());
+		m_RenderLightDataInfo.LightData.LightParams[lightIndex].Params1 = DirectX::XMFLOAT4(direction.X(), direction.Y(), direction.Z(), lightSpot[i]->GetCosHalfRadian());
+
+		lightIndex += 1u;
 	}
 }
 void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)

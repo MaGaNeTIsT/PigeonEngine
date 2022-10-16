@@ -12,17 +12,25 @@ public:
 		UINT									Depth;
 		CRenderDevice::RenderTexture2DViewInfo	Texture;
 	};
+	enum LightType
+	{
+		LIGHT_TYPE_DIRECTIONAL	= 0,
+		LIGHT_TYPE_POINT		= 1,
+		LIGHT_TYPE_SPOT			= 2
+	};
 public:
 	BOOL		IsTransmitShadow() { return (this->m_ShadowInfo != nullptr); }
+	LightType	GetLightType() { return (this->m_LightType); }
 	void		GetColor(CustomStruct::CColor& color, FLOAT& intensity);
 	void		SetColor(const CustomStruct::CColor& color, const FLOAT& intensity);
 	BOOL		GetShadowSize(CustomType::Vector2Int& output);
 	BOOL		SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) = 0;
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) { return CustomType::Matrix4x4::Identity(); }
+	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) { return CustomType::Matrix4x4::Identity(); }
 protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
+	void			SetLightType(LightType type) { this->m_LightType = type; }
 public:
 	virtual void	Init()override {}
 	virtual void	Uninit()override {}
@@ -32,6 +40,7 @@ public:
 	CLightBase(const CLightBase& light);
 	virtual ~CLightBase() {}
 protected:
+	LightType							m_LightType;
 	CustomStruct::CColor				m_Color;
 	FLOAT								m_Intensity;
 	std::shared_ptr<LightShadowInfo>	m_ShadowInfo;

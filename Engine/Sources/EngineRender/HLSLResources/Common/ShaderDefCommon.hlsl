@@ -4,10 +4,13 @@
 #define CUSTOM_SHADER_PI		(3.141592653589793)
 #define CUSTOM_SHADER_PI_HALF	(1.570796326794897)
 
-struct DirectionalLightData
+#define GLOBAL_LIGHT_COUNT		(16)
+
+struct LightParams
 {
-	float4 forward;
-	float4 color;
+	float4 Color;
+	float4 Params0;
+	float4 Params1;
 };
 struct Attribute
 {

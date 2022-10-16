@@ -107,7 +107,6 @@ void CGTAOPass::Update()
 		this->m_UserArguments.NumAngles = tempNumAngles;
 	}
 
-	CustomType::Vector4Int viewport(this->m_MainCamera->GetViewport());
 	FLOAT bufferSizeW = static_cast<FLOAT>(this->m_BufferSize.X());
 	FLOAT bufferSizeH = static_cast<FLOAT>(this->m_BufferSize.Y());
 	FLOAT pipelineSizeW = static_cast<FLOAT>(this->m_PipelineSize.X());

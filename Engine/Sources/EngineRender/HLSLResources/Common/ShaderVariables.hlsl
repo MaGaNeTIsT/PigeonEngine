@@ -17,9 +17,7 @@ cbuffer ConstantBufferPerFrame : register(b0)
 	float4					_CameraViewportMinSizeAndInvBufferSize;
 	float4					_CameraViewportSizeAndInvSize;
 	float4					_CameraViewportRect;
-	float3					_CameraWorldPosition;
-	float					_DirectionalLightCount;
-	DirectionalLightData	_DirectionalLightData[4];
+	float4					_CameraWorldPosition;
 };
 cbuffer ConstantBufferPerDraw : register(b1)
 {
@@ -28,6 +26,12 @@ cbuffer ConstantBufferPerDraw : register(b1)
 	float4x4	_WorldInvTransposeMatrix;
 	float4		_CustomParameter;
 };
+cbuffer ConstantBufferLightData : register(b2)
+{
+	uint4			_LightCount;
+	LightParams		_LightData[GLOBAL_LIGHT_COUNT];
+}
+
 SamplerState	_PointClampSampler			: register(s0);
 SamplerState	_PointWrapSampler			: register(s1);
 SamplerState	_LinearClampSampler			: register(s2);

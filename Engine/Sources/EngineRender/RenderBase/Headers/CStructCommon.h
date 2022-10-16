@@ -36,12 +36,6 @@ namespace CustomStruct
 		UINT	IndexCount;
 	};
 
-	struct CShaderLightParams
-	{
-		DirectX::XMFLOAT4	Params0;
-		DirectX::XMFLOAT4	Params1;
-	};
-
 	struct CShaderGlobalPerFrame
 	{
 		CShaderGlobalPerFrame() { ::ZeroMemory(this, sizeof(*this)); }
@@ -58,8 +52,6 @@ namespace CustomStruct
 		DirectX::XMFLOAT4		CameraViewportSizeAndInvSize;
 		DirectX::XMFLOAT4		CameraViewportRect;
 		DirectX::XMFLOAT4		CameraWorldPosition;
-		DirectX::XMINT4			LightCount;
-		CShaderLightParams		LightParams[16];
 	};
 
 	struct CShaderGlobalPerDraw
@@ -69,6 +61,26 @@ namespace CustomStruct
 		DirectX::XMFLOAT4X4		WorldInvMatrix;
 		DirectX::XMFLOAT4X4		WorldInvTransposeMatrix;
 		DirectX::XMFLOAT4		CustomParameter;
+	};
+
+	struct CShaderLightParams
+	{
+		CShaderLightParams() { ::ZeroMemory(this, sizeof(*this)); }
+		DirectX::XMFLOAT4	Color;
+		DirectX::XMFLOAT4	Params0;
+		DirectX::XMFLOAT4	Params1;
+	};
+
+	struct CShaderGlobalLightData
+	{
+		CShaderGlobalLightData() { ::ZeroMemory(this, sizeof(*this)); }
+		static const UINT& GetSupportLightMaxCount()
+		{
+			const static UINT supportLightMaxCount = 16u;
+			return supportLightMaxCount;
+		}
+		DirectX::XMINT4			LightCount;
+		CShaderLightParams		LightParams[16];
 	};
 
 	enum CEngineDefaultTexture2DEnum

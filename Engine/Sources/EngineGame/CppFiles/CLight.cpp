@@ -76,11 +76,13 @@ BOOL CLightBase::CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& out
 
 CLightDirectional::CLightDirectional()
 {
+	this->SetLightType(LightType::LIGHT_TYPE_DIRECTIONAL);
 	this->m_CurrentCamera = NULL;
 	this->m_FrameCounter = 0;
 }
 CLightDirectional::CLightDirectional(const CLightDirectional& light) : CLightBase(light)
 {
+	this->SetLightType(LightType::LIGHT_TYPE_DIRECTIONAL);
 	this->m_CurrentCamera = light.m_CurrentCamera;
 	this->m_FrameCounter = light.m_FrameCounter;
 	this->m_ViewMatrix[0] = light.m_ViewMatrix[0];
@@ -112,11 +114,13 @@ CustomType::Matrix4x4 CLightDirectional::GetPreviousViewMatrix(const UINT& extra
 
 CLightPoint::CLightPoint()
 {
+	this->SetLightType(LightType::LIGHT_TYPE_POINT);
 	this->m_AttenuationExponent = 1.5f;
 	this->m_Radius = 100.f;
 }
 CLightPoint::CLightPoint(const CLightPoint& light) : CLightBase(light)
 {
+	this->SetLightType(LightType::LIGHT_TYPE_POINT);
 	this->m_AttenuationExponent = light.m_AttenuationExponent;
 	this->m_Radius = light.m_Radius;
 }
@@ -133,6 +137,7 @@ CustomType::Matrix4x4 CLightPoint::GetPreviousViewMatrix(const UINT& extraIndex)
 
 CLightSpot::CLightSpot()
 {
+	this->SetLightType(LightType::LIGHT_TYPE_SPOT);
 	this->m_Range = 100.f;
 	this->m_HalfRadian = 30.f * CustomType::CMath::GetDegToRad();
 	this->m_CosHalfRadian = CustomType::CMath::Cos(this->m_HalfRadian);
@@ -140,6 +145,7 @@ CLightSpot::CLightSpot()
 }
 CLightSpot::CLightSpot(const CLightSpot& light) : CLightBase(light)
 {
+	this->SetLightType(LightType::LIGHT_TYPE_SPOT);
 	this->m_Range = light.m_Range;
 	this->m_HalfRadian = light.m_HalfRadian;
 	this->m_CosHalfRadian = light.m_CosHalfRadian;

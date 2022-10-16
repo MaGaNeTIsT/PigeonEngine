@@ -35,6 +35,12 @@ public:
 		CustomStruct::CShaderGlobalPerFrame		PerFrameData;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	PerFrameBuffer;
 	};
+	struct RenderLightDataInfo
+	{
+		RenderLightDataInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		CustomStruct::CShaderGlobalLightData	LightData;
+		Microsoft::WRL::ComPtr<ID3D11Buffer>	LightDataBuffer;
+	};
 public:
 	const static UINT GEOMETRY_BUFFER_COUNT = 3;
 public:
@@ -48,6 +54,7 @@ protected:
 	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
 	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo);
 	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<class CGameObject*>& primitives);
+	virtual void	PrepareLightDataRender();
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 protected:
 	const CScene*						m_CurrentScene;
@@ -57,8 +64,9 @@ protected:
 	ULONGLONG							m_FrameIndex;
 	CRenderCameraCullingInfo			m_GlobalCullingInfo;
 	RenderPerFrameInfo					m_RenderPerFrameInfo;
+	RenderLightDataInfo					m_RenderLightDataInfo;
 	CustomType::Vector2Int				m_GlobalBufferSize;
-	
+	CustomType::Vector2Int				m_ShadowBufferSize;
 protected:
 	std::shared_ptr<CMesh<UINT>>		m_FullScreenPolygon;
 protected:

@@ -1594,7 +1594,7 @@ void CRenderDevice::ClearFinalOutput()
 void CRenderDevice::SetFinalOutput()
 {
 	CRenderDevice::SetRenderTarget(CRenderDevice::m_RenderDevice->m_RenderTargetView, CRenderDevice::m_RenderDevice->m_DepthStencilView);
-	CRenderDevice::SetViewport(CRenderDevice::m_RenderDevice->m_Viewport);
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &(CRenderDevice::m_RenderDevice->m_Viewport));
 }
 D3D11_VIEWPORT CRenderDevice::GetViewport()
 {
