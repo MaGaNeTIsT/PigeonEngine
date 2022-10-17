@@ -33,7 +33,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectManager.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLight.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2D.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h" />
@@ -79,7 +79,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObjectManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLight.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPlane.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2D.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2DBase.cpp" />

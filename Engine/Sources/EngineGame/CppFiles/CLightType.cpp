@@ -1,5 +1,5 @@
 #include "../../../../Entry/EngineMain.h"
-#include "../Headers/CLight.h"
+#include "../Headers/CLightType.h"
 #include "../Headers/CCamera.h"
 
 CLightBase::CLightBase()

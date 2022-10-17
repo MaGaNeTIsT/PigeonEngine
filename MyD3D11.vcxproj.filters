@@ -165,7 +165,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectManager.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLight.h">
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h">
@@ -296,7 +296,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObjectManager.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLight.cpp">
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPlane.cpp">

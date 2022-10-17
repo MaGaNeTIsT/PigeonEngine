@@ -2,7 +2,7 @@
 #include "../../../EngineBase/Headers/CManager.h"
 #include "../../../EngineGame/Headers/CGameObject.h"
 #include "../../../EngineGame/Headers/CCamera.h"
-#include "../../../EngineGame/Headers/CLight.h"
+#include "../../../EngineGame/Headers/CLightType.h"
 #include "../Headers/CRenderDevice.h"
 #include "../Headers/CGPUQuery.h"
 #include "../Headers/CGPUQueryManager.h"

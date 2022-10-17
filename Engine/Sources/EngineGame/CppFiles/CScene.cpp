@@ -3,7 +3,7 @@
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineBase/Headers/CInput.h"
 #include "../Headers/CCamera.h"
-#include "../Headers/CLight.h"
+#include "../Headers/CLightType.h"
 #include "../Headers/CScreenPolygon2D.h"
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
