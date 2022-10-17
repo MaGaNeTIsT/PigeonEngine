@@ -96,6 +96,11 @@ void CLightDirectional::Update()
 	{
 		return;
 	}
+
+	CustomType::Matrix4x4& currentMatrix = this->m_ViewMatrix[this->m_FrameCounter];
+
+
+	this->m_CurrentCamera = NULL;
 }
 void CLightDirectional::SetCurrentCamera(class Camera* camera)
 {

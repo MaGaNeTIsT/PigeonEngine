@@ -20,7 +20,7 @@ void CScene::Init()
 {
 	CCamera* mainCamera = this->AddGameObject<CCamera>(SceneLayout::LAYOUT_CAMERA);
 
-	CLightDirectional* mainLight = reinterpret_cast<CLightDirectional*>(this->AddGameObject<CLightBase>(SceneLayout::LAYOUT_LIGHT));
+	CLightDirectional* mainLight = this->AddGameObject<CLightDirectional>(SceneLayout::LAYOUT_LIGHT);
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 	//CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 	//CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);

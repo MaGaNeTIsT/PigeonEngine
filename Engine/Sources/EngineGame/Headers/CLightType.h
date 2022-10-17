@@ -26,8 +26,8 @@ public:
 	BOOL		GetShadowSize(CustomType::Vector2Int& output);
 	BOOL		SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) { return CustomType::Matrix4x4::Identity(); }
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) { return CustomType::Matrix4x4::Identity(); }
+	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) = 0;
 protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 	void			SetLightType(LightType type) { this->m_LightType = type; }
