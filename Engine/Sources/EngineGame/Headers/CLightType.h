@@ -26,8 +26,8 @@ public:
 	BOOL		GetShadowSize(CustomType::Vector2Int& output);
 	BOOL		SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) = 0;
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u) = 0;
 protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 	void			SetLightType(LightType type) { this->m_LightType = type; }
@@ -49,20 +49,77 @@ protected:
 class CLightDirectional : public CLightBase
 {
 public:
-	void	SetCurrentCamera(class Camera* camera);
+	struct ShadowCascadeSettings
+	{
+		ShadowCascadeSettings()
+		{
+			::ZeroMemory(this, sizeof(*this));
+			const FLOAT defaultDistance = ENGINE_DEFAULT_CULLING_DISTANCE;
+			LayerNum = 1u;
+			Distance[1u] = defaultDistance;
+		}
+		ShadowCascadeSettings(const UINT& layerNum, const std::vector<FLOAT>& distances, const std::vector<FLOAT>& borders, const BOOL& isBorderPercentage = TRUE)
+		{
+			::ZeroMemory(this, sizeof(*this));
+			const FLOAT defaultDistance = ENGINE_DEFAULT_CULLING_DISTANCE;
+			const FLOAT defaultPercentage = 0.1f;	// default 10% border of full distance.
+			LayerNum = CustomType::CMath::Clamp(layerNum, 1u, 4u);
+			for (UINT i = 0u; i < LayerNum; i++)
+			{
+				if (i < distances.size())
+				{
+					Distance[i] = distances[i];
+				}
+			}
+			for (UINT i = 0u; i < (LayerNum - 1); i++)
+			{
+				if (i < borders.size() && i < distances.size())
+				{
+					if (isBorderPercentage)
+					{
+						Border[i] = borders[i];
+					}
+					else
+					{
+						Border[i] = CustomType::CMath::Clamp(borders[i] / distances[i], 0.f, 1.f);
+					}
+				}
+			}
+		}
+		UINT	LayerNum;
+		FLOAT	Distance[4];
+		FLOAT	Border[3];
+	};
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	void	PreRenderInitLight(class CCamera* camera);
+	void	SetCascadeInfo(const ShadowCascadeSettings& settings);
 public:
+	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
+public:
+	virtual void	Init()override;
 	virtual void	Update()override;
+protected:
+	static void		GenerateCascadeProjectionMatrices(class CCamera* camera, CLightDirectional* light);
 public:
 	CLightDirectional();
 	CLightDirectional(const CLightDirectional& light);
 	virtual ~CLightDirectional() {}
 protected:
-	Camera*					m_CurrentCamera;
-	INT						m_FrameCounter;
-	CustomType::Matrix4x4	m_ViewMatrix[2u];
+	struct ShadowCascadeInfo
+	{
+		ShadowCascadeInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		UINT				LayerNum;
+		std::vector<FLOAT>	Distances;
+		std::vector<FLOAT>	Borders;
+	};
+protected:
+	INT									m_FrameCounter;
+	class CCamera*						m_CurrentCamera;
+	CustomType::Matrix4x4				m_ViewMatrix[2];
+	ShadowCascadeSettings				m_CascadeSettings;
+	ShadowCascadeInfo					m_CascadeInfo;
+	std::vector<CustomType::Matrix4x4>	m_ProjectionMatrices;
 };
 
 class CLightPoint : public CLightBase
@@ -73,8 +130,8 @@ public:
 	const FLOAT&	GetAttenuationExponent()const { return (this->m_AttenuationExponent); }
 	void			SetAttenuationExponent(const FLOAT& value) { this->m_AttenuationExponent = value; }
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
 public:
 	CLightPoint();
 	CLightPoint(const CLightPoint& light);
@@ -94,8 +151,8 @@ public:
 	const FLOAT&	GetCosHalfRadian()const { return (this->m_CosHalfRadian); }
 	void			SetCosHalfRadian(const FLOAT& v) { this->m_CosHalfRadian = v; }
 public:
-	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
 public:
 	virtual void	Update()override;
 public:
@@ -108,5 +165,5 @@ protected:
 	FLOAT					m_CosHalfRadian;
 protected:
 	INT						m_FrameCounter;
-	CustomType::Matrix4x4	m_ViewMatrix[2];
+	CustomType::Matrix4x4	m_ViewProjectionMatrix[2];
 };

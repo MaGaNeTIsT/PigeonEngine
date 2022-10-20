@@ -37,6 +37,16 @@ namespace CustomType
 		Matrix4x4 m(l.GetXMMATRIX() * r.GetXMMATRIX());
 		return m;
 	}
+	Matrix4x4 Matrix4x4::PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane)
+	{
+		Matrix4x4 result(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * CMath::GetDegToRad(), aspectRatio, nearPlane, farPlane));
+		return result;
+	}
+	Matrix4x4 Matrix4x4::OrthographicMatrix(const FLOAT& left, const FLOAT& top, const FLOAT& right, const FLOAT& bottom, const FLOAT& nearPlane, const FLOAT& farPlane)
+	{
+		Matrix4x4 result(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane));
+		return result;
+	}
 	Matrix4x4 Matrix4x4::Inverse()
 	{
 		Matrix4x4 result(DirectX::XMMatrixInverse(nullptr, this->GetXMMATRIX()));
@@ -55,6 +65,11 @@ namespace CustomType
 	Vector3 Matrix4x4::MultiplyPosition(const Vector3& v)
 	{
 		Vector3 result(DirectX::XMVector3TransformCoord(v.GetXMVECTOR(), this->GetXMMATRIX()));
+		return result;
+	}
+	Vector4 Matrix4x4::MultiplyVector(const Vector4& v)
+	{
+		Vector4 result(DirectX::XMVector4Transform(v.GetXMVECTOR(), this->GetXMMATRIX()));
 		return result;
 	}
 	Matrix4x4 Matrix4x4::operator*(const Matrix4x4& m)

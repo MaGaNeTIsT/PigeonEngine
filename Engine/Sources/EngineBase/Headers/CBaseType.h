@@ -24,12 +24,15 @@ namespace CustomType
 	public:
 		static const Matrix4x4&		Identity() { return Matrix4x4::m_Identity; }
 		static Matrix4x4			MultiplyMatrix(const Matrix4x4& l, const Matrix4x4& r);
+		static Matrix4x4			PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane);
+		static Matrix4x4			OrthographicMatrix(const FLOAT& left, const FLOAT& top, const FLOAT& right, const FLOAT& bottom, const FLOAT& nearPlane, const FLOAT& farPlane);
 	public:
 		void		ResetIdentity() { (*this) = Matrix4x4::m_Identity; }
 		void		SetMatrix(const Matrix4x4& m) { (*this) = m; }
 		Matrix4x4	Inverse();
 		Matrix4x4	Transpose();
 		Vector3		MultiplyVector(const Vector3& v);
+		Vector4		MultiplyVector(const Vector4& v);
 		Vector3		MultiplyPosition(const Vector3& v);
 	public:
 		Matrix4x4	operator*(const Matrix4x4& m);
