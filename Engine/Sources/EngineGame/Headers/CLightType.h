@@ -91,8 +91,7 @@ public:
 		FLOAT	Border[3];
 	};
 public:
-	void	PreRenderInitLight(class CCamera* camera);
-	void	SetCascadeInfo(const ShadowCascadeSettings& settings);
+	void PrepareCascadeShadowInfo(class CCamera* camera, const ShadowCascadeSettings* settings = NULL);
 public:
 	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
 	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
@@ -106,20 +105,25 @@ public:
 	CLightDirectional(const CLightDirectional& light);
 	virtual ~CLightDirectional() {}
 protected:
-	struct ShadowCascadeInfo
+	struct ShadowCascadeLayerInfo
 	{
-		ShadowCascadeInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		ShadowCascadeLayerInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		UINT				LayerNum;
 		std::vector<FLOAT>	Distances;
 		std::vector<FLOAT>	Borders;
 	};
+	struct ShadowCascadeInfo
+	{
+		ShadowCascadeInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		class CCamera*						CurrentCamera;
+		ShadowCascadeSettings				CascadeSettings;
+		ShadowCascadeLayerInfo				LayerInfo;
+		CustomType::Matrix4x4				ViewMatrix;
+		std::vector<CustomType::Matrix4x4>	ProjectionMatrices;
+	};
 protected:
-	INT									m_FrameCounter;
-	class CCamera*						m_CurrentCamera;
-	CustomType::Matrix4x4				m_ViewMatrix[2];
-	ShadowCascadeSettings				m_CascadeSettings;
-	ShadowCascadeInfo					m_CascadeInfo;
-	std::vector<CustomType::Matrix4x4>	m_ProjectionMatrices;
+	INT						m_FrameCounter;
+	ShadowCascadeInfo		m_CascadeInfo[2];
 };
 
 class CLightPoint : public CLightBase
