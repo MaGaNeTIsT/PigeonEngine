@@ -26,15 +26,15 @@ class CScene
 public:
 	enum SceneLayout
 	{
-		LAYOUT_CAMERA		= 0,
-		LAYOUT_LIGHT		= 1,
-		LAYOUT_TERRAIN		= 2,
-		LAYOUT_OPAQUE		= 3,
-		LAYOUT_TRANSPARENT	= 4,
+		LAYOUT_TERRAIN		= 0,
+		LAYOUT_OPAQUE		= 1,
+		LAYOUT_TRANSPARENT	= 2,
 		LAYOUT_COUNT
 	};
 protected:
-	std::map<ULONGLONG, CGameObject*> m_GameObject[SceneLayout::LAYOUT_COUNT];
+	std::map<ULONGLONG, CGameObject*> m_GameCameras;
+	std::map<ULONGLONG, CGameObject*> m_GameLights;
+	std::map<ULONGLONG, CGameObject*> m_GameObjects[SceneLayout::LAYOUT_COUNT];
 public:
 	CScene();
 	virtual ~CScene();
@@ -42,6 +42,8 @@ public:
 	template <typename T>
 	T* AddGameObject(const UINT& layout)
 	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+			return NULL;
 		CGameObject* gameObject = new T();
 		gameObject->SetScene(this);
 		gameObject->Active();
@@ -53,6 +55,8 @@ public:
 	template <typename T>
 	T* GetGameObjectFirst(const UINT& layout)const
 	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+			return NULL;
 		if (this->m_GameObject[layout].size() < 1)
 			return NULL;
 		for (const auto& obj : (this->m_GameObject[layout]))
@@ -68,6 +72,8 @@ public:
 	template <typename T>
 	T* GetGameObjectByIndex(const UINT& layout, const UINT& idx)const
 	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+			return NULL;
 		if (this->m_GameObject[layout].size() < 1)
 			return NULL;
 		UINT number = idx;
@@ -89,6 +95,8 @@ public:
 	template <typename T>
 	std::vector<T*>	GetGameObjectAll(const UINT& layout)const
 	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+			return NULL;
 		std::vector<T*> listObj;
 		if (this->m_GameObject[layout].size() < 1)
 			return listObj;

@@ -940,6 +940,10 @@ namespace CustomType
 	{
 		return ((this->x == v.x) && (this->y == v.y));
 	}
+	BOOL Vector2Int::operator!=(const Vector2Int& v)
+	{
+		return ((this->x != v.x) || (this->y != v.y));
+	}
 	Vector2Int Vector2Int::GetZero()
 	{
 		Vector2Int result(0, 0);
@@ -1277,6 +1281,17 @@ namespace CustomType
 	{
 		FLOAT e = log2f(v);
 		return static_cast<INT>(floorf(e));
+	}
+	INT CMath::Log2Ceil(const INT& v)
+	{
+		FLOAT e = log2f(static_cast<FLOAT>(v));
+		e = ceilf(e);
+		return static_cast<INT>(e);
+	}
+	INT CMath::Log2Ceil(const FLOAT& v)
+	{
+		FLOAT e = log2f(v);
+		return static_cast<INT>(ceilf(e));
 	}
 	INT CMath::PowerOfTwoFloor(FLOAT& output, const FLOAT& input)
 	{

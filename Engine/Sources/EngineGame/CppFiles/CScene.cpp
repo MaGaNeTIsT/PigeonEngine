@@ -87,10 +87,20 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_CAMERA])
+	{
+		object.second->Update();
+	}
+	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_LIGHT])
+	{
+		object.second->Update();
+	}
+	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObject[i])
+		{
 			object.second->Update();
+		}
 	}
 
 	{

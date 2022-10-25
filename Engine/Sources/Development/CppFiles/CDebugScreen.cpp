@@ -52,14 +52,13 @@ void CDebugScreen::PrepareDraw()
 	if (m_SRVs.size() != CDebugScreen::DEBUGPOLYGON_COUNT)
 	{
 		m_SRVs.resize(CDebugScreen::DEBUGPOLYGON_COUNT);
-		m_SRVs[0] = CManager::GetRenderPipeline()->m_SceneColor.ShaderResourceView;
-		for (INT i = 0; i < static_cast<INT>(CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT); i++)
-		{
-			m_SRVs[i + 1] = CManager::GetRenderPipeline()->m_GBuffer[i].ShaderResourceView;
-		}
-		m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1] = CManager::GetRenderPipeline()->m_SceneDepth.ShaderResourceView;
-		m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 2] = CManager::GetRenderPipeline()->m_ShadowBuffer.ShaderResourceView;
 	}
+	m_SRVs[0] = CManager::GetRenderPipeline()->m_SceneColor.ShaderResourceView;
+	for (INT i = 0; i < static_cast<INT>(CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT); i++)
+	{
+		m_SRVs[i + 1] = CManager::GetRenderPipeline()->m_GBuffer[i].ShaderResourceView;
+	}
+	m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1] = CManager::GetRenderPipeline()->m_SceneDepth.ShaderResourceView;
 }
 void CDebugScreen::Draw()
 {
@@ -69,4 +68,12 @@ void CDebugScreen::Draw()
 		CRenderDevice::BindPSShaderResourceView(m_SRVs[i], ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 		m_Polygons[i]->Draw();
 	}
+}
+void CDebugScreen::SetShadowMap(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadow)
+{
+	if (m_SRVs.size() != CDebugScreen::DEBUGPOLYGON_COUNT)
+	{
+		m_SRVs.resize(CDebugScreen::DEBUGPOLYGON_COUNT);
+	}
+	m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 2] = shadow;
 }

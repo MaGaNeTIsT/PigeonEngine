@@ -41,10 +41,13 @@ Texture2D		_EngineGBufferColor			: register(t0);
 Texture2D		_EngineGBufferNormal		: register(t1);
 Texture2D		_EngineGBufferAlbedo		: register(t2);
 Texture2D		_EngineGBufferProperty		: register(t3);
+Texture2D		_EngineLightShadowMap0		: register(t4);
+Texture2D		_EngineLightShadowMap1		: register(t5);
+Texture2D		_EngineLightShadowMap2		: register(t6);
+Texture2D		_EngineLightShadowMap3		: register(t7);
 
 Texture2D		_EngineCameraColor			: register(t0);
 Texture2D		_EngineCameraDepth			: register(t1);
-Texture2D		_EngineLightShadowMap		: register(t2);
 
 Texture2D		_AlbedoTexture				: register(t3);
 Texture2D		_NormalTexture				: register(t4);

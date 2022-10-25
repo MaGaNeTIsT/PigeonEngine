@@ -8,6 +8,7 @@ class CLightBase : public CGameObject
 public:
 	struct LightShadowInfo
 	{
+		LightShadowInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		CustomType::Vector2Int					Size;
 		UINT									Depth;
 		CRenderDevice::RenderTexture2DViewInfo	Texture;
@@ -19,15 +20,15 @@ public:
 		LIGHT_TYPE_SPOT			= 2
 	};
 public:
-	BOOL		IsTransmitShadow() { return (this->m_ShadowInfo != nullptr); }
-	LightType	GetLightType() { return (this->m_LightType); }
-	void		GetColor(CustomStruct::CColor& color, FLOAT& intensity);
-	void		SetColor(const CustomStruct::CColor& color, const FLOAT& intensity);
-	BOOL		GetShadowSize(CustomType::Vector2Int& output);
-	BOOL		SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
+	virtual BOOL	IsTransmitShadow() = 0;
+	LightType		GetLightType() { return (this->m_LightType); }
+	void			GetColor(CustomStruct::CColor& color, FLOAT& intensity);
+	void			SetColor(const CustomStruct::CColor& color, const FLOAT& intensity);
 public:
-	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u) = 0;
-	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetCurrentViewMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetCurrentProjectionMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetPreviousViewMatrix(const UINT& extraIndex = 0u) = 0;
+	virtual CustomType::Matrix4x4	GetPreviousProjectionMatrix(const UINT& extraIndex = 0u) = 0;
 protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 	void			SetLightType(LightType type) { this->m_LightType = type; }
@@ -40,10 +41,9 @@ public:
 	CLightBase(const CLightBase& light);
 	virtual ~CLightBase() {}
 protected:
-	LightType							m_LightType;
-	CustomStruct::CColor				m_Color;
-	FLOAT								m_Intensity;
-	std::shared_ptr<LightShadowInfo>	m_ShadowInfo;
+	LightType					m_LightType;
+	CustomStruct::CColor		m_Color;
+	FLOAT						m_Intensity;
 };
 
 class CLightDirectional : public CLightBase
@@ -91,14 +91,24 @@ public:
 		FLOAT	Border[3];
 	};
 public:
-	void PrepareCascadeShadowInfo(class CCamera* camera, const ShadowCascadeSettings* settings = NULL);
+	virtual BOOL	IsTransmitShadow()override;
+	virtual BOOL	SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
+	void			PrepareCascadeShadowInfo(class CCamera* camera, const ShadowCascadeSettings* settings = NULL);
+	void			UpdateCascadeShadowInfo();
 public:
-	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
+	virtual const UINT&						GetCurrentShadowMapLayerNum();
+	virtual CustomStruct::CRenderViewport	GetCurrentShadowMapViewport(const UINT& extraIndex);
+	virtual const LightShadowInfo&			GetCurrentShadowMap(const UINT& extraIndex);
+	virtual CustomType::Matrix4x4			GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4			GetCurrentProjectionMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4			GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4			GetPreviousProjectionMatrix(const UINT& extraIndex = 0u)override;
 public:
 	virtual void	Init()override;
 	virtual void	Update()override;
 protected:
+	static BOOL		GenerateClosestShadowMap(CLightDirectional* light);
+	static BOOL		GenerateCascadeShadowMap(CLightDirectional* light, const INT& frameCounter);
 	static void		GenerateCascadeProjectionMatrices(class CCamera* camera, CLightDirectional* light);
 public:
 	CLightDirectional();
@@ -115,27 +125,33 @@ protected:
 	struct ShadowCascadeInfo
 	{
 		ShadowCascadeInfo() { ::ZeroMemory(this, sizeof(*this)); }
-		class CCamera*						CurrentCamera;
-		ShadowCascadeSettings				CascadeSettings;
-		ShadowCascadeLayerInfo				LayerInfo;
-		CustomType::Matrix4x4				ViewMatrix;
-		std::vector<CustomType::Matrix4x4>	ProjectionMatrices;
+		class CCamera*							CurrentCamera;
+		ShadowCascadeSettings					CascadeSettings;
+		ShadowCascadeLayerInfo					LayerInfo;
+		CustomType::Matrix4x4					ViewMatrix;
+		std::vector<CustomType::Matrix4x4>		ProjectionMatrices;
+		CustomStruct::CRenderViewport			Viewport;
+		std::vector<LightShadowInfo>			ShadowMap;
 	};
 protected:
-	INT						m_FrameCounter;
-	ShadowCascadeInfo		m_CascadeInfo[2];
+	INT									m_FrameCounter;
+	BOOL								m_IsTransmitShadow;
+	std::shared_ptr<ShadowCascadeInfo>	m_CascadeInfo[2];
 };
 
 class CLightPoint : public CLightBase
 {
 public:
+	virtual BOOL	IsTransmitShadow()override { return FALSE; }
 	const FLOAT&	GetRadius()const { return (this->m_Radius); }
 	void			SetRadius(const FLOAT& value) { this->m_Radius = value; }
 	const FLOAT&	GetAttenuationExponent()const { return (this->m_AttenuationExponent); }
 	void			SetAttenuationExponent(const FLOAT& value) { this->m_AttenuationExponent = value; }
 public:
-	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetCurrentProjectionMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetPreviousProjectionMatrix(const UINT& extraIndex = 0u)override;
 public:
 	CLightPoint();
 	CLightPoint(const CLightPoint& light);
@@ -148,6 +164,7 @@ protected:
 class CLightSpot : public CLightBase
 {
 public:
+	virtual BOOL	IsTransmitShadow()override { return FALSE; }
 	const FLOAT&	GetRange()const { return (this->m_Range); }
 	void			SetRange(const FLOAT& v) { this->m_Range = v; }
 	const FLOAT&	GetHalfRadian()const { return (this->m_HalfRadian); }
@@ -155,8 +172,10 @@ public:
 	const FLOAT&	GetCosHalfRadian()const { return (this->m_CosHalfRadian); }
 	void			SetCosHalfRadian(const FLOAT& v) { this->m_CosHalfRadian = v; }
 public:
-	virtual CustomType::Matrix4x4	GetCurrentMatrix(const UINT& extraIndex = 0u)override;
-	virtual CustomType::Matrix4x4	GetPreviousMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetCurrentProjectionMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
+	virtual CustomType::Matrix4x4		GetPreviousProjectionMatrix(const UINT& extraIndex = 0u)override;
 public:
 	virtual void	Update()override;
 public:
@@ -169,5 +188,6 @@ protected:
 	FLOAT					m_CosHalfRadian;
 protected:
 	INT						m_FrameCounter;
-	CustomType::Matrix4x4	m_ViewProjectionMatrix[2];
+	CustomType::Matrix4x4	m_ViewMatrix[2];
+	CustomType::Matrix4x4	m_ProjectionMatrix[2];
 };

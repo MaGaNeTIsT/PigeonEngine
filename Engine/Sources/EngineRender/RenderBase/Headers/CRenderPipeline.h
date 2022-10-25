@@ -51,30 +51,34 @@ public:
 	virtual void	Render();
 protected:
 	virtual void	PreparePerFrameRender(class CCamera* camera);
+	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
 	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
 	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo);
 	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<class CGameObject*>& primitives);
-	virtual void	PrepareLightDataRender();
+	void			CullingDirectionalCascadeShadow(std::vector<class CGameObject*>& cullingResult, CLightDirectional* lightInfo, const std::vector<class CGameObject*>& primitives);
+	virtual void	PrepareLightDataRender(class CCamera* camera);
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 protected:
-	const CScene*						m_CurrentScene;
-	std::vector<class CGameObject*>		m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
-	std::vector<class CGameObject*>		m_CurrentCPUCullingPrimitives;
+	using DirectionalCascadeShadowPrimitives = std::map<class CLightDirectional*, std::map<UINT, std::vector<class CGameObject*>>>;
 protected:
-	ULONGLONG							m_FrameIndex;
-	CRenderCameraCullingInfo			m_GlobalCullingInfo;
-	RenderPerFrameInfo					m_RenderPerFrameInfo;
-	RenderLightDataInfo					m_RenderLightDataInfo;
-	CustomType::Vector2Int				m_GlobalBufferSize;
-	CustomType::Vector2Int				m_ShadowBufferSize;
+	const CScene*							m_CurrentScene;
+	std::vector<class CGameObject*>			m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
+	std::vector<class CGameObject*>			m_CurrentCPUCullingPrimitives;
+	DirectionalCascadeShadowPrimitives		m_CurrentDirCSMCullingPrimitives;
 protected:
-	std::shared_ptr<CMesh<UINT>>		m_FullScreenPolygon;
+	ULONGLONG								m_FrameIndex;
+	CRenderCameraCullingInfo				m_GlobalCullingInfo;
+	RenderPerFrameInfo						m_RenderPerFrameInfo;
+	RenderLightDataInfo						m_RenderLightDataInfo;
+	CustomType::Vector2Int					m_GlobalBufferSize;
+	CustomType::Vector2Int					m_ShadowBufferSize;
+protected:
+	std::shared_ptr<CMesh<UINT>>			m_FullScreenPolygon;
 protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_SceneColor;
 	CRenderDevice::RenderTexture2DViewInfo	m_SceneDepth;
 	CRenderDevice::RenderTexture2DViewInfo	m_PostProcessColor[2];
 	CRenderDevice::RenderTexture2DViewInfo	m_GBuffer[GEOMETRY_BUFFER_COUNT];
-	CRenderDevice::RenderTexture2DViewInfo	m_ShadowBuffer;
 protected:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			m_PipelineSampler[4];
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;

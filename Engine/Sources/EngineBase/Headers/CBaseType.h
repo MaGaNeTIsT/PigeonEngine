@@ -309,6 +309,7 @@ namespace CustomType
 		void			operator*=(const INT& v);
 		void			operator/=(const INT& v);
 		BOOL			operator==(const Vector2Int& v);
+		BOOL			operator!=(const Vector2Int& v);
 	public:
 		Vector2Int();
 		Vector2Int(const Vector2Int& v);
@@ -412,6 +413,8 @@ namespace CustomType
 		static INT		Exp2(const INT& v);
 		static INT		Log2Floor(const INT& v);
 		static INT		Log2Floor(const FLOAT& v);
+		static INT		Log2Ceil(const INT& v);
+		static INT		Log2Ceil(const FLOAT& v);
 		static INT		PowerOfTwoFloor(FLOAT& output, const FLOAT& input);
 		static INT		PowerOfTwoFloor(INT& output, const INT& input);
 	};
