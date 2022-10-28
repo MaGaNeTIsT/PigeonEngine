@@ -36,14 +36,16 @@ CPlane::~CPlane()
 }
 void CPlane::Init()
 {
-	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
-		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-	this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u);
+	this->SetMeshInfo(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
 	this->m_MeshRenderer = new CMeshRenderer();
-	this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+	{
+		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+		this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+	}
 
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga");
 	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE);
@@ -59,18 +61,7 @@ void CPlane::Uninit()
 }
 void CPlane::Update()
 {
-	//FLOAT tempR = this->m_TestRotate;
 
-	//CHAR tempName[256];
-	//_itoa_s(static_cast<INT>(this->m_UID), tempName, 256, 10);
-	//std::string name = tempName;
-	//name = "Plane data : " + name;
-	//ImGui::Begin(name.c_str());
-	//ImGui::SliderFloat("Rotation", &tempR, 0.f, 360.f);
-	//ImGui::End();
-
-	//this->m_TestRotate = tempR;
-	//this->SetRotation(CustomType::Quaternion(CustomType::Vector3(0.f, 1.f, 0.f), this->m_TestRotate * CustomType::CMath::GetDegToRad()));
 }
 void CPlane::PrepareDraw()
 {
@@ -94,14 +85,44 @@ void CPlane::DrawExtra()
 }
 void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
 {
-	this->m_PlaneMeshInfo.Length		= length;
-	this->m_PlaneMeshInfo.UV			= uv;
-	this->m_PlaneMeshInfo.VertexCount	= vertexCount;
+	this->m_PlaneMeshInfo.Length = length;
+	this->m_PlaneMeshInfo.UV = uv;
+	this->m_PlaneMeshInfo.VertexCount = vertexCount;
 	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 	if (this->m_Mesh != nullptr)
-		this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u);
+	{
+		this->m_Mesh = nullptr;
+	}
+	this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u);
+	{
+		CustomType::Vector3 boundMin, boundMax;
+		this->m_Mesh->GetMinMaxBounding(boundMin, boundMax);
+		{
+			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
+				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
+				for (UINT i = 0u; i < 3u; i++)
+				{
+					errorV[i] = (errorV[i] < 2.5f) ? 2.5f : 0.f;
+				}
+				v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
+				v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]);
+			};
+			errorMinMax(boundMin, boundMax);
+		}
+		auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
+			CustomType::Vector3 tempVec(boundMax);
+			tempVec = (tempVec - boundMin) * 0.5f;
+			anchor = tempVec + boundMin;
+			radius = tempVec.Length(); };
+		this->SetBoundingBox(boundMin, boundMax - boundMin);
+		{
+			CustomType::Vector3 anchor; FLOAT radius;
+			boundingSphere(anchor, radius);
+			this->SetBoundingSphere(anchor, radius);
+		}
+	}
 }

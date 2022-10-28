@@ -36,6 +36,34 @@ void CCube::Init()
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Cloud001.tga");
 	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
 	this->m_PropertyTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+
+	{
+		CustomType::Vector3 boundMin, boundMax;
+		this->m_Mesh->GetMinMaxBounding(boundMin, boundMax);
+		{
+			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
+				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
+				for (UINT i = 0u; i < 3u; i++)
+				{
+					errorV[i] = (errorV[i] < 2.5f) ? 2.5f : 0.f;
+				}
+				v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
+				v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]);
+			};
+			errorMinMax(boundMin, boundMax);
+		}
+		auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
+			CustomType::Vector3 tempVec(boundMax);
+			tempVec = (tempVec - boundMin) * 0.5f;
+			anchor = tempVec + boundMin;
+			radius = tempVec.Length(); };
+		this->SetBoundingBox(boundMin, boundMax - boundMin);
+		{
+			CustomType::Vector3 anchor; FLOAT radius;
+			boundingSphere(anchor, radius);
+			this->SetBoundingSphere(anchor, radius);
+		}
+	}
 }
 void CCube::Uninit()
 {

@@ -300,7 +300,15 @@ void CLightDirectional::PrepareCascadeShadowInfo(CCamera* camera, const ShadowCa
 	nextCascadeInfo->CurrentCamera = camera;
 	if (settings)
 	{
-		nextCascadeInfo->CascadeSettings = (*settings);
+		nextCascadeInfo->CascadeSettings.LayerNum = settings->LayerNum;
+		for (UINT i = 0u; i < 4u; i++)
+		{
+			nextCascadeInfo->CascadeSettings.Distance[i] = settings->Distance[i];
+		}
+		for (UINT i = 0u; i < 3u; i++)
+		{
+			nextCascadeInfo->CascadeSettings.Border[i] = settings->Border[i];
+		}
 	}
 }
 void CLightDirectional::UpdateCascadeShadowInfo()

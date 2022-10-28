@@ -20,6 +20,7 @@ public:
 	static std::shared_ptr<CMesh<UINT>>			LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 private:
 	static CustomType::Vector3					CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2);
+	static void									CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum);
 	template<typename IndexType>
 	static void									CalculateTangentForMesh(const std::vector<CustomStruct::CSubMeshInfo>& submesh, const std::vector<IndexType>& indices, void* vertices, const UINT& vertexNum, const UINT& vertexStride, const UINT& offsetPosition, const UINT& offsetTexcoord, const UINT& offsetTangent);
 	static void									CombineForVertexData(void* vertices, const UINT& vertexNum, const UINT& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color);

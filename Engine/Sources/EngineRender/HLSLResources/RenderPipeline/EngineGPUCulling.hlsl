@@ -104,7 +104,7 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 		[unroll(8)] for (uint indexPoint = 0u; indexPoint < 8u; indexPoint++)
 		{
 			position[indexPoint] = TransformWorldToClip(position[indexPoint].xyz);
-			position[indexPoint] = float4(position[indexPoint].xyz / position[indexPoint].w, position[indexPoint].w);
+			position[indexPoint] = float4(position[indexPoint].xyz / abs(position[indexPoint].w), position[indexPoint].w);
 #if 0
 			outScreen = outScreen && (any(position[indexPoint].xy < -1.0 || position[indexPoint].xy > 1.0) ? true : false);
 #endif
@@ -157,8 +157,6 @@ void main(uint dispatchThreadID :SV_DispatchThreadID, uint groupID : SV_GroupID,
 			maxCoord[h] = uint2(ceil(bufferMax[h] * maxClamp.xy));
 		}
 	}
-
-	float deviceZ;
 	[unroll(HIERARCHICAL_COUNT)] for (int i = 0; i < HIERARCHICAL_COUNT; i++)
 	{
 		if (indexMax >= i)

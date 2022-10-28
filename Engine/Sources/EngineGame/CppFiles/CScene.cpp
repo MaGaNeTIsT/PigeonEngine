@@ -12,26 +12,57 @@
 
 CScene::CScene()
 {
+	this->m_MainCamera = NULL;
 }
 CScene::~CScene()
 {
+	if (this->m_MainCamera)
+	{
+		this->m_MainCamera->Uninit();
+		delete (this->m_MainCamera);
+		this->m_MainCamera = NULL;
+	}
+	if (this->m_Lights.size() > 0u)
+	{
+		for (const auto& object : this->m_Lights)
+		{
+			if (object.second)
+			{
+				object.second->Uninit();
+				delete (object.second);
+			}
+		}
+		this->m_Lights.clear();
+	}
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	{
+		if (this->m_GameObjects[i].size() > 0u)
+		{
+			for (const auto& object : this->m_GameObjects[i])
+			{
+				if (object.second)
+				{
+					object.second->Uninit();
+					delete (object.second);
+				}
+			}
+			this->m_GameObjects[i].clear();
+		}
+	}
 }
 void CScene::Init()
 {
-	CCamera* mainCamera = this->AddGameObject<CCamera>(SceneLayout::LAYOUT_CAMERA);
+	CCamera* mainCamera = this->AddCamera<CCamera>();
 
-	CLightDirectional* mainLight = this->AddGameObject<CLightDirectional>(SceneLayout::LAYOUT_LIGHT);
+	CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
-	//CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
-	//CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);
+	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 
-	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
-	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 60.f * CustomType::CMath::GetDegToRad()));
+	mainCamera->SetPosition(CustomType::Vector3(0.f, 5.f, -5.f));
+	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 90.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(100.f, 8, 3.f);
-	//cube->SetPosition(CustomType::Vector3(0.f, 0.f, -70.f));
-	//cube->SetScale(CustomType::Vector3(150.f, 150.f, 10.f));
-	//testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));
-	//testPlane->SetScale(CustomType::Vector3(3.f, 3.f, 3.f));
+	cube->SetPosition(CustomType::Vector3(0.f, 50.f, 0.f));
+	cube->SetScale(CustomType::Vector3(10.f, 10.f, 10.f));
 
 	{
 		//static_cast<UINT>(::time(NULL));
@@ -75,29 +106,51 @@ void CScene::Init()
 }
 void CScene::Uninit()
 {
+	if (this->m_MainCamera)
+	{
+		this->m_MainCamera->Uninit();
+		delete (this->m_MainCamera);
+		this->m_MainCamera = NULL;
+	}
+	if (this->m_Lights.size() > 0u)
+	{
+		for (const auto& object : this->m_Lights)
+		{
+			if (object.second)
+			{
+				object.second->Uninit();
+				delete (object.second);
+			}
+		}
+		this->m_Lights.clear();
+	}
 	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
-		for (const auto& object : this->m_GameObject[i])
+		if (this->m_GameObjects[i].size() > 0u)
 		{
-			object.second->Uninit();
-			delete (object.second);
+			for (const auto& object : this->m_GameObjects[i])
+			{
+				if (object.second)
+				{
+					object.second->Uninit();
+					delete (object.second);
+				}
+			}
+			this->m_GameObjects[i].clear();
 		}
-		this->m_GameObject[i].clear();
 	}
 }
 void CScene::Update()
 {
-	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_CAMERA])
+	this->m_MainCamera->Update();
+
+	for (const auto& object : this->m_Lights)
 	{
 		object.second->Update();
 	}
-	for (const auto& object : this->m_GameObject[SceneLayout::LAYOUT_LIGHT])
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
-		object.second->Update();
-	}
-	for (INT i = SceneLayout::LAYOUT_TERRAIN; i < SceneLayout::LAYOUT_COUNT; ++i)
-	{
-		for (const auto& object : this->m_GameObject[i])
+		for (const auto& object : this->m_GameObjects[i])
 		{
 			object.second->Update();
 		}
@@ -112,9 +165,17 @@ void CScene::Update()
 }
 void CScene::FixedUpdate()
 {
+	this->m_MainCamera->FixedUpdate();
+
+	for (const auto& object : this->m_Lights)
+	{
+		object.second->FixedUpdate();
+	}
 	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
-		for (const auto& object : this->m_GameObject[i])
+		for (const auto& object : this->m_GameObjects[i])
+		{
 			object.second->FixedUpdate();
+		}
 	}
 }

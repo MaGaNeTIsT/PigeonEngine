@@ -426,6 +426,47 @@ CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::
 		st2.Y() * q1.Y() + (-st1.Y()) * q2.Y(),
 		st2.Y() * q1.Z() + (-st1.Y()) * q2.Z()) * scale);
 }
+void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum)
+{
+	BOOL havePosition = FALSE;
+	UINT vertexStride = 0u;
+	UINT offsetPosition = 0u;
+
+	for (UINT i = 0u; i < inputLayoutNum; i++)
+	{
+		if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+		{
+			havePosition = TRUE;
+			offsetPosition = vertexStride;
+		}
+		vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+	}
+
+	if (havePosition)
+	{
+		FLOAT minmax[6] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+		auto compareMinMax = [&](const FLOAT* input) {
+			minmax[0 * 3 + 0] = CustomType::CMath::Min(input[0u], minmax[0 * 3 + 0]);
+			minmax[0 * 3 + 1] = CustomType::CMath::Min(input[1u], minmax[0 * 3 + 1]);
+			minmax[0 * 3 + 2] = CustomType::CMath::Min(input[2u], minmax[0 * 3 + 2]);
+			minmax[1 * 3 + 0] = CustomType::CMath::Max(input[0u], minmax[1 * 3 + 0]);
+			minmax[1 * 3 + 1] = CustomType::CMath::Max(input[1u], minmax[1 * 3 + 1]);
+			minmax[1 * 3 + 2] = CustomType::CMath::Max(input[2u], minmax[1 * 3 + 2]); };
+		for (UINT i = 0u; i < vertexNum; i++)
+		{
+			const CHAR* tempVertex = &(((const CHAR*)(vertexData))[i * vertexStride]);
+			const FLOAT* tempPosition = (const FLOAT*)(&(tempVertex[offsetPosition]));
+			compareMinMax(tempPosition);
+		}
+		boundMin = CustomType::Vector3(minmax[0], minmax[1], minmax[2]);
+		boundMax = CustomType::Vector3(minmax[3], minmax[4], minmax[5]);
+	}
+	else
+	{
+		boundMin = CustomType::Vector3::Zero();
+		boundMax = CustomType::Vector3::Zero();
+	}
+}
 template<typename IndexType>
 void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubMeshInfo>& submesh, const std::vector<IndexType>& indices, void* vertices, const UINT& vertexNum, const UINT& vertexStride, const UINT& offsetPosition, const UINT& offsetTexcoord, const UINT& offsetTangent)
 {
@@ -952,15 +993,17 @@ std::shared_ptr<CMesh<IndexType>> CMeshManager::CreateMeshObject(const std::stri
 			return nullptr;
 		}
 	}
+	CustomType::Vector3 boundMin, boundMax;
+	CMeshManager::CalculateBoundMinMax(boundMin, boundMax, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum);
 	if (needVertexData)
 	{
-		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer));
+		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax));
 		CMeshManager::AddMeshData(name, mesh);
 		return mesh;
 	}
 	else
 	{
-		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, nullptr, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer));
+		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, nullptr, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax));
 		CMeshManager::AddMeshData(name, mesh);
 		delete[]vertexData;
 		return mesh;

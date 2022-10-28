@@ -80,8 +80,11 @@ CRenderPipeline::CRenderPipeline()
 		CRenderPipeline::m_DebugScreen = std::shared_ptr<CDebugScreen>(new CDebugScreen());
 	}
 
-	m_CurrentScene		= NULL;
+	m_Scene				= NULL;
+	m_SceneCamera		= NULL;
+	m_FrameIndex		= 0;
 	m_GlobalBufferSize	= CustomType::Vector2Int(0, 0);
+	m_ShadowBufferSize	= CustomType::Vector2Int(0, 0);
 	m_FullScreenPolygon	= NULL;
 }
 CRenderPipeline::~CRenderPipeline()
@@ -89,7 +92,7 @@ CRenderPipeline::~CRenderPipeline()
 }
 void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bufferSize)
 {
-	m_CurrentScene = scene;
+	m_Scene = scene;
 	m_GlobalBufferSize = bufferSize;
 	m_ShadowBufferSize = CustomType::Vector2Int(2048, 2048);
 	m_GlobalCullingInfo.Distance = ENGINE_DEFAULT_CULLING_DISTANCE;
@@ -105,14 +108,29 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 
 	for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 	{
-		if (m_CurrentScenePrimitives[i].size() != 0)
+		if (m_ScenePrimitives[i].size() != 0)
 		{
-			m_CurrentScenePrimitives[i].clear();
+			m_ScenePrimitives[i].clear();
 		}
 	}
-	if (m_CurrentCPUCullingPrimitives.size() != 0)
+	if (m_SceneLightList.size() != 0)
 	{
-		m_CurrentCPUCullingPrimitives.clear();
+		m_SceneLightList.clear();
+	}
+	if (m_CameraCullingResults.size() != 0)
+	{
+		m_CameraCullingResults.clear();
+	}
+	for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
+	{
+		if (m_RenderingCullingResults[i].size() != 0)
+		{
+			m_RenderingCullingResults[i].clear();
+		}
+	}
+	if (m_DirLightCullingResults.size() != 0)
+	{
+		m_DirLightCullingResults.clear();
 	}
 
 	{
@@ -136,7 +154,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 		{
 			CRenderDevice::CreateRenderTexture2D(
-				m_GBuffer[i],
+				m_RTGBuffer[i],
 				CustomStruct::CRenderTextureDesc(
 					bufferWidth,
 					bufferHeight,
@@ -144,7 +162,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 					CustomStruct::CRenderFormat::FORMAT_R16G16B16A16_FLOAT));
 		}
 		CRenderDevice::CreateRenderTexture2D(
-			m_SceneColor,
+			m_RTSceneColor,
 			CustomStruct::CRenderTextureDesc(
 				bufferWidth,
 				bufferHeight,
@@ -152,7 +170,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 				CustomStruct::CRenderFormat::FORMAT_R11G11B10_FLOAT));
 		CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_UNKNOWN;
 		CRenderDevice::CreateRenderTexture2D(
-			m_SceneDepth,
+			m_RTSceneDepth,
 			CustomStruct::CRenderTextureDesc(
 				bufferWidth,
 				bufferHeight,
@@ -162,7 +180,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		for (INT i = 0; i < 2; i++)
 		{
 			CRenderDevice::CreateRenderTexture2D(
-				m_PostProcessColor[i],
+				m_RTPostProcess[i],
 				CustomStruct::CRenderTextureDesc(
 					bufferWidth,
 					bufferHeight,
@@ -246,23 +264,30 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 }
 void CRenderPipeline::PostInit()
 {
-	if (m_CurrentScene == NULL)
+	if (m_Scene == NULL)
+	{
 		return;
+	}
 
 	{
-		std::vector<CLightDirectional*> rawSceneLights = m_CurrentScene->GetGameObjectAll<CLightDirectional>(CScene::SceneLayout::LAYOUT_LIGHT);
-		CLightDirectional* sceneMainLight = NULL;
-		for (INT i = 0; i < rawSceneLights.size(); i++)
+		m_SceneCamera = reinterpret_cast<CCamera*>(m_Scene->m_MainCamera);
+
+		CLightDirectional* sceneMainDirectionalLight = NULL;
+		for (auto& lightObj : m_Scene->m_Lights)
 		{
-			if (rawSceneLights[i]->IsActive())
+			if (lightObj.second && lightObj.second->IsActive())
 			{
-				sceneMainLight = rawSceneLights[i];
-				break;
+				CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(lightObj.second);
+				if (tempLight)
+				{
+					sceneMainDirectionalLight = tempLight;
+					break;
+				}
 			}
 		}
-		if (sceneMainLight)
+		if (sceneMainDirectionalLight)
 		{
-			if (!(sceneMainLight->SetShadowInfo(m_ShadowBufferSize, 32u)))
+			if (!(sceneMainDirectionalLight->SetShadowInfo(m_ShadowBufferSize, 32u)))
 			{
 				//TODO
 			}
@@ -270,22 +295,11 @@ void CRenderPipeline::PostInit()
 	}
 
 	{
-		std::vector<CCamera*> rawSceneCameras = m_CurrentScene->GetGameObjectAll<CCamera>(CScene::SceneLayout::LAYOUT_CAMERA);
-		CCamera* sceneMainCamera = NULL;
-		for (INT i = 0; i < rawSceneCameras.size(); i++)
-		{
-			if (rawSceneCameras[i]->IsActive())
-			{
-				sceneMainCamera = rawSceneCameras[i];
-				break;
-			}
-		}
-
 		m_FrameIndex = 0u;
 
 		m_SkyBox->Init(m_GlobalBufferSize, CSkyBox::SkyBoxInfo(1000000.f));
 
-		m_GTAOPass->Init(sceneMainCamera, m_GlobalBufferSize);
+		m_GTAOPass->Init(m_SceneCamera, m_GlobalBufferSize);
 		m_HZBPass->Init(m_GlobalBufferSize);
 		m_GPUCulling->Init(m_HZBPass, 1u, 50u);
 		m_DebugScreen->Init(m_GlobalBufferSize);
@@ -293,16 +307,33 @@ void CRenderPipeline::PostInit()
 }
 void CRenderPipeline::Uninit()
 {
+	m_Scene = NULL;
+	m_SceneCamera = NULL;
 	for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 	{
-		if (m_CurrentScenePrimitives[i].size() != 0)
+		if (m_ScenePrimitives[i].size() != 0)
 		{
-			m_CurrentScenePrimitives[i].clear();
+			m_ScenePrimitives[i].clear();
 		}
 	}
-	if (m_CurrentCPUCullingPrimitives.size() != 0)
+	if (m_SceneLightList.size() != 0)
 	{
-		m_CurrentCPUCullingPrimitives.clear();
+		m_SceneLightList.clear();
+	}
+	if (m_CameraCullingResults.size() != 0)
+	{
+		m_CameraCullingResults.clear();
+	}
+	for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
+	{
+		if (m_RenderingCullingResults[i].size() != 0)
+		{
+			m_RenderingCullingResults[i].clear();
+		}
+	}
+	if (m_DirLightCullingResults.size() != 0)
+	{
+		m_DirLightCullingResults.clear();
 	}
 
 	m_DebugScreen->Uninit();
@@ -314,92 +345,104 @@ void CRenderPipeline::Uninit()
 }
 void CRenderPipeline::PostUpdate()
 {
-	if (m_CurrentScene == NULL)
+	if (m_Scene == NULL || m_SceneCamera == NULL)
+	{
 		return;
+	}
+
+	m_FrameIndex += 1u;
 
 	{
-		m_FrameIndex += 1u;
-
 		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
-			if (m_CurrentScenePrimitives[i].size() != 0)
+			if (m_ScenePrimitives[i].size() != 0)
 			{
-				m_CurrentScenePrimitives[i].clear();
+				m_ScenePrimitives[i].clear();
 			}
 		}
-		if (m_CurrentCPUCullingPrimitives.size() != 0)
+		if (m_SceneLightList.size() != 0)
 		{
-			m_CurrentCPUCullingPrimitives.clear();
+			m_SceneLightList.clear();
 		}
-		if (m_CurrentDirCSMCullingPrimitives.size() != 0)
+		if (m_CameraCullingResults.size() != 0)
 		{
-			m_CurrentDirCSMCullingPrimitives.clear();
+			m_CameraCullingResults.clear();
 		}
-		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_CAMERA])
+		for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
 		{
-			if (obj.second->IsActive())
+			if (m_RenderingCullingResults[i].size() != 0)
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA].push_back(obj.second);
+				m_RenderingCullingResults[i].clear();
+			}
+		}
+		if (m_DirLightCullingResults.size() != 0)
+		{
+			m_DirLightCullingResults.clear();
+		}
+	}
+
+	{
+		for (auto& obj : m_Scene->m_Lights)
+		{
+			if (!(obj.second) || !(obj.second->IsActive()))
+			{
+				continue;
+			}
+			CLightBase* tempLightBase = reinterpret_cast<CLightBase*>(obj.second);
+			if (!tempLightBase)
+			{
+				continue;
+			}
+			m_SceneLightList.push_back(tempLightBase);
+			if (tempLightBase->IsTransmitShadow())
+			{
+				{
+					CLightDirectional* tempLightDir = reinterpret_cast<CLightDirectional*>(tempLightBase);
+					if (tempLightDir)
+					{
+						DirectionalCascadeShadowPerLightPrimitives tempCullingResults;
+						m_DirLightCullingResults.insert_or_assign(tempLightDir, tempCullingResults);
+
+						std::vector<FLOAT> cascadeDistances(3u, 0.f);
+						cascadeDistances[0] = 300.f;
+						cascadeDistances[1] = 600.f;
+						cascadeDistances[2] = 900.f;
+						std::vector<FLOAT> cascadeBorders(2u, 0.15f);
+						cascadeBorders[0] = 0.15f;
+						cascadeBorders[1] = 0.1f;
+						CLightDirectional::ShadowCascadeSettings cascadeSettings(3u, cascadeDistances, cascadeBorders);
+						tempLightDir->PrepareCascadeShadowInfo(m_SceneCamera, &cascadeSettings);
+						tempLightDir->UpdateCascadeShadowInfo();
+					}
+				}
+				//TODO other light type's shadow culling list.
+			}
+		}
+		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_TERRAIN])
+		{
+			if (obj.second && obj.second->IsActive() && obj.second->GetMeshRenderer())
+			{
+				m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 				break;
 			}
 		}
-		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_LIGHT])
+		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_OPAQUE])
 		{
-			if (obj.second->IsActive())
+			if (obj.second && obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				CLightDirectional* tempLightObj = reinterpret_cast<CLightDirectional*>(obj.second);
-				if (tempLightObj && tempLightObj->IsTransmitShadow())
-				{
-					std::map<UINT, std::vector<CGameObject*>> shadowCullingObjs;
-					m_CurrentDirCSMCullingPrimitives[tempLightObj] = lightCullingObjs;
-				}
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT].push_back(obj.second);
+				m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
 			}
 		}
-		for (auto obj : m_CurrentScene->m_GameObject[CScene::SceneLayout::LAYOUT_TERRAIN])
+		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_TRANSPARENT])
 		{
-			if (obj.second->IsActive() && obj.second->GetMeshRenderer())
+			if (obj.second && obj.second->IsActive() && obj.second->GetMeshRenderer())
 			{
-				m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
+				m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
 			}
-		}
-
-		{
-			// Camera Culling
-			std::vector<CGameObject*> objectLayer;
-			for (INT i = CScene::SceneLayout::LAYOUT_OPAQUE; i <= CScene::SceneLayout::LAYOUT_TRANSPARENT; i++)
-			{
-				for (auto obj : m_CurrentScene->m_GameObject[i])
-				{
-					if (obj.second->IsActive() && obj.second->GetMeshRenderer())
-					{
-						objectLayer.push_back(obj.second);
-					}
-				}
-			}
-			PrepareCameraCullingInfo(m_GlobalCullingInfo, reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA])[0]));
-			CRenderPipeline::Culling(m_CurrentCPUCullingPrimitives, m_GlobalCullingInfo, objectLayer);
-			std::vector<BOOL> objectGPUCullingResult;
-			m_GPUCulling->ReadBackAndPrepareCullingResult(m_FrameIndex, m_CurrentCPUCullingPrimitives, objectGPUCullingResult);
-			for (UINT i = 0; i < m_CurrentCPUCullingPrimitives.size(); i++)
-			{
-				if (objectGPUCullingResult[i] == TRUE)
-				{
-					if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE
-						|| m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
-					{
-						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(m_CurrentCPUCullingPrimitives[i]);
-					}
-					else if (m_CurrentCPUCullingPrimitives[i]->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_TRANSPARENT_FORWARD)
-					{
-						m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(m_CurrentCPUCullingPrimitives[i]);
-					}
-				}
-			}
-			// Light Culling
-
 		}
 	}
+
+	Culling();
 
 	m_SkyBox->Update();
 
@@ -410,396 +453,310 @@ void CRenderPipeline::PostUpdate()
 }
 void CRenderPipeline::Render()
 {
-	if (m_CurrentScene == NULL)
+	if (m_Scene == NULL || m_SceneCamera == NULL)
+	{
 		return;
+	}
 
 	{
-		CRenderDevice::ClearRenderTargetView(m_SceneColor.RenderTargetView);
+		CRenderDevice::ClearRenderTargetView(m_RTSceneColor.RenderTargetView);
 		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 		{
-			CRenderDevice::ClearRenderTargetView(m_GBuffer[i].RenderTargetView);
+			CRenderDevice::ClearRenderTargetView(m_RTGBuffer[i].RenderTargetView);
 		}
 		for (UINT i = 0u; i < 2u; i++)
 		{
-			CRenderDevice::ClearRenderTargetView(m_PostProcessColor[i].RenderTargetView);
+			CRenderDevice::ClearRenderTargetView(m_RTPostProcess[i].RenderTargetView);
 		}
-		CRenderDevice::ClearDepthStencilView(m_SceneDepth.DepthStencilView);
+		CRenderDevice::ClearDepthStencilView(m_RTSceneDepth.DepthStencilView);
 		CRenderDevice::ClearFinalOutput();
 
 		CRenderDevice::BindVSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
 		CRenderDevice::BindPSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
 		CRenderDevice::BindCSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
+
+		CRenderDevice::SetRasterizerState(m_PipelineRS);
+		CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	}
 
-	for (INT i = 0; i < (m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA]).size(); i++)
 	{
-		CCamera* mainCamera = NULL;
+		PrepareLightDataRender();
+		CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
+		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+	}
+
+	CLightDirectional* lightShadow = NULL;
+	BOOL needShadowPass = FALSE;
+	{
+		for (auto& lightObj : m_SceneLightList)
 		{
-			mainCamera = reinterpret_cast<CCamera*>((m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_CAMERA])[i]);
-			if (!mainCamera)
+			CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(lightObj);
+			if (tempLight && tempLight->IsTransmitShadow())
 			{
-				continue;
-			}
-			PrepareLightDataRender(mainCamera);
-
-			CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
-
-			CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
-			CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
-			CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
-
-			CRenderDevice::SetRasterizerState(m_PipelineRS);
-			CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		}
-
-		CLightDirectional* lightShadow = NULL;
-		{
-			for (CGameObject* lightObj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT])
-			{
-				if (!lightObj)
+				DirectionalCascadeShadowCullingResults::iterator element = m_DirLightCullingResults.find(tempLight);
+				if (element == m_DirLightCullingResults.end())
 				{
 					continue;
 				}
-				CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(lightObj);
-				if (tempLight && tempLight->IsTransmitShadow())
+				lightShadow = tempLight;
+				needShadowPass = (m_DirLightCullingResults[tempLight]).size() > 0;
+				if (needShadowPass)
 				{
-					lightShadow = tempLight;
 					break;
 				}
 			}
 		}
-
+		//Shadow pass
+		if (needShadowPass)
 		{
-			if (lightShadow)
+			UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
+			for (UINT layerIndex = 0u; layerIndex < layerNum; layerIndex++)
 			{
-				UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
-				for (UINT i = 0u; i < layerNum; i++)
-				{
-					std::string passShadowName = "Shadow_Pass_";
-					passShadowName += std::to_string(i);
-					PrepareDirectionalLightPerFrameRender(lightShadow, i);
-					CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-					CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-					CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-					CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-					CustomStruct::CRenderViewport viewportShadow = lightShadow->GetCurrentShadowMapViewport(i);
-					const CRenderDevice::RenderTexture2DViewInfo& shadowMap = lightShadow->GetCurrentShadowMap(i).Texture;
-					//Shadow pass
-					CGPUProfilerManager::AddPass(passShadowName, m_FrameIndex, [&]() {
-						CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
-						CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
-						CRenderDevice::ClearDepthStencilView(shadowMap.DepthStencilView, CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH);
-						CRenderDevice::SetRenderTarget(shadowMap.DepthStencilView);
-						CRenderDevice::SetViewport(viewportShadow);
-						for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+				std::string passShadowName = "Shadow_Pass_";
+				passShadowName += std::to_string(layerIndex);
+				PrepareDirectionalLightPerFrameRender(lightShadow, layerIndex);
+				CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
+				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+				CustomStruct::CRenderViewport viewportShadow = lightShadow->GetCurrentShadowMapViewport(layerIndex);
+				const CRenderDevice::RenderTexture2DViewInfo& shadowMap = lightShadow->GetCurrentShadowMap(layerIndex).Texture;
+				CGPUProfilerManager::AddPass(passShadowName, m_FrameIndex, [&]() {
+					CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
+					CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
+					CRenderDevice::ClearDepthStencilView(shadowMap.DepthStencilView, CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH);
+					CRenderDevice::SetRenderTarget(shadowMap.DepthStencilView);
+					CRenderDevice::SetViewport(viewportShadow);
+					if (m_DirLightCullingResults[lightShadow].find(layerIndex) != m_DirLightCullingResults[lightShadow].end())
+					{
+						for (UINT i = 0u; i < (m_DirLightCullingResults[lightShadow])[layerIndex].size(); i++)
 						{
-							for (CGameObject* obj : m_CurrentScenePrimitives[i])
-							{
-								obj->DrawExtra();
-							}
-						}});
-				}
+							((m_DirLightCullingResults[lightShadow])[layerIndex])[i]->DrawExtra();
+						}
+					}});
 			}
 		}
+	}
 
-		{
-			PreparePerFrameRender(mainCamera);
-			CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-			CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-			CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-			CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-			CRenderDevice::SetViewport(mainCamera->GetViewport());
-		}
+	{
+		PreparePerFrameRender();
+		CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
+		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::SetViewport(m_SceneCamera->GetViewport());
+	}
 
-		{
-			//Pre depth pass
-			CGPUProfilerManager::AddPass("Pre-Depth_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetRenderTarget(m_SceneDepth.DepthStencilView);
-				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-				{
-					for (CGameObject* obj : m_CurrentScenePrimitives[i])
-					{
-						obj->DrawExtra();
-					}
-				}});
-		}
-
-		{
-			//HZB GTAO pass
-			CGPUProfilerManager::AddPass("HZB_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetNoRenderTarget();
-				m_HZBPass->ComputeHZB(m_SceneDepth.ShaderResourceView); });
-			CGPUProfilerManager::AddPass("GTAO_Pass", m_FrameIndex, [&]() {
-				m_GTAOPass->ComputeGTAO(m_SceneDepth.ShaderResourceView); });
-		}
-
-		{
-			//Occlusion culling pass
-			CGPUProfilerManager::AddPass("Occlusion_Culling_Pass", m_FrameIndex, [&]() {
-				m_GPUCulling->ComputeCulling(m_FrameIndex); });
-		}
-
-		{
-			//Geometry buffer pass
-			CGPUProfilerManager::AddPass("Geometry_Buffer_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-				CRenderDevice::SetBlendState(m_GBufferPassBS);
-				Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
-				tempGBuffersRTV[0] = m_SceneColor.RenderTargetView;
-				for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
-				{
-					tempGBuffersRTV[i + 1u] = m_GBuffer[i].RenderTargetView;
-				}
-				CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_SceneDepth.DepthStencilView);
-				CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), 6u);
-				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
-				{
-					for (CGameObject* obj : m_CurrentScenePrimitives[i])
-					{
-						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE)
-							obj->Draw();
-					}
-				}
-				});
-		}
-
-		{
-			UINT layerNum = lightShadow ? lightShadow->GetCurrentShadowMapLayerNum() : 0u;
-			//Direct light pass
-			CGPUProfilerManager::AddPass("Direct_Light_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
-				CRenderDevice::SetBlendState(m_DirectLightPassBS);
-				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
-				Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
-				tempGBuffersSRV[0] = m_SceneColor.ShaderResourceView;
-				for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
-				{
-					tempGBuffersSRV[i + 1u] = m_GBuffer[i].ShaderResourceView;
-				}
-				CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
-				for (UINT i = 0u; i < 4u; i++)
-				{
-					if (i < layerNum)
-					{
-						CRenderDevice::BindPSShaderResourceView(lightShadow->GetCurrentShadowMap(i).Texture.ShaderResourceView, ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
-					}
-					else
-					{
-						CRenderDevice::BindPSShaderResourceView(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView(), ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
-					}
-				}
-				DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
-		}
-
-		{
-			//Opaque forward pass
-			CGPUProfilerManager::AddPass("Opaque_Forward_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+	{
+		//Pre depth pass
+		CGPUProfilerManager::AddPass("Pre-Depth_Pass", m_FrameIndex, [&]() {
+			if (!needShadowPass)
+			{
+				CRenderDevice::SetDepthStencilState(m_ShadowPrePassDSS);
 				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
-				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView, m_SceneDepth.DepthStencilView);
-				for (INT i = CScene::SceneLayout::LAYOUT_TERRAIN; i < CScene::SceneLayout::LAYOUT_TRANSPARENT; ++i)
+			}
+			CRenderDevice::SetRenderTarget(m_RTSceneDepth.DepthStencilView);
+			for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; ++i)
+			{
+				for (auto& obj : m_RenderingCullingResults[i])
 				{
-					for (CGameObject* obj : m_CurrentScenePrimitives[i])
-					{
-						if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_OPAQUE_FORWARD)
-							obj->Draw();
-					}
-				}});
-		}
+					obj->DrawExtra();
+				}
+			}});
+	}
 
-		{
-			//Sky box pass
-			CGPUProfilerManager::AddPass("Sky_Box_Pass", m_FrameIndex, [&]() {
-				m_SkyBox->Draw(); });
-		}
+	{
+		//HZB GTAO pass
+		CGPUProfilerManager::AddPass("HZB_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetNoRenderTarget();
+			m_HZBPass->ComputeHZB(m_RTSceneDepth.ShaderResourceView); });
+		CGPUProfilerManager::AddPass("GTAO_Pass", m_FrameIndex, [&]() {
+			m_GTAOPass->ComputeGTAO(m_RTSceneDepth.ShaderResourceView); });
+	}
 
-		{
-			//Transparent forward pass
-			CGPUProfilerManager::AddPass("Transparent_Forward_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetBlendState(m_TransparentPassBS);
-				for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT])
+	{
+		//Occlusion culling pass
+		CGPUProfilerManager::AddPass("Occlusion_Culling_Pass", m_FrameIndex, [&]() {
+			m_GPUCulling->ComputeCulling(m_FrameIndex); });
+	}
+
+	{
+		//Geometry buffer pass
+		CGPUProfilerManager::AddPass("Geometry_Buffer_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_GBufferPassBS);
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
+			tempGBuffersRTV[0] = m_RTSceneColor.RenderTargetView;
+			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+			{
+				tempGBuffersRTV[i + 1u] = m_RTGBuffer[i].RenderTargetView;
+			}
+			CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_RTSceneDepth.DepthStencilView);
+			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), 6u);
+			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED])
+			{
+				obj->Draw();
+			}});
+	}
+
+	{
+		//Direct light pass
+		UINT layerNum = needShadowPass ? lightShadow->GetCurrentShadowMapLayerNum() : 0u;
+		CGPUProfilerManager::AddPass("Direct_Light_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
+			CRenderDevice::SetBlendState(m_DirectLightPassBS);
+			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView);
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
+			tempGBuffersSRV[0] = m_RTSceneColor.ShaderResourceView;
+			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+			{
+				tempGBuffersSRV[i + 1u] = m_RTGBuffer[i].ShaderResourceView;
+			}
+			CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
+			for (UINT i = 0u; i < 4u; i++)
+			{
+				if (i < layerNum)
 				{
-					if (obj->GetMeshRenderer()->GetRenderType() == CMeshRenderer::RENDER_TYPE_TRANSPARENT_FORWARD)
-						obj->Draw();
-				}});
-		}
-
-		{
-			//TODO Test and debug.
-			CGPUProfilerManager::AddPass("Debug_Pass", m_FrameIndex, [&]() {
-				CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
-				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
-				CRenderDevice::SetRenderTarget(m_SceneColor.RenderTargetView);
-				if (lightShadow)
-				{
-					m_DebugScreen->SetShadowMap(lightShadow->GetCurrentShadowMap(0u).Texture.ShaderResourceView);
+					CRenderDevice::BindPSShaderResourceView(lightShadow->GetCurrentShadowMap(i).Texture.ShaderResourceView, ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
 				}
 				else
 				{
-					m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView());
+					CRenderDevice::BindPSShaderResourceView(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView(), ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
 				}
-				m_DebugScreen->Draw();
-				m_HZBPass->DrawDebug();
-				m_GTAOPass->DrawDebug(); });
-		}
-
-		{
-			//Post process pass
-		}
-		
-		{
-			DOUBLE shadowPassTime = static_cast<DOUBLE>(0);
-			if (lightShadow)
-			{
-				UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
-				for (UINT i = 0u; i < layerNum; i++)
-				{
-					std::string passShadowName = "Shadow_Pass_";
-					passShadowName += std::to_string(i);
-					shadowPassTime += CGPUProfilerManager::GetPassAverageTime(passShadowName);
-				}
-				shadowPassTime *= static_cast<DOUBLE>(1000);
 			}
-			ImGui::Begin("GPU Profiler");
-			ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::Text("Shadow Pass          : %f ms.", shadowPassTime);
-			ImGui::Text("Pre-Depth Pass       : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Build HZB            : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Sky Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
-			ImGui::End();
-		}
+			DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
+	}
 
+	{
+		//Opaque forward pass
+		CGPUProfilerManager::AddPass("Opaque_Forward_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
+			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView, m_RTSceneDepth.DepthStencilView);
+			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD])
+			{
+				obj->Draw();
+			}});
+	}
+
+	{
+		//Sky box pass
+		CGPUProfilerManager::AddPass("Sky_Box_Pass", m_FrameIndex, [&]() {
+			m_SkyBox->Draw(); });
+	}
+
+	{
+		//Transparent forward pass
+		CGPUProfilerManager::AddPass("Transparent_Forward_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetBlendState(m_TransparentPassBS);
+			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_TRANSPARENT])
+			{
+				obj->Draw();
+			}});
+	}
+
+	{
+		//TODO Test and debug.
+		CGPUProfilerManager::AddPass("Debug_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
+			CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
+			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView);
+			if (needShadowPass)
+			{
+				m_DebugScreen->SetShadowMap(lightShadow->GetCurrentShadowMap(0u).Texture.ShaderResourceView);
+			}
+			else
+			{
+				m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView());
+			}
+			m_DebugScreen->Draw();
+			m_HZBPass->DrawDebug();
+			m_GTAOPass->DrawDebug(); });
+	}
+
+	{
+		//Post process pass
+	}
+
+	{
+		DOUBLE shadowPassTime = static_cast<DOUBLE>(0);
+		if (needShadowPass)
 		{
-			//Final output
-			CRenderDevice::SetDefaultDepthStencilState();
-			CRenderDevice::SetDefaultBlendState();
-			CRenderDevice::SetFinalOutput();
-			CRenderDevice::BindPSShaderResourceView(m_SceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-			DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
+			UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
+			for (UINT i = 0u; i < layerNum; i++)
+			{
+				std::string passShadowName = "Shadow_Pass_";
+				passShadowName += std::to_string(i);
+				shadowPassTime += CGPUProfilerManager::GetPassAverageTime(passShadowName);
+			}
+			shadowPassTime *= static_cast<DOUBLE>(1000);
 		}
+		ImGui::Begin("GPU Profiler");
+		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::Text("Shadow Pass          : %f ms.", shadowPassTime);
+		ImGui::Text("Pre-Depth Pass       : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Build HZB            : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Sky Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::End();
+	}
+
+	{
+		//Final output
+		CRenderDevice::SetDefaultDepthStencilState();
+		CRenderDevice::SetDefaultBlendState();
+		CRenderDevice::SetFinalOutput();
+		CRenderDevice::BindPSShaderResourceView(m_RTSceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
 	}
 }
-void CRenderPipeline::PreparePerFrameRender(CCamera* camera)
+void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)
 {
-	CustomType::Vector2 cameraViewportMin = camera->GetViewportMinSize();
-	CustomStruct::CRenderViewport vp = camera->GetViewport();
+	m_FullScreenPolygonVS->Bind();
+	shader->Bind();
+	CRenderDevice::SetVertexBuffer(m_FullScreenPolygon->GetVertexBuffer(), m_FullScreenPolygon->GetVertexStride());
+	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
+	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
+}
+void CRenderPipeline::PreparePerFrameRender()
+{
+	CustomType::Vector2 cameraViewportMin = m_SceneCamera->GetViewportMinSize();
+	CustomStruct::CRenderViewport vp = m_SceneCamera->GetViewport();
 
-	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = camera->GetProjectionMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = camera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.DepthMultiAdd = camera->GetDeviceZToViewZMulAdd().GetXMFLOAT4();
-	m_RenderPerFrameInfo.PerFrameData.ScreenToViewSpaceParams = camera->GetScreenToViewParameters(CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height), CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height)).GetXMFLOAT4();
+	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = m_SceneCamera->GetProjectionMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = m_SceneCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.DepthMultiAdd = m_SceneCamera->GetDeviceZToViewZMulAdd().GetXMFLOAT4();
+	m_RenderPerFrameInfo.PerFrameData.ScreenToViewSpaceParams = m_SceneCamera->GetScreenToViewParameters(CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height), CustomType::Vector2Int(CRenderDevice::GetViewport().Width, CRenderDevice::GetViewport().Height)).GetXMFLOAT4();
 	m_RenderPerFrameInfo.PerFrameData.CameraViewportMinSizeAndInvBufferSize = DirectX::XMFLOAT4(cameraViewportMin.X(), cameraViewportMin.Y(), 1.f / static_cast<FLOAT>(m_GlobalBufferSize.X()), 1.f / static_cast<FLOAT>(m_GlobalBufferSize.Y()));
-	m_RenderPerFrameInfo.PerFrameData.CameraViewportSizeAndInvSize = camera->GetViewportSizeAndInvSize().GetXMFLOAT4();
+	m_RenderPerFrameInfo.PerFrameData.CameraViewportSizeAndInvSize = m_SceneCamera->GetViewportSizeAndInvSize().GetXMFLOAT4();
 	m_RenderPerFrameInfo.PerFrameData.CameraViewportRect = DirectX::XMFLOAT4(vp.TopLeftX, vp.TopLeftY, vp.Width, vp.Height);
 
-	m_RenderPerFrameInfo.PerFrameData.ViewMatrix = camera->GetViewMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = camera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = camera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = camera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewMatrix = m_SceneCamera->GetViewMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = m_SceneCamera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = m_SceneCamera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = m_SceneCamera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.TimeParams = DirectX::XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
-	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = camera->GetPosition().GetXMFLOAT4();
+	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = m_SceneCamera->GetPosition().GetXMFLOAT4();
 }
-void CRenderPipeline::PrepareDirectionalLightPerFrameRender(CLightBase* light, const UINT& index)
-{
-	CustomType::Matrix4x4 viewMatrix(light->GetCurrentViewMatrix(index));
-	CustomType::Matrix4x4 projectionMatrix(light->GetCurrentProjectionMatrix(index));
-	CustomType::Matrix4x4 viewProjectionMatrix(CustomType::Matrix4x4::MultiplyMatrix(viewMatrix, projectionMatrix));
-
-	::ZeroMemory(&(m_RenderPerFrameInfo.PerFrameData), sizeof(m_RenderPerFrameInfo.PerFrameData));
-
-	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = projectionMatrix.GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = projectionMatrix.Inverse().GetGPUUploadFloat4x4();
-
-	m_RenderPerFrameInfo.PerFrameData.ViewMatrix = viewMatrix.GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = viewMatrix.Inverse().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = viewProjectionMatrix.GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = viewProjectionMatrix.Inverse().GetGPUUploadFloat4x4();
-	m_RenderPerFrameInfo.PerFrameData.TimeParams = DirectX::XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
-}
-void CRenderPipeline::PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, CCamera* camera)
-{
-	std::vector<CustomType::Vector3> cameraPlane(camera->GetCullingPlane());
-	cullingInfo.OriginPosition = camera->GetPosition();
-	cullingInfo.ClipPlane[0u] = camera->GetForwardVector();
-	cullingInfo.ClipPlane[1u] = -cameraPlane[0u];
-	cullingInfo.ClipPlane[2u] = -cameraPlane[1u];
-	cullingInfo.ClipPlane[3u] = -cameraPlane[2u];
-	cullingInfo.ClipPlane[4u] = -cameraPlane[3u];
-	for (INT i = 0; i < 5u; i++)
-	{
-		cullingInfo.ClipDot[i] = CustomType::Vector3::Dot(cullingInfo.ClipPlane[i], cullingInfo.OriginPosition) + cullingInfo.ClipOffset;
-	}
-}
-BOOL CRenderPipeline::CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo)
-{
-	for (UINT i = 0u; i < 5u; i++)
-	{
-		if ((CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) + radius) < cullingInfo.ClipDot[i])
-		{
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-void CRenderPipeline::Culling(std::vector<CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<CGameObject*>& primitives)
-{
-	for (UINT i = 0u; i < primitives.size(); i++)
-	{
-		CustomType::Vector3 objPos; FLOAT objRadius;
-		primitives[i]->GetBoundingSphere(objPos, objRadius);
-		if ((CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) - objRadius) < cullingInfo.Distance)
-		{
-			if (CullingCameraPlane(objPos, objRadius, cullingInfo))
-			{
-				cullingResult.push_back(primitives[i]);
-			}
-		}
-	}
-}
-void CRenderPipeline::CullingDirectionalCascadeShadow(std::vector<class CGameObject*>& cullingResult, CLightDirectional* lightInfo, const std::vector<class CGameObject*>& primitives)
-{
-	CustomType::Matrix4x4 viewMatrix(lightInfo->GetCurrentViewMatrix());
-	CustomStruct::CRenderViewport viewport(lightInfo->GetCurrentViewMatrix);
-	for (UINT i = 0u; i < primitives.size(); i++)
-	{
-		CustomType::Vector3 objPos; FLOAT objRadius;
-		primitives[i]->GetBoundingSphere(objPos, objRadius);
-		if ((CustomType::Vector3::Distance(objPos, cullingInfo.OriginPosition) - objRadius) < cullingInfo.Distance)
-		{
-			if (CullingCameraPlane(objPos, objRadius, cullingInfo))
-			{
-				cullingResult.push_back(primitives[i]);
-			}
-		}
-	}
-}
-void CRenderPipeline::PrepareLightDataRender(CCamera* camera)
+void CRenderPipeline::PrepareLightDataRender()
 {
 	std::vector<CLightDirectional*> lightDirectional;
 	std::vector<CLightPoint*> lightPoint;
 	std::vector<CLightSpot*> lightSpot;
-	for (CGameObject* obj : m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_LIGHT])
+	for (auto& obj : m_SceneLightList)
 	{
-		if (!obj)
-		{
-			continue;
-		}
-		CLightBase* lightObj = reinterpret_cast<CLightBase*>(obj);
-		if (!lightObj)
-		{
-			continue;
-		}
-		CLightBase::LightType lightType = lightObj->GetLightType();
+		CLightBase::LightType lightType = obj->GetLightType();
 		if (lightType == CLightBase::LightType::LIGHT_TYPE_DIRECTIONAL)
 		{
-			CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(lightObj);
+			CLightDirectional* tempLight = reinterpret_cast<CLightDirectional*>(obj);
 			if (tempLight)
 			{
 				lightDirectional.push_back(tempLight);
@@ -807,7 +764,7 @@ void CRenderPipeline::PrepareLightDataRender(CCamera* camera)
 		}
 		else if (lightType == CLightBase::LightType::LIGHT_TYPE_POINT)
 		{
-			CLightPoint* tempLight = reinterpret_cast<CLightPoint*>(lightObj);
+			CLightPoint* tempLight = reinterpret_cast<CLightPoint*>(obj);
 			if (tempLight)
 			{
 				lightPoint.push_back(tempLight);
@@ -815,30 +772,10 @@ void CRenderPipeline::PrepareLightDataRender(CCamera* camera)
 		}
 		else if (lightType == CLightBase::LightType::LIGHT_TYPE_SPOT)
 		{
-			CLightSpot* tempLight = reinterpret_cast<CLightSpot*>(lightObj);
+			CLightSpot* tempLight = reinterpret_cast<CLightSpot*>(obj);
 			if (tempLight)
 			{
 				lightSpot.push_back(tempLight);
-			}
-		}
-	}
-
-	{
-		std::vector<FLOAT> cascadeDistances(3u, 0.f);
-		cascadeDistances[0] = 300.f;
-		cascadeDistances[1] = 600.f;
-		cascadeDistances[2] = 900.f;
-		std::vector<FLOAT> cascadeBorders(2u, 0.15f);
-		cascadeBorders[0] = 0.15f;
-		cascadeBorders[1] = 0.1f;
-		CLightDirectional::ShadowCascadeSettings cascadeSettings(3u, cascadeDistances, cascadeBorders);
-		for (UINT i = 0u; i < lightDirectional.size(); i++)
-		{
-			CLightDirectional* tempLight = lightDirectional[i];
-			if (tempLight->IsTransmitShadow())
-			{
-				tempLight->PrepareCascadeShadowInfo(camera, &cascadeSettings);
-				tempLight->UpdateCascadeShadowInfo();
 			}
 		}
 	}
@@ -897,13 +834,207 @@ void CRenderPipeline::PrepareLightDataRender(CCamera* camera)
 		lightIndex += 1u;
 	}
 }
-void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)
+void CRenderPipeline::PrepareDirectionalLightPerFrameRender(CLightBase* light, const UINT& index)
 {
-	m_FullScreenPolygonVS->Bind();
-	shader->Bind();
-	CRenderDevice::SetVertexBuffer(m_FullScreenPolygon->GetVertexBuffer(), m_FullScreenPolygon->GetVertexStride());
-	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
-	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
+	CustomType::Matrix4x4 viewMatrix(light->GetCurrentViewMatrix(index));
+	CustomType::Matrix4x4 projectionMatrix(light->GetCurrentProjectionMatrix(index));
+	CustomType::Matrix4x4 viewProjectionMatrix(CustomType::Matrix4x4::MultiplyMatrix(viewMatrix, projectionMatrix));
+
+	::ZeroMemory(&(m_RenderPerFrameInfo.PerFrameData), sizeof(m_RenderPerFrameInfo.PerFrameData));
+
+	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = projectionMatrix.GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = projectionMatrix.Inverse().GetGPUUploadFloat4x4();
+
+	m_RenderPerFrameInfo.PerFrameData.ViewMatrix = viewMatrix.GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = viewMatrix.Inverse().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = viewProjectionMatrix.GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = viewProjectionMatrix.Inverse().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.TimeParams = DirectX::XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
+}
+void CRenderPipeline::PrepareCameraCullingInfo()
+{
+	std::vector<CustomType::Vector3> cameraPlane(m_SceneCamera->GetCullingPlane());
+	m_GlobalCullingInfo.OriginPosition = m_SceneCamera->GetPosition();
+	m_GlobalCullingInfo.ClipPlane[0] = m_SceneCamera->GetForwardVector();
+	m_GlobalCullingInfo.ClipPlane[1] = -cameraPlane[0];
+	m_GlobalCullingInfo.ClipPlane[2] = -cameraPlane[1];
+	m_GlobalCullingInfo.ClipPlane[3] = -cameraPlane[2];
+	m_GlobalCullingInfo.ClipPlane[4] = -cameraPlane[3];
+	for (INT i = 0; i < 5; i++)
+	{
+		m_GlobalCullingInfo.ClipDot[i] = CustomType::Vector3::Dot(m_GlobalCullingInfo.ClipPlane[i], m_GlobalCullingInfo.OriginPosition) + m_GlobalCullingInfo.ClipOffset;
+	}
+}
+void CRenderPipeline::Culling()
+{
+	//Camera distance culling & frustum culling
+	{
+		PrepareCameraCullingInfo();
+		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		{
+			for (auto& obj : m_ScenePrimitives[i])
+			{
+				CustomType::Vector3 boundAnchor; FLOAT boundRadius;
+				obj->GetBoundingSphere(boundAnchor, boundRadius);
+				if (PerObjectDistanceFrustumCulling(boundAnchor, boundRadius))
+				{
+					m_CameraCullingResults.push_back(obj);
+				}
+			}
+		}
+	}
+
+	//HZB occlusion culling
+	{
+		std::vector<BOOL> objectHZBCullingResults;
+		m_GPUCulling->ReadBackAndPrepareCullingResult(m_FrameIndex, m_CameraCullingResults, objectHZBCullingResults);
+		for (UINT i = 0; i < m_CameraCullingResults.size(); i++)
+		{
+			if (objectHZBCullingResults[i] == TRUE)
+			{
+				CMeshRenderer::RenderTypeEnum tempRenderType = m_CameraCullingResults[i]->GetMeshRenderer()->GetRenderType();
+				if (tempRenderType == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE)
+				{
+					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED].push_back(m_CameraCullingResults[i]);
+				}
+				else if (tempRenderType == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
+				{
+					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD].push_back(m_CameraCullingResults[i]);
+				}
+				else if (tempRenderType == CMeshRenderer::RenderTypeEnum::RENDER_TYPE_TRANSPARENT)
+				{
+					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_TRANSPARENT].push_back(m_CameraCullingResults[i]);
+				}
+			}
+		}
+	}
+
+	//Light orthographic culling
+	{
+		if (m_DirLightCullingResults.size() == 0)
+		{
+			//This is function's ending.
+			return;
+		}
+		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		{
+			for (auto& obj : m_ScenePrimitives[i])
+			{
+				CustomType::Vector3 boundAnchor; FLOAT boundRadius;
+				obj->GetBoundingSphere(boundAnchor, boundRadius);
+				for (auto& cullingList : m_DirLightCullingResults)
+				{
+					CLightDirectional* tempLight = cullingList.first;
+					std::vector<UINT> layerIndex;
+					if (!PerObjectDirectionalCascadeShadowCulling(layerIndex, tempLight, boundAnchor, boundRadius))
+					{
+						continue;
+					}
+					for (UINT index = 0u; index < layerIndex.size(); index++)
+					{
+						DirectionalCascadeShadowPerLightPrimitives::iterator element = (cullingList.second).find(layerIndex[index]);
+						if (element == (cullingList.second).end())
+						{
+							std::vector<CGameObject*> tempResults;
+							cullingList.second.insert_or_assign(layerIndex[index], tempResults);
+						}
+						((cullingList.second)[layerIndex[index]]).push_back(obj);
+					}
+				}
+			}
+		}
+	}
+
+	{
+		INT tempPrimitivesCount = static_cast<INT>(m_ScenePrimitives[0].size());
+		for (INT i = 1; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		{
+			tempPrimitivesCount += static_cast<INT>(m_ScenePrimitives[i].size());
+		}
+		INT tempCascadeShadowCount = static_cast<INT>(m_DirLightCullingResults.size());
+		ImGui::Begin("CPU culling information");
+		ImGui::Text("Render pipeline primitives = %d", tempPrimitivesCount);
+		ImGui::Text("Pass camera culling = %d", static_cast<INT>(m_CameraCullingResults.size()));
+		ImGui::Text("Cascade shadow count = %d", tempCascadeShadowCount);
+		INT tempCascadeShadowIndex = 0;
+		for (auto& tempResult : m_DirLightCullingResults)
+		{
+			UINT tempLayerNum = tempResult.first->GetCurrentShadowMapLayerNum();
+			ImGui::Text("Cascade shadow index = %d", tempCascadeShadowIndex);
+			ImGui::Text("Layer count = %d", static_cast<INT>(tempLayerNum));
+			for (UINT layerIndex = 0u; layerIndex < tempLayerNum; layerIndex++)
+			{
+				INT tempLayerPassNum = static_cast<INT>((tempResult.second)[layerIndex].size());
+				ImGui::Text("Layer index = %d, Pass light culling = %d", static_cast<INT>(layerIndex), tempLayerPassNum);
+			}
+			tempCascadeShadowIndex++;
+		}
+		ImGui::End();
+	}
+}
+BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius)
+{
+	const static auto planeCulling = [](const CRenderCameraCullingInfo& cullingInfo, const CustomType::Vector3& pos, const FLOAT& radius)->BOOL {
+		for (UINT i = 0u; i < 5u; i++)
+		{
+			if ((CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) + radius) < cullingInfo.ClipDot[i])
+			{
+				return FALSE;
+			}
+		}
+		return TRUE;
+	};
+
+	if ((CustomType::Vector3::Distance(pos, m_GlobalCullingInfo.OriginPosition) - radius) < m_GlobalCullingInfo.Distance)
+	{
+		return (planeCulling(m_GlobalCullingInfo, pos, radius));
+	}
+	return FALSE;
+}
+BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>& layerIndex, CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius)
+{
+	static CustomType::Vector3 offset[8] = {
+		CustomType::Vector3(-1, -1, -1),CustomType::Vector3(1, -1, -1),
+		CustomType::Vector3(-1, -1, 1),CustomType::Vector3(1, -1, 1),
+		CustomType::Vector3(-1, 1, -1),CustomType::Vector3(1, 1, -1),
+		CustomType::Vector3(-1, 1, 1),CustomType::Vector3(1, 1, 1) };
+
+	BOOL result = FALSE;
+	UINT layerNum = light->GetCurrentShadowMapLayerNum();
+	if (layerNum < 1u)
+	{
+		return result;
+	}
+	CustomType::Vector3 boundAnchor((light->GetCurrentViewMatrix()).MultiplyPosition(pos));
+	for (UINT i = 0u; i < layerNum; i++)
+	{
+		BOOL currentDefinite = FALSE;
+		CustomType::Matrix4x4 projMatrix(light->GetCurrentProjectionMatrix(i));
+		CustomType::Vector3 tempAnchor(boundAnchor); CustomType::Vector4 tempScreenPos;
+		//First calc
+		{
+			tempScreenPos = projMatrix.MultiplyVector(CustomType::Vector4(tempAnchor.X(), tempAnchor.Y(), tempAnchor.Z(), 1.f));
+			tempScreenPos = tempScreenPos / tempScreenPos.W();
+			currentDefinite = (tempScreenPos.Z() > 0.f && tempScreenPos.Z() < 1.f) && (tempScreenPos.X() > -1.f && tempScreenPos.X() < 1.f) && (tempScreenPos.Y() > -1.f && tempScreenPos.Y() < 1.f);
+		}
+		for (UINT boundIndex = 0u; boundIndex < 8u; boundIndex++)
+		{
+			if (currentDefinite)
+			{
+				break;
+			}
+			tempAnchor = boundAnchor + (offset[boundIndex] * radius);
+			tempScreenPos = projMatrix.MultiplyVector(CustomType::Vector4(tempAnchor.X(), tempAnchor.Y(), tempAnchor.Z(), 1.f));
+			tempScreenPos = tempScreenPos / tempScreenPos.W();
+			currentDefinite = (tempScreenPos.Z() > 0.f && tempScreenPos.Z() < 1.f) && (tempScreenPos.X() > -1.f && tempScreenPos.X() < 1.f) && (tempScreenPos.Y() > -1.f && tempScreenPos.Y() < 1.f);
+		}
+		if (currentDefinite)
+		{
+			result = TRUE;
+			layerIndex.push_back(i);
+		}
+	}
+	return result;
 }
 CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
 {

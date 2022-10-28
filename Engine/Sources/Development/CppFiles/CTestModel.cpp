@@ -39,65 +39,30 @@ void CTestModel::Init()
 	this->m_PropertyTexture = CTextureManager::LoadTexture2D("./Engine/Assets/Robot/Textures/HX_DJ_Robot_MR.tga", FALSE);
 
 	{
-		std::vector<FLOAT> minmax(6u, 0.f);
-
-		BOOL havePosition = FALSE;
-		UINT offsetPosition = 0u;
-		if (this->m_Mesh->IsHaveVertexData())
+		CustomType::Vector3 boundMin, boundMax;
+		this->m_Mesh->GetMinMaxBounding(boundMin, boundMax);
 		{
-			UINT vertexStride = 0u;
-			for (UINT i = 0u; i < this->m_Mesh->GetInputLayoutDesc().size(); i++)
-			{
-				if (this->m_Mesh->GetInputLayoutDesc()[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
+			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
+				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
+				for (UINT i = 0u; i < 3u; i++)
 				{
-					havePosition = TRUE;
-					offsetPosition = vertexStride;
+					errorV[i] = (errorV[i] < 2.5f) ? 2.5f : 0.f;
 				}
-				vertexStride += this->m_Mesh->GetInputLayoutDesc()[i].GetSemanticSizeByByte();
-			}
-		}
-
-		{
-			auto compare = [&](const FLOAT* input)
-			{
-				minmax[0 * 3 + 0] = CustomType::CMath::Min(input[0u], minmax[0 * 3 + 0]);
-				minmax[0 * 3 + 1] = CustomType::CMath::Min(input[1u], minmax[0 * 3 + 1]);
-				minmax[0 * 3 + 2] = CustomType::CMath::Min(input[2u], minmax[0 * 3 + 2]);
-				minmax[1 * 3 + 0] = CustomType::CMath::Max(input[0u], minmax[1 * 3 + 0]);
-				minmax[1 * 3 + 1] = CustomType::CMath::Max(input[1u], minmax[1 * 3 + 1]);
-				minmax[1 * 3 + 2] = CustomType::CMath::Max(input[2u], minmax[1 * 3 + 2]);
+				v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
+				v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]);
 			};
-
-			if (havePosition)
-			{
-				for (UINT i = 0u; i < this->m_Mesh->GetVertexCount(); i++)
-				{
-					const CHAR* tempVertex = &(((const CHAR*)(this->m_Mesh->GetVertexData()))[i * this->m_Mesh->GetVertexStride()]);
-					const FLOAT* tempPosition = (const FLOAT*)(&(tempVertex[offsetPosition]));
-					compare(tempPosition);
-				}
-				this->SetBoundingBox(CustomType::Vector3(minmax[0], minmax[1], minmax[2]), CustomType::Vector3(minmax[3] - minmax[0], minmax[4] - minmax[1], minmax[5] - minmax[2]));
-			}
+			errorMinMax(boundMin, boundMax);
 		}
-
+		auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
+			CustomType::Vector3 tempVec(boundMax);
+			tempVec = (tempVec - boundMin) * 0.5f;
+			anchor = tempVec + boundMin;
+			radius = tempVec.Length(); };
+		this->SetBoundingBox(boundMin, boundMax - boundMin);
 		{
-			auto boundingSphere = [&minmax](CustomType::Vector3& anchor, FLOAT& radius)
-			{
-				CustomType::Vector3 tempAnchor(minmax[0], minmax[1], minmax[2]);
-				CustomType::Vector3 tempVec(minmax[3], minmax[4], minmax[5]);
-				tempVec = (tempVec - tempAnchor) * 0.5f;
-
-				anchor = tempVec + tempAnchor;
-				radius = tempVec.Length();
-			};
-
-			if (havePosition)
-			{
-				FLOAT radius;
-				CustomType::Vector3 anchor;
-				boundingSphere(anchor, radius);
-				this->SetBoundingSphere(anchor, radius);
-			}
+			CustomType::Vector3 anchor; FLOAT radius;
+			boundingSphere(anchor, radius);
+			this->SetBoundingSphere(anchor, radius);
 		}
 	}
 }

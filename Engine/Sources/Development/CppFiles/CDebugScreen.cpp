@@ -53,12 +53,12 @@ void CDebugScreen::PrepareDraw()
 	{
 		m_SRVs.resize(CDebugScreen::DEBUGPOLYGON_COUNT);
 	}
-	m_SRVs[0] = CManager::GetRenderPipeline()->m_SceneColor.ShaderResourceView;
+	m_SRVs[0] = CManager::GetRenderPipeline()->m_RTSceneColor.ShaderResourceView;
 	for (INT i = 0; i < static_cast<INT>(CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT); i++)
 	{
-		m_SRVs[i + 1] = CManager::GetRenderPipeline()->m_GBuffer[i].ShaderResourceView;
+		m_SRVs[i + 1] = CManager::GetRenderPipeline()->m_RTGBuffer[i].ShaderResourceView;
 	}
-	m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1] = CManager::GetRenderPipeline()->m_SceneDepth.ShaderResourceView;
+	m_SRVs[CManager::GetRenderPipeline()->GEOMETRY_BUFFER_COUNT + 1] = CManager::GetRenderPipeline()->m_RTSceneDepth.ShaderResourceView;
 }
 void CDebugScreen::Draw()
 {

@@ -50,21 +50,34 @@ public:
 	virtual void	PostUpdate();
 	virtual void	Render();
 protected:
-	virtual void	PreparePerFrameRender(class CCamera* camera);
-	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
-	void			PrepareCameraCullingInfo(CRenderCameraCullingInfo& cullingInfo, class CCamera* camera);
-	BOOL			CullingCameraPlane(const CustomType::Vector3& pos, const FLOAT& radius, const CRenderCameraCullingInfo& cullingInfo);
-	void			Culling(std::vector<class CGameObject*>& cullingResult, const CRenderCameraCullingInfo& cullingInfo, const std::vector<class CGameObject*>& primitives);
-	void			CullingDirectionalCascadeShadow(std::vector<class CGameObject*>& cullingResult, CLightDirectional* lightInfo, const std::vector<class CGameObject*>& primitives);
-	virtual void	PrepareLightDataRender(class CCamera* camera);
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
+	virtual void	PreparePerFrameRender();
+	virtual void	PrepareLightDataRender();
+	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
 protected:
-	using DirectionalCascadeShadowPrimitives = std::map<class CLightDirectional*, std::map<UINT, std::vector<class CGameObject*>>>;
+	void			PrepareCameraCullingInfo();
+	void			Culling();
+	BOOL			PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius);
+	BOOL			PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>& layerIndex, class CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius);
 protected:
-	const CScene*							m_CurrentScene;
-	std::vector<class CGameObject*>			m_CurrentScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
-	std::vector<class CGameObject*>			m_CurrentCPUCullingPrimitives;
-	DirectionalCascadeShadowPrimitives		m_CurrentDirCSMCullingPrimitives;
+	using DirectionalCascadeShadowPerLightPrimitives	= std::map<UINT, std::vector<class CGameObject*>>;
+	using DirectionalCascadeShadowCullingResults		= std::map<class CLightDirectional*, DirectionalCascadeShadowPerLightPrimitives>;
+	enum CullingResultsLayer
+	{
+		CULLINGRESULTS_DEFERRED		= 0,
+		CULLINGRESULTS_FORWARD		= 1,
+		CULLINGRESULTS_TRANSPARENT	= 2,
+		CULLINGRESULTS_COUNT
+	};
+protected:
+	const CScene*							m_Scene;
+	class CCamera*							m_SceneCamera;
+	std::vector<class CLightBase*>			m_SceneLightList;
+	std::vector<class CGameObject*>			m_ScenePrimitives[CScene::SceneLayout::LAYOUT_COUNT];
+protected:
+	std::vector<class CGameObject*>			m_CameraCullingResults;
+	std::vector<class CGameObject*>			m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_COUNT];
+	DirectionalCascadeShadowCullingResults	m_DirLightCullingResults;
 protected:
 	ULONGLONG								m_FrameIndex;
 	CRenderCameraCullingInfo				m_GlobalCullingInfo;
@@ -75,10 +88,10 @@ protected:
 protected:
 	std::shared_ptr<CMesh<UINT>>			m_FullScreenPolygon;
 protected:
-	CRenderDevice::RenderTexture2DViewInfo	m_SceneColor;
-	CRenderDevice::RenderTexture2DViewInfo	m_SceneDepth;
-	CRenderDevice::RenderTexture2DViewInfo	m_PostProcessColor[2];
-	CRenderDevice::RenderTexture2DViewInfo	m_GBuffer[GEOMETRY_BUFFER_COUNT];
+	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneColor;
+	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneDepth;
+	CRenderDevice::RenderTexture2DViewInfo	m_RTPostProcess[2];
+	CRenderDevice::RenderTexture2DViewInfo	m_RTGBuffer[GEOMETRY_BUFFER_COUNT];
 protected:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState>			m_PipelineSampler[4];
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;
@@ -100,8 +113,8 @@ protected:
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 public:
-	static class CTexture2D* GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
-	static std::shared_ptr<class CPixelShader> GetDefaultEmptyPS();
+	static class CTexture2D*					GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
+	static std::shared_ptr<class CPixelShader>	GetDefaultEmptyPS();
 protected:
 	static class CTexture2D* m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
 	static std::shared_ptr<class CPixelShader> m_DefaultEmptyPS;

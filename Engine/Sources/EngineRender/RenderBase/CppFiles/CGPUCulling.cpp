@@ -70,7 +70,6 @@ void CGPUCulling::Update(const ULONGLONG& frameIndex)
 void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& inputCullingResult, std::vector<BOOL>& outputCullingResult)
 {
 	UINT index = frameIndex % (this->m_CachedCount);
-
 	outputCullingResult.resize(inputCullingResult.size(), TRUE);
 	if (frameIndex > this->m_CachedCount)
 	{
