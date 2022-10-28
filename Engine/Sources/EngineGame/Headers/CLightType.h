@@ -109,7 +109,7 @@ public:
 protected:
 	static BOOL		GenerateClosestShadowMap(CLightDirectional* light);
 	static BOOL		GenerateCascadeShadowMap(CLightDirectional* light, const INT& frameCounter);
-	static void		GenerateCascadeProjectionMatrices(class CCamera* camera, CLightDirectional* light);
+	static void		GenerateCascadeMatrices(class CCamera* camera, CLightDirectional* light);
 public:
 	CLightDirectional();
 	CLightDirectional(const CLightDirectional& light);

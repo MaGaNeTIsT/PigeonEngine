@@ -1017,6 +1017,7 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 			tempScreenPos = tempScreenPos / tempScreenPos.W();
 			currentDefinite = (tempScreenPos.Z() > 0.f && tempScreenPos.Z() < 1.f) && (tempScreenPos.X() > -1.f && tempScreenPos.X() < 1.f) && (tempScreenPos.Y() > -1.f && tempScreenPos.Y() < 1.f);
 		}
+		//Conservative calc
 		for (UINT boundIndex = 0u; boundIndex < 8u; boundIndex++)
 		{
 			if (currentDefinite)

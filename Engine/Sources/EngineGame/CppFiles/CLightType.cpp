@@ -117,7 +117,7 @@ BOOL CLightDirectional::GenerateCascadeShadowMap(CLightDirectional* light, const
 	}
 	return result;
 }
-void CLightDirectional::GenerateCascadeProjectionMatrices(CCamera* camera, CLightDirectional* light)
+void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirectional* light)
 {
 	const INT& frameCounter = light->m_FrameCounter;
 	std::shared_ptr<ShadowCascadeInfo> currentShadowCascadeInfo = light->m_CascadeInfo[frameCounter];
@@ -230,7 +230,7 @@ void CLightDirectional::GenerateCascadeProjectionMatrices(CCamera* camera, CLigh
 				FLOAT MinY; FLOAT MaxY;
 				FLOAT MinZ; FLOAT MaxZ;
 			};
-			auto CalculateAABB = [](CustomType::Vector3* pos)->AABB {
+			auto calculateAABB = [](CustomType::Vector3* pos)->AABB {
 				AABB result;
 				result.MinX = result.MaxX = pos[0].X();
 				result.MinY = result.MaxY = pos[0].Y();
@@ -257,7 +257,7 @@ void CLightDirectional::GenerateCascadeProjectionMatrices(CCamera* camera, CLigh
 					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 5u]),
 					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 6u]),
 					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 7u]) };
-				AABB aabb = CalculateAABB(layerPoints);
+				AABB aabb = calculateAABB(layerPoints);
 				projectionMatrices[i] = CustomType::Matrix4x4::OrthographicMatrix(aabb.MinX, aabb.MaxY, aabb.MaxX, aabb.MinY, aabb.MinZ, aabb.MaxZ);
 			}
 		}
@@ -319,7 +319,7 @@ void CLightDirectional::UpdateCascadeShadowInfo()
 		return;
 	}
 
-	CLightDirectional::GenerateCascadeProjectionMatrices(currentCascadeInfo->CurrentCamera, this);
+	CLightDirectional::GenerateCascadeMatrices(currentCascadeInfo->CurrentCamera, this);
 	if (!CLightDirectional::GenerateCascadeShadowMap(this, this->m_FrameCounter))
 	{
 		//TODO
