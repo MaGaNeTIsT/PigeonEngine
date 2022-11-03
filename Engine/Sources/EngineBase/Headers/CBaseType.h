@@ -41,6 +41,7 @@ namespace CustomType
 	public:
 		Matrix4x4();
 		Matrix4x4(const Matrix4x4& m);
+		Matrix4x4(DirectX::XMFLOAT4X4 m);
 		Matrix4x4(DirectX::CXMMATRIX m);
 		Matrix4x4(const Quaternion& v);
 		Matrix4x4(const Vector3& t, const Quaternion& r);
@@ -177,11 +178,15 @@ namespace CustomType
 		static FLOAT				Dot(const Vector3& v1, const Vector3& v2);
 		static Vector3				Cross(const Vector3& v1, const Vector3& v2);
 		static FLOAT				Length(const Vector3& v);
+		static FLOAT				LengthSquare(const Vector3& v);
 		static FLOAT				Distance(const Vector3& v1, const Vector3& v2);
+		static FLOAT				DistanceSquare(const Vector3& v1, const Vector3& v2);
 		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t);
 	public:
 		FLOAT						Length();
+		FLOAT						LengthSquare();
 		FLOAT						Distance(const Vector3& v);
+		FLOAT						DistanceSquare(const Vector3& v);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -211,6 +216,7 @@ namespace CustomType
 	public:
 		Vector3();
 		Vector3(const Vector3& v);
+		Vector3(const Vector4& v);
 		Vector3(DirectX::CXMVECTOR v);
 		Vector3(DirectX::XMFLOAT3 v);
 		Vector3(DirectX::XMFLOAT4 v);
@@ -417,5 +423,6 @@ namespace CustomType
 		static INT		Log2Ceil(const FLOAT& v);
 		static INT		PowerOfTwoFloor(FLOAT& output, const FLOAT& input);
 		static INT		PowerOfTwoFloor(INT& output, const INT& input);
+		static FLOAT	Sqrt(const FLOAT& v);
 	};
 }

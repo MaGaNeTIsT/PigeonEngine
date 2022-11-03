@@ -99,6 +99,7 @@ public:
 	virtual const UINT&						GetCurrentShadowMapLayerNum();
 	virtual CustomStruct::CRenderViewport	GetCurrentShadowMapViewport(const UINT& extraIndex);
 	virtual const LightShadowInfo&			GetCurrentShadowMap(const UINT& extraIndex);
+	virtual CustomType::Vector4				GetCurrentProjectionSphereBounding(const UINT& extraIndex);
 	virtual CustomType::Matrix4x4			GetCurrentViewMatrix(const UINT& extraIndex = 0u)override;
 	virtual CustomType::Matrix4x4			GetCurrentProjectionMatrix(const UINT& extraIndex = 0u)override;
 	virtual CustomType::Matrix4x4			GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
@@ -130,6 +131,7 @@ protected:
 		ShadowCascadeLayerInfo					LayerInfo;
 		CustomType::Matrix4x4					ViewMatrix;
 		std::vector<CustomType::Matrix4x4>		ProjectionMatrices;
+		std::vector<CustomType::Vector4>		ProjectionSphereBounds;
 		CustomStruct::CRenderViewport			Viewport;
 		std::vector<LightShadowInfo>			ShadowMap;
 	};

@@ -98,8 +98,12 @@ void CScene::Init()
 				CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 				CustomType::Vector3 min, max;
 				model->GetAABBBoundingBox(min, max);
-				cube->SetPosition(min + ((max - min) * 0.5f));
-				cube->SetScale(max - min);
+				//cube->SetPosition(min + ((max - min) * 0.5f));
+				//cube->SetScale(max - min);
+				CustomType::Vector3 anchor; FLOAT radius;
+				model->GetBoundingSphere(anchor, radius);
+				cube->SetPosition(anchor);
+				cube->SetScale(radius * 2.f);
 			}
 		}
 	}
@@ -157,9 +161,23 @@ void CScene::Update()
 	}
 
 	{
+		CustomType::Vector3 cameraPos(this->m_MainCamera->GetPosition());
+		CustomType::Vector3 cameraDir(this->m_MainCamera->GetForwardVector());
 		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 		ImGui::Begin("Scene Manager");
 		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
+		ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
+		ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
+		UINT index = 0u;
+		for (const auto& object : this->m_Lights)
+		{
+			CustomType::Vector3 lightPos(object.second->GetPosition());
+			CustomType::Vector3 lightDir(object.second->GetForwardVector());
+			ImGui::Text("Light index = %d", index);
+			ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());
+			ImGui::Text("Light direction :\nx = %f\ny = %f\nz = %f", lightDir.X(), lightDir.Y(), lightDir.Z());
+			index++;
+		}
 		ImGui::End();
 	}
 }

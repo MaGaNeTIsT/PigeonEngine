@@ -993,6 +993,7 @@ BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3&
 }
 BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>& layerIndex, CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius)
 {
+#if 0
 	static CustomType::Vector3 offset[8] = {
 		CustomType::Vector3(-1, -1, -1),CustomType::Vector3(1, -1, -1),
 		CustomType::Vector3(-1, -1, 1),CustomType::Vector3(1, -1, 1),
@@ -1036,6 +1037,31 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 		}
 	}
 	return result;
+#else
+	BOOL result = FALSE;
+	UINT layerNum = light->GetCurrentShadowMapLayerNum();
+	if (layerNum < 1u)
+	{
+		return result;
+	}
+	for (UINT i = 0u; i < layerNum; i++)
+	{
+		CustomType::Vector3 lightBoundAnchor; FLOAT lightBoundRadius;
+		{
+			CustomType::Vector4 lightBound(light->GetCurrentProjectionSphereBounding(i));
+			lightBoundAnchor = CustomType::Vector3(lightBound);
+			lightBoundRadius = lightBound.W();
+		}
+		FLOAT distanceSq = lightBoundRadius + radius;
+		distanceSq = distanceSq * distanceSq;
+		if (CustomType::Vector3::DistanceSquare(lightBoundAnchor, pos) < distanceSq)
+		{
+			result = TRUE;
+			layerIndex.push_back(i);
+		}
+	}
+	return result;
+#endif
 }
 CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
 {

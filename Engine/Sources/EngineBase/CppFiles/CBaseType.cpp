@@ -11,6 +11,10 @@ namespace CustomType
 	{
 		(*this) = m;
 	}
+	Matrix4x4::Matrix4x4(DirectX::XMFLOAT4X4 m)
+	{
+		this->m_Value = m;
+	}
 	Matrix4x4::Matrix4x4(DirectX::CXMMATRIX m)
 	{
 		this->SetXMMATRIX(m);
@@ -347,6 +351,12 @@ namespace CustomType
 	{
 		(*this) = v;
 	}
+	Vector3::Vector3(const Vector4& v)
+	{
+		this->m_Value.x = v.X();
+		this->m_Value.y = v.Y();
+		this->m_Value.z = v.Z();
+	}
 	Vector3::Vector3(DirectX::CXMVECTOR v)
 	{
 		this->SetXMVECTOR(v);
@@ -400,10 +410,21 @@ namespace CustomType
 	{
 		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v.GetXMVECTOR()));
 	}
+	FLOAT Vector3::LengthSquare(const Vector3& v)
+	{
+		DirectX::XMVECTOR vec = v.GetXMVECTOR();
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vec, vec));
+	}
 	FLOAT Vector3::Distance(const Vector3& v1, const Vector3& v2)
 	{
-		Vector3 v = v1;
+		Vector3 v(v1);
 		return DirectX::XMVectorGetX(DirectX::XMVector3Length((v - v2).GetXMVECTOR()));
+	}
+	FLOAT Vector3::DistanceSquare(const Vector3& v1, const Vector3& v2)
+	{
+		Vector3 v(v1);
+		DirectX::XMVECTOR vec = (v - v2).GetXMVECTOR();
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vec, vec));
 	}
 	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t)
 	{
@@ -417,10 +438,21 @@ namespace CustomType
 	{
 		return DirectX::XMVectorGetX(DirectX::XMVector3Length(this->GetXMVECTOR()));
 	}
+	FLOAT Vector3::LengthSquare()
+	{
+		DirectX::XMVECTOR vec = this->GetXMVECTOR();
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vec, vec));
+	}
 	FLOAT Vector3::Distance(const Vector3& v)
 	{
 		Vector3 tv = v;
 		return DirectX::XMVectorGetX(DirectX::XMVector3Length((tv - (*this)).GetXMVECTOR()));
+	}
+	FLOAT Vector3::DistanceSquare(const Vector3& v)
+	{
+		Vector3 tv = v;
+		DirectX::XMVECTOR vec = (tv - v).GetXMVECTOR();
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vec, vec));
 	}
 	Vector3 Vector3::operator+(const Vector3& v)
 	{
@@ -582,10 +614,9 @@ namespace CustomType
 	}
 	Vector4::Vector4(const Vector3& v)
 	{
-		DirectX::XMFLOAT3 temp = v.GetXMFLOAT3();
-		this->m_Value.x = temp.x;
-		this->m_Value.y = temp.y;
-		this->m_Value.z = temp.z;
+		this->m_Value.x = v.X();
+		this->m_Value.y = v.Y();
+		this->m_Value.z = v.Z();
 		this->m_Value.w = 0.f;
 	}
 	Vector4::Vector4(const Vector4& v)
@@ -1184,9 +1215,9 @@ namespace CustomType
 	}
 
 
-	FLOAT CMath::m_PI		= 3.1415926536f;
-	FLOAT CMath::m_RadToDeg = 57.2957795f;
-	FLOAT CMath::m_DegToRad = 0.0174532925f;
+	FLOAT CMath::m_PI		= 3.1415926535897932f;
+	FLOAT CMath::m_RadToDeg = 57.295779513082321f;
+	FLOAT CMath::m_DegToRad = 0.0174532925199433f;
 	const FLOAT& CMath::GetPI()
 	{
 		return CMath::m_PI;
@@ -1306,5 +1337,9 @@ namespace CustomType
 		e = floorf(e);
 		output = static_cast<INT>(exp2f(e));
 		return static_cast<INT>(e);
+	}
+	FLOAT CMath::Sqrt(const FLOAT& v)
+	{
+		return sqrtf(v);
 	}
 }

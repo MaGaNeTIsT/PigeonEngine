@@ -126,6 +126,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 	std::vector<FLOAT>& currentDistances = currentShadowCascadeInfo->LayerInfo.Distances;
 	std::vector<FLOAT>& currentBorders = currentShadowCascadeInfo->LayerInfo.Borders;
 	std::vector<CustomType::Matrix4x4>& projectionMatrices = currentShadowCascadeInfo->ProjectionMatrices;
+	std::vector<CustomType::Vector4>& projectionSphereBounds = currentShadowCascadeInfo->ProjectionSphereBounds;
 	{
 		CustomType::Matrix4x4& viewMatrix = currentShadowCascadeInfo->ViewMatrix;
 		viewMatrix = CustomType::Matrix4x4(camera->GetPosition(), light->GetRotation());
@@ -181,45 +182,71 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 	{
 		projectionMatrices.resize(currentLayerNum);
 	}
+	if (projectionSphereBounds.size() != currentLayerNum)
+	{
+		projectionSphereBounds.resize(currentLayerNum);
+	}
 
 	{
 		std::vector<CustomType::Vector3> tempPoints;
+		std::vector<FLOAT> tempLayerDistances;
+		std::vector<FLOAT> tempCenterT;
 		{
-			if (currentLayerNum > 1u)
-			{
-				tempPoints.resize((currentLayerNum - 1u) * 4u + 8u);
-			}
-			else
-			{
-				tempPoints.resize(8u);
-			}
+			tempPoints.resize(currentLayerNum * 8u);
+			tempCenterT.resize(currentLayerNum);
 			std::vector<CustomType::Vector3> frustumPoints(camera->GetCullingPlanePoint());
 			FLOAT totalLayerDist = camera->GetFar() - camera->GetNear();
-			for (size_t i = 0u; i < (currentLayerNum - 1u); i++)
+			for (UINT i = 0u; i < currentLayerNum; i++)
 			{
-				FLOAT currentLayerDist = currentDistances[i];
-				for (UINT layerIndex = 0u; layerIndex < i; layerIndex++)
+				if (i > 0u)
 				{
-					currentLayerDist += currentDistances[layerIndex];
+					FLOAT tNear, tFar;
+					{
+						FLOAT tempNearDist = 0.f, tempFarDist = 0.f;
+						for (UINT layerIndex = 0u; layerIndex <= i; layerIndex++)
+						{
+							if (layerIndex != i)
+							{
+								tempNearDist += currentDistances[layerIndex];
+							}
+							tempFarDist += currentDistances[layerIndex];
+						}
+						tempNearDist -= currentBorders[i - 1u];
+						tNear = tempNearDist / totalLayerDist;
+						tFar = tempFarDist / totalLayerDist;
+						tempCenterT[i] = 0.5f * (tNear + tFar);
+					}
+					tempPoints[i * 8u + 0u] = CustomType::Vector3::Lerp(frustumPoints[0u], frustumPoints[4u], tNear);
+					tempPoints[i * 8u + 1u] = CustomType::Vector3::Lerp(frustumPoints[1u], frustumPoints[5u], tNear);
+					tempPoints[i * 8u + 2u] = CustomType::Vector3::Lerp(frustumPoints[2u], frustumPoints[6u], tNear);
+					tempPoints[i * 8u + 3u] = CustomType::Vector3::Lerp(frustumPoints[3u], frustumPoints[7u], tNear);
+					tempPoints[i * 8u + 4u] = CustomType::Vector3::Lerp(frustumPoints[0u], frustumPoints[4u], tFar);
+					tempPoints[i * 8u + 5u] = CustomType::Vector3::Lerp(frustumPoints[1u], frustumPoints[5u], tFar);
+					tempPoints[i * 8u + 6u] = CustomType::Vector3::Lerp(frustumPoints[2u], frustumPoints[6u], tFar);
+					tempPoints[i * 8u + 7u] = CustomType::Vector3::Lerp(frustumPoints[3u], frustumPoints[7u], tFar);
 				}
-				FLOAT t = currentLayerDist / totalLayerDist;
-				tempPoints[4u + (i * 4u + 0u)] = CustomType::Vector3::Lerp(frustumPoints[0u], frustumPoints[4u], t);
-				tempPoints[4u + (i * 4u + 1u)] = CustomType::Vector3::Lerp(frustumPoints[1u], frustumPoints[5u], t);
-				tempPoints[4u + (i * 4u + 2u)] = CustomType::Vector3::Lerp(frustumPoints[2u], frustumPoints[6u], t);
-				tempPoints[4u + (i * 4u + 3u)] = CustomType::Vector3::Lerp(frustumPoints[3u], frustumPoints[7u], t);
+				else
+				{
+					FLOAT t = currentDistances[0u] / totalLayerDist;
+					tempCenterT[0u] = 0.5f * t;
+					tempPoints[0u] = frustumPoints[0u];
+					tempPoints[1u] = frustumPoints[1u];
+					tempPoints[2u] = frustumPoints[2u];
+					tempPoints[3u] = frustumPoints[3u];
+					tempPoints[4u] = CustomType::Vector3::Lerp(frustumPoints[0u], frustumPoints[4u], t);
+					tempPoints[5u] = CustomType::Vector3::Lerp(frustumPoints[1u], frustumPoints[5u], t);
+					tempPoints[6u] = CustomType::Vector3::Lerp(frustumPoints[2u], frustumPoints[6u], t);
+					tempPoints[7u] = CustomType::Vector3::Lerp(frustumPoints[3u], frustumPoints[7u], t);
+				}
 			}
-
+			tempLayerDistances.resize(currentLayerNum);
+			for (UINT i = 0u; i < currentLayerNum; i++)
 			{
-				tempPoints[0u] = frustumPoints[0u];
-				tempPoints[1u] = frustumPoints[1u];
-				tempPoints[2u] = frustumPoints[2u];
-				tempPoints[3u] = frustumPoints[3u];
-
-				UINT farLocation = (currentLayerNum - 1u) * 4u + 4u;
-				tempPoints[farLocation + 0u] = frustumPoints[4u];
-				tempPoints[farLocation + 1u] = frustumPoints[5u];
-				tempPoints[farLocation + 2u] = frustumPoints[6u];
-				tempPoints[farLocation + 3u] = frustumPoints[7u];
+				tempLayerDistances[i] = currentDistances[i];
+				if (i > 0u)
+				{
+					tempLayerDistances[i] += currentBorders[i - 1u];
+				}
 			}
 		}
 
@@ -246,20 +273,52 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 				}
 				return result;
 			};
+#if 0
+			ImGui::Begin("Cascade Shadow");
+#endif
+			CustomType::Vector3 tempCameraDirection(camera->GetForwardVector());
+			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + (camera->GetPosition()));
+			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + (camera->GetPosition()));
 			for (UINT i = 0u; i < currentLayerNum; i++)
 			{
 				CustomType::Vector3 layerPoints[] = {
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 0u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 1u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 2u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 3u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 4u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 5u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 6u]),
-					 currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(tempPoints[i * 4u + 7u]) };
-				AABB aabb = calculateAABB(layerPoints);
-				projectionMatrices[i] = CustomType::Matrix4x4::OrthographicMatrix(aabb.MinX, aabb.MaxY, aabb.MaxX, aabb.MinY, aabb.MinZ, aabb.MaxZ);
+					tempPoints[i * 8u + 0u], tempPoints[i * 8u + 1u],
+					tempPoints[i * 8u + 2u], tempPoints[i * 8u + 3u],
+					tempPoints[i * 8u + 4u], tempPoints[i * 8u + 5u],
+					tempPoints[i * 8u + 6u], tempPoints[i * 8u + 7u] };
+				
+				{
+					FLOAT tempBoundExtentSq = CustomType::Vector3::DistanceSquare(layerPoints[4], layerPoints[5]);
+					tempBoundExtentSq = CustomType::CMath::Min(CustomType::Vector3::DistanceSquare(layerPoints[4], layerPoints[6]), tempBoundExtentSq);
+					FLOAT tempBoundExtent = CustomType::CMath::Sqrt(tempBoundExtentSq);
+					tempBoundExtent = CustomType::CMath::Min(tempLayerDistances[i], tempBoundExtent);
+					tempBoundExtent *= 0.5f;
+					CustomType::Vector3 tempBoundCenter(CustomType::Vector3::Lerp(tempCameraCenterNear, tempCameraCenterFar, tempCenterT[i]));
+					projectionSphereBounds[i] = CustomType::Vector4(tempBoundCenter.X(), tempBoundCenter.Y(), tempBoundCenter.Z(), tempBoundExtent);
+				}
+#if 0
+				{
+					ImGui::Text("Shadow Layer %d", i);
+					for (UINT debugIndex = 0u; debugIndex < 8u; debugIndex++)
+					{
+						ImGui::Text("Layer Points %d : x = %f, y = %f, z = %f", debugIndex, layerPoints[debugIndex].X(), layerPoints[debugIndex].Y(), layerPoints[debugIndex].Z());
+					}
+					ImGui::Text("Sphere Vector : x = %f, y = %f, z = %f, w = %f", projectionSphereBounds[i].X(), projectionSphereBounds[i].Y(), projectionSphereBounds[i].Z(), projectionSphereBounds[i].W());
+				}
+#endif
+				for (UINT pointIndex = 0u; pointIndex < 8u; pointIndex++)
+				{
+					layerPoints[pointIndex] = currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(layerPoints[pointIndex]);
+				}
+
+				{
+					AABB aabb = calculateAABB(layerPoints);
+					projectionMatrices[i] = CustomType::Matrix4x4::OrthographicMatrix(aabb.MinX, aabb.MaxY, aabb.MaxX, aabb.MinY, aabb.MinZ, aabb.MaxZ);
+				}
 			}
+#if 0
+			ImGui::End();
+#endif
 		}
 	}
 }
@@ -345,6 +404,16 @@ const CLightBase::LightShadowInfo& CLightDirectional::GetCurrentShadowMap(const 
 {
 	const INT& currentFrame = this->m_FrameCounter;
 	return (this->m_CascadeInfo[currentFrame]->ShadowMap[extraIndex]);
+}
+CustomType::Vector4 CLightDirectional::GetCurrentProjectionSphereBounding(const UINT& extraIndex)
+{
+	const INT& currentFrame = this->m_FrameCounter;
+	const std::shared_ptr<ShadowCascadeInfo> currentCascadeInfo = this->m_CascadeInfo[currentFrame];
+	if (extraIndex >= currentCascadeInfo->ProjectionSphereBounds.size())
+	{
+		return CustomType::Vector4::Zero();
+	}
+	return (currentCascadeInfo->ProjectionSphereBounds[extraIndex]);
 }
 CustomType::Matrix4x4 CLightDirectional::GetCurrentViewMatrix(const UINT& extraIndex)
 {
