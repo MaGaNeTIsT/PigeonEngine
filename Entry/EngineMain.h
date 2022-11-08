@@ -31,6 +31,9 @@ using namespace DirectX;
 //#pragma comment (lib, "libxml2-mt.lib")
 //#pragma comment (lib, "zlib-mt.lib")
 
+#include <Jolt/Jolt.h>
+#pragma comment (lib,"Jolt.lib")
+
 #include "../ThirdParty/imgui/imgui.h"
 
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)

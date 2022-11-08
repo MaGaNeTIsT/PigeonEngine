@@ -109,6 +109,15 @@
     <Filter Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling">
       <UniqueIdentifier>{df824d15-d2e8-424c-ba9f-0b7153dcbd58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Sources\EnginePhysics">
+      <UniqueIdentifier>{812cc968-29f6-4301-88a3-e7bbfcca990c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Sources\EnginePhysics\CppFiles">
+      <UniqueIdentifier>{92086320-4182-4744-94b9-eeeb0e191495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Sources\EnginePhysics\Headers">
+      <UniqueIdentifier>{bf3dfe61-e3a3-4704-b1e2-51ecca62f2d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -246,6 +255,9 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h">
+      <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -370,6 +382,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp">
+      <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -40,6 +40,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMesh.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CReadFBX.h" />
@@ -86,6 +87,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CReadFBX.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
@@ -306,13 +308,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -339,12 +341,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>.\ThirdParty\Jolt\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\ThirdParty\Jolt\Plugins\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>.\ThirdParty\Jolt\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\ThirdParty\Jolt\Plugins\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
