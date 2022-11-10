@@ -462,5 +462,8 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
     </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
+    </None>
   </ItemGroup>
 </Project>
