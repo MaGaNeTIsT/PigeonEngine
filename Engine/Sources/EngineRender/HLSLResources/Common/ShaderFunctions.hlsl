@@ -27,9 +27,9 @@ GeometryViewLightDotTerm InitGeometryViewLightDotTerm(const float3 normal, const
 	output.LdotH = saturate(dot(lightDir, halfVec));
 }
 
-float3 RemappingBaseColor(float3 albedo, float metallic)
+float3 RemappingBaseColor(float3 albedo, float metallicness)
 {
-	return (albedo * (1.0 - metallic));
+	return (albedo * (1.0 - metallicness));
 }
 
 float RemappingRoughness(float perceptualRoughness)
@@ -48,14 +48,14 @@ float RemappingFresnelf0DielectricsFast(float reflectance)
 	return (0.16 * reflectance * reflectance);
 }
 
-float3 RemappingFresnelf0Conductors(float3 albedo, float metallic)
+float3 RemappingFresnelf0Conductors(float3 albedo, float metallicness)
 {
-	return (albedo * metallic);
+	return (albedo * metallicness);
 }
 
-float3 RemappingFresnelf0(float reflectance, float3 albedo, float metallic)
+float3 RemappingFresnelf0(float reflectance, float3 albedo, float metallicness)
 {
-	return (0.16 * reflectance * reflectance * (1.0 - metallic) + albedo * metallic);
+	return (0.16 * reflectance * reflectance * (1.0 - metallicness) + albedo * metallicness);
 }
 
 #endif

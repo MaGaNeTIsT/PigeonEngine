@@ -71,7 +71,7 @@ void CScene::Init()
 		const INT randomMax = 3000;
 		//const FLOAT rangePos = 50.f;
 		const FLOAT rangePos = 200.f;
-		const FLOAT baseScale = 0.05f;
+		const FLOAT baseScale = 10.f;
 		const FLOAT rangeScale = 0.15f;
 		//const UINT countModel = 4u;
 		const UINT countModel = 200u;
