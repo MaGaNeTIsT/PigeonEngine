@@ -2,7 +2,7 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "./CStructCommon.h"
+#include "./CRenderStructCommon.h"
 
 class CRenderDevice
 {

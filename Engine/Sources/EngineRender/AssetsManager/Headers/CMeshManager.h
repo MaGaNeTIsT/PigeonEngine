@@ -2,7 +2,7 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "../../RenderBase/Headers/CStructCommon.h"
+#include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "./CMesh.h"
 
 class CMeshManager

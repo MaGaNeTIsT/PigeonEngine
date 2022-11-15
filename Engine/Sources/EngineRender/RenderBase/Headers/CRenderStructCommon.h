@@ -27,6 +27,28 @@ namespace CustomStruct
 		};
 	};
 
+	struct CRenderBoundingBox
+	{
+		CRenderBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
+		{
+			Anchor		= anchor;
+			Dimensions	= dimensions;
+		}
+		CustomType::Vector3		Anchor;
+		CustomType::Vector3		Dimensions;
+	};
+
+	struct CRenderBoundingSphere
+	{
+		CRenderBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
+		{
+			Anchor	= anchor;
+			Radius	= radius;
+		}
+		CustomType::Vector3		Anchor;
+		FLOAT					Radius;
+	};
+
 	struct CSubMeshInfo
 	{
 		CSubMeshInfo() { ::ZeroMemory(this, sizeof(*this)); }

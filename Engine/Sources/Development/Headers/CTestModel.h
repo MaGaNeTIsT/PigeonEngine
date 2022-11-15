@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../EngineRender/RenderBase/Headers/CStructCommon.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "../../EngineGame/Headers/CGameObject.h"
 
 class CTestModel : public CGameObject

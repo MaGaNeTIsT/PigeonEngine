@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
-#include "./CStructCommon.h"
+#include "./CRenderStructCommon.h"
 #include "../Headers/CRenderDevice.h"
 
 class CGPUCulling

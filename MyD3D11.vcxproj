@@ -32,7 +32,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectManager.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CObjectManager.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2D.h" />
@@ -53,7 +53,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderStructCommon.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
@@ -78,7 +78,8 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CTimer.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObjectManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObject.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CObjectManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPlane.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2D.cpp" />

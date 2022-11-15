@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../RenderBase/Headers/CStructCommon.h"
+#include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../../EngineGame/Headers/CGameObject.h"
 
 class CVolumetricClouds : public CGameObject

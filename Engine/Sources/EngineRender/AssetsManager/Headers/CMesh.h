@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
-#include "../../RenderBase/Headers/CStructCommon.h"
+#include "../../RenderBase/Headers/CRenderStructCommon.h"
 
 template<typename IndexType>
 class CMesh

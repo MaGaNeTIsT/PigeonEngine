@@ -162,7 +162,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectManager.h">
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CObjectManager.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h">
@@ -204,7 +204,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CStructCommon.h">
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderStructCommon.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h">
@@ -293,7 +293,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObjectManager.cpp">
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CObjectManager.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp">
@@ -370,6 +370,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureType.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObject.cpp">
+      <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

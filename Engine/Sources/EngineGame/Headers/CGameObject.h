@@ -1,282 +1,256 @@
 #pragma once
 
-#include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CBaseType.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "./CGameObjectManager.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "../../EngineRender/AssetsManager/Headers/CMesh.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
 
-class CGameObject
+class CObjectBase
 {
 public:
-	struct CGameBoundingBox
-	{
-		CGameBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
-		{
-			Anchor		= anchor;
-			Dimensions	= dimensions;
-		}
-		CustomType::Vector3 Anchor;
-		CustomType::Vector3 Dimensions;
-	};
-	struct CGameBoundingSphere
-	{
-		CGameBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
-		{
-			Anchor = anchor;
-			Radius = radius;
-		}
-		CustomType::Vector3 Anchor;
-		FLOAT				Radius;
-	};
+	CObjectBase();
+	CObjectBase(const CObjectBase& obj);
+	virtual ~CObjectBase();
 public:
-	const CustomType::Vector3&		GetPosition()const { return m_Position; }
-	const CustomType::Quaternion&	GetRotation()const { return m_Rotation; }
-	const CustomType::Vector3&		GetScale()const { return m_Scale; }
-
-	void SetPosition(const CustomType::Vector3& Position) { m_Position = Position; }
-	void SetRotation(const CustomType::Quaternion& Rotation) { m_Rotation = Rotation; }
-	void SetScale(const CustomType::Vector3& Scale) { m_Scale = Scale; }
+	const ULONGLONG& GetUniqueID()const;
+public:
+	BOOL operator==(const CObjectBase& obj);
+	BOOL operator!=(const CObjectBase& obj);
 protected:
-	void RecurWorldMatrix(CGameObject* obj, CustomType::Matrix4x4& m)
-	{
-		CustomType::Matrix4x4 temp(obj->m_Position, obj->m_Rotation, obj->m_Scale);
-		m = temp * m;
-		if (obj->m_Parent != NULL)
-			RecurWorldMatrix(obj->m_Parent, m);
-	}
+	ULONGLONG m_UniqueID;
+};
+
+class CTransform : public CObjectBase
+{
 public:
-	CustomType::Vector3 GetForwardVector()
-	{
-		CustomType::Vector3 result(0.f, 0.f, 1.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Vector3 GetUpVector()
-	{
-		CustomType::Vector3 result(0.f, 1.f, 0.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Vector3 GetRightVector()
-	{
-		CustomType::Vector3 result(1.f, 0.f, 0.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Matrix4x4 GetLocalToWorldMatrix()
-	{
-		CustomType::Matrix4x4 result(m_Position, m_Rotation, m_Scale);
-		if (m_Parent != NULL)
-			RecurWorldMatrix(m_Parent, result);
-		return result;
-	}
-	CustomType::Matrix4x4 GetWorldToLocalMatrix()
-	{
-		CustomType::Matrix4x4 result(GetLocalToWorldMatrix().Inverse());
-		return result;
-	}
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Quaternion& worldRotation, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldScale, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale, std::shared_ptr<CTransform> parent = nullptr);
 public:
-	const ULONGLONG& GetGameObjectID()const { return m_UID; }
-	const BOOL& IsActive()const { return m_Active; }
-	void Active() { m_Active = TRUE; }
-	void Inactive() { m_Active = FALSE; }
-	void SetScene(class CScene* scene) { m_Scene = scene; }
-	void SetParent(CGameObject* parent)
-	{
-		if (m_Parent != NULL)
-			m_Parent->RemoveChild(this);
-		m_Parent = parent;
-		parent->AddChild(this);
-	}
-	void AddChild(CGameObject* child) { m_Child[child->m_UID] = child; }
-	void RemoveChild(CGameObject* child) { m_Child.erase(child->m_UID); }
+	std::shared_ptr<class CGameObject>					GetGameObject();
+	std::shared_ptr<CTransform>							GetParent();
+	std::shared_ptr<CTransform>							GetChildByUniqueID(const ULONGLONG& id);
+	std::vector<std::shared_ptr<CTransform>>			GetChildrenList();
+	std::map<ULONGLONG, std::shared_ptr<CTransform>>	GetChildrenMap();
 public:
-	void AddMesh(std::shared_ptr<CMesh<UINT>> mesh) { m_Mesh = mesh; }
-	void AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
-	std::shared_ptr<CMesh<UINT>> GetMesh()const { return m_Mesh; }
-	CMeshRenderer* GetMeshRenderer()const { return m_MeshRenderer; }
+	void	SetGameObject(std::shared_ptr<class CGameObject> gameObject);
+	void	SetParent(std::shared_ptr<CTransform> parent);
+	void	AddChild(std::shared_ptr<CTransform> child);
+public:
+	void	RemoveParent();
+	void	RemoveChild(std::shared_ptr<CTransform> child);
+	void	RemoveChildByUniqueID(const ULONGLONG& id);
+	void	RemoveChildren();
 protected:
-	ULONGLONG							m_UID;
-	BOOL								m_Active;
-	class CScene*						m_Scene				= NULL;
-	CGameObject*						m_Parent			= NULL;
-	std::map<ULONGLONG,CGameObject*>	m_Child;
-
-	std::shared_ptr<CMesh<UINT>>		m_Mesh				= nullptr;
-	CMeshRenderer*						m_MeshRenderer		= NULL;
-
-	CGameBoundingBox*					m_BoundingBox		= NULL;
-	CGameBoundingSphere*				m_BoundingSphere	= NULL;
-
-	CustomType::Vector3					m_Position;
-	CustomType::Quaternion				m_Rotation;
-	CustomType::Vector3					m_Scale				= CustomType::Vector3(1.f, 1.f, 1.f);
+	std::shared_ptr<class CGameObject>					m_GameObject;
+	std::shared_ptr<CTransform>							m_Parent;
+	std::map<ULONGLONG, std::shared_ptr<CTransform>>	m_Children;
 public:
-	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); m_Active = FALSE; }
-	virtual ~CGameObject()
-	{
-		if (m_MeshRenderer != NULL)
-		{
-			delete m_MeshRenderer;
-			m_MeshRenderer = NULL;
-		}
-		if (m_BoundingBox != NULL)
-		{
-			delete m_BoundingBox;
-			m_BoundingBox = NULL;
-		}
-		if (m_BoundingSphere != NULL)
-		{
-			delete m_BoundingSphere;
-			m_BoundingSphere = NULL;
-		}
-	}
-	virtual void	Init()			= 0;
-	virtual void	Uninit()		= 0;
-	virtual void	Update()		{}
-	virtual void	FixedUpdate()	{}
-	virtual void	Draw()			{}
-	virtual void	DrawExtra()		{}
+	const CustomType::Vector3&		GetLocalPosition()const;
+	const CustomType::Quaternion&	GetLocalRotation()const;
+	const CustomType::Vector3&		GetLocalScale()const;
+public:
+	void	SetLocalPosition(const CustomType::Vector3& localPosition);
+	void	SetLocalRotation(const CustomType::Quaternion& localRotation);
+	void	SetLocalScale(const CustomType::Vector3& localScale);
+public:
+	void	SetWorldPosition(const CustomType::Vector3& worldPosition);
+	void	SetWorldRotation(const CustomType::Quaternion& worldRotation);
+	void	SetWorldScale(const CustomType::Vector3& worldScale);
+public:
+	CustomType::Vector3		GetWorldPosition();
+	CustomType::Quaternion	GetWorldRotation();
+	CustomType::Vector3		GetWorldScale();
 protected:
-	virtual void	PrepareDraw()	{}
+	void	RecursionWorldPosition(const std::shared_ptr<CTransform> parent, CustomType::Vector3& position);
+	void	RecursionWorldRotation(const std::shared_ptr<CTransform> parent, CustomType::Quaternion& rotation);
+	void	RecursionWorldScale(const std::shared_ptr<CTransform> parent, CustomType::Vector3& scale);
+	void	CalculateCurrentLocalTransform(std::shared_ptr<CTransform> newParent);
+protected:
+	CustomType::Vector3			m_LocalPosition;
+	CustomType::Quaternion		m_LocalRotation;
+	CustomType::Vector3			m_LocalScale;
 public:
-	void SetBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
-	{
-		if (m_BoundingBox == NULL)
-		{
-			m_BoundingBox = new CGameBoundingBox(anchor, dimensions);
-			return;
-		}
-		m_BoundingBox->Anchor = anchor;
-		m_BoundingBox->Dimensions = dimensions;
-	}
-	void SetBoundingBox(const CustomType::Vector3& dimensions)
-	{
-		CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
-		tempAnchor = tempAnchor * 0.5f;
-		if (m_BoundingBox == NULL)
-		{
-			m_BoundingBox = new CGameBoundingBox(tempAnchor, dimensions);
-			return;
-		}
-		m_BoundingBox->Anchor = tempAnchor;
-		m_BoundingBox->Dimensions = dimensions;
-	}
-	CGameBoundingBox* GetBoundingBox() { return m_BoundingBox; }
-	void GetAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)
-	{
-		if (m_BoundingBox == NULL)
-		{
-			boundingMin = m_Position;
-			boundingMax = CustomType::Vector3::Zero();
-			return;
-		}
-		FLOAT points[24];
-		{
-			CustomType::Vector3 rightVec(GetRightVector());
-			CustomType::Vector3 upVec(GetUpVector());
-			CustomType::Vector3 forwardVec(GetForwardVector());
+	CustomType::Vector3		GetForwardVector();
+	CustomType::Vector3		GetUpVector();
+	CustomType::Vector3		GetRightVector();
+	CustomType::Matrix4x4	GetLocalToWorldMatrix();
+	CustomType::Matrix4x4	GetWorldToLocalMatrix();
+public:
+	CTransform();
+	CTransform(const CTransform& transform);
+	virtual ~CTransform();
+};
 
-			CustomType::Vector3 tempPoint(rightVec * m_BoundingBox->Anchor.X() * m_Scale.X() + upVec * m_BoundingBox->Anchor.Y() * m_Scale.Y() + forwardVec * m_BoundingBox->Anchor.Z() * m_Scale.Z() + m_Position);
-			/*
-			//            5--------6                Y(up vector)
-			//           /|       /|                ^
-			//          / |      / |  (dimension y) |
-			//         4--------7  |                |    Z(forward vector)
-			//         |  1-----|--2                |   /
-			//         | /      | /                 |  /(dimension z)
-			//         |/       |/                  | /
-			// (anchor)0--------3                   0---------------->X(right vector)
-			//                                         (dimension x)
-			*/
-			points[0u * 3u + 0u] = tempPoint.X();
-			points[0u * 3u + 1u] = tempPoint.Y();
-			points[0u * 3u + 2u] = tempPoint.Z();
-
-			rightVec = rightVec * m_BoundingBox->Dimensions.X() * m_Scale.X();
-			upVec = upVec * m_BoundingBox->Dimensions.Y() * m_Scale.Y();
-			forwardVec = forwardVec * m_BoundingBox->Dimensions.Z() * m_Scale.Z();
-
-			points[1u * 3u + 0u] = points[0u * 3u + 0u] + forwardVec.X();
-			points[1u * 3u + 1u] = points[0u * 3u + 1u] + forwardVec.Y();
-			points[1u * 3u + 2u] = points[0u * 3u + 2u] + forwardVec.Z();
-			points[2u * 3u + 0u] = points[1u * 3u + 0u] + rightVec.X();
-			points[2u * 3u + 1u] = points[1u * 3u + 1u] + rightVec.Y();
-			points[2u * 3u + 2u] = points[1u * 3u + 2u] + rightVec.Z();
-			points[3u * 3u + 0u] = points[0u * 3u + 0u] + rightVec.X();
-			points[3u * 3u + 1u] = points[0u * 3u + 1u] + rightVec.Y();
-			points[3u * 3u + 2u] = points[0u * 3u + 2u] + rightVec.Z();
-			points[4u * 3u + 0u] = points[0u * 3u + 0u] + upVec.X();
-			points[4u * 3u + 1u] = points[0u * 3u + 1u] + upVec.Y();
-			points[4u * 3u + 2u] = points[0u * 3u + 2u] + upVec.Z();
-			points[5u * 3u + 0u] = points[4u * 3u + 0u] + forwardVec.X();
-			points[5u * 3u + 1u] = points[4u * 3u + 1u] + forwardVec.Y();
-			points[5u * 3u + 2u] = points[4u * 3u + 2u] + forwardVec.Z();
-			points[7u * 3u + 0u] = points[4u * 3u + 0u] + rightVec.X();
-			points[7u * 3u + 1u] = points[4u * 3u + 1u] + rightVec.Y();
-			points[7u * 3u + 2u] = points[4u * 3u + 2u] + rightVec.Z();
-			points[6u * 3u + 0u] = points[7u * 3u + 0u] + forwardVec.X();
-			points[6u * 3u + 1u] = points[7u * 3u + 1u] + forwardVec.Y();
-			points[6u * 3u + 2u] = points[7u * 3u + 2u] + forwardVec.Z();
-		}
-
-		{
-			FLOAT minPoint[3] = { points[0], points[1], points[2] };
-			FLOAT maxPoint[3] = { points[0], points[1], points[2] };
-			for (INT i = 1; i < 8; i++)
-			{
-				for (INT d = 0; d < 3; d++)
-				{
-					minPoint[d] = CustomType::CMath::Min(points[i * 3 + d], minPoint[d]);
-					maxPoint[d] = CustomType::CMath::Max(points[i * 3 + d], maxPoint[d]);
-				}
-			}
-			boundingMin = CustomType::Vector3(minPoint[0], minPoint[1], minPoint[2]);
-			boundingMax = CustomType::Vector3(maxPoint[0], maxPoint[1], maxPoint[2]);
-		}
-	}
-	void SetBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
-	{
-		if (m_BoundingSphere == NULL)
-		{
-			m_BoundingSphere = new CGameBoundingSphere(anchor, radius);
-			return;
-		}
-		m_BoundingSphere->Anchor = anchor;
-		m_BoundingSphere->Radius = radius;
-	}
-	void SetBoundingSphere(const FLOAT& radius)
-	{
-		if (m_BoundingSphere == NULL)
-		{
-			m_BoundingSphere = new CGameBoundingSphere(CustomType::Vector3::Zero(), radius);
-			return;
-		}
-		m_BoundingSphere->Anchor = CustomType::Vector3::Zero();
-		m_BoundingSphere->Radius = radius;
-	}
-	void SetBoundingSphere(const CGameBoundingBox* boundingBox)
-	{
-		CustomType::Vector3 tempVec = boundingBox->Dimensions;
-		tempVec = tempVec * 0.5f;
-		if (m_BoundingSphere == NULL)
-		{
-			m_BoundingSphere = new CGameBoundingSphere(tempVec + boundingBox->Anchor, tempVec.Length());
-			return;
-		}
-		m_BoundingSphere->Anchor = tempVec + boundingBox->Anchor;
-		m_BoundingSphere->Radius = tempVec.Length();
-	}
-	CGameBoundingSphere* GetBoundingSphere() { return m_BoundingSphere; }
-	void GetBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)
-	{
-		if (m_BoundingSphere == NULL)
-		{
-			anchor = m_Position;
-			radius = 1.f;
-			return;
-		}
-		anchor = (m_BoundingSphere->Anchor * m_Scale) + m_Position;
-		radius = m_BoundingSphere->Radius * CustomType::CMath::Max(m_Scale.X(), CustomType::CMath::Max(m_Scale.Y(), m_Scale.Z()));
-	}
+class CGameObject : public CObjectBase
+{
+public:
+	std::shared_ptr<class CScene>	GetScene();
+	void							SetScene(std::shared_ptr<class CScene> scene);
+	const BOOL&						IsActive()const { return (this->m_Active); }
+	void							Active() { this->m_Active = TRUE; }
+	void							Inactive() { this->m_Active = FALSE; }
+public:
+	std::shared_ptr<CTransform>		GetTransform() { return (this->m_Transform); }
+protected:
+	std::shared_ptr<class CScene>	m_Scene;
+	BOOL							m_Active;
+protected:
+	std::shared_ptr<CTransform>								m_Transform;
+	std::shared_ptr<CustomStruct::CRenderBoundingBox>		m_BoundingBox;
+	std::shared_ptr<CustomStruct::CRenderBoundingSphere>	m_BoundingSphere;
+public:
+	CGameObject();
+	CGameObject(const CGameObject& obj);
+	virtual ~CGameObject();
+//	virtual void	Init()			= 0;
+//	virtual void	Uninit()		= 0;
+//	virtual void	Update()		{}
+//	virtual void	FixedUpdate()	{}
+//	virtual void	Draw()			{}
+//	virtual void	DrawExtra()		{}
+//protected:
+//	virtual void	PrepareDraw()	{}
+//public:
+//	void SetBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
+//	{
+//		if (m_BoundingBox == NULL)
+//		{
+//			m_BoundingBox = new CGameBoundingBox(anchor, dimensions);
+//			return;
+//		}
+//		m_BoundingBox->Anchor = anchor;
+//		m_BoundingBox->Dimensions = dimensions;
+//	}
+//	void SetBoundingBox(const CustomType::Vector3& dimensions)
+//	{
+//		CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
+//		tempAnchor = tempAnchor * 0.5f;
+//		if (m_BoundingBox == NULL)
+//		{
+//			m_BoundingBox = new CGameBoundingBox(tempAnchor, dimensions);
+//			return;
+//		}
+//		m_BoundingBox->Anchor = tempAnchor;
+//		m_BoundingBox->Dimensions = dimensions;
+//	}
+//	CGameBoundingBox* GetBoundingBox() { return m_BoundingBox; }
+//	void GetAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)
+//	{
+//		if (m_BoundingBox == NULL)
+//		{
+//			boundingMin = m_Position;
+//			boundingMax = CustomType::Vector3::Zero();
+//			return;
+//		}
+//		FLOAT points[24];
+//		{
+//			CustomType::Vector3 rightVec(GetRightVector());
+//			CustomType::Vector3 upVec(GetUpVector());
+//			CustomType::Vector3 forwardVec(GetForwardVector());
+//
+//			CustomType::Vector3 tempPoint(rightVec * m_BoundingBox->Anchor.X() * m_Scale.X() + upVec * m_BoundingBox->Anchor.Y() * m_Scale.Y() + forwardVec * m_BoundingBox->Anchor.Z() * m_Scale.Z() + m_Position);
+//			/*
+//			//            5--------6                Y(up vector)
+//			//           /|       /|                ^
+//			//          / |      / |  (dimension y) |
+//			//         4--------7  |                |    Z(forward vector)
+//			//         |  1-----|--2                |   /
+//			//         | /      | /                 |  /(dimension z)
+//			//         |/       |/                  | /
+//			// (anchor)0--------3                   0---------------->X(right vector)
+//			//                                         (dimension x)
+//			*/
+//			points[0u * 3u + 0u] = tempPoint.X();
+//			points[0u * 3u + 1u] = tempPoint.Y();
+//			points[0u * 3u + 2u] = tempPoint.Z();
+//
+//			rightVec = rightVec * m_BoundingBox->Dimensions.X() * m_Scale.X();
+//			upVec = upVec * m_BoundingBox->Dimensions.Y() * m_Scale.Y();
+//			forwardVec = forwardVec * m_BoundingBox->Dimensions.Z() * m_Scale.Z();
+//
+//			points[1u * 3u + 0u] = points[0u * 3u + 0u] + forwardVec.X();
+//			points[1u * 3u + 1u] = points[0u * 3u + 1u] + forwardVec.Y();
+//			points[1u * 3u + 2u] = points[0u * 3u + 2u] + forwardVec.Z();
+//			points[2u * 3u + 0u] = points[1u * 3u + 0u] + rightVec.X();
+//			points[2u * 3u + 1u] = points[1u * 3u + 1u] + rightVec.Y();
+//			points[2u * 3u + 2u] = points[1u * 3u + 2u] + rightVec.Z();
+//			points[3u * 3u + 0u] = points[0u * 3u + 0u] + rightVec.X();
+//			points[3u * 3u + 1u] = points[0u * 3u + 1u] + rightVec.Y();
+//			points[3u * 3u + 2u] = points[0u * 3u + 2u] + rightVec.Z();
+//			points[4u * 3u + 0u] = points[0u * 3u + 0u] + upVec.X();
+//			points[4u * 3u + 1u] = points[0u * 3u + 1u] + upVec.Y();
+//			points[4u * 3u + 2u] = points[0u * 3u + 2u] + upVec.Z();
+//			points[5u * 3u + 0u] = points[4u * 3u + 0u] + forwardVec.X();
+//			points[5u * 3u + 1u] = points[4u * 3u + 1u] + forwardVec.Y();
+//			points[5u * 3u + 2u] = points[4u * 3u + 2u] + forwardVec.Z();
+//			points[7u * 3u + 0u] = points[4u * 3u + 0u] + rightVec.X();
+//			points[7u * 3u + 1u] = points[4u * 3u + 1u] + rightVec.Y();
+//			points[7u * 3u + 2u] = points[4u * 3u + 2u] + rightVec.Z();
+//			points[6u * 3u + 0u] = points[7u * 3u + 0u] + forwardVec.X();
+//			points[6u * 3u + 1u] = points[7u * 3u + 1u] + forwardVec.Y();
+//			points[6u * 3u + 2u] = points[7u * 3u + 2u] + forwardVec.Z();
+//		}
+//
+//		{
+//			FLOAT minPoint[3] = { points[0], points[1], points[2] };
+//			FLOAT maxPoint[3] = { points[0], points[1], points[2] };
+//			for (INT i = 1; i < 8; i++)
+//			{
+//				for (INT d = 0; d < 3; d++)
+//				{
+//					minPoint[d] = CustomType::CMath::Min(points[i * 3 + d], minPoint[d]);
+//					maxPoint[d] = CustomType::CMath::Max(points[i * 3 + d], maxPoint[d]);
+//				}
+//			}
+//			boundingMin = CustomType::Vector3(minPoint[0], minPoint[1], minPoint[2]);
+//			boundingMax = CustomType::Vector3(maxPoint[0], maxPoint[1], maxPoint[2]);
+//		}
+//	}
+//	void SetBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
+//	{
+//		if (m_BoundingSphere == NULL)
+//		{
+//			m_BoundingSphere = new CGameBoundingSphere(anchor, radius);
+//			return;
+//		}
+//		m_BoundingSphere->Anchor = anchor;
+//		m_BoundingSphere->Radius = radius;
+//	}
+//	void SetBoundingSphere(const FLOAT& radius)
+//	{
+//		if (m_BoundingSphere == NULL)
+//		{
+//			m_BoundingSphere = new CGameBoundingSphere(CustomType::Vector3::Zero(), radius);
+//			return;
+//		}
+//		m_BoundingSphere->Anchor = CustomType::Vector3::Zero();
+//		m_BoundingSphere->Radius = radius;
+//	}
+//	void SetBoundingSphere(const CGameBoundingBox* boundingBox)
+//	{
+//		CustomType::Vector3 tempVec = boundingBox->Dimensions;
+//		tempVec = tempVec * 0.5f;
+//		if (m_BoundingSphere == NULL)
+//		{
+//			m_BoundingSphere = new CGameBoundingSphere(tempVec + boundingBox->Anchor, tempVec.Length());
+//			return;
+//		}
+//		m_BoundingSphere->Anchor = tempVec + boundingBox->Anchor;
+//		m_BoundingSphere->Radius = tempVec.Length();
+//	}
+//	CGameBoundingSphere* GetBoundingSphere() { return m_BoundingSphere; }
+//	void GetBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)
+//	{
+//		if (m_BoundingSphere == NULL)
+//		{
+//			anchor = m_Position;
+//			radius = 1.f;
+//			return;
+//		}
+//		anchor = (m_BoundingSphere->Anchor * m_Scale) + m_Position;
+//		radius = m_BoundingSphere->Radius * CustomType::CMath::Max(m_Scale.X(), CustomType::CMath::Max(m_Scale.Y(), m_Scale.Z()));
+//	}
 };

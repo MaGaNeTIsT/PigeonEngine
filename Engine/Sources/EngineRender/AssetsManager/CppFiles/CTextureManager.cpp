@@ -1,7 +1,7 @@
 #include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CTextureManager.h"
 #include "../Headers/CTextureType.h"
-#include "../../RenderBase/Headers/CStructCommon.h"
+#include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 
 CTextureManager* CTextureManager::m_TextureManager = new CTextureManager();

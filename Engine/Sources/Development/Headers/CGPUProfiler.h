@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
-#include "../../EngineRender/RenderBase/Headers/CStructCommon.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 
 class CGPUProfilerManager
 {
