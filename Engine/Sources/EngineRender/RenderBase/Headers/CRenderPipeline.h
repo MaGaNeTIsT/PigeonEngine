@@ -3,7 +3,7 @@
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
 #include "./CRenderStructCommon.h"
-#include "../../AssetsManager/Headers/CMesh.h"
+#include "../../AssetsManager/Headers/CMeshComponent.h"
 #include "../../../EngineGame/Headers/CScene.h"
 
 class CRenderPipeline
@@ -86,7 +86,7 @@ protected:
 	CustomType::Vector2Int					m_GlobalBufferSize;
 	CustomType::Vector2Int					m_ShadowBufferSize;
 protected:
-	std::shared_ptr<CMesh<UINT>>			m_FullScreenPolygon;
+	std::weak_ptr<CBaseMesh<UINT>>			m_FullScreenPolygon;
 protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneColor;
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneDepth;

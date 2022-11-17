@@ -13,40 +13,63 @@ void CMeshManager::ClearMeshData()
 		m_MeshManager->m_Data.clear();
 	}
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
-	const static std::string _objName = "obj";
-
 	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	std::shared_ptr<CMesh<UINT>> resultMesh = CMeshManager::FindMeshData((name + descName));
-	if (resultMesh != nullptr)
-		return resultMesh;
 	{
+		std::weak_ptr<CBaseMesh<UINT>> resultMesh(CMeshManager::FindMeshData((name + descName)));
+		if (!resultMesh.expired())
+		{
+			return resultMesh;
+		}
+	}
+
+	{
+		const static std::string _objName = "obj";
+
+		std::weak_ptr<CBaseMesh<UINT>> nullWeakPtr;
+		std::shared_ptr<CBaseMesh<UINT>> resultMesh = nullptr;
 		size_t pos = name.find_last_of('.');
 		if (pos == std::string::npos)
-			return nullptr;
+		{
+			return nullWeakPtr;
+		}
 		std::string typeName = name.substr(pos + 1, name.length());
 
 		if (typeName == _objName)
+		{
 			resultMesh = (CMeshManager::LoadOBJMesh(name, inputLayoutDesc, inputLayoutNum, needVertexData));
+		}
 		else
-			return nullptr;
-
-		if (resultMesh == nullptr)
-			return nullptr;
+		{
+			return nullWeakPtr;
+		}
+		if (!resultMesh)
+		{
+			return nullWeakPtr;
+		}
 
 		CMeshManager::AddMeshData((name + descName), resultMesh);
+		return std::weak_ptr<CBaseMesh<UINT>>(resultMesh);
 	}
-	return resultMesh;
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	if (inputLayoutNum < 1u || inputLayoutDesc == NULL)
-		return nullptr;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> weakPtr;
+		return weakPtr;
+	}
 	if (length.X() <= 0.f || length.Y() <= 0.f || vertexCount.X() < 2 || vertexCount.Y() < 2)
-		return nullptr;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> weakPtr;
+		return weakPtr;
+	}
 	if (CustomType::CMath::Abs(uv.X()) < 0.01f || CustomType::CMath::Abs(uv.Y()) < 0.01f)
-		return nullptr;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> weakPtr;
+		return weakPtr;
+	}
 	std::string tempName = ENGINE_MESH_PLANE_NAME;
 	tempName = tempName +
 		"_cx_" + std::to_string(vertexCount.X()) +
@@ -56,10 +79,13 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPlaneMesh(const CustomType::Vecto
 		"_u_" + std::to_string(uv.X()) +
 		"_v_" + std::to_string(uv.Y());
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != nullptr)
-		return findResult;
-
+	{
+		std::weak_ptr<CBaseMesh<UINT>> findResult(CMeshManager::FindMeshData(tempName));
+		if (!findResult.expired())
+		{
+			return findResult;
+		}
+	}
 	void* vertices = nullptr;
 	UINT vertexNum = 0u;
 	{
@@ -180,16 +206,21 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPlaneMesh(const CustomType::Vecto
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
-	return mesh;
+	std::shared_ptr<CBaseMesh<UINT>> sharedPtrMesh(CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData));
+	CMeshManager::AddMeshData(tempName, sharedPtrMesh);
+	return std::weak_ptr<CBaseMesh<UINT>>(sharedPtrMesh);
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_CUBE_NAME;
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != nullptr)
-		return findResult;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> findResult(CMeshManager::FindMeshData(tempName));
+		if (!findResult.expired())
+		{
+			return findResult;
+		}
+	}
 	void* vertices = nullptr;
 	UINT vertexNum = 24u;
 	{
@@ -289,16 +320,21 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadCubeMesh(const CustomStruct::CRen
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
-	return mesh;
+	std::shared_ptr<CBaseMesh<UINT>> sharedPtrMesh(CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData));
+	CMeshManager::AddMeshData(tempName, sharedPtrMesh);
+	return std::weak_ptr<CBaseMesh<UINT>>(sharedPtrMesh);
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_NAME;
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != nullptr)
-		return findResult;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> findResult(CMeshManager::FindMeshData(tempName));
+		if (!findResult.expired())
+		{
+			return findResult;
+		}
+	}
 	void* vertices = nullptr;
 	UINT vertexNum = 4u;
 	{
@@ -343,10 +379,11 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygonMesh(const CustomStruct::C
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
-	return mesh;
+	std::shared_ptr<CBaseMesh<UINT>> sharedPtrMesh(CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData));
+	CMeshManager::AddMeshData(tempName, sharedPtrMesh);
+	return std::weak_ptr<CBaseMesh<UINT>>(sharedPtrMesh);
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
 	tempName = tempName +
@@ -355,9 +392,13 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygon2D(const CustomType::Vecto
 		"_z_" + std::to_string(customSize.Z()) +
 		"_w_" + std::to_string(customSize.W());
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	std::shared_ptr<CMesh<UINT>> findResult = CMeshManager::FindMeshData(tempName);
-	if (findResult != nullptr)
-		return findResult;
+	{
+		std::weak_ptr<CBaseMesh<UINT>> findResult(CMeshManager::FindMeshData(tempName));
+		if (!findResult.expired())
+		{
+			return findResult;
+		}
+	}
 	void* vertices = nullptr;
 	UINT vertexNum = 4u;
 	{
@@ -403,8 +444,9 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadPolygon2D(const CustomType::Vecto
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
-	return mesh;
+	std::shared_ptr<CBaseMesh<UINT>> sharedPtrMesh(CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData));
+	CMeshManager::AddMeshData(tempName, sharedPtrMesh);
+	return std::weak_ptr<CBaseMesh<UINT>>(sharedPtrMesh);
 }
 CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2)
 {
@@ -673,7 +715,7 @@ void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, c
 		}
 	}
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::LoadOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+std::shared_ptr<CBaseMesh<UINT>> CMeshManager::LoadOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	void* vertices = nullptr;
 	UINT verticesNum = 0u;
@@ -935,8 +977,7 @@ std::shared_ptr<CMesh<UINT>> CMeshManager::LoadOBJMesh(const std::string& name, 
 			CMeshManager::CalculateTangentForMesh<UINT>(submesh, index, vertices, verticesNum, vertexStride, offsetPosition, offsetTexcoord, offsetTangent);
 		}
 	}
-	std::shared_ptr<CMesh<UINT>> mesh = CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData);
-	return mesh;
+	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData));
 }
 std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
@@ -962,7 +1003,7 @@ std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderIn
 	return result;
 }
 template<typename IndexType>
-std::shared_ptr<CMesh<IndexType>> CMeshManager::CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL& needVertexData)
+std::shared_ptr<CBaseMesh<IndexType>> CMeshManager::CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL& needVertexData)
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 	{
@@ -997,26 +1038,28 @@ std::shared_ptr<CMesh<IndexType>> CMeshManager::CreateMeshObject(const std::stri
 	CMeshManager::CalculateBoundMinMax(boundMin, boundMax, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum);
 	if (needVertexData)
 	{
-		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax));
-		CMeshManager::AddMeshData(name, mesh);
+		std::shared_ptr<CBaseMesh<IndexType>> mesh(std::shared_ptr<CBaseMesh<IndexType>>(new CBaseMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, vertexData, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax)));
 		return mesh;
 	}
 	else
 	{
-		std::shared_ptr<CMesh<IndexType>> mesh = std::shared_ptr<CMesh<IndexType>>(new CMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, nullptr, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax));
-		CMeshManager::AddMeshData(name, mesh);
+		std::shared_ptr<CBaseMesh<IndexType>> mesh(std::shared_ptr<CBaseMesh<IndexType>>(new CBaseMesh<IndexType>(name, inputLayoutDesc, inputLayoutNum, nullptr, vertexNum, indexData, submeshData, vertexBuffer, indexBuffer, boundMin, boundMax)));
 		delete[]vertexData;
 		return mesh;
 	}
 }
-void CMeshManager::AddMeshData(const std::string& name, std::shared_ptr<CMesh<UINT>> mesh)
+void CMeshManager::AddMeshData(const std::string& name, std::shared_ptr<CBaseMesh<UINT>> mesh)
 {
-	m_MeshManager->m_Data[name] = mesh;
+	m_MeshManager->m_Data.insert_or_assign(name, mesh);
 }
-std::shared_ptr<CMesh<UINT>> CMeshManager::FindMeshData(const std::string& name)
+std::weak_ptr<CBaseMesh<UINT>> CMeshManager::FindMeshData(const std::string& name)
 {
-	std::map<std::string, std::shared_ptr<CMesh<UINT>>>::iterator element = m_MeshManager->m_Data.find(name);
+	std::map<std::string, std::shared_ptr<CBaseMesh<UINT>>>::iterator element = m_MeshManager->m_Data.find(name);
 	if (element == m_MeshManager->m_Data.end())
-		return nullptr;
-	return (element->second);
+	{
+		std::weak_ptr<CBaseMesh<UINT>> weakPrt;
+		return weakPrt;
+	}
+	std::weak_ptr<CBaseMesh<UINT>> weakPrt(element->second);
+	return weakPrt;
 }

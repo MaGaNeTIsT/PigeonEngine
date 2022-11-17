@@ -18,10 +18,6 @@ public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
 	virtual void	Update()override;
-	virtual void	Draw()override;
-	virtual void	DrawExtra()override;
-protected:
-	virtual void	PrepareDraw()override;
 public:
 	void			SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 public:

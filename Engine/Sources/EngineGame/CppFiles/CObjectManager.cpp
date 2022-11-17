@@ -18,3 +18,27 @@ CUniqueIDManager::CUniqueIDManager()
 CUniqueIDManager::~CUniqueIDManager()
 {
 }
+
+CObjectBase::CObjectBase()
+{
+	this->m_UniqueID = CUniqueIDManager::GetUniqueID();
+}
+CObjectBase::CObjectBase(const CObjectBase& obj)
+{
+	this->m_UniqueID = CUniqueIDManager::GetUniqueID();
+}
+CObjectBase::~CObjectBase()
+{
+}
+const ULONGLONG& CObjectBase::GetUniqueID()const
+{
+	return (this->m_UniqueID);
+}
+BOOL CObjectBase::operator==(const CObjectBase& obj)
+{
+	return (this->m_UniqueID == obj.m_UniqueID);
+}
+BOOL CObjectBase::operator!=(const CObjectBase& obj)
+{
+	return (this->m_UniqueID != obj.m_UniqueID);
+}

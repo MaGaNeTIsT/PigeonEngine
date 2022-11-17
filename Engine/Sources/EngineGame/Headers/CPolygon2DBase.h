@@ -9,10 +9,6 @@ public:
 	virtual void	Uninit()override		{}
 	virtual void	Update()override		{}
 	virtual void	FixedUpdate()override	{}
-	virtual void	Draw()override			{}
-	virtual void	DrawExtra()override		{}
-protected:
-	virtual void	PrepareDraw()override	{}
 public:
 	void			SetScreenPosition(const CustomType::Vector4& rect);
 	const CustomType::Vector4& GetScreenPosition()const { return m_2DPosition; }

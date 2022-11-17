@@ -14,9 +14,7 @@ CCamera::CCamera()
 	this->m_CameraControlInfo.MoveSpeed = ENGINE_CAMERA_MOVE_SPEED;
 	this->m_CameraControlInfo.LookSpeed = ENGINE_CAMERA_LOOK_SPEED * CustomType::CMath::GetDegToRad();
 
-	this->m_Position.Reset();
-	this->m_Rotation.Identity();
-	this->m_Scale = 1.f;
+	this->AddNewTransform();
 
 	this->ReCalculateProjectionMatrix();
 	this->ReCalculateViewMatrix();
@@ -32,9 +30,7 @@ CCamera::CCamera(const CustomType::Vector3& position, const CustomType::Quaterni
 	this->m_CameraControlInfo.MoveSpeed	= ENGINE_CAMERA_MOVE_SPEED;
 	this->m_CameraControlInfo.LookSpeed	= ENGINE_CAMERA_LOOK_SPEED * CustomType::CMath::GetDegToRad();
 
-	this->m_Position	= position;
-	this->m_Rotation	= rotation;
-	this->m_Scale		= 1.f;
+	this->AddNewTransformWithValue(position, rotation, 1.f);
 
 	this->ReCalculateProjectionMatrix();
 	this->ReCalculateViewMatrix();
@@ -42,9 +38,7 @@ CCamera::CCamera(const CustomType::Vector3& position, const CustomType::Quaterni
 }
 CCamera::CCamera(const CCamera& camera)
 {
-	this->m_Position				= camera.m_Position;
-	this->m_Rotation				= camera.m_Rotation;
-	this->m_Scale					= 1.f;
+	this->AddNewTransformWithValue(camera.m_Transform->GetWorldPosition(), camera.m_Transform->GetWorldRotation(), 1.f);
 
 	this->m_CameraInfo				= camera.m_CameraInfo;
 	this->m_CameraControlInfo		= camera.m_CameraControlInfo;
@@ -65,7 +59,7 @@ CCamera::~CCamera()
 }
 std::vector<CustomType::Vector3> CCamera::GetCullingPlane()
 {
-	CustomType::Quaternion wR(this->GetRotation());
+	CustomType::Quaternion wR(this->GetWorldRotation());
 	std::vector<CustomType::Vector3> plane = {
 		wR.MultiplyVector(this->m_FrustumInfo.Plane[0]),
 		wR.MultiplyVector(this->m_FrustumInfo.Plane[1]),
@@ -75,8 +69,8 @@ std::vector<CustomType::Vector3> CCamera::GetCullingPlane()
 }
 std::vector<CustomType::Vector3> CCamera::GetCullingPlanePoint()
 {
-	CustomType::Vector3 wP(this->GetPosition());
-	CustomType::Quaternion wR(this->GetRotation());
+	CustomType::Vector3 wP(this->GetWorldPosition());
+	CustomType::Quaternion wR(this->GetWorldRotation());
 	std::vector<CustomType::Vector3> points = {
 		wR.MultiplyVector(this->m_FrustumInfo.Point[0]),
 		wR.MultiplyVector(this->m_FrustumInfo.Point[1]),
@@ -182,7 +176,7 @@ void CCamera::ReCalculateProjectionMatrix()
 }
 void CCamera::ReCalculateViewMatrix()
 {
-	this->m_ViewInvMatrix = CustomType::Matrix4x4(this->m_Position, this->m_Rotation);
+	this->m_ViewInvMatrix = CustomType::Matrix4x4(this->GetWorldPosition(), this->GetWorldRotation());
 	this->m_ViewMatrix = this->m_ViewInvMatrix.Inverse();
 }
 void CCamera::ReCalculateViewProjectionMatrix()
@@ -234,77 +228,93 @@ void CCamera::Update()
 			break;
 		}
 	}*/
-	BOOL bRightMouseButtonDown = CInput::Controller.IsRightMouseButtonDown();
-	BOOL moveForward	       = CInput::Controller.IsKeyPressed('W');
-	BOOL moveBack		       = CInput::Controller.IsKeyPressed('S');
-	BOOL moveRight		       = CInput::Controller.IsKeyPressed('D');
-	BOOL moveLeft		       = CInput::Controller.IsKeyPressed('A');
-	BOOL moveUp			       = CInput::Controller.IsKeyPressed('Q');
-	BOOL moveDown		       = CInput::Controller.IsKeyPressed('E');
-	BOOL lookUp			       = CInput::Controller.IsKeyPressed('I');
-	BOOL lookDown		       = CInput::Controller.IsKeyPressed('K');
-	BOOL lookLeft		       = CInput::Controller.IsKeyPressed('J');
-	BOOL lookRight		       = CInput::Controller.IsKeyPressed('L');
-	//BOOL lookRotClock		= CInput::GetKeyPress('O');
-	//BOOL lookRotAntiClock	= CInput::GetKeyPress('U');
 	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
-	if (moveForward || moveBack)
 	{
-		CustomType::Vector3 moveVector = this->GetForwardVector();
-		if (moveForward)
-			this->m_Position += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-		if (moveBack)
-			this->m_Position += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-	}
-	if (moveRight || moveLeft)
-	{
-		CustomType::Vector3 moveVector = this->GetRightVector();
-		moveVector = CustomType::Vector3(moveVector.X(), 0.f, moveVector.Z());
-		moveVector.Normalize();
-		if (moveRight)
-			this->m_Position += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-		if (moveLeft)
-			this->m_Position += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-	}
-	if (moveUp || moveDown)
-	{
-		CustomType::Vector3 moveVector = CustomType::Vector3(0.f, 1.f, 0.f);
-		if (moveUp)
-			this->m_Position += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-		if (moveDown)
-			this->m_Position += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
-	}
-	if (lookUp || lookDown)
-	{
-		CustomType::Vector3 lookAxis = this->GetRightVector();
-		lookAxis = CustomType::Vector3(lookAxis.X(), 0.f, lookAxis.Z());
-		lookAxis.Normalize();
-		if (lookUp)
+		BOOL moveForward	= CInput::Controller.IsKeyPressed('W');
+		BOOL moveBack		= CInput::Controller.IsKeyPressed('S');
+		BOOL moveRight		= CInput::Controller.IsKeyPressed('D');
+		BOOL moveLeft		= CInput::Controller.IsKeyPressed('A');
+		BOOL moveUp			= CInput::Controller.IsKeyPressed('Q');
+		BOOL moveDown		= CInput::Controller.IsKeyPressed('E');
+		BOOL lookUp			= CInput::Controller.IsKeyPressed('I');
+		BOOL lookDown		= CInput::Controller.IsKeyPressed('K');
+		BOOL lookLeft		= CInput::Controller.IsKeyPressed('J');
+		BOOL lookRight		= CInput::Controller.IsKeyPressed('L');
+		CustomType::Vector3 worldPosition(this->GetWorldPosition());
+		CustomType::Quaternion worldRotation(this->GetWorldRotation());
+		if (moveForward || moveBack)
 		{
-			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+			CustomType::Vector3 moveVector = this->GetForwardVector();
+			if (moveForward)
+			{
+				worldPosition += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
+			if (moveBack)
+			{
+				worldPosition += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
 		}
-		if (lookDown)
+		if (moveRight || moveLeft)
 		{
-			CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+			CustomType::Vector3 moveVector = this->GetRightVector();
+			moveVector = CustomType::Vector3(moveVector.X(), 0.f, moveVector.Z());
+			moveVector.Normalize();
+			if (moveRight)
+			{
+				worldPosition += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
+			if (moveLeft)
+			{
+				worldPosition += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
 		}
-	}
-	if (lookLeft || lookRight)
-	{
-		CustomType::Vector3 lookAxis = CustomType::Vector3(0.f, 1.f, 0.f);
-		if (lookLeft)
+		if (moveUp || moveDown)
 		{
-			CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+			CustomType::Vector3 moveVector = CustomType::Vector3(0.f, 1.f, 0.f);
+			if (moveUp)
+			{
+				worldPosition += moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
+			if (moveDown)
+			{
+				worldPosition += -moveVector * (this->m_CameraControlInfo.MoveSpeed * deltaTime);
+			}
 		}
-		if (lookRight)
+		if (lookUp || lookDown)
 		{
-			CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
-			this->m_Rotation = CustomType::Quaternion::MultiplyQuaternion(this->m_Rotation, lookRotation);
+			CustomType::Vector3 lookAxis = this->GetRightVector();
+			lookAxis = CustomType::Vector3(lookAxis.X(), 0.f, lookAxis.Z());
+			lookAxis.Normalize();
+			if (lookUp)
+			{
+				CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
+				worldRotation = CustomType::Quaternion::MultiplyQuaternion(worldRotation, lookRotation);
+			}
+			if (lookDown)
+			{
+				CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
+				worldRotation = CustomType::Quaternion::MultiplyQuaternion(worldRotation, lookRotation);
+			}
 		}
+		if (lookLeft || lookRight)
+		{
+			CustomType::Vector3 lookAxis = CustomType::Vector3(0.f, 1.f, 0.f);
+			if (lookLeft)
+			{
+				CustomType::Quaternion lookRotation(lookAxis, -this->m_CameraControlInfo.LookSpeed * deltaTime);
+				worldRotation = CustomType::Quaternion::MultiplyQuaternion(worldRotation, lookRotation);
+			}
+			if (lookRight)
+			{
+				CustomType::Quaternion lookRotation(lookAxis, this->m_CameraControlInfo.LookSpeed * deltaTime);
+				worldRotation = CustomType::Quaternion::MultiplyQuaternion(worldRotation, lookRotation);
+			}
+		}
+		this->SetWorldPosition(worldPosition);
+		this->SetWorldRotation(worldRotation);
 	}
 
+	BOOL bRightMouseButtonDown = CInput::Controller.IsRightMouseButtonDown();
 	// Rotate camera while right mouse button down
 	if (bRightMouseButtonDown)
 	{
@@ -321,12 +331,12 @@ void CCamera::Update()
 	{
 		while (const auto delta = CInput::ReadRawDelta())
 		{
-			CustomType::Quaternion TargetRotation = GetRotation();
+			CustomType::Quaternion TargetRotation = this->GetWorldRotation();
 			// Rotate around world vector (0,1,0) , whitch is world up vector
 			TargetRotation = TargetRotation * TargetRotation.RotationAxis(CustomType::Vector3(0.f, 1.f, 0.f), delta->x * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
 			// Rotate around object's right vector
 			TargetRotation = TargetRotation * TargetRotation.RotationAxis(GetRightVector(), delta->y * this->m_CameraControlInfo.LookSpeed * deltaTime * CustomType::CMath::GetDegToRad());
-			SetRotation(TargetRotation);
+			this->SetWorldRotation(TargetRotation);
 		}
 	}
 

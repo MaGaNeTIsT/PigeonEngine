@@ -5,10 +5,10 @@
 #include "../../EngineRender/AssetsManager/Headers/CTextureType.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
+#include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 
-std::shared_ptr<CVertexShader> CSkyBox::m_VertexShader = nullptr;
-std::shared_ptr<CMesh<UINT>> CSkyBox::m_FullScreenMesh = nullptr;
+std::shared_ptr<CVertexShader>		CSkyBox::m_VertexShader		= nullptr;
+std::weak_ptr<CBaseMesh<UINT>>		CSkyBox::m_FullScreenMesh;
 
 CSkyBox::CSkyBox()
 {
@@ -39,7 +39,7 @@ CSkyBox::CSkyBox(const CSkyBox& skyBox)
 }
 void CSkyBox::Init(const CustomType::Vector2Int& bufferSize, const SkyBoxInfo& skyBoxInfo)
 {
-	if (!CSkyBox::m_FullScreenMesh)
+	if (CSkyBox::m_FullScreenMesh.expired())
 	{
 		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
@@ -85,9 +85,10 @@ void CSkyBox::Update()
 }
 void CSkyBox::PrepareDraw()
 {
+	std::shared_ptr<CBaseMesh<UINT>> fullScreenMesh(CSkyBox::m_FullScreenMesh.lock());
 	this->m_VertexShader->Bind();
-	CRenderDevice::SetVertexBuffer(CSkyBox::m_FullScreenMesh->GetVertexBuffer(), CSkyBox::m_FullScreenMesh->GetVertexStride());
-	CRenderDevice::SetIndexBuffer(CSkyBox::m_FullScreenMesh->GetIndexBuffer());
+	CRenderDevice::SetVertexBuffer(fullScreenMesh->GetVertexBuffer(), fullScreenMesh->GetVertexStride());
+	CRenderDevice::SetIndexBuffer(fullScreenMesh->GetIndexBuffer());
 	this->m_PixelShader->Bind();
 	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, 1u);
 	CRenderDevice::BindPSShaderResourceView(this->m_CubeMap->GetShaderResourceView(), 3u);
@@ -95,5 +96,5 @@ void CSkyBox::PrepareDraw()
 void CSkyBox::Draw()
 {
 	this->PrepareDraw();
-	CRenderDevice::DrawIndexed(CSkyBox::m_FullScreenMesh->GetIndexCount());
+	CRenderDevice::DrawIndexed(CSkyBox::m_FullScreenMesh.lock()->GetIndexCount());
 }

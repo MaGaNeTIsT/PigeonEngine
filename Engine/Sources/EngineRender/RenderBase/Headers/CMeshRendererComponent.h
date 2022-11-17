@@ -2,10 +2,10 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "./CRenderStructCommon.h"
+#include "../../../EngineGame/Headers/CComponent.h"
+#include "../../AssetsManager/Headers/CMeshComponent.h"
 
-class CGameObject;
-
-class CMeshRenderer
+class CMeshRendererComponent : public CRenderComponent
 {
 public:
 	struct RenderPerDrawInfo
@@ -24,11 +24,14 @@ public:
 	RenderTypeEnum	GetRenderType() { return this->m_RenderType; }
 	void			SetRenderType(RenderTypeEnum type) { this->m_RenderType = type; }
 public:
-	virtual void	Init(CGameObject* gameObject, const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
+	virtual void	InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
+	void			SetMeshComponent(std::shared_ptr<CMeshComponent> meshComponent);
 	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
 	virtual void	UploadConstantBuffer(const void* data);
 	void			BindConstantBuffer(const UINT& startSlot);
-	virtual void	Draw(const BOOL& needPixelShader = TRUE);
+public:
+	virtual void	Draw()override;
+	virtual void	DrawExtra()override;
 private:
 	void			SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum);
 	void			LoadShader();
@@ -36,11 +39,11 @@ private:
 	void			UploadPerDrawConstantBuffer();
 	virtual void	Bind(const BOOL& needPixelShader = TRUE);
 public:
-	CMeshRenderer();
-	CMeshRenderer(const CMeshRenderer& renderer);
-	virtual ~CMeshRenderer();
+	CMeshRendererComponent();
+	CMeshRendererComponent(const CMeshRendererComponent& renderer);
+	virtual ~CMeshRendererComponent();
 protected:
-	CGameObject*										m_GameObject;
+	std::weak_ptr<CMeshComponent>						m_MeshComponent;
 	RenderTypeEnum										m_RenderType;
 	std::string											m_VertexShaderName;
 	std::string											m_PixelShaderName;

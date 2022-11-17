@@ -7,14 +7,15 @@
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureType.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CMesh.h"
-#include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
+#include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
 CPlane::CPlane()
 {
+	this->AddNewTransform();
 	this->m_AlbedoTexture	= NULL;
 	this->m_NormalTexture	= NULL;
 	this->m_PropertyTexture	= NULL;
@@ -24,6 +25,7 @@ CPlane::CPlane()
 }
 CPlane::CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
 {
+	this->AddNewTransform();
 	this->m_AlbedoTexture	= NULL;
 	this->m_NormalTexture	= NULL;
 	this->m_PropertyTexture = NULL;
@@ -36,16 +38,21 @@ CPlane::~CPlane()
 }
 void CPlane::Init()
 {
-	this->SetMeshInfo(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
-	this->m_MeshRenderer = new CMeshRenderer();
 	{
+		std::shared_ptr<CMeshRendererComponent> meshRendererComponent(std::shared_ptr<CMeshRendererComponent>(new CMeshRendererComponent()));
+		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
+		this->AddComponent(meshRendererComponent);
+		this->AddComponent(meshComponent);
+
 		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-		this->m_MeshRenderer->Init(this, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+		meshRendererComponent->SetMeshComponent(meshComponent);
 	}
+	this->SetMeshInfo(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
 
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga");
 	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE);
@@ -53,54 +60,25 @@ void CPlane::Init()
 }
 void CPlane::Uninit()
 {
-	if (this->m_MeshRenderer != NULL)
-	{
-		delete (this->m_MeshRenderer);
-		this->m_MeshRenderer = NULL;
-	}
 }
 void CPlane::Update()
 {
-
-}
-void CPlane::PrepareDraw()
-{
-	CustomType::Matrix4x4 tempWorldMatrix(this->GetLocalToWorldMatrix());
-	CustomType::Matrix4x4 tempWorldInverseMatrix(tempWorldMatrix.Inverse());
-	this->m_MeshRenderer->SetPerDrawInfo(tempWorldMatrix, tempWorldInverseMatrix, CustomType::Vector4::Zero());
-}
-void CPlane::Draw()
-{
-	this->PrepareDraw();
-	CRenderDevice::BindPSShaderResourceView(this->m_AlbedoTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-	CRenderDevice::BindPSShaderResourceView(this->m_NormalTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_NORMAL_START_SLOT);
-	CRenderDevice::BindPSShaderResourceView(this->m_PropertyTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
-	this->m_MeshRenderer->Draw();
-}
-void CPlane::DrawExtra()
-{
-	this->PrepareDraw();
-	CRenderPipeline::GetDefaultEmptyPS()->Bind();
-	this->m_MeshRenderer->Draw(FALSE);
 }
 void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
 {
 	this->m_PlaneMeshInfo.Length = length;
 	this->m_PlaneMeshInfo.UV = uv;
 	this->m_PlaneMeshInfo.VertexCount = vertexCount;
+	std::shared_ptr<CMeshComponent> mesh(this->GetMeshComponent<CMeshComponent>().lock());
 	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-	if (this->m_Mesh != nullptr)
-	{
-		this->m_Mesh = nullptr;
-	}
-	this->m_Mesh = CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u);
+	mesh->SetMesh(CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u));
 	{
 		CustomType::Vector3 boundMin, boundMax;
-		this->m_Mesh->GetMinMaxBounding(boundMin, boundMax);
+		mesh->GetMinMaxBounding(boundMin, boundMax);
 		{
 			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
 				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
@@ -118,11 +96,11 @@ void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Ve
 			tempVec = (tempVec - boundMin) * 0.5f;
 			anchor = tempVec + boundMin;
 			radius = tempVec.Length(); };
-		this->SetBoundingBox(boundMin, boundMax - boundMin);
+		this->SetRenderLocalBoundingBox(boundMin, boundMax - boundMin);
 		{
 			CustomType::Vector3 anchor; FLOAT radius;
 			boundingSphere(anchor, radius);
-			this->SetBoundingSphere(anchor, radius);
+			this->SetRenderLocalBoundingSphere(anchor, radius);
 		}
 	}
 }

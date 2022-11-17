@@ -58,55 +58,11 @@ void CScene::Init()
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 
-	mainCamera->SetPosition(CustomType::Vector3(0.f, 5.f, -5.f));
-	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 90.f * CustomType::CMath::GetDegToRad()));
+	mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 5.f, -5.f));
+	mainLight->SetWorldRotation(CustomType::Quaternion(mainLight->GetRightVector(), 90.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(100.f, 8, 3.f);
-	cube->SetPosition(CustomType::Vector3(0.f, 50.f, 0.f));
-	cube->SetScale(CustomType::Vector3(10.f, 10.f, 10.f));
-
-	{
-		//static_cast<UINT>(::time(NULL));
-		::srand(12415u);
-
-		const INT randomMax = 3000;
-		//const FLOAT rangePos = 50.f;
-		const FLOAT rangePos = 200.f;
-		const FLOAT baseScale = 10.f;
-		const FLOAT rangeScale = 0.15f;
-		//const UINT countModel = 4u;
-		const UINT countModel = 200u;
-		const BOOL showOBB = FALSE;
-
-		INT random[3] = { 0, 0, 0 };
-		FLOAT t[3] = { 0.f, 0.f, 0.f };
-		for (UINT i = 0u; i < countModel; i++)
-		{
-			CTestModel* model = this->AddGameObject<CTestModel>(SceneLayout::LAYOUT_OPAQUE);
-			random[0] = rand() % randomMax;
-			t[0] = static_cast<FLOAT>(random[0]) / static_cast<FLOAT>((randomMax - 1));
-			FLOAT scale = baseScale + t[0] * rangeScale;
-			model->SetScale(CustomType::Vector3(scale, scale, scale));
-			random[0] = rand() % randomMax;
-			random[1] = rand() % randomMax;
-			random[2] = rand() % randomMax;
-			t[0] = static_cast<FLOAT>(random[0]) / static_cast<FLOAT>((randomMax - 1));
-			t[1] = static_cast<FLOAT>(random[1]) / static_cast<FLOAT>((randomMax - 1));
-			t[2] = static_cast<FLOAT>(random[2]) / static_cast<FLOAT>((randomMax - 1));
-			model->SetPosition(CustomType::Vector3((t[0] - 0.5f) * rangePos, (t[1] - 0.5f) * rangePos, (t[2] - 0.5f) * rangePos));
-			if (showOBB)
-			{
-				CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
-				CustomType::Vector3 min, max;
-				model->GetAABBBoundingBox(min, max);
-				//cube->SetPosition(min + ((max - min) * 0.5f));
-				//cube->SetScale(max - min);
-				CustomType::Vector3 anchor; FLOAT radius;
-				model->GetBoundingSphere(anchor, radius);
-				cube->SetPosition(anchor);
-				cube->SetScale(radius * 2.f);
-			}
-		}
-	}
+	cube->SetWorldPosition(CustomType::Vector3(0.f, 50.f, 0.f));
+	cube->SetWorldScale(CustomType::Vector3(10.f, 10.f, 10.f));
 }
 void CScene::Uninit()
 {

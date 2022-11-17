@@ -4,15 +4,13 @@
 
 CLightBase::CLightBase()
 {
-	this->m_Scale = 1.f;
+	this->AddNewTransform();
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
 	this->m_Intensity = 1.f;
 }
 CLightBase::CLightBase(const CLightBase& light)
 {
-	this->m_Position = light.m_Position;
-	this->m_Rotation = light.m_Rotation;
-	this->m_Scale = 1.f;
+	this->AddNewTransformWithValue(light.m_Transform->GetWorldPosition(), light.m_Transform->GetWorldRotation(), 1.f);
 	this->m_Color = light.m_Color;
 	this->m_Intensity = light.m_Intensity;
 }
@@ -127,9 +125,10 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 	std::vector<FLOAT>& currentBorders = currentShadowCascadeInfo->LayerInfo.Borders;
 	std::vector<CustomType::Matrix4x4>& projectionMatrices = currentShadowCascadeInfo->ProjectionMatrices;
 	std::vector<CustomType::Vector4>& projectionSphereBounds = currentShadowCascadeInfo->ProjectionSphereBounds;
+	CustomType::Vector3 cameraWorldPosition(camera->GetWorldPosition());
 	{
 		CustomType::Matrix4x4& viewMatrix = currentShadowCascadeInfo->ViewMatrix;
-		viewMatrix = CustomType::Matrix4x4(camera->GetPosition(), light->GetRotation());
+		viewMatrix = CustomType::Matrix4x4(cameraWorldPosition, light->GetWorldRotation());
 		viewMatrix = viewMatrix.Inverse();
 	}
 
@@ -277,8 +276,8 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 			ImGui::Begin("Cascade Shadow");
 #endif
 			CustomType::Vector3 tempCameraDirection(camera->GetForwardVector());
-			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + (camera->GetPosition()));
-			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + (camera->GetPosition()));
+			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + cameraWorldPosition);
+			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + cameraWorldPosition);
 			for (UINT i = 0u; i < currentLayerNum; i++)
 			{
 				CustomType::Vector3 layerPoints[] = {

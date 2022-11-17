@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "../../EngineRender/AssetsManager/Headers/CMesh.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 
 class CSkyBox
 {
@@ -37,6 +37,6 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
 	SkyBoxConstantBuffer						m_ConstantData;
 protected:
-	static std::shared_ptr<CMesh<UINT>>			m_FullScreenMesh;
+	static std::weak_ptr<CBaseMesh<UINT>>		m_FullScreenMesh;
 	static std::shared_ptr<class CVertexShader>	m_VertexShader;
 };
