@@ -4,14 +4,14 @@
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CObjectManager.h"
 
-class CTransform : public CObjectBase
+class CTransform : public CObjectBase, protected std::enable_shared_from_this<CTransform>
 {
 public:
-	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, std::shared_ptr<CTransform> parent = nullptr);
-	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, std::shared_ptr<CTransform> parent = nullptr);
-	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Quaternion& worldRotation, std::shared_ptr<CTransform> parent = nullptr);
-	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, std::shared_ptr<CTransform> parent = nullptr);
-	void	InitTransform(std::shared_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale, std::shared_ptr<CTransform> parent = nullptr);
+	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale);
+	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition);
+	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Quaternion& worldRotation);
+	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation);
+	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale);
 public:
 	std::weak_ptr<class CGameObject>					GetGameObject();
 	std::weak_ptr<CTransform>							GetParent();
@@ -20,19 +20,29 @@ public:
 	std::vector<std::weak_ptr<CTransform>>				GetChildrenList();
 	std::map<ULONGLONG, std::weak_ptr<CTransform>>		GetChildrenMap();
 public:
-	void	SetGameObject(std::shared_ptr<class CGameObject> gameObject);
+	void	SetGameObject(std::weak_ptr<class CGameObject> gameObject);
 	void	SetParent(std::shared_ptr<CTransform> parent);
 	void	AddChild(std::shared_ptr<CTransform> child);
 public:
 	void	RemoveParent();
 	void	RemoveChild(std::shared_ptr<CTransform> child);
 	void	RemoveChildByUniqueID(const ULONGLONG& id);
-	void	RemoveChildren();
+	void	RemoveAllChildren();
 public:
 	BOOL	IsBelongGameObject(const class CGameObject* transform);
+	BOOL	HasGameObject();
+	BOOL	HasParent();
 	BOOL	HasChild();
 	BOOL	IsParent(const CTransform* parent);
 	BOOL	IsChild(const CTransform* child);
+protected:
+	void	BaseAddChild(std::shared_ptr<CTransform> child);
+	void	BaseRemoveChildByUniqueID(const ULONGLONG& id);
+	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id);
+	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, std::weak_ptr<CTransform>& output);
+	void	ConnectParentAndChild(std::weak_ptr<CTransform> parent, std::weak_ptr<CTransform> child);
+	void	DisconnectParentAndChild(std::weak_ptr<CTransform> parent, std::weak_ptr<CTransform> child);
+	void	CalculateCurrentLocalTransform(std::shared_ptr<CTransform> newParent);
 protected:
 	std::weak_ptr<class CGameObject>					m_GameObject;
 	std::weak_ptr<CTransform>							m_Parent;
@@ -57,7 +67,6 @@ protected:
 	void	RecursionWorldPosition(const std::weak_ptr<CTransform> parent, CustomType::Vector3& position);
 	void	RecursionWorldRotation(const std::weak_ptr<CTransform> parent, CustomType::Quaternion& rotation);
 	void	RecursionWorldScale(const std::weak_ptr<CTransform> parent, CustomType::Vector3& scale);
-	void	CalculateCurrentLocalTransform(std::shared_ptr<CTransform> newParent);
 protected:
 	CustomType::Vector3			m_LocalPosition;
 	CustomType::Quaternion		m_LocalRotation;
@@ -78,8 +87,8 @@ class CBaseComponent : public CObjectBase
 public:
 	virtual void	Init()			= 0;
 	virtual void	Uninit()		= 0;
-	virtual void	Update() {}
-	virtual void	FixedUpdate() {}
+	virtual void	Update()const {}
+	virtual void	FixedUpdate()const {}
 public:
 	const BOOL&		NeedUpdate()const { return (this->m_NeedUpdate); }
 	const BOOL&		NeedFixedUpdate()const { return (this->m_NeedFixedUpdate); }
@@ -92,23 +101,23 @@ protected:
 	BOOL	m_NeedFixedUpdate;
 	BOOL	m_Active;
 public:
-	std::shared_ptr<class CGameObject> GetGameObject() { return (this->m_GameObject); }
-	void SetGameObject(std::shared_ptr<class CGameObject> gameObject)
+	std::weak_ptr<class CGameObject> GetGameObject() { return (this->m_GameObject); }
+	void SetGameObject(std::weak_ptr<class CGameObject> gameObject)
 	{
-		if (gameObject)
+		if (!gameObject.expired())
 		{
 			this->m_GameObject = gameObject;
 		}
 	}
 protected:
-	std::shared_ptr<class CGameObject>	m_GameObject;
+	std::weak_ptr<class CGameObject>	m_GameObject;
 public:
 	CBaseComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate)
 	{
 		this->m_NeedUpdate		= needUpdate;
 		this->m_NeedFixedUpdate	= needFixedUpdate;
 		this->m_Active			= active;
-		this->m_GameObject		= nullptr;
+		this->m_GameObject.reset();
 	}
 	virtual ~CBaseComponent() {}
 };
@@ -118,11 +127,11 @@ class CRenderComponent : public CBaseComponent
 public:
 	virtual void	Init()override {}
 	virtual void	Uninit()override {}
-	virtual void	Update()override {}
-	virtual void	FixedUpdate()override {}
+	virtual void	Update()const override {}
+	virtual void	FixedUpdate()const override {}
 public:
-	virtual void	Draw()		= 0;
-	virtual void	DrawExtra()	= 0;
+	virtual void	Draw()const			= 0;
+	virtual void	DrawExtra()const	= 0;
 public:
 	CRenderComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate) {}
 	virtual ~CRenderComponent() {}

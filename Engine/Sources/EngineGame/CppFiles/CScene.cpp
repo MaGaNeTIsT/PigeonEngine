@@ -117,7 +117,7 @@ void CScene::Update()
 	}
 
 	{
-		CustomType::Vector3 cameraPos(this->m_MainCamera->GetPosition());
+		CustomType::Vector3 cameraPos(this->m_MainCamera->GetWorldPosition());
 		CustomType::Vector3 cameraDir(this->m_MainCamera->GetForwardVector());
 		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 		ImGui::Begin("Scene Manager");
@@ -127,7 +127,7 @@ void CScene::Update()
 		UINT index = 0u;
 		for (const auto& object : this->m_Lights)
 		{
-			CustomType::Vector3 lightPos(object.second->GetPosition());
+			CustomType::Vector3 lightPos(object.second->GetWorldPosition());
 			CustomType::Vector3 lightDir(object.second->GetForwardVector());
 			ImGui::Text("Light index = %d", index);
 			ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());

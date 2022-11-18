@@ -24,15 +24,9 @@ CGameObject::CGameObject(const CGameObject& obj)
 	this->m_RenderBoundingSphere	= obj.m_RenderBoundingSphere;
 	this->m_MeshComponentID			= obj.m_MeshComponentID;
 	this->m_MeshRendererComponentID	= obj.m_MeshRendererComponentID;
-	if (obj.m_Transform)
-	{
-		this->m_Transform = std::shared_ptr<CTransform>(new CTransform());
-		this->m_Transform->InitTransform(this->shared_from_this(), obj.m_Transform->GetWorldPosition(), obj.m_Transform->GetWorldRotation(), obj.m_Transform->GetWorldScale(), obj.m_Transform->GetParent().lock());
-	}
 }
 CGameObject::~CGameObject()
 {
-
 }
 std::weak_ptr<CScene> CGameObject::GetScene()
 {
@@ -40,86 +34,113 @@ std::weak_ptr<CScene> CGameObject::GetScene()
 }
 std::weak_ptr<CTransform> CGameObject::GetTransform()
 {
-	std::weak_ptr<CTransform> weakPtr(this->m_Transform);
-	return weakPtr;
+	return std::weak_ptr<CTransform>(this->m_Transform);
 }
 std::weak_ptr<CustomStruct::CRenderBoundingBox> CGameObject::GetRenderLocalBoundingBox()
 {
-	std::weak_ptr<CustomStruct::CRenderBoundingBox> weakPtr((this->m_RenderBoundingBox));
-	return weakPtr;
+	return std::weak_ptr<CustomStruct::CRenderBoundingBox>((this->m_RenderBoundingBox));
 }
 std::weak_ptr<CustomStruct::CRenderBoundingSphere> CGameObject::GetRenderLocalBoundingSphere()
 {
-	std::weak_ptr<CustomStruct::CRenderBoundingSphere> weakPtr((this->m_RenderBoundingSphere));
-	return weakPtr;
+	return std::weak_ptr<CustomStruct::CRenderBoundingSphere>((this->m_RenderBoundingSphere));
 }
-void CGameObject::SetScene(std::shared_ptr<CScene> scene)
+BOOL CGameObject::IsBelongTransform(const CTransform* transform)
+{
+	if (transform && this->HasTransform())
+	{
+		return (this->m_Transform->GetUniqueID() == transform->GetUniqueID());
+	}
+	return FALSE;
+}
+BOOL CGameObject::HasScene()const
+{
+	return (!this->m_Scene.expired());
+}
+BOOL CGameObject::HasTransform()const
+{
+	return (this->m_Transform != nullptr);
+}
+BOOL CGameObject::HasRenderBoundingBox()const
+{
+	return (this->m_RenderBoundingBox != nullptr);
+}
+BOOL CGameObject::HasRenderBoundingSphere()const
+{
+	return (this->m_RenderBoundingSphere != nullptr);
+}
+void CGameObject::SetScene(std::weak_ptr<CScene> scene)
 {
 	this->m_Scene = scene;
 }
 void CGameObject::AddNewTransform(std::shared_ptr<CGameObject> parent)
 {
-	if (!m_Transform)
+	if (!this->HasTransform())
 	{
 		this->m_Transform = std::shared_ptr<CTransform>(new CTransform());
 	}
 	if (parent)
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), CustomType::Vector3::Zero(), parent->GetTransform().lock());
+		this->m_Transform->InitTransform(this->weak_from_this(), CustomType::Vector3::Zero());
+		this->SetParent(parent);
 	}
-	else if (!this->GetParent().expired())
+	else if (this->HasParent())
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), CustomType::Vector3::Zero(), this->GetParent().lock()->GetTransform().lock());
+		std::shared_ptr<CGameObject> oldParent(this->GetParent().lock());
+		this->m_Transform->InitTransform(this->weak_from_this(), CustomType::Vector3::Zero());
+		this->SetParent(oldParent);
 	}
 	else
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), CustomType::Vector3::Zero(), nullptr);
+		this->m_Transform->InitTransform(this->weak_from_this(), CustomType::Vector3::Zero());
 	}
 }
 void CGameObject::AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, std::shared_ptr<CGameObject> parent)
 {
-	if (!m_Transform)
+	if (!this->HasTransform())
 	{
 		this->m_Transform = std::shared_ptr<CTransform>(new CTransform());
 	}
 	if (parent)
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), worldPosition, worldRotation, worldScale, parent->GetTransform().lock());
+		this->m_Transform->InitTransform(this->weak_from_this(), worldPosition, worldRotation, worldScale);
+		this->SetParent(parent);
 	}
-	else if (!this->GetParent().expired())
+	else if (this->HasParent())
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), worldPosition, worldRotation, worldScale, this->GetParent().lock()->GetTransform().lock());
+		std::shared_ptr<CGameObject> oldParent(this->GetParent().lock());
+		this->m_Transform->InitTransform(this->weak_from_this(), worldPosition, worldRotation, worldScale);
+		this->SetParent(oldParent);
 	}
 	else
 	{
-		this->m_Transform->InitTransform(this->shared_from_this(), worldPosition, worldRotation, worldScale, nullptr);
+		this->m_Transform->InitTransform(this->weak_from_this(), worldPosition, worldRotation, worldScale);
 	}
 }
 void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
 {
-	if (!m_RenderBoundingBox)
+	if (!this->HasRenderBoundingBox())
 	{
-		m_RenderBoundingBox = std::shared_ptr<CustomStruct::CRenderBoundingBox>(new CustomStruct::CRenderBoundingBox(anchor, dimensions));
+		this->m_RenderBoundingBox = std::shared_ptr<CustomStruct::CRenderBoundingBox>(new CustomStruct::CRenderBoundingBox(anchor, dimensions));
 		return;
 	}
-	m_RenderBoundingBox->Anchor = anchor;
-	m_RenderBoundingBox->Dimensions = dimensions;
+	this->m_RenderBoundingBox->Anchor = anchor;
+	this->m_RenderBoundingBox->Dimensions = dimensions;
 }
 void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)
 {
 	CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
 	tempAnchor = tempAnchor * 0.5f;
-	if (!m_RenderBoundingBox)
+	if (!this->HasRenderBoundingBox())
 	{
-		m_RenderBoundingBox = std::shared_ptr<CustomStruct::CRenderBoundingBox>(new CustomStruct::CRenderBoundingBox(tempAnchor, dimensions));
+		this->m_RenderBoundingBox = std::shared_ptr<CustomStruct::CRenderBoundingBox>(new CustomStruct::CRenderBoundingBox(tempAnchor, dimensions));
 		return;
 	}
-	m_RenderBoundingBox->Anchor = tempAnchor;
-	m_RenderBoundingBox->Dimensions = dimensions;
+	this->m_RenderBoundingBox->Anchor = tempAnchor;
+	this->m_RenderBoundingBox->Dimensions = dimensions;
 }
 void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)
 {
-	if (!m_RenderBoundingBox)
+	if (!this->HasRenderBoundingBox())
 	{
 		CustomType::Vector3 position(this->m_Transform->GetWorldPosition());
 		boundingMin = position - 0.5f;
@@ -134,7 +155,7 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 		CustomType::Vector3 upVec(this->m_Transform->GetUpVector());
 		CustomType::Vector3 forwardVec(this->m_Transform->GetForwardVector());
 
-		CustomType::Vector3 tempPoint(rightVec * m_RenderBoundingBox->Anchor.X() * scale.X() + upVec * m_RenderBoundingBox->Anchor.Y() * scale.Y() + forwardVec * m_RenderBoundingBox->Anchor.Z() * scale.Z() + position);
+		CustomType::Vector3 tempPoint(rightVec * this->m_RenderBoundingBox->Anchor.X() * scale.X() + upVec * this->m_RenderBoundingBox->Anchor.Y() * scale.Y() + forwardVec * this->m_RenderBoundingBox->Anchor.Z() * scale.Z() + position);
 		/*
 		//            5--------6                Y(up vector)
 		//           /|       /|                ^
@@ -150,9 +171,9 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 		points[0u * 3u + 1u] = tempPoint.Y();
 		points[0u * 3u + 2u] = tempPoint.Z();
 
-		rightVec = rightVec * m_RenderBoundingBox->Dimensions.X() * scale.X();
-		upVec = upVec * m_RenderBoundingBox->Dimensions.Y() * scale.Y();
-		forwardVec = forwardVec * m_RenderBoundingBox->Dimensions.Z() * scale.Z();
+		rightVec = rightVec * this->m_RenderBoundingBox->Dimensions.X() * scale.X();
+		upVec = upVec * this->m_RenderBoundingBox->Dimensions.Y() * scale.Y();
+		forwardVec = forwardVec * this->m_RenderBoundingBox->Dimensions.Z() * scale.Z();
 
 		points[1u * 3u + 0u] = points[0u * 3u + 0u] + forwardVec.X();
 		points[1u * 3u + 1u] = points[0u * 3u + 1u] + forwardVec.Y();
@@ -194,27 +215,27 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 }
 void CGameObject::SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
 {
-	if (!m_RenderBoundingSphere)
+	if (!this->HasRenderBoundingSphere())
 	{
-		m_RenderBoundingSphere = std::shared_ptr<CustomStruct::CRenderBoundingSphere>(new CustomStruct::CRenderBoundingSphere(anchor, radius));
+		this->m_RenderBoundingSphere = std::shared_ptr<CustomStruct::CRenderBoundingSphere>(new CustomStruct::CRenderBoundingSphere(anchor, radius));
 		return;
 	}
-	m_RenderBoundingSphere->Anchor = anchor;
-	m_RenderBoundingSphere->Radius = radius;
+	this->m_RenderBoundingSphere->Anchor = anchor;
+	this->m_RenderBoundingSphere->Radius = radius;
 }
 void CGameObject::SetRenderLocalBoundingSphere(const FLOAT& radius)
 {
-	if (!m_RenderBoundingSphere)
+	if (!this->HasRenderBoundingSphere())
 	{
-		m_RenderBoundingSphere = std::shared_ptr<CustomStruct::CRenderBoundingSphere>(new CustomStruct::CRenderBoundingSphere(CustomType::Vector3::Zero(), radius));
+		this->m_RenderBoundingSphere = std::shared_ptr<CustomStruct::CRenderBoundingSphere>(new CustomStruct::CRenderBoundingSphere(CustomType::Vector3::Zero(), radius));
 		return;
 	}
-	m_RenderBoundingSphere->Anchor = CustomType::Vector3::Zero();
-	m_RenderBoundingSphere->Radius = radius;
+	this->m_RenderBoundingSphere->Anchor = CustomType::Vector3::Zero();
+	this->m_RenderBoundingSphere->Radius = radius;
 }
 void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)
 {
-	if (!m_RenderBoundingSphere)
+	if (!this->HasRenderBoundingSphere())
 	{
 		anchor = this->m_Transform->GetWorldPosition();
 		radius = 1.f;
@@ -222,12 +243,12 @@ void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOA
 	}
 	CustomType::Vector3 position(this->m_Transform->GetWorldPosition());
 	CustomType::Vector3 scale(this->m_Transform->GetWorldScale());
-	anchor = (m_RenderBoundingSphere->Anchor * scale) + position;
-	radius = m_RenderBoundingSphere->Radius * CustomType::CMath::Max(scale.X(), CustomType::CMath::Max(scale.Y(), scale.Z()));
+	anchor = (this->m_RenderBoundingSphere->Anchor * scale) + position;
+	radius = this->m_RenderBoundingSphere->Radius * CustomType::CMath::Max(scale.X(), CustomType::CMath::Max(scale.Y(), scale.Z()));
 }
 CustomType::Vector3 CGameObject::GetForwardVector()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetForwardVector());
 	}
@@ -235,7 +256,7 @@ CustomType::Vector3 CGameObject::GetForwardVector()
 }
 CustomType::Vector3 CGameObject::GetUpVector()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetUpVector());
 	}
@@ -243,7 +264,7 @@ CustomType::Vector3 CGameObject::GetUpVector()
 }
 CustomType::Vector3 CGameObject::GetRightVector()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetRightVector());
 	}
@@ -251,7 +272,7 @@ CustomType::Vector3 CGameObject::GetRightVector()
 }
 CustomType::Matrix4x4 CGameObject::GetLocalToWorldMatrix()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetLocalToWorldMatrix());
 	}
@@ -259,7 +280,7 @@ CustomType::Matrix4x4 CGameObject::GetLocalToWorldMatrix()
 }
 CustomType::Matrix4x4 CGameObject::GetWorldToLocalMatrix()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetWorldToLocalMatrix());
 	}
@@ -267,7 +288,7 @@ CustomType::Matrix4x4 CGameObject::GetWorldToLocalMatrix()
 }
 CustomType::Vector3 CGameObject::GetWorldPosition()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetWorldPosition());
 	}
@@ -275,7 +296,7 @@ CustomType::Vector3 CGameObject::GetWorldPosition()
 }
 CustomType::Quaternion CGameObject::GetWorldRotation()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetWorldRotation());
 	}
@@ -283,7 +304,7 @@ CustomType::Quaternion CGameObject::GetWorldRotation()
 }
 CustomType::Vector3 CGameObject::GetWorldScale()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetWorldScale());
 	}
@@ -291,7 +312,7 @@ CustomType::Vector3 CGameObject::GetWorldScale()
 }
 CustomType::Vector3 CGameObject::GetLocalPosition()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetLocalPosition());
 	}
@@ -299,7 +320,7 @@ CustomType::Vector3 CGameObject::GetLocalPosition()
 }
 CustomType::Quaternion CGameObject::GetLocalRotation()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetLocalRotation());
 	}
@@ -307,7 +328,7 @@ CustomType::Quaternion CGameObject::GetLocalRotation()
 }
 CustomType::Vector3 CGameObject::GetLocalScale()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		return (this->m_Transform->GetLocalScale());
 	}
@@ -315,49 +336,49 @@ CustomType::Vector3 CGameObject::GetLocalScale()
 }
 void CGameObject::SetWorldPosition(const CustomType::Vector3& worldPosition)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetWorldPosition(worldPosition);
 	}
 }
 void CGameObject::SetWorldRotation(const CustomType::Quaternion& worldRotation)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetWorldRotation(worldRotation);
 	}
 }
 void CGameObject::SetWorldScale(const CustomType::Vector3& worldScale)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetWorldScale(worldScale);
 	}
 }
 void CGameObject::SetLocalPosition(const CustomType::Vector3& localPosition)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetLocalPosition(localPosition);
 	}
 }
 void CGameObject::SetLocalRotation(const CustomType::Quaternion& localRotation)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetLocalRotation(localRotation);
 	}
 }
 void CGameObject::SetLocalScale(const CustomType::Vector3& localScale)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->SetLocalScale(localScale);
 	}
 }
 std::weak_ptr<CGameObject> CGameObject::GetParent()
 {
-	if (this->m_Transform && !this->m_Transform->GetParent().expired())
+	if (this->HasTransform() && this->HasParent())
 	{
 		return (this->m_Transform->GetParent().lock()->GetGameObject());
 	}
@@ -367,7 +388,7 @@ std::weak_ptr<CGameObject> CGameObject::GetParent()
 std::vector<std::weak_ptr<CGameObject>> CGameObject::GetChildrenList()
 {
 	std::vector<std::weak_ptr<CGameObject>> childrenList;
-	if (this->m_Transform && this->m_Transform->HasChild())
+	if (this->HasTransform() && this->HasChild())
 	{
 		std::vector<std::weak_ptr<CTransform>> childrenTransformList = this->m_Transform->GetChildrenList();
 		for (const auto& child : childrenTransformList)
@@ -375,7 +396,7 @@ std::vector<std::weak_ptr<CGameObject>> CGameObject::GetChildrenList()
 			if (!child.expired())
 			{
 				std::shared_ptr<CTransform> sharedPtr(child.lock());
-				if (!sharedPtr->GetGameObject().expired())
+				if (sharedPtr->HasGameObject())
 				{
 					childrenList.push_back(sharedPtr->GetGameObject());
 				}
@@ -384,30 +405,9 @@ std::vector<std::weak_ptr<CGameObject>> CGameObject::GetChildrenList()
 	}
 	return childrenList;
 }
-template<class T>
-std::vector<std::weak_ptr<T>> CGameObject::GetChildrenListByType()
-{
-	std::vector<std::weak_ptr<T>> childrenList;
-	if (this->m_Transform && this->m_Transform->HasChild())
-	{
-		std::vector<std::weak_ptr<CTransform>> childrenTransformList = this->m_Transform->GetChildrenList();
-		for (const auto& child : childrenTransformList)
-		{
-			if (!child.expired())
-			{
-				std::shared_ptr<CTransform> sharedPrt(child.lock());
-				if (!sharedPrt->GetGameObject().expired() && typeid(*sharedPrt) == typeid(T))
-				{
-					childrenList.push_back(sharedPrt->GetGameObject());
-				}
-			}
-		}
-	}
-	return childrenList;
-}
 std::weak_ptr<CGameObject> CGameObject::FindChildByTransformID(const ULONGLONG& id)
 {
-	if (this->m_Transform && this->m_Transform->HasChild())
+	if (this->HasTransform() && this->HasChild())
 	{
 		std::weak_ptr<CTransform> tempTransform(this->m_Transform->GetChildByUniqueID(id));
 		if (!tempTransform.expired())
@@ -418,80 +418,51 @@ std::weak_ptr<CGameObject> CGameObject::FindChildByTransformID(const ULONGLONG& 
 	std::weak_ptr<CGameObject> weakPtr;
 	return weakPtr;
 }
-template<class T>
-std::weak_ptr<T> CGameObject::FindFirstChildByType()
-{
-	if (this->m_Transform && this->m_Transform->HasChild())
-	{
-		std::vector<std::weak_ptr<CTransform>> childrenTransformList = this->m_Transform->GetChildrenList();
-		for (const auto& child : childrenTransformList)
-		{
-			if (!child.expired())
-			{
-				std::shared_ptr<CTransform> sharedPtr(child.lock());
-				if (!sharedPtr->GetGameObject().expired() && typeid(*sharedPtr) == typeid(T))
-				{
-					return (sharedPtr->GetGameObject());
-				}
-			}
-		}
-	}
-	std::weak_ptr<T> weakPtr;
-	return weakPtr;
-}
 void CGameObject::SetParent(std::shared_ptr<CGameObject> parent)
 {
-	if (parent && this->m_Transform && !parent->GetTransform().expired())
+	if (parent && this->HasTransform() && parent->HasTransform())
 	{
 		this->m_Transform->SetParent(parent->GetTransform().lock());
 	}
 }
 void CGameObject::AddChild(std::shared_ptr<CGameObject> child)
 {
-	if (child && this->m_Transform && !child->GetTransform().expired())
+	if (child && this->HasTransform() && child->HasTransform())
 	{
 		this->m_Transform->AddChild(child->GetTransform().lock());
 	}
 }
 void CGameObject::RemoveParent()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->RemoveParent();
 	}
 }
 void CGameObject::RemoveChild(std::shared_ptr<CGameObject> child)
 {
-	if (child && this->m_Transform && !child->GetTransform().expired())
+	if (child && this->HasTransform() && child->HasTransform())
 	{
 		this->m_Transform->RemoveChild(child->GetTransform().lock());
 	}
 }
 void CGameObject::RemoveChildByTransformID(const ULONGLONG& id)
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
 		this->m_Transform->RemoveChildByUniqueID(id);
 	}
 }
 void CGameObject::RemoveChildren()
 {
-	if (this->m_Transform)
+	if (this->HasTransform())
 	{
-		this->m_Transform->RemoveChildren();
+		this->m_Transform->RemoveAllChildren();
 	}
-}
-BOOL CGameObject::IsBelongTransform(const CTransform* transform)
-{
-	if (transform && this->m_Transform)
-	{
-		return (this->m_Transform->GetUniqueID() == transform->GetUniqueID());
-	}
-	return FALSE;
 }
 BOOL CGameObject::IsParent(const CGameObject* parent)
 {
-	if (parent && this->m_Transform && parent->m_Transform)
+	if (parent && this->HasTransform() && parent->HasTransform())
 	{
 		return (this->m_Transform->IsParent(parent->m_Transform.get()));
 	}
@@ -499,9 +470,25 @@ BOOL CGameObject::IsParent(const CGameObject* parent)
 }
 BOOL CGameObject::IsChild(const CGameObject* child)
 {
-	if (child && this->m_Transform && child->m_Transform)
+	if (child && this->HasTransform() && child->HasTransform())
 	{
 		return (this->m_Transform->IsChild(child->m_Transform.get()));
+	}
+	return FALSE;
+}
+BOOL CGameObject::HasParent()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->HasParent());
+	}
+	return FALSE;
+}
+BOOL CGameObject::HasChild()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->HasChild());
 	}
 	return FALSE;
 }
@@ -521,6 +508,7 @@ void CGameObject::AddComponent(std::shared_ptr<CBaseComponent> component)
 				this->m_MeshComponentID = component->GetUniqueID();
 			}
 			this->m_Components.insert_or_assign(component->GetUniqueID(), component);
+			component->SetGameObject(this->weak_from_this());
 		}
 	}
 }
@@ -575,63 +563,13 @@ std::weak_ptr<CBaseComponent> CGameObject::FindComponentByComponentID(const ULON
 {
 	if (this->HasComponent())
 	{
-		return (this->FindComponentByComponentID(id));
+		std::map<ULONGLONG, std::shared_ptr<CBaseComponent>>::iterator element = this->m_Components.find(id);
+		if (element != this->m_Components.end())
+		{
+			return std::weak_ptr<CBaseComponent>(element->second);
+		}
 	}
 	std::weak_ptr<CBaseComponent> weakPtr;
-	return weakPtr;
-}
-template<class T>
-std::weak_ptr<T> CGameObject::FindFirstComponentByType()
-{
-	std::weak_ptr<T> weakPtr;
-	if (this->HasComponent())
-	{
-		for (const auto& component : this->m_Components)
-		{
-			if (component.second && typeid(*(component.second)) == typeid(T))
-			{
-				weakPtr = component.second;
-				break;
-			}
-		}
-	}
-	return weakPtr;
-}
-template<class T>
-std::vector<std::weak_ptr<T>> CGameObject::GetComponentListByType()
-{
-	std::vector<std::weak_ptr<T>> componentList;
-	if (this->HasComponent())
-	{
-		for (const auto& component : this->m_Components)
-		{
-			if (component.second && typeid(*(component.second)) == typeid(T))
-			{
-				std::weak_ptr<T> weakPtr(component.second);
-				componentList.push_back(weakPtr);
-			}
-		}
-	}
-	return componentList;
-}
-template<class T>
-std::weak_ptr<T> CGameObject::GetMeshComponent()
-{
-	if (this->HasMeshComponent())
-	{
-		return (this->FindComponentByComponentID(this->m_MeshComponentID));
-	}
-	std::weak_ptr<T> weakPtr;
-	return weakPtr;
-}
-template<class T>
-std::weak_ptr<T> CGameObject::GetMeshRendererComponent()
-{
-	if (this->HasMeshRendererComponent())
-	{
-		return (this->FindComponentByComponentID(this->m_MeshRendererComponentID));
-	}
-	std::weak_ptr<T> weakPtr;
 	return weakPtr;
 }
 BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)
@@ -643,15 +581,15 @@ BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)
 	}
 	return FALSE;
 }
-BOOL CGameObject::HasComponent()
+BOOL CGameObject::HasComponent()const
 {
 	return (this->m_Components.size() > 0);
 }
-BOOL CGameObject::HasMeshComponent()
+BOOL CGameObject::HasMeshComponent()const
 {
 	return (this->m_MeshComponentID > 0u);
 }
-BOOL CGameObject::HasMeshRendererComponent()
+BOOL CGameObject::HasMeshRendererComponent()const
 {
 	return (this->m_MeshRendererComponentID > 0u);
 }

@@ -2,6 +2,7 @@
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
+#include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineGame/Headers/CScreenPolygon2D.h"
@@ -66,7 +67,13 @@ void CDebugScreen::Draw()
 	for (UINT i = 0; i < CDebugScreen::DEBUGPOLYGON_COUNT; i++)
 	{
 		CRenderDevice::BindPSShaderResourceView(m_SRVs[i], ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-		m_Polygons[i]->Draw();
+		{
+			const CMeshRendererComponent* meshRenderer = m_Polygons[i]->GetMeshRendererComponent<CMeshRendererComponent>();
+			if (meshRenderer)
+			{
+				meshRenderer->Draw();
+			}
+		}
 	}
 }
 void CDebugScreen::SetShadowMap(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadow)

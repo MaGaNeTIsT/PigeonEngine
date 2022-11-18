@@ -16,7 +16,6 @@ public:
 	};
 public:
 	virtual void	Init()override;
-	virtual void	Uninit()override;
 	virtual void	Update()override;
 public:
 	void			SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
@@ -29,6 +28,6 @@ protected:
 	CTexture2D*		m_NormalTexture;
 	CTexture2D*		m_PropertyTexture;
 protected:
-	CPlaneMeshInfo	m_PlaneMeshInfo;
-	FLOAT m_TestRotate = 0;
+	std::weak_ptr<class CMeshComponent>	m_PlaneMesh;
+	CPlaneMeshInfo						m_PlaneMeshInfo;
 };

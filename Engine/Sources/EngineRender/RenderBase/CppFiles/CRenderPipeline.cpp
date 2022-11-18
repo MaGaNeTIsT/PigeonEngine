@@ -3,7 +3,6 @@
 #include "../../../EngineGame/Headers/CGameObject.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CLightType.h"
-#include "../Headers/CRenderDevice.h"
 #include "../Headers/CGPUQuery.h"
 #include "../Headers/CGPUQueryManager.h"
 #include "../Headers/CGPUCulling.h"
@@ -423,9 +422,9 @@ void CRenderPipeline::PostUpdate()
 		{
 			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
 			{
-				std::weak_ptr<CMeshComponent> mesh(obj.second->GetMeshComponent<CMeshComponent>());
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj.second->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!mesh.expired() && !meshRenderer.expired() && mesh.lock()->IsActive() && meshRenderer.lock()->IsActive())
+				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
+				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 					break;
@@ -436,9 +435,9 @@ void CRenderPipeline::PostUpdate()
 		{
 			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
 			{
-				std::weak_ptr<CMeshComponent> mesh(obj.second->GetMeshComponent<CMeshComponent>());
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj.second->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!mesh.expired() && !meshRenderer.expired() && mesh.lock()->IsActive() && meshRenderer.lock()->IsActive())
+				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
+				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
 				}
@@ -448,9 +447,9 @@ void CRenderPipeline::PostUpdate()
 		{
 			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
 			{
-				std::weak_ptr<CMeshComponent> mesh(obj.second->GetMeshComponent<CMeshComponent>());
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj.second->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!mesh.expired() && !meshRenderer.expired() && mesh.lock()->IsActive() && meshRenderer.lock()->IsActive())
+				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
+				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
 				}
@@ -549,10 +548,10 @@ void CRenderPipeline::Render()
 					{
 						for (UINT i = 0u; i < (m_DirLightCullingResults[lightShadow])[layerIndex].size(); i++)
 						{
-							std::weak_ptr<CMeshRendererComponent> meshRenderer(((m_DirLightCullingResults[lightShadow])[layerIndex])[i]->GetMeshRendererComponent<CMeshRendererComponent>());
-							if (!meshRenderer.expired())
+							const CMeshRendererComponent* meshRenderer = ((m_DirLightCullingResults[lightShadow])[layerIndex])[i]->GetMeshRendererComponent<CMeshRendererComponent>();
+							if (meshRenderer)
 							{
-								meshRenderer.lock()->DrawExtra();
+								meshRenderer->DrawExtra();
 							}
 						}
 					}});
@@ -582,10 +581,10 @@ void CRenderPipeline::Render()
 			{
 				for (auto& obj : m_RenderingCullingResults[i])
 				{
-					std::weak_ptr<CMeshRendererComponent> meshRenderer(obj->GetMeshRendererComponent<CMeshRendererComponent>());
-					if (!meshRenderer.expired())
+					const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
+					if (meshRenderer)
 					{
-						meshRenderer.lock()->DrawExtra();
+						meshRenderer->DrawExtra();
 					}
 				}
 			}});
@@ -621,10 +620,10 @@ void CRenderPipeline::Render()
 			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), 6u);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED])
 			{
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!meshRenderer.expired())
+				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (meshRenderer)
 				{
-					meshRenderer.lock()->Draw();
+					meshRenderer->Draw();
 				}
 			}});
 	}
@@ -665,10 +664,10 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView, m_RTSceneDepth.DepthStencilView);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD])
 			{
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!meshRenderer.expired())
+				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (meshRenderer)
 				{
-					meshRenderer.lock()->Draw();
+					meshRenderer->Draw();
 				}
 			}});
 	}
@@ -685,10 +684,10 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetBlendState(m_TransparentPassBS);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_TRANSPARENT])
 			{
-				std::weak_ptr<CMeshRendererComponent> meshRenderer(obj->GetMeshRendererComponent<CMeshRendererComponent>());
-				if (!meshRenderer.expired())
+				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
+				if (meshRenderer)
 				{
-					meshRenderer.lock()->Draw();
+					meshRenderer->Draw();
 				}
 			}});
 	}
@@ -929,7 +928,7 @@ void CRenderPipeline::Culling()
 		{
 			if (objectHZBCullingResults[i] == TRUE)
 			{
-				std::shared_ptr<CMeshRendererComponent> meshRenderer(m_CameraCullingResults[i]->GetMeshRendererComponent<CMeshRendererComponent>().lock());
+				const CMeshRendererComponent* meshRenderer = m_CameraCullingResults[i]->GetMeshRendererComponent<CMeshRendererComponent>();
 				CMeshRendererComponent::RenderTypeEnum tempRenderType = meshRenderer->GetRenderType();
 				if (tempRenderType == CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE)
 				{

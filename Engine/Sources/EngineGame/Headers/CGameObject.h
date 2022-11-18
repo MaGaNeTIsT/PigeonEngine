@@ -5,7 +5,7 @@
 #include "./CObjectManager.h"
 #include "./CComponent.h"
 
-class CGameObject : public CObjectBase, public std::enable_shared_from_this<CGameObject>
+class CGameObject : public CObjectBase, protected std::enable_shared_from_this<CGameObject>
 {
 public:
 	std::weak_ptr<class CScene>								GetScene();
@@ -13,7 +13,13 @@ public:
 	std::weak_ptr<CustomStruct::CRenderBoundingBox>			GetRenderLocalBoundingBox();
 	std::weak_ptr<CustomStruct::CRenderBoundingSphere>		GetRenderLocalBoundingSphere();
 public:
-	void	SetScene(std::shared_ptr<class CScene> scene);
+	BOOL	IsBelongTransform(const CTransform* gameObject);
+	BOOL	HasScene()const;
+	BOOL	HasTransform()const;
+	BOOL	HasRenderBoundingBox()const;
+	BOOL	HasRenderBoundingSphere()const;
+public:
+	void	SetScene(std::weak_ptr<class CScene> scene);
 	void	AddNewTransform(std::shared_ptr<CGameObject> parent = nullptr);
 	void	AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, std::shared_ptr<CGameObject> parent = nullptr);
 public:
@@ -38,11 +44,50 @@ public:
 public:
 	std::weak_ptr<CGameObject>					GetParent();
 	std::vector<std::weak_ptr<CGameObject>>		GetChildrenList();
-	template<class T>
-	std::vector<std::weak_ptr<T>>				GetChildrenListByType();
 	std::weak_ptr<CGameObject>					FindChildByTransformID(const ULONGLONG& id);
 	template<class T>
-	std::weak_ptr<T>							FindFirstChildByType();
+	std::vector<const T*> GetChildrenListByType()const
+	{
+		std::vector<const T*> childrenList;
+		if (this->HasTransform() && this->HasChild())
+		{
+			std::vector<std::weak_ptr<CTransform>> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
+			{
+				std::shared_ptr<CTransform> sharedPrtTransform(child.lock());
+				if (sharedPrtTransform && sharedPrtTransform->HasGameObject())
+				{
+					std::shared_ptr<CGameObject> sharedPrtGameObject(sharedPrtTransform->GetGameObject().lock());
+					if (sharedPrtGameObject && typeid(*sharedPrtGameObject) == typeid(T))
+					{
+						childrenList.push_back(reinterpret_cast<const T*>(sharedPrtGameObject.get()));
+					}
+				}
+			}
+		}
+		return childrenList;
+	}
+	template<class T>
+	const T* FindFirstChildByType()const
+	{
+		if (this->HasTransform() && this->HasChild())
+		{
+			std::vector<std::weak_ptr<CTransform>> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
+			{
+				std::shared_ptr<CTransform> sharedPrtTransform(child.lock());
+				if (sharedPrtTransform && sharedPrtTransform->HasGameObject())
+				{
+					std::shared_ptr<CGameObject> sharedPrtGameObject(sharedPrtTransform->GetGameObject().lock());
+					if (sharedPrtGameObject && typeid(*sharedPrtGameObject) == typeid(T))
+					{
+						return (reinterpret_cast<const T*>(sharedPrtGameObject.get()));
+					}
+				}
+			}
+		}
+		return nullptr;
+	}
 public:
 	void	SetParent(std::shared_ptr<CGameObject> parent);
 	void	AddChild(std::shared_ptr<CGameObject> child);
@@ -52,9 +97,10 @@ public:
 	void	RemoveChildByTransformID(const ULONGLONG& id);
 	void	RemoveChildren();
 public:
-	BOOL	IsBelongTransform(const CTransform* gameObject);
 	BOOL	IsParent(const CGameObject* parent);
 	BOOL	IsChild(const CGameObject* child);
+	BOOL	HasParent()const;
+	BOOL	HasChild()const;
 public:
 	void	SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions);
 	void	SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions);
@@ -73,19 +119,75 @@ public:
 	void								RemoveComponentByComponentID(const ULONGLONG& id);
 	void								RemoveComponents();
 	std::weak_ptr<CBaseComponent>		FindComponentByComponentID(const ULONGLONG& id);
+public:
 	template<class T>
-	std::weak_ptr<T>					FindFirstComponentByType();
+	const T* FindFirstComponentByType()const
+	{
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second && typeid(*(component.second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>(component.second.get()));
+				}
+			}
+		}
+		return nullptr;
+	}
 	template<class T>
-	std::vector<std::weak_ptr<T>>		GetComponentListByType();
+	std::vector<const T*> GetComponentListByType()const
+	{
+		std::vector<const T*> componentList;
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second && typeid(*(component.second)) == typeid(T))
+				{
+					componentList.push_back(reinterpret_cast<const T*>(component.second.get()));
+				}
+			}
+		}
+		return componentList;
+	}
 	template<class T>
-	std::weak_ptr<T>					GetMeshComponent();
+	const T* GetMeshComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshComponent())
+		{
+			auto element = this->m_Components.find(this->m_MeshComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>((element->second).get()));
+				}
+			}
+		}
+		return nullptr;
+	}
 	template<class T>
-	std::weak_ptr<T>					GetMeshRendererComponent();
+	const T* GetMeshRendererComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshRendererComponent())
+		{
+			auto element = this->m_Components.find(this->m_MeshRendererComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>((element->second).get()));
+				}
+			}
+		}
+		return nullptr;
+	}
 public:
 	BOOL	IsBelongComponent(const CBaseComponent* component);
-	BOOL	HasComponent();
-	BOOL	HasMeshComponent();
-	BOOL	HasMeshRendererComponent();
+	BOOL	HasComponent()const;
+	BOOL	HasMeshComponent()const;
+	BOOL	HasMeshRendererComponent()const;
 protected:
 	ULONGLONG												m_MeshComponentID;
 	ULONGLONG												m_MeshRendererComponentID;

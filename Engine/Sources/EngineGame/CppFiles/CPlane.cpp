@@ -44,6 +44,8 @@ void CPlane::Init()
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
 
+		this->m_PlaneMesh = std::weak_ptr<CMeshComponent>(meshComponent);
+
 		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
@@ -57,9 +59,8 @@ void CPlane::Init()
 	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga");
 	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE);
 	this->m_PropertyTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE);
-}
-void CPlane::Uninit()
-{
+
+	CGameObject::Init();
 }
 void CPlane::Update()
 {
@@ -69,7 +70,9 @@ void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Ve
 	this->m_PlaneMeshInfo.Length = length;
 	this->m_PlaneMeshInfo.UV = uv;
 	this->m_PlaneMeshInfo.VertexCount = vertexCount;
-	std::shared_ptr<CMeshComponent> mesh(this->GetMeshComponent<CMeshComponent>().lock());
+
+	std::shared_ptr<CMeshComponent> mesh(this->m_PlaneMesh.lock());
+
 	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),

@@ -6,7 +6,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineGame/Headers/CGameObjectManager.h"
+#include "../../EngineGame/Headers/CObjectManager.h"
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 
@@ -70,7 +70,7 @@ void CManager::Initialize(HWND hWnd)
 	CRenderDevice::Initialize();
 	CimGUIManager::Initialize();
 
-	CGameObjectManager::Initialize();
+	CUniqueIDManager::Initialize();
 
 	CManager::m_Manager->m_WindowTimer.Init();
 }

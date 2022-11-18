@@ -4,13 +4,13 @@
 
 CLightBase::CLightBase()
 {
-	this->AddNewTransform();
+	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
 	this->m_Intensity = 1.f;
 }
 CLightBase::CLightBase(const CLightBase& light)
 {
-	this->AddNewTransformWithValue(light.m_Transform->GetWorldPosition(), light.m_Transform->GetWorldRotation(), 1.f);
+	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = light.m_Color;
 	this->m_Intensity = light.m_Intensity;
 }
@@ -57,6 +57,7 @@ CLightDirectional::CLightDirectional(const CLightDirectional& light) : CLightBas
 }
 void CLightDirectional::Init()
 {
+	this->AddNewTransform();
 	this->m_FrameCounter = 0;
 }
 void CLightDirectional::Update()
@@ -477,6 +478,10 @@ CustomType::Matrix4x4 CLightPoint::GetPreviousProjectionMatrix(const UINT& extra
 {
 	return (CustomType::Matrix4x4::Identity());
 }
+void CLightPoint::Init()
+{
+	this->AddNewTransform();
+}
 
 
 
@@ -504,11 +509,6 @@ CLightSpot::CLightSpot(const CLightSpot& light) : CLightBase(light)
 	this->m_ProjectionMatrix[0] = light.m_ProjectionMatrix[0];
 	this->m_ProjectionMatrix[1] = light.m_ProjectionMatrix[1];
 }
-void CLightSpot::Update()
-{
-	this->m_FrameCounter = 1 - this->m_FrameCounter;
-
-}
 CustomType::Matrix4x4 CLightSpot::GetCurrentViewMatrix(const UINT& extraIndex)
 {
 	return (this->m_ViewMatrix[this->m_FrameCounter]);
@@ -524,4 +524,13 @@ CustomType::Matrix4x4 CLightSpot::GetPreviousViewMatrix(const UINT& extraIndex)
 CustomType::Matrix4x4 CLightSpot::GetPreviousProjectionMatrix(const UINT& extraIndex)
 {
 	return (this->m_ProjectionMatrix[1 - this->m_FrameCounter]);
+}
+void CLightSpot::Init()
+{
+	this->AddNewTransform();
+}
+void CLightSpot::Update()
+{
+	this->m_FrameCounter = 1 - this->m_FrameCounter;
+
 }

@@ -70,7 +70,7 @@ private:
 class CMeshComponent : public CBaseComponent
 {
 public:
-	void GetMinMaxBounding(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax)
+	void GetMinMaxBounding(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax)const
 	{
 		if (!this->m_Mesh.expired())
 		{
@@ -94,7 +94,7 @@ public:
 		}
 		return nullptr;
 	}
-	const std::vector<CustomStruct::CRenderInputLayoutDesc>& GetInputLayoutDesc()const
+	std::vector<CustomStruct::CRenderInputLayoutDesc> GetInputLayoutDesc()const
 	{
 		if (!this->m_Mesh.expired())
 		{
@@ -103,7 +103,7 @@ public:
 		std::vector<CustomStruct::CRenderInputLayoutDesc> layout;
 		return layout;
 	}
-	const std::vector<CustomStruct::CSubMeshInfo>& GetSubMeshInfo()const
+	std::vector<CustomStruct::CSubMeshInfo> GetSubMeshInfo()const
 	{
 		if (!this->m_Mesh.expired())
 		{

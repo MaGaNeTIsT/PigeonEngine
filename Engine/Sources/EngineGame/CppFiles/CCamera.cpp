@@ -13,46 +13,6 @@ CCamera::CCamera()
 
 	this->m_CameraControlInfo.MoveSpeed = ENGINE_CAMERA_MOVE_SPEED;
 	this->m_CameraControlInfo.LookSpeed = ENGINE_CAMERA_LOOK_SPEED * CustomType::CMath::GetDegToRad();
-
-	this->AddNewTransform();
-
-	this->ReCalculateProjectionMatrix();
-	this->ReCalculateViewMatrix();
-	this->ReCalculateViewProjectionMatrix();
-}
-CCamera::CCamera(const CustomType::Vector3& position, const CustomType::Quaternion& rotation)
-{
-	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
-	this->m_CameraInfo.Fov		= ENGINE_CAMERA_FOV;
-	this->m_CameraInfo.Near		= ENGINE_CAMERA_NEAR;
-	this->m_CameraInfo.Far		= ENGINE_CAMERA_FAR;
-
-	this->m_CameraControlInfo.MoveSpeed	= ENGINE_CAMERA_MOVE_SPEED;
-	this->m_CameraControlInfo.LookSpeed	= ENGINE_CAMERA_LOOK_SPEED * CustomType::CMath::GetDegToRad();
-
-	this->AddNewTransformWithValue(position, rotation, 1.f);
-
-	this->ReCalculateProjectionMatrix();
-	this->ReCalculateViewMatrix();
-	this->ReCalculateViewProjectionMatrix();
-}
-CCamera::CCamera(const CCamera& camera)
-{
-	this->AddNewTransformWithValue(camera.m_Transform->GetWorldPosition(), camera.m_Transform->GetWorldRotation(), 1.f);
-
-	this->m_CameraInfo				= camera.m_CameraInfo;
-	this->m_CameraControlInfo		= camera.m_CameraControlInfo;
-	this->m_FrustumInfo				= camera.m_FrustumInfo;
-
-	this->m_ViewMatrix				= camera.m_ViewMatrix;
-	this->m_ViewInvMatrix			= camera.m_ViewInvMatrix;
-	this->m_ProjectionMatrix		= camera.m_ProjectionMatrix;
-	this->m_ProjectionInvMatrix		= camera.m_ProjectionInvMatrix;
-	this->m_ViewProjectionMatrix	= camera.m_ViewProjectionMatrix;
-	this->m_ViewProjectionInvMatrix	= camera.m_ViewProjectionInvMatrix;
-	this->m_ViewportMinSize			= camera.m_ViewportMinSize;
-	this->m_ViewportSizeAndInvSize	= camera.m_ViewportSizeAndInvSize;
-	this->m_DeviceZToViewZMulAdd	= camera.m_DeviceZToViewZMulAdd;
 }
 CCamera::~CCamera()
 {
@@ -186,6 +146,11 @@ void CCamera::ReCalculateViewProjectionMatrix()
 }
 void CCamera::Init()
 {
+	this->AddNewTransform();
+
+	this->ReCalculateProjectionMatrix();
+	this->ReCalculateViewMatrix();
+	this->ReCalculateViewProjectionMatrix();
 }
 void CCamera::Uninit()
 {

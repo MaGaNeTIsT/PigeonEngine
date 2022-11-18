@@ -1,3 +1,4 @@
+#include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CMeshRendererComponent.h"
 #include "../Headers/CRenderDevice.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -6,7 +7,7 @@
 
 CMeshRendererComponent::CMeshRendererComponent() : CRenderComponent(TRUE, FALSE, FALSE)
 {
-	this->m_GameObject			= NULL;
+	this->m_GameObject.reset();
 	this->m_RenderType			= RenderTypeEnum::RENDER_TYPE_OPAQUE;
 	this->m_VertexShaderName	= ENGINE_SHADER_NONE;
 	this->m_PixelShaderName		= ENGINE_SHADER_NONE;
@@ -62,7 +63,7 @@ void CMeshRendererComponent::BindConstantBuffer(const UINT& startSlot)
 	CRenderDevice::BindVSConstantBuffer(this->m_ConstantBuffer, startSlot);
 	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, startSlot);
 }
-void CMeshRendererComponent::Draw()
+void CMeshRendererComponent::Draw()const
 {
 	if (this->m_MeshComponent.expired() || !this->m_VertexShader || !this->m_PixelShader)
 	{
@@ -70,20 +71,21 @@ void CMeshRendererComponent::Draw()
 	}
 	this->Bind(TRUE);
 	std::shared_ptr<CMeshComponent> meshSharedPtr(this->m_MeshComponent.lock());
-	if (meshSharedPtr->GetSubMeshInfo().size() < 1)
+	std::vector<CustomStruct::CSubMeshInfo> subMesh = meshSharedPtr->GetSubMeshInfo();
+	if (subMesh.size() < 1)
 	{
 		CRenderDevice::DrawIndexed(meshSharedPtr->GetIndexCount());
 	}
 	else
 	{
-		for (UINT i = 0; i < static_cast<UINT>(meshSharedPtr->GetSubMeshInfo().size()); i++)
+		for (UINT i = 0; i < static_cast<UINT>(subMesh.size()); i++)
 		{
-			const CustomStruct::CSubMeshInfo& subInfo = (meshSharedPtr->GetSubMeshInfo())[i];
+			const CustomStruct::CSubMeshInfo& subInfo = subMesh[i];
 			CRenderDevice::DrawIndexed(subInfo.IndexCount, subInfo.IndexStart, subInfo.VertexStart);
 		}
 	}
 }
-void CMeshRendererComponent::DrawExtra()
+void CMeshRendererComponent::DrawExtra()const
 {
 	if (this->m_MeshComponent.expired() || !this->m_VertexShader)
 	{
@@ -91,15 +93,16 @@ void CMeshRendererComponent::DrawExtra()
 	}
 	this->Bind(FALSE);
 	std::shared_ptr<CMeshComponent> meshSharedPtr(this->m_MeshComponent.lock());
-	if (meshSharedPtr->GetSubMeshInfo().size() < 1)
+	std::vector<CustomStruct::CSubMeshInfo> subMesh = meshSharedPtr->GetSubMeshInfo();
+	if (subMesh.size() < 1)
 	{
 		CRenderDevice::DrawIndexed(meshSharedPtr->GetIndexCount());
 	}
 	else
 	{
-		for (UINT i = 0; i < static_cast<UINT>(meshSharedPtr->GetSubMeshInfo().size()); i++)
+		for (UINT i = 0; i < static_cast<UINT>(subMesh.size()); i++)
 		{
-			const CustomStruct::CSubMeshInfo& subInfo = (meshSharedPtr->GetSubMeshInfo())[i];
+			const CustomStruct::CSubMeshInfo& subInfo = subMesh[i];
 			CRenderDevice::DrawIndexed(subInfo.IndexCount, subInfo.IndexStart, subInfo.VertexStart);
 		}
 	}
@@ -125,11 +128,11 @@ BOOL CMeshRendererComponent::CreateConstantBuffer(const UINT& size)
 	this->m_ConstantBufferDesc = CustomStruct::CRenderBufferDesc(size, CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT));
 	return (CRenderDevice::CreateBuffer(m_ConstantBuffer, this->m_ConstantBufferDesc));
 }
-void CMeshRendererComponent::UploadPerDrawConstantBuffer()
+void CMeshRendererComponent::UploadPerDrawConstantBuffer()const
 {
 	CRenderDevice::UploadBuffer(this->m_PerDrawInfo.PerDrawBuffer, static_cast<const void*>(&(this->m_PerDrawInfo.PerDrawData)));
 }
-void CMeshRendererComponent::Bind(const BOOL& needPixelShader)
+void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
 {
 	if (this->m_MeshComponent.expired() || !this->m_VertexShader)
 	{

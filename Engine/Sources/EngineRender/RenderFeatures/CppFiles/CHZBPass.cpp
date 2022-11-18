@@ -1,4 +1,5 @@
 #include "../Headers/CHZBPass.h"
+#include "../../RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CScene.h"
 #include "../../../EngineGame/Headers/CScreenPolygon2D.h"
@@ -76,7 +77,13 @@ void CHZBPass::DrawDebug()
 	if (this->m_DebugType)
 	{
 		CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffers[this->m_DebugLevel].ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-		this->m_Polygon2D->Draw();
+		{
+			const CMeshRendererComponent* meshRenderer = this->m_Polygon2D->GetMeshRendererComponent<CMeshRendererComponent>();
+			if (meshRenderer)
+			{
+				meshRenderer->Draw();
+			}
+		}
 	}
 }
 void CHZBPass::GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT& idx)

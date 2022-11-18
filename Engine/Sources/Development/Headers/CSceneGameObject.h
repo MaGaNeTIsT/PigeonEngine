@@ -11,6 +11,5 @@ public:
 	virtual void	FixedUpdate()override;
 public:
 	CSceneGameObject();
-	CSceneGameObject(const CSceneGameObject& sceneGameObject);
 	virtual ~CSceneGameObject();
 };

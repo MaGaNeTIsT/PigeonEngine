@@ -31,15 +31,3 @@ void CVolumetricClouds::Update()
 {
 
 }
-void CVolumetricClouds::Draw()
-{
-
-}
-void CVolumetricClouds::DrawExtra()
-{
-
-}
-void CVolumetricClouds::PrepareDraw()
-{
-
-}

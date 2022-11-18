@@ -1,6 +1,7 @@
 #include "../../../../Entry/EngineMain.h"
 #include "../Headers/CSceneGameObject.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 
 CSceneGameObject::CSceneGameObject()
@@ -11,23 +12,32 @@ CSceneGameObject::CSceneGameObject()
 		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
-	}
-}
-CSceneGameObject::CSceneGameObject(const CSceneGameObject& sceneGameObject)
-{
-	if (sceneGameObject.m_Transform)
-	{
-		this->AddNewTransformWithValue(sceneGameObject.m_Transform->GetWorldPosition(), sceneGameObject.m_Transform->GetWorldRotation(), sceneGameObject.m_Transform->GetWorldScale());
-	}
-	else
-	{
-		this->AddNewTransform();
+		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+		meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/BaseShape/SphereSmooth.obj", desc, 4u));
+		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+		meshRendererComponent->SetMeshComponent(meshComponent);
 	}
 }
 CSceneGameObject::~CSceneGameObject()
 {
 }
-void CSceneGameObject::Init();
-void CSceneGameObject::Uninit();
-void CSceneGameObject::Update();
-void CSceneGameObject::FixedUpdate();
+void CSceneGameObject::Init()
+{
+	CGameObject::Init();
+}
+void CSceneGameObject::Uninit()
+{
+	CGameObject::Uninit();
+}
+void CSceneGameObject::Update()
+{
+	CGameObject::Update();
+}
+void CSceneGameObject::FixedUpdate()
+{
+	CGameObject::FixedUpdate();
+}

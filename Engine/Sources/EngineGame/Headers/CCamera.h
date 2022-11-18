@@ -58,8 +58,6 @@ public:
 	virtual void	Update()override;
 public:
 	CCamera();
-	CCamera(const CustomType::Vector3& position, const CustomType::Quaternion& rotation);
-	CCamera(const CCamera& camera);
 	virtual ~CCamera();
 protected:
 	CCameraInfo							m_CameraInfo;

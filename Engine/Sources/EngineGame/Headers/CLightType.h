@@ -15,9 +15,10 @@ public:
 	};
 	enum LightType
 	{
-		LIGHT_TYPE_DIRECTIONAL	= 0,
-		LIGHT_TYPE_POINT		= 1,
-		LIGHT_TYPE_SPOT			= 2
+		LIGHT_TYPE_NONE			= 0,
+		LIGHT_TYPE_DIRECTIONAL	= 1,
+		LIGHT_TYPE_POINT		= 2,
+		LIGHT_TYPE_SPOT			= 3
 	};
 public:
 	virtual BOOL	IsTransmitShadow() = 0;
@@ -32,10 +33,6 @@ public:
 protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 	void			SetLightType(LightType type) { this->m_LightType = type; }
-public:
-	virtual void	Init()override {}
-	virtual void	Uninit()override {}
-	virtual void	Update()override {}
 public:
 	CLightBase();
 	CLightBase(const CLightBase& light);
@@ -155,6 +152,8 @@ public:
 	virtual CustomType::Matrix4x4		GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
 	virtual CustomType::Matrix4x4		GetPreviousProjectionMatrix(const UINT& extraIndex = 0u)override;
 public:
+	virtual void	Init()override;
+public:
 	CLightPoint();
 	CLightPoint(const CLightPoint& light);
 	virtual ~CLightPoint() {}
@@ -179,6 +178,7 @@ public:
 	virtual CustomType::Matrix4x4		GetPreviousViewMatrix(const UINT& extraIndex = 0u)override;
 	virtual CustomType::Matrix4x4		GetPreviousProjectionMatrix(const UINT& extraIndex = 0u)override;
 public:
+	virtual void	Init()override;
 	virtual void	Update()override;
 public:
 	CLightSpot();

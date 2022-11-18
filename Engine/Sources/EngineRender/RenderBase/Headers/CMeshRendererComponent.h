@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../../../../Entry/EngineMain.h"
 #include "./CRenderStructCommon.h"
 #include "../../../EngineGame/Headers/CComponent.h"
 #include "../../AssetsManager/Headers/CMeshComponent.h"
@@ -21,7 +20,7 @@ public:
 		RENDER_TYPE_TRANSPARENT		= 2
 	};
 public:
-	RenderTypeEnum	GetRenderType() { return this->m_RenderType; }
+	RenderTypeEnum	GetRenderType()const { return this->m_RenderType; }
 	void			SetRenderType(RenderTypeEnum type) { this->m_RenderType = type; }
 public:
 	virtual void	InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
@@ -30,14 +29,14 @@ public:
 	virtual void	UploadConstantBuffer(const void* data);
 	void			BindConstantBuffer(const UINT& startSlot);
 public:
-	virtual void	Draw()override;
-	virtual void	DrawExtra()override;
+	virtual void	Draw()const override;
+	virtual void	DrawExtra()const override;
 private:
 	void			SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum);
 	void			LoadShader();
 	BOOL			CreateConstantBuffer(const UINT& size);
-	void			UploadPerDrawConstantBuffer();
-	virtual void	Bind(const BOOL& needPixelShader = TRUE);
+	void			UploadPerDrawConstantBuffer()const;
+	virtual void	Bind(const BOOL& needPixelShader = TRUE)const;
 public:
 	CMeshRendererComponent();
 	CMeshRendererComponent(const CMeshRendererComponent& renderer);
