@@ -14,8 +14,14 @@
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Collision/Shape/TriangleShape.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/TaperedCapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 
 // STL includes
@@ -193,6 +199,52 @@ class CPhysics_API_Jolt : public CPhysicsInterface
 public:
 	virtual void Init() override;
 	virtual void Tick(const float cDeltaTime) override;
+
+	JPH_INLINE Body* CreateBody(const ULONGLONG& GameObjectId, const BodyCreationSettings& inBodyCreateSettings, EActivation Activation);
+	JPH_INLINE Body* GetBody(const ULONGLONG& GameObjectId);
+
+	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings();
+	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(ShapeSettings* inSettings,
+		const Vec3& inPosition,
+		const Quat& inRotation,
+		EMotionType MotionType,
+		ObjectLayer ObjectLayer);
+	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(Shape* inShape,
+		const Vec3& inPosition,
+		const Quat& inRotation,
+		EMotionType MotionType,
+		ObjectLayer ObjectLayer);
+	//Use CreateXXXShape funtions when you dont want to change params,like static object or some object cant be changed.
+	JPH_INLINE BoxShape* CreateBoxShape(const Vec3& inHalfExtent, float ConvexRadius);
+	JPH_INLINE BoxShapeSettings* CreateBoxShapeSettings(const Vec3& inHalfExtent, float ConvexRadius);
+	JPH_INLINE SphereShape* CreateSphereShape(float Radius);
+	JPH_INLINE SphereShapeSettings* CreateSphereShapeSettings(float Radius);
+	JPH_INLINE TriangleShapeSettings* CreateTriangleShapeSettings(const Vec3& inV1, const Vec3& inV2, const Vec3& inV3, float ConvexRadius);
+	JPH_INLINE CapsuleShapeSettings* CreateCapsuleShapeSettings(float HalfHeightOfCylinder,float Radius);
+	JPH_INLINE CylinderShapeSettings* CreateCylinderShapeSettings(float HalfHeight, float Radius, float ConvexRadius);
+	JPH_INLINE ConvexHullShapeSettings* CreateConvexHullShapeSettings(const vector<Vec3> inPoints, float MaxConvexRadius);
+	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Triangle> inTriangles);
+	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Vec3> inVertices, const vector<IndexedTriangle> inTriangles);
+	JPH_INLINE HeightFieldShapeSettings* CreateHeightFieldShapeSettings(const float* inSamples, const Vec3& inOffset, const Vec3& inScale, uint32_t SampleCount);
+	JPH_INLINE TaperedCapsuleShapeSettings* CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius);
+public:
+	CPhysics_API_Jolt();
+	virtual ~CPhysics_API_Jolt();
+
+	//Physics Parameters
+public:
+	//Initialized Parameters
+	uint cPreAllocatedSize			= 70 * 1024 * 1024;		//pre-allocated memory for simulation.
+	uint cMaxBodies					= 65535;				//Max amount of rigid bodies.
+	uint cNumBodyMutexes			= 0;					//Mutexes count,0 to default setting.
+	uint cMaxBodyPairs				= 65535;				//Max amount of body pairs that can be queued at any time.
+	uint cMaxContactConstraints		= 65535;				//This is the maximum size of the contact constraint buffer.
+
+	//Runtime Parameters
+	int cCollisionSteps				= 1;					// Do n collision step per cDeltaTime
+	int cIntegrationSubSteps		= 1;					// If you want more accurate step results you can do multiple sub steps within a collision step. Usually you would set this to 1.
+
+	//Jolt Parameters
 private:
 	PhysicsSystem*											m_PhysicsSystem;
 	BodyInterface*											m_BodyInterface;
@@ -202,15 +254,4 @@ private:
 	PhysicsAPI_Jolt::CBodyActivationListener*				m_BodyActivationListener;
 	PhysicsAPI_Jolt::CContactListener*						m_ContactListener;
 	unordered_map<ULONGLONG, Body*>							m_Bodys;
-
-private:
-	JPH_INLINE Body* CreateBody(const ULONGLONG& GameObjectId, BodyCreationSettings inBodyCreateSettings, EActivation inActivation)
-	{
-		Body* body = m_BodyInterface->CreateBody(inBodyCreateSettings);
-		m_BodyInterface->AddBody(body->GetID(), inActivation);
-		m_Bodys.insert_or_assign(GameObjectId, body);
-		return body;
-	}
-
-
 };
