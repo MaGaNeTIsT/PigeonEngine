@@ -15,9 +15,10 @@
 
 CCube::CCube()
 {
+	this->AddNewTransform();
 	{
-		std::shared_ptr<CMeshRendererComponent> meshRendererComponent(std::shared_ptr<CMeshRendererComponent>(new CMeshRendererComponent()));
-		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
+		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
+		CMeshComponent* meshComponent = new CMeshComponent();
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
 
@@ -28,6 +29,7 @@ CCube::CCube()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		meshComponent->SetMesh(CMeshManager::LoadCubeMesh(desc, 4u));
 		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+		meshRendererComponent->SetMaterialTextures(CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY), CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP), CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY));
 		meshRendererComponent->SetMeshComponent(meshComponent);
 		{
 			CustomType::Vector3 boundMin, boundMax;
@@ -57,16 +59,14 @@ CCube::CCube()
 			}
 		}
 	}
-	//this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Cloud001.tga");
-	this->m_AlbedoTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY);
-	this->m_NormalTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
-	this->m_PropertyTexture = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+	//CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Cloud001.tga");
 }
 CCube::~CCube()
 {
 }
 void CCube::Update()
 {
+	CGameObject::Update();
 	//FLOAT pos[3] = { this->GetPosition().X(), this->GetPosition().Y(), this->GetPosition().Z() };
 	//FLOAT scale[3] = { this->GetScale().X(), this->GetScale().Y(), this->GetScale().Z() };
 	//ImGui::Begin("Cube properties");

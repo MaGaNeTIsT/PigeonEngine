@@ -162,7 +162,7 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 			CustomType::Vector3 min, max;
 			for (UINT i = 0u; i < fromCPUCullingResult.size(); i++)
 			{
-				if (!fromCPUCullingResult[i]->GetRenderLocalBoundingBox().expired())
+				if (fromCPUCullingResult[i]->HasRenderBoundingBox())
 				{
 					fromCPUCullingResult[i]->GetRenderWorldAABBBoundingBox(min, max);
 					this->m_CachedAABBInfo[numCounter].Min[0] = min.X();

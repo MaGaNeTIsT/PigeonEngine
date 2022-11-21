@@ -6,8 +6,8 @@ CScreenPolygon2D::CScreenPolygon2D(const std::string& vertexShaderName, const st
 {
 	this->m_2DPosition = screenPosition;
 	{
-		std::shared_ptr<CMeshRendererComponent> meshRendererComponent(std::shared_ptr<CMeshRendererComponent>(new CMeshRendererComponent()));
-		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
+		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
+		CMeshComponent* meshComponent = new CMeshComponent();
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
 		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
@@ -20,4 +20,8 @@ CScreenPolygon2D::CScreenPolygon2D(const std::string& vertexShaderName, const st
 }
 CScreenPolygon2D::~CScreenPolygon2D()
 {
+}
+void CScreenPolygon2D::Update()
+{
+	CGameObject::Update();
 }

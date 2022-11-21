@@ -24,10 +24,6 @@ public:
 	CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	virtual ~CPlane();
 protected:
-	CTexture2D*		m_AlbedoTexture;
-	CTexture2D*		m_NormalTexture;
-	CTexture2D*		m_PropertyTexture;
-protected:
-	std::weak_ptr<class CMeshComponent>	m_PlaneMesh;
-	CPlaneMeshInfo						m_PlaneMeshInfo;
+	class CMeshComponent*		m_MeshComponent;
+	CPlaneMeshInfo				m_PlaneMeshInfo;
 };

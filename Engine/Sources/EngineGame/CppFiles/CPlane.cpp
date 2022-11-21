@@ -16,9 +16,7 @@
 CPlane::CPlane()
 {
 	this->AddNewTransform();
-	this->m_AlbedoTexture	= NULL;
-	this->m_NormalTexture	= NULL;
-	this->m_PropertyTexture	= NULL;
+	this->m_MeshComponent	= NULL;
 	this->m_PlaneMeshInfo.Length		= 1.f;
 	this->m_PlaneMeshInfo.UV			= 1.f;
 	this->m_PlaneMeshInfo.VertexCount	= 2;
@@ -26,9 +24,7 @@ CPlane::CPlane()
 CPlane::CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
 {
 	this->AddNewTransform();
-	this->m_AlbedoTexture	= NULL;
-	this->m_NormalTexture	= NULL;
-	this->m_PropertyTexture = NULL;
+	this->m_MeshComponent	= NULL;
 	this->m_PlaneMeshInfo.Length		= length;
 	this->m_PlaneMeshInfo.UV			= uv;
 	this->m_PlaneMeshInfo.VertexCount	= vertexCount;
@@ -38,13 +34,12 @@ CPlane::~CPlane()
 }
 void CPlane::Init()
 {
+	if (!this->HasMeshComponent() && !this->HasMeshRendererComponent())
 	{
-		std::shared_ptr<CMeshRendererComponent> meshRendererComponent(std::shared_ptr<CMeshRendererComponent>(new CMeshRendererComponent()));
-		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
+		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
+		CMeshComponent* meshComponent = new CMeshComponent();
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
-
-		this->m_PlaneMesh = std::weak_ptr<CMeshComponent>(meshComponent);
 
 		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
@@ -52,18 +47,18 @@ void CPlane::Init()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
+		meshRendererComponent->SetMaterialTextures(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga"), CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE), CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE));
 		meshRendererComponent->SetMeshComponent(meshComponent);
+
+		this->m_MeshComponent = meshComponent;
 	}
 	this->SetMeshInfo(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
-
-	this->m_AlbedoTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga");
-	this->m_NormalTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE);
-	this->m_PropertyTexture = CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE);
 
 	CGameObject::Init();
 }
 void CPlane::Update()
 {
+	CGameObject::Update();
 }
 void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
 {
@@ -71,17 +66,15 @@ void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Ve
 	this->m_PlaneMeshInfo.UV = uv;
 	this->m_PlaneMeshInfo.VertexCount = vertexCount;
 
-	std::shared_ptr<CMeshComponent> mesh(this->m_PlaneMesh.lock());
-
 	CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-	mesh->SetMesh(CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u));
+	this->m_MeshComponent->SetMesh(CMeshManager::LoadPlaneMesh(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV, desc, 4u));
 	{
 		CustomType::Vector3 boundMin, boundMax;
-		mesh->GetMinMaxBounding(boundMin, boundMax);
+		this->m_MeshComponent->GetMinMaxBounding(boundMin, boundMax);
 		{
 			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
 				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };

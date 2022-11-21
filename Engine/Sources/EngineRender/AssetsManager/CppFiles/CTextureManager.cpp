@@ -7,6 +7,7 @@
 CTextureManager* CTextureManager::m_TextureManager = new CTextureManager();
 void CTextureManager::ShutDown()
 {
+	CTextureManager::ClearTexture2DData();
 	delete m_TextureManager;
 }
 void CTextureManager::ClearTexture2DData()

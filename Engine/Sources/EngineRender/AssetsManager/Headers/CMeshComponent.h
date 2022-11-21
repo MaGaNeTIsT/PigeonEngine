@@ -8,21 +8,21 @@ template<typename IndexType>
 class CBaseMesh
 {
 public:
-	void GetMinMaxBounding(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax)
+	void GetMinMaxBounding(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax)const
 	{
 		boundMin = this->m_BoundMin;
 		boundMax = this->m_BoundMax;
 	}
 public:
-	Microsoft::WRL::ComPtr<ID3D11Buffer>						GetVertexBuffer() { return (this->m_VertexBuffer); }
-	Microsoft::WRL::ComPtr<ID3D11Buffer>						GetIndexBuffer() { return (this->m_IndexBuffer); }
+	Microsoft::WRL::ComPtr<ID3D11Buffer>						GetVertexBuffer()const { return (this->m_VertexBuffer); }
+	Microsoft::WRL::ComPtr<ID3D11Buffer>						GetIndexBuffer()const { return (this->m_IndexBuffer); }
 	const std::vector<CustomStruct::CRenderInputLayoutDesc>&	GetInputLayoutDesc()const { return (this->m_InputLayoutDesc); }
 	const std::vector<CustomStruct::CSubMeshInfo>&				GetSubMeshInfo() const { return (this->m_SubMeshInfo); }
 	const void*		GetVertexData() const { return (this->m_VertexData); }
-	UINT			GetVertexStride() { return (this->m_VertexStride); }
-	UINT			GetVertexCount() { return (this->m_VertexCount); }
-	UINT			GetIndexCount() { return (this->m_IndexCount); }
-	BOOL			HasVertexData() { return (this->m_VertexData != nullptr); }
+	UINT			GetVertexStride()const { return (this->m_VertexStride); }
+	UINT			GetVertexCount()const { return (this->m_VertexCount); }
+	UINT			GetIndexCount()const { return (this->m_IndexCount); }
+	BOOL			HasVertexData()const { return (this->m_VertexData != nullptr); }
 public:
 	CBaseMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vdata, const UINT& vNum, const std::vector<IndexType>& idata, const std::vector<CustomStruct::CSubMeshInfo>& submeshInfo, Microsoft::WRL::ComPtr<ID3D11Buffer> vbuffer, Microsoft::WRL::ComPtr<ID3D11Buffer> ibuffer, const CustomType::Vector3& boundMin, const CustomType::Vector3& boundMax)
 	{
@@ -72,100 +72,110 @@ class CMeshComponent : public CBaseComponent
 public:
 	void GetMinMaxBounding(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax)const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			std::shared_ptr<CBaseMesh<UINT>> mesh(this->m_Mesh.lock());
-			mesh->GetMinMaxBounding(boundMin, boundMax);
+			this->m_Mesh->GetMinMaxBounding(boundMin, boundMax);
+		}
+		else
+		{
+			boundMin = 0.f;
+			boundMax = 0.f;
 		}
 	}
-	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer()
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetVertexBuffer()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetVertexBuffer());
+			return (this->m_Mesh->GetVertexBuffer());
 		}
 		return nullptr;
 	}
-	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer()
+	Microsoft::WRL::ComPtr<ID3D11Buffer> GetIndexBuffer()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetIndexBuffer());
+			return (this->m_Mesh->GetIndexBuffer());
 		}
 		return nullptr;
 	}
 	std::vector<CustomStruct::CRenderInputLayoutDesc> GetInputLayoutDesc()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetInputLayoutDesc());
+			return (this->m_Mesh->GetInputLayoutDesc());
 		}
 		std::vector<CustomStruct::CRenderInputLayoutDesc> layout;
 		return layout;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> GetSubMeshInfo()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetSubMeshInfo());
+			return (this->m_Mesh->GetSubMeshInfo());
 		}
 		std::vector<CustomStruct::CSubMeshInfo> subMesh;
 		return subMesh;
 	}
 	const void* GetVertexData()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetVertexData());
+			return (this->m_Mesh->GetVertexData());
 		}
-		return nullptr;
+		return NULL;
 	}
-	UINT GetVertexStride()
+	UINT GetVertexStride()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetVertexStride());
-		}
-		return 0u;
-	}
-	UINT GetVertexCount()
-	{
-		if (!this->m_Mesh.expired())
-		{
-			return (this->m_Mesh.lock()->GetVertexCount());
+			return (this->m_Mesh->GetVertexStride());
 		}
 		return 0u;
 	}
-	UINT GetIndexCount()
+	UINT GetVertexCount()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->GetIndexCount());
+			return (this->m_Mesh->GetVertexCount());
 		}
 		return 0u;
 	}
-	BOOL HasVertexData()
+	UINT GetIndexCount()const
 	{
-		if (!this->m_Mesh.expired())
+		if (this->HasMesh())
 		{
-			return (this->m_Mesh.lock()->HasVertexData());
+			return (this->m_Mesh->GetIndexCount());
+		}
+		return 0u;
+	}
+	BOOL HasVertexData()const
+	{
+		if (this->HasMesh())
+		{
+			return (this->m_Mesh->HasVertexData());
 		}
 		return FALSE;
 	}
 public:
-	void SetMesh(std::weak_ptr<CBaseMesh<UINT>> mesh)
+	void SetMesh(const CBaseMesh<UINT>* mesh)
 	{
-		this->m_Mesh.reset();
-		this->m_Mesh = mesh;
+		if (mesh != NULL)
+		{
+			this->m_Mesh = mesh;
+		}
+	}
+	BOOL HasMesh()const
+	{
+		return (this->m_Mesh != NULL);
 	}
 	virtual void Init()override {}
 	virtual void Uninit()override {}
 protected:
-	std::weak_ptr<CBaseMesh<UINT>>	m_Mesh;
+	const CBaseMesh<UINT>* m_Mesh;
 public:
 	CMeshComponent() : CBaseComponent(TRUE, FALSE, FALSE)
 	{
-		m_Mesh.reset();
+		m_Mesh = NULL;
 	}
 	virtual ~CMeshComponent() {}
 };

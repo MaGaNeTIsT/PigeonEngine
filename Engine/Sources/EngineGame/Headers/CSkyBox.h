@@ -29,14 +29,14 @@ protected:
 public:
 	CSkyBox();
 	CSkyBox(const CSkyBox& skyBox);
-	virtual ~CSkyBox() {}
+	virtual ~CSkyBox();
 protected:
 	SkyBoxInfo									m_SkyBoxInfo;
-	std::shared_ptr<class CPixelShader>			m_PixelShader;
+	class CVertexShader*						m_VertexShader;
+	class CPixelShader*							m_PixelShader;
 	class CTextureCube*							m_CubeMap;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
 	SkyBoxConstantBuffer						m_ConstantData;
 protected:
-	static std::weak_ptr<CBaseMesh<UINT>>		m_FullScreenMesh;
-	static std::shared_ptr<class CVertexShader>	m_VertexShader;
+	static const CBaseMesh<UINT>*				m_FullScreenMesh;
 };

@@ -8,8 +8,8 @@ CSceneGameObject::CSceneGameObject()
 {
 	this->AddNewTransform();
 	{
-		std::shared_ptr<CMeshRendererComponent> meshRendererComponent(std::shared_ptr<CMeshRendererComponent>(new CMeshRendererComponent()));
-		std::shared_ptr<CMeshComponent> meshComponent(std::shared_ptr<CMeshComponent>(new CMeshComponent()));
+		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
+		CMeshComponent* meshComponent = new CMeshComponent();
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
 		CustomStruct::CRenderInputLayoutDesc desc[4u] = {

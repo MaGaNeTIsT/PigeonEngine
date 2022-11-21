@@ -9,9 +9,9 @@ public:
 	static const CShaderManager* const GetShaderManager() { return m_ShaderManager; }
 	static void ShutDown();
 public:
-	static std::shared_ptr<class CVertexShader>		LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum);
-	static std::shared_ptr<class CPixelShader>		LoadPixelShader(const std::string& name);
-	static std::shared_ptr<class CComputeShader>	LoadComputeShader(const std::string& name);
+	static class CVertexShader*		LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum);
+	static class CPixelShader*		LoadPixelShader(const std::string& name);
+	static class CComputeShader*	LoadComputeShader(const std::string& name);
 public:
 	static void		ClearVertexShaderData();
 	static void		ClearPixelShaderData();

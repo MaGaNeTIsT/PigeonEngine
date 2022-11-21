@@ -21,7 +21,7 @@
 //
 //};
 
-class CScene : protected std::enable_shared_from_this<CScene>
+class CScene
 {
 public:
 	enum SceneLayout
@@ -44,7 +44,7 @@ public:
 	T* AddCamera()
 	{
 		ULONGLONG id;
-		if (this->m_MainCamera)
+		if (this->m_MainCamera != NULL)
 		{
 			id = this->m_MainCamera->GetUniqueID();
 			this->m_MainCamera->Uninit();
@@ -55,7 +55,7 @@ public:
 			delete (this->m_MainCamera);
 		}
 		this->m_MainCamera = new T();
-		this->m_MainCamera->SetScene(this->weak_from_this());
+		this->m_MainCamera->SetScene(this);
 		this->m_MainCamera->Active();
 		this->m_MainCamera->Init();
 		id = this->m_MainCamera->GetUniqueID();
@@ -66,7 +66,7 @@ public:
 	T* AddLight()
 	{
 		CGameObject* gameObject = new T();
-		gameObject->SetScene(this->weak_from_this());
+		gameObject->SetScene(this);
 		gameObject->Active();
 		gameObject->Init();
 		ULONGLONG id = gameObject->GetUniqueID();
@@ -82,7 +82,7 @@ public:
 			return NULL;
 		}
 		CGameObject* gameObject = new T();
-		gameObject->SetScene(this->weak_from_this());
+		gameObject->SetScene(this);
 		gameObject->Active();
 		gameObject->Init();
 		ULONGLONG id = gameObject->GetUniqueID();

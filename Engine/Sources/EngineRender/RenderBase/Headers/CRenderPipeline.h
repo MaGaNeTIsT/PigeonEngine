@@ -87,7 +87,7 @@ protected:
 	CustomType::Vector2Int					m_GlobalBufferSize;
 	CustomType::Vector2Int					m_ShadowBufferSize;
 protected:
-	std::weak_ptr<CBaseMesh<UINT>>			m_FullScreenPolygon;
+	const CBaseMesh<UINT>*					m_FullScreenPolygon;
 protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneColor;
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneDepth;
@@ -114,11 +114,11 @@ protected:
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 public:
-	static class CTexture2D*					GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
-	static std::shared_ptr<class CPixelShader>	GetDefaultEmptyPS();
+	static class CTexture2D*							GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
+	static std::shared_ptr<class CPixelShader>			GetDefaultEmptyPS();
 protected:
-	static class CTexture2D* m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
-	static std::shared_ptr<class CPixelShader> m_DefaultEmptyPS;
+	static class CTexture2D*							m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
+	static std::shared_ptr<class CPixelShader>			m_DefaultEmptyPS;
 public:
 	CRenderPipeline();
 	virtual ~CRenderPipeline();

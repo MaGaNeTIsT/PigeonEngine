@@ -4,49 +4,48 @@
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CObjectManager.h"
 
-class CTransform : public CObjectBase, protected std::enable_shared_from_this<CTransform>
+class CTransform : public CObjectBase
 {
 public:
-	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale);
-	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition);
-	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Quaternion& worldRotation);
-	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation);
-	void	InitTransform(std::weak_ptr<class CGameObject> gameObject, const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale);
+	void	InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale);
+	void	InitTransform(const CustomType::Vector3& worldPosition);
+	void	InitTransform(const CustomType::Quaternion& worldRotation);
+	void	InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation);
+	void	InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale);
 public:
-	std::weak_ptr<class CGameObject>					GetGameObject();
-	std::weak_ptr<CTransform>							GetParent();
-	UINT												GetChildrenNum();
-	std::weak_ptr<CTransform>							GetChildByUniqueID(const ULONGLONG& id);
-	std::vector<std::weak_ptr<CTransform>>				GetChildrenList();
-	std::map<ULONGLONG, std::weak_ptr<CTransform>>		GetChildrenMap();
+	const class CGameObject*					GetGameObject()const;
+	const CTransform*							GetParent()const;
+	UINT										GetChildrenNum()const;
+	const CTransform*							GetChildByUniqueID(const ULONGLONG& id)const;
+	std::vector<const CTransform*>				GetChildrenList()const;
+	std::map<ULONGLONG, const CTransform*>		GetChildrenMap()const;
 public:
-	void	SetGameObject(std::weak_ptr<class CGameObject> gameObject);
-	void	SetParent(std::shared_ptr<CTransform> parent);
-	void	AddChild(std::shared_ptr<CTransform> child);
+	void	SetParent(const CTransform* parent)const;
+	void	AddChild(const CTransform* child)const;
 public:
-	void	RemoveParent();
-	void	RemoveChild(std::shared_ptr<CTransform> child);
-	void	RemoveChildByUniqueID(const ULONGLONG& id);
-	void	RemoveAllChildren();
+	void	RemoveParent()const;
+	void	RemoveChild(const CTransform* child)const;
+	void	RemoveChildByUniqueID(const ULONGLONG& id)const;
+	void	RemoveAllChildren()const;
 public:
-	BOOL	IsBelongGameObject(const class CGameObject* transform);
-	BOOL	HasGameObject();
-	BOOL	HasParent();
-	BOOL	HasChild();
-	BOOL	IsParent(const CTransform* parent);
-	BOOL	IsChild(const CTransform* child);
+	BOOL	IsBelongGameObject(const class CGameObject* transform)const;
+	BOOL	HasGameObject()const;
+	BOOL	HasParent()const;
+	BOOL	HasChild()const;
+	BOOL	IsParent(const CTransform* parent)const;
+	BOOL	IsChild(const CTransform* child)const;
 protected:
-	void	BaseAddChild(std::shared_ptr<CTransform> child);
-	void	BaseRemoveChildByUniqueID(const ULONGLONG& id);
-	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id);
-	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, std::weak_ptr<CTransform>& output);
-	void	ConnectParentAndChild(std::weak_ptr<CTransform> parent, std::weak_ptr<CTransform> child);
-	void	DisconnectParentAndChild(std::weak_ptr<CTransform> parent, std::weak_ptr<CTransform> child);
-	void	CalculateCurrentLocalTransform(std::shared_ptr<CTransform> newParent);
+	void	BaseAddChild(const CTransform* child)const;
+	void	BaseRemoveChildByUniqueID(const ULONGLONG& id)const;
+	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id)const;
+	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, const CTransform*& output)const;
+	void	ConnectParentAndChild(const CTransform* parent, const CTransform* child)const;
+	void	DisconnectParentAndChild(const CTransform* parent, const CTransform* child)const;
+	void	CalculateCurrentLocalTransform(const CTransform* newParent)const;
 protected:
-	std::weak_ptr<class CGameObject>					m_GameObject;
-	std::weak_ptr<CTransform>							m_Parent;
-	std::map<ULONGLONG, std::weak_ptr<CTransform>>		m_Children;
+	mutable const class CGameObject*					m_GameObject;
+	mutable const CTransform*							m_Parent;
+	mutable std::map<ULONGLONG, const CTransform*>		m_Children;
 public:
 	const CustomType::Vector3&		GetLocalPosition()const;
 	const CustomType::Quaternion&	GetLocalRotation()const;
@@ -60,26 +59,28 @@ public:
 	void	SetWorldRotation(const CustomType::Quaternion& worldRotation);
 	void	SetWorldScale(const CustomType::Vector3& worldScale);
 public:
-	CustomType::Vector3		GetWorldPosition();
-	CustomType::Quaternion	GetWorldRotation();
-	CustomType::Vector3		GetWorldScale();
+	CustomType::Vector3		GetWorldPosition()const;
+	CustomType::Quaternion	GetWorldRotation()const;
+	CustomType::Vector3		GetWorldScale()const;
 protected:
-	void	RecursionWorldPosition(const std::weak_ptr<CTransform> parent, CustomType::Vector3& position);
-	void	RecursionWorldRotation(const std::weak_ptr<CTransform> parent, CustomType::Quaternion& rotation);
-	void	RecursionWorldScale(const std::weak_ptr<CTransform> parent, CustomType::Vector3& scale);
+	void	RecursionWorldPosition(const CTransform* parent, CustomType::Vector3& position)const;
+	void	RecursionWorldRotation(const CTransform* parent, CustomType::Quaternion& rotation)const;
+	void	RecursionWorldScale(const CTransform* parent, CustomType::Vector3& scale)const;
 protected:
-	CustomType::Vector3			m_LocalPosition;
-	CustomType::Quaternion		m_LocalRotation;
-	CustomType::Vector3			m_LocalScale;
+	mutable CustomType::Vector3			m_LocalPosition;
+	mutable CustomType::Quaternion		m_LocalRotation;
+	mutable CustomType::Vector3			m_LocalScale;
 public:
-	CustomType::Vector3		GetForwardVector();
-	CustomType::Vector3		GetUpVector();
-	CustomType::Vector3		GetRightVector();
-	CustomType::Matrix4x4	GetLocalToWorldMatrix();
-	CustomType::Matrix4x4	GetWorldToLocalMatrix();
+	CustomType::Vector3		GetForwardVector()const;
+	CustomType::Vector3		GetUpVector()const;
+	CustomType::Vector3		GetRightVector()const;
+	CustomType::Matrix4x4	GetLocalToWorldMatrix()const;
+	CustomType::Matrix4x4	GetWorldToLocalMatrix()const;
 public:
 	CTransform();
 	virtual ~CTransform() {}
+protected:
+	friend class CGameObject;
 };
 
 class CBaseComponent : public CObjectBase
@@ -101,23 +102,23 @@ protected:
 	BOOL	m_NeedFixedUpdate;
 	BOOL	m_Active;
 public:
-	std::weak_ptr<class CGameObject> GetGameObject() { return (this->m_GameObject); }
-	void SetGameObject(std::weak_ptr<class CGameObject> gameObject)
+	const class CGameObject* GetGameObject() { return (this->m_GameObject); }
+	void SetGameObject(const class CGameObject* gameObject)
 	{
-		if (!gameObject.expired())
+		if (gameObject != NULL)
 		{
 			this->m_GameObject = gameObject;
 		}
 	}
 protected:
-	std::weak_ptr<class CGameObject>	m_GameObject;
+	const class CGameObject*	m_GameObject;
 public:
 	CBaseComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate)
 	{
 		this->m_NeedUpdate		= needUpdate;
 		this->m_NeedFixedUpdate	= needFixedUpdate;
 		this->m_Active			= active;
-		this->m_GameObject.reset();
+		this->m_GameObject		= NULL;
 	}
 	virtual ~CBaseComponent() {}
 };

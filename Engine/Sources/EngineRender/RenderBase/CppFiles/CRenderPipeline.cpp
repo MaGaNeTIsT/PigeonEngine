@@ -42,22 +42,22 @@ CRenderPipeline::CRenderPipeline()
 	}
 	if (CRenderPipeline::m_DefaultEmptyPS == nullptr)
 	{
-		CRenderPipeline::m_DefaultEmptyPS = CShaderManager::LoadPixelShader(ENGINE_SHADER_EMPTY_PS);
+		CRenderPipeline::m_DefaultEmptyPS = std::shared_ptr<CPixelShader>(CShaderManager::LoadPixelShader(ENGINE_SHADER_EMPTY_PS));
 	}
 	if (CRenderPipeline::m_FullScreenPolygonVS == nullptr)
 	{
 		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-		CRenderPipeline::m_FullScreenPolygonVS = CShaderManager::LoadVertexShader(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, desc, 2u);
+		CRenderPipeline::m_FullScreenPolygonVS = std::shared_ptr<CVertexShader>(CShaderManager::LoadVertexShader(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, desc, 2u));
 	}
 	if (CRenderPipeline::m_ScreenPolygonShader == nullptr)
 	{
-		CRenderPipeline::m_ScreenPolygonShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_SCREEN_POLYGON_2D_PS);
+		CRenderPipeline::m_ScreenPolygonShader = std::shared_ptr<CPixelShader>(CShaderManager::LoadPixelShader(ENGINE_SHADER_SCREEN_POLYGON_2D_PS));
 	}
 	if (CRenderPipeline::m_DirectLightShader == nullptr)
 	{
-		CRenderPipeline::m_DirectLightShader = CShaderManager::LoadPixelShader(ENGINE_SHADER_DIRECT_LIGHT_PS);
+		CRenderPipeline::m_DirectLightShader = std::shared_ptr<CPixelShader>(CShaderManager::LoadPixelShader(ENGINE_SHADER_DIRECT_LIGHT_PS));
 	}
 	if (CRenderPipeline::m_SkyBox == nullptr)
 	{
@@ -85,7 +85,7 @@ CRenderPipeline::CRenderPipeline()
 	m_FrameIndex		= 0;
 	m_GlobalBufferSize	= CustomType::Vector2Int(0, 0);
 	m_ShadowBufferSize	= CustomType::Vector2Int(0, 0);
-	m_FullScreenPolygon.reset();
+	m_FullScreenPolygon = NULL;
 }
 CRenderPipeline::~CRenderPipeline()
 {
@@ -424,7 +424,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 					break;
@@ -437,7 +437,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
 				}
@@ -449,7 +449,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
 				}
@@ -554,7 +554,8 @@ void CRenderPipeline::Render()
 								meshRenderer->DrawExtra();
 							}
 						}
-					}});
+					}
+					});
 			}
 		}
 	}
@@ -587,22 +588,26 @@ void CRenderPipeline::Render()
 						meshRenderer->DrawExtra();
 					}
 				}
-			}});
+			}
+			});
 	}
 
 	{
 		//HZB GTAO pass
 		CGPUProfilerManager::AddPass("HZB_Pass", m_FrameIndex, [&]() {
 			CRenderDevice::SetNoRenderTarget();
-			m_HZBPass->ComputeHZB(m_RTSceneDepth.ShaderResourceView); });
+			m_HZBPass->ComputeHZB(m_RTSceneDepth.ShaderResourceView);
+			});
 		CGPUProfilerManager::AddPass("GTAO_Pass", m_FrameIndex, [&]() {
-			m_GTAOPass->ComputeGTAO(m_RTSceneDepth.ShaderResourceView); });
+			m_GTAOPass->ComputeGTAO(m_RTSceneDepth.ShaderResourceView);
+			});
 	}
 
 	{
 		//Occlusion culling pass
 		CGPUProfilerManager::AddPass("Occlusion_Culling_Pass", m_FrameIndex, [&]() {
-			m_GPUCulling->ComputeCulling(m_FrameIndex); });
+			m_GPUCulling->ComputeCulling(m_FrameIndex);
+			});
 	}
 
 	{
@@ -625,7 +630,8 @@ void CRenderPipeline::Render()
 				{
 					meshRenderer->Draw();
 				}
-			}});
+			}
+			});
 	}
 
 	{
@@ -653,7 +659,8 @@ void CRenderPipeline::Render()
 					CRenderDevice::BindPSShaderResourceView(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView(), ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
 				}
 			}
-			DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader); });
+			DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader);
+			});
 	}
 
 	{
@@ -669,13 +676,15 @@ void CRenderPipeline::Render()
 				{
 					meshRenderer->Draw();
 				}
-			}});
+			}
+			});
 	}
 
 	{
 		//Sky box pass
 		CGPUProfilerManager::AddPass("Sky_Box_Pass", m_FrameIndex, [&]() {
-			m_SkyBox->Draw(); });
+			m_SkyBox->Draw();
+			});
 	}
 
 	{
@@ -689,7 +698,8 @@ void CRenderPipeline::Render()
 				{
 					meshRenderer->Draw();
 				}
-			}});
+			}
+			});
 	}
 
 	{
@@ -708,7 +718,8 @@ void CRenderPipeline::Render()
 			}
 			m_DebugScreen->Draw();
 			m_HZBPass->DrawDebug();
-			m_GTAOPass->DrawDebug(); });
+			m_GTAOPass->DrawDebug();
+			});
 	}
 
 	{
@@ -757,10 +768,9 @@ void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>&
 {
 	m_FullScreenPolygonVS->Bind();
 	shader->Bind();
-	std::shared_ptr<CBaseMesh<UINT>> sharedPtrFullScreenPolygon(m_FullScreenPolygon.lock());
-	CRenderDevice::SetVertexBuffer(sharedPtrFullScreenPolygon->GetVertexBuffer(), sharedPtrFullScreenPolygon->GetVertexStride());
-	CRenderDevice::SetIndexBuffer(sharedPtrFullScreenPolygon->GetIndexBuffer());
-	CRenderDevice::DrawIndexed(sharedPtrFullScreenPolygon->GetIndexCount());
+	CRenderDevice::SetVertexBuffer(m_FullScreenPolygon->GetVertexBuffer(), m_FullScreenPolygon->GetVertexStride());
+	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
+	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
 }
 void CRenderPipeline::PreparePerFrameRender()
 {

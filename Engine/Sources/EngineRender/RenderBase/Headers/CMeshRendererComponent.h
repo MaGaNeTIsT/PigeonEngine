@@ -22,13 +22,18 @@ public:
 public:
 	RenderTypeEnum	GetRenderType()const { return this->m_RenderType; }
 	void			SetRenderType(RenderTypeEnum type) { this->m_RenderType = type; }
+	BOOL			HasMesh()const { return (this->m_MeshComponent != NULL); }
+	BOOL			HasVertexShader()const { return (this->m_VertexShader != NULL); }
+	BOOL			HasPixelShader()const { return (this->m_PixelShader != NULL); }
 public:
 	virtual void	InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
-	void			SetMeshComponent(std::shared_ptr<CMeshComponent> meshComponent);
-	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
+	void			SetMaterialTextures(class CTexture2D* albedoTexture, class CTexture2D* normalTexture, class CTexture2D* propertyTexture);
+	void			SetMeshComponent(const CMeshComponent* meshComponent);
+	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)const;
 	virtual void	UploadConstantBuffer(const void* data);
 	void			BindConstantBuffer(const UINT& startSlot);
 public:
+	virtual void	Update()const override;
 	virtual void	Draw()const override;
 	virtual void	DrawExtra()const override;
 private:
@@ -39,17 +44,21 @@ private:
 	virtual void	Bind(const BOOL& needPixelShader = TRUE)const;
 public:
 	CMeshRendererComponent();
-	CMeshRendererComponent(const CMeshRendererComponent& renderer);
 	virtual ~CMeshRendererComponent();
 protected:
-	std::weak_ptr<CMeshComponent>						m_MeshComponent;
+	mutable BOOL										m_CurrentFrameUpload;
+	class CTexture2D*									m_AlbedoTexture;
+	class CTexture2D*									m_NormalTexture;
+	class CTexture2D*									m_PropertyTexture;
+protected:
+	const CMeshComponent*								m_MeshComponent;
 	RenderTypeEnum										m_RenderType;
 	std::string											m_VertexShaderName;
 	std::string											m_PixelShaderName;
-	std::shared_ptr<class CVertexShader>				m_VertexShader;
-	std::shared_ptr<class CPixelShader>					m_PixelShader;
+	class CVertexShader*								m_VertexShader;
+	class CPixelShader*									m_PixelShader;
 	std::vector<CustomStruct::CRenderInputLayoutDesc>	m_InputLayoutDesc;
-	RenderPerDrawInfo									m_PerDrawInfo;
+	mutable RenderPerDrawInfo							m_PerDrawInfo;
 	CustomStruct::CRenderBufferDesc						m_ConstantBufferDesc;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_ConstantBuffer;
 };
