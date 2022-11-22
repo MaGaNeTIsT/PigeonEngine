@@ -1,4 +1,3 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CComponent.h"
 #include "../Headers/CGameObject.h"
 
@@ -9,6 +8,10 @@ CTransform::CTransform()
 	this->m_LocalPosition	= CustomType::Vector3::Zero();
 	this->m_LocalRotation	= CustomType::Quaternion::Identity();
 	this->m_LocalScale		= 1.f;
+#if _DEVELOPMENT_EDITOR
+	this->m_RealTimeChangeValue = TRUE;
+	this->m_EditorRotation[0] = 0.f; this->m_EditorRotation[1] = 0.f; this->m_EditorRotation[2] = 0.f;
+#endif
 }
 void CTransform::InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale)
 {
@@ -400,3 +403,75 @@ CustomType::Matrix4x4 CTransform::GetWorldToLocalMatrix()const
 {
 	return (this->GetLocalToWorldMatrix().Inverse());
 }
+#if _DEVELOPMENT_EDITOR
+void CTransform::SelectedEditorUpdate()
+{
+	bool realTimeChange = this->m_RealTimeChangeValue;
+	BOOL needChangeTransform = FALSE;
+	FLOAT localPosition[3], localScale[3];
+	{
+		CustomType::Vector3 localPositionVector(this->GetLocalPosition());
+		CustomType::Vector3 localScaleVector(this->GetLocalScale());
+		localPosition[0] = localPositionVector.X(); localPosition[1] = localPositionVector.Y(); localPosition[2] = localPositionVector.Z();
+		localScale[0] = localScaleVector.X(); localScale[1] = localScaleVector.Y(); localScale[2] = localScaleVector.Z();
+	}
+
+	{
+		ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+		if (ImGui::TreeNode("Transform"))
+		{
+			ImGui::Checkbox("IsRealTimeChange", &realTimeChange);
+			ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(320, 135), ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+			ImGui::InputFloat3("LocalPosition", localPosition, "%.2f");
+			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.5f, -360.f, 360.f, "%.2f");
+			ImGui::InputFloat3("LocalScale", localScale, "%.2f");
+			{
+				FLOAT worldPosition[3], worldRotation[4], worldScale[3];
+				CustomType::Vector3 worldPositionVector(this->GetWorldPosition());
+				CustomType::Quaternion worldRotationVector(this->GetWorldRotation());
+				CustomType::Vector3 worldScaleVector(this->GetWorldScale());
+				worldPosition[0] = worldPositionVector.X(); worldPosition[1] = worldPositionVector.Y(); worldPosition[2] = worldPositionVector.Z();
+				worldRotation[0] = worldRotationVector.X(); worldRotation[1] = worldRotationVector.Y(); worldRotation[2] = worldRotationVector.Z(); worldRotation[3] = worldRotationVector.W();
+				worldScale[0] = worldScaleVector.X(); worldScale[1] = worldScaleVector.Y(); worldScale[2] = worldScaleVector.Z();
+				ImGui::Text("World position : %.2f, %.2f, %.2f", worldPosition[0], worldPosition[1], worldPosition[2]);
+				ImGui::Text("World rotation : %.2f, %.2f, %.2f, %.2f", worldRotation[0], worldRotation[1], worldRotation[2], worldRotation[3]);
+				ImGui::Text("World scale    : %.2f, %.2f, %.2f", worldScale[0], worldScale[1], worldScale[2]);
+			}
+			ImGui::EndChild();
+			if (ImGui::Button("Apply") || realTimeChange)
+			{
+				needChangeTransform = TRUE;
+			}
+			if (ImGui::Button("ResetRotation"))
+			{
+				needChangeTransform = TRUE;
+				{
+					CustomType::Vector3 localPositionVector(this->GetLocalPosition());
+					CustomType::Vector3 localScaleVector(this->GetLocalScale());
+					localPosition[0] = localPositionVector.X(); localPosition[1] = localPositionVector.Y(); localPosition[2] = localPositionVector.Z();
+					localScale[0] = localScaleVector.X(); localScale[1] = localScaleVector.Y(); localScale[2] = localScaleVector.Z();
+				}
+				this->m_EditorRotation[0] = 0.f; this->m_EditorRotation[1] = 0.f; this->m_EditorRotation[2] = 0.f;
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	this->m_RealTimeChangeValue = realTimeChange;
+	if (needChangeTransform)
+	{
+		this->SetLocalPosition(CustomType::Vector3(localPosition[0], localPosition[1], localPosition[2]));
+		this->SetLocalScale(CustomType::Vector3(localScale[0], localScale[1], localScale[2]));
+		{
+			CustomType::Quaternion rotation(CustomType::Vector3::XVector(), this->m_EditorRotation[0] * CustomType::CMath::GetDegToRad());
+			{
+				CustomType::Quaternion rY(CustomType::Vector3::YVector(), this->m_EditorRotation[1] * CustomType::CMath::GetDegToRad());
+				rotation = CustomType::Quaternion::MultiplyQuaternion(rotation, rY);
+				CustomType::Quaternion rZ(CustomType::Vector3::ZVector(), this->m_EditorRotation[2] * CustomType::CMath::GetDegToRad());
+				rotation = CustomType::Quaternion::MultiplyQuaternion(rotation, rZ);
+			}
+			this->SetLocalRotation(rotation);
+		}
+	}
+}
+#endif

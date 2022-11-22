@@ -1,4 +1,3 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CGameObject.h"
 #include "../Headers/CComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
@@ -665,6 +664,18 @@ const CBaseComponent* CGameObject::GetComponentByComponentID(const ULONGLONG& id
 	}
 	return NULL;
 }
+CBaseComponent* CGameObject::BaseGetComponentByComponentID(const ULONGLONG& id)const
+{
+	if (this->HasComponent())
+	{
+		auto& element = this->m_Components.find(id);
+		if (element != this->m_Components.end())
+		{
+			return (element->second);
+		}
+	}
+	return NULL;
+}
 BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)const
 {
 	if (component != NULL && this->HasComponent())
@@ -766,3 +777,56 @@ void CGameObject::FixedUpdate()
 		}
 	}
 }
+#if _DEVELOPMENT_EDITOR
+void CGameObject::SelectedEditorUpdate_RenderBounding()
+{
+	if (ImGui::TreeNode("RenderBounding"))
+	{
+		FLOAT boxBoundMin[3] = { 0.f, 0.f, 0.f }, boxBoundMax[3] = { 0.f, 0.f, 0.f };
+		if (this->HasRenderBoundingBox())
+		{
+			CustomType::Vector3 boundMin(this->GetRenderLocalBoundingBox()->Anchor), boundMax(this->GetRenderLocalBoundingBox()->Dimensions);
+			boxBoundMin[0] = boundMin.X(); boxBoundMin[1] = boundMin.Y(); boxBoundMin[2] = boundMin.Z();
+			boxBoundMax[0] = boundMax.X(); boxBoundMax[1] = boundMax.Y(); boxBoundMax[2] = boundMax.Z();
+		}
+		FLOAT sphereBoundAnchor[3] = { 0.f, 0.f, 0.f }, sphereBoundRadius = 0.f;
+		if (this->HasRenderBoundingSphere())
+		{
+			CustomType::Vector3 boundAnchor(this->GetRenderLocalBoundingSphere()->Anchor);
+			sphereBoundRadius = this->GetRenderLocalBoundingSphere()->Radius;
+			sphereBoundAnchor[0] = boundAnchor.X(); sphereBoundAnchor[1] = boundAnchor.Y(); sphereBoundAnchor[2] = boundAnchor.Z();
+		}
+		ImGui::Text("RenderBoundingBox & BoundingSphere");
+		ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(320, 105), ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+		ImGui::InputFloat3("Box Min", boxBoundMin);
+		ImGui::InputFloat3("Box Max", boxBoundMax);
+		ImGui::InputFloat3("Sphere Anchor", sphereBoundAnchor);
+		ImGui::InputFloat("Sphere Radius", &sphereBoundRadius);
+		ImGui::EndChild();
+		if (ImGui::Button("Apply"))
+		{
+			this->SetRenderLocalBoundingBox(CustomType::Vector3(boxBoundMin[0], boxBoundMin[1], boxBoundMin[2]), CustomType::Vector3(boxBoundMax[0], boxBoundMax[1], boxBoundMax[2]));
+			this->SetRenderLocalBoundingSphere(CustomType::Vector3(sphereBoundAnchor[0], sphereBoundAnchor[1], sphereBoundAnchor[2]), sphereBoundRadius);
+		}
+		ImGui::TreePop();
+	}
+}
+void CGameObject::SelectedEditorUpdate()
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SelectedEditorUpdate();
+	}
+	this->SelectedEditorUpdate_RenderBounding();
+	if (this->HasComponent())
+	{
+		for (const auto& component : this->m_Components)
+		{
+			if (component.second && component.second->IsActive())
+			{
+				component.second->SelectedEditorUpdate();
+			}
+		}
+	}
+}
+#endif

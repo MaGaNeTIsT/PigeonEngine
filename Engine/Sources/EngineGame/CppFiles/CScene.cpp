@@ -8,11 +8,14 @@
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
 
-#include "../../Development/Headers/CTestModel.h"
+#include "../../Development/Headers/CSceneGameObject.h"
 
 CScene::CScene()
 {
 	this->m_MainCamera = NULL;
+#if _DEVELOPMENT_EDITOR
+	this->m_SelectedObject = NULL;
+#endif
 }
 CScene::~CScene()
 {
@@ -57,12 +60,19 @@ void CScene::Init()
 	CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
+	CSceneGameObject* sceneGameObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
 
-	mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 5.f, -5.f));
-	mainLight->SetWorldRotation(CustomType::Quaternion(mainLight->GetRightVector(), 90.f * CustomType::CMath::GetDegToRad()));
-	terrainPlane->SetMeshInfo(100.f, 8, 3.f);
-	cube->SetWorldPosition(CustomType::Vector3(0.f, 50.f, 0.f));
-	cube->SetWorldScale(CustomType::Vector3(10.f, 10.f, 10.f));
+	mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 150.f, -50.f));
+	mainLight->SetWorldRotation(CustomType::Quaternion(mainLight->GetRightVector(), 60.f * CustomType::CMath::GetDegToRad()));
+	terrainPlane->SetMeshInfo(1000.f, 8, 3.f);
+	cube->SetWorldPosition(CustomType::Vector3(0.f, 0.f, 0.f));
+	cube->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+	sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 150.f, 0.f));
+	sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+
+#if _DEVELOPMENT_EDITOR
+	this->m_SelectedObject = sceneGameObject;
+#endif
 }
 void CScene::Uninit()
 {
@@ -102,17 +112,11 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
-	this->m_MainCamera->Update();
-
-	for (const auto& object : this->m_Lights)
+#if _DEVELOPMENT_EDITOR
 	{
-		object.second->Update();
-	}
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
-	{
-		for (const auto& object : this->m_GameObjects[i])
+		if (this->m_SelectedObject != NULL)
 		{
-			object.second->Update();
+			this->m_SelectedObject->SelectedEditorUpdate();
 		}
 	}
 
@@ -135,6 +139,21 @@ void CScene::Update()
 			index++;
 		}
 		ImGui::End();
+	}
+#endif
+
+	this->m_MainCamera->Update();
+
+	for (const auto& object : this->m_Lights)
+	{
+		object.second->Update();
+	}
+	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	{
+		for (const auto& object : this->m_GameObjects[i])
+		{
+			object.second->Update();
+		}
 	}
 }
 void CScene::FixedUpdate()

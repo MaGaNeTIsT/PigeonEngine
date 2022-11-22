@@ -31,6 +31,8 @@
 
 #include "../ThirdParty/imgui/imgui.h"
 
+#define _DEVELOPMENT_EDITOR									1
+
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
@@ -90,6 +92,14 @@
 #define ENGINE_SHADER_SKY_BOX_VS							("./Engine/Assets/EngineShaders/EngineSkyBoxVS.cso")
 #define ENGINE_SHADER_SKY_BOX_PS							("./Engine/Assets/EngineShaders/EngineSkyBoxPS.cso")
 
+#define ENGINE_MESH_MATERIAL_SPHERE_NAME					("./Engine/Assets/EngineModels/SceneModels/MaterialSphere/MaterialSphere.obj")
+#define ENGINE_MESH_MONKEY_NAME								("./Engine/Assets/EngineModels/SceneModels/Monkey/Monkey.obj")
+#define ENGINE_MESH_NORMAL_CUBE_NAME						("./Engine/Assets/EngineModels/BaseShapes/Cube.obj")
+#define ENGINE_MESH_ROUNDED_CUBE_NAME						("./Engine/Assets/EngineModels/BaseShapes/RoundedCube.obj")
+#define ENGINE_MESH_SMOOTH_SPHERE_NAME						("./Engine/Assets/EngineModels/BaseShapes/SphereSmooth.obj")
+#define ENGINE_MESH_UV_SPHERE_NAME							("./Engine/Assets/EngineModels/BaseShapes/SphereUV.obj")
+#define ENGINE_MESH_TORUS_NAME								("./Engine/Assets/EngineModels/BaseShapes/Torus.obj")
+#define ENGINE_MESH_PRISM_NAME								("./Engine/Assets/EngineModels/BaseShapes/Prism.obj")
 #define ENGINE_MESH_CUBE_NAME								("EngineBase/Mesh/CubeMesh")
 #define ENGINE_MESH_PLANE_NAME								("EngineBase/Mesh/PlaneMesh")
 #define ENGINE_MESH_POLYGON_NAME							("EngineBase/Mesh/PolygonMesh")
@@ -105,7 +115,7 @@
 #define ENGINE_CAMERA_FOV									(60.f)
 #define ENGINE_CAMERA_NEAR									(5.f)
 #define ENGINE_CAMERA_FAR									(2000.f)
-#define ENGINE_CAMERA_MOVE_SPEED							(20.f)
+#define ENGINE_CAMERA_MOVE_SPEED							(120.f)
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)
 
 #define ENGINE_SHADOW_MAP_SIZE								(4096)

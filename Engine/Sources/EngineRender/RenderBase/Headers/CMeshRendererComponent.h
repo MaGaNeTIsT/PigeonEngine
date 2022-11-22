@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../../Entry/EngineMain.h"
 #include "./CRenderStructCommon.h"
 #include "../../../EngineGame/Headers/CComponent.h"
 #include "../../AssetsManager/Headers/CMeshComponent.h"
@@ -29,13 +30,17 @@ public:
 	virtual void	InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
 	void			SetMaterialTextures(class CTexture2D* albedoTexture, class CTexture2D* normalTexture, class CTexture2D* propertyTexture);
 	void			SetMeshComponent(const CMeshComponent* meshComponent);
-	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)const;
+	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
 	virtual void	UploadConstantBuffer(const void* data);
 	void			BindConstantBuffer(const UINT& startSlot);
 public:
-	virtual void	Update()const override;
+	virtual void	Update()override;
 	virtual void	Draw()const override;
 	virtual void	DrawExtra()const override;
+#if _DEVELOPMENT_EDITOR
+public:
+	virtual void	SelectedEditorUpdate()override;
+#endif
 private:
 	void			SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum);
 	void			LoadShader();
@@ -58,7 +63,7 @@ protected:
 	class CVertexShader*								m_VertexShader;
 	class CPixelShader*									m_PixelShader;
 	std::vector<CustomStruct::CRenderInputLayoutDesc>	m_InputLayoutDesc;
-	mutable RenderPerDrawInfo							m_PerDrawInfo;
+	RenderPerDrawInfo									m_PerDrawInfo;
 	CustomStruct::CRenderBufferDesc						m_ConstantBufferDesc;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_ConstantBuffer;
 };

@@ -8,16 +8,31 @@
 class CMeshManager
 {
 public:
+	enum CEngineBaseModelType
+	{
+		ENGINE_BASE_NONE			= 0,
+		ENGINE_BASE_NORMAL_CUBE		= 1,
+		ENGINE_BASE_ROUNDED_CUBE	= 2,
+		ENGINE_BASE_SMOOTH_SPHERE	= 3,
+		ENGINE_BASE_UV_SPHERE		= 4,
+		ENGINE_BASE_TORUS			= 5,
+		ENGINE_BASE_PRISM			= 6,
+		ENGINE_BASE_MATERIAL_SPHERE	= 7,
+		ENGINE_BASE_MONKEY			= 8,
+		ENGINE_BASE_COUNT
+	};
+public:
 	static const CMeshManager* const	GetMeshManager() { return m_MeshManager; }
 	static void							ShutDown();
 public:
 	static void							ClearMeshData();
 public:
+	static const CBaseMesh<UINT>*		LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
-	static const CBaseMesh<UINT>*		LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
+	static const CBaseMesh<UINT>*		LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 private:
 	static CustomType::Vector3			CalculateTangentForTriangle(const CustomType::Vector3& p0, const CustomType::Vector3& p1, const CustomType::Vector3& p2, const CustomType::Vector2& uv0, const CustomType::Vector2& uv1, const CustomType::Vector2& uv2);
 	static void							CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum);

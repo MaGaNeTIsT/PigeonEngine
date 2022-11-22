@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CObjectManager.h"
@@ -186,6 +187,71 @@ public:
 		}
 		return NULL;
 	}
+protected:
+	CBaseComponent* BaseGetComponentByComponentID(const ULONGLONG& id)const;
+	template<class T>
+	T* BaseGetFirstComponentByType()const
+	{
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(component.second));
+				}
+			}
+		}
+		return NULL;
+	}
+	template<class T>
+	std::vector<T*> BaseGetComponentListByType()const
+	{
+		std::vector<T*> componentList;
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					componentList.push_back(reinterpret_cast<T*>(component.second));
+				}
+			}
+		}
+		return componentList;
+	}
+	template<class T>
+	T* BaseGetMeshComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshComponent())
+		{
+			auto& element = this->m_Components.find(this->m_MeshComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
+	template<class T>
+	T* BaseGetMeshRendererComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshRendererComponent())
+		{
+			auto& element = this->m_Components.find(this->m_MeshRendererComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
 public:
 	BOOL	IsBelongComponent(const CBaseComponent* component)const;
 	BOOL	HasComponent()const;
@@ -208,6 +274,12 @@ public:
 	virtual void	Uninit();
 	virtual void	Update();
 	virtual void	FixedUpdate();
+#if _DEVELOPMENT_EDITOR
+protected:
+	virtual void	SelectedEditorUpdate_RenderBounding();
+public:
+	virtual void	SelectedEditorUpdate();
+#endif
 public:
 	CGameObject();
 	CGameObject(const CGameObject& obj);

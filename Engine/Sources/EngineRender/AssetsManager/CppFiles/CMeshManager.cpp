@@ -21,6 +21,40 @@ void CMeshManager::ClearMeshData()
 		m_MeshManager->m_Data.clear();
 	}
 }
+const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+{
+	if (baseType == CEngineBaseModelType::ENGINE_BASE_NONE || baseType == CEngineBaseModelType::ENGINE_BASE_COUNT)
+	{
+		return NULL;
+	}
+
+	static std::map<CEngineBaseModelType, std::string> baseModelMap = {
+		{ CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, ENGINE_MESH_NORMAL_CUBE_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_ROUNDED_CUBE, ENGINE_MESH_ROUNDED_CUBE_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE, ENGINE_MESH_SMOOTH_SPHERE_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_UV_SPHERE, ENGINE_MESH_UV_SPHERE_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_TORUS, ENGINE_MESH_TORUS_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_PRISM, ENGINE_MESH_PRISM_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, ENGINE_MESH_MATERIAL_SPHERE_NAME },
+		{ CEngineBaseModelType::ENGINE_BASE_MONKEY, ENGINE_MESH_MONKEY_NAME } };
+
+	std::string baseName = baseModelMap[baseType];
+	std::string tempName = baseName + CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	{
+		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		if (findResult != NULL)
+		{
+			return findResult;
+		}
+	}
+	CBaseMesh<UINT>* resultMesh = CMeshManager::LoadOBJMesh(baseName, inputLayoutDesc, inputLayoutNum, needVertexData);
+	if (resultMesh == NULL)
+	{
+		return NULL;
+	}
+	CMeshManager::AddMeshData(tempName, resultMesh);
+	return resultMesh;
+}
 const CBaseMesh<UINT>* CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
@@ -214,120 +248,6 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
-const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
-{
-	std::string tempName = ENGINE_MESH_CUBE_NAME;
-	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
-		if (findResult != NULL)
-		{
-			return findResult;
-		}
-	}
-	void* vertices = nullptr;
-	UINT vertexNum = 24u;
-	{
-		//
-		// Back->Right->Forward->Left->Top->Bottom
-		//                  Y
-		//                  ^
-		//                  |
-		//     0--------1   |    Z
-		//     |        |   |   /
-		//     |        |   |  /
-		//     |        |   | /
-		//     2--------3   0---------------->X
-		//
-		const static FLOAT position[24u * 4u] = {
-			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
-			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
-
-			0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
-			0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f,
-
-			0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, 0.5f, 1.f,
-			0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, 0.5f, 1.f,
-
-			-0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, -0.5f, 1.f,
-			-0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, -0.5f, 1.f,
-
-			-0.5f, 0.5f, 0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
-			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
-
-			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
-			-0.5f, -0.5f, 0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f };
-		const static FLOAT normal[24u * 4u] = {
-			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
-			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
-
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-
-			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-
-			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
-			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
-
-			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-
-			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f,
-			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f };
-		const static FLOAT tangent[24u * 4u] = {
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-
-			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-
-			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
-			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
-
-			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
-			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
-
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
-			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
-		const static FLOAT texcoord[24u * 2u] = {
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
-			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
-		UINT vertexStride = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
-		{
-			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
-		}
-		vertices = new CHAR[vertexStride * vertexNum];
-		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
-			inputLayoutNum, position, normal, tangent, texcoord, NULL);
-	}
-	std::vector<UINT> index;
-	{
-		index.resize(36);
-		for (UINT i = 0u; i < 6u; i++)
-		{
-			index[i * 6u + 0u] = i * 4u + 0u;
-			index[i * 6u + 1u] = i * 4u + 1u;
-			index[i * 6u + 2u] = i * 4u + 2u;
-
-			index[i * 6u + 3u] = i * 4u + 1u;
-			index[i * 6u + 4u] = i * 4u + 3u;
-			index[i * 6u + 5u] = i * 4u + 2u;
-		}
-	}
-	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
-	CMeshManager::AddMeshData(tempName, resultMesh);
-	return resultMesh;
-}
 const CBaseMesh<UINT>* CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_NAME;
@@ -446,6 +366,120 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int&
 		index.resize(6);
 		index[0] = 0; index[1] = 1; index[2] = 2;
 		index[3] = 1; index[4] = 3; index[5] = 2;
+	}
+	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
+	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
+	CMeshManager::AddMeshData(tempName, resultMesh);
+	return resultMesh;
+}
+const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+{
+	std::string tempName = ENGINE_MESH_CUBE_NAME;
+	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	{
+		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		if (findResult != NULL)
+		{
+			return findResult;
+		}
+	}
+	void* vertices = nullptr;
+	UINT vertexNum = 24u;
+	{
+		//
+		// Back->Right->Forward->Left->Top->Bottom
+		//                  Y
+		//                  ^
+		//                  |
+		//     0--------1   |    Z
+		//     |        |   |   /
+		//     |        |   |  /
+		//     |        |   | /
+		//     2--------3   0---------------->X
+		//
+		const static FLOAT position[24u * 4u] = {
+			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
+
+			0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
+			0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f,
+
+			0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, 0.5f, 1.f,
+			0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, 0.5f, 1.f,
+
+			-0.5f, 0.5f, 0.5f, 1.f, -0.5f, 0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, 0.5f, 1.f, -0.5f, -0.5f, -0.5f, 1.f,
+
+			-0.5f, 0.5f, 0.5f, 1.f, 0.5f, 0.5f, 0.5f, 1.f,
+			-0.5f, 0.5f, -0.5f, 1.f, 0.5f, 0.5f, -0.5f, 1.f,
+
+			-0.5f, -0.5f, -0.5f, 1.f, 0.5f, -0.5f, -0.5f, 1.f,
+			-0.5f, -0.5f, 0.5f, 1.f, 0.5f, -0.5f, 0.5f, 1.f };
+		const static FLOAT normal[24u * 4u] = {
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+
+			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+			0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+
+			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f,
+			0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f };
+		const static FLOAT tangent[24u * 4u] = {
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+			-1.f, 0.f, 0.f, 0.f, -1.f, 0.f, 0.f, 0.f,
+
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+			0.f, 0.f, -1.f, 0.f, 0.f, 0.f, -1.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
+			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
+		const static FLOAT texcoord[24u * 2u] = {
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
+			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
+		UINT vertexStride = 0u;
+		for (UINT i = 0u; i < inputLayoutNum; i++)
+		{
+			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
+		}
+		vertices = new CHAR[vertexStride * vertexNum];
+		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
+			inputLayoutNum, position, normal, tangent, texcoord, NULL);
+	}
+	std::vector<UINT> index;
+	{
+		index.resize(36);
+		for (UINT i = 0u; i < 6u; i++)
+		{
+			index[i * 6u + 0u] = i * 4u + 0u;
+			index[i * 6u + 1u] = i * 4u + 1u;
+			index[i * 6u + 2u] = i * 4u + 2u;
+
+			index[i * 6u + 3u] = i * 4u + 1u;
+			index[i * 6u + 4u] = i * 4u + 3u;
+			index[i * 6u + 5u] = i * 4u + 2u;
+		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
 	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);

@@ -5,6 +5,7 @@
 class CTextureBase
 {
 public:
+	const std::string& GetName()const { return (this->m_Name); }
 	virtual Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView() = 0;
 public:
 	CTextureBase(const std::string& name);
@@ -14,7 +15,7 @@ protected:
 	std::string m_Name;
 };
 
-class CTexture2D : CTextureBase
+class CTexture2D : public CTextureBase
 {
 public:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()override;

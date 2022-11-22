@@ -1,4 +1,3 @@
-#include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CMeshRendererComponent.h"
 #include "../Headers/CRenderDevice.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -53,7 +52,7 @@ void CMeshRendererComponent::SetMeshComponent(const CMeshComponent* meshComponen
 {
 	this->m_MeshComponent = meshComponent;
 }
-void CMeshRendererComponent::SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)const
+void CMeshRendererComponent::SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)
 {
 	this->m_PerDrawInfo.PerDrawData.WorldMatrix				= worldMatrix.GetGPUUploadFloat4x4();
 	this->m_PerDrawInfo.PerDrawData.WorldInvMatrix			= worldInvMatrix.GetGPUUploadFloat4x4();
@@ -69,7 +68,7 @@ void CMeshRendererComponent::BindConstantBuffer(const UINT& startSlot)
 	CRenderDevice::BindVSConstantBuffer(this->m_ConstantBuffer, startSlot);
 	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, startSlot);
 }
-void CMeshRendererComponent::Update()const
+void CMeshRendererComponent::Update()
 {
 	this->m_CurrentFrameUpload = FALSE;
 	if (this->m_GameObject != NULL)
@@ -120,6 +119,38 @@ void CMeshRendererComponent::DrawExtra()const
 		}
 	}
 }
+#if _DEVELOPMENT_EDITOR
+void CMeshRendererComponent::SelectedEditorUpdate()
+{
+	if (ImGui::TreeNode("MeshRendererComponent"))
+	{
+		{
+			static std::map<RenderTypeEnum, std::string> renderTypeMap = {
+				{ RenderTypeEnum::RENDER_TYPE_OPAQUE, "OPAQUE" },
+				{ RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD, "OPAQUE_FORWARD" },
+				{ RenderTypeEnum::RENDER_TYPE_TRANSPARENT, "TRANSPARENT" } };
+			ImGui::Text("Render type : %s", renderTypeMap[this->m_RenderType].c_str());
+		}
+
+		{
+			std::string vsName = this->HasVertexShader() ? this->m_VertexShaderName : "NULL";
+			std::string psName = this->HasPixelShader() ? this->m_PixelShaderName : "NULL";
+			ImGui::Text("Vertex shader name : %s", vsName.c_str());
+			ImGui::Text("Pixel shader name : %s", psName.c_str());
+		}
+
+		{
+			std::string albedoName = this->m_AlbedoTexture != NULL ? this->m_AlbedoTexture->GetName() : "NULL";
+			std::string normalName = this->m_NormalTexture != NULL ? this->m_NormalTexture->GetName() : "NULL";
+			std::string propertyName = this->m_PropertyTexture != NULL ? this->m_PropertyTexture->GetName() : "NULL";
+			ImGui::Text("Albedo texture name : %s", albedoName.c_str());
+			ImGui::Text("Normal texture name : %s", normalName.c_str());
+			ImGui::Text("Property texture name : %s", propertyName.c_str());
+		}
+		ImGui::TreePop();
+	}
+}
+#endif
 void CMeshRendererComponent::SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum)
 {
 	if (this->m_InputLayoutDesc.size() != layoutNum)

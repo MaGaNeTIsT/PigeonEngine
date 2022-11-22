@@ -18,6 +18,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>						GetIndexBuffer()const { return (this->m_IndexBuffer); }
 	const std::vector<CustomStruct::CRenderInputLayoutDesc>&	GetInputLayoutDesc()const { return (this->m_InputLayoutDesc); }
 	const std::vector<CustomStruct::CSubMeshInfo>&				GetSubMeshInfo() const { return (this->m_SubMeshInfo); }
+	const std::string&											GetName()const { return (this->m_MeshPath); }
 	const void*		GetVertexData() const { return (this->m_VertexData); }
 	UINT			GetVertexStride()const { return (this->m_VertexStride); }
 	UINT			GetVertexCount()const { return (this->m_VertexCount); }
@@ -170,6 +171,56 @@ public:
 	}
 	virtual void Init()override {}
 	virtual void Uninit()override {}
+#if _DEVELOPMENT_EDITOR
+public:
+	virtual void SelectedEditorUpdate()override
+	{
+		if (ImGui::TreeNode("MeshComponent"))
+		{
+			std::string meshName = this->m_Mesh == NULL ? "NULL" : this->m_Mesh->GetName();
+			ImGui::Text("Mesh name : %s", meshName.c_str());
+			std::vector<CustomStruct::CSubMeshInfo> submesh = this->GetSubMeshInfo();
+			ImGui::Text("Has submesh : %s", (submesh.size() > 1) ? "true" : "false");
+			if (submesh.size() > 1)
+			{
+				if (ImGui::TreeNode("SubMeshInfo"))
+				{
+					ImGui::Text("Submesh number : %d", submesh.size());
+					for (size_t i = 0; i < submesh.size(); i++)
+					{
+						ImGui::Text("Submesh index : %d\nVertex start : %d, Vertex count : %d\nIndex start : %d, Index count : %d", i, submesh[i].VertexStart, submesh[i].VertexCount, submesh[i].IndexStart, submesh[i].IndexCount);
+					}
+					ImGui::TreePop();
+				}
+			}
+			std::vector<CustomStruct::CRenderInputLayoutDesc> layoutDesc = this->GetInputLayoutDesc();
+			if (layoutDesc.size() > 0)
+			{
+				static std::map<CustomStruct::CRenderShaderSemantic, std::string> layoutSemanticMap = {
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, "POSITION" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, "TEXCOORD" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, "NORMAL" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, "TANGENT" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, "COLOR" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, "BLENDINDICES" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, "BLENDWEIGHT" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, "POSITIONT" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, "PSIZE" },
+					{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, "BINORMAL" } };
+				if (ImGui::TreeNode("InputLayoutInfo"))
+				{
+					ImGui::Text("Input layout number : %d", layoutDesc.size());
+					for (size_t i = 0; i < layoutDesc.size(); i++)
+					{
+						ImGui::Text("Layout index : %d, %s", i, layoutSemanticMap[layoutDesc[i].SemanticName].c_str());
+					}
+					ImGui::TreePop();
+				}
+			}
+			ImGui::TreePop();
+		}
+	}
+#endif
 protected:
 	const CBaseMesh<UINT>* m_Mesh;
 public:

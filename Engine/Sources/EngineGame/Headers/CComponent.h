@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CObjectManager.h"
@@ -43,7 +44,7 @@ protected:
 	void	DisconnectParentAndChild(const CTransform* parent, const CTransform* child)const;
 	void	CalculateCurrentLocalTransform(const CTransform* newParent)const;
 protected:
-	mutable const class CGameObject*					m_GameObject;
+	const class CGameObject*							m_GameObject;
 	mutable const CTransform*							m_Parent;
 	mutable std::map<ULONGLONG, const CTransform*>		m_Children;
 public:
@@ -76,6 +77,13 @@ public:
 	CustomType::Vector3		GetRightVector()const;
 	CustomType::Matrix4x4	GetLocalToWorldMatrix()const;
 	CustomType::Matrix4x4	GetWorldToLocalMatrix()const;
+#if _DEVELOPMENT_EDITOR
+public:
+	void	SelectedEditorUpdate();
+protected:
+	BOOL	m_RealTimeChangeValue;
+	FLOAT	m_EditorRotation[3];
+#endif
 public:
 	CTransform();
 	virtual ~CTransform() {}
@@ -88,8 +96,12 @@ class CBaseComponent : public CObjectBase
 public:
 	virtual void	Init()			= 0;
 	virtual void	Uninit()		= 0;
-	virtual void	Update()const {}
-	virtual void	FixedUpdate()const {}
+	virtual void	Update() {}
+	virtual void	FixedUpdate() {}
+#if _DEVELOPMENT_EDITOR
+public:
+	virtual void	SelectedEditorUpdate() {}
+#endif
 public:
 	const BOOL&		NeedUpdate()const { return (this->m_NeedUpdate); }
 	const BOOL&		NeedFixedUpdate()const { return (this->m_NeedFixedUpdate); }
@@ -128,8 +140,8 @@ class CRenderComponent : public CBaseComponent
 public:
 	virtual void	Init()override {}
 	virtual void	Uninit()override {}
-	virtual void	Update()const override {}
-	virtual void	FixedUpdate()const override {}
+	virtual void	Update()override {}
+	virtual void	FixedUpdate()override {}
 public:
 	virtual void	Draw()const			= 0;
 	virtual void	DrawExtra()const	= 0;
