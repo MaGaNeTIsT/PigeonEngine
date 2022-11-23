@@ -56,16 +56,15 @@ CScene::~CScene()
 void CScene::Init()
 {
 	CCamera* mainCamera = this->AddCamera<CCamera>();
-
 	CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 	CSceneGameObject* sceneGameObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
 
-	mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 150.f, -50.f));
+	mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 150.f, -250.f));
 	mainLight->SetWorldRotation(CustomType::Quaternion(mainLight->GetRightVector(), 60.f * CustomType::CMath::GetDegToRad()));
 	terrainPlane->SetMeshInfo(1000.f, 8, 3.f);
-	cube->SetWorldPosition(CustomType::Vector3(0.f, 0.f, 0.f));
+	cube->SetWorldPosition(CustomType::Vector3(100.f, 50.f, 100.f));
 	cube->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 	sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 150.f, 0.f));
 	sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));

@@ -5,19 +5,19 @@
 
 cbuffer ConstantBufferPerFrame : register(b0)
 {
-	float4x4				_ViewMatrix;
-	float4x4				_ViewInvMatrix;
-	float4x4				_ProjectionMatrix;
-	float4x4				_ProjectionInvMatrix;
-	float4x4				_ViewProjectionMatrix;
-	float4x4				_ViewProjectionInvMatrix;
-	float4					_TimeParams;
-	float4					_DepthMultiAdd;
-	float4					_ScreenToViewSpaceParams;
-	float4					_CameraViewportMinSizeAndInvBufferSize;
-	float4					_CameraViewportSizeAndInvSize;
-	float4					_CameraViewportRect;
-	float4					_CameraWorldPosition;
+	float4x4	_ViewMatrix;
+	float4x4	_ViewInvMatrix;
+	float4x4	_ProjectionMatrix;
+	float4x4	_ProjectionInvMatrix;
+	float4x4	_ViewProjectionMatrix;
+	float4x4	_ViewProjectionInvMatrix;
+	float4		_TimeParams;
+	float4		_DepthMultiAdd;
+	float4		_ScreenToViewSpaceParams;
+	float4		_CameraViewportMinSizeAndInvBufferSize;
+	float4		_CameraViewportSizeAndInvSize;
+	float4		_CameraViewportRect;
+	float4		_CameraWorldPosition;
 };
 cbuffer ConstantBufferPerDraw : register(b1)
 {

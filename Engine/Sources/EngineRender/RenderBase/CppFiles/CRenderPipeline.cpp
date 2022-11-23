@@ -16,6 +16,7 @@
 #include "../../../EngineGame/Headers/CSkyBox.h"
 #include "../../RenderFeatures/Headers/CGTAOPass.h"
 #include "../../RenderFeatures/Headers/CHZBPass.h"
+#include "../../RenderFeatures/Headers/CPostProcessBase.h"
 
 #include "../../../Development/Headers/CDebugScreen.h"
 #include "../../../Development/Headers/CGPUProfiler.h"
@@ -25,6 +26,7 @@ std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_ScreenPolygonShader	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DirectLightShader	= nullptr;
+std::shared_ptr<CPostProcessBase>	CRenderPipeline::m_PostProcessBase		= nullptr;
 std::shared_ptr<CSkyBox>			CRenderPipeline::m_SkyBox				= nullptr;
 std::shared_ptr<CGPUCulling>		CRenderPipeline::m_GPUCulling			= nullptr;
 std::shared_ptr<CGTAOPass>			CRenderPipeline::m_GTAOPass				= nullptr;
@@ -58,6 +60,10 @@ CRenderPipeline::CRenderPipeline()
 	if (CRenderPipeline::m_DirectLightShader == nullptr)
 	{
 		CRenderPipeline::m_DirectLightShader = std::shared_ptr<CPixelShader>(CShaderManager::LoadPixelShader(ENGINE_SHADER_DIRECT_LIGHT_PS));
+	}
+	if (CRenderPipeline::m_PostProcessBase == nullptr)
+	{
+		CRenderPipeline::m_PostProcessBase = std::shared_ptr<CPostProcessBase>(new CPostProcessBase());
 	}
 	if (CRenderPipeline::m_SkyBox == nullptr)
 	{
@@ -206,14 +212,8 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		blendStates[3] = CustomStruct::CRenderBlendState();
 		CRenderDevice::CreateBlendState(m_GBufferPassBS, blendStates);
 		blendStates.resize(1);
-		blendStates[0] = CustomStruct::CRenderBlendState(
-			CustomStruct::CRenderBlendOption::BLEND_ONE,
-			CustomStruct::CRenderBlendOption::BLEND_ONE,
-			CustomStruct::CRenderBlendOperation::BLEND_OP_ADD,
-			CustomStruct::CRenderBlendOption::BLEND_ONE,
-			CustomStruct::CRenderBlendOption::BLEND_ONE,
-			CustomStruct::CRenderBlendOperation::BLEND_OP_MAX);
-		CRenderDevice::CreateBlendState(m_DirectLightPassBS, blendStates);
+		blendStates[0] = CustomStruct::CRenderBlendState();
+		CRenderDevice::CreateBlendState(m_DirectLightPostPassBS, blendStates);
 		blendStates.resize(1);
 		blendStates[0] = CustomStruct::CRenderBlendState(
 			CustomStruct::CRenderBlendOption::BLEND_SRC_ALPHA,
@@ -230,7 +230,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		CRenderDevice::CreateDepthStencilState(m_GBufferForwardPassDSS,
 			CustomStruct::CRenderDepthState(
 				CustomStruct::CRenderComparisonFunction::COMPARISON_LESS_EQUAL));
-		CRenderDevice::CreateDepthStencilState(m_DirectLightPassDSS,
+		CRenderDevice::CreateDepthStencilState(m_DirectLightPostPassDSS,
 			CustomStruct::CRenderDepthState(
 				CustomStruct::CRenderComparisonFunction::COMPARISON_ALWAYS));
 	}
@@ -638,8 +638,8 @@ void CRenderPipeline::Render()
 		//Direct light pass
 		UINT layerNum = needShadowPass ? lightShadow->GetCurrentShadowMapLayerNum() : 0u;
 		CGPUProfilerManager::AddPass("Direct_Light_Pass", m_FrameIndex, [&]() {
-			CRenderDevice::SetDepthStencilState(m_DirectLightPassDSS);
-			CRenderDevice::SetBlendState(m_DirectLightPassBS);
+			CRenderDevice::SetDepthStencilState(m_DirectLightPostPassDSS);
+			CRenderDevice::SetBlendState(m_DirectLightPostPassBS);
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView);
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersSRV[0] = m_RTSceneColor.ShaderResourceView;
@@ -724,6 +724,16 @@ void CRenderPipeline::Render()
 
 	{
 		//Post process pass
+		CGPUProfilerManager::AddPass("Post_Process_Pass", m_FrameIndex, [&]() {
+			CRenderDevice::SetDepthStencilState(m_DirectLightPostPassDSS);
+			CRenderDevice::SetBlendState(m_DirectLightPostPassBS);
+			CRenderDevice::SetNoRenderTarget();
+			CRenderDevice::CopyTexture2DResource(m_RTSceneColor.Texture2D, m_RTPostProcess[0].Texture2D);
+			CRenderDevice::BindPSShaderResourceView(m_RTSceneDepth.ShaderResourceView, ENGINE_SRV_CAMERA_DEPTH);
+			m_PostProcessBase->InitPerFrame(&(m_RTPostProcess[1]), &(m_RTPostProcess[0]));
+			m_PostProcessBase->Draw(CPostProcessBase::PostProcessType::POST_PROCESS_COLOR_GRADING);
+			DrawFullScreenPolygon(nullptr);
+			});
 	}
 
 	{
@@ -751,6 +761,7 @@ void CRenderPipeline::Render()
 		ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Post-process Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::End();
 	}
@@ -760,14 +771,17 @@ void CRenderPipeline::Render()
 		CRenderDevice::SetDefaultDepthStencilState();
 		CRenderDevice::SetDefaultBlendState();
 		CRenderDevice::SetFinalOutput();
-		CRenderDevice::BindPSShaderResourceView(m_RTSceneColor.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(m_PostProcessBase->GetResultTarget()->ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
 		DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
 	}
 }
 void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)
 {
 	m_FullScreenPolygonVS->Bind();
-	shader->Bind();
+	if (shader)
+	{
+		shader->Bind();
+	}
 	CRenderDevice::SetVertexBuffer(m_FullScreenPolygon->GetVertexBuffer(), m_FullScreenPolygon->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
 	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());

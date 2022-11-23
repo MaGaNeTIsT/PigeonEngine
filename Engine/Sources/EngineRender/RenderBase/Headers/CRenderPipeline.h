@@ -98,16 +98,17 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_ShadowSkyForwardPrePassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_GBufferPassBS;
-	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_DirectLightPassBS;
+	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_DirectLightPostPassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_TransparentPassBS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_ShadowPrePassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferForwardPassDSS;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPassDSS;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPostPassDSS;
 protected:
 	static std::shared_ptr<class CVertexShader>			m_FullScreenPolygonVS;
 	static std::shared_ptr<class CPixelShader>			m_ScreenPolygonShader;
 	static std::shared_ptr<class CPixelShader>			m_DirectLightShader;
 protected:
+	static std::shared_ptr<class CPostProcessBase>		m_PostProcessBase;
 	static std::shared_ptr<class CSkyBox>				m_SkyBox;
 	static std::shared_ptr<class CGPUCulling>			m_GPUCulling;
 	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;

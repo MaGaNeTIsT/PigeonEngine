@@ -7,7 +7,8 @@ Varying main(Attribute input)
 {
 	Varying output;
 
-	output.positionCS	= TransformObjectToClip(input.position.xyz);
+	output.positionWS	= float4(TransformObjectToWorld(input.position.xyz), 1.0);
+	output.positionCS	= TransformWorldToClip(output.positionWS.xyz);
 	output.normal		= TransformObjectToWorldNormal(input.normal.xyz).xyzz;
 	output.tangent		= TransformObjectToWorldDir(input.tangent.xyz).xyzz;
 	output.uv0			= input.uv0;

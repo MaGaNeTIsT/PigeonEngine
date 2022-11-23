@@ -56,6 +56,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderStructCommon.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CPostProcessBase.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
@@ -103,6 +104,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRendererComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CPostProcessBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />
@@ -142,7 +144,7 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderGlobalFunctions.hlsl">
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
@@ -269,6 +271,14 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>

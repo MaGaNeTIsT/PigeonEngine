@@ -172,6 +172,8 @@ public:
 	static void		BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot);
 	static void		BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum);
 public:
+	static void		CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst);
+public:
 	static void		ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const CustomStruct::CColor& clearColor = CustomStruct::CColor(0.f, 0.f, 0.f, 0.f));
 	static void		ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, CustomStruct::CRenderClearDepthStencilFlag flag = CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH_STENCIL, const FLOAT& depth = 1.f, const UINT& stencil = 0u);
 	static void		ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const CustomStruct::CColor& clearValue = CustomStruct::CColor(0.f, 0.f, 0.f, 0.f));

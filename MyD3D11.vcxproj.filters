@@ -109,6 +109,9 @@
     <Filter Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling">
       <UniqueIdentifier>{df824d15-d2e8-424c-ba9f-0b7153dcbd58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess">
+      <UniqueIdentifier>{101061e4-48e7-4b1c-b396-f99746c965fb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -252,6 +255,9 @@
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h">
       <Filter>Engine\Sources\Development\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CPostProcessBase.h">
+      <Filter>Engine\Sources\EngineRender\RenderFeatures\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -386,6 +392,9 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp">
       <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CPostProcessBase.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderFeatures\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -448,6 +457,9 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
@@ -462,7 +474,7 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderGlobalFunctions.hlsl">
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
