@@ -14,6 +14,8 @@
 #include "../../EngineRender/RenderBase/Headers/CGPUQueryManager.h"
 #include "../../Development/Headers/CGPUProfiler.h"
 
+#include "../../EnginePhysics/Headers/CPhysicsManager.h"
+
 CManager* CManager::m_Manager = new CManager();
 
 CManager::CManager()
@@ -118,6 +120,7 @@ void CManager::Init()
 	CManager::m_Manager->m_Scene->Init();
 	CManager::m_Manager->m_RenderPipeline->PostInit();
 	CManager::m_Manager->m_GameTimer->Reset();
+	GetPhysicsManager()->Init();
 }
 void CManager::Uninit()
 {
@@ -141,6 +144,8 @@ void CManager::Uninit()
 	}
 
 	CRenderDevice::Uninit();
+
+	GetPhysicsManager()->Uninit();
 }
 void CManager::Update()
 {
@@ -153,6 +158,7 @@ void CManager::Update()
 void CManager::FixedUpdate()
 {
 	CManager::m_Manager->m_Scene->FixedUpdate();
+	GetPhysicsManager()->Tick(static_cast <FLOAT>(1) / static_cast<FLOAT>(ENGINE_FIXED_UPDATE_FRAME));
 }
 void CManager::Draw()
 {

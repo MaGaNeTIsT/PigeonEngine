@@ -2,25 +2,27 @@
 
 //DXProject includes
 #include "../../../../Entry/EngineMain.h"
-#include "CPhysics_APi_Jolt.h"
+#include "CPhysics_API_Jolt.h"
 
+typedef CPhysics_API_Jolt CPhysics;
 
-class CPhysicsManager
+class CPhysicsManager : public CPhysics
 {
 public:
-	void Init();
-	void Tick(const float cDeltaTime);
+	void Init() override;
+	void Uninit() { Release(); };
+	void Tick(const float cDeltaTime) override;
 private:
 	CPhysicsManager();
 	virtual ~CPhysicsManager();
 
-private:
-	CPhysics_API_Jolt* Physics;
 
-public://static funcs
-	static CPhysicsManager* GetPhysicsManager() { return m_PhysicsManager; }
-	static void Uninit() { delete m_PhysicsManager; }
-
+//static funcs
 private:
 	static CPhysicsManager* m_PhysicsManager;
+	static void Release() { delete m_PhysicsManager; }
+public:
+	static CPhysicsManager* GetPhysicsManager() { return m_PhysicsManager; }
 };
+
+#define GetPhysicsManager() CPhysicsManager::GetPhysicsManager()

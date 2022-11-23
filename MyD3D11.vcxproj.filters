@@ -118,12 +118,6 @@
     <Filter Include="Engine\Sources\EnginePhysics\Headers">
       <UniqueIdentifier>{bf3dfe61-e3a3-4704-b1e2-51ecca62f2d6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt">
-      <UniqueIdentifier>{d2858a23-9420-463c-840c-6f6b2052b327}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt">
-      <UniqueIdentifier>{7294b5e0-9b13-43cf-b2f9-3e0f4e7596c8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -270,18 +264,6 @@
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysics_API_Jolt.h">
       <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CBodyActivationListener.h">
-      <Filter>Engine\Sources\EnginePhysics\Headers\Physics_Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CBPLayerInterfaceImpl.h">
-      <Filter>Engine\Sources\EnginePhysics\Headers\Physics_Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CContactListener.h">
-      <Filter>Engine\Sources\EnginePhysics\Headers\Physics_Jolt</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CPhysicsLayers.h">
-      <Filter>Engine\Sources\EnginePhysics\Headers\Physics_Jolt</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -415,18 +397,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API_Jolt.cpp">
       <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CBodyActivationListener.cpp">
-      <Filter>Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CBPLayerInterfaceImpl.cpp">
-      <Filter>Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CContactListener.cpp">
-      <Filter>Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CPhysicsLayers.cpp">
-      <Filter>Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

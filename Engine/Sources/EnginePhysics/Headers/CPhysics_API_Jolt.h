@@ -199,21 +199,11 @@ class CPhysics_API_Jolt : public CPhysicsInterface
 public:
 	virtual void Init() override;
 	virtual void Tick(const float cDeltaTime) override;
-
-	JPH_INLINE Body* CreateBody(const ULONGLONG& GameObjectId, const BodyCreationSettings& inBodyCreateSettings, EActivation Activation);
-	JPH_INLINE Body* GetBody(const ULONGLONG& GameObjectId);
+	virtual void Uninit() = 0;
 
 	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings();
-	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(ShapeSettings* inSettings,
-		const Vec3& inPosition,
-		const Quat& inRotation,
-		EMotionType MotionType,
-		ObjectLayer ObjectLayer);
-	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(Shape* inShape,
-		const Vec3& inPosition,
-		const Quat& inRotation,
-		EMotionType MotionType,
-		ObjectLayer ObjectLayer);
+	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(ShapeSettings* inSettings,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
+	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(Shape* inShape,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
 	//Use CreateXXXShape funtions when you dont want to change params,like static object or some object cant be changed.
 	JPH_INLINE BoxShape* CreateBoxShape(const Vec3& inHalfExtent, float ConvexRadius);
 	JPH_INLINE BoxShapeSettings* CreateBoxShapeSettings(const Vec3& inHalfExtent, float ConvexRadius);
@@ -222,11 +212,16 @@ public:
 	JPH_INLINE TriangleShapeSettings* CreateTriangleShapeSettings(const Vec3& inV1, const Vec3& inV2, const Vec3& inV3, float ConvexRadius);
 	JPH_INLINE CapsuleShapeSettings* CreateCapsuleShapeSettings(float HalfHeightOfCylinder,float Radius);
 	JPH_INLINE CylinderShapeSettings* CreateCylinderShapeSettings(float HalfHeight, float Radius, float ConvexRadius);
-	JPH_INLINE ConvexHullShapeSettings* CreateConvexHullShapeSettings(const vector<Vec3> inPoints, float MaxConvexRadius);
-	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Triangle> inTriangles);
-	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Vec3> inVertices, const vector<IndexedTriangle> inTriangles);
+	JPH_INLINE ConvexHullShapeSettings* CreateConvexHullShapeSettings(const vector<Vec3>& inPoints, float MaxConvexRadius);
+	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Triangle>& inTriangles);
+	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Vec3>& inVertices, const vector<IndexedTriangle>& inTriangles);
 	JPH_INLINE HeightFieldShapeSettings* CreateHeightFieldShapeSettings(const float* inSamples, const Vec3& inOffset, const Vec3& inScale, uint32_t SampleCount);
 	JPH_INLINE TaperedCapsuleShapeSettings* CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius);
+	//CreateBody
+	JPH_INLINE BodyID CreateAndAddBody(const ULONGLONG& GameObjectId, const BodyCreationSettings* inBodyCreateSettings, EActivation Activation);
+	JPH_INLINE bool TryCreateBody(const BodyCreationSettings* inBodyCreateSettings, BodyID& outBodyID);
+	JPH_INLINE void AddBody(const ULONGLONG& GameObjectId, const BodyID& inBodyID, EActivation Activation);
+	JPH_INLINE BodyID GetBodyID(const ULONGLONG& GameObjectId);
 public:
 	CPhysics_API_Jolt();
 	virtual ~CPhysics_API_Jolt();
@@ -253,5 +248,5 @@ private:
 	PhysicsAPI_Jolt::CBPLayerInterfaceImpl*					m_BPLayerInterface;
 	PhysicsAPI_Jolt::CBodyActivationListener*				m_BodyActivationListener;
 	PhysicsAPI_Jolt::CContactListener*						m_ContactListener;
-	unordered_map<ULONGLONG, Body*>							m_Bodys;
+	unordered_map<ULONGLONG, BodyID>						m_Bodys;
 };

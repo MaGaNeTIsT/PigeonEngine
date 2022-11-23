@@ -1,5 +1,6 @@
 #include "../Headers/CPhysics_API_Jolt.h"
 
+
 CPhysics_API_Jolt::CPhysics_API_Jolt()
 {
 	
@@ -9,8 +10,8 @@ CPhysics_API_Jolt::~CPhysics_API_Jolt()
 {
 	for (const auto& body : m_Bodys)
 	{
-		m_BodyInterface->RemoveBody(body.second->GetID());
-		m_BodyInterface->DestroyBody(body.second->GetID());
+		m_BodyInterface->RemoveBody(body.second);
+		m_BodyInterface->DestroyBody(body.second);
 	}
 
 	m_BodyInterface = nullptr;
@@ -69,19 +70,6 @@ void CPhysics_API_Jolt::Init()
 void CPhysics_API_Jolt::Tick(const float cDeltaTime)
 {
 	m_PhysicsSystem->Update(cDeltaTime, cCollisionSteps, cIntegrationSubSteps, m_TempAllocator, m_JobSystem);
-}
-
-Body* CPhysics_API_Jolt::CreateBody(const ULONGLONG& GameObjectId, const BodyCreationSettings& inBodyCreateSettings, EActivation Activation)
-{
-	Body* body = m_BodyInterface->CreateBody(inBodyCreateSettings);
-	m_BodyInterface->AddBody(body->GetID(), Activation);
-	m_Bodys.insert_or_assign(GameObjectId, body);
-	return body;
-}
-
-Body* CPhysics_API_Jolt::GetBody(const ULONGLONG& GameObjectId)
-{
-	return m_Bodys.find(GameObjectId)->second;
 }
 
 BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings()
@@ -148,15 +136,15 @@ CylinderShapeSettings* CPhysics_API_Jolt::CreateCylinderShapeSettings(float Half
 {
 	return new CylinderShapeSettings(HalfHeight, Radius, ConvexRadius);
 }
-ConvexHullShapeSettings* CPhysics_API_Jolt::CreateConvexHullShapeSettings(const vector<Vec3> inPoints, float MaxConvexRadius)
+ConvexHullShapeSettings* CPhysics_API_Jolt::CreateConvexHullShapeSettings(const vector<Vec3>& inPoints, float MaxConvexRadius)
 {
 	return new ConvexHullShapeSettings(inPoints, MaxConvexRadius);
 }
-MeshShapeSettings* CPhysics_API_Jolt::CreateMeshShapeSettings(const vector<Triangle> inTriangles)
+MeshShapeSettings* CPhysics_API_Jolt::CreateMeshShapeSettings(const vector<Triangle>& inTriangles)
 {
 	return new MeshShapeSettings(inTriangles);
 }
-MeshShapeSettings* CPhysics_API_Jolt::CreateMeshShapeSettings(const vector<Vec3> inVertices, const vector<IndexedTriangle> inTriangles)
+MeshShapeSettings* CPhysics_API_Jolt::CreateMeshShapeSettings(const vector<Vec3>& inVertices, const vector<IndexedTriangle>& inTriangles)
 {
 	VertexList VertexList;
 	VertexList.resize(inVertices.size());
@@ -173,4 +161,34 @@ HeightFieldShapeSettings* CPhysics_API_Jolt::CreateHeightFieldShapeSettings(cons
 TaperedCapsuleShapeSettings* CPhysics_API_Jolt::CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius)
 {
 	return new TaperedCapsuleShapeSettings(HalfHeightOfTaperedCylinder, TopRadius, BottomRadius);
+}
+
+BodyID CPhysics_API_Jolt::CreateAndAddBody(const ULONGLONG& GameObjectId, const BodyCreationSettings* inBodyCreateSettings, EActivation Activation)
+{
+	BodyID bodyID = m_BodyInterface->CreateAndAddBody(*inBodyCreateSettings, Activation);
+	m_BodyInterface->AddBody(bodyID, Activation);
+	m_Bodys.insert_or_assign(GameObjectId, bodyID);
+	return bodyID;
+}
+
+bool CPhysics_API_Jolt::TryCreateBody(const BodyCreationSettings* inBodyCreateSettings,BodyID& outBodyID)
+{
+	Body* body = m_BodyInterface->CreateBody(*inBodyCreateSettings);
+	if (body)
+	{
+		outBodyID = body->GetID();
+		return true;
+	}
+	return false;
+}
+
+void CPhysics_API_Jolt::AddBody(const ULONGLONG& GameObjectId, const BodyID& inBodyID, EActivation Activation)
+{
+	m_BodyInterface->AddBody(inBodyID, Activation);
+	m_Bodys.insert_or_assign(GameObjectId, inBodyID);
+}
+
+BodyID CPhysics_API_Jolt::GetBodyID(const ULONGLONG& GameObjectId)
+{
+	return m_Bodys.find(GameObjectId)->second;
 }

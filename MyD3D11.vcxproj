@@ -43,10 +43,6 @@
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h" />
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsInterface.h" />
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysics_API_Jolt.h" />
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CBodyActivationListener.h" />
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CBPLayerInterfaceImpl.h" />
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CContactListener.h" />
-    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\Physics_Jolt\CPhysicsLayers.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMesh.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CReadFBX.h" />
@@ -96,10 +92,6 @@
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp" />
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API.cpp" />
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API_Jolt.cpp" />
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CBodyActivationListener.cpp" />
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CBPLayerInterfaceImpl.cpp" />
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CContactListener.cpp" />
-    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\Physics_Jolt\CPhysicsLayers.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CReadFBX.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />

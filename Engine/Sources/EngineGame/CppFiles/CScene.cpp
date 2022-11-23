@@ -10,6 +10,8 @@
 
 #include "../../Development/Headers/CTestModel.h"
 
+#define RANDOMCUBE 0
+
 CScene::CScene()
 {
 }
@@ -22,17 +24,17 @@ void CScene::Init()
 
 	CLight* mainLight = this->AddGameObject<CLight>(SceneLayout::LAYOUT_LIGHT);
 	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
-	//CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
+	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
 	//CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);
 
 	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
 	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
 	//terrainPlane->SetMeshInfo(100.f, 50, 50.f);
-	//cube->SetPosition(CustomType::Vector3(0.f, 0.f, -70.f));
-	//cube->SetScale(CustomType::Vector3(150.f, 150.f, 10.f));
+	cube->SetPosition(CustomType::Vector3(0.f, 15.f, 0.f));
+	cube->SetScale(CustomType::Vector3(150.f, 150.f, 10.f));
 	//testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));
 	//testPlane->SetScale(CustomType::Vector3(3.f, 3.f, 3.f));
-
+#ifdef RANDOMCUBE
 	{
 		//static_cast<UINT>(::time(NULL));
 		::srand(12415u);
@@ -72,6 +74,7 @@ void CScene::Init()
 			}
 		}
 	}
+#endif
 }
 void CScene::Uninit()
 {
