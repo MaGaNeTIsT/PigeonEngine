@@ -10,6 +10,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
+#include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
@@ -28,9 +29,8 @@ CCube::CCube()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		meshComponent->SetMesh(CMeshManager::LoadCubeMesh(desc, 4u));
-		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
-		meshRendererComponent->SetMaterialTextures(CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY), CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP), CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY));
 		meshRendererComponent->SetMeshComponent(meshComponent);
+		meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
 		{
 			CustomType::Vector3 boundMin, boundMax;
 			meshComponent->GetMinMaxBounding(boundMin, boundMax);

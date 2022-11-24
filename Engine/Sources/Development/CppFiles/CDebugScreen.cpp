@@ -25,7 +25,7 @@ void CDebugScreen::Init(const CustomType::Vector2Int& pipelineSize)
 	for (INT i = 0; i < polygonCount; i++)
 	{
 		CustomType::Vector4 tempScreenAnchor = CustomType::Vector4(0, length * i, length, length * (i + 1));
-		CScreenPolygon2D* tempScreenPolygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, tempScreenAnchor);
+		CScreenPolygon2D* tempScreenPolygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_PS, tempScreenAnchor);
 		tempScreenPolygon2D->Init();
 		m_Polygons.push_back(tempScreenPolygon2D);
 	}

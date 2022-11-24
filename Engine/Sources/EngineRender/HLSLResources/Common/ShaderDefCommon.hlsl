@@ -94,7 +94,6 @@ struct Varying
 	float4	normal		: NORMAL0;
 	float4	tangent		: TANGENT0;
 	float2	uv0			: TEXCOORD0;
-	float4	positionWS	: TEXCOORD1;
 };
 struct DeferredOutput
 {
@@ -116,6 +115,22 @@ struct VaryingTerrain
 	float4	normal		: NORMAL0;
 	float4	tangent		: TANGENT0;
 	float2	uv0			: TEXCOORD0;
+};
+struct AttributeCloth
+{
+	float4	position	: POSITION0;
+	float4	normal		: NORMAL0;
+	float4	tangent		: TANGENT0;
+	float2	uv0			: TEXCOORD0;
+};
+struct VaryingCloth
+{
+	float4	positionCS	: SV_POSITION;
+	float4	normal		: NORMAL0;
+	float4	tangent		: TANGENT0;
+	float2	uv0			: TEXCOORD0;
+	float4	positionWS	: TEXCOORD1;
+	float4	positionSS	: TEXCOORD2;
 };
 struct AttributeScreenPolygon2D
 {

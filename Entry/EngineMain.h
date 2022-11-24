@@ -47,6 +47,7 @@
 #define ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT			(0u)
 #define ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT			(1u)
 #define ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT		(2u)
+#define ENGINE_CONSTANT_BUFFER_MATERIAL_DATA_START_SLOT		(3u)
 
 #define ENGINE_SAMPLER_ALL_START_SLOT						(0u)
 #define ENGINE_SAMPLER_POINT_CLAMP_START_SLOT				(ENGINE_SAMPLER_ALL_START_SLOT + 0u)
@@ -65,9 +66,10 @@
 
 #define ENGINE_SRV_CAMERA_COLOR								(0u)
 #define ENGINE_SRV_CAMERA_DEPTH								(1u)
-#define ENGINE_TEXTURE2D_ALBEDO_START_SLOT					(3u)
-#define ENGINE_TEXTURE2D_NORMAL_START_SLOT					(4u)
-#define ENGINE_TEXTURE2D_PROPERTY_START_SLOT				(5u)
+#define ENGINE_TEXTURE2D_ALBEDO_START_SLOT					(0u)
+#define ENGINE_TEXTURE2D_NORMAL_START_SLOT					(1u)
+#define ENGINE_TEXTURE2D_PROPERTY_START_SLOT				(2u)
+#define ENGINE_TEXTURE2D_GLOBAL_AO_INPUT_SLOT				(3u)
 
 #define ENGINE_TEXTURE2D_DEFAULT_WHITE						("./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga")
 #define ENGINE_TEXTURE2D_DEFAULT_BLACK						("./Engine/Assets/EngineTextures/Default/EngineDefaultBlack.tga")
@@ -81,6 +83,8 @@
 #define ENGINE_SHADER_NONE									("EngineBase/Shader/None")
 #define ENGINE_SHADER_DEFAULT_VS							("./Engine/Assets/EngineShaders/EngineDefaultVS.cso")
 #define ENGINE_SHADER_DEFAULT_PS							("./Engine/Assets/EngineShaders/EngineDefaultPS.cso")
+#define ENGINE_SHADER_DEFAULT_CLOTH_VS						("./Engine/Assets/EngineShaders/EngineDefaultClothVS.cso")
+#define ENGINE_SHADER_DEFAULT_CLOTH_PS						("./Engine/Assets/EngineShaders/EngineDefaultClothPS.cso")
 #define ENGINE_SHADER_DEFAULT_TERRAIN_VS					("./Engine/Assets/EngineShaders/EngineDefaultTerrainVS.cso")
 #define ENGINE_SHADER_DEFAULT_TERRAIN_PS					("./Engine/Assets/EngineShaders/EngineDefaultTerrainPS.cso")
 #define ENGINE_SHADER_EMPTY_PS								("./Engine/Assets/EngineShaders/EngineEmptyPS.cso")

@@ -7,6 +7,7 @@
 #include "../Headers/CGPUQueryManager.h"
 #include "../Headers/CGPUCulling.h"
 #include "../../AssetsManager/Headers/CMeshManager.h"
+#include "../../RenderBase/Headers/CMaterialBase.h"
 #include "../../../EngineGame/Headers/CComponent.h"
 #include "../Headers/CMeshRendererComponent.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -424,7 +425,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
 					break;
@@ -437,7 +438,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
 				}
@@ -449,7 +450,7 @@ void CRenderPipeline::PostUpdate()
 			{
 				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
 				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasVertexShader() && meshRenderer->HasPixelShader())
+				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
 				{
 					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
 				}
@@ -622,7 +623,7 @@ void CRenderPipeline::Render()
 				tempGBuffersRTV[i + 1u] = m_RTGBuffer[i].RenderTargetView;
 			}
 			CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_RTSceneDepth.DepthStencilView);
-			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), 6u);
+			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), ENGINE_TEXTURE2D_GLOBAL_AO_INPUT_SLOT);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED])
 			{
 				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
@@ -763,6 +764,18 @@ void CRenderPipeline::Render()
 		ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::Text("Post-process Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") * static_cast<DOUBLE>(1000));
 		ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
+		ImGui::Text("Total Pass           : %f ms.",
+			(CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("HZB_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") +
+				CGPUProfilerManager::GetPassAverageTime("Debug_Pass")) * static_cast<DOUBLE>(1000));
 		ImGui::End();
 	}
 
@@ -953,16 +966,16 @@ void CRenderPipeline::Culling()
 			if (objectHZBCullingResults[i] == TRUE)
 			{
 				const CMeshRendererComponent* meshRenderer = m_CameraCullingResults[i]->GetMeshRendererComponent<CMeshRendererComponent>();
-				CMeshRendererComponent::RenderTypeEnum tempRenderType = meshRenderer->GetRenderType();
-				if (tempRenderType == CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE)
+				CMaterialBase::MaterialType tempMaterialType = meshRenderer->GetMaterialType();
+				if (tempMaterialType == CMaterialBase::MaterialType::MATERIAL_TYPE_OPAQUE_DEFERRED)
 				{
 					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED].push_back(m_CameraCullingResults[i]);
 				}
-				else if (tempRenderType == CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD)
+				else if (tempMaterialType == CMaterialBase::MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD)
 				{
 					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD].push_back(m_CameraCullingResults[i]);
 				}
-				else if (tempRenderType == CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_TRANSPARENT)
+				else if (tempMaterialType == CMaterialBase::MaterialType::MATERIAL_TYPE_TRANSPARENT)
 				{
 					m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_TRANSPARENT].push_back(m_CameraCullingResults[i]);
 				}

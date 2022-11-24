@@ -177,6 +177,8 @@ public:
 	{
 		if (ImGui::TreeNode("MeshComponent"))
 		{
+			std::string meshComponentUniqueID = std::to_string((this->GetUniqueID()));
+			ImGui::Text("MeshComponent uniqueID : %s", meshComponentUniqueID.c_str());
 			std::string meshName = this->m_Mesh == NULL ? "NULL" : this->m_Mesh->GetName();
 			ImGui::Text("Mesh name : %s", meshName.c_str());
 			std::vector<CustomStruct::CSubMeshInfo> submesh = this->GetSubMeshInfo();

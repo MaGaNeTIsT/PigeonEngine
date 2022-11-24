@@ -14,9 +14,10 @@ BRDFTerm InitBRDFTerm()
 
 AnisotropicRoughness FetchAnisotropicRoughness(float roughness, float anisotropy)
 {
-    AnisotropicRoughness roughness;
-    roughness.at = max(roughness * (1.0 + anisotropy), 0.001);
-    roughness.ab = max(roughness * (1.0 - anisotropy), 0.001);
+    AnisotropicRoughness r;
+    r.at = max(roughness * (1.0 + anisotropy), 0.001);
+    r.ab = max(roughness * (1.0 - anisotropy), 0.001);
+    return r;
 }
 
 /*
@@ -226,7 +227,7 @@ float3 ClearCoatBRDF(const NormalViewLightDotParams content, float roughness, fl
     // Clear coat BRDF
     float Dc    = D_GGX(content.NdotH, clearCoatRoughness);
     float Vc    = V_Kelemen(content.LdotH);
-    float Fc    = F_Schlick(content.LdotH, 0.04) * clearCoatStrength;
+    float Fc    = F_Schlick(content.LdotH, 0.04, 1.0) * clearCoatStrength;
     float Frc   = (Dc * Vc) * Fc;
 
     // Account for energy loss in the base layer

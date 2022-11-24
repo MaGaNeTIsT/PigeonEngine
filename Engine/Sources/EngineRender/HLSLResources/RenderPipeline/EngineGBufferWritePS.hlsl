@@ -3,15 +3,13 @@
 
 #include "../Common/ShaderCommon.hlsl"
 
-Texture2D<float> _AOInput : register(t6);
-
 DeferredOutput main(Varying input)
 {
 	float3 normalModelWS	= SafeNormalize(input.normal.xyz);
 	float3 normalWS			= TransformTangentToSpaceDir(SafeNormalize(_NormalTexture.Sample(_LinearWrapSampler, input.uv0).rgb * 2 - 1), CreateTangentMatrix(normalModelWS, SafeNormalize(input.tangent.xyz)));
 	float3 albedo			= _AlbedoTexture.Sample(_LinearWrapSampler, input.uv0).rgb;
 	float4 property			= _PropertyTexture.Sample(_LinearWrapSampler, input.uv0).rgba;
-	float  ao				= _AOInput.Sample(_LinearClampSampler, (input.positionCS.xy + _CameraViewportMinSizeAndInvBufferSize.xy) * _CameraViewportMinSizeAndInvBufferSize.zw).r;
+	float  ao				= _GlobalAOInput.Sample(_LinearClampSampler, (input.positionCS.xy + _CameraViewportMinSizeAndInvBufferSize.xy) * _CameraViewportMinSizeAndInvBufferSize.zw).r;
 
 	ao = property.g * ao;
 

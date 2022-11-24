@@ -59,10 +59,12 @@ void CLightDirectional::Init()
 {
 	this->AddNewTransform();
 	this->m_FrameCounter = 0;
+	CGameObject::Init();
 }
 void CLightDirectional::Update()
 {
 	this->m_FrameCounter = 1 - this->m_FrameCounter;
+	CGameObject::Update();
 }
 BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 {
@@ -481,6 +483,7 @@ CustomType::Matrix4x4 CLightPoint::GetPreviousProjectionMatrix(const UINT& extra
 void CLightPoint::Init()
 {
 	this->AddNewTransform();
+	CGameObject::Init();
 }
 
 
@@ -528,9 +531,10 @@ CustomType::Matrix4x4 CLightSpot::GetPreviousProjectionMatrix(const UINT& extraI
 void CLightSpot::Init()
 {
 	this->AddNewTransform();
+	CGameObject::Init();
 }
 void CLightSpot::Update()
 {
 	this->m_FrameCounter = 1 - this->m_FrameCounter;
-
+	CGameObject::Update();
 }

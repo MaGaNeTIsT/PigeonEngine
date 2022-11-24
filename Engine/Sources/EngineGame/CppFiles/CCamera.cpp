@@ -148,13 +148,15 @@ void CCamera::Init()
 {
 	this->AddNewTransform();
 
+	CGameObject::Init();
+
 	this->ReCalculateProjectionMatrix();
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();
 }
 void CCamera::Uninit()
 {
-
+	CGameObject::Uninit();
 }
 void CCamera::Update()
 {
@@ -304,6 +306,8 @@ void CCamera::Update()
 			this->SetWorldRotation(TargetRotation);
 		}
 	}
+
+	CGameObject::Update();
 
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();

@@ -52,6 +52,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMaterialBase.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRendererComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
@@ -60,6 +61,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClothMaterial.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CDefaultLitMaterial.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CScreenPolygon2DMaterial.h" />
     <ClInclude Include="Entry\EngineMain.h" />
     <ClInclude Include="ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui\imgui.h" />
@@ -101,6 +105,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMaterialBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRendererComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
@@ -108,6 +113,9 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClothMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CDefaultLitMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CScreenPolygon2DMaterial.cpp" />
     <ClCompile Include="Entry\EngineMain.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
@@ -159,6 +167,22 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

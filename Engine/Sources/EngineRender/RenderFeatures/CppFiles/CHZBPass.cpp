@@ -27,7 +27,7 @@ void CHZBPass::Init(const CustomType::Vector2Int& pipelineSize)
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/BuildHZBComputeShader.cso", this->m_BuildHZBComputeShader);
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/RawDownSamplingComputeShader.cso", this->m_RawDownSamplingComputeShader);
 	this->InitHZBBuffers();
-	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
+	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
 	this->m_Polygon2D->Init();
 }
 void CHZBPass::Uninit()

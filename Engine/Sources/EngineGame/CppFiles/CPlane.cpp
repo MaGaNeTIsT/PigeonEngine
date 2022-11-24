@@ -10,6 +10,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
+#include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
@@ -46,9 +47,11 @@ void CPlane::Init()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
-		meshRendererComponent->SetMaterialTextures(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga"), CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE), CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE));
 		meshRendererComponent->SetMeshComponent(meshComponent);
+		CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
+		material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga"));
+		material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE));
+		material->SetPropertyTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE));
 
 		this->m_MeshComponent = meshComponent;
 	}

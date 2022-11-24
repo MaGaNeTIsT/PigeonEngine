@@ -2,6 +2,7 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "./CRenderStructCommon.h"
+#include "./CMaterialBase.h"
 #include "../../../EngineGame/Headers/CComponent.h"
 #include "../../AssetsManager/Headers/CMeshComponent.h"
 
@@ -14,26 +15,26 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	PerDrawBuffer;
 	};
 public:
-	enum RenderTypeEnum
+	BOOL	HasMesh()const { return (this->m_MeshComponent != NULL); }
+	BOOL	HasMaterial()const { return (this->m_Material != NULL); }
+	BOOL	HasConstantBuffer()const { return (this->m_ConstantBuffer != nullptr); }
+public:
+	CMaterialBase::MaterialType		GetMaterialType()const;
+public:
+	template<class T>
+	T* AddMaterial()
 	{
-		RENDER_TYPE_OPAQUE			= 0,
-		RENDER_TYPE_OPAQUE_FORWARD	= 1,
-		RENDER_TYPE_TRANSPARENT		= 2
-	};
-public:
-	RenderTypeEnum	GetRenderType()const { return this->m_RenderType; }
-	void			SetRenderType(RenderTypeEnum type) { this->m_RenderType = type; }
-	BOOL			HasMesh()const { return (this->m_MeshComponent != NULL); }
-	BOOL			HasVertexShader()const { return (this->m_VertexShader != NULL); }
-	BOOL			HasPixelShader()const { return (this->m_PixelShader != NULL); }
-public:
-	virtual void	InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type);
-	void			SetMaterialTextures(class CTexture2D* albedoTexture, class CTexture2D* normalTexture, class CTexture2D* propertyTexture);
+		if (this->HasMaterial())
+		{
+			delete (this->m_Material);
+			this->m_Material = NULL;
+		}
+		this->m_Material = new T();
+		return (reinterpret_cast<T*>(this->m_Material));
+	}
 	void			SetMeshComponent(const CMeshComponent* meshComponent);
-	void			SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
-	virtual void	UploadConstantBuffer(const void* data);
-	void			BindConstantBuffer(const UINT& startSlot);
 public:
+	virtual void	Init()override;
 	virtual void	Update()override;
 	virtual void	Draw()const override;
 	virtual void	DrawExtra()const override;
@@ -41,28 +42,21 @@ public:
 public:
 	virtual void	SelectedEditorUpdate()override;
 #endif
-private:
-	void			SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum);
-	void			LoadShader();
+protected:
+	void			UpdatePerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
 	BOOL			CreateConstantBuffer(const UINT& size);
+	void			UploadConstantBuffer(const void* data)const;
+	void			BindConstantBuffer(const UINT& startSlot)const;
 	void			UploadPerDrawConstantBuffer()const;
 	virtual void	Bind(const BOOL& needPixelShader = TRUE)const;
 public:
 	CMeshRendererComponent();
 	virtual ~CMeshRendererComponent();
 protected:
-	mutable BOOL										m_CurrentFrameUpload;
-	class CTexture2D*									m_AlbedoTexture;
-	class CTexture2D*									m_NormalTexture;
-	class CTexture2D*									m_PropertyTexture;
-protected:
+	mutable BOOL										m_CurrentFramePerDrawUpload;
+	mutable BOOL										m_CurrentFrameMaterialUpload;
 	const CMeshComponent*								m_MeshComponent;
-	RenderTypeEnum										m_RenderType;
-	std::string											m_VertexShaderName;
-	std::string											m_PixelShaderName;
-	class CVertexShader*								m_VertexShader;
-	class CPixelShader*									m_PixelShader;
-	std::vector<CustomStruct::CRenderInputLayoutDesc>	m_InputLayoutDesc;
+	CMaterialBase*										m_Material;
 	RenderPerDrawInfo									m_PerDrawInfo;
 	CustomStruct::CRenderBufferDesc						m_ConstantBufferDesc;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_ConstantBuffer;

@@ -65,7 +65,7 @@ void CGTAOPass::Init(CCamera* mainCamera, const CustomType::Vector2Int& pipeline
 			CustomStruct::CRenderBindFlag::BIND_SRV_UAV,
 			CustomStruct::CRenderFormat::FORMAT_R8_UNORM));
 
-	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_VS, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
+	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
 	this->m_Polygon2D->Init();
 
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAOSpatialIntegral.cso", this->m_IntegralComputeShader);

@@ -32,25 +32,26 @@ cbuffer ConstantBufferLightData : register(b2)
 	LightParams		_LightData[GLOBAL_LIGHT_COUNT];
 }
 
-SamplerState	_PointClampSampler			: register(s0);
-SamplerState	_PointWrapSampler			: register(s1);
-SamplerState	_LinearClampSampler			: register(s2);
-SamplerState	_LinearWrapSampler			: register(s3);
+SamplerState		_PointClampSampler		: register(s0);
+SamplerState		_PointWrapSampler		: register(s1);
+SamplerState		_LinearClampSampler		: register(s2);
+SamplerState		_LinearWrapSampler		: register(s3);
 
-Texture2D		_EngineGBufferColor			: register(t0);
-Texture2D		_EngineGBufferNormal		: register(t1);
-Texture2D		_EngineGBufferAlbedo		: register(t2);
-Texture2D		_EngineGBufferProperty		: register(t3);
-Texture2D		_EngineLightShadowMap0		: register(t4);
-Texture2D		_EngineLightShadowMap1		: register(t5);
-Texture2D		_EngineLightShadowMap2		: register(t6);
-Texture2D		_EngineLightShadowMap3		: register(t7);
+Texture2D			_EngineGBufferColor		: register(t0);
+Texture2D			_EngineGBufferNormal	: register(t1);
+Texture2D			_EngineGBufferAlbedo	: register(t2);
+Texture2D			_EngineGBufferProperty	: register(t3);
+Texture2D			_EngineLightShadowMap0	: register(t4);
+Texture2D			_EngineLightShadowMap1	: register(t5);
+Texture2D			_EngineLightShadowMap2	: register(t6);
+Texture2D			_EngineLightShadowMap3	: register(t7);
 
-Texture2D		_EngineCameraColor			: register(t0);
-Texture2D		_EngineCameraDepth			: register(t1);
+Texture2D			_EngineCameraColor		: register(t0);
+Texture2D			_EngineCameraDepth		: register(t1);
 
-Texture2D		_AlbedoTexture				: register(t3);
-Texture2D		_NormalTexture				: register(t4);
-Texture2D		_PropertyTexture			: register(t5);
+Texture2D			_AlbedoTexture			: register(t0);
+Texture2D			_NormalTexture			: register(t1);
+Texture2D			_PropertyTexture		: register(t2);
+Texture2D<float>	_GlobalAOInput			: register(t3);
 
 #endif

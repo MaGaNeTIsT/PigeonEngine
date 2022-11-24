@@ -5,81 +5,69 @@
 #include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../AssetsManager/Headers/CTextureManager.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
+#include "../../RenderBase/Headers/CMaterialBase.h"
 #include "../../../EngineGame/Headers/CGameObject.h"
 
 CMeshRendererComponent::CMeshRendererComponent() : CRenderComponent(TRUE, TRUE, FALSE)
 {
-	this->m_CurrentFrameUpload	= FALSE;
-	this->m_AlbedoTexture		= NULL;
-	this->m_NormalTexture		= NULL;
-	this->m_PropertyTexture		= NULL;
-	this->m_RenderType			= RenderTypeEnum::RENDER_TYPE_OPAQUE;
-	this->m_VertexShaderName	= ENGINE_SHADER_NONE;
-	this->m_PixelShaderName		= ENGINE_SHADER_NONE;
-	this->m_VertexShader		= NULL;
-	this->m_PixelShader			= NULL;
-	this->m_ConstantBuffer		= nullptr;
+	this->m_CurrentFramePerDrawUpload	= FALSE;
+	this->m_CurrentFrameMaterialUpload	= FALSE;
+	this->m_MeshComponent				= NULL;
+	this->m_Material					= NULL;
+	this->m_ConstantBuffer				= nullptr;
 }
 CMeshRendererComponent::~CMeshRendererComponent()
 {
-	if (this->HasVertexShader())
+	if (this->HasMaterial())
 	{
-		delete (this->m_VertexShader);
-		this->m_VertexShader = NULL;
-	}
-	if (this->HasPixelShader())
-	{
-		delete (this->m_PixelShader);
-		this->m_PixelShader = NULL;
+		delete (this->m_Material);
+		this->m_Material = NULL;
 	}
 }
-void CMeshRendererComponent::InitShadersAndInputLayout(const std::string& vertexShaderName, const std::string& pixelShaderName, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, RenderTypeEnum type)
+CMaterialBase::MaterialType	CMeshRendererComponent::GetMaterialType()const
 {
-	this->m_RenderType			= type;
-	this->m_VertexShaderName	= vertexShaderName;
-	this->m_PixelShaderName		= pixelShaderName;
-	this->SetInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
-	CRenderDevice::CreateBuffer(this->m_PerDrawInfo.PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::CShaderGlobalPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
-	this->LoadShader();
-}
-void CMeshRendererComponent::SetMaterialTextures(CTexture2D* albedoTexture, CTexture2D* normalTexture, CTexture2D* propertyTexture)
-{
-	this->m_AlbedoTexture = (albedoTexture != NULL) ? albedoTexture : CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY);
-	this->m_NormalTexture = (normalTexture != NULL) ? normalTexture : CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP);
-	this->m_PropertyTexture = (propertyTexture != NULL) ? propertyTexture : CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY);
+	if (this->HasMaterial())
+	{
+		return (this->m_Material->GetMaterialType());
+	}
+	return CMaterialBase::MaterialType::MATERIAL_TYPE_NONE;
 }
 void CMeshRendererComponent::SetMeshComponent(const CMeshComponent* meshComponent)
 {
 	this->m_MeshComponent = meshComponent;
 }
-void CMeshRendererComponent::SetPerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)
+void CMeshRendererComponent::UpdatePerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter)
 {
 	this->m_PerDrawInfo.PerDrawData.WorldMatrix				= worldMatrix.GetGPUUploadFloat4x4();
 	this->m_PerDrawInfo.PerDrawData.WorldInvMatrix			= worldInvMatrix.GetGPUUploadFloat4x4();
 	this->m_PerDrawInfo.PerDrawData.WorldInvTransposeMatrix	= worldInvMatrix.GetXMFLOAT4X4();
 	this->m_PerDrawInfo.PerDrawData.CustomParameter			= customParameter.GetXMFLOAT4();
 }
-void CMeshRendererComponent::UploadConstantBuffer(const void* ptrData)
+void CMeshRendererComponent::Init()
 {
-	CRenderDevice::UploadBuffer(this->m_ConstantBuffer, ptrData);
-}
-void CMeshRendererComponent::BindConstantBuffer(const UINT& startSlot)
-{
-	CRenderDevice::BindVSConstantBuffer(this->m_ConstantBuffer, startSlot);
-	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, startSlot);
+	CRenderDevice::CreateBuffer(this->m_PerDrawInfo.PerDrawBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::CShaderGlobalPerDraw), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+	if (this->HasMaterial())
+	{
+		this->m_Material->Init();
+		if (this->m_Material->HasConstantData())
+		{
+			this->CreateConstantBuffer(this->m_Material->GetConstantSize());
+		}
+	}
 }
 void CMeshRendererComponent::Update()
 {
-	this->m_CurrentFrameUpload = FALSE;
+	this->m_CurrentFramePerDrawUpload	= FALSE;
+	this->m_CurrentFrameMaterialUpload	= FALSE;
 	if (this->m_GameObject != NULL)
 	{
 		CustomType::Matrix4x4 locaToWorld(this->m_GameObject->GetLocalToWorldMatrix());
-		this->SetPerDrawInfo(locaToWorld, locaToWorld.Inverse(), CustomType::Vector4(0.f));
+		this->UpdatePerDrawInfo(locaToWorld, locaToWorld.Inverse(), CustomType::Vector4(0.f));
 	}
 }
 void CMeshRendererComponent::Draw()const
 {
-	if (!this->HasMesh() || !this->HasVertexShader() || !this->HasPixelShader())
+	if (!this->HasMesh() || !this->HasMaterial())
 	{
 		return;
 	}
@@ -100,7 +88,7 @@ void CMeshRendererComponent::Draw()const
 }
 void CMeshRendererComponent::DrawExtra()const
 {
-	if (!this->HasMesh() || !this->HasVertexShader())
+	if (!this->HasMesh() || !this->HasMaterial())
 	{
 		return;
 	}
@@ -122,65 +110,40 @@ void CMeshRendererComponent::DrawExtra()const
 #if _DEVELOPMENT_EDITOR
 void CMeshRendererComponent::SelectedEditorUpdate()
 {
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 	if (ImGui::TreeNode("MeshRendererComponent"))
 	{
 		{
-			static std::map<RenderTypeEnum, std::string> renderTypeMap = {
-				{ RenderTypeEnum::RENDER_TYPE_OPAQUE, "OPAQUE" },
-				{ RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD, "OPAQUE_FORWARD" },
-				{ RenderTypeEnum::RENDER_TYPE_TRANSPARENT, "TRANSPARENT" } };
-			ImGui::Text("Render type : %s", renderTypeMap[this->m_RenderType].c_str());
+			std::string meshComponentName = "NULL";
+			if (this->HasMesh())
+			{
+				meshComponentName = "Has, UniqueID : " + std::to_string((this->m_MeshComponent->GetUniqueID()));
+			}
+			ImGui::Text("Mesh component : %s", meshComponentName.c_str());
 		}
 
+		if (this->HasMaterial())
 		{
-			std::string vsName = this->HasVertexShader() ? this->m_VertexShaderName : "NULL";
-			std::string psName = this->HasPixelShader() ? this->m_PixelShaderName : "NULL";
-			ImGui::Text("Vertex shader name : %s", vsName.c_str());
-			ImGui::Text("Pixel shader name : %s", psName.c_str());
+			this->m_Material->SelectedEditorUpdate();
 		}
 
-		{
-			std::string albedoName = this->m_AlbedoTexture != NULL ? this->m_AlbedoTexture->GetName() : "NULL";
-			std::string normalName = this->m_NormalTexture != NULL ? this->m_NormalTexture->GetName() : "NULL";
-			std::string propertyName = this->m_PropertyTexture != NULL ? this->m_PropertyTexture->GetName() : "NULL";
-			ImGui::Text("Albedo texture name : %s", albedoName.c_str());
-			ImGui::Text("Normal texture name : %s", normalName.c_str());
-			ImGui::Text("Property texture name : %s", propertyName.c_str());
-		}
 		ImGui::TreePop();
 	}
 }
 #endif
-void CMeshRendererComponent::SetInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* layoutDesc, const UINT& layoutNum)
-{
-	if (this->m_InputLayoutDesc.size() != layoutNum)
-	{
-		this->m_InputLayoutDesc.resize(layoutNum);
-	}
-	for (UINT i = 0u; i < layoutNum; i++)
-	{
-		this->m_InputLayoutDesc[i] = layoutDesc[i];
-	}
-}
-void CMeshRendererComponent::LoadShader()
-{
-	if (this->HasVertexShader())
-	{
-		delete (this->m_VertexShader);
-		this->m_VertexShader = NULL;
-	}
-	if (this->HasPixelShader())
-	{
-		delete (this->m_PixelShader);
-		this->m_PixelShader = NULL;
-	}
-	this->m_VertexShader = CShaderManager::LoadVertexShader(this->m_VertexShaderName, this->m_InputLayoutDesc.data(), static_cast<UINT>(this->m_InputLayoutDesc.size()));
-	this->m_PixelShader = CShaderManager::LoadPixelShader(this->m_PixelShaderName);
-}
 BOOL CMeshRendererComponent::CreateConstantBuffer(const UINT& size)
 {
 	this->m_ConstantBufferDesc = CustomStruct::CRenderBufferDesc(size, CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT));
 	return (CRenderDevice::CreateBuffer(m_ConstantBuffer, this->m_ConstantBufferDesc));
+}
+void CMeshRendererComponent::UploadConstantBuffer(const void* ptrData)const
+{
+	CRenderDevice::UploadBuffer(this->m_ConstantBuffer, ptrData);
+}
+void CMeshRendererComponent::BindConstantBuffer(const UINT& startSlot)const
+{
+	CRenderDevice::BindVSConstantBuffer(this->m_ConstantBuffer, startSlot);
+	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, startSlot);
 }
 void CMeshRendererComponent::UploadPerDrawConstantBuffer()const
 {
@@ -188,34 +151,35 @@ void CMeshRendererComponent::UploadPerDrawConstantBuffer()const
 }
 void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
 {
-	if (!this->HasMesh() || !this->HasVertexShader())
+	if (!this->HasMesh() || !this->HasMaterial())
 	{
 		return;
 	}
-	if (!this->m_CurrentFrameUpload)
+	if (!this->m_CurrentFramePerDrawUpload)
 	{
 		this->UploadPerDrawConstantBuffer();
-		this->m_CurrentFrameUpload = TRUE;
+		this->m_CurrentFramePerDrawUpload = TRUE;
+	}
+	if (!m_CurrentFrameMaterialUpload && this->HasConstantBuffer() && this->m_Material->HasConstantData())
+	{
+		this->UploadConstantBuffer(this->m_Material->GetConstantData());
+		this->m_CurrentFrameMaterialUpload = TRUE;
 	}
 	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
 	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
-	this->m_VertexShader->Bind();
+	if (this->HasConstantBuffer())
+	{
+		this->BindConstantBuffer(ENGINE_CONSTANT_BUFFER_MATERIAL_DATA_START_SLOT);
+	}
+	this->m_Material->Bind();
 	CRenderDevice::SetVertexBuffer(this->m_MeshComponent->GetVertexBuffer(), this->m_MeshComponent->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(this->m_MeshComponent->GetIndexBuffer());
-	if (needPixelShader && this->HasPixelShader())
+	if (this->m_Material->HasVertexShader())
 	{
-		if (this->m_AlbedoTexture != NULL)
-		{
-			CRenderDevice::BindPSShaderResourceView(this->m_AlbedoTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
-		}
-		if (this->m_NormalTexture != NULL)
-		{
-			CRenderDevice::BindPSShaderResourceView(this->m_NormalTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_NORMAL_START_SLOT);
-		}
-		if (this->m_PropertyTexture != NULL)
-		{
-			CRenderDevice::BindPSShaderResourceView(this->m_PropertyTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_PROPERTY_START_SLOT);
-		}
-		this->m_PixelShader->Bind();
+		this->m_Material->GetVertexShader()->Bind();
+	}
+	if (needPixelShader && this->m_Material->HasVertexShader())
+	{
+		this->m_Material->GetPixelShader()->Bind();
 	}
 }

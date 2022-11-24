@@ -2,6 +2,8 @@
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
+#include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
+#include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
 CSceneGameObject::CSceneGameObject()
 {
@@ -16,11 +18,9 @@ CSceneGameObject::CSceneGameObject()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-		meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE, desc, 4u, FALSE));
-		//meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE);
-		meshRendererComponent->InitShadersAndInputLayout(ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_DEFAULT_PS, desc, 4u, CMeshRendererComponent::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD);
-		meshRendererComponent->SetMaterialTextures(NULL, NULL, NULL);
+		meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, desc, 4u, FALSE));
 		meshRendererComponent->SetMeshComponent(meshComponent);
+		CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>();
 		{
 			CustomType::Vector3 boundMin, boundMax;
 			meshComponent->GetMinMaxBounding(boundMin, boundMax);
@@ -49,8 +49,8 @@ CSceneGameObject::CSceneGameObject()
 #if _DEVELOPMENT_EDITOR
 		this->m_MeshRendererComponent = meshRendererComponent;
 		this->m_MeshComponent = meshComponent;
-		this->m_CurrentMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
-		this->m_PreviousMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
+		this->m_CurrentMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
+		this->m_PreviousMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_LoadBaseModel = TRUE;
 #endif
 	}
