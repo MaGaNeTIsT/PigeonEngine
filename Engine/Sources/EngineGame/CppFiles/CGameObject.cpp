@@ -780,6 +780,7 @@ void CGameObject::FixedUpdate()
 #if _DEVELOPMENT_EDITOR
 void CGameObject::SelectedEditorUpdate_RenderBounding()
 {
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 	if (ImGui::TreeNode("RenderBounding"))
 	{
 		FLOAT boxBoundMin[3] = { 0.f, 0.f, 0.f }, boxBoundMax[3] = { 0.f, 0.f, 0.f };
@@ -803,7 +804,7 @@ void CGameObject::SelectedEditorUpdate_RenderBounding()
 		ImGui::InputFloat3("Sphere Anchor", sphereBoundAnchor);
 		ImGui::InputFloat("Sphere Radius", &sphereBoundRadius);
 		ImGui::EndChild();
-		if (ImGui::Button("Apply"))
+		if (ImGui::Button("ApplyBounding"))
 		{
 			this->SetRenderLocalBoundingBox(CustomType::Vector3(boxBoundMin[0], boxBoundMin[1], boxBoundMin[2]), CustomType::Vector3(boxBoundMax[0], boxBoundMax[1], boxBoundMax[2]));
 			this->SetRenderLocalBoundingSphere(CustomType::Vector3(sphereBoundAnchor[0], sphereBoundAnchor[1], sphereBoundAnchor[2]), sphereBoundRadius);

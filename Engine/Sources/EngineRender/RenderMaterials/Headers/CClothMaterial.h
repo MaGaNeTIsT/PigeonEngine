@@ -24,19 +24,19 @@ public:
 	virtual void			SelectedEditorUpdate()override;
 protected:
 	INT					m_AlbedoTextureSelect;
-	std::string			m_AlbedoTexturePath;
+	CHAR				m_AlbedoTexturePath[512];
 	INT					m_EmissiveTextureSelect;
-	std::string			m_EmissiveTexturePath;
+	CHAR				m_EmissiveTexturePath[512];
 	INT					m_SheenColorTextureSelect;
-	std::string			m_SheenColorTexturePath;
+	CHAR				m_SheenColorTexturePath[512];
 	INT					m_NormalTextureSelect;
-	std::string			m_NormalTexturePath;
+	CHAR				m_NormalTexturePath[512];
 	INT					m_RoughnessTextureSelect;
-	std::string			m_RoughnessTexturePath;
+	CHAR				m_RoughnessTexturePath[512];
 	INT					m_MetallicnessTextureSelect;
-	std::string			m_MetallicnessTexturePath;
+	CHAR				m_MetallicnessTexturePath[512];
 	INT					m_AmbientOcclusionTextureSelect;
-	std::string			m_AmbientOcclusionTexturePath;
+	CHAR				m_AmbientOcclusionTexturePath[512];
 #endif
 protected:
 	RenderParams		m_RenderParams;

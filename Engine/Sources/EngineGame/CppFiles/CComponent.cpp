@@ -421,7 +421,7 @@ void CTransform::SelectedEditorUpdate()
 		if (ImGui::TreeNode("Transform"))
 		{
 			ImGui::Checkbox("IsRealTimeChange", &realTimeChange);
-			ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(320, 135), ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+			ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(400, 135), false, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 			ImGui::InputFloat3("LocalPosition", localPosition, "%.2f");
 			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.5f, -360.f, 360.f, "%.2f");
 			ImGui::InputFloat3("LocalScale", localScale, "%.2f");
@@ -438,7 +438,7 @@ void CTransform::SelectedEditorUpdate()
 				ImGui::Text("World scale    : %.2f, %.2f, %.2f", worldScale[0], worldScale[1], worldScale[2]);
 			}
 			ImGui::EndChild();
-			if (ImGui::Button("Apply") || realTimeChange)
+			if (ImGui::Button("ApplyTransform") || realTimeChange)
 			{
 				needChangeTransform = TRUE;
 			}

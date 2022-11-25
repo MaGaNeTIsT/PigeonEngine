@@ -10,7 +10,7 @@ VaryingCloth main(AttributeCloth input)
 	output.positionWS		= float4(TransformObjectToWorld(input.position.xyz), 1.0);
 	output.positionCS		= TransformWorldToClip(output.positionWS.xyz);
 	output.positionSS		= output.positionCS.xyzw / output.positionCS.w;
-	output.positionSS.xy	= output.positionSS.xy * 0.5 + 0.5;
+	output.positionSS.xy	= output.positionSS.xy * float2(0.5, -0.5) + 0.5;
 	output.normal			= TransformObjectToWorldNormal(input.normal.xyz).xyzz;
 	output.tangent			= TransformObjectToWorldDir(input.tangent.xyz).xyzz;
 	output.uv0				= input.uv0;

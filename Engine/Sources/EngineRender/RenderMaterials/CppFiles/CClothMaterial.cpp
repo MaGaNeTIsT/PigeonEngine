@@ -2,6 +2,8 @@
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../AssetsManager/Headers/CTextureManager.h"
+#include "../../AssetsManager/Headers/CShader.h"
+#include "../../AssetsManager/Headers/CShaderManager.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
 
@@ -13,6 +15,8 @@ const static CustomStruct::CRenderInputLayoutDesc _GClothMaterialInputLayout[4u]
 
 CClothMaterial::CClothMaterial() : CMaterialBase(typeid(CClothMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(RenderParams), _GClothMaterialInputLayout, 4u, ENGINE_SHADER_DEFAULT_CLOTH_VS, ENGINE_SHADER_DEFAULT_CLOTH_PS)
 {
+	this->m_VertexShader	= CShaderManager::LoadVertexShader(ENGINE_SHADER_DEFAULT_CLOTH_VS, _GClothMaterialInputLayout, 4u);
+	this->m_PixelShader		= CShaderManager::LoadPixelShader(ENGINE_SHADER_DEFAULT_CLOTH_PS);
 	this->m_AlbedoTexture			= NULL;
 	this->m_EmissiveTexture			= NULL;
 	this->m_SheenColorTexture		= NULL;
@@ -21,20 +25,25 @@ CClothMaterial::CClothMaterial() : CMaterialBase(typeid(CClothMaterial).name(), 
 	this->m_MetallicnessTexture		= NULL;
 	this->m_AmbientOcclusionTexture	= NULL;
 #if _DEVELOPMENT_EDITOR
-	this->m_AlbedoTextureSelect				= -1;
-	this->m_EmissiveTextureSelect			= -1;
-	this->m_SheenColorTextureSelect			= -1;
-	this->m_NormalTextureSelect				= -1;
-	this->m_RoughnessTextureSelect			= -1;
-	this->m_MetallicnessTextureSelect		= -1;
-	this->m_AmbientOcclusionTextureSelect	= -1;
-	this->m_AlbedoTexturePath				= "None";
-	this->m_EmissiveTexturePath				= "None";
-	this->m_SheenColorTexturePath			= "None";
-	this->m_NormalTexturePath				= "None";
-	this->m_RoughnessTexturePath			= "None";
-	this->m_MetallicnessTexturePath			= "None";
-	this->m_AmbientOcclusionTexturePath		= "None";
+	this->m_AlbedoTextureSelect				= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	this->m_EmissiveTextureSelect			= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	this->m_SheenColorTextureSelect			= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	this->m_NormalTextureSelect				= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP;
+	this->m_RoughnessTextureSelect			= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	this->m_MetallicnessTextureSelect		= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	this->m_AmbientOcclusionTextureSelect	= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE;
+	{
+		auto initPathChar = [](CHAR* path, const std::string& str) {
+			strcpy_s(path, 512, str.c_str());
+		};
+		initPathChar(this->m_AlbedoTexturePath, "Default White");
+		initPathChar(this->m_EmissiveTexturePath, "Default White");
+		initPathChar(this->m_SheenColorTexturePath, "Default White");
+		initPathChar(this->m_NormalTexturePath, "Default Bump");
+		initPathChar(this->m_RoughnessTexturePath, "Default White");
+		initPathChar(this->m_MetallicnessTexturePath, "Default White");
+		initPathChar(this->m_AmbientOcclusionTexturePath, "Default White");
+	}
 #endif
 }
 CClothMaterial::~CClothMaterial()
@@ -56,10 +65,10 @@ void CClothMaterial::Init()
 			{ CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP, "Default Bump" },
 			{ CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY, "Default Property" },
 			{ -2, "Custom Path" } };
-		auto pathSelect = [&baseEngineTextureItems](const INT& select, std::string& name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
+		auto pathSelect = [&baseEngineTextureItems](const INT& select, CHAR* name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
 			if (select != -2)
 			{
-				name = baseEngineTextureItems[select];
+				strcpy_s(name, 512, baseEngineTextureItems[select].c_str());
 				if (select != -1)
 				{
 					texture = CRenderPipeline::GetDefaultTexture(static_cast<CustomStruct::CEngineDefaultTexture2DEnum>(select));
@@ -67,7 +76,8 @@ void CClothMaterial::Init()
 			}
 			else
 			{
-				texture = CTextureManager::LoadTexture2D(name, sRGB);
+				std::string tempName(name);
+				texture = CTextureManager::LoadTexture2D(tempName, sRGB);
 			}};
 		pathSelect(this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath, this->m_AlbedoTexture);
 		pathSelect(this->m_EmissiveTextureSelect, this->m_EmissiveTexturePath, this->m_EmissiveTexture);
@@ -142,11 +152,20 @@ void CClothMaterial::SelectedEditorUpdate()
 		{ CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY, "Default Property" },
 		{ -2, "Custom Path" } };
 
-	ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(320, 135), ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
-	ImGui::ColorEdit3("BaseColor", baseColor);
-	ImGui::ColorEdit3("EmissiveColor", EmissiveColor);
-	ImGui::ColorEdit3("SheenColor", SheenColor);
-	ImGui::ColorEdit3("SubsurfaceColor", SubsurfaceColor);
+	ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(400, 270), false, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+
+	ImGui::Text("BaseColor");
+	ImGui::ColorEdit3("BaseColor", baseColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+
+	ImGui::Text("EmissiveColor");
+	ImGui::ColorEdit3("EmissiveColor", EmissiveColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+
+	ImGui::Text("SheenColor");
+	ImGui::ColorEdit3("SheenColor", SheenColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+
+	ImGui::Text("SubsurfaceColor");
+	ImGui::ColorEdit3("SubsurfaceColor", SubsurfaceColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+
 	ImGui::SliderFloat("Roughness", &roughness, 0.f, 1.f);
 	ImGui::SliderFloat("Metallicness", &metallicness, 0.f, 1.f);
 	ImGui::SliderFloat("AmbientOcclusion", &ambientOcclusion, 0.f, 1.f);
@@ -169,23 +188,17 @@ void CClothMaterial::SelectedEditorUpdate()
 				}
 				ImGui::EndCombo();
 			}};
-		auto texturePathText = [](const std::string& name, const INT& select, std::string& path) {
+		auto texturePathText = [](const std::string& name, const INT& select, CHAR* path) {
 			if (select == -2)
 			{
-				CHAR texPath[512];
-				texPath[0] = '\0';
-				ImGui::InputText(name.c_str(), texPath, 512);
-				if (ImGui::Button("Apply"))
-				{
-					path = texPath;
-				}
+				ImGui::InputText(name.c_str(), path, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
 			}};
-		textureCombo("BaseColorTexture", this->m_AlbedoTextureSelect);
-		texturePathText("BaseColorTexturePath", this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath);
+		textureCombo("BaseTexture", this->m_AlbedoTextureSelect);
+		texturePathText("BaseTexturePath", this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath);
 		textureCombo("EmissiveTexture", this->m_EmissiveTextureSelect);
 		texturePathText("EmissiveTexturePath", this->m_EmissiveTextureSelect, this->m_EmissiveTexturePath);
-		textureCombo("SheenColorTexture", this->m_SheenColorTextureSelect);
-		texturePathText("SheenColorTexturePath", this->m_SheenColorTextureSelect, this->m_SheenColorTexturePath);
+		textureCombo("SheenTexture", this->m_SheenColorTextureSelect);
+		texturePathText("SheenTexturePath", this->m_SheenColorTextureSelect, this->m_SheenColorTexturePath);
 		textureCombo("NormalTexture", this->m_NormalTextureSelect);
 		texturePathText("NormalTexturePath", this->m_NormalTextureSelect, this->m_NormalTexturePath);
 		textureCombo("RoughnessTexture", this->m_RoughnessTextureSelect);
@@ -197,10 +210,10 @@ void CClothMaterial::SelectedEditorUpdate()
 	}
 
 	{
-		auto textureUpdate = [&baseEngineTextureItems](const INT& select, std::string& path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
+		auto textureUpdate = [&baseEngineTextureItems](const INT& select, CHAR* path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
 			if (select != -2)
 			{
-				path = baseEngineTextureItems[select];
+				strcpy_s(path, 512, baseEngineTextureItems[select].c_str());
 				if (select == -1)
 				{
 					tex = CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_RED);
@@ -212,9 +225,20 @@ void CClothMaterial::SelectedEditorUpdate()
 			}
 			else
 			{
-				tex = CTextureManager::LoadTexture2D(path, sRGB);
+				std::string tempName(path);
+				tex = CTextureManager::LoadTexture2D(tempName, sRGB);
 			}
 		};
+		if (ImGui::Button("ApplyTextures"))
+		{
+			textureUpdate(this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath, this->m_AlbedoTexture);
+			textureUpdate(this->m_EmissiveTextureSelect, this->m_EmissiveTexturePath, this->m_EmissiveTexture);
+			textureUpdate(this->m_SheenColorTextureSelect, this->m_SheenColorTexturePath, this->m_SheenColorTexture);
+			textureUpdate(this->m_NormalTextureSelect, this->m_NormalTexturePath, this->m_NormalTexture);
+			textureUpdate(this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath, this->m_RoughnessTexture);
+			textureUpdate(this->m_MetallicnessTextureSelect, this->m_MetallicnessTexturePath, this->m_MetallicnessTexture);
+			textureUpdate(this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath, this->m_AmbientOcclusionTexture);
+		}
 	}
 
 	ImGui::EndChild();

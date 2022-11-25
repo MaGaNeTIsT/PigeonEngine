@@ -35,6 +35,7 @@ CPlane::~CPlane()
 }
 void CPlane::Init()
 {
+	CDefaultLitMaterial* material = NULL;
 	if (!this->HasMeshComponent() && !this->HasMeshRendererComponent())
 	{
 		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
@@ -48,16 +49,17 @@ void CPlane::Init()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		meshRendererComponent->SetMeshComponent(meshComponent);
-		CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
-		material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga"));
-		material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE));
-		material->SetPropertyTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE));
+		material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
 
 		this->m_MeshComponent = meshComponent;
 	}
 	this->SetMeshInfo(this->m_PlaneMeshInfo.Length, this->m_PlaneMeshInfo.VertexCount, this->m_PlaneMeshInfo.UV);
 
 	CGameObject::Init();
+
+	material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Albedo.tga"));
+	material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE));
+	material->SetPropertyTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Property.tga", FALSE));
 }
 void CPlane::Update()
 {

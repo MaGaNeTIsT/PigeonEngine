@@ -670,6 +670,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
 			CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView, m_RTSceneDepth.DepthStencilView);
+			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), ENGINE_TEXTURE2D_GLOBAL_AO_INPUT_SLOT);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD])
 			{
 				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();

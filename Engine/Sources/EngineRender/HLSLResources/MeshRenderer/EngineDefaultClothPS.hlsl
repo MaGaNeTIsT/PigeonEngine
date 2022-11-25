@@ -58,12 +58,12 @@ float4 main(VaryingCloth input) : SV_Target
 	pixelParams.DiffuseColor					= RemappingDiffuseColor(GBuffer.BaseColor, GBuffer.Metallicness);
 	pixelParams.SpecularColor					= RemappingSpecularColor(GBuffer.BaseColor, GBuffer.Metallicness);
 	pixelParams.F0								= RemappingFresnelf0(0.5, GBuffer.BaseColor, GBuffer.Metallicness);
-	pixelParams.SheenColor						= _SheenColorMetallicness.rgb * materialSheenColor;
+	pixelParams.SheenColor						= _SheenColorMetallicness.rgb * materialSheenColor * pixelParams.SpecularColor;
 #ifdef CLOTH_HAS_SUBSURFACE_COLOR
 	pixelParams.SubsurfaceColor					= _SubsurfaceColor.rgb;
 #endif
 
-	float4 color = float4((0.4 * GBuffer.BaseColor * GBuffer.AmbientOcclusion) + GBuffer.Emissive, 1.0);
+	float4 color = float4((0.2 * GBuffer.BaseColor * GBuffer.AmbientOcclusion) + GBuffer.Emissive, 1.0);
 	for (uint i = 0u; i < (uint)_LightCount.x; i++)
 	{
 		ShadingLightParams light;

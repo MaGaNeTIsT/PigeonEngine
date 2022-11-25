@@ -15,15 +15,15 @@ const static CustomStruct::CRenderInputLayoutDesc _GDefaultLitMaterialInputLayou
 
 CDefaultLitMaterial::CDefaultLitMaterial() : CMaterialBase(typeid(CDefaultLitMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_DEFERRED, 0u, _GDefaultLitMaterialInputLayout, 4u, ENGINE_SHADER_DEFAULT_VS, ENGINE_SHADER_GBUFFER_WRITE_PS)
 {
-	this->m_VertexShader = CShaderManager::LoadVertexShader(ENGINE_SHADER_DEFAULT_VS, _GDefaultLitMaterialInputLayout, 4u);
+	this->m_VertexShader	= CShaderManager::LoadVertexShader(ENGINE_SHADER_DEFAULT_VS, _GDefaultLitMaterialInputLayout, 4u);
 	this->m_PixelShader		= CShaderManager::LoadPixelShader(ENGINE_SHADER_GBUFFER_WRITE_PS);
 #if _DEVELOPMENT_EDITOR
-	this->m_AlbedoTextureSelect		= -1;
-	this->m_NormalTextureSelect		= -1;
-	this->m_PropertyTextureSelect	= -1;
-	this->m_AlbedoTexturePath		= "None";
-	this->m_NormalTexturePath		= "None";
-	this->m_PropertyTexturePath		= "None";
+	this->m_AlbedoTextureSelect		= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY;
+	this->m_NormalTextureSelect		= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP;
+	this->m_PropertyTextureSelect	= CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY;
+	this->m_AlbedoTexturePath		= "Default Gray";
+	this->m_NormalTexturePath		= "Default Bump";
+	this->m_PropertyTexturePath		= "Default Property";
 #endif
 	this->m_AlbedoTexture		= NULL;
 	this->m_NormalTexture		= NULL;

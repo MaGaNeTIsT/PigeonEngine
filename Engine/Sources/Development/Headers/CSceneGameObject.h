@@ -17,6 +17,7 @@ protected:
 	class CMeshRendererComponent*	m_MeshRendererComponent;
 	class CMeshComponent*			m_MeshComponent;
 	BOOL							m_LoadBaseModel;
+	CHAR							m_LoadCustomModelPath[512];
 	INT								m_CurrentMeshType;
 	INT								m_PreviousMeshType;
 #endif

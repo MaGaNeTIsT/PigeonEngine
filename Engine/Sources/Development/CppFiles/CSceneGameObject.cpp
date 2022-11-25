@@ -52,6 +52,8 @@ CSceneGameObject::CSceneGameObject()
 		this->m_CurrentMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_PreviousMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_LoadBaseModel = TRUE;
+		this->m_LoadCustomModelPath[0] = 'N'; this->m_LoadCustomModelPath[1] = 'U'; this->m_LoadCustomModelPath[2] = 'L'; this->m_LoadCustomModelPath[3] = 'L';
+		this->m_LoadCustomModelPath[4] = '\0';
 #endif
 	}
 }
@@ -82,35 +84,57 @@ void CSceneGameObject::SelectedEditorUpdate()
 
 	//Editor body
 	{
-		ImGui::Begin("SceneGameObject");
+		ImGui::Begin("SceneGameObject", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 		CGameObject::SelectedEditorUpdate();
+		ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 		if (ImGui::TreeNode("EditorMenu"))
 		{
 			if (this->m_MeshComponent != NULL)
 			{
 				ImGui::Checkbox("IsLoadBase", &loadBaseModel);
+				ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 				if (ImGui::TreeNode("EngineBaseModel"))
 				{
 					if (loadBaseModel)
 					{
-						ImGui::RadioButton("Normal cube", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE);
-						ImGui::RadioButton("Rounded cube", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_ROUNDED_CUBE);
-						ImGui::RadioButton("Smooth sphere", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE);
-						ImGui::RadioButton("UV sphere", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_UV_SPHERE);
-						ImGui::RadioButton("Torus", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_TORUS);
-						ImGui::RadioButton("Prism", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_PRISM);
-						ImGui::RadioButton("Material sphere", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE);
-						ImGui::RadioButton("Monkey", &(this->m_CurrentMeshType), CMeshManager::CEngineBaseModelType::ENGINE_BASE_MONKEY);
-						if (ImGui::Button("Apply"))
+						std::map<INT, std::string> baseEngineMeshItems = {
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, "Normal cube" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_ROUNDED_CUBE, "Rounded cube" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE, "Smooth sphere" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_UV_SPHERE, "UV sphere" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_TORUS, "Torus" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_PRISM, "Prism" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, "Material sphere" },
+							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_MONKEY, "Monkey" } };
+						auto meshCombo = [&baseEngineMeshItems](const std::string& name, INT& select) {
+							if (ImGui::BeginCombo(name.c_str(), baseEngineMeshItems[select].c_str()))
+							{
+								for (const auto& textureItem : baseEngineMeshItems)
+								{
+									BOOL selected = (select == textureItem.first);
+									if (ImGui::Selectable(textureItem.second.c_str(), &selected))
+									{
+										select = textureItem.first;
+									}
+									if (selected)
+									{
+										ImGui::SetItemDefaultFocus();
+									}
+								}
+								ImGui::EndCombo();
+							}};
+						meshCombo("MeshSelect", this->m_CurrentMeshType);
+						if (ImGui::Button("ApplyMeshSelect"))
 						{
 							needLoadMesh = TRUE;
 						}
 					}
 					else
 					{
-						if (ImGui::Button("Apply"))
+						ImGui::InputText("InputMeshPath", this->m_LoadCustomModelPath, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
+						if (ImGui::Button("ApplyMeshInput"))
 						{
-
+							needLoadMesh = TRUE;
 						}
 					}
 					ImGui::TreePop();
@@ -131,23 +155,28 @@ void CSceneGameObject::SelectedEditorUpdate()
 		if (this->m_MeshComponent != NULL)
 		{
 			BOOL needResetBound = FALSE;
+			CustomStruct::CRenderInputLayoutDesc desc[4u] = {
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 			if (loadBaseModel)
 			{
 				if (this->m_CurrentMeshType > 0 && this->m_CurrentMeshType < CMeshManager::CEngineBaseModelType::ENGINE_BASE_COUNT && this->m_PreviousMeshType != this->m_CurrentMeshType && needLoadMesh)
 				{
 					this->m_PreviousMeshType = this->m_CurrentMeshType;
-					CustomStruct::CRenderInputLayoutDesc desc[4u] = {
-						CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-						CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-						CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-						CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 					this->m_MeshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(static_cast<CMeshManager::CEngineBaseModelType>(this->m_CurrentMeshType), desc, 4u, FALSE));
 					needResetBound = TRUE;
 				}
 			}
 			else
 			{
-
+				if (needLoadMesh)
+				{
+					std::string loadCustomModelPath(this->m_LoadCustomModelPath);
+					this->m_MeshComponent->SetMesh(CMeshManager::LoadMeshFromFile(loadCustomModelPath, desc, 4u, FALSE));
+					needResetBound = TRUE;
+				}
 			}
 			if (needResetBound)
 			{
