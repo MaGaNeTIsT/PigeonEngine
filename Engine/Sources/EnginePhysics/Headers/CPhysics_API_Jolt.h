@@ -219,8 +219,19 @@ public:
 	JPH_INLINE TaperedCapsuleShapeSettings* CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius);
 	//CreateBody
 	JPH_INLINE BodyID CreateAndAddBody(const ULONGLONG& GameObjectId, const BodyCreationSettings* inBodyCreateSettings, EActivation Activation);
+	/// <summary>
+	/// try to create a body and return success or not
+	/// </summary>
+	/// <param name="inBodyCreateSettings">Body create settings input</param>
+	/// <param name="outBodyID">output body id</param>
+	/// <returns>true ,if create success</returns>
 	JPH_INLINE bool TryCreateBody(const BodyCreationSettings* inBodyCreateSettings, BodyID& outBodyID);
 	JPH_INLINE void AddBody(const ULONGLONG& GameObjectId, const BodyID& inBodyID, EActivation Activation);
+	/// <summary>
+	/// maybe unsafe.
+	/// </summary>
+	/// <param name="GameObjectId">object id input</param>
+	/// <returns></returns>
 	JPH_INLINE BodyID GetBodyID(const ULONGLONG& GameObjectId);
 public:
 	CPhysics_API_Jolt();
@@ -249,4 +260,5 @@ private:
 	PhysicsAPI_Jolt::CBodyActivationListener*				m_BodyActivationListener;
 	PhysicsAPI_Jolt::CContactListener*						m_ContactListener;
 	unordered_map<ULONGLONG, BodyID>						m_Bodys;
+	unordered_map<BodyID, BodyCreationSettings*>			m_BodyCreationSettings;
 };
