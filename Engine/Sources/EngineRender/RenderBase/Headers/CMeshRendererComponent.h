@@ -20,9 +20,10 @@ public:
 	BOOL	HasConstantBuffer()const { return (this->m_ConstantBuffer != nullptr); }
 public:
 	CMaterialBase::MaterialType		GetMaterialType()const;
+	const CMaterialBase*			GetMaterial()const;
 public:
 	template<class T>
-	T* AddMaterial()
+	T* AddMaterial(const BOOL& needInit = FALSE)
 	{
 		if (this->HasMaterial())
 		{
@@ -30,6 +31,10 @@ public:
 			this->m_Material = NULL;
 		}
 		this->m_Material = new T();
+		if (needInit)
+		{
+			this->m_Material->Init();
+		}
 		return (reinterpret_cast<T*>(this->m_Material));
 	}
 	void			SetMeshComponent(const CMeshComponent* meshComponent);
@@ -38,7 +43,7 @@ public:
 	virtual void	Update()override;
 	virtual void	Draw()const override;
 	virtual void	DrawExtra()const override;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void	SelectedEditorUpdate()override;
 #endif

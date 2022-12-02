@@ -274,7 +274,7 @@ public:
 	virtual void	Uninit();
 	virtual void	Update();
 	virtual void	FixedUpdate();
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 protected:
 	virtual void	SelectedEditorUpdate_RenderBounding();
 public:

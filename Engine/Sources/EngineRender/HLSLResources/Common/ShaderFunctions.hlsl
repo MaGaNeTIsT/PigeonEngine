@@ -28,4 +28,14 @@ float Power5(float v)
 	return (v2 * v2 * v);
 }
 
+float Max3(float3 input)
+{
+	return max(max(input.x, input.y), input.z);
+}
+
+float Min3(float3 input)
+{
+	return min(min(input.x, input.y), input.z);
+}
+
 #endif

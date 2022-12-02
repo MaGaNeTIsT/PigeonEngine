@@ -56,7 +56,7 @@ void CHZBPass::Update()
 void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
 	CRenderDevice::SetCSShader(this->m_RawDownSamplingComputeShader);
-	CRenderDevice::BindCSShaderResourceView(sceneDepth, 0u);
+	CRenderDevice::BindCSShaderResourceView(sceneDepth, 5u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffers[0].UnorderedAccessView, 0u);
 	CRenderDevice::Dispatch(static_cast<UINT>((this->m_HZBSizes[0].X() + 7) / 8), static_cast<UINT>((this->m_HZBSizes[0].Y() + 7) / 8), 1u);
 	CRenderDevice::BindNoCSUnorderedAccessView(0u);
@@ -65,7 +65,7 @@ void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>
 	CRenderDevice::SetCSShader(this->m_BuildHZBComputeShader);
 	for (UINT i = 1u; i < this->m_HZBBuffers.size(); i++)
 	{
-		CRenderDevice::BindCSShaderResourceView(this->m_HZBBuffers[i - 1u].ShaderResourceView, 0u);
+		CRenderDevice::BindCSShaderResourceView(this->m_HZBBuffers[i - 1u].ShaderResourceView, 5u);
 		CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffers[i].UnorderedAccessView, 0u);
 		CRenderDevice::Dispatch(static_cast<UINT>((this->m_HZBSizes[i].X() + 7) / 8), static_cast<UINT>((this->m_HZBSizes[i].Y() + 7) / 8), 1u);
 		CRenderDevice::BindNoCSUnorderedAccessView(0u);
@@ -76,7 +76,7 @@ void CHZBPass::DrawDebug()
 {
 	if (this->m_DebugType)
 	{
-		CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffers[this->m_DebugLevel].ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffers[this->m_DebugLevel].ShaderResourceView, ENGINE_GBUFFER_A_START_SLOT);
 		{
 			const CMeshRendererComponent* meshRenderer = this->m_Polygon2D->GetMeshRendererComponent<CMeshRendererComponent>();
 			if (meshRenderer)

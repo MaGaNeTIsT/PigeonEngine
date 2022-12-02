@@ -97,8 +97,8 @@ void CSkyBox::PrepareDraw()
 	CRenderDevice::SetVertexBuffer(CSkyBox::m_FullScreenMesh->GetVertexBuffer(), CSkyBox::m_FullScreenMesh->GetVertexStride());
 	CRenderDevice::SetIndexBuffer(CSkyBox::m_FullScreenMesh->GetIndexBuffer());
 	this->m_PixelShader->Bind();
-	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, 1u);
-	CRenderDevice::BindPSShaderResourceView(this->m_CubeMap->GetShaderResourceView(), 3u);
+	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, 3u);
+	CRenderDevice::BindPSShaderResourceView(this->m_CubeMap->GetShaderResourceView(), 5u);
 }
 void CSkyBox::Draw()
 {

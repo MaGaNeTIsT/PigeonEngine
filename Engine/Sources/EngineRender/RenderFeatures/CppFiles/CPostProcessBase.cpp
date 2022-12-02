@@ -43,7 +43,7 @@ void CPostProcessBase::Draw(PostProcessType type)
 	INT currentSrc = this->m_SwapIndex;
 	INT currentDst = 1 - this->m_SwapIndex;
 	CRenderDevice::SetRenderTarget(this->m_SwapRenderTarget[currentDst]->RenderTargetView);
-	CRenderDevice::BindPSShaderResourceView(this->m_SwapRenderTarget[currentSrc]->ShaderResourceView, ENGINE_SRV_CAMERA_COLOR);
+	CRenderDevice::BindPSShaderResourceView(this->m_SwapRenderTarget[currentSrc]->ShaderResourceView, ENGINE_SCENE_COLOR);
 	this->m_PostShader[type]->Bind();
 	this->m_SwapIndex = 1 - this->m_SwapIndex;
 }

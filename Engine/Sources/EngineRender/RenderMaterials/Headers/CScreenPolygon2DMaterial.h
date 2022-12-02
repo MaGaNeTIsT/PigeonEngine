@@ -13,7 +13,7 @@ public:
 	virtual void			Init()override;
 	virtual void			Bind()const override;
 	virtual const void*		GetConstantData()const override;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void			SelectedEditorUpdate()override;
 #endif

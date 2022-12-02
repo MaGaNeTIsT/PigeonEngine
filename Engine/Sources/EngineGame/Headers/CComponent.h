@@ -77,7 +77,7 @@ public:
 	CustomType::Vector3		GetRightVector()const;
 	CustomType::Matrix4x4	GetLocalToWorldMatrix()const;
 	CustomType::Matrix4x4	GetWorldToLocalMatrix()const;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	void	SelectedEditorUpdate();
 protected:
@@ -98,7 +98,7 @@ public:
 	virtual void	Uninit()		= 0;
 	virtual void	Update() {}
 	virtual void	FixedUpdate() {}
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void	SelectedEditorUpdate() {}
 #endif

@@ -777,7 +777,7 @@ void CGameObject::FixedUpdate()
 		}
 	}
 }
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 void CGameObject::SelectedEditorUpdate_RenderBounding()
 {
 	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);

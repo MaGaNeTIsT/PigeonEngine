@@ -6,10 +6,10 @@
 float4 main(VaryingTerrain input) : SV_Target
 {
 	float3 normalModelWS	= SafeNormalize(input.normal.xyz);
-	float3 normalWS			= TransformTangentToSpaceDir(SafeNormalize(_NormalTexture.Sample(_LinearWrapSampler, input.uv0).rgb * 2 - 1), CreateTangentMatrix(normalModelWS, SafeNormalize(input.tangent.xyz)));
-	float3 albedo			= _AlbedoTexture.Sample(_LinearWrapSampler, input.uv0).rgb;
-	float4 property			= _PropertyTexture.Sample(_LinearWrapSampler, input.uv0).rgba;
 	float  ao				= _GlobalAOInput.Sample(_LinearClampSampler, (input.positionCS.xy + _CameraViewportMinSizeAndInvBufferSize.xy) * _CameraViewportMinSizeAndInvBufferSize.zw).r;
+	float3 normalWS			= TransformTangentToSpaceDir(SafeNormalize(_CustomTextureA.Sample(_LinearWrapSampler, input.uv0).rgb * 2.0 - 1.0), CreateTangentMatrix(normalModelWS, SafeNormalize(input.tangent.xyz)));
+	float3 albedo			= _CustomTextureB.Sample(_LinearWrapSampler, input.uv0).rgb;
+	float4 property			= _CustomTextureC.Sample(_LinearWrapSampler, input.uv0).rgba;
 
 	float3 indirectDiffuse = 0.4 * albedo * ao;
 

@@ -16,7 +16,7 @@ const static uint MAX_THREAD_GROUP_SIZE			= GROUP_THREAD_SIZE_X * GROUP_THREAD_S
 #define GROUP_SHARED_ARRAY_SIZE					(MAX_THREAD_GROUP_SIZE * 2u)
 
 
-cbuffer	ConstantComputeBuffer : register(b1)
+cbuffer	ConstantComputeBuffer : register(b3)
 {
 	float4 _ResultBufferParams;
 	float4 _DepthBufferParams;
@@ -24,7 +24,7 @@ cbuffer	ConstantComputeBuffer : register(b1)
 	float4 _AdjustAngleThicknessParams;	// x is world space radius adjust. y is sin rotatation delta angle. z is cos rotatation delta angle. w is thickness blend factory.
 	float4 _IntensityPowerParams;
 };
-Texture2D<float> _CameraDepth : register(t0);
+Texture2D<float> _CameraDepth : register(t5);
 RWTexture2D<float4> _ResultBuffer : register(u0);
 groupshared float _DeviceZBuffer[GROUP_SHARED_ARRAY_SIZE];
 

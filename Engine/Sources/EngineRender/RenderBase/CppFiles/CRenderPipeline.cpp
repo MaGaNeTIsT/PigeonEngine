@@ -22,7 +22,7 @@
 #include "../../../Development/Headers/CDebugScreen.h"
 #include "../../../Development/Headers/CGPUProfiler.h"
 
-CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_ScreenPolygonShader	= nullptr;
@@ -36,7 +36,7 @@ std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
 
 CRenderPipeline::CRenderPipeline()
 {
-	for (INT i = 0; i < CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT; i++)
+	for (INT i = 0; i < CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT; i++)
 	{
 		if (CRenderPipeline::m_DefaultTexture[i] == NULL)
 		{
@@ -405,9 +405,9 @@ void CRenderPipeline::PostUpdate()
 						m_DirLightCullingResults.insert_or_assign(tempLightDir, tempCullingResults);
 
 						std::vector<FLOAT> cascadeDistances(3u, 0.f);
-						cascadeDistances[0] = 300.f;
-						cascadeDistances[1] = 600.f;
-						cascadeDistances[2] = 900.f;
+						cascadeDistances[0] = 1000.f;
+						cascadeDistances[1] = 10000.f;
+						cascadeDistances[2] = 80000.f;
 						std::vector<FLOAT> cascadeBorders(2u, 0.15f);
 						cascadeBorders[0] = 0.15f;
 						cascadeBorders[1] = 0.1f;
@@ -487,9 +487,9 @@ void CRenderPipeline::Render()
 		CRenderDevice::ClearDepthStencilView(m_RTSceneDepth.DepthStencilView);
 		CRenderDevice::ClearFinalOutput();
 
-		CRenderDevice::BindVSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
-		CRenderDevice::BindPSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
-		CRenderDevice::BindCSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_ALL_START_SLOT, 4u);
+		CRenderDevice::BindVSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_FIRST_START_SLOT, 4u);
+		CRenderDevice::BindPSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_FIRST_START_SLOT, 4u);
+		CRenderDevice::BindCSSamplerStates(m_PipelineSampler, ENGINE_SAMPLER_FIRST_START_SLOT, 4u);
 
 		CRenderDevice::SetRasterizerState(m_PipelineRS);
 		CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -498,9 +498,9 @@ void CRenderPipeline::Render()
 	{
 		PrepareLightDataRender();
 		CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CONSTANT_BUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
 	}
 
 	CLightDirectional* lightShadow = NULL;
@@ -534,9 +534,9 @@ void CRenderPipeline::Render()
 				passShadowName += std::to_string(layerIndex);
 				PrepareDirectionalLightPerFrameRender(lightShadow, layerIndex);
 				CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
 				CustomStruct::CRenderViewport viewportShadow = lightShadow->GetCurrentShadowMapViewport(layerIndex);
 				const CRenderDevice::RenderTexture2DViewInfo& shadowMap = lightShadow->GetCurrentShadowMap(layerIndex).Texture;
 				CGPUProfilerManager::AddPass(passShadowName, m_FrameIndex, [&]() {
@@ -562,11 +562,11 @@ void CRenderPipeline::Render()
 	}
 
 	{
-		PreparePerFrameRender();
+		PreparePerFrameRender(lightShadow, 0u);
 		CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CONSTANT_BUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
 		CRenderDevice::SetViewport(m_SceneCamera->GetViewport());
 	}
 
@@ -623,7 +623,7 @@ void CRenderPipeline::Render()
 				tempGBuffersRTV[i + 1u] = m_RTGBuffer[i].RenderTargetView;
 			}
 			CRenderDevice::SetRenderTargets(tempGBuffersRTV, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u, m_RTSceneDepth.DepthStencilView);
-			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), ENGINE_TEXTURE2D_GLOBAL_AO_INPUT_SLOT);
+			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), ENGINE_AO_GLOBAL_INPUT_START_SLOT);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_DEFERRED])
 			{
 				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
@@ -648,16 +648,16 @@ void CRenderPipeline::Render()
 			{
 				tempGBuffersSRV[i + 1u] = m_RTGBuffer[i].ShaderResourceView;
 			}
-			CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_ALL_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
+			CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_FIRST_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
 			for (UINT i = 0u; i < 4u; i++)
 			{
 				if (i < layerNum)
 				{
-					CRenderDevice::BindPSShaderResourceView(lightShadow->GetCurrentShadowMap(i).Texture.ShaderResourceView, ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
+					CRenderDevice::BindPSShaderResourceView(lightShadow->GetCurrentShadowMap(i).Texture.ShaderResourceView, ENGINE_LIGHT_SHADOW_MAP_FIRST_START_SLOT + i);
 				}
 				else
 				{
-					CRenderDevice::BindPSShaderResourceView(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView(), ENGINE_LIGHT_SHADOW_MAP_0_START_SLOT + i);
+					CRenderDevice::BindPSShaderResourceView(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE]->GetShaderResourceView(), ENGINE_LIGHT_SHADOW_MAP_FIRST_START_SLOT + i);
 				}
 			}
 			DrawFullScreenPolygon(CRenderPipeline::m_DirectLightShader);
@@ -670,7 +670,6 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
 			CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView, m_RTSceneDepth.DepthStencilView);
-			CRenderDevice::BindPSShaderResourceView(m_GTAOPass->GetResultShaderResourceView(), ENGINE_TEXTURE2D_GLOBAL_AO_INPUT_SLOT);
 			for (auto& obj : m_RenderingCullingResults[CullingResultsLayer::CULLINGRESULTS_FORWARD])
 			{
 				const CMeshRendererComponent* meshRenderer = obj->GetMeshRendererComponent<CMeshRendererComponent>();
@@ -716,7 +715,7 @@ void CRenderPipeline::Render()
 			}
 			else
 			{
-				m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE]->GetShaderResourceView());
+				m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE]->GetShaderResourceView());
 			}
 			m_DebugScreen->Draw();
 			m_HZBPass->DrawDebug();
@@ -731,7 +730,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetBlendState(m_DirectLightPostPassBS);
 			CRenderDevice::SetNoRenderTarget();
 			CRenderDevice::CopyTexture2DResource(m_RTSceneColor.Texture2D, m_RTPostProcess[0].Texture2D);
-			CRenderDevice::BindPSShaderResourceView(m_RTSceneDepth.ShaderResourceView, ENGINE_SRV_CAMERA_DEPTH);
+			CRenderDevice::BindPSShaderResourceView(m_RTSceneDepth.ShaderResourceView, ENGINE_SCENE_DEPTH);
 			m_PostProcessBase->InitPerFrame(&(m_RTPostProcess[1]), &(m_RTPostProcess[0]));
 			m_PostProcessBase->Draw(CPostProcessBase::PostProcessType::POST_PROCESS_COLOR_GRADING);
 			DrawFullScreenPolygon(nullptr);
@@ -785,7 +784,7 @@ void CRenderPipeline::Render()
 		CRenderDevice::SetDefaultDepthStencilState();
 		CRenderDevice::SetDefaultBlendState();
 		CRenderDevice::SetFinalOutput();
-		CRenderDevice::BindPSShaderResourceView(m_PostProcessBase->GetResultTarget()->ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(m_PostProcessBase->GetResultTarget()->ShaderResourceView, ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
 		DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
 	}
 }
@@ -800,10 +799,16 @@ void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>&
 	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
 	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
 }
-void CRenderPipeline::PreparePerFrameRender()
+void CRenderPipeline::PreparePerFrameRender(CLightDirectional* light, const UINT& index)
 {
 	CustomType::Vector2 cameraViewportMin = m_SceneCamera->GetViewportMinSize();
 	CustomStruct::CRenderViewport vp = m_SceneCamera->GetViewport();
+	CustomType::Matrix4x4 lightViewProjMatrix(CustomType::Matrix4x4::Identity());
+	if (light != NULL)
+	{
+		lightViewProjMatrix = light->GetCurrentViewMatrix(index);
+		lightViewProjMatrix = CustomType::Matrix4x4::MultiplyMatrix(lightViewProjMatrix, light->GetCurrentProjectionMatrix(0u));
+	}
 
 	m_RenderPerFrameInfo.PerFrameData.ProjectionMatrix = m_SceneCamera->GetProjectionMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ProjectionInvMatrix = m_SceneCamera->GetProjectionInverseMatrix().GetGPUUploadFloat4x4();
@@ -817,6 +822,7 @@ void CRenderPipeline::PreparePerFrameRender()
 	m_RenderPerFrameInfo.PerFrameData.ViewInvMatrix = m_SceneCamera->GetViewInverseMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionMatrix = m_SceneCamera->GetViewProjectionMatrix().GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.ViewProjectionInvMatrix = m_SceneCamera->GetViewProjectionInverseMatrix().GetGPUUploadFloat4x4();
+	m_RenderPerFrameInfo.PerFrameData.LightViewProjectionMatrix = lightViewProjMatrix.GetGPUUploadFloat4x4();
 	m_RenderPerFrameInfo.PerFrameData.TimeParams = DirectX::XMFLOAT4(static_cast<FLOAT>(CManager::GetGameTimer()->GetClockTime()), static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime()), 1.f, 1.f);
 	m_RenderPerFrameInfo.PerFrameData.CameraWorldPosition = m_SceneCamera->GetWorldPosition().GetXMFLOAT4();
 }
@@ -1138,7 +1144,7 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 	return result;
 #endif
 }
-CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input)
+CTexture2D* CRenderPipeline::GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DType input)
 {
 	return (CRenderPipeline::m_DefaultTexture[input]);
 }

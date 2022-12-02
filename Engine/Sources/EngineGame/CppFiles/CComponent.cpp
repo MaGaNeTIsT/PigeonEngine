@@ -8,7 +8,7 @@ CTransform::CTransform()
 	this->m_LocalPosition	= CustomType::Vector3::Zero();
 	this->m_LocalRotation	= CustomType::Quaternion::Identity();
 	this->m_LocalScale		= 1.f;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 	this->m_RealTimeChangeValue = TRUE;
 	this->m_EditorRotation[0] = 0.f; this->m_EditorRotation[1] = 0.f; this->m_EditorRotation[2] = 0.f;
 #endif
@@ -403,7 +403,7 @@ CustomType::Matrix4x4 CTransform::GetWorldToLocalMatrix()const
 {
 	return (this->GetLocalToWorldMatrix().Inverse());
 }
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 void CTransform::SelectedEditorUpdate()
 {
 	bool realTimeChange = this->m_RealTimeChangeValue;

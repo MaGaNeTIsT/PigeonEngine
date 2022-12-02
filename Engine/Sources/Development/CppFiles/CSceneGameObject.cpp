@@ -46,12 +46,14 @@ CSceneGameObject::CSceneGameObject()
 				this->SetRenderLocalBoundingSphere(anchor, radius);
 			}
 		}
-#if _DEVELOPMENT_EDITOR
-		this->m_MeshRendererComponent = meshRendererComponent;
-		this->m_MeshComponent = meshComponent;
-		this->m_CurrentMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
-		this->m_PreviousMeshType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
-		this->m_LoadBaseModel = TRUE;
+#ifdef _DEVELOPMENT_EDITOR
+		this->m_MeshRendererComponent	= meshRendererComponent;
+		this->m_MeshComponent			= meshComponent;
+		this->m_CurrentMeshType			= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
+		this->m_PreviousMeshType		= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
+		this->m_CurrentMaterialType		= DefaultMaterialType::DefaultMaterialType_Cloth;
+		this->m_PreviousMaterialType	= DefaultMaterialType::DefaultMaterialType_Cloth;
+		this->m_LoadBaseModel			= TRUE;
 		this->m_LoadCustomModelPath[0] = 'N'; this->m_LoadCustomModelPath[1] = 'U'; this->m_LoadCustomModelPath[2] = 'L'; this->m_LoadCustomModelPath[3] = 'L';
 		this->m_LoadCustomModelPath[4] = '\0';
 #endif
@@ -76,11 +78,12 @@ void CSceneGameObject::FixedUpdate()
 {
 	CGameObject::FixedUpdate();
 }
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 void CSceneGameObject::SelectedEditorUpdate()
 {
 	bool loadBaseModel = this->m_LoadBaseModel;
 	BOOL needLoadMesh = FALSE;
+	BOOL needLoadMaterial = FALSE;
 
 	//Editor body
 	{
@@ -93,7 +96,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 			{
 				ImGui::Checkbox("IsLoadBase", &loadBaseModel);
 				ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
-				if (ImGui::TreeNode("EngineBaseModel"))
+				if (ImGui::TreeNode("EditMeshComponent"))
 				{
 					if (loadBaseModel)
 					{
@@ -142,7 +145,42 @@ void CSceneGameObject::SelectedEditorUpdate()
 			}
 			if (this->m_MeshRendererComponent != NULL)
 			{
-
+				ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+				if (ImGui::TreeNode("EditMeshRendererComponent"))
+				{
+					std::string materialName = "NULL";
+					if (this->m_MeshRendererComponent->HasMaterial())
+					{
+						materialName = this->m_MeshRendererComponent->GetMaterial()->GetName();
+					}
+					ImGui::Text("CurrentMaterial : %s", materialName.c_str());
+					std::map<INT, std::string> baseEngineMaterialItems = {
+						{ DefaultMaterialType::DefaultMaterialType_DefaultLit, "DefaultLitMaterial" },
+						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" } };
+					auto materialCombo = [&baseEngineMaterialItems](const std::string& name, INT& select) {
+						if (ImGui::BeginCombo(name.c_str(), baseEngineMaterialItems[select].c_str()))
+						{
+							for (const auto& materialItem : baseEngineMaterialItems)
+							{
+								BOOL selected = (select == materialItem.first);
+								if (ImGui::Selectable(materialItem.second.c_str(), &selected))
+								{
+									select = materialItem.first;
+								}
+								if (selected)
+								{
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}};
+					materialCombo("MaterialSelect", this->m_CurrentMaterialType);
+					if (ImGui::Button("ApplyMaterial"))
+					{
+						needLoadMaterial = TRUE;
+					}
+					ImGui::TreePop();
+				}
 			}
 			ImGui::TreePop();
 		}
@@ -202,6 +240,22 @@ void CSceneGameObject::SelectedEditorUpdate()
 					CustomType::Vector3 anchor; FLOAT radius;
 					boundingSphere(anchor, radius);
 					this->SetRenderLocalBoundingSphere(anchor, radius);
+				}
+			}
+		}
+		if (this->m_MeshRendererComponent != NULL)
+		{
+			if (needLoadMaterial && this->m_CurrentMaterialType >= 0 && this->m_CurrentMaterialType < DefaultMaterialType_Count && this->m_CurrentMaterialType != this->m_PreviousMaterialType)
+			{
+				this->m_PreviousMaterialType = this->m_CurrentMaterialType;
+				switch (this->m_CurrentMaterialType)
+				{
+				case DefaultMaterialType::DefaultMaterialType_DefaultLit:
+					this->m_MeshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+					break;
+				case DefaultMaterialType::DefaultMaterialType_Cloth:
+					this->m_MeshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+					break;
 				}
 			}
 		}

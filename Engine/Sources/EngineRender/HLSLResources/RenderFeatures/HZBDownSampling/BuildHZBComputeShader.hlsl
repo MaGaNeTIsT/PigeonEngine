@@ -7,7 +7,7 @@
 #define GROUP_THREAD_SIZE_X		(8)
 #define GROUP_THREAD_SIZE_Y		(8)
 
-Texture2D<float> _SrcBuffer : register(t0);
+Texture2D<float> _SrcBuffer : register(t5);
 RWTexture2D<float> _DstBuffer : register(u0);
 
 float GetSrcHZBValue(uint2 coord)

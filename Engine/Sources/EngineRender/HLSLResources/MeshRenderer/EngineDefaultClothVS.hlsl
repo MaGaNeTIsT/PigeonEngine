@@ -3,9 +3,9 @@
 
 #include "../Common/ShaderCommon.hlsl"
 
-VaryingCloth main(AttributeCloth input)
+VaryingForward main(AttributeForward input)
 {
-	VaryingCloth output;
+	VaryingForward output;
 
 	output.positionWS		= float4(TransformObjectToWorld(input.position.xyz), 1.0);
 	output.positionCS		= TransformWorldToClip(output.positionWS.xyz);

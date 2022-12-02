@@ -36,7 +36,7 @@ protected:
 	std::map<ULONGLONG, CGameObject*>	m_Lights;
 	std::map<ULONGLONG, CGameObject*>	m_GameObjects[SceneLayout::LAYOUT_COUNT];
 	std::map<ULONGLONG, CGameObject*>	m_AllObjectList;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 protected:
 	CGameObject*						m_SelectedObject;
 #endif

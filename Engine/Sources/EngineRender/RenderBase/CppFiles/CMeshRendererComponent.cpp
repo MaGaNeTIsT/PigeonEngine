@@ -32,6 +32,10 @@ CMaterialBase::MaterialType	CMeshRendererComponent::GetMaterialType()const
 	}
 	return CMaterialBase::MaterialType::MATERIAL_TYPE_NONE;
 }
+const CMaterialBase* CMeshRendererComponent::GetMaterial()const
+{
+	return (this->m_Material);
+}
 void CMeshRendererComponent::SetMeshComponent(const CMeshComponent* meshComponent)
 {
 	this->m_MeshComponent = meshComponent;
@@ -107,7 +111,7 @@ void CMeshRendererComponent::DrawExtra()const
 		}
 	}
 }
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 void CMeshRendererComponent::SelectedEditorUpdate()
 {
 	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
@@ -165,11 +169,11 @@ void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
 		this->UploadConstantBuffer(this->m_Material->GetConstantData());
 		this->m_CurrentFrameMaterialUpload = TRUE;
 	}
-	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
-	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CONSTANT_BUFFER_PER_DRAW_START_SLOT);
+	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_PER_DRAW_START_SLOT);
+	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_PER_DRAW_START_SLOT);
 	if (this->HasConstantBuffer())
 	{
-		this->BindConstantBuffer(ENGINE_CONSTANT_BUFFER_MATERIAL_DATA_START_SLOT);
+		this->BindConstantBuffer(ENGINE_CBUFFER_MATERIAL_DATA_START_SLOT);
 	}
 	this->m_Material->Bind();
 	CRenderDevice::SetVertexBuffer(this->m_MeshComponent->GetVertexBuffer(), this->m_MeshComponent->GetVertexStride());

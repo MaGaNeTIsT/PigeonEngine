@@ -17,7 +17,7 @@ public:
 public:
 	virtual void	Init() = 0;
 	virtual void	Bind()const = 0;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 	virtual void	SelectedEditorUpdate() {}
 #endif
 public:

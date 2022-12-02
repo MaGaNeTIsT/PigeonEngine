@@ -457,9 +457,6 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EnginePostEffectExposurePS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
-    </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
     </FxCompile>
@@ -493,10 +490,13 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultPS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>

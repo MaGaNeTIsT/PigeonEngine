@@ -637,16 +637,78 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 			}
 		}
 	}
-	for (UINT i = 0u; i < vertexNum; i++)
+
 	{
-		CHAR* tempVertex = (&(((CHAR*)vertices)[i * vertexStride]));
-		FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
-		CustomType::Vector3 normalizedT(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
-		normalizedT.Normalize();
-		tempTangent[0u] = normalizedT.X();
-		tempTangent[1u] = normalizedT.Y();
-		tempTangent[2u] = normalizedT.Z();
-		tempTangent[3u] = 0.f;
+		std::vector<UINT> tempVertexPool;
+		tempVertexPool.resize(vertexNum);
+		for (UINT i = 0u; i < vertexNum; i++)
+		{
+			tempVertexPool[i] = i;
+		}
+		std::vector<UINT>::iterator tempScanVertex = tempVertexPool.begin();
+		while (tempScanVertex != tempVertexPool.end())
+		{
+			UINT tempCurrentIndex = (*tempScanVertex);
+
+			CHAR* tempCurrentVertex = (&(((CHAR*)vertices)[tempCurrentIndex * vertexStride]));
+			FLOAT* tempCurrentPosition = (FLOAT*)(&(tempCurrentVertex[offsetPosition]));
+
+			FLOAT* tempCurrentTangent = (FLOAT*)(&(tempCurrentVertex[offsetTangent]));
+			CustomType::Vector3 totalTangent(tempCurrentTangent[0], tempCurrentTangent[1], tempCurrentTangent[2]);
+
+			std::vector<UINT> tempVertexRemove;
+			for (size_t indexPool = 0; indexPool < tempVertexPool.size(); indexPool++)
+			{
+				if (tempCurrentIndex == tempVertexPool[indexPool])
+				{
+					continue;
+				}
+				CHAR* tempPooledVertex = (&(((CHAR*)vertices)[(tempVertexPool[indexPool]) * vertexStride]));
+				FLOAT* tempPooledPosition = (FLOAT*)(&(tempPooledVertex[offsetPosition]));
+				if (tempCurrentPosition[0] == tempPooledPosition[0] && tempCurrentPosition[1] == tempPooledPosition[1] && tempCurrentPosition[2] == tempPooledPosition[2])
+				{
+					tempVertexRemove.push_back((tempVertexPool[indexPool]));
+				}
+			}
+			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
+			{
+				CHAR* tempRemovedVertex = (&(((CHAR*)vertices)[(tempVertexRemove[indexRemove]) * vertexStride]));
+				FLOAT* tempRemovedTangent = (FLOAT*)(&(tempRemovedVertex[offsetTangent]));
+				totalTangent += CustomType::Vector3(tempRemovedTangent[0], tempRemovedTangent[1], tempRemovedTangent[2]);
+			}
+			totalTangent.Normalize();
+			tempCurrentTangent[0] = totalTangent.X();
+			tempCurrentTangent[1] = totalTangent.Y();
+			tempCurrentTangent[2] = totalTangent.Z();
+			tempCurrentTangent[3] = 0.f;
+			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
+			{
+				CHAR* tempRemovedVertex = (&(((CHAR*)vertices)[(tempVertexRemove[indexRemove]) * vertexStride]));
+				FLOAT* tempRemovedTangent = (FLOAT*)(&(tempRemovedVertex[offsetTangent]));
+				tempRemovedTangent[0] = totalTangent.X();
+				tempRemovedTangent[1] = totalTangent.Y();
+				tempRemovedTangent[2] = totalTangent.Z();
+				tempRemovedTangent[3] = 0.f;
+			}
+			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
+			{
+				UINT tempRemoveIndex = tempVertexRemove[indexRemove];
+				std::vector<UINT>::iterator removeIterator = tempVertexPool.begin() + 1;
+				while (removeIterator != tempVertexPool.end())
+				{
+					if ((*removeIterator) == tempRemoveIndex)
+					{
+						removeIterator = tempVertexPool.erase(removeIterator);
+						break;
+					}
+					else
+					{
+						removeIterator++;
+					}
+				}
+			}
+			tempScanVertex = tempVertexPool.erase(tempScanVertex);
+		}
 	}
 }
 void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, const UINT& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color)

@@ -12,14 +12,21 @@ public:
 		RenderParams() { ::ZeroMemory(this, sizeof(*this)); }
 		DirectX::XMFLOAT4	BaseColorRoughness;
 		DirectX::XMFLOAT4	EmissiveAmbientOcclusion;
-		DirectX::XMFLOAT4	SheenColorMetallicness;
+		DirectX::XMFLOAT4	SheenColor;
 		DirectX::XMFLOAT4	SubsurfaceColor;
 	};
+public:
+	void	SetNormalTexture(class CTexture2D* tex);
+	void	SetAlbedoTexture(class CTexture2D* tex);
+	void	SetEmissiveTexture(class CTexture2D* tex);
+	void	SetSheenColorTexture(class CTexture2D* tex);
+	void	SetRoughnessTexture(class CTexture2D* tex);
+	void	SetAmbientOcclusionTexture(class CTexture2D* tex);
 public:
 	virtual void			Init()override;
 	virtual void			Bind()const override;
 	virtual const void*		GetConstantData()const override;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void			SelectedEditorUpdate()override;
 protected:
@@ -33,8 +40,6 @@ protected:
 	CHAR				m_NormalTexturePath[512];
 	INT					m_RoughnessTextureSelect;
 	CHAR				m_RoughnessTexturePath[512];
-	INT					m_MetallicnessTextureSelect;
-	CHAR				m_MetallicnessTexturePath[512];
 	INT					m_AmbientOcclusionTextureSelect;
 	CHAR				m_AmbientOcclusionTexturePath[512];
 #endif
@@ -45,7 +50,6 @@ protected:
 	class CTexture2D*	m_SheenColorTexture;
 	class CTexture2D*	m_NormalTexture;
 	class CTexture2D*	m_RoughnessTexture;
-	class CTexture2D*	m_MetallicnessTexture;
 	class CTexture2D*	m_AmbientOcclusionTexture;
 public:
 	CClothMaterial();

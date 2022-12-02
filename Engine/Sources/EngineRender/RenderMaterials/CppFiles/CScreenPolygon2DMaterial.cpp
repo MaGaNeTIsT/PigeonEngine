@@ -48,14 +48,14 @@ void CScreenPolygon2DMaterial::Bind()const
 {
 	if (this->m_AlbedoTexture != NULL)
 	{
-		CRenderDevice::BindPSShaderResourceView(this->m_AlbedoTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(this->m_AlbedoTexture->GetShaderResourceView(), ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
 	}
 }
 const void* CScreenPolygon2DMaterial::GetConstantData()const
 {
 	return nullptr;
 }
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 void CScreenPolygon2DMaterial::SelectedEditorUpdate()
 {
 

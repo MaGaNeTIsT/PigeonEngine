@@ -52,7 +52,7 @@ public:
 	virtual void	Render();
 protected:
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
-	virtual void	PreparePerFrameRender();
+	virtual void	PreparePerFrameRender(class CLightDirectional* light, const UINT& index);
 	virtual void	PrepareLightDataRender();
 	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
 protected:
@@ -115,10 +115,10 @@ protected:
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 public:
-	static class CTexture2D*							GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
+	static class CTexture2D*							GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DType input);
 	static std::shared_ptr<class CPixelShader>			GetDefaultEmptyPS();
 protected:
-	static class CTexture2D*							m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
+	static class CTexture2D*							m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT];
 	static std::shared_ptr<class CPixelShader>			m_DefaultEmptyPS;
 public:
 	CRenderPipeline();

@@ -147,16 +147,16 @@ void CGTAOPass::ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceVie
 	UINT dispatchZ = 1u;
 
 	CRenderDevice::UploadBuffer(this->m_ConstantBuffer, &(this->m_ConstantData));
-	CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 1u);
+	CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 3u);
 
-	CRenderDevice::BindCSShaderResourceView(sceneDepth, 0u);
+	CRenderDevice::BindCSShaderResourceView(sceneDepth, 5u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_IntegralBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::SetCSShader(this->m_IntegralComputeShader);
 	CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
 	CRenderDevice::BindNoCSUnorderedAccessView(0u);
 	CRenderDevice::SetNoCSShader();
 
-	CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 0u);
+	CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 5u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_FilterBuffer.UnorderedAccessView, 0u);
 	CRenderDevice::SetCSShader(this->m_FilterComputeShader);
 	CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
@@ -171,9 +171,9 @@ void CGTAOPass::DrawDebug()
 			UINT dispatchX = static_cast<UINT>((this->m_BufferSize.X() + 7) / 8);
 			UINT dispatchY = static_cast<UINT>((this->m_BufferSize.Y() + 7) / 8);
 			UINT dispatchZ = 1u;
-			CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 1u);
-			CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 0u);
-			CRenderDevice::BindCSShaderResourceView(this->m_FilterBuffer.ShaderResourceView, 1u);
+			CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 3u);
+			CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 5u);
+			CRenderDevice::BindCSShaderResourceView(this->m_FilterBuffer.ShaderResourceView, 6u);
 			CRenderDevice::BindCSUnorderedAccessView(this->m_DebugBuffer.UnorderedAccessView, 0u);
 			CRenderDevice::SetCSShader(this->m_DebugComputeShader);
 			CRenderDevice::Dispatch(dispatchX, dispatchY, dispatchZ);
@@ -181,7 +181,7 @@ void CGTAOPass::DrawDebug()
 			CRenderDevice::SetNoCSShader();
 		}
 
-		CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(this->m_DebugBuffer.ShaderResourceView, ENGINE_GBUFFER_A_START_SLOT);
 		{
 			const CMeshRendererComponent* meshRenderer = this->m_Polygon2D->GetMeshRendererComponent<CMeshRendererComponent>();
 			if (meshRenderer)

@@ -171,7 +171,7 @@ public:
 	}
 	virtual void Init()override {}
 	virtual void Uninit()override {}
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void SelectedEditorUpdate()override
 	{

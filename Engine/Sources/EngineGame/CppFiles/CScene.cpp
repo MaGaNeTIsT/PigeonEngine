@@ -13,7 +13,7 @@
 CScene::CScene()
 {
 	this->m_MainCamera = NULL;
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 	this->m_SelectedObject = NULL;
 #endif
 }
@@ -69,7 +69,7 @@ void CScene::Init()
 	sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 150.f, 0.f));
 	sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 	this->m_SelectedObject = sceneGameObject;
 #endif
 }
@@ -111,7 +111,7 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
-#if _DEVELOPMENT_EDITOR
+#ifdef _DEVELOPMENT_EDITOR
 	{
 		if (this->m_SelectedObject != NULL)
 		{

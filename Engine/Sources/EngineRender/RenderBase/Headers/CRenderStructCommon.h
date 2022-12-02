@@ -67,6 +67,7 @@ namespace CustomStruct
 		DirectX::XMFLOAT4X4		ProjectionInvMatrix;
 		DirectX::XMFLOAT4X4		ViewProjectionMatrix;
 		DirectX::XMFLOAT4X4		ViewProjectionInvMatrix;
+		DirectX::XMFLOAT4X4		LightViewProjectionMatrix;
 		DirectX::XMFLOAT4		TimeParams;
 		DirectX::XMFLOAT4		DepthMultiAdd;
 		DirectX::XMFLOAT4		ScreenToViewSpaceParams;
@@ -105,17 +106,17 @@ namespace CustomStruct
 		CShaderLightParams		LightParams[16];
 	};
 
-	enum CEngineDefaultTexture2DEnum
+	enum CEngineDefaultTexture2DType
 	{
-		ENGINE_DEFAULT_TEXTURE2D_WHITE		= 0,
-		ENGINE_DEFAULT_TEXTURE2D_BLACK		= 1,
-		ENGINE_DEFAULT_TEXTURE2D_GRAY		= 2,
-		ENGINE_DEFAULT_TEXTURE2D_RED		= 3,
-		ENGINE_DEFAULT_TEXTURE2D_GREEN		= 4,
-		ENGINE_DEFAULT_TEXTURE2D_BLUE		= 5,
-		ENGINE_DEFAULT_TEXTURE2D_BUMP		= 6,
-		ENGINE_DEFAULT_TEXTURE2D_PROPERTY	= 7,
-		ENGINE_DEFAULT_TEXTURE2D_COUNT
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE		= 0,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK		= 1,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_GRAY		= 2,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_RED		= 3,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_GREEN		= 4,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_BLUE		= 5,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP		= 6,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY	= 7,
+		ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT
 	};
 
 	struct CRenderViewport
@@ -933,17 +934,17 @@ namespace CustomStruct
 	public:
 		static std::string GetDefaultTexturePath(const INT& input)
 		{
-			static std::map<CEngineDefaultTexture2DEnum, std::string> engineDefaultTexturePathMap = {
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_WHITE, std::string(ENGINE_TEXTURE2D_DEFAULT_WHITE) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BLACK, std::string(ENGINE_TEXTURE2D_DEFAULT_BLACK) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GRAY, std::string(ENGINE_TEXTURE2D_DEFAULT_GRAY) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_RED, std::string(ENGINE_TEXTURE2D_DEFAULT_RED) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_GREEN, std::string(ENGINE_TEXTURE2D_DEFAULT_GREEN) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BLUE, std::string(ENGINE_TEXTURE2D_DEFAULT_BLUE) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_BUMP, std::string(ENGINE_TEXTURE2D_DEFAULT_BUMP) },
-				{ CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_PROPERTY, std::string(ENGINE_TEXTURE2D_DEFAULT_PROPERTY) } };
+			static std::map<CEngineDefaultTexture2DType, std::string> engineDefaultTexturePathMap = {
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, std::string(ENGINE_DEFAULT_TEXTURE2D_WHITE) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, std::string(ENGINE_DEFAULT_TEXTURE2D_BLACK) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_GRAY, std::string(ENGINE_DEFAULT_TEXTURE2D_GRAY) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_RED, std::string(ENGINE_DEFAULT_TEXTURE2D_RED) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_GREEN, std::string(ENGINE_DEFAULT_TEXTURE2D_GREEN) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLUE, std::string(ENGINE_DEFAULT_TEXTURE2D_BLUE) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, std::string(ENGINE_DEFAULT_TEXTURE2D_BUMP) },
+				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, std::string(ENGINE_DEFAULT_TEXTURE2D_PROPERTY) } };
 
-			return engineDefaultTexturePathMap[static_cast<CEngineDefaultTexture2DEnum>(input)];
+			return engineDefaultTexturePathMap[static_cast<CEngineDefaultTexture2DType>(input)];
 		}
 	};
 }

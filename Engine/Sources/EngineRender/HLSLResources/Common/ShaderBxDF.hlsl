@@ -4,22 +4,6 @@
 #include "./ShaderDefCommon.hlsl"
 #include "./ShaderFunctions.hlsl"
 
-BRDFTerm InitBRDFTerm()
-{
-    BRDFTerm brdf;
-    brdf.Fd = 0.0;
-    brdf.Fr = 0.0;
-    return brdf;
-}
-
-AnisotropicRoughness FetchAnisotropicRoughness(float roughness, float anisotropy)
-{
-    AnisotropicRoughness r;
-    r.at = max(roughness * (1.0 + anisotropy), 0.001);
-    r.ab = max(roughness * (1.0 - anisotropy), 0.001);
-    return r;
-}
-
 /*
 * Physically Based Rendering in Filament https://google.github.io/filament/Filament.html#about/authors
 */
@@ -56,15 +40,15 @@ float D_GGX(float NdotH, float roughness, const float3 normal, const float3 half
     return (SaturateMediumPrecision(d));
 }
 
-float D_GGX_Anisotropic(float NdotH, float TdotH, float BdotH, AnisotropicRoughness anisotropicRoughness)
+float D_GGX_Anisotropic(float NdotH, float TdotH, float BdotH, float at, float ab)
 {
 	// Burley 2012, "Physically-Based Shading at Disney"
 
     // The values at and ab are perceptualRoughness^2, a2 is therefore perceptualRoughness^4
     // The dot product below computes perceptualRoughness^8. We cannot fit in fp16 without clamping
     // the roughness to too high values so we perform the dot product and the division in fp32
-    float a2 = anisotropicRoughness.at * anisotropicRoughness.ab;
-    float3 v = float3(anisotropicRoughness.ab * TdotH, anisotropicRoughness.at * BdotH, a2 * NdotH);	// High precision
+    float a2 = at * ab;
+    float3 v = float3(ab * TdotH, at * BdotH, a2 * NdotH);  // High precision
     float v2 = dot(v, v);	// High precision
     float w2 = a2 / v2;
     return (a2 * w2 * w2 * CUSTOM_SHADER_PI_DERIVATIVE);
@@ -117,12 +101,12 @@ float V_SmithGGXCorrelated_Fast(float NdotV, float NdotL, float roughness)
     return (SaturateMediumPrecision(v));
 }
 
-float V_SmithGGXCorrelated_Anisotropic(float NdotV, float NdotL, float TdotV, float BdotV, float TdotL, float BdotL, AnisotropicRoughness anisotropicRoughness)
+float V_SmithGGXCorrelated_Anisotropic(float NdotV, float NdotL, float TdotV, float BdotV, float TdotL, float BdotL, float at, float ab)
 {
 	// Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"
     // TODO: lambdaV can be pre-computed for all the lights, it should be moved out of this function
-    float lambdaV = NdotL * length(float3(anisotropicRoughness.at * TdotV, anisotropicRoughness.ab * BdotV, NdotV));
-    float lambdaL = NdotV * length(float3(anisotropicRoughness.at * TdotL, anisotropicRoughness.ab * BdotL, NdotL));
+    float lambdaV = NdotL * length(float3(at * TdotV, ab * BdotV, NdotV));
+    float lambdaL = NdotV * length(float3(at * TdotL, ab * BdotL, NdotL));
     float v = 0.5 / (lambdaV + lambdaL);
     return (SaturateMediumPrecision(v));
 }
@@ -163,7 +147,7 @@ float3 F_Schlick(float u, float3 f0)
 float Diffuse_Lambert()
 {
 	// Simple lambertian diffuse term. Diffuse reflectance = diffuseColor * Diffuse_Lambert();
-    return CUSTOM_SHADER_PI_DERIVATIVE;
+    return (CUSTOM_SHADER_PI_DERIVATIVE);
 }
 
 float Diffuse_Burley(float NdotV, float NdotL, float LdotH, float roughness)
@@ -181,79 +165,94 @@ float Diffuse_Wrap(float NdotL, float w)
     return (saturate((NdotL + w) / Power2(1.0 + w)));
 }
 
-BRDFTerm StandardBRDF(const NormalViewLightDotParams content, float roughness, float3 diffuseColor, float3 f0)
+float DiffuseBRDF(const NormalViewLightDotParams content, const PixelParams pixel)
 {
-    float  D = D_GGX(content.NdotH, roughness);
-    float  V = V_SmithGGXCorrelated(content.NdotV, content.NdotL, roughness);
-    float3 F = F_Schlick(content.LdotH, f0);
-
-    BRDFTerm brdf = InitBRDFTerm();
-
-    // Diffuse BRDF
-    brdf.Fd = diffuseColor * Diffuse_Lambert();
-    // Specular BRDF
-    brdf.Fr = (D * V) * F;
-	
-	return brdf;
-}
-
-BRDFTerm StandardBRDF_Anisotropic(const NormalViewLightDotParams_Anisotropic content, float roughness, float3 diffuseColor, float3 f0, float anisotropy)
-{
-    AnisotropicRoughness r = FetchAnisotropicRoughness(roughness, anisotropy);
-
-    float  D = D_GGX_Anisotropic(content.NdotH, content.TdotH, content.BdotH, r);
-    float  V = V_SmithGGXCorrelated_Anisotropic(content.NdotV, content.NdotL, content.TdotV, content.BdotV, content.TdotL, content.BdotL, r);
-    float3 F = F_Schlick(content.LdotH, f0);
-
-    BRDFTerm brdf = InitBRDFTerm();
-
-    // Diffuse BRDF
-    brdf.Fd = diffuseColor * Diffuse_Lambert();
-    // Specular BRDF
-    brdf.Fr = (D * V) * F;
-	
-	return brdf;
-}
-
-float3 ClearCoatBRDF(const NormalViewLightDotParams content, float roughness, float3 diffuseColor, float3 f0, float clearCoatStrength, float clearCoatPerceptualRoughness)
-{
-    // Compute Fd and Fr from standard model
-    BRDFTerm brdf = StandardBRDF(content, roughness, diffuseColor, f0);
-
-    // Remapping and linearization of clear coat roughness
-    clearCoatPerceptualRoughness = clamp(clearCoatPerceptualRoughness, 0.089, 1.0);
-    float clearCoatRoughness = clearCoatPerceptualRoughness * clearCoatPerceptualRoughness;
-    
-    // Clear coat BRDF
-    float Dc    = D_GGX(content.NdotH, clearCoatRoughness);
-    float Vc    = V_Kelemen(content.LdotH);
-    float Fc    = F_Schlick(content.LdotH, 0.04, 1.0) * clearCoatStrength;
-    float Frc   = (Dc * Vc) * Fc;
-
-    // Account for energy loss in the base layer
-    return ((brdf.Fd + brdf.Fr * (1.0 - Fc)) * (1.0 - Fc) + Frc);
-}
-
-BRDFTerm ClothBRDF(const NormalViewLightDotParams content, float roughness, float3 sheenColor)
-{
-    //#define CLOTH_HAS_SUBSURFACE_COLOR
-
-	float  D = D_Charlie(content.NdotH, roughness);
-    float  V = V_Neubelt(content.NdotV, content.NdotL);
-	float3 F = sheenColor;
-
-    BRDFTerm brdf = InitBRDFTerm();
-
-    // Specular BRDF
-    brdf.Fr = (D * V) * F;
-	
-	// Diffuse BRDF
-    brdf.Fd = Diffuse_Lambert();
-#ifdef CLOTH_HAS_SUBSURFACE_COLOR
-    // Energy conservative wrap diffuse to simulate subsurface scattering
-    brdf.Fd *= Diffuse_Wrap(content.NdotL, 0.5);
+#ifdef ENABLE_LAMBERT_DIFFUSE
+    return (Diffuse_Lambert());
+#elif defined(ENABLE_BURLEY_DIFFUSE)
+    return (Diffuse_Burley(content.NdotVClamped, content.NdotLClamped, content.LdotHClamped, pixel.Roughness));
 #endif
-    return brdf;
+}
+
+float3 IsotropicBRDF(const NormalViewLightDotParams content, const PixelParams pixel, const float3 normal, const float3 halfVector)
+{
+#ifdef ENABLE_CONSOLE_SHADING
+    float f90 = 50.0 * 0.33;
+    f90 = saturate(dot(pixel.F0, f90.xxx));
+    float  D = D_GGX(content.NdotHClamped, pixel.Roughness);
+    float  V = V_SmithGGXCorrelated(content.NdotVClamped, content.NdotLClamped, pixel.Roughness);
+    float3 F = F_Schlick(content.LdotHClamped, pixel.F0, f90);
+#else
+    float  D = D_GGX(content.NdotHClamped, pixel.Roughness, normal, halfVector);
+    float  V = V_SmithGGXCorrelated_Fast(content.NdotVClamped, content.NdotLClamped, pixel.Roughness);
+    float3 F = F_Schlick(content.LdotHClamped, pixel.F0);  // f90 = 1.0
+#endif
+
+    return ((D * V) * F);
+}
+
+float3 AnisotropicBRDF(const NormalViewLightDotParams content, const PixelParams pixel, const float3 viewDir, const float3 lightDir, const float3 halfVector, float3 anisotropicT, float3 anisotropicB, float anisotropy)
+{
+    float TdotV = dot(anisotropicT, viewDir);
+    float BdotV = dot(anisotropicB, viewDir);
+    float TdotL = dot(anisotropicT, lightDir);
+    float BdotL = dot(anisotropicB, lightDir);
+    float TdotH = dot(anisotropicT, halfVector);
+    float BdotH = dot(anisotropicB, halfVector);
+
+    // Anisotropic parameters: at and ab are the roughness along the tangent and bitangent
+    // to simplify materials, we derive them from a single roughness parameter
+    // Kulla 2017, "Revisiting Physically Based Shading at Imageworks"
+    float at = max(pixel.Roughness * (1.0 + anisotropy), MIN_ROUGHNESS);
+    float ab = max(pixel.Roughness * (1.0 - anisotropy), MIN_ROUGHNESS);
+
+    // Specular anisotropic BRDF
+    float D = D_GGX_Anisotropic(content.NdotHClamped, TdotH, BdotH, at, ab);
+    float V = V_SmithGGXCorrelated_Anisotropic(content.NdotVClamped, content.NdotLClamped, TdotV, BdotV, TdotL, BdotL, at, ab);
+#ifdef ENABLE_CONSOLE_SHADING
+    float f90 = 50.0 * 0.33;
+    f90 = saturate(dot(pixel.F0, f90.xxx));
+    float3 F = F_Schlick(content.LdotHClamped, pixel.F0, f90);
+#else
+    float3 F = F_Schlick(content.LdotHClamped, pixel.F0);  // f90 = 1.0
+#endif
+
+    return ((D * V) * F);
+}
+
+float ClearCoatBRDF(const NormalViewLightDotParams content, const PixelParams pixel, const float3 normal, const float3 halfVector, float3 clearCoatNormal, float clearCoatRoughness, float clearCoatStrength, out float Fcc)
+{
+#if defined(MATERIAL_HAS_NORMALMAP) || defined(MATERIAL_HAS_CLEAR_COAT_NORMAL)
+    // If the material has a normal map, we want to use the geometric normal
+    // Instead to avoid applying the normal map details to the clear coat layer
+    float clearCoatNdotH = saturate(dot(clearCoatNormal, halfVector));
+#else
+    float clearCoatNdotH = content.NdotHClamped;
+#endif
+
+    // Clear coat specular lobe
+#ifdef ENABLE_CONSOLE_SHADING
+    float D = D_GGX(clearCoatNdotH, clearCoatRoughness);
+#else
+    float D = D_GGX(clearCoatNdotH, clearCoatRoughness, normal, halfVector);
+#endif
+    float V = V_Kelemen(content.LdotHClamped);
+    float F = F_Schlick(content.LdotHClamped, 0.04, 1.0) * clearCoatStrength;  // Fix IOR to 1.5
+
+    Fcc = F;
+    return ((D * V) * F);
+}
+
+float3 ClothSheenBRDF(const NormalViewLightDotParams content, const PixelParams pixel)
+{
+    float  D = D_Charlie(content.NdotHClamped, pixel.Roughness);
+    float  V = V_Neubelt(content.NdotVClamped, content.NdotLClamped);
+
+#ifdef MATERIAL_HAS_SHEEN_COLOR
+    return ((D * V) * pixel.SheenColor);
+#else
+    return (D * V);
+#endif
 }
 
 #endif

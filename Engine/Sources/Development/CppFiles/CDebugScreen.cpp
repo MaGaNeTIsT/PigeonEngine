@@ -66,7 +66,7 @@ void CDebugScreen::Draw()
 	this->PrepareDraw();
 	for (UINT i = 0; i < CDebugScreen::DEBUGPOLYGON_COUNT; i++)
 	{
-		CRenderDevice::BindPSShaderResourceView(m_SRVs[i], ENGINE_TEXTURE2D_ALBEDO_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(m_SRVs[i], ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
 		{
 			const CMeshRendererComponent* meshRenderer = m_Polygons[i]->GetMeshRendererComponent<CMeshRendererComponent>();
 			if (meshRenderer)

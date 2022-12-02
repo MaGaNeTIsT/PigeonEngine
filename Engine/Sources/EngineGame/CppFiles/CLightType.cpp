@@ -6,7 +6,7 @@ CLightBase::CLightBase()
 {
 	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
-	this->m_Intensity = 1.f;
+	this->m_Intensity = 1.5f;
 }
 CLightBase::CLightBase(const CLightBase& light)
 {
