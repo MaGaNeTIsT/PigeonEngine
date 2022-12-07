@@ -717,7 +717,7 @@ void CRenderPipeline::Render()
 			{
 				m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE]->GetShaderResourceView());
 			}
-			m_DebugScreen->Draw();
+			//m_DebugScreen->Draw();
 			m_HZBPass->DrawDebug();
 			m_GTAOPass->DrawDebug();
 			});

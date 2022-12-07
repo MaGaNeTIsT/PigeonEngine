@@ -639,16 +639,20 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 	}
 
 	{
+		auto swapValue = [](std::vector<UINT>& pool, const UINT& index0, const UINT& index1) {
+			UINT tempV = pool[index0];
+			pool[index0] = pool[index1];
+			pool[index1] = tempV; };
 		std::vector<UINT> tempVertexPool;
+		UINT tempVertexPoolNum = vertexNum;
 		tempVertexPool.resize(vertexNum);
 		for (UINT i = 0u; i < vertexNum; i++)
 		{
 			tempVertexPool[i] = i;
 		}
-		std::vector<UINT>::iterator tempScanVertex = tempVertexPool.begin();
-		while (tempScanVertex != tempVertexPool.end())
+		while (tempVertexPoolNum > 0)
 		{
-			UINT tempCurrentIndex = (*tempScanVertex);
+			UINT tempCurrentIndex = tempVertexPool[0];
 
 			CHAR* tempCurrentVertex = (&(((CHAR*)vertices)[tempCurrentIndex * vertexStride]));
 			FLOAT* tempCurrentPosition = (FLOAT*)(&(tempCurrentVertex[offsetPosition]));
@@ -656,58 +660,49 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 			FLOAT* tempCurrentTangent = (FLOAT*)(&(tempCurrentVertex[offsetTangent]));
 			CustomType::Vector3 totalTangent(tempCurrentTangent[0], tempCurrentTangent[1], tempCurrentTangent[2]);
 
-			std::vector<UINT> tempVertexRemove;
-			for (size_t indexPool = 0; indexPool < tempVertexPool.size(); indexPool++)
+			std::vector<UINT> tempRemoveList;
+			for (UINT indexVertexPool = 1u; indexVertexPool < tempVertexPoolNum; indexVertexPool++)
 			{
-				if (tempCurrentIndex == tempVertexPool[indexPool])
-				{
-					continue;
-				}
-				CHAR* tempPooledVertex = (&(((CHAR*)vertices)[(tempVertexPool[indexPool]) * vertexStride]));
+				CHAR* tempPooledVertex = (&(((CHAR*)vertices)[(tempVertexPool[indexVertexPool]) * vertexStride]));
 				FLOAT* tempPooledPosition = (FLOAT*)(&(tempPooledVertex[offsetPosition]));
 				if (tempCurrentPosition[0] == tempPooledPosition[0] && tempCurrentPosition[1] == tempPooledPosition[1] && tempCurrentPosition[2] == tempPooledPosition[2])
 				{
-					tempVertexRemove.push_back((tempVertexPool[indexPool]));
+					FLOAT* tempPooledTangent = (FLOAT*)(&(tempPooledVertex[offsetTangent]));
+					totalTangent += CustomType::Vector3(tempPooledTangent[0], tempPooledTangent[1], tempPooledTangent[2]);
+					tempRemoveList.push_back(indexVertexPool);
 				}
-			}
-			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
-			{
-				CHAR* tempRemovedVertex = (&(((CHAR*)vertices)[(tempVertexRemove[indexRemove]) * vertexStride]));
-				FLOAT* tempRemovedTangent = (FLOAT*)(&(tempRemovedVertex[offsetTangent]));
-				totalTangent += CustomType::Vector3(tempRemovedTangent[0], tempRemovedTangent[1], tempRemovedTangent[2]);
 			}
 			totalTangent.Normalize();
 			tempCurrentTangent[0] = totalTangent.X();
 			tempCurrentTangent[1] = totalTangent.Y();
 			tempCurrentTangent[2] = totalTangent.Z();
 			tempCurrentTangent[3] = 0.f;
-			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
+			for (size_t indexRemoveList = 0u; indexRemoveList < tempRemoveList.size(); indexRemoveList++)
 			{
-				CHAR* tempRemovedVertex = (&(((CHAR*)vertices)[(tempVertexRemove[indexRemove]) * vertexStride]));
-				FLOAT* tempRemovedTangent = (FLOAT*)(&(tempRemovedVertex[offsetTangent]));
-				tempRemovedTangent[0] = totalTangent.X();
-				tempRemovedTangent[1] = totalTangent.Y();
-				tempRemovedTangent[2] = totalTangent.Z();
-				tempRemovedTangent[3] = 0.f;
+				CHAR* tempPooledVertex = (&(((CHAR*)vertices)[(tempVertexPool[tempRemoveList[indexRemoveList]]) * vertexStride]));
+				FLOAT* tempPooledTangent = (FLOAT*)(&(tempPooledVertex[offsetTangent]));
+				tempPooledTangent[0] = totalTangent.X();
+				tempPooledTangent[1] = totalTangent.Y();
+				tempPooledTangent[2] = totalTangent.Z();
+				tempPooledTangent[3] = 0.f;
 			}
-			for (size_t indexRemove = 0; indexRemove < tempVertexRemove.size(); indexRemove++)
+			for (size_t indexRemoveList = 0u; indexRemoveList < tempRemoveList.size(); indexRemoveList++)
 			{
-				UINT tempRemoveIndex = tempVertexRemove[indexRemove];
-				std::vector<UINT>::iterator removeIterator = tempVertexPool.begin() + 1;
-				while (removeIterator != tempVertexPool.end())
+				if (tempVertexPoolNum > 0)
 				{
-					if ((*removeIterator) == tempRemoveIndex)
-					{
-						removeIterator = tempVertexPool.erase(removeIterator);
-						break;
-					}
-					else
-					{
-						removeIterator++;
-					}
+					UINT tempRemoveIndex = tempRemoveList[indexRemoveList];
+					UINT tempEndIndex = tempVertexPoolNum - 1;
+					swapValue(tempVertexPool, tempRemoveIndex, tempEndIndex);
+					tempVertexPoolNum = tempVertexPoolNum - 1;
 				}
 			}
-			tempScanVertex = tempVertexPool.erase(tempScanVertex);
+			if (tempVertexPoolNum > 0)
+			{
+				UINT tempRemoveIndex = 0;
+				UINT tempEndIndex = tempVertexPoolNum - 1;
+				swapValue(tempVertexPool, tempRemoveIndex, tempEndIndex);
+				tempVertexPoolNum = tempVertexPoolNum - 1;
+			}
 		}
 	}
 }

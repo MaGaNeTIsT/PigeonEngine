@@ -38,7 +38,7 @@ protected:
 	std::map<ULONGLONG, CGameObject*>	m_AllObjectList;
 #ifdef _DEVELOPMENT_EDITOR
 protected:
-	CGameObject*						m_SelectedObject;
+	CGameObject*	m_SelectedObject;
 #endif
 public:
 	CScene();

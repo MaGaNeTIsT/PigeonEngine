@@ -219,11 +219,15 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	{
 		bpp = 3u;
 	}
+	else if (depth == 8)
+	{
+		bpp = 1u;
+	}
 	else
 	{
 		bpp = 0u;
 	}
-	if (!(bpp == 4u || bpp == 3u))
+	if (bpp == 0u)
 	{
 		return FALSE;
 	}
@@ -239,9 +243,23 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	outputHeight = height;
 
 	// Copy from raw to output.
-	// R<->B
-	if (bpp == 3u)
+	if (bpp == 1u)
 	{
+		for (UINT y = 0u; y < height; y++)
+		{
+			for (UINT x = 0u; x < width; x++)
+			{
+				TBYTE value = rawData[y * width + x];
+				outputData[offset + (y * width + x) * 4u + 0u] = value;
+				outputData[offset + (y * width + x) * 4u + 1u] = value;
+				outputData[offset + (y * width + x) * 4u + 2u] = value;
+				outputData[offset + (y * width + x) * 4u + 3u] = 0xffu;
+			}
+		}
+	}
+	else if (bpp == 3u)
+	{
+		// R<->B
 		for (UINT y = 0u; y < height; y++)
 		{
 			for (UINT x = 0u; x < width; x++)
@@ -255,6 +273,7 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	}
 	else if (bpp == 4u)
 	{
+		// R<->B
 		for (UINT y = 0u; y < height; y++)
 		{
 			for (UINT x = 0u; x < width; x++)

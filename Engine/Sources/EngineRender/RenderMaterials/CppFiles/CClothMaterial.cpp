@@ -23,25 +23,34 @@ CClothMaterial::CClothMaterial() : CMaterialBase(typeid(CClothMaterial).name(), 
 	this->m_NormalTexture			= NULL;
 	this->m_RoughnessTexture		= NULL;
 	this->m_AmbientOcclusionTexture	= NULL;
+	this->m_SubsurfaceTexture		= NULL;
 #ifdef _DEVELOPMENT_EDITOR
+	this->m_IsGlossy						= FALSE;
 	this->m_AlbedoTextureSelect				= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
 	this->m_EmissiveTextureSelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK;
-	this->m_SheenColorTextureSelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK;
+	this->m_SheenColorTextureSelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
 	this->m_NormalTextureSelect				= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP;
 	this->m_RoughnessTextureSelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
 	this->m_AmbientOcclusionTextureSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
+	this->m_SubsurfaceTextureSelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
 	{
 		auto initPathChar = [](CHAR* path, const std::string& str) {
 			strcpy_s(path, 512, str.c_str());
 		};
 		initPathChar(this->m_AlbedoTexturePath, "Default White");
 		initPathChar(this->m_EmissiveTexturePath, "Default Black");
-		initPathChar(this->m_SheenColorTexturePath, "Default Black");
+		initPathChar(this->m_SheenColorTexturePath, "Default White");
 		initPathChar(this->m_NormalTexturePath, "Default Bump");
 		initPathChar(this->m_RoughnessTexturePath, "Default White");
 		initPathChar(this->m_AmbientOcclusionTexturePath, "Default White");
+		initPathChar(this->m_SubsurfaceTexturePath, "Default White");
 	}
 #endif
+
+	this->m_RenderParams.BaseColorRoughness			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	this->m_RenderParams.EmissiveAmbientOcclusion	= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	this->m_RenderParams.SheenColorIsGlossy			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
+	this->m_RenderParams.SubsurfaceColor			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
 }
 CClothMaterial::~CClothMaterial()
 {
@@ -89,6 +98,49 @@ void CClothMaterial::SetAmbientOcclusionTexture(CTexture2D* tex)
 		this->m_AmbientOcclusionTexture = tex;
 	}
 }
+void CClothMaterial::SetSubsurfaceTexture(CTexture2D* tex)
+{
+	if (tex != NULL)
+	{
+		this->m_SubsurfaceTexture = tex;
+	}
+}
+void CClothMaterial::SetIsGlossyRoughness(const BOOL& v)
+{
+	this->m_RenderParams.SheenColorIsGlossy.w = v ? 1.f : 0.f;
+}
+void CClothMaterial::SetRoughness(const FLOAT& v)
+{
+	this->m_RenderParams.BaseColorRoughness.w = v;
+}
+void CClothMaterial::SetAmbientOcclusion(const FLOAT& v)
+{
+	this->m_RenderParams.EmissiveAmbientOcclusion.w = v;
+}
+void CClothMaterial::SetBaseColor(const CustomStruct::CColor& clr)
+{
+	this->m_RenderParams.BaseColorRoughness.x = clr.r;
+	this->m_RenderParams.BaseColorRoughness.y = clr.g;
+	this->m_RenderParams.BaseColorRoughness.z = clr.b;
+}
+void CClothMaterial::SetEmissiveColor(const CustomStruct::CColor& clr)
+{
+	this->m_RenderParams.EmissiveAmbientOcclusion.x = clr.r;
+	this->m_RenderParams.EmissiveAmbientOcclusion.y = clr.g;
+	this->m_RenderParams.EmissiveAmbientOcclusion.z = clr.b;
+}
+void CClothMaterial::SetSheenColor(const CustomStruct::CColor& clr)
+{
+	this->m_RenderParams.SheenColorIsGlossy.x = clr.r;
+	this->m_RenderParams.SheenColorIsGlossy.y = clr.g;
+	this->m_RenderParams.SheenColorIsGlossy.z = clr.b;
+}
+void CClothMaterial::SetSubsurfaceColor(const CustomStruct::CColor& clr)
+{
+	this->m_RenderParams.SubsurfaceColor.x = clr.r;
+	this->m_RenderParams.SubsurfaceColor.y = clr.g;
+	this->m_RenderParams.SubsurfaceColor.z = clr.b;
+}
 void CClothMaterial::Init()
 {
 #ifdef _DEVELOPMENT_EDITOR
@@ -121,9 +173,10 @@ void CClothMaterial::Init()
 		pathSelect(this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath, this->m_AlbedoTexture);
 		pathSelect(this->m_EmissiveTextureSelect, this->m_EmissiveTexturePath, this->m_EmissiveTexture);
 		pathSelect(this->m_SheenColorTextureSelect, this->m_SheenColorTexturePath, this->m_SheenColorTexture);
-		pathSelect(this->m_NormalTextureSelect, this->m_NormalTexturePath, this->m_NormalTexture);
-		pathSelect(this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath, this->m_RoughnessTexture);
-		pathSelect(this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath, this->m_AmbientOcclusionTexture);
+		pathSelect(this->m_NormalTextureSelect, this->m_NormalTexturePath, this->m_NormalTexture, FALSE);
+		pathSelect(this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath, this->m_RoughnessTexture, FALSE);
+		pathSelect(this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath, this->m_AmbientOcclusionTexture, FALSE);
+		pathSelect(this->m_SubsurfaceTextureSelect, this->m_SubsurfaceTexturePath, this->m_SubsurfaceTexture);
 	}
 #endif
 
@@ -135,16 +188,12 @@ void CClothMaterial::Init()
 			}};
 		nullTextureSelect(this->m_AlbedoTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE);
 		nullTextureSelect(this->m_EmissiveTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK);
-		nullTextureSelect(this->m_SheenColorTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK);
+		nullTextureSelect(this->m_SheenColorTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE);
 		nullTextureSelect(this->m_NormalTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP);
 		nullTextureSelect(this->m_RoughnessTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE);
 		nullTextureSelect(this->m_AmbientOcclusionTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE);
+		nullTextureSelect(this->m_SubsurfaceTexture, CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE);
 	}
-
-	this->m_RenderParams.BaseColorRoughness			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	this->m_RenderParams.EmissiveAmbientOcclusion	= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	this->m_RenderParams.SheenColor					= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
-	this->m_RenderParams.SubsurfaceColor			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
 }
 void CClothMaterial::Bind()const
 {
@@ -159,6 +208,7 @@ void CClothMaterial::Bind()const
 	bindTexture(this->m_SheenColorTexture, ENGINE_TEXTURE2D_CUSTOM_D_START_SLOT);
 	bindTexture(this->m_RoughnessTexture, 9u);
 	bindTexture(this->m_AmbientOcclusionTexture, 10u);
+	bindTexture(this->m_SubsurfaceTexture, 11u);
 }
 const void* CClothMaterial::GetConstantData()const
 {
@@ -168,10 +218,12 @@ const void* CClothMaterial::GetConstantData()const
 void CClothMaterial::SelectedEditorUpdate()
 {
 	FLOAT baseColor[3]			= { this->m_RenderParams.BaseColorRoughness.x, this->m_RenderParams.BaseColorRoughness.y, this->m_RenderParams.BaseColorRoughness.z };
-	FLOAT EmissiveColor[3]		= { this->m_RenderParams.EmissiveAmbientOcclusion.x, this->m_RenderParams.EmissiveAmbientOcclusion.y, this->m_RenderParams.EmissiveAmbientOcclusion.z };
-	FLOAT SheenColor[3]			= { this->m_RenderParams.SheenColor.x, this->m_RenderParams.SheenColor.y, this->m_RenderParams.SheenColor.z };
-	FLOAT SubsurfaceColor[3]	= { this->m_RenderParams.SubsurfaceColor.x, this->m_RenderParams.SubsurfaceColor.y, this->m_RenderParams.SubsurfaceColor.z };
+	FLOAT emissiveColor[3]		= { this->m_RenderParams.EmissiveAmbientOcclusion.x, this->m_RenderParams.EmissiveAmbientOcclusion.y, this->m_RenderParams.EmissiveAmbientOcclusion.z };
+	FLOAT sheenColor[3]			= { this->m_RenderParams.SheenColorIsGlossy.x, this->m_RenderParams.SheenColorIsGlossy.y, this->m_RenderParams.SheenColorIsGlossy.z };
+	FLOAT subsurfaceColor[3]	= { this->m_RenderParams.SubsurfaceColor.x, this->m_RenderParams.SubsurfaceColor.y, this->m_RenderParams.SubsurfaceColor.z };
 
+	bool isGlossy				= this->m_IsGlossy;
+	FLOAT glossy				= 0.f;
 	FLOAT roughness				= this->m_RenderParams.BaseColorRoughness.w;
 	FLOAT ambientOcclusion		= this->m_RenderParams.EmissiveAmbientOcclusion.w;
 
@@ -193,14 +245,15 @@ void CClothMaterial::SelectedEditorUpdate()
 	ImGui::ColorEdit3("BaseColor", baseColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
 
 	ImGui::Text("EmissiveColor");
-	ImGui::ColorEdit3("EmissiveColor", EmissiveColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+	ImGui::ColorEdit3("EmissiveColor", emissiveColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
 
 	ImGui::Text("SheenColor");
-	ImGui::ColorEdit3("SheenColor", SheenColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+	ImGui::ColorEdit3("SheenColor", sheenColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
 
 	ImGui::Text("SubsurfaceColor");
-	ImGui::ColorEdit3("SubsurfaceColor", SubsurfaceColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+	ImGui::ColorEdit3("SubsurfaceColor", subsurfaceColor, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
 
+	ImGui::Checkbox("IsGlossy", &isGlossy);
 	ImGui::SliderFloat("Roughness", &roughness, 0.f, 1.f);
 	ImGui::SliderFloat("AmbientOcclusion", &ambientOcclusion, 0.f, 1.f);
 
@@ -239,6 +292,8 @@ void CClothMaterial::SelectedEditorUpdate()
 		texturePathText("RoughnessTexturePath", this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath);
 		textureCombo("AmbientOcclusionTexture", this->m_AmbientOcclusionTextureSelect);
 		texturePathText("AmbientOcclusionTexturePath", this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath);
+		textureCombo("SubsurfaceTexture", this->m_SubsurfaceTextureSelect);
+		texturePathText("SubsurfaceTexturePath", this->m_SubsurfaceTextureSelect, this->m_SubsurfaceTexturePath);
 	}
 
 	{
@@ -266,17 +321,20 @@ void CClothMaterial::SelectedEditorUpdate()
 			textureUpdate(this->m_AlbedoTextureSelect, this->m_AlbedoTexturePath, this->m_AlbedoTexture);
 			textureUpdate(this->m_EmissiveTextureSelect, this->m_EmissiveTexturePath, this->m_EmissiveTexture);
 			textureUpdate(this->m_SheenColorTextureSelect, this->m_SheenColorTexturePath, this->m_SheenColorTexture);
-			textureUpdate(this->m_NormalTextureSelect, this->m_NormalTexturePath, this->m_NormalTexture);
-			textureUpdate(this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath, this->m_RoughnessTexture);
-			textureUpdate(this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath, this->m_AmbientOcclusionTexture);
+			textureUpdate(this->m_NormalTextureSelect, this->m_NormalTexturePath, this->m_NormalTexture, FALSE);
+			textureUpdate(this->m_RoughnessTextureSelect, this->m_RoughnessTexturePath, this->m_RoughnessTexture, FALSE);
+			textureUpdate(this->m_AmbientOcclusionTextureSelect, this->m_AmbientOcclusionTexturePath, this->m_AmbientOcclusionTexture, FALSE);
+			textureUpdate(this->m_SubsurfaceTextureSelect, this->m_SubsurfaceTexturePath, this->m_SubsurfaceTexture);
 		}
 	}
 
 	ImGui::EndChild();
 
+	this->m_IsGlossy = isGlossy;
+	glossy = isGlossy ? 1.f : 0.f;
 	this->m_RenderParams.BaseColorRoughness			= DirectX::XMFLOAT4(baseColor[0], baseColor[1], baseColor[2], roughness);
-	this->m_RenderParams.EmissiveAmbientOcclusion	= DirectX::XMFLOAT4(EmissiveColor[0], EmissiveColor[1], EmissiveColor[2], ambientOcclusion);
-	this->m_RenderParams.SheenColor					= DirectX::XMFLOAT4(SheenColor[0], SheenColor[1], SheenColor[2], 0.f);
-	this->m_RenderParams.SubsurfaceColor			= DirectX::XMFLOAT4(SubsurfaceColor[0], SubsurfaceColor[1], SubsurfaceColor[2], 0.f);
+	this->m_RenderParams.EmissiveAmbientOcclusion	= DirectX::XMFLOAT4(emissiveColor[0], emissiveColor[1], emissiveColor[2], ambientOcclusion);
+	this->m_RenderParams.SheenColorIsGlossy			= DirectX::XMFLOAT4(sheenColor[0], sheenColor[1], sheenColor[2], glossy);
+	this->m_RenderParams.SubsurfaceColor			= DirectX::XMFLOAT4(subsurfaceColor[0], subsurfaceColor[1], subsurfaceColor[2], 0.f);
 }
 #endif

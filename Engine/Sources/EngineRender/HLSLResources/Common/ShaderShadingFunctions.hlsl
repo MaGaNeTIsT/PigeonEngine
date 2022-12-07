@@ -131,7 +131,11 @@ float3 SurfaceShading_DefaultLit(
 
 #ifdef MATERIAL_HAS_CLEAR_COAT
 	float Fcc;
+#ifdef MATERIAL_HAS_CLEAR_COAT_NORMAL
 	float clearCoat = ClearCoatBRDF(content, pixel, pixel.ShadingNormalWS, halfVector, clearCoatNormal, clearCoatRoughness, clearCoatStrength, Fcc);
+#else
+	float clearCoat = ClearCoatBRDF(content, pixel, pixel.ShadingNormalWS, halfVector, float3(1.0, 0.0, 0.0), clearCoatRoughness, clearCoatStrength, Fcc);
+#endif
 	float attenuation = 1.0 - Fcc;
 
 #if defined(MATERIAL_HAS_NORMALMAP) || defined(MATERIAL_HAS_CLEAR_COAT_NORMAL)

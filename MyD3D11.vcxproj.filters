@@ -279,6 +279,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CScreenPolygon2DMaterial.h">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClearCoatMaterial.h">
+      <Filter>Engine\Sources\EngineRender\RenderMaterials\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -428,6 +431,9 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CScreenPolygon2DMaterial.cpp">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClearCoatMaterial.cpp">
+      <Filter>Engine\Sources\EngineRender\RenderMaterials\CppFiles</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -490,13 +496,25 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardPS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardVS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>

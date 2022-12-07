@@ -3,6 +3,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
+#include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
 CSceneGameObject::CSceneGameObject()
@@ -20,7 +21,7 @@ CSceneGameObject::CSceneGameObject()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 		meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, desc, 4u, FALSE));
 		meshRendererComponent->SetMeshComponent(meshComponent);
-		CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>();
+		CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
 		{
 			CustomType::Vector3 boundMin, boundMax;
 			meshComponent->GetMinMaxBounding(boundMin, boundMax);
@@ -51,8 +52,8 @@ CSceneGameObject::CSceneGameObject()
 		this->m_MeshComponent			= meshComponent;
 		this->m_CurrentMeshType			= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_PreviousMeshType		= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
-		this->m_CurrentMaterialType		= DefaultMaterialType::DefaultMaterialType_Cloth;
-		this->m_PreviousMaterialType	= DefaultMaterialType::DefaultMaterialType_Cloth;
+		this->m_CurrentMaterialType		= DefaultMaterialType::DefaultMaterialType_DefaultLit;
+		this->m_PreviousMaterialType	= DefaultMaterialType::DefaultMaterialType_DefaultLit;
 		this->m_LoadBaseModel			= TRUE;
 		this->m_LoadCustomModelPath[0] = 'N'; this->m_LoadCustomModelPath[1] = 'U'; this->m_LoadCustomModelPath[2] = 'L'; this->m_LoadCustomModelPath[3] = 'L';
 		this->m_LoadCustomModelPath[4] = '\0';
@@ -79,6 +80,14 @@ void CSceneGameObject::FixedUpdate()
 	CGameObject::FixedUpdate();
 }
 #ifdef _DEVELOPMENT_EDITOR
+CMeshRendererComponent* CSceneGameObject::GetMeshRendererComponentNotConst()
+{
+	return (this->m_MeshRendererComponent);
+}
+CMeshComponent* CSceneGameObject::GetMeshComponentNotConst()
+{
+	return (this->m_MeshComponent);
+}
 void CSceneGameObject::SelectedEditorUpdate()
 {
 	bool loadBaseModel = this->m_LoadBaseModel;
@@ -156,6 +165,8 @@ void CSceneGameObject::SelectedEditorUpdate()
 					ImGui::Text("CurrentMaterial : %s", materialName.c_str());
 					std::map<INT, std::string> baseEngineMaterialItems = {
 						{ DefaultMaterialType::DefaultMaterialType_DefaultLit, "DefaultLitMaterial" },
+						{ DefaultMaterialType::DefaultMaterialType_Anisotropic, "AnisotropicMaterial" },
+						{ DefaultMaterialType::DefaultMaterialType_ClearCoat, "ClearCoatMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" } };
 					auto materialCombo = [&baseEngineMaterialItems](const std::string& name, INT& select) {
 						if (ImGui::BeginCombo(name.c_str(), baseEngineMaterialItems[select].c_str()))
@@ -252,6 +263,12 @@ void CSceneGameObject::SelectedEditorUpdate()
 				{
 				case DefaultMaterialType::DefaultMaterialType_DefaultLit:
 					this->m_MeshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+					break;
+				case DefaultMaterialType::DefaultMaterialType_Anisotropic:
+					this->m_MeshRendererComponent->AddMaterial<CAnisotropicMaterial>(TRUE);
+					break;
+				case DefaultMaterialType::DefaultMaterialType_ClearCoat:
+					this->m_MeshRendererComponent->AddMaterial<CClearCoatMaterial>(TRUE);
 					break;
 				case DefaultMaterialType::DefaultMaterialType_Cloth:
 					this->m_MeshRendererComponent->AddMaterial<CClothMaterial>(TRUE);

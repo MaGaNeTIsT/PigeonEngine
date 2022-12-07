@@ -104,6 +104,10 @@ public:
 public:
 	virtual void	Init()override;
 	virtual void	Update()override;
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	virtual void	SelectedEditorUpdate()override;
+#endif
 protected:
 	static BOOL		GenerateClosestShadowMap(CLightDirectional* light);
 	static BOOL		GenerateCascadeShadowMap(CLightDirectional* light, const INT& frameCounter);

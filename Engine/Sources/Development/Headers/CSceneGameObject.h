@@ -12,12 +12,17 @@ public:
 	virtual void	FixedUpdate()override;
 #ifdef _DEVELOPMENT_EDITOR
 public:
+	class CMeshRendererComponent*	GetMeshRendererComponentNotConst();
+	class CMeshComponent*			GetMeshComponentNotConst();
+public:
 	virtual void	SelectedEditorUpdate()override;
 protected:
 	enum DefaultMaterialType
 	{
 		DefaultMaterialType_DefaultLit	= 0,
-		DefaultMaterialType_Cloth		= 1,
+		DefaultMaterialType_Anisotropic	= 1,
+		DefaultMaterialType_ClearCoat	= 2,
+		DefaultMaterialType_Cloth		= 3,
 		DefaultMaterialType_Count
 	};
 protected:

@@ -24,13 +24,25 @@
 
 Texture2D	_RoughnessTexture			: register(t9);
 Texture2D	_AmbientOcclusionTexture	: register(t10);
+Texture2D	_SubsurfaceTexture			: register(t11);
 
 cbuffer ConstantBufferMaterialData : register(b3)
 {
 	float4	_BaseColorRoughness;
 	float4	_EmissiveAmbientOcclusion;
-	float4	_SheenColor;
+	float4	_SheenColorIsGlossy;
 	float4	_SubsurfaceColor;
+}
+
+float GetShadowGaussian(int x, int y)
+{
+	const static float _ShadowGaussian[25] = {
+		0.0159325, 0.0292619, 0.0358351, 0.0292619, 0.0159325,
+		0.0292619, 0.053743,  0.0658155, 0.053743,  0.0292619,
+		0.0358351, 0.0658155, 0.0806,    0.0658155, 0.0358351,
+		0.0292619, 0.053743,  0.0658155, 0.053743,  0.0292619,
+		0.0159325, 0.0292619, 0.0358351, 0.0292619, 0.0159325 };
+	return (_ShadowGaussian[(y + 2) * 5 + (x + 2)]);
 }
 
 float4 main(VaryingForward input) : SV_Target
@@ -39,16 +51,16 @@ float4 main(VaryingForward input) : SV_Target
 	float3   geometricNormalWS		= SafeNormalize(input.normal.xyz);
 	float3x3 tangentToWorld			= CreateTangentMatrix(geometricNormalWS, SafeNormalize(input.tangent.xyz), true);
 
-	float3   materialNormalWS		= TransformTangentToSpaceDir(SafeNormalize(_CustomTextureA.Sample(_PointWrapSampler, input.uv0).rgb * 2.0 - 1.0), tangentToWorld);
+	float3   materialNormalWS		= TransformTangentToSpaceDir(SafeNormalize(_CustomTextureA.Sample(_LinearWrapSampler, input.uv0).rgb * 2.0 - 1.0), tangentToWorld);
 	float3   materialAlbedo			= _CustomTextureB.Sample(_LinearWrapSampler, input.uv0).rgb * _BaseColorRoughness.rgb;
-	float    materialRoughness		= _RoughnessTexture.Sample(_LinearWrapSampler, input.uv0).r * _BaseColorRoughness.w;
+	float    materialRoughness		= saturate(abs(_RoughnessTexture.Sample(_LinearWrapSampler, input.uv0).r - _SheenColorIsGlossy.w)) * _BaseColorRoughness.w;
 	float3   materialEmissive		= _CustomTextureC.Sample(_LinearWrapSampler, input.uv0).rgb * _EmissiveAmbientOcclusion.rgb;
 	float    materialAO				= _AmbientOcclusionTexture.Sample(_LinearWrapSampler, input.uv0).r * _EmissiveAmbientOcclusion.w;
 #ifdef MATERIAL_HAS_SHEEN_COLOR
-	float3   materialSheenColor		= _CustomTextureD.Sample(_LinearWrapSampler, input.uv0).rgb * _SheenColor.rgb;
+	float3   materialSheenColor		= _CustomTextureD.Sample(_LinearWrapSampler, input.uv0).rgb * _SheenColorIsGlossy.rgb;
 #endif
 #ifdef MATERIAL_HAS_SUBSURFACE_COLOR
-	float3   materialSubsurfaceClr	= _SubsurfaceColor.rgb;
+	float3   materialSubsurfaceClr	= _SubsurfaceTexture.Sample(_LinearWrapSampler, input.uv0).rgb * _SubsurfaceColor.rgb;
 #endif
 
 	float3 positionWS	= input.positionWS.xyz;
@@ -77,7 +89,8 @@ float4 main(VaryingForward input) : SV_Target
 	pixelParams.SubsurfaceColor					= materialSubsurfaceClr;
 #endif
 
-	float4 color = float4((0.01 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	//float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	float4 color = float4(pixelParams.EmissiveColor, 1.0);
 	for (uint i = 0u; i < (uint)_LightCount.x; i++)
 	{
 		ShadingLightParams light;
@@ -96,19 +109,18 @@ float4 main(VaryingForward input) : SV_Target
 			_EngineLightShadowMap0.GetDimensions(mapSize.x, mapSize.y);
 			float2 mapOffset = 1.0 / float2(mapSize);
 			[unroll]
-			for (int y = -1; y <= 1; y++)
+			for (int y = -2; y <= 2; y++)
 			{
 				[unroll]
-				for (int x = -1; x <= 1; x++)
+				for (int x = -2; x <= 2; x++)
 				{
 					float2 tempUV = float2(x, y) * mapOffset + shadowUV.xy;
 					float lightZ = _EngineLightShadowMap0.Sample(_LinearClampSampler, tempUV).r;
 					bool outScreen = any(tempUV.xy < 0.0) || any(tempUV.xy > 1.0);
 					float tempShadow = shadowUV.z < (lightZ + 1e-2) ? 1.0 : 0.0;
-					shadow += outScreen ? 1.0 : tempShadow;
+					shadow += (outScreen ? 1.0 : tempShadow) * GetShadowGaussian(x, y);
 				}
 			}
-			shadow /= 9.0;
 		}
 
 		NormalViewLightDotParams content = InitNormalViewLightDotParams(pixelParams.ShadingNormalWS, light.Direction, viewDirWS, halfVecWS);

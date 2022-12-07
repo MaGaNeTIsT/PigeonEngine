@@ -13,6 +13,11 @@ namespace CustomStruct
 			r = _r; g = _g;
 			b = _b; a = _a;
 		}
+		CColor(const FLOAT& _r, const FLOAT& _g, const FLOAT& _b)
+		{
+			r = _r; g = _g;
+			b = _b; a = 1.f;
+		}
 		union
 		{
 			FLOAT rgba[4];

@@ -12,7 +12,7 @@ public:
 		RenderParams() { ::ZeroMemory(this, sizeof(*this)); }
 		DirectX::XMFLOAT4	BaseColorRoughness;
 		DirectX::XMFLOAT4	EmissiveAmbientOcclusion;
-		DirectX::XMFLOAT4	SheenColor;
+		DirectX::XMFLOAT4	SheenColorIsGlossy;
 		DirectX::XMFLOAT4	SubsurfaceColor;
 	};
 public:
@@ -22,6 +22,15 @@ public:
 	void	SetSheenColorTexture(class CTexture2D* tex);
 	void	SetRoughnessTexture(class CTexture2D* tex);
 	void	SetAmbientOcclusionTexture(class CTexture2D* tex);
+	void	SetSubsurfaceTexture(class CTexture2D* tex);
+public:
+	void	SetIsGlossyRoughness(const BOOL& v);
+	void	SetRoughness(const FLOAT& v);
+	void	SetAmbientOcclusion(const FLOAT& v);
+	void	SetBaseColor(const CustomStruct::CColor& clr);
+	void	SetEmissiveColor(const CustomStruct::CColor& clr);
+	void	SetSheenColor(const CustomStruct::CColor& clr);
+	void	SetSubsurfaceColor(const CustomStruct::CColor& clr);
 public:
 	virtual void			Init()override;
 	virtual void			Bind()const override;
@@ -30,6 +39,7 @@ public:
 public:
 	virtual void			SelectedEditorUpdate()override;
 protected:
+	BOOL				m_IsGlossy;
 	INT					m_AlbedoTextureSelect;
 	CHAR				m_AlbedoTexturePath[512];
 	INT					m_EmissiveTextureSelect;
@@ -42,6 +52,8 @@ protected:
 	CHAR				m_RoughnessTexturePath[512];
 	INT					m_AmbientOcclusionTextureSelect;
 	CHAR				m_AmbientOcclusionTexturePath[512];
+	INT					m_SubsurfaceTextureSelect;
+	CHAR				m_SubsurfaceTexturePath[512];
 #endif
 protected:
 	RenderParams		m_RenderParams;
@@ -51,6 +63,7 @@ protected:
 	class CTexture2D*	m_NormalTexture;
 	class CTexture2D*	m_RoughnessTexture;
 	class CTexture2D*	m_AmbientOcclusionTexture;
+	class CTexture2D*	m_SubsurfaceTexture;
 public:
 	CClothMaterial();
 	virtual ~CClothMaterial();

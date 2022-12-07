@@ -34,6 +34,10 @@ public:
 		if (needInit)
 		{
 			this->m_Material->Init();
+			if (this->m_Material->HasConstantData())
+			{
+				this->CreateConstantBuffer(this->m_Material->GetConstantSize());
+			}
 		}
 		return (reinterpret_cast<T*>(this->m_Material));
 	}

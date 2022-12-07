@@ -6,7 +6,7 @@ CLightBase::CLightBase()
 {
 	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
-	this->m_Intensity = 1.5f;
+	this->m_Intensity = 2.5f;
 }
 CLightBase::CLightBase(const CLightBase& light)
 {
@@ -66,6 +66,31 @@ void CLightDirectional::Update()
 	this->m_FrameCounter = 1 - this->m_FrameCounter;
 	CGameObject::Update();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CLightDirectional::SelectedEditorUpdate()
+{
+	FLOAT lightClr[3]		= { this->m_Color.r, this->m_Color.g, this->m_Color.b };
+	FLOAT lightIntensity	= this->m_Intensity;
+
+	ImGui::Begin("DirectionalLight", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+	CGameObject::SelectedEditorUpdate();
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+	if (ImGui::TreeNode("LightEditorMenu"))
+	{
+		ImGui::Text("LightColor");
+		ImGui::ColorEdit3("LightColor", lightClr, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+		ImGui::SliderFloat("LightIntensity", &lightIntensity, 0.f, 10.f);
+
+		ImGui::TreePop();
+	}
+	ImGui::End();
+
+	this->m_Color.r		= lightClr[0];
+	this->m_Color.g		= lightClr[1];
+	this->m_Color.b		= lightClr[2];
+	this->m_Intensity	= lightIntensity;
+}
+#endif
 BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 {
 	BOOL result = TRUE;

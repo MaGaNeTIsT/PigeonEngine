@@ -61,6 +61,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CVolumetricCloud.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClearCoatMaterial.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClothMaterial.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CDefaultLitMaterial.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CScreenPolygon2DMaterial.h" />
@@ -113,6 +114,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CVolumetricCloud.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClearCoatMaterial.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClothMaterial.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CDefaultLitMaterial.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CScreenPolygon2DMaterial.cpp" />
@@ -167,6 +169,38 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
       <FileType>Document</FileType>
     </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -183,7 +217,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardPS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -191,7 +225,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultForwardVS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
