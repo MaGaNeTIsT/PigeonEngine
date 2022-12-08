@@ -99,7 +99,7 @@ NormalViewLightDotParams InitNormalViewLightDotParams(const float3 normal, const
 	return output;
 }
 
-float3 SurfaceShading_DefaultLit(
+float3 SurfaceShading_Standard(
 	const PixelParams pixel,
 	const NormalViewLightDotParams content,
 	const ShadingLightParams light,

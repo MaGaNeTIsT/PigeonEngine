@@ -121,6 +121,15 @@
     <Filter Include="Engine\Sources\EngineRender\RenderMaterials\Headers">
       <UniqueIdentifier>{a8b45931-3cb4-4747-b96f-da3e79d2b110}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\EngineThirdParty\Cassimp">
+      <UniqueIdentifier>{f7af3b20-90e5-49d5-bd4b-51c5416a64a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\EngineThirdParty\Cassimp\CppFiles">
+      <UniqueIdentifier>{ac41ca51-0869-4291-a3bf-669837b6b5c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\EngineThirdParty\Cassimp\Headers">
+      <UniqueIdentifier>{a3a8850c-963d-4c05-a932-b631285a9591}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -196,9 +205,6 @@
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CReadFBX.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h">
@@ -282,6 +288,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClearCoatMaterial.h">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h">
+      <Filter>Engine\EngineThirdParty\Cassimp\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -351,9 +360,6 @@
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CReadFBX.cpp">
       <Filter>Engine\Sources\EngineRender\AssetsManager\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp">
@@ -433,6 +439,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClearCoatMaterial.cpp">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp">
+      <Filter>Engine\EngineThirdParty\Cassimp\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

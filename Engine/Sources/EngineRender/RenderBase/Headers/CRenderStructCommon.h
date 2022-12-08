@@ -766,6 +766,14 @@ namespace CustomStruct
 			InputSlotClass			= CRenderInputClassification::INPUT_PER_VERTEX_DATA;
 			InstanceDataStepRate	= 0u;
 		}
+		CRenderInputLayoutDesc(const CRenderInputLayoutDesc& desc)
+		{
+			SemanticName			= desc.SemanticName;
+			SemanticIndex			= desc.SemanticIndex;
+			InputSlot				= desc.InputSlot;
+			InputSlotClass			= desc.InputSlotClass;
+			InstanceDataStepRate	= desc.InstanceDataStepRate;
+		}
 		CRenderInputLayoutDesc(CRenderShaderSemantic name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, CRenderInputClassification inputSlotClass = CRenderInputClassification::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u)
 		{
 			SemanticName			= name;
@@ -810,20 +818,16 @@ namespace CustomStruct
 		UINT						InputSlot;
 		CRenderInputClassification	InputSlotClass;
 		UINT						InstanceDataStepRate;
-		static const CRenderInputLayoutDesc* GetFullLayouts()
+		static void GetEngineDefaultMeshInputLayouts(const CustomStruct::CRenderInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
 		{
-			const static CRenderInputLayoutDesc fullLayouts[5] = {
-				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_COLOR),
-				CRenderInputLayoutDesc(CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-			return fullLayouts;
-		}
-		static const UINT& GetFullLayoutNum()
-		{
-			const static UINT fullLayoutNum = 5u;
-			return fullLayoutNum;
+			const static CustomStruct::CRenderInputLayoutDesc _EngineDefaultMeshInputLayout[4u] = {
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+
+			inputLayoutDesc	= _EngineDefaultMeshInputLayout;
+			inputLayoutNum	= 4u;
 		}
 	};
 

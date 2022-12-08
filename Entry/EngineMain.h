@@ -24,14 +24,9 @@
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "xaudio2.lib")
 
-//#include <fbxsdk.h>
-//#pragma comment (lib, "libfbxsdk-mt.lib")
-//#pragma comment (lib, "libxml2-mt.lib")
-//#pragma comment (lib, "zlib-mt.lib")
-
+#ifdef _DEVELOPMENT_EDITOR
 #include "../ThirdParty/imgui/imgui.h"
-
-#define _DEVELOPMENT_EDITOR
+#endif
 
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)

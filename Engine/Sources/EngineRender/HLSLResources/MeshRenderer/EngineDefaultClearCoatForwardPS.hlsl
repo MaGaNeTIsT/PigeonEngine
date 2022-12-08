@@ -102,7 +102,8 @@ float4 main(VaryingForward input) : SV_Target
 #endif
 #endif
 
-	float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	//float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	float4 color = float4(pixelParams.EmissiveColor, 1.0);
 	for (uint i = 0u; i < (uint)_LightCount.x; i++)
 	{
 		ShadingLightParams light;
@@ -137,7 +138,7 @@ float4 main(VaryingForward input) : SV_Target
 
 		NormalViewLightDotParams content = InitNormalViewLightDotParams(pixelParams.ShadingNormalWS, light.Direction, viewDirWS, halfVecWS);
 
-		color.rgb += SurfaceShading_DefaultLit(pixelParams, content, light, viewDirWS, halfVecWS,
+		color.rgb += SurfaceShading_Standard(pixelParams, content, light, viewDirWS, halfVecWS,
 #ifdef MATERIAL_HAS_CLEAR_COAT
 			pixelParams.ClearCoatStrength,
 			pixelParams.ClearCoatRoughness,

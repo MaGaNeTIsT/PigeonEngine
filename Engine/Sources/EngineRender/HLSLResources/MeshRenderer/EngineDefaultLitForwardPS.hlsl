@@ -83,7 +83,8 @@ float4 main(VaryingForward input) : SV_Target
 	pixelParams.DiffuseColor					= ComputeDiffuseColor(GBuffer.BaseColor, GBuffer.Metallicness);
 	pixelParams.F0								= ComputeFresnelF0(materialReflectance, GBuffer.BaseColor, GBuffer.Metallicness);
 
-	float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	//float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);
+	float4 color = float4(pixelParams.EmissiveColor, 1.0);
 	for (uint i = 0u; i < (uint)_LightCount.x; i++)
 	{
 		ShadingLightParams light;
@@ -118,7 +119,7 @@ float4 main(VaryingForward input) : SV_Target
 
 		NormalViewLightDotParams content = InitNormalViewLightDotParams(pixelParams.ShadingNormalWS, light.Direction, viewDirWS, halfVecWS);
 
-		color.rgb += SurfaceShading_DefaultLit(pixelParams, content, light, viewDirWS, halfVecWS, shadow);
+		color.rgb += SurfaceShading_Standard(pixelParams, content, light, viewDirWS, halfVecWS, shadow);
 	}
 	return color;
 }
