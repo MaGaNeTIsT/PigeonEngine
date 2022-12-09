@@ -86,7 +86,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, -150.f));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
@@ -101,7 +102,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, 150));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
@@ -118,7 +120,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, -150.f));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
@@ -136,7 +139,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, 150));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
@@ -156,7 +160,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, -150.f));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));
@@ -170,7 +175,8 @@ void CScene::Init()
 			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, 150.f));
 			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
+			meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, testMeshInputLayout, 4u, FALSE));
+			//meshComponent->SetMesh(CMeshManager::LoadMeshFromFile("./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj", testMeshInputLayout, 4u, FALSE));
 			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
 			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
 			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));

@@ -27,6 +27,7 @@ public:
 public:
 	static void							ClearMeshData();
 public:
+	static const CBaseMesh<UINT>*		LoadDefaultMeshAsset(const std::string& path, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);

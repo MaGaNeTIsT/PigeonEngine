@@ -32,11 +32,18 @@ void CassimpManager::ShutDown()
 		CassimpManager::m_AssimpManager = nullptr;
 	}
 }
-BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, CHAR*& meshVertices, UINT& numVertices, UINT*& meshIndices, UINT& numIndices)
+BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, CHAR*& meshVertices, UINT& numVertices, std::vector<UINT>& meshIndices, UINT& numIndices)
 {
-	meshVertices	= nullptr;
-	meshIndices		= nullptr;
-	meshIndices		= 0u;
+	if (meshVertices != nullptr)
+	{
+		delete meshVertices;
+		meshVertices = nullptr;
+	}
+	if (meshIndices.size() > 0)
+	{
+		meshIndices.clear();
+	}
+	numVertices		= 0u;
 	numIndices		= 0u;
 
 	Assimp::Importer* impoter = _GAssetImporter;
@@ -101,13 +108,8 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, CHAR*& meshVer
 	return TRUE;
 }
 template<typename T>
-BOOL CassimpManager::TranslateMeshData(const T* sceneMesh, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, CHAR*& verticesData, UINT& numVertices, UINT*& indicesData, UINT& numIndices)
+BOOL CassimpManager::TranslateMeshData(const T* sceneMesh, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, CHAR*& verticesData, UINT& numVertices, std::vector<UINT>& indicesData, UINT& numIndices)
 {
-	verticesData	= nullptr;
-	indicesData		= nullptr;
-	numVertices		= 0u;
-	numIndices		= 0u;
-
 	const aiMesh* tempMesh = dynamic_cast<const aiMesh*>(sceneMesh);
 	if (tempMesh == nullptr || !tempMesh->HasFaces())
 	{
@@ -194,7 +196,7 @@ BOOL CassimpManager::TranslateMeshData(const T* sceneMesh, const CustomStruct::C
 	numVertices = tempMesh->mNumVertices;
 	verticesData = new CHAR[stride * tempMesh->mNumVertices];
 	numIndices = tempMesh->mNumFaces * 3u;
-	indicesData = new UINT[tempMesh->mNumFaces * 3u];
+	indicesData.resize(tempMesh->mNumFaces * 3u);
 
 	{
 		UINT numFaces = tempMesh->mNumFaces;

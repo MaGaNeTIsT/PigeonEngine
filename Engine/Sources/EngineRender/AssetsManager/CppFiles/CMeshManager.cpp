@@ -1,5 +1,6 @@
 #include "../Headers/CMeshManager.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
+#include "../../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
 
 CMeshManager* CMeshManager::m_MeshManager = new CMeshManager();
 void CMeshManager::ShutDown()
@@ -19,6 +20,34 @@ void CMeshManager::ClearMeshData()
 			}
 		}
 		m_MeshManager->m_Data.clear();
+	}
+}
+const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& path, const BOOL& needVertexData)
+{
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	{
+		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(path + descName);
+		if (findResult != NULL)
+		{
+			return findResult;
+		}
+	}
+
+	{
+		CHAR* vertices; std::vector<UINT> indices;
+		UINT numVertices, numIndices;
+		if (!CassimpManager::ReadDefaultMeshFile(path, vertices, numVertices, indices, numIndices))
+		{
+			return NULL;
+		}
+
+		std::vector<CustomStruct::CSubMeshInfo> submesh(0);
+		CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>((path + descName), inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, submesh, needVertexData);
+
+		CMeshManager::AddMeshData((path + descName), resultMesh);
+		return resultMesh;
 	}
 }
 const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
