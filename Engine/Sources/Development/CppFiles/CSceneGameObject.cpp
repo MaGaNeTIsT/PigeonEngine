@@ -223,7 +223,8 @@ void CSceneGameObject::SelectedEditorUpdate()
 				if (needLoadMesh)
 				{
 					std::string loadCustomModelPath(this->m_LoadCustomModelPath);
-					this->m_MeshComponent->SetMesh(CMeshManager::LoadMeshFromFile(loadCustomModelPath, desc, 4u, FALSE));
+					//this->m_MeshComponent->SetMesh(CMeshManager::LoadMeshFromFile(loadCustomModelPath, desc, 4u, FALSE));
+					this->m_MeshComponent->SetMesh(CMeshManager::LoadDefaultMeshAsset(loadCustomModelPath, FALSE));
 					needResetBound = TRUE;
 				}
 			}

@@ -13,9 +13,6 @@ public:
 	static void		Initialize();
 	static void		ShutDown();
 private:
-	template<typename T>
-	static BOOL		TranslateMeshData(const T* sceneMesh, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, CHAR*& verticesData, UINT& numVertices, std::vector<UINT>& indicesData, UINT& numIndices);
-private:
 	CassimpManager() {}
 	CassimpManager(const CassimpManager&) {}
 	~CassimpManager() {}

@@ -36,7 +36,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 	}
 
 	{
-		CHAR* vertices; std::vector<UINT> indices;
+		CHAR* vertices = nullptr; std::vector<UINT> indices;
 		UINT numVertices, numIndices;
 		if (!CassimpManager::ReadDefaultMeshFile(path, vertices, numVertices, indices, numIndices))
 		{
