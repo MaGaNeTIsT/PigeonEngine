@@ -6,50 +6,62 @@ CShaderManager* CShaderManager::m_ShaderManager = new CShaderManager();
 
 void CShaderManager::ShutDown()
 {
+	CShaderManager::ClearVertexShaderData();
+	CShaderManager::ClearPixelShaderData();
+	CShaderManager::ClearComputeShaderData();
 	delete (CShaderManager::m_ShaderManager);
 }
-std::shared_ptr<CVertexShader> CShaderManager::LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum)
+CVertexShader* CShaderManager::LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum)
 {
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> shader = nullptr;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout = nullptr;
 	CShaderManager::FindVertexShaderData(name, shader, inputLayout);
 	if (shader != nullptr && inputLayout != nullptr)
-		return (std::shared_ptr<CVertexShader>(new CVertexShader(name, shader, inputLayout)));
-
+	{
+		CVertexShader* vs = new CVertexShader(name, shader, inputLayout);
+		return vs;
+	}
 	if (CRenderDevice::LoadVertexShader(name, shader, inputLayout, layouts, layoutNum))
 	{
 		CShaderManager::AddVertexShaderData(name, shader, inputLayout);
-		return (std::shared_ptr<CVertexShader>(new CVertexShader(name, shader, inputLayout)));
+		CVertexShader* vs = new CVertexShader(name, shader, inputLayout);
+		return vs;
 	}
-	return nullptr;
+	return NULL;
 }
-std::shared_ptr<CPixelShader> CShaderManager::LoadPixelShader(const std::string& name)
+CPixelShader* CShaderManager::LoadPixelShader(const std::string& name)
 {
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> shader = nullptr;
 	CShaderManager::FindPixelShaderData(name, shader);
 	if (shader != nullptr)
-		return (std::shared_ptr<CPixelShader>(new CPixelShader(name, shader)));
-
+	{
+		CPixelShader* ps = new CPixelShader(name, shader);
+		return ps;
+	}
 	if (CRenderDevice::LoadPixelShader(name, shader))
 	{
 		CShaderManager::AddPixelShaderData(name, shader);
-		return (std::shared_ptr<CPixelShader>(new CPixelShader(name, shader)));
+		CPixelShader* ps = new CPixelShader(name, shader);
+		return ps;
 	}
-	return nullptr;
+	return NULL;
 }
-std::shared_ptr<CComputeShader> CShaderManager::LoadComputeShader(const std::string& name)
+CComputeShader* CShaderManager::LoadComputeShader(const std::string& name)
 {
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> shader = nullptr;
 	CShaderManager::FindComputeShaderData(name, shader);
 	if (shader != nullptr)
-		return (std::shared_ptr<CComputeShader>(new CComputeShader(name, shader)));
-
+	{
+		CComputeShader* cs = new CComputeShader(name, shader);
+		return cs;
+	}
 	if (CRenderDevice::LoadComputeShader(name, shader))
 	{
 		CShaderManager::AddComputeShaderData(name, shader);
-		return (std::shared_ptr<CComputeShader>(new CComputeShader(name, shader)));
+		CComputeShader* cs = new CComputeShader(name, shader);
+		return cs;
 	}
-	return nullptr;
+	return NULL;
 }
 void CShaderManager::ClearVertexShaderData()
 {

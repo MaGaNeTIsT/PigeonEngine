@@ -6,7 +6,7 @@
 #define GROUP_THREAD_SIZE_X		(8)
 #define GROUP_THREAD_SIZE_Y		(8)
 
-cbuffer	ConstantComputeBuffer : register(b1)
+cbuffer	ConstantComputeBuffer : register(b3)
 {
 	float4 _ResultBufferParams;
 	float4 _DepthBufferParams;
@@ -14,8 +14,8 @@ cbuffer	ConstantComputeBuffer : register(b1)
 	float4 _AdjustAngleThicknessParams;
 	float4 _IntensityPowerParams;
 };
-Texture2D<float4> _GTAOIntegralInput : register(t0);
-Texture2D<float> _GTAOFilterInput : register(t1);
+Texture2D<float4> _GTAOIntegralInput : register(t5);
+Texture2D<float> _GTAOFilterInput : register(t6);
 RWTexture2D<float4> _ResultBuffer : register(u0);
 
 [numthreads(GROUP_THREAD_SIZE_X, GROUP_THREAD_SIZE_Y, 1)]

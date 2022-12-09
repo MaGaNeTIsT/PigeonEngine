@@ -143,6 +143,11 @@ namespace CustomType
 		DirectX::XMStoreFloat4x4(&result, DirectX::XMMatrixTranspose(this->GetXMMATRIX()));
 		return result;
 	}
+	Quaternion Quaternion::Inverse(const Quaternion& v)
+	{
+		Quaternion result(DirectX::XMQuaternionInverse(v.GetXMVECTOR()));
+		return result;
+	}
 	Quaternion Quaternion::Normalize(const Quaternion& v)
 	{
 		Quaternion result(DirectX::XMQuaternionNormalize(v.GetXMVECTOR()));
@@ -161,6 +166,11 @@ namespace CustomType
 	Matrix4x4 Quaternion::GetMatrix()
 	{
 		Matrix4x4 result((*this));
+		return result;
+	}
+	Quaternion Quaternion::Inverse()
+	{
+		Quaternion result(DirectX::XMQuaternionInverse(this->GetXMVECTOR()));
 		return result;
 	}
 	Vector3 Quaternion::MultiplyVector(const Vector3& v)
@@ -342,7 +352,11 @@ namespace CustomType
 	}
 
 
-	Vector3 Vector3::m_Zero = Vector3::GetZero();
+	Vector3 Vector3::m_Zero = Vector3::GetStaticVector(0.f, 0.f, 0.f);
+	Vector3 Vector3::m_One = Vector3::GetStaticVector(1.f, 1.f, 1.f);
+	Vector3 Vector3::m_XVector = Vector3::GetStaticVector(1.f, 0.f, 0.f);
+	Vector3 Vector3::m_YVector = Vector3::GetStaticVector(0.f, 1.f, 0.f);
+	Vector3 Vector3::m_ZVector = Vector3::GetStaticVector(0.f, 0.f, 1.f);
 	Vector3::Vector3()
 	{
 		(*this) = Vector3::m_Zero;
@@ -425,6 +439,11 @@ namespace CustomType
 		Vector3 v(v1);
 		DirectX::XMVECTOR vec = (v - v2).GetXMVECTOR();
 		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(vec, vec));
+	}
+	Vector3 Vector3::Reciprocal(const Vector3& v)
+	{
+		Vector3 result(1.f / v.X(), 1.f / v.Y(), 1.f / v.Z());
+		return result;
 	}
 	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t)
 	{
@@ -600,11 +619,11 @@ namespace CustomType
 		this->m_Value.y = this->m_Value.y / v;
 		this->m_Value.z = this->m_Value.z / v;
 	}
-	Vector3 Vector3::GetZero()
+	Vector3 Vector3::GetStaticVector(const FLOAT& x, const FLOAT& y, const FLOAT& z)
 	{
-		Vector3 v(0.f, 0.f, 0.f);
-		return v;
+		return Vector3(x, y, z);
 	}
+
 
 
 	Vector4 Vector4::m_Zero = Vector4::GetZero();

@@ -4,15 +4,13 @@
 
 CLightBase::CLightBase()
 {
-	this->m_Scale = 1.f;
+	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
-	this->m_Intensity = 1.f;
+	this->m_Intensity = 2.5f;
 }
 CLightBase::CLightBase(const CLightBase& light)
 {
-	this->m_Position = light.m_Position;
-	this->m_Rotation = light.m_Rotation;
-	this->m_Scale = 1.f;
+	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = light.m_Color;
 	this->m_Intensity = light.m_Intensity;
 }
@@ -59,12 +57,40 @@ CLightDirectional::CLightDirectional(const CLightDirectional& light) : CLightBas
 }
 void CLightDirectional::Init()
 {
+	this->AddNewTransform();
 	this->m_FrameCounter = 0;
+	CGameObject::Init();
 }
 void CLightDirectional::Update()
 {
 	this->m_FrameCounter = 1 - this->m_FrameCounter;
+	CGameObject::Update();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CLightDirectional::SelectedEditorUpdate()
+{
+	FLOAT lightClr[3]		= { this->m_Color.r, this->m_Color.g, this->m_Color.b };
+	FLOAT lightIntensity	= this->m_Intensity;
+
+	ImGui::Begin("DirectionalLight", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+	CGameObject::SelectedEditorUpdate();
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+	if (ImGui::TreeNode("LightEditorMenu"))
+	{
+		ImGui::Text("LightColor");
+		ImGui::ColorEdit3("LightColor", lightClr, ImGuiColorEditFlags_::ImGuiColorEditFlags_NoLabel);
+		ImGui::SliderFloat("LightIntensity", &lightIntensity, 0.f, 10.f);
+
+		ImGui::TreePop();
+	}
+	ImGui::End();
+
+	this->m_Color.r		= lightClr[0];
+	this->m_Color.g		= lightClr[1];
+	this->m_Color.b		= lightClr[2];
+	this->m_Intensity	= lightIntensity;
+}
+#endif
 BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 {
 	BOOL result = TRUE;
@@ -127,9 +153,10 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 	std::vector<FLOAT>& currentBorders = currentShadowCascadeInfo->LayerInfo.Borders;
 	std::vector<CustomType::Matrix4x4>& projectionMatrices = currentShadowCascadeInfo->ProjectionMatrices;
 	std::vector<CustomType::Vector4>& projectionSphereBounds = currentShadowCascadeInfo->ProjectionSphereBounds;
+	CustomType::Vector3 cameraWorldPosition(camera->GetWorldPosition());
 	{
 		CustomType::Matrix4x4& viewMatrix = currentShadowCascadeInfo->ViewMatrix;
-		viewMatrix = CustomType::Matrix4x4(camera->GetPosition(), light->GetRotation());
+		viewMatrix = CustomType::Matrix4x4(cameraWorldPosition, light->GetWorldRotation());
 		viewMatrix = viewMatrix.Inverse();
 	}
 
@@ -277,8 +304,8 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 			ImGui::Begin("Cascade Shadow");
 #endif
 			CustomType::Vector3 tempCameraDirection(camera->GetForwardVector());
-			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + (camera->GetPosition()));
-			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + (camera->GetPosition()));
+			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + cameraWorldPosition);
+			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + cameraWorldPosition);
 			for (UINT i = 0u; i < currentLayerNum; i++)
 			{
 				CustomType::Vector3 layerPoints[] = {
@@ -478,6 +505,11 @@ CustomType::Matrix4x4 CLightPoint::GetPreviousProjectionMatrix(const UINT& extra
 {
 	return (CustomType::Matrix4x4::Identity());
 }
+void CLightPoint::Init()
+{
+	this->AddNewTransform();
+	CGameObject::Init();
+}
 
 
 
@@ -505,11 +537,6 @@ CLightSpot::CLightSpot(const CLightSpot& light) : CLightBase(light)
 	this->m_ProjectionMatrix[0] = light.m_ProjectionMatrix[0];
 	this->m_ProjectionMatrix[1] = light.m_ProjectionMatrix[1];
 }
-void CLightSpot::Update()
-{
-	this->m_FrameCounter = 1 - this->m_FrameCounter;
-
-}
 CustomType::Matrix4x4 CLightSpot::GetCurrentViewMatrix(const UINT& extraIndex)
 {
 	return (this->m_ViewMatrix[this->m_FrameCounter]);
@@ -525,4 +552,14 @@ CustomType::Matrix4x4 CLightSpot::GetPreviousViewMatrix(const UINT& extraIndex)
 CustomType::Matrix4x4 CLightSpot::GetPreviousProjectionMatrix(const UINT& extraIndex)
 {
 	return (this->m_ProjectionMatrix[1 - this->m_FrameCounter]);
+}
+void CLightSpot::Init()
+{
+	this->AddNewTransform();
+	CGameObject::Init();
+}
+void CLightSpot::Update()
+{
+	this->m_FrameCounter = 1 - this->m_FrameCounter;
+	CGameObject::Update();
 }

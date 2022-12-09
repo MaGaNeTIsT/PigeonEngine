@@ -951,6 +951,10 @@ void CRenderDevice::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D
 
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.data(), NULL);
 }
+void CRenderDevice::CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->CopyResource(dst.Get(), src.Get());
+}
 void CRenderDevice::ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const CustomStruct::CColor& clearColor)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->ClearRenderTargetView(rtv.Get(), clearColor.rgba);

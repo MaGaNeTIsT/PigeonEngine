@@ -7,6 +7,7 @@
 #include "./ShaderFastMath.hlsl"
 #include "./ShaderFunctions.hlsl"
 #include "./ShaderSpaceTransform.hlsl"
-#include "./ShaderGlobalFunctions.hlsl"
+#include "./ShaderBxDF.hlsl"
+#include "./ShaderShadingFunctions.hlsl"
 
 #endif

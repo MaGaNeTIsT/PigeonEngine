@@ -3,11 +3,11 @@
 
 #include "../Common/ShaderCommon.hlsl"
 
-cbuffer ConstantBufferSkyBox : register(b1)
+cbuffer ConstantBufferSkyBox : register(b3)
 {
-	float4 _Parameter;	//x y z is origin position of sky sphere. w is radius of sky sphere.
+	float4 _SkyBoxParameter;	//x y z is origin position of sky sphere. w is radius of sky sphere.
 };
-TextureCube _SkyBoxCubeMap : register(t3);
+TextureCube _SkyBoxCubeMap : register(t5);
 
 float3 HitPositionInSphere(float3 rayOrigin, float3 rayDirection, float3 sphereOrigin, float radius)
 {
@@ -27,8 +27,8 @@ float3 HitPositionInSphere(float3 rayOrigin, float3 rayDirection, float3 sphereO
 
 float4 main(VaryingSkyBox input) :SV_Target
 {
-	const float3 skyOrigin = _Parameter.xyz;
-	const float skyRadius = _Parameter.w;
+	const float3 skyOrigin = _SkyBoxParameter.xyz;
+	const float skyRadius = _SkyBoxParameter.w;
 	float2 hdc = (input.uv0 - 0.5) * 2.0;
 	hdc.y = -hdc.y;
 	float3 posWS = TransformClipToWorld(float4(hdc, 1.0, 1.0));

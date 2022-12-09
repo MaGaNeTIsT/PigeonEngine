@@ -78,7 +78,7 @@ void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, c
 		{
 			for (UINT i = 0u; i < inputCullingResult.size(); i++)
 			{
-				std::map<ULONGLONG, UINT>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetGameObjectID());
+				std::map<ULONGLONG, UINT>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetUniqueID());
 				if (occluded != this->m_MappedUIDCullingResult.end())
 				{
 					outputCullingResult[i] = (occluded->second) == 1u;
@@ -162,16 +162,16 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 			CustomType::Vector3 min, max;
 			for (UINT i = 0u; i < fromCPUCullingResult.size(); i++)
 			{
-				if (fromCPUCullingResult[i]->GetBoundingBox() != NULL)
+				if (fromCPUCullingResult[i]->HasRenderBoundingBox())
 				{
-					fromCPUCullingResult[i]->GetAABBBoundingBox(min, max);
+					fromCPUCullingResult[i]->GetRenderWorldAABBBoundingBox(min, max);
 					this->m_CachedAABBInfo[numCounter].Min[0] = min.X();
 					this->m_CachedAABBInfo[numCounter].Min[1] = min.Y();
 					this->m_CachedAABBInfo[numCounter].Min[2] = min.Z();
 					this->m_CachedAABBInfo[numCounter].Max[0] = max.X();
 					this->m_CachedAABBInfo[numCounter].Max[1] = max.Y();
 					this->m_CachedAABBInfo[numCounter].Max[2] = max.Z();
-					objectsUID[numCounter] = fromCPUCullingResult[i]->GetGameObjectID();
+					objectsUID[numCounter] = fromCPUCullingResult[i]->GetUniqueID();
 					numCounter++;
 				}
 			}

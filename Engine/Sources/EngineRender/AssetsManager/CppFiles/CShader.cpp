@@ -21,7 +21,7 @@ CVertexShader::CVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3
 CVertexShader::~CVertexShader()
 {
 }
-void CVertexShader::Bind()
+void CVertexShader::Bind()const
 {
 	CRenderDevice::SetVSShader(this->m_Shader);
 	CRenderDevice::SetInputLayout(this->m_InputLayout);
@@ -36,7 +36,7 @@ CPixelShader::CPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D1
 CPixelShader::~CPixelShader()
 {
 }
-void CPixelShader::Bind()
+void CPixelShader::Bind()const
 {
 	CRenderDevice::SetPSShader(this->m_Shader);
 }
@@ -50,7 +50,7 @@ CComputeShader::CComputeShader(const std::string& name, Microsoft::WRL::ComPtr<I
 CComputeShader::~CComputeShader()
 {
 }
-void CComputeShader::Bind()
+void CComputeShader::Bind()const
 {
 	CRenderDevice::SetCSShader(this->m_Shader);
 }

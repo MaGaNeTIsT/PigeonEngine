@@ -81,6 +81,7 @@ namespace CustomType
 		DirectX::XMFLOAT4X4			GetGPUUploadFloat4x4();
 	public:
 		static const Quaternion&	Identity() { return Quaternion::m_Identity; }
+		static Quaternion			Inverse(const Quaternion& v);
 		static Quaternion			Normalize(const Quaternion& v);
 		static Quaternion			MultiplyQuaternion(const Quaternion& q1, const Quaternion& q2);
 		static Quaternion			RotationAxis(const Vector3& axis, const FLOAT& radian);
@@ -91,6 +92,7 @@ namespace CustomType
 		const FLOAT&				W()const { return m_Value.w; }
 	public:
 		Matrix4x4					GetMatrix();
+		Quaternion					Inverse();
 		void						SetQuaternion(const Quaternion& v) { (*this) = v; }
 		Vector3						MultiplyVector(const Vector3& v);
 	public:
@@ -174,6 +176,10 @@ namespace CustomType
 		DirectX::XMFLOAT4			GetXMFLOAT4()const { return DirectX::XMFLOAT4(m_Value.x, m_Value.y, m_Value.z, 0.f); }
 	public:
 		static const Vector3&		Zero() { return Vector3::m_Zero; }
+		static const Vector3&		One() { return Vector3::m_One; }
+		static const Vector3&		XVector() { return Vector3::m_XVector; }
+		static const Vector3&		YVector() { return Vector3::m_YVector; }
+		static const Vector3&		ZVector() { return Vector3::m_ZVector; }
 		static Vector3				Normalize(const Vector3& v);
 		static FLOAT				Dot(const Vector3& v1, const Vector3& v2);
 		static Vector3				Cross(const Vector3& v1, const Vector3& v2);
@@ -181,6 +187,7 @@ namespace CustomType
 		static FLOAT				LengthSquare(const Vector3& v);
 		static FLOAT				Distance(const Vector3& v1, const Vector3& v2);
 		static FLOAT				DistanceSquare(const Vector3& v1, const Vector3& v2);
+		static Vector3				Reciprocal(const Vector3& v);
 		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t);
 	public:
 		FLOAT						Length();
@@ -224,10 +231,15 @@ namespace CustomType
 		Vector3(const FLOAT& x, const FLOAT& y, const FLOAT& z);
 		virtual ~Vector3();
 	protected:
-		static Vector3				GetZero();
+		static Vector3				GetStaticVector(const FLOAT& x, const FLOAT& y, const FLOAT& z);
+	protected:
+		DirectX::XMFLOAT3			m_Value;
 	protected:
 		static Vector3				m_Zero;
-		DirectX::XMFLOAT3			m_Value;
+		static Vector3				m_One;
+		static Vector3				m_XVector;
+		static Vector3				m_YVector;
+		static Vector3				m_ZVector;
 	};
 
 	class Vector4 : public VectorBase

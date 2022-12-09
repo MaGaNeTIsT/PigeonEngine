@@ -5,7 +5,8 @@
 class CTextureBase
 {
 public:
-	virtual Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView() = 0;
+	const std::string& GetName()const { return (this->m_Name); }
+	virtual Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()const = 0;
 public:
 	CTextureBase(const std::string& name);
 	CTextureBase(const CTextureBase& v);
@@ -14,10 +15,10 @@ protected:
 	std::string m_Name;
 };
 
-class CTexture2D : CTextureBase
+class CTexture2D : public CTextureBase
 {
 public:
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()override;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()const override;
 public:
 	CTexture2D(const std::string& name, const CRenderDevice::Texture2DViewInfo& v);
 	CTexture2D(const CTexture2D& v);
@@ -38,7 +39,7 @@ protected:
 class CTextureCube : public CTextureBase
 {
 public:
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()override;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()const override;
 public:
 	CTextureCube(const std::string& name, const CRenderDevice::TextureCubeViewInfo& v);
 	CTextureCube(const CTextureCube& v);

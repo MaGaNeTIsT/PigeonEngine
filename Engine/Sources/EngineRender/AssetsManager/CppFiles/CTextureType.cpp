@@ -13,7 +13,7 @@ CTextureBase::CTextureBase(const CTextureBase& v)
 
 
 
-Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CTexture2D::GetShaderResourceView()
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CTexture2D::GetShaderResourceView()const
 {
 	return (this->m_Texture2D.ShaderResourceView);
 }
@@ -36,7 +36,7 @@ CTextureCube::CTextureCube(const CTextureCube& v) : CTextureBase(v.m_Name)
 {
 	this->m_TextureCube = v.m_TextureCube;
 }
-Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CTextureCube::GetShaderResourceView()
+Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CTextureCube::GetShaderResourceView()const
 {
 	return (this->m_TextureCube.ShaderResourceView);
 }

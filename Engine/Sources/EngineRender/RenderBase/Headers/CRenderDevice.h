@@ -2,7 +2,7 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "./CStructCommon.h"
+#include "./CRenderStructCommon.h"
 
 class CRenderDevice
 {
@@ -171,6 +171,8 @@ public:
 	static void		BindNoCSUnorderedAccessView(const UINT& startSlot);
 	static void		BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot);
 	static void		BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum);
+public:
+	static void		CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst);
 public:
 	static void		ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const CustomStruct::CColor& clearColor = CustomStruct::CColor(0.f, 0.f, 0.f, 0.f));
 	static void		ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, CustomStruct::CRenderClearDepthStencilFlag flag = CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH_STENCIL, const FLOAT& depth = 1.f, const UINT& stencil = 0u);

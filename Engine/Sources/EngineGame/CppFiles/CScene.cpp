@@ -2,17 +2,29 @@
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineBase/Headers/CInput.h"
+#include "../../EngineRender/AssetsManager/Headers/CTextureType.h"
+#include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
+#include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
+#include "../../EngineRender/RenderBase/Headers/CMaterialBase.h"
+#include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
+#include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
+#include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 #include "../Headers/CCamera.h"
 #include "../Headers/CLightType.h"
 #include "../Headers/CScreenPolygon2D.h"
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
 
-#include "../../Development/Headers/CTestModel.h"
+#include "../../Development/Headers/CSceneGameObject.h"
 
 CScene::CScene()
 {
 	this->m_MainCamera = NULL;
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_SelectedObject = NULL;
+#endif
 }
 CScene::~CScene()
 {
@@ -52,61 +64,180 @@ CScene::~CScene()
 }
 void CScene::Init()
 {
-	CCamera* mainCamera = this->AddCamera<CCamera>();
-
-	CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
-	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
-	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
-
-	mainCamera->SetPosition(CustomType::Vector3(0.f, 5.f, -5.f));
-	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 90.f * CustomType::CMath::GetDegToRad()));
-	terrainPlane->SetMeshInfo(100.f, 8, 3.f);
-	cube->SetPosition(CustomType::Vector3(0.f, 50.f, 0.f));
-	cube->SetScale(CustomType::Vector3(10.f, 10.f, 10.f));
-
 	{
-		//static_cast<UINT>(::time(NULL));
-		::srand(12415u);
+		CCamera* mainCamera = this->AddCamera<CCamera>();
+		CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
+		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 
-		const INT randomMax = 3000;
-		//const FLOAT rangePos = 50.f;
-		const FLOAT rangePos = 200.f;
-		const FLOAT baseScale = 0.05f;
-		const FLOAT rangeScale = 0.15f;
-		//const UINT countModel = 4u;
-		const UINT countModel = 200u;
-		const BOOL showOBB = FALSE;
+		mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -950.f));
+		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
+	}
 
-		INT random[3] = { 0, 0, 0 };
-		FLOAT t[3] = { 0.f, 0.f, 0.f };
-		for (UINT i = 0u; i < countModel; i++)
+#ifdef _DEVELOPMENT_EDITOR
+	{
+		BOOL useModelFromFile = TRUE;
+		std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
+		CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
+
+		const static CustomStruct::CRenderInputLayoutDesc testMeshInputLayout[4u] = {
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+
 		{
-			CTestModel* model = this->AddGameObject<CTestModel>(SceneLayout::LAYOUT_OPAQUE);
-			random[0] = rand() % randomMax;
-			t[0] = static_cast<FLOAT>(random[0]) / static_cast<FLOAT>((randomMax - 1));
-			FLOAT scale = baseScale + t[0] * rangeScale;
-			model->SetScale(CustomType::Vector3(scale, scale, scale));
-			random[0] = rand() % randomMax;
-			random[1] = rand() % randomMax;
-			random[2] = rand() % randomMax;
-			t[0] = static_cast<FLOAT>(random[0]) / static_cast<FLOAT>((randomMax - 1));
-			t[1] = static_cast<FLOAT>(random[1]) / static_cast<FLOAT>((randomMax - 1));
-			t[2] = static_cast<FLOAT>(random[2]) / static_cast<FLOAT>((randomMax - 1));
-			model->SetPosition(CustomType::Vector3((t[0] - 0.5f) * rangePos, (t[1] - 0.5f) * rangePos, (t[2] - 0.5f) * rangePos));
-			if (showOBB)
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, -150.f));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
 			{
-				CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
-				CustomType::Vector3 min, max;
-				model->GetAABBBoundingBox(min, max);
-				//cube->SetPosition(min + ((max - min) * 0.5f));
-				//cube->SetScale(max - min);
-				CustomType::Vector3 anchor; FLOAT radius;
-				model->GetBoundingSphere(anchor, radius);
-				cube->SetPosition(anchor);
-				cube->SetScale(radius * 2.f);
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
 			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_COL_1K.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_GLOSS_1K.tga"));
+			material->SetIsGlossyRoughness(TRUE);
+			material->SetRoughness(0.752f);
+		}
+
+		{
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, 150));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
+			{
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_COL_1K.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_GLOSS_1K.tga"));
+			material->SetIsGlossyRoughness(TRUE);
+			material->SetRoughness(0.752f);
+			material->SetSheenColor(CustomStruct::CColor(154.f / 255.f, 146.f / 255.f, 127.f / 255.f));
+			material->SetSubsurfaceColor(CustomStruct::CColor(81.f / 255.f, 62.f / 255.f, 17.f / 255.f));
+		}
+
+		{
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, -150.f));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
+			{
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR1_1K.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_GLOSS_1K.tga"));
+			material->SetReflectanceTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_REFL_1K.tga"));
+			material->SetIsGlossyRoughness(TRUE);
+			material->SetRoughness(0.699f);
+			material->SetReflectance(1.f);
+			material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
+		}
+
+		{
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, 150));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
+			{
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR1_1K.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_GLOSS_1K.tga"));
+			material->SetSheenColorTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR2_1K.tga"));
+			material->SetSubsurfaceTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR2_1K.tga"));
+			material->SetIsGlossyRoughness(TRUE);
+			material->SetRoughness(0.699f);
+			material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
+			material->SetSheenColor(CustomStruct::CColor(66.f / 255.f, 66.f / 255.f, 66.f / 255.f));
+			material->SetSubsurfaceColor(CustomStruct::CColor(200.f / 255.f, 200.f / 255.f, 200.f / 255.f));
+		}
+
+		{
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, -150.f));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
+			{
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Roughness.tga"));
+			material->SetRoughness(0.329f);
+		}
+
+		{
+			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, 150.f));
+			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+			if (useModelFromFile)
+			{
+				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+			}
+			else
+			{
+				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+			}
+			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));
+			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
+			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Roughness.tga"));
+			material->SetSheenColorTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
+			material->SetRoughness(0.329f);
+			material->SetSheenColor(CustomStruct::CColor(94.f / 255.f, 94.f / 255.f, 94.f / 255.f));
+			material->SetSubsurfaceColor(CustomStruct::CColor(193.f / 255.f, 193.f / 255.f, 193.f / 255.f));
 		}
 	}
+#endif
+
+#ifdef _DEVELOPMENT_EDITOR
+	{
+		CSceneGameObject* sceneGameObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
+		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+		this->m_SelectedObject = sceneGameObject;
+	}
+#endif
 }
 void CScene::Uninit()
 {
@@ -146,6 +277,46 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
+#ifdef _DEVELOPMENT_EDITOR
+	{
+		if (this->m_SelectedObject != NULL)
+		{
+			this->m_SelectedObject->SelectedEditorUpdate();
+		}
+		if (this->m_Lights.size() > 0u)
+		{
+			for (const auto& object : this->m_Lights)
+			{
+				if (object.second)
+				{
+					object.second->SelectedEditorUpdate();
+				}
+			}
+		}
+	}
+
+	{
+		CustomType::Vector3 cameraPos(this->m_MainCamera->GetWorldPosition());
+		CustomType::Vector3 cameraDir(this->m_MainCamera->GetForwardVector());
+		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+		ImGui::Begin("Scene Manager");
+		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
+		ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
+		ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
+		UINT index = 0u;
+		for (const auto& object : this->m_Lights)
+		{
+			CustomType::Vector3 lightPos(object.second->GetWorldPosition());
+			CustomType::Vector3 lightDir(object.second->GetForwardVector());
+			ImGui::Text("Light index = %d", index);
+			ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());
+			ImGui::Text("Light direction :\nx = %f\ny = %f\nz = %f", lightDir.X(), lightDir.Y(), lightDir.Z());
+			index++;
+		}
+		ImGui::End();
+	}
+#endif
+
 	this->m_MainCamera->Update();
 
 	for (const auto& object : this->m_Lights)
@@ -158,27 +329,6 @@ void CScene::Update()
 		{
 			object.second->Update();
 		}
-	}
-
-	{
-		CustomType::Vector3 cameraPos(this->m_MainCamera->GetPosition());
-		CustomType::Vector3 cameraDir(this->m_MainCamera->GetForwardVector());
-		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
-		ImGui::Begin("Scene Manager");
-		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
-		ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
-		ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
-		UINT index = 0u;
-		for (const auto& object : this->m_Lights)
-		{
-			CustomType::Vector3 lightPos(object.second->GetPosition());
-			CustomType::Vector3 lightDir(object.second->GetForwardVector());
-			ImGui::Text("Light index = %d", index);
-			ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());
-			ImGui::Text("Light direction :\nx = %f\ny = %f\nz = %f", lightDir.X(), lightDir.Y(), lightDir.Z());
-			index++;
-		}
-		ImGui::End();
 	}
 }
 void CScene::FixedUpdate()

@@ -2,8 +2,9 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "./CStructCommon.h"
-#include "../../AssetsManager/Headers/CMesh.h"
+#include "./CRenderStructCommon.h"
+#include "./CRenderDevice.h"
+#include "../../AssetsManager/Headers/CMeshComponent.h"
 #include "../../../EngineGame/Headers/CScene.h"
 
 class CRenderPipeline
@@ -51,7 +52,7 @@ public:
 	virtual void	Render();
 protected:
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
-	virtual void	PreparePerFrameRender();
+	virtual void	PreparePerFrameRender(class CLightDirectional* light, const UINT& index);
 	virtual void	PrepareLightDataRender();
 	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
 protected:
@@ -86,7 +87,7 @@ protected:
 	CustomType::Vector2Int					m_GlobalBufferSize;
 	CustomType::Vector2Int					m_ShadowBufferSize;
 protected:
-	std::shared_ptr<CMesh<UINT>>			m_FullScreenPolygon;
+	const CBaseMesh<UINT>*					m_FullScreenPolygon;
 protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneColor;
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneDepth;
@@ -97,27 +98,28 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState>		m_PipelineRS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_ShadowSkyForwardPrePassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_GBufferPassBS;
-	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_DirectLightPassBS;
+	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_DirectLightPostPassBS;
 	Microsoft::WRL::ComPtr<ID3D11BlendState>			m_TransparentPassBS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_ShadowPrePassDSS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_GBufferForwardPassDSS;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPassDSS;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState>		m_DirectLightPostPassDSS;
 protected:
 	static std::shared_ptr<class CVertexShader>			m_FullScreenPolygonVS;
 	static std::shared_ptr<class CPixelShader>			m_ScreenPolygonShader;
 	static std::shared_ptr<class CPixelShader>			m_DirectLightShader;
 protected:
+	static std::shared_ptr<class CPostProcessBase>		m_PostProcessBase;
 	static std::shared_ptr<class CSkyBox>				m_SkyBox;
 	static std::shared_ptr<class CGPUCulling>			m_GPUCulling;
 	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
 public:
-	static class CTexture2D*					GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DEnum input);
-	static std::shared_ptr<class CPixelShader>	GetDefaultEmptyPS();
+	static class CTexture2D*							GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DType input);
+	static std::shared_ptr<class CPixelShader>			GetDefaultEmptyPS();
 protected:
-	static class CTexture2D* m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DEnum::ENGINE_DEFAULT_TEXTURE2D_COUNT];
-	static std::shared_ptr<class CPixelShader> m_DefaultEmptyPS;
+	static class CTexture2D*							m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT];
+	static std::shared_ptr<class CPixelShader>			m_DefaultEmptyPS;
 public:
 	CRenderPipeline();
 	virtual ~CRenderPipeline();
