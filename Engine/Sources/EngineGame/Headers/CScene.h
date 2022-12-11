@@ -95,6 +95,11 @@ public:
 		return  (reinterpret_cast<T*>(gameObject));
 	}
 	template <class T>
+	T* GetMainCamera() const
+	{ 
+		return reinterpret_cast<T*>(m_MainCamera);
+	}
+	template <class T>
 	T* GetGameObjectFirst(const UINT& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
@@ -177,6 +182,7 @@ public:
 	virtual void	Uninit();
 	virtual void	Update();
 	virtual void	FixedUpdate();
+
 private:
 	friend class CRenderPipeline;
 };
