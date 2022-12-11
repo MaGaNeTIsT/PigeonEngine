@@ -36,16 +36,14 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 	}
 
 	{
-		CHAR* vertices = nullptr; std::vector<UINT> indices;
-		UINT numVertices, numIndices;
-		if (!CassimpManager::ReadDefaultMeshFile(path, vertices, numVertices, indices, numIndices))
+		CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+		UINT numVertices, numIndices, vertexStride;
+		if (!CassimpManager::ReadDefaultMeshFile(path, subMesh, vertexStride, vertices, numVertices, indices, numIndices))
 		{
 			return NULL;
 		}
 
-		std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-		CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>((path + descName), inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, submesh, needVertexData);
-
+		CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>((path + descName), inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData);
 		CMeshManager::AddMeshData((path + descName), resultMesh);
 		return resultMesh;
 	}

@@ -30,29 +30,128 @@ struct _GMeshAssetImporterInfo
 	_GVertexSemanticName	VertexBoneWeight;
 };
 
-inline BOOL _GTranslateMeshDesc(const aiScene* sceneMesh, std::vector<CustomStruct::CSubMeshInfo>& subMesh, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+inline void _GTranslateMeshData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData)
+{
+	const static UINT constVertexColorIndex = 0u;
+	const static UINT constVertexTexcoordIndex = 0u;
+
+	{
+		UINT numFaces = mesh->mNumFaces;
+		aiFace* faces = mesh->mFaces;
+		for (UINT indexFace = 0; indexFace < numFaces; indexFace++)
+		{
+			aiFace& tempFace = faces[indexFace];
+			for (UINT i = 0; i < 3; i++)
+			{
+				indicesData[subMeshInfo.IndexStart + (indexFace * 3 + i)] = tempFace.mIndices[i];
+			}
+		}
+	}
+
+	{
+		UINT numVertices = mesh->mNumVertices;
+
+		aiColor4D* colors = mesh->mColors[constVertexColorIndex];
+		aiVector3D* vertices = mesh->mVertices;
+		aiVector3D* normals = mesh->mNormals;
+		aiVector3D* tangents = mesh->mTangents;
+		aiVector3D* texcoords = mesh->mTextureCoords[constVertexTexcoordIndex];
+
+		aiBone** bones = mesh->mBones;
+
+		for (UINT indexVertex = 0; indexVertex < numVertices; indexVertex++)
+		{
+			CHAR* tempVertex = &(verticesData[assetInfo.VertexStride * (indexVertex + subMeshInfo.VertexStart)]);
+			if (assetInfo.VertexColor.Exist)
+			{
+				FLOAT* tempColor = (FLOAT*)(&(tempVertex[assetInfo.VertexColor.Offset]));
+				aiColor4D& tempSceneMeshColor = colors[indexVertex];
+				tempColor[0] = tempSceneMeshColor.r;
+				tempColor[1] = tempSceneMeshColor.g;
+				tempColor[2] = tempSceneMeshColor.b;
+				tempColor[3] = tempSceneMeshColor.a;
+			}
+			if (assetInfo.VertexPosition.Exist)
+			{
+				FLOAT* tempPosition = (FLOAT*)(&(tempVertex[assetInfo.VertexPosition.Offset]));
+				aiVector3D& tempSceneMeshPos = vertices[indexVertex];
+				tempPosition[0] = tempSceneMeshPos.x;
+				tempPosition[1] = tempSceneMeshPos.y;
+				tempPosition[2] = tempSceneMeshPos.z;
+				tempPosition[3] = 1.f;
+			}
+			if (assetInfo.VertexNormal.Exist)
+			{
+				FLOAT* tempNormal = (FLOAT*)(&(tempVertex[assetInfo.VertexNormal.Offset]));
+				aiVector3D& tempSceneMeshNormal = normals[indexVertex];
+				tempNormal[0] = tempSceneMeshNormal.x;
+				tempNormal[1] = tempSceneMeshNormal.y;
+				tempNormal[2] = tempSceneMeshNormal.z;
+				tempNormal[3] = 0.f;
+			}
+			if (assetInfo.VertexTangent.Exist)
+			{
+				FLOAT* tempTangent = (FLOAT*)(&(tempVertex[assetInfo.VertexTangent.Offset]));
+				aiVector3D& tempSceneMeshTangent = tangents[indexVertex];
+				tempTangent[0] = tempSceneMeshTangent.x;
+				tempTangent[1] = tempSceneMeshTangent.y;
+				tempTangent[2] = tempSceneMeshTangent.z;
+				tempTangent[3] = 0.f;
+			}
+			if (assetInfo.VertexUV.Exist)
+			{
+				FLOAT* tempUV = (FLOAT*)(&(tempVertex[assetInfo.VertexUV.Offset]));
+				aiVector3D& tempSceneMeshUV = texcoords[indexVertex];
+				tempUV[0] = tempSceneMeshUV.x;
+				tempUV[1] = tempSceneMeshUV.y;
+			}
+			if (assetInfo.VertexBoneIndices.Exist)
+			{
+				//TODO
+			}
+			if (assetInfo.VertexBoneWeight.Exist)
+			{
+				//TODO
+			}
+		}
+	}
+}
+
+inline BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
 
+	vertexStride	= 0u;
+	numVertices		= 0u;
+	numIndices		= 0u;
+	if (vertices != nullptr)
+	{
+		delete vertices;
+		vertices = nullptr;
+	}
+	if (indices.size() > 0)
+	{
+		indices.clear();
+	}
 	if (subMesh.size() > 0)
 	{
 		subMesh.clear();
 	}
 
-	if (sceneMesh == nullptr || !sceneMesh->HasMeshes())
+	if (scene == nullptr || !scene->HasMeshes())
 	{
 		return FALSE;
 	}
 
-	UINT numMeshes = sceneMesh->mNumMeshes;
+	UINT numMeshes = scene->mNumMeshes;
 
 	subMesh.resize(numMeshes);
 	std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
 
 	for (UINT indexMesh = 0; indexMesh < numMeshes; indexMesh++)
 	{
-		const aiMesh* tempMesh = sceneMesh->mMeshes[indexMesh];
+		const aiMesh* tempMesh = scene->mMeshes[indexMesh];
 
 		_GMeshAssetImporterInfo tempPerMeshInfo;
 		tempPerMeshInfo.Name = tempMesh->mName.C_Str();
@@ -148,177 +247,22 @@ inline BOOL _GTranslateMeshDesc(const aiScene* sceneMesh, std::vector<CustomStru
 		totalNumIndices		+= sceneMeshInfo.NumIndices;
 	}
 
-
-
-	return TRUE;
-}
-
-inline BOOL _GTranslateMeshData(const aiMesh* sceneMesh, const _GMeshAssetImporterInfo& assetInfo, CHAR*& startVerticesData, std::vector<UINT>& startIndicesData)
-{
-	const static UINT constVertexColorIndex		= 0u;
-	const static UINT constVertexTexcoordIndex	= 0u;
-
-	if (sceneMesh == nullptr || !sceneMesh->HasFaces())
 	{
-		return FALSE;
+		vertexStride = sceneMeshesInfo[0].VertexStride;
+		numVertices = totalNumVertices;
+		numIndices = totalNumIndices;
+		vertices = new CHAR[totalNumVertices * vertexStride];
+		indices.resize(totalNumIndices);
 	}
 
-	BOOL hasColor, hasPosition, hasNormal, hasTangent, hasUV, hasBlendIndices, hasBlendWeight;
-	hasColor = hasPosition = hasNormal = hasTangent = hasUV = hasBlendIndices = hasBlendWeight = FALSE;
-	UINT stride, offsetColor, offsetPosition, offsetNormal, offsetTangent, offsetUV, offsetBlendIndices, offsetBlendWeight;
-	stride = offsetColor = offsetPosition = offsetNormal = offsetTangent = offsetUV = offsetBlendIndices = offsetBlendWeight = 0u;
-
-	for (UINT i = 0u; i < inputLayoutNum; i++)
+	for (UINT indexMesh = 0; indexMesh < numMeshes; indexMesh++)
 	{
-		CustomStruct::CRenderInputLayoutDesc desc(inputLayoutDesc[i]);
-		if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR)
-		{
-			if (!sceneMesh->HasVertexColors(constVertexColorIndex))
-			{
-				return FALSE;
-			}
-			hasColor = TRUE;
-			offsetColor = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
-		{
-			if (!sceneMesh->HasPositions())
-			{
-				return FALSE;
-			}
-			hasPosition = TRUE;
-			offsetPosition = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL)
-		{
-			if (!sceneMesh->HasNormals())
-			{
-				return FALSE;
-			}
-			hasNormal = TRUE;
-			offsetNormal = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT)
-		{
-			if (!sceneMesh->HasTangentsAndBitangents())
-			{
-				return FALSE;
-			}
-			hasTangent = TRUE;
-			offsetTangent = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD)
-		{
-			if (!sceneMesh->HasTextureCoords(constVertexTexcoordIndex))
-			{
-				return FALSE;
-			}
-			hasUV = TRUE;
-			offsetUV = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES)
-		{
-			if (!sceneMesh->HasBones())
-			{
-				return FALSE;
-			}
-			hasBlendIndices = TRUE;
-			offsetBlendIndices = stride;
-		}
-		else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT)
-		{
-			if (!sceneMesh->HasBones())
-			{
-				return FALSE;
-			}
-			hasBlendWeight = TRUE;
-			offsetBlendWeight = stride;
-		}
-		stride += desc.GetSemanticSizeByByte();
+		const aiMesh* tempMesh = scene->mMeshes[indexMesh];
+		_GMeshAssetImporterInfo& sceneMeshInfo = sceneMeshesInfo[indexMesh];
+		CustomStruct::CSubMeshInfo& subMeshInfo = subMesh[indexMesh];
+		_GTranslateMeshData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices);
 	}
 
-	numVertices = sceneMesh->mNumVertices;
-	verticesData = new CHAR[stride * sceneMesh->mNumVertices];
-	numIndices = sceneMesh->mNumFaces * 3u;
-	indicesData.resize(sceneMesh->mNumFaces * 3u);
-
-	{
-		UINT numFaces = sceneMesh->mNumFaces;
-		aiFace* faces = sceneMesh->mFaces;
-		for (UINT indexFace = 0; indexFace < numFaces; indexFace++)
-		{
-			aiFace& tempFace = faces[indexFace];
-			for (UINT i = 0; i < 3; i++)
-			{
-				indicesData[indexFace * 3 + i] = tempFace.mIndices[i];
-			}
-		}
-	}
-
-	{
-		aiString sceneMeshName = sceneMesh->mName;
-		aiColor4D* colors = sceneMesh->mColors[constVertexColorIndex];
-		aiVector3D* vertices = sceneMesh->mVertices;
-		aiVector3D* normals = sceneMesh->mNormals;
-		aiVector3D* tangents = sceneMesh->mTangents;
-		aiVector3D* texcoords = sceneMesh->mTextureCoords[constVertexTexcoordIndex];
-		aiBone** bones = sceneMesh->mBones;
-		for (UINT indexVertex = 0; indexVertex < numVertices; indexVertex++)
-		{
-			CHAR* tempVertex = &(verticesData[stride * indexVertex]);
-			if (hasColor)
-			{
-				FLOAT* tempColor = (FLOAT*)(&(tempVertex[offsetColor]));
-				aiColor4D& tempSceneMeshColor = colors[indexVertex];
-				tempColor[0] = tempSceneMeshColor.r;
-				tempColor[1] = tempSceneMeshColor.g;
-				tempColor[2] = tempSceneMeshColor.b;
-				tempColor[3] = tempSceneMeshColor.a;
-			}
-			if (hasPosition)
-			{
-				FLOAT* tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
-				aiVector3D& tempSceneMeshPos = vertices[indexVertex];
-				tempPosition[0] = tempSceneMeshPos.x;
-				tempPosition[1] = tempSceneMeshPos.y;
-				tempPosition[2] = tempSceneMeshPos.z;
-				tempPosition[3] = 1.f;
-			}
-			if (hasNormal)
-			{
-				FLOAT* tempNormal = (FLOAT*)(&(tempVertex[offsetNormal]));
-				aiVector3D& tempSceneMeshNormal = normals[indexVertex];
-				tempNormal[0] = tempSceneMeshNormal.x;
-				tempNormal[1] = tempSceneMeshNormal.y;
-				tempNormal[2] = tempSceneMeshNormal.z;
-				tempNormal[3] = 0.f;
-			}
-			if (hasTangent)
-			{
-				FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
-				aiVector3D& tempSceneMeshTangent = tangents[indexVertex];
-				tempTangent[0] = tempSceneMeshTangent.x;
-				tempTangent[1] = tempSceneMeshTangent.y;
-				tempTangent[2] = tempSceneMeshTangent.z;
-				tempTangent[3] = 0.f;
-			}
-			if (hasUV)
-			{
-				FLOAT* tempUV = (FLOAT*)(&(tempVertex[offsetUV]));
-				aiVector3D& tempSceneMeshUV = texcoords[indexVertex];
-				tempUV[0] = tempSceneMeshUV.x;
-				tempUV[1] = tempSceneMeshUV.y;
-			}
-			if (hasBlendIndices)
-			{
-				//TODO
-			}
-			if (hasBlendWeight)
-			{
-				//TODO
-			}
-		}
-	}
 	return TRUE;
 }
 
@@ -348,17 +292,22 @@ void CassimpManager::ShutDown()
 		CassimpManager::m_AssimpManager = nullptr;
 	}
 }
-BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, CHAR*& meshVertices, UINT& numVertices, std::vector<UINT>& meshIndices, UINT& numIndices)
+BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices)
 {
-	if (meshVertices != nullptr)
+	if (vertices != nullptr)
 	{
-		delete meshVertices;
-		meshVertices = nullptr;
+		delete vertices;
+		vertices = nullptr;
 	}
-	if (meshIndices.size() > 0)
+	if (indices.size() > 0)
 	{
-		meshIndices.clear();
+		indices.clear();
 	}
+	if (subMesh.size() > 0)
+	{
+		subMesh.clear();
+	}
+	vertexStride	= 0u;
 	numVertices		= 0u;
 	numIndices		= 0u;
 
@@ -413,7 +362,7 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, CHAR*& meshVer
 	// Only access first mesh in scene.
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-	if (TRUE)
+	if (!_GTranslateMeshDesc(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
 	{
 		impoter->FreeScene();
 		return FALSE;

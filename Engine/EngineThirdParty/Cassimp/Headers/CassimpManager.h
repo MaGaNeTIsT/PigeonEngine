@@ -2,13 +2,11 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "../../../Sources/EngineRender/RenderBase/Headers/CRenderStructCommon.h"
-#include "../../../Sources/EngineRender/AssetsManager/Headers/CMeshComponent.h"
-#include "../../../Sources/EngineRender/AssetsManager/Headers/CMeshManager.h"
 
 class CassimpManager
 {
 public:
-	static BOOL		ReadDefaultMeshFile(const std::string& path, CHAR*& meshVertices, UINT& numVertices, std::vector<UINT>& meshIndices, UINT& numIndices);
+	static BOOL		ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices);
 public:
 	static void		Initialize();
 	static void		ShutDown();
