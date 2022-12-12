@@ -75,157 +75,162 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		BOOL useModelFromFile = TRUE;
-		std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
-		CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
+		BOOL showDebugFabric = FALSE;
 
-		const static CustomStruct::CRenderInputLayoutDesc testMeshInputLayout[4u] = {
-			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-
+		if (showDebugFabric)
 		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, -150.f));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
-			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
-			}
-			else
-			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-			}
-			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_COL_1K.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_GLOSS_1K.tga"));
-			material->SetIsGlossyRoughness(TRUE);
-			material->SetRoughness(0.752f);
-		}
+			BOOL useModelFromFile = FALSE;
+			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
+			CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
 
-		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, 150));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
-			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
-			}
-			else
-			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-			}
-			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_NRM_1K.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_COL_1K.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricPlainWhiteBlackout009/FabricPlainWhiteBlackout009_GLOSS_1K.tga"));
-			material->SetIsGlossyRoughness(TRUE);
-			material->SetRoughness(0.752f);
-			material->SetSheenColor(CustomStruct::CColor(154.f / 255.f, 146.f / 255.f, 127.f / 255.f));
-			material->SetSubsurfaceColor(CustomStruct::CColor(81.f / 255.f, 62.f / 255.f, 17.f / 255.f));
-		}
+			const static CustomStruct::CRenderInputLayoutDesc testMeshInputLayout[4u] = {
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 
-		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, -150.f));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
 			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, -150.f));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_NRM_1K.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_COL_1K.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_GLOSS_1K.tga"));
+				material->SetIsGlossyRoughness(TRUE);
+				material->SetRoughness(0.752f);
 			}
-			else
-			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-			}
-			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR1_1K.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_GLOSS_1K.tga"));
-			material->SetReflectanceTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_REFL_1K.tga"));
-			material->SetIsGlossyRoughness(TRUE);
-			material->SetRoughness(0.699f);
-			material->SetReflectance(1.f);
-			material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
-		}
 
-		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, 150));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
 			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, 150));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_NRM_1K.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_COL_1K.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_GLOSS_1K.tga"));
+				material->SetIsGlossyRoughness(TRUE);
+				material->SetRoughness(0.752f);
+				material->SetSheenColor(CustomStruct::CColor(154.f / 255.f, 146.f / 255.f, 127.f / 255.f));
+				material->SetSubsurfaceColor(CustomStruct::CColor(81.f / 255.f, 62.f / 255.f, 17.f / 255.f));
 			}
-			else
-			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-			}
-			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_NRM_1K.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR1_1K.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_GLOSS_1K.tga"));
-			material->SetSheenColorTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR2_1K.tga"));
-			material->SetSubsurfaceTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/FabricDenim003/FabricDenim003_COL_VAR2_1K.tga"));
-			material->SetIsGlossyRoughness(TRUE);
-			material->SetRoughness(0.699f);
-			material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
-			material->SetSheenColor(CustomStruct::CColor(66.f / 255.f, 66.f / 255.f, 66.f / 255.f));
-			material->SetSubsurfaceColor(CustomStruct::CColor(200.f / 255.f, 200.f / 255.f, 200.f / 255.f));
-		}
 
-		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, -150.f));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
 			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, -150.f));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_NRM_1K.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_COL_VAR1_1K.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_GLOSS_1K.tga"));
+				material->SetReflectanceTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_REFL_1K.tga"));
+				material->SetIsGlossyRoughness(TRUE);
+				material->SetRoughness(0.699f);
+				material->SetReflectance(1.f);
+				material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
 			}
-			else
-			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-			}
-			CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Roughness.tga"));
-			material->SetRoughness(0.329f);
-		}
 
-		{
-			CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-			testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, 150.f));
-			testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-			CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-			CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-			if (useModelFromFile)
 			{
-				meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(150.f, 200.f, 150));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_NRM_1K.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_COL_VAR1_1K.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_GLOSS_1K.tga"));
+				material->SetSheenColorTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_COL_VAR2_1K.tga"));
+				material->SetSubsurfaceTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric001_1K/Fabric001_COL_VAR2_1K.tga"));
+				material->SetIsGlossyRoughness(TRUE);
+				material->SetRoughness(0.699f);
+				material->SetBaseColor(CustomStruct::CColor(73.f / 255.f, 73.f / 255.f, 73.f / 255.f));
+				material->SetSheenColor(CustomStruct::CColor(66.f / 255.f, 66.f / 255.f, 66.f / 255.f));
+				material->SetSubsurfaceColor(CustomStruct::CColor(200.f / 255.f, 200.f / 255.f, 200.f / 255.f));
 			}
-			else
+
 			{
-				meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, -150.f));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_NormalDX.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_Color.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_Roughness.tga"));
+				material->SetRoughness(0.329f);
 			}
-			CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
-			material->SetNormalTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_NormalDX.tga"));
-			material->SetAlbedoTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
-			material->SetRoughnessTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Roughness.tga"));
-			material->SetSheenColorTexture(CTextureManager::LoadTexture2D("E:/Download/Models/Fabric/Fabric067_1K/Fabric067_1K_Color.tga"));
-			material->SetRoughness(0.329f);
-			material->SetSheenColor(CustomStruct::CColor(94.f / 255.f, 94.f / 255.f, 94.f / 255.f));
-			material->SetSubsurfaceColor(CustomStruct::CColor(193.f / 255.f, 193.f / 255.f, 193.f / 255.f));
+
+			{
+				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+				testObject->SetWorldPosition(CustomType::Vector3(450.f, 200.f, 150.f));
+				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+				if (useModelFromFile)
+				{
+					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+				}
+				else
+				{
+					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+				}
+				CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_NormalDX.tga"));
+				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_Color.tga"));
+				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_Roughness.tga"));
+				material->SetSheenColorTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric002_1K/Fabric002_1K_Color.tga"));
+				material->SetRoughness(0.329f);
+				material->SetSheenColor(CustomStruct::CColor(94.f / 255.f, 94.f / 255.f, 94.f / 255.f));
+				material->SetSubsurfaceColor(CustomStruct::CColor(193.f / 255.f, 193.f / 255.f, 193.f / 255.f));
+			}
 		}
 	}
 #endif

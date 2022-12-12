@@ -178,7 +178,7 @@ float3 SurfaceShading_Cloth(const PixelParams pixel, const NormalViewLightDotPar
 	Fd *= saturate(pixel.SubsurfaceColor + content.NdotLClamped);
 	// We need to apply NoL separately to the specular lobe since we already took
 	// it into account in the diffuse lobe
-	float3 color = Fd + Fr * content.NdotL;
+	float3 color = Fd + Fr * content.NdotLClamped;
 	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * shadowOcclusion);
 #else
 	float3 color = Fd + Fr;
