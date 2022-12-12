@@ -158,7 +158,7 @@ public:
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return NULL;
+			return std::vector<T*>();
 		}
 		std::vector<T*> listObj;
 		if (this->m_GameObjects[layout].size() < 1)
@@ -173,6 +173,27 @@ public:
 				{
 					listObj.push_back((reinterpret_cast<T*>(obj.second)));
 				}
+			}
+		}
+		return listObj;
+	}
+
+	std::vector<CGameObject*> GetGameObjectAll(const UINT& layout)const
+	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+		{
+			return std::vector<CGameObject*>();
+		}
+		std::vector<CGameObject*> listObj;
+		if (this->m_GameObjects[layout].size() < 1)
+		{
+			return listObj;
+		}
+		for (const auto& obj : (this->m_GameObjects[layout]))
+		{
+			if ((obj.second) != NULL)
+			{
+				listObj.push_back(obj.second);
 			}
 		}
 		return listObj;

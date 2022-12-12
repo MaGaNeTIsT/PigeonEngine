@@ -14,8 +14,8 @@ public:
 	struct CPickedMesh2D
 	{
 	public:
-		CustomType::Vector2 ScreenMax;
 		CustomType::Vector2 ScreenMin;
+		CustomType::Vector2 ScreenMax;
 
 		CPickedMesh2D(CustomType::Vector2 ScreenMin, CustomType::Vector2 ScreenMax):
 			ScreenMax(ScreenMax),
@@ -25,12 +25,32 @@ public:
 	public:
 		inline BOOL	IsInside(const CustomType::Vector2& v) const
 		{
-			return v.X() < ScreenMax.X() && v.Y() < ScreenMax.Y()
-				&& v.X() > ScreenMin.X() && v.Y() > ScreenMin.Y();
+			return v.X() > ScreenMin.X() && v.Y() > ScreenMin.Y()
+				&& v.X() < ScreenMax.X() && v.Y() < ScreenMax.Y();
 		}
 	};
 
-	std::vector<CGameObject*> GetPickedGameObjects()
+	struct CPickMeshSphere2D
+	{
+	public:
+		CustomType::Vector2 ScreenCenter;
+		FLOAT Raidus;
+
+		CPickMeshSphere2D(CustomType::Vector2 ScreenCenter, FLOAT Raidus) :
+			ScreenCenter(ScreenCenter),
+			Raidus(Raidus)
+		{
+		}
+	public:
+		inline BOOL	IsInside(const CustomType::Vector2& v)
+		{
+			CustomType::Vector2 direction(ScreenCenter - v);
+			return CustomType::Vector2::Dot(direction, direction);
+		}
+	};
+
+
+	static CGameObject* GetPickedGameObjectsByBox()
 	{
 		if (CInput::Controller.IsLeftMouseButtonDown())
 		{
@@ -39,38 +59,106 @@ public:
 			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 			CustomType::Vector2 mousePosVec(mousePos.first, mousePos.second);
 			std::vector<CGameObject*> listObject;
-			std::vector<CGameObject*> PickedGameObjectIds;
-			listObject = GameObjectUtility::GetGameObjectsByComponent<CMeshComponent>();
+			CGameObject* PickedGameObject = NULL;
+			listObject = GameObjectUtility::GetGameObjectsHasBoundingBox();
+
+			std::vector<std::pair<CPickedMesh2D, CGameObject*>> pickedMesh2Des;
+			CCamera* camera = CManager::GetScene()->GetMainCamera<CCamera>();
 
 			for (const auto& obj : listObject)
 			{
-				std::vector<CPickedMesh2D> pickedMesh2Des;
-				std::vector<const CMeshComponent*> meshComponents = obj->GetComponentListByType<CMeshComponent>();
-				for (const auto& meshComponent : meshComponents)
+				if (obj != NULL)
 				{
 					CustomType::Vector3 boundMin;
 					CustomType::Vector3 boundMax;
-					meshComponent->GetMinMaxBounding(boundMin, boundMax);
+					obj->GetRenderWorldAABBBoundingBox(boundMin, boundMax);
 
 					//Convert to Screen
-					CustomType::Matrix4x4 MatrixVP = CManager::GetScene()->GetMainCamera<CCamera>()->GetViewProjectionMatrix();
-					boundMin = MatrixVP.MultiplyVector(boundMin);
-					boundMax = MatrixVP.MultiplyVector(boundMax);
-
-					pickedMesh2Des.push_back(CPickedMesh2D(CustomType::Vector2(boundMin.X(), boundMin.Y()), CustomType::Vector2(boundMax.X(), boundMax.Y())));
-				}
-
-				for (const auto& mesh : pickedMesh2Des)
-				{
-					if (mesh.IsInside(mousePosVec))
+					CustomType::Vector4 posMin(boundMin.X(), boundMin.Y(), boundMin.Z(), 1.f);
+					CustomType::Vector4 posMax(boundMax.X(), boundMax.Y(), boundMax.Z(), 1.f);
 					{
-						PickedGameObjectIds.push_back(obj);
+						CustomType::Matrix4x4 MatrixVP = camera->GetViewProjectionMatrix();
+						posMin = MatrixVP.MultiplyVector(posMin);
+						posMax = MatrixVP.MultiplyVector(posMax);
+						posMin /= posMin.W(); posMax /= posMax.W();
+						boundMin = CustomType::Vector3(posMin.GetXMVECTOR());
+						boundMax = CustomType::Vector3(posMax.GetXMVECTOR());
+						CustomStruct::CRenderViewport vp = camera->GetViewport();
+						boundMin = (boundMin * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
+						boundMax = (boundMax * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
 					}
+					pickedMesh2Des.push_back(std::pair(CPickedMesh2D(CustomType::Vector2(boundMin.X(), boundMin.Y()), CustomType::Vector2(boundMax.X(), boundMax.Y())), obj));
 				}
 			}
 
-			return PickedGameObjectIds;
+			//handle mutily gameobject.
+			FLOAT distance = ENGINE_FLOAT32_MAX;
+			for (const auto& mesh : pickedMesh2Des)
+			{
+				if (mesh.first.IsInside(mousePosVec))
+				{
+					float disTemp = (mesh.second->GetWorldPosition() - camera->GetWorldPosition()).LengthSquare();
+					if(distance > disTemp)
+						PickedGameObject = mesh.second;
+				}
+			}
+
+			return PickedGameObject;
 		}
-		return std::vector<CGameObject*>();
+		return NULL;
+	}
+
+	static CGameObject* GetPickedGameObjectsBySphere()
+	{
+		if (CInput::Controller.IsLeftMouseButtonDown())
+		{
+			//is this really the mouse position?
+			//CInput::Controller.ReadRawDelta();
+			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+			CustomType::Vector2 mousePosVec(mousePos.first, mousePos.second);
+			std::vector<CGameObject*> listObject;
+			CGameObject* PickedGameObject = NULL;
+			listObject = GameObjectUtility::GetGameObjectsHasBoundingBox();
+
+			std::vector<std::pair<CPickMeshSphere2D, CGameObject*>> CPickMeshSphere2Des;
+			CCamera* camera = CManager::GetScene()->GetMainCamera<CCamera>();
+
+			for (const auto& obj : listObject)
+			{
+				if (obj != NULL)
+				{
+					CustomType::Vector3 Center;
+					FLOAT Raidus;
+					obj->GetRenderWorldBoundingSphere(Center, Raidus);
+
+					//Convert to Screen
+					CustomType::Vector4 sphereCenter(Center.X(), Center.Y(), Center.Z(), 1.f);
+					{
+						CustomType::Matrix4x4 MatrixVP = camera->GetViewProjectionMatrix();
+						sphereCenter = MatrixVP.MultiplyVector(sphereCenter);
+						sphereCenter /= sphereCenter.W();
+						Center = CustomType::Vector3(sphereCenter.GetXMVECTOR());
+						CustomStruct::CRenderViewport vp = camera->GetViewport();
+						Center = (Center * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
+					}
+					CPickMeshSphere2Des.push_back(std::pair(CPickMeshSphere2D(CustomType::Vector2(Center.X(), Center.Y()), Raidus), obj));
+				}
+			}
+
+			//handle mutily gameobject.
+			FLOAT distance = ENGINE_FLOAT32_MAX;
+			for (auto& mesh : CPickMeshSphere2Des)
+			{
+				if (mesh.first.IsInside(mousePosVec))
+				{
+					float disTemp = (mesh.second->GetWorldPosition() - camera->GetWorldPosition()).LengthSquare();
+					if (distance > disTemp)
+						PickedGameObject = mesh.second;
+				}
+			}
+
+			return PickedGameObject;
+		}
+		return NULL;
 	}
 };

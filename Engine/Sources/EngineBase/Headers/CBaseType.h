@@ -126,6 +126,7 @@ namespace CustomType
 	public:
 		static const Vector2&		Zero() { return Vector2::m_Zero; }
 		static Vector2				Normalize(const Vector2& v);
+		static FLOAT				Dot(const Vector2& v1, const Vector2& v2);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }

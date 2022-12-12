@@ -9,39 +9,34 @@
 namespace GameObjectUtility
 {
 
-	template <class T>
-	std::vector<CGameObject*> GetGameObjectsByComponent(const UINT& layout)
+	std::vector<CGameObject*> GetGameObjectsHasBoundingBox(const UINT& layout)
 	{
 		if (layout >= CScene::LAYOUT_COUNT)
 		{
-			return NULL;
+			return std::vector<CGameObject*>();
 		}
 		std::vector<CGameObject*> listObj;
-		if (CManager::GetScene()->m_GameObjects[layout].size() < 1)
+		std::vector<CGameObject*> LayerObj = CManager::GetScene()->GetGameObjectAll(layout);
+		for (const auto& obj : LayerObj)
 		{
-			return listObj;
-		}
-		for (const auto& obj : (CManager::GetScene()->m_GameObjects[layout]))
-		{
-			if ((obj.second) != NULL)
+			if ((obj) != NULL)
 			{
-				if (obj.second->GetFirstComponentByType<T>())
+				if (obj->HasRenderBoundingBox())
 				{
-					listObj.push_back(obj.second));
+					listObj.push_back(obj);
 				}
 			}
 		}
 		return listObj;
 	}
 
-	template <class T>
-	std::vector<CGameObject*> GetGameObjectsByComponent()
+	std::vector<CGameObject*> GetGameObjectsHasBoundingBox()
 	{
 		std::vector<CGameObject*> listObj;
 		for (UINT i = 0; i < CScene::LAYOUT_COUNT; i++)
 		{
 			std::vector<CGameObject*> listObjTemp;
-			listObjTemp = GetGameObjectsByComponent<T>(i);
+			listObjTemp = GetGameObjectsHasBoundingBox(i);
 			listObj.resize(listObj.size() + listObjTemp.size());
 			listObj.insert(listObj.end(), listObjTemp.begin(), listObjTemp.end());
 		}

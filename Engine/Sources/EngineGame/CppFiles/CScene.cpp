@@ -16,6 +16,7 @@
 #include "../Headers/CScreenPolygon2D.h"
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
+#include "../../EngineEidtor/Headers/CPickMesh.h"
 
 #include "../../Development/Headers/CSceneGameObject.h"
 
@@ -284,6 +285,8 @@ void CScene::Update()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
+		this->m_SelectedObject = CPickMesh::GetPickedGameObjects();
+
 		if (this->m_SelectedObject != NULL)
 		{
 			this->m_SelectedObject->SelectedEditorUpdate();
