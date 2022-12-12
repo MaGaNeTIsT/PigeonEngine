@@ -526,6 +526,12 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

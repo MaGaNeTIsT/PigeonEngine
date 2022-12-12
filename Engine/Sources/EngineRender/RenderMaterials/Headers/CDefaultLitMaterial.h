@@ -36,9 +36,9 @@ public:
 	virtual const void*		GetConstantData()const override;
 #ifdef _DEVELOPMENT_EDITOR
 public:
-	virtual void			SelectedDefaultLitUpdate();
 	virtual void			HookSelectedTextureUpdate();
 	virtual void			HookApplyTextureUpdate();
+	virtual void			SelectedDefaultLitUpdate();
 	virtual void			SelectedEditorUpdate()override;
 protected:
 	BOOL		m_IsGlossy;

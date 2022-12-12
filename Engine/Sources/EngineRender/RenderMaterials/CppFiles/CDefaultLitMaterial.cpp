@@ -261,6 +261,14 @@ const void* CDefaultLitMaterial::GetConstantData()const
 	return (this->m_RenderParams);
 }
 #ifdef _DEVELOPMENT_EDITOR
+void CDefaultLitMaterial::HookSelectedTextureUpdate()
+{
+
+}
+void CDefaultLitMaterial::HookApplyTextureUpdate()
+{
+
+}
 void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 {
 	std::map<INT, std::string> baseEngineTextureItems = {
@@ -346,14 +354,6 @@ void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 			this->HookApplyTextureUpdate();
 		}
 	}
-}
-void CDefaultLitMaterial::HookSelectedTextureUpdate()
-{
-
-}
-void CDefaultLitMaterial::HookApplyTextureUpdate()
-{
-
 }
 void CDefaultLitMaterial::SelectedEditorUpdate()
 {

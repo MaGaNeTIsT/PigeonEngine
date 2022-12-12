@@ -1,5 +1,5 @@
-#ifndef _ENGINE_DEFAULT_CLOTH_VS_HLSL
-#define _ENGINE_DEFAULT_CLOTH_VS_HLSL
+#ifndef _ENGINE_CLOTH_ANISOTROPIC_VS_HLSL
+#define _ENGINE_CLOTH_ANISOTROPIC_VS_HLSL
 
 #include "../Common/ShaderCommon.hlsl"
 

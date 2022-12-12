@@ -188,4 +188,50 @@ float3 SurfaceShading_Cloth(const PixelParams pixel, const NormalViewLightDotPar
 	return color;
 }
 
+float3 SurfaceShading_ClothAnisotropic(
+	const PixelParams pixel,
+	const NormalViewLightDotParams content,
+	const ShadingLightParams light,
+	const float3 viewDir,
+	const float3 halfVector,
+#ifdef MATERIAL_HAS_ANISOTROPY
+	float3 anisotropicT,
+	float3 anisotropicB,
+	float anisotropy,
+#endif
+	float shadowOcclusion)
+{
+	float3 Fr = ClothSheenBRDF(content, pixel);
+
+#ifdef MATERIAL_HAS_ANISOTROPY
+	Fr += AnisotropicBRDF(content, pixel, viewDir, light.Direction, halfVector, anisotropicT, anisotropicB, anisotropy);
+#endif
+
+	// Diffuse BRDF
+	float diffuse = DiffuseBRDF(content, pixel);
+#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+	// Energy conservative wrap diffuse to simulate subsurface scattering
+	diffuse *= Diffuse_Wrap(content.NdotL, 0.5);
+#endif
+
+	// We do not multiply the diffuse term by the Fresnel term as discussed in
+	// Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+	// The effect is fairly subtle and not deemed worth the cost for mobile
+	float3 Fd = diffuse * pixel.DiffuseColor;
+
+#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+	// Cheap subsurface scatter
+	Fd *= saturate(pixel.SubsurfaceColor + content.NdotLClamped);
+	// We need to apply NoL separately to the specular lobe since we already took
+	// it into account in the diffuse lobe
+	float3 color = Fd + Fr * content.NdotLClamped;
+	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * shadowOcclusion);
+#else
+	float3 color = Fd + Fr;
+	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * content.NdotLClamped * shadowOcclusion);
+#endif
+
+	return color;
+}
+
 #endif

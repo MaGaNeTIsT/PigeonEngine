@@ -167,7 +167,8 @@ void CSceneGameObject::SelectedEditorUpdate()
 						{ DefaultMaterialType::DefaultMaterialType_DefaultLit, "DefaultLitMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Anisotropic, "AnisotropicMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_ClearCoat, "ClearCoatMaterial" },
-						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" } };
+						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" },
+						{ DefaultMaterialType::DefaultMaterialType_ClothAnisotropic, "ClothAnisotropicMaterial" } };
 					auto materialCombo = [&baseEngineMaterialItems](const std::string& name, INT& select) {
 						if (ImGui::BeginCombo(name.c_str(), baseEngineMaterialItems[select].c_str()))
 						{
@@ -273,6 +274,9 @@ void CSceneGameObject::SelectedEditorUpdate()
 					break;
 				case DefaultMaterialType::DefaultMaterialType_Cloth:
 					this->m_MeshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+					break;
+				case DefaultMaterialType::DefaultMaterialType_ClothAnisotropic:
+					this->m_MeshRendererComponent->AddMaterial<CClothAnisotropicMaterial>(TRUE);
 					break;
 				}
 			}
