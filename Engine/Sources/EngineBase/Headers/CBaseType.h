@@ -130,6 +130,7 @@ namespace CustomType
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
+		FLOAT						Dot(const Vector2& v) { return Vector2::Dot(*this, v); }
 	public:
 		Vector2			operator+(const Vector2& v);
 		Vector2			operator-(const Vector2& v);

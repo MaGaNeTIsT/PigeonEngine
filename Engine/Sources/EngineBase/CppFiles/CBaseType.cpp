@@ -233,6 +233,11 @@ namespace CustomType
 		Vector2 result(DirectX::XMVector2Normalize(v.GetXMVECTOR()));
 		return result;
 	}
+	FLOAT Vector2::Dot(const Vector2& v1, const Vector2& v2)
+	{
+		FLOAT result = DirectX::XMVectorGetX(DirectX::XMVector2Dot(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
+		return result;
+	}
 	Vector2 Vector2::operator+(const Vector2& v)
 	{
 		Vector2 result(

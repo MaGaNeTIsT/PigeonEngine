@@ -285,7 +285,8 @@ void CScene::Update()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		this->m_SelectedObject = CPickMesh::GetPickedGameObjects();
+		if(CInput::Controller.IsLeftMouseButtonDown())
+			this->m_SelectedObject = CPickMesh::GetPickedGameObjectsBySphere();
 
 		if (this->m_SelectedObject != NULL)
 		{

@@ -45,7 +45,7 @@ public:
 		inline BOOL	IsInside(const CustomType::Vector2& v)
 		{
 			CustomType::Vector2 direction(ScreenCenter - v);
-			return CustomType::Vector2::Dot(direction, direction);
+			return CustomType::Vector2::Dot(direction, direction) < Raidus;
 		}
 	};
 
@@ -130,16 +130,24 @@ public:
 					CustomType::Vector3 Center;
 					FLOAT Raidus;
 					obj->GetRenderWorldBoundingSphere(Center, Raidus);
+					CustomType::Vector3 Point = Center + camera->GetRightVector() * Raidus;
 
 					//Convert to Screen
 					CustomType::Vector4 sphereCenter(Center.X(), Center.Y(), Center.Z(), 1.f);
+					CustomType::Vector4 spherePoint(Point.X(), Point.Y(), Point.Z(), 1.f);
 					{
 						CustomType::Matrix4x4 MatrixVP = camera->GetViewProjectionMatrix();
 						sphereCenter = MatrixVP.MultiplyVector(sphereCenter);
+						spherePoint = MatrixVP.MultiplyVector(spherePoint);
 						sphereCenter /= sphereCenter.W();
+						spherePoint /= spherePoint.W();
 						Center = CustomType::Vector3(sphereCenter.GetXMVECTOR());
+						Point = CustomType::Vector3(spherePoint.GetXMVECTOR());
 						CustomStruct::CRenderViewport vp = camera->GetViewport();
 						Center = (Center * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
+						Point = (Point * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
+						CustomType::Vector2 temp(CustomType::Vector2(Center.X(), Center.Y()) - CustomType::Vector2(Point.X(), Point.Y()));
+						Raidus = temp.Dot(temp);
 					}
 					CPickMeshSphere2Des.push_back(std::pair(CPickMeshSphere2D(CustomType::Vector2(Center.X(), Center.Y()), Raidus), obj));
 				}
@@ -153,7 +161,10 @@ public:
 				{
 					float disTemp = (mesh.second->GetWorldPosition() - camera->GetWorldPosition()).LengthSquare();
 					if (distance > disTemp)
+					{
+						distance = disTemp;
 						PickedGameObject = mesh.second;
+					}
 				}
 			}
 
