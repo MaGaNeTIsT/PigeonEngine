@@ -1,7 +1,14 @@
 #include "../Headers/CPhysics_API_Jolt.h"
 
 
-CPhysics_API_Jolt::CPhysics_API_Jolt()
+CPhysics_API_Jolt::CPhysics_API_Jolt():
+	m_BodyInterface(nullptr),
+	m_PhysicsSystem(nullptr),
+	m_TempAllocator(nullptr),
+	m_JobSystem(nullptr),
+	m_BPLayerInterface(nullptr),
+	m_BodyActivationListener(nullptr),
+	m_ContactListener(nullptr)
 {
 	
 }
@@ -12,6 +19,15 @@ CPhysics_API_Jolt::~CPhysics_API_Jolt()
 	{
 		m_BodyInterface->RemoveBody(body.second);
 		m_BodyInterface->DestroyBody(body.second);
+	}
+
+	for (const auto& bodyCreateSettings: m_BodyCreationSettings)
+	{
+		if(bodyCreateSettings.second->GetShapeSettings())
+			delete bodyCreateSettings.second->GetShapeSettings();
+		if (bodyCreateSettings.second->GetShape())
+			delete bodyCreateSettings.second->GetShape();
+		delete bodyCreateSettings.second;
 	}
 
 	m_BodyInterface = nullptr;
@@ -168,6 +184,7 @@ BodyID CPhysics_API_Jolt::CreateAndAddBody(const ULONGLONG& GameObjectId, const 
 	BodyID bodyID = m_BodyInterface->CreateAndAddBody(*inBodyCreateSettings, Activation);
 	m_BodyInterface->AddBody(bodyID, Activation);
 	m_Bodys.insert_or_assign(GameObjectId, bodyID);
+	m_BodyCreationSettings.insert_or_assign(bodyID, inBodyCreateSettings);
 	return bodyID;
 }
 
@@ -177,6 +194,7 @@ bool CPhysics_API_Jolt::TryCreateBody(const BodyCreationSettings* inBodyCreateSe
 	if (body)
 	{
 		outBodyID = body->GetID();
+		m_BodyCreationSettings.insert_or_assign(outBodyID, inBodyCreateSettings);
 		return true;
 	}
 	return false;
@@ -191,4 +209,13 @@ void CPhysics_API_Jolt::AddBody(const ULONGLONG& GameObjectId, const BodyID& inB
 BodyID CPhysics_API_Jolt::GetBodyID(const ULONGLONG& GameObjectId)
 {
 	return m_Bodys.find(GameObjectId)->second;
+}
+
+JPH::Vec3 CPhysics_API_Jolt::GetPosition(const BodyID& BodyId)
+{
+	return m_BodyInterface->GetPosition(BodyId);
+}
+JPH::Quat CPhysics_API_Jolt::GetRotation(const BodyID& BodyId)
+{
+	return m_BodyInterface->GetRotation(BodyId);
 }

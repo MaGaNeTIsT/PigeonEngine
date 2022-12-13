@@ -76,21 +76,6 @@ void CScene::Init()
 		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
 	}
 
-#ifdef _DEVELOPMENT_EDITOR
-	CCamera* mainCamera = this->AddGameObject<CCamera>(SceneLayout::LAYOUT_CAMERA);
-
-	CLight* mainLight = this->AddGameObject<CLight>(SceneLayout::LAYOUT_LIGHT);
-	CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
-	CCube* cube = this->AddGameObject<CCube>(SceneLayout::LAYOUT_OPAQUE);
-	//CPlane* testPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_OPAQUE);
-
-	mainCamera->SetPosition(CustomType::Vector3(0.f, 0.6f, -3.f));
-	mainLight->SetRotation(CustomType::Quaternion(mainLight->GetRightVector(), 30.f * CustomType::CMath::GetDegToRad()));
-	//terrainPlane->SetMeshInfo(100.f, 50, 50.f);
-	cube->SetPosition(CustomType::Vector3(0.f, 15.f, 0.f));
-	cube->SetScale(CustomType::Vector3(150.f, 150.f, 10.f));
-	//testPlane->SetPosition(CustomType::Vector3(0.f, 0.5f, -4.f));
-	//testPlane->SetScale(CustomType::Vector3(3.f, 3.f, 3.f));
 #if 0
 	{
 		BOOL showDebugFabric = FALSE;

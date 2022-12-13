@@ -47,11 +47,12 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsUtility.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CRigidBodyComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h" />
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsInterface.h" />
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysics_API_Jolt.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMesh.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
@@ -111,6 +112,7 @@
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp" />
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API.cpp" />
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API_Jolt.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CRigidBodyComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />

@@ -138,6 +138,7 @@
     </Filter>
     <Filter Include="Engine\Sources\EngineEditor\Headers">
       <UniqueIdentifier>{393cd869-76a1-4880-80af-185b4c055fbc}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Sources\EnginePhysics">
       <UniqueIdentifier>{812cc968-29f6-4301-88a3-e7bbfcca990c}</UniqueIdentifier>
     </Filter>
@@ -319,6 +320,7 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBound.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h">
       <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
     </ClInclude>
@@ -326,6 +328,12 @@
       <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysics_API_Jolt.h">
+      <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CRigidBodyComponent.h">
+      <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsUtility.h">
       <Filter>Engine\Sources\EnginePhysics\Headers</Filter>
     </ClInclude>
   </ItemGroup>
@@ -485,6 +493,7 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBound.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
+    </ClCompile>
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp">
       <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
     </ClCompile>
@@ -492,6 +501,9 @@
       <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API_Jolt.cpp">
+      <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CRigidBodyComponent.cpp">
       <Filter>Engine\Sources\EnginePhysics\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>

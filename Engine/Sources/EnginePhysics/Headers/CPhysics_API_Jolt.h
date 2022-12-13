@@ -233,6 +233,8 @@ public:
 	/// <param name="GameObjectId">object id input</param>
 	/// <returns></returns>
 	JPH_INLINE BodyID GetBodyID(const ULONGLONG& GameObjectId);
+	JPH_INLINE JPH::Vec3 GetPosition(const BodyID& BodyId);
+	JPH_INLINE JPH::Quat GetRotation(const BodyID& BodyId);
 public:
 	CPhysics_API_Jolt();
 	virtual ~CPhysics_API_Jolt();
