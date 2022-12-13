@@ -16,7 +16,7 @@ const static uint MAX_THREAD_GROUP_SIZE			= GROUP_THREAD_SIZE_X * GROUP_THREAD_S
 #define GROUP_SHARED_ARRAY_SIZE					(MAX_THREAD_GROUP_SIZE * 3u)
 
 
-cbuffer	ConstantComputeBuffer : register(b1)
+cbuffer	ConstantComputeBuffer : register(b3)
 {
 	float4 _ResultBufferParams;
 	float4 _DepthBufferParams;
@@ -24,7 +24,7 @@ cbuffer	ConstantComputeBuffer : register(b1)
 	float4 _AdjustAngleThicknessParams;
 	float4 _IntensityPowerParams;		// x is ambient occlusion adjust intensity. y is ambient occlusion adjust power. z w is not used.
 };
-Texture2D<float4> _GTAOInput : register(t0);
+Texture2D<float4> _GTAOInput : register(t5);
 RWTexture2D<float> _ResultBuffer : register(u0);
 groupshared float _DeviceZBuffer[GROUP_SHARED_ARRAY_SIZE];
 groupshared float _AOBuffer[GROUP_SHARED_ARRAY_SIZE];

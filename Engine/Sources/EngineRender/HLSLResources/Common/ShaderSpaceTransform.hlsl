@@ -109,6 +109,15 @@ float3x3 CreateTangentMatrix(float3 normal, float3 tangent, uniform bool reCalcu
 		binormal.x, binormal.y, binormal.z,
 		normal.x, normal.y, normal.z);
 }
+float3x3 CreateTangentMatrix(in float3 normal, in float3 tangent, out float3 binormal, uniform bool reCalculateTangent = false)
+{
+	binormal = SafeNormalize(cross(normal, tangent));
+	if (reCalculateTangent == true)
+		tangent = SafeNormalize(cross(binormal, normal));
+	return float3x3(tangent.x, tangent.y, tangent.z,
+		binormal.x, binormal.y, binormal.z,
+		normal.x, normal.y, normal.z);
+}
 float3 TransformTangentToSpaceDir(const float3 dir, const float3x3 tangentMatrix, uniform bool normalize = false)
 {
 	float3 targetDir = mul(dir, tangentMatrix);

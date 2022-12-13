@@ -32,7 +32,7 @@ void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT& waitingFrameNu
 	{
 		CGPUCulling::ReCreateBufferSize(i, baseSceneObjectsNum);
 	}
-	this->m_CullingData.Parameters = XMINT4(baseSceneObjectsNum, 0, 0, 0);
+	this->m_CullingData.Parameters = DirectX::XMINT4(baseSceneObjectsNum, 0, 0, 0);
 	CRenderDevice::CreateBuffer(
 		this->m_CullingConstantBuffer,
 		CustomStruct::CRenderBufferDesc(
@@ -70,7 +70,6 @@ void CGPUCulling::Update(const ULONGLONG& frameIndex)
 void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& inputCullingResult, std::vector<BOOL>& outputCullingResult)
 {
 	UINT index = frameIndex % (this->m_CachedCount);
-
 	outputCullingResult.resize(inputCullingResult.size(), TRUE);
 	if (frameIndex > this->m_CachedCount)
 	{
@@ -79,7 +78,7 @@ void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, c
 		{
 			for (UINT i = 0u; i < inputCullingResult.size(); i++)
 			{
-				std::map<ULONGLONG, UINT>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetGameObjectID());
+				std::map<ULONGLONG, UINT>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetUniqueID());
 				if (occluded != this->m_MappedUIDCullingResult.end())
 				{
 					outputCullingResult[i] = (occluded->second) == 1u;
@@ -113,7 +112,7 @@ void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 			hzbBuffers[(numLayer - 1) - i] = usedHZBBuffer.ShaderResourceView;
 			indexHZB++;
 		}
-		this->m_CullingData.Parameters = XMINT4(static_cast<int32_t>(this->m_CachedCullingInfo[index].NumObjects), mostDetail, numLayer, 0);
+		this->m_CullingData.Parameters = DirectX::XMINT4(static_cast<int32_t>(this->m_CachedCullingInfo[index].NumObjects), mostDetail, numLayer, 0);
 		CRenderDevice::UploadBuffer(this->m_CachedCullingInfo[index].CullingBoundingInfo.Buffer, static_cast<void*>(this->m_CachedAABBInfo.data()), sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum, sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum);
 		CRenderDevice::UploadBuffer(this->m_CullingConstantBuffer, static_cast<void*>(&(this->m_CullingData)));
 		CRenderDevice::BindCSConstantBuffer(this->m_CullingConstantBuffer, 1u);
@@ -163,16 +162,16 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 			CustomType::Vector3 min, max;
 			for (UINT i = 0u; i < fromCPUCullingResult.size(); i++)
 			{
-				if (fromCPUCullingResult[i]->GetBoundingBox() != NULL)
+				if (fromCPUCullingResult[i]->HasRenderBoundingBox())
 				{
-					fromCPUCullingResult[i]->GetAABBBoundingBox(min, max);
+					fromCPUCullingResult[i]->GetRenderWorldAABBBoundingBox(min, max);
 					this->m_CachedAABBInfo[numCounter].Min[0] = min.X();
 					this->m_CachedAABBInfo[numCounter].Min[1] = min.Y();
 					this->m_CachedAABBInfo[numCounter].Min[2] = min.Z();
 					this->m_CachedAABBInfo[numCounter].Max[0] = max.X();
 					this->m_CachedAABBInfo[numCounter].Max[1] = max.Y();
 					this->m_CachedAABBInfo[numCounter].Max[2] = max.Z();
-					objectsUID[numCounter] = fromCPUCullingResult[i]->GetGameObjectID();
+					objectsUID[numCounter] = fromCPUCullingResult[i]->GetUniqueID();
 					numCounter++;
 				}
 			}

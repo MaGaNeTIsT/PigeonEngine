@@ -2,11 +2,12 @@
 #include "../Headers/CManager.h"
 #include "../Headers/CInput.h"
 #include "../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
+#include "../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineGame/Headers/CGameObjectManager.h"
+#include "../../EngineGame/Headers/CObjectManager.h"
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 
@@ -71,8 +72,9 @@ void CManager::Initialize(HWND hWnd)
 	CInput::Initialize(hWnd);
 	CRenderDevice::Initialize();
 	CimGUIManager::Initialize();
+	CassimpManager::Initialize();
 
-	CGameObjectManager::Initialize();
+	CUniqueIDManager::Initialize();
 
 	CManager::m_Manager->m_WindowTimer.Init();
 }
@@ -85,6 +87,7 @@ void CManager::ShutDown()
 	CMeshManager::ShutDown();
 	CTextureManager::ShutDown();
 
+	CassimpManager::ShutDown();
 	CimGUIManager::ShutDown();
 	CRenderDevice::ShutDown();
 	CInput::ShutDown();

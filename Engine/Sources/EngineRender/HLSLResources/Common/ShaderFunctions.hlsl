@@ -17,4 +17,25 @@ float TakeSmallerAbsDelta(float left, float mid, float right)
 	return (abs(a) < abs(b)) ? a : b;
 }
 
+float Power2(float v)
+{
+	return (v * v);
+}
+
+float Power5(float v)
+{
+	float v2 = v * v;
+	return (v2 * v2 * v);
+}
+
+float Max3(float3 input)
+{
+	return max(max(input.x, input.y), input.z);
+}
+
+float Min3(float3 input)
+{
+	return min(min(input.x, input.y), input.z);
+}
+
 #endif

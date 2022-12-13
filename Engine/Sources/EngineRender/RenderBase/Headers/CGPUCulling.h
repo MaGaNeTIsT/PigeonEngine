@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
-#include "./CStructCommon.h"
+#include "./CRenderStructCommon.h"
 #include "../Headers/CRenderDevice.h"
 
 class CGPUCulling
@@ -41,8 +41,8 @@ public:
 private:
 	struct CullingConstantBufferData
 	{
-		CullingConstantBufferData() { Parameters = XMINT4(0, 0, 0, 0); }
-		XMINT4 Parameters;
+		CullingConstantBufferData() { Parameters = DirectX::XMINT4(0, 0, 0, 0); }
+		DirectX::XMINT4 Parameters;
 	};
 	void	ReCreateBufferSize(const UINT& idx, const UINT& num);
 	void	PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vector<class CGameObject*>& fromCPUCullingResult);

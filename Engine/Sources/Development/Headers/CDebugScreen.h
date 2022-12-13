@@ -6,6 +6,8 @@
 class CDebugScreen
 {
 public:
+	void	SetShadowMap(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadow);
+public:
 	void	Init(const CustomType::Vector2Int& pipelineSize);
 	void	Uninit();
 	void	Update();

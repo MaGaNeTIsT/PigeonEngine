@@ -24,12 +24,15 @@ namespace CustomType
 	public:
 		static const Matrix4x4&		Identity() { return Matrix4x4::m_Identity; }
 		static Matrix4x4			MultiplyMatrix(const Matrix4x4& l, const Matrix4x4& r);
+		static Matrix4x4			PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane);
+		static Matrix4x4			OrthographicMatrix(const FLOAT& left, const FLOAT& top, const FLOAT& right, const FLOAT& bottom, const FLOAT& nearPlane, const FLOAT& farPlane);
 	public:
 		void		ResetIdentity() { (*this) = Matrix4x4::m_Identity; }
 		void		SetMatrix(const Matrix4x4& m) { (*this) = m; }
 		Matrix4x4	Inverse();
 		Matrix4x4	Transpose();
 		Vector3		MultiplyVector(const Vector3& v);
+		Vector4		MultiplyVector(const Vector4& v);
 		Vector3		MultiplyPosition(const Vector3& v);
 	public:
 		Matrix4x4	operator*(const Matrix4x4& m);
@@ -38,6 +41,7 @@ namespace CustomType
 	public:
 		Matrix4x4();
 		Matrix4x4(const Matrix4x4& m);
+		Matrix4x4(DirectX::XMFLOAT4X4 m);
 		Matrix4x4(DirectX::CXMMATRIX m);
 		Matrix4x4(const Quaternion& v);
 		Matrix4x4(const Vector3& t, const Quaternion& r);
@@ -77,6 +81,7 @@ namespace CustomType
 		DirectX::XMFLOAT4X4			GetGPUUploadFloat4x4();
 	public:
 		static const Quaternion&	Identity() { return Quaternion::m_Identity; }
+		static Quaternion			Inverse(const Quaternion& v);
 		static Quaternion			Normalize(const Quaternion& v);
 		static Quaternion			MultiplyQuaternion(const Quaternion& q1, const Quaternion& q2);
 		static Quaternion			RotationAxis(const Vector3& axis, const FLOAT& radian);
@@ -87,6 +92,7 @@ namespace CustomType
 		const FLOAT&				W()const { return m_Value.w; }
 	public:
 		Matrix4x4					GetMatrix();
+		Quaternion					Inverse();
 		void						SetQuaternion(const Quaternion& v) { (*this) = v; }
 		Vector3						MultiplyVector(const Vector3& v);
 	public:
@@ -116,10 +122,22 @@ namespace CustomType
 		virtual void				Reset()override { (*this) = Vector2::m_Zero; }
 
 		const DirectX::XMFLOAT2&	GetXMFLOAT2()const { return m_Value; }
-		DirectX::XMFLOAT4			GetXMFLOAT4()const { return XMFLOAT4(m_Value.x, m_Value.y, 0.f, 0.f); }
+		DirectX::XMFLOAT4			GetXMFLOAT4()const { return DirectX::XMFLOAT4(m_Value.x, m_Value.y, 0.f, 0.f); }
 	public:
 		static const Vector2&		Zero() { return Vector2::m_Zero; }
 		static Vector2				Normalize(const Vector2& v);
+		static FLOAT				Dot(const Vector2& v1, const Vector2& v2);
+		static FLOAT				Length(const Vector2& v);
+		static FLOAT				LengthSquare(const Vector2& v);
+		static FLOAT				Distance(const Vector2& v1, const Vector2& v2);
+		static FLOAT				DistanceSquare(const Vector2& v1, const Vector2& v2);
+		static Vector2				Lerp(const Vector2& v1, const Vector2& v2, const FLOAT& t);
+	public:
+		FLOAT						Dot(const Vector2& v);
+		FLOAT						Length();
+		FLOAT						LengthSquare();
+		FLOAT						Distance(const Vector2& v);
+		FLOAT						DistanceSquare(const Vector2& v);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -170,15 +188,26 @@ namespace CustomType
 		DirectX::XMFLOAT4			GetXMFLOAT4()const { return DirectX::XMFLOAT4(m_Value.x, m_Value.y, m_Value.z, 0.f); }
 	public:
 		static const Vector3&		Zero() { return Vector3::m_Zero; }
+		static const Vector3&		One() { return Vector3::m_One; }
+		static const Vector3&		XVector() { return Vector3::m_XVector; }
+		static const Vector3&		YVector() { return Vector3::m_YVector; }
+		static const Vector3&		ZVector() { return Vector3::m_ZVector; }
 		static Vector3				Normalize(const Vector3& v);
 		static FLOAT				Dot(const Vector3& v1, const Vector3& v2);
 		static Vector3				Cross(const Vector3& v1, const Vector3& v2);
 		static FLOAT				Length(const Vector3& v);
+		static FLOAT				LengthSquare(const Vector3& v);
 		static FLOAT				Distance(const Vector3& v1, const Vector3& v2);
+		static FLOAT				DistanceSquare(const Vector3& v1, const Vector3& v2);
+		static Vector3				Reciprocal(const Vector3& v);
 		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t);
 	public:
+		FLOAT						Dot(const Vector3& v);
+		Vector3						Cross(const Vector3& v);
 		FLOAT						Length();
+		FLOAT						LengthSquare();
 		FLOAT						Distance(const Vector3& v);
+		FLOAT						DistanceSquare(const Vector3& v);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -208,6 +237,7 @@ namespace CustomType
 	public:
 		Vector3();
 		Vector3(const Vector3& v);
+		Vector3(const Vector4& v);
 		Vector3(DirectX::CXMVECTOR v);
 		Vector3(DirectX::XMFLOAT3 v);
 		Vector3(DirectX::XMFLOAT4 v);
@@ -215,10 +245,15 @@ namespace CustomType
 		Vector3(const FLOAT& x, const FLOAT& y, const FLOAT& z);
 		virtual ~Vector3();
 	protected:
-		static Vector3				GetZero();
+		static Vector3				GetStaticVector(const FLOAT& x, const FLOAT& y, const FLOAT& z);
+	protected:
+		DirectX::XMFLOAT3			m_Value;
 	protected:
 		static Vector3				m_Zero;
-		DirectX::XMFLOAT3			m_Value;
+		static Vector3				m_One;
+		static Vector3				m_XVector;
+		static Vector3				m_YVector;
+		static Vector3				m_ZVector;
 	};
 
 	class Vector4 : public VectorBase
@@ -305,6 +340,8 @@ namespace CustomType
 		void			operator-=(const INT& v);
 		void			operator*=(const INT& v);
 		void			operator/=(const INT& v);
+		BOOL			operator==(const Vector2Int& v);
+		BOOL			operator!=(const Vector2Int& v);
 	public:
 		Vector2Int();
 		Vector2Int(const Vector2Int& v);
@@ -401,12 +438,17 @@ namespace CustomType
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
 		static INT		Clamp(const INT& v, const INT& min, const INT& max);
 		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
+		static FLOAT	Sin(const FLOAT& v);
+		static FLOAT	Cos(const FLOAT& v);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
 		static FLOAT	Exp2(const FLOAT& v);
 		static INT		Exp2(const INT& v);
 		static INT		Log2Floor(const INT& v);
 		static INT		Log2Floor(const FLOAT& v);
+		static INT		Log2Ceil(const INT& v);
+		static INT		Log2Ceil(const FLOAT& v);
 		static INT		PowerOfTwoFloor(FLOAT& output, const FLOAT& input);
 		static INT		PowerOfTwoFloor(INT& output, const INT& input);
+		static FLOAT	Sqrt(const FLOAT& v);
 	};
 }

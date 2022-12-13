@@ -5,8 +5,7 @@
 
 float4 main(VaryingScreenPolygon2D input) : SV_Target
 {
-	float4 color = float4(_AlbedoTexture.Sample(_LinearClampSampler, input.uv0).rgb, 1);
-	return color;
+	return float4(_CustomTextureA.Sample(_LinearClampSampler, input.uv0).rgb, 1.0);
 }
 
 #endif

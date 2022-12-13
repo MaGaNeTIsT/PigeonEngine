@@ -1,25 +1,31 @@
 #include "../Headers/CScreenPolygon2D.h"
-#include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
+#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
+#include "../../EngineRender/AssetsManager/Headers/CShader.h"
+#include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
+#include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
+#include "../../EngineRender/RenderMaterials/Headers/CScreenPolygon2DMaterial.h"
 
-CScreenPolygon2D::CScreenPolygon2D(const std::string& vertexShaderName, const std::string& pixelShaderName, CustomType::Vector4 screenPosition)
+CScreenPolygon2D::CScreenPolygon2D(const std::string& pixelShaderName, CustomType::Vector4 screenPosition)
 {
 	this->m_2DPosition = screenPosition;
-	CustomStruct::CRenderInputLayoutDesc desc[2u] = {
+	{
+		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
+		CMeshComponent* meshComponent = new CMeshComponent();
+		this->AddComponent(meshRendererComponent);
+		this->AddComponent(meshComponent);
+		CustomStruct::CRenderInputLayoutDesc desc[2u] = {
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 		CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
-	this->m_Mesh = CMeshManager::LoadPolygon2D(this->m_2DPosition, desc, 2u);
-	this->m_MeshRenderer = new CMeshRenderer();
-	this->m_MeshRenderer->Init(this, vertexShaderName, pixelShaderName, desc, 2u, CMeshRenderer::RenderTypeEnum::RENDER_TYPE_OPAQUE_FORWARD);
+		meshComponent->SetMesh(CMeshManager::LoadPolygon2D(this->m_2DPosition, desc, 2u));
+		meshRendererComponent->SetMeshComponent(meshComponent);
+		CScreenPolygon2DMaterial* material = meshRendererComponent->AddMaterial<CScreenPolygon2DMaterial>();
+		material->SetPixelShader(CShaderManager::LoadPixelShader(pixelShaderName));
+	}
 }
 CScreenPolygon2D::~CScreenPolygon2D()
 {
-	if (this->m_MeshRenderer != NULL)
-	{
-		delete (this->m_MeshRenderer);
-		this->m_MeshRenderer = NULL;
-	}
 }
-void CScreenPolygon2D::Draw()
+void CScreenPolygon2D::Update()
 {
-	this->m_MeshRenderer->Draw();
+	CGameObject::Update();
 }

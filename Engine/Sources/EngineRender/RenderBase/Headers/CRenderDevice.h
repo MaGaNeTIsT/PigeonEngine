@@ -2,7 +2,7 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
-#include "./CStructCommon.h"
+#include "./CRenderStructCommon.h"
 
 class CRenderDevice
 {
@@ -92,6 +92,25 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Texture2D;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
+	struct TextureCubeViewInfo
+	{
+		TextureCubeViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		void Release()
+		{
+			if (TextureCube)
+			{
+				TextureCube->Release();
+				TextureCube = nullptr;
+			}
+			if (ShaderResourceView)
+			{
+				ShaderResourceView->Release();
+				ShaderResourceView = nullptr;
+			}
+		};
+		Microsoft::WRL::ComPtr<ID3D11Texture2D>				TextureCube;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
+	};
 public:
 	static void		Initialize();
 	static void		ShutDown();
@@ -107,6 +126,7 @@ public:
 	static BOOL		CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
+	static BOOL		CreateTextureCube(TextureCubeViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:
 	static void		Present(const UINT& syncInterval = 0u);
 	static void		SetDefaultDepthStencilState();
@@ -120,8 +140,8 @@ public:
 	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum);
 	static void		SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
 	static void		SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs);
-	static void		SetViewport(const D3D11_VIEWPORT& viewport);
-	static void		SetViewports(std::vector<D3D11_VIEWPORT> viewports);
+	static void		SetViewport(const CustomStruct::CRenderViewport& viewport);
+	static void		SetViewports(const CustomStruct::CRenderViewport* viewports, const UINT& viewportNum);
 public:
 	static void		SetNoVSShader();
 	static void		SetNoPSShader();
@@ -151,6 +171,8 @@ public:
 	static void		BindNoCSUnorderedAccessView(const UINT& startSlot);
 	static void		BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot);
 	static void		BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum);
+public:
+	static void		CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst);
 public:
 	static void		ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const CustomStruct::CColor& clearColor = CustomStruct::CColor(0.f, 0.f, 0.f, 0.f));
 	static void		ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, CustomStruct::CRenderClearDepthStencilFlag flag = CustomStruct::CRenderClearDepthStencilFlag::CLEAR_DEPTH_STENCIL, const FLOAT& depth = 1.f, const UINT& stencil = 0u);

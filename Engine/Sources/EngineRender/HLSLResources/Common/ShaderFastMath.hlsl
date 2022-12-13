@@ -31,14 +31,14 @@
 
 #include "./ShaderDefCommon.hlsl"
 
-#define COMPILER_PSSL 0
+#define COMPILER_PSSL	0
 
 //
 // Normalized range [0,1] Constants
 //
-#define IEEE_INT_RCP_CONST_NR0_SNORM        0x7EEF370B
-#define IEEE_INT_SQRT_CONST_NR0_SNORM       0x1FBD1DF5
-#define IEEE_INT_RCP_SQRT_CONST_NR0_SNORM   0x5F341A43
+#define IEEE_INT_RCP_CONST_NR0_SNORM			0x7EEF370B
+#define IEEE_INT_SQRT_CONST_NR0_SNORM			0x1FBD1DF5
+#define IEEE_INT_RCP_SQRT_CONST_NR0_SNORM		0x5F341A43
 
 
 // Relative error : ~3.4% over full

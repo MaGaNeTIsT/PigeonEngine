@@ -192,10 +192,10 @@ void CGPUProfilerManager::ShutDown()
 }
 void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount)
 {
-	shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
+	std::shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
 	if (result == nullptr)
 	{
-		result = shared_ptr<CGPUProfilerManager::CGPUProfiler>(new CGPUProfilerManager::CGPUProfiler(name, recordFrameCount));
+		result = std::shared_ptr<CGPUProfilerManager::CGPUProfiler>(new CGPUProfilerManager::CGPUProfiler(name, recordFrameCount));
 		CGPUProfilerManager::AddProfiler(name, result);
 	}
 	if (result->GetRecordFrameCount() != recordFrameCount || !(result->IsAlreadyInitialize()))
@@ -210,7 +210,7 @@ void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& curr
 }
 DOUBLE CGPUProfilerManager::GetPassAverageTime(const std::string& name)
 {
-	shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
+	std::shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
 	if (result == nullptr || !(result->IsAlreadyInitialize()) || !(result->IsAlreadyBegin()))
 	{
 		return static_cast<DOUBLE>(0);
@@ -221,9 +221,9 @@ void CGPUProfilerManager::ClearProfilers()
 {
 	CGPUProfilerManager::m_GPUProfilerManager->m_Profilers.clear();
 }
-shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::NewProfiler(const std::string& name, const UINT& recordFrameCount)
+std::shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::NewProfiler(const std::string& name, const UINT& recordFrameCount)
 {
-	shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
+	std::shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
 	if (result != nullptr)
 	{
 		if (result->IsAlreadyBegin() == TRUE)
@@ -236,7 +236,7 @@ shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::NewProfiler(c
 		}
 		return result;
 	}
-	result = shared_ptr<CGPUProfilerManager::CGPUProfiler>(new CGPUProfilerManager::CGPUProfiler(name, recordFrameCount));
+	result = std::shared_ptr<CGPUProfilerManager::CGPUProfiler>(new CGPUProfilerManager::CGPUProfiler(name, recordFrameCount));
 	CGPUProfilerManager::AddProfiler(name, result);
 	result->ResetAll();
 	return result;

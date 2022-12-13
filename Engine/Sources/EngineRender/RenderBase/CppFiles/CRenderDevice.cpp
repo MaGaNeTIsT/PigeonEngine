@@ -647,6 +647,81 @@ BOOL CRenderDevice::CreateTexture2D(Texture2DViewInfo& output, const CustomStruc
 	}
 	return TRUE;
 }
+BOOL CRenderDevice::CreateTextureCube(TextureCubeViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData)
+{
+	if (textureDesc.Width != textureDesc.Height)
+	{
+		//TODO Texture cube's size must be a square log.
+		return FALSE;
+	}
+
+	{
+		D3D11_TEXTURE2D_DESC td;
+		{
+			::ZeroMemory(&td, sizeof(td));
+			td.Width = textureDesc.Width;
+			td.Height = textureDesc.Height;
+			td.MipLevels = textureDesc.MipLevels;
+			td.ArraySize = 6u;	//Texture cube has fixed number(6) of textures.
+			CRenderDevice::TranslateResourceFormat(td.Format, textureDesc.TextureFormat);
+			td.SampleDesc.Count = textureDesc.SampleDesc.Count;
+			td.SampleDesc.Quality = textureDesc.SampleDesc.Quality;
+			CRenderDevice::TranslateUsage(td.Usage, textureDesc.Usage);
+			td.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
+			CRenderDevice::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
+			td.MiscFlags = D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_TEXTURECUBE;
+			if (textureDesc.MipLevels == 0u || textureDesc.MipLevels > 1u)
+			{
+				td.MiscFlags |= D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			}
+		}
+		if (subData != NULL)
+		{
+			D3D11_SUBRESOURCE_DATA sd[6u];
+			for (UINT i = 0u; i < 6u; i++)
+			{
+				::ZeroMemory(&(sd[i]), sizeof(sd[i]));
+				sd[i].pSysMem = subData[i].pSysMem;
+				sd[i].SysMemPitch = subData[i].SysMemPitch;
+				sd[i].SysMemSlicePitch = subData[i].SysMemSlicePitch;
+			}
+			HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, sd, output.TextureCube.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create texture cube object failed log.
+				return FALSE;
+			}
+		}
+		else
+		{
+			HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, NULL, output.TextureCube.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create texture cube object failed log.
+				return FALSE;
+			}
+		}
+	}
+
+	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
+		{
+			::ZeroMemory(&srvd, sizeof(srvd));
+			CRenderDevice::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
+			srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURECUBE;
+			srvd.Texture2D.MostDetailedMip = 0u;
+			srvd.Texture2D.MipLevels = textureDesc.MipLevels;
+		}
+		HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateShaderResourceView(output.TextureCube.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+		if (FAILED(hr))
+		{
+			//TODO Create SRV object failed log.
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
 void CRenderDevice::Present(const UINT& syncInterval)
 {
 	HRESULT hr = CRenderDevice::m_RenderDevice->m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
@@ -705,13 +780,27 @@ void CRenderDevice::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11Raster
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetState(rs.Get());
 }
-void CRenderDevice::SetViewport(const D3D11_VIEWPORT& viewport)
+void CRenderDevice::SetViewport(const CustomStruct::CRenderViewport& viewport)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &viewport);
+	D3D11_VIEWPORT vp = {
+		viewport.TopLeftX, viewport.TopLeftY,
+		viewport.Width, viewport.Height,
+		viewport.MinDepth, viewport.MaxDepth };
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &vp);
 }
-void CRenderDevice::SetViewports(std::vector<D3D11_VIEWPORT> viewports)
+void CRenderDevice::SetViewports(const CustomStruct::CRenderViewport* viewports, const UINT& viewportNum)
 {
-	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(static_cast<UINT>(viewports.size()), viewports.data());
+	std::vector<D3D11_VIEWPORT> vps(viewportNum);
+	for (UINT i = 0u; i < viewportNum; i++)
+	{
+		vps[i].TopLeftX = viewports[i].TopLeftX;
+		vps[i].TopLeftY = viewports[i].TopLeftY;
+		vps[i].Width = viewports[i].Width;
+		vps[i].Height = viewports[i].Height;
+		vps[i].MinDepth = viewports[i].MinDepth;
+		vps[i].MaxDepth = viewports[i].MaxDepth;
+	}
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(viewportNum, vps.data());
 }
 void CRenderDevice::SetNoVSShader()
 {
@@ -861,6 +950,10 @@ void CRenderDevice::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D
 		uavs[i] = uav[i].Get();
 
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.data(), NULL);
+}
+void CRenderDevice::CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->CopyResource(dst.Get(), src.Get());
 }
 void CRenderDevice::ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const CustomStruct::CColor& clearColor)
 {
@@ -1505,7 +1598,7 @@ void CRenderDevice::ClearFinalOutput()
 void CRenderDevice::SetFinalOutput()
 {
 	CRenderDevice::SetRenderTarget(CRenderDevice::m_RenderDevice->m_RenderTargetView, CRenderDevice::m_RenderDevice->m_DepthStencilView);
-	CRenderDevice::SetViewport(CRenderDevice::m_RenderDevice->m_Viewport);
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &(CRenderDevice::m_RenderDevice->m_Viewport));
 }
 D3D11_VIEWPORT CRenderDevice::GetViewport()
 {

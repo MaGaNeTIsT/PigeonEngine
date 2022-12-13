@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
-#include "../../EngineRender/RenderBase/Headers/CStructCommon.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 
 class CGPUProfilerManager
 {
@@ -47,7 +47,7 @@ public:
 	static DOUBLE	GetPassAverageTime(const std::string& name);
 public:
 	static void		ClearProfilers();
-	static shared_ptr<CGPUProfiler>			NewProfiler(const std::string& name, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
+	static std::shared_ptr<CGPUProfiler>	NewProfiler(const std::string& name, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
 private:
 	static void								AddProfiler(const std::string& name, std::shared_ptr<CGPUProfiler> profiler);
 	static std::shared_ptr<CGPUProfiler>	FindProfiler(const std::string& name);

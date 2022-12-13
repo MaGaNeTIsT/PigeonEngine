@@ -2,281 +2,286 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CBaseType.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "./CGameObjectManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CMesh.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineRender/RenderBase/Headers/CMeshRenderer.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
+#include "./CObjectManager.h"
+#include "./CComponent.h"
 
-class CGameObject
+class CGameObject : public CObjectBase
 {
 public:
-	struct CGameBoundingBox
-	{
-		CGameBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
-		{
-			Anchor		= anchor;
-			Dimensions	= dimensions;
-		}
-		CustomType::Vector3 Anchor;
-		CustomType::Vector3 Dimensions;
-	};
-	struct CGameBoundingSphere
-	{
-		CGameBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
-		{
-			Anchor = anchor;
-			Radius = radius;
-		}
-		CustomType::Vector3 Anchor;
-		FLOAT				Radius;
-	};
+	const class CScene*								GetScene()const;
+	const CTransform*								GetTransform()const;
+	const CustomStruct::CRenderBoundingBox*			GetRenderLocalBoundingBox()const;
+	const CustomStruct::CRenderBoundingSphere*		GetRenderLocalBoundingSphere()const;
 public:
-	const CustomType::Vector3&		GetPosition()const { return m_Position; }
-	const CustomType::Quaternion&	GetRotation()const { return m_Rotation; }
-	const CustomType::Vector3&		GetScale()const { return m_Scale; }
-
-	void SetPosition(const CustomType::Vector3& Position) { m_Position = Position; }
-	void SetRotation(const CustomType::Quaternion& Rotation) { m_Rotation = Rotation; }
-	void SetScale(const CustomType::Vector3& Scale) { m_Scale = Scale; }
-protected:
-	void RecurWorldMatrix(CGameObject* obj, CustomType::Matrix4x4& m)
-	{
-		CustomType::Matrix4x4 temp(obj->m_Position, obj->m_Rotation, obj->m_Scale);
-		m = temp * m;
-		if (obj->m_Parent != NULL)
-			RecurWorldMatrix(obj->m_Parent, m);
-	}
+	void	SetScene(const class CScene* scene)const;
+	void	AddNewTransform(const CGameObject* parent = NULL)const;
+	void	AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, const CGameObject* parent = NULL)const;
+	void	SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)const;
+	void	SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)const;
+	void	GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)const;
+	void	SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)const;
+	void	SetRenderLocalBoundingSphere(const FLOAT& radius)const;
+	void	GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)const;
 public:
-	CustomType::Vector3 GetForwardVector()
-	{
-		CustomType::Vector3 result(0.f, 0.f, 1.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Vector3 GetUpVector()
-	{
-		CustomType::Vector3 result(0.f, 1.f, 0.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Vector3 GetRightVector()
-	{
-		CustomType::Vector3 result(1.f, 0.f, 0.f);
-		return (m_Rotation.MultiplyVector(result));
-	}
-	CustomType::Matrix4x4 GetLocalToWorldMatrix()
-	{
-		CustomType::Matrix4x4 result(m_Position, m_Rotation, m_Scale);
-		if (m_Parent != NULL)
-			RecurWorldMatrix(m_Parent, result);
-		return result;
-	}
-	CustomType::Matrix4x4 GetWorldToLocalMatrix()
-	{
-		CustomType::Matrix4x4 result(GetLocalToWorldMatrix().Inverse());
-		return result;
-	}
+	void	RemoveTransform()const;
 public:
-	const ULONGLONG& GetGameObjectID()const { return m_UID; }
-	const BOOL& IsActive()const { return m_Active; }
-	void Active() { m_Active = TRUE; }
-	void Inactive() { m_Active = FALSE; }
-	void SetScene(class CScene* scene) { m_Scene = scene; }
-	void SetParent(CGameObject* parent)
-	{
-		if (m_Parent != NULL)
-			m_Parent->RemoveChild(this);
-		m_Parent = parent;
-		parent->AddChild(this);
-	}
-	void AddChild(CGameObject* child) { m_Child[child->m_UID] = child; }
-	void RemoveChild(CGameObject* child) { m_Child.erase(child->m_UID); }
+	BOOL	IsBelongTransform(const CTransform* gameObject)const;
+	BOOL	HasScene()const;
+	BOOL	HasTransform()const;
+	BOOL	HasRenderBoundingBox()const;
+	BOOL	HasRenderBoundingSphere()const;
 public:
-	void AddMesh(std::shared_ptr<CMesh<UINT>> mesh) { m_Mesh = mesh; }
-	void AddMeshRenderer(CMeshRenderer* meshRenderer) { m_MeshRenderer = meshRenderer; }
-	std::shared_ptr<CMesh<UINT>> GetMesh()const { return m_Mesh; }
-	CMeshRenderer* GetMeshRenderer()const { return m_MeshRenderer; }
-protected:
-	ULONGLONG							m_UID;
-	BOOL								m_Active;
-	class CScene*						m_Scene				= NULL;
-	CGameObject*						m_Parent			= NULL;
-	std::map<ULONGLONG,CGameObject*>	m_Child;
-
-	std::shared_ptr<CMesh<UINT>>		m_Mesh				= nullptr;
-	CMeshRenderer*						m_MeshRenderer		= NULL;
-
-	CGameBoundingBox*					m_BoundingBox		= NULL;
-	CGameBoundingSphere*				m_BoundingSphere	= NULL;
-
-	CustomType::Vector3					m_Position;
-	CustomType::Quaternion				m_Rotation;
-	CustomType::Vector3					m_Scale				= CustomType::Vector3(1.f, 1.f, 1.f);
-public:
-	CGameObject() { m_UID = CGameObjectManager::GetGameObjectID(); m_Active = FALSE; }
-	virtual ~CGameObject()
+	const CGameObject*					GetParent()const;
+	std::vector<const CGameObject*>		GetChildrenList()const;
+	const CGameObject*					GetChildByTransformID(const ULONGLONG& id)const;
+	template<class T>
+	std::vector<const T*> GetChildrenListByType()const
 	{
-		if (m_MeshRenderer != NULL)
+		std::vector<const T*> childrenList;
+		if (this->HasChild())
 		{
-			delete m_MeshRenderer;
-			m_MeshRenderer = NULL;
-		}
-		if (m_BoundingBox != NULL)
-		{
-			delete m_BoundingBox;
-			m_BoundingBox = NULL;
-		}
-		if (m_BoundingSphere != NULL)
-		{
-			delete m_BoundingSphere;
-			m_BoundingSphere = NULL;
-		}
-	}
-	virtual void	Init()			= 0;
-	virtual void	Uninit()		= 0;
-	virtual void	Update()		{}
-	virtual void	FixedUpdate()	{}
-	virtual void	Draw()			{}
-	virtual void	DrawExtra()		{}
-protected:
-	virtual void	PrepareDraw()	{}
-public:
-	void SetBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
-	{
-		if (m_BoundingBox == NULL)
-		{
-			m_BoundingBox = new CGameBoundingBox(anchor, dimensions);
-			return;
-		}
-		m_BoundingBox->Anchor = anchor;
-		m_BoundingBox->Dimensions = dimensions;
-	}
-	void SetBoundingBox(const CustomType::Vector3& dimensions)
-	{
-		CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
-		tempAnchor = tempAnchor * 0.5f;
-		if (m_BoundingBox == NULL)
-		{
-			m_BoundingBox = new CGameBoundingBox(tempAnchor, dimensions);
-			return;
-		}
-		m_BoundingBox->Anchor = tempAnchor;
-		m_BoundingBox->Dimensions = dimensions;
-	}
-	CGameBoundingBox* GetBoundingBox() { return m_BoundingBox; }
-	void GetAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)
-	{
-		if (m_BoundingBox == NULL)
-		{
-			boundingMin = m_Position;
-			boundingMax = CustomType::Vector3::Zero();
-			return;
-		}
-		FLOAT points[24];
-		{
-			CustomType::Vector3 rightVec(GetRightVector());
-			CustomType::Vector3 upVec(GetUpVector());
-			CustomType::Vector3 forwardVec(GetForwardVector());
-
-			CustomType::Vector3 tempPoint(rightVec * m_BoundingBox->Anchor.X() * m_Scale.X() + upVec * m_BoundingBox->Anchor.Y() * m_Scale.Y() + forwardVec * m_BoundingBox->Anchor.Z() * m_Scale.Z() + m_Position);
-			/*
-			//            5--------6                Y(up vector)
-			//           /|       /|                ^
-			//          / |      / |  (dimension y) |
-			//         4--------7  |                |    Z(forward vector)
-			//         |  1-----|--2                |   /
-			//         | /      | /                 |  /(dimension z)
-			//         |/       |/                  | /
-			// (anchor)0--------3                   0---------------->X(right vector)
-			//                                         (dimension x)
-			*/
-			points[0u * 3u + 0u] = tempPoint.X();
-			points[0u * 3u + 1u] = tempPoint.Y();
-			points[0u * 3u + 2u] = tempPoint.Z();
-
-			rightVec = rightVec * m_BoundingBox->Dimensions.X() * m_Scale.X();
-			upVec = upVec * m_BoundingBox->Dimensions.Y() * m_Scale.Y();
-			forwardVec = forwardVec * m_BoundingBox->Dimensions.Z() * m_Scale.Z();
-
-			points[1u * 3u + 0u] = points[0u * 3u + 0u] + forwardVec.X();
-			points[1u * 3u + 1u] = points[0u * 3u + 1u] + forwardVec.Y();
-			points[1u * 3u + 2u] = points[0u * 3u + 2u] + forwardVec.Z();
-			points[2u * 3u + 0u] = points[1u * 3u + 0u] + rightVec.X();
-			points[2u * 3u + 1u] = points[1u * 3u + 1u] + rightVec.Y();
-			points[2u * 3u + 2u] = points[1u * 3u + 2u] + rightVec.Z();
-			points[3u * 3u + 0u] = points[0u * 3u + 0u] + rightVec.X();
-			points[3u * 3u + 1u] = points[0u * 3u + 1u] + rightVec.Y();
-			points[3u * 3u + 2u] = points[0u * 3u + 2u] + rightVec.Z();
-			points[4u * 3u + 0u] = points[0u * 3u + 0u] + upVec.X();
-			points[4u * 3u + 1u] = points[0u * 3u + 1u] + upVec.Y();
-			points[4u * 3u + 2u] = points[0u * 3u + 2u] + upVec.Z();
-			points[5u * 3u + 0u] = points[4u * 3u + 0u] + forwardVec.X();
-			points[5u * 3u + 1u] = points[4u * 3u + 1u] + forwardVec.Y();
-			points[5u * 3u + 2u] = points[4u * 3u + 2u] + forwardVec.Z();
-			points[7u * 3u + 0u] = points[4u * 3u + 0u] + rightVec.X();
-			points[7u * 3u + 1u] = points[4u * 3u + 1u] + rightVec.Y();
-			points[7u * 3u + 2u] = points[4u * 3u + 2u] + rightVec.Z();
-			points[6u * 3u + 0u] = points[7u * 3u + 0u] + forwardVec.X();
-			points[6u * 3u + 1u] = points[7u * 3u + 1u] + forwardVec.Y();
-			points[6u * 3u + 2u] = points[7u * 3u + 2u] + forwardVec.Z();
-		}
-
-		{
-			FLOAT minPoint[3] = { points[0], points[1], points[2] };
-			FLOAT maxPoint[3] = { points[0], points[1], points[2] };
-			for (INT i = 1; i < 8; i++)
+			std::vector<const CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
 			{
-				for (INT d = 0; d < 3; d++)
+				if (child != NULL && child->HasGameObject())
 				{
-					minPoint[d] = CustomType::CMath::Min(points[i * 3 + d], minPoint[d]);
-					maxPoint[d] = CustomType::CMath::Max(points[i * 3 + d], maxPoint[d]);
+					const CGameObject* childGameObject = child->GetGameObject();
+					if (childGameObject != NULL && typeid(*childGameObject) == typeid(T))
+					{
+						childrenList.push_back(reinterpret_cast<const T*>(childGameObject));
+					}
 				}
 			}
-			boundingMin = CustomType::Vector3(minPoint[0], minPoint[1], minPoint[2]);
-			boundingMax = CustomType::Vector3(maxPoint[0], maxPoint[1], maxPoint[2]);
 		}
+		return childrenList;
 	}
-	void SetBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
+	template<class T>
+	const T* GetFirstChildByType()const
 	{
-		if (m_BoundingSphere == NULL)
+		if (this->HasChild())
 		{
-			m_BoundingSphere = new CGameBoundingSphere(anchor, radius);
-			return;
+			std::vector<const CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
+			{
+				if (child != NULL && child->HasGameObject())
+				{
+					const CGameObject* childGameObject = child->GetGameObject();
+					if (childGameObject != NULL && typeid(*childGameObject) == typeid(T))
+					{
+						return (reinterpret_cast<const T*>(childGameObject));
+					}
+				}
+			}
 		}
-		m_BoundingSphere->Anchor = anchor;
-		m_BoundingSphere->Radius = radius;
+		return NULL;
 	}
-	void SetBoundingSphere(const FLOAT& radius)
+public:
+	void	SetParent(const CGameObject* parent)const;
+	void	AddChild(const CGameObject* child)const;
+public:
+	void	RemoveParent()const;
+	void	RemoveChild(const CGameObject* child)const;
+	void	RemoveChildByTransformID(const ULONGLONG& id)const;
+	void	RemoveChildren()const;
+public:
+	BOOL	IsParent(const CGameObject* parent)const;
+	BOOL	IsChild(const CGameObject* child)const;
+	BOOL	HasParent()const;
+	BOOL	HasChild()const;
+public:
+	CustomType::Vector3			GetForwardVector()const;
+	CustomType::Vector3			GetUpVector()const;
+	CustomType::Vector3			GetRightVector()const;
+	CustomType::Matrix4x4		GetLocalToWorldMatrix()const;
+	CustomType::Matrix4x4		GetWorldToLocalMatrix()const;
+	CustomType::Vector3			GetWorldPosition()const;
+	CustomType::Quaternion		GetWorldRotation()const;
+	CustomType::Vector3			GetWorldScale()const;
+	CustomType::Vector3			GetLocalPosition()const;
+	CustomType::Quaternion		GetLocalRotation()const;
+	CustomType::Vector3			GetLocalScale()const;
+public:
+	void	SetWorldPosition(const CustomType::Vector3& worldPosition);
+	void	SetWorldRotation(const CustomType::Quaternion& worldRotation);
+	void	SetWorldScale(const CustomType::Vector3& worldScale);
+	void	SetLocalPosition(const CustomType::Vector3& localPosition);
+	void	SetLocalRotation(const CustomType::Quaternion& localRotation);
+	void	SetLocalScale(const CustomType::Vector3& localScale);
+protected:
+	void	BaseRemoveTransform(const UINT& deleteTransform)const;
+	void	ConnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const;
+	void	DisconnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const;
+protected:
+	mutable const class CScene*							m_Scene;
+	mutable CTransform*									m_Transform;
+	mutable CustomStruct::CRenderBoundingBox*			m_RenderBoundingBox;
+	mutable CustomStruct::CRenderBoundingSphere*		m_RenderBoundingSphere;
+public:
+	void						AddComponent(CBaseComponent* component);
+	void						RemoveComponent(const CBaseComponent* component);
+	void						RemoveComponentByComponentID(const ULONGLONG& id);
+	void						RemoveComponents();
+	const CBaseComponent*		GetComponentByComponentID(const ULONGLONG& id)const;
+public:
+	template<class T>
+	const T* GetFirstComponentByType()const
 	{
-		if (m_BoundingSphere == NULL)
+		if (this->HasComponent())
 		{
-			m_BoundingSphere = new CGameBoundingSphere(CustomType::Vector3::Zero(), radius);
-			return;
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>(component.second));
+				}
+			}
 		}
-		m_BoundingSphere->Anchor = CustomType::Vector3::Zero();
-		m_BoundingSphere->Radius = radius;
+		return NULL;
 	}
-	void SetBoundingSphere(const CGameBoundingBox* boundingBox)
+	template<class T>
+	std::vector<const T*> GetComponentListByType()const
 	{
-		CustomType::Vector3 tempVec = boundingBox->Dimensions;
-		tempVec = tempVec * 0.5f;
-		if (m_BoundingSphere == NULL)
+		std::vector<const T*> componentList;
+		if (this->HasComponent())
 		{
-			m_BoundingSphere = new CGameBoundingSphere(tempVec + boundingBox->Anchor, tempVec.Length());
-			return;
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					componentList.push_back(reinterpret_cast<const T*>(component.second));
+				}
+			}
 		}
-		m_BoundingSphere->Anchor = tempVec + boundingBox->Anchor;
-		m_BoundingSphere->Radius = tempVec.Length();
+		return componentList;
 	}
-	CGameBoundingSphere* GetBoundingSphere() { return m_BoundingSphere; }
-	void GetBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)
+	template<class T>
+	const T* GetMeshComponent()const
 	{
-		if (m_BoundingSphere == NULL)
+		if (this->HasComponent() && this->HasMeshComponent())
 		{
-			anchor = m_Position;
-			radius = 1.f;
-			return;
+			auto& element = this->m_Components.find(this->m_MeshComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>(element->second));
+				}
+			}
 		}
-		anchor = (m_BoundingSphere->Anchor * m_Scale) + m_Position;
-		radius = m_BoundingSphere->Radius * CustomType::CMath::Max(m_Scale.X(), CustomType::CMath::Max(m_Scale.Y(), m_Scale.Z()));
+		return NULL;
 	}
+	template<class T>
+	const T* GetMeshRendererComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshRendererComponent())
+		{
+			auto& element = this->m_Components.find(this->m_MeshRendererComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<const T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
+protected:
+	CBaseComponent* BaseGetComponentByComponentID(const ULONGLONG& id)const;
+	template<class T>
+	T* BaseGetFirstComponentByType()const
+	{
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(component.second));
+				}
+			}
+		}
+		return NULL;
+	}
+	template<class T>
+	std::vector<T*> BaseGetComponentListByType()const
+	{
+		std::vector<T*> componentList;
+		if (this->HasComponent())
+		{
+			for (const auto& component : this->m_Components)
+			{
+				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				{
+					componentList.push_back(reinterpret_cast<T*>(component.second));
+				}
+			}
+		}
+		return componentList;
+	}
+	template<class T>
+	T* BaseGetMeshComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshComponent())
+		{
+			auto& element = this->m_Components.find(this->m_MeshComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
+	template<class T>
+	T* BaseGetMeshRendererComponent()const
+	{
+		if (this->HasComponent() && this->HasMeshRendererComponent())
+		{
+			auto& element = this->m_Components.find(this->m_MeshRendererComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
+public:
+	BOOL	IsBelongComponent(const CBaseComponent* component)const;
+	BOOL	HasComponent()const;
+	BOOL	HasMeshComponent()const;
+	BOOL	HasMeshRendererComponent()const;
+protected:
+	BOOL	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component);
+protected:
+	ULONGLONG								m_MeshComponentID;
+	ULONGLONG								m_MeshRendererComponentID;
+	std::map<ULONGLONG, CBaseComponent*>	m_Components;
+public:
+	const BOOL&		IsActive()const;
+	void			Active();
+	void			Inactive();
+protected:
+	BOOL	m_Active;
+public:
+	virtual void	Init();
+	virtual void	Uninit();
+	virtual void	Update();
+	virtual void	FixedUpdate();
+#ifdef _DEVELOPMENT_EDITOR
+protected:
+	virtual void	SelectedEditorUpdate_RenderBounding();
+public:
+	virtual void	SelectedEditorUpdate();
+#endif
+public:
+	CGameObject();
+	CGameObject(const CGameObject& obj);
+	virtual ~CGameObject();
 };
