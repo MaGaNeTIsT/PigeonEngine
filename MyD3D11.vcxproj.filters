@@ -306,6 +306,12 @@
     <ClInclude Include="Engine\Sources\EngineEidtor\Headers\CPickMesh.h">
       <Filter>Engine\Sources\EngineEditor\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameStructCommon.h">
+      <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBound.h">
+      <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -460,6 +466,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineEidtor\CppFiles\CPickMesh.cpp">
       <Filter>Engine\Sources\EngineEditor\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBound.cpp">
+      <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

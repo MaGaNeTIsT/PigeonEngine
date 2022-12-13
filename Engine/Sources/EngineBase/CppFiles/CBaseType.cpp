@@ -235,8 +235,60 @@ namespace CustomType
 	}
 	FLOAT Vector2::Dot(const Vector2& v1, const Vector2& v2)
 	{
-		FLOAT result = DirectX::XMVectorGetX(DirectX::XMVector2Dot(v1.GetXMVECTOR(), v2.GetXMVECTOR()));
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(v1.GetXMVECTOR(), v2.GetXMVECTOR())));
+	}
+	FLOAT Vector2::Length(const Vector2& v)
+	{
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Length(v.GetXMVECTOR())));
+	}
+	FLOAT Vector2::LengthSquare(const Vector2& v)
+	{
+		DirectX::XMVECTOR result = v.GetXMVECTOR();
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(result, result)));
+	}
+	FLOAT Vector2::Distance(const Vector2& v1, const Vector2& v2)
+	{
+		Vector2 v(v1); v = v - v2;
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Length(v.GetXMVECTOR())));
+	}
+	FLOAT Vector2::DistanceSquare(const Vector2& v1, const Vector2& v2)
+	{
+		Vector2 v(v1); v = v - v2;
+		DirectX::XMVECTOR result = v.GetXMVECTOR();
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(result, result)));
+	}
+	Vector2 Vector2::Lerp(const Vector2& v1, const Vector2& v2, const FLOAT& t)
+	{
+		Vector2 result(
+			v1.X() * (1.f - t) + v2.X() * t,
+			v1.Y() * (1.f - t) + v2.Y() * t);
 		return result;
+	}
+	FLOAT Vector2::Dot(const Vector2& v)
+	{
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(this->GetXMVECTOR(), v.GetXMVECTOR())));
+	}
+	FLOAT Vector2::Length()
+	{
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Length(this->GetXMVECTOR())));
+	}
+	FLOAT Vector2::LengthSquare()
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat2(&(this->m_Value));
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(v, v)));
+	}
+	FLOAT Vector2::Distance(const Vector2& v)
+	{
+		Vector2 result(this->GetXMFLOAT2());
+		result = result - v;
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Length(result.GetXMVECTOR())));
+	}
+	FLOAT Vector2::DistanceSquare(const Vector2& v)
+	{
+		Vector2 result(this->GetXMFLOAT2());
+		result = result - v;
+		DirectX::XMVECTOR resultV = result.GetXMVECTOR();
+		return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(resultV, resultV)));
 	}
 	Vector2 Vector2::operator+(const Vector2& v)
 	{
@@ -456,6 +508,15 @@ namespace CustomType
 			v1.X() * (1.f - t) + v2.X() * t,
 			v1.Y() * (1.f - t) + v2.Y() * t,
 			v1.Z() * (1.f - t) + v2.Z() * t);
+		return result;
+	}
+	FLOAT Vector3::Dot(const Vector3& v)
+	{
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(this->GetXMVECTOR(), v.GetXMVECTOR()));
+	}
+	Vector3 Vector3::Cross(const Vector3& v)
+	{
+		Vector3 result(DirectX::XMVector3Cross(this->GetXMVECTOR(), v.GetXMVECTOR()));
 		return result;
 	}
 	FLOAT Vector3::Length()
