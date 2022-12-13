@@ -95,6 +95,11 @@ public:
 		return  (reinterpret_cast<T*>(gameObject));
 	}
 	template <class T>
+	T* GetMainCamera() const
+	{ 
+		return reinterpret_cast<T*>(m_MainCamera);
+	}
+	template <class T>
 	T* GetGameObjectFirst(const UINT& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
@@ -153,7 +158,7 @@ public:
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return NULL;
+			return std::vector<T*>();
 		}
 		std::vector<T*> listObj;
 		if (this->m_GameObjects[layout].size() < 1)
@@ -172,11 +177,33 @@ public:
 		}
 		return listObj;
 	}
+
+	std::vector<CGameObject*> GetGameObjectAll(const UINT& layout)const
+	{
+		if (layout >= SceneLayout::LAYOUT_COUNT)
+		{
+			return std::vector<CGameObject*>();
+		}
+		std::vector<CGameObject*> listObj;
+		if (this->m_GameObjects[layout].size() < 1)
+		{
+			return listObj;
+		}
+		for (const auto& obj : (this->m_GameObjects[layout]))
+		{
+			if ((obj.second) != NULL)
+			{
+				listObj.push_back(obj.second);
+			}
+		}
+		return listObj;
+	}
 public:
 	virtual void	Init();
 	virtual void	Uninit();
 	virtual void	Update();
 	virtual void	FixedUpdate();
+
 private:
 	friend class CRenderPipeline;
 };

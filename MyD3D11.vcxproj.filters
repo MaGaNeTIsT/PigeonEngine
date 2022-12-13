@@ -130,6 +130,15 @@
     <Filter Include="Engine\EngineThirdParty\Cassimp\Headers">
       <UniqueIdentifier>{a3a8850c-963d-4c05-a932-b631285a9591}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Sources\EngineEditor">
+      <UniqueIdentifier>{f15043f7-f27e-4a30-8bc0-2cccaab8020c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Sources\EngineEditor\CppFiles">
+      <UniqueIdentifier>{3b627421-5f52-46fd-9deb-b4ec7ae76af2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Sources\EngineEditor\Headers">
+      <UniqueIdentifier>{393cd869-76a1-4880-80af-185b4c055fbc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui\imconfig.h">
@@ -291,6 +300,12 @@
     <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h">
       <Filter>Engine\EngineThirdParty\Cassimp\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectUtilty.h">
+      <Filter>Engine\Sources\EngineGame\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sources\EngineEidtor\Headers\CPickMesh.h">
+      <Filter>Engine\Sources\EngineEditor\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -442,6 +457,9 @@
     </ClCompile>
     <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp">
       <Filter>Engine\EngineThirdParty\Cassimp\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineEidtor\CppFiles\CPickMesh.cpp">
+      <Filter>Engine\Sources\EngineEditor\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
