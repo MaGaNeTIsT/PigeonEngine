@@ -551,7 +551,7 @@ void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomTyp
 
 	if (havePosition)
 	{
-		FLOAT minmax[6] = { 0.f, 0.f, 0.f, 0.f, 0.f, 0.f };
+		FLOAT minmax[6] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX };
 		auto compareMinMax = [&](const FLOAT* input) {
 			minmax[0 * 3 + 0] = CustomType::CMath::Min(input[0u], minmax[0 * 3 + 0]);
 			minmax[0 * 3 + 1] = CustomType::CMath::Min(input[1u], minmax[0 * 3 + 1]);

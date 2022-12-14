@@ -399,6 +399,8 @@ void CScene::Update()
 		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 		ImGui::Begin("Scene Manager");
 		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
+		ImGui::Text("Mouse focus : any window = %d.", (ImGui::IsWindowFocused(ImGuiFocusedFlags_::ImGuiFocusedFlags_AnyWindow) ? 1 : 0));
+		ImGui::Text("Mouse press : left = %d right = %d.", CInput::Controller.IsLeftMouseButtonDown(), CInput::Controller.IsRightMouseButtonDown());
 		ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
 		ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
 		UINT index = 0u;

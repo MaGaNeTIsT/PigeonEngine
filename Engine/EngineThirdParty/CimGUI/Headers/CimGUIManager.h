@@ -7,7 +7,7 @@ class CimGUIManager
 public:
     struct WndData
     {
-        WndData() { ZeroMemory(this, sizeof(*this)); }
+        WndData() { ::ZeroMemory(this, sizeof(*this)); }
         HWND                        hWnd;
         HWND                        MouseHwnd;
         BOOL                        MouseTracked;
@@ -18,7 +18,7 @@ public:
     };
     struct D3DData
     {
-        D3DData() { ZeroMemory(this, sizeof(*this)); this->VertexBufferSize = 5000; this->IndexBufferSize = 10000; }
+        D3DData() { ::ZeroMemory(this, sizeof(*this)); this->VertexBufferSize = 5000; this->IndexBufferSize = 10000; }
         ID3D11VertexShader*         VertexShader;
         ID3D11InputLayout*          InputLayout;
         ID3D11Buffer*               ConstantBuffer;

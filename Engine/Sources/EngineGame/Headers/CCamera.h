@@ -9,7 +9,7 @@ class CCamera : public CGameObject
 public:
 	struct CCameraInfo
 	{
-		CCameraInfo() { ZeroMemory(this, sizeof(*this)); }
+		CCameraInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		CustomStruct::CRenderViewport	Viewport;
 		FLOAT							Fov;
 		FLOAT							Near;
@@ -17,13 +17,12 @@ public:
 	};
 	struct CCameraControlInfo
 	{
-		CCameraControlInfo() { ZeroMemory(this, sizeof(*this)); }
+		CCameraControlInfo() { ::ZeroMemory(this, sizeof(*this)); }
 		FLOAT	MoveSpeed;
 		FLOAT	LookSpeed;
 	};
 	struct CFrustumPlane
 	{
-		CFrustumPlane() { ZeroMemory(this, sizeof(*this)); }
 		CustomType::Vector3 Plane[4];
 		CustomType::Vector3 Point[8];
 	};

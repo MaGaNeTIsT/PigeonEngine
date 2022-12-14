@@ -8,8 +8,8 @@ namespace CustomStruct
 	class CGameBaseSetting
 	{
 	public:
-		constexpr static FLOAT GameBoundMinimum			= 5.f;
-		constexpr static FLOAT GameBoundHalfMinimum		= 2.5f;
+		constexpr static FLOAT GameBoundMinimum			= 2.f;
+		constexpr static FLOAT GameBoundHalfMinimum		= 1.f;
 	};
 
 	struct CRect
@@ -24,20 +24,28 @@ namespace CustomStruct
 
 	struct CCullingFrustumInfo
 	{
-		CCullingFrustumInfo() { ZeroMemory(this, sizeof(*this)); }
+		CCullingFrustumInfo()
+		{
+			this->CameraProjectPlane[0] = 0.f;
+			this->CameraProjectPlane[1] = 0.f;
+			this->CameraProjectPlane[2] = 0.f;
+			this->CameraProjectPlane[3] = 0.f;
+			this->CameraProjectNear		= 0.f;
+			this->CameraProjectFar		= 0.f;
+		}
 		CCullingFrustumInfo(const CCullingFrustumInfo& v)
 		{
-			this->CameraForwardVec		= v.CameraForwardVec;
-			this->CameraProjectPlane[0] = v.CameraProjectPlane[0];
-			this->CameraProjectPlane[1] = v.CameraProjectPlane[1];
-			this->CameraProjectPlane[2] = v.CameraProjectPlane[2];
-			this->CameraProjectPlane[3] = v.CameraProjectPlane[3];
-			this->CameraProjectNear		= v.CameraProjectNear;
-			this->CameraProjectFar		= v.CameraProjectFar;
-			this->CameraFrustumPlane[0] = v.CameraFrustumPlane[0];
-			this->CameraFrustumPlane[1] = v.CameraFrustumPlane[1];
-			this->CameraFrustumPlane[2] = v.CameraFrustumPlane[2];
-			this->CameraFrustumPlane[3] = v.CameraFrustumPlane[3];
+			CameraForwardVec		= v.CameraForwardVec;
+			CameraProjectPlane[0]	= v.CameraProjectPlane[0];
+			CameraProjectPlane[1]	= v.CameraProjectPlane[1];
+			CameraProjectPlane[2]	= v.CameraProjectPlane[2];
+			CameraProjectPlane[3]	= v.CameraProjectPlane[3];
+			CameraProjectNear		= v.CameraProjectNear;
+			CameraProjectFar		= v.CameraProjectFar;
+			CameraFrustumPlane[0]	= v.CameraFrustumPlane[0];
+			CameraFrustumPlane[1]	= v.CameraFrustumPlane[1];
+			CameraFrustumPlane[2]	= v.CameraFrustumPlane[2];
+			CameraFrustumPlane[3]	= v.CameraFrustumPlane[3];
 		}
 		CustomType::Vector3		CameraForwardVec;
 		FLOAT					CameraProjectPlane[4];

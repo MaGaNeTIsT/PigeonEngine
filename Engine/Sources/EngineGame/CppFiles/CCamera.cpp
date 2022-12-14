@@ -3,6 +3,9 @@
 #include "../../EngineBase/Headers/CInput.h"
 #include "../../EngineBase/Headers/CManager.h"
 
+const static CustomType::Vector2 _GStaticPointScale(0.5f, -0.5f);
+const static CustomType::Vector2 _GStaticPointAdd(0.5f, 0.5f);
+
 CCamera::CCamera()
 {
 	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
@@ -56,14 +59,15 @@ void CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input,
 	FLOAT screenCoordX = CustomType::CMath::Clamp(point.X() / point.W(), -1.f, 1.f);
 	FLOAT screenCoordY = CustomType::CMath::Clamp(point.Y() / point.W(), -1.f, 1.f);
 
-	const static CustomType::Vector2 _StaticPointScale(0.5f, -0.5f);
-	const static CustomType::Vector2 _StaticPointAdd(0.5f, 0.5f);
-
 	CustomType::Vector2 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height);
 	CustomType::Vector2 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY);
 
 	CustomType::Vector2 result(screenCoordX, screenCoordY);
-	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+	if (point.Z() < 0.f)
+	{
+		result *= -1.f;
+	}
+	output = (result * _GStaticPointScale + _GStaticPointAdd) * viewPortPointMul + viewPortPointAdd;
 }
 BOOL CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
 {
@@ -77,8 +81,8 @@ BOOL CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input,
 		return FALSE;
 	}
 
-	const static CustomType::Vector3 _StaticPointScale(0.5f, -0.5f, 1.f);
-	const static CustomType::Vector3 _StaticPointAdd(0.5f, 0.5f, 0.f);
+	const static CustomType::Vector3 _StaticPointScale(_GStaticPointScale.X(), _GStaticPointScale.Y(), 1.f);
+	const static CustomType::Vector3 _StaticPointAdd(_GStaticPointAdd.X(), _GStaticPointAdd.Y(), 0.f);
 
 	CustomType::Vector3 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height, 1.f);
 	CustomType::Vector3 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY, 0.f);
@@ -95,14 +99,15 @@ void CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, 
 	FLOAT screenCoordX = CustomType::CMath::Clamp(point.X() / point.W(), -1.f, 1.f);
 	FLOAT screenCoordY = CustomType::CMath::Clamp(point.Y() / point.W(), -1.f, 1.f);
 
-	const static CustomType::Vector2 _StaticPointScale(0.5f, -0.5f);
-	const static CustomType::Vector2 _StaticPointAdd(0.5f, 0.5f);
-
 	CustomType::Vector2 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height);
 	CustomType::Vector2 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY);
 
 	CustomType::Vector2 result(screenCoordX, screenCoordY);
-	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+	if (point.Z() < 0.f)
+	{
+		result *= -1.f;
+	}
+	output = (result * _GStaticPointScale + _GStaticPointAdd) * viewPortPointMul + viewPortPointAdd;
 }
 BOOL CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
 {
@@ -116,8 +121,8 @@ BOOL CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, 
 		return FALSE;
 	}
 
-	const static CustomType::Vector3 _StaticPointScale(0.5f, -0.5f, 1.f);
-	const static CustomType::Vector3 _StaticPointAdd(0.5f, 0.5f, 0.f);
+	const static CustomType::Vector3 _StaticPointScale(_GStaticPointScale.X(), _GStaticPointScale.Y(), 1.f);
+	const static CustomType::Vector3 _StaticPointAdd(_GStaticPointAdd.X(), _GStaticPointAdd.Y(), 0.f);
 
 	CustomType::Vector3 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height, 1.f);
 	CustomType::Vector3 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY, 0.f);

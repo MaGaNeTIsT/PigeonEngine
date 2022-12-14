@@ -196,10 +196,8 @@ public:
 			auto& element = this->m_Components.find(this->m_GameBoundComponentID);
 			if (element != this->m_Components.end())
 			{
-				if (typeid(*(element->second)) == typeid(T))
-				{
-					return (reinterpret_cast<T*>(element->second));
-				}
+				//TODO if parent type matched.
+				return (reinterpret_cast<T*>(element->second));
 			}
 		}
 		return NULL;

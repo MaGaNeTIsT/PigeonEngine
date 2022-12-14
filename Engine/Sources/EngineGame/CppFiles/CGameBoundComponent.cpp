@@ -85,6 +85,13 @@ BOOL CGameBoundSphereComponent::InsertCameraFrustum(const CustomStruct::CCulling
 {
 	CustomType::Vector3 sphereAnchor(this->GetWorldAnchor());
 	FLOAT sphereRadius = this->GetRadius();
+	const CGameObject* gameObject = this->GetGameObject();
+	CustomType::Vector3 sphereS(CustomType::Vector3::One());
+	if (gameObject != NULL)
+	{
+		sphereS = gameObject->GetWorldScale();
+		sphereRadius *= CustomType::CMath::Max(CustomType::CMath::Max(sphereS.X(), sphereS.Y()), sphereS.Z());
+	}
 
 	FLOAT dotTerm = CustomType::Vector3::Dot(sphereAnchor, cullingFrustum.CameraForwardVec);
 	if ((dotTerm + sphereRadius) < cullingFrustum.CameraProjectNear || (-dotTerm + sphereRadius) < cullingFrustum.CameraProjectFar)
@@ -110,11 +117,13 @@ CustomStruct::CRect CGameBoundSphereComponent::GetScreenCoordRect(const CCamera*
 
 	const CGameObject* gameObject = this->GetGameObject();
 	CustomType::Quaternion sphereR(CustomType::Quaternion::Identity());
-	CustomType::Vector3 sphereW(CustomType::Vector3::Zero());
+	CustomType::Vector3 sphereT(CustomType::Vector3::Zero());
+	CustomType::Vector3 sphereS(CustomType::Vector3::One());
 	if (gameObject != NULL)
 	{
-		sphereW = gameObject->GetWorldPosition();
+		sphereT = gameObject->GetWorldPosition();
 		sphereR = gameObject->GetWorldRotation();
+		sphereS = gameObject->GetWorldScale();
 	}
 
 	FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
@@ -127,7 +136,8 @@ CustomStruct::CRect CGameBoundSphereComponent::GetScreenCoordRect(const CCamera*
 		CustomType::Vector3 tempPoint(sphereLocalAnchor + sphereRadius * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
-			tempPoint = sphereR.MultiplyVector(tempPoint) + sphereW;
+			tempPoint *= sphereS;
+			tempPoint = sphereR.MultiplyVector(tempPoint) + sphereT;
 		}
 		camera->TransformWorldPointToScreenCoord(tempPoint, output); };
 	{
@@ -529,11 +539,13 @@ BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFru
 
 	const CGameObject* gameObject = this->GetGameObject();
 	CustomType::Quaternion boxR(CustomType::Quaternion::Identity());
-	CustomType::Vector3 boxW(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxT(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxS(CustomType::Vector3::One());
 	if (gameObject != NULL)
 	{
-		boxW = gameObject->GetWorldPosition();
+		boxT = gameObject->GetWorldPosition();
 		boxR = gameObject->GetWorldRotation();
+		boxS = gameObject->GetWorldScale();
 	}
 
 	// Use diagonal line to early exit this function.
@@ -541,7 +553,8 @@ BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFru
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
-			tempPoint = boxR.MultiplyVector(tempPoint) + boxW;
+			tempPoint *= boxS;
+			tempPoint = boxR.MultiplyVector(tempPoint) + boxT;
 		}
 		FLOAT dotTerm = CustomType::Vector3::Dot(tempPoint, cullingFrustum.CameraForwardVec);
 		if (dotTerm < cullingFrustum.CameraProjectNear || -dotTerm < cullingFrustum.CameraProjectFar)
@@ -576,11 +589,13 @@ CustomStruct::CRect CGameBoundBoxComponent::GetScreenCoordRect(const CCamera* ca
 
 	const CGameObject* gameObject = this->GetGameObject();
 	CustomType::Quaternion boxR(CustomType::Quaternion::Identity());
-	CustomType::Vector3 boxW(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxT(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxS(CustomType::Vector3::One());
 	if (gameObject != NULL)
 	{
-		boxW = gameObject->GetWorldPosition();
+		boxT = gameObject->GetWorldPosition();
 		boxR = gameObject->GetWorldRotation();
+		boxS = gameObject->GetWorldScale();
 	}
 
 	FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
@@ -593,7 +608,8 @@ CustomStruct::CRect CGameBoundBoxComponent::GetScreenCoordRect(const CCamera* ca
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
-			tempPoint = boxR.MultiplyVector(tempPoint) + boxW;
+			tempPoint *= boxS;
+			tempPoint = boxR.MultiplyVector(tempPoint) + boxT;
 		}
 		camera->TransformWorldPointToScreenCoord(tempPoint, output); };
 	{
@@ -615,23 +631,32 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 
 	const CGameObject* gameObject = this->GetGameObject();
 	CustomType::Quaternion boxR(CustomType::Quaternion::Identity());
-	CustomType::Vector3 boxW(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxT(CustomType::Vector3::Zero());
+	CustomType::Vector3 boxS(CustomType::Vector3::One());
 	if (gameObject != NULL)
 	{
-		boxW = gameObject->GetWorldPosition();
+		boxT = gameObject->GetWorldPosition();
 		boxR = gameObject->GetWorldRotation();
+		boxS = gameObject->GetWorldScale();
 	}
 
 	CustomType::Vector3 newPoints[8];
 
 	// Use diagonal line to early exit this function.
-	auto checkPointInsertCameraFrustum = [&](const UINT& index)->BOOL {
+	auto transformBoxPoints = [&](const UINT& index) {
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
-			tempPoint = boxR.MultiplyVector(tempPoint) + boxW;
+			tempPoint *= boxS;
+			tempPoint = boxR.MultiplyVector(tempPoint) + boxT;
 		}
 		newPoints[index] = tempPoint;
+	};
+
+
+#if 0
+	auto checkPointInsertCameraFrustum = [&](const UINT& index)->BOOL {
+		CustomType::Vector3& tempPoint = newPoints[index];
 		FLOAT dotTerm = CustomType::Vector3::Dot(tempPoint, cullingFrustum.CameraForwardVec);
 		if (dotTerm < cullingFrustum.CameraProjectNear || -dotTerm < cullingFrustum.CameraProjectFar)
 		{
@@ -657,6 +682,12 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 		return FALSE; };
 
 	if (checkBoxInsertCameraFrustum())
+#else
+	for (UINT i = 0u; i < 8u; i++)
+	{
+		transformBoxPoints(i);
+	}
+#endif
 	{
 		FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
 

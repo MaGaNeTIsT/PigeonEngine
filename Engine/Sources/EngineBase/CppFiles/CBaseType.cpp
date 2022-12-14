@@ -96,6 +96,7 @@ namespace CustomType
 	}
 
 
+
 	Quaternion Quaternion::m_Identity = Quaternion::GetIdentity();
 	Quaternion::Quaternion()
 	{
@@ -192,6 +193,7 @@ namespace CustomType
 		Quaternion v(DirectX::XMQuaternionIdentity());
 		return v;
 	}
+
 
 
 	Vector2 Vector2::m_Zero = Vector2::GetZero();
@@ -422,6 +424,7 @@ namespace CustomType
 		Vector2 result(0.f, 0.f);
 		return result;
 	}
+
 
 
 	Vector3 Vector3::m_Zero = Vector3::GetStaticVector(0.f, 0.f, 0.f);
@@ -924,6 +927,7 @@ namespace CustomType
 	}
 
 
+
 	Vector2Int Vector2Int::m_Zero = Vector2Int::GetZero();
 	Vector2Int::Vector2Int()
 	{
@@ -1080,6 +1084,7 @@ namespace CustomType
 		Vector2Int result(0, 0);
 		return result;
 	}
+
 
 
 	Vector4Int Vector4Int::m_Zero = Vector4Int::GetZero();
@@ -1313,6 +1318,7 @@ namespace CustomType
 		Vector4Int result(0, 0, 0, 0);
 		return result;
 	}
+
 
 
 	FLOAT CMath::m_PI		= 3.1415926535897932f;
