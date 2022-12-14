@@ -1,6 +1,6 @@
 #include "../Headers/CRigidBodyComponent.h"
 
-void CRigidBodyComponent::SetGameObject(const class CGameObject* gameObject)
+void CRigidBodyComponent::SetGameObjectHook(const class CGameObject* gameObject)
 {
 	if (gameObject != NULL)
 	{
@@ -12,11 +12,19 @@ void CRigidBodyComponent::SetGameObject(const class CGameObject* gameObject)
 	}
 }
 
-void CRigidBodyComponent::FixedUpdate()
+inline void CRigidBodyComponent::AddForce(CustomType::Vector3 inForce)
 {
-	if (m_GameObject != NULL)
-	{
-		//m_GameObject->SetWorldPosition(PhysicsUtility::Convert(GetPhysicsManager()->GetPosition(m_Body)));
-		//m_GameObject->GetWorldRotation(PhysicsUtility::Convert(GetPhysicsManager()->GetRotation(m_Body)));
-	}
+	GetPhysicsManager()->AddForce(m_Body, PhysicsUtility::Convert(inForce));
+}
+inline void CRigidBodyComponent::AddForce(CustomType::Vector3 inForce, CustomType::Vector3 inPoint)
+{
+	GetPhysicsManager()->AddForce(m_Body, PhysicsUtility::Convert(inForce), PhysicsUtility::Convert(inPoint));
+}
+inline void CRigidBodyComponent::AddImpulse(CustomType::Vector3 inImpulse)
+{
+	GetPhysicsManager()->AddImpulse(m_Body, PhysicsUtility::Convert(inImpulse));
+}
+inline void CRigidBodyComponent::AddImpulse(CustomType::Vector3 inImpulse, CustomType::Vector3 inPoint)
+{
+	GetPhysicsManager()->AddImpulse(m_Body, PhysicsUtility::Convert(inImpulse), PhysicsUtility::Convert(inPoint));
 }

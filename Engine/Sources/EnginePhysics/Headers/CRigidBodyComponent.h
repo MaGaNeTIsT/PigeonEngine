@@ -18,7 +18,10 @@ public:
 	{
 	}
 
-	void			SetGameObject(const class CGameObject* gameObject);
+	virtual void SetGameObjectHook(const class CGameObject* gameObject) override;
 
-	virtual void	FixedUpdate() override;
+	inline void AddForce(CustomType::Vector3 inForce);
+	inline void AddForce(CustomType::Vector3 inForce, CustomType::Vector3 inPoint);
+	inline void AddImpulse(CustomType::Vector3 inImpulse);
+	inline void AddImpulse(CustomType::Vector3 inImpulse, CustomType::Vector3 inPoint);
 };

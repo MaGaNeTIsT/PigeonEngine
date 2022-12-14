@@ -235,6 +235,10 @@ public:
 	JPH_INLINE BodyID GetBodyID(const ULONGLONG& GameObjectId);
 	JPH_INLINE JPH::Vec3 GetPosition(const BodyID& BodyId);
 	JPH_INLINE JPH::Quat GetRotation(const BodyID& BodyId);
+	JPH_INLINE void AddForce(const BodyID& inBodyID, JPH::Vec3 inForce);
+	JPH_INLINE void AddForce(const BodyID& inBodyID, JPH::Vec3 inForce, JPH::Vec3 inPoint);
+	JPH_INLINE void AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse); ///< Applied at center of mass
+	JPH_INLINE void AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse, JPH::Vec3 inPoint); ///< Applied at inPoint
 public:
 	CPhysics_API_Jolt();
 	virtual ~CPhysics_API_Jolt();

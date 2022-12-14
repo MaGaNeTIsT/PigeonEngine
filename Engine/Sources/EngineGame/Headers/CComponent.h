@@ -98,6 +98,7 @@ public:
 	virtual void	Uninit()		= 0;
 	virtual void	Update() {}
 	virtual void	FixedUpdate() {}
+	virtual void	SetGameObjectHook(const class CGameObject* gameObject) {}
 #ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void	SelectedEditorUpdate() {}
@@ -120,6 +121,7 @@ public:
 		if (gameObject != NULL)
 		{
 			this->m_GameObject = gameObject;
+			SetGameObjectHook(gameObject);
 		}
 	}
 protected:

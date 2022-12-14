@@ -198,6 +198,18 @@ public:
 		}
 		return listObj;
 	}
+
+	CGameObject* GetGameObjectById(const ULONGLONG& gameObjectId) const
+	{
+		const auto& temp = m_AllObjectList.find(gameObjectId);
+		if (temp->second)
+		{
+			return temp->second;
+		}
+
+		return NULL;
+	}
+
 public:
 	virtual void	Init();
 	virtual void	Uninit();

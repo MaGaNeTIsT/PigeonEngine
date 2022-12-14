@@ -1,4 +1,7 @@
 #include "../Headers/CPhysics_API_Jolt.h"
+#include "../../EngineBase/Headers/CManager.h"
+#include "../../EngineGame/Headers/CScene.h"
+#include "../Headers/CPhysicsUtility.h"
 
 
 CPhysics_API_Jolt::CPhysics_API_Jolt():
@@ -86,6 +89,13 @@ void CPhysics_API_Jolt::Init()
 void CPhysics_API_Jolt::Tick(const float cDeltaTime)
 {
 	m_PhysicsSystem->Update(cDeltaTime, cCollisionSteps, cIntegrationSubSteps, m_TempAllocator, m_JobSystem);
+
+	for (const auto& obj : m_Bodys)
+	{
+		CGameObject* gameObject = CManager::GetScene()->GetGameObjectById(obj.first);
+		gameObject->SetWorldPosition(PhysicsUtility::Convert(GetPosition(obj.second)));
+		gameObject->SetWorldRotation(PhysicsUtility::Convert(GetRotation(obj.second)));
+	}
 }
 
 BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings()
@@ -218,4 +228,22 @@ JPH::Vec3 CPhysics_API_Jolt::GetPosition(const BodyID& BodyId)
 JPH::Quat CPhysics_API_Jolt::GetRotation(const BodyID& BodyId)
 {
 	return m_BodyInterface->GetRotation(BodyId);
+}
+
+JPH_INLINE void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce)
+{
+	m_BodyInterface->AddForce(inBodyID,inForce);
+}
+JPH_INLINE void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce, JPH::Vec3 inPoint)
+{
+	m_BodyInterface->AddForce(inBodyID, inForce, inPoint);
+}
+
+JPH_INLINE void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse)
+{
+	m_BodyInterface->AddImpulse(inBodyID, inImpulse);
+}
+JPH_INLINE void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse, JPH::Vec3 inPoint)
+{
+	m_BodyInterface->AddImpulse(inBodyID, inImpulse, inPoint);
 }
