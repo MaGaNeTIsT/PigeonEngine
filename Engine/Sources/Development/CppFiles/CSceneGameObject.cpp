@@ -1,4 +1,6 @@
 #include "../Headers/CSceneGameObject.h"
+#include "../../EngineGame/Headers/CComponent.h"
+#include "../../EngineGame/Headers/CGameBoundComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
@@ -10,6 +12,11 @@ CSceneGameObject::CSceneGameObject()
 {
 	this->AddNewTransform();
 	{
+		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
+		//this->AddComponent(boundSphereComponent);
+		CGameBoundBoxComponent* boundBoxComponent = new CGameBoundBoxComponent();
+		this->AddComponent(boundBoxComponent);
+
 		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
 		CMeshComponent* meshComponent = new CMeshComponent();
 		this->AddComponent(meshRendererComponent);
@@ -22,31 +29,44 @@ CSceneGameObject::CSceneGameObject()
 		meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, desc, 4u, FALSE));
 		meshRendererComponent->SetMeshComponent(meshComponent);
 		CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
+
+		CustomType::Vector3 boundMin, boundMax;
+		meshComponent->GetMinMaxBounding(boundMin, boundMax);
+
+		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
+			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
+			for (UINT i = 0u; i < 3u; i++)
+			{
+				errorV[i] = (errorV[i] < error) ? error : 0.f;
+			}
+			v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
+			v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]); };
+
 		{
-			CustomType::Vector3 boundMin, boundMax;
-			meshComponent->GetMinMaxBounding(boundMin, boundMax);
-			auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
-				FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-				for (UINT i = 0u; i < 3u; i++)
-				{
-					errorV[i] = (errorV[i] < 2.5f) ? 2.5f : 0.f;
-				}
-				v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
-				v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]);
-			};
-			errorMinMax(boundMin, boundMax);
+			CustomType::Vector3 renderBoundMin(boundMin), renderBoundMax(boundMax);
+			errorMinMax(renderBoundMin, renderBoundMax, CustomStruct::CRenderBaseSetting::RenderBoundHalfMinimum);
 			auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
-				CustomType::Vector3 tempVec(boundMax);
-				tempVec = (tempVec - boundMin) * 0.5f;
-				anchor = tempVec + boundMin;
+				CustomType::Vector3 tempVec(renderBoundMax);
+				tempVec = (tempVec - renderBoundMin) * 0.5f;
+				anchor = tempVec + renderBoundMin;
 				radius = tempVec.Length(); };
-			this->SetRenderLocalBoundingBox(boundMin, boundMax - boundMin);
+			this->SetRenderLocalBoundingBox(renderBoundMin, renderBoundMax - renderBoundMin);
 			{
 				CustomType::Vector3 anchor; FLOAT radius;
 				boundingSphere(anchor, radius);
 				this->SetRenderLocalBoundingSphere(anchor, radius);
 			}
 		}
+
+		{
+			CustomType::Vector3 gameBoundMin(boundMin), gameBoundMax(boundMax);
+			errorMinMax(gameBoundMin, gameBoundMax, CustomStruct::CGameBaseSetting::GameBoundHalfMinimum);
+			CustomType::Vector3 anchor(((gameBoundMin + gameBoundMax) * 0.5f));
+			CustomType::Vector3 extent((gameBoundMax - gameBoundMin));
+			boundBoxComponent->SetLocalAnchorExtent(anchor, extent * 0.5f);
+			//boundSphereComponent->SetLocalAnchorRadius(anchor, extent.Length() * 0.5f);
+		}
+
 #ifdef _DEVELOPMENT_EDITOR
 		this->m_MeshRendererComponent	= meshRendererComponent;
 		this->m_MeshComponent			= meshComponent;
@@ -231,28 +251,49 @@ void CSceneGameObject::SelectedEditorUpdate()
 			}
 			if (needResetBound)
 			{
-				CustomType::Vector3 boundMin, boundMax;
-				this->m_MeshComponent->GetMinMaxBounding(boundMin, boundMax);
-				auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1) {
+				auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 					FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
 					for (UINT i = 0u; i < 3u; i++)
 					{
-						errorV[i] = (errorV[i] < 2.5f) ? 2.5f : 0.f;
+						errorV[i] = (errorV[i] < error) ? error : 0.f;
 					}
 					v0 = CustomType::Vector3(v0.X() - errorV[0], v0.Y() - errorV[1], v0.Z() - errorV[2]);
-					v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]);
-				};
-				errorMinMax(boundMin, boundMax);
-				auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
-					CustomType::Vector3 tempVec(boundMax);
-					tempVec = (tempVec - boundMin) * 0.5f;
-					anchor = tempVec + boundMin;
-					radius = tempVec.Length(); };
-				this->SetRenderLocalBoundingBox(boundMin, boundMax - boundMin);
+					v1 = CustomType::Vector3(v1.X() + errorV[0], v1.Y() + errorV[1], v1.Z() + errorV[2]); };
+
+				CustomType::Vector3 boundMin, boundMax;
+				this->m_MeshComponent->GetMinMaxBounding(boundMin, boundMax);
+
 				{
-					CustomType::Vector3 anchor; FLOAT radius;
-					boundingSphere(anchor, radius);
-					this->SetRenderLocalBoundingSphere(anchor, radius);
+					CustomType::Vector3 renderBoundMin(boundMin), renderBoundMax(boundMax);
+					errorMinMax(renderBoundMin, renderBoundMax, CustomStruct::CRenderBaseSetting::RenderBoundHalfMinimum);
+					auto boundingSphere = [&](CustomType::Vector3& anchor, FLOAT& radius) {
+						CustomType::Vector3 tempVec(renderBoundMax);
+						tempVec = (tempVec - renderBoundMin) * 0.5f;
+						anchor = tempVec + renderBoundMin;
+						radius = tempVec.Length(); };
+					this->SetRenderLocalBoundingBox(renderBoundMin, renderBoundMax - renderBoundMin);
+					{
+						CustomType::Vector3 anchor; FLOAT radius;
+						boundingSphere(anchor, radius);
+						this->SetRenderLocalBoundingSphere(anchor, radius);
+					}
+				}
+
+				{
+					CustomType::Vector3 gameBoundMin(boundMin), gameBoundMax(boundMax);
+					errorMinMax(gameBoundMin, gameBoundMax, CustomStruct::CGameBaseSetting::GameBoundHalfMinimum);
+					CustomType::Vector3 anchor(((gameBoundMin + gameBoundMax) * 0.5f));
+					CustomType::Vector3 extent((gameBoundMax - gameBoundMin));
+					CGameBoundBoxComponent* boxComponent = this->GetGameBoundComponent<CGameBoundBoxComponent>();
+					if (boxComponent != NULL)
+					{
+						boxComponent->SetLocalAnchorExtent(anchor, extent * 0.5f);
+					}
+					CGameBoundSphereComponent* sphereComponent = this->GetGameBoundComponent<CGameBoundSphereComponent>();
+					if (sphereComponent != NULL)
+					{
+						sphereComponent->SetLocalAnchorRadius(anchor, extent.Length() * 0.5f);
+					}
 				}
 			}
 		}

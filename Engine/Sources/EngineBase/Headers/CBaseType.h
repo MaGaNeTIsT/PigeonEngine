@@ -164,10 +164,13 @@ namespace CustomType
 	public:
 		Vector2();
 		Vector2(const Vector2& v);
+		Vector2(const Vector2Int& v);
 		Vector2(DirectX::CXMVECTOR v);
 		Vector2(DirectX::XMFLOAT2 v);
 		Vector2(const FLOAT& v);
 		Vector2(const FLOAT& x, const FLOAT& y);
+		Vector2(const INT& v);
+		Vector2(const INT& x, const INT& y);
 		virtual ~Vector2();
 	protected:
 		static Vector2				GetZero();

@@ -1,4 +1,3 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CCamera.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CInput.h"
@@ -17,7 +16,138 @@ CCamera::CCamera()
 CCamera::~CCamera()
 {
 }
-std::vector<CustomType::Vector3> CCamera::GetCullingPlane()
+CustomStruct::CCullingFrustumInfo CCamera::PrepareTempFrustumInfo()const
+{
+	CustomStruct::CCullingFrustumInfo result;
+
+	CustomType::Vector3 tempWorldPosition(this->GetWorldPosition());
+	result.CameraForwardVec = this->GetForwardVector();
+
+	{
+		std::vector<CustomType::Vector3> tempPlane(this->GetCullingPlane());
+		for (UINT i = 0u; i < 4u; i++)
+		{
+			result.CameraFrustumPlane[i] = tempPlane[i];
+			result.CameraProjectPlane[i] = CustomType::Vector3::Dot(tempWorldPosition, tempPlane[i]);
+		}
+	}
+
+	{
+		CustomType::Vector3 tempNear(tempWorldPosition + result.CameraForwardVec * this->m_CameraInfo.Near);
+		CustomType::Vector3 tempFar(tempWorldPosition + result.CameraForwardVec * this->m_CameraInfo.Far);
+		result.CameraProjectNear = CustomType::Vector3::Dot(tempNear, result.CameraForwardVec);
+		result.CameraProjectFar = CustomType::Vector3::Dot(tempFar, -result.CameraForwardVec);
+	}
+	
+	return result;
+}
+void CCamera::TransformPointFromWorldToView(const CustomType::Vector3& input, CustomType::Vector3& output)const
+{
+	output = this->GetViewMatrix().MultiplyPosition(input);
+}
+void CCamera::TransformPointFromViewToWorld(const CustomType::Vector3& input, CustomType::Vector3& output)const
+{
+	output = this->GetViewInverseMatrix().MultiplyPosition(input);
+}
+void CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const
+{
+	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
+	point = this->GetViewProjectionMatrix().MultiplyVector(point);
+	FLOAT screenCoordX = CustomType::CMath::Clamp(point.X() / point.W(), -1.f, 1.f);
+	FLOAT screenCoordY = CustomType::CMath::Clamp(point.Y() / point.W(), -1.f, 1.f);
+
+	const static CustomType::Vector2 _StaticPointScale(0.5f, -0.5f);
+	const static CustomType::Vector2 _StaticPointAdd(0.5f, 0.5f);
+
+	CustomType::Vector2 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height);
+	CustomType::Vector2 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY);
+
+	CustomType::Vector2 result(screenCoordX, screenCoordY);
+	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+}
+BOOL CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
+{
+	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
+	point = this->GetViewProjectionMatrix().MultiplyVector(point);
+	point = point / point.W();
+	if (point.X() < -1.f || point.X() > 1.f ||
+		point.Y() < -1.f || point.Y() > 1.f ||
+		point.Z() < 0.f || point.Z() > 1.f)
+	{
+		return FALSE;
+	}
+
+	const static CustomType::Vector3 _StaticPointScale(0.5f, -0.5f, 1.f);
+	const static CustomType::Vector3 _StaticPointAdd(0.5f, 0.5f, 0.f);
+
+	CustomType::Vector3 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height, 1.f);
+	CustomType::Vector3 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY, 0.f);
+
+	CustomType::Vector3 result(point.GetXMFLOAT4());
+	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+
+	return TRUE;
+}
+void CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const
+{
+	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
+	point = this->GetProjectionMatrix().MultiplyVector(point);
+	FLOAT screenCoordX = CustomType::CMath::Clamp(point.X() / point.W(), -1.f, 1.f);
+	FLOAT screenCoordY = CustomType::CMath::Clamp(point.Y() / point.W(), -1.f, 1.f);
+
+	const static CustomType::Vector2 _StaticPointScale(0.5f, -0.5f);
+	const static CustomType::Vector2 _StaticPointAdd(0.5f, 0.5f);
+
+	CustomType::Vector2 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height);
+	CustomType::Vector2 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY);
+
+	CustomType::Vector2 result(screenCoordX, screenCoordY);
+	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+}
+BOOL CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
+{
+	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
+	point = this->GetProjectionMatrix().MultiplyVector(point);
+	point = point / point.W();
+	if (point.X() < -1.f || point.X() > 1.f ||
+		point.Y() < -1.f || point.Y() > 1.f ||
+		point.Z() < 0.f || point.Z() > 1.f)
+	{
+		return FALSE;
+	}
+
+	const static CustomType::Vector3 _StaticPointScale(0.5f, -0.5f, 1.f);
+	const static CustomType::Vector3 _StaticPointAdd(0.5f, 0.5f, 0.f);
+
+	CustomType::Vector3 viewPortPointMul(this->m_CameraInfo.Viewport.Width, this->m_CameraInfo.Viewport.Height, 1.f);
+	CustomType::Vector3 viewPortPointAdd(this->m_CameraInfo.Viewport.TopLeftX, this->m_CameraInfo.Viewport.TopLeftY, 0.f);
+
+	CustomType::Vector3 result(point.GetXMFLOAT4());
+	output = (result * _StaticPointScale + _StaticPointAdd) * viewPortPointMul + viewPortPointAdd;
+
+	return TRUE;
+}
+void CCamera::TransformScreenCoordToWorldPoint(const CustomType::Vector2& mousePos, CustomType::Vector3& output)const
+{
+	CustomType::Vector4 posSS(
+		((mousePos.X() - this->m_CameraInfo.Viewport.TopLeftX) / this->m_CameraInfo.Viewport.Width - 0.5f) * 2.f,
+		((mousePos.Y() - this->m_CameraInfo.Viewport.TopLeftY) / this->m_CameraInfo.Viewport.Height - 0.5f) * -2.f,
+		1.f, 1.f);
+	this->GetViewProjectionInverseMatrix().MultiplyVector(posSS);
+	posSS /= posSS.W();
+	output = CustomType::Vector3(posSS);
+}
+void CCamera::TransformScreenCoordToViewPoint(const CustomType::Vector2& mousePos, CustomType::Vector3& output)const
+{
+	CustomType::Vector4 posSS(
+		((mousePos.X() - this->m_CameraInfo.Viewport.TopLeftX) / this->m_CameraInfo.Viewport.Width - 0.5f) * 2.f,
+		((mousePos.Y() - this->m_CameraInfo.Viewport.TopLeftY) / this->m_CameraInfo.Viewport.Height - 0.5f) * -2.f,
+		1.f, 1.f);
+	this->GetProjectionInverseMatrix().MultiplyVector(posSS);
+	posSS /= posSS.W();
+	output = CustomType::Vector3(posSS);
+}
+std::vector<CustomType::Vector3> CCamera::GetCullingPlane()const
 {
 	CustomType::Quaternion wR(this->GetWorldRotation());
 	std::vector<CustomType::Vector3> plane = {
@@ -27,7 +157,7 @@ std::vector<CustomType::Vector3> CCamera::GetCullingPlane()
 		wR.MultiplyVector(this->m_FrustumInfo.Plane[3]) };
 	return plane;
 }
-std::vector<CustomType::Vector3> CCamera::GetCullingPlanePoint()
+std::vector<CustomType::Vector3> CCamera::GetCullingPlanePoint()const
 {
 	CustomType::Vector3 wP(this->GetWorldPosition());
 	CustomType::Quaternion wR(this->GetWorldRotation());
@@ -46,7 +176,7 @@ std::vector<CustomType::Vector3> CCamera::GetCullingPlanePoint()
 	}
 	return points;
 }
-CustomType::Vector4 CCamera::GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize)
+CustomType::Vector4 CCamera::GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize)const
 {
 	FLOAT aspectRatio	= static_cast<FLOAT>(finalViewport.X()) / static_cast<FLOAT>(finalViewport.Y());
 	FLOAT invTanHalfFov	= this->m_ProjectionMatrix.GetXMFLOAT4X4()._11;

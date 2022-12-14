@@ -11,12 +11,12 @@
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
+#include "../Headers/CGameBoundComponent.h"
 #include "../Headers/CCamera.h"
 #include "../Headers/CLightType.h"
 #include "../Headers/CScreenPolygon2D.h"
 #include "../Headers/CPlane.h"
 #include "../Headers/CCube.h"
-#include "../../EngineEidtor/Headers/CPickMesh.h"
 
 #include "../../Development/Headers/CSceneGameObject.h"
 
@@ -63,6 +63,98 @@ CScene::~CScene()
 		}
 	}
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
+{
+	if (this->m_MainCamera == NULL)
+	{
+		return;
+	}
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_::ImGuiFocusedFlags_AnyWindow) || !CInput::Controller.IsLeftMouseButtonDown())
+	{
+		return;
+	}
+
+	struct Screen2DObject
+	{
+		Screen2DObject(const CustomType::Vector2& coord, const FLOAT& depth) { ScreenCoord = coord; ViewDepth = depth; }
+		CustomType::Vector2	ScreenCoord;
+		FLOAT				ViewDepth;
+	};
+
+	std::vector<std::pair<CGameObject*, Screen2DObject>> selectedObjects;
+	CustomType::Vector2 mousePos(mouseX, mouseY);
+	CCamera* camera = this->GetMainCamera<CCamera>();
+	CustomStruct::CCullingFrustumInfo frustumInfo(camera->PrepareTempFrustumInfo());
+
+	for (const auto& obj : this->m_AllObjectList)
+	{
+		if (obj.second != NULL && obj.second->HasGameBoundComponent())
+		{
+			CGameBoundBaseComponent* boundComponent = obj.second->GetGameBoundComponent<CGameBoundBaseComponent>();
+			if (boundComponent == NULL)
+			{
+				continue;
+			}
+			CustomType::Vector2	tempScreenCoord; FLOAT tempViewDepth;
+			if (!boundComponent->SelectedInEditorScreen(mousePos, camera, frustumInfo, tempScreenCoord, tempViewDepth))
+			{
+				continue;
+			}
+			selectedObjects.push_back(std::pair<CGameObject*, Screen2DObject>(obj.second, Screen2DObject(tempScreenCoord, tempViewDepth)));
+		}
+	}
+
+	if (selectedObjects.size() > 0)
+	{
+		const static FLOAT _ErrorSq = 100.f;
+		std::vector<std::pair<FLOAT, CGameObject*>> depthList;
+		this->m_SelectedObject = selectedObjects[0].first;
+		FLOAT depth = selectedObjects[0].second.ViewDepth;
+		FLOAT minDisSq = CustomType::Vector2::DistanceSquare(mousePos, selectedObjects[0].second.ScreenCoord);
+		for (size_t i = 1; i < selectedObjects.size(); i++)
+		{
+			CGameObject*& obj = selectedObjects[i].first;
+			Screen2DObject& screen = selectedObjects[i].second;
+
+			FLOAT tempMinDisSq = CustomType::Vector2::DistanceSquare(mousePos, screen.ScreenCoord);
+			if (tempMinDisSq < (minDisSq - _ErrorSq))
+			{
+				this->m_SelectedObject = obj;
+				depth = screen.ViewDepth;
+				minDisSq = tempMinDisSq;
+				if (depthList.size() > 0)
+				{
+					depthList.clear();
+				}
+			}
+			else if (CustomType::CMath::Abs(tempMinDisSq - minDisSq) < _ErrorSq)
+			{
+				depthList.push_back(std::pair<FLOAT, CGameObject*>(depth, this->m_SelectedObject));
+				depthList.push_back(std::pair<FLOAT, CGameObject*>(screen.ViewDepth, obj));
+				if (tempMinDisSq < tempMinDisSq)
+				{
+					this->m_SelectedObject = obj;
+					depth = screen.ViewDepth;
+					minDisSq = tempMinDisSq;
+				}
+			}
+		}
+		if (depthList.size() > 1)
+		{
+			this->m_SelectedObject = depthList[0].second;
+			depth = depthList[0].first;
+			for (size_t i = 1; i < depthList.size(); i++)
+			{
+				if (depthList[i].first < depth)
+				{
+					this->m_SelectedObject = depthList[i].second;
+				}
+			}
+		}
+	}
+}
+#endif
 void CScene::Init()
 {
 	{
@@ -285,9 +377,6 @@ void CScene::Update()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		if(CInput::Controller.IsLeftMouseButtonDown())
-			this->m_SelectedObject = CPickMesh::GetPickedGameObjectsBySphere();
-
 		if (this->m_SelectedObject != NULL)
 		{
 			this->m_SelectedObject->SelectedEditorUpdate();
@@ -339,6 +428,11 @@ void CScene::Update()
 			object.second->Update();
 		}
 	}
+
+#ifdef _DEVELOPMENT_EDITOR
+	std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+	this->ReSelectSceneObject(mousePos.first, mousePos.second);
+#endif
 }
 void CScene::FixedUpdate()
 {

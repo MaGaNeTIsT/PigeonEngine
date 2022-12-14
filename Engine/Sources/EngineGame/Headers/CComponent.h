@@ -114,7 +114,7 @@ protected:
 	BOOL	m_NeedFixedUpdate;
 	BOOL	m_Active;
 public:
-	const class CGameObject* GetGameObject() { return (this->m_GameObject); }
+	const class CGameObject* GetGameObject()const { return (this->m_GameObject); }
 	void SetGameObject(const class CGameObject* gameObject)
 	{
 		if (gameObject != NULL)

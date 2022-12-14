@@ -1,44 +1,51 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
-#include "../../EngineBase/Headers/CInput.h"
-#include "../../EngineGame/Headers/CGameObject.h"
-#include "../../EngineGame/Headers/CScene.h"
-#include "../../EngineBase/Headers/CManager.h"
+#include "./CComponent.h"
+#include "./CGameBoundComponent.h"
+#include "./CGameObject.h"
+#include "./CScene.h"
 
 namespace GameObjectUtility
 {
-
-	std::vector<CGameObject*> GetGameObjectsHasBoundingBox(const UINT& layout)
+	BOOL GetObjectHasBoundingBoxInView(CScene* scene, const UINT& layout, std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>>& list)
 	{
-		if (layout >= CScene::LAYOUT_COUNT)
+		if (layout >= CScene::SceneLayout::LAYOUT_COUNT)
 		{
-			return std::vector<CGameObject*>();
+			return FALSE;
 		}
-		std::vector<CGameObject*> listObj;
-		std::vector<CGameObject*> LayerObj = CManager::GetScene()->GetGameObjectAll(layout);
-		for (const auto& obj : LayerObj)
+		if (list.size() > 0)
+		{
+			list.clear();
+		}
+		std::vector<CGameObject*> objects = scene->GetGameObjectAll(layout);
+		for (const auto& obj : objects)
 		{
 			if ((obj) != NULL)
 			{
-				if (obj->HasRenderBoundingBox())
+				if (obj->HasGameBoundComponent())
 				{
-					listObj.push_back(obj);
+					CGameBoundBaseComponent* boundComponent = obj->GetGameBoundComponent<CGameBoundBaseComponent>();
+					std::pair<CGameObject*, CGameBoundBaseComponent*> tempObj(obj, boundComponent);
+					list.push_back(tempObj);
 				}
 			}
 		}
-		return listObj;
+		return (list.size() > 0);
 	}
 
-	std::vector<CGameObject*> GetGameObjectsHasBoundingBox()
+	std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> GetGameObjectsHasBoundingBoxInView(CScene* scene)
 	{
-		std::vector<CGameObject*> listObj;
+		std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObj;
 		for (UINT i = 0; i < CScene::LAYOUT_COUNT; i++)
 		{
-			std::vector<CGameObject*> listObjTemp;
-			listObjTemp = GetGameObjectsHasBoundingBox(i);
-			listObj.resize(listObj.size() + listObjTemp.size());
-			listObj.insert(listObj.end(), listObjTemp.begin(), listObjTemp.end());
+			std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObjTemp;
+			if (GetObjectHasBoundingBoxInView(scene, i, listObjTemp))
+			{
+				auto iterStart = listObj.end();
+				listObj.resize(listObj.size() + listObjTemp.size());
+				listObj.insert(iterStart, listObjTemp.begin(), listObjTemp.end());
+			}
 		}
 		return listObj;
 	}

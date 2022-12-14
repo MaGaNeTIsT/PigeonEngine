@@ -36,14 +36,11 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 	}
 
 	{
-		CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
-		UINT numVertices, numIndices, vertexStride;
-		if (!CassimpManager::ReadDefaultMeshFile(path, subMesh, vertexStride, vertices, numVertices, indices, numIndices))
+		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetDefaultMesh(path, needVertexData);
+		if (resultMesh == NULL)
 		{
 			return NULL;
 		}
-
-		CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>((path + descName), inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData);
 		CMeshManager::AddMeshData((path + descName), resultMesh);
 		return resultMesh;
 	}
@@ -74,7 +71,8 @@ const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType ba
 			return findResult;
 		}
 	}
-	CBaseMesh<UINT>* resultMesh = CMeshManager::LoadOBJMesh(baseName, inputLayoutDesc, inputLayoutNum, needVertexData);
+	//CBaseMesh<UINT>* resultMesh = CMeshManager::LoadOBJMesh(baseName, inputLayoutDesc, inputLayoutNum, needVertexData);
+	CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetDefaultMesh(baseName, needVertexData);
 	if (resultMesh == NULL)
 	{
 		return NULL;
@@ -106,7 +104,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadMeshFromFile(const std::string& name, c
 
 		if (typeName == _objName)
 		{
-			resultMesh = (CMeshManager::LoadOBJMesh(name, inputLayoutDesc, inputLayoutNum, needVertexData));
+			resultMesh = (CMeshManager::ImportOBJMesh(name, inputLayoutDesc, inputLayoutNum, needVertexData));
 		}
 		else
 		{
@@ -839,7 +837,7 @@ void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, c
 		}
 	}
 }
-CBaseMesh<UINT>* CMeshManager::LoadOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	void* vertices = nullptr;
 	UINT verticesNum = 0u;
@@ -1108,6 +1106,20 @@ CBaseMesh<UINT>* CMeshManager::LoadOBJMesh(const std::string& name, const Custom
 		}
 	}
 	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData));
+}
+CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, const BOOL& needVertexData)
+{
+	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+	UINT numVertices, numIndices, vertexStride;
+	if (!CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices))
+	{
+		return NULL;
+	}
+
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+
+	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }
 std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {

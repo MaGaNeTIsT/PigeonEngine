@@ -6,23 +6,14 @@
 
 CGameObject::CGameObject()
 {
-	this->m_Active					= FALSE;
-	this->m_Scene					= NULL;
-	this->m_Transform				= NULL;
-	this->m_RenderBoundingBox		= NULL;
-	this->m_RenderBoundingSphere	= NULL;
-	this->m_MeshComponentID			= 0u;
-	this->m_MeshRendererComponentID	= 0u;
-}
-CGameObject::CGameObject(const CGameObject& obj)
-{
-	this->m_Active					= FALSE;
-	this->m_Scene					= obj.m_Scene;
-	this->m_Transform				= NULL;
-	this->m_RenderBoundingBox		= obj.m_RenderBoundingBox;
-	this->m_RenderBoundingSphere	= obj.m_RenderBoundingSphere;
-	this->m_MeshComponentID			= obj.m_MeshComponentID;
-	this->m_MeshRendererComponentID	= obj.m_MeshRendererComponentID;
+	this->m_Active						= FALSE;
+	this->m_Scene						= NULL;
+	this->m_Transform					= NULL;
+	this->m_RenderBoundingBox			= NULL;
+	this->m_RenderBoundingSphere		= NULL;
+	this->m_MeshComponentID				= 0u;
+	this->m_MeshRendererComponentID		= 0u;
+	this->m_GameBoundComponentID		= 0u;
 }
 CGameObject::~CGameObject()
 {
@@ -586,6 +577,22 @@ void CGameObject::AddComponent(CBaseComponent* component)
 				}
 				this->m_MeshComponentID = component->GetUniqueID();
 			}
+			else if (typeid(*component) == typeid(CGameBoundSphereComponent))
+			{
+				if (this->HasGameBoundComponent())
+				{
+					this->RemoveComponentByComponentID(this->m_GameBoundComponentID);
+				}
+				this->m_GameBoundComponentID = component->GetUniqueID();
+			}
+			else if (typeid(*component) == typeid(CGameBoundBoxComponent))
+			{
+				if (this->HasGameBoundComponent())
+				{
+					this->RemoveComponentByComponentID(this->m_GameBoundComponentID);
+				}
+				this->m_GameBoundComponentID = component->GetUniqueID();
+			}
 			this->m_Components.insert_or_assign(component->GetUniqueID(), component);
 			component->SetGameObject(this);
 		}
@@ -609,6 +616,14 @@ void CGameObject::RemoveComponent(const CBaseComponent* component)
 				{
 					this->m_MeshComponentID = 0u;
 				}
+				else if (typeid(*resultComponent) == typeid(CGameBoundSphereComponent))
+				{
+					this->m_GameBoundComponentID = 0u;
+				}
+				else if (typeid(*resultComponent) == typeid(CGameBoundBoxComponent))
+				{
+					this->m_GameBoundComponentID = 0u;
+				}
 				delete resultComponent;
 				this->m_Components.erase(component->GetUniqueID());
 			}
@@ -631,6 +646,14 @@ void CGameObject::RemoveComponentByComponentID(const ULONGLONG& id)
 			{
 				this->m_MeshComponentID = 0u;
 			}
+			else if (typeid(*resultComponent) == typeid(CGameBoundSphereComponent))
+			{
+				this->m_GameBoundComponentID = 0u;
+			}
+			else if (typeid(*resultComponent) == typeid(CGameBoundBoxComponent))
+			{
+				this->m_GameBoundComponentID = 0u;
+			}
 			delete resultComponent;
 			this->m_Components.erase(id);
 		}
@@ -649,10 +672,11 @@ void CGameObject::RemoveComponents()
 		}
 		this->m_MeshComponentID = 0u;
 		this->m_MeshRendererComponentID = 0u;
+		this->m_GameBoundComponentID = 0u;
 		this->m_Components.clear();
 	}
 }
-const CBaseComponent* CGameObject::GetComponentByComponentID(const ULONGLONG& id)const
+CBaseComponent* CGameObject::GetComponentByComponentID(const ULONGLONG& id)const
 {
 	if (this->HasComponent())
 	{
@@ -699,6 +723,10 @@ BOOL CGameObject::HasMeshComponent()const
 BOOL CGameObject::HasMeshRendererComponent()const
 {
 	return (this->m_MeshRendererComponentID > 0u);
+}
+BOOL CGameObject::HasGameBoundComponent()const
+{
+	return (this->m_GameBoundComponentID > 0u);
 }
 BOOL CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)
 {

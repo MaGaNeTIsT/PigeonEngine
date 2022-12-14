@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
+#include "./CGameStructCommon.h"
 #include "./CGameObject.h"
 
 class CCamera : public CGameObject
@@ -21,31 +23,53 @@ public:
 	};
 	struct CFrustumPlane
 	{
+		CFrustumPlane() { ZeroMemory(this, sizeof(*this)); }
 		CustomType::Vector3 Plane[4];
 		CustomType::Vector3 Point[8];
 	};
 public:
-	CustomStruct::CRenderViewport	GetViewport() { return this->m_CameraInfo.Viewport; }
-	FLOAT							GetFov() { return this->m_CameraInfo.Fov; }
-	FLOAT							GetNear() { return this->m_CameraInfo.Near; }
-	FLOAT							GetFar() { return this->m_CameraInfo.Far; }
+	CustomStruct::CRenderViewport		GetViewport()const { return this->m_CameraInfo.Viewport; }
+	FLOAT								GetFov()const { return this->m_CameraInfo.Fov; }
+	FLOAT								GetNear()const { return this->m_CameraInfo.Near; }
+	FLOAT								GetFar()const { return this->m_CameraInfo.Far; }
+	CustomStruct::CCullingFrustumInfo	PrepareTempFrustumInfo()const;
+public:
+	void	TransformPointFromWorldToView(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+	void	TransformPointFromViewToWorld(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+
+	/*
+	* Return value : if return false, the point is out of screen coord, else in screen.
+	* Params input : specific space position of the point.
+	* Params output : [0.f, screen max] range of screen coord which has anchor(zero point) in left top of RECT.
+	*/
+	void	TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const;
+	BOOL	TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+	void	TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const;
+	BOOL	TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+
+	/*
+	* Params input X Y : screen space position of the point (range : [0.f, screen max]).
+	* Params output : output space direction from camera to point. WARNING! output direction is NOT normalized.
+	*/
+	void	TransformScreenCoordToWorldPoint(const CustomType::Vector2& mousePos, CustomType::Vector3& output)const;
+	void	TransformScreenCoordToViewPoint(const CustomType::Vector2& mousePos, CustomType::Vector3& output)const;
 public:
 	//The culling plane's normals of Camera' frustum with (top, down, left, right) order.
-	std::vector<CustomType::Vector3> GetCullingPlane();
+	std::vector<CustomType::Vector3> GetCullingPlane()const;
 	//The culling plane's points of Camera' frustum with (0~3 near plane, 4~7 far plane) order.
-	std::vector<CustomType::Vector3> GetCullingPlanePoint();
+	std::vector<CustomType::Vector3> GetCullingPlanePoint()const;
 public:
-	CustomType::Matrix4x4	GetViewMatrix() { return m_ViewMatrix; }
-	CustomType::Matrix4x4	GetViewInverseMatrix() { return m_ViewInvMatrix; }
-	CustomType::Matrix4x4	GetProjectionMatrix() { return m_ProjectionMatrix; }
-	CustomType::Matrix4x4	GetProjectionInverseMatrix() { return m_ProjectionInvMatrix; }
-	CustomType::Matrix4x4	GetViewProjectionMatrix() { return m_ViewProjectionMatrix; }
-	CustomType::Matrix4x4	GetViewProjectionInverseMatrix() { return m_ViewProjectionInvMatrix; }
+	CustomType::Matrix4x4	GetViewMatrix()const { return m_ViewMatrix; }
+	CustomType::Matrix4x4	GetViewInverseMatrix()const { return m_ViewInvMatrix; }
+	CustomType::Matrix4x4	GetProjectionMatrix()const { return m_ProjectionMatrix; }
+	CustomType::Matrix4x4	GetProjectionInverseMatrix()const { return m_ProjectionInvMatrix; }
+	CustomType::Matrix4x4	GetViewProjectionMatrix()const { return m_ViewProjectionMatrix; }
+	CustomType::Matrix4x4	GetViewProjectionInverseMatrix()const { return m_ViewProjectionInvMatrix; }
 public:
-	CustomType::Vector2		GetViewportMinSize() { return m_ViewportMinSize; }
-	CustomType::Vector4		GetViewportSizeAndInvSize() { return m_ViewportSizeAndInvSize; }
-	CustomType::Vector2		GetDeviceZToViewZMulAdd() { return m_DeviceZToViewZMulAdd; }
-	CustomType::Vector4		GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize);
+	CustomType::Vector2		GetViewportMinSize()const { return m_ViewportMinSize; }
+	CustomType::Vector4		GetViewportSizeAndInvSize()const { return m_ViewportSizeAndInvSize; }
+	CustomType::Vector2		GetDeviceZToViewZMulAdd()const { return m_DeviceZToViewZMulAdd; }
+	CustomType::Vector4		GetScreenToViewParameters(const CustomType::Vector2Int& finalViewport, const CustomType::Vector2Int& bufferSize)const;
 protected:
 	//Calculate plane's normal of Camera' frustum with (top, down, left, right) order.
 	void			ReCalculateFrustumPlane(CFrustumPlane& plane, const FLOAT& fovAngleY, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane);

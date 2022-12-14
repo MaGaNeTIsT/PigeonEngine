@@ -5,6 +5,13 @@
 
 namespace CustomStruct
 {
+	class CRenderBaseSetting
+	{
+	public:
+		constexpr static FLOAT RenderBoundMinimum		= 5.f;
+		constexpr static FLOAT RenderBoundHalfMinimum	= 2.5f;
+	};
+
 	struct CColor
 	{
 		CColor() { r = 1.f; g = 1.f; b = 1.f; a = 1.f; }

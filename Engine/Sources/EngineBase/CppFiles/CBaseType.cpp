@@ -203,6 +203,11 @@ namespace CustomType
 	{
 		(*this) = v;
 	}
+	Vector2::Vector2(const Vector2Int& v)
+	{
+		this->m_Value.x = static_cast<FLOAT>(v.X());
+		this->m_Value.y = static_cast<FLOAT>(v.Y());
+	}
 	Vector2::Vector2(DirectX::CXMVECTOR v)
 	{
 		this->SetXMVECTOR(v);
@@ -220,6 +225,16 @@ namespace CustomType
 	{
 		this->m_Value.x = x;
 		this->m_Value.y = y;
+	}
+	Vector2::Vector2(const INT& v)
+	{
+		this->m_Value.x = static_cast<FLOAT>(v);
+		this->m_Value.y = static_cast<FLOAT>(v);
+	}
+	Vector2::Vector2(const INT& x, const INT& y)
+	{
+		this->m_Value.x = static_cast<FLOAT>(x);
+		this->m_Value.y = static_cast<FLOAT>(y);
 	}
 	Vector2::~Vector2()
 	{

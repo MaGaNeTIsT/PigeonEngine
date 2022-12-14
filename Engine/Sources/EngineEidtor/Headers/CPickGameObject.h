@@ -1,11 +1,9 @@
 #pragma once
 #include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CInput.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineGame/Headers/CGameObject.h"
 #include "../../EngineGame/Headers/CScene.h"
 #include "../../EngineGame/Headers/CGameObjectUtilty.h"
-#include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineGame/Headers/CCamera.h"
 
 class CPickMesh
@@ -50,7 +48,7 @@ public:
 	};
 
 
-	static CGameObject* GetPickedGameObjectsByBox()
+	static CGameObject* GetPickedGameObjectsByBox(CScene* scene)
 	{
 		if (CInput::Controller.IsLeftMouseButtonDown())
 		{
@@ -58,20 +56,20 @@ public:
 			//CInput::Controller.ReadRawDelta();
 			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 			CustomType::Vector2 mousePosVec(mousePos.first, mousePos.second);
-			std::vector<CGameObject*> listObject;
+			std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObject;
 			CGameObject* PickedGameObject = NULL;
-			listObject = GameObjectUtility::GetGameObjectsHasBoundingBox();
+			listObject = GameObjectUtility::GetGameObjectsHasBoundingBoxInView(scene);
 
 			std::vector<std::pair<CPickedMesh2D, CGameObject*>> pickedMesh2Des;
-			CCamera* camera = CManager::GetScene()->GetMainCamera<CCamera>();
+			CCamera* camera = scene->GetMainCamera<CCamera>();
 
 			for (const auto& obj : listObject)
 			{
-				if (obj != NULL)
+				if (obj.first != NULL && obj.second != NULL)
 				{
 					CustomType::Vector3 boundMin;
 					CustomType::Vector3 boundMax;
-					obj->GetRenderWorldAABBBoundingBox(boundMin, boundMax);
+					obj.first->GetRenderWorldAABBBoundingBox(boundMin, boundMax);
 
 					//Convert to Screen
 					CustomType::Vector4 posMin(boundMin.X(), boundMin.Y(), boundMin.Z(), 1.f);
@@ -87,7 +85,7 @@ public:
 						boundMin = (boundMin * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
 						boundMax = (boundMax * CustomType::Vector3(0.5f, -0.5f, 1.f) + CustomType::Vector3(0.5f, 0.5f, 0.f)) * CustomType::Vector3(vp.Width, vp.Height, 1.f) + CustomType::Vector3(vp.TopLeftX, vp.TopLeftY, 0.f);
 					}
-					pickedMesh2Des.push_back(std::pair(CPickedMesh2D(CustomType::Vector2(boundMin.X(), boundMin.Y()), CustomType::Vector2(boundMax.X(), boundMax.Y())), obj));
+					pickedMesh2Des.push_back(std::pair(CPickedMesh2D(CustomType::Vector2(boundMin.X(), boundMin.Y()), CustomType::Vector2(boundMax.X(), boundMax.Y())), obj.first));
 				}
 			}
 
@@ -108,7 +106,7 @@ public:
 		return NULL;
 	}
 
-	static CGameObject* GetPickedGameObjectsBySphere()
+	static CGameObject* GetPickedGameObjectsBySphere(CScene* scene)
 	{
 		if (CInput::Controller.IsLeftMouseButtonDown())
 		{
@@ -116,20 +114,20 @@ public:
 			//CInput::Controller.ReadRawDelta();
 			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
 			CustomType::Vector2 mousePosVec(mousePos.first, mousePos.second);
-			std::vector<CGameObject*> listObject;
+			std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObject;
 			CGameObject* PickedGameObject = NULL;
-			listObject = GameObjectUtility::GetGameObjectsHasBoundingBox();
+			listObject = GameObjectUtility::GetGameObjectsHasBoundingBoxInView(scene);
 
 			std::vector<std::pair<CPickMeshSphere2D, CGameObject*>> CPickMeshSphere2Des;
-			CCamera* camera = CManager::GetScene()->GetMainCamera<CCamera>();
+			CCamera* camera = scene->GetMainCamera<CCamera>();
 
 			for (const auto& obj : listObject)
 			{
-				if (obj != NULL)
+				if (obj.first != NULL && obj.second != NULL)
 				{
 					CustomType::Vector3 Center;
 					FLOAT Raidus;
-					obj->GetRenderWorldBoundingSphere(Center, Raidus);
+					obj.first->GetRenderWorldBoundingSphere(Center, Raidus);
 					CustomType::Vector3 Point = Center + camera->GetRightVector() * Raidus;
 
 					//Convert to Screen
@@ -149,7 +147,7 @@ public:
 						CustomType::Vector2 temp(CustomType::Vector2(Center.X(), Center.Y()) - CustomType::Vector2(Point.X(), Point.Y()));
 						Raidus = temp.Dot(temp);
 					}
-					CPickMeshSphere2Des.push_back(std::pair(CPickMeshSphere2D(CustomType::Vector2(Center.X(), Center.Y()), Raidus), obj));
+					CPickMeshSphere2Des.push_back(std::pair(CPickMeshSphere2D(CustomType::Vector2(Center.X(), Center.Y()), Raidus), obj.first));
 				}
 			}
 

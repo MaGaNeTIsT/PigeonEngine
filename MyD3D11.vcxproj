@@ -31,11 +31,11 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CTimer.h" />
-    <ClInclude Include="Engine\Sources\EngineEidtor\Headers\CPickMesh.h" />
+    <ClInclude Include="Engine\Sources\EngineEidtor\Headers\CPickGameObject.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBound.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBoundComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectUtilty.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameStructCommon.h" />
@@ -90,11 +90,11 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CTimer.cpp" />
-    <ClCompile Include="Engine\Sources\EngineEidtor\CppFiles\CPickMesh.cpp" />
+    <ClCompile Include="Engine\Sources\EngineEidtor\CppFiles\CPickGameObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBound.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBoundComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CObjectManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp" />

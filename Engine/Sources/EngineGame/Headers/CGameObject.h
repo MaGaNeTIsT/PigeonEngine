@@ -5,6 +5,7 @@
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CObjectManager.h"
 #include "./CComponent.h"
+#include "./CGameBoundComponent.h"
 
 class CGameObject : public CObjectBase
 {
@@ -122,10 +123,10 @@ public:
 	void						RemoveComponent(const CBaseComponent* component);
 	void						RemoveComponentByComponentID(const ULONGLONG& id);
 	void						RemoveComponents();
-	const CBaseComponent*		GetComponentByComponentID(const ULONGLONG& id)const;
+	CBaseComponent*				GetComponentByComponentID(const ULONGLONG& id)const;
 public:
 	template<class T>
-	const T* GetFirstComponentByType()const
+	T* GetFirstComponentByType()const
 	{
 		if (this->HasComponent())
 		{
@@ -133,30 +134,30 @@ public:
 			{
 				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
 				{
-					return (reinterpret_cast<const T*>(component.second));
+					return (reinterpret_cast<T*>(component.second));
 				}
 			}
 		}
 		return NULL;
 	}
 	template<class T>
-	std::vector<const T*> GetComponentListByType()const
+	std::vector<T*> GetComponentListByType()const
 	{
-		std::vector<const T*> componentList;
+		std::vector<T*> componentList;
 		if (this->HasComponent())
 		{
 			for (const auto& component : this->m_Components)
 			{
 				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
 				{
-					componentList.push_back(reinterpret_cast<const T*>(component.second));
+					componentList.push_back(reinterpret_cast<T*>(component.second));
 				}
 			}
 		}
 		return componentList;
 	}
 	template<class T>
-	const T* GetMeshComponent()const
+	T* GetMeshComponent()const
 	{
 		if (this->HasComponent() && this->HasMeshComponent())
 		{
@@ -165,14 +166,14 @@ public:
 			{
 				if (typeid(*(element->second)) == typeid(T))
 				{
-					return (reinterpret_cast<const T*>(element->second));
+					return (reinterpret_cast<T*>(element->second));
 				}
 			}
 		}
 		return NULL;
 	}
 	template<class T>
-	const T* GetMeshRendererComponent()const
+	T* GetMeshRendererComponent()const
 	{
 		if (this->HasComponent() && this->HasMeshRendererComponent())
 		{
@@ -181,7 +182,23 @@ public:
 			{
 				if (typeid(*(element->second)) == typeid(T))
 				{
-					return (reinterpret_cast<const T*>(element->second));
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
+	template<class T>
+	T* GetGameBoundComponent()const
+	{
+		if (this->HasComponent() && this->HasGameBoundComponent())
+		{
+			auto& element = this->m_Components.find(this->m_GameBoundComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
 				}
 			}
 		}
@@ -252,16 +269,34 @@ protected:
 		}
 		return NULL;
 	}
+	template<class T>
+	T* BaseGetGameBoundComponent()const
+	{
+		if (this->HasComponent() && this->HasGameBoundComponent())
+		{
+			auto& element = this->m_Components.find(this->m_GameBoundComponentID);
+			if (element != this->m_Components.end())
+			{
+				if (typeid(*(element->second)) == typeid(T))
+				{
+					return (reinterpret_cast<T*>(element->second));
+				}
+			}
+		}
+		return NULL;
+	}
 public:
 	BOOL	IsBelongComponent(const CBaseComponent* component)const;
 	BOOL	HasComponent()const;
 	BOOL	HasMeshComponent()const;
 	BOOL	HasMeshRendererComponent()const;
+	BOOL	HasGameBoundComponent()const;
 protected:
 	BOOL	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component);
 protected:
 	ULONGLONG								m_MeshComponentID;
 	ULONGLONG								m_MeshRendererComponentID;
+	ULONGLONG								m_GameBoundComponentID;
 	std::map<ULONGLONG, CBaseComponent*>	m_Components;
 public:
 	const BOOL&		IsActive()const;
@@ -282,6 +317,5 @@ public:
 #endif
 public:
 	CGameObject();
-	CGameObject(const CGameObject& obj);
 	virtual ~CGameObject();
 };
