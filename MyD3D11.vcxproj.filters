@@ -312,6 +312,9 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBoundComponent.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Sources\Development\Headers\CReadFileString.h">
+      <Filter>Engine\Sources\Development\Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -469,6 +472,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBoundComponent.cpp">
       <Filter>Engine\Sources\EngineGame\CppFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CReadFileString.cpp">
+      <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -168,7 +168,7 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		BOOL showDebugFabric = FALSE;
+		BOOL showDebugFabric = TRUE;
 
 		if (showDebugFabric)
 		{
