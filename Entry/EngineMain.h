@@ -32,6 +32,9 @@
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
 
+#define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT>(sizeof(_ARR) / sizeof(*(_ARR))))
+#define ENGINE_NOT_EXIST_STRING								("Engine_Not_Exist")
+
 #define ENGINE_SCREEN_WIDTH									(1600)
 #define ENGINE_SCREEN_HEIGHT								(900)
 

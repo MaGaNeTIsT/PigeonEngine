@@ -158,6 +158,12 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 void CScene::Init()
 {
 	{
+		CReadMaterialParamsFile readMaterialFile;
+		readMaterialFile.ReadFile("./Engine/Assets/Development/MaterialConfigs/test.mat_tex_cfg");
+		int a = 0;
+	}
+
+	{
 		CCamera* mainCamera = this->AddCamera<CCamera>();
 		CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);

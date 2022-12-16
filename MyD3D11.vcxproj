@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CReadFileString.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CKeyboard.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CMouse.h" />
@@ -80,7 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CReadFileString.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CKeyboard.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CMouse.cpp" />
