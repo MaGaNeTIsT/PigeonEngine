@@ -86,6 +86,7 @@ constexpr UINT CReadMaterialParamsFile::_PathStringLengthMax;
 CReadMaterialParamsFile::CReadMaterialParamsFile()
 {
 	this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE] = ENGINE_NOT_EXIST_STRING;
+	this->m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_NONE] = ENGINE_NOT_EXIST_STRING;
 	this->InitAllPath();
 }
 CReadMaterialParamsFile::~CReadMaterialParamsFile()
@@ -167,27 +168,6 @@ void CReadMaterialParamsFile::ReadFile(const std::string& fullPath)
 	this->InitAllPath();
 
 	CTempFileReader reader(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileReader* const tempReader)->BOOL {
-#if 0
-		CHAR tempProp[CReadMaterialParamsFile::_PropertyStringLengthMax];
-		CHAR tempPath[CReadMaterialParamsFile::_PathStringLengthMax];
-		while (fileStream >> tempProp)
-		{
-			for (UINT i = (FileMaterialTextureParamsType::FMPT_NONE + 1); i < FileMaterialTextureParamsType::FMPT_COUNT; i++)
-			{
-				const std::string& propertyName = _StaticTextures[i];
-				if (::_strnicmp(tempProp, propertyName.c_str(), CReadMaterialParamsFile::_PropertyStringLengthMax) != 0)
-				{
-					continue;
-				}
-				if (!(fileStream >> tempPath))
-				{
-					return FALSE;
-				}
-				this->SetTypePath(static_cast<FileMaterialTextureParamsType>(i), tempPath);
-				break;
-			}
-		}
-#else
 		CHAR tempLine[CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax];
 		while (fileStream.getline(tempLine, CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax))
 		{
@@ -205,12 +185,25 @@ void CReadMaterialParamsFile::ReadFile(const std::string& fullPath)
 					{
 						break;
 					}
-					this->SetTypePath(static_cast<FileMaterialTextureParamsType>(i), tempPath);
+					this->SetTexturePath(static_cast<FileMaterialTextureParamsType>(i), tempPath);
+					break;
+				}
+				for (UINT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+				{
+					const std::string& propertyName = _StaticProperties[i];
+					if (tempProp != propertyName)
+					{
+						continue;
+					}
+					if (tempPath.length() < 2)
+					{
+						break;
+					}
+					this->SetPropertyPath(static_cast<FileMaterialPropertyParamsType>(i), tempPath);
 					break;
 				}
 			}
 		}
-#endif
 		return TRUE; });
 }
 void CReadMaterialParamsFile::InitAllPath()
@@ -219,5 +212,9 @@ void CReadMaterialParamsFile::InitAllPath()
 	for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 	{
 		this->m_TexturePath[i] = _NotExistPath;
+	}
+	for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+	{
+		this->m_PropertyPath[i] = _NotExistPath;
 	}
 }
