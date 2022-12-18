@@ -13,6 +13,7 @@
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
+#include "../../EnginePhysics/Headers/CRigidBodyComponent.h"
 
 CPlane::CPlane()
 {
@@ -61,6 +62,10 @@ void CPlane::Init()
 	material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_Normal.tga", FALSE));
 	material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_R.tga", FALSE));
 	material->SetMetallicnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/WetChess/WetChess_M.tga", FALSE));
+
+	CRigidBodyComponent* RigidBodyComponent = new CRigidBodyComponent();
+	this->AddComponent(RigidBodyComponent);
+	this->m_RigidBodyComponent = RigidBodyComponent;
 }
 void CPlane::Update()
 {

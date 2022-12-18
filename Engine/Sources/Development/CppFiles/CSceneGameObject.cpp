@@ -6,14 +6,19 @@
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
+#include "../../EnginePhysics/Headers/CRigidBodyComponent.h"
+
 CSceneGameObject::CSceneGameObject()
 {
 	this->AddNewTransform();
 	{
 		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
 		CMeshComponent* meshComponent = new CMeshComponent();
+		CRigidBodyComponent* rigidBodyComponent = new CRigidBodyComponent(EMotionType::Dynamic,1u,TRUE);
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
+		this->AddComponent(rigidBodyComponent);
+		rigidBodyComponent->SetGameObject(this);
 		CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
@@ -50,6 +55,7 @@ CSceneGameObject::CSceneGameObject()
 #ifdef _DEVELOPMENT_EDITOR
 		this->m_MeshRendererComponent	= meshRendererComponent;
 		this->m_MeshComponent			= meshComponent;
+		this->m_RigidBodyComponent		= rigidBodyComponent;
 		this->m_CurrentMeshType			= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_PreviousMeshType		= CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE;
 		this->m_CurrentMaterialType		= DefaultMaterialType::DefaultMaterialType_DefaultLit;
@@ -88,6 +94,12 @@ CMeshComponent* CSceneGameObject::GetMeshComponentNotConst()
 {
 	return (this->m_MeshComponent);
 }
+
+CRigidBodyComponent* CSceneGameObject::GetRigidBodyComponentNotConst()
+{
+	return (this->m_RigidBodyComponent);
+}
+
 void CSceneGameObject::SelectedEditorUpdate()
 {
 	bool loadBaseModel = this->m_LoadBaseModel;

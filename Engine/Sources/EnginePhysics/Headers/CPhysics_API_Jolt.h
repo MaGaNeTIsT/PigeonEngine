@@ -201,32 +201,32 @@ public:
 	virtual void Tick(const float cDeltaTime) override;
 	virtual void Uninit() = 0;
 
-	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings();
-	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(ShapeSettings* inSettings,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
-	JPH_INLINE BodyCreationSettings* CreateBodyCreationSettings(Shape* inShape,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
+	JPH::BodyCreationSettings* CreateBodyCreationSettings();
+	JPH::BodyCreationSettings* CreateBodyCreationSettings(ShapeSettings* inSettings,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
+	JPH::BodyCreationSettings* CreateBodyCreationSettings(Shape* inShape,const Vec3& inPosition,const Quat& inRotation,EMotionType MotionType,ObjectLayer ObjectLayer);
 	//Use CreateXXXShape funtions when you dont want to change params,like static object or some object cant be changed.
-	JPH_INLINE BoxShape* CreateBoxShape(const Vec3& inHalfExtent, float ConvexRadius);
-	JPH_INLINE BoxShapeSettings* CreateBoxShapeSettings(const Vec3& inHalfExtent, float ConvexRadius);
-	JPH_INLINE SphereShape* CreateSphereShape(float Radius);
-	JPH_INLINE SphereShapeSettings* CreateSphereShapeSettings(float Radius);
-	JPH_INLINE TriangleShapeSettings* CreateTriangleShapeSettings(const Vec3& inV1, const Vec3& inV2, const Vec3& inV3, float ConvexRadius);
-	JPH_INLINE CapsuleShapeSettings* CreateCapsuleShapeSettings(float HalfHeightOfCylinder,float Radius);
-	JPH_INLINE CylinderShapeSettings* CreateCylinderShapeSettings(float HalfHeight, float Radius, float ConvexRadius);
-	JPH_INLINE ConvexHullShapeSettings* CreateConvexHullShapeSettings(const vector<Vec3>& inPoints, float MaxConvexRadius);
-	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Triangle>& inTriangles);
-	JPH_INLINE MeshShapeSettings* CreateMeshShapeSettings(const vector<Vec3>& inVertices, const vector<IndexedTriangle>& inTriangles);
-	JPH_INLINE HeightFieldShapeSettings* CreateHeightFieldShapeSettings(const float* inSamples, const Vec3& inOffset, const Vec3& inScale, uint32_t SampleCount);
-	JPH_INLINE TaperedCapsuleShapeSettings* CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius);
+	BoxShape* CreateBoxShape(const Vec3& inHalfExtent, float ConvexRadius);
+	BoxShapeSettings* CreateBoxShapeSettings(const Vec3& inHalfExtent, float ConvexRadius);
+	SphereShape* CreateSphereShape(float Radius);
+	SphereShapeSettings* CreateSphereShapeSettings(float Radius);
+	TriangleShapeSettings* CreateTriangleShapeSettings(const Vec3& inV1, const Vec3& inV2, const Vec3& inV3, float ConvexRadius);
+	CapsuleShapeSettings* CreateCapsuleShapeSettings(float HalfHeightOfCylinder,float Radius);
+	CylinderShapeSettings* CreateCylinderShapeSettings(float HalfHeight, float Radius, float ConvexRadius);
+	ConvexHullShapeSettings* CreateConvexHullShapeSettings(const vector<Vec3>& inPoints, float MaxConvexRadius);
+	MeshShapeSettings* CreateMeshShapeSettings(const vector<Triangle>& inTriangles);
+	MeshShapeSettings* CreateMeshShapeSettings(const vector<Vec3>& inVertices, const vector<IndexedTriangle>& inTriangles);
+	HeightFieldShapeSettings* CreateHeightFieldShapeSettings(const float* inSamples, const Vec3& inOffset, const Vec3& inScale, uint32_t SampleCount);
+	TaperedCapsuleShapeSettings* CreateTaperedCapsuleShapeSettings(float HalfHeightOfTaperedCylinder, float TopRadius, float BottomRadius);
 	//CreateBody
-	JPH_INLINE BodyID CreateAndAddBody(const ULONGLONG& GameObjectId, const BodyCreationSettings* inBodyCreateSettings, EActivation Activation);
+	BodyID CreateAndAddBody(const ULONGLONG& GameObjectId, BodyCreationSettings* inBodyCreateSettings, EActivation Activation);
 	/// <summary>
 	/// try to create a body and return success or not
 	/// </summary>
 	/// <param name="inBodyCreateSettings">Body create settings input</param>
 	/// <param name="outBodyID">output body id</param>
 	/// <returns>true ,if create success</returns>
-	JPH_INLINE bool TryCreateBody(const BodyCreationSettings* inBodyCreateSettings, BodyID& outBodyID);
-	JPH_INLINE void AddBody(const ULONGLONG& GameObjectId, const BodyID& inBodyID, EActivation Activation);
+	bool TryCreateBody(BodyCreationSettings* inBodyCreateSettings, BodyID& outBodyID);
+	void AddBody(const ULONGLONG& GameObjectId, const BodyID& inBodyID, EActivation Activation);
 	/// <summary>
 	/// maybe unsafe.
 	/// </summary>
@@ -235,11 +235,14 @@ public:
 	JPH_INLINE BodyID GetBodyID(const ULONGLONG& GameObjectId);
 	JPH_INLINE JPH::Vec3 GetPosition(const BodyID& BodyId);
 	JPH_INLINE JPH::Quat GetRotation(const BodyID& BodyId);
+	JPH_INLINE void SetPosition(const BodyID& inBodyID, JPH::Vec3 inPosition, EActivation inActivationMode = EActivation::DontActivate);
+	JPH_INLINE void SetRoation(const BodyID& inBodyID, JPH::Quat inRotation, EActivation inActivationMode = EActivation::DontActivate);
 	JPH_INLINE void AddForce(const BodyID& inBodyID, JPH::Vec3 inForce);
 	JPH_INLINE void AddForce(const BodyID& inBodyID, JPH::Vec3 inForce, JPH::Vec3 inPoint);
 	JPH_INLINE void AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse); ///< Applied at center of mass
 	JPH_INLINE void AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse, JPH::Vec3 inPoint); ///< Applied at inPoint
-public:
+
+	JPH_INLINE void SetGravity(JPH::Vec3 inGravity);
 	CPhysics_API_Jolt();
 	virtual ~CPhysics_API_Jolt();
 

@@ -98,6 +98,7 @@ public:
 	virtual void	Uninit()		= 0;
 	virtual void	Update() {}
 	virtual void	FixedUpdate() {}
+protected:
 	virtual void	SetGameObjectHook(const class CGameObject* gameObject) {}
 #ifdef _DEVELOPMENT_EDITOR
 public:

@@ -118,12 +118,12 @@ void CManager::Init()
 		CManager::m_Manager->m_RenderPipeline = NULL;
 	}
 	CManager::m_Manager->m_RenderPipeline = new CRenderPipeline();
+	CPhysicsManager::GetPhysicsManager()->Init();
 	CManager::m_Manager->m_Scene = new CScene();
 	CManager::m_Manager->m_RenderPipeline->Init(CManager::m_Manager->m_Scene, CManager::m_Manager->m_WindowSize);
 	CManager::m_Manager->m_Scene->Init();
 	CManager::m_Manager->m_RenderPipeline->PostInit();
 	CManager::m_Manager->m_GameTimer->Reset();
-	GetPhysicsManager()->Init();
 }
 void CManager::Uninit()
 {
@@ -148,7 +148,7 @@ void CManager::Uninit()
 
 	CRenderDevice::Uninit();
 
-	GetPhysicsManager()->Uninit();
+	CPhysicsManager::GetPhysicsManager()->Uninit();
 }
 void CManager::Update()
 {
@@ -161,7 +161,7 @@ void CManager::Update()
 void CManager::FixedUpdate()
 {
 	CManager::m_Manager->m_Scene->FixedUpdate();
-	GetPhysicsManager()->Tick(static_cast <FLOAT>(1) / static_cast<FLOAT>(ENGINE_FIXED_UPDATE_FRAME));
+	CPhysicsManager::GetPhysicsManager()->Tick(static_cast <FLOAT>(1) / static_cast<FLOAT>(ENGINE_FIXED_UPDATE_FRAME));
 }
 void CManager::Draw()
 {

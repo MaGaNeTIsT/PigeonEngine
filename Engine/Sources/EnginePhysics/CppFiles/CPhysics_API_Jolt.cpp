@@ -4,14 +4,14 @@
 #include "../Headers/CPhysicsUtility.h"
 
 
-CPhysics_API_Jolt::CPhysics_API_Jolt():
-	m_BodyInterface(nullptr),
-	m_PhysicsSystem(nullptr),
-	m_TempAllocator(nullptr),
-	m_JobSystem(nullptr),
-	m_BPLayerInterface(nullptr),
-	m_BodyActivationListener(nullptr),
-	m_ContactListener(nullptr)
+CPhysics_API_Jolt::CPhysics_API_Jolt()/*:*/
+	//m_BodyInterface(nullptr),
+	//m_PhysicsSystem(nullptr),
+	//m_TempAllocator(nullptr),
+	//m_JobSystem(nullptr),
+	//m_BPLayerInterface(nullptr),
+	//m_BodyActivationListener(nullptr),
+	//m_ContactListener(nullptr)
 {
 	
 }
@@ -28,8 +28,8 @@ CPhysics_API_Jolt::~CPhysics_API_Jolt()
 	{
 		if(bodyCreateSettings.second->GetShapeSettings())
 			delete bodyCreateSettings.second->GetShapeSettings();
-		if (bodyCreateSettings.second->GetShape())
-			delete bodyCreateSettings.second->GetShape();
+		//if (bodyCreateSettings.second->GetShape())
+		//	delete bodyCreateSettings.second->GetShape();
 		delete bodyCreateSettings.second;
 	}
 
@@ -84,10 +84,20 @@ void CPhysics_API_Jolt::Init()
 	m_PhysicsSystem->SetContactListener(m_ContactListener);
 
 	m_BodyInterface = &m_PhysicsSystem->GetBodyInterface();
+
+	m_PhysicsSystem->SetGravity(JPH::Vec3(0, -980.f, 0));
 }
 
 void CPhysics_API_Jolt::Tick(const float cDeltaTime)
 {
+	for (const auto& obj : m_Bodys)
+	{
+		CGameObject* gameObject = CManager::GetScene()->GetGameObjectById(obj.first);
+
+		SetPosition(obj.second,PhysicsUtility::Convert(gameObject->GetWorldPosition()));
+		SetRoation(obj.second,PhysicsUtility::Convert(gameObject->GetWorldRotation()));
+	}
+
 	m_PhysicsSystem->Update(cDeltaTime, cCollisionSteps, cIntegrationSubSteps, m_TempAllocator, m_JobSystem);
 
 	for (const auto& obj : m_Bodys)
@@ -98,12 +108,12 @@ void CPhysics_API_Jolt::Tick(const float cDeltaTime)
 	}
 }
 
-BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings()
+JPH::BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings()
 {
 	auto bodyCreationSettings = new JPH::BodyCreationSettings();
 	return bodyCreationSettings;
 }
-BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings(ShapeSettings* settings,
+JPH::BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings(ShapeSettings* settings,
 	const Vec3& position,
 	const Quat& rotation,
 	EMotionType motionType,
@@ -118,7 +128,7 @@ BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings(ShapeSetting
 	);
 	return bodyCreationSettings;
 }
-BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings(Shape* shape,
+JPH::BodyCreationSettings* CPhysics_API_Jolt::CreateBodyCreationSettings(Shape* shape,
 	const Vec3& position,
 	const Quat& rotation,
 	EMotionType motionType,
@@ -189,16 +199,15 @@ TaperedCapsuleShapeSettings* CPhysics_API_Jolt::CreateTaperedCapsuleShapeSetting
 	return new TaperedCapsuleShapeSettings(HalfHeightOfTaperedCylinder, TopRadius, BottomRadius);
 }
 
-BodyID CPhysics_API_Jolt::CreateAndAddBody(const ULONGLONG& GameObjectId, const BodyCreationSettings* inBodyCreateSettings, EActivation Activation)
+BodyID CPhysics_API_Jolt::CreateAndAddBody(const ULONGLONG& GameObjectId, BodyCreationSettings* inBodyCreateSettings, EActivation Activation)
 {
 	BodyID bodyID = m_BodyInterface->CreateAndAddBody(*inBodyCreateSettings, Activation);
-	m_BodyInterface->AddBody(bodyID, Activation);
 	m_Bodys.insert_or_assign(GameObjectId, bodyID);
 	m_BodyCreationSettings.insert_or_assign(bodyID, inBodyCreateSettings);
 	return bodyID;
 }
 
-bool CPhysics_API_Jolt::TryCreateBody(const BodyCreationSettings* inBodyCreateSettings,BodyID& outBodyID)
+bool CPhysics_API_Jolt::TryCreateBody(BodyCreationSettings* inBodyCreateSettings, BodyID& outBodyID)
 {
 	Body* body = m_BodyInterface->CreateBody(*inBodyCreateSettings);
 	if (body)
@@ -230,20 +239,35 @@ JPH::Quat CPhysics_API_Jolt::GetRotation(const BodyID& BodyId)
 	return m_BodyInterface->GetRotation(BodyId);
 }
 
-JPH_INLINE void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce)
+void CPhysics_API_Jolt::SetPosition(const BodyID& inBodyID, JPH::Vec3 inPosition, EActivation inActivationMode)
+{
+	m_BodyInterface->SetPosition(inBodyID, inPosition, inActivationMode);
+}
+
+void CPhysics_API_Jolt::SetRoation(const BodyID& inBodyID, JPH::Quat inRotation, EActivation inActivationMode)
+{
+	m_BodyInterface->SetRotation(inBodyID, inRotation, inActivationMode);
+}
+
+void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce)
 {
 	m_BodyInterface->AddForce(inBodyID,inForce);
 }
-JPH_INLINE void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce, JPH::Vec3 inPoint)
+void CPhysics_API_Jolt::AddForce(const BodyID& inBodyID, JPH::Vec3 inForce, JPH::Vec3 inPoint)
 {
 	m_BodyInterface->AddForce(inBodyID, inForce, inPoint);
 }
 
-JPH_INLINE void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse)
+void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse)
 {
 	m_BodyInterface->AddImpulse(inBodyID, inImpulse);
 }
-JPH_INLINE void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse, JPH::Vec3 inPoint)
+void CPhysics_API_Jolt::AddImpulse(const BodyID& inBodyID, JPH::Vec3 inImpulse, JPH::Vec3 inPoint)
 {
 	m_BodyInterface->AddImpulse(inBodyID, inImpulse, inPoint);
+}
+
+void CPhysics_API_Jolt::SetGravity(JPH::Vec3 inGravity)
+{
+	m_PhysicsSystem->SetGravity(inGravity);
 }
