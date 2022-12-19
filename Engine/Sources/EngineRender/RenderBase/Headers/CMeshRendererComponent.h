@@ -20,7 +20,7 @@ public:
 	BOOL	HasConstantBuffer()const { return (this->m_ConstantBuffer != nullptr); }
 public:
 	CMaterialBase::MaterialType		GetMaterialType()const;
-	const CMaterialBase*			GetMaterial()const;
+	CMaterialBase*					GetMaterial()const;
 public:
 	template<class T>
 	T* AddMaterial(const BOOL& needInit = FALSE)

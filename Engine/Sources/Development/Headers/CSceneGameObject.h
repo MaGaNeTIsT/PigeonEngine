@@ -35,6 +35,8 @@ protected:
 	CHAR							m_LoadCustomModelPath[512];
 	INT								m_CurrentMeshType;
 	INT								m_PreviousMeshType;
+	CHAR							m_SaveMaterialPath[512];
+	CHAR							m_LoadMaterialPath[512];
 #endif
 public:
 	CSceneGameObject();

@@ -145,6 +145,34 @@ void CClothMaterial::SetSubsurfaceTexture(CTexture2D* tex)
 		this->m_SubsurfaceTexture = tex;
 	}
 }
+CTexture2D* CClothMaterial::GetNormalTexture()const
+{
+	return (this->m_NormalTexture);
+}
+CTexture2D* CClothMaterial::GetAlbedoTexture()const
+{
+	return (this->m_AlbedoTexture);
+}
+CTexture2D* CClothMaterial::GetEmissiveTexture()const
+{
+	return (this->m_EmissiveTexture);
+}
+CTexture2D* CClothMaterial::GetSheenColorTexture()const
+{
+	return (this->m_SheenColorTexture);
+}
+CTexture2D* CClothMaterial::GetRoughnessTexture()const
+{
+	return (this->m_RoughnessTexture);
+}
+CTexture2D* CClothMaterial::GetAmbientOcclusionTexture()const
+{
+	return (this->m_AmbientOcclusionTexture);
+}
+CTexture2D* CClothMaterial::GetSubsurfaceTexture()const
+{
+	return (this->m_SubsurfaceTexture);
+}
 void CClothMaterial::SetIsGlossyRoughness(const BOOL& v)
 {
 	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
@@ -187,6 +215,42 @@ void CClothMaterial::SetSubsurfaceColor(const CustomStruct::CColor& clr)
 	renderParams->SubsurfaceColor.x = clr.r;
 	renderParams->SubsurfaceColor.y = clr.g;
 	renderParams->SubsurfaceColor.z = clr.b;
+}
+BOOL CClothMaterial::GetIsGlossyRoughness()const
+{
+	return (this->m_IsGlossy);
+}
+FLOAT CClothMaterial::GetRoughness()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT r = renderParams->BaseColorRoughness.w;
+	return r;
+}
+FLOAT CClothMaterial::GetAmbientOcclusion()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT a = renderParams->EmissiveAmbientOcclusion.w;
+	return a;
+}
+CustomStruct::CColor CClothMaterial::GetBaseColor()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
+}
+CustomStruct::CColor CClothMaterial::GetEmissiveColor()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->EmissiveAmbientOcclusion.x, renderParams->EmissiveAmbientOcclusion.y, renderParams->EmissiveAmbientOcclusion.z));
+}
+CustomStruct::CColor CClothMaterial::GetSheenColor()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->SheenColorIsGlossy.x, renderParams->SheenColorIsGlossy.y, renderParams->SheenColorIsGlossy.z));
+}
+CustomStruct::CColor CClothMaterial::GetSubsurfaceColor()const
+{
+	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->SubsurfaceColor.x, renderParams->SubsurfaceColor.y, renderParams->SubsurfaceColor.z));
 }
 void CClothMaterial::Init()
 {
@@ -449,6 +513,14 @@ void CClothAnisotropicMaterial::SetAnisotropyDirectionTexture(CTexture2D* tex)
 		this->m_AnisotropyDirectionTexture = tex;
 	}
 }
+CTexture2D* CClothAnisotropicMaterial::GetAnisotropyStrengthTexture()const
+{
+	return (this->m_AnisotropyStrengthTexture);
+}
+CTexture2D* CClothAnisotropicMaterial::GetAnisotropyDirectionTexture()const
+{
+	return (this->m_AnisotropyDirectionTexture);
+}
 void CClothAnisotropicMaterial::SetAnisotropyStrength(const FLOAT& v)
 {
 	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
@@ -501,6 +573,54 @@ void CClothAnisotropicMaterial::SetSubsurfaceColor(const CustomStruct::CColor& c
 	renderParams->SubsurfaceColor.x = clr.r;
 	renderParams->SubsurfaceColor.y = clr.g;
 	renderParams->SubsurfaceColor.z = clr.b;
+}
+FLOAT CClothAnisotropicMaterial::GetAnisotropyStrength()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT s = renderParams->AnisotropyStrengthDirection.x;
+	return s;
+}
+FLOAT CClothAnisotropicMaterial::GetAnisotropyDirection()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT s = renderParams->AnisotropyStrengthDirection.y;
+	return s;
+}
+BOOL CClothAnisotropicMaterial::GetIsGlossyRoughness()const
+{
+	return (this->m_IsGlossy);
+}
+FLOAT CClothAnisotropicMaterial::GetRoughness()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT r = renderParams->BaseColorRoughness.w;
+	return r;
+}
+FLOAT CClothAnisotropicMaterial::GetAmbientOcclusion()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT a = renderParams->EmissiveAmbientOcclusion.w;
+	return a;
+}
+CustomStruct::CColor CClothAnisotropicMaterial::GetBaseColor()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
+}
+CustomStruct::CColor CClothAnisotropicMaterial::GetEmissiveColor()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->EmissiveAmbientOcclusion.x, renderParams->EmissiveAmbientOcclusion.y, renderParams->EmissiveAmbientOcclusion.z));
+}
+CustomStruct::CColor CClothAnisotropicMaterial::GetSheenColor()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->SheenColorIsGlossy.x, renderParams->SheenColorIsGlossy.y, renderParams->SheenColorIsGlossy.z));
+}
+CustomStruct::CColor CClothAnisotropicMaterial::GetSubsurfaceColor()const
+{
+	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->SubsurfaceColor.x, renderParams->SubsurfaceColor.y, renderParams->SubsurfaceColor.z));
 }
 void CClothAnisotropicMaterial::Init()
 {

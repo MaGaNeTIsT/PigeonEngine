@@ -77,6 +77,9 @@ CSceneGameObject::CSceneGameObject()
 		this->m_LoadBaseModel			= TRUE;
 		this->m_LoadCustomModelPath[0] = 'N'; this->m_LoadCustomModelPath[1] = 'U'; this->m_LoadCustomModelPath[2] = 'L'; this->m_LoadCustomModelPath[3] = 'L';
 		this->m_LoadCustomModelPath[4] = '\0';
+
+		strncpy_s(this->m_SaveMaterialPath, 512, "./Engine/Assets/Development/MaterialConfigs/", 45);
+		strncpy_s(this->m_LoadMaterialPath, 512, "./Engine/Assets/Development/MaterialConfigs/", 45);
 #endif
 	}
 }
@@ -113,6 +116,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 	bool loadBaseModel = this->m_LoadBaseModel;
 	BOOL needLoadMesh = FALSE;
 	BOOL needLoadMaterial = FALSE;
+	BOOL needSaveMaterialFile = FALSE;
 
 	//Editor body
 	{
@@ -210,6 +214,11 @@ void CSceneGameObject::SelectedEditorUpdate()
 					if (ImGui::Button("ApplyMaterial"))
 					{
 						needLoadMaterial = TRUE;
+					}
+					ImGui::InputText("SaveMaterialPath", this->m_SaveMaterialPath, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
+					if (ImGui::Button("SaveMaterial"))
+					{
+						needSaveMaterialFile = TRUE;
 					}
 					ImGui::TreePop();
 				}
@@ -319,6 +328,20 @@ void CSceneGameObject::SelectedEditorUpdate()
 				case DefaultMaterialType::DefaultMaterialType_ClothAnisotropic:
 					this->m_MeshRendererComponent->AddMaterial<CClothAnisotropicMaterial>(TRUE);
 					break;
+				}
+			}
+
+			if (needSaveMaterialFile)
+			{
+				CDefaultLitMaterial* material = reinterpret_cast<CDefaultLitMaterial*>(this->m_MeshRendererComponent->GetMaterial());
+				if (material != nullptr)
+				{
+					CReadWriteMaterialParamsFile rwMaterialFile;
+					std::string savePath(this->m_SaveMaterialPath);
+					std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
+						std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
+						std::to_string(typeid(*material).hash_code()) + '_' + std::to_string(material->GetUniqueID());
+					rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
 				}
 			}
 		}

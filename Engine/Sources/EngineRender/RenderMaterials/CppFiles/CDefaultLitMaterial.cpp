@@ -144,6 +144,34 @@ void CDefaultLitMaterial::SetReflectanceTexture(class CTexture2D* tex)
 		this->m_ReflectanceTexture = tex;
 	}
 }
+CTexture2D* CDefaultLitMaterial::GetNormalTexture()const
+{
+	return (this->m_NormalTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetAlbedoTexture()const
+{
+	return (this->m_AlbedoTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetEmissiveTexture()const
+{
+	return (this->m_EmissiveTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetRoughnessTexture()const
+{
+	return (this->m_RoughnessTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetMetallicnessTexture()const
+{
+	return (this->m_MetallicnessTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetAmbientOcclusionTexture()const
+{
+	return (this->m_AmbientOcclusionTexture);
+}
+CTexture2D* CDefaultLitMaterial::GetReflectanceTexture()const
+{
+	return (this->m_ReflectanceTexture);
+}
 void CDefaultLitMaterial::SetIsGlossyRoughness(const BOOL& v)
 {
 	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
@@ -182,6 +210,44 @@ void CDefaultLitMaterial::SetEmissiveColor(const CustomStruct::CColor& clr)
 	renderParams->EmissiveAmbientOcclusion.x = clr.r;
 	renderParams->EmissiveAmbientOcclusion.y = clr.g;
 	renderParams->EmissiveAmbientOcclusion.z = clr.b;
+}
+BOOL CDefaultLitMaterial::GetIsGlossyRoughness()const
+{
+	return (this->m_IsGlossy);
+}
+FLOAT CDefaultLitMaterial::GetRoughness()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT r = renderParams->BaseColorRoughness.w;
+	return r;
+}
+FLOAT CDefaultLitMaterial::GetMetallicness()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT m = renderParams->MetallicnessReflectanceIsGlossy.x;
+	return m;
+}
+FLOAT CDefaultLitMaterial::GetReflectance()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT r = renderParams->MetallicnessReflectanceIsGlossy.y;
+	return r;
+}
+FLOAT CDefaultLitMaterial::GetAmbientOcclusion()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT a = renderParams->EmissiveAmbientOcclusion.w;
+	return a;
+}
+CustomStruct::CColor CDefaultLitMaterial::GetBaseColor()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	 return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
+}
+CustomStruct::CColor CDefaultLitMaterial::GetEmissiveColor()const
+{
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->EmissiveAmbientOcclusion.x, renderParams->EmissiveAmbientOcclusion.y, renderParams->EmissiveAmbientOcclusion.z));
 }
 void CDefaultLitMaterial::Init()
 {
@@ -400,23 +466,17 @@ void CDefaultLitMaterial::SelectedEditorUpdate()
 CAnisotropicMaterial::CAnisotropicMaterial() : CDefaultLitMaterial(typeid(CAnisotropicMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CAnisotropicMaterial::RenderParams), _GDefaultLitMaterialInputLayout, 4u, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_VS, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_PS)
 {
 #ifdef _DEVELOPMENT_EDITOR
-	this->m_AnisotropySelect			= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
-	this->m_AnisotropyDirectionSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP;
-	this->m_AnisotropyVerticalSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
-	this->m_AnisotropyHorizontalSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
+	this->m_AnisotropyStrengthSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
+	this->m_AnisotropyDirectionSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;
 	{
 		auto initPathChar = [](CHAR* path, const std::string& str) {
 			strcpy_s(path, 512, str.c_str()); };
-		initPathChar(this->m_AnisotropyPath, "Default White");
-		initPathChar(this->m_AnisotropyDirectionPath, "Default Bump");
-		initPathChar(this->m_AnisotropyVerticalPath, "Default White");
-		initPathChar(this->m_AnisotropyHorizontalPath, "Default White");
+		initPathChar(this->m_AnisotropyStrengthPath, "Default White");
+		initPathChar(this->m_AnisotropyDirectionPath, "Default White");
 	}
 #endif
-	this->m_AnisotropyTexture			= NULL;
+	this->m_AnisotropyStrengthTexture	= NULL;
 	this->m_AnisotropyDirectionTexture	= NULL;
-	this->m_AnisotropyVerticalTexture	= NULL;
-	this->m_AnisotropyHorizontalTexture	= NULL;
 
 	if (this->m_RenderParams != nullptr)
 	{
@@ -427,8 +487,8 @@ CAnisotropicMaterial::CAnisotropicMaterial() : CDefaultLitMaterial(typeid(CAniso
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->BaseColorRoughness						= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
 	renderParams->EmissiveAmbientOcclusion					= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
-	renderParams->MetallicnessReflectanceIsGlossyAnisotropy = DirectX::XMFLOAT4(0.f, 1.f, 0.f, 0.5f);
-	renderParams->AnisotropyVerticalHorizontal				= DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	renderParams->MetallicnessReflectanceIsGlossy			= DirectX::XMFLOAT4(0.f, 1.f, 0.f, 0.f);
+	renderParams->AnisotropyStrengthDirection				= DirectX::XMFLOAT4(0.5f, 1.f, 0.f, 0.f);
 }
 CAnisotropicMaterial::~CAnisotropicMaterial()
 {
@@ -438,11 +498,11 @@ CAnisotropicMaterial::~CAnisotropicMaterial()
 		this->m_RenderParams = nullptr;
 	}
 }
-void CAnisotropicMaterial::SetAnisotropyTexture(CTexture2D* tex)
+void CAnisotropicMaterial::SetAnisotropyStrengthTexture(CTexture2D* tex)
 {
 	if (tex != NULL)
 	{
-		this->m_AnisotropyTexture = tex;
+		this->m_AnisotropyStrengthTexture = tex;
 	}
 }
 void CAnisotropicMaterial::SetAnisotropyDirectionTexture(CTexture2D* tex)
@@ -452,39 +512,28 @@ void CAnisotropicMaterial::SetAnisotropyDirectionTexture(CTexture2D* tex)
 		this->m_AnisotropyDirectionTexture = tex;
 	}
 }
-void CAnisotropicMaterial::SetAnisotropyVerticalTexture(CTexture2D* tex)
+CTexture2D* CAnisotropicMaterial::GetAnisotropyStrengthTexture()const
 {
-	if (tex != NULL)
-	{
-		this->m_AnisotropyVerticalTexture = tex;
-	}
+	return (this->m_AnisotropyStrengthTexture);
 }
-void CAnisotropicMaterial::SetAnisotropyHorizontalTexture(CTexture2D* tex)
+CTexture2D* CAnisotropicMaterial::GetAnisotropyDirectionTexture()const
 {
-	if (tex != NULL)
-	{
-		this->m_AnisotropyHorizontalTexture = tex;
-	}
+	return (this->m_AnisotropyDirectionTexture);
 }
-void CAnisotropicMaterial::SetAnisotropyVertical(const FLOAT& v)
+void CAnisotropicMaterial::SetAnisotropyStrength(const FLOAT& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->AnisotropyVerticalHorizontal.x = v;
+	renderParams->AnisotropyStrengthDirection.x = v;
 }
-void CAnisotropicMaterial::SetAnisotropyHorizontal(const FLOAT& v)
+void CAnisotropicMaterial::SetAnisotropyDirection(const FLOAT& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->AnisotropyVerticalHorizontal.y = v;
-}
-void CAnisotropicMaterial::SetAnisotropy(const FLOAT& v)
-{
-	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->MetallicnessReflectanceIsGlossyAnisotropy.w = v;
+	renderParams->AnisotropyStrengthDirection.y = v;
 }
 void CAnisotropicMaterial::SetIsGlossyRoughness(const BOOL& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->MetallicnessReflectanceIsGlossyAnisotropy.z = v ? 1.f : 0.f;
+	renderParams->MetallicnessReflectanceIsGlossy.z = v ? 1.f : 0.f;
 }
 void CAnisotropicMaterial::SetRoughness(const FLOAT& v)
 {
@@ -494,12 +543,12 @@ void CAnisotropicMaterial::SetRoughness(const FLOAT& v)
 void CAnisotropicMaterial::SetMetallicness(const FLOAT& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->MetallicnessReflectanceIsGlossyAnisotropy.x = v;
+	renderParams->MetallicnessReflectanceIsGlossy.x = v;
 }
 void CAnisotropicMaterial::SetReflectance(const FLOAT& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
-	renderParams->MetallicnessReflectanceIsGlossyAnisotropy.y = v;
+	renderParams->MetallicnessReflectanceIsGlossy.y = v;
 }
 void CAnisotropicMaterial::SetAmbientOcclusion(const FLOAT& v)
 {
@@ -520,6 +569,25 @@ void CAnisotropicMaterial::SetEmissiveColor(const CustomStruct::CColor& clr)
 	renderParams->EmissiveAmbientOcclusion.y = clr.g;
 	renderParams->EmissiveAmbientOcclusion.z = clr.b;
 }
+FLOAT CAnisotropicMaterial::GetAnisotropyStrength()const
+{
+	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT s = renderParams->AnisotropyStrengthDirection.x;
+	return s;
+}
+FLOAT CAnisotropicMaterial::GetAnisotropyDirection()const
+{
+	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT d = renderParams->AnisotropyStrengthDirection.y;
+	return d;
+}
+BOOL CAnisotropicMaterial::GetIsGlossyRoughness()const;
+FLOAT CAnisotropicMaterial::GetRoughness()const;
+FLOAT CAnisotropicMaterial::GetMetallicness()const;
+FLOAT CAnisotropicMaterial::GetReflectance()const;
+FLOAT CAnisotropicMaterial::GetAmbientOcclusion()const;
+CustomStruct::CColor CAnisotropicMaterial::GetBaseColor()const;
+CustomStruct::CColor CAnisotropicMaterial::GetEmissiveColor()const;
 void CAnisotropicMaterial::Init()
 {
 	CDefaultLitMaterial::Init();

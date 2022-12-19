@@ -50,7 +50,7 @@ public:
 	virtual ~CMaterialBase();
 };
 
-class CReadMaterialParamsFile
+class CReadWriteMaterialParamsFile
 {
 public:
 	enum FileMaterialTextureParamsType
@@ -91,6 +91,9 @@ public:
 		FMPPT_COUNT
 	};
 public:
+	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CDefaultLitMaterial* mat);
+	void	LoadMaterialParams(const std::string& path, const std::string& name, class CDefaultLitMaterial* mat);
+public:
 	void	SetTexturePath(FileMaterialTextureParamsType type, const std::string& str);
 	BOOL	GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const;
 public:
@@ -98,7 +101,7 @@ public:
 	BOOL	GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const;
 public:
 	template<typename Type>
-	BOOL GetPropertyValue(FileMaterialPropertyParamsType type, Type* output, const UINT& num, const CHAR& separator = CReadMaterialParamsFile::_PropertyValueSeparator)const
+	BOOL GetPropertyValue(FileMaterialPropertyParamsType type, Type* output, const UINT& num, const CHAR& separator = CReadWriteMaterialParamsFile::_PropertyValueSeparator)const
 	{
 		const static std::string _StaticNotExistString = ENGINE_NOT_EXIST_STRING;
 		if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || num < 1u || this->m_PropertyPath[type] == _StaticNotExistString)
@@ -121,7 +124,7 @@ public:
 		return TRUE;
 	}
 	template<typename Type>
-	void SetPropertyValue(FileMaterialPropertyParamsType type, const Type* input, const UINT& num, const CHAR& separator = CReadMaterialParamsFile::_PropertyValueSeparator)const
+	void SetPropertyValue(FileMaterialPropertyParamsType type, const Type* input, const UINT& num, const CHAR& separator = CReadWriteMaterialParamsFile::_PropertyValueSeparator)
 	{
 		if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || num < 1u)
 		{
@@ -155,6 +158,6 @@ protected:
 	std::string		m_TexturePath[FileMaterialTextureParamsType::FMTPT_COUNT];
 	std::string		m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_COUNT];
 public:
-	CReadMaterialParamsFile();
-	virtual ~CReadMaterialParamsFile();
+	CReadWriteMaterialParamsFile();
+	virtual ~CReadWriteMaterialParamsFile();
 };

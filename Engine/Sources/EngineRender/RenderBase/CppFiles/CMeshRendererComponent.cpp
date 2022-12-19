@@ -32,7 +32,7 @@ CMaterialBase::MaterialType	CMeshRendererComponent::GetMaterialType()const
 	}
 	return CMaterialBase::MaterialType::MATERIAL_TYPE_NONE;
 }
-const CMaterialBase* CMeshRendererComponent::GetMaterial()const
+CMaterialBase* CMeshRendererComponent::GetMaterial()const
 {
 	return (this->m_Material);
 }

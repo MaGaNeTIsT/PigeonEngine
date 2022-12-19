@@ -23,6 +23,14 @@ public:
 	void	SetAmbientOcclusionTexture(class CTexture2D* tex);
 	void	SetReflectanceTexture(class CTexture2D* tex);
 public:
+	class CTexture2D*	GetNormalTexture()const;
+	class CTexture2D*	GetAlbedoTexture()const;
+	class CTexture2D*	GetEmissiveTexture()const;
+	class CTexture2D*	GetRoughnessTexture()const;
+	class CTexture2D*	GetMetallicnessTexture()const;
+	class CTexture2D*	GetAmbientOcclusionTexture()const;
+	class CTexture2D*	GetReflectanceTexture()const;
+public:
 	virtual void	SetIsGlossyRoughness(const BOOL& v);
 	virtual void	SetRoughness(const FLOAT& v);
 	virtual void	SetMetallicness(const FLOAT& v);
@@ -30,6 +38,14 @@ public:
 	virtual void	SetAmbientOcclusion(const FLOAT& v);
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr);
 	virtual void	SetEmissiveColor(const CustomStruct::CColor& clr);
+public:
+	virtual BOOL					GetIsGlossyRoughness()const;
+	virtual FLOAT					GetRoughness()const;
+	virtual FLOAT					GetMetallicness()const;
+	virtual FLOAT					GetReflectance()const;
+	virtual FLOAT					GetAmbientOcclusion()const;
+	virtual CustomStruct::CColor	GetBaseColor()const;
+	virtual CustomStruct::CColor	GetEmissiveColor()const;
 public:
 	virtual void			Init()override;
 	virtual void			Bind()const override;
@@ -80,18 +96,18 @@ public:
 		RenderParams() { ::ZeroMemory(this, sizeof(*this)); }
 		DirectX::XMFLOAT4	BaseColorRoughness;
 		DirectX::XMFLOAT4	EmissiveAmbientOcclusion;
-		DirectX::XMFLOAT4	MetallicnessReflectanceIsGlossyAnisotropy;
-		DirectX::XMFLOAT4	AnisotropyVerticalHorizontal;
+		DirectX::XMFLOAT4	MetallicnessReflectanceIsGlossy;
+		DirectX::XMFLOAT4	AnisotropyStrengthDirection;
 	};
 public:
-	void	SetAnisotropyTexture(class CTexture2D* tex);
+	void	SetAnisotropyStrengthTexture(class CTexture2D* tex);
 	void	SetAnisotropyDirectionTexture(class CTexture2D* tex);
-	void	SetAnisotropyVerticalTexture(class CTexture2D* tex);
-	void	SetAnisotropyHorizontalTexture(class CTexture2D* tex);
 public:
-	void			SetAnisotropyVertical(const FLOAT& v);
-	void			SetAnisotropyHorizontal(const FLOAT& v);
-	void			SetAnisotropy(const FLOAT& v);
+	class CTexture2D*	GetAnisotropyStrengthTexture()const;
+	class CTexture2D*	GetAnisotropyDirectionTexture()const;
+public:
+	void			SetAnisotropyStrength(const FLOAT& v);
+	void			SetAnisotropyDirection(const FLOAT& v);
 	virtual void	SetIsGlossyRoughness(const BOOL& v)override;
 	virtual void	SetRoughness(const FLOAT& v)override;
 	virtual void	SetMetallicness(const FLOAT& v)override;
@@ -99,6 +115,16 @@ public:
 	virtual void	SetAmbientOcclusion(const FLOAT& v)override;
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr)override;
 	virtual void	SetEmissiveColor(const CustomStruct::CColor& clr)override;
+public:
+	FLOAT							GetAnisotropyStrength()const;
+	FLOAT							GetAnisotropyDirection()const;
+	virtual BOOL					GetIsGlossyRoughness()const override;
+	virtual FLOAT					GetRoughness()const override;
+	virtual FLOAT					GetMetallicness()const override;
+	virtual FLOAT					GetReflectance()const override;
+	virtual FLOAT					GetAmbientOcclusion()const override;
+	virtual CustomStruct::CColor	GetBaseColor()const override;
+	virtual CustomStruct::CColor	GetEmissiveColor()const override;
 public:
 	virtual void	Init()override;
 	virtual void	Bind()const override;
@@ -108,20 +134,14 @@ public:
 	virtual void	HookApplyTextureUpdate()override;
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	INT			m_AnisotropySelect;
+	INT			m_AnisotropyStrengthSelect;
 	INT			m_AnisotropyDirectionSelect;
-	INT			m_AnisotropyVerticalSelect;
-	INT			m_AnisotropyHorizontalSelect;
-	CHAR		m_AnisotropyPath[512];
+	CHAR		m_AnisotropyStrengthPath[512];
 	CHAR		m_AnisotropyDirectionPath[512];
-	CHAR		m_AnisotropyVerticalPath[512];
-	CHAR		m_AnisotropyHorizontalPath[512];
 #endif
 protected:
-	class CTexture2D*	m_AnisotropyTexture;
+	class CTexture2D*	m_AnisotropyStrengthTexture;
 	class CTexture2D*	m_AnisotropyDirectionTexture;
-	class CTexture2D*	m_AnisotropyVerticalTexture;
-	class CTexture2D*	m_AnisotropyHorizontalTexture;
 public:
 	CAnisotropicMaterial();
 	virtual ~CAnisotropicMaterial();

@@ -158,23 +158,6 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 void CScene::Init()
 {
 	{
-		CReadMaterialParamsFile readMaterialFile;
-		readMaterialFile.ReadFile("./Engine/Assets/Development/MaterialConfigs/testRead.mat_tex_cfg");
-
-		FLOAT baseColor[3]; FLOAT roughness;
-		if (!readMaterialFile.GetPropertyValue<FLOAT>(CReadMaterialParamsFile::FileMaterialPropertyParamsType::FMPPT_BASECOLOR, baseColor, 3u))
-		{
-
-		}
-		if (!readMaterialFile.GetPropertyValue<FLOAT>(CReadMaterialParamsFile::FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &roughness, 1u))
-		{
-
-		}
-
-		readMaterialFile.WriteFile("./Engine/Assets/Development/MaterialConfigs/testWrite.mat_tex_cfg");
-	}
-
-	{
 		CCamera* mainCamera = this->AddCamera<CCamera>();
 		CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
