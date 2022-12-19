@@ -3,6 +3,7 @@
 #include "../../../../Entry/EngineMain.h"
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 class CTempFileHelper
 {
@@ -150,7 +151,9 @@ public:
 		return TRUE;
 	}
 public:
-	static void		FetchFullPathStringIntoThreePart(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index = nullptr, UINT* extra1Index = nullptr);
+	static BOOL FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index = nullptr, UINT* extra1Index = nullptr);
+	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR** signChar, const UINT* signNum, const std::string& failedStr, UINT* extraIndex = nullptr);
+	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr);
 };
 
 class CTempFileReaderWriterBase

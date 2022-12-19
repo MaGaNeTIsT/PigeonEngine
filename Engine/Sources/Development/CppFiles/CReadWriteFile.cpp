@@ -1,6 +1,6 @@
 #include "../Headers/CReadWriteFile.h"
 
-void CTempFileHelper::FetchFullPathStringIntoThreePart(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index, UINT* extra1Index)
+BOOL CTempFileHelper::FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index, UINT* extra1Index)
 {
 	std::string& ptrStr0 = dst[0];
 	std::string& ptrStr1 = dst[1];
@@ -13,7 +13,7 @@ void CTempFileHelper::FetchFullPathStringIntoThreePart(const std::string& src, s
 		if (!CTempFileHelper::FetchPosAndString<TRUE, TRUE, FALSE>(src, ptrStr0, sign0Char, sign0Num, failedStr, &lastStr))
 		{
 			//TODO log.
-			return;
+			return FALSE;
 		}
 	}
 	else
@@ -21,7 +21,7 @@ void CTempFileHelper::FetchFullPathStringIntoThreePart(const std::string& src, s
 		if (!CTempFileHelper::FetchPosAndString<TRUE, TRUE, TRUE>(src, ptrStr0, sign0Char, sign0Num, failedStr, &lastStr, extra0Index))
 		{
 			//TODO log.
-			return;
+			return FALSE;
 		}
 	}
 	if (extra1Index == nullptr)
@@ -29,7 +29,7 @@ void CTempFileHelper::FetchFullPathStringIntoThreePart(const std::string& src, s
 		if (!CTempFileHelper::FetchPosAndString<TRUE, TRUE, FALSE>(lastStr, ptrStr1, sign1Char, sign1Num, failedStr, ptrStr2))
 		{
 			//TODO log.
-			return;
+			return FALSE;
 		}
 	}
 	else
@@ -37,9 +37,55 @@ void CTempFileHelper::FetchFullPathStringIntoThreePart(const std::string& src, s
 		if (!CTempFileHelper::FetchPosAndString<TRUE, TRUE, TRUE>(lastStr, ptrStr1, sign1Char, sign1Num, failedStr, ptrStr2, extra1Index))
 		{
 			//TODO log.
-			return;
+			return FALSE;
 		}
 	}
+
+	return TRUE;
+}
+BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR** signChar, const UINT* signNum, const std::string& failedStr, UINT* extraIndex)
+{
+	UINT num_m_1 = numPart - 1;
+	std::string lastStr = src;
+	for (UINT i = 0u; i < num_m_1; i++)
+	{
+		const CHAR*& tempSign = signChar[i];
+		const UINT& tempSignNum = signNum[i];
+
+		if (extraIndex != nullptr)
+		{
+			if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE, TRUE>(lastStr, dst[i], tempSign, tempSignNum, failedStr, &lastStr, &(extraIndex[i])))
+			{
+				//TODO log.
+				return FALSE;
+			}
+		}
+		else
+		{
+			if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE, FALSE>(lastStr, dst[i], tempSign, tempSignNum, failedStr, &lastStr))
+			{
+				//TODO log.
+				return FALSE;
+			}
+		}
+	}
+	dst[num_m_1] = lastStr;
+	return TRUE;
+}
+BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr)
+{
+	UINT num_m_1 = numPart - 1;
+	std::string lastStr = src;
+	for (UINT i = 0u; i < num_m_1; i++)
+	{
+		if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE, FALSE>(lastStr, dst[i], &signChar, 1u, failedStr, &lastStr))
+		{
+			//TODO log.
+			return FALSE;
+		}
+	}
+	dst[num_m_1] = lastStr;
+	return TRUE;
 }
 
 
@@ -213,7 +259,7 @@ CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& fullNa
 {
 	if (this->IsSuccessSeparate())
 	{
-		this->m_FileStream.open(fullNamePath, std::fstream::out | (isBinary ? std::fstream::binary : 0x00));
+		this->m_FileStream.open(fullNamePath, std::fstream::out | std::fstream::trunc | (isBinary ? std::fstream::binary : 0x00));
 	}
 	if (this->m_FileStream.is_open())
 	{
@@ -224,7 +270,7 @@ CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& path, 
 {
 	if (this->IsSuccessSeparate())
 	{
-		this->m_FileStream.open(this->m_FullPath, std::fstream::out | (isBinary ? std::fstream::binary : 0x00));
+		this->m_FileStream.open(this->m_FullPath, std::fstream::out | std::fstream::trunc | (isBinary ? std::fstream::binary : 0x00));
 	}
 	if (this->m_FileStream.is_open())
 	{
@@ -235,7 +281,7 @@ CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& path, 
 {
 	if (this->IsSuccessSeparate())
 	{
-		this->m_FileStream.open(this->m_FullPath, std::fstream::out | (isBinary ? std::fstream::binary : 0x00));
+		this->m_FileStream.open(this->m_FullPath, std::fstream::out | std::fstream::trunc | (isBinary ? std::fstream::binary : 0x00));
 	}
 	if (this->m_FileStream.is_open())
 	{

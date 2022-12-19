@@ -4,6 +4,8 @@
 #include "../../../EngineGame/Headers/CObjectManager.h"
 #include "./CRenderStructCommon.h"
 
+#include "../../../Development/Headers/CReadWriteFile.h"
+
 class CMaterialBase : public CObjectBase
 {
 public:
@@ -73,8 +75,8 @@ public:
 	enum FileMaterialPropertyParamsType
 	{
 		FMPPT_NONE = 0,
-		FMPPT_BaseColor,
-		FMPPT_Emissive,
+		FMPPT_BASECOLOR,
+		FMPPT_EMISSIVE,
 		FMPPT_ROUGHNESS,
 		FMPPT_AMBIENTOCCLUSION,
 		FMPPT_REFLECTANCE,
@@ -89,16 +91,64 @@ public:
 		FMPPT_COUNT
 	};
 public:
-	BOOL	GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const;
 	void	SetTexturePath(FileMaterialTextureParamsType type, const std::string& str);
-	BOOL	GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const;
+	BOOL	GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const;
+public:
 	void	SetPropertyPath(FileMaterialPropertyParamsType type, const std::string& str);
+	BOOL	GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const;
+public:
+	template<typename Type>
+	BOOL GetPropertyValue(FileMaterialPropertyParamsType type, Type* output, const UINT& num, const CHAR& separator = CReadMaterialParamsFile::_PropertyValueSeparator)const
+	{
+		const static std::string _StaticNotExistString = ENGINE_NOT_EXIST_STRING;
+		if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || num < 1u || this->m_PropertyPath[type] == _StaticNotExistString)
+		{
+			return FALSE;
+		}
+		std::string* tempDst = new std::string[num];
+		if (!CTempFileHelper::FetchStringIntoNPart(this->m_PropertyPath[type], tempDst, num, separator, "Error"))
+		{
+			delete[]tempDst;
+			return FALSE;
+		}
+		for (UINT i = 0u; i < num; i++)
+		{
+			Type& refOutput = output[i];
+			std::istringstream tempStream(tempDst[i]);
+			tempStream >> refOutput;
+		}
+		delete[]tempDst;
+		return TRUE;
+	}
+	template<typename Type>
+	void SetPropertyValue(FileMaterialPropertyParamsType type, const Type* input, const UINT& num, const CHAR& separator = CReadMaterialParamsFile::_PropertyValueSeparator)const
+	{
+		if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || num < 1u)
+		{
+			return;
+		}
+		std::string tempStr; UINT lastNum = num - 1u;
+		for (UINT i = 0u; i < num; i++)
+		{
+			const Type& refOutput = input[i];
+			std::ostringstream tempStream;
+			tempStream << refOutput;
+			tempStr += tempStream.str();
+			if (i != lastNum)
+			{
+				tempStr += separator;
+			}
+		}
+		this->m_PropertyPath[type] = tempStr;
+	}
 public:
 	virtual void	ReadFile(const std::string& fullPath);
+	virtual void	WriteFile(const std::string& fullPath);
 protected:
 	void	InitAllPath();
 protected:
 	const static CHAR	_PropertySeparator			= '=';
+	const static CHAR	_PropertyValueSeparator		= ',';
 	const static UINT	_PropertyStringLengthMax	= 256u;
 	const static UINT	_PathStringLengthMax		= 1024u;
 protected:

@@ -19,6 +19,8 @@ CGameObject::~CGameObject()
 {
 	if (this->HasTransform())
 	{
+		this->RemoveParent();
+		this->RemoveChildren();
 		delete (this->m_Transform);
 		this->m_Transform = NULL;
 	}
@@ -34,7 +36,7 @@ CGameObject::~CGameObject()
 	}
 	if (this->HasComponent())
 	{
-		this->RemoveChildren();
+		this->RemoveComponents();
 	}
 }
 const CScene* CGameObject::GetScene()const

@@ -1,8 +1,6 @@
 #include "../Headers/CMaterialBase.h"
 #include "../../AssetsManager/Headers/CShader.h"
 
-#include "../../../Development/Headers/CReadWriteFile.h"
-
 CMaterialBase::CMaterialBase(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName)
 {
 	this->m_Name				= name;
@@ -81,28 +79,49 @@ BOOL CMaterialBase::HasPixelShader()const
 
 
 
+const static std::string _GStaticTextureName[CReadMaterialParamsFile::FileMaterialTextureParamsType::FMTPT_COUNT] = {
+	"None",
+	"NormalTexture",
+	"AlbedoTexture",
+	"EmissiveTexture",
+	"RoughnessTexture",
+	"AmbientOcclusionTexture",
+	"ReflectanceTexture",
+	"MetallicnessTexture",
+	"ClothSheenTexture",
+	"ClothSubsurfaceTexture",
+	"AnisotropyStrengthTexture",
+	"AnisotropyDirectionTexture",
+	"ClearCoatStrengthTexture",
+	"ClearCoatRoughnessTexture",
+	"ClearCoatNormalTexture" };
+const static std::string _GStaticPropertyName[CReadMaterialParamsFile::FileMaterialPropertyParamsType::FMPPT_COUNT] = {
+	"None",
+	"BaseColorProperty",
+	"EmissiveColorProperty",
+	"RoughnessProperty",
+	"AmbientOcclusionProperty",
+	"ReflectanceProperty",
+	"MetallicnessProperty",
+	"IsGlossyProperty",
+	"SheenColorProperty",
+	"SubsurfaceColorProperty",
+	"AnisotropyStrengthProperty",
+	"AnisotropyDirectionProperty",
+	"ClearCoatStrengthProperty",
+	"ClearCoatRoughnessProperty" };
+const static std::string _GStaticNotExistString = ENGINE_NOT_EXIST_STRING;
 constexpr UINT CReadMaterialParamsFile::_PropertyStringLengthMax;
 constexpr UINT CReadMaterialParamsFile::_PathStringLengthMax;
 CReadMaterialParamsFile::CReadMaterialParamsFile()
 {
-	this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE] = ENGINE_NOT_EXIST_STRING;
-	this->m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_NONE] = ENGINE_NOT_EXIST_STRING;
+	this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE] = _GStaticNotExistString;
+	this->m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_NONE] = _GStaticNotExistString;
 	this->InitAllPath();
 }
 CReadMaterialParamsFile::~CReadMaterialParamsFile()
 {
 
-}
-BOOL CReadMaterialParamsFile::GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const
-{
-	const static std::string _NotExistPath = ENGINE_NOT_EXIST_STRING;
-	if (type <= FileMaterialTextureParamsType::FMTPT_NONE || type >= FileMaterialTextureParamsType::FMTPT_COUNT || this->m_TexturePath[type] == _NotExistPath)
-	{
-		output = this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE];
-		return FALSE;
-	}
-	output = this->m_TexturePath[type];
-	return TRUE;
 }
 void CReadMaterialParamsFile::SetTexturePath(FileMaterialTextureParamsType type, const std::string& str)
 {
@@ -112,15 +131,14 @@ void CReadMaterialParamsFile::SetTexturePath(FileMaterialTextureParamsType type,
 	}
 	this->m_TexturePath[type] = str;
 }
-BOOL CReadMaterialParamsFile::GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const
+BOOL CReadMaterialParamsFile::GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const
 {
-	const static std::string _NotExistPath = ENGINE_NOT_EXIST_STRING;
-	if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || this->m_PropertyPath[type] == _NotExistPath)
+	if (type <= FileMaterialTextureParamsType::FMTPT_NONE || type >= FileMaterialTextureParamsType::FMTPT_COUNT || this->m_TexturePath[type] == _GStaticNotExistString)
 	{
-		output = this->m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_NONE];
+		output = this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE];
 		return FALSE;
 	}
-	output = this->m_PropertyPath[type];
+	output = this->m_TexturePath[type];
 	return TRUE;
 }
 void CReadMaterialParamsFile::SetPropertyPath(FileMaterialPropertyParamsType type, const std::string& str)
@@ -131,90 +149,91 @@ void CReadMaterialParamsFile::SetPropertyPath(FileMaterialPropertyParamsType typ
 	}
 	this->m_PropertyPath[type] = str;
 }
+BOOL CReadMaterialParamsFile::GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const
+{
+	if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || this->m_PropertyPath[type] == _GStaticNotExistString)
+	{
+		output = this->m_PropertyPath[FileMaterialPropertyParamsType::FMPPT_NONE];
+		return FALSE;
+	}
+	output = this->m_PropertyPath[type];
+	return TRUE;
+}
 void CReadMaterialParamsFile::ReadFile(const std::string& fullPath)
 {
-	const static std::string _StaticTextures[FileMaterialTextureParamsType::FMTPT_COUNT] = {
-		"None",
-		"NormalTexture",
-		"AlbedoTexture",
-		"EmissiveTexture",
-		"RoughnessTexture",
-		"AmbientOcclusionTexture",
-		"ReflectanceTexture",
-		"MetallicnessTexture",
-		"ClothSheenTexture",
-		"ClothSubsurfaceTexture",
-		"AnisotropyStrengthTexture",
-		"AnisotropyDirectionTexture",
-		"ClearCoatStrengthTexture",
-		"ClearCoatRoughnessTexture",
-		"ClearCoatNormalTexture" };
-	const static std::string _StaticProperties[FileMaterialPropertyParamsType::FMPPT_COUNT] = {
-		"None",
-		"BaseColorProperty",
-		"EmissiveColorProperty",
-		"RoughnessProperty",
-		"AmbientOcclusionProperty",
-		"ReflectanceProperty",
-		"MetallicnessProperty",
-		"IsGlossyProperty",
-		"SheenColorProperty",
-		"SubsurfaceColorProperty",
-		"AnisotropyStrengthProperty",
-		"AnisotropyDirectionProperty",
-		"ClearCoatStrengthProperty",
-		"ClearCoatRoughnessProperty" };
-
 	this->InitAllPath();
 
 	CTempFileReader reader(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileReader* const tempReader)->BOOL {
 		CHAR tempLine[CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax];
-		while (fileStream.getline(tempLine, CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax))
+		for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 		{
-			std::string tempStr(tempLine); std::string tempProp, tempPath;
-			if (CTempFileHelper::FetchPosAndString<FALSE, TRUE>(tempStr, tempProp, CReadMaterialParamsFile::_PropertySeparator, "Error", &tempPath))
+			if (!fileStream.getline(tempLine, CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax))
 			{
-				for (UINT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
-				{
-					const std::string& propertyName = _StaticTextures[i];
-					if (tempProp != propertyName)
-					{
-						continue;
-					}
-					if (tempPath.length() < 2)
-					{
-						break;
-					}
-					this->SetTexturePath(static_cast<FileMaterialTextureParamsType>(i), tempPath);
-					break;
-				}
-				for (UINT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
-				{
-					const std::string& propertyName = _StaticProperties[i];
-					if (tempProp != propertyName)
-					{
-						continue;
-					}
-					if (tempPath.length() < 2)
-					{
-						break;
-					}
-					this->SetPropertyPath(static_cast<FileMaterialPropertyParamsType>(i), tempPath);
-					break;
-				}
+				continue;
 			}
+			std::string tempStr(tempLine); std::string tempProp, tempPath;
+			if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE>(tempStr, tempProp, CReadMaterialParamsFile::_PropertySeparator, "Error", &tempPath))
+			{
+				continue;
+			}
+			if (tempProp != _GStaticTextureName[i] || tempPath.length() < 2)
+			{
+				continue;
+			}
+			this->m_TexturePath[i] = tempPath;
+		}
+		for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+		{
+			if (!fileStream.getline(tempLine, CReadMaterialParamsFile::_PropertyStringLengthMax + CReadMaterialParamsFile::_PathStringLengthMax))
+			{
+				continue;
+			}
+			std::string tempStr(tempLine); std::string tempProp, tempPath;
+			if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE>(tempStr, tempProp, CReadMaterialParamsFile::_PropertySeparator, "Error", &tempPath))
+			{
+				continue;
+			}
+			if (tempProp != _GStaticPropertyName[i] || tempPath.length() < 2)
+			{
+				continue;
+			}
+			this->m_PropertyPath[i] = tempPath;
+		}
+		return TRUE; });
+}
+void CReadMaterialParamsFile::WriteFile(const std::string& fullPath)
+{
+	CTempFileWriter writer(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileWriter* const tempWrite)->BOOL {
+		for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
+		{
+			std::string tempWriteStr = _GStaticTextureName[i] + '=';
+			if (this->m_TexturePath[i] != _GStaticNotExistString)
+			{
+				tempWriteStr += this->m_TexturePath[i];
+			}
+			tempWriteStr += '\n';
+			fileStream << tempWriteStr;
+		}
+		for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+		{
+			std::string tempWriteStr = _GStaticPropertyName[i] + '=';
+			if (this->m_PropertyPath[i] != _GStaticNotExistString)
+			{
+				tempWriteStr += this->m_PropertyPath[i];
+			}
+			tempWriteStr += '\n';
+			fileStream << tempWriteStr;
 		}
 		return TRUE; });
 }
 void CReadMaterialParamsFile::InitAllPath()
 {
-	const static std::string _NotExistPath = ENGINE_NOT_EXIST_STRING;
 	for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 	{
-		this->m_TexturePath[i] = _NotExistPath;
+		this->m_TexturePath[i] = _GStaticNotExistString;
 	}
 	for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
 	{
-		this->m_PropertyPath[i] = _NotExistPath;
+		this->m_PropertyPath[i] = _GStaticNotExistString;
 	}
 }
