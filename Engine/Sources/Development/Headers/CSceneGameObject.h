@@ -14,6 +14,7 @@ public:
 public:
 	class CMeshRendererComponent*	GetMeshRendererComponentNotConst();
 	class CMeshComponent*			GetMeshComponentNotConst();
+	class CRigidBodyComponent*		GetRigidBodyComponentNotConst();
 public:
 	virtual void	SelectedEditorUpdate()override;
 protected:
@@ -29,6 +30,7 @@ protected:
 protected:
 	class CMeshRendererComponent*	m_MeshRendererComponent;
 	class CMeshComponent*			m_MeshComponent;
+	class CRigidBodyComponent*		m_RigidBodyComponent;
 	INT								m_CurrentMaterialType;
 	INT								m_PreviousMaterialType;
 	BOOL							m_LoadBaseModel;

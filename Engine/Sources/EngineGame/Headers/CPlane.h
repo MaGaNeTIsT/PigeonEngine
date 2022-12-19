@@ -25,5 +25,6 @@ public:
 	virtual ~CPlane();
 protected:
 	class CMeshComponent*		m_MeshComponent;
+	class CRigidBodyComponent*	m_RigidBodyComponent;
 	CPlaneMeshInfo				m_PlaneMeshInfo;
 };

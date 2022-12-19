@@ -24,6 +24,9 @@
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "xaudio2.lib")
 
+#include <Jolt/Jolt.h>
+#pragma comment (lib,"Jolt.lib")
+
 #ifdef _DEVELOPMENT_EDITOR
 #include "../ThirdParty/imgui/imgui.h"
 #endif

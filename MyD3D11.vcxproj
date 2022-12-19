@@ -48,7 +48,12 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsUtility.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CRigidBodyComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsManager.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysicsInterface.h" />
+    <ClInclude Include="Engine\Sources\EnginePhysics\Headers\CPhysics_API_Jolt.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
@@ -106,6 +111,10 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysicsManager.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CPhysics_API_Jolt.cpp" />
+    <ClCompile Include="Engine\Sources\EnginePhysics\CppFiles\CRigidBodyComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
@@ -456,6 +465,8 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>./ThirdParty/assimp/;$(IncludePath)</IncludePath>
     <LibraryPath>./ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\ThirdParty\Jolt\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\ThirdParty\Jolt\Plugins\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -464,6 +475,8 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>./ThirdParty/assimp/;$(IncludePath)</IncludePath>
     <LibraryPath>./ThirdParty/assimp/lib/Release/;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\ThirdParty\Jolt\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\ThirdParty\Jolt\Plugins\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

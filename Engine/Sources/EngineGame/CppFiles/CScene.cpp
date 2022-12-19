@@ -20,6 +20,8 @@
 
 #include "../../Development/Headers/CSceneGameObject.h"
 
+#define RANDOMCUBE 0
+
 CScene::CScene()
 {
 	this->m_MainCamera = NULL;
@@ -183,7 +185,7 @@ void CScene::Init()
 		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
 	}
 
-#ifdef _DEVELOPMENT_EDITOR
+#if 0
 	{
 		BOOL showDebugFabric = TRUE;
 
