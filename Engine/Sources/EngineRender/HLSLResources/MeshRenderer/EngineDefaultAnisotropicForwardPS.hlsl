@@ -30,15 +30,13 @@ Texture2D	_MetallicnessTexture			: register(t10);
 Texture2D	_ReflectanceTexture				: register(t11);
 Texture2D	_AnisotropyTexture				: register(t12);
 Texture2D	_AnisotropyDirectionTexture		: register(t13);
-Texture2D	_AnisotropyVerticalTexture		: register(t14);
-Texture2D	_AnisotropyHorizontalTexture	: register(t15);
 
 cbuffer ConstantBufferMaterialData : register(b3)
 {
 	float4	_BaseColorRoughness;
 	float4	_EmissiveAmbientOcclusion;
-	float4	_MetallicnessReflectanceIsGlossyAnisotropy;
-	float4	_AnisotropyVerticalHorizontal;
+	float4	_MetallicnessReflectanceIsGlossy;
+	float4	_AnisotropyStrengthDirection;
 }
 
 float GetShadowGaussian(int x, int y)
@@ -56,22 +54,22 @@ float4 main(VaryingForward input) : SV_Target
 {
 	float    globalAO				= _GlobalAOInput.Sample(_LinearClampSampler, input.positionSS.xy).r;
 	float3   geometricNormalWS		= SafeNormalize(input.normal.xyz);
-	float3x3 tangentToWorld			= CreateTangentMatrix(geometricNormalWS, SafeNormalize(input.tangent.xyz), true);
+	float3   geometricTangentWS		= SafeNormalize(input.tangent.xyz);
+	float3   geometricBinormalWS	= float3(0.0, 1.0, 0.0);
+	float3x3 tangentToWorld			= CreateTangentMatrix(geometricNormalWS, geometricTangentWS, geometricBinormalWS, true);
 
 	float3   materialNormalWS		= TransformTangentToSpaceDir(SafeNormalize(_CustomTextureA.Sample(_LinearWrapSampler, input.uv0).rgb * 2.0 - 1.0), tangentToWorld);
 	float3   materialAlbedo			= _CustomTextureB.Sample(_LinearWrapSampler, input.uv0).rgb * _BaseColorRoughness.rgb;
-	float    materialRoughness		= saturate(abs(_RoughnessTexture.Sample(_LinearWrapSampler, input.uv0).r - _MetallicnessReflectanceIsGlossyAnisotropy.z)) * _BaseColorRoughness.w;
+	float    materialRoughness		= saturate(abs(_RoughnessTexture.Sample(_LinearWrapSampler, input.uv0).r - _MetallicnessReflectanceIsGlossy.z)) * _BaseColorRoughness.w;
 	float3   materialEmissive		= _CustomTextureC.Sample(_LinearWrapSampler, input.uv0).rgb * _EmissiveAmbientOcclusion.rgb;
 	float    materialAO				= _CustomTextureD.Sample(_LinearWrapSampler, input.uv0).r * _EmissiveAmbientOcclusion.w;
-	float    materialMetallicness	= _MetallicnessTexture.Sample(_LinearWrapSampler, input.uv0).r * _MetallicnessReflectanceIsGlossyAnisotropy.x;
-	float    materialReflectance	= ComputeFresnelF0Dielectric(_ReflectanceTexture.Sample(_LinearWrapSampler, input.uv0).r * _MetallicnessReflectanceIsGlossyAnisotropy.y);
+	float    materialMetallicness	= _MetallicnessTexture.Sample(_LinearWrapSampler, input.uv0).r * _MetallicnessReflectanceIsGlossy.x;
+	float    materialReflectance	= ComputeFresnelF0Dielectric(_ReflectanceTexture.Sample(_LinearWrapSampler, input.uv0).r * _MetallicnessReflectanceIsGlossy.y);
 #ifdef MATERIAL_HAS_ANISOTROPY
-	float    materialAnisotropy				= _AnisotropyTexture.Sample(_LinearWrapSampler, input.uv0).r * _MetallicnessReflectanceIsGlossyAnisotropy.w;
-	float    materialAnisotropyVertical		= (_AnisotropyVerticalTexture.Sample(_LinearWrapSampler, input.uv0).r * 2.0 - 1.0) * _AnisotropyVerticalHorizontal.x;
-	float    materialAnisotropyHorizontal	= (_AnisotropyHorizontalTexture.Sample(_LinearWrapSampler, input.uv0).r * 2.0 - 1.0) * _AnisotropyVerticalHorizontal.y;
-	float3   materialAnisotropyDirection	= _AnisotropyDirectionTexture.Sample(_LinearWrapSampler, input.uv0).rgb * 2.0 - 1.0;
-	materialAnisotropyDirection.xy			+= float2(materialAnisotropyVertical, materialAnisotropyHorizontal);
-	float3   materialAnisotropyDir			= TransformTangentToSpaceDir(SafeNormalize(materialAnisotropyDirection), tangentToWorld);
+	float    materialAnisotropy		= _AnisotropyTexture.Sample(_LinearWrapSampler, input.uv0).r * _AnisotropyStrengthDirection.x;
+	float    materialAnisotropyDir	= _AnisotropyDirectionTexture.Sample(_LinearWrapSampler, input.uv0).r * _AnisotropyStrengthDirection.y;
+	float3   materialAnisotropicT	= SafeNormalize(lerp(geometricBinormalWS, geometricTangentWS, materialAnisotropyDir));
+	float3   materialAnisotropicB	= cross(geometricNormalWS, materialAnisotropicT);
 #endif
 
 	float3 positionWS	= input.positionWS.xyz;
@@ -97,8 +95,8 @@ float4 main(VaryingForward input) : SV_Target
 	pixelParams.F0								= ComputeFresnelF0(materialReflectance, GBuffer.BaseColor, GBuffer.Metallicness);
 #ifdef MATERIAL_HAS_ANISOTROPY
 	pixelParams.Anisotropy						= materialAnisotropy;
-	pixelParams.AnisotropyT						= materialAnisotropyDir;
-	pixelParams.AnisotropyB						= SafeNormalize(cross(pixelParams.GeometricNormalWS, pixelParams.AnisotropyT));
+	pixelParams.AnisotropyT						= materialAnisotropicT;
+	pixelParams.AnisotropyB						= materialAnisotropicB;
 #endif
 
 	//float4 color = float4((0.1 * pixelParams.DiffuseColor * pixelParams.AmbientOcclusion) + pixelParams.EmissiveColor, 1.0);

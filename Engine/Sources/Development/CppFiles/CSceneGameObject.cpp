@@ -331,17 +331,60 @@ void CSceneGameObject::SelectedEditorUpdate()
 				}
 			}
 
-			if (needSaveMaterialFile)
+			if (needSaveMaterialFile && this->m_MeshRendererComponent->HasMaterial())
 			{
-				CDefaultLitMaterial* material = reinterpret_cast<CDefaultLitMaterial*>(this->m_MeshRendererComponent->GetMaterial());
-				if (material != nullptr)
+				size_t materialHashCode = typeid(*(this->m_MeshRendererComponent->GetMaterial())).hash_code();
+				if (materialHashCode == typeid(CDefaultLitMaterial).hash_code())
 				{
-					CReadWriteMaterialParamsFile rwMaterialFile;
-					std::string savePath(this->m_SaveMaterialPath);
-					std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
-						std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
-						std::to_string(typeid(*material).hash_code()) + '_' + std::to_string(material->GetUniqueID());
-					rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
+					CDefaultLitMaterial* material = reinterpret_cast<CDefaultLitMaterial*>(this->m_MeshRendererComponent->GetMaterial());
+					if (material != nullptr)
+					{
+						CReadWriteMaterialParamsFile rwMaterialFile;
+						std::string savePath(this->m_SaveMaterialPath);
+						std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
+							std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
+							std::to_string(materialHashCode) + '_' + std::to_string(material->GetUniqueID());
+						rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
+					}
+				}
+				else if (materialHashCode == typeid(CAnisotropicMaterial).hash_code())
+				{
+					CAnisotropicMaterial* material = reinterpret_cast<CAnisotropicMaterial*>(this->m_MeshRendererComponent->GetMaterial());
+					if (material != nullptr)
+					{
+						CReadWriteMaterialParamsFile rwMaterialFile;
+						std::string savePath(this->m_SaveMaterialPath);
+						std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
+							std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
+							std::to_string(materialHashCode) + '_' + std::to_string(material->GetUniqueID());
+						rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
+					}
+				}
+				else if (materialHashCode == typeid(CClothMaterial).hash_code())
+				{
+					CClothMaterial* material = reinterpret_cast<CClothMaterial*>(this->m_MeshRendererComponent->GetMaterial());
+					if (material != nullptr)
+					{
+						CReadWriteMaterialParamsFile rwMaterialFile;
+						std::string savePath(this->m_SaveMaterialPath);
+						std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
+							std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
+							std::to_string(materialHashCode) + '_' + std::to_string(material->GetUniqueID());
+						rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
+					}
+				}
+				else if (materialHashCode == typeid(CClothAnisotropicMaterial).hash_code())
+				{
+					CClothAnisotropicMaterial* material = reinterpret_cast<CClothAnisotropicMaterial*>(this->m_MeshRendererComponent->GetMaterial());
+					if (material != nullptr)
+					{
+						CReadWriteMaterialParamsFile rwMaterialFile;
+						std::string savePath(this->m_SaveMaterialPath);
+						std::string saveName = std::to_string(typeid(*this).hash_code()) + '_' + std::to_string(this->GetUniqueID()) + '_' +
+							std::to_string(typeid(*this->m_MeshRendererComponent).hash_code()) + '_' + std::to_string(this->m_MeshRendererComponent->GetUniqueID()) + '_' +
+							std::to_string(materialHashCode) + '_' + std::to_string(material->GetUniqueID());
+						rwMaterialFile.SaveMaterialParams(savePath, saveName, material);
+					}
 				}
 			}
 		}

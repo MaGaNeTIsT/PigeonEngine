@@ -56,6 +56,10 @@ void CClearCoatMaterial::SetClearCoatStrengthTexture(CTexture2D* tex)
 	if (tex != NULL)
 	{
 		this->m_ClearCoatStrengthTexture = tex;
+#ifdef _DEVELOPMENT_EDITOR
+		this->m_ClearCoatStrengthSelect = -2;
+		strcpy_s(this->m_ClearCoatStrengthPath, 512, tex->GetName().c_str());
+#endif
 	}
 }
 void CClearCoatMaterial::SetClearCoatRoughnessTexture(CTexture2D* tex)
@@ -63,6 +67,10 @@ void CClearCoatMaterial::SetClearCoatRoughnessTexture(CTexture2D* tex)
 	if (tex != NULL)
 	{
 		this->m_ClearCoatRoughnessTexture = tex;
+#ifdef _DEVELOPMENT_EDITOR
+		this->m_ClearCoatRoughnessSelect = -2;
+		strcpy_s(this->m_ClearCoatRoughnessPath, 512, tex->GetName().c_str());
+#endif
 	}
 }
 void CClearCoatMaterial::SetClearCoatNormalTexture(CTexture2D* tex)
@@ -70,7 +78,23 @@ void CClearCoatMaterial::SetClearCoatNormalTexture(CTexture2D* tex)
 	if (tex != NULL)
 	{
 		this->m_ClearCoatNormalTexture = tex;
+#ifdef _DEVELOPMENT_EDITOR
+		this->m_ClearCoatNormalSelect = -2;
+		strcpy_s(this->m_ClearCoatNormalPath, 512, tex->GetName().c_str());
+#endif
 	}
+}
+CTexture2D* CClearCoatMaterial::GetClearCoatStrengthTexture()const
+{
+	return (this->m_ClearCoatStrengthTexture);
+}
+CTexture2D* CClearCoatMaterial::GetClearCoatRoughnessTexture()const
+{
+	return (this->m_ClearCoatRoughnessTexture);
+}
+CTexture2D* CClearCoatMaterial::GetClearCoatNormalTexture()const
+{
+	return (this->m_ClearCoatNormalTexture);
 }
 void CClearCoatMaterial::SetClearCoatStrength(const FLOAT& v)
 {
@@ -120,6 +144,56 @@ void CClearCoatMaterial::SetEmissiveColor(const CustomStruct::CColor& clr)
 	renderParams->EmissiveAmbientOcclusion.x = clr.r;
 	renderParams->EmissiveAmbientOcclusion.y = clr.g;
 	renderParams->EmissiveAmbientOcclusion.z = clr.b;
+}
+FLOAT CClearCoatMaterial::GetClearCoatStrength()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->ClearCoatStrengthRoughness.x;
+	return v;
+}
+FLOAT CClearCoatMaterial::GetClearCoatRoughness()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->ClearCoatStrengthRoughness.y;
+	return v;
+}
+BOOL CClearCoatMaterial::GetIsGlossyRoughness()const
+{
+	return (this->m_IsGlossy);
+}
+FLOAT CClearCoatMaterial::GetRoughness()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->BaseColorRoughness.w;
+	return v;
+}
+FLOAT CClearCoatMaterial::GetMetallicness()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->MetallicnessReflectanceIsGlossy.x;
+	return v;
+}
+FLOAT CClearCoatMaterial::GetReflectance()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->MetallicnessReflectanceIsGlossy.y;
+	return v;
+}
+FLOAT CClearCoatMaterial::GetAmbientOcclusion()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	FLOAT v = renderParams->EmissiveAmbientOcclusion.w;
+	return v;
+}
+CustomStruct::CColor CClearCoatMaterial::GetBaseColor()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
+}
+CustomStruct::CColor CClearCoatMaterial::GetEmissiveColor()const
+{
+	CClearCoatMaterial::RenderParams* renderParams = static_cast<CClearCoatMaterial::RenderParams*>(this->m_RenderParams);
+	return (CustomStruct::CColor(renderParams->EmissiveAmbientOcclusion.x, renderParams->EmissiveAmbientOcclusion.y, renderParams->EmissiveAmbientOcclusion.z));
 }
 void CClearCoatMaterial::Init()
 {

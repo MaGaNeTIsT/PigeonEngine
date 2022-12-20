@@ -971,7 +971,7 @@ CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const Cust
 				fscanf_s(file, "%s", str, 256);
 
 				CHAR path[256];
-				strncpy_s(path, 256, "data/model/", 256);
+				strncpy_s(path, 256, "data/model/", 12);
 				strncat_s(path, 256, str, 256);
 				//TODO or not Load material textures
 			}

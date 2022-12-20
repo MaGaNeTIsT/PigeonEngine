@@ -151,40 +151,236 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			CustomStruct::CColor matBaseColor(mat->GetBaseColor());
-			FLOAT baseColor[3] = { matBaseColor.r, matBaseColor.g, matBaseColor.b };
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, baseColor, 3u);
+			CustomStruct::CColor matClr(mat->GetBaseColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
 		}
 
 		{
-			CustomStruct::CColor matEmissiveColor(mat->GetEmissiveColor());
-			FLOAT emissiveColor[3] = { matEmissiveColor.r, matEmissiveColor.g, matEmissiveColor.b };
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, emissiveColor, 3u);
+			CustomStruct::CColor matClr(mat->GetEmissiveColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
 		}
 
 		{
-			BOOL matGlossy = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matGlossy, 1u);
+			BOOL matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
-			FLOAT matRoughness = mat->GetRoughness();
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matRoughness, 1u);
+			FLOAT matV = mat->GetRoughness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matV, 1u);
+
+			matV = mat->GetMetallicness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &matV, 1u);
+
+			matV = mat->GetReflectance();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &matV, 1u);
+
+			matV = mat->GetAmbientOcclusion();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matV, 1u);
+		}
+	}
+
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->WriteFile(fullPath);
+	}
+}
+void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, const std::string& name, const CAnisotropicMaterial* mat)
+{
+	this->InitAllPath();
+
+	{
+		{
+			auto saveTexPath = [&](CTexture2D* tex, FileMaterialTextureParamsType type) {
+				if (tex != NULL)
+				{
+					this->SetTexturePath(type, tex->GetName());
+				}};
+
+			saveTexPath(mat->GetNormalTexture(), FileMaterialTextureParamsType::FMTPT_NORMAL);
+			saveTexPath(mat->GetAlbedoTexture(), FileMaterialTextureParamsType::FMTPT_ALBEDO);
+			saveTexPath(mat->GetEmissiveTexture(), FileMaterialTextureParamsType::FMTPT_EMISSIVE);
+			saveTexPath(mat->GetRoughnessTexture(), FileMaterialTextureParamsType::FMTPT_ROUGHNESS);
+			saveTexPath(mat->GetMetallicnessTexture(), FileMaterialTextureParamsType::FMTPT_METALLICNESS);
+			saveTexPath(mat->GetAmbientOcclusionTexture(), FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION);
+			saveTexPath(mat->GetReflectanceTexture(), FileMaterialTextureParamsType::FMTPT_REFLECTANCE);
+			saveTexPath(mat->GetAnisotropyStrengthTexture(), FileMaterialTextureParamsType::FMTPT_ANISOTROPYSTRENGTH);
+			saveTexPath(mat->GetAnisotropyDirectionTexture(), FileMaterialTextureParamsType::FMTPT_ANISOTROPYDIRECTION);
 		}
 
 		{
-			FLOAT matMetallicness = mat->GetMetallicness();
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &matMetallicness, 1u);
+			CustomStruct::CColor matClr(mat->GetBaseColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
 		}
 
 		{
-			FLOAT matReflectance = mat->GetReflectance();
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &matReflectance, 1u);
+			CustomStruct::CColor matClr(mat->GetEmissiveColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
 		}
 
 		{
-			FLOAT matAmbientOcclusion = mat->GetAmbientOcclusion();
-			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matAmbientOcclusion, 1u);
+			BOOL matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+		}
+
+		{
+			FLOAT matV = mat->GetRoughness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matV, 1u);
+
+			matV = mat->GetMetallicness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &matV, 1u);
+
+			matV = mat->GetReflectance();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &matV, 1u);
+
+			matV = mat->GetAmbientOcclusion();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matV, 1u);
+
+			matV = mat->GetAnisotropyStrength();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYSTRENGTH, &matV, 1u);
+
+			matV = mat->GetAnisotropyDirection();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYDIRECTION, &matV, 1u);
+		}
+	}
+
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->WriteFile(fullPath);
+	}
+}
+void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, const std::string& name, const CClothMaterial* mat)
+{
+	this->InitAllPath();
+
+	{
+		{
+			auto saveTexPath = [&](CTexture2D* tex, FileMaterialTextureParamsType type) {
+				if (tex != NULL)
+				{
+					this->SetTexturePath(type, tex->GetName());
+				}};
+
+			saveTexPath(mat->GetNormalTexture(), FileMaterialTextureParamsType::FMTPT_NORMAL);
+			saveTexPath(mat->GetAlbedoTexture(), FileMaterialTextureParamsType::FMTPT_ALBEDO);
+			saveTexPath(mat->GetEmissiveTexture(), FileMaterialTextureParamsType::FMTPT_EMISSIVE);
+			saveTexPath(mat->GetRoughnessTexture(), FileMaterialTextureParamsType::FMTPT_ROUGHNESS);
+			saveTexPath(mat->GetAmbientOcclusionTexture(), FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION);
+			saveTexPath(mat->GetSheenColorTexture(), FileMaterialTextureParamsType::FMTPT_CLOTHSHEEN);
+			saveTexPath(mat->GetSubsurfaceTexture(), FileMaterialTextureParamsType::FMTPT_CLOTHSUBSURFACE);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetBaseColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetEmissiveColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetSheenColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSHEEN, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetSubsurfaceColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSUBSURFACE, clr, 3u);
+		}
+
+		{
+			BOOL matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+		}
+
+		{
+			FLOAT matV = mat->GetRoughness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matV, 1u);
+
+			matV = mat->GetAmbientOcclusion();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matV, 1u);
+		}
+	}
+
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->WriteFile(fullPath);
+	}
+}
+void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, const std::string& name, const CClothAnisotropicMaterial* mat)
+{
+	this->InitAllPath();
+
+	{
+		{
+			auto saveTexPath = [&](CTexture2D* tex, FileMaterialTextureParamsType type) {
+				if (tex != NULL)
+				{
+					this->SetTexturePath(type, tex->GetName());
+				}};
+
+			saveTexPath(mat->GetNormalTexture(), FileMaterialTextureParamsType::FMTPT_NORMAL);
+			saveTexPath(mat->GetAlbedoTexture(), FileMaterialTextureParamsType::FMTPT_ALBEDO);
+			saveTexPath(mat->GetEmissiveTexture(), FileMaterialTextureParamsType::FMTPT_EMISSIVE);
+			saveTexPath(mat->GetRoughnessTexture(), FileMaterialTextureParamsType::FMTPT_ROUGHNESS);
+			saveTexPath(mat->GetAmbientOcclusionTexture(), FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION);
+			saveTexPath(mat->GetSheenColorTexture(), FileMaterialTextureParamsType::FMTPT_CLOTHSHEEN);
+			saveTexPath(mat->GetSubsurfaceTexture(), FileMaterialTextureParamsType::FMTPT_CLOTHSUBSURFACE);
+			saveTexPath(mat->GetAnisotropyStrengthTexture(), FileMaterialTextureParamsType::FMTPT_ANISOTROPYSTRENGTH);
+			saveTexPath(mat->GetAnisotropyDirectionTexture(), FileMaterialTextureParamsType::FMTPT_ANISOTROPYDIRECTION);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetBaseColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetEmissiveColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetSheenColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSHEEN, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetSubsurfaceColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSUBSURFACE, clr, 3u);
+		}
+
+		{
+			BOOL matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+		}
+
+		{
+			FLOAT matV = mat->GetRoughness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matV, 1u);
+
+			matV = mat->GetAmbientOcclusion();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matV, 1u);
+
+			matV = mat->GetAnisotropyStrength();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYSTRENGTH, &matV, 1u);
+
+			matV = mat->GetAnisotropyDirection();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYDIRECTION, &matV, 1u);
 		}
 	}
 
@@ -241,24 +437,235 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 			FLOAT v = 1.f;
 			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &v, 1u);
 			mat->SetRoughness(v);
-		}
 
-		{
-			FLOAT v = 1.f;
+			v = 1.f;
 			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &v, 1u);
 			mat->SetMetallicness(v);
-		}
 
-		{
-			FLOAT v = 1.f;
+			v = 1.f;
 			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &v, 1u);
 			mat->SetReflectance(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &v, 1u);
+			mat->SetAmbientOcclusion(v);
+		}
+	}
+}
+void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, const std::string& name, CAnisotropicMaterial* mat)
+{
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->ReadFile(fullPath);
+	}
+
+	{
+		{
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+				std::string outputStr;
+				if (this->GetTexturePath(type, outputStr))
+				{
+					return (CTextureManager::LoadTexture2D(outputStr, sRGB));
+				}
+				return NULL; };
+
+			mat->SetNormalTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_NORMAL, FALSE));
+			mat->SetAlbedoTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ALBEDO));
+			mat->SetEmissiveTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_EMISSIVE));
+			mat->SetRoughnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ROUGHNESS, FALSE));
+			mat->SetMetallicnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_METALLICNESS, FALSE));
+			mat->SetAmbientOcclusionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION, FALSE));
+			mat->SetReflectanceTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_REFLECTANCE, FALSE));
+			mat->SetAnisotropyStrengthTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ANISOTROPYSTRENGTH, FALSE));
+			mat->SetAnisotropyDirectionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ANISOTROPYDIRECTION, FALSE));
+		}
+
+		{
+			FLOAT clr[3] = { 1.f, 1.f, 1.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+			mat->SetBaseColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+			mat->SetEmissiveColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			BOOL v = FALSE;
+			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			mat->SetIsGlossyRoughness(v);
 		}
 
 		{
 			FLOAT v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &v, 1u);
+			mat->SetRoughness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &v, 1u);
+			mat->SetMetallicness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &v, 1u);
+			mat->SetReflectance(v);
+
+			v = 1.f;
 			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &v, 1u);
 			mat->SetAmbientOcclusion(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYSTRENGTH, &v, 1u);
+			mat->SetAnisotropyStrength(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYDIRECTION, &v, 1u);
+			mat->SetAnisotropyDirection(v);
+		}
+	}
+}
+void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, const std::string& name, CClothMaterial* mat)
+{
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->ReadFile(fullPath);
+	}
+
+	{
+		{
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+				std::string outputStr;
+				if (this->GetTexturePath(type, outputStr))
+				{
+					return (CTextureManager::LoadTexture2D(outputStr, sRGB));
+				}
+				return NULL; };
+
+			mat->SetNormalTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_NORMAL, FALSE));
+			mat->SetAlbedoTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ALBEDO));
+			mat->SetEmissiveTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_EMISSIVE));
+			mat->SetRoughnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ROUGHNESS, FALSE));
+			mat->SetAmbientOcclusionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION, FALSE));
+			mat->SetSheenColorTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_CLOTHSHEEN, FALSE));
+			mat->SetSubsurfaceTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_CLOTHSUBSURFACE, FALSE));
+		}
+
+		{
+			FLOAT clr[3] = { 1.f, 1.f, 1.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+			mat->SetBaseColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+			mat->SetEmissiveColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSHEEN, clr, 3u);
+			mat->SetSheenColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSUBSURFACE, clr, 3u);
+			mat->SetSubsurfaceColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			BOOL v = FALSE;
+			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			mat->SetIsGlossyRoughness(v);
+		}
+
+		{
+			FLOAT v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &v, 1u);
+			mat->SetRoughness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &v, 1u);
+			mat->SetAmbientOcclusion(v);
+		}
+	}
+}
+void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, const std::string& name, CClothAnisotropicMaterial* mat)
+{
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->ReadFile(fullPath);
+	}
+
+	{
+		{
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+				std::string outputStr;
+				if (this->GetTexturePath(type, outputStr))
+				{
+					return (CTextureManager::LoadTexture2D(outputStr, sRGB));
+				}
+				return NULL; };
+
+			mat->SetNormalTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_NORMAL, FALSE));
+			mat->SetAlbedoTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ALBEDO));
+			mat->SetEmissiveTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_EMISSIVE));
+			mat->SetRoughnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ROUGHNESS, FALSE));
+			mat->SetAmbientOcclusionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION, FALSE));
+			mat->SetSheenColorTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_CLOTHSHEEN, FALSE));
+			mat->SetSubsurfaceTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_CLOTHSUBSURFACE, FALSE));
+			mat->SetAnisotropyStrengthTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ANISOTROPYSTRENGTH, FALSE));
+			mat->SetAnisotropyDirectionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ANISOTROPYDIRECTION, FALSE));
+		}
+
+		{
+			FLOAT clr[3] = { 1.f, 1.f, 1.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+			mat->SetBaseColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+			mat->SetEmissiveColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSHEEN, clr, 3u);
+			mat->SetSheenColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_CLOTHSUBSURFACE, clr, 3u);
+			mat->SetSubsurfaceColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			BOOL v = FALSE;
+			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			mat->SetIsGlossyRoughness(v);
+		}
+
+		{
+			FLOAT v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &v, 1u);
+			mat->SetRoughness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &v, 1u);
+			mat->SetAmbientOcclusion(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYSTRENGTH, &v, 1u);
+			mat->SetAnisotropyStrength(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ANISOTROPYDIRECTION, &v, 1u);
+			mat->SetAnisotropyDirection(v);
 		}
 	}
 }

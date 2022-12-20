@@ -20,6 +20,10 @@ public:
 	void	SetClearCoatRoughnessTexture(class CTexture2D* tex);
 	void	SetClearCoatNormalTexture(class CTexture2D* tex);
 public:
+	class CTexture2D*	GetClearCoatStrengthTexture()const;
+	class CTexture2D*	GetClearCoatRoughnessTexture()const;
+	class CTexture2D*	GetClearCoatNormalTexture()const;
+public:
 	void			SetClearCoatStrength(const FLOAT& v);
 	void			SetClearCoatRoughness(const FLOAT& v);
 	virtual void	SetIsGlossyRoughness(const BOOL& v)override;
@@ -29,6 +33,16 @@ public:
 	virtual void	SetAmbientOcclusion(const FLOAT& v)override;
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr)override;
 	virtual void	SetEmissiveColor(const CustomStruct::CColor& clr)override;
+public:
+	FLOAT							GetClearCoatStrength()const;
+	FLOAT							GetClearCoatRoughness()const;
+	virtual BOOL					GetIsGlossyRoughness()const override;
+	virtual FLOAT					GetRoughness()const override;
+	virtual FLOAT					GetMetallicness()const override;
+	virtual FLOAT					GetReflectance()const override;
+	virtual FLOAT					GetAmbientOcclusion()const override;
+	virtual CustomStruct::CColor	GetBaseColor()const override;
+	virtual CustomStruct::CColor	GetEmissiveColor()const override;
 public:
 	virtual void	Init()override;
 	virtual void	Bind()const override;
