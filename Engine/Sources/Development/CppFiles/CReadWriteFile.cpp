@@ -1,4 +1,5 @@
 #include "../Headers/CReadWriteFile.h"
+#include <filesystem>
 
 BOOL CTempFileHelper::FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index, UINT* extra1Index)
 {
@@ -86,6 +87,50 @@ BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* 
 	}
 	dst[num_m_1] = lastStr;
 	return TRUE;
+}
+INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames)
+{
+	if (fileNames.size() != 0)
+	{
+		fileNames.clear();
+	}
+
+	{
+		std::filesystem::path pathRoot(path);
+		if (!std::filesystem::exists(pathRoot))
+		{
+			return -1;
+		}
+		BOOL bRegularFile = std::filesystem::is_regular_file(pathRoot);
+		if (!std::filesystem::is_directory(pathRoot) && !bRegularFile)
+		{
+			return -1;
+		}
+		if (bRegularFile)
+		{
+			std::string result[3];
+			if (CTempFileHelper::FetchStringIntoThreePartInvOrder(path, result, &(CTempFileHelper::_NameTypeSeparator), 1u, CTempFileHelper::_PathNameSeparator, CTempFileHelper::_PathNameSeparatorNum, "Error"))
+			{
+				if (result[0] == fileType)
+				{
+					fileNames.push_back(result[2]);
+					return 1;
+				}
+			}
+			return -1;
+		}
+	}
+
+	INT fileNum = 0;
+	std::filesystem::directory_iterator folderIterator(path);
+	for (auto& folderItem : folderIterator)
+	{
+		std::string fileName(folderItem.path().filename().string());
+
+		fileNames.push_back();
+		fileNum++;
+	}
+	return fileNum;
 }
 
 

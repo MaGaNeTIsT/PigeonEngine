@@ -37,25 +37,11 @@ protected:
 	std::map<ULONGLONG, CGameObjectBase*>	m_Lights;
 	std::map<ULONGLONG, CGameObjectBase*>	m_GameObjects[SceneLayout::LAYOUT_COUNT];
 	std::map<ULONGLONG, CGameObjectBase*>	m_AllObjectList;
-#ifdef _DEVELOPMENT_EDITOR
-protected:
-	virtual void		OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY);
-protected:
-	BOOL				m_ShowSceneInfo;
-	BOOL				m_ShowCameraInfo;
-	BOOL				m_ShowLightInfo;
-	BOOL				m_ShowSelectObjectInfo;
-	CGameObjectBase*	m_SelectedObject;
-#endif
 public:
 	virtual void	Init();
 	virtual void	Uninit();
 	virtual void	Update();
 	virtual void	FixedUpdate();
-public:
-#ifdef _DEVELOPMENT_EDITOR
-	virtual void	EditorUpdate();
-#endif
 protected:
 	template <class T>
 	T* GetMainCamera()const
@@ -232,6 +218,18 @@ public:
 		}
 		return listObj;
 	}
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	virtual void	EditorUpdate();
+protected:
+	virtual void	OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY);
+protected:
+	BOOL				m_ShowSceneInfo;
+	BOOL				m_ShowCameraInfo;
+	BOOL				m_ShowLightInfo;
+	BOOL				m_ShowSelectObjectInfo;
+	CGameObjectBase*	m_SelectedObject;
+#endif
 public:
 	CScene();
 	virtual ~CScene();

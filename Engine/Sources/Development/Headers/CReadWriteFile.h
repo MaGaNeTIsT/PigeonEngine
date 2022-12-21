@@ -154,6 +154,11 @@ public:
 	static BOOL FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index = nullptr, UINT* extra1Index = nullptr);
 	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR** signChar, const UINT* signNum, const std::string& failedStr, UINT* extraIndex = nullptr);
 	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr);
+public:
+	/*
+	* Return value : If -1, invalid path. If 0, there is no file. If = 1, folder path is point to a single file. If > 0, file's number.
+	*/
+	static INT CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames);
 };
 
 class CTempFileReaderWriterBase
