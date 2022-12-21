@@ -39,6 +39,6 @@ protected:
 	CHAR							m_LoadMaterialPath[512];
 #endif
 public:
-	CSceneGameObject();
+	CSceneGameObject(const BOOL& active, const class CScene* scene);
 	virtual ~CSceneGameObject();
 };

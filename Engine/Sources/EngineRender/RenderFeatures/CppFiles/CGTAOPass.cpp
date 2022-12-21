@@ -4,11 +4,13 @@
 #include "../../AssetsManager/Headers/CTextureType.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CScene.h"
+
+#ifdef _DEVELOPMENT_EDITOR
 #include "../../../EngineGame/Headers/CScreenPolygon2D.h"
+#endif
 
 CGTAOPass::CGTAOPass()
 {
-	this->m_Polygon2D = NULL;
 	this->m_MainCamera = NULL;
 	this->m_BufferSize = CustomType::Vector2Int(0, 0);
 	this->m_PipelineSize = CustomType::Vector2Int(0, 0);
@@ -22,15 +24,20 @@ CGTAOPass::CGTAOPass()
 	this->m_UserArguments.Intensity = 0.5f;
 	this->m_UserArguments.Power = 2.f;
 
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_Polygon2D = NULL;
 	this->m_DebugType = 0;
+#endif
 }
 CGTAOPass::~CGTAOPass()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	if (this->m_Polygon2D != NULL)
 	{
 		delete (this->m_Polygon2D);
 		this->m_Polygon2D = NULL;
 	}
+#endif
 }
 void CGTAOPass::Init(CCamera* mainCamera, const CustomType::Vector2Int& pipelineSize)
 {
@@ -65,12 +72,12 @@ void CGTAOPass::Init(CCamera* mainCamera, const CustomType::Vector2Int& pipeline
 			CustomStruct::CRenderBindFlag::BIND_SRV_UAV,
 			CustomStruct::CRenderFormat::FORMAT_R8_UNORM));
 
-	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
-	this->m_Polygon2D->Init();
-
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAOSpatialIntegral.cso", this->m_IntegralComputeShader);
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAOSpatialFilter.cso", this->m_FilterComputeShader);
-	
+
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_Polygon2D = new CScreenPolygon2D(TRUE, nullptr, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
+	this->m_Polygon2D->Init();
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/GTAODebugType.cso", this->m_DebugComputeShader);
 	CRenderDevice::CreateRenderTexture2D(
 		this->m_DebugBuffer,
@@ -79,35 +86,20 @@ void CGTAOPass::Init(CCamera* mainCamera, const CustomType::Vector2Int& pipeline
 			bufferHeight,
 			CustomStruct::CRenderBindFlag::BIND_SRV_UAV,
 			CustomStruct::CRenderFormat::FORMAT_R8G8B8A8_UNORM));
+#endif
 }
 void CGTAOPass::Uninit()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	if (this->m_Polygon2D != NULL)
 	{
 		delete (this->m_Polygon2D);
 		this->m_Polygon2D = NULL;
 	}
+#endif
 }
 void CGTAOPass::Update()
 {
-	{
-		INT tempNumAngles = this->m_UserArguments.NumAngles;
-
-		ImGui::Begin("GTAO parameters");
-		ImGui::SliderInt("Debug type", &(this->m_DebugType), 0, 3);
-		ImGui::SliderInt("Angles number", &(tempNumAngles), 1, 16);
-		ImGui::SliderFloat("Fall off end", &(this->m_UserArguments.FallOffEnd), 0.f, 1000.f);
-		//ImGui::SliderFloat("Fall off start ratio", &(this->m_UserArguments.FallOffStartRatio), 0.f, 0.999f);
-		ImGui::SliderFloat("Thickness blend", &(this->m_UserArguments.ThicknessBlend), 0.f, 1.f);
-		ImGui::SliderFloat("Fade radius", &(this->m_UserArguments.FadeRadius), 0.f, 200000.f);
-		ImGui::SliderFloat("Fade distance", &(this->m_UserArguments.FadeDistance), 0.f, 200000.f);
-		ImGui::SliderFloat("Intensity", &(this->m_UserArguments.Intensity), 0.f, 1.f);
-		ImGui::SliderFloat("Power", &(this->m_UserArguments.Power), 0.1f, 8.f);
-		ImGui::End();
-
-		this->m_UserArguments.NumAngles = tempNumAngles;
-	}
-
 	FLOAT bufferSizeW = static_cast<FLOAT>(this->m_BufferSize.X());
 	FLOAT bufferSizeH = static_cast<FLOAT>(this->m_BufferSize.Y());
 	FLOAT pipelineSizeW = static_cast<FLOAT>(this->m_PipelineSize.X());
@@ -163,6 +155,25 @@ void CGTAOPass::ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceVie
 	CRenderDevice::BindNoCSUnorderedAccessView(0u);
 	CRenderDevice::SetNoCSShader();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CGTAOPass::EditorUpdate()
+{
+	INT tempNumAngles = this->m_UserArguments.NumAngles;
+
+	ImGui::Begin("GTAO parameters");
+	ImGui::SliderInt("Debug type", &(this->m_DebugType), 0, 3);
+	ImGui::SliderInt("Angles number", &(tempNumAngles), 1, 16);
+	ImGui::SliderFloat("Fall off end", &(this->m_UserArguments.FallOffEnd), 0.f, 1000.f);
+	//ImGui::SliderFloat("Fall off start ratio", &(this->m_UserArguments.FallOffStartRatio), 0.f, 0.999f);
+	ImGui::SliderFloat("Thickness blend", &(this->m_UserArguments.ThicknessBlend), 0.f, 1.f);
+	ImGui::SliderFloat("Fade radius", &(this->m_UserArguments.FadeRadius), 0.f, 200000.f);
+	ImGui::SliderFloat("Fade distance", &(this->m_UserArguments.FadeDistance), 0.f, 200000.f);
+	ImGui::SliderFloat("Intensity", &(this->m_UserArguments.Intensity), 0.f, 1.f);
+	ImGui::SliderFloat("Power", &(this->m_UserArguments.Power), 0.1f, 8.f);
+	ImGui::End();
+
+	this->m_UserArguments.NumAngles = tempNumAngles;
+}
 void CGTAOPass::DrawDebug()
 {
 	if (this->m_DebugType != 0)
@@ -191,3 +202,4 @@ void CGTAOPass::DrawDebug()
 		}
 	}
 }
+#endif

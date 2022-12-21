@@ -32,7 +32,9 @@ std::shared_ptr<CSkyBox>			CRenderPipeline::m_SkyBox				= nullptr;
 std::shared_ptr<CGPUCulling>		CRenderPipeline::m_GPUCulling			= nullptr;
 std::shared_ptr<CGTAOPass>			CRenderPipeline::m_GTAOPass				= nullptr;
 std::shared_ptr<CHZBPass>			CRenderPipeline::m_HZBPass				= nullptr;
+#ifdef _DEVELOPMENT_EDITOR
 std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
+#endif
 
 CRenderPipeline::CRenderPipeline()
 {
@@ -82,10 +84,12 @@ CRenderPipeline::CRenderPipeline()
 	{
 		CRenderPipeline::m_HZBPass = std::shared_ptr<CHZBPass>(new CHZBPass());
 	}
+#ifdef _DEVELOPMENT_EDITOR
 	if (CRenderPipeline::m_DebugScreen == nullptr)
 	{
 		CRenderPipeline::m_DebugScreen = std::shared_ptr<CDebugScreen>(new CDebugScreen());
 	}
+#endif
 
 	m_Scene				= NULL;
 	m_SceneCamera		= NULL;
@@ -93,12 +97,32 @@ CRenderPipeline::CRenderPipeline()
 	m_GlobalBufferSize	= CustomType::Vector2Int(0, 0);
 	m_ShadowBufferSize	= CustomType::Vector2Int(0, 0);
 	m_FullScreenPolygon = NULL;
+
+#ifdef _DEVELOPMENT_EDITOR
+	m_ShadowPassGPUAverageTime = static_cast<DOUBLE>(0);
+	m_ShowGPUProfiler = FALSE;
+	m_ShowCPUCullingInfo = FALSE;
+	m_ShowGPUCullingInfo = FALSE;
+	m_ShowDebugScreen = FALSE;
+	m_ShowGTAOEditor = FALSE;
+	m_ShowHZBEditor = FALSE;
+#endif
 }
 CRenderPipeline::~CRenderPipeline()
 {
 }
 void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bufferSize)
 {
+#ifdef _DEVELOPMENT_EDITOR
+	m_ShadowPassGPUAverageTime = static_cast<DOUBLE>(0);
+	m_ShowGPUProfiler = FALSE;
+	m_ShowCPUCullingInfo = FALSE;
+	m_ShowGPUCullingInfo = FALSE;
+	m_ShowDebugScreen = FALSE;
+	m_ShowGTAOEditor = FALSE;
+	m_ShowHZBEditor = FALSE;
+#endif
+
 	m_Scene = scene;
 	m_GlobalBufferSize = bufferSize;
 	m_ShadowBufferSize = CustomType::Vector2Int(2048, 2048);
@@ -303,7 +327,9 @@ void CRenderPipeline::PostInit()
 		m_GTAOPass->Init(m_SceneCamera, m_GlobalBufferSize);
 		m_HZBPass->Init(m_GlobalBufferSize);
 		m_GPUCulling->Init(m_HZBPass, 1u, 50u);
+#ifdef _DEVELOPMENT_EDITOR
 		m_DebugScreen->Init(m_GlobalBufferSize);
+#endif
 	}
 }
 void CRenderPipeline::Uninit()
@@ -337,7 +363,9 @@ void CRenderPipeline::Uninit()
 		m_DirLightCullingResults.clear();
 	}
 
+#ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Uninit();
+#endif
 	m_GTAOPass->Uninit();
 	m_HZBPass->Uninit();
 	m_GPUCulling->Uninit();
@@ -421,38 +449,50 @@ void CRenderPipeline::PostUpdate()
 		}
 		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_TERRAIN])
 		{
-			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
+			if (obj.second && obj.second->IsActive())
 			{
-				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
-				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+				CGameObject* tempGameObjectPtr = reinterpret_cast<CGameObject*>(obj.second);
+				if (tempGameObjectPtr && tempGameObjectPtr->HasMeshComponent() && tempGameObjectPtr->HasMeshRendererComponent())
 				{
-					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(obj.second);
-					break;
+					const CMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CMeshComponent>();
+					const CMeshRendererComponent* meshRenderer = tempGameObjectPtr->GetMeshRendererComponent<CMeshRendererComponent>();
+					if (mesh && meshRenderer && mesh->IsActive() && mesh->HasMesh() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+					{
+						m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TERRAIN].push_back(tempGameObjectPtr);
+						break;
+					}
 				}
 			}
 		}
 		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_OPAQUE])
 		{
-			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
+			if (obj.second && obj.second->IsActive())
 			{
-				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
-				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+				CGameObject* tempGameObjectPtr = reinterpret_cast<CGameObject*>(obj.second);
+				if (tempGameObjectPtr && tempGameObjectPtr->HasMeshComponent() && tempGameObjectPtr->HasMeshRendererComponent())
 				{
-					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(obj.second);
+					const CMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CMeshComponent>();
+					const CMeshRendererComponent* meshRenderer = tempGameObjectPtr->GetMeshRendererComponent<CMeshRendererComponent>();
+					if (mesh && meshRenderer && mesh->IsActive() && mesh->HasMesh() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+					{
+						m_ScenePrimitives[CScene::SceneLayout::LAYOUT_OPAQUE].push_back(tempGameObjectPtr);
+					}
 				}
 			}
 		}
 		for (auto& obj : m_Scene->m_GameObjects[CScene::SceneLayout::LAYOUT_TRANSPARENT])
 		{
-			if (obj.second && obj.second->IsActive() && obj.second->HasMeshComponent() && obj.second->HasMeshRendererComponent())
+			if (obj.second && obj.second->IsActive())
 			{
-				const CMeshComponent* mesh = obj.second->GetMeshComponent<CMeshComponent>();
-				const CMeshRendererComponent* meshRenderer = obj.second->GetMeshRendererComponent<CMeshRendererComponent>();
-				if (mesh && meshRenderer && mesh->IsActive() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+				CGameObject* tempGameObjectPtr = reinterpret_cast<CGameObject*>(obj.second);
+				if (tempGameObjectPtr && tempGameObjectPtr->HasMeshComponent() && tempGameObjectPtr->HasMeshRendererComponent())
 				{
-					m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(obj.second);
+					const CMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CMeshComponent>();
+					const CMeshRendererComponent* meshRenderer = tempGameObjectPtr->GetMeshRendererComponent<CMeshRendererComponent>();
+					if (mesh && meshRenderer && mesh->IsActive() && mesh->HasMesh() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
+					{
+						m_ScenePrimitives[CScene::SceneLayout::LAYOUT_TRANSPARENT].push_back(tempGameObjectPtr);
+					}
 				}
 			}
 		}
@@ -465,7 +505,9 @@ void CRenderPipeline::PostUpdate()
 	m_GTAOPass->Update();
 	m_HZBPass->Update();
 	m_GPUCulling->Update(m_FrameIndex);
+#ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Update();
+#endif
 }
 void CRenderPipeline::Render()
 {
@@ -706,20 +748,25 @@ void CRenderPipeline::Render()
 	{
 		//TODO Test and debug.
 		CGPUProfilerManager::AddPass("Debug_Pass", m_FrameIndex, [&]() {
+#ifdef _DEVELOPMENT_EDITOR
 			CRenderDevice::SetDepthStencilState(m_GBufferForwardPassDSS);
 			CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView);
-			if (needShadowPass)
+			if (m_ShowDebugScreen)
 			{
-				m_DebugScreen->SetShadowMap(lightShadow->GetCurrentShadowMap(0u).Texture.ShaderResourceView);
+				if (needShadowPass)
+				{
+					m_DebugScreen->SetShadowMap(lightShadow->GetCurrentShadowMap(0u).Texture.ShaderResourceView);
+				}
+				else
+				{
+					m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE]->GetShaderResourceView());
+				}
+				m_DebugScreen->Draw();
 			}
-			else
-			{
-				m_DebugScreen->SetShadowMap(CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE]->GetShaderResourceView());
-			}
-			//m_DebugScreen->Draw();
 			m_HZBPass->DrawDebug();
 			m_GTAOPass->DrawDebug();
+#endif
 			});
 	}
 
@@ -738,7 +785,19 @@ void CRenderPipeline::Render()
 	}
 
 	{
+		//Final output
+		CRenderDevice::SetDefaultDepthStencilState();
+		CRenderDevice::SetDefaultBlendState();
+		CRenderDevice::SetFinalOutput();
+		CRenderDevice::BindPSShaderResourceView(m_PostProcessBase->GetResultTarget()->ShaderResourceView, ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
+		DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
+	}
+
+#ifdef _DEVELOPMENT_EDITOR
+	if (m_ShowGPUProfiler)
+	{
 		DOUBLE shadowPassTime = static_cast<DOUBLE>(0);
+		DOUBLE timeScale = static_cast<DOUBLE>(1000);
 		if (needShadowPass)
 		{
 			UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
@@ -748,23 +807,50 @@ void CRenderPipeline::Render()
 				passShadowName += std::to_string(i);
 				shadowPassTime += CGPUProfilerManager::GetPassAverageTime(passShadowName);
 			}
-			shadowPassTime *= static_cast<DOUBLE>(1000);
+			shadowPassTime *= timeScale;
 		}
+		m_ShadowPassGPUAverageTime = shadowPassTime;
+	}
+#endif
+}
+#ifdef _DEVELOPMENT_EDITOR
+void CRenderPipeline::EditorUpdate()
+{
+	bool showGPUProfiler = m_ShowGPUProfiler;
+	bool showCPUCullingInfo = m_ShowCPUCullingInfo;
+	bool showGPUCullingInfo = m_ShowGPUCullingInfo;
+	bool showDebugScreen = m_ShowDebugScreen;
+	bool showGTAOEditor = m_ShowGTAOEditor;
+	bool showHZBEditor = m_ShowHZBEditor;
+
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+	if (ImGui::TreeNode("CurrentRenderPipelineInfo"))
+	{
+		ImGui::Checkbox("ShowGPUProfiler", &showGPUProfiler);
+		ImGui::Checkbox("ShowCPUCullingInfo", &showCPUCullingInfo);
+		ImGui::Checkbox("ShowGPUCullingInfo", &showGPUCullingInfo);
+		ImGui::Checkbox("ShowDebugScreen", &showDebugScreen);
+		ImGui::Checkbox("ShowGTAOEditor", &showGTAOEditor);
+		ImGui::Checkbox("ShowHZBEditor", &showHZBEditor);
+		ImGui::TreePop();
+	}
+	if (showGPUProfiler)
+	{
+		DOUBLE timeScale = static_cast<DOUBLE>(1000);
 		ImGui::Begin("GPU Profiler");
-		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::Text("Shadow Pass          : %f ms.", shadowPassTime);
-		ImGui::Text("Pre-Depth Pass       : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Build HZB            : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Sky Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Post-process Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * static_cast<DOUBLE>(1000));
-		ImGui::Text("Total Pass           : %f ms.",
+		ImGui::Text("Shadow Pass          : %f ms.", m_ShadowPassGPUAverageTime);
+		ImGui::Text("Pre-Depth Pass       : %f ms.", CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") * timeScale);
+		ImGui::Text("Build HZB            : %f ms.", CGPUProfilerManager::GetPassAverageTime("HZB_Pass") * timeScale);
+		ImGui::Text("Ambient Occlusion    : %f ms.", CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") * timeScale);
+		ImGui::Text("Occlusion Culling    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Occlusion_Culling_Pass") * timeScale);
+		ImGui::Text("Geometry Pass        : %f ms.", CGPUProfilerManager::GetPassAverageTime("Geometry_Buffer_Pass") * timeScale);
+		ImGui::Text("Sky Pass             : %f ms.", CGPUProfilerManager::GetPassAverageTime("Sky_Box_Pass") * timeScale);
+		ImGui::Text("Direct Light Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Direct_Light_Pass") * timeScale);
+		ImGui::Text("Opaque Forward Pass  : %f ms.", CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") * timeScale);
+		ImGui::Text("Transparent Pass     : %f ms.", CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") * timeScale);
+		ImGui::Text("Post-process Pass    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") * timeScale);
+		ImGui::Text("Debug Screen Info    : %f ms.", CGPUProfilerManager::GetPassAverageTime("Debug_Pass") * timeScale);
+		ImGui::Text("Total Pass           : %f ms.", m_ShadowPassGPUAverageTime +
 			(CGPUProfilerManager::GetPassAverageTime("Pre-Depth_Pass") +
 				CGPUProfilerManager::GetPassAverageTime("HZB_Pass") +
 				CGPUProfilerManager::GetPassAverageTime("GTAO_Pass") +
@@ -775,19 +861,30 @@ void CRenderPipeline::Render()
 				CGPUProfilerManager::GetPassAverageTime("Opaque_Forward_Pass") +
 				CGPUProfilerManager::GetPassAverageTime("Transparent_Forward_Pass") +
 				CGPUProfilerManager::GetPassAverageTime("Post_Process_Pass") +
-				CGPUProfilerManager::GetPassAverageTime("Debug_Pass")) * static_cast<DOUBLE>(1000));
+				CGPUProfilerManager::GetPassAverageTime("Debug_Pass")) * timeScale);
 		ImGui::End();
 	}
-
+	if (showGPUCullingInfo)
 	{
-		//Final output
-		CRenderDevice::SetDefaultDepthStencilState();
-		CRenderDevice::SetDefaultBlendState();
-		CRenderDevice::SetFinalOutput();
-		CRenderDevice::BindPSShaderResourceView(m_PostProcessBase->GetResultTarget()->ShaderResourceView, ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
-		DrawFullScreenPolygon(CRenderPipeline::m_ScreenPolygonShader);
+		m_GPUCulling->EditorUpdate();
 	}
+	if (showGTAOEditor)
+	{
+		m_GTAOPass->EditorUpdate();
+	}
+	if (showHZBEditor)
+	{
+		m_HZBPass->EditorUpdate();
+	}
+
+	m_ShowGPUProfiler = showGPUProfiler;
+	m_ShowCPUCullingInfo = showCPUCullingInfo;
+	m_ShowGPUCullingInfo = showGPUCullingInfo;
+	m_ShowDebugScreen = showDebugScreen;
+	m_ShowGTAOEditor = showGTAOEditor;
+	m_ShowHZBEditor = showHZBEditor;
 }
+#endif
 void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)
 {
 	m_FullScreenPolygonVS->Bind();
@@ -1026,6 +1123,8 @@ void CRenderPipeline::Culling()
 		}
 	}
 
+#ifdef _DEVELOPMENT_EDITOR
+	if (m_ShowCPUCullingInfo)
 	{
 		INT tempPrimitivesCount = static_cast<INT>(m_ScenePrimitives[0].size());
 		for (INT i = 1; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
@@ -1052,6 +1151,7 @@ void CRenderPipeline::Culling()
 		}
 		ImGui::End();
 	}
+#endif
 }
 BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius)
 {

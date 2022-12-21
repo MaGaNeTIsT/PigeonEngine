@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 

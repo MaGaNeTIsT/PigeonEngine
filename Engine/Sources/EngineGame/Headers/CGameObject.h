@@ -7,101 +7,58 @@
 #include "./CComponent.h"
 #include "./CGameBoundComponent.h"
 
-class CGameObject : public CObjectBase
+class CGameObjectBase : public CObjectBase
 {
 public:
-	const class CScene*								GetScene()const;
-	const CTransform*								GetTransform()const;
-	const CustomStruct::CRenderBoundingBox*			GetRenderLocalBoundingBox()const;
-	const CustomStruct::CRenderBoundingSphere*		GetRenderLocalBoundingSphere()const;
+	virtual void	Init()			= 0;
+	virtual void	Uninit()		= 0;
+	virtual void	Update()		= 0;
+	virtual void	FixedUpdate()	= 0;
+#ifdef _DEVELOPMENT_EDITOR
 public:
-	void	SetScene(const class CScene* scene)const;
-	void	AddNewTransform(const CGameObject* parent = NULL)const;
-	void	AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, const CGameObject* parent = NULL)const;
-	void	SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)const;
-	void	SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)const;
-	void	GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)const;
-	void	SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)const;
-	void	SetRenderLocalBoundingSphere(const FLOAT& radius)const;
-	void	GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)const;
+	virtual void	SelectedEditorUpdate() = 0;
+#endif
 public:
-	void	RemoveTransform()const;
+	BOOL					HasScene()const;
+	BOOL					IsBelongScene(const class CScene* scene)const;
+	const class CScene*		GetScene()const;
+protected:
+	const class CScene*		m_Scene;
 public:
-	BOOL	IsBelongTransform(const CTransform* gameObject)const;
-	BOOL	HasScene()const;
-	BOOL	HasTransform()const;
-	BOOL	HasRenderBoundingBox()const;
-	BOOL	HasRenderBoundingSphere()const;
+	const BOOL&		IsActive()const;
+	void			Active();
+	void			Inactive();
+protected:
+	BOOL			m_Active;
 public:
-	const CGameObject*					GetParent()const;
-	std::vector<const CGameObject*>		GetChildrenList()const;
-	const CGameObject*					GetChildByTransformID(const ULONGLONG& id)const;
-	template<class T>
-	std::vector<const T*> GetChildrenListByType()const
-	{
-		std::vector<const T*> childrenList;
-		if (this->HasChild())
-		{
-			std::vector<const CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
-			for (const auto& child : childrenTransformList)
-			{
-				if (child != NULL && child->HasGameObject())
-				{
-					const CGameObject* childGameObject = child->GetGameObject();
-					if (childGameObject != NULL && typeid(*childGameObject) == typeid(T))
-					{
-						childrenList.push_back(reinterpret_cast<const T*>(childGameObject));
-					}
-				}
-			}
-		}
-		return childrenList;
-	}
-	template<class T>
-	const T* GetFirstChildByType()const
-	{
-		if (this->HasChild())
-		{
-			std::vector<const CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
-			for (const auto& child : childrenTransformList)
-			{
-				if (child != NULL && child->HasGameObject())
-				{
-					const CGameObject* childGameObject = child->GetGameObject();
-					if (childGameObject != NULL && typeid(*childGameObject) == typeid(T))
-					{
-						return (reinterpret_cast<const T*>(childGameObject));
-					}
-				}
-			}
-		}
-		return NULL;
-	}
+	CGameObjectBase(const BOOL& active, const class CScene* scene);
+	virtual ~CGameObjectBase();
+};
+
+class CGameObjectTransformBase : public CGameObjectBase
+{
 public:
-	void	SetParent(const CGameObject* parent)const;
-	void	AddChild(const CGameObject* child)const;
+	virtual void	Init()override {}
+	virtual void	Uninit()override {}
+	virtual void	Update()override {}
+	virtual void	FixedUpdate()override {}
+#ifdef _DEVELOPMENT_EDITOR
 public:
-	void	RemoveParent()const;
-	void	RemoveChild(const CGameObject* child)const;
-	void	RemoveChildByTransformID(const ULONGLONG& id)const;
-	void	RemoveChildren()const;
+	virtual void	SelectedEditorUpdate()override {}
+#endif
 public:
-	BOOL	IsParent(const CGameObject* parent)const;
-	BOOL	IsChild(const CGameObject* child)const;
-	BOOL	HasParent()const;
-	BOOL	HasChild()const;
+	CustomType::Vector3		GetForwardVector()const;
+	CustomType::Vector3		GetUpVector()const;
+	CustomType::Vector3		GetRightVector()const;
+	CustomType::Matrix4x4	GetLocalToWorldMatrix()const;
+	CustomType::Matrix4x4	GetWorldToLocalMatrix()const;
 public:
-	CustomType::Vector3			GetForwardVector()const;
-	CustomType::Vector3			GetUpVector()const;
-	CustomType::Vector3			GetRightVector()const;
-	CustomType::Matrix4x4		GetLocalToWorldMatrix()const;
-	CustomType::Matrix4x4		GetWorldToLocalMatrix()const;
-	CustomType::Vector3			GetWorldPosition()const;
-	CustomType::Quaternion		GetWorldRotation()const;
-	CustomType::Vector3			GetWorldScale()const;
-	CustomType::Vector3			GetLocalPosition()const;
-	CustomType::Quaternion		GetLocalRotation()const;
-	CustomType::Vector3			GetLocalScale()const;
+	CustomType::Vector3		GetWorldPosition()const;
+	CustomType::Quaternion	GetWorldRotation()const;
+	CustomType::Vector3		GetWorldScale()const;
+	CustomType::Vector3		GetLocalPosition()const;
+	CustomType::Quaternion	GetLocalRotation()const;
+	CustomType::Vector3		GetLocalScale()const;
 public:
 	void	SetWorldPosition(const CustomType::Vector3& worldPosition);
 	void	SetWorldRotation(const CustomType::Quaternion& worldRotation);
@@ -109,21 +66,108 @@ public:
 	void	SetLocalPosition(const CustomType::Vector3& localPosition);
 	void	SetLocalRotation(const CustomType::Quaternion& localRotation);
 	void	SetLocalScale(const CustomType::Vector3& localScale);
-protected:
-	void	BaseRemoveTransform(const UINT& deleteTransform)const;
-	void	ConnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const;
-	void	DisconnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const;
-protected:
-	mutable const class CScene*							m_Scene;
-	mutable CTransform*									m_Transform;
-	mutable CustomStruct::CRenderBoundingBox*			m_RenderBoundingBox;
-	mutable CustomStruct::CRenderBoundingSphere*		m_RenderBoundingSphere;
 public:
-	void						AddComponent(CBaseComponent* component);
-	void						RemoveComponent(const CBaseComponent* component);
-	void						RemoveComponentByComponentID(const ULONGLONG& id);
-	void						RemoveComponents();
-	CBaseComponent*				GetComponentByComponentID(const ULONGLONG& id)const;
+	BOOL			HasTransform()const;
+	BOOL			IsBelongTransform(const ULONGLONG& transformID)const;
+	CTransform*		GetTransform()const;
+	ULONGLONG		GetTransformID()const;
+	void			AddNewTransform(CGameObjectTransformBase* parent = nullptr);
+	void			AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, CGameObjectTransformBase* parent = nullptr);
+	void			RemoveTransform();
+protected:
+	void	BaseRemoveTransform(const BOOL& bDeleteTransform);
+	void	ConnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform);
+	void	DisconnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform);
+public:
+	BOOL	HasParent()const;
+	BOOL	HasChild()const;
+	BOOL	IsParent(const ULONGLONG& parentID)const;
+	BOOL	IsChild(const ULONGLONG& childID)const;
+public:
+	void	SetParent(CGameObjectTransformBase* parent);
+	void	AddChild(CGameObjectTransformBase* child);
+public:
+	void	RemoveParent();
+	void	RemoveChild(CGameObjectTransformBase* child);
+	void	RemoveChildByTransformID(const ULONGLONG& id);
+	void	RemoveChildren();
+public:
+	CGameObjectTransformBase*					GetParent()const;
+	std::vector<CGameObjectTransformBase*>		GetChildrenList()const;
+	CGameObjectTransformBase*					GetChildByTransformID(const ULONGLONG& id)const;
+	template<class T>
+	std::vector<T*> GetChildrenListByType()const
+	{
+		std::vector<T*> childrenList;
+		if (this->HasChild())
+		{
+			std::vector<CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
+			{
+				if (child != nullptr && child->HasGameObject())
+				{
+					CGameObjectTransformBase* childGameObject = child->GetGameObject();
+					if (childGameObject != nullptr && typeid(*childGameObject) == typeid(T))
+					{
+						childrenList.push_back(reinterpret_cast<T*>(childGameObject));
+					}
+				}
+			}
+		}
+		return childrenList;
+	}
+	template<class T>
+	T* GetFirstChildByType()const
+	{
+		if (this->HasChild())
+		{
+			std::vector<CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
+			for (const auto& child : childrenTransformList)
+			{
+				if (child != nullptr && child->HasGameObject())
+				{
+					CGameObjectTransformBase* childGameObject = child->GetGameObject();
+					if (childGameObject != nullptr && typeid(*childGameObject) == typeid(T))
+					{
+						return (reinterpret_cast<T*>(childGameObject));
+					}
+				}
+			}
+		}
+		return nullptr;
+	}
+protected:
+	CTransform*		m_Transform;
+public:
+	CGameObjectTransformBase(const BOOL& active, const class CScene* scene);
+	virtual ~CGameObjectTransformBase();
+};
+
+class CGameObject : public CGameObjectTransformBase
+{
+public:
+	BOOL	HasRenderBoundingBox()const;
+	BOOL	HasRenderBoundingSphere()const;
+public:
+	const CustomStruct::CRenderBoundingBox*		GetRenderLocalBoundingBox()const;
+	const CustomStruct::CRenderBoundingSphere*	GetRenderLocalBoundingSphere()const;
+public:
+	void	GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)const;
+	void	SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions);
+	void	SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions);
+public:
+	void	GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)const;
+	void	SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius);
+	void	SetRenderLocalBoundingSphere(const FLOAT& radius);
+protected:
+	CustomStruct::CRenderBoundingBox*		m_RenderBoundingBox;
+	CustomStruct::CRenderBoundingSphere*	m_RenderBoundingSphere;
+public:
+	void				AddComponent(CBaseComponent* component);
+	void				RemoveComponent(const CBaseComponent* component);
+	void				RemoveComponentByComponentID(const ULONGLONG& id);
+	void				RemoveComponents();
+	CBaseComponent*		GetComponentByComponentID(const ULONGLONG& id)const;
 public:
 	template<class T>
 	T* GetFirstComponentByType()const
@@ -132,13 +176,13 @@ public:
 		{
 			for (const auto& component : this->m_Components)
 			{
-				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				if (component.second != nullptr && typeid(*(component.second)) == typeid(T))
 				{
 					return (reinterpret_cast<T*>(component.second));
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	std::vector<T*> GetComponentListByType()const
@@ -148,7 +192,7 @@ public:
 		{
 			for (const auto& component : this->m_Components)
 			{
-				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				if (component.second != nullptr && typeid(*(component.second)) == typeid(T))
 				{
 					componentList.push_back(reinterpret_cast<T*>(component.second));
 				}
@@ -170,7 +214,7 @@ public:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	T* GetMeshRendererComponent()const
@@ -186,7 +230,7 @@ public:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	T* GetGameBoundComponent()const
@@ -200,7 +244,7 @@ public:
 				return (reinterpret_cast<T*>(element->second));
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 protected:
 	CBaseComponent* BaseGetComponentByComponentID(const ULONGLONG& id)const;
@@ -211,13 +255,13 @@ protected:
 		{
 			for (const auto& component : this->m_Components)
 			{
-				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				if (component.second != nullptr && typeid(*(component.second)) == typeid(T))
 				{
 					return (reinterpret_cast<T*>(component.second));
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	std::vector<T*> BaseGetComponentListByType()const
@@ -227,7 +271,7 @@ protected:
 		{
 			for (const auto& component : this->m_Components)
 			{
-				if (component.second != NULL && typeid(*(component.second)) == typeid(T))
+				if (component.second != nullptr && typeid(*(component.second)) == typeid(T))
 				{
 					componentList.push_back(reinterpret_cast<T*>(component.second));
 				}
@@ -249,7 +293,7 @@ protected:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	T* BaseGetMeshRendererComponent()const
@@ -265,7 +309,7 @@ protected:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template<class T>
 	T* BaseGetGameBoundComponent()const
@@ -281,39 +325,34 @@ protected:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 public:
 	BOOL	IsBelongComponent(const CBaseComponent* component)const;
+	BOOL	IsBelongComponent(const ULONGLONG& componentID)const;
 	BOOL	HasComponent()const;
 	BOOL	HasMeshComponent()const;
 	BOOL	HasMeshRendererComponent()const;
 	BOOL	HasGameBoundComponent()const;
 protected:
-	BOOL	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component);
+	BOOL	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const;
 protected:
 	ULONGLONG								m_MeshComponentID;
 	ULONGLONG								m_MeshRendererComponentID;
 	ULONGLONG								m_GameBoundComponentID;
 	std::map<ULONGLONG, CBaseComponent*>	m_Components;
 public:
-	const BOOL&		IsActive()const;
-	void			Active();
-	void			Inactive();
-protected:
-	BOOL	m_Active;
-public:
-	virtual void	Init();
-	virtual void	Uninit();
-	virtual void	Update();
-	virtual void	FixedUpdate();
+	virtual void	Init()override;
+	virtual void	Uninit()override;
+	virtual void	Update()override;
+	virtual void	FixedUpdate()override;
 #ifdef _DEVELOPMENT_EDITOR
 protected:
 	virtual void	SelectedEditorUpdate_RenderBounding();
 public:
-	virtual void	SelectedEditorUpdate();
+	virtual void	SelectedEditorUpdate()override;
 #endif
 public:
-	CGameObject();
+	CGameObject(const BOOL& active, const class CScene* scene);
 	virtual ~CGameObject();
 };

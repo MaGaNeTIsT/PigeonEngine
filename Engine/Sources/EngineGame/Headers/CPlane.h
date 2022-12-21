@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "./CGameObject.h"
 
@@ -20,8 +21,8 @@ public:
 public:
 	void			SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 public:
-	CPlane();
-	CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
+	CPlane(const BOOL& active, const class CScene* scene);
+	CPlane(const BOOL& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	virtual ~CPlane();
 protected:
 	class CMeshComponent*		m_MeshComponent;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
+#include "./CObjectManager.h"
 #include "./CGameObject.h"
 //
 //class CSceneNode
@@ -21,7 +22,7 @@
 //
 //};
 
-class CScene
+class CScene : public CObjectBase
 {
 public:
 	enum SceneLayout
@@ -32,36 +33,54 @@ public:
 		LAYOUT_COUNT
 	};
 protected:
-	CGameObject*						m_MainCamera;
-	std::map<ULONGLONG, CGameObject*>	m_Lights;
-	std::map<ULONGLONG, CGameObject*>	m_GameObjects[SceneLayout::LAYOUT_COUNT];
-	std::map<ULONGLONG, CGameObject*>	m_AllObjectList;
+	CGameObjectBase*						m_MainCamera;
+	std::map<ULONGLONG, CGameObjectBase*>	m_Lights;
+	std::map<ULONGLONG, CGameObjectBase*>	m_GameObjects[SceneLayout::LAYOUT_COUNT];
+	std::map<ULONGLONG, CGameObjectBase*>	m_AllObjectList;
 #ifdef _DEVELOPMENT_EDITOR
 protected:
-	virtual void	ReSelectSceneObject(const INT& mouseX, const INT& mouseY);
+	virtual void		OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY);
 protected:
-	CGameObject*	m_SelectedObject;
+	BOOL				m_ShowSceneInfo;
+	BOOL				m_ShowCameraInfo;
+	BOOL				m_ShowLightInfo;
+	BOOL				m_ShowSelectObjectInfo;
+	CGameObjectBase*	m_SelectedObject;
 #endif
 public:
-	CScene();
-	virtual ~CScene();
+	virtual void	Init();
+	virtual void	Uninit();
+	virtual void	Update();
+	virtual void	FixedUpdate();
 public:
+#ifdef _DEVELOPMENT_EDITOR
+	virtual void	EditorUpdate();
+#endif
+protected:
 	template <class T>
-	T* AddCamera()
+	T* GetMainCamera()const
+	{
+		if (this->m_MainCamera == nullptr)
+		{
+			return nullptr;
+		}
+		return (reinterpret_cast<T*>(this->m_MainCamera));
+	}
+	template <class T>
+	T* AddMainCamera()
 	{
 		ULONGLONG id;
-		if (this->m_MainCamera != NULL)
+		if (this->m_MainCamera != nullptr)
 		{
 			id = this->m_MainCamera->GetUniqueID();
 			this->m_MainCamera->Uninit();
 			{
-				this->m_AllObjectList[id] = NULL;
+				this->m_AllObjectList[id] = nullptr;
 				this->m_AllObjectList.erase(id);
 			}
 			delete (this->m_MainCamera);
 		}
-		this->m_MainCamera = new T();
-		this->m_MainCamera->SetScene(this);
+		this->m_MainCamera = new T(TRUE, this);
 		this->m_MainCamera->Active();
 		this->m_MainCamera->Init();
 		id = this->m_MainCamera->GetUniqueID();
@@ -71,8 +90,7 @@ public:
 	template <class T>
 	T* AddLight()
 	{
-		CGameObject* gameObject = new T();
-		gameObject->SetScene(this);
+		CGameObject* gameObject = new T(TRUE, this);
 		gameObject->Active();
 		gameObject->Init();
 		ULONGLONG id = gameObject->GetUniqueID();
@@ -85,10 +103,9 @@ public:
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return NULL;
+			return nullptr;
 		}
-		CGameObject* gameObject = new T();
-		gameObject->SetScene(this);
+		CGameObject* gameObject = new T(TRUE, this);
 		gameObject->Active();
 		gameObject->Init();
 		ULONGLONG id = gameObject->GetUniqueID();
@@ -97,24 +114,19 @@ public:
 		return  (reinterpret_cast<T*>(gameObject));
 	}
 	template <class T>
-	T* GetMainCamera() const
-	{ 
-		return reinterpret_cast<T*>(m_MainCamera);
-	}
-	template <class T>
 	T* GetGameObjectFirst(const UINT& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return NULL;
+			return nullptr;
 		}
 		if (this->m_GameObjects[layout].size() < 1)
 		{
-			return NULL;
+			return nullptr;
 		}
 		for (const auto& obj : (this->m_GameObjects[layout]))
 		{
-			if ((obj.second) != NULL)
+			if ((obj.second) != nullptr)
 			{
 				if (typeid(*(obj.second)) == typeid(T))
 				{
@@ -122,23 +134,23 @@ public:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template <class T>
 	T* GetGameObjectByIndex(const UINT& layout, const UINT& idx)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return NULL;
+			return nullptr;
 		}
 		if (this->m_GameObjects[layout].size() < 1)
 		{
-			return NULL;
+			return nullptr;
 		}
 		UINT number = idx;
 		for (const auto& obj : (this->m_GameObjects[layout]))
 		{
-			if ((obj.second) != NULL)
+			if ((obj.second) != nullptr)
 			{
 				if (typeid(*(obj.second)) == typeid(T))
 				{
@@ -153,7 +165,7 @@ public:
 				}
 			}
 		}
-		return NULL;
+		return nullptr;
 	}
 	template <class T>
 	std::vector<T*>	GetGameObjectAll(const UINT& layout)const
@@ -169,7 +181,7 @@ public:
 		}
 		for (const auto& obj : (this->m_GameObjects[layout]))
 		{
-			if ((obj.second) != NULL)
+			if ((obj.second) != nullptr)
 			{
 				if (typeid(*(obj.second)) == typeid(T))
 				{
@@ -179,21 +191,41 @@ public:
 		}
 		return listObj;
 	}
-
-	std::vector<CGameObject*> GetGameObjectAll(const UINT& layout)const
+	template <class T>
+	std::vector<T*>	GetGameObjectAll()const
+	{
+		std::vector<T*> listObj;
+		if (this->m_AllObjectList.size() < 1)
+		{
+			return listObj;
+		}
+		for (const auto& obj : (this->m_AllObjectList))
+		{
+			if ((obj.second) != nullptr)
+			{
+				if (typeid(*(obj.second)) == typeid(T))
+				{
+					listObj.push_back((reinterpret_cast<T*>(obj.second)));
+				}
+			}
+		}
+		return listObj;
+	}
+public:
+	std::vector<CGameObjectBase*> GetGameObjectAll(const UINT& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
-			return std::vector<CGameObject*>();
+			return std::vector<CGameObjectBase*>();
 		}
-		std::vector<CGameObject*> listObj;
+		std::vector<CGameObjectBase*> listObj;
 		if (this->m_GameObjects[layout].size() < 1)
 		{
 			return listObj;
 		}
 		for (const auto& obj : (this->m_GameObjects[layout]))
 		{
-			if ((obj.second) != NULL)
+			if ((obj.second) != nullptr)
 			{
 				listObj.push_back(obj.second);
 			}
@@ -201,11 +233,8 @@ public:
 		return listObj;
 	}
 public:
-	virtual void	Init();
-	virtual void	Uninit();
-	virtual void	Update();
-	virtual void	FixedUpdate();
-
-private:
+	CScene();
+	virtual ~CScene();
+protected:
 	friend class CRenderPipeline;
 };

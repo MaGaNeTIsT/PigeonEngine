@@ -8,7 +8,7 @@
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
-CSceneGameObject::CSceneGameObject()
+CSceneGameObject::CSceneGameObject(const BOOL& active, const CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 	{

@@ -3,8 +3,8 @@
 
 CTransform::CTransform()
 {
-	this->m_GameObject		= NULL;
-	this->m_Parent			= NULL;
+	this->m_GameObject		= nullptr;
+	this->m_Parent			= nullptr;
 	this->m_LocalPosition	= CustomType::Vector3::Zero();
 	this->m_LocalRotation	= CustomType::Quaternion::Identity();
 	this->m_LocalScale		= 1.f;
@@ -35,11 +35,11 @@ void CTransform::InitTransform(const CustomType::Vector3& worldPosition, const C
 {
 	this->InitTransform(worldPosition, CustomType::Quaternion::Identity(), CustomType::Vector3::One());
 }
-const CGameObject* CTransform::GetGameObject()const
+CGameObjectTransformBase* CTransform::GetGameObject()const
 {
 	return (this->m_GameObject);
 }
-const CTransform* CTransform::GetParent()const
+CTransform* CTransform::GetParent()const
 {
 	return (this->m_Parent);
 }
@@ -47,27 +47,27 @@ UINT CTransform::GetChildrenNum()const
 {
 	return (static_cast<UINT>(this->m_Children.size()));
 }
-const CTransform* CTransform::GetChildByUniqueID(const ULONGLONG& id)const
+CTransform* CTransform::GetChildByUniqueID(const ULONGLONG& id)const
 {
 	if (this->HasChild())
 	{
 		auto& element = this->m_Children.find(id);
 		if (element == this->m_Children.end())
 		{
-			return NULL;
+			return nullptr;
 		}
 		return (element->second);
 	}
-	return NULL;
+	return nullptr;
 }
-std::vector<const CTransform*> CTransform::GetChildrenList()const
+std::vector<CTransform*> CTransform::GetChildrenList()const
 {
-	std::vector<const CTransform*> childrenList;
+	std::vector<CTransform*> childrenList;
 	if (this->HasChild())
 	{
 		for (const auto& child : this->m_Children)
 		{
-			if (child.second != NULL)
+			if (child.second != nullptr)
 			{
 				childrenList.push_back(child.second);
 			}
@@ -75,13 +75,13 @@ std::vector<const CTransform*> CTransform::GetChildrenList()const
 	}
 	return childrenList;
 }
-std::map<ULONGLONG, const CTransform*> CTransform::GetChildrenMap()const
+std::map<ULONGLONG, CTransform*> CTransform::GetChildrenMap()const
 {
 	return (this->m_Children);
 }
-void CTransform::SetParent(const CTransform* parent)const
+void CTransform::SetParent(CTransform* parent)
 {
-	if (parent != NULL)
+	if (parent != nullptr)
 	{
 		if (this->HasParent())
 		{
@@ -90,9 +90,9 @@ void CTransform::SetParent(const CTransform* parent)const
 		this->ConnectParentAndChild(parent, this);
 	}
 }
-void CTransform::AddChild(const CTransform* child)const
+void CTransform::AddChild(CTransform* child)
 {
-	if (child != NULL)
+	if (child != nullptr)
 	{
 		if (child->HasParent())
 		{
@@ -101,38 +101,38 @@ void CTransform::AddChild(const CTransform* child)const
 		this->ConnectParentAndChild(this, child);
 	}
 }
-void CTransform::RemoveParent()const
+void CTransform::RemoveParent()
 {
 	if (this->HasParent())
 	{
 		this->DisconnectParentAndChild(this->m_Parent, this);
 	}
 }
-void CTransform::RemoveChild(const CTransform* child)const
+void CTransform::RemoveChild(CTransform* child)
 {
-	if (child != NULL && this->HasChild())
+	if (child != nullptr && this->HasChild())
 	{
 		this->DisconnectParentAndChild(this, child);
 	}
 }
-void CTransform::RemoveChildByUniqueID(const ULONGLONG& id)const
+void CTransform::RemoveChildByUniqueID(const ULONGLONG& id)
 {
 	if (this->HasChild())
 	{
-		const CTransform* child = NULL;
+		CTransform* child = nullptr;
 		if (this->BaseModifyChildByUniqueID(id, child))
 		{
 			this->DisconnectParentAndChild(this, child);
 		}
 	}
 }
-void CTransform::RemoveAllChildren()const
+void CTransform::RemoveAllChildren()
 {
 	if (this->HasChild())
 	{
 		for (auto& child : this->m_Children)
 		{
-			if (child.second != NULL)
+			if (child.second != nullptr)
 			{
 				this->DisconnectParentAndChild(this, child.second);
 			}
@@ -140,39 +140,39 @@ void CTransform::RemoveAllChildren()const
 		this->m_Children.clear();
 	}
 }
-BOOL CTransform::IsBelongGameObject(const CGameObject* gameObject)const
+BOOL CTransform::IsBelongGameObject(const ULONGLONG& gameObjectID)const
 {
-	if (gameObject != NULL && this->HasGameObject())
+	if (this->HasGameObject())
 	{
-		return (this->m_GameObject->GetUniqueID() == gameObject->GetUniqueID());
+		return (this->m_GameObject->GetUniqueID() == gameObjectID);
 	}
 	return FALSE;
 }
 BOOL CTransform::HasGameObject()const
 {
-	return (this->m_GameObject != NULL);
+	return (this->m_GameObject != nullptr);
 }
 BOOL CTransform::HasParent()const
 {
-	return (this->m_Parent != NULL);
+	return (this->m_Parent != nullptr);
 }
 BOOL CTransform::HasChild()const
 {
 	return (this->m_Children.size() > 0);
 }
-BOOL CTransform::IsParent(const CTransform* parent)const
+BOOL CTransform::IsParent(const ULONGLONG& parentID)const
 {
-	if (parent != NULL && this->HasParent())
+	if (this->HasParent())
 	{
-		return (this->m_Parent->GetUniqueID() == parent->GetUniqueID());
+		return (this->m_Parent->GetUniqueID() == parentID);
 	}
 	return FALSE;
 }
-BOOL CTransform::IsChild(const CTransform* child)const
+BOOL CTransform::IsChild(const ULONGLONG& childID)const
 {
-	if (child != NULL && this->HasChild())
+	if (this->HasChild())
 	{
-		auto& element = this->m_Children.find(child->GetUniqueID());
+		auto& element = this->m_Children.find(childID);
 		if (element == this->m_Children.end())
 		{
 			return FALSE;
@@ -181,9 +181,9 @@ BOOL CTransform::IsChild(const CTransform* child)const
 	}
 	return FALSE;
 }
-void CTransform::BaseAddChild(const CTransform* child)const
+void CTransform::BaseAddChild(CTransform* child)
 {
-	if (child != NULL)
+	if (child != nullptr)
 	{
 		if (!this->BaseFindChildByUniqueID(child->GetUniqueID()))
 		{
@@ -191,7 +191,7 @@ void CTransform::BaseAddChild(const CTransform* child)const
 		}
 	}
 }
-void CTransform::BaseRemoveChildByUniqueID(const ULONGLONG& id)const
+void CTransform::BaseRemoveChildByUniqueID(const ULONGLONG& id)
 {
 	if (this->HasChild())
 	{
@@ -201,7 +201,7 @@ void CTransform::BaseRemoveChildByUniqueID(const ULONGLONG& id)const
 		}
 	}
 }
-BOOL CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)const
+BOOL CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)
 {
 	if (this->HasChild())
 	{
@@ -214,7 +214,7 @@ BOOL CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)const
 	}
 	return FALSE;
 }
-BOOL CTransform::BaseModifyChildByUniqueID(const ULONGLONG& id, const CTransform*& output)const
+BOOL CTransform::BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output)
 {
 	if (this->HasChild())
 	{
@@ -228,30 +228,30 @@ BOOL CTransform::BaseModifyChildByUniqueID(const ULONGLONG& id, const CTransform
 	}
 	return FALSE;
 }
-void CTransform::ConnectParentAndChild(const CTransform* parent, const CTransform* child)const
+void CTransform::ConnectParentAndChild(CTransform* parent, CTransform* child)
 {
-	if (parent == NULL || child == NULL)
+	if (parent == nullptr || child == nullptr)
 	{
 		return;
 	}
 	if (child->HasParent())
 	{
-		const CTransform* oldParent = child->m_Parent;
+		CTransform* oldParent = child->m_Parent;
 		if ((parent->GetUniqueID() == oldParent->GetUniqueID()) && parent->BaseFindChildByUniqueID(child->GetUniqueID()))
 		{
 			return;
 		}
-		child->CalculateCurrentLocalTransform(NULL);
+		child->CalculateCurrentLocalTransform(nullptr);
 		oldParent->BaseRemoveChildByUniqueID(child->GetUniqueID());
-		child->m_Parent = NULL;
+		child->m_Parent = nullptr;
 	}
 	child->CalculateCurrentLocalTransform(parent);
 	child->m_Parent = parent;
 	parent->BaseAddChild(child);
 }
-void CTransform::DisconnectParentAndChild(const CTransform* parent, const CTransform* child)const
+void CTransform::DisconnectParentAndChild(CTransform* parent, CTransform* child)
 {
-	if (parent == NULL || child == NULL)
+	if (parent == nullptr || child == nullptr)
 	{
 		return;
 	}
@@ -259,15 +259,15 @@ void CTransform::DisconnectParentAndChild(const CTransform* parent, const CTrans
 	{
 		if (parent->GetUniqueID() == child->m_Parent->GetUniqueID())
 		{
-			child->CalculateCurrentLocalTransform(NULL);
-			child->m_Parent = NULL;
+			child->CalculateCurrentLocalTransform(nullptr);
+			child->m_Parent = nullptr;
 		}
 	}
 	parent->BaseRemoveChildByUniqueID(child->GetUniqueID());
 }
-void CTransform::CalculateCurrentLocalTransform(const CTransform* newParent)const
+void CTransform::CalculateCurrentLocalTransform(CTransform* newParent)
 {
-	if (newParent != NULL)
+	if (newParent != nullptr)
 	{
 		this->m_LocalPosition = this->GetWorldPosition() - newParent->GetWorldPosition();
 		this->m_LocalRotation = CustomType::Quaternion::MultiplyQuaternion(newParent->GetWorldRotation().Inverse(), this->GetWorldRotation());
@@ -358,7 +358,7 @@ CustomType::Vector3 CTransform::GetWorldScale()const
 }
 void CTransform::RecursionWorldPosition(const CTransform* parent, CustomType::Vector3& position)const
 {
-	if (parent == NULL)
+	if (parent == nullptr)
 	{
 		return;
 	}
@@ -367,7 +367,7 @@ void CTransform::RecursionWorldPosition(const CTransform* parent, CustomType::Ve
 }
 void CTransform::RecursionWorldRotation(const CTransform* parent, CustomType::Quaternion& rotation)const
 {
-	if (parent == NULL)
+	if (parent == nullptr)
 	{
 		return;
 	}
@@ -376,7 +376,7 @@ void CTransform::RecursionWorldRotation(const CTransform* parent, CustomType::Qu
 }
 void CTransform::RecursionWorldScale(const CTransform* parent, CustomType::Vector3& scale)const
 {
-	if (parent == NULL)
+	if (parent == nullptr)
 	{
 		return;
 	}

@@ -1,7 +1,9 @@
 #include "./EngineMain.h"
 #include "../Engine/Sources/EngineBase/Headers/CManager.h"
 #include "../Engine/Sources/EngineBase/Headers/CTimer.h"
+#ifdef _DEVELOPMENT_EDITOR
 #include "../Engine/EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
+#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -108,8 +110,10 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+#ifdef _DEVELOPMENT_EDITOR
 	if (CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
 		return TRUE;
+#endif
 
 	switch(uMsg)
 	{

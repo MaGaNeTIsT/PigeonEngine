@@ -1,7 +1,6 @@
 #include "../../../../Entry/EngineMain.h"
 #include "../Headers/CManager.h"
 #include "../Headers/CInput.h"
-#include "../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #include "../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
@@ -13,7 +12,13 @@
 
 #include "../../EngineRender/RenderBase/Headers/CGPUQuery.h"
 #include "../../EngineRender/RenderBase/Headers/CGPUQueryManager.h"
+
+#ifdef _DEVELOPMENT_EDITOR
+
+#include "../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #include "../../Development/Headers/CGPUProfiler.h"
+
+#endif
 
 CManager* CManager::m_Manager = new CManager();
 
@@ -69,7 +74,13 @@ void CManager::Initialize(HWND hWnd)
 
 	CInput::Initialize(hWnd);
 	CRenderDevice::Initialize();
+
+#ifdef _DEVELOPMENT_EDITOR
+
 	CimGUIManager::Initialize();
+
+#endif
+
 	CassimpManager::Initialize();
 
 	CUniqueIDManager::Initialize();
@@ -78,7 +89,9 @@ void CManager::Initialize(HWND hWnd)
 }
 void CManager::ShutDown()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	CGPUProfilerManager::ShutDown();
+#endif
 	CGPUQueryManager::ShutDown();
 
 	CShaderManager::ShutDown();
@@ -86,7 +99,9 @@ void CManager::ShutDown()
 	CTextureManager::ShutDown();
 
 	CassimpManager::ShutDown();
+#ifdef _DEVELOPMENT_EDITOR
 	CimGUIManager::ShutDown();
+#endif
 	CRenderDevice::ShutDown();
 	CInput::ShutDown();
 
@@ -121,6 +136,10 @@ void CManager::Init()
 	CManager::m_Manager->m_Scene->Init();
 	CManager::m_Manager->m_RenderPipeline->PostInit();
 	CManager::m_Manager->m_GameTimer->Reset();
+
+#ifdef _DEVELOPMENT_EDITOR
+	CManager::m_Manager->m_EditorOpen = true;
+#endif
 }
 void CManager::Uninit()
 {
@@ -149,7 +168,10 @@ void CManager::Update()
 {
 	CManager::m_Manager->m_GameTimer->Update();
 	CInput::Update();
+#ifdef _DEVELOPMENT_EDITOR
 	CimGUIManager::Update();
+	CManager::EditorUpdate();
+#endif
 	CManager::m_Manager->m_Scene->Update();
 	CManager::m_Manager->m_RenderPipeline->PostUpdate();
 }
@@ -163,6 +185,16 @@ void CManager::Draw()
 	CimGUIManager::Draw();
 	CRenderDevice::Present();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CManager::EditorUpdate()
+{
+	ImGui::Begin("EditorRoot", &(CManager::m_Manager->m_EditorOpen), ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+	ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	CManager::m_Manager->m_Scene->EditorUpdate();
+	CManager::m_Manager->m_RenderPipeline->EditorUpdate();
+	ImGui::End();
+}
+#endif
 void CManager::CalculateFrameStats()
 {
 	static UINT		frameCnt	= 0u;

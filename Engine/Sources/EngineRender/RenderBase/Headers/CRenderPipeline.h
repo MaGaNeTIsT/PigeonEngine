@@ -50,6 +50,18 @@ public:
 	virtual void	Uninit();
 	virtual void	PostUpdate();
 	virtual void	Render();
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	virtual void	EditorUpdate();
+protected:
+	DOUBLE	m_ShadowPassGPUAverageTime;
+	BOOL	m_ShowGPUProfiler;
+	BOOL	m_ShowCPUCullingInfo;
+	BOOL	m_ShowGPUCullingInfo;
+	BOOL	m_ShowDebugScreen;
+	BOOL	m_ShowGTAOEditor;
+	BOOL	m_ShowHZBEditor;
+#endif
 protected:
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
 	virtual void	PreparePerFrameRender(class CLightDirectional* light, const UINT& index);
@@ -113,7 +125,10 @@ protected:
 	static std::shared_ptr<class CGPUCulling>			m_GPUCulling;
 	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
+#ifdef _DEVELOPMENT_EDITOR
+protected:
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;
+#endif
 public:
 	static class CTexture2D*							GetDefaultTexture(CustomStruct::CEngineDefaultTexture2DType input);
 	static std::shared_ptr<class CPixelShader>			GetDefaultEmptyPS();

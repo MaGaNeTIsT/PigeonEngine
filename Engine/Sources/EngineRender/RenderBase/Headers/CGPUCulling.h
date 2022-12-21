@@ -38,6 +38,12 @@ public:
 	*/
 	void	ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<class CGameObject*>& inputCullingResult, std::vector<BOOL>& outputCullingResult);
 	void	ComputeCulling(const ULONGLONG& frameIndex);
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	void	EditorUpdate();
+protected:
+	ULONGLONG	m_EditorFrameCount;
+#endif
 private:
 	struct CullingConstantBufferData
 	{

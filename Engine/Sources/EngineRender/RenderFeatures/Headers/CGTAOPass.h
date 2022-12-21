@@ -34,17 +34,21 @@ public:
 	void	Uninit();
 	void	Update();
 	void	ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	void	EditorUpdate();
 	void	DrawDebug();
+#endif
 public:
 	CGTAOPass();
 	~CGTAOPass();
 private:
+#ifdef _DEVELOPMENT_EDITOR
 	class CScreenPolygon2D*						m_Polygon2D;
-
 	INT											m_DebugType;
 	CRenderDevice::RenderTexture2DViewInfo		m_DebugBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_DebugComputeShader;
-
+#endif
 	class CCamera*								m_MainCamera;
 	CustomType::Vector2Int						m_BufferSize;
 	CustomType::Vector2Int						m_PipelineSize;

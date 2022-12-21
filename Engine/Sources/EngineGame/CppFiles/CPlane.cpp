@@ -1,6 +1,4 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CPlane.h"
-#include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
 #include "../../EngineRender/AssetsManager/Headers/CShader.h"
@@ -16,7 +14,7 @@
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
-CPlane::CPlane()
+CPlane::CPlane(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 
@@ -30,7 +28,7 @@ CPlane::CPlane()
 	this->m_PlaneMeshInfo.UV			= 1.f;
 	this->m_PlaneMeshInfo.VertexCount	= 2;
 }
-CPlane::CPlane(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv)
+CPlane::CPlane(const BOOL& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 

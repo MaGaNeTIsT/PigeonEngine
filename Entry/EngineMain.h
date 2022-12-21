@@ -123,8 +123,11 @@
 #define ENGINE_MESH_POLYGON_NAME							("EngineBase/Mesh/PolygonMesh")
 #define ENGINE_MESH_POLYGON_2D_NAME							("EngineBase/Mesh/Polygon2DMesh")
 
+#ifdef _DEVELOPMENT_EDITOR
 #define ENGINE_GPU_PROFILER_NONE							("EngineBase/GPUProfiler/None")
 #define ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
+#endif
+
 #define ENGINE_GPU_QUERY_NONE								("EngineBase/GPUQuery/None")
 
 #define ENGINE_DEFAULT_CULLING_DISTANCE						(200000.f)

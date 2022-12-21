@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../Entry/EngineMain.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "./CGameObject.h"
 
@@ -34,8 +35,7 @@ protected:
 	static BOOL		CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth);
 	void			SetLightType(LightType type) { this->m_LightType = type; }
 public:
-	CLightBase();
-	CLightBase(const CLightBase& light);
+	CLightBase(const BOOL& active, const class CScene* scene);
 	virtual ~CLightBase() {}
 protected:
 	LightType					m_LightType;
@@ -113,8 +113,7 @@ protected:
 	static BOOL		GenerateCascadeShadowMap(CLightDirectional* light, const INT& frameCounter);
 	static void		GenerateCascadeMatrices(class CCamera* camera, CLightDirectional* light);
 public:
-	CLightDirectional();
-	CLightDirectional(const CLightDirectional& light);
+	CLightDirectional(const BOOL& active, const class CScene* scene);
 	virtual ~CLightDirectional() {}
 protected:
 	struct ShadowCascadeLayerInfo
@@ -158,8 +157,7 @@ public:
 public:
 	virtual void	Init()override;
 public:
-	CLightPoint();
-	CLightPoint(const CLightPoint& light);
+	CLightPoint(const BOOL& active, const class CScene* scene);
 	virtual ~CLightPoint() {}
 protected:
 	FLOAT	m_AttenuationExponent;
@@ -185,8 +183,7 @@ public:
 	virtual void	Init()override;
 	virtual void	Update()override;
 public:
-	CLightSpot();
-	CLightSpot(const CLightSpot& light);
+	CLightSpot(const BOOL& active, const class CScene* scene);
 	virtual ~CLightSpot() {}
 protected:
 	FLOAT					m_Range;

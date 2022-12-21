@@ -1,4 +1,3 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CCube.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
@@ -16,7 +15,7 @@
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
-CCube::CCube()
+CCube::CCube(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 	{

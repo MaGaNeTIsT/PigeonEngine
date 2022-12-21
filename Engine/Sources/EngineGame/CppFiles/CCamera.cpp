@@ -6,7 +6,7 @@
 const static CustomType::Vector2 _GStaticPointScale(0.5f, -0.5f);
 const static CustomType::Vector2 _GStaticPointAdd(0.5f, 0.5f);
 
-CCamera::CCamera()
+CCamera::CCamera(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
 	this->m_CameraInfo.Fov		= ENGINE_CAMERA_FOV;
@@ -295,17 +295,6 @@ void CCamera::Uninit()
 }
 void CCamera::Update()
 {
-	{
-		FLOAT moveSpeed = this->m_CameraControlInfo.MoveSpeed;
-		FLOAT lookSpeed = this->m_CameraControlInfo.LookSpeed;
-		ImGui::Begin("Camera properties");
-		ImGui::InputFloat("Move speed", &moveSpeed);
-		ImGui::InputFloat("Look speed", &lookSpeed);
-		ImGui::End();
-		this->m_CameraControlInfo.MoveSpeed = CustomType::CMath::Max(0.001f, moveSpeed);
-		this->m_CameraControlInfo.LookSpeed = CustomType::CMath::Max(0.001f, lookSpeed);
-	}
-
 	/*while (const auto e = CInput::Controller.ReadKey())
 	{
 		if (!e->IsPress())
@@ -447,3 +436,16 @@ void CCamera::Update()
 	this->ReCalculateViewMatrix();
 	this->ReCalculateViewProjectionMatrix();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CCamera::SelectedEditorUpdate()
+{
+	FLOAT moveSpeed = this->m_CameraControlInfo.MoveSpeed;
+	FLOAT lookSpeed = this->m_CameraControlInfo.LookSpeed;
+	ImGui::Begin("Camera properties");
+	ImGui::InputFloat("Move speed", &moveSpeed);
+	ImGui::InputFloat("Look speed", &lookSpeed);
+	ImGui::End();
+	this->m_CameraControlInfo.MoveSpeed = CustomType::CMath::Max(0.001f, moveSpeed);
+	this->m_CameraControlInfo.LookSpeed = CustomType::CMath::Max(0.001f, lookSpeed);
+}
+#endif

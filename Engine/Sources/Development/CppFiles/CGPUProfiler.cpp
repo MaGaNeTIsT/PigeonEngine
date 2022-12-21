@@ -1,4 +1,7 @@
 #include "../Headers/CGPUProfiler.h"
+
+#ifdef _DEVELOPMENT_EDITOR
+
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/RenderBase/Headers/CGPUQuery.h"
@@ -252,3 +255,12 @@ std::shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::FindProf
 	result = (is == CGPUProfilerManager::m_GPUProfilerManager->m_Profilers.end()) ? result : (is->second);
 	return result;
 }
+
+#else
+
+void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount)
+{
+	func();
+}
+
+#endif

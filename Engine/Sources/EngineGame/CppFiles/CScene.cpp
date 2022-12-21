@@ -22,9 +22,13 @@
 
 CScene::CScene()
 {
-	this->m_MainCamera = NULL;
+	this->m_MainCamera = nullptr;
 #ifdef _DEVELOPMENT_EDITOR
-	this->m_SelectedObject = NULL;
+	this->m_ShowSceneInfo = FALSE;
+	this->m_ShowCameraInfo = FALSE;
+	this->m_ShowLightInfo = TRUE;
+	this->m_ShowSelectObjectInfo = TRUE;
+	this->m_SelectedObject = nullptr;
 #endif
 }
 CScene::~CScene()
@@ -33,7 +37,7 @@ CScene::~CScene()
 	{
 		this->m_MainCamera->Uninit();
 		delete (this->m_MainCamera);
-		this->m_MainCamera = NULL;
+		this->m_MainCamera = nullptr;
 	}
 	if (this->m_Lights.size() > 0u)
 	{
@@ -64,9 +68,9 @@ CScene::~CScene()
 	}
 }
 #ifdef _DEVELOPMENT_EDITOR
-void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
+void CScene::OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY)
 {
-	if (this->m_MainCamera == NULL)
+	if (this->m_MainCamera == nullptr)
 	{
 		return;
 	}
@@ -89,19 +93,23 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 
 	for (const auto& obj : this->m_AllObjectList)
 	{
-		if (obj.second != NULL && obj.second->HasGameBoundComponent())
+		if (obj.second != nullptr)
 		{
-			CGameBoundBaseComponent* boundComponent = obj.second->GetGameBoundComponent<CGameBoundBaseComponent>();
-			if (boundComponent == NULL)
+			CGameObject* gameObjectPtr = reinterpret_cast<CGameObject*>(obj.second);
+			if (gameObjectPtr != nullptr && gameObjectPtr->HasGameBoundComponent())
 			{
-				continue;
+				CGameBoundBaseComponent* boundComponent = gameObjectPtr->GetGameBoundComponent<CGameBoundBaseComponent>();
+				if (boundComponent == nullptr)
+				{
+					continue;
+				}
+				CustomType::Vector2	tempScreenCoord; FLOAT tempViewDepth;
+				if (!boundComponent->SelectedInEditorScreen(mousePos, camera, frustumInfo, tempScreenCoord, tempViewDepth))
+				{
+					continue;
+				}
+				selectedObjects.push_back(std::pair<CGameObject*, Screen2DObject>(gameObjectPtr, Screen2DObject(tempScreenCoord, tempViewDepth)));
 			}
-			CustomType::Vector2	tempScreenCoord; FLOAT tempViewDepth;
-			if (!boundComponent->SelectedInEditorScreen(mousePos, camera, frustumInfo, tempScreenCoord, tempViewDepth))
-			{
-				continue;
-			}
-			selectedObjects.push_back(std::pair<CGameObject*, Screen2DObject>(obj.second, Screen2DObject(tempScreenCoord, tempViewDepth)));
 		}
 	}
 
@@ -109,7 +117,7 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 	{
 		const static FLOAT _ErrorSq = 100.f;
 		std::vector<std::pair<FLOAT, CGameObject*>> depthList;
-		this->m_SelectedObject = selectedObjects[0].first;
+		CGameObject* tempSelectedObject = selectedObjects[0].first;
 		FLOAT depth = selectedObjects[0].second.ViewDepth;
 		FLOAT minDisSq = CustomType::Vector2::DistanceSquare(mousePos, selectedObjects[0].second.ScreenCoord);
 		for (size_t i = 1; i < selectedObjects.size(); i++)
@@ -120,7 +128,7 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 			FLOAT tempMinDisSq = CustomType::Vector2::DistanceSquare(mousePos, screen.ScreenCoord);
 			if (tempMinDisSq < (minDisSq - _ErrorSq))
 			{
-				this->m_SelectedObject = obj;
+				tempSelectedObject = obj;
 				depth = screen.ViewDepth;
 				minDisSq = tempMinDisSq;
 				if (depthList.size() > 0)
@@ -130,11 +138,11 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 			}
 			else if (CustomType::CMath::Abs(tempMinDisSq - minDisSq) < _ErrorSq)
 			{
-				depthList.push_back(std::pair<FLOAT, CGameObject*>(depth, this->m_SelectedObject));
+				depthList.push_back(std::pair<FLOAT, CGameObject*>(depth, tempSelectedObject));
 				depthList.push_back(std::pair<FLOAT, CGameObject*>(screen.ViewDepth, obj));
 				if (tempMinDisSq < tempMinDisSq)
 				{
-					this->m_SelectedObject = obj;
+					tempSelectedObject = obj;
 					depth = screen.ViewDepth;
 					minDisSq = tempMinDisSq;
 				}
@@ -142,23 +150,24 @@ void CScene::ReSelectSceneObject(const INT& mouseX, const INT& mouseY)
 		}
 		if (depthList.size() > 1)
 		{
-			this->m_SelectedObject = depthList[0].second;
+			tempSelectedObject = depthList[0].second;
 			depth = depthList[0].first;
 			for (size_t i = 1; i < depthList.size(); i++)
 			{
 				if (depthList[i].first < depth)
 				{
-					this->m_SelectedObject = depthList[i].second;
+					tempSelectedObject = depthList[i].second;
 				}
 			}
 		}
+		this->m_SelectedObject = tempSelectedObject;
 	}
 }
 #endif
 void CScene::Init()
 {
 	{
-		CCamera* mainCamera = this->AddCamera<CCamera>();
+		CCamera* mainCamera = this->AddMainCamera<CCamera>();
 		CLightDirectional* mainLight = this->AddLight<CLightDirectional>();
 		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 
@@ -335,6 +344,13 @@ void CScene::Init()
 		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 		this->m_SelectedObject = sceneGameObject;
 	}
+
+	{
+		this->m_ShowSceneInfo = FALSE;
+		this->m_ShowCameraInfo = FALSE;
+		this->m_ShowLightInfo = TRUE;
+		this->m_ShowSelectObjectInfo = TRUE;
+	}
 #endif
 }
 void CScene::Uninit()
@@ -343,7 +359,7 @@ void CScene::Uninit()
 	{
 		this->m_MainCamera->Uninit();
 		delete (this->m_MainCamera);
-		this->m_MainCamera = NULL;
+		this->m_MainCamera = nullptr;
 	}
 	if (this->m_Lights.size() > 0u)
 	{
@@ -375,48 +391,6 @@ void CScene::Uninit()
 }
 void CScene::Update()
 {
-#ifdef _DEVELOPMENT_EDITOR
-	{
-		if (this->m_SelectedObject != NULL)
-		{
-			this->m_SelectedObject->SelectedEditorUpdate();
-		}
-		if (this->m_Lights.size() > 0u)
-		{
-			for (const auto& object : this->m_Lights)
-			{
-				if (object.second)
-				{
-					object.second->SelectedEditorUpdate();
-				}
-			}
-		}
-	}
-
-	{
-		CustomType::Vector3 cameraPos(this->m_MainCamera->GetWorldPosition());
-		CustomType::Vector3 cameraDir(this->m_MainCamera->GetForwardVector());
-		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
-		ImGui::Begin("Scene Manager");
-		ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
-		ImGui::Text("Mouse focus : any window = %d.", (ImGui::IsWindowFocused(ImGuiFocusedFlags_::ImGuiFocusedFlags_AnyWindow) ? 1 : 0));
-		ImGui::Text("Mouse press : left = %d right = %d.", CInput::Controller.IsLeftMouseButtonDown(), CInput::Controller.IsRightMouseButtonDown());
-		ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
-		ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
-		UINT index = 0u;
-		for (const auto& object : this->m_Lights)
-		{
-			CustomType::Vector3 lightPos(object.second->GetWorldPosition());
-			CustomType::Vector3 lightDir(object.second->GetForwardVector());
-			ImGui::Text("Light index = %d", index);
-			ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());
-			ImGui::Text("Light direction :\nx = %f\ny = %f\nz = %f", lightDir.X(), lightDir.Y(), lightDir.Z());
-			index++;
-		}
-		ImGui::End();
-	}
-#endif
-
 	this->m_MainCamera->Update();
 
 	for (const auto& object : this->m_Lights)
@@ -430,11 +404,6 @@ void CScene::Update()
 			object.second->Update();
 		}
 	}
-
-#ifdef _DEVELOPMENT_EDITOR
-	std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
-	this->ReSelectSceneObject(mousePos.first, mousePos.second);
-#endif
 }
 void CScene::FixedUpdate()
 {
@@ -452,3 +421,92 @@ void CScene::FixedUpdate()
 		}
 	}
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CScene::EditorUpdate()
+{
+	bool showSceneInfo = this->m_ShowSceneInfo;
+	bool showCameraInfo = this->m_ShowCameraInfo;
+	bool showLightInfo = this->m_ShowLightInfo;
+	bool showSelectObjectInfo = this->m_ShowSelectObjectInfo;
+
+	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
+	if (ImGui::TreeNode("CurrentSceneInfo"))
+	{
+		ImGui::Checkbox("ShowSelectObjectInfo", &showSelectObjectInfo);
+		ImGui::Checkbox("ShowSceneInfo", &showSceneInfo);
+		ImGui::Checkbox("ShowCameraInfo", &showCameraInfo);
+		ImGui::Checkbox("ShowLightInfo", &showLightInfo);
+		ImGui::TreePop();
+	}
+	if (showSceneInfo)
+	{
+		ImGui::Begin("CurrentSceneInfo");
+
+		{
+			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+			ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
+			ImGui::Text("Mouse focus : any window = %d.", (ImGui::IsWindowFocused(ImGuiFocusedFlags_::ImGuiFocusedFlags_AnyWindow) ? 1 : 0));
+			ImGui::Text("Mouse press : left = %d right = %d.", CInput::Controller.IsLeftMouseButtonDown(), CInput::Controller.IsRightMouseButtonDown());
+		}
+
+		{
+			CCamera* camera = this->GetMainCamera<CCamera>();
+			if (camera != nullptr)
+			{
+				CustomType::Vector3 cameraPos(camera->GetWorldPosition());
+				CustomType::Vector3 cameraDir(camera->GetForwardVector());
+				ImGui::Text("Camera position :\nx = %f\ny = %f\nz = %f", cameraPos.X(), cameraPos.Y(), cameraPos.Z());
+				ImGui::Text("Camera direction :\nx = %f\ny = %f\nz = %f", cameraDir.X(), cameraDir.Y(), cameraDir.Z());
+			}
+		}
+
+		{
+			UINT index = 0u;
+			for (const auto& object : this->m_Lights)
+			{
+				CGameObjectTransformBase* obj = reinterpret_cast<CGameObjectTransformBase*>(object.second);
+				if (obj != nullptr)
+				{
+					CustomType::Vector3 lightPos(obj->GetWorldPosition());
+					CustomType::Vector3 lightDir(obj->GetForwardVector());
+					ImGui::Text("Light index = %d", index);
+					ImGui::Text("Light position :\nx = %f\ny = %f\nz = %f", lightPos.X(), lightPos.Y(), lightPos.Z());
+					ImGui::Text("Light direction :\nx = %f\ny = %f\nz = %f", lightDir.X(), lightDir.Y(), lightDir.Z());
+					index++;
+				}
+			}
+		}
+
+		ImGui::End();
+	}
+	if (showCameraInfo && this->m_MainCamera)
+	{
+		this->m_MainCamera->SelectedEditorUpdate();
+	}
+	if (showLightInfo && this->m_Lights.size() > 0u)
+	{
+		for (const auto& object : this->m_Lights)
+		{
+			if (object.second)
+			{
+				object.second->SelectedEditorUpdate();
+			}
+		}
+	}
+	if (showSelectObjectInfo)
+	{
+		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+		this->OnClickReselectSceneObjectWithBound(mousePos.first, mousePos.second);
+
+		if (this->m_SelectedObject != nullptr)
+		{
+			this->m_SelectedObject->SelectedEditorUpdate();
+		}
+	}
+
+	this->m_ShowSceneInfo = showSceneInfo;
+	this->m_ShowCameraInfo = showCameraInfo;
+	this->m_ShowLightInfo = showLightInfo;
+	this->m_ShowSelectObjectInfo = showSelectObjectInfo;
+}
+#endif

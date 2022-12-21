@@ -1,4 +1,3 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CSkyBox.h"
 #include "../../EngineRender/AssetsManager/Headers/CShader.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"

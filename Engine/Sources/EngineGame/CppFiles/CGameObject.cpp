@@ -4,48 +4,443 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../Headers/CScene.h"
 
-CGameObject::CGameObject()
+CGameObjectBase::CGameObjectBase(const BOOL& active, const CScene* scene)
 {
-	this->m_Active						= FALSE;
-	this->m_Scene						= NULL;
-	this->m_Transform					= NULL;
-	this->m_RenderBoundingBox			= NULL;
-	this->m_RenderBoundingSphere		= NULL;
+	this->m_Active = active;
+	this->m_Scene = scene;
+}
+CGameObjectBase::~CGameObjectBase()
+{
+
+}
+BOOL CGameObjectBase::HasScene()const
+{
+	return (this->m_Scene != nullptr);
+}
+BOOL CGameObjectBase::IsBelongScene(const CScene* scene)const
+{
+	return (this->m_Scene->GetUniqueID() == scene->GetUniqueID());
+}
+const CScene* CGameObjectBase::GetScene()const
+{
+	return (this->m_Scene);
+}
+const BOOL& CGameObjectBase::IsActive()const
+{
+	return (this->m_Active);
+}
+void CGameObjectBase::Active()
+{
+	this->m_Active = TRUE;
+}
+void CGameObjectBase::Inactive()
+{
+	this->m_Active = FALSE;
+}
+
+
+
+CGameObjectTransformBase::CGameObjectTransformBase(const BOOL& active, const CScene* scene) : CGameObjectBase(active, scene)
+{
+	this->m_Transform = nullptr;
+	this->AddNewTransform();
+}
+CGameObjectTransformBase::~CGameObjectTransformBase()
+{
+	this->RemoveParent();
+	this->RemoveChildren();
+	this->RemoveTransform();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetForwardVector()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetForwardVector());
+	}
+	return CustomType::Vector3::ZVector();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetUpVector()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetUpVector());
+	}
+	return CustomType::Vector3::YVector();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetRightVector()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetRightVector());
+	}
+	return CustomType::Vector3::XVector();
+}
+CustomType::Matrix4x4 CGameObjectTransformBase::GetLocalToWorldMatrix()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetLocalToWorldMatrix());
+	}
+	return CustomType::Matrix4x4::Identity();
+}
+CustomType::Matrix4x4 CGameObjectTransformBase::GetWorldToLocalMatrix()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetWorldToLocalMatrix());
+	}
+	return CustomType::Matrix4x4::Identity();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetWorldPosition()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetWorldPosition());
+	}
+	return CustomType::Vector3::Zero();
+}
+CustomType::Quaternion CGameObjectTransformBase::GetWorldRotation()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetWorldRotation());
+	}
+	return CustomType::Quaternion::Identity();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetWorldScale()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetWorldScale());
+	}
+	return CustomType::Vector3::One();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetLocalPosition()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetLocalPosition());
+	}
+	return CustomType::Vector3::Zero();
+}
+CustomType::Quaternion CGameObjectTransformBase::GetLocalRotation()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetLocalRotation());
+	}
+	return CustomType::Quaternion::Identity();
+}
+CustomType::Vector3 CGameObjectTransformBase::GetLocalScale()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->GetLocalScale());
+	}
+	return CustomType::Vector3::One();
+}
+void CGameObjectTransformBase::SetWorldPosition(const CustomType::Vector3& worldPosition)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetWorldPosition(worldPosition);
+	}
+}
+void CGameObjectTransformBase::SetWorldRotation(const CustomType::Quaternion& worldRotation)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetWorldRotation(worldRotation);
+	}
+}
+void CGameObjectTransformBase::SetWorldScale(const CustomType::Vector3& worldScale)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetWorldScale(worldScale);
+	}
+}
+void CGameObjectTransformBase::SetLocalPosition(const CustomType::Vector3& localPosition)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetLocalPosition(localPosition);
+	}
+}
+void CGameObjectTransformBase::SetLocalRotation(const CustomType::Quaternion& localRotation)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetLocalRotation(localRotation);
+	}
+}
+void CGameObjectTransformBase::SetLocalScale(const CustomType::Vector3& localScale)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->SetLocalScale(localScale);
+	}
+}
+BOOL CGameObjectTransformBase::HasTransform()const
+{
+	return (this->m_Transform != nullptr);
+}
+BOOL CGameObjectTransformBase::IsBelongTransform(const ULONGLONG& transformID)const
+{
+	return (this->m_Transform->GetUniqueID() == transformID);
+}
+CTransform* CGameObjectTransformBase::GetTransform()const
+{
+	return (this->m_Transform);
+}
+ULONGLONG CGameObjectTransformBase::GetTransformID()const
+{
+	if (this->HasTransform())
+	{
+		return this->m_Transform->GetUniqueID();
+	}
+	return 0u;
+}
+void CGameObjectTransformBase::AddNewTransform(CGameObjectTransformBase* parent)
+{
+	if (!this->HasTransform())
+	{
+		this->m_Transform = new CTransform();
+		this->ConnectGameObjectAndTransform(this, this->m_Transform);
+	}
+	if (parent != nullptr)
+	{
+		this->m_Transform->InitTransform(CustomType::Vector3::Zero());
+		this->SetParent(parent);
+	}
+	else
+	{
+		this->m_Transform->InitTransform(CustomType::Vector3::Zero());
+	}
+}
+void CGameObjectTransformBase::AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, CGameObjectTransformBase* parent)
+{
+	if (!this->HasTransform())
+	{
+		this->m_Transform = new CTransform();
+		this->ConnectGameObjectAndTransform(this, this->m_Transform);
+	}
+	if (parent != nullptr)
+	{
+		this->m_Transform->InitTransform(worldPosition, worldRotation, worldScale);
+		this->SetParent(parent);
+	}
+	else
+	{
+		this->m_Transform->InitTransform(worldPosition, worldRotation, worldScale);
+	}
+}
+void CGameObjectTransformBase::RemoveTransform()
+{
+	if (this->HasTransform())
+	{
+		this->DisconnectGameObjectAndTransform(this, this->m_Transform);
+	}
+}
+void CGameObjectTransformBase::BaseRemoveTransform(const BOOL& bDeleteTransform)
+{
+	if (this->HasTransform())
+	{
+		if (this->m_Transform->HasGameObject())
+		{
+			this->m_Transform->m_GameObject = nullptr;
+		}
+		if (bDeleteTransform)
+		{
+			delete (this->m_Transform);
+		}
+		this->m_Transform = nullptr;
+	}
+}
+void CGameObjectTransformBase::ConnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform)
+{
+	if (gameObject == nullptr || transform == nullptr)
+	{
+		return;
+	}
+	if (gameObject->HasTransform() && transform->HasGameObject() && gameObject->GetUniqueID() == transform->m_GameObject->GetUniqueID() && gameObject->m_Transform->GetUniqueID() == transform->GetUniqueID())
+	{
+		return;
+	}
+	if (gameObject->HasTransform() && gameObject->m_Transform->GetUniqueID() != transform->GetUniqueID())
+	{
+		gameObject->BaseRemoveTransform(TRUE);
+	}
+	if (transform->HasGameObject() && transform->m_GameObject->GetUniqueID() != gameObject->GetUniqueID())
+	{
+		transform->m_GameObject->BaseRemoveTransform(FALSE);
+	}
+	transform->m_GameObject = gameObject;
+	gameObject->m_Transform = transform;
+}
+void CGameObjectTransformBase::DisconnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform)
+{
+	if (gameObject == nullptr || transform == nullptr)
+	{
+		return;
+	}
+	if (transform->HasGameObject() && transform->m_GameObject->GetUniqueID() == gameObject->GetUniqueID())
+	{
+		transform->m_GameObject = nullptr;
+	}
+	if (gameObject->HasTransform() && gameObject->m_Transform->GetUniqueID() == transform->GetUniqueID())
+	{
+		gameObject->BaseRemoveTransform(TRUE);
+	}
+}
+BOOL CGameObjectTransformBase::HasParent()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->HasParent());
+	}
+	return FALSE;
+}
+BOOL CGameObjectTransformBase::HasChild()const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->HasChild());
+	}
+	return FALSE;
+}
+BOOL CGameObjectTransformBase::IsParent(const ULONGLONG& parentID)const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->IsParent(parentID));
+	}
+	return FALSE;
+}
+BOOL CGameObjectTransformBase::IsChild(const ULONGLONG& childID)const
+{
+	if (this->HasTransform())
+	{
+		return (this->m_Transform->IsChild(childID));
+	}
+	return FALSE;
+}
+void CGameObjectTransformBase::SetParent(CGameObjectTransformBase* parent)
+{
+	if (parent != nullptr && this->HasTransform() && parent->HasTransform())
+	{
+		this->m_Transform->SetParent(parent->GetTransform());
+	}
+}
+void CGameObjectTransformBase::AddChild(CGameObjectTransformBase* child)
+{
+	if (child != nullptr && this->HasTransform() && child->HasTransform())
+	{
+		this->m_Transform->AddChild(child->GetTransform());
+	}
+}
+void CGameObjectTransformBase::RemoveParent()
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->RemoveParent();
+	}
+}
+void CGameObjectTransformBase::RemoveChild(CGameObjectTransformBase* child)
+{
+	if (child != nullptr && this->HasTransform() && child->HasTransform())
+	{
+		this->m_Transform->RemoveChild(child->GetTransform());
+	}
+}
+void CGameObjectTransformBase::RemoveChildByTransformID(const ULONGLONG& id)
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->RemoveChildByUniqueID(id);
+	}
+}
+void CGameObjectTransformBase::RemoveChildren()
+{
+	if (this->HasTransform())
+	{
+		this->m_Transform->RemoveAllChildren();
+	}
+}
+CGameObjectTransformBase* CGameObjectTransformBase::GetParent()const
+{
+	if (this->HasParent())
+	{
+		return (this->m_Transform->GetParent()->GetGameObject());
+	}
+	return nullptr;
+}
+std::vector<CGameObjectTransformBase*> CGameObjectTransformBase::GetChildrenList()const
+{
+	std::vector<CGameObjectTransformBase*> childrenList;
+	if (this->HasChild())
+	{
+		std::vector<CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
+		for (const auto& child : childrenTransformList)
+		{
+			if (child != nullptr)
+			{
+				if (child->HasGameObject())
+				{
+					childrenList.push_back(child->GetGameObject());
+				}
+			}
+		}
+	}
+	return childrenList;
+}
+CGameObjectTransformBase* CGameObjectTransformBase::GetChildByTransformID(const ULONGLONG& id)const
+{
+	if (this->HasChild())
+	{
+		CTransform* tempTransform = this->m_Transform->GetChildByUniqueID(id);
+		if (tempTransform != nullptr)
+		{
+			return (tempTransform->GetGameObject());
+		}
+	}
+	return nullptr;
+}
+
+
+
+CGameObject::CGameObject(const BOOL& active, const CScene* scene) : CGameObjectTransformBase(active, scene)
+{
+	this->m_RenderBoundingBox			= nullptr;
+	this->m_RenderBoundingSphere		= nullptr;
 	this->m_MeshComponentID				= 0u;
 	this->m_MeshRendererComponentID		= 0u;
 	this->m_GameBoundComponentID		= 0u;
 }
 CGameObject::~CGameObject()
 {
-	if (this->HasTransform())
-	{
-		this->RemoveParent();
-		this->RemoveChildren();
-		delete (this->m_Transform);
-		this->m_Transform = NULL;
-	}
 	if (this->HasRenderBoundingBox())
 	{
 		delete (this->m_RenderBoundingBox);
-		this->m_RenderBoundingBox = NULL;
+		this->m_RenderBoundingBox = nullptr;
 	}
 	if (this->HasRenderBoundingSphere())
 	{
 		delete (this->m_RenderBoundingSphere);
-		this->m_RenderBoundingSphere = NULL;
+		this->m_RenderBoundingSphere = nullptr;
 	}
 	if (this->HasComponent())
 	{
 		this->RemoveComponents();
 	}
 }
-const CScene* CGameObject::GetScene()const
+BOOL CGameObject::HasRenderBoundingBox()const
 {
-	return (this->m_Scene);
+	return (this->m_RenderBoundingBox != nullptr);
 }
-const CTransform* CGameObject::GetTransform()const
+BOOL CGameObject::HasRenderBoundingSphere()const
 {
-	return (this->m_Transform);
+	return (this->m_RenderBoundingSphere != nullptr);
 }
 const CustomStruct::CRenderBoundingBox* CGameObject::GetRenderLocalBoundingBox()const
 {
@@ -54,70 +449,6 @@ const CustomStruct::CRenderBoundingBox* CGameObject::GetRenderLocalBoundingBox()
 const CustomStruct::CRenderBoundingSphere* CGameObject::GetRenderLocalBoundingSphere()const
 {
 	return (this->m_RenderBoundingSphere);
-}
-void CGameObject::SetScene(const CScene* scene)const
-{
-	this->m_Scene = scene;
-}
-void CGameObject::AddNewTransform(const CGameObject* parent)const
-{
-	if (!this->HasTransform())
-	{
-		this->m_Transform = new CTransform();
-		this->ConnectGameObjectAndTransform(this, this->m_Transform);
-	}
-	if (parent != NULL)
-	{
-		this->m_Transform->InitTransform(CustomType::Vector3::Zero());
-		this->SetParent(parent);
-	}
-	else
-	{
-		this->m_Transform->InitTransform(CustomType::Vector3::Zero());
-	}
-}
-void CGameObject::AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, const CGameObject* parent)const
-{
-	if (!this->HasTransform())
-	{
-		this->m_Transform = new CTransform();
-		this->ConnectGameObjectAndTransform(this, this->m_Transform);
-	}
-	if (parent != NULL)
-	{
-		this->m_Transform->InitTransform(worldPosition, worldRotation, worldScale);
-		this->SetParent(parent);
-	}
-	else
-	{
-		this->m_Transform->InitTransform(worldPosition, worldRotation, worldScale);
-	}
-}
-void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)const
-{
-	if (!this->HasRenderBoundingBox())
-	{
-		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(anchor, dimensions);
-	}
-	else
-	{
-		this->m_RenderBoundingBox->Anchor = anchor;
-		this->m_RenderBoundingBox->Dimensions = dimensions;
-	}
-}
-void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)const
-{
-	CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
-	tempAnchor = tempAnchor * 0.5f;
-	if (!this->HasRenderBoundingBox())
-	{
-		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(tempAnchor, dimensions);
-	}
-	else
-	{
-		this->m_RenderBoundingBox->Anchor = tempAnchor;
-		this->m_RenderBoundingBox->Dimensions = dimensions;
-	}
 }
 void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin, CustomType::Vector3& boundingMax)const
 {
@@ -194,28 +525,30 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 		boundingMax = CustomType::Vector3(maxPoint[0], maxPoint[1], maxPoint[2]);
 	}
 }
-void CGameObject::SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)const
+void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, const CustomType::Vector3& dimensions)
 {
-	if (!this->HasRenderBoundingSphere())
+	if (!this->HasRenderBoundingBox())
 	{
-		this->m_RenderBoundingSphere = new CustomStruct::CRenderBoundingSphere(anchor, radius);
+		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(anchor, dimensions);
 	}
 	else
 	{
-		this->m_RenderBoundingSphere->Anchor = anchor;
-		this->m_RenderBoundingSphere->Radius = radius;
+		this->m_RenderBoundingBox->Anchor = anchor;
+		this->m_RenderBoundingBox->Dimensions = dimensions;
 	}
 }
-void CGameObject::SetRenderLocalBoundingSphere(const FLOAT& radius)const
+void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)
 {
-	if (!this->HasRenderBoundingSphere())
+	CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
+	tempAnchor = tempAnchor * 0.5f;
+	if (!this->HasRenderBoundingBox())
 	{
-		this->m_RenderBoundingSphere = new CustomStruct::CRenderBoundingSphere(CustomType::Vector3::Zero(), radius);
+		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(tempAnchor, dimensions);
 	}
 	else
 	{
-		this->m_RenderBoundingSphere->Anchor = CustomType::Vector3::Zero();
-		this->m_RenderBoundingSphere->Radius = radius;
+		this->m_RenderBoundingBox->Anchor = tempAnchor;
+		this->m_RenderBoundingBox->Dimensions = dimensions;
 	}
 }
 void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)const
@@ -231,329 +564,28 @@ void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOA
 	anchor = (this->m_RenderBoundingSphere->Anchor * scale) + position;
 	radius = this->m_RenderBoundingSphere->Radius * CustomType::CMath::Max(scale.X(), CustomType::CMath::Max(scale.Y(), scale.Z()));
 }
-void CGameObject::RemoveTransform()const
+void CGameObject::SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)
 {
-	if (this->HasTransform())
+	if (!this->HasRenderBoundingSphere())
 	{
-		this->DisconnectGameObjectAndTransform(this, this->m_Transform);
+		this->m_RenderBoundingSphere = new CustomStruct::CRenderBoundingSphere(anchor, radius);
+	}
+	else
+	{
+		this->m_RenderBoundingSphere->Anchor = anchor;
+		this->m_RenderBoundingSphere->Radius = radius;
 	}
 }
-BOOL CGameObject::IsBelongTransform(const CTransform* transform)const
+void CGameObject::SetRenderLocalBoundingSphere(const FLOAT& radius)
 {
-	if (transform != NULL && this->HasTransform())
+	if (!this->HasRenderBoundingSphere())
 	{
-		return (this->m_Transform->GetUniqueID() == transform->GetUniqueID());
+		this->m_RenderBoundingSphere = new CustomStruct::CRenderBoundingSphere(CustomType::Vector3::Zero(), radius);
 	}
-	return FALSE;
-}
-BOOL CGameObject::HasScene()const
-{
-	return (this->m_Scene != NULL);
-}
-BOOL CGameObject::HasTransform()const
-{
-	return (this->m_Transform != NULL);
-}
-BOOL CGameObject::HasRenderBoundingBox()const
-{
-	return (this->m_RenderBoundingBox != NULL);
-}
-BOOL CGameObject::HasRenderBoundingSphere()const
-{
-	return (this->m_RenderBoundingSphere != NULL);
-}
-const CGameObject* CGameObject::GetParent()const
-{
-	if (this->HasParent())
+	else
 	{
-		return (this->m_Transform->GetParent()->GetGameObject());
-	}
-	return NULL;
-}
-std::vector<const CGameObject*> CGameObject::GetChildrenList()const
-{
-	std::vector<const CGameObject*> childrenList;
-	if (this->HasChild())
-	{
-		std::vector<const CTransform*> childrenTransformList = this->m_Transform->GetChildrenList();
-		for (const auto& child : childrenTransformList)
-		{
-			if (child != NULL)
-			{
-				if (child->HasGameObject())
-				{
-					childrenList.push_back(child->GetGameObject());
-				}
-			}
-		}
-	}
-	return childrenList;
-}
-const CGameObject* CGameObject::GetChildByTransformID(const ULONGLONG& id)const
-{
-	if (this->HasChild())
-	{
-		const CTransform* tempTransform = this->m_Transform->GetChildByUniqueID(id);
-		if (tempTransform != NULL)
-		{
-			return (tempTransform->GetGameObject());
-		}
-	}
-	return NULL;
-}
-void CGameObject::SetParent(const CGameObject* parent)const
-{
-	if (parent != NULL && this->HasTransform() && parent->HasTransform())
-	{
-		this->m_Transform->SetParent(parent->GetTransform());
-	}
-}
-void CGameObject::AddChild(const CGameObject* child)const
-{
-	if (child != NULL && this->HasTransform() && child->HasTransform())
-	{
-		this->m_Transform->AddChild(child->GetTransform());
-	}
-}
-void CGameObject::RemoveParent()const
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->RemoveParent();
-	}
-}
-void CGameObject::RemoveChild(const CGameObject* child)const
-{
-	if (child != NULL && this->HasTransform() && child->HasTransform())
-	{
-		this->m_Transform->RemoveChild(child->GetTransform());
-	}
-}
-void CGameObject::RemoveChildByTransformID(const ULONGLONG& id)const
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->RemoveChildByUniqueID(id);
-	}
-}
-void CGameObject::RemoveChildren()const
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->RemoveAllChildren();
-	}
-}
-BOOL CGameObject::IsParent(const CGameObject* parent)const
-{
-	if (parent != NULL && this->HasTransform() && parent->HasTransform())
-	{
-		return (this->m_Transform->IsParent(parent->m_Transform));
-	}
-	return FALSE;
-}
-BOOL CGameObject::IsChild(const CGameObject* child)const
-{
-	if (child != NULL && this->HasTransform() && child->HasTransform())
-	{
-		return (this->m_Transform->IsChild(child->m_Transform));
-	}
-	return FALSE;
-}
-BOOL CGameObject::HasParent()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->HasParent());
-	}
-	return FALSE;
-}
-BOOL CGameObject::HasChild()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->HasChild());
-	}
-	return FALSE;
-}
-CustomType::Vector3 CGameObject::GetForwardVector()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetForwardVector());
-	}
-	return CustomType::Vector3::ZVector();
-}
-CustomType::Vector3 CGameObject::GetUpVector()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetUpVector());
-	}
-	return CustomType::Vector3::YVector();
-}
-CustomType::Vector3 CGameObject::GetRightVector()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetRightVector());
-	}
-	return CustomType::Vector3::XVector();
-}
-CustomType::Matrix4x4 CGameObject::GetLocalToWorldMatrix()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetLocalToWorldMatrix());
-	}
-	return CustomType::Matrix4x4::Identity();
-}
-CustomType::Matrix4x4 CGameObject::GetWorldToLocalMatrix()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetWorldToLocalMatrix());
-	}
-	return CustomType::Matrix4x4::Identity();
-}
-CustomType::Vector3 CGameObject::GetWorldPosition()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetWorldPosition());
-	}
-	return CustomType::Vector3::Zero();
-}
-CustomType::Quaternion CGameObject::GetWorldRotation()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetWorldRotation());
-	}
-	return CustomType::Quaternion::Identity();
-}
-CustomType::Vector3 CGameObject::GetWorldScale()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetWorldScale());
-	}
-	return CustomType::Vector3::One();
-}
-CustomType::Vector3 CGameObject::GetLocalPosition()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetLocalPosition());
-	}
-	return CustomType::Vector3::Zero();
-}
-CustomType::Quaternion CGameObject::GetLocalRotation()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetLocalRotation());
-	}
-	return CustomType::Quaternion::Identity();
-}
-CustomType::Vector3 CGameObject::GetLocalScale()const
-{
-	if (this->HasTransform())
-	{
-		return (this->m_Transform->GetLocalScale());
-	}
-	return CustomType::Vector3::One();
-}
-void CGameObject::SetWorldPosition(const CustomType::Vector3& worldPosition)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetWorldPosition(worldPosition);
-	}
-}
-void CGameObject::SetWorldRotation(const CustomType::Quaternion& worldRotation)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetWorldRotation(worldRotation);
-	}
-}
-void CGameObject::SetWorldScale(const CustomType::Vector3& worldScale)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetWorldScale(worldScale);
-	}
-}
-void CGameObject::SetLocalPosition(const CustomType::Vector3& localPosition)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetLocalPosition(localPosition);
-	}
-}
-void CGameObject::SetLocalRotation(const CustomType::Quaternion& localRotation)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetLocalRotation(localRotation);
-	}
-}
-void CGameObject::SetLocalScale(const CustomType::Vector3& localScale)
-{
-	if (this->HasTransform())
-	{
-		this->m_Transform->SetLocalScale(localScale);
-	}
-}
-void CGameObject::BaseRemoveTransform(const UINT& deleteTransform)const
-{
-	if (this->HasTransform())
-	{
-		if (this->m_Transform->HasGameObject())
-		{
-			this->m_Transform->m_GameObject = NULL;
-		}
-		if (deleteTransform)
-		{
-			delete (this->m_Transform);
-		}
-		this->m_Transform = NULL;
-	}
-}
-void CGameObject::ConnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const
-{
-	if (gameObject == NULL || transform == NULL)
-	{
-		return;
-	}
-	if (gameObject->HasTransform() && transform->HasGameObject() && gameObject->GetUniqueID() == transform->m_GameObject->GetUniqueID() && gameObject->m_Transform->GetUniqueID() == transform->GetUniqueID())
-	{
-		return;
-	}
-	if (gameObject->HasTransform() && gameObject->m_Transform->GetUniqueID() != transform->GetUniqueID())
-	{
-		gameObject->BaseRemoveTransform(TRUE);
-	}
-	if (transform->HasGameObject() && transform->m_GameObject->GetUniqueID() != gameObject->GetUniqueID())
-	{
-		transform->m_GameObject->BaseRemoveTransform(FALSE);
-	}
-	transform->m_GameObject = gameObject;
-	gameObject->m_Transform = transform;
-}
-void CGameObject::DisconnectGameObjectAndTransform(const CGameObject* gameObject, CTransform* transform)const
-{
-	if (gameObject == NULL || transform == NULL)
-	{
-		return;
-	}
-	if (transform->HasGameObject() && transform->m_GameObject->GetUniqueID() == gameObject->GetUniqueID())
-	{
-		transform->m_GameObject = NULL;
-	}
-	if (gameObject->HasTransform() && gameObject->m_Transform->GetUniqueID() == transform->GetUniqueID())
-	{
-		gameObject->BaseRemoveTransform(TRUE);
+		this->m_RenderBoundingSphere->Anchor = CustomType::Vector3::Zero();
+		this->m_RenderBoundingSphere->Radius = radius;
 	}
 }
 void CGameObject::AddComponent(CBaseComponent* component)
@@ -714,6 +746,18 @@ BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)const
 	}
 	return FALSE;
 }
+BOOL CGameObject::IsBelongComponent(const ULONGLONG& componentID)const
+{
+	if (this->HasComponent())
+	{
+		auto& element = this->m_Components.find(componentID);
+		if (element != this->m_Components.end())
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
 BOOL CGameObject::HasComponent()const
 {
 	return (this->m_Components.size() > 0);
@@ -730,7 +774,7 @@ BOOL CGameObject::HasGameBoundComponent()const
 {
 	return (this->m_GameBoundComponentID > 0u);
 }
-BOOL CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)
+BOOL CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const
 {
 	if (this->HasComponent())
 	{
@@ -742,18 +786,6 @@ BOOL CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent
 		}
 	}
 	return FALSE;
-}
-const BOOL& CGameObject::IsActive()const
-{
-	return (this->m_Active);
-}
-void CGameObject::Active()
-{
-	this->m_Active = TRUE;
-}
-void CGameObject::Inactive()
-{
-	this->m_Active = FALSE;
 }
 void CGameObject::Init()
 {
@@ -810,7 +842,6 @@ void CGameObject::FixedUpdate()
 #ifdef _DEVELOPMENT_EDITOR
 void CGameObject::SelectedEditorUpdate_RenderBounding()
 {
-	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 	if (ImGui::TreeNode("RenderBounding"))
 	{
 		FLOAT boxBoundMin[3] = { 0.f, 0.f, 0.f }, boxBoundMax[3] = { 0.f, 0.f, 0.f };

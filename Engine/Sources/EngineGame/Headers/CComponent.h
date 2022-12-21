@@ -14,39 +14,39 @@ public:
 	void	InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation);
 	void	InitTransform(const CustomType::Vector3& worldPosition, const CustomType::Vector3& worldScale);
 public:
-	const class CGameObject*					GetGameObject()const;
-	const CTransform*							GetParent()const;
-	UINT										GetChildrenNum()const;
-	const CTransform*							GetChildByUniqueID(const ULONGLONG& id)const;
-	std::vector<const CTransform*>				GetChildrenList()const;
-	std::map<ULONGLONG, const CTransform*>		GetChildrenMap()const;
+	class CGameObjectTransformBase*			GetGameObject()const;
+	CTransform*								GetParent()const;
+	UINT									GetChildrenNum()const;
+	CTransform*								GetChildByUniqueID(const ULONGLONG& id)const;
+	std::vector<CTransform*>				GetChildrenList()const;
+	std::map<ULONGLONG, CTransform*>		GetChildrenMap()const;
 public:
-	void	SetParent(const CTransform* parent)const;
-	void	AddChild(const CTransform* child)const;
+	void	SetParent(CTransform* parent);
+	void	AddChild(CTransform* child);
 public:
-	void	RemoveParent()const;
-	void	RemoveChild(const CTransform* child)const;
-	void	RemoveChildByUniqueID(const ULONGLONG& id)const;
-	void	RemoveAllChildren()const;
+	void	RemoveParent();
+	void	RemoveChild(CTransform* child);
+	void	RemoveChildByUniqueID(const ULONGLONG& id);
+	void	RemoveAllChildren();
 public:
-	BOOL	IsBelongGameObject(const class CGameObject* transform)const;
+	BOOL	IsBelongGameObject(const ULONGLONG& gameObjectID)const;
 	BOOL	HasGameObject()const;
 	BOOL	HasParent()const;
 	BOOL	HasChild()const;
-	BOOL	IsParent(const CTransform* parent)const;
-	BOOL	IsChild(const CTransform* child)const;
+	BOOL	IsParent(const ULONGLONG& parentID)const;
+	BOOL	IsChild(const ULONGLONG& childID)const;
 protected:
-	void	BaseAddChild(const CTransform* child)const;
-	void	BaseRemoveChildByUniqueID(const ULONGLONG& id)const;
-	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id)const;
-	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, const CTransform*& output)const;
-	void	ConnectParentAndChild(const CTransform* parent, const CTransform* child)const;
-	void	DisconnectParentAndChild(const CTransform* parent, const CTransform* child)const;
-	void	CalculateCurrentLocalTransform(const CTransform* newParent)const;
+	void	BaseAddChild(CTransform* child);
+	void	BaseRemoveChildByUniqueID(const ULONGLONG& id);
+	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id);
+	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output);
+	void	ConnectParentAndChild(CTransform* parent, CTransform* child);
+	void	DisconnectParentAndChild(CTransform* parent, CTransform* child);
+	void	CalculateCurrentLocalTransform(CTransform* newParent);
 protected:
-	const class CGameObject*							m_GameObject;
-	mutable const CTransform*							m_Parent;
-	mutable std::map<ULONGLONG, const CTransform*>		m_Children;
+	class CGameObjectTransformBase*		m_GameObject;
+	CTransform*							m_Parent;
+	std::map<ULONGLONG, CTransform*>	m_Children;
 public:
 	const CustomType::Vector3&		GetLocalPosition()const;
 	const CustomType::Quaternion&	GetLocalRotation()const;
@@ -68,9 +68,9 @@ protected:
 	void	RecursionWorldRotation(const CTransform* parent, CustomType::Quaternion& rotation)const;
 	void	RecursionWorldScale(const CTransform* parent, CustomType::Vector3& scale)const;
 protected:
-	mutable CustomType::Vector3			m_LocalPosition;
-	mutable CustomType::Quaternion		m_LocalRotation;
-	mutable CustomType::Vector3			m_LocalScale;
+	CustomType::Vector3			m_LocalPosition;
+	CustomType::Quaternion		m_LocalRotation;
+	CustomType::Vector3			m_LocalScale;
 public:
 	CustomType::Vector3		GetForwardVector()const;
 	CustomType::Vector3		GetUpVector()const;
@@ -88,7 +88,7 @@ public:
 	CTransform();
 	virtual ~CTransform() {}
 protected:
-	friend class CGameObject;
+	friend class CGameObjectTransformBase;
 };
 
 class CBaseComponent : public CObjectBase
@@ -117,7 +117,7 @@ public:
 	const class CGameObject* GetGameObject()const { return (this->m_GameObject); }
 	void SetGameObject(const class CGameObject* gameObject)
 	{
-		if (gameObject != NULL)
+		if (gameObject != nullptr)
 		{
 			this->m_GameObject = gameObject;
 		}
@@ -130,7 +130,7 @@ public:
 		this->m_NeedUpdate		= needUpdate;
 		this->m_NeedFixedUpdate	= needFixedUpdate;
 		this->m_Active			= active;
-		this->m_GameObject		= NULL;
+		this->m_GameObject		= nullptr;
 	}
 	virtual ~CBaseComponent() {}
 };

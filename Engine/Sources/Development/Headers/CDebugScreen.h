@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
+
+#ifdef _DEVELOPMENT_EDITOR
+
 #include "../../EngineBase/Headers/CBaseType.h"
 
 class CDebugScreen
@@ -23,3 +26,5 @@ protected:
 	std::vector<class CScreenPolygon2D*> m_Polygons;
 	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> m_SRVs;
 };
+
+#endif

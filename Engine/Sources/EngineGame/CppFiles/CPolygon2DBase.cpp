@@ -1,7 +1,6 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CPolygon2DBase.h"
 
-CPolygon2DBase::CPolygon2DBase()
+CPolygon2DBase::CPolygon2DBase(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	m_2DPosition = CustomType::Vector4(0, 0, 0, 0);
 }

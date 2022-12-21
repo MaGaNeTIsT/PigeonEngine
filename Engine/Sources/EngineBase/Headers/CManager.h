@@ -15,6 +15,12 @@ public:
 	static void		Update();
 	static void		FixedUpdate();
 	static void		Draw();
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	static void		EditorUpdate();
+private:
+	bool	m_EditorOpen;
+#endif
 public:
 	static void				CalculateFrameStats();
 	static HWND				GetWindowHandle();

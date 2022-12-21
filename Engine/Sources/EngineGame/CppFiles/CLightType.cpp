@@ -1,18 +1,11 @@
-#include "../../../../Entry/EngineMain.h"
 #include "../Headers/CLightType.h"
 #include "../Headers/CCamera.h"
 
-CLightBase::CLightBase()
+CLightBase::CLightBase(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
 	this->m_Intensity = 2.5f;
-}
-CLightBase::CLightBase(const CLightBase& light)
-{
-	this->m_LightType = LightType::LIGHT_TYPE_NONE;
-	this->m_Color = light.m_Color;
-	this->m_Intensity = light.m_Intensity;
 }
 void CLightBase::GetColor(CustomStruct::CColor& color, FLOAT& intensity)
 {
@@ -39,21 +32,13 @@ BOOL CLightBase::CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& out
 
 
 
-CLightDirectional::CLightDirectional()
+CLightDirectional::CLightDirectional(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_DIRECTIONAL);
 	this->m_FrameCounter = 0;
 	this->m_IsTransmitShadow = FALSE;
 	this->m_CascadeInfo[0] = nullptr;
 	this->m_CascadeInfo[1] = nullptr;
-}
-CLightDirectional::CLightDirectional(const CLightDirectional& light) : CLightBase(light)
-{
-	this->SetLightType(LightType::LIGHT_TYPE_DIRECTIONAL);
-	this->m_FrameCounter = light.m_FrameCounter;
-	this->m_IsTransmitShadow = light.m_IsTransmitShadow;
-	this->m_CascadeInfo[0] = light.m_CascadeInfo[0];
-	this->m_CascadeInfo[1] = light.m_CascadeInfo[1];
 }
 void CLightDirectional::Init()
 {
@@ -477,17 +462,11 @@ CustomType::Matrix4x4 CLightDirectional::GetPreviousProjectionMatrix(const UINT&
 
 
 
-CLightPoint::CLightPoint()
+CLightPoint::CLightPoint(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_POINT);
 	this->m_AttenuationExponent = 1.5f;
 	this->m_Radius = 100.f;
-}
-CLightPoint::CLightPoint(const CLightPoint& light) : CLightBase(light)
-{
-	this->SetLightType(LightType::LIGHT_TYPE_POINT);
-	this->m_AttenuationExponent = light.m_AttenuationExponent;
-	this->m_Radius = light.m_Radius;
 }
 CustomType::Matrix4x4 CLightPoint::GetCurrentViewMatrix(const UINT& extraIndex)
 {
@@ -513,7 +492,7 @@ void CLightPoint::Init()
 
 
 
-CLightSpot::CLightSpot()
+CLightSpot::CLightSpot(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_SPOT);
 	this->m_Range = 100.f;
@@ -524,18 +503,6 @@ CLightSpot::CLightSpot()
 	this->m_ViewMatrix[1] = CustomType::Matrix4x4::Identity();
 	this->m_ProjectionMatrix[0] = CustomType::Matrix4x4::Identity();
 	this->m_ProjectionMatrix[1] = CustomType::Matrix4x4::Identity();
-}
-CLightSpot::CLightSpot(const CLightSpot& light) : CLightBase(light)
-{
-	this->SetLightType(LightType::LIGHT_TYPE_SPOT);
-	this->m_Range = light.m_Range;
-	this->m_HalfRadian = light.m_HalfRadian;
-	this->m_CosHalfRadian = light.m_CosHalfRadian;
-	this->m_FrameCounter = light.m_FrameCounter;
-	this->m_ViewMatrix[0] = light.m_ViewMatrix[0];
-	this->m_ViewMatrix[1] = light.m_ViewMatrix[1];
-	this->m_ProjectionMatrix[0] = light.m_ProjectionMatrix[0];
-	this->m_ProjectionMatrix[1] = light.m_ProjectionMatrix[1];
 }
 CustomType::Matrix4x4 CLightSpot::GetCurrentViewMatrix(const UINT& extraIndex)
 {

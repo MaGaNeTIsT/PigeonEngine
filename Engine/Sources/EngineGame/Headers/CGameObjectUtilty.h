@@ -18,15 +18,16 @@ namespace GameObjectUtility
 		{
 			list.clear();
 		}
-		std::vector<CGameObject*> objects = scene->GetGameObjectAll(layout);
+		std::vector<CGameObjectBase*> objects = scene->GetGameObjectAll(layout);
 		for (const auto& obj : objects)
 		{
-			if ((obj) != NULL)
+			if ((obj) != nullptr)
 			{
-				if (obj->HasGameBoundComponent())
+				CGameObject* tempGameObjectPtr = reinterpret_cast<CGameObject*>(obj);
+				if (tempGameObjectPtr && tempGameObjectPtr->HasGameBoundComponent())
 				{
-					CGameBoundBaseComponent* boundComponent = obj->GetGameBoundComponent<CGameBoundBaseComponent>();
-					std::pair<CGameObject*, CGameBoundBaseComponent*> tempObj(obj, boundComponent);
+					CGameBoundBaseComponent* boundComponent = tempGameObjectPtr->GetGameBoundComponent<CGameBoundBaseComponent>();
+					std::pair<CGameObject*, CGameBoundBaseComponent*> tempObj(tempGameObjectPtr, boundComponent);
 					list.push_back(tempObj);
 				}
 			}

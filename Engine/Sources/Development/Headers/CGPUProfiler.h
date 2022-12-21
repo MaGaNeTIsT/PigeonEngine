@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
+
+#ifdef _DEVELOPMENT_EDITOR
+
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 
 class CGPUProfilerManager
@@ -60,3 +63,16 @@ private:
 private:
 	static CGPUProfilerManager* m_GPUProfilerManager;
 };
+
+#else
+
+class CGPUProfilerManager
+{
+public:
+	static void AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
+public:
+	CGPUProfilerManager() {}
+	~CGPUProfilerManager() {}
+};
+
+#endif

@@ -11,6 +11,10 @@ CGPUCulling::CGPUCulling()
 	this->m_UsedHZBNum = 0;
 	this->m_CachedAABBNum = 0u;
 	this->m_PassingCount = 0u;
+
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_EditorFrameCount = 0u;
+#endif
 }
 CGPUCulling::~CGPUCulling()
 {
@@ -46,26 +50,9 @@ void CGPUCulling::Uninit()
 }
 void CGPUCulling::Update(const ULONGLONG& frameIndex)
 {
-	INT index, readBackIndex;
-	{
-		index = static_cast<INT>(frameIndex % (this->m_CachedCount));
-		INT totalCount = static_cast<INT>(this->m_CachedCount);
-		readBackIndex = static_cast<INT>(index) - totalCount + 1;
-		readBackIndex = (readBackIndex < 0) ? (readBackIndex + totalCount) : readBackIndex;
-	}
-
-	INT mostDetailHZBIndex = this->m_MostDetailHZBIndex;
-	INT usedHZBNum = this->m_UsedHZBNum;
-	INT layerCount = static_cast<INT>(this->m_HZBPass->GetHZBBufferNum());
-	ImGui::Begin("Occlusion test parameters");
-	ImGui::Text("Current  index = %d number of objects = %d", index, this->m_CachedCullingInfo[index].NumObjects);
-	ImGui::Text("ReadBack index = %d number of objects = %d", readBackIndex, this->m_CachedCullingInfo[readBackIndex].NumObjects);
-	ImGui::Text("Passing number of objects = %d", this->m_PassingCount);
-	ImGui::SliderInt("Most HZB layer", &mostDetailHZBIndex, 0, static_cast<INT>(this->m_HZBPass->GetHZBBufferNum() - 1u));
-	ImGui::SliderInt("Used number of HZB layers", &usedHZBNum, 1, layerCount - mostDetailHZBIndex);
-	ImGui::End();
-	this->m_MostDetailHZBIndex = mostDetailHZBIndex;
-	this->m_UsedHZBNum = usedHZBNum;
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_EditorFrameCount = frameIndex;
+#endif
 }
 void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& inputCullingResult, std::vector<BOOL>& outputCullingResult)
 {
@@ -131,6 +118,31 @@ void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 		CRenderDevice::SetNoCSShader();
 	}
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CGPUCulling::EditorUpdate()
+{
+	INT index, readBackIndex;
+	{
+		index = static_cast<INT>(this->m_EditorFrameCount % (this->m_CachedCount));
+		INT totalCount = static_cast<INT>(this->m_CachedCount);
+		readBackIndex = static_cast<INT>(index) - totalCount + 1;
+		readBackIndex = (readBackIndex < 0) ? (readBackIndex + totalCount) : readBackIndex;
+	}
+
+	INT mostDetailHZBIndex = this->m_MostDetailHZBIndex;
+	INT usedHZBNum = this->m_UsedHZBNum;
+	INT layerCount = static_cast<INT>(this->m_HZBPass->GetHZBBufferNum());
+	ImGui::Begin("Occlusion test parameters");
+	ImGui::Text("Current  index = %d number of objects = %d", index, this->m_CachedCullingInfo[index].NumObjects);
+	ImGui::Text("ReadBack index = %d number of objects = %d", readBackIndex, this->m_CachedCullingInfo[readBackIndex].NumObjects);
+	ImGui::Text("Passing number of objects = %d", this->m_PassingCount);
+	ImGui::SliderInt("Most HZB layer", &mostDetailHZBIndex, 0, static_cast<INT>(this->m_HZBPass->GetHZBBufferNum() - 1u));
+	ImGui::SliderInt("Used number of HZB layers", &usedHZBNum, 1, layerCount - mostDetailHZBIndex);
+	ImGui::End();
+	this->m_MostDetailHZBIndex = mostDetailHZBIndex;
+	this->m_UsedHZBNum = usedHZBNum;
+}
+#endif
 void CGPUCulling::ReCreateBufferSize(const UINT& idx, const UINT& num)
 {
 	if (idx >= this->m_CachedCullingInfo.size())

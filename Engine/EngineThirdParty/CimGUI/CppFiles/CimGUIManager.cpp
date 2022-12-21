@@ -1,4 +1,7 @@
 #include "../Headers/CimGUIManager.h"
+
+#ifdef _DEVELOPMENT_EDITOR
+
 #include "../../../../Engine/Sources/EngineBase/Headers/CManager.h"
 #include "../../../../Engine/Sources/EngineBase/Headers/CTimer.h"
 #include "../../../../Engine/Sources/EngineRender/RenderBase/Headers/CRenderDevice.h"
@@ -826,3 +829,5 @@ void CimGUIManager::D3DInvalidateDeviceObjects()
     if (CimGUIManager::m_imGUIManager->m_D3DData.InputLayout) { CimGUIManager::m_imGUIManager->m_D3DData.InputLayout->Release(); CimGUIManager::m_imGUIManager->m_D3DData.InputLayout = NULL; }
     if (CimGUIManager::m_imGUIManager->m_D3DData.VertexShader) { CimGUIManager::m_imGUIManager->m_D3DData.VertexShader->Release(); CimGUIManager::m_imGUIManager->m_D3DData.VertexShader = NULL; }
 }
+
+#endif

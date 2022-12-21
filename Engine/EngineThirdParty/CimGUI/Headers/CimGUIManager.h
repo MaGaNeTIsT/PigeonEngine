@@ -2,6 +2,8 @@
 
 #include "../../../../Entry/EngineMain.h"
 
+#ifdef _DEVELOPMENT_EDITOR
+
 class CimGUIManager
 {
 public:
@@ -70,3 +72,5 @@ private:
 	CimGUIManager(const CimGUIManager&) {}
 	~CimGUIManager() {}
 };
+
+#endif

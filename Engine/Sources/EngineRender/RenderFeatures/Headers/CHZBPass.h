@@ -16,7 +16,11 @@ public:
 	void	Uninit();
 	void	Update();
 	void	ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth);
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	void	EditorUpdate();
 	void	DrawDebug();
+#endif
 private:
 	void	CalculateHZBLevels();
 	void	InitHZBBuffers();
@@ -24,9 +28,11 @@ public:
 	CHZBPass();
 	~CHZBPass();
 private:
+#ifdef _DEVELOPMENT_EDITOR
 	class CScreenPolygon2D*		m_Polygon2D;
 	BOOL						m_DebugType;
 	INT							m_DebugLevel;
+#endif
 
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_BuildHZBComputeShader;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_RawDownSamplingComputeShader;

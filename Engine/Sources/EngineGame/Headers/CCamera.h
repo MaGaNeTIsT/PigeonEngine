@@ -79,8 +79,12 @@ public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
 	virtual void	Update()override;
+#ifdef _DEVELOPMENT_EDITOR
 public:
-	CCamera();
+	virtual void	SelectedEditorUpdate()override;
+#endif
+public:
+	CCamera(const BOOL& active, const class CScene* scene);
 	virtual ~CCamera();
 protected:
 	CCameraInfo							m_CameraInfo;

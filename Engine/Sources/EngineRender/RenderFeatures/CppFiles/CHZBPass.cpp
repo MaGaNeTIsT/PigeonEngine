@@ -2,23 +2,30 @@
 #include "../../RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../../EngineGame/Headers/CCamera.h"
 #include "../../../EngineGame/Headers/CScene.h"
+
+#ifdef _DEVELOPMENT_EDITOR
 #include "../../../EngineGame/Headers/CScreenPolygon2D.h"
+#endif
 
 CHZBPass::CHZBPass()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	this->m_Polygon2D = NULL;
 	this->m_DebugType = FALSE;
 	this->m_DebugLevel = 0;
+#endif
 	this->m_PipelineSize = CustomType::Vector2Int(0, 0);
 	this->m_HZBMipLevels = 0;
 }
 CHZBPass::~CHZBPass()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	if (this->m_Polygon2D != NULL)
 	{
 		delete (this->m_Polygon2D);
 		this->m_Polygon2D = NULL;
 	}
+#endif
 }
 void CHZBPass::Init(const CustomType::Vector2Int& pipelineSize)
 {
@@ -27,31 +34,25 @@ void CHZBPass::Init(const CustomType::Vector2Int& pipelineSize)
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/BuildHZBComputeShader.cso", this->m_BuildHZBComputeShader);
 	CRenderDevice::LoadComputeShader("./Engine/Assets/EngineShaders/RawDownSamplingComputeShader.cso", this->m_RawDownSamplingComputeShader);
 	this->InitHZBBuffers();
-	this->m_Polygon2D = new CScreenPolygon2D(ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
+
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_Polygon2D = new CScreenPolygon2D(TRUE, nullptr, ENGINE_SHADER_SCREEN_POLYGON_2D_PS, CustomType::Vector4(0, 0, pipelineSize.X(), pipelineSize.Y()));
 	this->m_Polygon2D->Init();
+#endif
 }
 void CHZBPass::Uninit()
 {
+#ifdef _DEVELOPMENT_EDITOR
 	if (this->m_Polygon2D != NULL)
 	{
 		delete (this->m_Polygon2D);
 		this->m_Polygon2D = NULL;
 	}
+#endif
 }
 void CHZBPass::Update()
 {
-	bool tempDebugType = this->m_DebugType;
 
-	ImGui::Begin("HZB parameters");
-	ImGui::Checkbox("Debug Enable", &tempDebugType);
-	ImGui::SliderInt("Debug Level", &(this->m_DebugLevel), 0, static_cast<INT>(this->m_HZBBuffers.size() - 1u));
-	for (UINT i = 0u; i < (this->m_HZBSizes.size()); i++)
-	{
-		ImGui::Text("Resolution[%d] : x = %d, y = %d.", i, this->m_HZBSizes[i].X(), this->m_HZBSizes[i].Y());
-	}
-	ImGui::End();
-
-	this->m_DebugType = tempDebugType;
 }
 void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
@@ -72,6 +73,22 @@ void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>
 	}
 	CRenderDevice::SetNoCSShader();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CHZBPass::EditorUpdate()
+{
+	bool tempDebugType = this->m_DebugType;
+
+	ImGui::Begin("HZB parameters");
+	ImGui::Checkbox("Debug Enable", &tempDebugType);
+	ImGui::SliderInt("Debug Level", &(this->m_DebugLevel), 0, static_cast<INT>(this->m_HZBBuffers.size() - 1u));
+	for (UINT i = 0u; i < (this->m_HZBSizes.size()); i++)
+	{
+		ImGui::Text("Resolution[%d] : x = %d, y = %d.", i, this->m_HZBSizes[i].X(), this->m_HZBSizes[i].Y());
+	}
+	ImGui::End();
+
+	this->m_DebugType = tempDebugType;
+}
 void CHZBPass::DrawDebug()
 {
 	if (this->m_DebugType)
@@ -86,6 +103,7 @@ void CHZBPass::DrawDebug()
 		}
 	}
 }
+#endif
 void CHZBPass::GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT& idx)
 {
 	if (idx < this->m_HZBBuffers.size())
