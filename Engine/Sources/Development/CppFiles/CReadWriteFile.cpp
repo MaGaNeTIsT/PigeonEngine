@@ -117,7 +117,7 @@ INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std:
 					return 1;
 				}
 			}
-			return -1;
+			return 0;
 		}
 	}
 
@@ -125,10 +125,15 @@ INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std:
 	std::filesystem::directory_iterator folderIterator(path);
 	for (auto& folderItem : folderIterator)
 	{
-		std::string fileName(folderItem.path().filename().string());
-
-		fileNames.push_back();
-		fileNum++;
+		std::string fileName(folderItem.path().filename().string()); std::string tempTypeName;
+		if (CTempFileHelper::FetchPosAndString<TRUE, TRUE>(fileName, tempTypeName, CTempFileHelper::_NameTypeSeparator, "Error", &fileName))
+		{
+			if (tempTypeName == fileType)
+			{
+				fileNames.push_back(fileName);
+				fileNum++;
+			}
+		}
 	}
 	return fileNum;
 }

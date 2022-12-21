@@ -94,14 +94,17 @@ void CScene::Init()
 	}
 
 	{
-		std::vector<std::string> fileNames;
-		INT fileNum = CTempFileHelper::CountFileNumberInFolder("./Engine/Assets/Development/MaterialConfigs/", "mat_tex_cfg", fileNames);
-
+		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
+		std::string materialTypeName = "mat_tex_cfg";
 		BOOL showDebugFabric = TRUE;
+		BOOL useModelFromFile = FALSE;
+		FLOAT modelY = 200.f;
+		FLOAT modelOffsetX = 300.f;
+		FLOAT modelOffsetZ = 300.f;
+		FLOAT modelScale = 100.f;
 
 		if (showDebugFabric)
 		{
-			BOOL useModelFromFile = FALSE;
 			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
 			CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
 
@@ -111,26 +114,45 @@ void CScene::Init()
 				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 
+			std::vector<std::string> fileNames;
+			INT fileNum = CTempFileHelper::CountFileNumberInFolder(materialConfigPath, materialTypeName, fileNames);
+			if (fileNum > 0)
 			{
-				CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
-				testObject->SetWorldPosition(CustomType::Vector3(-150.f, 200.f, -150.f));
-				testObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-				CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
-				CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
-				if (useModelFromFile)
+				CReadWriteMaterialParamsFile materialFileReadWrite;
+
+				INT objNum = (CustomType::CMath::Log2Ceil(fileNum));
+				FLOAT maxX = ((objNum - 1.f) * 0.5f) * modelOffsetX;
+				FLOAT minX = -maxX;
+				FLOAT maxZ = ((objNum - 1.f) * 0.5f) * modelOffsetZ;
+				FLOAT minZ = -maxZ;
+
+				for (INT i = 0; i < fileNum; i++)
 				{
-					meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+					FLOAT z = static_cast<FLOAT>(i / (objNum));
+					FLOAT x = static_cast<FLOAT>(i % (objNum));
+					if (objNum > 1)
+					{
+						z /= static_cast<FLOAT>(objNum - 1);
+						x /= static_cast<FLOAT>(objNum - 1);
+					}
+
+					CSceneGameObject* testObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+					testObject->SetWorldPosition(CustomType::Vector3(x * maxX + (1.f - x) * minX, modelY, z * maxZ + (1.f - z) * minZ));
+					testObject->SetWorldScale(CustomType::Vector3(modelScale, modelScale, modelScale));
+					CMeshComponent* meshComponent = testObject->GetMeshComponentNotConst();
+					CMeshRendererComponent* meshRendererComponent = testObject->GetMeshRendererComponentNotConst();
+					if (useModelFromFile)
+					{
+						meshComponent->SetMesh(CMeshManager::LoadMeshFromFile(modelFilePath, testMeshInputLayout, 4u, FALSE));
+					}
+					else
+					{
+						meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
+					}
+					CClothMaterial* material = meshRendererComponent->AddMaterial<CClothMaterial>(TRUE);
+
+					materialFileReadWrite.LoadMaterialParams(materialConfigPath, fileNames[i], material);
 				}
-				else
-				{
-					meshComponent->SetMesh(CMeshManager::LoadEngineBaseModel(defaultModelType, testMeshInputLayout, 4u, FALSE));
-				}
-				CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
-				material->SetNormalTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_NRM_1K.tga"));
-				material->SetAlbedoTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_COL_1K.tga"));
-				material->SetRoughnessTexture(CTextureManager::LoadTexture2D("./Engine/Assets/EngineTextures/Resources/Fabric003_1K/Fabric003_GLOSS_1K.tga"));
-				material->SetIsGlossyRoughness(TRUE);
-				material->SetRoughness(0.752f);
 			}
 		}
 	}

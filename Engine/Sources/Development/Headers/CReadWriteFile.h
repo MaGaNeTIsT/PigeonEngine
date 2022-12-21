@@ -156,7 +156,7 @@ public:
 	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr);
 public:
 	/*
-	* Return value : If -1, invalid path. If 0, there is no file. If = 1, folder path is point to a single file. If > 0, file's number.
+	* Return value : If -1, invalid path. If 0, there is no file. If > 0, file's number.
 	*/
 	static INT CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames);
 };
