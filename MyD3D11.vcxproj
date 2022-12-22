@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
+    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonValue.h" />
+    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h" />
@@ -76,6 +79,9 @@
     <ClInclude Include="ThirdParty\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonValue.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp" />
@@ -448,7 +454,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>./ThirdParty/assimp/;$(IncludePath)</IncludePath>
+    <IncludePath>./ThirdParty/assimp/;./ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
     <LibraryPath>./ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -456,7 +462,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./ThirdParty/assimp/;$(IncludePath)</IncludePath>
+    <IncludePath>./ThirdParty/assimp/;./ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
     <LibraryPath>./ThirdParty/assimp/lib/Release/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
