@@ -307,7 +307,6 @@
       <Filter>Engine\Sources\Development\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
-    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonValue.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
   </ItemGroup>
   <ItemGroup>
@@ -462,7 +461,6 @@
       <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
-    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonValue.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
   </ItemGroup>
   <ItemGroup>

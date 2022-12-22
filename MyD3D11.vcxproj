@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
-    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonValue.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
@@ -80,7 +79,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
-    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonValue.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
