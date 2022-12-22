@@ -8,8 +8,8 @@ namespace CustomStruct
 	class CGameBaseSetting
 	{
 	public:
-		constexpr static FLOAT GameBoundMinimum			= 2.f;
-		constexpr static FLOAT GameBoundHalfMinimum		= 1.f;
+		constexpr static FLOAT GameBoundMinimum			= 0.1f;
+		constexpr static FLOAT GameBoundHalfMinimum		= 0.05f;
 	};
 
 	struct CRect

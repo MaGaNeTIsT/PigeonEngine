@@ -462,6 +462,7 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 	FLOAT points[24];
 	{
 		CustomType::Vector3 position(this->m_Transform->GetWorldPosition());
+		CustomType::Quaternion rotation(this->m_Transform->GetWorldRotation());
 		CustomType::Vector3 scale(this->m_Transform->GetWorldScale());
 		CustomType::Vector3 rightVec(this->m_Transform->GetRightVector());
 		CustomType::Vector3 upVec(this->m_Transform->GetUpVector());
@@ -539,16 +540,16 @@ void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& anchor, c
 }
 void CGameObject::SetRenderLocalBoundingBox(const CustomType::Vector3& dimensions)
 {
-	CustomType::Vector3 tempAnchor(-dimensions.X(), -dimensions.Y(), -dimensions.Z());
+	CustomType::Vector3 tempAnchor(dimensions.X(), dimensions.Y(), dimensions.Z());
 	tempAnchor = tempAnchor * 0.5f;
 	if (!this->HasRenderBoundingBox())
 	{
-		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(tempAnchor, dimensions);
+		this->m_RenderBoundingBox = new CustomStruct::CRenderBoundingBox(-tempAnchor, tempAnchor);
 	}
 	else
 	{
-		this->m_RenderBoundingBox->Anchor = tempAnchor;
-		this->m_RenderBoundingBox->Dimensions = dimensions;
+		this->m_RenderBoundingBox->Anchor = -tempAnchor;
+		this->m_RenderBoundingBox->Dimensions = tempAnchor;
 	}
 }
 void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOAT& radius)const
@@ -560,8 +561,9 @@ void CGameObject::GetRenderWorldBoundingSphere(CustomType::Vector3& anchor, FLOA
 		return;
 	}
 	CustomType::Vector3 position(this->m_Transform->GetWorldPosition());
+	CustomType::Quaternion rotation(this->m_Transform->GetWorldRotation());
 	CustomType::Vector3 scale(this->m_Transform->GetWorldScale());
-	anchor = (this->m_RenderBoundingSphere->Anchor * scale) + position;
+	anchor = rotation.MultiplyVector(this->m_RenderBoundingSphere->Anchor * scale) + position;
 	radius = this->m_RenderBoundingSphere->Radius * CustomType::CMath::Max(scale.X(), CustomType::CMath::Max(scale.Y(), scale.Z()));
 }
 void CGameObject::SetRenderLocalBoundingSphere(const CustomType::Vector3& anchor, const FLOAT& radius)

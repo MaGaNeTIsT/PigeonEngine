@@ -8,8 +8,8 @@ namespace CustomStruct
 	class CRenderBaseSetting
 	{
 	public:
-		constexpr static FLOAT RenderBoundMinimum		= 5.f;
-		constexpr static FLOAT RenderBoundHalfMinimum	= 2.5f;
+		constexpr static FLOAT RenderBoundMinimum		= 0.01f;
+		constexpr static FLOAT RenderBoundHalfMinimum	= 0.005f;
 	};
 
 	struct CColor

@@ -1155,7 +1155,7 @@ void CRenderPipeline::Culling()
 }
 BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius)
 {
-	const static auto planeCulling = [](const CRenderCameraCullingInfo& cullingInfo, const CustomType::Vector3& pos, const FLOAT& radius)->BOOL {
+	auto planeCulling = [](const CRenderCameraCullingInfo& cullingInfo, const CustomType::Vector3& pos, const FLOAT& radius)->BOOL {
 		for (UINT i = 0u; i < 5u; i++)
 		{
 			if ((CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) + radius) < cullingInfo.ClipDot[i])
@@ -1163,8 +1163,7 @@ BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3&
 				return FALSE;
 			}
 		}
-		return TRUE;
-	};
+		return TRUE; };
 
 	if ((CustomType::Vector3::Distance(pos, m_GlobalCullingInfo.OriginPosition) - radius) < m_GlobalCullingInfo.Distance)
 	{

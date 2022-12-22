@@ -31,7 +31,7 @@ CustomStruct::CCullingFrustumInfo CCamera::PrepareTempFrustumInfo()const
 		for (UINT i = 0u; i < 4u; i++)
 		{
 			result.CameraFrustumPlane[i] = tempPlane[i];
-			result.CameraProjectPlane[i] = CustomType::Vector3::Dot(tempWorldPosition, tempPlane[i]);
+			result.CameraProjectPlane[i] = CustomType::Vector3::Dot(tempWorldPosition, -tempPlane[i]);
 		}
 	}
 
