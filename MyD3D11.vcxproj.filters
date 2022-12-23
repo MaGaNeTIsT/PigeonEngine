@@ -306,6 +306,8 @@
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h">
       <Filter>Engine\Sources\Development\Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
@@ -458,6 +460,8 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp">
       <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
