@@ -327,17 +327,19 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 
 	const aiScene* scene = impoter->ReadFile(
 		path,
-		aiProcess_Triangulate |
 		aiProcess_CalcTangentSpace |
-		aiProcess_MakeLeftHanded |
-		aiProcess_FlipWindingOrder |
-		aiProcess_FlipUVs |
 		aiProcess_JoinIdenticalVertices |
+		aiProcess_MakeLeftHanded |
+		aiProcess_Triangulate |
 		aiProcess_RemoveComponent |
 		aiProcess_GenSmoothNormals |
 		aiProcess_SplitLargeMeshes |
-		aiProcess_ImproveCacheLocality |
+		aiProcess_PreTransformVertices |
+		/*aiProcess_ImproveCacheLocality |*/
+		aiProcess_RemoveRedundantMaterials |
 		aiProcess_FixInfacingNormals |
+		aiProcess_FlipWindingOrder |
+		aiProcess_FlipUVs |
 		aiProcess_FindInvalidData |
 		aiProcess_GenUVCoords |
 		aiProcess_SortByPType |
@@ -362,6 +364,70 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 	// Only access first mesh in scene.
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+	if (!_GTranslateMeshDesc(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
+	{
+		impoter->FreeScene();
+		return FALSE;
+	}
+
+	// We're done. Everything will be cleaned up by the importer destructor
+	impoter->FreeScene();
+	return TRUE;
+}
+BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
+{
+	Assimp::Importer* impoter = _GAssetImporter;
+	if (impoter == nullptr)
+	{
+		// TODO Do the error logging (did not create the instance of importer)
+		return FALSE;
+	}
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll
+	// probably to request more postprocessing than we do in this example.
+
+	// Use SetPropertyInteger to modify config of importer
+	//Assimp::Importer::SetProperty###();
+
+	const aiScene* scene = impoter->ReadFile(
+		path,
+		aiProcess_CalcTangentSpace |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_MakeLeftHanded |
+		aiProcess_Triangulate |
+		aiProcess_RemoveComponent |
+		aiProcess_GenSmoothNormals |
+		aiProcess_SplitLargeMeshes |
+		/*aiProcess_LimitBoneWeights |*/
+		aiProcess_RemoveRedundantMaterials |
+		aiProcess_FixInfacingNormals |
+		aiProcess_FlipWindingOrder |
+		aiProcess_FlipUVs |
+		aiProcess_FindInvalidData |
+		aiProcess_GenUVCoords |
+		aiProcess_SortByPType |
+		aiProcess_OptimizeMeshes |
+		aiProcess_OptimizeGraph);
+
+	// If the import failed, report it
+	if (scene == nullptr)
+	{
+		// TODO Do the error logging (importer.GetErrorString())
+		return FALSE;
+	}
+
+	if (!scene->HasMeshes())
+	{
+		impoter->FreeScene();
+		// TODO Scene does not contain meshes
+		return FALSE;
+	}
+
+	// Now we can access the file's contents.
+	// Only access first mesh in scene.
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 	if (!_GTranslateMeshDesc(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
 	{
 		impoter->FreeScene();

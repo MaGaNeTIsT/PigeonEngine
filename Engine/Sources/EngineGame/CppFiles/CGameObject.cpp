@@ -8,6 +8,7 @@ CGameObjectBase::CGameObjectBase(const BOOL& active, const CScene* scene)
 {
 	this->m_Active = active;
 	this->m_Scene = scene;
+	this->m_Name = ENGINE_NOT_EXIST_STRING;
 }
 CGameObjectBase::~CGameObjectBase()
 {
@@ -36,6 +37,17 @@ void CGameObjectBase::Active()
 void CGameObjectBase::Inactive()
 {
 	this->m_Active = FALSE;
+}
+const std::string& CGameObjectBase::GetName()const
+{
+	return (this->m_Name);
+}
+void CGameObjectBase::SetName(const std::string& name)
+{
+	if (name.length() > 1)
+	{
+		this->m_Name = name;
+	}
 }
 
 
@@ -405,6 +417,30 @@ CGameObjectTransformBase* CGameObjectTransformBase::GetChildByTransformID(const 
 		}
 	}
 	return nullptr;
+}
+
+
+
+CGameObjectSingleBone::CGameObjectSingleBone(const BOOL& active, const CScene* scene, CGameObjectSingleBone* rootBone, const std::string boneName) : CGameObjectTransformBase(active, scene)
+{
+	this->m_RootBone = rootBone;
+	this->m_BoneName = boneName;
+}
+CGameObjectSingleBone::~CGameObjectSingleBone()
+{
+
+}
+BOOL CGameObjectSingleBone::IsRootBone()const
+{
+	return (this->m_RootBone == nullptr);
+}
+const std::string& CGameObjectSingleBone::GetBoneName()const
+{
+
+}
+CGameObjectSingleBone* CGameObjectSingleBone::GetRootBone()const
+{
+
 }
 
 

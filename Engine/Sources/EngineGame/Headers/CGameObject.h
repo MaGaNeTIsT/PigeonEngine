@@ -31,6 +31,11 @@ public:
 protected:
 	BOOL			m_Active;
 public:
+	const std::string&	GetName()const;
+	void				SetName(const std::string& name);
+protected:
+	std::string		m_Name;
+public:
 	CGameObjectBase(const BOOL& active, const class CScene* scene);
 	virtual ~CGameObjectBase();
 };
@@ -141,6 +146,21 @@ protected:
 public:
 	CGameObjectTransformBase(const BOOL& active, const class CScene* scene);
 	virtual ~CGameObjectTransformBase();
+};
+
+class CGameObjectSingleBone : public CGameObjectTransformBase
+{
+public:
+	BOOL	IsRootBone()const;
+public:
+	const std::string&		GetBoneName()const;
+	CGameObjectSingleBone*	GetRootBone()const;
+protected:
+	std::string				m_BoneName;
+	CGameObjectSingleBone*	m_RootBone;
+public:
+	CGameObjectSingleBone(const BOOL& active, const class CScene* scene, CGameObjectSingleBone* rootBone, const std::string boneName);
+	virtual ~CGameObjectSingleBone();
 };
 
 class CGameObject : public CGameObjectTransformBase

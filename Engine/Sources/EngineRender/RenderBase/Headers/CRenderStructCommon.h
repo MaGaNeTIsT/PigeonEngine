@@ -836,6 +836,19 @@ namespace CustomStruct
 			inputLayoutDesc	= _EngineDefaultMeshInputLayout;
 			inputLayoutNum	= 4u;
 		}
+		static void GetEngineSkeletonMeshInputLayouts(const CustomStruct::CRenderInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		{
+			const static CustomStruct::CRenderInputLayoutDesc _EngineSkeletonMeshInputLayout[6u] = {
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT) };
+
+			inputLayoutDesc = _EngineSkeletonMeshInputLayout;
+			inputLayoutNum = 6u;
+		}
 	};
 
 	enum CRenderMapType

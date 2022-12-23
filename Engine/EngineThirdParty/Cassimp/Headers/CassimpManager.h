@@ -7,6 +7,9 @@ class CassimpManager
 {
 public:
 	static BOOL		ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices);
+	static BOOL		ReadSkeletonBoneFile(const std::string& path);
+	//static BOOL		ReadSkeletonMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices);
+	//static BOOL		ReadSkeletonBoneAndMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices);
 public:
 	static void		Initialize();
 	static void		ShutDown();
