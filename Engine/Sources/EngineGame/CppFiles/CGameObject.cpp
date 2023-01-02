@@ -436,11 +436,11 @@ BOOL CGameObjectSingleBone::IsRootBone()const
 }
 const std::string& CGameObjectSingleBone::GetBoneName()const
 {
-
+	return (this->m_BoneName);
 }
 CGameObjectSingleBone* CGameObjectSingleBone::GetRootBone()const
 {
-
+	return (this->m_RootBone);
 }
 
 

@@ -338,13 +338,14 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 		/*aiProcess_ImproveCacheLocality |*/
 		aiProcess_RemoveRedundantMaterials |
 		aiProcess_FixInfacingNormals |
-		aiProcess_FlipWindingOrder |
-		aiProcess_FlipUVs |
+		aiProcess_SortByPType |
 		aiProcess_FindInvalidData |
 		aiProcess_GenUVCoords |
-		aiProcess_SortByPType |
 		aiProcess_OptimizeMeshes |
-		aiProcess_OptimizeGraph);
+		aiProcess_OptimizeGraph |
+		aiProcess_FlipUVs |
+		aiProcess_FlipWindingOrder |
+		aiProcess_GenBoundingBoxes);
 
 	// If the import failed, report it
 	if (scene == nullptr)
@@ -402,13 +403,16 @@ BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
 		/*aiProcess_LimitBoneWeights |*/
 		aiProcess_RemoveRedundantMaterials |
 		aiProcess_FixInfacingNormals |
-		aiProcess_FlipWindingOrder |
-		aiProcess_FlipUVs |
+		/*aiProcess_PopulateArmatureData |*/
+		aiProcess_SortByPType |
 		aiProcess_FindInvalidData |
 		aiProcess_GenUVCoords |
-		aiProcess_SortByPType |
 		aiProcess_OptimizeMeshes |
-		aiProcess_OptimizeGraph);
+		aiProcess_FlipUVs |
+		aiProcess_FlipWindingOrder |
+		/*aiProcess_SplitByBoneCount |*/
+		/*aiProcess_Debone |*/
+		aiProcess_GenBoundingBoxes);
 
 	// If the import failed, report it
 	if (scene == nullptr)
@@ -428,11 +432,11 @@ BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
 	// Only access first mesh in scene.
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-	if (!_GTranslateMeshDesc(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
-	{
-		impoter->FreeScene();
-		return FALSE;
-	}
+	//if (!_GTranslateMeshDesc(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
+	//{
+	//	impoter->FreeScene();
+	//	return FALSE;
+	//}
 
 	// We're done. Everything will be cleaned up by the importer destructor
 	impoter->FreeScene();
