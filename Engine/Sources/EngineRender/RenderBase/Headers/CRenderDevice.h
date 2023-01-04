@@ -73,6 +73,37 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView>		DepthStencilView;
 	};
+	struct RenderTexture3DViewInfo
+	{
+		RenderTexture3DViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		void Release()
+		{
+			if (Texture3D)
+			{
+				Texture3D->Release();
+				Texture3D = nullptr;
+			}
+			if (RenderTargetView)
+			{
+				RenderTargetView->Release();
+				RenderTargetView = nullptr;
+			}
+			if (UnorderedAccessView)
+			{
+				UnorderedAccessView->Release();
+				UnorderedAccessView = nullptr;
+			}
+			if (ShaderResourceView)
+			{
+				ShaderResourceView->Release();
+				ShaderResourceView = nullptr;
+			}
+		};
+		Microsoft::WRL::ComPtr<ID3D11Texture3D>				Texture3D;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		RenderTargetView;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
+	};
 	struct Texture2DViewInfo
 	{
 		Texture2DViewInfo() { ::ZeroMemory(this, sizeof(*this)); }
@@ -123,8 +154,10 @@ public:
 	static BOOL		LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
 	static BOOL		CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const CustomStruct::CRenderBufferDesc& bufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static void		UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = NULL);
+	static void		UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = NULL);
 	static BOOL		CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateRenderTexture2D(RenderTexture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
+	static BOOL		CreateRenderTexture3D(RenderTexture3DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc);
 	static BOOL		CreateTexture2D(Texture2DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 	static BOOL		CreateTextureCube(TextureCubeViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc, const CustomStruct::CRenderSubresourceData* subData = NULL);
 public:

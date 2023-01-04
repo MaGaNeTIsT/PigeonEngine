@@ -393,6 +393,8 @@ namespace CustomType
 		void			operator*=(const INT& v);
 		void			operator/=(const INT& v);
 		void			operator=(const Vector4& v);
+		BOOL			operator==(const Vector4Int& v);
+		BOOL			operator!=(const Vector4Int& v);
 	public:
 		Vector4Int();
 		Vector4Int(const Vector4Int& v);

@@ -61,6 +61,7 @@ protected:
 	BOOL	m_ShowDebugScreen;
 	BOOL	m_ShowGTAOEditor;
 	BOOL	m_ShowHZBEditor;
+	BOOL	m_ShowDynamicWindEditor;
 #endif
 protected:
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
@@ -125,6 +126,7 @@ protected:
 	static std::shared_ptr<class CGPUCulling>			m_GPUCulling;
 	static std::shared_ptr<class CGTAOPass>				m_GTAOPass;
 	static std::shared_ptr<class CHZBPass>				m_HZBPass;
+	static std::shared_ptr<class CDynamicWind>			m_DynamicWind;
 #ifdef _DEVELOPMENT_EDITOR
 protected:
 	static std::shared_ptr<class CDebugScreen>			m_DebugScreen;

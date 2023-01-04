@@ -80,9 +80,6 @@ void CScene::Init()
 		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
 	}
 
-	{
-		CassimpManager::ReadSkeletonBoneFile("E:/Projects/Model/Misaki/Misaki_SchoolUniform.fbx");
-	}
 #ifdef _DEVELOPMENT_EDITOR
 	{
 		this->m_ShowSceneInfo = FALSE;

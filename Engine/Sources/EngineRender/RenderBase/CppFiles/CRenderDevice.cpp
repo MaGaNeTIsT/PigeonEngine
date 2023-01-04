@@ -323,6 +323,10 @@ void CRenderDevice::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dst
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 }
+void CRenderDevice::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+}
 BOOL CRenderDevice::CreateStructuredBuffer(StructuredBufferInfo& output, const CustomStruct::CRenderStructuredBufferDesc& structuredBufferDesc, const CustomStruct::CRenderSubresourceData* subData)
 {
 	if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
@@ -431,6 +435,9 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& output, const
 		//TODO Create depth texture failed log.
 		return FALSE;
 	}
+
+	output.Release();
+
 	D3D11_TEXTURE2D_DESC td;
 	{
 		UINT tBindFlags = 0u;
@@ -470,7 +477,6 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& output, const
 		CRenderDevice::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
 		CRenderDevice::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
 	}
-	output.Release();
 	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture2D(&td, NULL, output.Texture2D.ReleaseAndGetAddressOf());
 	if (FAILED(hr))
 	{
@@ -588,6 +594,108 @@ BOOL CRenderDevice::CreateRenderTexture2D(RenderTexture2DViewInfo& output, const
 			if (FAILED(hr))
 			{
 				//TODO Create DSV object failed log.
+				return FALSE;
+			}
+		}
+	}
+
+	return TRUE;
+}
+BOOL CRenderDevice::CreateRenderTexture3D(RenderTexture3DViewInfo& output, const CustomStruct::CRenderTextureDesc& textureDesc)
+{
+	if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
+	{
+		//TODO Create depth texture failed log.
+		return FALSE;
+	}
+
+	output.Release();
+
+	D3D11_TEXTURE3D_DESC td;
+	{
+		::ZeroMemory(&td, sizeof(td));
+		td.Width = textureDesc.Width;
+		td.Height = textureDesc.Height;
+		td.Depth = textureDesc.Depth;
+		td.MipLevels = textureDesc.MipLevels;
+		CRenderDevice::TranslateResourceFormat(td.Format, textureDesc.TextureFormat);
+		CRenderDevice::TranslateUsage(td.Usage, textureDesc.Usage);
+		CRenderDevice::TranslateBindFlag(td.BindFlags, textureDesc.BindFlags);
+		CRenderDevice::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
+		CRenderDevice::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
+	}
+	HRESULT hr = CRenderDevice::m_RenderDevice->m_Device->CreateTexture3D(&td, NULL, output.Texture3D.ReleaseAndGetAddressOf());
+	if (FAILED(hr))
+	{
+		//TODO Create texture object failed log.
+		return FALSE;
+	}
+
+	{
+		BOOL needSRV = textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_SHADER_RESOURCE
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RTV_SRV
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RTV_SRV_UAV
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_SRV_UAV;
+		if (needSRV)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
+			{
+				::ZeroMemory(&srvd, sizeof(srvd));
+				CRenderDevice::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
+				srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURE3D;
+				srvd.Texture3D.MostDetailedMip = 0u;
+				srvd.Texture3D.MipLevels = td.MipLevels;
+			}
+			hr = CRenderDevice::m_RenderDevice->m_Device->CreateShaderResourceView(output.Texture3D.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create SRV object failed log.
+				return FALSE;
+			}
+		}
+	}
+
+	{
+		BOOL needUAV = textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_UNORDERED_ACCESS
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_SRV_UAV
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RTV_SRV_UAV;
+		if (needUAV)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
+			::ZeroMemory(&uavd, sizeof(uavd));
+			CRenderDevice::TranslateResourceFormat(uavd.Format, textureDesc.UAVFormat);
+			uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE3D;
+			uavd.Texture3D.MipSlice = 0u;
+			uavd.Texture3D.FirstWSlice = 0u;
+			uavd.Texture3D.WSize = textureDesc.Depth;
+			hr = CRenderDevice::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Texture3D.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create UAV object failed log.
+				return FALSE;
+			}
+		}
+	}
+
+	{
+		BOOL needRTV = textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RENDER_TARGET
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RTV_SRV
+			|| textureDesc.BindFlags == CustomStruct::CRenderBindFlag::BIND_RTV_SRV_UAV;
+		if (needRTV)
+		{
+			D3D11_RENDER_TARGET_VIEW_DESC rtvd;
+			{
+				::ZeroMemory(&rtvd, sizeof(rtvd));
+				CRenderDevice::TranslateResourceFormat(rtvd.Format, textureDesc.RTVFormat);
+				rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE3D;
+				rtvd.Texture3D.MipSlice = 0u;
+				rtvd.Texture3D.FirstWSlice = 0u;
+				rtvd.Texture3D.WSize = textureDesc.Depth;
+			}
+			hr = CRenderDevice::m_RenderDevice->m_Device->CreateRenderTargetView(output.Texture3D.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				//TODO Create RTV object failed log.
 				return FALSE;
 			}
 		}

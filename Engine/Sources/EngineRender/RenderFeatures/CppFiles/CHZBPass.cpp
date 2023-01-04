@@ -93,7 +93,7 @@ void CHZBPass::DrawDebug()
 {
 	if (this->m_DebugType)
 	{
-		CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffers[this->m_DebugLevel].ShaderResourceView, ENGINE_GBUFFER_A_START_SLOT);
+		CRenderDevice::BindPSShaderResourceView(this->m_HZBBuffers[this->m_DebugLevel].ShaderResourceView, ENGINE_TEXTURE2D_CUSTOM_A_START_SLOT);
 		{
 			const CMeshRendererComponent* meshRenderer = this->m_Polygon2D->GetMeshRendererComponent<CMeshRendererComponent>();
 			if (meshRenderer)

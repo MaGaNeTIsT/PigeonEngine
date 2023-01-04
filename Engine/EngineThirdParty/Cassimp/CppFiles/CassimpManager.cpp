@@ -334,7 +334,6 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 		aiProcess_RemoveComponent |
 		aiProcess_GenSmoothNormals |
 		aiProcess_SplitLargeMeshes |
-		aiProcess_PreTransformVertices |
 		/*aiProcess_ImproveCacheLocality |*/
 		aiProcess_RemoveRedundantMaterials |
 		aiProcess_FixInfacingNormals |

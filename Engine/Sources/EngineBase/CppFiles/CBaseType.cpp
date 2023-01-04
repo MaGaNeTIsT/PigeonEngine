@@ -1313,6 +1313,22 @@ namespace CustomType
 		this->z = static_cast<INT>(v.Z());
 		this->w = static_cast<INT>(v.W());
 	}
+	BOOL Vector4Int::operator==(const Vector4Int& v)
+	{
+		return (
+			this->x == v.x &&
+			this->y == v.y &&
+			this->z == v.z &&
+			this->w == v.w);
+	}
+	BOOL Vector4Int::operator!=(const Vector4Int& v)
+	{
+		return (
+			this->x != v.x ||
+			this->y != v.y ||
+			this->z != v.z ||
+			this->w != v.w);
+	}
 	Vector4Int Vector4Int::GetZero()
 	{
 		Vector4Int result(0, 0, 0, 0);
