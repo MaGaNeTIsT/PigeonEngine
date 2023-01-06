@@ -421,10 +421,11 @@ CGameObjectTransformBase* CGameObjectTransformBase::GetChildByTransformID(const 
 
 
 
-CGameObjectSingleBone::CGameObjectSingleBone(const BOOL& active, const CScene* scene, CGameObjectSingleBone* rootBone, const std::string boneName) : CGameObjectTransformBase(active, scene)
+CGameObjectSingleBone::CGameObjectSingleBone(const BOOL& active, const CScene* scene, CGameObjectRootBone* rootBone, const std::string& boneName) : CGameObjectTransformBase(active, scene)
 {
-	this->m_RootBone = rootBone;
-	this->m_BoneName = boneName;
+	this->m_BoneIndex	= 0u;
+	this->m_BoneName	= boneName;
+	this->m_RootBone	= rootBone;
 }
 CGameObjectSingleBone::~CGameObjectSingleBone()
 {
@@ -434,13 +435,173 @@ BOOL CGameObjectSingleBone::IsRootBone()const
 {
 	return (this->m_RootBone == nullptr);
 }
+void CGameObjectSingleBone::SetBoneIndex(const UINT& boneIndex)
+{
+	this->m_BoneIndex = boneIndex;
+}
+const UINT& CGameObjectSingleBone::GetBoneIndex()const
+{
+	return (this->m_BoneIndex);
+}
 const std::string& CGameObjectSingleBone::GetBoneName()const
 {
 	return (this->m_BoneName);
 }
-CGameObjectSingleBone* CGameObjectSingleBone::GetRootBone()const
+CGameObjectRootBone* CGameObjectSingleBone::GetRootBone()const
 {
 	return (this->m_RootBone);
+}
+
+
+
+CGameObjectRootBone::CGameObjectRootBone(const BOOL& active, const CScene* scene, const std::string& boneName) : CGameObjectSingleBone(active, scene, nullptr, boneName)
+{
+	this->AddBone(this);
+}
+CGameObjectRootBone::~CGameObjectRootBone()
+{
+
+}
+UINT CGameObjectRootBone::GetNextBoneIndex()const
+{
+	return (static_cast<UINT>(this->m_BoneListVector.size()));
+}
+CGameObjectSingleBone* CGameObjectRootBone::GetBoneByName(const std::string& boneName)const
+{
+	auto element = this->m_BoneListMap.find(boneName);
+	if (element != this->m_BoneListMap.end())
+	{
+		return (element->second);
+	}
+	return nullptr;
+}
+CGameObjectSingleBone* CGameObjectRootBone::GetBoneByIndex(const UINT& boneIndex)const
+{
+	if (boneIndex < static_cast<UINT>(this->m_BoneListVector.size()))
+	{
+		return (this->m_BoneListVector[boneIndex]);
+	}
+	return nullptr;
+}
+BOOL CGameObjectRootBone::AddBone(CGameObjectRootBone* bone)
+{
+	if (bone == nullptr)
+	{
+		return FALSE;
+	}
+	INT boneListSize = this->m_BoneListVector.size() == this->m_BoneListMap.size() ? static_cast<INT>(this->m_BoneListVector.size()) : -1;
+	if (boneListSize < 0)
+	{
+		return FALSE;
+	}
+	BOOL canAddIntoList = FALSE;
+	{
+		BOOL isRootBone = bone->IsRootBone();
+		if (isRootBone && boneListSize == 0)
+		{
+			canAddIntoList = TRUE;
+		}
+		else if (!isRootBone && boneListSize == 1)
+		{
+			canAddIntoList = TRUE;
+		}
+		else if (!isRootBone && boneListSize > 1)
+		{
+			if (this->GetBoneByName(bone->GetBoneName()) == nullptr)
+			{
+				canAddIntoList = TRUE;
+			}
+		}
+	}
+
+	if (canAddIntoList)
+	{
+		bone->SetBoneIndex(this->GetNextBoneIndex());
+		this->m_BoneListVector.push_back(bone);
+		this->m_BoneListMap.insert_or_assign(bone->GetBoneName(), bone);
+	}
+	return canAddIntoList;
+}
+BOOL CGameObjectRootBone::RemoveBone(CGameObjectRootBone* bone)
+{
+	if (bone == nullptr)
+	{
+		return FALSE;
+	}
+
+	{
+		BOOL isRootBone = bone->IsRootBone();
+		if (isRootBone)
+		{
+			return FALSE;
+		}
+		INT boneListSize = this->m_BoneListVector.size() == this->m_BoneListMap.size() ? static_cast<INT>(this->m_BoneListVector.size()) : -1;
+		if (boneListSize <= 1)
+		{
+			return FALSE;
+		}
+	}
+
+	{
+		std::string boneName(bone->GetBoneName());
+		auto element = this->m_BoneListMap.find(boneName);
+		if (element != this->m_BoneListMap.end())
+		{
+			this->m_BoneListMap.erase(element->first);
+		}
+	}
+
+	for (auto it = this->m_BoneListVector.begin(); it != this->m_BoneListVector.end(); it++)
+	{
+		if ((*it) == bone)
+		{
+			(*it) = nullptr;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+BOOL CGameObjectRootBone::RemoveBone(const std::string& boneName)
+{
+	{
+		INT boneListSize = this->m_BoneListVector.size() == this->m_BoneListMap.size() ? static_cast<INT>(this->m_BoneListVector.size()) : -1;
+		if (boneListSize <= 1)
+		{
+			return FALSE;
+		}
+	}
+
+	{
+		auto element = this->m_BoneListMap.find(boneName);
+		if (element != this->m_BoneListMap.end())
+		{
+			this->m_BoneListMap.erase(element->first);
+		}
+	}
+
+	for (auto it = this->m_BoneListVector.begin(); it != this->m_BoneListVector.end(); it++)
+	{
+		if ((*it)->GetBoneName() == boneName)
+		{
+			(*it) = nullptr;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+void CGameObjectRootBone::RemoveAllBone()
+{
+	if (this->m_BoneListVector.size() > 0)
+	{
+		this->m_BoneListVector.clear();
+	}
+	if (this->m_BoneListMap.size() > 0)
+	{
+		this->m_BoneListMap.clear();
+	}
+	this->AddBone(this);
 }
 
 

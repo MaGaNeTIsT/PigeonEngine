@@ -1,4 +1,5 @@
 #include "../Headers/CScene.h"
+#include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineBase/Headers/CInput.h"

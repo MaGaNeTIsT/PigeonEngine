@@ -321,7 +321,18 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWind.hlsl">
+    <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>

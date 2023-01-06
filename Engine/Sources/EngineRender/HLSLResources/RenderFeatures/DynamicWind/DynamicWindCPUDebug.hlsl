@@ -1,10 +1,7 @@
 #ifndef _DYNAMIC_WIND_CPU_DEBUG_CS_HLSL
 #define _DYNAMIC_WIND_CPU_DEBUG_CS_HLSL
 
-#include "../../Common/ShaderCommon.hlsl"
-
-#define GROUP_THREAD_SIZE_X		(4)
-#define GROUP_THREAD_SIZE_Y		(4)
+#include "./DynamicWindCommon.hlsl"
 
 cbuffer	ConstantComputeBuffer : register(b3)
 {
