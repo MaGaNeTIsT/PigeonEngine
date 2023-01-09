@@ -1,7 +1,7 @@
-NormalTexture=./Engine/Assets/EngineTextures/Resources/Fabric011_1K/Fabric011_NRM_1K.tga
-AlbedoTexture=./Engine/Assets/EngineTextures/Resources/Fabric011_1K/Fabric011_COL_1K.tga
+NormalTexture=./Engine/Assets/EngineTextures/Fabric/Fabric011_1K/Fabric011_NRM_1K.tga
+AlbedoTexture=./Engine/Assets/EngineTextures/Fabric/Fabric011_1K/Fabric011_COL_1K.tga
 EmissiveTexture=./Engine/Assets/EngineTextures/Default/EngineDefaultBlack.tga
-RoughnessTexture=./Engine/Assets/EngineTextures/Resources/Fabric011_1K/Fabric011_GLOSS_1K.tga
+RoughnessTexture=./Engine/Assets/EngineTextures/Fabric/Fabric011_1K/Fabric011_GLOSS_1K.tga
 AmbientOcclusionTexture=./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga
 ReflectanceTexture=
 MetallicnessTexture=

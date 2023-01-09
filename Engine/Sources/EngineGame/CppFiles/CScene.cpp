@@ -83,6 +83,10 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
+		//CassimpManager::ReadSkeletonBoneFile("");
+	}
+
+	{
 		this->m_ShowSceneInfo = FALSE;
 		this->m_ShowCameraInfo = FALSE;
 		this->m_ShowLightInfo = TRUE;

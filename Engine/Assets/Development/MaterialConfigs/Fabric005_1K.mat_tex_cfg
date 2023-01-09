@@ -1,12 +1,12 @@
-NormalTexture=./Engine/Assets/EngineTextures/Resources/Fabric005_1K/Fabric005_1K_NormalDX.tga
-AlbedoTexture=./Engine/Assets/EngineTextures/Resources/Fabric005_1K/Fabric005_1K_Color.tga
+NormalTexture=./Engine/Assets/EngineTextures/Fabric/Fabric005_1K/Fabric005_1K_NormalDX.tga
+AlbedoTexture=./Engine/Assets/EngineTextures/Fabric/Fabric005_1K/Fabric005_1K_Color.tga
 EmissiveTexture=./Engine/Assets/EngineTextures/Default/EngineDefaultBlack.tga
-RoughnessTexture=./Engine/Assets/EngineTextures/Resources/Fabric005_1K/Fabric005_1K_Roughness.tga
+RoughnessTexture=./Engine/Assets/EngineTextures/Fabric/Fabric005_1K/Fabric005_1K_Roughness.tga
 AmbientOcclusionTexture=./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga
 ReflectanceTexture=
 MetallicnessTexture=
-ClothSheenTexture=./Engine/Assets/EngineTextures/Resources/Fabric005_1K/Fabric005_1K_Color.tga
-ClothSubsurfaceTexture=./Engine/Assets/EngineTextures/Resources/Fabric005_1K/Fabric005_1K_Color.tga
+ClothSheenTexture=./Engine/Assets/EngineTextures/Fabric/Fabric005_1K/Fabric005_1K_Color.tga
+ClothSubsurfaceTexture=./Engine/Assets/EngineTextures/Fabric/Fabric005_1K/Fabric005_1K_Color.tga
 AnisotropyStrengthTexture=
 AnisotropyDirectionTexture=
 ClearCoatStrengthTexture=

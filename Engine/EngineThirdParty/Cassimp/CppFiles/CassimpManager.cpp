@@ -1,4 +1,5 @@
 #include "../Headers/CassimpManager.h"
+#include "../../../Sources/EngineBase/Headers/CBaseType.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -266,6 +267,66 @@ inline BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::
 	return TRUE;
 }
 
+struct _GImporterBoneData
+{
+	_GImporterBoneData()
+	{
+		this->Parent = nullptr;
+	}
+	std::string							Name;
+	_GImporterBoneData*					Parent;
+	std::vector<_GImporterBoneData*>	Children;
+	CustomType::Matrix4x4				BindPose;
+	CustomType::Matrix4x4				Location;
+
+	void AddChild(_GImporterBoneData* child)
+	{
+		this->Children.push_back(child);
+	}
+};
+
+inline BOOL _GTranslateSingleSkeletonData(const aiSkeleton* skeleton, std::vector<_GImporterBoneData>& output)
+{
+	const UINT boneNum = skeleton->mNumBones;
+	if (boneNum < 1u)
+	{
+		return FALSE;
+	}
+	auto _TranslateMatrix = [](const aiMatrix4x4& input)->CustomType::Matrix4x4 {
+		aiVector3D scaling, rotation, position;
+		input.Decompose(scaling, rotation, position);
+		CustomType::Quaternion quatX(CustomType::Vector3::XVector(), rotation.x);
+		CustomType::Quaternion quatY(CustomType::Vector3::YVector(), rotation.y);
+		CustomType::Quaternion quatZ(CustomType::Vector3::ZVector(), rotation.z);
+		return (CustomType::Matrix4x4(
+			CustomType::Vector3(position.x, position.y, position.z),
+			((quatX * quatY) * quatZ),
+			CustomType::Vector3(scaling.x, scaling.y, scaling.z))); };
+
+	const aiString& skeletonName = skeleton->mName;
+	const aiMesh* meshID = skeleton->mBones[0]->mMeshId;
+	for (UINT boneIndex = 0u; boneIndex < boneNum; boneIndex++)
+	{
+		_GImporterBoneData& outputBone = output[boneIndex];
+		const aiSkeletonBone* bone = skeleton->mBones[boneIndex];
+		if (bone->mMeshId != meshID)
+		{
+			return FALSE;
+		}
+		//const UINT& weightNum = bone->mNumnWeights;
+		//const aiVertexWeight* weights = bone->mWeights;
+		const INT& parentIndex = bone->mParent;
+		const aiMatrix4x4& offsetMatrix = bone->mOffsetMatrix;
+		const aiMatrix4x4& localMatrix = bone->mLocalMatrix;
+		outputBone.Parent = parentIndex < 0 ? nullptr : &(output[parentIndex]);
+		if (outputBone.Parent != nullptr) { outputBone.Parent->AddChild(&(output[boneIndex])); }
+		outputBone.Name = std::string(skeletonName.C_Str()) + "_BoneIndex_" + std::to_string(boneIndex);
+		outputBone.BindPose = _TranslateMatrix(offsetMatrix);
+		outputBone.Location = _TranslateMatrix(localMatrix);
+	}
+	return TRUE;
+}
+
 CassimpManager* CassimpManager::m_AssimpManager = nullptr;
 void CassimpManager::Initialize()
 {
@@ -375,6 +436,79 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 	return TRUE;
 }
 BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
+{
+	Assimp::Importer* impoter = _GAssetImporter;
+	if (impoter == nullptr)
+	{
+		// TODO Do the error logging (did not create the instance of importer)
+		return FALSE;
+	}
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll
+	// probably to request more postprocessing than we do in this example.
+
+	// Use SetPropertyInteger to modify config of importer
+	//Assimp::Importer::SetProperty###();
+
+	const aiScene* scene = impoter->ReadFile(
+		path,
+		aiProcess_CalcTangentSpace |
+		aiProcess_JoinIdenticalVertices |
+		aiProcess_MakeLeftHanded |
+		aiProcess_Triangulate |
+		aiProcess_RemoveComponent |
+		aiProcess_GenSmoothNormals |
+		aiProcess_SplitLargeMeshes |
+		/*aiProcess_LimitBoneWeights |*/
+		aiProcess_RemoveRedundantMaterials |
+		aiProcess_FixInfacingNormals |
+		/*aiProcess_PopulateArmatureData |*/
+		aiProcess_SortByPType |
+		aiProcess_FindInvalidData |
+		aiProcess_GenUVCoords |
+		aiProcess_OptimizeMeshes |
+		aiProcess_FlipUVs |
+		aiProcess_FlipWindingOrder |
+		/*aiProcess_SplitByBoneCount |*/
+		/*aiProcess_Debone |*/
+		aiProcess_GenBoundingBoxes);
+
+	// If the import failed, report it
+	if (scene == nullptr)
+	{
+		// TODO Do the error logging (importer.GetErrorString())
+		return FALSE;
+	}
+
+	if (!scene->hasSkeletons())
+	{
+		impoter->FreeScene();
+		// TODO Scene does not contain meshes
+		return FALSE;
+	}
+
+	// Now we can access the file's contents.
+	for (UINT skeletonIndex = 0u; skeletonIndex < scene->mNumSkeletons; skeletonIndex++)
+	{
+		const aiSkeleton* tempSkeleton = scene->mSkeletons[skeletonIndex];
+		if (tempSkeleton == nullptr || tempSkeleton->mNumBones < 1u)
+		{
+			continue;
+		}
+		std::vector<_GImporterBoneData> boneDatas;
+		boneDatas.resize(static_cast<size_t>(tempSkeleton->mNumBones));
+		if (!_GTranslateSingleSkeletonData(tempSkeleton, boneDatas))
+		{
+			continue;
+		}
+	}
+
+	// We're done. Everything will be cleaned up by the importer destructor
+	impoter->FreeScene();
+	return TRUE;
+}
+BOOL CassimpManager::ReadSkeletonMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices)
 {
 	Assimp::Importer* impoter = _GAssetImporter;
 	if (impoter == nullptr)

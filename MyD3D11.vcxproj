@@ -47,6 +47,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonObject.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
@@ -105,6 +106,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2DBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
