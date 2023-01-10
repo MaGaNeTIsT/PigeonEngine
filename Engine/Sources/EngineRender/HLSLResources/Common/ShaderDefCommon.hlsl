@@ -16,11 +16,11 @@
 
 // Min roughness such that (MIN_PERCEPTUAL_ROUGHNESS^4) > 0 in fp16 (i.e. 2^(-14/4), rounded up)
 #ifdef ENABLE_CONSOLE_SHADING
-#define MIN_PERCEPTUAL_ROUGHNESS		(0.089)
-#define MIN_ROUGHNESS					(0.007921)
-#else
 #define MIN_PERCEPTUAL_ROUGHNESS		(0.045)
 #define MIN_ROUGHNESS					(0.002025)
+#else
+#define MIN_PERCEPTUAL_ROUGHNESS		(0.089)
+#define MIN_ROUGHNESS					(0.007921)
 #endif
 
 #define MIN_N_DOT_V						(1e-4)

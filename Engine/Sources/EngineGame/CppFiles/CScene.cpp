@@ -83,7 +83,7 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		//CassimpManager::ReadSkeletonBoneFile("");
+		CassimpManager::ReadSkeletonBoneFile("E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX");
 	}
 
 	{
