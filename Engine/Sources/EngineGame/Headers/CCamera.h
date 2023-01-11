@@ -6,6 +6,7 @@
 
 class CCamera : public CGameObject
 {
+	CClass(CCamera, CGameObject)
 public:
 	struct CCameraInfo
 	{

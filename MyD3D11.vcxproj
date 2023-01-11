@@ -32,6 +32,7 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CRTTI.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CTimer.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CComponent.h" />
@@ -419,7 +420,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">

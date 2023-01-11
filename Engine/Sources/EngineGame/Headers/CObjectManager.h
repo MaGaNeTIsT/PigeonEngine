@@ -1,4 +1,5 @@
 #pragma once
+#include "../../EngineBase/Headers/CRTTI.h"
 
 class CUniqueIDManager
 {
@@ -12,8 +13,9 @@ private:
 	static ULONGLONG	m_UniqueID;
 };
 
-class CObjectBase
+class CObjectBase : public CRTTI
 {
+    CClass(CObjectBase, CRTTI)
 public:
 	CObjectBase();
 	CObjectBase(const CObjectBase& obj);

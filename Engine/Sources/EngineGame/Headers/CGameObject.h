@@ -9,6 +9,7 @@
 
 class CGameObjectBase : public CObjectBase
 {
+	CClass(CGameObjectBase, CObjectBase)
 public:
 	virtual void	Init()			= 0;
 	virtual void	Uninit()		= 0;
@@ -37,6 +38,7 @@ public:
 
 class CGameObjectTransformBase : public CGameObjectBase
 {
+	CClass(CGameObjectTransformBase, CGameObjectBase)
 public:
 	virtual void	Init()override {}
 	virtual void	Uninit()override {}
@@ -145,6 +147,7 @@ public:
 
 class CGameObject : public CGameObjectTransformBase
 {
+	CClass(CGameObject, CGameObjectTransformBase)
 public:
 	BOOL	HasRenderBoundingBox()const;
 	BOOL	HasRenderBoundingSphere()const;

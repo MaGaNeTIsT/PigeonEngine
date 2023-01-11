@@ -308,6 +308,7 @@
     </ClInclude>
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
+    <ClInclude Include="Engine\Sources\EngineBase\Headers\CRTTI.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\imgui\imgui.cpp">
