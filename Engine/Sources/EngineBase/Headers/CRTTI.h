@@ -26,6 +26,18 @@ public:
     }
 
     template <typename T>
+    CRTTI* QueryInterfaceT()
+    {
+        return QueryInterface(T::TypeIdClass());
+    }
+
+    template <typename T>
+    const CRTTI* QueryInterfaceT() const
+    {
+        return QueryInterface(T::TypeIdClass());
+    }
+
+    template <typename T>
     bool IsT() const
     {
         return Is(T::TypeIdClass());
@@ -60,17 +72,17 @@ public:
         { return Type::TypeIdClass(); }                                         \
         static const size_t TypeIdClass()                                       \
         { static int d = 0; return (size_t) &d; }                               \
-        virtual ::CRTTI* QueryInterface( const size_t id )                       \
+        virtual ::CRTTI* QueryInterface( const size_t id )                      \
         {                                                                       \
             if (id == TypeIdClass())                                            \
-                { return (CRTTI*)this; }                                         \
+                { return (CRTTI*)this; }                                        \
             else                                                                \
                 { return ParentType::QueryInterface(id); }                      \
         }                                                                       \
-        virtual const ::CRTTI* QueryInterface( const size_t id ) const           \
+        virtual const ::CRTTI* QueryInterface( const size_t id ) const          \
         {                                                                       \
             if (id == TypeIdClass())                                            \
-                { return (CRTTI*)this; }                                         \
+                { return (CRTTI*)this; }                                        \
             else                                                                \
                 { return ParentType::QueryInterface(id); }                      \
         }                                                                       \
