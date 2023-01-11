@@ -34,7 +34,7 @@ public:
 	void	RemoveAllBone();
 	void	ResortBonesAndClearNull();
 public:
-	const static UINT	_StaticBoneMaxNum = 256u;
+	const static UINT	_StaticBoneMaxNum = 384u;
 protected:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>					m_BoneGPUBuffer;
 	std::map<std::string, class CGameObjectSingleBone*>		m_BoneListMap;
