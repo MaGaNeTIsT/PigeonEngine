@@ -197,15 +197,10 @@ inline BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::
 	return TRUE;
 }
 
-inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, const std::vector<CassimpManager::_GEngineBoneNodeData>& skeletonInput, const std::vector<UINT>& boneListInput)
+inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
-
-	if (skeletonInput.size() == 0 || boneListInput.size() == 0)
-	{
-		return;
-	}
 
 	{
 		UINT numFaces = mesh->mNumFaces;
@@ -221,44 +216,81 @@ inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImpor
 	}
 
 	{
-		UINT numVertices = mesh->mNumVertices;
+		UINT		numVertices		= mesh->mNumVertices;
 
-		aiColor4D* colors = mesh->mColors[constVertexColorIndex];
-		aiVector3D* vertices = mesh->mVertices;
-		aiVector3D* normals = mesh->mNormals;
-		aiVector3D* tangents = mesh->mTangents;
-		aiVector3D* texcoords = mesh->mTextureCoords[constVertexTexcoordIndex];
+		aiColor4D*	colors			= mesh->mColors[constVertexColorIndex];
+		aiVector3D*	vertices		= mesh->mVertices;
+		aiVector3D*	normals			= mesh->mNormals;
+		aiVector3D*	tangents		= mesh->mTangents;
+		aiVector3D*	texcoords		= mesh->mTextureCoords[constVertexTexcoordIndex];
 
-		UINT* blendWriteIndex = new UINT[numVertices];
-		aiColor4t<USHORT>* blendIndices = new aiColor4t<USHORT>[numVertices];
-		aiColor4t<FLOAT>* blendWeights = new aiColor4t<FLOAT>[numVertices];
+		std::vector<std::vector<std::pair<USHORT, FLOAT>>> blendIndicesWeights;
+		UINT* blendWriteIndex = nullptr;
+
+		if (skeletonInput.size() != 0 && boneListInput.size() != 0)
 		{
-			auto _FindBoneListIndex = [](const std::string& boneName, const std::vector<CassimpManager::_GEngineBoneNodeData>& skeleton, const std::vector<UINT>& boneList)->UINT {
+			blendWriteIndex = new UINT[numVertices];
+			blendIndicesWeights.resize(numVertices);
+
+			auto _FindBoneListIndex = [](const std::string& boneName, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, const std::vector<UINT>& boneList)->UINT {
 				UINT skeletonNum = static_cast<UINT>(skeleton.size());
 				UINT boneListNum = static_cast<UINT>(boneList.size());
 				for (UINT findBoneIndex = 0u; findBoneIndex < boneListNum; findBoneIndex++)
 				{
 					const UINT& tempBoneIndex = boneList[findBoneIndex];
-					const CassimpManager::_GEngineBoneNodeData& tempBoneInSkeleton = skeleton[tempBoneIndex];
+					const CustomStruct::CGameBoneNodeInfo& tempBoneInSkeleton = skeleton[tempBoneIndex];
 					if (tempBoneInSkeleton.Name == boneName)
 					{
 						return findBoneIndex;
 					}
 				}
 				return 0u; };
+			auto _SortBoneIndicesAndWeight = [](const UINT& num, std::vector<std::pair<USHORT, FLOAT>>& inputIndicesWeights) {
+				BOOL needLoop = TRUE;
+				while (needLoop == TRUE)
+				{
+					BOOL isModify = FALSE;
+					for (UINT index = 1u; index < num; index++)
+					{
+						if (inputIndicesWeights[index].second > inputIndicesWeights[index - 1].second)
+						{
+							USHORT indexOfSmaller = inputIndicesWeights[index - 1].first;
+							FLOAT weightOfSmaller = inputIndicesWeights[index - 1].second;
+							inputIndicesWeights[index - 1] = std::pair<USHORT, FLOAT>(inputIndicesWeights[index].first, inputIndicesWeights[index].second);
+							inputIndicesWeights[index] = std::pair<USHORT, FLOAT>(indexOfSmaller, weightOfSmaller);
+							isModify |= TRUE;
+						}
+					}
+					needLoop = isModify;
+				}};
 
 			for (UINT indexVertex = 0u; indexVertex < numVertices; indexVertex++)
 			{
 				blendWriteIndex[indexVertex] = 0u;
-				blendIndices[indexVertex] = aiColor4t<USHORT>(0u, 0u, 0u, 0u);
-				blendWeights[indexVertex] = aiColor4t<FLOAT>(1.f, 0.f, 0.f, 0.f);
 			}
 			UINT boneNum = mesh->mNumBones;
 			for (UINT boneIndex = 0u; boneIndex < boneNum; boneIndex++)
 			{
 				const aiBone* bone = mesh->mBones[boneIndex];
-				//TODO
-
+				if (bone->mNumWeights == 0u)
+				{
+					continue;
+				}
+				UINT tempBoneIndex = _FindBoneListIndex(_GTranslateString(bone->mName), skeletonInput, boneListInput);
+				for (UINT boneWeightIndex = 0u; boneWeightIndex < bone->mNumWeights; boneWeightIndex++)
+				{
+					const aiVertexWeight& tempBoneWeight = bone->mWeights[boneWeightIndex];
+					blendWriteIndex[tempBoneWeight.mVertexId] += 1u;
+					blendIndicesWeights[tempBoneWeight.mVertexId].push_back(std::pair<USHORT, FLOAT>(static_cast<USHORT>(tempBoneIndex), tempBoneWeight.mWeight));
+				}
+			}
+			for (UINT vertexIndex = 0u; vertexIndex < numVertices; vertexIndex++)
+			{
+				if (blendWriteIndex[vertexIndex] <= 4u)
+				{
+					continue;
+				}
+				_SortBoneIndicesAndWeight(blendWriteIndex[vertexIndex], blendIndicesWeights[vertexIndex]);
 			}
 		}
 
@@ -310,17 +342,50 @@ inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImpor
 			}
 			if (assetInfo.VertexBoneIndices.Exist)
 			{
-				//TODO
+				USHORT* tempBoneIndices = (USHORT*)(&(tempVertex[assetInfo.VertexBoneIndices.Offset]));
+				if (blendWriteIndex != nullptr)
+				{
+					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
+					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
+					tempBoneIndices[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneIndices[0].first : 0u;
+					tempBoneIndices[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneIndices[1].first : 0u;
+					tempBoneIndices[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneIndices[2].first : 0u;
+					tempBoneIndices[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneIndices[3].first : 0u;
+				}
+				else
+				{
+					tempBoneIndices[0] = 0u;
+					tempBoneIndices[1] = 0u;
+					tempBoneIndices[2] = 0u;
+					tempBoneIndices[3] = 0u;
+				}
 			}
 			if (assetInfo.VertexBoneWeight.Exist)
 			{
-				//TODO
+				FLOAT* tempBoneWeights = (FLOAT*)(&(tempVertex[assetInfo.VertexBoneWeight.Offset]));
+				if (blendWriteIndex != nullptr)
+				{
+					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
+					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
+					tempBoneWeights[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneWeights[0].second : 1.f;
+					tempBoneWeights[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneWeights[1].second : 0.f;
+					tempBoneWeights[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneWeights[2].second : 0.f;
+					tempBoneWeights[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneWeights[3].second : 0.f;
+				}
+				else
+				{
+					tempBoneWeights[0] = 1.f;
+					tempBoneWeights[1] = 0.f;
+					tempBoneWeights[2] = 0.f;
+					tempBoneWeights[3] = 0.f;
+				}
 			}
 		}
 
-		delete[]blendWriteIndex;
-		delete[]blendIndices;
-		delete[]blendWeights;
+		if (blendWriteIndex != nullptr)
+		{
+			delete[]blendWriteIndex;
+		}
 	}
 }
 
@@ -331,7 +396,7 @@ inline BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomS
 	numIndices		= 0u;
 	if (vertices != nullptr)
 	{
-		delete vertices;
+		delete[]vertices;
 		vertices = nullptr;
 	}
 	if (indices.size() > 0)
@@ -354,7 +419,7 @@ inline BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomS
 		indices.resize(totalNumIndices);
 	}
 
-	std::vector<CassimpManager::_GEngineBoneNodeData> tempSkeleton;
+	std::vector<CustomStruct::CGameBoneNodeInfo> tempSkeleton;
 	std::vector<UINT> tempBoneList;
 
 	UINT numMeshes = scene->mNumMeshes;
@@ -375,13 +440,34 @@ inline BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomS
 	return TRUE;
 }
 
-inline BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const std::vector<CassimpManager::_GEngineBoneNodeData>& skeletonInput, const std::vector<UINT>& boneListInput, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+inline BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
+	vertexStride	= 0u;
+	numVertices		= 0u;
+	numIndices		= 0u;
+	if (vertices != nullptr)
+	{
+		delete[]vertices;
+		vertices = nullptr;
+	}
+	if (indices.size() > 0)
+	{
+		indices.clear();
+	}
+
 	std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
 	UINT totalNumVertices, totalNumIndices;
 	if (!_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, inputLayoutDesc, inputLayoutNum))
 	{
 		return FALSE;
+	}
+
+	{
+		vertexStride = sceneMeshesInfo[0].VertexStride;
+		numVertices = totalNumVertices;
+		numIndices = totalNumIndices;
+		vertices = new CHAR[totalNumVertices * vertexStride];
+		indices.resize(totalNumIndices);
 	}
 
 	UINT numMeshes = scene->mNumMeshes;
@@ -552,7 +638,7 @@ inline void _GGatherAllBones(const aiScene* scene, std::map<std::string, const a
 	}
 }
 
-inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::_GEngineBoneNodeData>& skeletonOutput, std::vector<UINT>& boneList)
+inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonOutput, std::vector<UINT>& boneList, INT& skeletonRootNode)
 {
 	if (skeletonOutput.size() != 0)
 	{
@@ -562,6 +648,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::
 	{
 		boneList.clear();
 	}
+	skeletonRootNode = -1;
 
 	std::map<std::string, const aiBone*> boneMap;
 	_GGatherAllBones(scene, boneMap);
@@ -587,7 +674,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::
 		UINT boneIndex = 0u;
 		for (auto it = nodeMap.begin(); it != nodeMap.end(); it++)
 		{
-			skeletonOutput.push_back(CassimpManager::_GEngineBoneNodeData(it->second.Name));
+			skeletonOutput.push_back(CustomStruct::CGameBoneNodeInfo(it->second.Name));
 			if (it->second.Bone != nullptr)
 			{
 				boneList.push_back(boneIndex);
@@ -600,7 +687,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::
 		UINT skeletonNodeNum = static_cast<UINT>(skeletonOutput.size());
 		for (UINT nodeIndex = 0u; nodeIndex < skeletonNodeNum; nodeIndex++)
 		{
-			CassimpManager::_GEngineBoneNodeData& node = skeletonOutput[nodeIndex];
+			CustomStruct::CGameBoneNodeInfo& node = skeletonOutput[nodeIndex];
 
 			auto it = nodeMap.find(node.Name);
 			if (it == nodeMap.end())
@@ -627,9 +714,14 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::
 				}
 			}
 		}
+		std::string rawRootNodeName(scene->mRootNode->mName.C_Str());
 		for (UINT nodeIndex = 0u; nodeIndex < skeletonNodeNum; nodeIndex++)
 		{
-			CassimpManager::_GEngineBoneNodeData& node = skeletonOutput[nodeIndex];
+			CustomStruct::CGameBoneNodeInfo& node = skeletonOutput[nodeIndex];
+			if (skeletonRootNode == -1 && node.Name == rawRootNodeName)
+			{
+				skeletonRootNode = static_cast<INT>(nodeIndex);
+			}
 			if (node.Parent != nullptr)
 			{
 				node.Parent->Children.push_back(&(skeletonOutput[nodeIndex]));
@@ -637,7 +729,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CassimpManager::
 		}
 	}
 
-	return (boneList.size() > 0);
+	return (boneList.size() > 0 && skeletonRootNode >= 0);
 }
 
 CassimpManager* CassimpManager::m_AssimpManager = nullptr;
@@ -649,7 +741,7 @@ void CassimpManager::Initialize()
 	}
 	if (_GAssetImporter == nullptr)
 	{
-		_GAssetImporter = new  Assimp::Importer();
+		_GAssetImporter = new Assimp::Importer();
 	}
 }
 void CassimpManager::ShutDown()
@@ -670,7 +762,7 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 {
 	if (vertices != nullptr)
 	{
-		delete vertices;
+		delete[]vertices;
 		vertices = nullptr;
 	}
 	if (indices.size() > 0)
@@ -775,8 +867,34 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 //		CopyNodesWithMeshes(node.mChildren[a], parent, transform);
 //	}
 //}
-BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
+BOOL CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode)
 {
+	if (vertices != nullptr)
+	{
+		delete[]vertices;
+		vertices = nullptr;
+	}
+	if (indices.size() > 0)
+	{
+		indices.clear();
+	}
+	if (subMesh.size() > 0)
+	{
+		subMesh.clear();
+	}
+	vertexStride = 0u;
+	numVertices = 0u;
+	numIndices = 0u;
+
+	if (skeleton.size() > 0)
+	{
+		skeleton.clear();
+	}
+	if (boneList.size() > 0)
+	{
+		boneList.clear();
+	}
+
 	Assimp::Importer* impoter = _GAssetImporter;
 	BOOL result = FALSE;
 	if (impoter == nullptr)
@@ -816,17 +934,22 @@ BOOL CassimpManager::ReadSkeletonBoneFile(const std::string& path)
 		aiProcess_GenBoundingBoxes);
 
 	// If the import failed, report it
-	if (scene == nullptr)
+	if (scene == nullptr || !scene->HasMeshes())
 	{
 		// TODO Do the error logging (importer.GetErrorString())
 		return result;
 	}
 
 	// Now we can access the file's contents.
-	std::vector<_GEngineBoneNodeData> skeletonData; std::vector<UINT> boneList;
-	if (_GGatherBoneDatas(scene, skeletonData, boneList))
+	INT tempRootNode = -1;
+	result = _GGatherBoneDatas(scene, skeleton, boneList, tempRootNode);
+
+	if (result == TRUE)
 	{
-		result = TRUE;
+		rootNode = static_cast<UINT>(tempRootNode);
+		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+		result = _GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, inputLayoutDesc, inputLayoutNum);
 	}
 
 	// We're done. Everything will be cleaned up by the importer destructor

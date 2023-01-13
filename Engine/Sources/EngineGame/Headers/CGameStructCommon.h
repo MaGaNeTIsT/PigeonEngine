@@ -53,4 +53,26 @@ namespace CustomStruct
 		FLOAT					CameraProjectFar;
 		CustomType::Vector3		CameraFrustumPlane[4];
 	};
+
+	struct CGameBoneNodeInfo
+	{
+		CGameBoneNodeInfo()
+		{
+			this->Location	= CustomType::Matrix4x4::Identity();
+			this->Offset	= CustomType::Matrix4x4::Identity();
+			this->Parent	= nullptr;
+		}
+		CGameBoneNodeInfo(const std::string& name)
+		{
+			this->Name		= name;
+			this->Location	= CustomType::Matrix4x4::Identity();
+			this->Offset	= CustomType::Matrix4x4::Identity();
+			this->Parent	= nullptr;
+		}
+		std::string							Name;
+		CustomType::Matrix4x4				Location;
+		CustomType::Matrix4x4				Offset;
+		CGameBoneNodeInfo*					Parent;
+		std::vector<CGameBoneNodeInfo*>		Children;
+	};
 }

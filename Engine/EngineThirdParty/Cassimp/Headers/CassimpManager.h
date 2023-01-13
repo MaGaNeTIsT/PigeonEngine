@@ -2,34 +2,13 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "../../../Sources/EngineRender/RenderBase/Headers/CRenderStructCommon.h"
+#include "../../../Sources/EngineGame/Headers/CGameStructCommon.h"
 
 class CassimpManager
 {
 public:
-	struct _GEngineBoneNodeData
-	{
-		_GEngineBoneNodeData()
-		{
-			this->Location	= CustomType::Matrix4x4::Identity();
-			this->Offset	= CustomType::Matrix4x4::Identity();
-			this->Parent	= nullptr;
-		}
-		_GEngineBoneNodeData(const std::string& name)
-		{
-			this->Name		= name;
-			this->Location	= CustomType::Matrix4x4::Identity();
-			this->Offset	= CustomType::Matrix4x4::Identity();
-			this->Parent	= nullptr;
-		}
-		std::string							Name;
-		CustomType::Matrix4x4				Location;
-		CustomType::Matrix4x4				Offset;
-		_GEngineBoneNodeData*				Parent;
-		std::vector<_GEngineBoneNodeData*>	Children;
-	};
-public:
 	static BOOL		ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices);
-	static BOOL		ReadSkeletonBoneFile(const std::string& path);
+	static BOOL		ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode);
 public:
 	static void		Initialize();
 	static void		ShutDown();

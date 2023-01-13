@@ -83,7 +83,12 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		CassimpManager::ReadSkeletonBoneFile("E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX");
+		std::string testPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
+		BOOL isOutputSkeleton = FALSE;
+		UINT skeletonRoot = 0u;
+		std::vector<CustomStruct::CGameBoneNodeInfo> skeleton;
+		std::vector<UINT> boneList;
+		const CBaseMesh<UINT>* skeletonMesh = CMeshManager::LoadSkeletonMeshAsset(testPath, isOutputSkeleton, skeleton, boneList, skeletonRoot);
 	}
 
 	{

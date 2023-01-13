@@ -45,6 +45,31 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 		return resultMesh;
 	}
 }
+const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode, const BOOL& needVertexData)
+{
+	isOutputSkeleton = FALSE;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	{
+		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(path + descName);
+		if (findResult != NULL)
+		{
+			return findResult;
+		}
+	}
+
+	{
+		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneList, rootNode, needVertexData);
+		if (resultMesh == NULL)
+		{
+			return NULL;
+		}
+		CMeshManager::AddMeshData((path + descName), resultMesh);
+		isOutputSkeleton = TRUE;
+		return resultMesh;
+	}
+}
 const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	if (baseType == CEngineBaseModelType::ENGINE_BASE_NONE || baseType == CEngineBaseModelType::ENGINE_BASE_COUNT)
@@ -1118,6 +1143,20 @@ CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, c
 
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+
+	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
+}
+CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode, const BOOL& needVertexData)
+{
+	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+	UINT numVertices, numIndices, vertexStride;
+	if (!CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, rootNode))
+	{
+		return NULL;
+	}
+
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 
 	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }

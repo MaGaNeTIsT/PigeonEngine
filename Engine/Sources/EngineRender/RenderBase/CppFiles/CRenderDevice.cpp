@@ -250,7 +250,7 @@ BOOL CRenderDevice::LoadPixelShader(const std::string& name, Microsoft::WRL::Com
 		}
 	}
 
-	delete[] buffer;
+	delete[]buffer;
 	return TRUE;
 }
 BOOL CRenderDevice::LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader)
@@ -281,7 +281,7 @@ BOOL CRenderDevice::LoadComputeShader(const std::string& name, Microsoft::WRL::C
 		}
 	}
 
-	delete[] buffer;
+	delete[]buffer;
 	return TRUE;
 }
 BOOL CRenderDevice::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const CustomStruct::CRenderBufferDesc& bufferDesc, const CustomStruct::CRenderSubresourceData* subData)

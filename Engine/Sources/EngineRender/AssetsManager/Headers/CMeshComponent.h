@@ -230,5 +230,20 @@ public:
 	{
 		m_Mesh = NULL;
 	}
+	CMeshComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate)
+	{
+		m_Mesh = NULL;
+	}
 	virtual ~CMeshComponent() {}
+};
+
+class CSkeletonMeshComponent : public CMeshComponent
+{
+public:
+
+public:
+	CSkeletonMeshComponent() : CMeshComponent(TRUE, FALSE, FALSE)
+	{
+	}
+	virtual ~CSkeletonMeshComponent() {}
 };

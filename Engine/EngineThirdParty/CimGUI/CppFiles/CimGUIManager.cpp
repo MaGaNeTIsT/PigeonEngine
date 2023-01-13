@@ -772,7 +772,7 @@ BOOL CimGUIManager::D3DCreateDeviceObjects()
                 return FALSE;
             }
         }
-        delete[] buffer;
+        delete[]buffer;
     }
 
     {
