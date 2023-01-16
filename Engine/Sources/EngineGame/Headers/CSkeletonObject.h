@@ -9,13 +9,13 @@ public:
 	BOOL	IsRootBone()const;
 	void	SetBoneIndex(const UINT& boneIndex);
 public:
-	const UINT& GetBoneIndex()const;
-	const std::string& GetBoneName()const;
-	class CGameObjectRootBone* GetRootBone()const;
+	const UINT&					GetBoneIndex()const;
+	const std::string&			GetBoneName()const;
+	class CGameObjectRootBone*	GetRootBone()const;
 protected:
 	UINT							m_BoneIndex;
 	std::string						m_BoneName;
-	class CGameObjectRootBone* m_RootBone;
+	class CGameObjectRootBone*		m_RootBone;
 public:
 	CGameObjectSingleBone(const BOOL& active, const class CScene* scene, class CGameObjectRootBone* rootBone, const std::string& boneName);
 	virtual ~CGameObjectSingleBone();
@@ -25,8 +25,8 @@ class CGameObjectRootBone : public CGameObjectSingleBone
 {
 public:
 	UINT							GetNextBoneIndex()const;
-	class CGameObjectSingleBone* GetBoneByName(const std::string& boneName)const;
-	class CGameObjectSingleBone* GetBoneByIndex(const UINT& boneIndex)const;
+	class CGameObjectSingleBone*	GetBoneByName(const std::string& boneName)const;
+	class CGameObjectSingleBone*	GetBoneByIndex(const UINT& boneIndex)const;
 public:
 	BOOL	AddBone(class CGameObjectRootBone* bone);
 	BOOL	RemoveBone(class CGameObjectRootBone* bone);
