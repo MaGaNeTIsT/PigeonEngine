@@ -187,6 +187,64 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		this->WriteFile(fullPath);
 	}
 }
+void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, const std::string& name, const class CDefaultLitSkeletonMeshMaterial* mat)
+{
+	this->InitAllPath();
+
+	{
+		{
+			auto saveTexPath = [&](CTexture2D* tex, FileMaterialTextureParamsType type) {
+				if (tex != NULL)
+				{
+					this->SetTexturePath(type, tex->GetName());
+				}};
+
+			saveTexPath(mat->GetNormalTexture(), FileMaterialTextureParamsType::FMTPT_NORMAL);
+			saveTexPath(mat->GetAlbedoTexture(), FileMaterialTextureParamsType::FMTPT_ALBEDO);
+			saveTexPath(mat->GetEmissiveTexture(), FileMaterialTextureParamsType::FMTPT_EMISSIVE);
+			saveTexPath(mat->GetRoughnessTexture(), FileMaterialTextureParamsType::FMTPT_ROUGHNESS);
+			saveTexPath(mat->GetMetallicnessTexture(), FileMaterialTextureParamsType::FMTPT_METALLICNESS);
+			saveTexPath(mat->GetAmbientOcclusionTexture(), FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION);
+			saveTexPath(mat->GetReflectanceTexture(), FileMaterialTextureParamsType::FMTPT_REFLECTANCE);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetBaseColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+		}
+
+		{
+			CustomStruct::CColor matClr(mat->GetEmissiveColor());
+			FLOAT clr[3] = { matClr.r, matClr.g, matClr.b };
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+		}
+
+		{
+			BOOL matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+		}
+
+		{
+			FLOAT matV = mat->GetRoughness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &matV, 1u);
+
+			matV = mat->GetMetallicness();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &matV, 1u);
+
+			matV = mat->GetReflectance();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &matV, 1u);
+
+			matV = mat->GetAmbientOcclusion();
+			this->SetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &matV, 1u);
+		}
+	}
+
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->WriteFile(fullPath);
+	}
+}
 void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, const std::string& name, const CAnisotropicMaterial* mat)
 {
 	this->InitAllPath();
@@ -390,6 +448,69 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 	}
 }
 void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, const std::string& name, CDefaultLitMaterial* mat)
+{
+	{
+		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;
+		this->ReadFile(fullPath);
+	}
+
+	{
+		{
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+				std::string outputStr;
+				if (this->GetTexturePath(type, outputStr))
+				{
+					return (CTextureManager::LoadTexture2D(outputStr, sRGB));
+				}
+				return NULL; };
+
+			mat->SetNormalTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_NORMAL, FALSE));
+			mat->SetAlbedoTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ALBEDO));
+			mat->SetEmissiveTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_EMISSIVE));
+			mat->SetRoughnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_ROUGHNESS, FALSE));
+			mat->SetMetallicnessTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_METALLICNESS, FALSE));
+			mat->SetAmbientOcclusionTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_AMBIENTOCCLUSION, FALSE));
+			mat->SetReflectanceTexture(loadTexFromPath(FileMaterialTextureParamsType::FMTPT_REFLECTANCE, FALSE));
+		}
+
+		{
+			FLOAT clr[3] = { 1.f, 1.f, 1.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_BASECOLOR, clr, 3u);
+			mat->SetBaseColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			FLOAT clr[3] = { 0.f, 0.f, 0.f };
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_EMISSIVE, clr, 3u);
+			mat->SetEmissiveColor(CustomStruct::CColor(clr[0], clr[1], clr[2]));
+		}
+
+		{
+			BOOL v = FALSE;
+			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			mat->SetIsGlossyRoughness(v);
+		}
+
+		{
+			FLOAT v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_ROUGHNESS, &v, 1u);
+			mat->SetRoughness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_METALLICNESS, &v, 1u);
+			mat->SetMetallicness(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_REFLECTANCE, &v, 1u);
+			mat->SetReflectance(v);
+
+			v = 1.f;
+			this->GetPropertyValue<FLOAT>(FileMaterialPropertyParamsType::FMPPT_AMBIENTOCCLUSION, &v, 1u);
+			mat->SetAmbientOcclusion(v);
+		}
+	}
+}
+void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, const std::string& name, class CDefaultLitSkeletonMeshMaterial* mat)
 {
 	{
 		std::string fullPath = path + name + CTempFileHelper::_NameTypeSeparator + _GStaticMaterialConfigTypeString;

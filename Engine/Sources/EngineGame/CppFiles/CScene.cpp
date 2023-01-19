@@ -20,6 +20,7 @@
 #include "../Headers/CCube.h"
 
 #include "../../Development/Headers/CSceneGameObject.h"
+#include "../../Development/Headers/CSceneSkeletonMeshObject.h"
 #include "../../Development/Headers/CReadWriteFile.h"
 #include "../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
 
@@ -83,15 +84,6 @@ void CScene::Init()
 
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		std::string testPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
-		BOOL isOutputSkeleton = FALSE;
-		UINT skeletonRoot = 0u;
-		std::vector<CustomStruct::CGameBoneNodeInfo> skeleton;
-		std::vector<UINT> boneList;
-		const CBaseMesh<UINT>* skeletonMesh = CMeshManager::LoadSkeletonMeshAsset(testPath, isOutputSkeleton, skeleton, boneList, skeletonRoot);
-	}
-
-	{
 		this->m_ShowSceneInfo = FALSE;
 		this->m_ShowCameraInfo = FALSE;
 		this->m_ShowLightInfo = TRUE;
@@ -99,7 +91,7 @@ void CScene::Init()
 	}
 
 	{
-		CSceneGameObject* sceneGameObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+		CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
 		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
 		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
 		this->m_SelectedObject = sceneGameObject;
@@ -108,7 +100,7 @@ void CScene::Init()
 	{
 		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
 		std::string materialTypeName = "mat_tex_cfg";
-		BOOL showDebugFabric = TRUE;
+		BOOL showDebugFabric = FALSE;
 		BOOL useModelFromFile = FALSE;
 		FLOAT modelY = 200.f;
 		FLOAT modelOffsetX = 300.f;

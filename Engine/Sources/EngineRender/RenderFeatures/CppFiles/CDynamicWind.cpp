@@ -161,6 +161,11 @@ void CDynamicWind::DrawDebug(const CustomType::Vector2Int& pipelineSize)
 		return;
 	}
 
+	if (!this->m_DrawDebugWindCPU)
+	{
+		return;
+	}
+
 	{
 		FLOAT deltaTime = static_cast<FLOAT>(_GGameTimer->GetDeltaTime());
 		CDynamicWind::RunCPUWind(deltaTime);

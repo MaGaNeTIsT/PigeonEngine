@@ -30,6 +30,7 @@
 #define CUSTOM_SHADER_PI_DERIVATIVE		(0.3183098861837907)
 
 #define GLOBAL_LIGHT_COUNT				(16)
+#define GLOBAL_SKELETON_BONE_MAX		(384)
 
 struct LightParams
 {
@@ -135,6 +136,15 @@ struct AttributeForward
 	float4	normal		: NORMAL0;
 	float4	tangent		: TANGENT0;
 	float2	uv0			: TEXCOORD0;
+};
+struct AttributeForwardSkeletonMesh
+{
+	float4	position		: POSITION0;
+	float4	normal			: NORMAL0;
+	float4	tangent			: TANGENT0;
+	float2	uv0				: TEXCOORD0;
+	uint4	blendIndices	: BLENDINDICES;
+	float4	blendWeight		: BLENDWEIGHT;
 };
 struct VaryingForward
 {

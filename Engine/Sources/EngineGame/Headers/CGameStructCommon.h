@@ -58,19 +58,28 @@ namespace CustomStruct
 	{
 		CGameBoneNodeInfo()
 		{
-			this->Location	= CustomType::Matrix4x4::Identity();
+			this->Index		= -1;
+			this->Location	= CustomType::Vector3::Zero();
+			this->Rotation	= CustomType::Quaternion::Identity();
+			this->Scale		= CustomType::Vector3::One();
 			this->Offset	= CustomType::Matrix4x4::Identity();
 			this->Parent	= nullptr;
 		}
 		CGameBoneNodeInfo(const std::string& name)
 		{
+			this->Index		= -1;
 			this->Name		= name;
-			this->Location	= CustomType::Matrix4x4::Identity();
+			this->Location	= CustomType::Vector3::Zero();
+			this->Rotation	= CustomType::Quaternion::Identity();
+			this->Scale		= CustomType::Vector3::One();
 			this->Offset	= CustomType::Matrix4x4::Identity();
 			this->Parent	= nullptr;
 		}
+		INT									Index;
 		std::string							Name;
-		CustomType::Matrix4x4				Location;
+		CustomType::Vector3					Location;
+		CustomType::Quaternion				Rotation;
+		CustomType::Vector3					Scale;
 		CustomType::Matrix4x4				Offset;
 		CGameBoneNodeInfo*					Parent;
 		std::vector<CGameBoneNodeInfo*>		Children;

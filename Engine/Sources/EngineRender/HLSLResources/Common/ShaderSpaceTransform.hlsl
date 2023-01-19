@@ -19,6 +19,17 @@ float3 GetCameraWorldPosition()
 {
 	return ENGINE_CAMERA_POSITION.xyz;
 }
+float4 TransformPositionToSpecificSpace(const float4 position, const float4x4 mat)
+{
+	return mul(position, mat).xyzw;
+}
+float3 TransformDirectionToSpecificSpace(const float3 dir, const float3x3 mat, uniform bool bNormalize = true)
+{
+	float3 d = mul(dir, mat);
+	if (bNormalize == true)
+		d = SafeNormalize(d);
+	return d;
+}
 float3 TransformObjectToWorld(const float3 position)
 {
 	return mul(float4(position, 1), ENGINE_MATRIX_W).xyz;
@@ -65,38 +76,38 @@ float3 TransformScreenToView(float2 uv, float viewZ)
 	projViewPos.y = uv.y * _ScreenToViewSpaceParams.y + _ScreenToViewSpaceParams.w;
 	return float3(projViewPos * viewZ, viewZ);
 }
-float3 TransformObjectToWorldNormal(const float3 normal, uniform bool normalize = true)
+float3 TransformObjectToWorldNormal(const float3 normal, uniform bool bNormalize = true)
 {
 	float3 normalWS = mul(normal, (float3x3)ENGINE_MATRIX_I_T_W);
-	if (normalize == true)
+	if (bNormalize == true)
 		normalWS = SafeNormalize(normalWS);
 	return normalWS;
 }
-float3 TransformObjectToWorldDir(const float3 dir, uniform bool normalize = true)
+float3 TransformObjectToWorldDir(const float3 dir, uniform bool bNormalize = true)
 {
 	float3 dirWS = mul(dir, (float3x3)ENGINE_MATRIX_W);
-	if (normalize == true)
+	if (bNormalize == true)
 		dirWS = SafeNormalize(dirWS);
 	return dirWS;
 }
-float3 TransformWorldToObjectDir(const float3 dir, uniform bool normalize = true)
+float3 TransformWorldToObjectDir(const float3 dir, uniform bool bNormalize = true)
 {
 	float3 dirOS = mul(dir, (float3x3)ENGINE_MATRIX_I_W);
-	if (normalize == true)
+	if (bNormalize == true)
 		dirOS = SafeNormalize(dirOS);
 	return dirOS;
 }
-float3 TransformWorldToViewDir(const float3 dir, uniform bool normalize = true)
+float3 TransformWorldToViewDir(const float3 dir, uniform bool bNormalize = true)
 {
 	float3 dirVS = mul(dir, (float3x3)ENGINE_MATRIX_V);
-	if (normalize == true)
+	if (bNormalize == true)
 		dirVS = SafeNormalize(dirVS);
 	return dirVS;
 }
-float3 TransformViewToWorldDir(const float3 dir, uniform bool normalize = true)
+float3 TransformViewToWorldDir(const float3 dir, uniform bool bNormalize = true)
 {
 	float3 dirWS = mul(dir, (float3x3)ENGINE_MATRIX_I_V);
-	if (normalize == true)
+	if (bNormalize == true)
 		dirWS = SafeNormalize(dirWS);
 	return dirWS;
 }
@@ -118,10 +129,10 @@ float3x3 CreateTangentMatrix(in float3 normal, in float3 tangent, out float3 bin
 		binormal.x, binormal.y, binormal.z,
 		normal.x, normal.y, normal.z);
 }
-float3 TransformTangentToSpaceDir(const float3 dir, const float3x3 tangentMatrix, uniform bool normalize = false)
+float3 TransformTangentToSpaceDir(const float3 dir, const float3x3 tangentMatrix, uniform bool bNormalize = false)
 {
 	float3 targetDir = mul(dir, tangentMatrix);
-	if (normalize == true)
+	if (bNormalize == true)
 		targetDir = SafeNormalize(targetDir);
 	return targetDir;
 }

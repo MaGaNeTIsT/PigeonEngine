@@ -92,10 +92,12 @@ public:
 	};
 public:
 	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CDefaultLitMaterial* mat);
+	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CDefaultLitSkeletonMeshMaterial* mat);
 	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CAnisotropicMaterial* mat);
 	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CClothMaterial* mat);
 	void	SaveMaterialParams(const std::string& path, const std::string& name, const class CClothAnisotropicMaterial* mat);
 	void	LoadMaterialParams(const std::string& path, const std::string& name, class CDefaultLitMaterial* mat);
+	void	LoadMaterialParams(const std::string& path, const std::string& name, class CDefaultLitSkeletonMeshMaterial* mat);
 	void	LoadMaterialParams(const std::string& path, const std::string& name, class CAnisotropicMaterial* mat);
 	void	LoadMaterialParams(const std::string& path, const std::string& name, class CClothMaterial* mat);
 	void	LoadMaterialParams(const std::string& path, const std::string& name, class CClothAnisotropicMaterial* mat);

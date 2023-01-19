@@ -483,7 +483,7 @@ void CRenderPipeline::PostUpdate()
 				CGameObject* tempGameObjectPtr = reinterpret_cast<CGameObject*>(obj.second);
 				if (tempGameObjectPtr && tempGameObjectPtr->HasMeshComponent() && tempGameObjectPtr->HasMeshRendererComponent())
 				{
-					const CMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CMeshComponent>();
+					const CSkeletonMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CSkeletonMeshComponent>();
 					const CMeshRendererComponent* meshRenderer = tempGameObjectPtr->GetMeshRendererComponent<CMeshRendererComponent>();
 					if (mesh && meshRenderer && mesh->IsActive() && mesh->HasMesh() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
 					{
@@ -553,9 +553,9 @@ void CRenderPipeline::Render()
 	{
 		PrepareLightDataRender();
 		CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
 	}
 
 	CLightDirectional* lightShadow = NULL;
@@ -589,9 +589,9 @@ void CRenderPipeline::Render()
 				passShadowName += std::to_string(layerIndex);
 				PrepareDirectionalLightPerFrameRender(lightShadow, layerIndex);
 				CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
 				CustomStruct::CRenderViewport viewportShadow = lightShadow->GetCurrentShadowMapViewport(layerIndex);
 				const CRenderDevice::RenderTexture2DViewInfo& shadowMap = lightShadow->GetCurrentShadowMap(layerIndex).Texture;
 				CGPUProfilerManager::AddPass(passShadowName, m_FrameIndex, [&]() {
@@ -619,9 +619,9 @@ void CRenderPipeline::Render()
 	{
 		PreparePerFrameRender(lightShadow, 0u);
 		CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
 		CRenderDevice::SetViewport(m_SceneCamera->GetViewport());
 	}
 

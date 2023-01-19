@@ -19,11 +19,12 @@ public:
 protected:
 	enum DefaultMaterialType
 	{
-		DefaultMaterialType_DefaultLit			= 0,
-		DefaultMaterialType_Anisotropic			= 1,
-		DefaultMaterialType_ClearCoat			= 2,
-		DefaultMaterialType_Cloth				= 3,
-		DefaultMaterialType_ClothAnisotropic	= 4,
+		DefaultMaterialType_DefaultLit				= 0,
+		DefaultMaterialType_DefaultLit_SkeletonMesh	= 1,
+		DefaultMaterialType_Anisotropic				= 2,
+		DefaultMaterialType_ClearCoat				= 3,
+		DefaultMaterialType_Cloth					= 4,
+		DefaultMaterialType_ClothAnisotropic		= 5,
 		DefaultMaterialType_Count
 	};
 protected:

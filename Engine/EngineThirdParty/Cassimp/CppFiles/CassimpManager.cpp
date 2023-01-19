@@ -21,6 +21,19 @@ inline CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m)
 		CustomType::Vector3(scaling.x, scaling.y, scaling.z)));
 }
 
+inline void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
+{
+	aiVector3D aiScaling, aiRotation, aiPosition;
+	m.Decompose(aiScaling, aiRotation, aiPosition);
+	CustomType::Quaternion quatX(CustomType::Vector3::XVector(), aiRotation.x);
+	CustomType::Quaternion quatY(CustomType::Vector3::YVector(), aiRotation.y);
+	CustomType::Quaternion quatZ(CustomType::Vector3::ZVector(), aiRotation.z);
+
+	location = CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
+	rotation = (quatX * quatY) * quatZ;
+	scale = CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z);
+}
+
 inline CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
 {
 	return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
@@ -64,7 +77,7 @@ struct _GMeshAssetImporterInfo
 	_GVertexSemanticName	VertexBoneWeight;
 };
 
-inline BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
@@ -197,7 +210,7 @@ inline BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::
 	return TRUE;
 }
 
-inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput)
+void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
@@ -389,7 +402,7 @@ inline void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImpor
 	}
 }
 
-inline BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	vertexStride	= 0u;
 	numVertices		= 0u;
@@ -440,7 +453,7 @@ inline BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomS
 	return TRUE;
 }
 
-inline BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	vertexStride	= 0u;
 	numVertices		= 0u;
@@ -512,7 +525,7 @@ struct _GImporterBoneNodeData
 	_GImporterBoneNodeData*					Parent;
 };
 
-inline void _GGatherSingleNodeRecursion(const aiNode* node, _GImporterBoneNodeData* parentNode, std::map<std::string, std::vector<_GImporterBoneNodeData>>& output)
+void _GGatherSingleNodeRecursion(const aiNode* node, _GImporterBoneNodeData* parentNode, std::map<std::string, std::vector<_GImporterBoneNodeData>>& output)
 {
 	if (node == nullptr)
 	{
@@ -531,8 +544,7 @@ inline void _GGatherSingleNodeRecursion(const aiNode* node, _GImporterBoneNodeDa
 				result = output.find(nodeName);
 				if (result == output.end())
 				{
-					std::vector<_GImporterBoneNodeData> tempNodeList;
-					std::pair<std::map<std::string, std::vector<_GImporterBoneNodeData>>::iterator, bool> tempResult = output.insert_or_assign(nodeName, tempNodeList);
+					std::pair<std::map<std::string, std::vector<_GImporterBoneNodeData>>::iterator, bool> tempResult = output.insert_or_assign(nodeName, std::vector<_GImporterBoneNodeData>());
 					result = tempResult.first;
 				}
 			}
@@ -555,7 +567,7 @@ inline void _GGatherSingleNodeRecursion(const aiNode* node, _GImporterBoneNodeDa
 	}
 }
 
-inline void _GResortAllNodeRecursion(std::map<std::string, std::vector<_GImporterBoneNodeData>>& input, std::map<std::string, _GImporterBoneNodeData>& output)
+void _GResortAllNodeRecursion(std::map<std::string, std::vector<_GImporterBoneNodeData>>& input, std::map<std::string, _GImporterBoneNodeData>& output)
 {
 	if (output.size() != 0)
 	{
@@ -604,14 +616,14 @@ inline void _GResortAllNodeRecursion(std::map<std::string, std::vector<_GImporte
 	}
 }
 
-inline void _GGatherAllNodes(const aiNode* root, std::map<std::string, _GImporterBoneNodeData>& output)
+void _GGatherAllNodes(const aiNode* root, std::map<std::string, _GImporterBoneNodeData>& output)
 {
 	std::map<std::string, std::vector<_GImporterBoneNodeData>> nodeDatas;
 	_GGatherSingleNodeRecursion(root, nullptr, nodeDatas);
 	_GResortAllNodeRecursion(nodeDatas, output);
 }
 
-inline void _GGatherAllBones(const aiScene* scene, std::map<std::string, const aiBone*>& output)
+void _GGatherAllBones(const aiScene* scene, std::map<std::string, const aiBone*>& output)
 {
 	if (output.size() != 0)
 	{
@@ -638,7 +650,7 @@ inline void _GGatherAllBones(const aiScene* scene, std::map<std::string, const a
 	}
 }
 
-inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonOutput, std::vector<UINT>& boneList, INT& skeletonRootNode)
+BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonOutput, std::vector<UINT>& boneList, INT& skeletonRootNode)
 {
 	if (skeletonOutput.size() != 0)
 	{
@@ -695,7 +707,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CG
 				continue;
 			}
 
-			node.Location = _GTranslateMatrix(it->second.Node->mTransformation);
+			_GTranslateMatrix(it->second.Node->mTransformation, node.Location, node.Rotation, node.Scale);
 
 			if (it->second.Bone != nullptr)
 			{
@@ -718,6 +730,7 @@ inline BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CG
 		for (UINT nodeIndex = 0u; nodeIndex < skeletonNodeNum; nodeIndex++)
 		{
 			CustomStruct::CGameBoneNodeInfo& node = skeletonOutput[nodeIndex];
+			node.Index = static_cast<INT>(nodeIndex);
 			if (skeletonRootNode == -1 && node.Name == rawRootNodeName)
 			{
 				skeletonRootNode = static_cast<INT>(nodeIndex);

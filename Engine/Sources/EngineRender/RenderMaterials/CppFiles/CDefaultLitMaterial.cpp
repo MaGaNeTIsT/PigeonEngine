@@ -7,15 +7,22 @@
 #include "../../RenderBase/Headers/CRenderDevice.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
 
-const static CustomStruct::CRenderInputLayoutDesc _GDefaultLitMaterialInputLayout[4u] = {
+const static CustomStruct::CRenderInputLayoutDesc _GDefaultMeshInputLayout[4u] = {
 	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
 	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
 	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+const static CustomStruct::CRenderInputLayoutDesc _GSkeletonMeshInputLayout[6u] = {
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD),
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES),
+	CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT) };
 
-CDefaultLitMaterial::CDefaultLitMaterial() : CMaterialBase(typeid(CDefaultLitMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CDefaultLitMaterial::RenderParams), _GDefaultLitMaterialInputLayout, 4u, ENGINE_DEFAULT_LIT_SHADER_FORWARD_VS, ENGINE_DEFAULT_LIT_SHADER_FORWARD_PS)
+CDefaultLitMaterial::CDefaultLitMaterial() : CMaterialBase(typeid(CDefaultLitMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CDefaultLitMaterial::RenderParams), _GDefaultMeshInputLayout, 4u, ENGINE_DEFAULT_LIT_SHADER_FORWARD_VS, ENGINE_DEFAULT_LIT_SHADER_FORWARD_PS)
 {
-	this->m_VertexShader	= CShaderManager::LoadVertexShader(ENGINE_DEFAULT_LIT_SHADER_FORWARD_VS, _GDefaultLitMaterialInputLayout, 4u);
+	this->m_VertexShader	= CShaderManager::LoadVertexShader(ENGINE_DEFAULT_LIT_SHADER_FORWARD_VS, _GDefaultMeshInputLayout, 4u);
 	this->m_PixelShader		= CShaderManager::LoadPixelShader(ENGINE_DEFAULT_LIT_SHADER_FORWARD_PS);
 #ifdef _DEVELOPMENT_EDITOR
 	this->m_IsGlossy				= FALSE;
@@ -491,7 +498,26 @@ void CDefaultLitMaterial::SelectedEditorUpdate()
 
 
 
-CAnisotropicMaterial::CAnisotropicMaterial() : CDefaultLitMaterial(typeid(CAnisotropicMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CAnisotropicMaterial::RenderParams), _GDefaultLitMaterialInputLayout, 4u, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_VS, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_PS)
+CDefaultLitSkeletonMeshMaterial::CDefaultLitSkeletonMeshMaterial() : CDefaultLitMaterial(typeid(CDefaultLitSkeletonMeshMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CDefaultLitMaterial::RenderParams), _GSkeletonMeshInputLayout, 6u, ENGINE_DEFAULT_LIT_SHADER_FORWARD_SKELETON_MESH_VS, ENGINE_DEFAULT_LIT_SHADER_FORWARD_PS)
+{
+	this->m_RenderParams = new CDefaultLitMaterial::RenderParams();
+	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
+	renderParams->BaseColorRoughness				= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	renderParams->EmissiveAmbientOcclusion			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
+	renderParams->MetallicnessReflectanceIsGlossy	= DirectX::XMFLOAT4(0.f, 1.f, 0.f, 0.f);
+}
+CDefaultLitSkeletonMeshMaterial::~CDefaultLitSkeletonMeshMaterial()
+{
+	if (this->m_RenderParams != nullptr)
+	{
+		delete (this->m_RenderParams);
+		this->m_RenderParams = nullptr;
+	}
+}
+
+
+
+CAnisotropicMaterial::CAnisotropicMaterial() : CDefaultLitMaterial(typeid(CAnisotropicMaterial).name(), MaterialType::MATERIAL_TYPE_OPAQUE_FORWARD, sizeof(CAnisotropicMaterial::RenderParams), _GDefaultMeshInputLayout, 4u, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_VS, ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_PS)
 {
 #ifdef _DEVELOPMENT_EDITOR
 	this->m_AnisotropyStrengthSelect	= CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE;

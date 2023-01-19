@@ -2,7 +2,9 @@
 
 #include "../../../../../Entry/EngineMain.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
+#include "../../RenderBase/Headers/CRenderDevice.h"
 #include "../../../EngineGame/Headers/CComponent.h"
+#include "../../../EngineGame/Headers/CSkeletonComponent.h"
 
 template<typename IndexType>
 class CBaseMesh
@@ -123,7 +125,7 @@ public:
 		{
 			return (this->m_Mesh->GetVertexData());
 		}
-		return NULL;
+		return nullptr;
 	}
 	UINT GetVertexStride()const
 	{
@@ -160,17 +162,31 @@ public:
 public:
 	void SetMesh(const CBaseMesh<UINT>* mesh)
 	{
-		if (mesh != NULL)
+		if (mesh != nullptr)
 		{
 			this->m_Mesh = mesh;
 		}
 	}
 	BOOL HasMesh()const
 	{
-		return (this->m_Mesh != NULL);
+		return (this->m_Mesh != nullptr);
 	}
 	virtual void Init()override {}
 	virtual void Uninit()override {}
+	virtual void Bind(const BOOL& needVertex, const BOOL& needIndex)const
+	{
+		if (needVertex == TRUE)
+		{
+			CRenderDevice::SetVertexBuffer(this->m_Mesh->GetVertexBuffer(), this->m_Mesh->GetVertexStride());
+		}
+		if (needIndex == TRUE)
+		{
+			CRenderDevice::SetIndexBuffer(this->m_Mesh->GetIndexBuffer());
+		}
+		this->BindExtra();
+	}
+protected:
+	virtual void BindExtra()const {}
 #ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void SelectedEditorUpdate()override
@@ -179,7 +195,7 @@ public:
 		{
 			std::string meshComponentUniqueID = std::to_string((this->GetUniqueID()));
 			ImGui::Text("MeshComponent uniqueID : %s", meshComponentUniqueID.c_str());
-			std::string meshName = this->m_Mesh == NULL ? "NULL" : this->m_Mesh->GetName();
+			std::string meshName = this->m_Mesh == nullptr ? "NULL" : this->m_Mesh->GetName();
 			ImGui::Text("Mesh name : %s", meshName.c_str());
 			std::vector<CustomStruct::CSubMeshInfo> submesh = this->GetSubMeshInfo();
 			ImGui::Text("Has submesh : %s", (submesh.size() > 1) ? "true" : "false");
@@ -228,11 +244,11 @@ protected:
 public:
 	CMeshComponent() : CBaseComponent(TRUE, FALSE, FALSE)
 	{
-		m_Mesh = NULL;
+		m_Mesh = nullptr;
 	}
 	CMeshComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate)
 	{
-		m_Mesh = NULL;
+		m_Mesh = nullptr;
 	}
 	virtual ~CMeshComponent() {}
 };
@@ -240,10 +256,22 @@ public:
 class CSkeletonMeshComponent : public CMeshComponent
 {
 public:
-
+	BOOL	HasSkeleton()const { return (this->m_SkeletonComponent != nullptr); }
+public:
+	void						SetSkeletonComponent(const CSkeletonComponent* skeletonComponent) { this->m_SkeletonComponent = skeletonComponent; };
+	const CSkeletonComponent*	GetSkeletonComponent() { return (this->m_SkeletonComponent); };
+protected:
+	const CSkeletonComponent*	m_SkeletonComponent;
+protected:
+	virtual void BindExtra()const override
+	{
+		m_SkeletonComponent->UploadSkeletonGPUConstantBuffer();
+		m_SkeletonComponent->BindVSSkeletonGPUConstantBuffer(ENGINE_CBUFFER_VS_SKELETON_DATA_START_SLOT);
+	}
 public:
 	CSkeletonMeshComponent() : CMeshComponent(TRUE, FALSE, FALSE)
 	{
+		this->m_SkeletonComponent	= nullptr;
 	}
 	virtual ~CSkeletonMeshComponent() {}
 };

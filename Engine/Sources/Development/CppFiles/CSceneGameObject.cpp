@@ -189,6 +189,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 					ImGui::Text("CurrentMaterial : %s", materialName.c_str());
 					std::map<INT, std::string> baseEngineMaterialItems = {
 						{ DefaultMaterialType::DefaultMaterialType_DefaultLit, "DefaultLitMaterial" },
+						{ DefaultMaterialType::DefaultMaterialType_DefaultLit_SkeletonMesh, "DefaultLitSkeletonMeshMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Anisotropic, "AnisotropicMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_ClearCoat, "ClearCoatMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" },
@@ -315,6 +316,9 @@ void CSceneGameObject::SelectedEditorUpdate()
 				{
 				case DefaultMaterialType::DefaultMaterialType_DefaultLit:
 					this->m_MeshRendererComponent->AddMaterial<CDefaultLitMaterial>(TRUE);
+					break;
+				case DefaultMaterialType::DefaultMaterialType_DefaultLit_SkeletonMesh:
+					this->m_MeshRendererComponent->AddMaterial<CDefaultLitSkeletonMeshMaterial>(TRUE);
 					break;
 				case DefaultMaterialType::DefaultMaterialType_Anisotropic:
 					this->m_MeshRendererComponent->AddMaterial<CAnisotropicMaterial>(TRUE);
