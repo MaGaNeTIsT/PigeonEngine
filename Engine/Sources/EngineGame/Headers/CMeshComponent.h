@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../../../../Entry/EngineMain.h"
-#include "../../RenderBase/Headers/CRenderStructCommon.h"
-#include "../../RenderBase/Headers/CRenderDevice.h"
-#include "../../../EngineGame/Headers/CComponent.h"
-#include "../../../EngineGame/Headers/CSkeletonComponent.h"
+#include "../../../../Entry/EngineMain.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
+#include "./CComponent.h"
+#include "./CSkeletonComponent.h"
 
 template<typename IndexType>
 class CBaseMesh

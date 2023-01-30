@@ -85,6 +85,10 @@ namespace CustomType
 		static Quaternion			Normalize(const Quaternion& v);
 		static Quaternion			MultiplyQuaternion(const Quaternion& q1, const Quaternion& q2);
 		static Quaternion			RotationAxis(const Vector3& axis, const FLOAT& radian);
+		static Quaternion			NLerp(const Quaternion& v1, const Quaternion& v2, const FLOAT& t);
+		static Quaternion			NLerp(const Quaternion& v1, const Quaternion& v2, const DOUBLE& t);
+		static Quaternion			SLerp(const Quaternion& v1, const Quaternion& v2, const FLOAT& t);
+		static Quaternion			SLerp(const Quaternion& v1, const Quaternion& v2, const DOUBLE& t);
 	public:
 		const FLOAT&				X()const { return m_Value.x; }
 		const FLOAT&				Y()const { return m_Value.y; }
@@ -96,6 +100,7 @@ namespace CustomType
 		void						SetQuaternion(const Quaternion& v) { (*this) = v; }
 		Vector3						MultiplyVector(const Vector3& v);
 	public:
+		Quaternion					operator*(const FLOAT& v);
 		Quaternion					operator*(const Quaternion& v);
 		void						operator=(const Quaternion& v);
 	public:
@@ -204,6 +209,7 @@ namespace CustomType
 		static FLOAT				DistanceSquare(const Vector3& v1, const Vector3& v2);
 		static Vector3				Reciprocal(const Vector3& v);
 		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const FLOAT& t);
+		static Vector3				Lerp(const Vector3& v1, const Vector3& v2, const DOUBLE& t);
 	public:
 		FLOAT						Dot(const Vector3& v);
 		Vector3						Cross(const Vector3& v);
@@ -443,6 +449,8 @@ namespace CustomType
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
 		static INT		Clamp(const INT& v, const INT& min, const INT& max);
 		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
+		static FLOAT	Mod(const FLOAT& numerator, const FLOAT& denominator);
+		static DOUBLE	Mod(const DOUBLE& numerator, const DOUBLE& denominator);
 		static FLOAT	Sin(const FLOAT& v);
 		static FLOAT	Cos(const FLOAT& v);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);

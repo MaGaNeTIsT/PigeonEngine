@@ -4,7 +4,7 @@
 #include "../../../EngineBase/Headers/CBaseType.h"
 #include "./CRenderStructCommon.h"
 #include "./CRenderDevice.h"
-#include "../../AssetsManager/Headers/CMeshComponent.h"
+#include "../../../EngineGame/Headers/CMeshComponent.h"
 #include "../../../EngineGame/Headers/CScene.h"
 
 class CRenderPipeline

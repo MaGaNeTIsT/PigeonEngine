@@ -12,7 +12,8 @@ CSkeletonSingleBone::CSkeletonSingleBone()
 }
 CSkeletonSingleBone::~CSkeletonSingleBone()
 {
-
+	this->m_Transform.RemoveParent();
+	this->m_Transform.RemoveAllChildren();
 }
 BOOL CSkeletonSingleBone::IsRootBone()const
 {
@@ -146,7 +147,6 @@ CSkeletonComponent::CSkeletonComponent(const std::string& skeletonName) : CBaseC
 }
 CSkeletonComponent::~CSkeletonComponent()
 {
-	this->m_RootBone->GetTransformNoConst()->RemoveParent();
 }
 void CSkeletonComponent::Init()
 {
@@ -182,6 +182,23 @@ const CSkeletonSingleBone* CSkeletonComponent::GetBoneByName(const std::string& 
 	return nullptr;
 }
 const CSkeletonSingleBone* CSkeletonComponent::GetBoneByBoneIndex(const UINT& boneIndex)const
+{
+	if (boneIndex < static_cast<UINT>(this->m_BoneListVector.size()))
+	{
+		return (&(this->m_NodeListVector[this->m_BoneListVector[boneIndex]]));
+	}
+	return nullptr;
+}
+CSkeletonSingleBone* CSkeletonComponent::GetBoneByNameNoConst(const std::string& boneName)
+{
+	auto element = this->m_NodeListMap.find(boneName);
+	if (element != this->m_NodeListMap.end())
+	{
+		return (element->second);
+	}
+	return nullptr;
+}
+CSkeletonSingleBone* CSkeletonComponent::GetBoneByBoneIndexNoConst(const UINT& boneIndex)
 {
 	if (boneIndex < static_cast<UINT>(this->m_BoneListVector.size()))
 	{
@@ -295,6 +312,21 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 			//CustomType::Matrix4x4 tempBindPose(tempNode.GetBindPose());
 			//CustomType::Matrix4x4 tempLocation(tempNode.GetTransformNoConst()->GetLocalToWorldMatrix());
 			//this->m_SkeletonGPUCBufferData[boneIndex] = (tempBindPose * tempLocation).GetGPUUploadFloat4x4();
+		}
+	}
+
+	// TODO Warning!!! This operation will make parents of all bones' transform to be actor's transform. But bone
+	// will still hold their owned parent & children. This will be change with skeleton animation's implement.
+	{
+		const CGameObject* tempGameObject = this->GetGameObject();
+		if (tempGameObject != nullptr && tempGameObject->HasTransform())
+		{
+			CTransform* tempTransform = tempGameObject->GetTransform();
+			for (UINT nodeIndex = 0u; nodeIndex < nodeNum; nodeIndex++)
+			{
+				CSkeletonSingleBone& tempNode = this->m_NodeListVector[nodeIndex];
+				tempNode.GetTransformNoConst()->SetParent(tempTransform);
+			}
 		}
 	}
 

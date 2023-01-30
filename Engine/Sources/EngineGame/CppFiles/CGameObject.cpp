@@ -1,7 +1,7 @@
 #include "../Headers/CGameObject.h"
 #include "../Headers/CComponent.h"
+#include "../Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../Headers/CScene.h"
 
 CGameObjectBase::CGameObjectBase(const BOOL& active, const CScene* scene)

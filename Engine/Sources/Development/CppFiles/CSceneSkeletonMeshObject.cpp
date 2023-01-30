@@ -1,9 +1,9 @@
 #include "../Headers/CSceneSkeletonMeshObject.h"
 #include "../../EngineGame/Headers/CComponent.h"
 #include "../../EngineGame/Headers/CGameBoundComponent.h"
+#include "../../EngineGame/Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineGame/Headers/CSkeletonComponent.h"
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
@@ -14,10 +14,9 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 	this->AddNewTransform();
 	{
 		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Lina/Lina/Lina.FBX";
+		std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Lina/Lina/Lina.FBX";
 		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/e-45-animation/source/8e689f1f0129471888e82361a65ffdcf.fbx.fbx";
 		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
-		std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/e-45-animation/source/8e689f1f0129471888e82361a65ffdcf.fbx.fbx";
 
 		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
 		CGameBoundBoxComponent* boundBoxComponent = new CGameBoundBoxComponent();

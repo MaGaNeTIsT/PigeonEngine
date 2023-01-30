@@ -41,6 +41,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectUtilty.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameStructCommon.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CObjectManager.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h" />
@@ -48,12 +49,13 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonAnimationComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureType.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h" />
@@ -108,11 +110,13 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2DBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureType.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp" />

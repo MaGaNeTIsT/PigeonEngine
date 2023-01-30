@@ -3,7 +3,7 @@
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
-#include "./CMeshComponent.h"
+#include "../../../EngineGame/Headers/CMeshComponent.h"
 
 class CMeshManager
 {

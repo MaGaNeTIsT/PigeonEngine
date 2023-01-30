@@ -189,9 +189,6 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
@@ -299,6 +296,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CDynamicWind.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonComponent.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneSkeletonMeshObject.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonAnimationComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entry\EngineMain.cpp">
@@ -446,6 +446,8 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CDynamicWind.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonComponent.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneSkeletonMeshObject.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">

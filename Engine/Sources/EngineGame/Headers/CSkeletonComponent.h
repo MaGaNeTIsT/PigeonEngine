@@ -42,7 +42,6 @@ public:
 	BOOL				operator!=(const CSkeletonSingleBone* v);
 public:
 	const CTransform*	GetTransform()const;
-protected:
 	CTransform*			GetTransformNoConst();
 protected:
 	CTransform			m_Transform;
@@ -64,6 +63,9 @@ public:
 public:
 	const CSkeletonSingleBone*		GetBoneByName(const std::string& boneName)const;
 	const CSkeletonSingleBone*		GetBoneByBoneIndex(const UINT& boneIndex)const;
+protected:
+	CSkeletonSingleBone*			GetBoneByNameNoConst(const std::string& boneName);
+	CSkeletonSingleBone*			GetBoneByBoneIndexNoConst(const UINT& boneIndex);
 public:
 	void	SetSkeleton(const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonData, const std::vector<UINT>& boneList, const UINT& rootNode);
 public:
@@ -86,4 +88,6 @@ protected:
 public:
 	CSkeletonComponent(const std::string& skeletonName);
 	virtual ~CSkeletonComponent();
+private:
+	friend class CSkeletonAnimationComponent;
 };

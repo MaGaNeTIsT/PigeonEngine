@@ -77,7 +77,7 @@ struct _GMeshAssetImporterInfo
 	_GVertexSemanticName	VertexBoneWeight;
 };
 
-BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, std::vector<BOOL>& hasBones, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
@@ -89,6 +89,10 @@ BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 	if (sceneMeshesInfo.size() > 0)
 	{
 		sceneMeshesInfo.clear();
+	}
+	if (hasBones.size() > 0)
+	{
+		hasBones.clear();
 	}
 	totalNumVertices	= 0u;
 	totalNumIndices		= 0u;
@@ -106,6 +110,8 @@ BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 		{
 			continue;
 		}
+
+		hasBones.push_back(tempMesh->HasBones());
 
 		_GMeshAssetImporterInfo tempPerMeshInfo;
 		tempPerMeshInfo.Name = tempMesh->mName.C_Str();
@@ -162,19 +168,11 @@ BOOL _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES)
 			{
-				if (!tempMesh->HasBones())
-				{
-					return FALSE;
-				}
 				tempPerMeshInfo.VertexBoneIndices.Exist = TRUE;
 				tempPerMeshInfo.VertexBoneIndices.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT)
 			{
-				if (!tempMesh->HasBones())
-				{
-					return FALSE;
-				}
 				tempPerMeshInfo.VertexBoneWeight.Exist = TRUE;
 				tempPerMeshInfo.VertexBoneWeight.Offset = tempPerMeshInfo.VertexStride;
 			}
@@ -356,7 +354,7 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 			if (assetInfo.VertexBoneIndices.Exist)
 			{
 				USHORT* tempBoneIndices = (USHORT*)(&(tempVertex[assetInfo.VertexBoneIndices.Offset]));
-				if (blendWriteIndex != nullptr)
+				if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
 				{
 					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
 					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
@@ -376,7 +374,7 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 			if (assetInfo.VertexBoneWeight.Exist)
 			{
 				FLOAT* tempBoneWeights = (FLOAT*)(&(tempVertex[assetInfo.VertexBoneWeight.Offset]));
-				if (blendWriteIndex != nullptr)
+				if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
 				{
 					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
 					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
@@ -417,9 +415,10 @@ BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::
 		indices.clear();
 	}
 
+	std::vector<BOOL> sceneMeshesHasBones;
 	std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
 	UINT totalNumVertices, totalNumIndices;
-	if (!_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, inputLayoutDesc, inputLayoutNum))
+	if (!_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, sceneMeshesHasBones, inputLayoutDesc, inputLayoutNum))
 	{
 		return FALSE;
 	}
@@ -468,9 +467,10 @@ BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct:
 		indices.clear();
 	}
 
+	std::vector<BOOL> sceneMeshesHasBones;
 	std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
 	UINT totalNumVertices, totalNumIndices;
-	if (!_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, inputLayoutDesc, inputLayoutNum))
+	if (!_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, sceneMeshesHasBones, inputLayoutDesc, inputLayoutNum))
 	{
 		return FALSE;
 	}
@@ -745,6 +745,144 @@ BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBone
 	return (boneList.size() > 0 && skeletonRootNode >= 0);
 }
 
+void _GTranslateAnimationBehaviour(const aiAnimBehaviour& input, CustomStruct::CGameAnimationBehaviour& output)
+{
+	if (input == aiAnimBehaviour::aiAnimBehaviour_DEFAULT)
+	{
+		output = CustomStruct::CGameAnimationBehaviour::ANIMATION_BEHAVIOUR_DEFAULT;
+	}
+	else if (input == aiAnimBehaviour::aiAnimBehaviour_CONSTANT)
+	{
+		output = CustomStruct::CGameAnimationBehaviour::ANIMATION_BEHAVIOUR_CONSTANT;
+	}
+	else if (input == aiAnimBehaviour::aiAnimBehaviour_LINEAR)
+	{
+		output = CustomStruct::CGameAnimationBehaviour::ANIMATION_BEHAVIOUR_LINEAR;
+	}
+	else if (input == aiAnimBehaviour::aiAnimBehaviour_REPEAT)
+	{
+		output = CustomStruct::CGameAnimationBehaviour::ANIMATION_BEHAVIOUR_REPEAT;
+	}
+}
+
+void _GGatherSingleAnimationDatas(const aiAnimation* animationNode, CustomStruct::CGameAnimationInfo& animationData)
+{
+	if (animationData.AnimationNodes.size() > 0)
+	{
+		animationData.AnimationNodes.clear();
+	}
+
+	UINT numChannels = animationNode->mNumChannels;
+	for (UINT indexChannel = 0u; indexChannel < numChannels; indexChannel++)
+	{
+		const aiNodeAnim* tempChannel = animationNode->mChannels[indexChannel];
+		if (tempChannel == nullptr || tempChannel->mNodeName.length < 1)
+		{
+			continue;
+		}
+
+		CustomStruct::CGameAnimationNodeInfo tempAnimationNodeInfo(_GTranslateString(tempChannel->mNodeName));
+
+		for (UINT indexPosKey = 0u; indexPosKey < tempChannel->mNumPositionKeys && tempChannel->mPositionKeys != nullptr; indexPosKey++)
+		{
+			const aiVectorKey& tempChannelPosKey = tempChannel->mPositionKeys[indexPosKey];
+
+			CustomStruct::CGameAnimationKey<CustomType::Vector3> tempPosKey;
+			tempPosKey.Time = tempChannelPosKey.mTime;
+			tempPosKey.Value = _GTranslateVector3(tempChannelPosKey.mValue);
+
+			tempAnimationNodeInfo.PositionKeys.push_back(tempPosKey);
+		}
+
+		for (UINT indexRotKey = 0u; indexRotKey < tempChannel->mNumRotationKeys && tempChannel->mRotationKeys != nullptr; indexRotKey++)
+		{
+			const aiQuatKey& tempChannelRotKey = tempChannel->mRotationKeys[indexRotKey];
+
+			CustomStruct::CGameAnimationKey<CustomType::Quaternion> tempRotKey;
+			tempRotKey.Time = tempChannelRotKey.mTime;
+			tempRotKey.Value = _GTranslateQuaternion(tempChannelRotKey.mValue);
+
+			tempAnimationNodeInfo.RotationKeys.push_back(tempRotKey);
+		}
+
+		for (UINT indexSclKey = 0u; indexSclKey < tempChannel->mNumScalingKeys && tempChannel->mScalingKeys != nullptr; indexSclKey++)
+		{
+			const aiVectorKey& tempChannelSclKey = tempChannel->mScalingKeys[indexSclKey];
+
+			CustomStruct::CGameAnimationKey<CustomType::Vector3> tempSclKey;
+			tempSclKey.Time = tempChannelSclKey.mTime;
+			tempSclKey.Value = _GTranslateVector3(tempChannelSclKey.mValue);
+
+			tempAnimationNodeInfo.ScalingKeys.push_back(tempSclKey);
+		}
+
+		_GTranslateAnimationBehaviour(tempChannel->mPreState, tempAnimationNodeInfo.PreState);
+		_GTranslateAnimationBehaviour(tempChannel->mPostState, tempAnimationNodeInfo.PostState);
+
+		// TODO is this necessary?
+		{
+			std::sort(tempAnimationNodeInfo.PositionKeys.begin(), tempAnimationNodeInfo.PositionKeys.end());
+			std::sort(tempAnimationNodeInfo.RotationKeys.begin(), tempAnimationNodeInfo.RotationKeys.end());
+			std::sort(tempAnimationNodeInfo.ScalingKeys.begin(), tempAnimationNodeInfo.ScalingKeys.end());
+		}
+		
+		animationData.AnimationNodes.push_back(tempAnimationNodeInfo);
+	}
+}
+
+BOOL _GGatherAllAnimationDatas(const std::string& path, const aiScene* scene, std::map<std::string, CustomStruct::CGameAnimationInfo>& animationDatas)
+{
+	if (animationDatas.size() > 0)
+	{
+		animationDatas.clear();
+	}
+
+	BOOL result = TRUE;
+
+	UINT animationDummyIndex = 0u;
+	UINT numAnimationNodes = scene->mNumAnimations;
+	for (UINT indexAnimationNode = 0u; indexAnimationNode < numAnimationNodes; indexAnimationNode++)
+	{
+		const aiAnimation* tempAnimationNode = scene->mAnimations[indexAnimationNode];
+		if (tempAnimationNode == nullptr)
+		{
+			continue;
+		}
+
+		std::string tempAnimationNodeName;
+
+		if (tempAnimationNode->mName.length > 0)
+		{
+			tempAnimationNodeName = _GTranslateString(tempAnimationNode->mName);
+		}
+		else
+		{
+			tempAnimationNodeName = std::string("DummyAnimation_") + std::to_string(animationDummyIndex);
+			animationDummyIndex += 1u;
+		}
+
+		{
+			auto tempFindAnimation = animationDatas.find(tempAnimationNodeName);
+			if (tempFindAnimation != animationDatas.end())
+			{
+				result = FALSE;
+				continue;
+			}
+		}
+
+		{
+			auto tempCurrentAnimation = animationDatas.insert_or_assign(tempAnimationNodeName, CustomStruct::CGameAnimationInfo());
+			CustomStruct::CGameAnimationInfo& tempAnimationData = tempCurrentAnimation.first->second;
+			tempAnimationData.Name				= path + "_" + tempAnimationNodeName;
+			tempAnimationData.Duration			= tempAnimationNode->mDuration;
+			tempAnimationData.TicksPerSecond	= tempAnimationNode->mTicksPerSecond;
+			_GGatherSingleAnimationDatas(tempAnimationNode, tempAnimationData);
+		}
+	}
+
+	return result;
+}
+
 CassimpManager* CassimpManager::m_AssimpManager = nullptr;
 void CassimpManager::Initialize()
 {
@@ -771,7 +909,7 @@ void CassimpManager::ShutDown()
 		CassimpManager::m_AssimpManager = nullptr;
 	}
 }
-BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices)
+CassimpManager::CassimpReadFileState CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices)
 {
 	if (vertices != nullptr)
 	{
@@ -790,11 +928,13 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 	numVertices		= 0u;
 	numIndices		= 0u;
 
+	CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+
 	Assimp::Importer* impoter = _GAssetImporter;
 	if (impoter == nullptr)
 	{
 		// TODO Do the error logging (did not create the instance of importer)
-		return FALSE;
+		return result;
 	}
 
 	// And have it read the given file with some example postprocessing
@@ -829,14 +969,16 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 	if (scene == nullptr)
 	{
 		// TODO Do the error logging (importer.GetErrorString())
-		return FALSE;
+		impoter->FreeScene();
+		return result;
 	}
 
 	if (!scene->HasMeshes())
 	{
-		impoter->FreeScene();
+		result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 		// TODO Scene does not contain meshes
-		return FALSE;
+		impoter->FreeScene();
+		return result;
 	}
 
 	// Now we can access the file's contents.
@@ -845,13 +987,15 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 	if (!_GTranslateDefaultMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum))
 	{
+		result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 		impoter->FreeScene();
-		return FALSE;
+		return result;
 	}
 
+	result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED;
 	// We're done. Everything will be cleaned up by the importer destructor
 	impoter->FreeScene();
-	return TRUE;
+	return result;
 }
 //void CopyNodesWithMeshes(aiNode node, SceneObject targetParent, Matrix4x4 accTransform)
 //{
@@ -880,7 +1024,7 @@ BOOL CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<Cu
 //		CopyNodesWithMeshes(node.mChildren[a], parent, transform);
 //	}
 //}
-BOOL CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode)
+CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode)
 {
 	if (vertices != nullptr)
 	{
@@ -907,9 +1051,11 @@ BOOL CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::v
 	{
 		boneList.clear();
 	}
+	rootNode = 0u;
+
+	CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
 
 	Assimp::Importer* impoter = _GAssetImporter;
-	BOOL result = FALSE;
 	if (impoter == nullptr)
 	{
 		// TODO Do the error logging (did not create the instance of importer)
@@ -947,23 +1093,96 @@ BOOL CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::v
 		aiProcess_GenBoundingBoxes);
 
 	// If the import failed, report it
-	if (scene == nullptr || !scene->HasMeshes())
+	if (scene == nullptr)
 	{
 		// TODO Do the error logging (importer.GetErrorString())
+		impoter->FreeScene();
+		return result;
+	}
+
+	if (!scene->HasMeshes())
+	{
+		result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		// TODO Do the error logging (importer.GetErrorString())
+		impoter->FreeScene();
 		return result;
 	}
 
 	// Now we can access the file's contents.
 	INT tempRootNode = -1;
-	result = _GGatherBoneDatas(scene, skeleton, boneList, tempRootNode);
+	result = _GGatherBoneDatas(scene, skeleton, boneList, tempRootNode) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 
-	if (result == TRUE)
+	if (result == CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		rootNode = static_cast<UINT>(tempRootNode);
 		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-		result = _GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, inputLayoutDesc, inputLayoutNum);
+		result = _GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 	}
+
+	// We're done. Everything will be cleaned up by the importer destructor
+	impoter->FreeScene();
+	return result;
+}
+CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonAnimationFile(const std::string& path, std::map<std::string, std::map<std::string, CustomStruct::CGameAnimationInfo>>& animationDatas)
+{
+	CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+
+	if (animationDatas.find(path) != animationDatas.end())
+	{
+		return result;
+	}
+
+	Assimp::Importer* impoter = _GAssetImporter;
+	if (impoter == nullptr)
+	{
+		// TODO Do the error logging (did not create the instance of importer)
+		return result;
+	}
+
+	// And have it read the given file with some example postprocessing
+	// Usually - if speed is not the most important aspect for you - you'll
+	// probably to request more postprocessing than we do in this example.
+
+	// Use SetPropertyInteger to modify config of importer
+	//Assimp::Importer::SetProperty###();
+
+	const aiScene* scene = impoter->ReadFile(
+		path,
+		aiProcess_MakeLeftHanded |
+		aiProcess_RemoveComponent |
+		aiProcess_RemoveRedundantMaterials |
+		aiProcess_PopulateArmatureData);
+
+	// If the import failed, report it
+	if (scene == nullptr)
+	{
+		// TODO Do the error logging (importer.GetErrorString())
+		impoter->FreeScene();
+		return result;
+	}
+
+	if (!scene->HasAnimations())
+	{
+		result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		// TODO Do the error logging (importer.GetErrorString())
+		impoter->FreeScene();
+		return result;
+	}
+
+	// Skeleton reader
+	//std::vector<CustomStruct::CGameBoneNodeInfo> sceneSkeleton;
+	//std::vector<UINT> sceneBoneList;
+	//UINT rootNode = 0u;
+	//INT tempRootNode = -1;
+	//result = _GGatherBoneDatas(scene, sceneSkeleton, sceneBoneList, tempRootNode);
+	//rootNode = static_cast<UINT>(tempRootNode);
+
+	// Now we can access the file's contents.
+	auto tempInsertResult = animationDatas.insert_or_assign(path, std::map<std::string, CustomStruct::CGameAnimationInfo>());
+	std::map<std::string, CustomStruct::CGameAnimationInfo>& tempAnimationContainer = tempInsertResult.first->second;
+
+	result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 
 	// We're done. Everything will be cleaned up by the importer destructor
 	impoter->FreeScene();

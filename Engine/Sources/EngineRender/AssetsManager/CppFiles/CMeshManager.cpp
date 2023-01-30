@@ -1136,7 +1136,7 @@ CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, c
 {
 	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
 	UINT numVertices, numIndices, vertexStride;
-	if (!CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices))
+	if (CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}
@@ -1150,7 +1150,7 @@ CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, 
 {
 	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
 	UINT numVertices, numIndices, vertexStride;
-	if (!CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, rootNode))
+	if (CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, rootNode) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}

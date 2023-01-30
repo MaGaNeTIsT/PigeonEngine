@@ -7,7 +7,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../Headers/CComponent.h"
 #include "../Headers/CGameBoundComponent.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
+#include "../Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"

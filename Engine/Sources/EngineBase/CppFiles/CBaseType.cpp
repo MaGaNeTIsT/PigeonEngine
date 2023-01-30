@@ -164,6 +164,38 @@ namespace CustomType
 		Quaternion result(axis, radian);
 		return result;
 	}
+	Quaternion Quaternion::NLerp(const Quaternion& v1, const Quaternion& v2, const FLOAT& t)
+	{
+		Quaternion result(
+			v1.X() * (1.f - t) + v2.X() * t,
+			v1.Y() * (1.f - t) + v2.Y() * t,
+			v1.Z() * (1.f - t) + v2.Z() * t,
+			v1.W() * (1.f - t) + v2.W() * t);
+		result.Normalize();
+		return result;
+	}
+	Quaternion Quaternion::NLerp(const Quaternion& v1, const Quaternion& v2, const DOUBLE& t)
+	{
+		FLOAT ft = static_cast<FLOAT>(t);
+		Quaternion result(
+			v1.X() * (1.f - ft) + v2.X() * ft,
+			v1.Y() * (1.f - ft) + v2.Y() * ft,
+			v1.Z() * (1.f - ft) + v2.Z() * ft,
+			v1.W() * (1.f - ft) + v2.W() * ft);
+		result.Normalize();
+		return result;
+	}
+	Quaternion Quaternion::SLerp(const Quaternion& v1, const Quaternion& v2, const FLOAT& t)
+	{
+		Quaternion result(DirectX::XMQuaternionSlerp(v1.GetXMVECTOR(), v2.GetXMVECTOR(), t));
+		return result;
+	}
+	Quaternion Quaternion::SLerp(const Quaternion& v1, const Quaternion& v2, const DOUBLE& t)
+	{
+		FLOAT ft = static_cast<FLOAT>(t);
+		Quaternion result(DirectX::XMQuaternionSlerp(v1.GetXMVECTOR(), v2.GetXMVECTOR(), ft));
+		return result;
+	}
 	Matrix4x4 Quaternion::GetMatrix()
 	{
 		Matrix4x4 result((*this));
@@ -177,6 +209,11 @@ namespace CustomType
 	Vector3 Quaternion::MultiplyVector(const Vector3& v)
 	{
 		Vector3 result(DirectX::XMVector3Rotate(v.GetXMVECTOR(), this->GetXMVECTOR()));
+		return result;
+	}
+	Quaternion Quaternion::operator*(const FLOAT& v)
+	{
+		Quaternion result(this->X() * v, this->Y() * v, this->Z() * v, this->W() * v);
 		return result;
 	}
 	Quaternion Quaternion::operator*(const Quaternion& v)
@@ -526,6 +563,15 @@ namespace CustomType
 			v1.X() * (1.f - t) + v2.X() * t,
 			v1.Y() * (1.f - t) + v2.Y() * t,
 			v1.Z() * (1.f - t) + v2.Z() * t);
+		return result;
+	}
+	Vector3 Vector3::Lerp(const Vector3& v1, const Vector3& v2, const DOUBLE& t)
+	{
+		FLOAT ft = static_cast<FLOAT>(t);
+		Vector3 result(
+			v1.X() * (1.f - ft) + v2.X() * ft,
+			v1.Y() * (1.f - ft) + v2.Y() * ft,
+			v1.Z() * (1.f - ft) + v2.Z() * ft);
 		return result;
 	}
 	FLOAT Vector3::Dot(const Vector3& v)
@@ -1402,6 +1448,14 @@ namespace CustomType
 	UINT CMath::Clamp(const UINT& v, const UINT& min, const UINT& max)
 	{
 		return CMath::Max(min, CMath::Min(max, v));
+	}
+	FLOAT CMath::Mod(const FLOAT& numerator, const FLOAT& denominator)
+	{
+		return fmodf(numerator, denominator);
+	}
+	DOUBLE CMath::Mod(const DOUBLE& numerator, const DOUBLE& denominator)
+	{
+		return fmod(numerator, denominator);
 	}
 	FLOAT CMath::Sin(const FLOAT& v)
 	{
