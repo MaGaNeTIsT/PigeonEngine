@@ -26,6 +26,10 @@ BOOL LerpAnimationKey(const DOUBLE& keyTime, KeyValueType& output, const std::ve
 
 CSkeletonAnimationComponent::CSkeletonAnimationComponent() : CBaseComponent(TRUE, TRUE, FALSE)
 {
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_PlayRepeat				= FALSE;
+#endif
+
 	this->m_GameTimer				= nullptr;
 	this->m_PlayState				= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
 	this->m_LastState				= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
@@ -39,6 +43,9 @@ CSkeletonAnimationComponent::~CSkeletonAnimationComponent()
 }
 void CSkeletonAnimationComponent::Init()
 {
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_PlayRepeat	= FALSE;
+#endif
 	this->m_GameTimer	= CManager::GetGameTimer();
 	this->m_PlayState	= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
 	this->m_LastState	= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
@@ -60,6 +67,7 @@ void CSkeletonAnimationComponent::Update()
 	this->m_PlayTime += this->m_GameTimer->GetDeltaTime();
 	
 	DOUBLE currentPlayTime = this->m_PlayTime;
+	currentPlayTime = (this->m_CurrentPlayAnimation->TicksPerSecond < 1e-2) ? currentPlayTime * static_cast<DOUBLE>(30) : currentPlayTime * this->m_CurrentPlayAnimation->TicksPerSecond;
 	if (this->m_PlayState & SkeletonAnimationPlayState::SkeletonAnimationPlayState_Repeat)
 	{
 		currentPlayTime = CustomType::CMath::Mod(currentPlayTime, this->m_CurrentPlayAnimation->Duration);
@@ -82,14 +90,45 @@ void CSkeletonAnimationComponent::Update()
 			CustomType::Vector3 tempPos, tempScl;
 			CustomType::Quaternion tempRot;
 
-			LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempPos, tempNode.PositionKeys, vec3Lerp);
-			LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
-			LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
+			BOOL findKeyPos = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempPos, tempNode.PositionKeys, vec3Lerp);
+			BOOL findKeyRot = LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
+			BOOL findKeyScl = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
 
-			tempBone->GetTransformNoConst()
+			CTransform* tempBoneTransform = tempBone->GetTransformNoConst();
+			if (findKeyPos) { tempBoneTransform->SetLocalPosition(tempPos); }
+			if (findKeyRot) { tempBoneTransform->SetLocalRotation(tempRot); }
+			if (findKeyScl) { tempBoneTransform->SetLocalScale(tempScl); }
 		}
 	}
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CSkeletonAnimationComponent::SelectedEditorUpdate()
+{
+	bool playRepeat = this->m_PlayRepeat;
+
+	{
+		if (ImGui::TreeNode("SkeletonAnimationComponent"))
+		{
+			ImGui::Checkbox("Repeat", &playRepeat);
+			if (ImGui::Button("Play"))
+			{
+				this->Play(this->m_PlayRepeat);
+			}
+			if (ImGui::Button("Pause"))
+			{
+				this->Pause();
+			}
+			if (ImGui::Button("Reset"))
+			{
+				this->Reset();
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	this->m_PlayRepeat = playRepeat;
+}
+#endif
 void CSkeletonAnimationComponent::Play(const BOOL& repeat)
 {
 	if (this->m_PlayState == SkeletonAnimationPlayState::SkeletonAnimationPlayState_Pause)

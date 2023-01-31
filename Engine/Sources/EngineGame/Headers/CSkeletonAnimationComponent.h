@@ -20,6 +20,12 @@ public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
 	virtual void	Update()override;
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	virtual void	SelectedEditorUpdate()override;
+protected:
+	BOOL	m_PlayRepeat;
+#endif
 public:
 	void	Play(const BOOL& repeat = FALSE);
 	void	Pause();

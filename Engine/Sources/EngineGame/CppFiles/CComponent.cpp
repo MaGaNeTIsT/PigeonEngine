@@ -423,7 +423,7 @@ void CTransform::SelectedEditorUpdate()
 			ImGui::Checkbox("IsRealTimeChange", &realTimeChange);
 			ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(400, 135), false, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 			ImGui::InputFloat3("LocalPosition", localPosition, "%.2f");
-			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.5f, -360.f, 360.f, "%.2f");
+			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.01f, -360.f, 360.f, "%.2f");
 			ImGui::InputFloat3("LocalScale", localScale, "%.2f");
 			{
 				FLOAT worldPosition[3], worldRotation[4], worldScale[3];
