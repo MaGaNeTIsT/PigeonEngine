@@ -27,7 +27,9 @@ BOOL LerpAnimationKey(const DOUBLE& keyTime, KeyValueType& output, const std::ve
 CSkeletonAnimationComponent::CSkeletonAnimationComponent() : CBaseComponent(TRUE, TRUE, FALSE)
 {
 #ifdef _DEVELOPMENT_EDITOR
-	this->m_PlayRepeat				= FALSE;
+	this->m_PlayRepeat					= FALSE;
+	this->m_EditorCurrentAnimationName	= "NULL";
+	this->m_EditorCurrentPlayTime		= static_cast<DOUBLE>(0);
 #endif
 
 	this->m_GameTimer				= nullptr;
@@ -44,7 +46,8 @@ CSkeletonAnimationComponent::~CSkeletonAnimationComponent()
 void CSkeletonAnimationComponent::Init()
 {
 #ifdef _DEVELOPMENT_EDITOR
-	this->m_PlayRepeat	= FALSE;
+	this->m_PlayRepeat					= FALSE;
+	this->m_EditorCurrentPlayTime		= static_cast<DOUBLE>(0);
 #endif
 	this->m_GameTimer	= CManager::GetGameTimer();
 	this->m_PlayState	= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
@@ -72,6 +75,12 @@ void CSkeletonAnimationComponent::Update()
 	{
 		currentPlayTime = CustomType::CMath::Mod(currentPlayTime, this->m_CurrentPlayAnimation->Duration);
 	}
+
+#ifdef _DEVELOPMENT_EDITOR
+	{
+		this->m_EditorCurrentPlayTime = currentPlayTime;
+	}
+#endif
 
 	{
 		auto vec3Lerp = [](const CustomType::Vector3& v1, const CustomType::Vector3& v2, const FLOAT& t)->CustomType::Vector3 { return CustomType::Vector3::Lerp(v1, v2, t); };
@@ -109,6 +118,9 @@ void CSkeletonAnimationComponent::SelectedEditorUpdate()
 	{
 		if (ImGui::TreeNode("SkeletonAnimationComponent"))
 		{
+			ImGui::Text("Current Animation Play Name : %s", this->m_EditorCurrentAnimationName.c_str());
+			ImGui::Text("Current Animation Raw Name : %s", this->m_CurrentPlayAnimation->Name.c_str());
+			ImGui::Text("Current Play Time : %f", this->m_EditorCurrentPlayTime);
 			ImGui::Checkbox("Repeat", &playRepeat);
 			if (ImGui::Button("Play"))
 			{
@@ -160,10 +172,19 @@ void CSkeletonAnimationComponent::Reset()
 {
 	this->m_PlayState	= SkeletonAnimationPlayState::SkeletonAnimationPlayState_None;
 	this->m_PlayTime	= static_cast<DOUBLE>(0);
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_EditorCurrentPlayTime = this->m_PlayTime;
+#endif
 }
 void CSkeletonAnimationComponent::SetCurrentAnimation(const std::string& name)
 {
 	this->m_CurrentPlayAnimation = this->FindAnimation(name);
+#ifdef _DEVELOPMENT_EDITOR
+	if (this->m_CurrentPlayAnimation != nullptr)
+	{
+		this->m_EditorCurrentAnimationName = name;
+	}
+#endif
 }
 void CSkeletonAnimationComponent::SetCurrentAnimation(const UINT& index)
 {
@@ -175,11 +196,17 @@ void CSkeletonAnimationComponent::SetCurrentAnimation(const UINT& index)
 			if (tempIndex == index)
 			{
 				this->m_CurrentPlayAnimation = indexFind->second;
+#ifdef _DEVELOPMENT_EDITOR
+				this->m_EditorCurrentAnimationName = indexFind->first;
+#endif
 				return;
 			}
 		}
 	}
 	this->m_CurrentPlayAnimation = nullptr;
+#ifdef _DEVELOPMENT_EDITOR
+	this->m_EditorCurrentAnimationName = "NULL";
+#endif
 }
 void CSkeletonAnimationComponent::SetSkeletonComponent(CSkeletonComponent* skeletonComponent)
 {

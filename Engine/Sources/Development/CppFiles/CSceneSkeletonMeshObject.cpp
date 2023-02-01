@@ -15,13 +15,9 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 {
 	this->AddNewTransform();
 	{
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Lina/Lina/Lina.FBX";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/e-45-animation/source/8e689f1f0129471888e82361a65ffdcf.fbx.fbx";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
-		//std::string skeletonMeshPath = "E:/Download/Models/Hero/Shane/Shane/Shane.FBX";
+		std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/SKM_Quinn.FBX";
 
-		//std::string skeletonAnimationPath = "E:/Download/Models/Hero/Shane/Shane/Shane.FBX";
+		std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/MF_Pistol_Jog_Fwd_Start.FBX";
 
 		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
 		CGameBoundBoxComponent* boundBoxComponent = new CGameBoundBoxComponent();
@@ -52,7 +48,7 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 		meshComponent->SetMesh(tempMesh);
 		skeletonComponent->SetSkeleton(skeleton, boneList, rootNode);
 
-		CDefaultLitMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitMaterial>();
+		CDefaultLitSkeletonMeshMaterial* material = meshRendererComponent->AddMaterial<CDefaultLitSkeletonMeshMaterial>();
 
 		CustomType::Vector3 boundMin, boundMax;
 		meshComponent->GetMinMaxBounding(boundMin, boundMax);

@@ -436,7 +436,7 @@ BOOL _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::
 
 	UINT numMeshes = scene->mNumMeshes;
 	UINT indexSubMesh = 0u;
-	for (UINT indexMesh = 0; indexMesh < numMeshes; indexMesh++)
+	for (UINT indexMesh = 0u; indexMesh < numMeshes; indexMesh++)
 	{
 		const aiMesh* tempMesh = scene->mMeshes[indexMesh];
 		if (tempMesh == nullptr)
@@ -485,7 +485,7 @@ BOOL _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct:
 
 	UINT numMeshes = scene->mNumMeshes;
 	UINT indexSubMesh = 0u;
-	for (UINT indexMesh = 0; indexMesh < numMeshes; indexMesh++)
+	for (UINT indexMesh = 0u; indexMesh < numMeshes; indexMesh++)
 	{
 		const aiMesh* tempMesh = scene->mMeshes[indexMesh];
 		if (tempMesh == nullptr)
@@ -510,20 +510,174 @@ struct _GImporterBoneNodeData
 	{
 		this->Node			= nullptr;
 		this->Bone			= nullptr;
+		this->Index			= -2;
 		this->Parent		= nullptr;
 	}
 	_GImporterBoneNodeData(const _GImporterBoneNodeData& v)
 	{
-		this->Name			= v.Name;
 		this->Node			= v.Node;
 		this->Bone			= v.Bone;
+		this->Index			= v.Index;
 		this->Parent		= v.Parent;
+		this->Name			= v.Name;
 	}
-	std::string								Name;
 	const aiNode*							Node;
 	const aiBone*							Bone;
+	INT										Index;
 	_GImporterBoneNodeData*					Parent;
+	std::string								Name;
 };
+
+void _GGatherSingleNodeRecursion(const aiNode* node, std::vector<const aiNode*>& outputNode, std::map<const aiNode*, INT>& outputParent)
+{
+	if (node == nullptr)
+	{
+		return;
+	}
+
+	outputNode.push_back(node);
+	outputParent.insert_or_assign(node, -2);
+
+	for (UINT indexChild = 0u; indexChild < node->mNumChildren; indexChild++)
+	{
+		_GGatherSingleNodeRecursion(node->mChildren[indexChild], outputNode, outputParent);
+	}
+}
+
+BOOL _GGatherAllNodes(const aiNode* rootNode, std::vector<const aiNode*>& outputAllNodes, std::map<const aiNode*, INT>& outputNodeParent, std::map<std::string, _GImporterBoneNodeData>& output)
+{
+	if (outputAllNodes.size() > 0)
+	{
+		outputAllNodes.clear();
+	}
+	if (outputNodeParent.size() > 0)
+	{
+		outputNodeParent.clear();
+	}
+	if (output.size() > 0)
+	{
+		output.clear();
+	}
+	if (rootNode == nullptr)
+	{
+		return FALSE;
+	}
+
+	_GGatherSingleNodeRecursion(rootNode, outputAllNodes, outputNodeParent);
+
+	if (outputAllNodes.size() == 0 || outputAllNodes.size() != outputNodeParent.size())
+	{
+		return FALSE;
+	}
+
+	const UINT numNodes = static_cast<UINT>(outputAllNodes.size());
+	{
+		auto findParentIndex = [](const aiNode* node, const std::vector<const aiNode*>& allNodes, const UINT& numNodes)->INT {
+			if (node == nullptr)
+			{
+				return -2;
+			}
+			if (node->mParent == nullptr)
+			{
+				return -1;
+			}
+			for (UINT indexNode = 0u; indexNode < numNodes; indexNode++)
+			{
+				const aiNode* tempNode = allNodes[indexNode];
+				if (tempNode == nullptr)
+				{
+					continue;
+				}
+				if (tempNode == node->mParent)
+				{
+					return static_cast<INT>(indexNode);
+				}
+			}
+			return -2; };
+
+		for (UINT indexNode = 0u; indexNode < numNodes; indexNode++)
+		{
+			const aiNode* tempNode = outputAllNodes[indexNode];
+			if (tempNode == nullptr)
+			{
+				continue;
+			}
+			auto itNodeParent = outputNodeParent.find(tempNode);
+			if (itNodeParent == outputNodeParent.end())
+			{
+				continue;
+			}
+			itNodeParent->second = findParentIndex(tempNode, outputAllNodes, numNodes);
+		}
+	}
+
+	for (UINT indexNode = 0u; indexNode < numNodes; indexNode++)
+	{
+		const aiNode* tempNode = outputAllNodes[indexNode];
+		if (tempNode == nullptr)
+		{
+			continue;
+		}
+
+		_GImporterBoneNodeData tempBoneNodeData;
+		tempBoneNodeData.Node = tempNode;
+		tempBoneNodeData.Bone = nullptr;
+		tempBoneNodeData.Index = static_cast<INT>(indexNode);
+		tempBoneNodeData.Parent = nullptr;
+
+		std::string tempBoneNodeName;
+		if (tempNode->mName.length < 1)
+		{
+			tempBoneNodeName = _GConstImporterNodeEmptyName;
+		}
+		else
+		{
+			tempBoneNodeName = _GTranslateString(tempNode->mName);
+		}
+
+		tempBoneNodeData.Name = tempBoneNodeName;
+
+		if (output.find(tempBoneNodeData.Name) != output.end())
+		{
+			UINT tempDummyIndex = 0u;
+			tempBoneNodeData.Name = tempBoneNodeName + "_" + std::to_string(tempDummyIndex);
+			tempDummyIndex += 1u;
+			while (output.find(tempBoneNodeData.Name) != output.end())
+			{
+				tempBoneNodeData.Name = tempBoneNodeName + "_" + std::to_string(tempDummyIndex);
+				tempDummyIndex += 1u;
+			}
+		}
+
+		output.insert_or_assign(tempBoneNodeData.Name, tempBoneNodeData);
+	}
+
+	for (auto itNode = output.begin(); itNode != output.end(); itNode++)
+	{
+		if (itNode->second.Node == nullptr)
+		{
+			continue;
+		}
+		auto itNodeParent = outputNodeParent.find(itNode->second.Node);
+		if (itNodeParent == outputNodeParent.end())
+		{
+			continue;
+		}
+		if (itNodeParent->second == -2 || itNodeParent->second == -1)
+		{
+			continue;
+		}
+		for (auto findNodeParent = output.begin(); findNodeParent != output.end(); findNodeParent++)
+		{
+			if (findNodeParent->second.Index == itNodeParent->second)
+			{
+				itNode->second.Parent = &(findNodeParent->second);
+			}
+		}
+	}
+
+	return TRUE;
+}
 
 void _GGatherSingleNodeRecursion(const aiNode* node, _GImporterBoneNodeData* parentNode, std::map<std::string, std::vector<_GImporterBoneNodeData>>& output)
 {
@@ -671,7 +825,23 @@ BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBone
 	}
 
 	std::map<std::string, _GImporterBoneNodeData> nodeMap;
+
+#if 1
+
+	{
+		std::vector<const aiNode*> allNodes;
+		std::map<const aiNode*, INT> allNodeParents;
+		if (!_GGatherAllNodes(scene->mRootNode, allNodes, allNodeParents, nodeMap))
+		{
+			return FALSE;
+		}
+	}
+
+#else
+
 	_GGatherAllNodes(scene->mRootNode, nodeMap);
+
+#endif
 
 	for (auto it = nodeMap.begin(); it != nodeMap.end(); it++)
 	{

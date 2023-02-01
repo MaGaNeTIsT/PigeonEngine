@@ -24,7 +24,9 @@ public:
 public:
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	BOOL	m_PlayRepeat;
+	BOOL			m_PlayRepeat;
+	std::string		m_EditorCurrentAnimationName;
+	DOUBLE			m_EditorCurrentPlayTime;
 #endif
 public:
 	void	Play(const BOOL& repeat = FALSE);
