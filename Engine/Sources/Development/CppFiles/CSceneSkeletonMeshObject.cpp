@@ -15,15 +15,9 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 {
 	this->AddNewTransform();
 	{
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/SKM_Quinn.FBX";
-		std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
-		//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
+		std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 
-		//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/MF_Pistol_Jog_Fwd_Start.FBX";
-		std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
-		//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/D.Va/Model.FBX";
-		//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
+		std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 
 		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
 		CGameBoundBoxComponent* boundBoxComponent = new CGameBoundBoxComponent();

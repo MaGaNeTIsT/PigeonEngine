@@ -35,8 +35,8 @@ cbuffer ConstantBufferPerDraw : register(b2)
 
 cbuffer ConstantBufferSkeleton : register(b4)
 {
+	float4			_SkeletonBoneNum;
 	float4x4		_SkeletonMatrix[GLOBAL_SKELETON_BONE_MAX];
-	float4x4		_SkeletonInverseTransposeMatrix[GLOBAL_SKELETON_BONE_MAX];
 };
 
 SamplerState		_PointClampSampler		: register(s0);

@@ -315,7 +315,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 		}
 	}
 
-#if 0
+#if 1
 	// TODO Warning!!! This operation will make parents of all bones' transform to be actor's transform. But bone
 	// will still hold their owned parent & children. This will be change with skeleton animation's implement.
 	{
@@ -333,7 +333,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 #endif
 
 	CRenderDevice::CreateBuffer(this->m_SkeletonGPUCBuffer, CustomStruct::CRenderBufferDesc(
-		static_cast<UINT>(this->m_SkeletonGPUCBufferData.size()) * sizeof(DirectX::XMFLOAT4X4), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+		sizeof(DirectX::XMFLOAT4) + sizeof(DirectX::XMFLOAT4X4) * static_cast<UINT>(this->m_SkeletonGPUCBufferData.size()), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 }
 void CSkeletonComponent::BindVSSkeletonGPUConstantBuffer(const UINT& startSlot)const
 {
@@ -365,7 +365,19 @@ void CSkeletonComponent::UploadSkeletonGPUConstantBuffer()const
 {
 	if (this->m_SkeletonPerFrameUpload == TRUE)
 	{
-		CRenderDevice::UploadBuffer(this->m_SkeletonGPUCBuffer, (void*)(this->m_SkeletonGPUCBufferData.data()));
+		UINT tempSkeletonGPUCBufferDataSize = static_cast<UINT>(this->m_SkeletonGPUCBufferData.size());
+		BYTE* tempUploadData = new BYTE[sizeof(DirectX::XMFLOAT4) + sizeof(DirectX::XMFLOAT4X4) * tempSkeletonGPUCBufferDataSize];
+		{
+			DirectX::XMFLOAT4* pUploadData = (DirectX::XMFLOAT4*)tempUploadData;
+			pUploadData[0] = DirectX::XMFLOAT4(static_cast<FLOAT>(tempSkeletonGPUCBufferDataSize / 2u), 0.f, 0.f, 0.f);
+		}
+
+		{
+			DirectX::XMFLOAT4X4* pUploadData = (DirectX::XMFLOAT4X4*)(&(((DirectX::XMFLOAT4*)tempUploadData)[1]));
+			memcpy_s(pUploadData, sizeof(DirectX::XMFLOAT4X4) * tempSkeletonGPUCBufferDataSize, this->m_SkeletonGPUCBufferData.data(), sizeof(DirectX::XMFLOAT4X4) * tempSkeletonGPUCBufferDataSize);
+		}
+		CRenderDevice::UploadBuffer(this->m_SkeletonGPUCBuffer, (void*)(tempUploadData));
 		this->m_SkeletonPerFrameUpload = FALSE;
+		delete[]tempUploadData;
 	}
 }

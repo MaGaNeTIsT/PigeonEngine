@@ -8,32 +8,6 @@
 
 static Assimp::Importer* _GAssetImporter = nullptr;
 
-inline CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m)
-{
-	aiVector3D scaling, rotation, position;
-	m.Decompose(scaling, rotation, position);
-	CustomType::Quaternion quatX(CustomType::Vector3::XVector(), rotation.x);
-	CustomType::Quaternion quatY(CustomType::Vector3::YVector(), rotation.y);
-	CustomType::Quaternion quatZ(CustomType::Vector3::ZVector(), rotation.z);
-	return (CustomType::Matrix4x4(
-		CustomType::Vector3(position.x, position.y, position.z),
-		((quatX * quatY) * quatZ),
-		CustomType::Vector3(scaling.x, scaling.y, scaling.z)));
-}
-
-inline void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
-{
-	aiVector3D aiScaling, aiRotation, aiPosition;
-	m.Decompose(aiScaling, aiRotation, aiPosition);
-	CustomType::Quaternion quatX(CustomType::Vector3::XVector(), aiRotation.x);
-	CustomType::Quaternion quatY(CustomType::Vector3::YVector(), aiRotation.y);
-	CustomType::Quaternion quatZ(CustomType::Vector3::ZVector(), aiRotation.z);
-
-	location = CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
-	rotation = (quatX * quatY) * quatZ;
-	scale = CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z);
-}
-
 inline CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
 {
 	return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
@@ -42,6 +16,28 @@ inline CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
 inline CustomType::Vector3 _GTranslateVector3(const aiVector3D& v)
 {
 	return (CustomType::Vector3(v.x, v.y, v.z));
+}
+
+inline CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m)
+{
+	aiVector3D scaling, position;
+	aiVector3D rotation;
+	m.Decompose(scaling, rotation, position);
+	return (CustomType::Matrix4x4(
+		CustomType::Vector3(position.x, position.y, position.z),
+		CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)),
+		CustomType::Vector3(scaling.x, scaling.y, scaling.z)));
+}
+
+inline void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
+{
+	aiVector3D aiScaling, aiPosition;
+	aiVector3D aiRotation;
+	m.Decompose(aiScaling, aiRotation, aiPosition);
+
+	location = CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
+	rotation = CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(aiRotation.x, aiRotation.y, aiRotation.z));
+	scale = CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z);
 }
 
 inline std::string _GTranslateString(const aiString& s)
