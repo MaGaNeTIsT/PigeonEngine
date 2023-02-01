@@ -16,15 +16,19 @@ VaryingForward main(AttributeForwardSkeletonMesh input)
 	
 	localToWorldMatrix /= blendWeight.x + blendWeight.y + blendWeight.z + blendWeight.w;
 	float3 posWS = TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), localToWorldMatrix).xyz;
+	posWS.xyz = TransformObjectToWorld(posWS.xyz);
 	float3 tangentWS = TransformDirectionToSpecificSpace(input.tangent.xyz, (float3x3)localToWorldMatrix);
-	
+	tangentWS.xyz = TransformObjectToWorldDir(tangentWS.xyz);
+
 	float4x4 inverseTransposeLocalToWorldMatrix =
 		_SkeletonInverseTransposeMatrix[blendIndices.x] * blendWeight.x +
 		_SkeletonInverseTransposeMatrix[blendIndices.y] * blendWeight.y +
 		_SkeletonInverseTransposeMatrix[blendIndices.z] * blendWeight.z +
 		_SkeletonInverseTransposeMatrix[blendIndices.w] * blendWeight.w;
+	inverseTransposeLocalToWorldMatrix /= blendWeight.x + blendWeight.y + blendWeight.z + blendWeight.w;
 	float3 normalWS = TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)inverseTransposeLocalToWorldMatrix);
-	
+	normalWS.xyz = TransformObjectToWorldNormal(normalWS.xyz);
+
 	float3 binormalWS = SafeNormalize(cross(normalWS, tangentWS));
 	tangentWS = cross(binormalWS, normalWS);
 

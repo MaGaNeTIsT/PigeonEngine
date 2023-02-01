@@ -315,6 +315,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 		}
 	}
 
+#if 0
 	// TODO Warning!!! This operation will make parents of all bones' transform to be actor's transform. But bone
 	// will still hold their owned parent & children. This will be change with skeleton animation's implement.
 	{
@@ -325,10 +326,11 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 			for (UINT nodeIndex = 0u; nodeIndex < nodeNum; nodeIndex++)
 			{
 				CSkeletonSingleBone& tempNode = this->m_NodeListVector[nodeIndex];
-				tempNode.GetTransformNoConst()->SetParent(tempTransform);
+				tempNode.GetTransformNoConst()->RemoveParent();
 			}
 		}
 	}
+#endif
 
 	CRenderDevice::CreateBuffer(this->m_SkeletonGPUCBuffer, CustomStruct::CRenderBufferDesc(
 		static_cast<UINT>(this->m_SkeletonGPUCBufferData.size()) * sizeof(DirectX::XMFLOAT4X4), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));

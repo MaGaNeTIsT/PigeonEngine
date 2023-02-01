@@ -119,7 +119,7 @@ void CSkeletonAnimationComponent::SelectedEditorUpdate()
 		if (ImGui::TreeNode("SkeletonAnimationComponent"))
 		{
 			ImGui::Text("Current Animation Play Name : %s", this->m_EditorCurrentAnimationName.c_str());
-			ImGui::Text("Current Animation Raw Name : %s", this->m_CurrentPlayAnimation->Name.c_str());
+			ImGui::Text("Current Animation Raw Name : %s", this->m_CurrentPlayAnimation == nullptr ? "NULL" : this->m_CurrentPlayAnimation->Name.c_str());
 			ImGui::Text("Current Play Time : %f", this->m_EditorCurrentPlayTime);
 			ImGui::Checkbox("Repeat", &playRepeat);
 			if (ImGui::Button("Play"))
