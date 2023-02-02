@@ -71,6 +71,16 @@ namespace CustomType
 		Vector3 result(DirectX::XMVector3TransformCoord(v.GetXMVECTOR(), this->GetXMMATRIX()));
 		return result;
 	}
+	Quaternion Matrix4x4::RightMultiplyQuaternion(const Quaternion& v)
+	{
+		Quaternion result(this->GetXMMATRIX());
+		return (result * v);
+	}
+	Quaternion Matrix4x4::LeftMultiplyQuaternion(const Quaternion& v)
+	{
+		Quaternion result(v);
+		return (result * Quaternion(this->GetXMMATRIX()));
+	}
 	Vector4 Matrix4x4::MultiplyVector(const Vector4& v)
 	{
 		Vector4 result(DirectX::XMVector4Transform(v.GetXMVECTOR(), this->GetXMMATRIX()));

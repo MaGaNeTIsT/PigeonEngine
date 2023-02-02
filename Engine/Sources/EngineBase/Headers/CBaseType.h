@@ -34,6 +34,8 @@ namespace CustomType
 		Vector3		MultiplyVector(const Vector3& v);
 		Vector4		MultiplyVector(const Vector4& v);
 		Vector3		MultiplyPosition(const Vector3& v);
+		Quaternion	RightMultiplyQuaternion(const Quaternion& v);
+		Quaternion	LeftMultiplyQuaternion(const Quaternion& v);
 	public:
 		Matrix4x4	operator*(const Matrix4x4& m);
 		void		operator=(const Matrix4x4& m);

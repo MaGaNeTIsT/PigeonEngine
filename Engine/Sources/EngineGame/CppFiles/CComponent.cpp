@@ -130,11 +130,11 @@ void CTransform::RemoveAllChildren()
 {
 	if (this->HasChild())
 	{
-		for (auto& child : this->m_Children)
+		for (auto itChild = this->m_Children.begin(); itChild != this->m_Children.end(); itChild++)
 		{
-			if (child.second != nullptr)
+			if (itChild->second != nullptr)
 			{
-				this->DisconnectParentAndChild(this, child.second);
+				this->DisconnectParentAndChild(this, itChild->second);
 			}
 		}
 		this->m_Children.clear();

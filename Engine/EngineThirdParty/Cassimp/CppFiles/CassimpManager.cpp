@@ -10,7 +10,13 @@ static Assimp::Importer* _GAssetImporter = nullptr;
 
 inline CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
 {
-	return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
+	//return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
+	aiMatrix4x4 tempM(v.GetMatrix());
+	tempM.Transpose();
+	aiVector3D scaling, position;
+	aiVector3D rotation;
+	tempM.Decompose(scaling, rotation, position);
+	return (CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)));
 }
 
 inline CustomType::Vector3 _GTranslateVector3(const aiVector3D& v)
@@ -22,7 +28,9 @@ inline CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m)
 {
 	aiVector3D scaling, position;
 	aiVector3D rotation;
-	m.Decompose(scaling, rotation, position);
+	aiMatrix4x4 tempM(m);
+	tempM.Transpose();
+	tempM.Decompose(scaling, rotation, position);
 	return (CustomType::Matrix4x4(
 		CustomType::Vector3(position.x, position.y, position.z),
 		CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)),
@@ -33,7 +41,9 @@ inline void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& locatio
 {
 	aiVector3D aiScaling, aiPosition;
 	aiVector3D aiRotation;
-	m.Decompose(aiScaling, aiRotation, aiPosition);
+	aiMatrix4x4 tempM(m);
+	tempM.Transpose();
+	tempM.Decompose(aiScaling, aiRotation, aiPosition);
 
 	location = CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
 	rotation = CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(aiRotation.x, aiRotation.y, aiRotation.z));

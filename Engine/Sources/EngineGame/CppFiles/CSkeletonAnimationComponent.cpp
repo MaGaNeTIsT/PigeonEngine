@@ -103,6 +103,17 @@ void CSkeletonAnimationComponent::Update()
 			BOOL findKeyRot = LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
 			BOOL findKeyScl = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
 
+			{
+				CustomType::Matrix4x4 parentToBone(tempBone->GetBindPose());
+				if (tempBone->HasParentBone())
+				{
+					CustomType::Matrix4x4 tempParentBindPose(tempBone->GetParentBone()->GetBindPose());
+					parentToBone = parentToBone * tempParentBindPose.Inverse();
+				}
+				tempPos = parentToBone.MultiplyPosition(tempPos);
+				tempRot = parentToBone.LeftMultiplyQuaternion(tempRot);
+			}
+
 			CTransform* tempBoneTransform = tempBone->GetTransformNoConst();
 			if (findKeyPos) { tempBoneTransform->SetLocalPosition(tempPos); }
 			if (findKeyRot) { tempBoneTransform->SetLocalRotation(tempRot); }

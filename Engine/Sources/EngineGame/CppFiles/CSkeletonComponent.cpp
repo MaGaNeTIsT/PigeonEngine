@@ -12,8 +12,6 @@ CSkeletonSingleBone::CSkeletonSingleBone()
 }
 CSkeletonSingleBone::~CSkeletonSingleBone()
 {
-	this->m_Transform.RemoveParent();
-	this->m_Transform.RemoveAllChildren();
 }
 BOOL CSkeletonSingleBone::IsRootBone()const
 {
@@ -147,6 +145,15 @@ CSkeletonComponent::CSkeletonComponent(const std::string& skeletonName) : CBaseC
 }
 CSkeletonComponent::~CSkeletonComponent()
 {
+	if (this->m_NodeListVector.size() > 0)
+	{
+		const UINT numNodes = static_cast<UINT>(this->m_NodeListVector.size());
+		for (UINT indexNode = 0u; indexNode < numNodes; indexNode++)
+		{
+			CTransform* tempTransform = this->m_NodeListVector[indexNode].GetTransformNoConst();
+			tempTransform->RemoveParent();
+		}
+	}
 }
 void CSkeletonComponent::Init()
 {
@@ -277,11 +284,13 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 			CSkeletonSingleBone& tempNode = this->m_NodeListVector[nodeIndex];
 			if (tempNode.IsRootBone())
 			{
+#if 0
 				const CGameObject* tempGameObject = this->GetGameObject();
 				if (tempGameObject != nullptr && tempGameObject->HasTransform())
 				{
 					tempNode.GetTransformNoConst()->SetParent(tempGameObject->GetTransform());
 				}
+#endif
 			}
 			else if (tempNode.HasParentBone())
 			{
@@ -304,18 +313,12 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 		for (UINT boneIndex = 0u; boneIndex < boneNum; boneIndex++)
 		{
 			// TODO Check(boneList[boneIndex] > CSkeletonComponent::_StaticBoneMaxNum);
-
 			USHORT tempBoneIndex = static_cast<USHORT>(boneList[boneIndex]);
 			this->m_BoneListVector[boneIndex] = tempBoneIndex;
-
-			//CSkeletonSingleBone& tempNode = this->m_NodeListVector[tempBoneIndex];
-			//CustomType::Matrix4x4 tempBindPose(tempNode.GetBindPose());
-			//CustomType::Matrix4x4 tempLocation(tempNode.GetTransformNoConst()->GetLocalToWorldMatrix());
-			//this->m_SkeletonGPUCBufferData[boneIndex] = (tempBindPose * tempLocation).GetGPUUploadFloat4x4();
 		}
 	}
 
-#if 1
+#if 0
 	// TODO Warning!!! This operation will make parents of all bones' transform to be actor's transform. But bone
 	// will still hold their owned parent & children. This will be change with skeleton animation's implement.
 	{
