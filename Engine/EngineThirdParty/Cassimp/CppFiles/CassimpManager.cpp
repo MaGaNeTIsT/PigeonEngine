@@ -8,54 +8,40 @@
 
 static Assimp::Importer* _GAssetImporter = nullptr;
 
-inline CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
+CustomType::Quaternion _GTranslateQuaternion(const aiQuaternion& v)
 {
-	//return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
-	aiMatrix4x4 tempM(v.GetMatrix());
-	tempM.Transpose();
-	aiVector3D scaling, position;
-	aiVector3D rotation;
-	tempM.Decompose(scaling, rotation, position);
-	return (CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)));
+	return (CustomType::Quaternion(v.x, v.y, v.z, v.w));
 }
 
-inline CustomType::Vector3 _GTranslateVector3(const aiVector3D& v)
+CustomType::Vector3 _GTranslateVector3(const aiVector3D& v)
 {
 	return (CustomType::Vector3(v.x, v.y, v.z));
 }
 
-inline CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m)
+CustomType::Matrix4x4 _GTranslateBindPoseMatrix(const aiMatrix4x4& m)
 {
-	aiVector3D scaling, position;
-	aiVector3D rotation;
+	aiVector3D scl, pos; aiQuaternion rot;
 	aiMatrix4x4 tempM(m);
-	tempM.Transpose();
-	tempM.Decompose(scaling, rotation, position);
-	return (CustomType::Matrix4x4(
-		CustomType::Vector3(position.x, position.y, position.z),
-		CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)),
-		CustomType::Vector3(scaling.x, scaling.y, scaling.z)));
+	tempM.Decompose(scl, rot, pos);
+	return (CustomType::Matrix4x4(_GTranslateVector3(pos), _GTranslateQuaternion(rot), _GTranslateVector3(scl)));
 }
 
-inline void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
+void _GTranslateTransformMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
 {
-	aiVector3D aiScaling, aiPosition;
-	aiVector3D aiRotation;
+	aiVector3D scl, pos; aiQuaternion rot;
 	aiMatrix4x4 tempM(m);
-	tempM.Transpose();
-	tempM.Decompose(aiScaling, aiRotation, aiPosition);
-
-	location = CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z);
-	rotation = CustomType::Quaternion(DirectX::XMQuaternionRotationRollPitchYaw(aiRotation.x, aiRotation.y, aiRotation.z));
-	scale = CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z);
+	tempM.Decompose(scl, rot, pos);
+	location = _GTranslateVector3(pos);
+	rotation = _GTranslateQuaternion(rot);
+	scale = _GTranslateVector3(scl);
 }
 
-inline std::string _GTranslateString(const aiString& s)
+std::string _GTranslateString(const aiString& s)
 {
 	return (std::string(s.C_Str()));
 }
 
-inline aiString _GTranslateString(const std::string& s)
+aiString _GTranslateString(const std::string& s)
 {
 	return (aiString(s));
 }
@@ -883,11 +869,50 @@ BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBone
 				continue;
 			}
 
-			_GTranslateMatrix(it->second.Node->mTransformation, node.Location, node.Rotation, node.Scale);
+			_GTranslateTransformMatrix(it->second.Node->mTransformation, node.Location, node.Rotation, node.Scale);
 
 			if (it->second.Bone != nullptr)
 			{
-				node.Offset = _GTranslateMatrix(it->second.Bone->mOffsetMatrix);
+				node.Offset = _GTranslateBindPoseMatrix(it->second.Bone->mOffsetMatrix);
+#if 0
+				{
+					aiMatrix4x4 tempRawOffsetNoT = it->second.Bone->mOffsetMatrix;
+
+					DirectX::XMMATRIX tempRawOffsetMatNoT(&(tempRawOffsetNoT.a1));
+					CustomType::Matrix4x4 tempOffsetMatNoT(tempRawOffsetMatNoT);
+
+					aiVector3D aiScalingNoT, aiPositionNoT;
+					aiVector3D aiRotationENoT; aiQuaternion aiRotationQNoT;
+					tempRawOffsetNoT.Decompose(aiScalingNoT, aiRotationENoT, aiPositionNoT);
+					tempRawOffsetNoT.Decompose(aiScalingNoT, aiRotationQNoT, aiPositionNoT);
+
+					CustomType::Quaternion tempRotNoT(DirectX::XMMatrixRotationRollPitchYaw(aiRotationENoT.x, aiRotationENoT.y, aiRotationENoT.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_0NoT(CustomType::Vector3(aiPositionNoT.x, aiPositionNoT.y, aiPositionNoT.z), tempRotNoT, CustomType::Vector3(aiScalingNoT.x, aiScalingNoT.y, aiScalingNoT.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_1NoT(CustomType::Vector3(aiPositionNoT.x, aiPositionNoT.y, aiPositionNoT.z), CustomType::Quaternion(aiRotationQNoT.w, aiRotationQNoT.x, aiRotationQNoT.y, aiRotationQNoT.z), CustomType::Vector3(aiScalingNoT.x, aiScalingNoT.y, aiScalingNoT.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_2NoT(CustomType::Vector3(aiPositionNoT.x, aiPositionNoT.y, aiPositionNoT.z), CustomType::Quaternion(aiRotationQNoT.y, aiRotationQNoT.z, aiRotationQNoT.w, aiRotationQNoT.x), CustomType::Vector3(aiScalingNoT.x, aiScalingNoT.y, aiScalingNoT.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_3NoT(CustomType::Vector3(aiPositionNoT.x, aiPositionNoT.y, aiPositionNoT.z), CustomType::Quaternion(aiRotationQNoT.x, aiRotationQNoT.y, aiRotationQNoT.z, aiRotationQNoT.w), CustomType::Vector3(aiScalingNoT.x, aiScalingNoT.y, aiScalingNoT.z));
+
+
+					aiMatrix4x4 tempRawOffset = it->second.Bone->mOffsetMatrix;
+					tempRawOffset.Transpose();
+
+					DirectX::XMMATRIX tempRawOffsetMat(&(tempRawOffset.a1));
+					CustomType::Matrix4x4 tempOffsetMat(tempRawOffsetMat);
+
+					aiVector3D aiScaling, aiPosition;
+					aiVector3D aiRotationE; aiQuaternion aiRotationQ;
+					tempRawOffset.Decompose(aiScaling, aiRotationE, aiPosition);
+					tempRawOffset.Decompose(aiScaling, aiRotationQ, aiPosition);
+
+					CustomType::Quaternion tempRot(DirectX::XMMatrixRotationRollPitchYaw(aiRotationE.x, aiRotationE.y, aiRotationE.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_0(CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z), tempRot, CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_1(CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z), CustomType::Quaternion(aiRotationQ.w, aiRotationQ.x, aiRotationQ.y, aiRotationQ.z), CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_2(CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z), CustomType::Quaternion(aiRotationQ.y, aiRotationQ.z, aiRotationQ.w, aiRotationQ.x), CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z));
+					CustomType::Matrix4x4 tempOffsetMatCom_3(CustomType::Vector3(aiPosition.x, aiPosition.y, aiPosition.z), CustomType::Quaternion(aiRotationQ.x, aiRotationQ.y, aiRotationQ.z, aiRotationQ.w), CustomType::Vector3(aiScaling.x, aiScaling.y, aiScaling.z));
+
+					int a = 0;
+				}
+#endif
 			}
 
 			if (it->second.Parent != nullptr)
