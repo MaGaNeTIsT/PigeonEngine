@@ -16,7 +16,7 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 	this->AddNewTransform();
 	{
 		std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
-
+		
 		std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 
 		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
