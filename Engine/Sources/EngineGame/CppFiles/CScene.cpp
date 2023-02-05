@@ -91,10 +91,10 @@ void CScene::Init()
 	}
 
 	{
-		CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
-		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
-		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
-		this->m_SelectedObject = sceneGameObject;
+		//CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
+		//sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
+		//sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+		//this->m_SelectedObject = sceneGameObject;
 	}
 
 	{

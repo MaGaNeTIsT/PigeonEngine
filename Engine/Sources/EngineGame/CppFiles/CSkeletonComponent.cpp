@@ -141,6 +141,7 @@ CSkeletonComponent::CSkeletonComponent(const std::string& skeletonName) : CBaseC
 	this->m_SkeletonPerFrameUpload	= TRUE;
 	this->m_SkeletonName			= skeletonName;
 	this->m_RootBone				= nullptr;
+	this->m_RootTransformInverse	= CustomType::Matrix4x4::Identity();
 	this->m_SkeletonGPUCBuffer		= nullptr;
 }
 CSkeletonComponent::~CSkeletonComponent()
@@ -225,6 +226,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 
 	{
 		this->m_RootBone = nullptr;
+		this->m_RootTransformInverse = CustomType::Matrix4x4::Identity();
 		if (this->m_SkeletonGPUCBufferData.size() != (boneList.size() * 2u))
 		{
 			this->m_SkeletonGPUCBufferData.resize((boneList.size() * 2u));
@@ -279,6 +281,8 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 			}
 		}
 
+#if 0
+		// Maybe we do not need transform parent relatation.
 		for (UINT nodeIndex = 0u; nodeIndex < nodeNum; nodeIndex++)
 		{
 			CSkeletonSingleBone& tempNode = this->m_NodeListVector[nodeIndex];
@@ -297,6 +301,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 				tempNode.GetTransformNoConst()->SetParent(tempNode.m_ParentBone->GetTransformNoConst());
 			}
 		}
+#endif
 
 		for (UINT nodeIndex = 0u; nodeIndex < nodeNum; nodeIndex++)
 		{
@@ -316,6 +321,16 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 			USHORT tempBoneIndex = static_cast<USHORT>(boneList[boneIndex]);
 			this->m_BoneListVector[boneIndex] = tempBoneIndex;
 		}
+
+#if 1
+		{
+			CTransform* tempRootTransform = this->m_RootBone->GetTransformNoConst();
+			this->m_RootTransformInverse = CustomType::Matrix4x4(
+				tempRootTransform->GetLocalPosition(),
+				tempRootTransform->GetLocalRotation(),
+				tempRootTransform->GetLocalScale()).Inverse();
+		}
+#endif
 	}
 
 #if 0
@@ -358,10 +373,15 @@ void CSkeletonComponent::UpdateSkeletonTransformInfoForGPU()
 		const USHORT& tempBoneIndex = this->m_BoneListVector[boneIndex];
 		const CSkeletonSingleBone& tempNode = this->m_NodeListVector[tempBoneIndex];
 
-		CustomType::Matrix4x4 tempBindPose(tempNode.GetBindPose());
-		CustomType::Matrix4x4 tempLocation(tempNode.GetTransform()->GetLocalToWorldMatrix());
-		this->m_SkeletonGPUCBufferData[boneIndex] = (tempBindPose * tempLocation).GetGPUUploadFloat4x4();
-		this->m_SkeletonGPUCBufferData[boneNum + boneIndex] = (tempBindPose * tempLocation).Inverse().GetXMFLOAT4X4();
+		CustomType::Matrix4x4 finalMatrix(CustomType::Matrix4x4::Identity());
+		{
+			CustomType::Matrix4x4 tempBindPose(tempNode.GetBindPose());
+			CustomType::Matrix4x4 tempLocation(tempNode.GetTransform()->GetLocalToWorldMatrix().Transpose());
+			this->RecursionBoneTransformMatrix(tempNode.GetParentBone(), tempLocation);
+			finalMatrix = this->m_RootTransformInverse * tempLocation * tempBindPose;
+		}
+		this->m_SkeletonGPUCBufferData[boneIndex] = (finalMatrix).GetXMFLOAT4X4();
+		this->m_SkeletonGPUCBufferData[boneNum + boneIndex] = (finalMatrix).Inverse().GetGPUUploadFloat4x4();
 	}
 }
 void CSkeletonComponent::UploadSkeletonGPUConstantBuffer()const
@@ -382,5 +402,17 @@ void CSkeletonComponent::UploadSkeletonGPUConstantBuffer()const
 		CRenderDevice::UploadBuffer(this->m_SkeletonGPUCBuffer, (void*)(tempUploadData));
 		this->m_SkeletonPerFrameUpload = FALSE;
 		delete[]tempUploadData;
+	}
+}
+void CSkeletonComponent::RecursionBoneTransformMatrix(const CSkeletonSingleBone* parentBone, CustomType::Matrix4x4& globalMat)
+{
+	if (parentBone == nullptr)
+	{
+		return;
+	}
+	globalMat = parentBone->GetTransform()->GetLocalToWorldMatrix().Transpose() * globalMat;
+	if (parentBone->HasParentBone())
+	{
+		this->RecursionBoneTransformMatrix(parentBone->GetParentBone(), globalMat);
 	}
 }

@@ -25,6 +25,12 @@
 #include "../../../Development/Headers/CGPUProfiler.h"
 #endif
 
+#ifdef _DEVELOPMENT_EDITOR
+#include "../../../Development/Headers/CFuxkingWhySkeletonAnimation.h"
+
+CFuxkingWhySkeletonAnimation _GTestSkeletonMesh;
+#endif
+
 CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
@@ -342,6 +348,10 @@ void CRenderPipeline::PostInit()
 		m_DebugScreen->Init(m_GlobalBufferSize);
 #endif
 	}
+
+#ifdef _DEVELOPMENT_EDITOR
+	_GTestSkeletonMesh.Init();
+#endif
 }
 void CRenderPipeline::Uninit()
 {
@@ -383,6 +393,10 @@ void CRenderPipeline::Uninit()
 	m_GPUCulling->Uninit();
 
 	m_SkyBox->Uninit();
+
+#ifdef _DEVELOPMENT_EDITOR
+	_GTestSkeletonMesh.Uninit();
+#endif
 }
 void CRenderPipeline::PostUpdate()
 {
@@ -520,6 +534,10 @@ void CRenderPipeline::PostUpdate()
 	m_GPUCulling->Update(m_FrameIndex);
 #ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Update();
+#endif
+
+#ifdef _DEVELOPMENT_EDITOR
+	_GTestSkeletonMesh.Update();
 #endif
 }
 void CRenderPipeline::Render()
@@ -733,6 +751,9 @@ void CRenderPipeline::Render()
 					meshRenderer->Draw();
 				}
 			}
+#ifdef _DEVELOPMENT_EDITOR
+			_GTestSkeletonMesh.Draw();
+#endif
 			});
 	}
 

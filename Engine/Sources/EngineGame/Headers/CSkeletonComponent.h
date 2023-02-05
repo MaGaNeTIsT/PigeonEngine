@@ -75,11 +75,14 @@ public:
 	void	UpdateSkeletonTransformInfoForGPU();
 	void	UploadSkeletonGPUConstantBuffer()const;
 public:
-	const static UINT	_StaticBoneMaxNum	= 384u;
+	const static UINT	_StaticBoneMaxNum	= 288u;
+protected:
+	void	RecursionBoneTransformMatrix(const CSkeletonSingleBone* parentBone, CustomType::Matrix4x4& globalMat);
 protected:
 	mutable BOOL									m_SkeletonPerFrameUpload;
 	std::string										m_SkeletonName;
 	CSkeletonSingleBone*							m_RootBone;
+	CustomType::Matrix4x4							m_RootTransformInverse;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>			m_SkeletonGPUCBuffer;
 	std::vector<DirectX::XMFLOAT4X4>				m_SkeletonGPUCBufferData;
 	std::vector<USHORT>								m_BoneListVector;

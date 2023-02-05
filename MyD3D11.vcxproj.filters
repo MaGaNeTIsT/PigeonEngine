@@ -299,6 +299,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonAnimationComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entry\EngineMain.cpp">
@@ -448,6 +449,7 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneSkeletonMeshObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -541,6 +543,8 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl" />
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl" />
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
