@@ -96,10 +96,19 @@ float3 TransformObjectToWorldNormal(const float3 normal, const float4x4 mat, uni
 }
 
 TestVarying main(TestAttribute input)
-{	
+{
 	uint4  blendIndices	= input.boneIndices.xyzw;
 	float4 blendWeight	= input.boneWeights.xyzw;
 	
+#if 1
+#if 1
+	float3 posWS = float3(0.0, 0.0, 0.0);
+	posWS += TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), _SkeletonMatrix[blendIndices.x]).xyz * blendWeight.x;
+	posWS += TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), _SkeletonMatrix[blendIndices.y]).xyz * blendWeight.y;
+	posWS += TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), _SkeletonMatrix[blendIndices.z]).xyz * blendWeight.z;
+	posWS += TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), _SkeletonMatrix[blendIndices.w]).xyz * blendWeight.w;
+	posWS /= dot(blendWeight.xyzw, 1.0.xxxx);
+#else
 	float4x4 localToWorldMatrix =
 		_SkeletonMatrix[blendIndices.x] * blendWeight.x +
 		_SkeletonMatrix[blendIndices.y] * blendWeight.y +
@@ -108,9 +117,22 @@ TestVarying main(TestAttribute input)
 	
 	localToWorldMatrix /= blendWeight.x + blendWeight.y + blendWeight.z + blendWeight.w;
 	float3 posWS = TransformPositionToSpecificSpace(float4(input.position.xyz, 1.0), localToWorldMatrix).xyz;
+#endif
+#else
+	float3 posWS = input.position.xyz;
+#endif
 	posWS.xyz = TransformObjectToWorld(posWS.xyz, _WorldMatrix);
 
 	uint inverseOffset = uint(_SkeletonBoneNum.x);
+#if 1
+#if 1
+	float3 normalWS = float3(0.0, 0.0, 0.0);
+	normalWS += TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)_SkeletonMatrix[inverseOffset + blendIndices.x]) * blendWeight.x;
+	normalWS += TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)_SkeletonMatrix[inverseOffset + blendIndices.y]) * blendWeight.y;
+	normalWS += TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)_SkeletonMatrix[inverseOffset + blendIndices.z]) * blendWeight.z;
+	normalWS += TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)_SkeletonMatrix[inverseOffset + blendIndices.w]) * blendWeight.w;
+	normalWS /= dot(blendWeight.xyzw, 1.0.xxxx);
+#else
 	float4x4 inverseTransposeLocalToWorldMatrix =
 		_SkeletonMatrix[inverseOffset + blendIndices.x] * blendWeight.x +
 		_SkeletonMatrix[inverseOffset + blendIndices.y] * blendWeight.y +
@@ -118,6 +140,10 @@ TestVarying main(TestAttribute input)
 		_SkeletonMatrix[inverseOffset + blendIndices.w] * blendWeight.w;
 	inverseTransposeLocalToWorldMatrix /= blendWeight.x + blendWeight.y + blendWeight.z + blendWeight.w;
 	float3 normalWS = TransformDirectionToSpecificSpace(input.normal.xyz, (float3x3)inverseTransposeLocalToWorldMatrix);
+#endif
+#else
+	float3 normalWS = input.normal.xyz;
+#endif
 	normalWS.xyz = TransformObjectToWorldNormal(normalWS.xyz, _WorldInvTransposeMatrix);
 
 	TestVarying output;
