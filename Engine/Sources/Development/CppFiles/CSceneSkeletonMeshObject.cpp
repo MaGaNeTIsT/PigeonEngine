@@ -24,20 +24,20 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 		CMeshRendererComponent* meshRendererComponent = new CMeshRendererComponent();
 		CSkeletonMeshComponent* meshComponent = new CSkeletonMeshComponent();
 		CSkeletonComponent* skeletonComponent = new CSkeletonComponent(skeletonMeshPath);
-		//CSkeletonAnimationComponent* skeletonAnimationComponent = new CSkeletonAnimationComponent();
+		CSkeletonAnimationComponent* skeletonAnimationComponent = new CSkeletonAnimationComponent();
 		//this->AddComponent(boundSphereComponent);
 		this->AddComponent(boundBoxComponent);
 		this->AddComponent(meshRendererComponent);
 		this->AddComponent(meshComponent);
 		this->AddComponent(skeletonComponent);
-		//this->AddComponent(skeletonAnimationComponent);
+		this->AddComponent(skeletonAnimationComponent);
 
 		skeletonComponent->SetGameObject(this);
-		//skeletonAnimationComponent->SetGameObject(this);
+		skeletonAnimationComponent->SetGameObject(this);
 
 		meshRendererComponent->SetMeshComponent(meshComponent);
 		meshComponent->SetSkeletonComponent(skeletonComponent);
-		//skeletonAnimationComponent->SetSkeletonComponent(skeletonComponent);
+		skeletonAnimationComponent->SetSkeletonComponent(skeletonComponent);
 
 		const CustomStruct::CRenderInputLayoutDesc* desc; UINT descNum;
 		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(desc, descNum);
@@ -53,8 +53,8 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 		CustomType::Vector3 boundMin, boundMax;
 		meshComponent->GetMinMaxBounding(boundMin, boundMax);
 
-		//skeletonAnimationComponent->AddAnimation("TestAnimation", CSkeletonAnimationManager::LoadSkeletonAnimationAsset(skeletonAnimationPath, nullptr));
-		//skeletonAnimationComponent->SetCurrentAnimation("TestAnimation");
+		skeletonAnimationComponent->AddAnimation("TestAnimation", CSkeletonAnimationManager::LoadSkeletonAnimationAsset(skeletonAnimationPath, nullptr));
+		skeletonAnimationComponent->SetCurrentAnimation("TestAnimation");
 
 		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
@@ -94,7 +94,7 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 		this->m_MeshRendererComponent		= meshRendererComponent;
 		this->m_MeshComponent				= meshComponent;
 		this->m_SkeletonComponent			= skeletonComponent;
-		//this->m_SkeletonAnimationComponent	= skeletonAnimationComponent;
+		this->m_SkeletonAnimationComponent	= skeletonAnimationComponent;
 		strncpy_s(this->m_SaveMaterialPath, 512, "./Engine/Assets/Development/MaterialConfigs/", 45);
 		strncpy_s(this->m_LoadMaterialPath, 512, "./Engine/Assets/Development/MaterialConfigs/", 45);
 #endif

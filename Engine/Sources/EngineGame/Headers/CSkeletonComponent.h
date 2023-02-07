@@ -38,6 +38,10 @@ protected:
 	void	SetNodeIndex(const SHORT& i);
 	void	SetParentIndex(const SHORT& i);
 	void	AddChildIndex(const SHORT& i);
+public:
+	void	SetAnimationPosition(const CustomType::Vector3& v);
+	void	SetAnimationRotation(const CustomType::Quaternion& v);
+	void	SetAnimationScaling(const CustomType::Vector3& v);
 protected:
 	CustomType::Matrix4x4		m_BoneSpaceGlobalMatrix;
 	CustomType::Matrix4x4		m_BindPoseMatrix;

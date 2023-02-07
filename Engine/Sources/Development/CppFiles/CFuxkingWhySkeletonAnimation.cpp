@@ -392,21 +392,21 @@ CFuxkingWhySkeletonAnimation::~CFuxkingWhySkeletonAnimation()
 }
 void CFuxkingWhySkeletonAnimation::Init()
 {
-	//std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+	std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
 	//std::string skeletonMeshPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_NO_NORMAL.fbx";
 	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/SKM_Quinn.FBX";
-	std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
+	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
 
 	UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
 	//UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality;
 	//UINT skeletonMeshReadState = aiProcess_ConvertToLeftHanded;
 
-	//std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+	std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
 	//std::string skeletonAnimationPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_Cycle.fbx";
 	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/MF_Pistol_Jog_Fwd_Start.FBX";
-	std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
+	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
 
 	UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_MakeLeftHanded;
 	//UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality;

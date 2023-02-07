@@ -82,7 +82,6 @@ void CSkeletonAnimationComponent::Update()
 	}
 #endif
 
-#if 0
 	{
 		auto vec3Lerp = [](const CustomType::Vector3& v1, const CustomType::Vector3& v2, const FLOAT& t)->CustomType::Vector3 { return CustomType::Vector3::Lerp(v1, v2, t); };
 		auto quatLerp = [](const CustomType::Quaternion& v1, const CustomType::Quaternion& v2, const FLOAT& t)->CustomType::Quaternion { return CustomType::Quaternion::SLerp(v1, v2, t); };
@@ -100,24 +99,11 @@ void CSkeletonAnimationComponent::Update()
 			BOOL findKeyRot = LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
 			BOOL findKeyScl = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
 
-			{
-				CustomType::Matrix4x4 parentToBone(tempBone->GetBindPose());
-				if (tempBone->HasParentBone())
-				{
-					CustomType::Matrix4x4 tempParentBindPose(tempBone->GetParentBone()->GetBindPose());
-					parentToBone = parentToBone * tempParentBindPose.Inverse();
-				}
-				tempPos = parentToBone.MultiplyPosition(tempPos);
-				tempRot = parentToBone.LeftMultiplyQuaternion(tempRot);
-			}
-
-			CTransform* tempBoneTransform = tempBone->GetTransformNoConst();
-			if (findKeyPos) { tempBoneTransform->SetLocalPosition(tempPos); }
-			if (findKeyRot) { tempBoneTransform->SetLocalRotation(tempRot); }
-			if (findKeyScl) { tempBoneTransform->SetLocalScale(tempScl); }
+			if (findKeyPos) { tempBone.SetAnimationPosition(tempPos); }
+			if (findKeyRot) { tempBone.SetAnimationRotation(tempRot); }
+			if (findKeyScl) { tempBone.SetAnimationScaling(tempScl); }
 		}
 	}
-#endif
 }
 #ifdef _DEVELOPMENT_EDITOR
 void CSkeletonAnimationComponent::SelectedEditorUpdate()

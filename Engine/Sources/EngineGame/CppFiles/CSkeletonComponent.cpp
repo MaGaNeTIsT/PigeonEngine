@@ -147,6 +147,18 @@ void CSkeletonSingleNode::AddChildIndex(const SHORT& i)
 	}
 	this->m_ChildrenIndex.push_back(i);
 }
+void CSkeletonSingleNode::SetAnimationPosition(const CustomType::Vector3& v)
+{
+	this->m_Transform.SetLocalPosition(v);
+}
+void CSkeletonSingleNode::SetAnimationRotation(const CustomType::Quaternion& v)
+{
+	this->m_Transform.SetLocalRotation(v);
+}
+void CSkeletonSingleNode::SetAnimationScaling(const CustomType::Vector3& v)
+{
+	this->m_Transform.SetLocalScale(v);
+}
 const CTransform* CSkeletonSingleNode::GetTransform()const
 {
 	return (&(this->m_Transform));
@@ -277,17 +289,17 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 		//TODO we do not need this matrix for now.
 		this->m_RootTransformInverse = CustomType::Matrix4x4::Identity();
 
-		if (this->m_NodeListVector.size() != skeleton.size())
+		if (this->m_NodeListVector.size() > 0)
 		{
-			this->m_NodeListVector.resize(skeleton.size());
+			this->m_NodeListVector.clear();
 		}
 		if (this->m_NodeListMap.size() > 0)
 		{
 			this->m_NodeListMap.clear();
 		}
-		if (this->m_BoneListVector.size() != boneList.size())
+		if (this->m_BoneListVector.size() > 0)
 		{
-			this->m_BoneListVector.resize(boneList.size());
+			this->m_BoneListVector.clear();
 		}
 	}
 
@@ -327,6 +339,7 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 	}
 
 	//TODO
+	this->m_SkeletonGPUCBufferData._SkeletonBoneNum = DirectX::XMFLOAT4(static_cast<FLOAT>(this->m_BoneListVector.size()), 0.f, 0.f, 0.f);
 	this->m_SkeletonGPUCBufferData._SkeletonMatrix[0] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
 	this->m_SkeletonGPUCBufferData._SkeletonMatrix[this->m_BoneListVector.size()] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
 
