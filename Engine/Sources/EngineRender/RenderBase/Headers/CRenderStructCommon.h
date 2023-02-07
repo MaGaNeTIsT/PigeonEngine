@@ -8,8 +8,9 @@ namespace CustomStruct
 	class CRenderBaseSetting
 	{
 	public:
-		constexpr static FLOAT RenderBoundMinimum		= 0.01f;
-		constexpr static FLOAT RenderBoundHalfMinimum	= 0.005f;
+		constexpr static FLOAT		RenderBoundMinimum			= 0.01f;
+		constexpr static FLOAT		RenderBoundHalfMinimum		= 0.005f;
+		constexpr static USHORT		RenderBoneMaxNum			= 286u;
 	};
 
 	struct CColor
@@ -116,6 +117,13 @@ namespace CustomStruct
 		}
 		DirectX::XMINT4			LightCount;
 		CShaderLightParams		LightParams[16];
+	};
+
+	struct CShaderSkeletonMatrix
+	{
+		CShaderSkeletonMatrix() { ::ZeroMemory(this, sizeof(*this)); }
+		DirectX::XMFLOAT4		_SkeletonBoneNum;
+		DirectX::XMFLOAT4X4		_SkeletonMatrix[CRenderBaseSetting::RenderBoneMaxNum * 2u];
 	};
 
 	enum CEngineDefaultTexture2DType

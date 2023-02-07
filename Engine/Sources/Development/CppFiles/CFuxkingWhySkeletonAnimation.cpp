@@ -37,17 +37,15 @@ void ReadNodeToRootTransform(const aiNode* node, aiMatrix4x4& globalMat)
 	ReadNodeToRootTransform(node->mParent, globalMat);
 }
 
-void ReadSceneBoneTransform(const aiNode* node, std::map<std::string, UINT>* savedBoneMap, std::vector<CFuxkingWhySkeletonAnimation::CFuxkingWhyBone>* savedBoneList, aiMatrix4x4& globalMat)
+void ReadSceneBoneTransform(const aiNode* node, std::map<std::string, UINT>* savedBoneMap, std::vector<CFuxkingWhySkeletonAnimation::CFuxkingWhyBone>* savedBoneList, DirectX::XMMATRIX globalMat)
 {
 	if (savedBoneMap->size() == 0 || node == nullptr)
 	{
 		return;
 	}
 
-	{
-		aiMatrix4x4 nodeMat = node->mTransformation;
-		globalMat = globalMat * nodeMat;
-	}
+	DirectX::XMMATRIX tempGlobalMat = DirectX::XMMATRIX(&(node->mTransformation.a1));
+	tempGlobalMat = globalMat * tempGlobalMat;
 
 	if (node->mName.length > 0)
 	{
@@ -55,27 +53,28 @@ void ReadSceneBoneTransform(const aiNode* node, std::map<std::string, UINT>* sav
 		auto tempItBone = savedBoneMap->find(nodeName);
 		if (tempItBone != savedBoneMap->end())
 		{
-			(*savedBoneList)[tempItBone->second].BoneMatrix = globalMat;
+			DirectX::XMStoreFloat4x4(&((*savedBoneList)[tempItBone->second].BoneMatrix), tempGlobalMat);
 		}
 	}
 
 	for (UINT i = 0u; i < node->mNumChildren; i++)
 	{
-		ReadSceneBoneTransform(node->mChildren[i], savedBoneMap, savedBoneList, globalMat);
+		ReadSceneBoneTransform(node->mChildren[i], savedBoneMap, savedBoneList, tempGlobalMat);
 	}
 }
 
-void ReadSceneAnimTransform(const aiNode* node, const aiAnimation* anim, std::map<std::string, UINT>* savedBoneMap, std::vector<CFuxkingWhySkeletonAnimation::CFuxkingWhyBone>* savedBoneList, aiMatrix4x4& globalMat, FLOAT& t)
+void ReadSceneAnimTransform(const aiNode* node, const aiAnimation* anim, std::map<std::string, UINT>* savedBoneMap, std::vector<CFuxkingWhySkeletonAnimation::CFuxkingWhyBone>* savedBoneList, DirectX::XMMATRIX globalMat, FLOAT& t)
 {
 	if (savedBoneMap->size() == 0 || node == nullptr || anim == nullptr)
 	{
 		return;
 	}
 
+	DirectX::XMMATRIX tempGlobalMatrix = globalMat;
+
 	if (node->mName.length > 0)
 	{
-		aiMatrix4x4 nodeMat = node->mTransformation;
-
+		DirectX::XMMATRIX nodeMat = DirectX::XMMATRIX(&(node->mTransformation.a1));
 		{
 			const aiNodeAnim* nodeAnim = nullptr;
 			for (UINT i = 0; i < anim->mNumChannels; i++)
@@ -170,25 +169,30 @@ void ReadSceneAnimTransform(const aiNode* node, const aiAnimation* anim, std::ma
 					}
 				}
 
-				nodeMat = aiMatrix4x4(scl, rot, pos);
+				nodeMat = DirectX::XMMatrixAffineTransformation(
+					DirectX::XMVectorSet(scl.x, scl.y, scl.z, 1.f),
+					DirectX::XMVectorSet(0.f, 0.f, 0.f, 0.f),
+					DirectX::XMVectorSet(rot.x, rot.y, rot.z, rot.w),
+					DirectX::XMVectorSet(pos.x, pos.y, pos.z, 1.f));
+				nodeMat = DirectX::XMMatrixTranspose(nodeMat);
 			}
 		}
 
-		globalMat = nodeMat * globalMat;
+		tempGlobalMatrix = globalMat * nodeMat;
 
 		{
 			std::string nodeName(node->mName.C_Str());
 			auto tempItBone = savedBoneMap->find(nodeName);
 			if (tempItBone != savedBoneMap->end())
 			{
-				(*savedBoneList)[tempItBone->second].BoneMatrix = globalMat;
+				DirectX::XMStoreFloat4x4(&((*savedBoneList)[tempItBone->second].BoneMatrix), tempGlobalMatrix);
 			}
 		}
 	}
 
 	for (UINT i = 0u; i < node->mNumChildren; i++)
 	{
-		ReadSceneAnimTransform(node->mChildren[i], anim, savedBoneMap, savedBoneList, globalMat, t);
+		ReadSceneAnimTransform(node->mChildren[i], anim, savedBoneMap, savedBoneList, tempGlobalMatrix, t);
 	}
 }
 
@@ -291,8 +295,23 @@ void ReadSceneMesh(const aiScene* scene, const aiNode* node, std::map<std::strin
 						CFuxkingWhySkeletonAnimation::CFuxkingWhyBone tempBone;
 						tempBone.Index = static_cast<UINT>(boneList->size());
 						tempBone.Name = tempSceneMeshBoneName;
-						tempBone.BindPoseMatrix = tempSceneMeshBone->mOffsetMatrix;
-						tempBone.BoneMatrix = aiMatrix4x4();
+						aiMatrix4x4 tempOffsetMatrix = tempSceneMeshBone->mOffsetMatrix;
+#if 1
+						DirectX::XMStoreFloat4x4(&(tempBone.BindPoseMatrix), DirectX::XMMATRIX(&(tempOffsetMatrix.a1)));
+#else
+						{
+							aiVector3D scl, pos; aiQuaternion rot;
+							tempOffsetMatrix.Decompose(scl, rot, pos);
+							DirectX::XMMATRIX tempM = DirectX::XMMatrixAffineTransformation(
+								DirectX::XMVectorSet(scl.x, scl.y, scl.z, 1.f),
+								DirectX::XMVectorSet(0.f, 0.f, 0.f, 0.f),
+								DirectX::XMVectorSet(rot.x, rot.y, rot.z, rot.w),
+								DirectX::XMVectorSet(pos.x, pos.y, pos.z, 1.f));
+							tempM = DirectX::XMMatrixTranspose(tempM);
+							DirectX::XMStoreFloat4x4(&(tempBone.BindPoseMatrix), tempM);
+						}
+#endif
+						DirectX::XMStoreFloat4x4(&(tempBone.BoneMatrix), DirectX::XMMatrixIdentity());
 						boneList->push_back(tempBone);
 						CFuxkingWhySkeletonAnimation::CFuxkingWhyBone* tempPtrBone = &((*boneList)[tempBone.Index]);
 						boneMap->insert_or_assign(tempSceneMeshBoneName, tempBone.Index);
@@ -373,24 +392,28 @@ CFuxkingWhySkeletonAnimation::~CFuxkingWhySkeletonAnimation()
 }
 void CFuxkingWhySkeletonAnimation::Init()
 {
+	//std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
 	//std::string skeletonMeshPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_NO_NORMAL.fbx";
-	std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/SKM_Quinn.FBX";
-	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
+	std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
 
 	UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
+	//UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality;
 	//UINT skeletonMeshReadState = aiProcess_ConvertToLeftHanded;
 
+	//std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
 	//std::string skeletonAnimationPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_Cycle.fbx";
-	std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
 	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/MF_Pistol_Jog_Fwd_Start.FBX";
-	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
+	std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
 
 	UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_MakeLeftHanded;
+	//UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality;
 	//UINT skeletonAnimationReadState = aiProcess_MakeLeftHanded;
 
 	DirectX::XMFLOAT3 objPos = DirectX::XMFLOAT3(0.f, 600.f, -600.f);
-	DirectX::XMFLOAT3 objRot = DirectX::XMFLOAT3(0.f, 0.f, 0.f);
+	DirectX::XMFLOAT3 objRot = DirectX::XMFLOAT3(90.f, 0.f, 0.f);
 	DirectX::XMFLOAT3 objScl = DirectX::XMFLOAT3(0.5f, 0.5f, 0.5f);
 
 	{
@@ -442,13 +465,13 @@ void CFuxkingWhySkeletonAnimation::Init()
 			CFuxkingWhyBone rootDummyBone;
 			rootDummyBone.Index = 0u;
 			rootDummyBone.Name = "_RootDummyBone";
-			rootDummyBone.BindPoseMatrix = aiMatrix4x4();
-			rootDummyBone.BoneMatrix = aiMatrix4x4();
+			DirectX::XMStoreFloat4x4(&(rootDummyBone.BindPoseMatrix), DirectX::XMMatrixIdentity());
+			DirectX::XMStoreFloat4x4(&(rootDummyBone.BoneMatrix), DirectX::XMMatrixIdentity());
 			this->m_BoneList.push_back(rootDummyBone);
 			this->m_BoneMap.insert_or_assign(rootDummyBone.Name, rootDummyBone.Index);
 		}
 		ReadSceneMesh(this->m_AssimpScene, this->m_AssimpScene->mRootNode, &(this->m_BoneMap), &(this->m_BoneList), &(this->m_Meshes), &(this->m_AssimpMeshes));
-		aiMatrix4x4 dummyMat;
+		DirectX::XMMATRIX dummyMat = DirectX::XMMatrixIdentity();
 		ReadSceneBoneTransform(this->m_AssimpScene->mRootNode, &(this->m_BoneMap), &(this->m_BoneList), dummyMat);
 	}
 
@@ -490,7 +513,7 @@ void CFuxkingWhySkeletonAnimation::Init()
 }
 void CFuxkingWhySkeletonAnimation::Update()
 {
-#if 0
+#if 1
 	if (this->m_AssimpAnims.size() > 0 && this->m_BoneMap.size() > 0)
 	{
 		{
@@ -501,7 +524,7 @@ void CFuxkingWhySkeletonAnimation::Update()
 			this->m_AnimationT = t;
 		}
 		FLOAT t = this->m_AnimationT;
-		aiMatrix4x4 dummyMat;
+		DirectX::XMMATRIX dummyMat = DirectX::XMMatrixIdentity();
 		ReadSceneAnimTransform(this->m_AssimpAnimScene->mRootNode, this->m_AssimpAnims[0], &(this->m_BoneMap), &(this->m_BoneList), dummyMat, t);
 	}
 #endif
@@ -531,13 +554,13 @@ void CFuxkingWhySkeletonAnimation::Draw()
 			//DirectX::XMMATRIX meshInvMat = DirectX::XMMatrixInverse(nullptr, DirectX::XMMatrixRotationAxis(DirectX::XMVectorSet(1.f, 0.f, 0.f, 0.f), 90.f * CustomType::CMath::GetDegToRad()));
 			//DirectX::XMMATRIX meshInvMat = DirectX::XMMatrixRotationAxis(DirectX::XMVectorSet(1.f, 0.f, 0.f, 0.f), 90.f * CustomType::CMath::GetDegToRad());
 			
-			aiMatrix4x4 tempBP = tempBone.BindPoseMatrix; aiMatrix4x4 tempB = tempBone.BoneMatrix;
-			tempBP = tempB * tempBP;
-			DirectX::XMMATRIX boneMat = DirectX::XMMATRIX(&(tempBP.a1));
+			//aiMatrix4x4 tempBP = tempBone.BindPoseMatrix; aiMatrix4x4 tempB = tempBone.BoneMatrix;
+			//tempBP = tempB * tempBP;
+			//DirectX::XMMATRIX boneMat = DirectX::XMMATRIX(&(tempBP.a1));
 			//DirectX::XMMATRIX boneMat = DirectX::XMLoadFloat4x4(&(tempBone.BindPoseMatrix)) * DirectX::XMLoadFloat4x4(&(tempBone.BoneMatrix)) * meshInvMat;
 			//DirectX::XMMATRIX boneMat = meshInvMat * DirectX::XMMATRIX(&(tempBone.BoneMatrix.a1)) * DirectX::XMMATRIX(&(tempBone.BindPoseMatrix.a1));
 			//DirectX::XMMATRIX boneMat = meshInvMat * DirectX::XMLoadFloat4x4(&(tempBone.BindPoseMatrix)) * DirectX::XMLoadFloat4x4(&(tempBone.BoneMatrix));
-			//DirectX::XMMATRIX boneMat = DirectX::XMLoadFloat4x4(&(tempBone.BoneMatrix)) * DirectX::XMLoadFloat4x4(&(tempBone.BindPoseMatrix)) * meshInvMat;
+			DirectX::XMMATRIX boneMat = meshInvMat * DirectX::XMLoadFloat4x4(&(tempBone.BoneMatrix)) * DirectX::XMLoadFloat4x4(&(tempBone.BindPoseMatrix));
 
 			DirectX::XMStoreFloat4x4(&(this->m_BoneCBufferData.SkeletonMatrix[i]), boneMat);
 			DirectX::XMStoreFloat4x4(&(this->m_BoneCBufferData.SkeletonMatrix[numBones + i]), DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(nullptr, boneMat)));

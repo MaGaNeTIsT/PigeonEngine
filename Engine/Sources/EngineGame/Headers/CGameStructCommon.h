@@ -58,31 +58,40 @@ namespace CustomStruct
 	{
 		CGameBoneNodeInfo()
 		{
-			this->Index		= -1;
-			this->Location	= CustomType::Vector3::Zero();
-			this->Rotation	= CustomType::Quaternion::Identity();
-			this->Scale		= CustomType::Vector3::One();
-			this->Offset	= CustomType::Matrix4x4::Identity();
-			this->Parent	= nullptr;
+			this->Index				= -2;
+			this->Name				= "_BoneDefaultNullName";
+			this->DefaultPosition	= CustomType::Vector3::Zero();
+			this->DefaultRotation	= CustomType::Quaternion::Identity();
+			this->DefaultScaling	= CustomType::Vector3::One();
+			this->BindPoseMatrix	= CustomType::Matrix4x4::Identity();
+			this->Parent			= -2;
+			if (this->Children.size() > 0)
+			{
+				this->Children.clear();
+			}
 		}
 		CGameBoneNodeInfo(const std::string& name)
 		{
-			this->Index		= -1;
-			this->Name		= name;
-			this->Location	= CustomType::Vector3::Zero();
-			this->Rotation	= CustomType::Quaternion::Identity();
-			this->Scale		= CustomType::Vector3::One();
-			this->Offset	= CustomType::Matrix4x4::Identity();
-			this->Parent	= nullptr;
+			this->Index				= -2;
+			this->Name				= name;
+			this->DefaultPosition	= CustomType::Vector3::Zero();
+			this->DefaultRotation	= CustomType::Quaternion::Identity();
+			this->DefaultScaling	= CustomType::Vector3::One();
+			this->BindPoseMatrix	= CustomType::Matrix4x4::Identity();
+			this->Parent			= -2;
+			if (this->Children.size() > 0)
+			{
+				this->Children.clear();
+			}
 		}
-		INT									Index;
+		SHORT								Index;
 		std::string							Name;
-		CustomType::Vector3					Location;
-		CustomType::Quaternion				Rotation;
-		CustomType::Vector3					Scale;
-		CustomType::Matrix4x4				Offset;
-		CGameBoneNodeInfo*					Parent;
-		std::vector<CGameBoneNodeInfo*>		Children;
+		CustomType::Vector3					DefaultPosition;
+		CustomType::Quaternion				DefaultRotation;
+		CustomType::Vector3					DefaultScaling;
+		CustomType::Matrix4x4				BindPoseMatrix;
+		SHORT								Parent;
+		std::vector<SHORT>					Children;
 	};
 
 	template<typename ValueType>
@@ -92,19 +101,19 @@ namespace CustomStruct
 		{
 			this->Time = static_cast<DOUBLE>(0);
 		}
-		BOOL operator>(const CGameAnimationKey& k)
+		BOOL operator>(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time > k.Time);
 		}
-		BOOL operator<(const CGameAnimationKey& k)
+		BOOL operator<(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time < k.Time);
 		}
-		BOOL operator>=(const CGameAnimationKey& k)
+		BOOL operator>=(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time >= k.Time);
 		}
-		BOOL operator<=(const CGameAnimationKey& k)
+		BOOL operator<=(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time <= k.Time);
 		}

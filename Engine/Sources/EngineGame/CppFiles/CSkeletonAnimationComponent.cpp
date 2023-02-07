@@ -82,6 +82,7 @@ void CSkeletonAnimationComponent::Update()
 	}
 #endif
 
+#if 0
 	{
 		auto vec3Lerp = [](const CustomType::Vector3& v1, const CustomType::Vector3& v2, const FLOAT& t)->CustomType::Vector3 { return CustomType::Vector3::Lerp(v1, v2, t); };
 		auto quatLerp = [](const CustomType::Quaternion& v1, const CustomType::Quaternion& v2, const FLOAT& t)->CustomType::Quaternion { return CustomType::Quaternion::SLerp(v1, v2, t); };
@@ -90,11 +91,7 @@ void CSkeletonAnimationComponent::Update()
 		for (UINT indexAnimationNode = 0u; indexAnimationNode < numAnimationNode; indexAnimationNode++)
 		{
 			const CustomStruct::CGameAnimationNodeInfo& tempNode = this->m_CurrentPlayAnimation->AnimationNodes[indexAnimationNode];
-			CSkeletonSingleBone* tempBone = this->m_SkeletonComponent->GetBoneByNameNoConst(tempNode.Name);
-			if (tempBone == nullptr)
-			{
-				continue;
-			}
+			CSkeletonSingleNode& tempBone = this->m_SkeletonComponent->GetNodeByNameNoConst(tempNode.Name);
 
 			CustomType::Vector3 tempPos, tempScl;
 			CustomType::Quaternion tempRot;
@@ -120,6 +117,7 @@ void CSkeletonAnimationComponent::Update()
 			if (findKeyScl) { tempBoneTransform->SetLocalScale(tempScl); }
 		}
 	}
+#endif
 }
 #ifdef _DEVELOPMENT_EDITOR
 void CSkeletonAnimationComponent::SelectedEditorUpdate()

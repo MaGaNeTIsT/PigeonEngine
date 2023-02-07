@@ -23,10 +23,10 @@ public:
 	};
 	struct CFuxkingWhyBone
 	{
-		UINT			Index;
-		std::string		Name;
-		aiMatrix4x4		BindPoseMatrix;
-		aiMatrix4x4		BoneMatrix;
+		UINT					Index;
+		std::string				Name;
+		DirectX::XMFLOAT4X4		BindPoseMatrix;
+		DirectX::XMFLOAT4X4		BoneMatrix;
 	};
 	struct CFuxkingWhyPerDrawCBuffer
 	{

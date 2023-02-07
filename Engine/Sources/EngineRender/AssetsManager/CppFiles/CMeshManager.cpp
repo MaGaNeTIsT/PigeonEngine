@@ -45,7 +45,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 		return resultMesh;
 	}
 }
-const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode, const BOOL& needVertexData)
+const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
 {
 	isOutputSkeleton = FALSE;
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
@@ -60,7 +60,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& pa
 	}
 
 	{
-		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneList, rootNode, needVertexData);
+		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneIndexMap, boneList, needVertexData);
 		if (resultMesh == NULL)
 		{
 			return NULL;
@@ -1146,11 +1146,11 @@ CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, c
 
 	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }
-CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode, const BOOL& needVertexData)
+CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
 {
 	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
 	UINT numVertices, numIndices, vertexStride;
-	if (CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, rootNode) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
+	if (CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}

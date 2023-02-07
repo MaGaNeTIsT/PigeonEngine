@@ -18,22 +18,33 @@ CustomType::Vector3 _GTranslateVector3(const aiVector3D& v)
 	return (CustomType::Vector3(v.x, v.y, v.z));
 }
 
-CustomType::Matrix4x4 _GTranslateBindPoseMatrix(const aiMatrix4x4& m)
+void _GTranslateMatrix(const aiMatrix4x4& m, CustomType::Vector3& pos, CustomType::Quaternion& rot, CustomType::Vector3& scl)
 {
-	aiVector3D scl, pos; aiQuaternion rot;
-	aiMatrix4x4 tempM(m);
-	tempM.Decompose(scl, rot, pos);
-	return (CustomType::Matrix4x4(_GTranslateVector3(pos), _GTranslateQuaternion(rot), _GTranslateVector3(scl)));
+	aiVector3D aiScl, aiPos; aiQuaternion aiRot;
+	m.Decompose(aiScl, aiRot, aiPos);
+	pos = _GTranslateVector3(aiPos);
+	scl = _GTranslateVector3(aiScl);
+	rot = _GTranslateQuaternion(aiRot);
 }
 
-void _GTranslateTransformMatrix(const aiMatrix4x4& m, CustomType::Vector3& location, CustomType::Quaternion& rotation, CustomType::Vector3& scale)
+CustomType::Matrix4x4 _GTranslateMatrix(const aiMatrix4x4& m, const BOOL& useOrigin = TRUE)
 {
-	aiVector3D scl, pos; aiQuaternion rot;
-	aiMatrix4x4 tempM(m);
-	tempM.Decompose(scl, rot, pos);
-	location = _GTranslateVector3(pos);
-	rotation = _GTranslateQuaternion(rot);
-	scale = _GTranslateVector3(scl);
+	if (useOrigin)
+	{
+		return (CustomType::Matrix4x4(DirectX::XMMATRIX(&(m.a1))));
+	}
+	else
+	{
+		aiVector3D scl, pos; aiQuaternion rot;
+		m.Decompose(scl, rot, pos);
+		return (CustomType::Matrix4x4(
+			DirectX::XMMatrixTranspose(
+				DirectX::XMMatrixAffineTransformation(
+					DirectX::XMVectorSet(scl.x, scl.y, scl.z, 1.f),
+					DirectX::XMVectorSet(0.f, 0.f, 0.f, 0.f),
+					DirectX::XMVectorSet(rot.x, rot.y, rot.z, rot.w),
+					DirectX::XMVectorSet(pos.x, pos.y, pos.z, 1.f)))));
+	}
 }
 
 std::string _GTranslateString(const aiString& s)
@@ -200,13 +211,13 @@ void _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 	}
 }
 
-void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput)
+void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<std::string, SHORT>& allGameNodeIndices, std::vector<SHORT>& allBoneList)
 {
 	const static UINT constVertexColorIndex		= 0u;
 	const static UINT constVertexTexcoordIndex	= 0u;
 
 	{
-		UINT numFaces = mesh->mNumFaces;
+		const UINT numFaces = mesh->mNumFaces;
 		aiFace* faces = mesh->mFaces;
 		for (UINT indexFace = 0u; indexFace < numFaces; indexFace++)
 		{
@@ -219,7 +230,7 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 	}
 
 	{
-		UINT		numVertices		= mesh->mNumVertices;
+		const UINT	numVertices		= mesh->mNumVertices;
 
 		aiColor4D*	colors			= mesh->mColors[constVertexColorIndex];
 		aiVector3D*	vertices		= mesh->mVertices;
@@ -230,24 +241,30 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 		std::vector<std::vector<std::pair<USHORT, FLOAT>>> blendIndicesWeights;
 		UINT* blendWriteIndex = nullptr;
 
-		if (skeletonInput.size() != 0 && boneListInput.size() != 0)
+		if (allGameNodes.size() != 0 && allGameNodeIndices.size() != 0 && allGameNodes.size() == allGameNodeIndices.size())
 		{
 			blendWriteIndex = new UINT[numVertices];
 			blendIndicesWeights.resize(numVertices);
 
-			auto _FindBoneListIndex = [](const std::string& boneName, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, const std::vector<UINT>& boneList)->UINT {
-				UINT skeletonNum = static_cast<UINT>(skeleton.size());
-				UINT boneListNum = static_cast<UINT>(boneList.size());
-				for (UINT findBoneIndex = 0u; findBoneIndex < boneListNum; findBoneIndex++)
+			auto _FindBoneListIndex = [](const std::string& boneName, const std::map<std::string, SHORT>& allNodeIndices)->SHORT {
+				auto itFindName = allNodeIndices.find(boneName);
+				if (itFindName != allNodeIndices.end())
 				{
-					const UINT& tempBoneIndex = boneList[findBoneIndex];
-					const CustomStruct::CGameBoneNodeInfo& tempBoneInSkeleton = skeleton[tempBoneIndex];
-					if (tempBoneInSkeleton.Name == boneName)
+					return (itFindName->second);
+				}
+				return -1; };
+			auto _GetBoneIndex = [](const SHORT& indexInAllGameNodes, std::vector<SHORT>& boneList)->USHORT {
+				USHORT boneListSize = static_cast<USHORT>(boneList.size());
+				for (USHORT i = 0u; i < boneListSize; i++)
+				{
+					if (indexInAllGameNodes == boneList[i])
 					{
-						return findBoneIndex;
+						return i;
 					}
 				}
-				return 0u; };
+				boneList.push_back(indexInAllGameNodes);
+				return (static_cast<USHORT>(boneList.size() - 1));
+			};
 			auto _SortBoneIndicesAndWeight = [](const UINT& num, std::vector<std::pair<USHORT, FLOAT>>& inputIndicesWeights) {
 				BOOL needLoop = TRUE;
 				while (needLoop == TRUE)
@@ -271,20 +288,30 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 			{
 				blendWriteIndex[indexVertex] = 0u;
 			}
-			UINT boneNum = mesh->mNumBones;
+			const UINT boneNum = mesh->mNumBones;
 			for (UINT boneIndex = 0u; boneIndex < boneNum; boneIndex++)
 			{
 				const aiBone* bone = mesh->mBones[boneIndex];
-				if (bone->mNumWeights == 0u)
+				if (bone == nullptr || bone->mNumWeights == 0u || bone->mName.length == 0u)
 				{
 					continue;
 				}
-				UINT tempBoneIndex = _FindBoneListIndex(_GTranslateString(bone->mName), skeletonInput, boneListInput);
+				SHORT tempFindBoneIndex = _FindBoneListIndex(_GTranslateString(bone->mName), allGameNodeIndices);
+				if (tempFindBoneIndex < 0)
+				{
+					continue;
+				}
+
+				// Save bind pose matrix of bone.
+				allGameNodes[tempFindBoneIndex].BindPoseMatrix = _GTranslateMatrix(bone->mOffsetMatrix, TRUE);
+				// [Get new bone list index] and [save bone index] that will be used for rendering.
+				USHORT tempBoneIndex = _GetBoneIndex(tempFindBoneIndex, allBoneList);
+
 				for (UINT boneWeightIndex = 0u; boneWeightIndex < bone->mNumWeights; boneWeightIndex++)
 				{
 					const aiVertexWeight& tempBoneWeight = bone->mWeights[boneWeightIndex];
+					blendIndicesWeights[tempBoneWeight.mVertexId].push_back(std::pair<USHORT, FLOAT>(tempBoneIndex, tempBoneWeight.mWeight));
 					blendWriteIndex[tempBoneWeight.mVertexId] += 1u;
-					blendIndicesWeights[tempBoneWeight.mVertexId].push_back(std::pair<USHORT, FLOAT>(static_cast<USHORT>(tempBoneIndex), tempBoneWeight.mWeight));
 				}
 			}
 			for (UINT vertexIndex = 0u; vertexIndex < numVertices; vertexIndex++)
@@ -468,7 +495,8 @@ void _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::
 	}
 
 	std::vector<CustomStruct::CGameBoneNodeInfo> tempSkeleton;
-	std::vector<UINT> tempBoneList;
+	const std::map<std::string, SHORT> tempSkeletonNodeIndices;
+	std::vector<SHORT> tempBoneList;
 
 	UINT numMeshes = scene->mNumMeshes;
 	UINT indexSubMesh = 0u;
@@ -481,12 +509,12 @@ void _GTranslateDefaultMeshData(const aiScene* scene, std::vector<CustomStruct::
 		}
 		_GMeshAssetImporterInfo& sceneMeshInfo = sceneMeshesInfo[indexSubMesh];
 		CustomStruct::CSubMeshInfo& subMeshInfo = subMesh[indexSubMesh];
-		_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, tempSkeleton, tempBoneList);
+		_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, tempSkeleton, tempSkeletonNodeIndices, tempBoneList);
 		indexSubMesh += 1u;
 	}
 }
 
-void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonInput, const std::vector<UINT>& boneListInput, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<std::string, SHORT>& allGameNodeIndices, std::vector<USHORT>& allBoneList, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
 	vertexStride	= 0u;
 	numVertices		= 0u;
@@ -499,6 +527,10 @@ void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct:
 	if (indices.size() > 0)
 	{
 		indices.clear();
+	}
+	if (allBoneList.size() > 0)
+	{
+		allBoneList.clear();
 	}
 
 	std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
@@ -513,6 +545,9 @@ void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct:
 		indices.resize(totalNumIndices);
 	}
 
+	std::vector<SHORT> tempBoneList;
+	tempBoneList.push_back(-1);
+
 	UINT numMeshes = scene->mNumMeshes;
 	UINT indexSubMesh = 0u;
 	for (UINT indexMesh = 0u; indexMesh < numMeshes; indexMesh++)
@@ -524,13 +559,185 @@ void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<CustomStruct:
 		}
 		_GMeshAssetImporterInfo& sceneMeshInfo = sceneMeshesInfo[indexSubMesh];
 		CustomStruct::CSubMeshInfo& subMeshInfo = subMesh[indexSubMesh];
-		_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, skeletonInput, boneListInput);
+		_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, allGameNodes, allGameNodeIndices, tempBoneList);
 		indexSubMesh += 1u;
+	}
+
+	if (tempBoneList.size() > 1)
+	{
+		allBoneList.resize(tempBoneList.size());
+		allBoneList[0] = 0u;
+		USHORT tempNumBoneList = static_cast<USHORT>(tempBoneList.size());
+		for (USHORT boneIndex = 1u; boneIndex < tempNumBoneList; boneIndex++)
+		{
+			allBoneList[boneIndex] = static_cast<USHORT>(tempBoneList[boneIndex]);
+		}
 	}
 }
 
 const static std::string _GConstImporterNodeEmptyName	= "_ConstImporterNodeEmptyName";
 const static std::string _GConstDummyName				= "_ConstDummyName";
+
+void _GReadNodeTransformRecursion(const aiNode* node, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<const aiNode*, aiString>& allNodeNames, const std::map<aiString, INT>& allNodeIndices, CustomType::Matrix4x4 globalMatrix)
+{
+	if (node == nullptr)
+	{
+		return;
+	}
+
+	CustomType::Matrix4x4 tempGlobalMatrix = _GTranslateMatrix(node->mTransformation, TRUE);
+	{
+		aiVector3D scl, pos; aiQuaternion rot;
+		INT tempNodeIndex = allNodeIndices.find(allNodeNames.find(node)->second)->second;
+		_GTranslateMatrix(node->mTransformation, allGameNodes[tempNodeIndex].DefaultPosition, allGameNodes[tempNodeIndex].DefaultRotation, allGameNodes[tempNodeIndex].DefaultScaling);
+		tempGlobalMatrix = globalMatrix * tempGlobalMatrix;
+	}
+
+	for (UINT indexChild = 0u; indexChild < node->mNumChildren; indexChild++)
+	{
+		_GReadNodeTransformRecursion(node->mChildren[indexChild], allGameNodes, allNodeNames, allNodeIndices, tempGlobalMatrix);
+	}
+}
+
+void _GGatherSingleNodeRecursion(const aiNode* node, std::vector<const aiNode*>& allNodes, std::map<const aiNode*, aiString>& allNodeNames, std::map<aiString, INT>& allNodeIndices)
+{
+	if (node == nullptr)
+	{
+		return;
+	}
+
+	allNodes.push_back(node);
+	{
+		INT indexNode = static_cast<INT>(allNodes.size() - 1);
+
+		aiString tempNodeName;
+		if (node->mName.length > 0)
+		{
+			tempNodeName = node->mName;
+		}
+		else
+		{
+			tempNodeName = _GTranslateString(_GConstImporterNodeEmptyName);
+		}
+
+		auto itFindNode = allNodeIndices.find(tempNodeName);
+
+		std::string tempOldName = _GTranslateString(tempNodeName) + "_";
+		aiString tempNewName = tempNodeName;
+		UINT tempSameNameIndex = 0u;
+		while (itFindNode != allNodeIndices.end())
+		{
+			std::string tempName = tempOldName + std::to_string(tempSameNameIndex);
+			tempNewName = _GTranslateString(tempName);
+			tempSameNameIndex += 1u;
+			itFindNode = allNodeIndices.find(tempNewName);
+		}
+
+		allNodeIndices.insert_or_assign(tempNewName, indexNode);
+		allNodeNames.insert_or_assign(node, tempNewName);
+	}
+
+	for (UINT indexChild = 0u; indexChild < node->mNumChildren; indexChild++)
+	{
+		_GGatherSingleNodeRecursion(node->mChildren[indexChild], allNodes, allNodeNames, allNodeIndices);
+	}
+}
+
+BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
+	std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices,
+	std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, std::map<std::string, SHORT>& allGameNodeIndices, std::vector<USHORT>& allBoneList,
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+{
+	// Init all output data.
+	{
+		if (vertices != nullptr)
+		{
+			delete[]vertices;
+			vertices = nullptr;
+		}
+		vertexStride = 0u;
+		numVertices = 0u;
+		numIndices = 0u;
+		if (subMesh.size() > 0)
+		{
+			subMesh.clear();
+		}
+		if (indices.size() > 0)
+		{
+			indices.clear();
+		}
+		if (allGameNodes.size() > 0)
+		{
+			allGameNodes.clear();
+		}
+		if (allGameNodeIndices.size() > 0)
+		{
+			allGameNodeIndices.clear();
+		}
+		if (allBoneList.size() > 0)
+		{
+			allBoneList.clear();
+		}
+	}
+
+	// Check scene pointer.
+	if (scene == nullptr)
+	{
+		return FALSE;
+	}
+
+	// Read data structures of all nodes.
+	std::vector<const aiNode*> allNodes; std::map<const aiNode*, aiString> allNodeNames; std::map<aiString, INT> allNodeIndices;
+	_GGatherSingleNodeRecursion(scene->mRootNode, allNodes, allNodeNames, allNodeIndices);
+
+	// Check read state.
+	if (allNodes.size() == 0 || allNodes.size() != allNodeIndices.size())
+	{
+		return FALSE;
+	}
+
+	// Create engine's hierarchical bones' data.
+	{
+		const UINT numAllNodes = static_cast<UINT>(allNodes.size());
+		for (UINT indexNode = 0u; indexNode < numAllNodes; indexNode++)
+		{
+			auto itFindNodeName = allNodeNames.find(allNodes[indexNode]);
+			CustomStruct::CGameBoneNodeInfo tempNewBone(_GTranslateString(itFindNodeName->second));
+			tempNewBone.Index = static_cast<SHORT>(indexNode);
+			tempNewBone.Parent = -1;
+			if (allNodes[indexNode]->mParent != nullptr)
+			{
+				tempNewBone.Parent = allNodeIndices.find(itFindNodeName->second)->second;
+			}
+			allGameNodes.push_back(tempNewBone);
+			allGameNodeIndices.insert_or_assign(tempNewBone.Name, tempNewBone.Index);
+		}
+	}
+
+	// Read mesh data for skeleton mesh.
+	_GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, allGameNodes, allGameNodeIndices, allBoneList, inputLayoutDesc, inputLayoutNum);
+
+	// Read skeleton default transform.
+	CustomType::Matrix4x4 dummyMat(CustomType::Matrix4x4::Identity());
+	_GReadNodeTransformRecursion(scene->mRootNode, allGameNodes, allNodeNames, allNodeIndices, dummyMat);
+
+	// Save node's child relation.
+	{
+		const SHORT numAllGameNodes = static_cast<SHORT>(allGameNodes.size());
+		for (SHORT indexNode = 0; indexNode < numAllGameNodes; indexNode++)
+		{
+			CustomStruct::CGameBoneNodeInfo& gameNode = allGameNodes[indexNode];
+			if (indexNode != gameNode.Index || gameNode.Parent < 0 || gameNode.Parent >= numAllGameNodes)
+			{
+				continue;
+			}
+			CustomStruct::CGameBoneNodeInfo& gameParentNode = allGameNodes[gameNode.Parent];
+			gameParentNode.Children.push_back(gameNode.Index);
+		}
+	}
+
+	return TRUE;
+}
 
 struct _GImporterBoneNodeData
 {
@@ -832,6 +1039,7 @@ void _GGatherAllBones(const aiScene* scene, std::map<std::string, const aiBone*>
 	}
 }
 
+#if 0
 BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBoneNodeInfo>& skeletonOutput, std::vector<UINT>& boneList, INT& skeletonRootNode)
 {
 	if (skeletonOutput.size() != 0)
@@ -981,6 +1189,7 @@ BOOL _GGatherBoneDatas(const aiScene* scene, std::vector<CustomStruct::CGameBone
 
 	return (boneList.size() > 0 && skeletonRootNode >= 0);
 }
+#endif
 
 void _GTranslateAnimationBehaviour(const aiAnimBehaviour& input, CustomStruct::CGameAnimationBehaviour& output)
 {
@@ -1256,7 +1465,7 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadDefaultMeshFile(const s
 //		CopyNodesWithMeshes(node.mChildren[a], parent, transform);
 //	}
 //}
-CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::vector<UINT>& boneList, UINT& rootNode)
+CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList)
 {
 	if (vertices != nullptr)
 	{
@@ -1279,11 +1488,14 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile
 	{
 		skeleton.clear();
 	}
+	if (boneIndexMap.size() > 0)
+	{
+		boneIndexMap.clear();
+	}
 	if (boneList.size() > 0)
 	{
 		boneList.clear();
 	}
-	rootNode = 0u;
 
 	CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
 
@@ -1343,17 +1555,20 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile
 	}
 
 	// Now we can access the file's contents.
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+#if 0
 	INT tempRootNode = -1;
 	result = _GGatherBoneDatas(scene, skeleton, boneList, tempRootNode) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 
 	if (result == CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		rootNode = static_cast<UINT>(tempRootNode);
-		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
-		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 		_GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, inputLayoutDesc, inputLayoutNum);
 	}
-
+#else
+	result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+#endif
 	// We're done. Everything will be cleaned up by the importer destructor
 	impoter->FreeScene();
 	return result;
