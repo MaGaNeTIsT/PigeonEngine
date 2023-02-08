@@ -79,6 +79,7 @@ void CScene::Init()
 		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 
 		mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -950.f));
+		mainLight->SetEditorRotation(CustomType::Vector3(50.f, 0.f, 0.f));
 		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
 	}
 
@@ -93,15 +94,16 @@ void CScene::Init()
 	{
 		CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
 		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
-		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+		sceneGameObject->SetEditorRotation(CustomType::Vector3(90.f, 0.f, 0.f));
+		sceneGameObject->SetWorldScale(CustomType::Vector3(1.f, 1.f, 1.f));
 		this->m_SelectedObject = sceneGameObject;
 	}
 
 	{
 		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
 		std::string materialTypeName = "mat_tex_cfg";
-		BOOL showDebugFabric = FALSE;
-		BOOL useModelFromFile = FALSE;
+		BOOL showDebugFabric = TRUE;
+		BOOL useModelFromFile = TRUE;
 		FLOAT modelY = 200.f;
 		FLOAT modelOffsetX = 300.f;
 		FLOAT modelOffsetZ = 300.f;
@@ -109,7 +111,7 @@ void CScene::Init()
 
 		if (showDebugFabric)
 		{
-			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
+			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/MaterialSphere/MaterialSphere.fbx";
 			CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
 
 			const static CustomStruct::CRenderInputLayoutDesc testMeshInputLayout[4u] = {

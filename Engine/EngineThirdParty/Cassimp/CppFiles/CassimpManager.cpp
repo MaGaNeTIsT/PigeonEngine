@@ -82,9 +82,6 @@ struct _GMeshAssetImporterInfo
 
 void _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 {
-	const static UINT constVertexColorIndex		= 0u;
-	const static UINT constVertexTexcoordIndex	= 0u;
-
 	if (subMesh.size() > 0)
 	{
 		subMesh.clear();
@@ -121,64 +118,36 @@ void _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 			if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_COLOR)
 			{
 				tempPerMeshInfo.VertexColor.Exist = TRUE;
-				if (!tempMesh->HasVertexColors(constVertexColorIndex))
-				{
-					tempPerMeshInfo.VertexColor.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexColor.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
 			{
 				tempPerMeshInfo.VertexPosition.Exist = TRUE;
-				if (!tempMesh->HasPositions())
-				{
-					tempPerMeshInfo.VertexPosition.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexPosition.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL)
 			{
 				tempPerMeshInfo.VertexNormal.Exist = TRUE;
-				if (!tempMesh->HasNormals())
-				{
-					tempPerMeshInfo.VertexNormal.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexNormal.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT)
 			{
 				tempPerMeshInfo.VertexTangent.Exist = TRUE;
-				if (!tempMesh->HasTangentsAndBitangents())
-				{
-					tempPerMeshInfo.VertexTangent.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexTangent.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD)
 			{
 				tempPerMeshInfo.VertexUV.Exist = TRUE;
-				if (!tempMesh->HasTextureCoords(constVertexTexcoordIndex))
-				{
-					tempPerMeshInfo.VertexUV.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexUV.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES)
 			{
 				tempPerMeshInfo.VertexBoneIndices.Exist = TRUE;
-				if (!tempMesh->HasBones())
-				{
-					tempPerMeshInfo.VertexBoneIndices.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexBoneIndices.Offset = tempPerMeshInfo.VertexStride;
 			}
 			else if (desc.SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT)
 			{
 				tempPerMeshInfo.VertexBoneWeight.Exist = TRUE;
-				if (!tempMesh->HasBones())
-				{
-					tempPerMeshInfo.VertexBoneWeight.Exist = FALSE;
-				}
 				tempPerMeshInfo.VertexBoneWeight.Offset = tempPerMeshInfo.VertexStride;
 			}
 			tempPerMeshInfo.VertexStride += desc.GetSemanticSizeByByte();
@@ -213,9 +182,6 @@ void _GTranslateMeshDesc(const aiScene* scene, std::vector<CustomStruct::CSubMes
 
 void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const CustomStruct::CSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<std::string, SHORT>& allGameNodeIndices, std::vector<SHORT>& allBoneList)
 {
-	const static UINT constVertexColorIndex		= 0u;
-	const static UINT constVertexTexcoordIndex	= 0u;
-
 	{
 		const UINT numFaces = mesh->mNumFaces;
 		aiFace* faces = mesh->mFaces;
@@ -230,13 +196,7 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 	}
 
 	{
-		const UINT	numVertices		= mesh->mNumVertices;
-
-		aiColor4D*	colors			= mesh->mColors[constVertexColorIndex];
-		aiVector3D*	vertices		= mesh->mVertices;
-		aiVector3D*	normals			= mesh->mNormals;
-		aiVector3D*	tangents		= mesh->mTangents;
-		aiVector3D*	texcoords		= mesh->mTextureCoords[constVertexTexcoordIndex];
+		const UINT	numVertices = mesh->mNumVertices;
 
 		std::vector<std::vector<std::pair<USHORT, FLOAT>>> blendIndicesWeights;
 		UINT* blendWriteIndex = nullptr;
@@ -332,18 +292,21 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 				FLOAT* tempColor = (FLOAT*)(&(tempVertex[assetInfo.VertexColor.Offset]));
 				if (assetInfo.VertexColor.Exist)
 				{
-					aiColor4D& tempSceneMeshColor = colors[indexVertex];
-					tempColor[0] = tempSceneMeshColor.r;
-					tempColor[1] = tempSceneMeshColor.g;
-					tempColor[2] = tempSceneMeshColor.b;
-					tempColor[3] = tempSceneMeshColor.a;
-				}
-				else
-				{
-					tempColor[0] = 0.5f;
-					tempColor[1] = 0.5f;
-					tempColor[2] = 0.5f;
-					tempColor[3] = 1.f;
+					if (mesh->HasVertexColors(0u))
+					{
+						aiColor4D& tempSceneMeshColor = (mesh->mColors[0])[indexVertex];
+						tempColor[0] = tempSceneMeshColor.r;
+						tempColor[1] = tempSceneMeshColor.g;
+						tempColor[2] = tempSceneMeshColor.b;
+						tempColor[3] = tempSceneMeshColor.a;
+					}
+					else
+					{
+						tempColor[0] = 0.5f;
+						tempColor[1] = 0.5f;
+						tempColor[2] = 0.5f;
+						tempColor[3] = 1.f;
+					}
 				}
 			}
 
@@ -351,18 +314,21 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 				FLOAT* tempPosition = (FLOAT*)(&(tempVertex[assetInfo.VertexPosition.Offset]));
 				if (assetInfo.VertexPosition.Exist)
 				{
-					aiVector3D& tempSceneMeshPos = vertices[indexVertex];
-					tempPosition[0] = tempSceneMeshPos.x;
-					tempPosition[1] = tempSceneMeshPos.y;
-					tempPosition[2] = tempSceneMeshPos.z;
-					tempPosition[3] = 1.f;
-				}
-				else
-				{
-					tempPosition[0] = 0.f;
-					tempPosition[1] = 0.f;
-					tempPosition[2] = 0.f;
-					tempPosition[3] = 1.f;
+					if (mesh->HasPositions())
+					{
+						aiVector3D& tempSceneMeshPos = mesh->mVertices[indexVertex];
+						tempPosition[0] = tempSceneMeshPos.x;
+						tempPosition[1] = tempSceneMeshPos.y;
+						tempPosition[2] = tempSceneMeshPos.z;
+						tempPosition[3] = 1.f;
+					}
+					else
+					{
+						tempPosition[0] = 0.f;
+						tempPosition[1] = 0.f;
+						tempPosition[2] = 0.f;
+						tempPosition[3] = 1.f;
+					}
 				}
 			}
 
@@ -370,18 +336,21 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 				FLOAT* tempNormal = (FLOAT*)(&(tempVertex[assetInfo.VertexNormal.Offset]));
 				if (assetInfo.VertexNormal.Exist)
 				{
-					aiVector3D& tempSceneMeshNormal = normals[indexVertex];
-					tempNormal[0] = tempSceneMeshNormal.x;
-					tempNormal[1] = tempSceneMeshNormal.y;
-					tempNormal[2] = tempSceneMeshNormal.z;
-					tempNormal[3] = 0.f;
-				}
-				else
-				{
-					tempNormal[0] = 0.f;
-					tempNormal[1] = 1.f;
-					tempNormal[2] = 0.f;
-					tempNormal[3] = 0.f;
+					if (mesh->HasNormals())
+					{
+						aiVector3D& tempSceneMeshNormal = mesh->mNormals[indexVertex];
+						tempNormal[0] = tempSceneMeshNormal.x;
+						tempNormal[1] = tempSceneMeshNormal.y;
+						tempNormal[2] = tempSceneMeshNormal.z;
+						tempNormal[3] = 0.f;
+					}
+					else
+					{
+						tempNormal[0] = 0.f;
+						tempNormal[1] = 1.f;
+						tempNormal[2] = 0.f;
+						tempNormal[3] = 0.f;
+					}
 				}
 			}
 
@@ -389,18 +358,21 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 				FLOAT* tempTangent = (FLOAT*)(&(tempVertex[assetInfo.VertexTangent.Offset]));
 				if (assetInfo.VertexTangent.Exist)
 				{
-					aiVector3D& tempSceneMeshTangent = tangents[indexVertex];
-					tempTangent[0] = tempSceneMeshTangent.x;
-					tempTangent[1] = tempSceneMeshTangent.y;
-					tempTangent[2] = tempSceneMeshTangent.z;
-					tempTangent[3] = 0.f;
-				}
-				else
-				{
-					tempTangent[0] = 1.f;
-					tempTangent[1] = 0.f;
-					tempTangent[2] = 0.f;
-					tempTangent[3] = 0.f;
+					if (mesh->HasTangentsAndBitangents())
+					{
+						aiVector3D& tempSceneMeshTangent = mesh->mTangents[indexVertex];
+						tempTangent[0] = tempSceneMeshTangent.x;
+						tempTangent[1] = tempSceneMeshTangent.y;
+						tempTangent[2] = tempSceneMeshTangent.z;
+						tempTangent[3] = 0.f;
+					}
+					else
+					{
+						tempTangent[0] = 1.f;
+						tempTangent[1] = 0.f;
+						tempTangent[2] = 0.f;
+						tempTangent[3] = 0.f;
+					}
 				}
 			}
 
@@ -408,54 +380,63 @@ void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo
 				FLOAT* tempUV = (FLOAT*)(&(tempVertex[assetInfo.VertexUV.Offset]));
 				if (assetInfo.VertexUV.Exist)
 				{
-					aiVector3D& tempSceneMeshUV = texcoords[indexVertex];
-					tempUV[0] = tempSceneMeshUV.x;
-					tempUV[1] = tempSceneMeshUV.y;
-				}
-				else
-				{
-					tempUV[0] = 0.f;
-					tempUV[1] = 0.f;
+					if (mesh->HasTextureCoords(0u))
+					{
+						aiVector3D& tempSceneMeshUV = (mesh->mTextureCoords[0])[indexVertex];
+						tempUV[0] = tempSceneMeshUV.x;
+						tempUV[1] = tempSceneMeshUV.y;
+					}
+					else
+					{
+						tempUV[0] = 0.f;
+						tempUV[1] = 0.f;
+					}
 				}
 			}
 
 			{
 				USHORT* tempBoneIndices = (USHORT*)(&(tempVertex[assetInfo.VertexBoneIndices.Offset]));
-				if (assetInfo.VertexBoneIndices.Exist && blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
+				if (assetInfo.VertexBoneIndices.Exist)
 				{
-					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
-					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
-					tempBoneIndices[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneIndices[0].first : 0u;
-					tempBoneIndices[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneIndices[1].first : 0u;
-					tempBoneIndices[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneIndices[2].first : 0u;
-					tempBoneIndices[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneIndices[3].first : 0u;
-				}
-				else
-				{
-					tempBoneIndices[0] = 0u;
-					tempBoneIndices[1] = 0u;
-					tempBoneIndices[2] = 0u;
-					tempBoneIndices[3] = 0u;
+					if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
+					{
+						std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
+						UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
+						tempBoneIndices[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneIndices[0].first : 0u;
+						tempBoneIndices[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneIndices[1].first : 0u;
+						tempBoneIndices[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneIndices[2].first : 0u;
+						tempBoneIndices[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneIndices[3].first : 0u;
+					}
+					else
+					{
+						tempBoneIndices[0] = 0u;
+						tempBoneIndices[1] = 0u;
+						tempBoneIndices[2] = 0u;
+						tempBoneIndices[3] = 0u;
+					}
 				}
 			}
 
 			{
 				FLOAT* tempBoneWeights = (FLOAT*)(&(tempVertex[assetInfo.VertexBoneWeight.Offset]));
-				if (assetInfo.VertexBoneWeight.Exist && blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
+				if (assetInfo.VertexBoneWeight.Exist)
 				{
-					std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
-					UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
-					tempBoneWeights[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneWeights[0].second : 1.f;
-					tempBoneWeights[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneWeights[1].second : 0.f;
-					tempBoneWeights[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneWeights[2].second : 0.f;
-					tempBoneWeights[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneWeights[3].second : 0.f;
-				}
-				else
-				{
-					tempBoneWeights[0] = 1.f;
-					tempBoneWeights[1] = 0.f;
-					tempBoneWeights[2] = 0.f;
-					tempBoneWeights[3] = 0.f;
+					if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
+					{
+						std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
+						UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
+						tempBoneWeights[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneWeights[0].second : 1.f;
+						tempBoneWeights[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneWeights[1].second : 0.f;
+						tempBoneWeights[2] = tempSceneMeshBoneWriteIndex > 2u ? tempSceneMeshBoneWeights[2].second : 0.f;
+						tempBoneWeights[3] = tempSceneMeshBoneWriteIndex > 3u ? tempSceneMeshBoneWeights[3].second : 0.f;
+					}
+					else
+					{
+						tempBoneWeights[0] = 1.f;
+						tempBoneWeights[1] = 0.f;
+						tempBoneWeights[2] = 0.f;
+						tempBoneWeights[3] = 0.f;
+					}
 				}
 			}
 		}
@@ -627,7 +608,7 @@ void _GGatherSingleNodeRecursion(const aiNode* node, std::vector<const aiNode*>&
 		UINT tempSameNameIndex = 0u;
 		while (itFindNode != allNodeIndices.end())
 		{
-			std::string tempName = tempOldName + std::to_string(tempSameNameIndex);
+			tempNewName = tempOldName + std::to_string(tempSameNameIndex);
 			tempSameNameIndex += 1u;
 			itFindNode = allNodeIndices.find(tempNewName);
 		}
@@ -706,7 +687,8 @@ BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
 			tempNewBone.Parent = -1;
 			if (allNodes[indexNode]->mParent != nullptr)
 			{
-				tempNewBone.Parent = allNodeIndices.find(itFindNodeName->second)->second;
+				auto itFindNodeParentName = allNodeNames.find(allNodes[indexNode]->mParent);
+				tempNewBone.Parent = allNodeIndices.find(itFindNodeParentName->second)->second;
 			}
 			allGameNodes.push_back(tempNewBone);
 			allGameNodeIndices.insert_or_assign(tempNewBone.Name, tempNewBone.Index);
@@ -985,33 +967,6 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadDefaultMeshFile(const s
 	impoter->FreeScene();
 	return result;
 }
-//void CopyNodesWithMeshes(aiNode node, SceneObject targetParent, Matrix4x4 accTransform)
-//{
-//	SceneObject parent;
-//	Matrix4x4 transform;
-//
-//	// if node has meshes, create a new scene object for it
-//	if (node.mNumMeshes > 0) {
-//		SceneObjekt newObject = new SceneObject;
-//		targetParent.addChild(newObject);
-//		// copy the meshes
-//		CopyMeshes(node, newObject);
-//
-//		// the new object is the parent for all child nodes
-//		parent = newObject;
-//		transform.SetUnity();
-//	}
-//	else {
-//		// if no meshes, skip the node, but keep its transformation
-//		parent = targetParent;
-//		transform = node.mTransformation * accTransform;
-//	}
-//
-//	// continue for all child nodes
-//	for (all node.mChildren) {
-//		CopyNodesWithMeshes(node.mChildren[a], parent, transform);
-//	}
-//}
 CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<CustomStruct::CSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList)
 {
 	if (vertices != nullptr)
@@ -1104,18 +1059,8 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile
 	// Now we can access the file's contents.
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-#if 0
-	INT tempRootNode = -1;
-	result = _GGatherBoneDatas(scene, skeleton, boneList, tempRootNode) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
-
-	if (result == CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
-	{
-		rootNode = static_cast<UINT>(tempRootNode);
-		_GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneList, inputLayoutDesc, inputLayoutNum);
-	}
-#else
 	result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
-#endif
+
 	// We're done. Everything will be cleaned up by the importer destructor
 	impoter->FreeScene();
 	return result;
@@ -1167,14 +1112,6 @@ CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonAnimationFile(c
 		impoter->FreeScene();
 		return result;
 	}
-
-	// Skeleton reader
-	//std::vector<CustomStruct::CGameBoneNodeInfo> sceneSkeleton;
-	//std::vector<UINT> sceneBoneList;
-	//UINT rootNode = 0u;
-	//INT tempRootNode = -1;
-	//result = _GGatherBoneDatas(scene, sceneSkeleton, sceneBoneList, tempRootNode);
-	//rootNode = static_cast<UINT>(tempRootNode);
 
 	// Now we can access the file's contents.
 	auto tempInsertResult = animationDatas.insert_or_assign(path, std::map<std::string, CustomStruct::CGameAnimationInfo>());

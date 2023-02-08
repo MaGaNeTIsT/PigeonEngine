@@ -404,6 +404,14 @@ CustomType::Matrix4x4 CTransform::GetWorldToLocalMatrix()const
 	return (this->GetLocalToWorldMatrix().Inverse());
 }
 #ifdef _DEVELOPMENT_EDITOR
+void CTransform::SetEditorRotation(const CustomType::Vector3& v)
+{
+	this->m_EditorRotation[0] = v.X();
+	this->m_EditorRotation[1] = v.Y();
+	this->m_EditorRotation[2] = v.Z();
+}
+#endif
+#ifdef _DEVELOPMENT_EDITOR
 void CTransform::SelectedEditorUpdate()
 {
 	bool realTimeChange = this->m_RealTimeChangeValue;

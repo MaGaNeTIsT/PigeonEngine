@@ -50,6 +50,10 @@ public:
 	virtual void	FixedUpdate()override {}
 #ifdef _DEVELOPMENT_EDITOR
 public:
+	void			SetEditorRotation(const CustomType::Vector3& v);
+#endif
+#ifdef _DEVELOPMENT_EDITOR
+public:
 	virtual void	SelectedEditorUpdate()override {}
 #endif
 public:

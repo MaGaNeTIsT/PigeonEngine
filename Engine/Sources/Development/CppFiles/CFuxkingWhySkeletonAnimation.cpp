@@ -1,6 +1,5 @@
 #include "../Headers/CFuxkingWhySkeletonAnimation.h"
 #include "../../EngineBase/Headers/CBaseType.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 
 void ReadFindNodeByName(const aiNode* currentNode, const aiString& findName, BOOL& successFind, const aiNode*& outputNode)
@@ -377,7 +376,7 @@ CFuxkingWhySkeletonAnimation::CFuxkingWhySkeletonAnimation()
 	DirectX::XMStoreFloat4x4(&(this->m_PerDrawCBufferData.WorldInvTransposeMatrix), Identity);
 
 	this->m_BoneCBufferData.SkeletonBoneNum = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
-	for (UINT i = 0u; i < 576u; i++)
+	for (UINT i = 0u; i < (CustomStruct::CRenderBaseSetting::RenderBoneMaxNum * 2u); i++)
 	{
 		DirectX::XMStoreFloat4x4(&(this->m_BoneCBufferData.SkeletonMatrix[i]), Identity);
 	}
@@ -392,25 +391,13 @@ CFuxkingWhySkeletonAnimation::~CFuxkingWhySkeletonAnimation()
 }
 void CFuxkingWhySkeletonAnimation::Init()
 {
-	std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
-	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
-	//std::string skeletonMeshPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_NO_NORMAL.fbx";
-	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/SKM_Quinn.FBX";
-	//std::string skeletonMeshPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/SK_Mannequin_UE4_WithWeapon.FBX";
+	std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/SK_Mannequin_UE4_WithWeapon.FBX";
 
 	UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded;
-	//UINT skeletonMeshReadState = aiProcessPreset_TargetRealtime_MaxQuality;
-	//UINT skeletonMeshReadState = aiProcess_ConvertToLeftHanded;
 
-	std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
-	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/Hero/Karin/Karin/Karin.FBX";
-	//std::string skeletonAnimationPath = "E:/Files/Git/DirectX11-SchoolProject/3D_Projekt_VW_PS_FG/3D_Projekt_VW_PS_FG/FbxModels/Glasse_Walk_Cycle.fbx";
-	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/UE_Quin/MF_Pistol_Jog_Fwd_Start.FBX";
-	//std::string skeletonAnimationPath = "E:/Download/SkeletonMeshAndAnimations/BossyEnemy/Boss_Idle.FBX";
+	std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/Boss_Idle.FBX";
 
 	UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_MakeLeftHanded;
-	//UINT skeletonAnimationReadState = aiProcessPreset_TargetRealtime_MaxQuality;
-	//UINT skeletonAnimationReadState = aiProcess_MakeLeftHanded;
 
 	DirectX::XMFLOAT3 objPos = DirectX::XMFLOAT3(0.f, 600.f, -600.f);
 	DirectX::XMFLOAT3 objRot = DirectX::XMFLOAT3(90.f, 0.f, 0.f);
@@ -525,7 +512,7 @@ void CFuxkingWhySkeletonAnimation::Update()
 		}
 		FLOAT t = this->m_AnimationT;
 		DirectX::XMMATRIX dummyMat = DirectX::XMMatrixIdentity();
-		ReadSceneAnimTransform(this->m_AssimpAnimScene->mRootNode, this->m_AssimpAnims[0], &(this->m_BoneMap), &(this->m_BoneList), dummyMat, t);
+		ReadSceneAnimTransform(this->m_AssimpAnimScene->mRootNode, nullptr, &(this->m_BoneMap), &(this->m_BoneList), dummyMat, t);//this->m_AssimpAnims[0]
 	}
 #endif
 }
@@ -545,7 +532,7 @@ void CFuxkingWhySkeletonAnimation::Draw()
 		CRenderDevice::SetVertexBuffer(tempMesh.VertexBuffer, vertexStride);
 		CRenderDevice::SetIndexBuffer(tempMesh.IndexBuffer);
 		const UINT numBones = static_cast<UINT>(this->m_BoneList.size());
-		for (UINT i = 0u; i < numBones && (numBones + i) < 576u; i++)
+		for (UINT i = 0u; i < numBones && (numBones + i) < (CustomStruct::CRenderBaseSetting::RenderBoneMaxNum * 2u); i++)
 		{
 			CFuxkingWhyBone& tempBone = this->m_BoneList[i];
 

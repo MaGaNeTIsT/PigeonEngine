@@ -174,7 +174,7 @@ static CSkeletonSingleNode _GSkeletonSingleErrorNode;
 CSkeletonComponent::CSkeletonComponent(const std::string& skeletonName) : CBaseComponent(TRUE, TRUE, FALSE)
 {
 	this->m_SkeletonPerFrameUpload = TRUE;
-	this->m_SkeletonGPUCBufferData._SkeletonBoneNum = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
+	this->m_SkeletonGPUCBufferData.SkeletonBoneNum = DirectX::XMFLOAT4(0.f, 0.f, 0.f, 0.f);
 	this->m_SkeletonGPUCBuffer = nullptr;
 
 	this->m_SkeletonName = skeletonName;
@@ -339,9 +339,9 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 	}
 
 	//TODO
-	this->m_SkeletonGPUCBufferData._SkeletonBoneNum = DirectX::XMFLOAT4(static_cast<FLOAT>(this->m_BoneListVector.size()), 0.f, 0.f, 0.f);
-	this->m_SkeletonGPUCBufferData._SkeletonMatrix[0] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
-	this->m_SkeletonGPUCBufferData._SkeletonMatrix[this->m_BoneListVector.size()] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
+	this->m_SkeletonGPUCBufferData.SkeletonBoneNum = DirectX::XMFLOAT4(static_cast<FLOAT>(this->m_BoneListVector.size()), 0.f, 0.f, 0.f);
+	this->m_SkeletonGPUCBufferData.SkeletonMatrix[0] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
+	this->m_SkeletonGPUCBufferData.SkeletonMatrix[this->m_BoneListVector.size()] = CustomType::Matrix4x4::Identity().GetXMFLOAT4X4();
 
 	CRenderDevice::CreateBuffer(this->m_SkeletonGPUCBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::CShaderSkeletonMatrix), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 }
@@ -372,8 +372,8 @@ void CSkeletonComponent::UpdateSkeletonTransformInfo()
 		CustomType::Matrix4x4 finalMatrix(tempNode.GetBoneSpaceGlobalMatrix());
 		finalMatrix = finalMatrix * tempNode.GetBindPoseMatrix();
 
-		this->m_SkeletonGPUCBufferData._SkeletonMatrix[boneIndex] = (finalMatrix).GetXMFLOAT4X4();
-		this->m_SkeletonGPUCBufferData._SkeletonMatrix[boneNum + boneIndex] = (finalMatrix).Inverse().Transpose().GetXMFLOAT4X4();
+		this->m_SkeletonGPUCBufferData.SkeletonMatrix[boneIndex] = (finalMatrix).GetXMFLOAT4X4();
+		this->m_SkeletonGPUCBufferData.SkeletonMatrix[boneNum + boneIndex] = (finalMatrix).Inverse().Transpose().GetXMFLOAT4X4();
 	}
 }
 void CSkeletonComponent::UploadSkeletonGPUConstantBuffer()const

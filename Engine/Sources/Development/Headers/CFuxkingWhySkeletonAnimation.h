@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -37,7 +38,7 @@ public:
 	struct CFuxkingWhyBoneCBuffer
 	{
 		DirectX::XMFLOAT4		SkeletonBoneNum;
-		DirectX::XMFLOAT4X4		SkeletonMatrix[576];
+		DirectX::XMFLOAT4X4		SkeletonMatrix[CustomStruct::CRenderBaseSetting::RenderBoneMaxNum * 2u];
 	};
 public:
 	void Init();

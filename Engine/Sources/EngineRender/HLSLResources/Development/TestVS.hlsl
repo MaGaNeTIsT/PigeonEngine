@@ -48,7 +48,7 @@ cbuffer ConstantBufferPerDraw : register(b2)
 cbuffer ConstantBufferSkeleton : register(b4)
 {
 	float4			_SkeletonBoneNum;
-	float4x4		_SkeletonMatrix[576];
+	float4x4		_SkeletonMatrix[572];
 };
 
 struct TestAttribute

@@ -122,8 +122,8 @@ namespace CustomStruct
 	struct CShaderSkeletonMatrix
 	{
 		CShaderSkeletonMatrix() { ::ZeroMemory(this, sizeof(*this)); }
-		DirectX::XMFLOAT4		_SkeletonBoneNum;
-		DirectX::XMFLOAT4X4		_SkeletonMatrix[CRenderBaseSetting::RenderBoneMaxNum * 2u];
+		DirectX::XMFLOAT4		SkeletonBoneNum;
+		DirectX::XMFLOAT4X4		SkeletonMatrix[CRenderBaseSetting::RenderBoneMaxNum * 2u];
 	};
 
 	enum CEngineDefaultTexture2DType

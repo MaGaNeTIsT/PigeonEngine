@@ -63,6 +63,12 @@ CGameObjectTransformBase::~CGameObjectTransformBase()
 	this->RemoveChildren();
 	this->RemoveTransform();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CGameObjectTransformBase::SetEditorRotation(const CustomType::Vector3& v)
+{
+	this->m_Transform->SetEditorRotation(v);
+}
+#endif
 CustomType::Vector3 CGameObjectTransformBase::GetForwardVector()const
 {
 	if (this->HasTransform())

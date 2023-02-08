@@ -15,9 +15,10 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 {
 	this->AddNewTransform();
 	{
-		std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+		std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/SK_Mannequin_UE4_WithWeapon.FBX";
 		
-		std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/Misaki/Misaki_SchoolUniform.fbx";
+		//std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/Boss_Idle.FBX";
+		std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/Boss_ReactionHit_F.FBX";
 
 		//CGameBoundSphereComponent* boundSphereComponent = new CGameBoundSphereComponent();
 		CGameBoundBoxComponent* boundBoxComponent = new CGameBoundBoxComponent();
