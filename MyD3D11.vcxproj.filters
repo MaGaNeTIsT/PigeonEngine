@@ -141,24 +141,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ThirdParty\imgui\imconfig.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui\imgui.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui\imgui_internal.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui\imstb_rectpack.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui\imstb_textedit.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui\imstb_truetype.h">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="Entry\EngineMain.h">
       <Filter>Entry</Filter>
     </ClInclude>
@@ -206,9 +188,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h">
       <Filter>Engine\Sources\EngineGame\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshComponent.h">
-      <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h">
       <Filter>Engine\Sources\EngineRender\AssetsManager\Headers</Filter>
@@ -309,23 +288,21 @@
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CRTTI.h" />
+    <ClInclude Include="ThirdParty\imgui\imconfig.h" />
+    <ClInclude Include="ThirdParty\imgui\imgui.h" />
+    <ClInclude Include="ThirdParty\imgui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\imgui\imstb_truetype.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CDynamicWind.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonComponent.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CSceneSkeletonMeshObject.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonAnimationComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ThirdParty\imgui\imgui.cpp">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp">
-      <Filter>ThirdParty\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Entry\EngineMain.cpp">
       <Filter>Entry</Filter>
     </ClCompile>
@@ -463,6 +440,17 @@
     </ClCompile>
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CDynamicWind.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonComponent.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneSkeletonMeshObject.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -552,6 +540,12 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
@@ -584,5 +578,6 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
+    <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl" />
   </ItemGroup>
 </Project>

@@ -8,8 +8,9 @@ namespace CustomStruct
 	class CRenderBaseSetting
 	{
 	public:
-		constexpr static FLOAT RenderBoundMinimum		= 0.01f;
-		constexpr static FLOAT RenderBoundHalfMinimum	= 0.005f;
+		constexpr static FLOAT		RenderBoundMinimum			= 0.01f;
+		constexpr static FLOAT		RenderBoundHalfMinimum		= 0.005f;
+		constexpr static USHORT		RenderBoneMaxNum			= 286u;
 	};
 
 	struct CColor
@@ -116,6 +117,13 @@ namespace CustomStruct
 		}
 		DirectX::XMINT4			LightCount;
 		CShaderLightParams		LightParams[16];
+	};
+
+	struct CShaderSkeletonMatrix
+	{
+		CShaderSkeletonMatrix() { ::ZeroMemory(this, sizeof(*this)); }
+		DirectX::XMFLOAT4		SkeletonBoneNum;
+		DirectX::XMFLOAT4X4		SkeletonMatrix[CRenderBaseSetting::RenderBoneMaxNum * 2u];
 	};
 
 	enum CEngineDefaultTexture2DType
@@ -835,6 +843,19 @@ namespace CustomStruct
 
 			inputLayoutDesc	= _EngineDefaultMeshInputLayout;
 			inputLayoutNum	= 4u;
+		}
+		static void GetEngineSkeletonMeshInputLayouts(const CustomStruct::CRenderInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		{
+			const static CustomStruct::CRenderInputLayoutDesc _EngineSkeletonMeshInputLayout[6u] = {
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES),
+				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT) };
+
+			inputLayoutDesc = _EngineSkeletonMeshInputLayout;
+			inputLayoutNum = 6u;
 		}
 	};
 

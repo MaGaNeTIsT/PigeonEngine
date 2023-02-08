@@ -2,7 +2,7 @@
 
 #include "../../../../Entry/EngineMain.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
+#include "./CMeshComponent.h"
 
 class CSkyBox
 {

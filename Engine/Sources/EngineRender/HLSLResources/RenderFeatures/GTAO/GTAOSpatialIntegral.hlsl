@@ -1,5 +1,5 @@
-#ifndef _GTAO_SPATIAL_INTEGRAL_HLSL
-#define _GTAO_SPATIAL_INTEGRAL_HLSL
+#ifndef _GTAO_SPATIAL_INTEGRAL_CS_HLSL
+#define _GTAO_SPATIAL_INTEGRAL_CS_HLSL
 
 #include "../../Common/ShaderCommon.hlsl"
 

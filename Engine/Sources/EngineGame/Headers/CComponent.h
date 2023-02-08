@@ -79,6 +79,10 @@ public:
 	CustomType::Matrix4x4	GetWorldToLocalMatrix()const;
 #ifdef _DEVELOPMENT_EDITOR
 public:
+	void	SetEditorRotation(const CustomType::Vector3& v);
+#endif
+#ifdef _DEVELOPMENT_EDITOR
+public:
 	void	SelectedEditorUpdate();
 protected:
 	BOOL	m_RealTimeChangeValue;

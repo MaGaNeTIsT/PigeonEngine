@@ -42,10 +42,11 @@
 #define ENGINE_UPDATE_FRAME									(90)
 #define ENGINE_WINDOWED										(1)
 
-#define ENGINE_CBUFFER_PER_FRAME_START_SLOT					(0u)
-#define ENGINE_CBUFFER_LIGHT_DATA_START_SLOT				(1u)
-#define ENGINE_CBUFFER_PER_DRAW_START_SLOT					(2u)
-#define ENGINE_CBUFFER_MATERIAL_DATA_START_SLOT				(3u)
+#define ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT		(0u)
+#define ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT		(1u)
+#define ENGINE_CBUFFER_VS_PS_PER_DRAW_START_SLOT			(2u)
+#define ENGINE_CBUFFER_VS_PS_MATERIAL_DATA_START_SLOT		(3u)
+#define ENGINE_CBUFFER_VS_SKELETON_DATA_START_SLOT			(4u)
 
 #define ENGINE_SAMPLER_FIRST_START_SLOT						(0u)
 #define ENGINE_SAMPLER_POINT_CLAMP_START_SLOT				(ENGINE_SAMPLER_FIRST_START_SLOT + 0u)
@@ -94,6 +95,7 @@
 #define ENGINE_SHADER_DIRECT_LIGHT_PS						("./Engine/Assets/EngineShaders/EngineDirectLightPS.cso")
 
 #define ENGINE_DEFAULT_LIT_SHADER_FORWARD_VS				("./Engine/Assets/EngineShaders/EngineDefaultLitForwardVS.cso")
+#define ENGINE_DEFAULT_LIT_SHADER_FORWARD_SKELETON_MESH_VS	("./Engine/Assets/EngineShaders/EngineDefaultLitForwardSkeletonMeshVS.cso")
 #define ENGINE_DEFAULT_LIT_SHADER_FORWARD_PS				("./Engine/Assets/EngineShaders/EngineDefaultLitForwardPS.cso")
 #define ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_VS		("./Engine/Assets/EngineShaders/EngineDefaultAnisotropicForwardVS.cso")
 #define ENGINE_DEFAULT_ANISOTROPIC_SHADER_FORWARD_PS		("./Engine/Assets/EngineShaders/EngineDefaultAnisotropicForwardPS.cso")

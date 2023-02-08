@@ -1,13 +1,14 @@
 #include "../Headers/CGameObject.h"
 #include "../Headers/CComponent.h"
+#include "../Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../Headers/CScene.h"
 
 CGameObjectBase::CGameObjectBase(const BOOL& active, const CScene* scene)
 {
 	this->m_Active = active;
 	this->m_Scene = scene;
+	this->m_Name = ENGINE_NOT_EXIST_STRING;
 }
 CGameObjectBase::~CGameObjectBase()
 {
@@ -37,6 +38,17 @@ void CGameObjectBase::Inactive()
 {
 	this->m_Active = FALSE;
 }
+const std::string& CGameObjectBase::GetName()const
+{
+	return (this->m_Name);
+}
+void CGameObjectBase::SetName(const std::string& name)
+{
+	if (name.length() > 1)
+	{
+		this->m_Name = name;
+	}
+}
 
 
 
@@ -51,6 +63,12 @@ CGameObjectTransformBase::~CGameObjectTransformBase()
 	this->RemoveChildren();
 	this->RemoveTransform();
 }
+#ifdef _DEVELOPMENT_EDITOR
+void CGameObjectTransformBase::SetEditorRotation(const CustomType::Vector3& v)
+{
+	this->m_Transform->SetEditorRotation(v);
+}
+#endif
 CustomType::Vector3 CGameObjectTransformBase::GetForwardVector()const
 {
 	if (this->HasTransform())
@@ -613,6 +631,14 @@ void CGameObject::AddComponent(CBaseComponent* component)
 				}
 				this->m_MeshComponentID = component->GetUniqueID();
 			}
+			else if (typeid(*component) == typeid(CSkeletonMeshComponent))
+			{
+				if (this->HasMeshComponent())
+				{
+					this->RemoveComponentByComponentID(this->m_MeshComponentID);
+				}
+				this->m_MeshComponentID = component->GetUniqueID();
+			}
 			else if (typeid(*component) == typeid(CGameBoundSphereComponent))
 			{
 				if (this->HasGameBoundComponent())
@@ -652,6 +678,10 @@ void CGameObject::RemoveComponent(const CBaseComponent* component)
 				{
 					this->m_MeshComponentID = 0u;
 				}
+				else if (typeid(*resultComponent) == typeid(CSkeletonMeshComponent))
+				{
+					this->m_MeshComponentID = 0u;
+				}
 				else if (typeid(*resultComponent) == typeid(CGameBoundSphereComponent))
 				{
 					this->m_GameBoundComponentID = 0u;
@@ -679,6 +709,10 @@ void CGameObject::RemoveComponentByComponentID(const ULONGLONG& id)
 				this->m_MeshRendererComponentID = 0u;
 			}
 			else if (typeid(*resultComponent) == typeid(CMeshComponent))
+			{
+				this->m_MeshComponentID = 0u;
+			}
+			else if (typeid(*resultComponent) == typeid(CSkeletonMeshComponent))
 			{
 				this->m_MeshComponentID = 0u;
 			}

@@ -45,6 +45,31 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 		return resultMesh;
 	}
 }
+const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
+{
+	isOutputSkeleton = FALSE;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
+	{
+		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(path + descName);
+		if (findResult != NULL)
+		{
+			return findResult;
+		}
+	}
+
+	{
+		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneIndexMap, boneList, needVertexData);
+		if (resultMesh == NULL)
+		{
+			return NULL;
+		}
+		CMeshManager::AddMeshData((path + descName), resultMesh);
+		isOutputSkeleton = TRUE;
+		return resultMesh;
+	}
+}
 const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
 {
 	if (baseType == CEngineBaseModelType::ENGINE_BASE_NONE || baseType == CEngineBaseModelType::ENGINE_BASE_COUNT)
@@ -1111,13 +1136,27 @@ CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, c
 {
 	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
 	UINT numVertices, numIndices, vertexStride;
-	if (!CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices))
+	if (CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}
 
 	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+
+	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
+}
+CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
+{
+	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+	UINT numVertices, numIndices, vertexStride;
+	if (CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
+	{
+		return NULL;
+	}
+
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 
 	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }

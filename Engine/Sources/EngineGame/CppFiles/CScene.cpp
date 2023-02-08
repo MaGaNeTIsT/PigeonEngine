@@ -1,16 +1,17 @@
 #include "../Headers/CScene.h"
+#include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineBase/Headers/CInput.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureType.h"
 #include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CMaterialBase.h"
 #include "../../EngineRender/RenderMaterials/Headers/CDefaultLitMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
+#include "../Headers/CMeshComponent.h"
 #include "../Headers/CGameBoundComponent.h"
 #include "../Headers/CCamera.h"
 #include "../Headers/CLightType.h"
@@ -19,7 +20,9 @@
 #include "../Headers/CCube.h"
 
 #include "../../Development/Headers/CSceneGameObject.h"
+#include "../../Development/Headers/CSceneSkeletonMeshObject.h"
 #include "../../Development/Headers/CReadWriteFile.h"
+#include "../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
 
 CScene::CScene()
 {
@@ -76,8 +79,10 @@ void CScene::Init()
 		CPlane* terrainPlane = this->AddGameObject<CPlane>(SceneLayout::LAYOUT_TERRAIN);
 
 		mainCamera->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -950.f));
+		mainLight->SetEditorRotation(CustomType::Vector3(50.f, 0.f, 0.f));
 		terrainPlane->SetMeshInfo(2000.f, 8, 4.f);
 	}
+
 #ifdef _DEVELOPMENT_EDITOR
 	{
 		this->m_ShowSceneInfo = FALSE;
@@ -87,9 +92,10 @@ void CScene::Init()
 	}
 
 	{
-		CSceneGameObject* sceneGameObject = this->AddGameObject<CSceneGameObject>(SceneLayout::LAYOUT_OPAQUE);
+		CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
 		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
-		sceneGameObject->SetWorldScale(CustomType::Vector3(100.f, 100.f, 100.f));
+		sceneGameObject->SetEditorRotation(CustomType::Vector3(90.f, 0.f, 0.f));
+		sceneGameObject->SetWorldScale(CustomType::Vector3(1.f, 1.f, 1.f));
 		this->m_SelectedObject = sceneGameObject;
 	}
 
@@ -97,7 +103,7 @@ void CScene::Init()
 		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
 		std::string materialTypeName = "mat_tex_cfg";
 		BOOL showDebugFabric = TRUE;
-		BOOL useModelFromFile = FALSE;
+		BOOL useModelFromFile = TRUE;
 		FLOAT modelY = 200.f;
 		FLOAT modelOffsetX = 300.f;
 		FLOAT modelOffsetZ = 300.f;
@@ -105,7 +111,7 @@ void CScene::Init()
 
 		if (showDebugFabric)
 		{
-			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/ClothOnly/Cloth.obj";
+			std::string modelFilePath = "./Engine/Assets/EngineModels/SceneModels/MaterialSphere/MaterialSphere.fbx";
 			CMeshManager::CEngineBaseModelType defaultModelType = CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE;
 
 			const static CustomStruct::CRenderInputLayoutDesc testMeshInputLayout[4u] = {

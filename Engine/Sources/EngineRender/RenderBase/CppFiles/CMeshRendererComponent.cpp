@@ -169,15 +169,14 @@ void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
 		this->UploadConstantBuffer(this->m_Material->GetConstantData());
 		this->m_CurrentFrameMaterialUpload = TRUE;
 	}
-	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_PER_DRAW_START_SLOT);
-	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_PER_DRAW_START_SLOT);
+	CRenderDevice::BindVSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_VS_PS_PER_DRAW_START_SLOT);
+	CRenderDevice::BindPSConstantBuffer(this->m_PerDrawInfo.PerDrawBuffer, ENGINE_CBUFFER_VS_PS_PER_DRAW_START_SLOT);
 	if (this->HasConstantBuffer())
 	{
-		this->BindConstantBuffer(ENGINE_CBUFFER_MATERIAL_DATA_START_SLOT);
+		this->BindConstantBuffer(ENGINE_CBUFFER_VS_PS_MATERIAL_DATA_START_SLOT);
 	}
 	this->m_Material->Bind();
-	CRenderDevice::SetVertexBuffer(this->m_MeshComponent->GetVertexBuffer(), this->m_MeshComponent->GetVertexStride());
-	CRenderDevice::SetIndexBuffer(this->m_MeshComponent->GetIndexBuffer());
+	this->m_MeshComponent->Bind(TRUE, TRUE);
 	if (this->m_Material->HasVertexShader())
 	{
 		this->m_Material->GetVertexShader()->Bind();

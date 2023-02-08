@@ -88,6 +88,13 @@ public:
 	virtual ~CDefaultLitMaterial();
 };
 
+class CDefaultLitSkeletonMeshMaterial : public CDefaultLitMaterial
+{
+public:
+	CDefaultLitSkeletonMeshMaterial();
+	virtual ~CDefaultLitSkeletonMeshMaterial();
+};
+
 class CAnisotropicMaterial : public CDefaultLitMaterial
 {
 public:

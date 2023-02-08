@@ -4,7 +4,7 @@
 #include "./CRenderStructCommon.h"
 #include "./CMaterialBase.h"
 #include "../../../EngineGame/Headers/CComponent.h"
-#include "../../AssetsManager/Headers/CMeshComponent.h"
+#include "../../../EngineGame/Headers/CMeshComponent.h"
 
 class CMeshRendererComponent : public CRenderComponent
 {

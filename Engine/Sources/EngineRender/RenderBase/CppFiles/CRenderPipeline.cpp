@@ -17,10 +17,13 @@
 #include "../../../EngineGame/Headers/CSkyBox.h"
 #include "../../RenderFeatures/Headers/CGTAOPass.h"
 #include "../../RenderFeatures/Headers/CHZBPass.h"
+#include "../../RenderFeatures/Headers/CDynamicWind.h"
 #include "../../RenderFeatures/Headers/CPostProcessBase.h"
 
+#ifdef _DEVELOPMENT_EDITOR
 #include "../../../Development/Headers/CDebugScreen.h"
 #include "../../../Development/Headers/CGPUProfiler.h"
+#endif
 
 CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
@@ -32,6 +35,7 @@ std::shared_ptr<CSkyBox>			CRenderPipeline::m_SkyBox				= nullptr;
 std::shared_ptr<CGPUCulling>		CRenderPipeline::m_GPUCulling			= nullptr;
 std::shared_ptr<CGTAOPass>			CRenderPipeline::m_GTAOPass				= nullptr;
 std::shared_ptr<CHZBPass>			CRenderPipeline::m_HZBPass				= nullptr;
+std::shared_ptr<CDynamicWind>		CRenderPipeline::m_DynamicWind			= nullptr;
 #ifdef _DEVELOPMENT_EDITOR
 std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
 #endif
@@ -84,6 +88,10 @@ CRenderPipeline::CRenderPipeline()
 	{
 		CRenderPipeline::m_HZBPass = std::shared_ptr<CHZBPass>(new CHZBPass());
 	}
+	if (CRenderPipeline::m_DynamicWind == nullptr)
+	{
+		CRenderPipeline::m_DynamicWind = std::shared_ptr<CDynamicWind>(new CDynamicWind());
+	}
 #ifdef _DEVELOPMENT_EDITOR
 	if (CRenderPipeline::m_DebugScreen == nullptr)
 	{
@@ -106,6 +114,7 @@ CRenderPipeline::CRenderPipeline()
 	m_ShowDebugScreen = FALSE;
 	m_ShowGTAOEditor = FALSE;
 	m_ShowHZBEditor = FALSE;
+	m_ShowDynamicWindEditor = FALSE;
 #endif
 }
 CRenderPipeline::~CRenderPipeline()
@@ -121,6 +130,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 	m_ShowDebugScreen = FALSE;
 	m_ShowGTAOEditor = FALSE;
 	m_ShowHZBEditor = FALSE;
+	m_ShowDynamicWindEditor = FALSE;
 #endif
 
 	m_Scene = scene;
@@ -327,6 +337,7 @@ void CRenderPipeline::PostInit()
 		m_GTAOPass->Init(m_SceneCamera, m_GlobalBufferSize);
 		m_HZBPass->Init(m_GlobalBufferSize);
 		m_GPUCulling->Init(m_HZBPass, 1u, 50u);
+		m_DynamicWind->Init();
 #ifdef _DEVELOPMENT_EDITOR
 		m_DebugScreen->Init(m_GlobalBufferSize);
 #endif
@@ -366,6 +377,7 @@ void CRenderPipeline::Uninit()
 #ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Uninit();
 #endif
+	m_DynamicWind->Uninit();
 	m_GTAOPass->Uninit();
 	m_HZBPass->Uninit();
 	m_GPUCulling->Uninit();
@@ -472,6 +484,10 @@ void CRenderPipeline::PostUpdate()
 				if (tempGameObjectPtr && tempGameObjectPtr->HasMeshComponent() && tempGameObjectPtr->HasMeshRendererComponent())
 				{
 					const CMeshComponent* mesh = tempGameObjectPtr->GetMeshComponent<CMeshComponent>();
+					if (mesh == nullptr)
+					{
+						mesh = tempGameObjectPtr->GetMeshComponent<CSkeletonMeshComponent>();
+					}
 					const CMeshRendererComponent* meshRenderer = tempGameObjectPtr->GetMeshRendererComponent<CMeshRendererComponent>();
 					if (mesh && meshRenderer && mesh->IsActive() && mesh->HasMesh() && meshRenderer->IsActive() && meshRenderer->HasMesh() && meshRenderer->HasMaterial())
 					{
@@ -504,6 +520,7 @@ void CRenderPipeline::PostUpdate()
 
 	m_GTAOPass->Update();
 	m_HZBPass->Update();
+	m_DynamicWind->Update();
 	m_GPUCulling->Update(m_FrameIndex);
 #ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Update();
@@ -540,9 +557,9 @@ void CRenderPipeline::Render()
 	{
 		PrepareLightDataRender();
 		CRenderDevice::UploadBuffer(m_RenderLightDataInfo.LightDataBuffer, &(m_RenderLightDataInfo.LightData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderLightDataInfo.LightDataBuffer, ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT);
 	}
 
 	CLightDirectional* lightShadow = NULL;
@@ -576,9 +593,9 @@ void CRenderPipeline::Render()
 				passShadowName += std::to_string(layerIndex);
 				PrepareDirectionalLightPerFrameRender(lightShadow, layerIndex);
 				CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+				CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+				CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+				CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
 				CustomStruct::CRenderViewport viewportShadow = lightShadow->GetCurrentShadowMapViewport(layerIndex);
 				const CRenderDevice::RenderTexture2DViewInfo& shadowMap = lightShadow->GetCurrentShadowMap(layerIndex).Texture;
 				CGPUProfilerManager::AddPass(passShadowName, m_FrameIndex, [&]() {
@@ -606,9 +623,9 @@ void CRenderPipeline::Render()
 	{
 		PreparePerFrameRender(lightShadow, 0u);
 		CRenderDevice::UploadBuffer(m_RenderPerFrameInfo.PerFrameBuffer, &(m_RenderPerFrameInfo.PerFrameData));
-		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
-		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_PER_FRAME_START_SLOT);
+		CRenderDevice::BindVSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+		CRenderDevice::BindPSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
+		CRenderDevice::BindCSConstantBuffer(m_RenderPerFrameInfo.PerFrameBuffer, ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT);
 		CRenderDevice::SetViewport(m_SceneCamera->GetViewport());
 	}
 
@@ -766,6 +783,7 @@ void CRenderPipeline::Render()
 			}
 			m_HZBPass->DrawDebug();
 			m_GTAOPass->DrawDebug();
+			m_DynamicWind->DrawDebug(m_GlobalBufferSize);
 #endif
 			});
 	}
@@ -822,6 +840,7 @@ void CRenderPipeline::EditorUpdate()
 	bool showDebugScreen = m_ShowDebugScreen;
 	bool showGTAOEditor = m_ShowGTAOEditor;
 	bool showHZBEditor = m_ShowHZBEditor;
+	bool showDynamicWindEditor = m_ShowDynamicWindEditor;
 
 	ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 	if (ImGui::TreeNode("CurrentRenderPipelineInfo"))
@@ -832,6 +851,7 @@ void CRenderPipeline::EditorUpdate()
 		ImGui::Checkbox("ShowDebugScreen", &showDebugScreen);
 		ImGui::Checkbox("ShowGTAOEditor", &showGTAOEditor);
 		ImGui::Checkbox("ShowHZBEditor", &showHZBEditor);
+		ImGui::Checkbox("ShowDynamicWindEditor", &showDynamicWindEditor);
 		ImGui::TreePop();
 	}
 	if (showGPUProfiler)
@@ -876,6 +896,10 @@ void CRenderPipeline::EditorUpdate()
 	{
 		m_HZBPass->EditorUpdate();
 	}
+	if (showDynamicWindEditor)
+	{
+		m_DynamicWind->EditorUpdate();
+	}
 
 	m_ShowGPUProfiler = showGPUProfiler;
 	m_ShowCPUCullingInfo = showCPUCullingInfo;
@@ -883,6 +907,7 @@ void CRenderPipeline::EditorUpdate()
 	m_ShowDebugScreen = showDebugScreen;
 	m_ShowGTAOEditor = showGTAOEditor;
 	m_ShowHZBEditor = showHZBEditor;
+	m_ShowDynamicWindEditor = showDynamicWindEditor;
 }
 #endif
 void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>& shader)

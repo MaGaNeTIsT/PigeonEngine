@@ -3,7 +3,7 @@
 #include "../../../../../Entry/EngineMain.h"
 #include "../../../EngineBase/Headers/CBaseType.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
-#include "./CMeshComponent.h"
+#include "../../../EngineGame/Headers/CMeshComponent.h"
 
 class CMeshManager
 {
@@ -28,6 +28,7 @@ public:
 	static void							ClearMeshData();
 public:
 	static const CBaseMesh<UINT>*		LoadDefaultMeshAsset(const std::string& path, const BOOL& needVertexData = FALSE);
+	static const CBaseMesh<UINT>*		LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
 	static const CBaseMesh<UINT>*		LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData = FALSE);
@@ -42,6 +43,7 @@ private:
 	static void							CombineForVertexData(void* vertices, const UINT& vertexNum, const UINT& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color);
 	static CBaseMesh<UINT>*				ImportOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData);
 	static CBaseMesh<UINT>*				ImportAssetDefaultMesh(const std::string& name, const BOOL& needVertexData);
+	static CBaseMesh<UINT>*				ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData);
 	static std::string					TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum);
 	template<typename IndexType>
 	static CBaseMesh<IndexType>*		CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL& needVertexData);

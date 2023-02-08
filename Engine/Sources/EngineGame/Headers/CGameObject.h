@@ -3,6 +3,7 @@
 #include "../../../../Entry/EngineMain.h"
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
+#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "./CObjectManager.h"
 #include "./CComponent.h"
 #include "./CGameBoundComponent.h"
@@ -32,6 +33,11 @@ public:
 protected:
 	BOOL			m_Active;
 public:
+	const std::string&	GetName()const;
+	void				SetName(const std::string& name);
+protected:
+	std::string		m_Name;
+public:
 	CGameObjectBase(const BOOL& active, const class CScene* scene);
 	virtual ~CGameObjectBase();
 };
@@ -44,6 +50,10 @@ public:
 	virtual void	Uninit()override {}
 	virtual void	Update()override {}
 	virtual void	FixedUpdate()override {}
+#ifdef _DEVELOPMENT_EDITOR
+public:
+	void			SetEditorRotation(const CustomType::Vector3& v);
+#endif
 #ifdef _DEVELOPMENT_EDITOR
 public:
 	virtual void	SelectedEditorUpdate()override {}

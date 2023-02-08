@@ -130,11 +130,11 @@ void CTransform::RemoveAllChildren()
 {
 	if (this->HasChild())
 	{
-		for (auto& child : this->m_Children)
+		for (auto itChild = this->m_Children.begin(); itChild != this->m_Children.end(); itChild++)
 		{
-			if (child.second != nullptr)
+			if (itChild->second != nullptr)
 			{
-				this->DisconnectParentAndChild(this, child.second);
+				this->DisconnectParentAndChild(this, itChild->second);
 			}
 		}
 		this->m_Children.clear();
@@ -404,6 +404,14 @@ CustomType::Matrix4x4 CTransform::GetWorldToLocalMatrix()const
 	return (this->GetLocalToWorldMatrix().Inverse());
 }
 #ifdef _DEVELOPMENT_EDITOR
+void CTransform::SetEditorRotation(const CustomType::Vector3& v)
+{
+	this->m_EditorRotation[0] = v.X();
+	this->m_EditorRotation[1] = v.Y();
+	this->m_EditorRotation[2] = v.Z();
+}
+#endif
+#ifdef _DEVELOPMENT_EDITOR
 void CTransform::SelectedEditorUpdate()
 {
 	bool realTimeChange = this->m_RealTimeChangeValue;
@@ -423,7 +431,7 @@ void CTransform::SelectedEditorUpdate()
 			ImGui::Checkbox("IsRealTimeChange", &realTimeChange);
 			ImGui::BeginChild(ImGui::GetID((void*)0), ImVec2(400, 135), false, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 			ImGui::InputFloat3("LocalPosition", localPosition, "%.2f");
-			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.5f, -360.f, 360.f, "%.2f");
+			ImGui::DragFloat3("LocalRotation", this->m_EditorRotation, 0.01f, -360.f, 360.f, "%.2f");
 			ImGui::InputFloat3("LocalScale", localScale, "%.2f");
 			{
 				FLOAT worldPosition[3], worldRotation[4], worldScale[3];
