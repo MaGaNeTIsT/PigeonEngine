@@ -426,8 +426,8 @@ void CFuxkingWhySkeletonAnimation::Init()
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES),
 			CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT)
 		};
-		BOOL successVS = CRenderDevice::LoadVertexShader("./Engine/Assets/EngineShaders/TestVS.cso", this->m_VertexShader, this->m_InputLayout, inputLayoutDesc, 4u);
-		BOOL successPS = CRenderDevice::LoadPixelShader("./Engine/Assets/EngineShaders/TestPS.cso", this->m_PixelShader);
+		BOOL successVS = CRenderDevice::LoadVertexShader("./Engine/Assets/EngineShaders/TestSkeletonMeshVS.cso", this->m_VertexShader, this->m_InputLayout, inputLayoutDesc, 4u);
+		BOOL successPS = CRenderDevice::LoadPixelShader("./Engine/Assets/EngineShaders/TestSkeletonMeshPS.cso", this->m_PixelShader);
 	}
 
 	{

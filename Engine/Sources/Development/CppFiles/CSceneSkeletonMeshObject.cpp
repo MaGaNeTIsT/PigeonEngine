@@ -141,9 +141,7 @@ void CSceneSkeletonMeshObject::SelectedEditorUpdate()
 {
 	//Editor body
 	{
-		ImGui::Begin("SceneSkeletonMeshObject", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 		CGameObject::SelectedEditorUpdate();
-		ImGui::End();
 	}
 }
 #endif

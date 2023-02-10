@@ -92,17 +92,17 @@ void CScene::Init()
 	}
 
 	{
-		CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
-		sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
-		sceneGameObject->SetEditorRotation(CustomType::Vector3(90.f, 0.f, 0.f));
-		sceneGameObject->SetWorldScale(CustomType::Vector3(1.f, 1.f, 1.f));
-		this->m_SelectedObject = sceneGameObject;
+		//CSceneSkeletonMeshObject* sceneGameObject = this->AddGameObject<CSceneSkeletonMeshObject>(SceneLayout::LAYOUT_OPAQUE);
+		//sceneGameObject->SetWorldPosition(CustomType::Vector3(0.f, 600.f, -600.f));
+		//sceneGameObject->SetEditorRotation(CustomType::Vector3(90.f, 0.f, 0.f));
+		//sceneGameObject->SetWorldScale(CustomType::Vector3(1.f, 1.f, 1.f));
+		//this->m_SelectedObject = sceneGameObject;
 	}
 
 	{
 		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
 		std::string materialTypeName = "mat_tex_cfg";
-		BOOL showDebugFabric = TRUE;
+		BOOL showDebugFabric = FALSE;
 		BOOL useModelFromFile = TRUE;
 		FLOAT modelY = 200.f;
 		FLOAT modelOffsetX = 300.f;
@@ -311,7 +311,9 @@ void CScene::EditorUpdate()
 
 		if (this->m_SelectedObject != nullptr)
 		{
+			ImGui::Begin("SelectedObject", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 			this->m_SelectedObject->SelectedEditorUpdate();
+			ImGui::End();
 		}
 	}
 

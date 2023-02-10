@@ -301,6 +301,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CBezierGrass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Entry\EngineMain.cpp">
@@ -451,6 +452,7 @@
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CBezierGrass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
@@ -544,8 +546,12 @@
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl" />
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl" />
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl" />
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestPS.hlsl" />
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
@@ -579,5 +585,6 @@
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
     <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl" />
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl" />
   </ItemGroup>
 </Project>

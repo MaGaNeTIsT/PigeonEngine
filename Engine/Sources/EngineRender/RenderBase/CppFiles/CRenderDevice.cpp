@@ -1094,16 +1094,32 @@ void CRenderDevice::SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayou
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetInputLayout(layout.Get());
 }
+void CRenderDevice::SetNoInputLayout()
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetInputLayout(NULL);
+}
 void CRenderDevice::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset)
 {
 	//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
+}
+void CRenderDevice::SetNoVertexBuffer()
+{
+	ID3D11Buffer* buffers[] = { NULL };
+	UINT stride = 0u, offset = 0u;
+	//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetVertexBuffers(0u, 1u, buffers, &stride, &offset);
 }
 void CRenderDevice::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT& offset, CustomStruct::CRenderFormat format)
 {
 	DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
 	CRenderDevice::TranslateResourceFormat(indexFormat, format);
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetIndexBuffer(ib.Get(), indexFormat, offset);
+}
+void CRenderDevice::SetNoIndexBuffer()
+{
+	DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->IASetIndexBuffer(NULL, indexFormat, 0u);
 }
 void CRenderDevice::SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology topology)
 {
@@ -1118,6 +1134,10 @@ void CRenderDevice::Draw(const UINT& vertexCount, const UINT& startVertexLocatio
 void CRenderDevice::DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation, const INT& baseVertexLocation)
 {
 	CRenderDevice::m_RenderDevice->m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+}
+void CRenderDevice::DrawIndexedInstance(const UINT& instanceCount, const UINT& indexCountPerInstance, const UINT& startInstanceLocation, const UINT& startIndexLocation, const INT& BaseVertexLocation)
+{
+	CRenderDevice::m_RenderDevice->m_ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
 }
 void CRenderDevice::Dispatch(const UINT& x, const UINT& y, const UINT& z)
 {

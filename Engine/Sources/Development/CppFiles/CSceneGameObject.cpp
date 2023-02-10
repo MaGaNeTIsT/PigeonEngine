@@ -120,7 +120,6 @@ void CSceneGameObject::SelectedEditorUpdate()
 
 	//Editor body
 	{
-		ImGui::Begin("SceneGameObject", NULL, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 		CGameObject::SelectedEditorUpdate();
 		ImGui::SetNextItemOpen(true, ImGuiCond_::ImGuiCond_Once);
 		if (ImGui::TreeNode("EditorMenu"))
@@ -226,7 +225,6 @@ void CSceneGameObject::SelectedEditorUpdate()
 			}
 			ImGui::TreePop();
 		}
-		ImGui::End();
 	}
 
 	//Run result for editor

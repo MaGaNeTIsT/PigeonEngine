@@ -173,7 +173,7 @@ namespace CustomType
 		Vector2(const Vector2& v);
 		Vector2(const Vector2Int& v);
 		Vector2(DirectX::CXMVECTOR v);
-		Vector2(DirectX::XMFLOAT2 v);
+		Vector2(const DirectX::XMFLOAT2& v);
 		Vector2(const FLOAT& v);
 		Vector2(const FLOAT& x, const FLOAT& y);
 		Vector2(const INT& v);
@@ -250,8 +250,8 @@ namespace CustomType
 		Vector3(const Vector3& v);
 		Vector3(const Vector4& v);
 		Vector3(DirectX::CXMVECTOR v);
-		Vector3(DirectX::XMFLOAT3 v);
-		Vector3(DirectX::XMFLOAT4 v);
+		Vector3(const DirectX::XMFLOAT3& v);
+		Vector3(const DirectX::XMFLOAT4& v);
 		Vector3(const FLOAT& v);
 		Vector3(const FLOAT& x, const FLOAT& y, const FLOAT& z);
 		virtual ~Vector3();
@@ -308,7 +308,7 @@ namespace CustomType
 		Vector4(const Vector3& v);
 		Vector4(const Vector4& v);
 		Vector4(DirectX::CXMVECTOR v);
-		Vector4(DirectX::XMFLOAT4 v);
+		Vector4(const DirectX::XMFLOAT4& v);
 		Vector4(const FLOAT& v);
 		Vector4(const FLOAT& x, const FLOAT& y, const FLOAT& z);
 		Vector4(const FLOAT& x, const FLOAT& y, const FLOAT& z, const FLOAT& w);
@@ -453,6 +453,7 @@ namespace CustomType
 		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
 		static FLOAT	Mod(const FLOAT& numerator, const FLOAT& denominator);
 		static DOUBLE	Mod(const DOUBLE& numerator, const DOUBLE& denominator);
+		static FLOAT	Frac(const FLOAT& v);
 		static FLOAT	Sin(const FLOAT& v);
 		static FLOAT	Cos(const FLOAT& v);
 		static void		SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v);
@@ -465,5 +466,60 @@ namespace CustomType
 		static INT		PowerOfTwoFloor(FLOAT& output, const FLOAT& input);
 		static INT		PowerOfTwoFloor(INT& output, const INT& input);
 		static FLOAT	Sqrt(const FLOAT& v);
+	public:
+		template<typename VType, typename IType>
+		static VType LinearBezierCurve(const VType& p0, const VType& p1, const IType& t)
+		{
+			VType v0 = p0, v1 = p1;
+			IType d = t;
+			IType oneMinusD = static_cast<IType>(1) - d;
+			return (v0 * oneMinusD + v1 * d);
+		}
+		template<typename VType, typename IType>
+		static VType QuadraticBezierCurve(const VType& p0, const VType& p1, const VType& p2, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2;
+			IType d = t; IType dSq = d * d;
+			IType oneMinusD = static_cast<IType>(1) - d; IType oneMinusDSq = oneMinusD * oneMinusD;
+			return (v0 * oneMinusDSq + v1 * (static_cast<IType>(2) * oneMinusD * d) + v2 * dSq);
+		}
+		template<typename VType, typename IType>
+		static VType DerivativeQuadraticBezierCurve(const VType& p0, const VType& p1, const VType& p2, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2;
+			IType d = t; IType oneMinusD = static_cast<IType>(1) - d;
+			return ((v1 - v0) * (static_cast<IType>(2) * oneMinusD) + (v2 - v1) * (static_cast<IType>(2) * d));
+		}
+		template<typename VType, typename IType>
+		static VType SecondDerivativeQuadraticBezierCurve(const VType& p0, const VType& p1, const VType& p2, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2;
+			IType two = static_cast<IType>(2);
+			return ((v2 - v1 * two + v0) * two);
+		}
+		template<typename VType, typename IType>
+		static VType CubicBezierCurve(const VType& p0, const VType& p1, const VType& p2, const VType& p3, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2, v3 = p3;
+			IType d = t; IType dSq = d * d; IType dCu = d * d * d;
+			IType oneMinusD = static_cast<IType>(1) - d; IType oneMinusDSq = oneMinusD * oneMinusD; IType oneMinusDCu = oneMinusD * oneMinusD * oneMinusD;
+			return (v0 * oneMinusDCu + v1 * (static_cast<IType>(3) * oneMinusDSq * d) + v2 * (static_cast<IType>(3) * oneMinusD * dSq) + v3 * dCu);
+		}
+		template<typename VType, typename IType>
+		static VType DerivativeCubicBezierCurve(const VType& p0, const VType& p1, const VType& p2, const VType& p3, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2, v3 = p3;
+			IType d = t; IType dSq = d * d;
+			IType oneMinusD = static_cast<IType>(1) - d; IType oneMinusDSq = oneMinusD * oneMinusD;
+			return ((v1 - v0) * (static_cast<IType>(3) * oneMinusDSq) + (v2 - v1) * (static_cast<IType>(6) * oneMinusD * d) + (v3 - v2) * (static_cast<IType>(3) * dSq));
+		}
+		template<typename VType, typename IType>
+		static VType SecondDerivativeCubicBezierCurve(const VType& p0, const VType& p1, const VType& p2, const VType& p3, const IType& t)
+		{
+			VType v0 = p0, v1 = p1, v2 = p2, v3 = p3;
+			IType d = t; IType oneMinusD = static_cast<IType>(1) - d;
+			IType two = static_cast<IType>(2), six = static_cast<IType>(6);
+			return ((v2 - v1 * two + v0) * six * oneMinusD + (v3 - v2 * two + v1) * six * d);
+		}
 	};
 }

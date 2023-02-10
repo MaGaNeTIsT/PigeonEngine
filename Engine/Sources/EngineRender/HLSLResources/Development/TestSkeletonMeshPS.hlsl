@@ -1,5 +1,5 @@
-#ifndef _ENGINE_TEST_PS_HLSL
-#define _ENGINE_TEST_PS_HLSL
+#ifndef _ENGINE_TEST_SKELETON_MESH_PS_HLSL
+#define _ENGINE_TEST_SKELETON_MESH_PS_HLSL
 
 float3 SafeNormalize(const float3 input)
 {

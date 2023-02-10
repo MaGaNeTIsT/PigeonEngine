@@ -25,6 +25,12 @@
 #include "../../../Development/Headers/CGPUProfiler.h"
 #endif
 
+#ifdef _DEVELOPMENT_EDITOR
+#include "../../../Development/Headers/CBezierGrass.h"
+
+CBezierGrass _GBezierGrass;
+#endif
+
 CTexture2D*							CRenderPipeline::m_DefaultTexture[CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 std::shared_ptr<CPixelShader>		CRenderPipeline::m_DefaultEmptyPS		= nullptr;
 std::shared_ptr<CVertexShader>		CRenderPipeline::m_FullScreenPolygonVS	= nullptr;
@@ -341,6 +347,10 @@ void CRenderPipeline::PostInit()
 #ifdef _DEVELOPMENT_EDITOR
 		m_DebugScreen->Init(m_GlobalBufferSize);
 #endif
+
+#ifdef _DEVELOPMENT_EDITOR
+		_GBezierGrass.Init();
+#endif
 	}
 }
 void CRenderPipeline::Uninit()
@@ -374,6 +384,9 @@ void CRenderPipeline::Uninit()
 		m_DirLightCullingResults.clear();
 	}
 
+#ifdef _DEVELOPMENT_EDITOR
+	_GBezierGrass.Uninit();
+#endif
 #ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Uninit();
 #endif
@@ -524,6 +537,9 @@ void CRenderPipeline::PostUpdate()
 	m_GPUCulling->Update(m_FrameIndex);
 #ifdef _DEVELOPMENT_EDITOR
 	m_DebugScreen->Update();
+#endif
+#ifdef _DEVELOPMENT_EDITOR
+	_GBezierGrass.Update();
 #endif
 }
 void CRenderPipeline::Render()
@@ -737,6 +753,9 @@ void CRenderPipeline::Render()
 					meshRenderer->Draw();
 				}
 			}
+#ifdef _DEVELOPMENT_EDITOR
+			_GBezierGrass.Render();
+#endif
 			});
 	}
 
@@ -784,6 +803,7 @@ void CRenderPipeline::Render()
 			m_HZBPass->DrawDebug();
 			m_GTAOPass->DrawDebug();
 			m_DynamicWind->DrawDebug(m_GlobalBufferSize);
+			_GBezierGrass.DrawDebug();
 #endif
 			});
 	}

@@ -261,7 +261,7 @@ namespace CustomType
 	{
 		this->SetXMVECTOR(v);
 	}
-	Vector2::Vector2(DirectX::XMFLOAT2 v)
+	Vector2::Vector2(const DirectX::XMFLOAT2& v)
 	{
 		this->m_Value = v;
 	}
@@ -497,13 +497,13 @@ namespace CustomType
 	{
 		this->SetXMVECTOR(v);
 	}
-	Vector3::Vector3(DirectX::XMFLOAT3 v)
+	Vector3::Vector3(const DirectX::XMFLOAT3& v)
 	{
 		this->m_Value.x = v.x;
 		this->m_Value.y = v.y;
 		this->m_Value.z = v.z;
 	}
-	Vector3::Vector3(DirectX::XMFLOAT4 v)
+	Vector3::Vector3(const DirectX::XMFLOAT4& v)
 	{
 		this->m_Value.x = v.x;
 		this->m_Value.y = v.y;
@@ -786,7 +786,7 @@ namespace CustomType
 	{
 		this->SetXMVECTOR(v);
 	}
-	Vector4::Vector4(DirectX::XMFLOAT4 v)
+	Vector4::Vector4(const DirectX::XMFLOAT4& v)
 	{
 		this->m_Value = v;
 	}
@@ -1466,6 +1466,10 @@ namespace CustomType
 	DOUBLE CMath::Mod(const DOUBLE& numerator, const DOUBLE& denominator)
 	{
 		return fmod(numerator, denominator);
+	}
+	FLOAT CMath::Frac(const FLOAT& v)
+	{
+		return (v - floorf(v));
 	}
 	FLOAT CMath::Sin(const FLOAT& v)
 	{

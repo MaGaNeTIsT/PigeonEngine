@@ -214,11 +214,15 @@ public:
 public:
 	static void		SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride = 0u, const UINT& offset = 0u);
 	static void		SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout);
+	static void		SetNoInputLayout();
 	static void		SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset = 0u);
+	static void		SetNoVertexBuffer();
 	static void		SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT& offset = 0u, CustomStruct::CRenderFormat format = CustomStruct::CRenderFormat::FORMAT_R32_UINT);
+	static void		SetNoIndexBuffer();
 	static void		SetPrimitiveTopology(CustomStruct::CRenderPrimitiveTopology topology = CustomStruct::CRenderPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	static void		Draw(const UINT& vertexCount, const UINT& startVertexLocation = 0u);
 	static void		DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation = 0u, const INT& baseVertexLocation = 0);
+	static void		DrawIndexedInstance(const UINT& instanceCount, const UINT& indexCountPerInstance, const UINT& startInstanceLocation = 0u, const UINT& startIndexLocation = 0u, const INT& BaseVertexLocation = 0);
 	static void		Dispatch(const UINT& x, const UINT& y, const UINT& z);
 	static void		DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs = 0u);
 public:

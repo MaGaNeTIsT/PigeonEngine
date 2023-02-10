@@ -22,6 +22,7 @@
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\CBezierGrass.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h" />
@@ -88,6 +89,7 @@
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\CBezierGrass.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp" />
@@ -188,7 +190,42 @@
     <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestPS.hlsl">
+    <None Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl">
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -196,7 +233,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestVS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
