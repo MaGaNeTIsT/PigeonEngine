@@ -119,7 +119,7 @@ void CBezierGrass::Init()
 	}
 
 #if 1
-	ReCreateGrassInstanceData(CustomType::Vector3::Zero(), 40.f, 10.f, 1000.f, 1000.f, 128u, 128u);
+	ReCreateGrassInstanceData(CustomType::Vector3::Zero(), 40.f, 10.f, 1000.f, 1000.f, 256u, 256u);
 #else
 	{
 		if (m_GrassInstanceData.size() > 0)
@@ -383,7 +383,10 @@ void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, 
 				CustomType::Vector3 tempOffset(offsetXStart * (1.f - tx) + offsetXEnd * tx + nx * deltaX * 0.5f, 0.f, offsetZStart * (1.f - tz) + offsetZEnd * tz + nz * deltaZ * 0.5f);
 				GrassInstanceInfo& tempGrassData = m_GrassInstanceData[index];
 				tempGrassData.Origin = tempOrigin + tempOffset;
-				tempGrassData.Direction = CustomType::Vector3(1.f, 0.f, 0.f);
+				FLOAT tempDirection = _RandomFloat(tx * 15.f, tz * 15.f) * 360.f * CustomType::CMath::GetDegToRad();
+				FLOAT tempSin, tempCos;
+				CustomType::CMath::SinCos(tempSin, tempCos, tempDirection);
+				tempGrassData.Direction = CustomType::Vector3::Normalize(CustomType::Vector3(tempCos, m_GrassInstanceData[0].Direction.Y(), tempSin));
 				tempGrassData.Tip = CustomType::Vector2(0.f, BaseHeight + offsetHeight + _RandomFloat(tx, tz) * offsetHeight);
 				tempGrassData.Tilt = (0.3f + 0.3f * _RandomFloat(tx * 5.f, tz * 5.f)) * 90.f * CustomType::CMath::GetDegToRad();
 				tempGrassData.Bend = 0.2f + 0.6f * _RandomFloat(tx * 10.f, tz * 10.f);

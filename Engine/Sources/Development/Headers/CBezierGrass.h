@@ -39,7 +39,7 @@ private:
 		DirectX::XMFLOAT4 Params1;
 		DirectX::XMFLOAT4 Params2;
 	};
-	const static UINT	_GrassInstancePerGroupMaxNum = 65535u;
+	const static UINT	_GrassInstancePerGroupMaxNum = 65536u;
 public:
 	void	Init();
 	void	Update();
