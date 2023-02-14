@@ -1,2 +1,2 @@
-ThirdParty/assimp/lib/Debug/assimp-vc143-mtd.lib filter=lfs diff=lfs merge=lfs -text
-ThirdParty/assimp/lib/Release/assimp-vc143-mt.lib filter=lfs diff=lfs merge=lfs -text
+Engine/ThirdParty/assimp/lib/Debug/assimp-vc143-mtd.lib filter=lfs diff=lfs merge=lfs -text
+Engine/ThirdParty/assimp/lib/Release/assimp-vc143-mt.lib filter=lfs diff=lfs merge=lfs -text
