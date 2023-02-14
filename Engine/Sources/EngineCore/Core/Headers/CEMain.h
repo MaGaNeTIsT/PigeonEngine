@@ -25,7 +25,7 @@
 #pragma comment (lib, "xaudio2.lib")
 
 #ifdef _DEVELOPMENT_EDITOR
-#include "../ThirdParty/imgui/imgui.h"
+#include "../../../../ThirdParty/imgui/imgui.h"
 #endif
 
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)

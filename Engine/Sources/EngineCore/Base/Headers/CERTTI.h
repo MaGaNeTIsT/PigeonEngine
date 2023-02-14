@@ -1,16 +1,16 @@
 #pragma once
 
 //Runtime Interface,all types need rtti need to implement from this.
-class CRTTI
+class CERTTI
 {
 public:
     virtual const size_t TypeIdInstance() const = 0;
 
-    virtual CRTTI* QueryInterface(const size_t)
+    virtual CERTTI* QueryInterface(const size_t)
     {
         return nullptr;
     }
-    virtual const CRTTI* QueryInterface(const size_t) const
+    virtual const CERTTI* QueryInterface(const size_t) const
     {
         return nullptr;
     }
@@ -26,13 +26,13 @@ public:
     }
 
     template <typename T>
-    CRTTI* QueryInterfaceT()
+    CERTTI* QueryInterfaceT()
     {
         return QueryInterface(T::TypeIdClass());
     }
 
     template <typename T>
-    const CRTTI* QueryInterfaceT() const
+    const CERTTI* QueryInterfaceT() const
     {
         return QueryInterface(T::TypeIdClass());
     }
@@ -65,24 +65,24 @@ public:
     }
 };
 
-#define CClass(Type, ParentType)                                                \
+#define CEClass(Type, ParentType)                                               \
     public:                                                                     \
         static const char* TypeName() { return #Type; }                         \
         virtual const size_t TypeIdInstance() const                             \
         { return Type::TypeIdClass(); }                                         \
         static const size_t TypeIdClass()                                       \
         { static int d = 0; return (size_t) &d; }                               \
-        virtual ::CRTTI* QueryInterface( const size_t id )                      \
+        virtual ::CERTTI* QueryInterface( const size_t id )                      \
         {                                                                       \
             if (id == TypeIdClass())                                            \
-                { return (CRTTI*)this; }                                        \
+                { return (CERTTI*)this; }                                        \
             else                                                                \
                 { return ParentType::QueryInterface(id); }                      \
         }                                                                       \
-        virtual const ::CRTTI* QueryInterface( const size_t id ) const          \
+        virtual const ::CERTTI* QueryInterface( const size_t id ) const          \
         {                                                                       \
             if (id == TypeIdClass())                                            \
-                { return (CRTTI*)this; }                                        \
+                { return (CERTTI*)this; }                                        \
             else                                                                \
                 { return ParentType::QueryInterface(id); }                      \
         }                                                                       \
@@ -99,4 +99,4 @@ public:
                 { return true; }                                                \
             else                                                                \
                 { return ParentType::Is(name); }                                \
-        }     
+        }                                                                       \

@@ -1,12 +1,11 @@
-#include "./EngineMain.h"
-#include "../Engine/Sources/EngineBase/Headers/CManager.h"
-#include "../Engine/Sources/EngineBase/Headers/CTimer.h"
+#include "../Headers/CEMain.h"
+#include "../Headers/CEManager.h"
+#include "../../Base/Headers/CETimer.h"
 #ifdef _DEVELOPMENT_EDITOR
-#include "../Engine/EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
+#include "../../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
 
 INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow)
 {
@@ -14,20 +13,22 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	const CHAR* WINDOW_NAME	= "PigeonEngineWindow";
 	HWND windowHandle; WNDCLASSEX wcex = {};
 	{
-		wcex.cbSize = sizeof(WNDCLASSEX);
-		wcex.style = CS_HREDRAW | CS_VREDRAW;
-		wcex.lpfnWndProc = WndProc;
-		wcex.cbClsExtra = 0;
-		wcex.cbWndExtra = 0;
-		wcex.hInstance = hInstance;
-		wcex.hIcon = NULL;
-		wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wcex.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
-		wcex.lpszMenuName = NULL;
-		wcex.lpszClassName = CLASS_NAME;
-		wcex.hIconSm = NULL;
+		wcex.cbSize			= sizeof(WNDCLASSEX);
+		wcex.style			= CS_HREDRAW | CS_VREDRAW;
+		wcex.lpfnWndProc	= WndProc;
+		wcex.cbClsExtra		= 0;
+		wcex.cbWndExtra		= 0;
+		wcex.hInstance		= hInstance;
+		wcex.hIcon			= NULL;
+		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
+		wcex.hbrBackground	= (HBRUSH)(COLOR_BACKGROUND + 1);
+		wcex.lpszMenuName	= NULL;
+		wcex.lpszClassName	= CLASS_NAME;
+		wcex.hIconSm		= NULL;
 		if (!::RegisterClassEx(&wcex))
+		{
 			return TRUE;
+		}
 		RECT clientRect = { 0,0,ENGINE_SCREEN_WIDTH,ENGINE_SCREEN_HEIGHT };
 		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
 		::AdjustWindowRect(&clientRect, style, FALSE);
@@ -46,22 +47,22 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			NULL);
 	}
 
-	CManager::Initialize(windowHandle);
+	PigeonEngine::CEManager::Initialize(windowHandle);
 
-	CManager::Init();
+	PigeonEngine::CEManager::Init();
 
 	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
-	fixedStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
-	updateStepTime = static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
-	currentTime = fixedLastTime = updateLastTime = CManager::GetWindowTimer().GetClockTime();
+	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
+	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
+	currentTime = fixedLastTime = updateLastTime = PigeonEngine::CEManager::GetWindowTimer().GetClockTime();
 
 	// register mouse raw input device
 	RAWINPUTDEVICE rid;
-	rid.usUsagePage = 0x01; // mouse page
-	rid.usUsage = 0x02; // mouse usage
-	rid.dwFlags = 0;
-	rid.hwndTarget = nullptr;
-	RegisterRawInputDevices(&rid, 1, sizeof(rid));
+	rid.usUsagePage	= 0x01; // mouse page
+	rid.usUsage		= 0x02; // mouse usage
+	rid.dwFlags		= 0;
+	rid.hwndTarget	= nullptr;
+	::RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
 	::ShowWindow(windowHandle, nCmdShow);
 	::UpdateWindow(windowHandle);
@@ -83,27 +84,27 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		}
 		else
 		{
-			CManager::StaticUpdate();
-			currentTime = CManager::GetWindowTimer().GetClockTime();
+			PigeonEngine::CEManager::StaticUpdate();
+			currentTime = PigeonEngine::CEManager::GetWindowTimer().GetClockTime();
 			if ((currentTime - fixedLastTime) >= fixedStepTime)
 			{
 				fixedLastTime = currentTime;
-				CManager::FixedUpdate();
+				PigeonEngine::CEManager::FixedUpdate();
 			}
 			if ((currentTime - updateLastTime) >= updateStepTime)
 			{
 				updateLastTime = currentTime;
-				CManager::Update();
-				CManager::Draw();
+				PigeonEngine::CEManager::Update();
+				PigeonEngine::CEManager::Draw();
 			}
 		}
 	}
 
-	CManager::Uninit();
+	PigeonEngine::CEManager::Uninit();
 
 	::UnregisterClass(CLASS_NAME, wcex.hInstance);
 
-	CManager::ShutDown();
+	PigeonEngine::CEManager::ShutDown();
 
 	return (INT)msg.wParam;
 }
@@ -111,8 +112,10 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 #ifdef _DEVELOPMENT_EDITOR
-	if (CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
+	if (PigeonEngine::CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
+	{
 		return TRUE;
+	}
 #endif
 
 	switch(uMsg)
@@ -120,7 +123,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		::PostQuitMessage(0);
 		break;
-
 	case WM_KEYDOWN:
 		switch(wParam)
 		{
@@ -133,5 +135,5 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	return CManager::HandleMsg(hWnd, uMsg, wParam, lParam);
+	return (PigeonEngine::CEManager::HandleMsg(hWnd, uMsg, wParam, lParam));
 }
