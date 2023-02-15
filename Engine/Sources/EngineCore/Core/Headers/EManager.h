@@ -1,12 +1,12 @@
 #pragma once
 
-#include "./CEMain.h"
-#include "../../Base/Headers/CEBaseType.h"
-#include "../../Base/Headers/CETimer.h"
+#include "./EMain.h"
+#include "../../Base/Headers/EBaseType.h"
+#include "../../Base/Headers/ETimer.h"
 
 namespace PigeonEngine
 {
-	class CEManager
+	class EManager
 	{
 	public:
 		static void		Initialize(HWND hWnd);
@@ -26,8 +26,8 @@ namespace PigeonEngine
 #endif
 	public:
 		static HWND								GetWindowHandle();
-		static const CEBaseTimer&				GetWindowTimer();
-		static const CEGameTimer*				GetGameTimer();
+		static const EBaseTimer&				GetWindowTimer();
+		static const EGameTimer*				GetGameTimer();
 		static const class CRenderPipeline*		GetRenderPipeline();
 		static const class CScene*				GetScene();
 	private:
@@ -35,16 +35,16 @@ namespace PigeonEngine
 		Vector2Int					m_WindowSize;
 		UINT						m_GraphicDepth;
 		UINT						m_FrameRate;
-		CEBaseTimer					m_WindowTimer;
+		EBaseTimer					m_WindowTimer;
 		BOOL						m_Windowed;
-		CEGameTimer*				m_GameTimer;
+		EGameTimer*					m_GameTimer;
 		class CRenderPipeline*		m_RenderPipeline;
 		class CScene*				m_Scene;
 	private:
-		CEManager();
-		~CEManager();
+		EManager();
+		~EManager();
 	private:
-		static CEManager*			m_EngineManager;
+		static EManager*			m_EngineManager;
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 	};

@@ -1,8 +1,8 @@
-#include "../Headers/CETimer.h"
+#include "../Headers/ETimer.h"
 
 namespace PigeonEngine
 {
-	CEBaseTimer::CEBaseTimer()
+	EBaseTimer::EBaseTimer()
 	{
 		::ZeroMemory(&this->m_T1, sizeof(this->m_T1));
 		::ZeroMemory(&this->m_T2, sizeof(this->m_T2));
@@ -10,10 +10,10 @@ namespace PigeonEngine
 		this->m_Delta = static_cast<DOUBLE>(0);
 		this->m_Clock = static_cast<DOUBLE>(0);
 	}
-	CEBaseTimer::~CEBaseTimer()
+	EBaseTimer::~EBaseTimer()
 	{
 	}
-	void CEBaseTimer::Init()
+	void EBaseTimer::Init()
 	{
 		::ZeroMemory(&this->m_T1, sizeof(this->m_T1));
 		::ZeroMemory(&this->m_T2, sizeof(this->m_T2));
@@ -24,7 +24,7 @@ namespace PigeonEngine
 		::QueryPerformanceFrequency(&this->m_Ticks);
 		::QueryPerformanceCounter(&this->m_T1);
 	}
-	void CEBaseTimer::Update()
+	void EBaseTimer::Update()
 	{
 		::QueryPerformanceCounter(&this->m_T2);
 		this->m_Delta = static_cast<DOUBLE>(this->m_T2.QuadPart - this->m_T1.QuadPart);
@@ -33,32 +33,32 @@ namespace PigeonEngine
 		this->m_Clock += this->m_Delta;
 		::QueryPerformanceCounter(&this->m_T1);
 	}
-	DOUBLE CEBaseTimer::GetClockTime()const
+	DOUBLE EBaseTimer::GetClockTime()const
 	{
-		return this->m_Clock;
+		return (this->m_Clock);
 	}
-	DOUBLE CEBaseTimer::GetDeltaTime()const
+	DOUBLE EBaseTimer::GetDeltaTime()const
 	{
-		return this->m_Delta;
+		return (this->m_Delta);
 	}
 
 
 
-	CEGameTimer::CEGameTimer(CEBaseTimer* timer)
+	EGameTimer::EGameTimer(EBaseTimer* timer)
 	{
 		this->m_Timer = timer;
 		this->m_Total = static_cast<DOUBLE>(0);
 		this->m_Delta = static_cast<DOUBLE>(0);
 	}
-	CEGameTimer::~CEGameTimer()
+	EGameTimer::~EGameTimer()
 	{
 	}
-	void CEGameTimer::Reset()
+	void EGameTimer::Reset()
 	{
 		this->m_Total = static_cast<DOUBLE>(0);
 		this->m_Delta = static_cast<DOUBLE>(0);
 	}
-	void CEGameTimer::Update()
+	void EGameTimer::Update()
 	{
 		if (this->m_Timer == nullptr)
 		{
@@ -69,12 +69,12 @@ namespace PigeonEngine
 		m_Delta = temp - m_Total;
 		m_Total = temp;
 	}
-	DOUBLE CEGameTimer::GetClockTime()const
+	DOUBLE EGameTimer::GetClockTime()const
 	{
-		return this->m_Total;
+		return (this->m_Total);
 	}
-	DOUBLE CEGameTimer::GetDeltaTime()const
+	DOUBLE EGameTimer::GetDeltaTime()const
 	{
-		return this->m_Delta;
+		return (this->m_Delta);
 	}
 };

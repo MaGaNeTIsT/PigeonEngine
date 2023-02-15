@@ -1,6 +1,6 @@
-#include "../Headers/CEMain.h"
-#include "../Headers/CEManager.h"
-#include "../../Base/Headers/CETimer.h"
+#include "../Headers/EMain.h"
+#include "../Headers/EManager.h"
+#include "../../Base/Headers/ETimer.h"
 #ifdef _DEVELOPMENT_EDITOR
 #include "../../../../EngineThirdParty/CimGUI/Headers/CimGUIManager.h"
 #endif
@@ -47,14 +47,14 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			NULL);
 	}
 
-	PigeonEngine::CEManager::Initialize(windowHandle);
+	PigeonEngine::EManager::Initialize(windowHandle);
 
-	PigeonEngine::CEManager::Init();
+	PigeonEngine::EManager::Init();
 
 	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
 	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
 	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
-	currentTime = fixedLastTime = updateLastTime = PigeonEngine::CEManager::GetWindowTimer().GetClockTime();
+	currentTime = fixedLastTime = updateLastTime = PigeonEngine::EManager::GetWindowTimer().GetClockTime();
 
 	// register mouse raw input device
 	RAWINPUTDEVICE rid;
@@ -84,27 +84,27 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		}
 		else
 		{
-			PigeonEngine::CEManager::StaticUpdate();
-			currentTime = PigeonEngine::CEManager::GetWindowTimer().GetClockTime();
+			PigeonEngine::EManager::StaticUpdate();
+			currentTime = PigeonEngine::EManager::GetWindowTimer().GetClockTime();
 			if ((currentTime - fixedLastTime) >= fixedStepTime)
 			{
 				fixedLastTime = currentTime;
-				PigeonEngine::CEManager::FixedUpdate();
+				PigeonEngine::EManager::FixedUpdate();
 			}
 			if ((currentTime - updateLastTime) >= updateStepTime)
 			{
 				updateLastTime = currentTime;
-				PigeonEngine::CEManager::Update();
-				PigeonEngine::CEManager::Draw();
+				PigeonEngine::EManager::Update();
+				PigeonEngine::EManager::Draw();
 			}
 		}
 	}
 
-	PigeonEngine::CEManager::Uninit();
+	PigeonEngine::EManager::Uninit();
 
 	::UnregisterClass(CLASS_NAME, wcex.hInstance);
 
-	PigeonEngine::CEManager::ShutDown();
+	PigeonEngine::EManager::ShutDown();
 
 	return (INT)msg.wParam;
 }
@@ -135,5 +135,5 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	return (PigeonEngine::CEManager::HandleMsg(hWnd, uMsg, wParam, lParam));
+	return (PigeonEngine::EManager::HandleMsg(hWnd, uMsg, wParam, lParam));
 }

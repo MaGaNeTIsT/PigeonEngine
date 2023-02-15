@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../Core/Headers/CEMain.h"
-#include "./CEMath.h"
+#include "../../Core/Headers/EMain.h"
 
 namespace PigeonEngine
 {
@@ -29,6 +28,22 @@ namespace PigeonEngine
 			lm._21 - rm._21, lm._22 - rm._22, lm._23 - rm._23, lm._24 - rm._24,
 			lm._31 - rm._31, lm._32 - rm._32, lm._33 - rm._33, lm._34 - rm._34,
 			lm._41 - rm._41, lm._42 - rm._42, lm._43 - rm._43, lm._44 - rm._44));
+	}
+	Matrix4x4 operator*(const Matrix4x4& lm, const FLOAT& rv)
+	{
+		return (Matrix4x4(
+			lm._11 * rv, lm._12 * rv, lm._13 * rv, lm._14 * rv,
+			lm._21 * rv, lm._22 * rv, lm._23 * rv, lm._24 * rv,
+			lm._31 * rv, lm._32 * rv, lm._33 * rv, lm._34 * rv,
+			lm._41 * rv, lm._42 * rv, lm._43 * rv, lm._44 * rv));
+	}
+	Matrix4x4 operator*(const FLOAT& lv, const Matrix4x4& rm)
+	{
+		return (Matrix4x4(
+			lv * rm._11, lv * rm._12, lv * rm._13, lv * rm._14,
+			lv * rm._21, lv * rm._22, lv * rm._23, lv * rm._24,
+			lv * rm._31, lv * rm._32, lv * rm._33, lv * rm._34,
+			lv * rm._41, lv * rm._42, lv * rm._43, lv * rm._44));
 	}
 	Matrix4x4 operator*(const Matrix4x4& lm, const Matrix4x4& rm) { return (Matrix4x4::MultiplyMatrix(lm, rm)); }
 	Matrix4x4 operator*(const Matrix4x4& lm, const Quaternion& rq) { return (Matrix4x4::MultiplyMatrix(lm, rq.GetMatrix())); }
@@ -178,7 +193,7 @@ namespace PigeonEngine
 		static Matrix4x4 ScalingMatrixFromVector3(const Vector3& scl) { return (Matrix4x4(DirectX::XMMatrixScaling(scl.x, scl.y, scl.z))); }
 		static Matrix4x4 RotationPitchYawRollMatrix(const FLOAT& pitch, const FLOAT& yaw, const FLOAT& roll) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll))); }
 		static Matrix4x4 RotationPitchYawRollMatrixFromVector3(const Vector3& rot) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z))); }
-		static Matrix4x4 PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * CMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
+		static Matrix4x4 PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * EMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
 		static Matrix4x4 OrthographicMatrix(const FLOAT& left, const FLOAT& top, const FLOAT& right, const FLOAT& bottom, const FLOAT& nearPlane, const FLOAT& farPlane) { return (Matrix4x4(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane))); }
 		void SetDirectXQuaternion(DirectX::CXMVECTOR xq)
 		{

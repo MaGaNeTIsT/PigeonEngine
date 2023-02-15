@@ -1,20 +1,19 @@
 #pragma once
+
+#include "../../Core/Headers/EMain.h"
 #include <queue>
 #include <optional>
-class CMouse
+
+class IMouse
 {
 public:
-
 	struct RawDelta
 	{
 		INT x, y;
 	};
-
 	class Event
 	{
-
 	public:
-
 		enum class EType
 		{
 			LPress,
@@ -30,7 +29,6 @@ public:
 		};
 
 	private:
-
 		EType Type;
 		BOOL bLeftIsPressed = false;
 		BOOL bRightIsPressed = false;
@@ -38,13 +36,11 @@ public:
 		INT y;
 
 	public:
-
-		Event(EType INType, const CMouse& Parent)
+		Event(EType INType, const IMouse& Parent)
 			:
 			Type(INType),
 			bLeftIsPressed(), x(0), y(0)
 		{
-
 		}
 		EType GetType() const
 		{
@@ -73,10 +69,9 @@ public:
 	};
 
 public:
-
-	CMouse() = default;
-	CMouse(const CMouse&) = delete;
-	CMouse& operator=(const CMouse&) = delete;
+	IMouse() = default;
+	IMouse(const IMouse&) = delete;
+	IMouse& operator=(const IMouse&) = delete;
 	std::pair<INT, INT> GetPos() const ;
 	std::optional<RawDelta> ReadRawDelta() ;
 	INT GetPosX() const ;
@@ -84,7 +79,7 @@ public:
 	BOOL IsInWindow() const ;
 	BOOL LeftIsPressed() const ;
 	BOOL RightIsPressed() const ;
-	std::optional<CMouse::Event> Read() ;
+	std::optional<IMouse::Event> Read() ;
 	BOOL IsEmpty() const 
 	{
 		return Buffer.empty();
@@ -95,7 +90,6 @@ public:
 	BOOL IsRawEnabled() const ;
 
 public:
-
 	void OnMouseMove(INT x, INT y) ;
 	void OnMouseLeave() ;
 	void OnMouseEnter() ;
@@ -111,7 +105,6 @@ public:
 	void OnWheelDelta(INT x, INT y, INT delta) ;
 
 private:  
-
 	const UINT BufferSize = 16u;
 	INT x = 0;
 	INT y = 0;
@@ -123,4 +116,3 @@ private:
 	std::queue<Event> Buffer;
 	std::queue<RawDelta> RawDeltaBuffer;
 };
-

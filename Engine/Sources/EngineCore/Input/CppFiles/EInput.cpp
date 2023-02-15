@@ -1,183 +1,121 @@
-#include "../../../../Entry/EngineMain.h"
-#include "../Headers/CInput.h"
+#include "../Headers/EInput.h"
 
-BYTE CInput::m_OldKeyState[256];
-BYTE CInput::m_KeyState[256];
-CController CInput::Controller;
+IController EInput::Controller;
+//BYTE EInput::m_OldKeyState[256];
+//BYTE EInput::m_KeyState[256];
 
-void CInput::Initialize(HWND hWnd)
+void EInput::Initialize(HWND hWnd)
 {
-	memset(m_OldKeyState, 0, 256);
-	memset(m_KeyState, 0, 256);
-
 	// Controller Initialization
 	Controller.Initialize(hWnd, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
 
+	//memset(m_OldKeyState, 0, 256);
+	//memset(m_KeyState, 0, 256);
 }
-void CInput::ShutDown()
+void EInput::ShutDown()
 {
 }
-void CInput::Update()
+void EInput::Update()
 {
-	{
-		memcpy(m_OldKeyState, m_KeyState, 256);
-	}
+	//{
+	//	memcpy(m_OldKeyState, m_KeyState, 256);
+	//}
 
-	{
-		BOOL keyResult = GetKeyboardState(m_KeyState);
-	}
-
-	{
-		//GetCursorPos();
-		//if (GetMouseMovePointsEx( NULL, &m_MouseMove, 1, GMMP_USE_DISPLAY_POINTS) != -1)
-		//{
-		//	INT nVirtualWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-		//	INT nVirtualHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-		//	INT nVirtualLeft = GetSystemMetrics(SM_XVIRTUALSCREEN);
-		//	INT nVirtualTop = GetSystemMetrics(SM_YVIRTUALSCREEN);
-		//	INT cpt = 0;
-		//	INT mode = GMMP_USE_DISPLAY_POINTS;
-
-		//	MOUSEMOVEPOINT mp_in;
-		//	MOUSEMOVEPOINT mp_out[64];
-
-		//	::ZeroMemory(&mp_in, sizeof(MOUSEMOVEPOINT));
-		//	//Ensure that this number will pass through.
-		//	mp_in.x = pt.x & 0x0000FFFF;
-		//	mp_in.y = pt.y & 0x0000FFFF;
-		//	cpt = GetMouseMovePointsEx(sizeof(MOUSEMOVEPOINT), &mp_in, &mp_out, 64, mode);
-
-		//	for (int i = 0; i < cpt; i++)
-		//	{
-		//		switch (mode)
-		//		{
-		//		case GMMP_USE_DISPLAY_POINTS:
-		//			if (mp_out[i].x > 32767)
-		//				mp_out[i].x -= 65536;
-		//			if (mp_out[i].y > 32767)
-		//				mp_out[i].y -= 65536;
-		//			break;
-		//		case GMMP_USE_HIGH_RESOLUTION_POINTS:
-		//			mp_out[i].x = ((mp_out[i].x * (nVirtualWidth - 1)) - (nVirtualLeft * 65536)) / nVirtualWidth;
-		//			mp_out[i].y = ((mp_out[i].y * (nVirtualHeight - 1)) - (nVirtualTop * 65536)) / nVirtualHeight;
-		//			break;
-		//		}
-		//	}
-		//}
-	}
+	//{
+	//	BOOL keyResult = GetKeyboardState(m_KeyState);
+	//}
 }
-BOOL CInput::GetKeyPress(BYTE KeyCode)
-{
-	INT curr = (m_KeyState[KeyCode] & 0x80);
-	return (curr > 0);
-}
-BOOL CInput::GetKeyTrigger(BYTE KeyCode)
-{
-	INT curr = (m_KeyState[KeyCode] & 0x80);
-	INT prev = (m_OldKeyState[KeyCode] & 0x80);
-	return ((curr > 0) && (prev == 0));
-}
-
-std::optional<CMouse::RawDelta> CInput::ReadRawDelta()
+//BOOL EInput::GetKeyPress(BYTE KeyCode)
+//{
+//	INT curr = (m_KeyState[KeyCode] & 0x80);
+//	return (curr > 0);
+//}
+//BOOL EInput::GetKeyTrigger(BYTE KeyCode)
+//{
+//	INT curr = (m_KeyState[KeyCode] & 0x80);
+//	INT prev = (m_OldKeyState[KeyCode] & 0x80);
+//	return ((curr > 0) && (prev == 0));
+//}
+std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
 {
 	return Controller.ReadRawDelta();
 }
-
-LRESULT CInput::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT EInput::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	return Controller.HandleMsg(hWnd, msg, wParam, lParam);
 }
-
-void CController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
+void IController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
 {
 	hWnd = InhWnd;
 	WindowSizeX = InWindowSizeX;
 	WindowSizeY = InWindowSizeY;
-
 }
-
-std::pair<INT, INT> CController::GetMousePosition() const
+std::pair<INT, INT> IController::GetMousePosition() const
 {
 	return Mouse.GetPos();
 }
-
-void CController::EnableCursor()
+void IController::EnableCursor()
 {
 	bCursorEnabled = true;
 	ShowCursor();
 	//EnableImGuiMouse();
 	FreeCursor();
-
 }
-
-void CController::DisableCursor()
+void IController::DisableCursor()
 {
 	bCursorEnabled = false;
 	HideCursor();
 	//DisableImGuiMouse();
 	ConfineCursor();
-
 }
-BOOL CController::IsCursorEnabled() const
+BOOL IController::IsCursorEnabled() const
 {
 	return bCursorEnabled;
 }
-
-void CController::ConfineCursor()
+void IController::ConfineCursor()
 {
 	RECT rect;
 	GetClientRect(hWnd, &rect);
 	MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
 	ClipCursor(&rect);
 }
-
-void CController::FreeCursor()
+void IController::FreeCursor()
 {
 	ClipCursor(nullptr);
 }
-
-void CController::HideCursor()
+void IController::HideCursor()
 {
 	while (::ShowCursor(FALSE) >= 0);
 }
-
-void CController::ShowCursor()
+void IController::ShowCursor()
 {
 	while (::ShowCursor(TRUE) < 0);
 }
-
-void CController::EnableMouseRaw()
+void IController::EnableMouseRaw()
 {
 	Mouse.EnableRaw();
 }
-
-void CController::DisableMouseRaw()
+void IController::DisableMouseRaw()
 {
 	Mouse.DisableRaw();
 }
-
-BOOL CController::IsMouseRawEnabled() const
+BOOL IController::IsMouseRawEnabled() const
 {
 	return Mouse.IsRawEnabled();
 }
-
-BOOL CController::IsLeftMouseButtonDown() const
+BOOL IController::IsLeftMouseButtonDown() const
 {
 	return Mouse.LeftIsPressed();
 }
-
-BOOL CController::IsRightMouseButtonDown() const
+BOOL IController::IsRightMouseButtonDown() const
 {
 	return Mouse.RightIsPressed();
 }
-
-std::optional<CMouse::RawDelta> CController::ReadRawDelta()
+std::optional<IMouse::RawDelta> IController::ReadRawDelta()
 {
 	return Mouse.ReadRawDelta();
 }
-
-
-LRESULT CController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+LRESULT IController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
@@ -392,58 +330,47 @@ LRESULT CController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
-BOOL CController::IsKeyPressed(unsigned char keycode) const
+BOOL IController::IsKeyPressed(unsigned char keycode) const
 {
 	return Keyboard.IsKeyPressed(keycode);
 }
-
-std::optional<CKeyboard::Event> CController::ReadKey()
+std::optional<IKeyboard::Event> IController::ReadKey()
 {
 	return Keyboard.ReadKey();
 }
-
-BOOL CController::IsKeyEmpty() const
+BOOL IController::IsKeyEmpty() const
 {
 	return Keyboard.IsKeyEmpty();
 }
-
-void CController::FlushKey()
+void IController::FlushKey()
 {
 	Keyboard.FlushKey();
 }
-
-std::optional<char> CController::ReadChar()
+std::optional<char> IController::ReadChar()
 {
 	return Keyboard.ReadChar();
 }
-
-BOOL CController::IsCharEmpty() const
+BOOL IController::IsCharEmpty() const
 {
 	return Keyboard.IsCharEmpty();
 }
-
-void CController::FlushChar()
+void IController::FlushChar()
 {
 	Keyboard.FlushChar();
 }
-
-void CController::Flush()
+void IController::Flush()
 {
 	Keyboard.Flush();
 }
-
-void CController::EnableAutorepeat()
+void IController::EnableAutorepeat()
 {
 	Keyboard.EnableAutorepeat();
 }
-
-void CController::DisableAutorepeat()
+void IController::DisableAutorepeat()
 {
 	Keyboard.DisableAutorepeat();
 }
-
-BOOL CController::IsAutorepeatEnabled() const
+BOOL IController::IsAutorepeatEnabled() const
 {
 	return Keyboard.IsAutorepeatEnabled();
 }

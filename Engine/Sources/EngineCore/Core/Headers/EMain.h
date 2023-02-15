@@ -28,6 +28,8 @@
 #include "../../../../ThirdParty/imgui/imgui.h"
 #endif
 
+#include "../../Base/Headers/EMath.h"
+
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)

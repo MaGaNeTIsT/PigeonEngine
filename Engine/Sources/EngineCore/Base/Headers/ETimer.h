@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../../Core/Headers/CEMain.h"
+#include "../../Core/Headers/EMain.h"
 
 namespace PigeonEngine
 {
-	class CEBaseTimer
+	class EBaseTimer
 	{
 	public:
 		void	Init();
@@ -13,8 +13,8 @@ namespace PigeonEngine
 		DOUBLE	GetClockTime()const;
 		DOUBLE	GetDeltaTime()const;
 	public:
-		CEBaseTimer();
-		virtual ~CEBaseTimer();
+		EBaseTimer();
+		virtual ~EBaseTimer();
 	protected:
 		LARGE_INTEGER	m_T1;
 		LARGE_INTEGER	m_T2;
@@ -24,7 +24,7 @@ namespace PigeonEngine
 		DOUBLE			m_Clock;
 	};
 
-	class CEGameTimer
+	class EGameTimer
 	{
 	public:
 		void	Reset();
@@ -33,10 +33,10 @@ namespace PigeonEngine
 		DOUBLE	GetClockTime()const;
 		DOUBLE	GetDeltaTime()const;
 	public:
-		CEGameTimer(CEBaseTimer* timer);
-		virtual ~CEGameTimer();
+		EGameTimer(EBaseTimer* timer);
+		virtual ~EGameTimer();
 	protected:
-		CEBaseTimer*	m_Timer;
+		EBaseTimer*		m_Timer;
 		DOUBLE			m_Total;
 		DOUBLE			m_Delta;
 	};
