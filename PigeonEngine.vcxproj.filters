@@ -141,7 +141,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\CEMain.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\EMain.h">
       <Filter>Entry</Filter>
     </ClInclude>
     <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h">
@@ -159,7 +159,7 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\CETimer.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ETimer.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h">
@@ -234,10 +234,10 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\CMouse.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\IMouse.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\CKeyboard.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\IKeyboard.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h">
@@ -287,7 +287,7 @@
     </ClInclude>
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\CERTTI.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ERTTI.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui_internal.h" />
@@ -302,13 +302,14 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CBezierGrass.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\CEBaseType.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\CEManager.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\CInput.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\CEMath.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EBaseType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\EManager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\EInput.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EMath.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EObjectBase.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\CEMain.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\EMain.cpp">
       <Filter>Entry</Filter>
     </ClCompile>
     <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp">
@@ -326,7 +327,7 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\CETimer.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ETimer.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp">
@@ -395,10 +396,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\CMouse.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\IMouse.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\CKeyboard.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\IKeyboard.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp">
@@ -457,9 +458,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CBezierGrass.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\CEManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\CInput.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\CEMath.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\EManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\EInput.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\EMath.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\EObjectBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
