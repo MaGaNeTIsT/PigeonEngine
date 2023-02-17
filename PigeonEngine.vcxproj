@@ -71,9 +71,9 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMaterialBase.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRendererComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderDevice.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\RDevice.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderStructCommon.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\RCommon.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CDynamicWind.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CPostProcessBase.h" />
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
@@ -138,7 +138,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMaterialBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRendererComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderDevice.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\CppFiles\RDevice.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CDynamicWind.cpp" />
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CPostProcessBase.cpp" />

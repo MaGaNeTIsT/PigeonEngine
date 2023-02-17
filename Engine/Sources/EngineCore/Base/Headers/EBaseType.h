@@ -12,6 +12,8 @@ namespace PigeonEngine
 	struct Vector2Int;
 	struct Vector3Int;
 	struct Vector4Int;
+	struct Color3;
+	struct Color4;
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)
 	{
@@ -121,6 +123,62 @@ namespace PigeonEngine
 	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
 	Vector4Int operator/(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
 	Vector4Int operator/(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
+	Color3 operator+(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x + rv, lv.y + rv, lv.z + rv)); }
+	Color3 operator+(const FLOAT& lv, const Color3& rv) { return (Color3(lv + rv.x, lv + rv.y, lv + rv.z)); }
+	Color3 operator+(const Color3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Color3& lv, const Vector3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Vector3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color4 operator+(const Color4& lv, const Color4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
+	Color4 operator+(const Color4& lv, const Vector4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
+	Color4 operator+(const Vector4& lv, const Color4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
+	Color3 operator+(const Color3& lv, const Vector4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Vector4& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Color4& lv, const Vector3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Vector3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Color4& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator+(const Color3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
+	Color3 operator-(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x - rv, lv.y - rv, lv.z - rv)); }
+	Color3 operator-(const FLOAT& lv, const Color3& rv) { return (Color3(lv - rv.x, lv - rv.y, lv - rv.z)); }
+	Color3 operator-(const Color3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Color3& lv, const Vector3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Vector3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color4 operator-(const Color4& lv, const Color4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
+	Color4 operator-(const Color4& lv, const Vector4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
+	Color4 operator-(const Vector4& lv, const Color4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
+	Color3 operator-(const Color3& lv, const Vector4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Vector4& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Color4& lv, const Vector3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Vector3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Color4& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator-(const Color3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
+	Color3 operator*(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x * rv, lv.y * rv, lv.z * rv)); }
+	Color3 operator*(const FLOAT& lv, const Color3& rv) { return (Color3(lv * rv.x, lv * rv.y, lv * rv.z)); }
+	Color3 operator*(const Color3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Color3& lv, const Vector3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Vector3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color4 operator*(const Color4& lv, const Color4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
+	Color4 operator*(const Color4& lv, const Vector4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
+	Color4 operator*(const Vector4& lv, const Color4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
+	Color3 operator*(const Color3& lv, const Vector4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Vector4& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Color4& lv, const Vector3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Vector3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Color4& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator*(const Color3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
+	Color3 operator/(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x / rv, lv.y / rv, lv.z / rv)); }
+	Color3 operator/(const FLOAT& lv, const Color3& rv) { return (Color3(lv / rv.x, lv / rv.y, lv / rv.z)); }
+	Color3 operator/(const Color3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Color3& lv, const Vector3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Vector3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color4 operator/(const Color4& lv, const Color4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
+	Color4 operator/(const Color4& lv, const Vector4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
+	Color4 operator/(const Vector4& lv, const Color4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
+	Color3 operator/(const Color3& lv, const Vector4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Vector4& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Color4& lv, const Vector3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Vector3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Color4& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+	Color3 operator/(const Color3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
 
 	struct Matrix4x4
 	{
@@ -1691,6 +1749,286 @@ namespace PigeonEngine
 				INT x, y, z, w;
 			};
 			INT v[4];
+		};
+	};
+
+	struct Color3
+	{
+		Color3() noexcept : x(0.f), y(0.f), z(0.f) {}
+		Color3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		Color3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		Color3(DirectX::CXMVECTOR xv)
+		{
+			DirectX::XMFLOAT3 tempV;
+			DirectX::XMStoreFloat3(&tempV, xv);
+			x = tempV.x; y = tempV.y; z = tempV.z;
+		}
+		Color3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
+		Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
+		Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz) {}
+		Color3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		Color3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Color3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Color3(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		Color3(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		static const Color3& Black()
+		{
+			const static Color3 _StaticColor3Black(0.f, 0.f, 0.f);
+			return _StaticColor3Black;
+		}
+		static const Color3& White()
+		{
+			const static Color3 _StaticColor3White(1.f, 1.f, 1.f);
+			return _StaticColor3White;
+		}
+		static const Color3& MiddleGray()
+		{
+			const static Color3 _StaticColor3MiddleGray(0.5f, 0.5f, 0.5f);
+			return _StaticColor3MiddleGray;
+		}
+		static const Color3& Red()
+		{
+			const static Color3 _StaticColor3Red(1.f, 0.f, 0.f);
+			return _StaticColor3Red;
+		}
+		static const Color3& Green()
+		{
+			const static Color3 _StaticColor3Green(0.f, 1.f, 0.f);
+			return _StaticColor3Green;
+		}
+		static const Color3& Blue()
+		{
+			const static Color3 _StaticColor3Blue(0.f, 0.f, 1.f);
+			return _StaticColor3Blue;
+		}
+		static Color3 Normalize(const Color3& vv)
+		{
+			if (vv.x > 0.f && vv.y > 0.f && vv.z > 0.f)
+			{
+				FLOAT maxV = EMath::Max(EMath::Max(vv.x, vv.y), vv.z);
+				maxV = maxV == 0.f ? 1e-5f : maxV;
+				return (Color3(vv.x / maxV, vv.y / maxV, vv.z / maxV));
+			}
+			return (Color3::Black());
+		}
+		static Color3 Lerp(const Color3& v1, const Color3& v2, const FLOAT& t) { return (Color3(v1.x * (1.f - t) + v2.x * t, v1.y * (1.f - t) + v2.y * t, v1.z * (1.f - t) + v2.z * t)); }
+		static Color3 Lerp(const Color3& v1, const Color3& v2, const DOUBLE& t)
+		{
+			FLOAT ft = static_cast<FLOAT>(t);
+			return (Color3(v1.x * (1.f - ft) + v2.x * ft, v1.y * (1.f - ft) + v2.y * ft, v1.z * (1.f - ft) + v2.z * ft));
+		}
+		void SetDirectXVector(DirectX::CXMVECTOR xv)
+		{
+			DirectX::XMFLOAT3 tempV;
+			DirectX::XMStoreFloat3(&tempV, xv);
+			x = tempV.x; y = tempV.y; z = tempV.z;
+		}
+		void SetDirectXValue3(const DirectX::XMFLOAT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, 1.f)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, 1.f)); }
+		void Reset() { (*this) = Color3::Black(); }
+		void Normalize()
+		{
+			if (x > 0.f && y > 0.f && z > 0.f)
+			{
+				FLOAT maxV = EMath::Max(EMath::Max(x, y), z);
+				maxV = maxV == 0.f ? 1e-5f : maxV;
+				x = x / maxV; y = y / maxV; z = z / maxV;
+			}
+		}
+		Color3 Lerp(const Color3& vv, const FLOAT& t) const { return (Color3(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t)); }
+		Color3 Lerp(const Color3& vv, const DOUBLE& t) const
+		{
+			FLOAT ft = static_cast<FLOAT>(t);
+			return (Color3(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft));
+		}
+		void operator=(const FLOAT& v) { x = y = z = v; }
+		void operator=(const DOUBLE& v) { x = y = z = static_cast<FLOAT>(v); }
+		void operator=(const Vector3& vv) { x = vv.x; y = vv.y; z = vv.z; }
+		void operator=(const Vector4& vv) { x = vv.x; y = vv.y; z = vv.z; }
+		void operator=(const Color3& vv) { x = vv.x; y = vv.y; z = vv.z; }
+		void operator=(const Color4& vv) { x = vv.x; y = vv.y; z = vv.z; }
+		void operator+=(const Vector3& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Vector3& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Vector3& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Vector3& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		void operator+=(const Vector4& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Vector4& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Vector4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Vector4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		void operator+=(const Color3& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Color3& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Color3& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Color3& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		void operator+=(const Color4& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Color4& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Color4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Color4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		constexpr Color3() noexcept : x(0.f), y(0.f), z(0.f) {}
+		constexpr Color3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Color3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		constexpr Color3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
+		constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Color3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		constexpr Color3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		constexpr Color3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		constexpr Color3(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		constexpr Color3(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		union
+		{
+			struct
+			{
+				FLOAT x, y, z;
+			};
+			FLOAT v[3];
+			struct
+			{
+				FLOAT r, g, b;
+			};
+			FLOAT rgb[3];
+		};
+	};
+
+	struct Color4
+	{
+		Color4() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
+		Color4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
+		Color4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		Color4(DirectX::CXMVECTOR xv)
+		{
+			DirectX::XMFLOAT4 tempV;
+			DirectX::XMStoreFloat4(&tempV, xv);
+			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
+		}
+		Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(1.f) {}
+		Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
+		Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		Color4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		Color4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		Color4(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		Color4(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		static const Color4& Black()
+		{
+			const static Color4 _StaticColor4Black(0.f, 0.f, 0.f, 1.f);
+			return _StaticColor4Black;
+		}
+		static const Color4& White()
+		{
+			const static Color4 _StaticColor4White(1.f, 1.f, 1.f, 1.f);
+			return _StaticColor4White;
+		}
+		static const Color4& MiddleGray()
+		{
+			const static Color4 _StaticColor4MiddleGray(0.5f, 0.5f, 0.5f, 1.f);
+			return _StaticColor4MiddleGray;
+		}
+		static const Color4& Red()
+		{
+			const static Color4 _StaticColor4Red(1.f, 0.f, 0.f, 1.f);
+			return _StaticColor4Red;
+		}
+		static const Color4& Green()
+		{
+			const static Color4 _StaticColor4Green(0.f, 1.f, 0.f, 1.f);
+			return _StaticColor4Green;
+		}
+		static const Color4& Blue()
+		{
+			const static Color4 _StaticColor4Blue(0.f, 0.f, 1.f, 1.f);
+			return _StaticColor4Blue;
+		}
+		static Color4 Normalize(const Color4& vv)
+		{
+			if (vv.x > 0.f && vv.y > 0.f && vv.z > 0.f)
+			{
+				FLOAT maxV = EMath::Max(EMath::Max(vv.x, vv.y), vv.z);
+				maxV = maxV == 0.f ? 1e-5f : maxV;
+				return (Color4(vv.x / maxV, vv.y / maxV, vv.z / maxV, vv.w));
+			}
+			return (Color4::Black());
+		}
+		static Color4 Lerp(const Color4& v1, const Color4& v2, const FLOAT& t) { return (Color4(v1.x * (1.f - t) + v2.x * t, v1.y * (1.f - t) + v2.y * t, v1.z * (1.f - t) + v2.z * t, v1.w * (1.f - t) + v2.w * t)); }
+		static Color4 Lerp(const Color4& v1, const Color4& v2, const DOUBLE& t)
+		{
+			FLOAT ft = static_cast<FLOAT>(t);
+			return (Color4(v1.x * (1.f - ft) + v2.x * ft, v1.y * (1.f - ft) + v2.y * ft, v1.z * (1.f - ft) + v2.z * ft, v1.w * (1.f - ft) + v2.w * ft));
+		}
+		void SetDirectXVector(DirectX::CXMVECTOR xv)
+		{
+			DirectX::XMFLOAT4 tempV;
+			DirectX::XMStoreFloat4(&tempV, xv);
+			x = tempV.x; y = tempV.y; z = tempV.z; w = tempV.w;
+		}
+		void SetDirectXValue4(const DirectX::XMFLOAT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
+		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, z, w)); }
+		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, z)); }
+		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, w)); }
+		void Reset() { (*this) = Color4::Black(); }
+		void Normalize()
+		{
+			if (x > 0.f && y > 0.f && z > 0.f)
+			{
+				FLOAT maxV = EMath::Max(EMath::Max(x, y), z);
+				maxV = maxV == 0.f ? 1e-5f : maxV;
+				x = x / maxV; y = y / maxV; z = z / maxV;
+			}
+		}
+		Color4 Lerp(const Color4& vv, const FLOAT& t) const { return (Color4(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t, z * (1.f - t) + vv.z * t, w * (1.f - t) + vv.w * t)); }
+		Color4 Lerp(const Color4& vv, const DOUBLE& t) const
+		{
+			FLOAT ft = static_cast<FLOAT>(t);
+			return (Color4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));
+		}
+		void operator=(const Vector3& vv) { x = vv.x; y = vv.y; z = vv.z; w = 1.f; }
+		void operator=(const Vector4& vv) { x = vv.x; y = vv.y; z = vv.z; w = vv.w; }
+		void operator=(const Color3& vv) { x = vv.x; y = vv.y; z = vv.z; w = 1.f; }
+		void operator=(const Color4& vv) { x = vv.x; y = vv.y; z = vv.z; w = vv.w; }
+		void operator+=(const Vector3& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Vector3& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Vector3& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Vector3& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		void operator+=(const Vector4& vv) { x += vv.x; y += vv.y; z += vv.z; w += vv.w; }
+		void operator-=(const Vector4& vv) { x -= vv.x; y -= vv.y; z -= vv.z; w -= vv.w; }
+		void operator*=(const Vector4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; w *= vv.w; }
+		void operator/=(const Vector4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; w /= vv.w; }
+		void operator+=(const Color3& vv) { x += vv.x; y += vv.y; z += vv.z; }
+		void operator-=(const Color3& vv) { x -= vv.x; y -= vv.y; z -= vv.z; }
+		void operator*=(const Color3& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
+		void operator/=(const Color3& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
+		void operator+=(const Color4& vv) { x += vv.x; y += vv.y; z += vv.z; w += vv.w; }
+		void operator-=(const Color4& vv) { x -= vv.x; y -= vv.y; z -= vv.z; w -= vv.w; }
+		void operator*=(const Color4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; w *= vv.w; }
+		void operator/=(const Color4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; w /= vv.w; }
+		constexpr Color4() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
+		constexpr Color4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
+		constexpr Color4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(1.f) {}
+		constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
+		constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		constexpr Color4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		constexpr Color4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		constexpr Color4(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		constexpr Color4(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		union
+		{
+			struct
+			{
+				FLOAT x, y, z, w;
+			};
+			FLOAT v[4];
+			struct
+			{
+				FLOAT r, g, b, a;
+			};
+			FLOAT rgba[4];
 		};
 	};
 };

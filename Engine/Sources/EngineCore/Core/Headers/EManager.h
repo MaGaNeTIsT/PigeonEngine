@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./EMain.h"
+#include "EMain.h"
 #include "../../Base/Headers/EBaseType.h"
 #include "../../Base/Headers/ETimer.h"
 

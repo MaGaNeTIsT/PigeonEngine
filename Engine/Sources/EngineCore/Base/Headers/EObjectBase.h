@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../Core/Headers/EMain.h"
-#include "./ERTTI.h"
+#include "ERTTI.h"
 
 class EUniqueIDAllocater
 {
