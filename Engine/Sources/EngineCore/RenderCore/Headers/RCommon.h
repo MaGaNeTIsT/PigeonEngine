@@ -172,13 +172,9 @@ namespace PigeonEngine
 	struct RStencilStateType
 	{
 		RStencilStateType() noexcept : StencilFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilDepthFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilPassOp(RStencilOperationType::STENCIL_OP_KEEP), StencilFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
-		RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP)
-		{
-			StencilFailOp		= stencilFailOp;
-			StencilDepthFailOp	= depthFailOp;
-			StencilPassOp		= passOp;
-			StencilFunc			= func;
-		}
+		RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP) noexcept : StencilFailOp(stencilFailOp), StencilDepthFailOp(depthFailOp), StencilPassOp(passOp), StencilFunc(func) {}
+		constexpr RStencilStateType() noexcept : StencilFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilDepthFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilPassOp(RStencilOperationType::STENCIL_OP_KEEP), StencilFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
+		constexpr RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP) noexcept : StencilFailOp(stencilFailOp), StencilDepthFailOp(depthFailOp), StencilPassOp(passOp), StencilFunc(func) {}
 		RStencilOperationType		StencilFailOp;
 		RStencilOperationType		StencilDepthFailOp;
 		RStencilOperationType		StencilPassOp;
@@ -186,40 +182,11 @@ namespace PigeonEngine
 	};
 	struct RStencilState
 	{
-		RStencilState()
-		{
-			StencilEnable		= FALSE;
-			StencilReadMask		= ENGINE_DEFAULT_STENCIL_READ_MASK;
-			StencilWriteMask	= ENGINE_DEFAULT_STENCIL_WRITE_MASK;
-			{
-				FrontFace.StencilFailOp			= RStencilOperationType::STENCIL_OP_KEEP;
-				FrontFace.StencilDepthFailOp	= RStencilOperationType::STENCIL_OP_KEEP;
-				FrontFace.StencilPassOp			= RStencilOperationType::STENCIL_OP_KEEP;
-				FrontFace.StencilFunc			= RComparisonFunctionType::COMPARISON_NEVER;
-			}
-			{
-				BackFace.StencilFailOp			= RStencilOperationType::STENCIL_OP_KEEP;
-				BackFace.StencilDepthFailOp		= RStencilOperationType::STENCIL_OP_KEEP;
-				BackFace.StencilPassOp			= RStencilOperationType::STENCIL_OP_KEEP;
-				BackFace.StencilFunc			= RComparisonFunctionType::COMPARISON_NEVER;
-			}
-		}
-		RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace)
-		{
-			StencilEnable		= TRUE;
-			StencilReadMask		= static_cast<UINT>(readMask);
-			StencilWriteMask	= static_cast<UINT>(writeMask);
-			FrontFace			= frontFace;
-			BackFace			= backFace;
-		}
-		RStencilState(const UINT& readMask, const UINT& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace)
-		{
-			StencilEnable		= TRUE;
-			StencilReadMask		= EMath::Min(readMask, 0xffu);
-			StencilWriteMask	= EMath::Min(writeMask, 0xffu);
-			FrontFace			= frontFace;
-			BackFace			= backFace;
-		}
+		RStencilState() noexcept : StencilEnable(FALSE), StencilReadMask(ENGINE_DEFAULT_STENCIL_READ_MASK), StencilWriteMask(ENGINE_DEFAULT_STENCIL_WRITE_MASK), FrontFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)), BackFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)) {}
+		RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(static_cast<UINT>(readMask)), StencilWriteMask(static_cast<UINT>(writeMask)), FrontFace(frontFace), BackFace(backFace) {}
+		RStencilState(const UINT& readMask, const UINT& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(EMath::Min(readMask, 0xffu)), StencilWriteMask(EMath::Min(writeMask, 0xffu)), FrontFace(frontFace), BackFace(backFace) {}
+		constexpr RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(static_cast<UINT>(readMask)), StencilWriteMask(static_cast<UINT>(writeMask)), FrontFace(frontFace), BackFace(backFace) {}
+		constexpr RStencilState(const UINT& readMask, const UINT& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(EMath::Min(readMask, 0xffu)), StencilWriteMask(EMath::Min(writeMask, 0xffu)), FrontFace(frontFace), BackFace(backFace) {}
 		BOOL				StencilEnable;
 		UINT				StencilReadMask;
 		UINT				StencilWriteMask;
@@ -260,28 +227,10 @@ namespace PigeonEngine
 	};
 	struct RBlendState
 	{
-		RBlendState()
-		{
-			BlendEnable				= FALSE;
-			SrcBlend				= RBlendOptionType::BLEND_ONE;
-			DstBlend				= RBlendOptionType::BLEND_ZERO;
-			BlendOp					= RBlendOperationType::BLEND_OP_ADD;
-			SrcBlendAlpha			= RBlendOptionType::BLEND_ONE;
-			DstBlendAlpha			= RBlendOptionType::BLEND_ZERO;
-			BlendOpAlpha			= RBlendOperationType::BLEND_OP_ADD;
-			RenderTargetWriteMask	= RColorWriteMaskType::COLOR_WRITE_MASK_ALL;
-		}
-		RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeEnable = RColorWriteMaskType::COLOR_WRITE_MASK_ALL)
-		{
-			BlendEnable				= TRUE;
-			SrcBlend				= src;
-			DstBlend				= dst;
-			BlendOp					= op;
-			SrcBlendAlpha			= srcA;
-			DstBlendAlpha			= dstA;
-			BlendOpAlpha			= opA;
-			RenderTargetWriteMask	= writeEnable;
-		}
+		RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
+		RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
+		constexpr RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
+		constexpr RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
 		BOOL					BlendEnable;
 		RBlendOptionType		SrcBlend;
 		RBlendOptionType		DstBlend;
@@ -307,17 +256,7 @@ namespace PigeonEngine
 	};
 	struct RSamplerState
 	{
-		RSamplerState()
-		{
-			Filter			= FILTER_LINEAR;
-			AddressU		= AddressV = AddressW = TEXTURE_ADDRESS_CLAMP;
-			MipLODBias		= 0.f;
-			MaxAnisotropy	= 1u;
-			ComparisonFunc	= COMPARISON_ALWAYS;
-			BorderColor		= Color4(0.f, 0.f, 0.f, 0.f);
-			MinLOD			= 0.f;
-			MaxLOD			= ENGINE_FLOAT32_MAX;
-		}
+		RSamplerState() noexcept : Filter(RFilterType::FILTER_LINEAR), AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS), BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(ENGINE_FLOAT32_MAX) {}
 		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS)
 		{
 			Filter			= filter;
