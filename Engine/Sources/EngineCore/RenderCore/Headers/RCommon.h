@@ -18,27 +18,20 @@ namespace PigeonEngine
 	};
 	struct RBoundingBox
 	{
-		RBoundingBox(const Vector3& anchor, const Vector3& dimensions)
-		{
-			Anchor		= anchor;
-			Dimensions	= dimensions;
-		}
+		RBoundingBox(const Vector3& anchor, const Vector3& dimensions) noexcept : Anchor(anchor), Dimensions(dimensions) {}
 		Vector3		Anchor;
 		Vector3		Dimensions;
 	};
 	struct RBoundingSphere
 	{
-		RBoundingSphere(const Vector3& anchor, const FLOAT& radius)
-		{
-			Anchor = anchor;
-			Radius = radius;
-		}
+		RBoundingSphere(const Vector3& anchor, const FLOAT& radius) noexcept : Anchor(anchor), Radius(radius) {}
 		Vector3		Anchor;
 		FLOAT		Radius;
 	};
 	struct RSubMeshInfo
 	{
-		RSubMeshInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
+		constexpr RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
 		UINT	VertexStart;
 		UINT	VertexCount;
 		UINT	IndexStart;
@@ -101,18 +94,17 @@ namespace PigeonEngine
 		TEXTURE2D_PROPERTY	= 7,
 		TEXTURE2D_COUNT
 	};
+	enum RStencilMaskType
+	{
+		STENCIL_MASK_SKY			= 0x1,
+		STENCIL_MASK_LAND			= 0x2,
+		STENCIL_MASK_OPAQUE_BASE	= 0x4
+	};
 	struct RViewport
 	{
 		RViewport() { ::ZeroMemory(this, sizeof(*this)); }
-		RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize)
-		{
-			TopLeftX	= rectSize.x;
-			TopLeftY	= rectSize.y;
-			Width		= rectSize.x;
-			Height		= rectSize.y;
-			MinDepth	= depthSize.x;
-			MaxDepth	= depthSize.y;
-		}
+		RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
+		constexpr RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
 		FLOAT	TopLeftX;
 		FLOAT	TopLeftY;
 		FLOAT	Width;
@@ -144,16 +136,10 @@ namespace PigeonEngine
 	};
 	struct RRasterizerState
 	{
-		RRasterizerState()
-		{
-			CullMode = RCullModeType::CULL_BACK;
-			FillMode = RFillModeType::FILL_SOLID;
-		}
-		RRasterizerState(RCullModeType cull, RFillModeType fill)
-		{
-			CullMode = cull;
-			FillMode = fill;
-		}
+		RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
+		RRasterizerState(RCullModeType cull, RFillModeType fill) noexcept : CullMode(cull), FillMode(fill) {}
+		constexpr RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
+		constexpr RRasterizerState(RCullModeType cull, RFillModeType fill) noexcept : CullMode(cull), FillMode(fill) {}
 		RCullModeType	CullMode;
 		RFillModeType	FillMode;
 	};
@@ -164,27 +150,13 @@ namespace PigeonEngine
 	};
 	struct RDepthState
 	{
-		RDepthState()
-		{
-			DepthEnable		= FALSE;
-			DepthWriteMask	= RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO;
-			DepthFunc		= RComparisonFunctionType::COMPARISON_NEVER;
-		}
-		RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL)
-		{
-			DepthEnable		= TRUE;
-			DepthWriteMask	= writeMask;
-			DepthFunc		= func;
-		}
+		RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
+		RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
+		constexpr RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
+		constexpr RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
 		BOOL						DepthEnable;
 		RDepthWriteMaskType			DepthWriteMask;
 		RComparisonFunctionType		DepthFunc;
-	};
-	enum RStencilMaskType
-	{
-		STENCIL_MASK_SKY			= 0x1,
-		STENCIL_MASK_LAND			= 0x2,
-		STENCIL_MASK_OPAQUE_BASE	= 0x4
 	};
 	enum RStencilOperationType
 	{
@@ -199,13 +171,7 @@ namespace PigeonEngine
 	};
 	struct RStencilStateType
 	{
-		RStencilStateType()
-		{
-			StencilFailOp		= RStencilOperationType::STENCIL_OP_KEEP;
-			StencilDepthFailOp	= RStencilOperationType::STENCIL_OP_KEEP;
-			StencilPassOp		= RStencilOperationType::STENCIL_OP_KEEP;
-			StencilFunc			= RComparisonFunctionType::COMPARISON_NEVER;
-		}
+		RStencilStateType() noexcept : StencilFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilDepthFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilPassOp(RStencilOperationType::STENCIL_OP_KEEP), StencilFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP)
 		{
 			StencilFailOp		= stencilFailOp;
@@ -284,339 +250,301 @@ namespace PigeonEngine
 		BLEND_OP_MIN			= 4,
 		BLEND_OP_MAX			= 5
 	};
-
-	enum CRenderBlendWriteEnable
+	enum RColorWriteMaskType
 	{
-		COLOR_WRITE_ENABLE_RED = 1,
-		COLOR_WRITE_ENABLE_GREEN = 2,
-		COLOR_WRITE_ENABLE_BLUE = 4,
-		COLOR_WRITE_ENABLE_ALPHA = 8,
-		COLOR_WRITE_ENABLE_ALL = (((D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN) | D3D11_COLOR_WRITE_ENABLE_BLUE) | D3D11_COLOR_WRITE_ENABLE_ALPHA)
+		COLOR_WRITE_MASK_RED	= 0x1,
+		COLOR_WRITE_MASK_GREEN	= 0x2,
+		COLOR_WRITE_MASK_BLUE	= 0x4,
+		COLOR_WRITE_MASK_ALPHA	= 0x8,
+		COLOR_WRITE_MASK_ALL	= (((COLOR_WRITE_MASK_RED | COLOR_WRITE_MASK_GREEN) | COLOR_WRITE_MASK_BLUE) | COLOR_WRITE_MASK_ALPHA)
 	};
-
-	struct CRenderBlendState
+	struct RBlendState
 	{
-		CRenderBlendState()
+		RBlendState()
 		{
-			BlendEnable = FALSE;
-			SrcBlend = CRenderBlendOption::BLEND_ONE;
-			DstBlend = CRenderBlendOption::BLEND_ZERO;
-			BlendOp = CRenderBlendOperation::BLEND_OP_ADD;
-			SrcBlendAlpha = CRenderBlendOption::BLEND_ONE;
-			DstBlendAlpha = CRenderBlendOption::BLEND_ZERO;
-			BlendOpAlpha = CRenderBlendOperation::BLEND_OP_ADD;
-			RenderTargetWriteMask = CRenderBlendWriteEnable::COLOR_WRITE_ENABLE_ALL;
+			BlendEnable				= FALSE;
+			SrcBlend				= RBlendOptionType::BLEND_ONE;
+			DstBlend				= RBlendOptionType::BLEND_ZERO;
+			BlendOp					= RBlendOperationType::BLEND_OP_ADD;
+			SrcBlendAlpha			= RBlendOptionType::BLEND_ONE;
+			DstBlendAlpha			= RBlendOptionType::BLEND_ZERO;
+			BlendOpAlpha			= RBlendOperationType::BLEND_OP_ADD;
+			RenderTargetWriteMask	= RColorWriteMaskType::COLOR_WRITE_MASK_ALL;
 		}
-		CRenderBlendState(CRenderBlendOption src, CRenderBlendOption dst, CRenderBlendOperation op, CRenderBlendOption srcA, CRenderBlendOption dstA, CRenderBlendOperation opA, CRenderBlendWriteEnable writeEnable = CRenderBlendWriteEnable::COLOR_WRITE_ENABLE_ALL)
+		RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeEnable = RColorWriteMaskType::COLOR_WRITE_MASK_ALL)
 		{
-			BlendEnable = TRUE;
-			SrcBlend = src;
-			DstBlend = dst;
-			BlendOp = op;
-			SrcBlendAlpha = srcA;
-			DstBlendAlpha = dstA;
-			BlendOpAlpha = opA;
-			RenderTargetWriteMask = writeEnable;
+			BlendEnable				= TRUE;
+			SrcBlend				= src;
+			DstBlend				= dst;
+			BlendOp					= op;
+			SrcBlendAlpha			= srcA;
+			DstBlendAlpha			= dstA;
+			BlendOpAlpha			= opA;
+			RenderTargetWriteMask	= writeEnable;
 		}
 		BOOL					BlendEnable;
-		CRenderBlendOption		SrcBlend;
-		CRenderBlendOption		DstBlend;
-		CRenderBlendOperation	BlendOp;
-		CRenderBlendOption		SrcBlendAlpha;
-		CRenderBlendOption		DstBlendAlpha;
-		CRenderBlendOperation	BlendOpAlpha;
-		CRenderBlendWriteEnable	RenderTargetWriteMask;
+		RBlendOptionType		SrcBlend;
+		RBlendOptionType		DstBlend;
+		RBlendOperationType		BlendOp;
+		RBlendOptionType		SrcBlendAlpha;
+		RBlendOptionType		DstBlendAlpha;
+		RBlendOperationType		BlendOpAlpha;
+		RColorWriteMaskType		RenderTargetWriteMask;
 	};
-
-	enum CRenderFilter
+	enum RFilterType
 	{
-		FILTER_POINT = 1,
-		FILTER_LINEAR = 2,
-		FILTER_ANISOTROPIC = 3,
+		FILTER_POINT		= 1,
+		FILTER_LINEAR		= 2,
+		FILTER_ANISOTROPIC	= 3
 	};
-
-	enum CRenderTextureAddressMode
+	enum RTextureAddressModeType
 	{
-		TEXTURE_ADDRESS_WRAP = 1,
-		TEXTURE_ADDRESS_MIRROR = 2,
-		TEXTURE_ADDRESS_CLAMP = 3,
-		TEXTURE_ADDRESS_BORDER = 4,
-		TEXTURE_ADDRESS_MIRROR_ONCE = 5
+		TEXTURE_ADDRESS_WRAP		= 1,
+		TEXTURE_ADDRESS_MIRROR		= 2,
+		TEXTURE_ADDRESS_CLAMP		= 3,
+		TEXTURE_ADDRESS_BORDER		= 4,
+		TEXTURE_ADDRESS_MIRROR_ONCE	= 5
 	};
-
-	struct CRenderSamplerState
+	struct RSamplerState
 	{
-		CRenderSamplerState()
+		RSamplerState()
 		{
-			Filter = FILTER_LINEAR;
-			AddressU = AddressV = AddressW = TEXTURE_ADDRESS_CLAMP;
-			MipLODBias = 0.f;
-			MaxAnisotropy = 1u;
-			ComparisonFunc = COMPARISON_ALWAYS;
-			BorderColor = CColor(0.f, 0.f, 0.f, 0.f);
-			MinLOD = 0.f;
-			MaxLOD = ENGINE_FLOAT32_MAX;
+			Filter			= FILTER_LINEAR;
+			AddressU		= AddressV = AddressW = TEXTURE_ADDRESS_CLAMP;
+			MipLODBias		= 0.f;
+			MaxAnisotropy	= 1u;
+			ComparisonFunc	= COMPARISON_ALWAYS;
+			BorderColor		= Color4(0.f, 0.f, 0.f, 0.f);
+			MinLOD			= 0.f;
+			MaxLOD			= ENGINE_FLOAT32_MAX;
 		}
-		CRenderSamplerState(CRenderFilter filter, CRenderTextureAddressMode u, CRenderTextureAddressMode v, CRenderTextureAddressMode w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const CColor& borderColor = CColor(0.f, 0.f, 0.f, 0.f), CRenderComparisonFunction func = CRenderComparisonFunction::COMPARISON_ALWAYS)
+		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS)
 		{
-			Filter = filter;
-			AddressU = u;
-			AddressV = v;
-			AddressW = w;
-			MipLODBias = mipLODBias;
-			MaxAnisotropy = maxAnisotropy;
-			ComparisonFunc = func;
-			BorderColor = borderColor;
-			MinLOD = minLOD;
-			MaxLOD = maxLOD;
+			Filter			= filter;
+			AddressU		= u;
+			AddressV		= v;
+			AddressW		= w;
+			MipLODBias		= mipLODBias;
+			MaxAnisotropy	= maxAnisotropy;
+			ComparisonFunc	= func;
+			BorderColor		= borderColor;
+			MinLOD			= minLOD;
+			MaxLOD			= maxLOD;
 		}
-		CRenderFilter				Filter;
-		CRenderTextureAddressMode	AddressU;
-		CRenderTextureAddressMode	AddressV;
-		CRenderTextureAddressMode	AddressW;
+		RFilterType					Filter;
+		RTextureAddressModeType		AddressU;
+		RTextureAddressModeType		AddressV;
+		RTextureAddressModeType		AddressW;
 		FLOAT						MipLODBias;
 		UINT						MaxAnisotropy;
-		CRenderComparisonFunction	ComparisonFunc;
-		CColor						BorderColor;
+		RComparisonFunctionType		ComparisonFunc;
+		Color4						BorderColor;
 		FLOAT						MinLOD;
 		FLOAT						MaxLOD;
 	};
-
-	enum CRenderBindFlag
+	enum RBindFlagType
 	{
-		BIND_NONE = 0,
-		BIND_VERTEX_BUFFER = 1,
-		BIND_INDEX_BUFFER = 2,
-		BIND_CONSTANT_BUFFER = 3,
-		BIND_SHADER_RESOURCE = 4,
-		BIND_STREAM_OUTPUT = 5,
-		BIND_RENDER_TARGET = 6,
-		BIND_DEPTH_STENCIL = 7,
-		BIND_UNORDERED_ACCESS = 8,
-		BIND_SRV_UAV = 9,
-		BIND_RTV_SRV = 10,
-		BIND_RTV_SRV_UAV = 11,
+		BIND_NONE				= 0,
+		BIND_VERTEX_BUFFER		= (1 << 0),
+		BIND_INDEX_BUFFER		= (1 << 1),
+		BIND_CONSTANT_BUFFER	= (1 << 2),
+		BIND_SHADER_RESOURCE	= (1 << 3),
+		BIND_STREAM_OUTPUT		= (1 << 4),
+		BIND_RENDER_TARGET		= (1 << 5),
+		BIND_DEPTH_STENCIL		= (1 << 6),
+		BIND_UNORDERED_ACCESS	= (1 << 7)
 	};
-
-	enum CRenderResourceMiscFlag
+	enum RResourceMiscFlagType
 	{
-		RESOURCE_MISC_NONE = 0,
-		RESOURCE_MISC_GENERATE_MIPS = 1,
-		RESOURCE_MISC_TEXTURECUBE = 2,
-		RESOURCE_MISC_DRAWINDIRECT_ARGS = 3,
-		RESOURCE_MISC_BUFFER_STRUCTURED = 4,
-		RESOURCE_MISC_RESOURCE_CLAMP = 5
+		RESOURCE_MISC_NONE					= 0,
+		RESOURCE_MISC_GENERATE_MIPS			= (1 << 0),
+		RESOURCE_MISC_TEXTURECUBE			= (1 << 1),
+		RESOURCE_MISC_DRAWINDIRECT_ARGS		= (1 << 2),
+		RESOURCE_MISC_BUFFER_STRUCTURED		= (1 << 3),
+		RESOURCE_MISC_RESOURCE_CLAMP		= (1 << 4)
 	};
-
-	enum CRenderUsage
+	enum RUsageFlagType
 	{
-		USAGE_DEFAULT = 0,
-		USAGE_IMMUTABLE = 1,
-		USAGE_DYNAMIC = 2,
-		USAGE_STAGING = 3
+		USAGE_DEFAULT		= 0,
+		USAGE_IMMUTABLE		= 1,
+		USAGE_DYNAMIC		= 2,
+		USAGE_STAGING		= 3
 	};
-
-	enum CRenderCPUAccessFlag
+	enum RCPUAccessFlagType
 	{
-		CPU_ACCESS_NONE = 0,
-		CPU_ACCESS_WRITE = 1,
-		CPU_ACCESS_READ = 2,
-		CPU_ACCESS_READ_WRITE = 3
+		CPU_ACCESS_DEFAULT	= 0,
+		CPU_ACCESS_WRITE	= (1 << 0),
+		CPU_ACCESS_READ		= (1 << 1)
 	};
-
-	enum CRenderBufferUAVFlag
+	enum RUAVFlagType
 	{
-		BUFFER_UAV_FLAG_NONE = 0,
-		BUFFER_UAV_FLAG_RAW = 1,
-		BUFFER_UAV_FLAG_APPEND = 2,
-		BUFFER_UAV_FLAG_COUNTER = 3
+		UAV_FLAG_NONE		= 0,
+		UAV_FLAG_RAW		= 1,
+		UAV_FLAG_APPEND		= 2,
+		UAV_FLAG_COUNTER	= 3
 	};
-
-	struct CRenderBufferDesc
+	struct RBufferDesc
 	{
-		CRenderBufferDesc()
+		RBufferDesc()
 		{
-			ByteWidth = 0u;
-			Usage = CRenderUsage::USAGE_DEFAULT;
-			BindFlags = CRenderBindFlag::BIND_NONE;
-			CPUAccessFlags = CRenderCPUAccessFlag::CPU_ACCESS_NONE;
-			MiscFlags = CRenderResourceMiscFlag::RESOURCE_MISC_NONE;
-			StructureByteStride = sizeof(FLOAT);
+			ByteWidth			= 0u;
+			Usage				= RUsageFlagType::USAGE_DEFAULT;
+			BindFlags			= RBindFlagType::BIND_NONE;
+			CPUAccessFlags		= RCPUAccessFlagType::CPU_ACCESS_DEFAULT;
+			MiscFlags			= RResourceMiscFlagType::RESOURCE_MISC_NONE;
+			StructureByteStride	= sizeof(FLOAT);
 		}
-		CRenderBufferDesc(const UINT& byteWidth, CRenderBindFlag bindFlag, const UINT& structureByteStride, CRenderResourceMiscFlag miscFlag = CRenderResourceMiscFlag::RESOURCE_MISC_NONE, CRenderUsage usage = CRenderUsage::USAGE_DEFAULT, CRenderCPUAccessFlag cpuAccessFlag = CRenderCPUAccessFlag::CPU_ACCESS_NONE)
+		RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT)
 		{
-			ByteWidth = byteWidth;
-			Usage = usage;
-			BindFlags = bindFlag;
-			CPUAccessFlags = cpuAccessFlag;
-			MiscFlags = miscFlag;
-			StructureByteStride = structureByteStride;
+			ByteWidth			= byteWidth;
+			Usage				= usage;
+			BindFlags			= bindFlag;
+			CPUAccessFlags		= cpuAccessFlag;
+			MiscFlags			= miscFlag;
+			StructureByteStride	= structureByteStride;
 		}
 		UINT					ByteWidth;
-		CRenderUsage			Usage;
-		CRenderBindFlag			BindFlags;
-		CRenderCPUAccessFlag	CPUAccessFlags;
-		CRenderResourceMiscFlag	MiscFlags;
+		RUsageFlagType			Usage;
+		RBindFlagType			BindFlags;
+		RCPUAccessFlagType		CPUAccessFlags;
+		RResourceMiscFlagType	MiscFlags;
 		UINT					StructureByteStride;
 	};
-
-	struct CRenderSubresourceData
+	struct RSubresourceDataDesc
 	{
-		CRenderSubresourceData() { ::ZeroMemory(this, sizeof(*this)); }
-		CRenderSubresourceData(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch)
+		RSubresourceDataDesc() { ::ZeroMemory(this, sizeof(*this)); }
+		RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch)
 		{
-			pSysMem = mem;
-			SysMemPitch = sysMemPitch;
-			SysMemSlicePitch = sysMemSlicePitch;
+			pSysMem				= mem;
+			SysMemPitch			= sysMemPitch;
+			SysMemSlicePitch	= sysMemSlicePitch;
 		}
-		const void* pSysMem;
+		const void*		pSysMem;
 		UINT			SysMemPitch;
 		UINT			SysMemSlicePitch;
 	};
-
-	struct CRenderBox
+	enum RFormatType
 	{
-		CRenderBox() { ::ZeroMemory(this, sizeof(*this)); }
-		CRenderBox(const UINT _left, const UINT _top, const UINT _front, const UINT _right, const UINT _bottom, const UINT _back)
-		{
-			left = _left;
-			top = _top;
-			front = _front;
-			right = _right;
-			bottom = _bottom;
-			back = _back;
-		}
-		UINT	left;
-		UINT	top;
-		UINT	front;
-		UINT	right;
-		UINT	bottom;
-		UINT	back;
+		FORMAT_UNKNOWN						= 0,
+		FORMAT_R32G32B32A32_TYPELESS		= 1,
+		FORMAT_R32G32B32A32_FLOAT			= 2,
+		FORMAT_R32G32B32A32_UINT			= 3,
+		FORMAT_R32G32B32A32_SINT			= 4,
+		FORMAT_R32G32B32_TYPELESS			= 5,
+		FORMAT_R32G32B32_FLOAT				= 6,
+		FORMAT_R32G32B32_UINT				= 7,
+		FORMAT_R32G32B32_SINT				= 8,
+		FORMAT_R16G16B16A16_TYPELESS		= 9,
+		FORMAT_R16G16B16A16_FLOAT			= 10,
+		FORMAT_R16G16B16A16_UNORM			= 11,
+		FORMAT_R16G16B16A16_UINT			= 12,
+		FORMAT_R16G16B16A16_SNORM			= 13,
+		FORMAT_R16G16B16A16_SINT			= 14,
+		FORMAT_R32G32_TYPELESS				= 15,
+		FORMAT_R32G32_FLOAT					= 16,
+		FORMAT_R32G32_UINT					= 17,
+		FORMAT_R32G32_SINT					= 18,
+		FORMAT_R10G10B10A2_TYPELESS			= 23,
+		FORMAT_R10G10B10A2_UNORM			= 24,
+		FORMAT_R10G10B10A2_UINT				= 25,
+		FORMAT_R11G11B10_FLOAT				= 26,
+		FORMAT_R8G8B8A8_TYPELESS			= 27,
+		FORMAT_R8G8B8A8_UNORM				= 28,
+		FORMAT_R8G8B8A8_UNORM_SRGB			= 29,
+		FORMAT_R8G8B8A8_UINT				= 30,
+		FORMAT_R8G8B8A8_SNORM				= 31,
+		FORMAT_R8G8B8A8_SINT				= 32,
+		FORMAT_R16G16_TYPELESS				= 33,
+		FORMAT_R16G16_FLOAT					= 34,
+		FORMAT_R16G16_UNORM					= 35,
+		FORMAT_R16G16_UINT					= 36,
+		FORMAT_R16G16_SNORM					= 37,
+		FORMAT_R16G16_SINT					= 38,
+		FORMAT_R32_TYPELESS					= 39,
+		FORMAT_R32_FLOAT					= 41,
+		FORMAT_R32_UINT						= 42,
+		FORMAT_R32_SINT						= 43,
+		FORMAT_R24G8_TYPELESS				= 44,
+		FORMAT_R8G8_TYPELESS				= 48,
+		FORMAT_R8G8_UNORM					= 49,
+		FORMAT_R8G8_UINT					= 50,
+		FORMAT_R8G8_SNORM					= 51,
+		FORMAT_R8G8_SINT					= 52,
+		FORMAT_R16_TYPELESS					= 53,
+		FORMAT_R16_FLOAT					= 54,
+		FORMAT_R16_UNORM					= 56,
+		FORMAT_R16_UINT						= 57,
+		FORMAT_R16_SNORM					= 58,
+		FORMAT_R16_SINT						= 59,
+		FORMAT_R8_TYPELESS					= 60,
+		FORMAT_R8_UNORM						= 61,
+		FORMAT_R8_UINT						= 62,
+		FORMAT_R8_SNORM						= 63,
+		FORMAT_R8_SINT						= 64,
+		FORMAT_A8_UNORM						= 65,
+		FORMAT_R1_UNORM						= 66,
+		FORMAT_R9G9B9E5_SHAREDEXP			= 67,
+		FORMAT_R8G8_B8G8_UNORM				= 68,
+		FORMAT_G8R8_G8B8_UNORM				= 69,
+		FORMAT_BC1_TYPELESS					= 70,
+		FORMAT_BC1_UNORM					= 71,
+		FORMAT_BC1_UNORM_SRGB				= 72,
+		FORMAT_BC2_TYPELESS					= 73,
+		FORMAT_BC2_UNORM					= 74,
+		FORMAT_BC2_UNORM_SRGB				= 75,
+		FORMAT_BC3_TYPELESS					= 76,
+		FORMAT_BC3_UNORM					= 77,
+		FORMAT_BC3_UNORM_SRGB				= 78,
+		FORMAT_BC4_TYPELESS					= 79,
+		FORMAT_BC4_UNORM					= 80,
+		FORMAT_BC4_SNORM					= 81,
+		FORMAT_BC5_TYPELESS					= 82,
+		FORMAT_BC5_UNORM					= 83,
+		FORMAT_BC5_SNORM					= 84,
+		FORMAT_B5G6R5_UNORM					= 85,
+		FORMAT_B5G5R5A1_UNORM				= 86,
+		FORMAT_B8G8R8A8_UNORM				= 87,
+		FORMAT_B8G8R8X8_UNORM				= 88,
+		FORMAT_R10G10B10_XR_BIAS_A2_UNORM	= 89,
+		FORMAT_B8G8R8A8_TYPELESS			= 90,
+		FORMAT_B8G8R8A8_UNORM_SRGB			= 91,
+		FORMAT_B8G8R8X8_TYPELESS			= 92,
+		FORMAT_B8G8R8X8_UNORM_SRGB			= 93,
+		FORMAT_BC6H_TYPELESS				= 94,
+		FORMAT_BC6H_UF16					= 95,
+		FORMAT_BC6H_SF16					= 96,
+		FORMAT_BC7_TYPELESS					= 97,
+		FORMAT_BC7_UNORM					= 98,
+		FORMAT_BC7_UNORM_SRGB				= 99,
+		FORMAT_AYUV							= 100,
+		FORMAT_Y410							= 101,
+		FORMAT_Y416							= 102,
+		FORMAT_NV12							= 103,
+		FORMAT_P010							= 104,
+		FORMAT_P016							= 105,
+		FORMAT_420_OPAQUE					= 106,
+		FORMAT_YUY2							= 107,
+		FORMAT_Y210							= 108,
+		FORMAT_Y216							= 109,
+		FORMAT_NV11							= 110,
+		FORMAT_AI44							= 111,
+		FORMAT_IA44							= 112,
+		FORMAT_P8							= 113,
+		FORMAT_A8P8							= 114,
+		FORMAT_B4G4R4A4_UNORM				= 115,
+		FORMAT_P208							= 130,
+		FORMAT_V208							= 131,
+		FORMAT_V408							= 132,
+		FORMAT_FORCE_UINT					= 0xffffffff
 	};
-
-	enum CRenderFormat
+	struct RTextureSampleDesc
 	{
-		FORMAT_UNKNOWN = 0,
-		FORMAT_R32G32B32A32_TYPELESS = 1,
-		FORMAT_R32G32B32A32_FLOAT = 2,
-		FORMAT_R32G32B32A32_UINT = 3,
-		FORMAT_R32G32B32A32_SINT = 4,
-		FORMAT_R32G32B32_TYPELESS = 5,
-		FORMAT_R32G32B32_FLOAT = 6,
-		FORMAT_R32G32B32_UINT = 7,
-		FORMAT_R32G32B32_SINT = 8,
-		FORMAT_R16G16B16A16_TYPELESS = 9,
-		FORMAT_R16G16B16A16_FLOAT = 10,
-		FORMAT_R16G16B16A16_UNORM = 11,
-		FORMAT_R16G16B16A16_UINT = 12,
-		FORMAT_R16G16B16A16_SNORM = 13,
-		FORMAT_R16G16B16A16_SINT = 14,
-		FORMAT_R32G32_TYPELESS = 15,
-		FORMAT_R32G32_FLOAT = 16,
-		FORMAT_R32G32_UINT = 17,
-		FORMAT_R32G32_SINT = 18,
-		FORMAT_R10G10B10A2_TYPELESS = 23,
-		FORMAT_R10G10B10A2_UNORM = 24,
-		FORMAT_R10G10B10A2_UINT = 25,
-		FORMAT_R11G11B10_FLOAT = 26,
-		FORMAT_R8G8B8A8_TYPELESS = 27,
-		FORMAT_R8G8B8A8_UNORM = 28,
-		FORMAT_R8G8B8A8_UNORM_SRGB = 29,
-		FORMAT_R8G8B8A8_UINT = 30,
-		FORMAT_R8G8B8A8_SNORM = 31,
-		FORMAT_R8G8B8A8_SINT = 32,
-		FORMAT_R16G16_TYPELESS = 33,
-		FORMAT_R16G16_FLOAT = 34,
-		FORMAT_R16G16_UNORM = 35,
-		FORMAT_R16G16_UINT = 36,
-		FORMAT_R16G16_SNORM = 37,
-		FORMAT_R16G16_SINT = 38,
-		FORMAT_R32_TYPELESS = 39,
-		FORMAT_R32_FLOAT = 41,
-		FORMAT_R32_UINT = 42,
-		FORMAT_R32_SINT = 43,
-		FORMAT_R24G8_TYPELESS = 44,
-		FORMAT_R8G8_TYPELESS = 48,
-		FORMAT_R8G8_UNORM = 49,
-		FORMAT_R8G8_UINT = 50,
-		FORMAT_R8G8_SNORM = 51,
-		FORMAT_R8G8_SINT = 52,
-		FORMAT_R16_TYPELESS = 53,
-		FORMAT_R16_FLOAT = 54,
-		FORMAT_R16_UNORM = 56,
-		FORMAT_R16_UINT = 57,
-		FORMAT_R16_SNORM = 58,
-		FORMAT_R16_SINT = 59,
-		FORMAT_R8_TYPELESS = 60,
-		FORMAT_R8_UNORM = 61,
-		FORMAT_R8_UINT = 62,
-		FORMAT_R8_SNORM = 63,
-		FORMAT_R8_SINT = 64,
-		FORMAT_A8_UNORM = 65,
-		FORMAT_R1_UNORM = 66,
-		FORMAT_R9G9B9E5_SHAREDEXP = 67,
-		FORMAT_R8G8_B8G8_UNORM = 68,
-		FORMAT_G8R8_G8B8_UNORM = 69,
-		FORMAT_BC1_TYPELESS = 70,
-		FORMAT_BC1_UNORM = 71,
-		FORMAT_BC1_UNORM_SRGB = 72,
-		FORMAT_BC2_TYPELESS = 73,
-		FORMAT_BC2_UNORM = 74,
-		FORMAT_BC2_UNORM_SRGB = 75,
-		FORMAT_BC3_TYPELESS = 76,
-		FORMAT_BC3_UNORM = 77,
-		FORMAT_BC3_UNORM_SRGB = 78,
-		FORMAT_BC4_TYPELESS = 79,
-		FORMAT_BC4_UNORM = 80,
-		FORMAT_BC4_SNORM = 81,
-		FORMAT_BC5_TYPELESS = 82,
-		FORMAT_BC5_UNORM = 83,
-		FORMAT_BC5_SNORM = 84,
-		FORMAT_B5G6R5_UNORM = 85,
-		FORMAT_B5G5R5A1_UNORM = 86,
-		FORMAT_B8G8R8A8_UNORM = 87,
-		FORMAT_B8G8R8X8_UNORM = 88,
-		FORMAT_R10G10B10_XR_BIAS_A2_UNORM = 89,
-		FORMAT_B8G8R8A8_TYPELESS = 90,
-		FORMAT_B8G8R8A8_UNORM_SRGB = 91,
-		FORMAT_B8G8R8X8_TYPELESS = 92,
-		FORMAT_B8G8R8X8_UNORM_SRGB = 93,
-		FORMAT_BC6H_TYPELESS = 94,
-		FORMAT_BC6H_UF16 = 95,
-		FORMAT_BC6H_SF16 = 96,
-		FORMAT_BC7_TYPELESS = 97,
-		FORMAT_BC7_UNORM = 98,
-		FORMAT_BC7_UNORM_SRGB = 99,
-		FORMAT_AYUV = 100,
-		FORMAT_Y410 = 101,
-		FORMAT_Y416 = 102,
-		FORMAT_NV12 = 103,
-		FORMAT_P010 = 104,
-		FORMAT_P016 = 105,
-		FORMAT_420_OPAQUE = 106,
-		FORMAT_YUY2 = 107,
-		FORMAT_Y210 = 108,
-		FORMAT_Y216 = 109,
-		FORMAT_NV11 = 110,
-		FORMAT_AI44 = 111,
-		FORMAT_IA44 = 112,
-		FORMAT_P8 = 113,
-		FORMAT_A8P8 = 114,
-		FORMAT_B4G4R4A4_UNORM = 115,
-		FORMAT_P208 = 130,
-		FORMAT_V208 = 131,
-		FORMAT_V408 = 132,
-		FORMAT_FORCE_UINT = 0xffffffff
-	};
-
-	struct CRenderTextureSampleDesc
-	{
-		CRenderTextureSampleDesc()
+		RTextureSampleDesc()
 		{
 			Count = 1u;
 			Quality = 0u;
 		}
-		CRenderTextureSampleDesc(const UINT& count, const UINT& quality)
+		RTextureSampleDesc(const UINT& count, const UINT& quality)
 		{
 			Count = count;
 			Quality = quality;
