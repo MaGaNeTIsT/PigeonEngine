@@ -5,25 +5,16 @@
 
 namespace PigeonEngine
 {
-	class RCommonSettings
-	{
-	public:
-		constexpr static FLOAT		BoundMinimum			= 0.01f;
-		constexpr static FLOAT		BoundHalfMinimum		= 0.005f;
-		constexpr static USHORT		SupportLightMax			= 16u;
-		constexpr static USHORT		SkeletonBoneMax			= 286u;
-	public:
-		RCommonSettings() {}
-		~RCommonSettings() {}
-	};
 	struct RBoundingBox
 	{
+		RBoundingBox(const RBoundingBox& other) noexcept : Anchor(other.Anchor), Dimensions(other.Dimensions) {}
 		RBoundingBox(const Vector3& anchor, const Vector3& dimensions) noexcept : Anchor(anchor), Dimensions(dimensions) {}
 		Vector3		Anchor;
 		Vector3		Dimensions;
 	};
 	struct RBoundingSphere
 	{
+		RBoundingSphere(const RBoundingSphere& other) noexcept : Anchor(other.Anchor), Radius(other.Radius) {}
 		RBoundingSphere(const Vector3& anchor, const FLOAT& radius) noexcept : Anchor(anchor), Radius(radius) {}
 		Vector3		Anchor;
 		FLOAT		Radius;
@@ -31,7 +22,9 @@ namespace PigeonEngine
 	struct RSubMeshInfo
 	{
 		RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
+		RSubMeshInfo(const RSubMeshInfo& other) noexcept :VertexStart(other.VertexStart), VertexCount(other.VertexCount), IndexStart(other.IndexStart), IndexCount(other.IndexCount) {}
 		constexpr RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
+		constexpr RSubMeshInfo(const RSubMeshInfo& other) noexcept :VertexStart(other.VertexStart), VertexCount(other.VertexCount), IndexStart(other.IndexStart), IndexCount(other.IndexCount) {}
 		UINT	VertexStart;
 		UINT	VertexCount;
 		UINT	IndexStart;
@@ -40,6 +33,7 @@ namespace PigeonEngine
 	struct RPerLightInfo
 	{
 		RPerLightInfo() { ::ZeroMemory(this, sizeof(*this)); }
+		RPerLightInfo(const RPerLightInfo& other) : Color(other.Color), Params0(other.Params0), Params1(other.Params1) {}
 		DirectX::XMFLOAT4	Color;
 		DirectX::XMFLOAT4	Params0;
 		DirectX::XMFLOAT4	Params1;
@@ -47,12 +41,28 @@ namespace PigeonEngine
 	struct RLightConstantBuffer
 	{
 		RLightConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
+		RLightConstantBuffer(const RLightConstantBuffer& other) : LightCount(other.LightCount) { for (USHORT i = 0u; i < RCommonSettings::SupportLightMax; i++) { LightParams[i] = other.LightParams[i]; } }
 		DirectX::XMINT4		LightCount;
 		RPerLightInfo		LightParams[RCommonSettings::SupportLightMax];
 	};
 	struct RPerFrameConstantBuffer
 	{
 		RPerFrameConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
+		RPerFrameConstantBuffer(const RPerFrameConstantBuffer& other)
+			: ViewMatrix(other.ViewMatrix)
+			, ViewInvMatrix(other.ViewInvMatrix)
+			, ProjectionMatrix(other.ProjectionMatrix)
+			, ProjectionInvMatrix(other.ProjectionInvMatrix)
+			, ViewProjectionMatrix(other.ViewProjectionMatrix)
+			, ViewProjectionInvMatrix(other.ViewProjectionInvMatrix)
+			, LightViewProjectionMatrix(other.LightViewProjectionMatrix)
+			, TimeParams(other.TimeParams)
+			, DepthMultiAdd(other.DepthMultiAdd)
+			, ScreenToViewSpaceParams(other.ScreenToViewSpaceParams)
+			, CameraViewportMinSizeAndInvBufferSize(other.CameraViewportMinSizeAndInvBufferSize)
+			, CameraViewportSizeAndInvSize(other.CameraViewportSizeAndInvSize)
+			, CameraViewportRect(other.CameraViewportRect)
+			, CameraWorldPosition(other.CameraWorldPosition) {}
 		DirectX::XMFLOAT4X4		ViewMatrix;
 		DirectX::XMFLOAT4X4		ViewInvMatrix;
 		DirectX::XMFLOAT4X4		ProjectionMatrix;
@@ -71,6 +81,7 @@ namespace PigeonEngine
 	struct RPerDrawConstantBuffer
 	{
 		RPerDrawConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
+		RPerDrawConstantBuffer(const RPerDrawConstantBuffer& other) : WorldMatrix(other.WorldInvMatrix), WorldInvMatrix(other.WorldInvMatrix), WorldInvTransposeMatrix(other.WorldInvTransposeMatrix), CustomParameter(other.CustomParameter) {}
 		DirectX::XMFLOAT4X4		WorldMatrix;
 		DirectX::XMFLOAT4X4		WorldInvMatrix;
 		DirectX::XMFLOAT4X4		WorldInvTransposeMatrix;
@@ -79,6 +90,7 @@ namespace PigeonEngine
 	struct RPerSkeletonConstantBuffer
 	{
 		RPerSkeletonConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
+		RPerSkeletonConstantBuffer(const RPerSkeletonConstantBuffer& other) : SkeletonBoneNum(other.SkeletonBoneNum) { for (USHORT i = 0u; i < RCommonSettings::SkeletonBoneMax * 2u; i++) { SkeletonMatrix[i] = other.SkeletonMatrix[i]; } }
 		DirectX::XMFLOAT4		SkeletonBoneNum;
 		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::SkeletonBoneMax * 2u];
 	};
@@ -103,9 +115,11 @@ namespace PigeonEngine
 	struct RViewport
 	{
 		RViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(0.f), MaxDepth(0.f) {}
+		RViewport(const RViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
 		RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
 		constexpr RViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(0.f), MaxDepth(0.f) {}
 		constexpr RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
+		constexpr RViewport(const RViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
 		FLOAT	TopLeftX;
 		FLOAT	TopLeftY;
 		FLOAT	Width;
@@ -139,8 +153,10 @@ namespace PigeonEngine
 	{
 		RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
 		RRasterizerState(RCullModeType cull, RFillModeType fill = RFillModeType::FILL_SOLID) noexcept : CullMode(cull), FillMode(fill) {}
+		RRasterizerState(const RRasterizerState& other) noexcept : CullMode(other.CullMode), FillMode(other.FillMode) {}
 		constexpr RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
 		constexpr RRasterizerState(RCullModeType cull, RFillModeType fill = RFillModeType::FILL_SOLID) noexcept : CullMode(cull), FillMode(fill) {}
+		constexpr RRasterizerState(const RRasterizerState& other) noexcept : CullMode(other.CullMode), FillMode(other.FillMode) {}
 		RCullModeType	CullMode;
 		RFillModeType	FillMode;
 	};
@@ -153,8 +169,10 @@ namespace PigeonEngine
 	{
 		RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
+		RDepthState(const RDepthState& other) noexcept : DepthEnable(other.DepthEnable), DepthWriteMask(other.DepthWriteMask), DepthFunc(other.DepthFunc) {}
 		constexpr RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		constexpr RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
+		constexpr RDepthState(const RDepthState& other) noexcept : DepthEnable(other.DepthEnable), DepthWriteMask(other.DepthWriteMask), DepthFunc(other.DepthFunc) {}
 		BOOL						DepthEnable;
 		RDepthWriteMaskType			DepthWriteMask;
 		RComparisonFunctionType		DepthFunc;
@@ -188,6 +206,7 @@ namespace PigeonEngine
 		RStencilState() : StencilEnable(FALSE), StencilReadMask(ENGINE_DEFAULT_STENCIL_READ_MASK), StencilWriteMask(ENGINE_DEFAULT_STENCIL_WRITE_MASK), FrontFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)), BackFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)) {}
 		RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(static_cast<UINT>(readMask)), StencilWriteMask(static_cast<UINT>(writeMask)), FrontFace(frontFace), BackFace(backFace) {}
 		RStencilState(const UINT& readMask, const UINT& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(EMath::Min(readMask, 0xffu)), StencilWriteMask(EMath::Min(writeMask, 0xffu)), FrontFace(frontFace), BackFace(backFace) {}
+		RStencilState(const RStencilState& other) noexcept : StencilEnable(other.StencilEnable), StencilReadMask(other.StencilReadMask), StencilWriteMask(other.StencilWriteMask), FrontFace(other.FrontFace), BackFace(other.BackFace) {}
 		BOOL				StencilEnable;
 		UINT				StencilReadMask;
 		UINT				StencilWriteMask;
@@ -230,8 +249,10 @@ namespace PigeonEngine
 	{
 		RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
 		RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
+		RBlendState(const RBlendState& other) noexcept : BlendEnable(other.BlendEnable), SrcBlend(other.SrcBlend), DstBlend(other.DstBlend), BlendOp(other.BlendOp), SrcBlendAlpha(other.SrcBlendAlpha), DstBlendAlpha(other.DstBlendAlpha), BlendOpAlpha(other.BlendOpAlpha), RenderTargetWriteMask(other.RenderTargetWriteMask) {}
 		constexpr RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
 		constexpr RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
+		constexpr RBlendState(const RBlendState& other) noexcept : BlendEnable(other.BlendEnable), SrcBlend(other.SrcBlend), DstBlend(other.DstBlend), BlendOp(other.BlendOp), SrcBlendAlpha(other.SrcBlendAlpha), DstBlendAlpha(other.DstBlendAlpha), BlendOpAlpha(other.BlendOpAlpha), RenderTargetWriteMask(other.RenderTargetWriteMask) {}
 		BOOL					BlendEnable;
 		RBlendOptionType		SrcBlend;
 		RBlendOptionType		DstBlend;
@@ -257,14 +278,9 @@ namespace PigeonEngine
 	};
 	struct RSamplerState
 	{
-		RSamplerState() noexcept
-			: Filter(RFilterType::FILTER_LINEAR), AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS), BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(ENGINE_FLOAT32_MAX)
-		{
-		}
-		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS) noexcept
-			: Filter(filter), AddressU(u), AddressV(v), AddressW(w), MipLODBias(mipLODBias), MaxAnisotropy(maxAnisotropy), ComparisonFunc(func), BorderColor(borderColor), MinLOD(minLOD), MaxLOD(maxLOD)
-		{
-		}
+		RSamplerState() noexcept : Filter(RFilterType::FILTER_LINEAR), AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS), BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(ENGINE_FLOAT32_MAX) {}
+		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS) noexcept : Filter(filter), AddressU(u), AddressV(v), AddressW(w), MipLODBias(mipLODBias), MaxAnisotropy(maxAnisotropy), ComparisonFunc(func), BorderColor(borderColor), MinLOD(minLOD), MaxLOD(maxLOD) {}
+		RSamplerState(const RSamplerState& other) noexcept : Filter(other.Filter), AddressU(other.AddressU), AddressV(other.AddressV), AddressW(other.AddressW), MipLODBias(other.MipLODBias), MaxAnisotropy(other.MaxAnisotropy), ComparisonFunc(other.ComparisonFunc), BorderColor(other.BorderColor), MinLOD(other.MinLOD), MaxLOD(other.MaxLOD) {}
 		RFilterType					Filter;
 		RTextureAddressModeType		AddressU;
 		RTextureAddressModeType		AddressV;
@@ -313,30 +329,16 @@ namespace PigeonEngine
 	enum RUAVFlagType
 	{
 		UAV_FLAG_NONE		= 0,
-		UAV_FLAG_RAW		= 1,
-		UAV_FLAG_APPEND		= 2,
-		UAV_FLAG_COUNTER	= 3
+		UAV_FLAG_RAW		= (1 << 0),
+		UAV_FLAG_APPEND		= (1 << 1),
+		UAV_FLAG_COUNTER	= (1 << 2)
 	};
 	struct RBufferDesc
 	{
-		RBufferDesc()
-		{
-			ByteWidth			= 0u;
-			Usage				= RUsageFlagType::USAGE_DEFAULT;
-			BindFlags			= RBindFlagType::BIND_NONE;
-			CPUAccessFlags		= RCPUAccessFlagType::CPU_ACCESS_DEFAULT;
-			MiscFlags			= RResourceMiscFlagType::RESOURCE_MISC_NONE;
-			StructureByteStride	= sizeof(FLOAT);
-		}
-		RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT)
-		{
-			ByteWidth			= byteWidth;
-			Usage				= usage;
-			BindFlags			= bindFlag;
-			CPUAccessFlags		= cpuAccessFlag;
-			MiscFlags			= miscFlag;
-			StructureByteStride	= structureByteStride;
-		}
+		RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
+		RBufferDesc(const RBufferDesc& other) noexcept : ByteWidth(other.ByteWidth), Usage(other.Usage), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags), MiscFlags(other.MiscFlags), StructureByteStride(other.StructureByteStride) {}
+		constexpr RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
+		constexpr RBufferDesc(const RBufferDesc& other) noexcept : ByteWidth(other.ByteWidth), Usage(other.Usage), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags), MiscFlags(other.MiscFlags), StructureByteStride(other.StructureByteStride) {}
 		UINT					ByteWidth;
 		RUsageFlagType			Usage;
 		RBindFlagType			BindFlags;
@@ -346,13 +348,12 @@ namespace PigeonEngine
 	};
 	struct RSubresourceDataDesc
 	{
-		RSubresourceDataDesc() { ::ZeroMemory(this, sizeof(*this)); }
-		RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch)
-		{
-			pSysMem				= mem;
-			SysMemPitch			= sysMemPitch;
-			SysMemSlicePitch	= sysMemSlicePitch;
-		}
+		RSubresourceDataDesc() noexcept : pSysMem(nullptr), SysMemPitch(0u), SysMemSlicePitch(0u) {}
+		RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
+		RSubresourceDataDesc(const RSubresourceDataDesc& other) noexcept : pSysMem(other.pSysMem), SysMemPitch(other.SysMemPitch), SysMemSlicePitch(other.SysMemSlicePitch) {}
+		constexpr RSubresourceDataDesc() noexcept : pSysMem(nullptr), SysMemPitch(0u), SysMemSlicePitch(0u) {}
+		constexpr RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
+		constexpr RSubresourceDataDesc(const RSubresourceDataDesc& other) noexcept : pSysMem(other.pSysMem), SysMemPitch(other.SysMemPitch), SysMemSlicePitch(other.SysMemSlicePitch) {}
 		const void*		pSysMem;
 		UINT			SysMemPitch;
 		UINT			SysMemSlicePitch;
@@ -473,326 +474,287 @@ namespace PigeonEngine
 	};
 	struct RTextureSampleDesc
 	{
-		RTextureSampleDesc()
-		{
-			Count = 1u;
-			Quality = 0u;
-		}
-		RTextureSampleDesc(const UINT& count, const UINT& quality)
-		{
-			Count = count;
-			Quality = quality;
-		}
+		RTextureSampleDesc() noexcept : Count(1u), Quality(0u) {}
+		RTextureSampleDesc(const UINT& count, const UINT& quality) noexcept : Count(count), Quality(quality) {}
+		RTextureSampleDesc(const RTextureSampleDesc& other) noexcept : Count(other.Count), Quality(other.Quality) {}
+		constexpr RTextureSampleDesc() noexcept : Count(1u), Quality(0u) {}
+		constexpr RTextureSampleDesc(const UINT& count, const UINT& quality) noexcept : Count(count), Quality(quality) {}
+		constexpr RTextureSampleDesc(const RTextureSampleDesc& other) noexcept : Count(other.Count), Quality(other.Quality) {}
 		UINT	Count;
 		UINT	Quality;
 	};
-
-	struct CRenderTextureDesc
+	struct RTextureDesc
 	{
-		CRenderTextureDesc()
+		RTextureDesc(
+			const UINT& width, const UINT& height, RBindFlagType bindFlags, RFormatType bufferFormat, const RFormatType* srvFormat = nullptr
+			, const RFormatType* rtvFormat = nullptr, const RFormatType* uavFormat = nullptr, const UINT& depth = 0u, const UINT& mipLevels = 1u
+			, const UINT& arraySize = 1u, RUsageFlagType usageFlag = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT
+			, RResourceMiscFlagType miscFlags = RResourceMiscFlagType::RESOURCE_MISC_NONE, RTextureSampleDesc sampleDesc = RTextureSampleDesc(1u, 0u)) noexcept
+			: Width(width), Height(height), Depth(depth), MipLevels(mipLevels), ArraySize(arraySize), BufferFormat(bufferFormat), SampleDesc(sampleDesc)
+			, UsageFlag(usageFlag), BindFlags(bindFlags), CPUAccessFlags(cpuAccessFlags), MiscFlags(miscFlags)
 		{
-			Width = 2u;
-			Height = 2u;
-			Depth = 0u;
-			MipLevels = 1u;
-			ArraySize = 1u;
-			TextureFormat = CRenderFormat::FORMAT_UNKNOWN;
-			SRVFormat = CRenderFormat::FORMAT_UNKNOWN;
-			RTVFormat = CRenderFormat::FORMAT_UNKNOWN;
-			UAVFormat = CRenderFormat::FORMAT_UNKNOWN;
-			SampleDesc = CRenderTextureSampleDesc(1u, 0u);
-			Usage = CRenderUsage::USAGE_DEFAULT;
-			BindFlags = CRenderBindFlag::BIND_NONE;
-			CPUAccessFlags = CRenderCPUAccessFlag::CPU_ACCESS_NONE;
-			MiscFlags = CRenderResourceMiscFlag::RESOURCE_MISC_NONE;
+			SRVFormat = srvFormat ? (*srvFormat) : bufferFormat;
+			RTVFormat = rtvFormat ? (*rtvFormat) : bufferFormat;
+			UAVFormat = uavFormat ? (*uavFormat) : bufferFormat;
 		}
-		CRenderTextureDesc(const UINT& width, const UINT& height, CRenderBindFlag bindFlags, CRenderFormat texFormat, const CRenderFormat* srvFormat = NULL, const CRenderFormat* rtvFormat = NULL, const CRenderFormat* uavFormat = NULL, const UINT& depth = 0u, const UINT& mipLevels = 1u, const UINT& arraySize = 1u, CRenderUsage usage = CRenderUsage::USAGE_DEFAULT, CRenderCPUAccessFlag cpuAccessFlags = CRenderCPUAccessFlag::CPU_ACCESS_NONE, CRenderResourceMiscFlag miscFlags = CRenderResourceMiscFlag::RESOURCE_MISC_NONE, CRenderTextureSampleDesc sampleDesc = CRenderTextureSampleDesc(1u, 0u))
-		{
-			Width = width;
-			Height = height;
-			Depth = depth;
-			MipLevels = mipLevels;
-			ArraySize = arraySize;
-			SampleDesc = sampleDesc;
-			Usage = usage;
-			BindFlags = bindFlags;
-			CPUAccessFlags = cpuAccessFlags;
-			MiscFlags = miscFlags;
-			TextureFormat = SRVFormat = UAVFormat = RTVFormat = texFormat;
-			if (srvFormat != NULL)
-				SRVFormat = (*srvFormat);
-			if (rtvFormat != NULL)
-				RTVFormat = (*rtvFormat);
-			if (uavFormat != NULL)
-				UAVFormat = (*uavFormat);
-		}
-		UINT						Width;
-		UINT						Height;
-		UINT						Depth;
-		UINT						MipLevels;
-		UINT						ArraySize;
-		CRenderFormat				TextureFormat;
-		CRenderFormat				SRVFormat;
-		CRenderFormat				RTVFormat;
-		CRenderFormat				UAVFormat;
-		CRenderTextureSampleDesc	SampleDesc;
-		CRenderUsage				Usage;
-		CRenderBindFlag				BindFlags;
-		CRenderCPUAccessFlag		CPUAccessFlags;
-		CRenderResourceMiscFlag		MiscFlags;
+		RTextureDesc(const RTextureDesc& other) noexcept
+			: Width(other.Width), Height(other.Height), Depth(other.Depth), MipLevels(other.MipLevels)
+			, ArraySize(other.ArraySize), BufferFormat(other.BufferFormat), SRVFormat(other.SRVFormat)
+			, RTVFormat(other.RTVFormat), UAVFormat(other.UAVFormat), SampleDesc(other.SampleDesc)
+			, UsageFlag(other.UsageFlag), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags)
+			, MiscFlags(other.MiscFlags) {}
+		UINT					Width;
+		UINT					Height;
+		UINT					Depth;
+		UINT					MipLevels;
+		UINT					ArraySize;
+		RFormatType				BufferFormat;
+		RFormatType				SRVFormat;
+		RFormatType				RTVFormat;
+		RFormatType				UAVFormat;
+		RTextureSampleDesc		SampleDesc;
+		RUsageFlagType			UsageFlag;
+		RBindFlagType			BindFlags;
+		RCPUAccessFlagType		CPUAccessFlags;
+		RResourceMiscFlagType	MiscFlags;
 	};
-
-	struct CRenderStructuredBufferDesc
+	struct RStructuredBufferDesc
 	{
-		CRenderStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, CRenderCPUAccessFlag accessFlag = CRenderCPUAccessFlag::CPU_ACCESS_NONE, const UINT& firstElement = 0u, CRenderBufferUAVFlag uavFlag = CRenderBufferUAVFlag::BUFFER_UAV_FLAG_NONE)
-		{
-			GPUWritable = writableGPU;
-			AccessFlag = accessFlag;
-			StructureSize = structureSize;
-			FirstElement = firstElement;
-			NumElements = numElements;
-			BufferFlag = uavFlag;
-		}
-
+		RStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
+		RStructuredBufferDesc(const RStructuredBufferDesc& other) noexcept : GPUWritable(other.GPUWritable), AccessFlags(other.AccessFlags), StructureSize(other.StructureSize), FirstElement(other.FirstElement), NumElements(other.NumElements), UAVFlags(other.UAVFlags) {}
+		constexpr RStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
+		constexpr RStructuredBufferDesc(const RStructuredBufferDesc& other) noexcept : GPUWritable(other.GPUWritable), AccessFlags(other.AccessFlags), StructureSize(other.StructureSize), FirstElement(other.FirstElement), NumElements(other.NumElements), UAVFlags(other.UAVFlags) {}
 		BOOL					GPUWritable;
-		CRenderCPUAccessFlag	AccessFlag;
+		RCPUAccessFlagType		AccessFlags;
 		UINT					StructureSize;
 		UINT					FirstElement;
 		UINT					NumElements;
-		CRenderBufferUAVFlag	BufferFlag;
+		RUAVFlagType			UAVFlags;
+	};
+	enum RInputClassificationType
+	{
+		INPUT_PER_VERTEX_DATA		= 0,
+		INPUT_PER_INSTANCE_DATA		= 1
 	};
 
-	enum CRenderShaderSemantic
+#define SHADER_SEMANTIC_DEFINE(Name)\
+	SHADER_SEMANTIC##Name##0 =  SHADER_SEMANTIC##Name + 0,\
+	SHADER_SEMANTIC##Name##1 =  SHADER_SEMANTIC##Name + 1,\
+	SHADER_SEMANTIC##Name##2 =  SHADER_SEMANTIC##Name + 2,\
+	SHADER_SEMANTIC##Name##3 =  SHADER_SEMANTIC##Name + 3,\
+	SHADER_SEMANTIC##Name##4 =  SHADER_SEMANTIC##Name + 4,\
+	SHADER_SEMANTIC##Name##5 =  SHADER_SEMANTIC##Name + 5,\
+	SHADER_SEMANTIC##Name##6 =  SHADER_SEMANTIC##Name + 6,\
+	SHADER_SEMANTIC##Name##7 =  SHADER_SEMANTIC##Name + 7,\
+	SHADER_SEMANTIC##Name##8 =  SHADER_SEMANTIC##Name + 8,\
+	SHADER_SEMANTIC##Name##9 =  SHADER_SEMANTIC##Name + 9,\
+	SHADER_SEMANTIC##Name##10 =  SHADER_SEMANTIC##Name + 10,\
+	SHADER_SEMANTIC##Name##11 =  SHADER_SEMANTIC##Name + 11,\
+	SHADER_SEMANTIC##Name##12 =  SHADER_SEMANTIC##Name + 12,\
+	SHADER_SEMANTIC##Name##13 =  SHADER_SEMANTIC##Name + 13,\
+	SHADER_SEMANTIC##Name##14 =  SHADER_SEMANTIC##Name + 14,\
+	SHADER_SEMANTIC##Name##15 =  SHADER_SEMANTIC##Name + 15\
+
+	enum RShaderSemanticType
 	{
-		SHADER_SEMANTIC_POSITION = 0,
-		SHADER_SEMANTIC_TEXCOORD = 1,
-		SHADER_SEMANTIC_NORMAL = 2,
-		SHADER_SEMANTIC_TANGENT = 3,
-		SHADER_SEMANTIC_COLOR = 4,
-		SHADER_SEMANTIC_BLENDINDICES = 5,
-		SHADER_SEMANTIC_BLENDWEIGHT = 6,
-		SHADER_SEMANTIC_POSITIONT = 7,
-		SHADER_SEMANTIC_PSIZE = 8,
-		SHADER_SEMANTIC_BINORMAL = 9
+		SHADER_SEMANTIC_NONE			= 0,
+		SHADER_SEMANTIC_PSIZE			= (1 << 6),
+		SHADER_SEMANTIC_POSITIONT		= (1 << 7),
+		SHADER_SEMANTIC_BINORMAL		= (1 << 8),
+		SHADER_SEMANTIC_BLENDWEIGHT		= (1 << 9),
+		SHADER_SEMANTIC_BLENDINDICES	= (1 << 10),
+		SHADER_SEMANTIC_COLOR			= (1 << 11),
+		SHADER_SEMANTIC_TANGENT			= (1 << 12),
+		SHADER_SEMANTIC_NORMAL			= (1 << 13),
+		SHADER_SEMANTIC_POSITION		= (1 << 14),
+		SHADER_SEMANTIC_TEXCOORD		= (1 << 15),
+		SHADER_SEMANTIC_DEFINE(_PSIZE),
+		SHADER_SEMANTIC_DEFINE(_POSITIONT),
+		SHADER_SEMANTIC_DEFINE(_BINORMAL),
+		SHADER_SEMANTIC_DEFINE(_BLENDWEIGHT),
+		SHADER_SEMANTIC_DEFINE(_BLENDINDICES),
+		SHADER_SEMANTIC_DEFINE(_COLOR),
+		SHADER_SEMANTIC_DEFINE(_TANGENT),
+		SHADER_SEMANTIC_DEFINE(_NORMAL),
+		SHADER_SEMANTIC_DEFINE(_POSITION),
+		SHADER_SEMANTIC_DEFINE(_TEXCOORD)
 	};
 
-	enum CRenderInputClassification
+#undef SHADER_SEMANTIC_DEFINE(Name)
+
+	struct RInputLayoutDesc
 	{
-		INPUT_PER_VERTEX_DATA = 0,
-		INPUT_PER_INSTANCE_DATA = 1
-	};
-
-	struct CRenderInputLayoutDesc
-	{
-		CRenderInputLayoutDesc()
-		{
-			SemanticName = CRenderShaderSemantic::SHADER_SEMANTIC_POSITION;
-			SemanticIndex = 0u;
-			InputSlot = 0u;
-			InputSlotClass = CRenderInputClassification::INPUT_PER_VERTEX_DATA;
-			InstanceDataStepRate = 0u;
-		}
-		CRenderInputLayoutDesc(const CRenderInputLayoutDesc& desc)
-		{
-			SemanticName = desc.SemanticName;
-			SemanticIndex = desc.SemanticIndex;
-			InputSlot = desc.InputSlot;
-			InputSlotClass = desc.InputSlotClass;
-			InstanceDataStepRate = desc.InstanceDataStepRate;
-		}
-		CRenderInputLayoutDesc(CRenderShaderSemantic name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, CRenderInputClassification inputSlotClass = CRenderInputClassification::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u)
-		{
-			SemanticName = name;
-			SemanticIndex = semanticIndex;
-			InputSlot = inputSlot;
-			InputSlotClass = inputSlotClass;
-			InstanceDataStepRate = instanceDataStepRate;
-		}
-		const UINT& GetSemanticSizeByByte()const
-		{
-			static std::map<CRenderShaderSemantic, UINT> semanticSizeByByteMap = {
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, 8u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES, 8u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, 16u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, 16u } };
-
-			return semanticSizeByByteMap[SemanticName];
-		}
-		const UINT& GetSemanticSizeByFloat()const
-		{
-			static std::map<CRenderShaderSemantic, UINT> semanticSizeByFloatMap = {
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD, 2u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_COLOR, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_POSITIONT, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_PSIZE, 4u },
-				{ CRenderShaderSemantic::SHADER_SEMANTIC_BINORMAL, 4u } };
-
-			return semanticSizeByFloatMap[SemanticName];
-		}
-		CRenderShaderSemantic		SemanticName;
+		RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
+		RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
+		constexpr RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
+		constexpr RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
+		RShaderSemanticType			SemanticName;
 		UINT						SemanticIndex;
 		UINT						InputSlot;
-		CRenderInputClassification	InputSlotClass;
+		RInputClassificationType	InputSlotClass;
 		UINT						InstanceDataStepRate;
-		static void GetEngineDefaultMeshInputLayouts(const CustomStruct::CRenderInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+	};
+	enum RResourceMapType
+	{
+		RESOURCE_MAP_NONE					= 0,
+		RESOURCE_MAP_READ					= 1,
+		RESOURCE_MAP_WRITE					= 2,
+		RESOURCE_MAP_READ_WRITE				= 3,
+		RESOURCE_MAP_WRITE_DISCARD			= 4,
+		RESOURCE_MAP_WRITE_NO_OVERWRITE		= 5
+	};
+	enum RResourceMapFlagType
+	{
+		RESOURCE_MAP_FLAG_NONE			= 0,
+		RESOURCE_MAP_FLAG_DO_NOT_WAIT	= 1
+	};
+	struct RMappedResource
+	{
+		RMappedResource() noexcept : pData(nullptr), RowPitch(0u), DepthPitch(0u) {}
+		constexpr RMappedResource() noexcept : pData(nullptr), RowPitch(0u), DepthPitch(0u) {}
+		void*	pData;
+		UINT	RowPitch;
+		UINT	DepthPitch;
+	};
+	enum RQueryType
+	{
+		QUERY_EVENT								= 0,
+		QUERY_OCCLUSION							= 1,
+		QUERY_TIMESTAMP							= 2,
+		QUERY_TIMESTAMP_DISJOINT				= 3,
+		QUERY_PIPELINE_STATISTICS				= 4,
+		QUERY_OCCLUSION_PREDICATE				= 5,
+		QUERY_SO_STATISTICS						= 6,
+		QUERY_SO_OVERFLOW_PREDICATE				= 7,
+		QUERY_SO_STATISTICS_STREAM0				= 8,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM0		= 9,
+		QUERY_SO_STATISTICS_STREAM1				= 10,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM1		= 11,
+		QUERY_SO_STATISTICS_STREAM2				= 12,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM2		= 13,
+		QUERY_SO_STATISTICS_STREAM3				= 14,
+		QUERY_SO_OVERFLOW_PREDICATE_STREAM3		= 15
+	};
+	enum RQueryMiscFlagType
+	{
+		QUERY_MISC_DEFAULT			= 0,
+		QUERY_MISC_PREDICATEHINT	= (1 << 0)
+	};
+	struct RQueryDesc
+	{
+		RQueryDesc(RQueryType queryType, RQueryMiscFlagType miscFlags = RQueryMiscFlagType::QUERY_MISC_DEFAULT) noexcept : QueryType(queryType), MiscFlags(miscFlags) {}
+		constexpr RQueryDesc(RQueryType queryType, RQueryMiscFlagType miscFlags = RQueryMiscFlagType::QUERY_MISC_DEFAULT) noexcept : QueryType(queryType), MiscFlags(miscFlags) {}
+		RQueryType			QueryType;
+		RQueryMiscFlagType	MiscFlags;
+	};
+	enum RAsyncGetDataFlagType
+	{
+		ASYNC_GETDATA_DEFAULT		= 0,
+		ASYNC_GETDATA_DONOTFLUSH	= (1 << 0)
+	};
+	struct RQueryTimestampDisjoint
+	{
+		RQueryTimestampDisjoint() noexcept : Frequency(1u), Disjoint(TRUE) {}
+		void Reset() { Frequency = 1u; Disjoint = TRUE; }
+		constexpr RQueryTimestampDisjoint() noexcept : Frequency(1u), Disjoint(TRUE) {}
+		ULONGLONG	Frequency;
+		BOOL		Disjoint;
+	};
+	enum RClearDepthStencilFlagType
+	{
+		CLEAR_NONE		= 0,
+		CLEAR_DEPTH		= (1 << 0),
+		CLEAR_STENCIL	= (1 << 1)
+	};
+	enum RPrimitiveTopologyType
+	{
+		PRIMITIVE_TOPOLOGY_UNDEFINED		= 0,
+		PRIMITIVE_TOPOLOGY_POINTLIST		= 1,
+		PRIMITIVE_TOPOLOGY_LINELIST			= 2,
+		PRIMITIVE_TOPOLOGY_LINESTRIP		= 3,
+		PRIMITIVE_TOPOLOGY_TRIANGLELIST		= 4,
+		PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	= 5
+	};
+	class RCommonSettings
+	{
+	public:
+		constexpr static FLOAT		BoundMinimum		= 0.01f;
+		constexpr static FLOAT		BoundHalfMinimum	= 0.005f;
+		constexpr static USHORT		SupportLightMax		= 16u;
+		constexpr static USHORT		SkeletonBoneMax		= 286u;
+	public:
+		static std::string GetEngineDefaultTexturePath(RDefaultTextureType texType)
 		{
-			const static CustomStruct::CRenderInputLayoutDesc _EngineDefaultMeshInputLayout[4u] = {
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
+			static std::map<RDefaultTextureType, std::string> engineDefaultTexturePathMap = {
+				{ RDefaultTextureType::TEXTURE2D_WHITE, std::string(ENGINE_DEFAULT_TEXTURE2D_WHITE) },
+				{ RDefaultTextureType::TEXTURE2D_BLACK, std::string(ENGINE_DEFAULT_TEXTURE2D_BLACK) },
+				{ RDefaultTextureType::TEXTURE2D_GRAY, std::string(ENGINE_DEFAULT_TEXTURE2D_GRAY) },
+				{ RDefaultTextureType::TEXTURE2D_RED, std::string(ENGINE_DEFAULT_TEXTURE2D_RED) },
+				{ RDefaultTextureType::TEXTURE2D_GREEN, std::string(ENGINE_DEFAULT_TEXTURE2D_GREEN) },
+				{ RDefaultTextureType::TEXTURE2D_BLUE, std::string(ENGINE_DEFAULT_TEXTURE2D_BLUE) },
+				{ RDefaultTextureType::TEXTURE2D_BUMP, std::string(ENGINE_DEFAULT_TEXTURE2D_BUMP) },
+				{ RDefaultTextureType::TEXTURE2D_PROPERTY, std::string(ENGINE_DEFAULT_TEXTURE2D_PROPERTY) } };
+
+			return engineDefaultTexturePathMap[texType];
+		}
+		static UINT GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
+		{
+			if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
+			UINT SemanticName = input.SemanticName;
+			if ((SemanticName >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return 8u; }
+			else if ((SemanticName >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return 16u; }
+			else if ((SemanticName >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return 16u; }
+			else if ((SemanticName >> 12) & 0x1u) { /*SHADER_SEMANTIC_TANGENT[n]*/return 16u; }
+			else if ((SemanticName >> 11) & 0x1u) { /*SHADER_SEMANTIC_COLOR[n]*/return 16u; }
+			else if ((SemanticName >> 10) & 0x1u) { /*SHADER_SEMANTIC_BLENDINDICES[n]*/return 8u; }
+			else if ((SemanticName >> 9) & 0x1u) { /*SHADER_SEMANTIC_BLENDWEIGHT[n]*/return 16u; }
+			else if ((SemanticName >> 8) & 0x1u) { /*SHADER_SEMANTIC_BINORMAL[n]*/return 16u; }
+			else if ((SemanticName >> 7) & 0x1u) { /*SHADER_SEMANTIC_POSITIONT[n]*/return 16u; }
+			else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 8u; }
+			return 0u;
+		}
+		static UINT GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input)
+		{
+			if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
+			UINT SemanticName = input.SemanticName;
+			if ((SemanticName >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return 2u; }
+			else if ((SemanticName >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return 4u; }
+			else if ((SemanticName >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return 4u; }
+			else if ((SemanticName >> 12) & 0x1u) { /*SHADER_SEMANTIC_TANGENT[n]*/return 4u; }
+			else if ((SemanticName >> 11) & 0x1u) { /*SHADER_SEMANTIC_COLOR[n]*/return 4u; }
+			else if ((SemanticName >> 10) & 0x1u) { /*SHADER_SEMANTIC_BLENDINDICES[n]*/return 2u; }
+			else if ((SemanticName >> 9) & 0x1u) { /*SHADER_SEMANTIC_BLENDWEIGHT[n]*/return 4u; }
+			else if ((SemanticName >> 8) & 0x1u) { /*SHADER_SEMANTIC_BINORMAL[n]*/return 4u; }
+			else if ((SemanticName >> 7) & 0x1u) { /*SHADER_SEMANTIC_POSITIONT[n]*/return 4u; }
+			else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 2u; }
+			return 0u;
+		}
+		static void GetEngineDefaultMeshInputLayouts(const RInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		{
+			const static RInputLayoutDesc _EngineDefaultMeshInputLayout[4u] = {
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TANGENT0),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0) };
 
 			inputLayoutDesc = _EngineDefaultMeshInputLayout;
 			inputLayoutNum = 4u;
 		}
-		static void GetEngineSkeletonMeshInputLayouts(const CustomStruct::CRenderInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		static void GetEngineSkeletonMeshInputLayouts(const RInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
 		{
-			const static CustomStruct::CRenderInputLayoutDesc _EngineSkeletonMeshInputLayout[6u] = {
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TANGENT),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDINDICES),
-				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_BLENDWEIGHT) };
+			const static RInputLayoutDesc _EngineSkeletonMeshInputLayout[6u] = {
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TANGENT),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES),
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT) };
 
 			inputLayoutDesc = _EngineSkeletonMeshInputLayout;
 			inputLayoutNum = 6u;
 		}
-	};
-
-	enum CRenderMapType
-	{
-		MAP_READ = 0,
-		MAP_WRITE = 1,
-		MAP_READ_WRITE = 2,
-		MAP_WRITE_DISCARD = 3,
-		MAP_WRITE_NO_OVERWRITE = 4
-	};
-
-	enum CRenderMapFlag
-	{
-		MAP_FLAG_NONE = 0,
-		MAP_FLAG_DO_NOT_WAIT = 1
-	};
-
-	struct CRenderMappedResource
-	{
-		CRenderMappedResource() { ::ZeroMemory(this, sizeof(*this)); }
-		void* pData;
-		UINT	RowPitch;
-		UINT	DepthPitch;
-	};
-
-	enum CRenderQueryType
-	{
-		QUERY_EVENT = 0,
-		QUERY_OCCLUSION = 1,
-		QUERY_TIMESTAMP = 2,
-		QUERY_TIMESTAMP_DISJOINT = 3,
-		QUERY_PIPELINE_STATISTICS = 4,
-		QUERY_OCCLUSION_PREDICATE = 5,
-		QUERY_SO_STATISTICS = 6,
-		QUERY_SO_OVERFLOW_PREDICATE = 7,
-		QUERY_SO_STATISTICS_STREAM0 = 8,
-		QUERY_SO_OVERFLOW_PREDICATE_STREAM0 = 9,
-		QUERY_SO_STATISTICS_STREAM1 = 10,
-		QUERY_SO_OVERFLOW_PREDICATE_STREAM1 = 11,
-		QUERY_SO_STATISTICS_STREAM2 = 12,
-		QUERY_SO_OVERFLOW_PREDICATE_STREAM2 = 13,
-		QUERY_SO_STATISTICS_STREAM3 = 14,
-		QUERY_SO_OVERFLOW_PREDICATE_STREAM3 = 15
-	};
-
-	enum CRenderQueryMiscFlag
-	{
-		QUERY_MISC_DEFAULT = 0x0,
-		QUERY_MISC_PREDICATEHINT = 0x1
-	};
-
-	struct CRenderQueryDesc
-	{
-		CRenderQueryDesc()
-		{
-			Query = CRenderQueryType::QUERY_EVENT;
-			MiscFlags = CRenderQueryMiscFlag::QUERY_MISC_DEFAULT;
-		}
-		CRenderQueryDesc(CRenderQueryType type, CRenderQueryMiscFlag flag = CRenderQueryMiscFlag::QUERY_MISC_DEFAULT)
-		{
-			Query = type;
-			MiscFlags = flag;
-		}
-		CRenderQueryType		Query;
-		CRenderQueryMiscFlag	MiscFlags;
-	};
-
-	enum CRenderAsyncGetDataFlag
-	{
-		D3D11_ASYNC_GETDATA_DEFAULT = 0x0,
-		D3D11_ASYNC_GETDATA_DONOTFLUSH = 0x1
-	};
-
-	struct CRenderQueryTimestampDisjoint
-	{
-		CRenderQueryTimestampDisjoint()
-		{
-			Frequency = 1u;
-			Disjoint = TRUE;
-		}
-		void Reset()
-		{
-			Frequency = 1u;
-			Disjoint = TRUE;
-		}
-		ULONGLONG	Frequency;
-		BOOL		Disjoint;
-	};
-
-	enum CRenderClearDepthStencilFlag
-	{
-		CLEAR_DEPTH = 1,
-		CLEAR_STENCIL = 2,
-		CLEAR_DEPTH_STENCIL = 3
-	};
-
-	enum CRenderPrimitiveTopology
-	{
-		PRIMITIVE_TOPOLOGY_UNDEFINED = 0,
-		PRIMITIVE_TOPOLOGY_POINTLIST = 1,
-		PRIMITIVE_TOPOLOGY_LINELIST = 2,
-		PRIMITIVE_TOPOLOGY_LINESTRIP = 3,
-		PRIMITIVE_TOPOLOGY_TRIANGLELIST = 4,
-		PRIMITIVE_TOPOLOGY_TRIANGLESTRIP = 5
-	};
-
-	class CEngineDefaultDefines
-	{
 	public:
-		CEngineDefaultDefines() {}
-		~CEngineDefaultDefines() {}
-	public:
-		static std::string GetDefaultTexturePath(const INT& input)
-		{
-			static std::map<CEngineDefaultTexture2DType, std::string> engineDefaultTexturePathMap = {
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, std::string(ENGINE_DEFAULT_TEXTURE2D_WHITE) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, std::string(ENGINE_DEFAULT_TEXTURE2D_BLACK) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_GRAY, std::string(ENGINE_DEFAULT_TEXTURE2D_GRAY) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_RED, std::string(ENGINE_DEFAULT_TEXTURE2D_RED) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_GREEN, std::string(ENGINE_DEFAULT_TEXTURE2D_GREEN) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLUE, std::string(ENGINE_DEFAULT_TEXTURE2D_BLUE) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, std::string(ENGINE_DEFAULT_TEXTURE2D_BUMP) },
-				{ CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, std::string(ENGINE_DEFAULT_TEXTURE2D_PROPERTY) } };
-
-			return engineDefaultTexturePathMap[static_cast<CEngineDefaultTexture2DType>(input)];
-		}
+		RCommonSettings() {}
+		~RCommonSettings() {}
 	};
 };

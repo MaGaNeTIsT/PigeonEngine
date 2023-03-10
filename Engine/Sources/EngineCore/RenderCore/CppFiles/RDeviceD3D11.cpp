@@ -1,4 +1,7 @@
-#include "../Headers/CRenderDevice.h"
+#include "../Headers/RDeviceD3D11.h"
+
+namespace PigeonEngine
+{
 
 CRenderDevice* CRenderDevice::m_RenderDevice = NULL;
 void CRenderDevice::Initialize()
@@ -1744,3 +1747,5 @@ Microsoft::WRL::ComPtr<ID3D11Device> CRenderDevice::GetRenderDevice()
 {
 	return (CRenderDevice::m_RenderDevice->m_Device);
 }
+
+ };
