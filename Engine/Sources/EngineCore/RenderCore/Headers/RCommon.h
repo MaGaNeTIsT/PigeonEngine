@@ -146,8 +146,8 @@ namespace PigeonEngine
 	};
 	enum RFillModeType
 	{
-		FILL_WIREFRAME	= 1,
-		FILL_SOLID		= 2
+		FILL_WIREFRAME	= 2,
+		FILL_SOLID		= 3
 	};
 	struct RRasterizerState
 	{
@@ -162,8 +162,8 @@ namespace PigeonEngine
 	};
 	enum RDepthWriteMaskType
 	{
-		DEPTH_WRITE_MASK_ZERO	= 1,
-		DEPTH_WRITE_MASK_ALL	= 2
+		DEPTH_WRITE_MASK_ZERO	= 0,
+		DEPTH_WRITE_MASK_ALL	= 1
 	};
 	struct RDepthState
 	{

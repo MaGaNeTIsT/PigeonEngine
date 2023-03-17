@@ -9,6 +9,51 @@ namespace PigeonEngine
 	class RDeviceD3D11
 	{
 	public:
+		struct RVertexShaderResource
+		{
+			RVertexShaderResource() : Shader(nullptr), InputLayout(nullptr) {}
+			void Release()
+			{
+				if (Shader)
+				{
+					Shader->Release();
+					Shader = nullptr;
+				}
+				if (InputLayout)
+				{
+					InputLayout->Release();
+					InputLayout = nullptr;
+				}
+			};
+			Microsoft::WRL::ComPtr<ID3D11VertexShader>	Shader;
+			Microsoft::WRL::ComPtr<ID3D11InputLayout>	InputLayout;
+		};
+		struct RPixelShaderResource
+		{
+			RPixelShaderResource() : Shader(nullptr) {}
+			void Release()
+			{
+				if (Shader)
+				{
+					Shader->Release();
+					Shader = nullptr;
+				}
+			};
+			Microsoft::WRL::ComPtr<ID3D11PixelShader> Shader;
+		};
+		struct RComputeShaderResource
+		{
+			RComputeShaderResource() : Shader(nullptr) {}
+			void Release()
+			{
+				if (Shader)
+				{
+					Shader->Release();
+					Shader = nullptr;
+				}
+			};
+			Microsoft::WRL::ComPtr<ID3D11ComputeShader> Shader;
+		};
 		struct RStructuredBuffer
 		{
 			RStructuredBuffer() : AccessMapRead(FALSE), AccessMapWrite(FALSE), Buffer(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr) {}
@@ -106,9 +151,9 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 		};
-		struct RTexture2D
+		struct RTexture2DResource
 		{
-			RTexture2D() : Buffer(nullptr), ShaderResourceView(nullptr) {}
+			RTexture2DResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
 			void Release()
 			{
 				if (Buffer)
@@ -125,9 +170,9 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 		};
-		struct RTextureCube
+		struct RTextureCubeResource
 		{
-			RTextureCube() : Buffer(nullptr), ShaderResourceView(nullptr) {}
+			RTextureCubeResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
 			void Release()
 			{
 				if (Buffer)
@@ -151,17 +196,17 @@ namespace PigeonEngine
 		void	Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
 		void	Uninit();
 	public:
-		BOOL	LoadVertexShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11VertexShader>& vertexShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& inputLayout, const RInputLayoutDesc* layouts, const UINT& layoutNum);
-		BOOL	LoadPixelShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11PixelShader>& pixelShader);
-		BOOL	LoadComputeShader(const std::string& name, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& computeShader);
+		BOOL	LoadVertexShader(const std::string& name, RVertexShaderResource& vertexShader, const RInputLayoutDesc* layouts, const UINT& layoutNum);
+		BOOL	LoadPixelShader(const std::string& name, RPixelShaderResource& pixelShader);
+		BOOL	LoadComputeShader(const std::string& name, RComputeShaderResource& computeShader);
 		BOOL	CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
 		void	UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 		void	UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 		BOOL	CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData = nullptr);
 		BOOL	CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc);
 		BOOL	CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc);
-		BOOL	CreateTexture2D(RTexture2D& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
-		BOOL	CreateTextureCube(RTextureCube& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
+		BOOL	CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
+		BOOL	CreateTextureCube(RTextureCubeResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
 	public:
 		void	Present(const UINT& syncInterval = 0u);
 		void	SetDefaultDepthStencilState();
@@ -210,7 +255,7 @@ namespace PigeonEngine
 		void	CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst);
 	public:
 		void	ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Color4& clearColor = Color4(0.f, 0.f, 0.f, 0.f));
-		void	ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT flag = (RClearDepthStencilFlagType::CLEAR_DEPTH | RClearDepthStencilFlagType::CLEAR_STENCIL), const FLOAT& depth = 1.f, const UINT& stencil = 0x0u);
+		void	ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT flags = (RClearDepthStencilFlagType::CLEAR_DEPTH | RClearDepthStencilFlagType::CLEAR_STENCIL), const FLOAT& depth = 1.f, const UINT& stencil = 0x0u);
 		void	ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Color4& clearValue = Color4(0.f, 0.f, 0.f, 0.f));
 		void	ClearUnorderedAccessViewUint(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Vector4Int& clearValue = Vector4Int(0, 0, 0, 0));
 	public:
@@ -229,7 +274,7 @@ namespace PigeonEngine
 		void	DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs = 0u);
 	public:
 		BOOL	CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const RDepthState& depthState, const RStencilState* stencilState = nullptr);
-		BOOL	CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const std::vector<RBlendState>& blendStates);
+		BOOL	CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const RBlendState* blendStates, const UINT& blendStateNum);
 		BOOL	CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, const RRasterizerState& rasterizerState);
 		BOOL	CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const RSamplerState& samplerState);
 	public:
@@ -237,28 +282,28 @@ namespace PigeonEngine
 		BOOL	GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, RAsyncGetDataFlagType flag = RAsyncGetDataFlagType::ASYNC_GETDATA_DEFAULT);
 		void	Begin(ID3D11Asynchronous* pAsync);
 		void	End(ID3D11Asynchronous* pAsync);
-		BOOL	Map(const StructuredBufferInfo& input, const UINT& indexSubResource, CustomStruct::CRenderMapType mapType, CustomStruct::CRenderMapFlag mapFlag, CustomStruct::CRenderMappedResource& output);
-		void	Unmap(const StructuredBufferInfo& input, const UINT& indexSubResource);
+		BOOL	Map(const RStructuredBuffer& input, const UINT& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output);
+		void	Unmap(const RStructuredBuffer& input, const UINT& indexSubResource);
 	private:
-		void	TranslateBindFlag(UINT& output, CustomStruct::CRenderBindFlag input);
-		void	TranslateUsage(D3D11_USAGE& output, CustomStruct::CRenderUsage input);
-		void	TranslateCPUAccessFlag(UINT& output, CustomStruct::CRenderCPUAccessFlag input);
-		void	TranslateResourceMiscFlag(UINT& output, CustomStruct::CRenderResourceMiscFlag input);
-		void	TranslateResourceFormat(DXGI_FORMAT& output, CustomStruct::CRenderFormat input);
-		void	TranslateBufferUAVFlag(UINT& output, CustomStruct::CRenderBufferUAVFlag input);
-		void	TranslateComparisonFunction(D3D11_COMPARISON_FUNC& output, CustomStruct::CRenderComparisonFunction input);
-		void	TranslateStencilOperation(D3D11_DEPTH_STENCILOP_DESC& output, const CustomStruct::CRenderStencilOp& input);
-		void	TranslateDepthStencilState(D3D11_DEPTH_STENCIL_DESC& output, const CustomStruct::CRenderDepthState& depthInput, const CustomStruct::CRenderStencilState* stencilInput = NULL);
-		void	TranslateBlendState(D3D11_RENDER_TARGET_BLEND_DESC& output, const CustomStruct::CRenderBlendState& input);
-		void	TranslateRasterizerState(D3D11_CULL_MODE& outputCull, D3D11_FILL_MODE& outputFill, const CustomStruct::CRenderRasterizerState& input);
-		void	TranslateSamplerState(D3D11_SAMPLER_DESC& output, const CustomStruct::CRenderSamplerState& input);
-		void	TranslateClearDepthStencilFlag(UINT& output, CustomStruct::CRenderClearDepthStencilFlag input);
-		void	TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, CustomStruct::CRenderPrimitiveTopology input);
-		void	TranslateQueryDesc(D3D11_QUERY_DESC& output, const CustomStruct::CRenderQueryDesc& input);
-		void	TranslateGetDataFlag(UINT& output, CustomStruct::CRenderAsyncGetDataFlag input);
-		void	TranslateMapType(D3D11_MAP& output, CustomStruct::CRenderMapType input);
-		void	TranslateMapFlag(UINT& output, CustomStruct::CRenderMapFlag input);
-		void	TranslateInputLayoutDesc(D3D11_INPUT_ELEMENT_DESC& output, const CustomStruct::CRenderInputLayoutDesc& input);
+		static void		TranslateBindFlag(UINT& output, RBindFlagType input);
+		static void		TranslateUsageFlag(D3D11_USAGE& output, RUsageFlagType input);
+		static void		TranslateCPUAccessFlag(UINT& output, RCPUAccessFlagType input);
+		static void		TranslateResourceMiscFlag(UINT& output, RResourceMiscFlagType input);
+		static void		TranslateResourceFormat(DXGI_FORMAT& output, RFormatType input);
+		static void		TranslateUAVFlag(UINT& output, RUAVFlagType input);
+		static void		TranslateComparisonFunction(D3D11_COMPARISON_FUNC& output, RComparisonFunctionType input);
+		static void		TranslateStencilStateType(D3D11_DEPTH_STENCILOP_DESC& output, const RStencilStateType& input);
+		static void		TranslateDepthStencilState(D3D11_DEPTH_STENCIL_DESC& output, const RDepthState& depthInput, const RStencilState* stencilInput = nullptr);
+		static void		TranslateBlendState(D3D11_RENDER_TARGET_BLEND_DESC& output, const RBlendState& input);
+		static void		TranslateRasterizerState(D3D11_CULL_MODE& outputCull, D3D11_FILL_MODE& outputFill, const RRasterizerState& input);
+		static void		TranslateSamplerState(D3D11_SAMPLER_DESC& output, const RSamplerState& input);
+		static void		TranslateClearDepthStencilFlag(UINT& output, const UINT& input);
+		static void		TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, RPrimitiveTopologyType input);
+		static void		TranslateQueryDesc(D3D11_QUERY_DESC& output, const RQueryDesc& input);
+		static void		TranslateGetDataFlag(UINT& output, RAsyncGetDataFlagType input);
+		static void		TranslateResourceMapType(D3D11_MAP& output, RResourceMapType input);
+		static void		TranslateResourceMapFlag(UINT& output, RResourceMapFlagType input);
+		static void		TranslateInputLayoutDesc(D3D11_INPUT_ELEMENT_DESC& output, const RInputLayoutDesc& input);
 	public:
 		void	ClearFinalOutput();
 		void	SetFinalOutput();
