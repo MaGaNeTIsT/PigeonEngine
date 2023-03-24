@@ -6,7 +6,7 @@
 
 class CLightBase : public CGameObject
 {
-	CClass(CLightBase, CGameObject)
+	EClass(CLightBase, CGameObject)
 public:
 	struct LightShadowInfo
 	{
@@ -46,7 +46,7 @@ protected:
 
 class CLightDirectional : public CLightBase
 {
-	CClass(CLightDirectional, CLightBase)
+	EClass(CLightDirectional, CLightBase)
 public:
 	struct ShadowCascadeSettings
 	{

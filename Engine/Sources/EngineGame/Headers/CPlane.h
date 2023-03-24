@@ -8,7 +8,7 @@ class CTexture2D;
 
 class CPlane : public CGameObject
 {
-	CClass(CPlane,CGameObject)
+	EClass(CPlane,CGameObject)
 public:
 	struct CPlaneMeshInfo
 	{

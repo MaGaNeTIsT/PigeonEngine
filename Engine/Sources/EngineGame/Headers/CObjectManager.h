@@ -15,7 +15,7 @@ private:
 
 class CObjectBase : public CRTTI
 {
-    CClass(CObjectBase, CRTTI)
+	EClass(CObjectBase, CRTTI)
 public:
 	CObjectBase();
 	CObjectBase(const CObjectBase& obj);

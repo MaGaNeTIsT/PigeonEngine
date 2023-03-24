@@ -141,10 +141,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\EMain.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\Main.h">
       <Filter>Entry</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\EngineThirdParty\CimGUI\Headers\CimGUIManager.h">
+    <ClInclude Include="Engine\EngineThirdParty\imGUI\Headers\imGUIManager.h">
       <Filter>Engine\EngineThirdParty\CimGUI\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h">
@@ -159,7 +159,7 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ETimer.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Timer.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h">
@@ -204,10 +204,10 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRendererComponent.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\RDeviceD3D11.h">
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\DeviceD3D11.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\RCommon.h">
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\Common.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h">
@@ -234,10 +234,10 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\IMouse.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Mouse.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\IKeyboard.h">
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Keyboard.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h">
@@ -270,7 +270,7 @@
     <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClearCoatMaterial.h">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\EngineThirdParty\Cassimp\Headers\CassimpManager.h">
+    <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h">
       <Filter>Engine\EngineThirdParty\Cassimp\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectUtilty.h">
@@ -285,9 +285,9 @@
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h">
       <Filter>Engine\Sources\Development\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonManager.h" />
-    <ClInclude Include="Engine\EngineThirdParty\CRapidJson\Headers\CJsonObject.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ERTTI.h" />
+    <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\RTTI.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui_internal.h" />
@@ -302,17 +302,18 @@
     <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CBezierGrass.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EBaseType.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\EManager.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\EInput.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EMath.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\EObjectBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\BaseType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\Manager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Input.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Math.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ObjectBase.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\EBaseAsset.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\EMain.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp">
       <Filter>Entry</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\EngineThirdParty\CimGUI\CppFiles\CimGUIManager.cpp">
+    <ClCompile Include="Engine\EngineThirdParty\imGUI\CppFiles\imGUIManager.cpp">
       <Filter>Engine\EngineThirdParty\CimGUI\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp">
@@ -327,7 +328,7 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ETimer.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Timer.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp">
@@ -372,7 +373,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRendererComponent.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\CppFiles\RDeviceD3D11.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\CppFiles\DeviceD3D11.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp">
@@ -396,10 +397,10 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\IMouse.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Mouse.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\IKeyboard.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Keyboard.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp">
@@ -435,7 +436,7 @@
     <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClearCoatMaterial.cpp">
       <Filter>Engine\Sources\EngineRender\RenderMaterials\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\EngineThirdParty\Cassimp\CppFiles\CassimpManager.cpp">
+    <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp">
       <Filter>Engine\EngineThirdParty\Cassimp\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBoundComponent.cpp">
@@ -444,8 +445,8 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp">
       <Filter>Engine\Sources\Development\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonManager.cpp" />
-    <ClCompile Include="Engine\EngineThirdParty\CRapidJson\CppFiles\CJsonObject.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonObject.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_draw.cpp" />
@@ -458,16 +459,17 @@
     <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CBezierGrass.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\EManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\EInput.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\EMath.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\EObjectBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Manager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Input.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Math.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\EBaseAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIPS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\CimGUI\HLSLResources\imGUIVS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
     </FxCompile>
     <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
