@@ -27,6 +27,7 @@
     <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\CSceneSkeletonMeshObject.h" />
+    <ClInclude Include="Engine\Sources\Development\Headers\DevelopmentDefines.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\BaseType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Math.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ObjectBase.h" />
@@ -42,7 +43,7 @@
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\RTTI.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Timer.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\EBaseAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\BaseAsset.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
@@ -100,6 +101,7 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneSkeletonMeshObject.cpp" />
+    <ClCompile Include="Engine\Sources\Development\CppFiles\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Math.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Manager.cpp" />
@@ -113,7 +115,7 @@
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Timer.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\EBaseAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\BaseAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
