@@ -82,30 +82,106 @@ namespace PigeonEngine
 	};
 
 	template<typename TKeyType, typename TAssetType>
-	class IAssetManager
+	class TAssetManager
 	{
 	public:
-		IAssetManager()
+		TAssetManager()
 		{
 		}
-		virtual ~IAssetManager()
+		virtual ~TAssetManager()
 		{
 			if (m_Datas.size() > 0)
 			{
-				for (auto& itData : m_Datas)
+				for (auto it = m_Datas.begin(); it != m_Datas.end(); it++)
 				{
-					if (itData.second)
-					{
-						delete (itData.second);
-						itData.second = nullptr;
-					}
+					delete (it->second);
 				}
 				m_Datas.clear();
 			}
 		}
+	public:
+		/*
+		* Add item into mapped datas. This action may reconstruct whole memories.
+		* Params [replaceIfHaveKey]: true = If already contain data with keyValue will replace it. This action will delete old asset. false = If already contain data with keyValue will not do anything.
+		* Return [UINT]: 0 = Add failed. value = Mapped datas' size(after add value).
+		*/
+		UINT Add(TKeyType&& keyValue, TAssetType* dataValue, const BOOL& replaceIfHaveKey = false)
+		{
+			auto result = m_Datas.insert_or_assign(std::forward<TKeyType>(keyValue), dataValue);
+			if (!result.second)
+			{
+				if (replaceIfHaveKey)
+				{
+					TAssetType* oldValue = m_Datas[std::forward<TKeyType>(keyValue)];
+					m_Datas[std::forward<TKeyType>(keyValue)] = dataValue;
+					delete oldValue;
+					return static_cast<UINT>(m_Datas.size());
+				}
+				return 0u;
+			}
+			return static_cast<UINT>(m_Datas.size());
+		}
+		/*
+		* Remove item with kayValue in mapped datas.
+		* Return [UINT]: Mapped datas' size(after remove value).
+		*/
+		UINT Remove(TKeyType&& keyValue)
+		{
+			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
+			if (findIt != m_Datas.end())
+			{
+				TAssetType* oldValue = findIt->second;
+				m_Datas.erase(std::forward<TKeyType>(keyValue));
+				delete oldValue;
+			}
+			return static_cast<UINT>(m_Datas.size());
+		}
+		/*
+		* Find item with kayValue in mapped datas.
+		* Return [TAssetType*]: If contain key return asset. If not then return nullptr.
+		*/
+		TAssetType* Find(TKeyType&& keyValue)
+		{
+			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
+			if (findIt != m_Datas.end())
+			{
+				return (findIt->second);
+			}
+			return nullptr;
+		}
+		/*
+		* Check if contains item with kayValue in mapped datas.
+		* Return [BOOL]: If contains return TRUE. If not then return FALSE.
+		*/
+		BOOL Contain(TKeyType&& keyValue)const
+		{
+			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
+			if (findIt != m_Datas.end())
+			{
+				return TRUE;
+			}
+			return FALSE;
+		}
+		/*
+		* Clear whole data list.
+		*/
+		void Clear()
+		{
+			for (auto it = m_Datas.begin(); it != m_Datas.end(); it++)
+			{
+				delete (it->second);
+			}
+			m_Datas.clear();
+		}
+		/*
+		* Get size of mapped datas.
+		*/
+		UINT Size()const
+		{
+			return static_cast<UINT>(m_Datas.size());
+		}
 	protected:
-		//std::map<int, int*> m_Datas;
-		std::map<TKeyType, TAssetType*> m_Datas;
+		std::unordered_map<TKeyType, TAssetType*> m_Datas;
 	};
 
 };

@@ -309,6 +309,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ObjectBase.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\BaseAsset.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\DevelopmentDefines.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\ShaderAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp">
@@ -464,8 +465,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Input.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Math.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\BaseAsset.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\DevelopmentDefines.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\ShaderAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
