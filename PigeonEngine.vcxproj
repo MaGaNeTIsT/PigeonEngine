@@ -31,6 +31,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\BaseType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Math.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ObjectBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ReadFile.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\ErrorCaption.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\Manager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Input.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Keyboard.h" />
@@ -105,6 +107,7 @@
     <ClCompile Include="Engine\Sources\Development\CppFiles\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Math.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ReadFile.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Manager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Input.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Keyboard.cpp" />

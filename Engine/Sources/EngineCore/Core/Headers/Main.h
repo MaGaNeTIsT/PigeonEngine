@@ -34,6 +34,9 @@
 #include "../../../Development/Headers/DevelopmentDefines.h"
 #endif
 
+namespace PigeonEngine
+{
+
 #define ENGINE_FLOAT32_MAX									(3.402823466e+38f)
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
@@ -149,3 +152,5 @@
 #define ENGINE_CAMERA_LOOK_SPEED							(270.f)
 
 #define ENGINE_SHADOW_MAP_SIZE								(4096)
+
+};

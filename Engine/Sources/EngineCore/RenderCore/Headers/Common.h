@@ -94,6 +94,13 @@ namespace PigeonEngine
 		DirectX::XMFLOAT4		SkeletonBoneNum;
 		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::SkeletonBoneMax * 2u];
 	};
+	enum RShaderFrequencyType
+	{
+		SHADER_FREQUENCY_COMPUTE	= 0,
+		SHADER_FREQUENCY_VERTEX		= 1,
+		SHADER_FREQUENCY_PIXEL		= 2,
+		SHADER_FREQUENCY_COUNT
+	};
 	enum RDefaultTextureType
 	{
 		TEXTURE2D_WHITE		= 0,
@@ -584,6 +591,7 @@ namespace PigeonEngine
 
 	struct RInputLayoutDesc
 	{
+		RInputLayoutDesc() noexcept : SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE), SemanticIndex(0u), InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA), InstanceDataStepRate(0u) {}
 		RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
 		RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
 		constexpr RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}

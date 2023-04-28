@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../Entry/EngineMain.h"
+#include "../../EngineCore/Core/Headers/Main.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

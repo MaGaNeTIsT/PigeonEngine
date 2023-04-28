@@ -7,78 +7,152 @@
 namespace PigeonEngine
 {
 
-	template<typename TCPUResourceType, typename TGPUResourceType>
+	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-		EClass(TBaseAsset, EObjectBase);
+		//EClass(TBaseAsset, EObjectBase);
 	public:
-		TBaseAsset() : m_CPUResource(nullptr), m_GPUResource(nullptr) {}
+		TBaseAsset(
+#ifdef _DEVELOPMENT_EDITOR
+			const std::string& name
+#endif
+		)
+			: m_Resource(nullptr)
+#ifdef _DEVELOPMENT_EDITOR
+			, m_Name(name)
+#endif
+		{
+		}
 		virtual ~TBaseAsset()
 		{
-			ReleaseCPUResourceInternal();
-			ReleaseGPUResourceInternal();
+			UninitResource();
 		}
 	public:
-		BOOL IsCPUResourceValid()const { return (!!m_CPUResource); }
-		BOOL IsGPUResourceValid()const { return (!!m_GPUResource); }
+		virtual BOOL	IsValid() { return IsResourceValid(); }
+		virtual BOOL	InitResource() { return FALSE; }
+		virtual void	UninitResource()
+		{
+			ReleaseResourceInternal();
+		}
 	public:
-		template<typename TCPUResourceLambdaType, typename TGPUResourceLambdaType>
-		BOOL InitResource(const TCPUResourceLambdaType& lCPUFunc, const TGPUResourceLambdaType& lGPUFunc, const BOOL& bHoldCPUResource)
-		{
-			if (m_CPUResource || m_GPUResource)
-			{
-				//TODO Output log with "already storage data".
-				return FALSE;
-			}
-			{
-				m_CPUResource = lCPUFunc();
-			}
-			if (!m_CPUResource)
-			{
-				//TODO Output log with "CPU data init failed".
-				return FALSE;
-			}
-			{
-				m_GPUResource = lGPUFunc(m_CPUResource);
-			}
-			if (!m_GPUResource)
-			{
-				//TODO Output log with "GPU data init failed".
-				ReleaseCPUResourceInternal();
-				return FALSE;
-			}
-			if (!bHoldCPUResource)
-			{
-				ReleaseCPUResourceInternal();
-			}
-		}
-		void UninitResource()
-		{
-			ReleaseCPUResourceInternal();
-			ReleaseGPUResourceInternal();
-		}
+		BOOL	IsResourceValid()const { return (!!m_Resource); }
 	protected:
-		void ReleaseCPUResourceInternal()
+		template<typename TInitResourceLambdaType>
+		BOOL StorageResourceInternal(const TInitResourceLambdaType& lCPUFunc)
 		{
-			if (m_CPUResource)
+			if (m_Resource)
 			{
-				m_CPUResource->Release();
-				delete m_CPUResource;
-				m_CPUResource = nullptr;
+#ifdef _DEVELOPMENT_EDITOR
+				std::string errorInfo = m_Name + " try to init a new resource, but already storage a resource.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+#endif
+				return FALSE;
 			}
-		}
-		void ReleaseGPUResourceInternal()
-		{
-			if (m_GPUResource)
 			{
-				m_GPUResource->Release();
-				delete m_GPUResource;
-				m_GPUResource = nullptr;
+				m_Resource = lCPUFunc();
+			}
+			if (!m_Resource)
+			{
+#ifdef _DEVELOPMENT_EDITOR
+				std::string errorInfo = m_Name + " try to storage a null resource.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+#endif
+				return FALSE;
+			}
+			return TRUE;
+		}
+		void ReleaseResourceInternal()
+		{
+			if (m_Resource)
+			{
+				m_Resource->Release();
+				delete m_Resource;
+				m_Resource = nullptr;
 			}
 		}
 	protected:
-		TCPUResourceType* m_CPUResource;
-		TGPUResourceType* m_GPUResource;
+		TResourceType* m_Resource;
+	};
+
+	template<typename TResourceType, typename TRenderResourceType>
+	class TRenderBaseAsset : public TBaseAsset<TResourceType>
+	{
+	public:
+		TRenderBaseAsset(
+#ifdef _DEVELOPMENT_EDITOR
+			const std::string& name
+#endif
+		)
+#ifdef _DEVELOPMENT_EDITOR
+			: TBaseAsset<TResourceType>(name), m_RenderResource(nullptr)
+#else
+			: m_RenderResource(nullptr)
+#endif
+			, m_HoldResource(TRUE)
+		{
+		}
+		~TRenderBaseAsset()
+		{
+		}
+	public:
+		virtual BOOL IsValid()override
+		{
+			if (m_HoldResource)
+			{
+				return IsResourceValid() && IsRenderResourceValid();
+			}
+			return IsRenderResourceValid();
+		}
+		virtual BOOL	InitResource() { return FALSE; }
+		virtual void	UninitResource()
+		{
+			TBaseAsset<TResourceType>::UninitResource();
+			ReleaseRenderResourceInternal();
+		}
+	public:
+		BOOL	IsRenderResourceValid()const { return (!!m_RenderResource); }
+	protected:
+		template<typename TCreateRenderResourceLambdaType>
+		BOOL CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL& bHoldStoragedResource)
+		{
+			if (m_RenderResource)
+			{
+#ifdef _DEVELOPMENT_EDITOR
+				std::string errorInfo = m_Name + " try to create gpu resource, but already has a resource.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+#endif
+				return FALSE;
+			}
+			{
+				m_RenderResource = lCreateFunc(m_Resource);
+			}
+			if (!m_RenderResource)
+			{
+#ifdef _DEVELOPMENT_EDITOR
+				std::string errorInfo = m_Name + " try to storage a null resource.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+#endif
+				return FALSE;
+			}
+			if (!bHoldStoragedResource)
+			{
+				ReleaseResourceInternal();
+			}
+			m_HoldResource = bHoldStoragedResource;
+			return TRUE;
+		}
+		void ReleaseRenderResourceInternal()
+		{
+			if (m_RenderResource)
+			{
+				m_RenderResource->Release();
+				delete m_RenderResource;
+				m_RenderResource = nullptr;
+			}
+		}
+	protected:
+		BOOL					m_HoldResource;
+		TRenderResourceType*	m_RenderResource;
 	};
 
 	template<typename TKeyType, typename TAssetType>
@@ -105,7 +179,7 @@ namespace PigeonEngine
 		* Params [replaceIfHaveKey]: true = If already contain data with keyValue will replace it. This action will delete old asset. false = If already contain data with keyValue will not do anything.
 		* Return [UINT]: 0 = Add failed. value = Mapped datas' size(after add value).
 		*/
-		UINT Add(TKeyType&& keyValue, TAssetType* dataValue, const BOOL& replaceIfHaveKey = false)
+		UINT Add(TKeyType&& keyValue, TAssetType* dataValue, const BOOL& replaceIfHaveKey = FALSE)
 		{
 			auto result = m_Datas.insert_or_assign(std::forward<TKeyType>(keyValue), dataValue);
 			if (!result.second)

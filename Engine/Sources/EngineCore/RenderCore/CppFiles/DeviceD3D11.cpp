@@ -3,6 +3,10 @@
 namespace PigeonEngine
 {
 	RDeviceD3D11* RDeviceD3D11::m_RenderDevice = nullptr;
+	RDeviceD3D11* RDeviceD3D11::GetRenderDeviceD3D11()
+	{
+		return RDeviceD3D11::m_RenderDevice;
+	}
 	void RDeviceD3D11::Initialize()
 	{
 		if (RDeviceD3D11::m_RenderDevice == nullptr)

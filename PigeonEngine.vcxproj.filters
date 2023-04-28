@@ -310,6 +310,8 @@
     <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\BaseAsset.h" />
     <ClInclude Include="Engine\Sources\Development\Headers\DevelopmentDefines.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\ShaderAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\ErrorCaption.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ReadFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp">
@@ -467,6 +469,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
     <ClCompile Include="Engine\Sources\Development\CppFiles\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\ShaderAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ReadFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">

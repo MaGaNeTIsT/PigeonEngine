@@ -11,7 +11,7 @@ namespace PigeonEngine
 	public:
 		struct RVertexShaderResource
 		{
-			RVertexShaderResource() : Shader(nullptr), InputLayout(nullptr) {}
+			RVertexShaderResource() : Shader(nullptr), InputLayout(nullptr), RawLayouts(nullptr), LayoutNum(0u) {}
 			void Release()
 			{
 				if (Shader)
@@ -24,9 +24,17 @@ namespace PigeonEngine
 					InputLayout->Release();
 					InputLayout = nullptr;
 				}
+				if (RawLayouts)
+				{
+					delete[]RawLayouts;
+					RawLayouts = nullptr;
+					LayoutNum = 0u;
+				}
 			};
 			Microsoft::WRL::ComPtr<ID3D11VertexShader>	Shader;
 			Microsoft::WRL::ComPtr<ID3D11InputLayout>	InputLayout;
+			RInputLayoutDesc*							RawLayouts;
+			UINT										LayoutNum;
 		};
 		struct RPixelShaderResource
 		{
@@ -327,6 +335,8 @@ namespace PigeonEngine
 		RDeviceD3D11() : m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr), m_DepthStencilView(nullptr), m_RenderTargetView(nullptr), m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT()) {}
 		RDeviceD3D11(const RDeviceD3D11&) : m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr), m_DepthStencilView(nullptr), m_RenderTargetView(nullptr), m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT()) {}
 		~RDeviceD3D11() {}
+	public:
+		static RDeviceD3D11* GetRenderDeviceD3D11();
 	private:
 		static RDeviceD3D11* m_RenderDevice;
 	private:
