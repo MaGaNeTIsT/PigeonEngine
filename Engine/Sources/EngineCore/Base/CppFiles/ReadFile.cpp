@@ -1,5 +1,6 @@
 ﻿#include "../Headers/ReadFile.h"
 #include <fstream>
+
 bool PigeonEngine::EReadFile::ReadFileAsBinary(const std::string FilePath, void*& Return, UINT64& Size)
 {
 	using namespace std;

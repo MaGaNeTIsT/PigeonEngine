@@ -38,7 +38,7 @@ namespace PigeonEngine
 		BOOL	IsResourceValid()const { return (!!m_Resource); }
 	protected:
 		template<typename TInitResourceLambdaType>
-		BOOL StorageResourceInternal(const TInitResourceLambdaType& lCPUFunc)
+		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
 			if (m_Resource)
 			{
@@ -49,7 +49,7 @@ namespace PigeonEngine
 				return FALSE;
 			}
 			{
-				m_Resource = lCPUFunc();
+				m_Resource = lStorageFunc();
 			}
 			if (!m_Resource)
 			{
@@ -95,6 +95,7 @@ namespace PigeonEngine
 		{
 		}
 	public:
+		BOOL IsHoldResource()const { return m_HoldResource; }
 		virtual BOOL IsValid()override
 		{
 			if (m_HoldResource)

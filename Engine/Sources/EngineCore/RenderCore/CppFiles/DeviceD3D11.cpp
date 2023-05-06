@@ -26,7 +26,7 @@ namespace PigeonEngine
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{
-			//TODO Invalid Arguments log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Render device init failed. Invalid arguments");
 			return;
 		}
 		UINT bufferWidth = static_cast<UINT>(bufferSize.x);
@@ -70,7 +70,7 @@ namespace PigeonEngine
 			RDeviceD3D11::m_RenderDevice->m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
 		if (FAILED(hr) || !(RDeviceD3D11::m_RenderDevice->m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || RDeviceD3D11::m_RenderDevice->m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
 		{
-			//TODO Create d3d device failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create D3D11 device failed.");
 			return;
 		}
 		RDeviceD3D11::m_RenderDevice->m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
@@ -83,14 +83,14 @@ namespace PigeonEngine
 		hr = RDeviceD3D11::m_RenderDevice->m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
 		if (FAILED(hr))
 		{
-			//TODO Get buffer failed from swap chain log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Failed to gather swap chain back buffer.");
 			return;
 		}
 		hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(pBackBuffer, nullptr, RDeviceD3D11::m_RenderDevice->m_RenderTargetView.ReleaseAndGetAddressOf());
 		pBackBuffer->Release();
 		if (FAILED(hr))
 		{
-			//TODO Create buffer RTV failed from swap chain log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create swap chain back buffer RTV failed.");
 			return;
 		}
 		{
@@ -112,7 +112,7 @@ namespace PigeonEngine
 			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, RDeviceD3D11::m_RenderDevice->m_DepthTexture.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				//TODO Create depth buffer failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create main depth buffer failed.");
 				return;
 			}
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
@@ -126,7 +126,7 @@ namespace PigeonEngine
 			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilView(RDeviceD3D11::m_RenderDevice->m_DepthTexture.Get(), &dsvd, RDeviceD3D11::m_RenderDevice->m_DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				//TODO Create depth stencil view failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create main depth buffer DSV failed.");
 				return;
 			}
 		}
@@ -159,7 +159,7 @@ namespace PigeonEngine
 			RDeviceD3D11::m_RenderDevice->m_Device = nullptr;
 		}
 	}
-	BOOL RDeviceD3D11::LoadVertexShader(const std::string& name, RVertexShaderResource& vertexShader, const RInputLayoutDesc* layouts, const UINT& layoutNum)
+	BOOL RDeviceD3D11::LoadVertexShader(const std::string& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -168,7 +168,13 @@ namespace PigeonEngine
 			fopen_s(&file, name.c_str(), "rb");
 			if (!file)
 			{
-				//TODO Can not read file log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Can not open file path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 			fsize = _filelength(_fileno(file));
@@ -177,38 +183,50 @@ namespace PigeonEngine
 			fclose(file);
 		}
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, vertexShader.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-				//TODO Create vertex shader object failed log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Create vertex shader resource failed. path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 		}
 		{
-			if (layouts == nullptr)
+			if (inLayouts == nullptr)
 			{
 				delete[]buffer;
-				//TODO Input layout format error log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader which needs fitted input layouts.");
 				return FALSE;
 			}
-			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(layoutNum);
-			for (UINT i = 0u; i < layoutNum; i++)
+			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
+			for (UINT i = 0u; i < inLayoutNum; i++)
 			{
-				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], layouts[i]);
+				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), layoutNum, static_cast<void*>(buffer), fsize, vertexShader.InputLayout.ReleaseAndGetAddressOf());
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-				//TODO Create input layout object failed log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Create vertex shader input layout failed. path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 		}
 		delete[]buffer;
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::LoadPixelShader(const std::string& name, RPixelShaderResource& pixelShader)
+	BOOL RDeviceD3D11::LoadPixelShader(const std::string& name, RPixelShaderResource& outShaderResource)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -217,7 +235,13 @@ namespace PigeonEngine
 			fopen_s(&file, name.c_str(), "rb");
 			if (!file)
 			{
-				//TODO Can not read file log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Can not open file path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 			fsize = _filelength(_fileno(file));
@@ -226,18 +250,24 @@ namespace PigeonEngine
 			fclose(file);
 		}
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, pixelShader.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-				//TODO Create pixel shader object failed log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Create pixel shader resource failed. path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 		}
 		delete[]buffer;
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::LoadComputeShader(const std::string& name, RComputeShaderResource& computeShader)
+	BOOL RDeviceD3D11::LoadComputeShader(const std::string& name, RComputeShaderResource& outShaderResource)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -246,7 +276,13 @@ namespace PigeonEngine
 			fopen_s(&file, name.c_str(), "rb");
 			if (!file)
 			{
-				//TODO Can not read file log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Can not open file path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 			fsize = _filelength(_fileno(file));
@@ -255,15 +291,76 @@ namespace PigeonEngine
 			fclose(file);
 		}
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, nullptr, computeShader.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-				//TODO Create compute shader object failed log.
+#ifdef _DEVELOPMENT_EDITOR
+				{
+					std::string debugInfo("Create compute shader resource failed. path : ");
+					debugInfo += name;
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
+				}
+#endif
 				return FALSE;
 			}
 		}
 		delete[]buffer;
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
+	{
+		{
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader resource failed.");
+				return FALSE;
+			}
+		}
+		{
+			if (inLayouts == nullptr)
+			{
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader which needs fitted input layouts.");
+				return FALSE;
+			}
+			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
+			for (UINT i = 0u; i < inLayoutNum; i++)
+			{
+				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
+			}
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader input layout failed.");
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource)
+	{
+		{
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreatePixelShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create pixel shader resource failed.");
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource)
+	{
+		{
+			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create compute shader resource failed.");
+				return FALSE;
+			}
+		}
 		return TRUE;
 	}
 	BOOL RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
@@ -296,7 +393,7 @@ namespace PigeonEngine
 		}
 		if (FAILED(hr))
 		{
-			//TODO Create buffer object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create buffer resource failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -313,7 +410,7 @@ namespace PigeonEngine
 	{
 		if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
 		{
-			//TODO Error desc log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource check failed (error description).");
 			return FALSE;
 		}
 		output.Release();
@@ -322,7 +419,7 @@ namespace PigeonEngine
 			output.AccessMapWrite = (structuredBufferDesc.AccessFlags & RCPUAccessFlagType::CPU_ACCESS_WRITE) != 0;
 			if (structuredBufferDesc.GPUWritable && output.AccessMapWrite)
 			{
-				//TODO Error access ability log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource check failed (error access ability).");
 				return FALSE;
 			}
 			D3D11_BUFFER_DESC bd;
@@ -368,7 +465,7 @@ namespace PigeonEngine
 			}
 			if (FAILED(hr))
 			{
-				//TODO Create structured buffer failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource failed.");
 				return FALSE;
 			}
 		}
@@ -382,7 +479,7 @@ namespace PigeonEngine
 			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				//TODO Create structured buffer SRV failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource SRV failed.");
 				return FALSE;
 			}
 		}
@@ -399,7 +496,7 @@ namespace PigeonEngine
 				HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create structured buffer UAV failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource UAV failed.");
 					return FALSE;
 				}
 			}
@@ -411,7 +508,7 @@ namespace PigeonEngine
 		BOOL isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
 		if (!isDepthFormat && textureDesc.Depth != 0u)
 		{
-			//TODO Create depth texture failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D depth check failed (wrong depth format used).");
 			return FALSE;
 		}
 		output.Release();
@@ -456,7 +553,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create texture object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource failed.");
 			return FALSE;
 		}
 		{
@@ -492,7 +589,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create SRV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource SRV failed.");
 					return FALSE;
 				}
 			}
@@ -509,7 +606,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create UAV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource UAV failed.");
 					return FALSE;
 				}
 			}
@@ -528,7 +625,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create RTV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource RTV failed.");
 					return FALSE;
 				}
 			}
@@ -557,7 +654,7 @@ namespace PigeonEngine
 			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				//TODO Create DSV object failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource DSV failed.");
 				return FALSE;
 			}
 		}
@@ -567,7 +664,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
 		{
-			//TODO Create depth texture failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D check failed (wrong size used).");
 			return FALSE;
 		}
 		output.Release();
@@ -587,7 +684,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture3D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create texture object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource failed.");
 			return FALSE;
 		}
 		{
@@ -605,7 +702,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create SRV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource SRV failed.");
 					return FALSE;
 				}
 			}
@@ -624,7 +721,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create UAV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource UAV failed.");
 					return FALSE;
 				}
 			}
@@ -645,7 +742,7 @@ namespace PigeonEngine
 				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					//TODO Create RTV object failed log.
+					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource RTV failed.");
 					return FALSE;
 				}
 			}
@@ -686,7 +783,7 @@ namespace PigeonEngine
 		}
 		if (FAILED(hr))
 		{
-			//TODO Create texture object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture2D resource failed.");
 			return FALSE;
 		}
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -700,7 +797,7 @@ namespace PigeonEngine
 		hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create SRV object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture2D resource SRV failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -709,7 +806,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width != textureDesc.Height)
 		{
-			//TODO Texture cube's size must be a square log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube check failed (size of texture cube must be a square).");
 			return FALSE;
 		}
 		output.Release();
@@ -733,6 +830,7 @@ namespace PigeonEngine
 					td.MiscFlags |= D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_GENERATE_MIPS;
 				}
 			}
+			HRESULT hr = S_FALSE;
 			if (subData != nullptr)
 			{
 				D3D11_SUBRESOURCE_DATA sd[6u];
@@ -743,21 +841,16 @@ namespace PigeonEngine
 					sd[i].SysMemPitch = subData[i].SysMemPitch;
 					sd[i].SysMemSlicePitch = subData[i].SysMemSlicePitch;
 				}
-				HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					//TODO Create texture cube object failed log.
-					return FALSE;
-				}
+				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			else
 			{
-				HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					//TODO Create texture cube object failed log.
-					return FALSE;
-				}
+				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+			}
+			if (FAILED(hr))
+			{
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube resource failed.");
+				return FALSE;
 			}
 		}
 		{
@@ -772,7 +865,7 @@ namespace PigeonEngine
 			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				//TODO Create SRV object failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube resource SRV failed.");
 				return FALSE;
 			}
 		}
@@ -1105,7 +1198,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create depth stencil state object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create depth stencil state failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -1114,7 +1207,7 @@ namespace PigeonEngine
 	{
 		if (!blendStates || blendStateNum == 0u)
 		{
-			//TODO Blend state info error log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create blend state check failed.");
 			return FALSE;
 		}
 		D3D11_BLEND_DESC bd;
@@ -1134,7 +1227,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create blend state object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create blend state failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -1157,7 +1250,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create rasterizer state object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create rasterizer state failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -1172,7 +1265,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create sampler state object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create sampler state failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -1187,7 +1280,7 @@ namespace PigeonEngine
 		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			//TODO Create query object failed log.
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create query failed.");
 			return FALSE;
 		}
 		return TRUE;
@@ -1212,14 +1305,14 @@ namespace PigeonEngine
 		{
 			if (!(input.AccessMapRead || input.AccessMapWrite))
 			{
-				//TODO Error resource type log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer check failed (error input access flag).");
 				return FALSE;
 			}
 			BOOL needRead = mapType == RResourceMapType::RESOURCE_MAP_READ || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE;
 			BOOL needWrite = mapType == RResourceMapType::RESOURCE_MAP_WRITE || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE || mapType == RResourceMapType::RESOURCE_MAP_WRITE_DISCARD || mapType == RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE;
 			if (input.AccessMapRead != needRead || input.AccessMapWrite != needWrite)
 			{
-				//TODO Error map type log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer check failed (error access flag).");
 				return FALSE;
 			}
 		}
@@ -1237,7 +1330,7 @@ namespace PigeonEngine
 				&ms);
 			if (FAILED(hr))
 			{
-				//TODO Access failed log.
+				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer access failed.");
 				return FALSE;
 			}
 		}

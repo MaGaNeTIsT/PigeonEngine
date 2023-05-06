@@ -24,6 +24,7 @@ namespace PigeonEngine
 	typedef	unsigned long		UINT64;
 	typedef	unsigned long		DWORD;
 	typedef	unsigned long long	size_t;
+	typedef	unsigned long long	SIZE_T;
 	typedef	float				FLOAT;
 	typedef	double				DOUBLE;
 

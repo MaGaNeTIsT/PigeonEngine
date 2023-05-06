@@ -10,7 +10,7 @@ namespace PigeonEngine
 
 	struct EShaderResource
 	{
-		EShaderResource() : ShaderByteCode(nullptr) {}
+		EShaderResource() : ShaderByteCode(nullptr), ShaderByteCodeSize(0u) {}
 		void Release()
 		{
 			if (ShaderByteCode != nullptr)
@@ -18,8 +18,10 @@ namespace PigeonEngine
 				delete[]ShaderByteCode;
 				ShaderByteCode = nullptr;
 			}
+			ShaderByteCodeSize = 0u;
 		}
-		void* ShaderByteCode;
+		void*	ShaderByteCode;
+		ULONG	ShaderByteCodeSize;
 	};
 
 	template<RShaderFrequencyType _ShaderFrequency, typename TShaderRenderResourceType>
@@ -64,7 +66,7 @@ namespace PigeonEngine
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RVertexShaderResource*	CreateShaderRenderResource();
+		RDeviceD3D11::RVertexShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
 	protected:
 		RInputLayoutDesc*	m_ShaderInputLayouts;
 		UINT				m_ShaderInputLayoutNum;
@@ -82,7 +84,7 @@ namespace PigeonEngine
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RPixelShaderResource*		CreateShaderRenderResource();
+		RDeviceD3D11::RPixelShaderResource*		CreateShaderRenderResource(EShaderResource* inResource);
 	};
 
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>
@@ -97,7 +99,21 @@ namespace PigeonEngine
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RComputeShaderResource* CreateShaderRenderResource();
+		RDeviceD3D11::RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
+	};
+
+	class EShaderAssetManager
+	{
+	public:
+		typedef TAssetManager<std::string, EVertexShaderAsset>		EVertexShaderManager;
+		typedef TAssetManager<std::string, EPixelShaderAsset>		EPixelShaderManager;
+		typedef TAssetManager<std::string, EComputeShaderAsset>		EComputeShaderManager;
+	public:
+
+	private:
+		EVertexShaderManager	m_VSManager;
+		EPixelShaderManager		m_PSManager;
+		EComputeShaderManager	m_CSManager;
 	};
 
 };

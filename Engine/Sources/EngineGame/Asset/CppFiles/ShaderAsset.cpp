@@ -46,10 +46,19 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
+		if (!StorageResourceInternal([]()->EShaderResource*
+			{
+				EShaderResource* outResource = nullptr;
+				//TODO read cso file from hard disk.
+				return outResource;
+			}))
+		{
+			return FALSE;
+		}
 		if (CreateRenderResourceInternal(
 			[this](EShaderResource* inResource)->RDeviceD3D11::RVertexShaderResource*
 			{
-				return (this->CreateShaderRenderResource());
+				return (this->CreateShaderRenderResource(inResource));
 			},
 			FALSE))
 		{
@@ -57,16 +66,20 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	RDeviceD3D11::RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource()
+	RDeviceD3D11::RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
 	{
-		RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
-		RDeviceD3D11::RVertexShaderResource* Result = new RDeviceD3D11::RVertexShaderResource();
-		if (!deviceD3D11->LoadVertexShader(m_ShaderPath, *Result, m_ShaderInputLayouts, m_ShaderInputLayoutNum))
+		RDeviceD3D11::RVertexShaderResource* result = nullptr;
+		if (inResource && inResource->ShaderByteCode && inResource->ShaderByteCodeSize > 0u)
 		{
-			delete Result;
-			return nullptr;
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			result = new RDeviceD3D11::RVertexShaderResource();
+			if (!deviceD3D11->CreateVertexShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result, m_ShaderInputLayouts, m_ShaderInputLayoutNum))
+			{
+				delete result;
+				result = nullptr;
+			}
 		}
-		return Result;
+		return result;
 	}
 
 	EPixelShaderAsset::EPixelShaderAsset(const std::string& shaderPath
@@ -86,10 +99,19 @@ namespace PigeonEngine
 	}
 	BOOL EPixelShaderAsset::InitResource()
 	{
+		if (!StorageResourceInternal([]()->EShaderResource*
+			{
+				EShaderResource* outResource = nullptr;
+				//TODO read cso file from hard disk.
+				return outResource;
+			}))
+		{
+			return FALSE;
+		}
 		if (CreateRenderResourceInternal(
 			[this](EShaderResource* inResource)->RDeviceD3D11::RPixelShaderResource*
 			{
-				return (this->CreateShaderRenderResource());
+				return (this->CreateShaderRenderResource(inResource));
 			},
 			FALSE))
 		{
@@ -97,16 +119,20 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	RDeviceD3D11::RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource()
+	RDeviceD3D11::RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
 	{
-		RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
-		RDeviceD3D11::RPixelShaderResource* Result = new RDeviceD3D11::RPixelShaderResource();
-		if (!deviceD3D11->LoadPixelShader(m_ShaderPath, *Result))
+		RDeviceD3D11::RPixelShaderResource* result = nullptr;
+		if (inResource && inResource->ShaderByteCode && inResource->ShaderByteCodeSize > 0u)
 		{
-			delete Result;
-			return nullptr;
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			result = new RDeviceD3D11::RPixelShaderResource();
+			if (!deviceD3D11->CreatePixelShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
+			{
+				delete result;
+				result = nullptr;
+			}
 		}
-		return Result;
+		return result;
 	}
 
 	EComputeShaderAsset::EComputeShaderAsset(const std::string& shaderPath
@@ -126,11 +152,39 @@ namespace PigeonEngine
 	}
 	BOOL EComputeShaderAsset::InitResource()
 	{
-
+		if (!StorageResourceInternal([]()->EShaderResource*
+			{
+				EShaderResource* outResource = nullptr;
+				//TODO read cso file from hard disk.
+				return outResource;
+			}))
+		{
+			return FALSE;
+		}
+		if (CreateRenderResourceInternal(
+			[this](EShaderResource* inResource)->RDeviceD3D11::RComputeShaderResource*
+			{
+				return (this->CreateShaderRenderResource(inResource));
+			}, FALSE))
+		{
+			return TRUE;
+		}
+		return FALSE;
 	}
-	RDeviceD3D11::RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource()
+	RDeviceD3D11::RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
 	{
-
+		RDeviceD3D11::RComputeShaderResource* result = nullptr;
+		if (inResource && inResource->ShaderByteCode && inResource->ShaderByteCodeSize > 0u)
+		{
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			result = new RDeviceD3D11::RComputeShaderResource();
+			if (!deviceD3D11->CreateComputeShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
+			{
+				delete result;
+				result = nullptr;
+			}
+		}
+		return result;
 	}
 
 };

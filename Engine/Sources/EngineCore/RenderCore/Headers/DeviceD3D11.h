@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Core/Headers/Main.h"
+#include "../../Core/Headers/ErrorCaption.h"
 #include "../../Base/Headers/BaseType.h"
 #include "./Common.h"
 
@@ -204,9 +205,12 @@ namespace PigeonEngine
 		void	Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
 		void	Uninit();
 	public:
-		BOOL	LoadVertexShader(const std::string& name, RVertexShaderResource& vertexShader, const RInputLayoutDesc* layouts, const UINT& layoutNum);
-		BOOL	LoadPixelShader(const std::string& name, RPixelShaderResource& pixelShader);
-		BOOL	LoadComputeShader(const std::string& name, RComputeShaderResource& computeShader);
+		BOOL	LoadVertexShader(const std::string& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
+		BOOL	LoadPixelShader(const std::string& name, RPixelShaderResource& outShaderResource);
+		BOOL	LoadComputeShader(const std::string& name, RComputeShaderResource& outShaderResource);
+		BOOL	CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
+		BOOL	CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource);
+		BOOL	CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource);
 		BOOL	CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
 		void	UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 		void	UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);

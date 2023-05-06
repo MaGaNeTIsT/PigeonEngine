@@ -32,6 +32,7 @@ namespace PigeonEngine
 #define Check(_Caption,_Text,_Condition)	(DWindowsMessage::_Check_Default((_Caption),(_Text),(_Condition)))
 #define Checkt(_Caption,_Text,_Condition)	(DWindowsMessage::_Check_Default((_Caption),(_Text),(_Condition)))
 #else
+#define PE_FAILED(_Caption,_Text)			(;)
 #define Check(_Condition)					(;)
 #define Check(_Caption, _Text, _Condition)	(;)
 #define Checkt(_Caption,_Text,_Condition)	(;)
