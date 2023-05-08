@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../Core/Headers/Main.h"
-#include "../../Core/Headers/ErrorCaption.h"
 #include "../../Base/Headers/BaseType.h"
 #include "./Common.h"
 

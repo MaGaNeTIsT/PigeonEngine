@@ -5,20 +5,17 @@
 namespace PigeonEngine
 {
 
-	class EReadFile
+	class EFileHelper
 	{
 	public:
-
+		static BOOL ReadFileAsBinary(const std::string& FilePath, void*& Return, ULONG& Size);
+		static BOOL ReadFileAsString(const std::string& FilePath, std::string& Return);
 	public:
-		EReadFile() = delete;
-		EReadFile(const EReadFile&) = delete;
-		~EReadFile() {}
+		EFileHelper() = delete;
+		EFileHelper(const EFileHelper&) = delete;
+		~EFileHelper() {}
 	public:
-		EReadFile& operator=(const EReadFile&) = delete;
-
-	public:
-		static bool ReadFileAsBinary(const std::string FilePath, void*& Return, UINT64& Size);
-		static bool ReadFileAsString(const std::string FilePath, std::string& Return);
+		EFileHelper& operator=(const EFileHelper&) = delete;
 	};
 
 };

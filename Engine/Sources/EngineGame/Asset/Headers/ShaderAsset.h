@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../../../EngineCore/Core/Headers/ErrorCaption.h"
 #include "./BaseAsset.h"
 #include "../../../EngineCore/RenderCore/Headers/Common.h"
 #include "../../../EngineCore/RenderCore/Headers/DeviceD3D11.h"
@@ -109,7 +108,13 @@ namespace PigeonEngine
 		typedef TAssetManager<std::string, EPixelShaderAsset>		EPixelShaderManager;
 		typedef TAssetManager<std::string, EComputeShaderAsset>		EComputeShaderManager;
 	public:
+		template<class TShaderAssetType>
+		TShaderAssetType* LoadShaderAsset(const std::string& loadPath);
 
+		template<class TShaderAssetType>
+		void SaveShaderAsset(TShaderAssetType* inShaderAsset, const std::string& savePath);
+
+		BOOL ImportShaderCSO(const std::string& inPath, const std::string& outPath);
 	private:
 		EVertexShaderManager	m_VSManager;
 		EPixelShaderManager		m_PSManager;

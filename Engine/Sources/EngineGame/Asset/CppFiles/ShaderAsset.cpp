@@ -1,4 +1,6 @@
 #include "../Headers/ShaderAsset.h"
+#include "../../../EngineCore/Core/Headers/ErrorCaption.h"
+#include "../../../EngineCore/Base/Headers/FileHelper.h"
 
 namespace PigeonEngine
 {
@@ -46,10 +48,14 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		if (!StorageResourceInternal([]()->EShaderResource*
+		if (!StorageResourceInternal([this]()->EShaderResource*
 			{
-				EShaderResource* outResource = nullptr;
-				//TODO read cso file from hard disk.
+				EShaderResource* outResource = new EShaderResource();
+				if (!EFileHelper::ReadFileAsBinary(m_ShaderPath, outResource->ShaderByteCode, outResource->ShaderByteCodeSize))
+				{
+					delete outResource;
+					return nullptr;
+				}
 				return outResource;
 			}))
 		{
@@ -99,10 +105,14 @@ namespace PigeonEngine
 	}
 	BOOL EPixelShaderAsset::InitResource()
 	{
-		if (!StorageResourceInternal([]()->EShaderResource*
+		if (!StorageResourceInternal([this]()->EShaderResource*
 			{
-				EShaderResource* outResource = nullptr;
-				//TODO read cso file from hard disk.
+				EShaderResource* outResource = new EShaderResource();
+				if (!EFileHelper::ReadFileAsBinary(m_ShaderPath, outResource->ShaderByteCode, outResource->ShaderByteCodeSize))
+				{
+					delete outResource;
+					return nullptr;
+				}
 				return outResource;
 			}))
 		{
@@ -152,10 +162,14 @@ namespace PigeonEngine
 	}
 	BOOL EComputeShaderAsset::InitResource()
 	{
-		if (!StorageResourceInternal([]()->EShaderResource*
+		if (!StorageResourceInternal([this]()->EShaderResource*
 			{
-				EShaderResource* outResource = nullptr;
-				//TODO read cso file from hard disk.
+				EShaderResource* outResource = new EShaderResource();
+				if (!EFileHelper::ReadFileAsBinary(m_ShaderPath, outResource->ShaderByteCode, outResource->ShaderByteCodeSize))
+				{
+					delete outResource;
+					return nullptr;
+				}
 				return outResource;
 			}))
 		{
