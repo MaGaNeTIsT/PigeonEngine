@@ -4,16 +4,15 @@
 
 namespace PigeonEngine
 {
-
 	BOOL EFileHelper::ReadFileAsBinary(const std::string& FilePath, void*& Return, ULONG& Size)
 	{
 		using namespace std;
-		std::ifstream  fin(FilePath, ios::in | ios::binary);;
+		ifstream  fin(FilePath, ios::in | ios::binary);;
 		if (!fin)
 		{
 #ifdef _DEVELOPMENT_EDITOR
 			{
-				string errorData("Error occured (open file path : ");
+				string errorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
 				errorData += FilePath + ").";
 				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
 			}
@@ -36,7 +35,7 @@ namespace PigeonEngine
 		{
 #ifdef _DEVELOPMENT_EDITOR
 			{
-				string errorData("Error occured (open file path : ");
+				string errorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
 				errorData += FilePath + ").";
 				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
 			}
@@ -49,4 +48,43 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	BOOL EFileHelper::SaveStringToFile(const std::string& FilePath, const std::string& Str)
+	{
+		using namespace std;
+		ofstream out(FilePath, ios::out);
+		if (!out)
+		{
+#ifdef _DEVELOPMENT_EDITOR
+			{
+				string errorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
+				errorData += FilePath + ").";
+				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+			}
+#endif
+			return FALSE;
+		}
+		out << Str;
+		out.close();
+		return TRUE;
+	}
+
+	BOOL EFileHelper::SaveBytesToFile(const std::string& FilePath, const void* Bytes, const ULONG& Size)
+	{
+		using namespace std;
+		ofstream out(FilePath, ios::out | ios::binary);
+		if (!out)
+		{
+#ifdef _DEVELOPMENT_EDITOR
+			{
+				string errorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
+				errorData += FilePath + ").";
+				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+			}
+#endif
+			return FALSE;
+		}
+		out.write(reinterpret_cast<const CHAR*>(Bytes), Size);
+		out.close();
+		return TRUE;
+	}
 };

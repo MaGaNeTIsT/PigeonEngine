@@ -1,4 +1,5 @@
 #folders
 x64/
 .vs/
+.idea/
 Engine/Assets/EngineShaders/
