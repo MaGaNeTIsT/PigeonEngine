@@ -4,6 +4,7 @@
 
 namespace PigeonEngine
 {
+
 	BOOL EFileHelper::ReadFileAsBinary(const std::string& FilePath, void*& Return, ULONG& Size)
 	{
 		using namespace std;
@@ -14,7 +15,7 @@ namespace PigeonEngine
 			{
 				string errorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
 				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
 			}
 #endif
 			return FALSE;
@@ -37,7 +38,7 @@ namespace PigeonEngine
 			{
 				string errorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
 				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
 			}
 #endif
 			return FALSE;
@@ -47,7 +48,6 @@ namespace PigeonEngine
 		fin.close();
 		return TRUE;
 	}
-
 	BOOL EFileHelper::SaveStringToFile(const std::string& FilePath, const std::string& Str)
 	{
 		using namespace std;
@@ -58,7 +58,7 @@ namespace PigeonEngine
 			{
 				string errorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
 				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
 			}
 #endif
 			return FALSE;
@@ -67,7 +67,6 @@ namespace PigeonEngine
 		out.close();
 		return TRUE;
 	}
-
 	BOOL EFileHelper::SaveBytesToFile(const std::string& FilePath, const void* Bytes, const ULONG& Size)
 	{
 		using namespace std;
@@ -78,7 +77,7 @@ namespace PigeonEngine
 			{
 				string errorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
 				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_READ_FILE_ERROR, errorData);
+				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
 			}
 #endif
 			return FALSE;
@@ -87,4 +86,5 @@ namespace PigeonEngine
 		out.close();
 		return TRUE;
 	}
+
 };

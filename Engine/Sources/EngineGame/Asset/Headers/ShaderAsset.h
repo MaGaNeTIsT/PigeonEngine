@@ -69,6 +69,8 @@ namespace PigeonEngine
 	protected:
 		RInputLayoutDesc*	m_ShaderInputLayouts;
 		UINT				m_ShaderInputLayoutNum;
+	private:
+		friend class EShaderAssetManager;
 	};
 
 	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>
@@ -84,6 +86,8 @@ namespace PigeonEngine
 		virtual BOOL	InitResource()override;
 	protected:
 		RDeviceD3D11::RPixelShaderResource*		CreateShaderRenderResource(EShaderResource* inResource);
+	private:
+		friend class EShaderAssetManager;
 	};
 
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>
@@ -99,6 +103,8 @@ namespace PigeonEngine
 		virtual BOOL	InitResource()override;
 	protected:
 		RDeviceD3D11::RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
+	private:
+		friend class EShaderAssetManager;
 	};
 
 	class EShaderAssetManager

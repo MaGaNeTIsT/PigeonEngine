@@ -201,4 +201,21 @@ namespace PigeonEngine
 		return result;
 	}
 
+	template<class TShaderAssetType>
+	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const std::string& loadPath)
+	{
+
+	}
+
+	template<class TShaderAssetType>
+	void EShaderAssetManager::SaveShaderAsset(TShaderAssetType* inShaderAsset, const std::string& savePath)
+	{
+
+	}
+
+	BOOL EShaderAssetManager::ImportShaderCSO(const std::string& inPath, const std::string& outPath)
+	{
+
+	}
+
 };
