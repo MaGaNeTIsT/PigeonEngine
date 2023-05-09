@@ -39,7 +39,7 @@ namespace PigeonEngine
 		), m_ShaderPath(shaderPath), m_ShaderFrequency(_ShaderFrequency)
 		{
 		}
-		~TShaderBaseAsset()
+		virtual ~TShaderBaseAsset()
 		{
 		}
 	public:
@@ -58,7 +58,7 @@ namespace PigeonEngine
 			, const std::string& name
 #endif
 			, const RInputLayoutDesc* inInputLayouts, const UINT& inInputLayoutNum);
-		~EVertexShaderAsset();
+		virtual ~EVertexShaderAsset();
 	public:
 		const RInputLayoutDesc*		GetShaderInputLayouts()const { return m_ShaderInputLayouts; }
 		const UINT&					GetShaderInputLayoutNum()const { return m_ShaderInputLayoutNum; }
@@ -81,7 +81,7 @@ namespace PigeonEngine
 			, const std::string& name
 #endif
 		);
-		~EPixelShaderAsset();
+		virtual ~EPixelShaderAsset();
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
@@ -98,7 +98,7 @@ namespace PigeonEngine
 			, const std::string& name
 #endif
 		);
-		~EComputeShaderAsset();
+		virtual ~EComputeShaderAsset();
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
@@ -114,13 +114,16 @@ namespace PigeonEngine
 		typedef TAssetManager<std::string, EPixelShaderAsset>		EPixelShaderManager;
 		typedef TAssetManager<std::string, EComputeShaderAsset>		EComputeShaderManager;
 	public:
+		BOOL ImportShaderCSO(const std::string& inPath, const std::string& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
+		BOOL LoadVertexShaderAsset(const std::string& loadPath, const EVertexShaderAsset*& outShaderAsset);
+		BOOL LoadPixelShaderAsset(const std::string& loadPath, const EPixelShaderAsset*& outShaderAsset);
+		BOOL LoadComputeShaderAsset(const std::string& loadPath, const EComputeShaderAsset*& outShaderAsset);
+	private:
 		template<class TShaderAssetType>
 		TShaderAssetType* LoadShaderAsset(const std::string& loadPath);
-
+		BOOL SaveShaderAsset(const std::string& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
 		template<class TShaderAssetType>
-		void SaveShaderAsset(TShaderAssetType* inShaderAsset, const std::string& savePath);
-
-		BOOL ImportShaderCSO(const std::string& inPath, const std::string& outPath);
+		BOOL SaveShaderAsset(const std::string& savePath, const TShaderAssetType* inShaderAsset);
 	private:
 		EVertexShaderManager	m_VSManager;
 		EPixelShaderManager		m_PSManager;

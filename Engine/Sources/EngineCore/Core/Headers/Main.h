@@ -42,8 +42,13 @@ namespace PigeonEngine
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
 
 #define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT>(sizeof(_ARR) / sizeof(*(_ARR))))
-#define ENGINE_NOT_EXIST_STRING								("Engine_Not_Exist")
+#define ENGINE_NOT_EXIST_STRING								("ENGINE_NOT_EXIST")
 #define ENGINE_DEFAULT_NAME									("PIGEON_ENGINE_DEFAULT_NAME")
+
+#define ENGINE_IMPORT_SHADER_NAME_TYPE						(".cso")
+#define ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE				("PEVS")
+#define ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE				("PEPS")
+#define ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE				("PECS")
 
 #define ENGINE_SCREEN_WIDTH									(1600)
 #define ENGINE_SCREEN_HEIGHT								(900)

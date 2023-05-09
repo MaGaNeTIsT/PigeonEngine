@@ -18,6 +18,7 @@ namespace PigeonEngine
 #endif
 		)
 			: m_Resource(nullptr)
+			, m_IsInitialized(FALSE)
 #ifdef _DEVELOPMENT_EDITOR
 			, m_Name(name)
 #endif
@@ -29,13 +30,16 @@ namespace PigeonEngine
 		}
 	public:
 		virtual BOOL	IsValid() { return IsResourceValid(); }
+		virtual BOOL	IsInitialized() { return m_IsInitialized; }
 		virtual BOOL	InitResource() { return FALSE; }
 		virtual void	UninitResource()
 		{
+			m_IsInitialized = FALSE;
 			ReleaseResourceInternal();
 		}
 	public:
 		BOOL	IsResourceValid()const { return (!!m_Resource); }
+		const TResourceType*	GetStoragedResource()const { return m_Resource; }
 	protected:
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
@@ -71,7 +75,8 @@ namespace PigeonEngine
 			}
 		}
 	protected:
-		TResourceType* m_Resource;
+		BOOL			m_IsInitialized;
+		TResourceType*	m_Resource;
 	};
 
 	template<typename TResourceType, typename TRenderResourceType>
@@ -91,7 +96,7 @@ namespace PigeonEngine
 			, m_HoldResource(TRUE)
 		{
 		}
-		~TRenderBaseAsset()
+		virtual ~TRenderBaseAsset()
 		{
 		}
 	public:
@@ -104,14 +109,14 @@ namespace PigeonEngine
 			}
 			return IsRenderResourceValid();
 		}
-		virtual BOOL	InitResource() { return FALSE; }
-		virtual void	UninitResource()
+		virtual void UninitResource()override
 		{
 			TBaseAsset<TResourceType>::UninitResource();
 			ReleaseRenderResourceInternal();
 		}
 	public:
 		BOOL	IsRenderResourceValid()const { return (!!m_RenderResource); }
+		const TRenderResourceType*	GetRenderResource()const { return m_RenderResource; }
 	protected:
 		template<typename TCreateRenderResourceLambdaType>
 		BOOL CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL& bHoldStoragedResource)
