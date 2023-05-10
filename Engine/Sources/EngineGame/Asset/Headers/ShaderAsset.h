@@ -27,6 +27,8 @@ namespace PigeonEngine
 	template<RShaderFrequencyType _ShaderFrequency, typename TShaderRenderResourceType>
 	class TShaderBaseAsset : public TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>
 	{
+		EClass(TShaderBaseAsset<_ShaderFrequency, TShaderRenderResourceType>, TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>)
+
 	public:
 		TShaderBaseAsset(
 			const std::string& shaderPath

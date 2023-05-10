@@ -10,7 +10,8 @@ namespace PigeonEngine
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-		//EClass(TBaseAsset, EObjectBase)
+		EClass(TBaseAsset<TResourceType>, EObjectBase)
+
 	public:
 		TBaseAsset(
 #ifdef _DEVELOPMENT_EDITOR
@@ -82,6 +83,8 @@ namespace PigeonEngine
 	template<typename TResourceType, typename TRenderResourceType>
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
 	{
+		EClass(TRenderBaseAsset<TResourceType, TRenderResourceType>, TBaseAsset<TResourceType>)
+
 	public:
 		TRenderBaseAsset(
 #ifdef _DEVELOPMENT_EDITOR
