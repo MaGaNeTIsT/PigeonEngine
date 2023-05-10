@@ -196,6 +196,12 @@ namespace PigeonEngine
 		return result;
 	}
 
+	EShaderAssetManager::EShaderAssetManager()
+	{
+	}
+	EShaderAssetManager::~EShaderAssetManager()
+	{
+	}
 	BOOL EShaderAssetManager::ImportShaderCSO(const std::string& inPath, const std::string& outPath, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
 	{
 		const static std::string importShaderNameType(ENGINE_IMPORT_SHADER_NAME_TYPE);
@@ -269,17 +275,101 @@ namespace PigeonEngine
 		delete outResource;
 		return FALSE;
 	}
-	BOOL EShaderAssetManager::LoadVertexShaderAsset(const std::string& loadPath, const EVertexShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadVertexShaderAsset(std::string& loadPath, const EVertexShaderAsset*& outShaderAsset)
 	{
-
+		EVertexShaderAsset* resultShaderAsset = m_VSManager.Find(std::move(loadPath));
+		if (resultShaderAsset)
+		{
+			outShaderAsset = resultShaderAsset;
+			return TRUE;
+		}
+		resultShaderAsset = LoadShaderAsset<EVertexShaderAsset>(loadPath);
+		if (!resultShaderAsset)
+		{
+			return FALSE;
+		}
+		if (!resultShaderAsset->InitResource())
+		{
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		if (m_VSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		{
+#ifdef _DEVELOPMENT_EDITOR
+			{
+				std::string errorInfo = "Vertex shader path = [" + loadPath + "] add into manager list failed.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+			}
+#endif
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		outShaderAsset = resultShaderAsset;
+		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadPixelShaderAsset(const std::string& loadPath, const EPixelShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadPixelShaderAsset(std::string& loadPath, const EPixelShaderAsset*& outShaderAsset)
 	{
-
+		EPixelShaderAsset* resultShaderAsset = m_PSManager.Find(std::move(loadPath));
+		if (resultShaderAsset)
+		{
+			outShaderAsset = resultShaderAsset;
+			return TRUE;
+		}
+		resultShaderAsset = LoadShaderAsset<EPixelShaderAsset>(loadPath);
+		if (!resultShaderAsset)
+		{
+			return FALSE;
+		}
+		if (!resultShaderAsset->InitResource())
+		{
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		if (m_PSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		{
+#ifdef _DEVELOPMENT_EDITOR
+			{
+				std::string errorInfo = "Pixel shader path = [" + loadPath + "] add into manager list failed.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+			}
+#endif
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		outShaderAsset = resultShaderAsset;
+		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadComputeShaderAsset(const std::string& loadPath, const EComputeShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadComputeShaderAsset(std::string& loadPath, const EComputeShaderAsset*& outShaderAsset)
 	{
-
+		EComputeShaderAsset* resultShaderAsset = m_CSManager.Find(std::move(loadPath));
+		if (resultShaderAsset)
+		{
+			outShaderAsset = resultShaderAsset;
+			return TRUE;
+		}
+		resultShaderAsset = LoadShaderAsset<EComputeShaderAsset>(loadPath);
+		if (!resultShaderAsset)
+		{
+			return FALSE;
+		}
+		if (!resultShaderAsset->InitResource())
+		{
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		if (m_CSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		{
+#ifdef _DEVELOPMENT_EDITOR
+			{
+				std::string errorInfo = "Pixel shader path = [" + loadPath + "] add into manager list failed.";
+				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
+			}
+#endif
+			delete resultShaderAsset;
+			return FALSE;
+		}
+		outShaderAsset = resultShaderAsset;
+		return TRUE;
 	}
 	template<class TShaderAssetType>
 	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const std::string& loadPath)
@@ -298,13 +388,61 @@ namespace PigeonEngine
 				PE_FAILED(ENGINE_ASSET_ERROR, errorData);
 			}
 #endif
-			return FALSE;
+			return nullptr;
 		}
+		Check(ENGINE_ASSET_ERROR, "Error read shader asset file size are too small.", (readFileSize > (sizeof(INT) * 2u)));
 		INT shaderFrequency = ((INT*)readFileMem)[0];
-		INT shaderInputLayoutNum = ((INT*)readFileMem)[1];
-		ULONG shaderSaveSize = inShaderResource->ShaderByteCodeSize + sizeof(INT) * 2u;
-		RShaderFrequencyType saveShaderFrequency = inShaderAsset->GetShaderFrequency();
-		return FALSE;
+		UINT shaderInputLayoutNum = static_cast<UINT>(((INT*)readFileMem)[1]);
+		ULONG shaderCSOSize = readFileSize - sizeof(INT) * 2u;
+		std::vector<RInputLayoutDesc> shaderInputLayouts;
+		if (shaderInputLayoutNum > 0u)
+		{
+			shaderCSOSize = shaderCSOSize - sizeof(RInputLayoutDesc) * shaderInputLayoutNum;
+			RInputLayoutDesc* tempInputlayouts = (RInputLayoutDesc*)(&(((INT*)readFileMem)[2]));
+			shaderInputLayouts.resize(shaderInputLayoutNum);
+			for (UINT layoutIndex = 0u; layoutIndex < shaderInputLayoutNum; layoutIndex++)
+			{
+				shaderInputLayouts[layoutIndex] = tempInputlayouts[layoutIndex];
+			}
+		}
+		TShaderAssetType* result = nullptr;
+		if (shaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
+		{
+			result = new EVertexShaderAsset(loadPath
+#ifdef _DEVELOPMENT_EDITOR
+				, loadPath
+#endif
+				, shaderInputLayouts.data(), shaderInputLayoutNum);
+		}
+		else
+		{
+			result = new TShaderAssetType(loadPath
+#ifdef _DEVELOPMENT_EDITOR
+				, loadPath
+#endif
+			);
+		}
+		EShaderResource* storagedResource = nullptr;
+		if (!result->StorageResourceInternal(
+			[readFileMem, readFileSize, shaderCSOSize, &storagedResource]()->EShaderResource*
+			{
+				void* shaderCSO = new BYTE[shaderCSOSize];
+				memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
+				storagedResource = new EShaderResource();
+				storagedResource->ShaderByteCode = shaderCSO;
+				storagedResource->ShaderByteCodeSize = shaderCSOSize;
+				return storagedResource;
+			}))
+		{
+			if (storagedResource)
+			{
+				storagedResource->Release();
+				delete storagedResource;
+			}
+		}
+
+		delete[]readFileMem;
+		return result;
 	}
 	BOOL EShaderAssetManager::SaveShaderAsset(const std::string& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
 	{

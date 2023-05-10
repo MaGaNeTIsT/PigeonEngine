@@ -1,26 +1,26 @@
 #pragma once
 
 #include "../../Core/Headers/Main.h"
-#include "RTTI.h"
+#include "./RTTI.h"
+#include "./TemplateHeaders.h"
 
 class EUniqueIDAllocater
 {
 public:
-	static ULONGLONG	GetUniqueID();
+	static ULONGLONG GetUniqueID();
 public:
-	static void			Initialize();
-	static void			ShutDown();
+	static void	Initialize();
+	static void	ShutDown();
 private:
-	EUniqueIDAllocater();
-	~EUniqueIDAllocater();
-private:
-	static EUniqueIDAllocater*		m_UniqueIDAllocater;
-	ULONGLONG						m_UniqueID;
+	ULONGLONG m_UniqueID;
+
+	CLASS_SINGLETON_BODY(EUniqueIDAllocater)
 };
 
 class EObjectBase : public ERTTI
 {
-	EClass(EObjectBase, ERTTI);
+	EClass(EObjectBase, ERTTI)
+
 public:
 	EObjectBase();
 	EObjectBase(const EObjectBase& obj);

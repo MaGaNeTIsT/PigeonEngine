@@ -1,9 +1,10 @@
 #pragma once
 
-#include "../../../../Entry/EngineMain.h"
-#include "../../EngineBase/Headers/CBaseType.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderStructCommon.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
+#include "../../EngineCore/Core/Headers/Main.h"
+#include "../../EngineCore/Base/Headers/RTTI.h"
+#include "../../EngineCore/Base/Headers/BaseType.h"
+#include "../../EngineCore/RenderCore/Headers/Common.h"
+#include "../../EngineCore/RenderCore/Headers/DeviceD3D11.h"
 #include "./CObjectManager.h"
 #include "./CComponent.h"
 #include "./CGameBoundComponent.h"

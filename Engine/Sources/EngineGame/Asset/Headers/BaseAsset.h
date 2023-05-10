@@ -10,7 +10,7 @@ namespace PigeonEngine
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-		//EClass(TBaseAsset, EObjectBase);
+		//EClass(TBaseAsset, EObjectBase)
 	public:
 		TBaseAsset(
 #ifdef _DEVELOPMENT_EDITOR

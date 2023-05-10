@@ -1,6 +1,5 @@
 #include "../Headers/ObjectBase.h"
 
-EUniqueIDAllocater* EUniqueIDAllocater::m_UniqueIDAllocater = new EUniqueIDAllocater();
 EUniqueIDAllocater::EUniqueIDAllocater()
 {
 	this->m_UniqueID = 1u;

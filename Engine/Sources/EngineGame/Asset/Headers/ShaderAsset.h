@@ -3,6 +3,7 @@
 #include "./BaseAsset.h"
 #include "../../../EngineCore/RenderCore/Headers/Common.h"
 #include "../../../EngineCore/RenderCore/Headers/DeviceD3D11.h"
+#include "../../../EngineCore/Base/Headers/TemplateHeaders.h"
 
 namespace PigeonEngine
 {
@@ -115,9 +116,9 @@ namespace PigeonEngine
 		typedef TAssetManager<std::string, EComputeShaderAsset>		EComputeShaderManager;
 	public:
 		BOOL ImportShaderCSO(const std::string& inPath, const std::string& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
-		BOOL LoadVertexShaderAsset(const std::string& loadPath, const EVertexShaderAsset*& outShaderAsset);
-		BOOL LoadPixelShaderAsset(const std::string& loadPath, const EPixelShaderAsset*& outShaderAsset);
-		BOOL LoadComputeShaderAsset(const std::string& loadPath, const EComputeShaderAsset*& outShaderAsset);
+		BOOL LoadVertexShaderAsset(std::string& loadPath, const EVertexShaderAsset*& outShaderAsset);
+		BOOL LoadPixelShaderAsset(std::string& loadPath, const EPixelShaderAsset*& outShaderAsset);
+		BOOL LoadComputeShaderAsset(std::string& loadPath, const EComputeShaderAsset*& outShaderAsset);
 	private:
 		template<class TShaderAssetType>
 		TShaderAssetType* LoadShaderAsset(const std::string& loadPath);
@@ -128,6 +129,8 @@ namespace PigeonEngine
 		EVertexShaderManager	m_VSManager;
 		EPixelShaderManager		m_PSManager;
 		EComputeShaderManager	m_CSManager;
+
+		CLASS_SINGLETON_BODY(EShaderAssetManager)
 	};
 
 };
