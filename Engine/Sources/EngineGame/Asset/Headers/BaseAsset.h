@@ -2,7 +2,6 @@
 
 #include "../../../EngineCore/Core/Headers/Main.h"
 #include "../../../EngineCore/Base/Headers/ObjectBase.h"
-#include "../../../EngineCore/Base/Headers/RTTI.h"
 
 namespace PigeonEngine
 {
@@ -10,7 +9,7 @@ namespace PigeonEngine
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-		EClass(TBaseAsset<TResourceType>, EObjectBase)
+		//EClass(TBaseAsset<TResourceType>, EObjectBase)
 
 	public:
 		TBaseAsset(
@@ -78,12 +77,18 @@ namespace PigeonEngine
 	protected:
 		BOOL			m_IsInitialized;
 		TResourceType*	m_Resource;
+
+	public:
+		TBaseAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(TBaseAsset)
+
 	};
 
 	template<typename TResourceType, typename TRenderResourceType>
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
 	{
-		EClass(TRenderBaseAsset<TResourceType, TRenderResourceType>, TBaseAsset<TResourceType>)
+		//EClass(TRenderBaseAsset<TResourceType, TRenderResourceType>, TBaseAsset<TResourceType>)
 
 	public:
 		TRenderBaseAsset(
@@ -162,6 +167,12 @@ namespace PigeonEngine
 	protected:
 		BOOL					m_HoldResource;
 		TRenderResourceType*	m_RenderResource;
+
+	public:
+		TRenderBaseAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(TRenderBaseAsset)
+
 	};
 
 	template<typename TKeyType, typename TAssetType>
@@ -223,9 +234,9 @@ namespace PigeonEngine
 		* Find item with kayValue in mapped datas.
 		* Return [TAssetType*]: If contain key return asset. If not then return nullptr.
 		*/
-		TAssetType* Find(TKeyType&& keyValue)
+		TAssetType* Find(const TKeyType& keyValue)
 		{
-			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
+			auto findIt = m_Datas.find(keyValue);
 			if (findIt != m_Datas.end())
 			{
 				return (findIt->second);
@@ -236,9 +247,9 @@ namespace PigeonEngine
 		* Check if contains item with kayValue in mapped datas.
 		* Return [BOOL]: If contains return TRUE. If not then return FALSE.
 		*/
-		BOOL Contain(TKeyType&& keyValue)const
+		BOOL Contain(const TKeyType& keyValue)const
 		{
-			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
+			auto findIt = m_Datas.find(keyValue);
 			if (findIt != m_Datas.end())
 			{
 				return TRUE;
@@ -265,6 +276,8 @@ namespace PigeonEngine
 		}
 	protected:
 		std::unordered_map<TKeyType, TAssetType*> m_Datas;
+
+		CLASS_REMOVE_COPY_BODY(TAssetManager)
 	};
 
 };

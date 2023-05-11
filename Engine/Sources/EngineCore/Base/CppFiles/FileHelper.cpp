@@ -1,5 +1,4 @@
 ﻿#include "../Headers/FileHelper.h"
-#include "../../Core/Headers/ErrorCaption.h"
 #include <fstream>
 
 namespace PigeonEngine

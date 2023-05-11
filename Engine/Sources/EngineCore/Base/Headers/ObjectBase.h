@@ -1,41 +1,60 @@
 #pragma once
 
 #include "../../Core/Headers/Main.h"
-#include "./RTTI.h"
-#include "./TemplateHeaders.h"
 
-class EUniqueIDAllocater
+namespace PigeonEngine
 {
-public:
-	static ULONGLONG GetUniqueID();
-public:
-	static void	Initialize();
-	static void	ShutDown();
-private:
-	ULONGLONG m_UniqueID;
 
-	CLASS_SINGLETON_BODY(EUniqueIDAllocater)
-};
+	class EObjectBase : public ERTTI
+	{
 
-class EObjectBase : public ERTTI
-{
-	EClass(EObjectBase, ERTTI)
+		EClass(EObjectBase, ERTTI)
 
-public:
-	EObjectBase();
-	EObjectBase(const EObjectBase& obj);
-	virtual ~EObjectBase();
-public:
-	const ULONGLONG& GetUniqueID()const { return m_UniqueID; }
-public:
-	BOOL operator==(const EObjectBase& obj);
-	BOOL operator!=(const EObjectBase& obj);
-protected:
-	ULONGLONG m_UniqueID;
+	public:
+		const ULONGLONG& GetUniqueID()const;
+	public:
+		BOOL operator==(const EObjectBase& obj);
+		BOOL operator!=(const EObjectBase& obj);
+	protected:
+		ULONGLONG m_UniqueID;
 #ifdef _DEVELOPMENT_EDITOR
-public:
-	const std::string& GetName()const { return m_Name; }
-protected:
-	std::string m_Name;
+	public:
+		const std::string& GetName()const;
+	protected:
+		std::string m_Name;
 #endif
+
+		CLASS_VIRTUAL_NOCOPY_BODY(EObjectBase)
+
+	};
+
+	class EManagerBase : public EObjectBase
+	{
+
+		EClass(EManagerBase, EObjectBase)
+
+	public:
+		virtual void Initialize() {}
+		virtual void ShutDown() {}
+
+		CLASS_VIRTUAL_NOCOPY_BODY(EManagerBase)
+
+	};
+
+	class EUniqueIDManager : public EManagerBase
+	{
+
+		EClass(EUniqueIDManager, EManagerBase)
+
+	public:
+		ULONGLONG AllocUniqueID();
+	private:
+		ULONGLONG m_AllocUniqueID;
+
+		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EUniqueIDManager)
+
+	};
+
+	extern ULONGLONG _AllocUniqueID();
+
 };

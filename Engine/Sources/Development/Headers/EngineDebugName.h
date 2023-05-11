@@ -1,0 +1,11 @@
+#pragma once
+
+namespace PigeonEngine
+{
+
+#ifdef _DEVELOPMENT_EDITOR
+#define ENGINE_UNIQUEID_MANAGER_NAME			("ENGINE_UNIQUEID_MANAGER")
+#define ENGINE_SHADER_ASSET_MANAGER_NAME		("ENGINE_SHADER_ASSET_MANAGER")
+#endif
+
+};

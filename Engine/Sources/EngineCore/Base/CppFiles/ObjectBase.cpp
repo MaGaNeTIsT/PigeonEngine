@@ -1,56 +1,63 @@
 #include "../Headers/ObjectBase.h"
 
-EUniqueIDAllocater::EUniqueIDAllocater()
-{
-	this->m_UniqueID = 1u;
-}
-EUniqueIDAllocater::~EUniqueIDAllocater()
+namespace PigeonEngine
 {
 
-}
-void EUniqueIDAllocater::Initialize()
-{
-	EUniqueIDAllocater::m_UniqueIDAllocater->m_UniqueID = 1u;
-}
-ULONGLONG EUniqueIDAllocater::GetUniqueID()
-{
-	ULONGLONG temp = EUniqueIDAllocater::m_UniqueIDAllocater->m_UniqueID;
-	EUniqueIDAllocater::m_UniqueIDAllocater->m_UniqueID += 1u;
-	return temp;
-}
-void EUniqueIDAllocater::ShutDown()
-{
-	if (EUniqueIDAllocater::m_UniqueIDAllocater != nullptr)
+	EObjectBase::EObjectBase()
+		: m_UniqueID(_AllocUniqueID())
+#ifdef _DEVELOPMENT_EDITOR
+		, m_Name(ENGINE_DEFAULT_NAME)
+#endif
 	{
-		delete (EUniqueIDAllocater::m_UniqueIDAllocater);
-		EUniqueIDAllocater::m_UniqueIDAllocater = nullptr;
 	}
-}
-
-
-
-EObjectBase::EObjectBase()
-	: m_UniqueID(EUniqueIDAllocater::GetUniqueID())
+	EObjectBase::~EObjectBase()
+	{
+	}
+	const ULONGLONG& EObjectBase::GetUniqueID()const
+	{
+		return m_UniqueID;
+	}
+	BOOL EObjectBase::operator==(const EObjectBase& obj)
+	{
+		return (GetUniqueID() == obj.GetUniqueID());
+	}
+	BOOL EObjectBase::operator!=(const EObjectBase& obj)
+	{
+		return (GetUniqueID() != obj.GetUniqueID());
+	}
 #ifdef _DEVELOPMENT_EDITOR
-	, m_Name(ENGINE_DEFAULT_NAME)
+	const std::string& EObjectBase::GetName()const
+	{
+		return m_Name;
+	}
 #endif
-{
-}
-EObjectBase::EObjectBase(const EObjectBase& obj)
-	: m_UniqueID(EUniqueIDAllocater::GetUniqueID())
+
+	EManagerBase::EManagerBase()
+	{
+	}
+	EManagerBase::~EManagerBase()
+	{
+	}
+
+	EUniqueIDManager::EUniqueIDManager() : m_AllocUniqueID(0u)
+	{
 #ifdef _DEVELOPMENT_EDITOR
-	, m_Name(obj.GetName())
+		m_Name = ENGINE_UNIQUEID_MANAGER_NAME;
 #endif
-{
-}
-EObjectBase::~EObjectBase()
-{
-}
-BOOL EObjectBase::operator==(const EObjectBase& obj)
-{
-	return (this->GetUniqueID() == obj.GetUniqueID());
-}
-BOOL EObjectBase::operator!=(const EObjectBase& obj)
-{
-	return (this->GetUniqueID() != obj.GetUniqueID());
-}
+	}
+	EUniqueIDManager::~EUniqueIDManager()
+	{
+	}
+	ULONGLONG EUniqueIDManager::AllocUniqueID()
+	{
+		m_AllocUniqueID += 1u;
+		return m_AllocUniqueID;
+	}
+
+	ULONGLONG _AllocUniqueID()
+	{
+		EUniqueIDManager* UniqueIDManager = EUniqueIDManager::GetManagerSingleton();
+		return (UniqueIDManager->AllocUniqueID());
+	}
+
+};

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "../../../EngineCore/Core/Headers/Main.h"
 #include "./BaseAsset.h"
 #include "../../../EngineCore/RenderCore/Headers/Common.h"
 #include "../../../EngineCore/RenderCore/Headers/DeviceD3D11.h"
-#include "../../../EngineCore/Base/Headers/TemplateHeaders.h"
 
 namespace PigeonEngine
 {
@@ -27,7 +27,7 @@ namespace PigeonEngine
 	template<RShaderFrequencyType _ShaderFrequency, typename TShaderRenderResourceType>
 	class TShaderBaseAsset : public TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>
 	{
-		EClass(TShaderBaseAsset<_ShaderFrequency, TShaderRenderResourceType>, TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>)
+		//EClass(TShaderBaseAsset<_ShaderFrequency, TShaderRenderResourceType>, TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>)
 
 	public:
 		TShaderBaseAsset(
@@ -51,10 +51,18 @@ namespace PigeonEngine
 	protected:
 		std::string				m_ShaderPath;
 		RShaderFrequencyType	m_ShaderFrequency;
+
+	public:
+		TShaderBaseAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(TShaderBaseAsset)
+
 	};
 
 	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>
 	{
+		//EClass(EVertexShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>)
+
 	public:
 		EVertexShaderAsset(const std::string& shaderPath
 #ifdef _DEVELOPMENT_EDITOR
@@ -74,10 +82,18 @@ namespace PigeonEngine
 		UINT				m_ShaderInputLayoutNum;
 	private:
 		friend class EShaderAssetManager;
+
+	public:
+		EVertexShaderAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(EVertexShaderAsset)
+
 	};
 
 	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>
 	{
+		//EClass(EPixelShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>)
+
 	public:
 		EPixelShaderAsset(const std::string& shaderPath
 #ifdef _DEVELOPMENT_EDITOR
@@ -91,10 +107,18 @@ namespace PigeonEngine
 		RDeviceD3D11::RPixelShaderResource*		CreateShaderRenderResource(EShaderResource* inResource);
 	private:
 		friend class EShaderAssetManager;
+
+	public:
+		EPixelShaderAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(EPixelShaderAsset)
+
 	};
 
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>
 	{
+		//EClass(EComputeShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>)
+
 	public:
 		EComputeShaderAsset(const std::string& shaderPath
 #ifdef _DEVELOPMENT_EDITOR
@@ -108,10 +132,19 @@ namespace PigeonEngine
 		RDeviceD3D11::RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
 	private:
 		friend class EShaderAssetManager;
+
+	public:
+		EComputeShaderAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(EComputeShaderAsset)
+
 	};
 
-	class EShaderAssetManager
+	class EShaderAssetManager : public EManagerBase
 	{
+
+		EClass(EShaderAssetManager, EManagerBase)
+
 	public:
 		typedef TAssetManager<std::string, EVertexShaderAsset>		EVertexShaderManager;
 		typedef TAssetManager<std::string, EPixelShaderAsset>		EPixelShaderManager;
@@ -132,7 +165,8 @@ namespace PigeonEngine
 		EPixelShaderManager		m_PSManager;
 		EComputeShaderManager	m_CSManager;
 
-		CLASS_SINGLETON_BODY(EShaderAssetManager)
+		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EShaderAssetManager)
+
 	};
 
 };

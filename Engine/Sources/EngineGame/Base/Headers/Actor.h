@@ -1,23 +1,25 @@
 #pragma once
 
 #include "../../../EngineCore/Core/Headers/Main.h"
-#include "../../../EngineCore/Core/Headers/ErrorCaption.h"
-#include "../../../EngineCore/Base/Headers/ObjectBase.h"
-#include "../../../EngineCore/Base/Headers/RTTI.h"
+#include "./Object.h"
 
 namespace PigeonEngine
 {
 
-	class PActor :public EObjectBase
+	class PActor : public PObject
 	{
-		EClass(PActor, EObjectBase)
+
+		EClass(PActor, PObject)
 
 	public:
-		PActor();
-		PActor(const PActor&) = delete;
-		~PActor();
-	public:
-		PActor& operator=(const PActor&) = delete;
+		virtual void	Update() = 0;
+		virtual void	FixedUpdate() = 0;
+#ifdef _DEVELOPMENT_EDITOR
+		virtual void	EditorUpdate() = 0;
+#endif
+
+		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
+
 	};
 
 };

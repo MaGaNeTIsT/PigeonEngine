@@ -1,5 +1,4 @@
 #include "../Headers/ShaderAsset.h"
-#include "../../../EngineCore/Core/Headers/ErrorCaption.h"
 #include "../../../EngineCore/Base/Headers/FileHelper.h"
 
 namespace PigeonEngine
@@ -198,6 +197,9 @@ namespace PigeonEngine
 
 	EShaderAssetManager::EShaderAssetManager()
 	{
+#ifdef _DEVELOPMENT_EDITOR
+		m_Name = ENGINE_SHADER_ASSET_MANAGER_NAME;
+#endif
 	}
 	EShaderAssetManager::~EShaderAssetManager()
 	{
@@ -277,7 +279,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadVertexShaderAsset(std::string& loadPath, const EVertexShaderAsset*& outShaderAsset)
 	{
-		EVertexShaderAsset* resultShaderAsset = m_VSManager.Find(std::move(loadPath));
+		EVertexShaderAsset* resultShaderAsset = m_VSManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
@@ -309,7 +311,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadPixelShaderAsset(std::string& loadPath, const EPixelShaderAsset*& outShaderAsset)
 	{
-		EPixelShaderAsset* resultShaderAsset = m_PSManager.Find(std::move(loadPath));
+		EPixelShaderAsset* resultShaderAsset = m_PSManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
@@ -341,7 +343,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadComputeShaderAsset(std::string& loadPath, const EComputeShaderAsset*& outShaderAsset)
 	{
-		EComputeShaderAsset* resultShaderAsset = m_CSManager.Find(std::move(loadPath));
+		EComputeShaderAsset* resultShaderAsset = m_CSManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
