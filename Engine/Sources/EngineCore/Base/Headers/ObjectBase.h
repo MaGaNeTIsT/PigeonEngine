@@ -15,7 +15,7 @@ namespace PigeonEngine
 	public:
 		BOOL operator==(const EObjectBase& obj);
 		BOOL operator!=(const EObjectBase& obj);
-	protected:
+	private:
 		ULONGLONG m_UniqueID;
 #ifdef _DEVELOPMENT_EDITOR
 	public:

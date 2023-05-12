@@ -314,6 +314,9 @@
     <ClInclude Include="Engine\Sources\Development\Headers\EngineDebugName.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Object.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\PScene.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\GameActor.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\ActorComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp">
@@ -472,6 +475,9 @@
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\PScene.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\GameActor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\ActorComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">

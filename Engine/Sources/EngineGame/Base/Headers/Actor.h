@@ -12,11 +12,7 @@ namespace PigeonEngine
 		EClass(PActor, PObject)
 
 	public:
-		virtual void	Update() = 0;
-		virtual void	FixedUpdate() = 0;
-#ifdef _DEVELOPMENT_EDITOR
-		virtual void	EditorUpdate() = 0;
-#endif
+		virtual void	FixedTick(FLOAT deltaTime) = 0;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
 

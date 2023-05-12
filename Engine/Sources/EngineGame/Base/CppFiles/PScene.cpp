@@ -3,4 +3,11 @@
 namespace PigeonEngine
 {
 
+	PScene::PScene()
+	{
+	}
+	PScene::~PScene()
+	{
+	}
+
 };

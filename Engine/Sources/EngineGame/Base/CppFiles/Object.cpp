@@ -3,7 +3,7 @@
 namespace PigeonEngine
 {
 
-	PObject::PObject()
+	PObject::PObject() : m_Active(FALSE)
 	{
 	}
 	PObject::~PObject()
@@ -15,5 +15,17 @@ namespace PigeonEngine
 		m_Name = name;
 	}
 #endif
+	BOOL PObject::IsActive()const
+	{
+		return m_Active;
+	}
+	void PObject::Active()
+	{
+		m_Active = TRUE;
+	}
+	void PObject::Inactive()
+	{
+		m_Active = FALSE;
+	}
 
 };

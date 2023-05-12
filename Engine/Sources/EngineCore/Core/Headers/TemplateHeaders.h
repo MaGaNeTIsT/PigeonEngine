@@ -24,6 +24,22 @@ namespace PigeonEngine
 		_ClassName(const _ClassName&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
 
+#define CLASS_COPY_BODY(_ClassName) \
+	public:\
+		_ClassName();\
+		~_ClassName();\
+	public:\
+		_ClassName(const _ClassName& other);\
+		_ClassName& operator=(const _ClassName& other);\
+
+#define CLASS_VIRTUAL_COPY_BODY(_ClassName) \
+	public:\
+		_ClassName();\
+		virtual ~_ClassName();\
+	public:\
+		_ClassName(const _ClassName& other);\
+		_ClassName& operator=(const _ClassName& other);\
+
 #define CLASS_SINGLETON_BODY(_ClassName) \
 	private:\
 		_ClassName();\

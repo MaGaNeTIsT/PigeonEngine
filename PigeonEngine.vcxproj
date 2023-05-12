@@ -50,6 +50,9 @@
     <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\BaseAsset.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\ShaderAsset.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Actor.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\GameActor.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Object.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\PScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
@@ -125,6 +128,9 @@
     <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Timer.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\ShaderAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Actor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\GameActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\PScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
