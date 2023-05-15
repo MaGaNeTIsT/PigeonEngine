@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../../../EngineCore/Core/Headers/Main.h"
-#include "./Object.h"
+#include "../Object.h"
 
 namespace PigeonEngine
 {
@@ -15,6 +15,7 @@ namespace PigeonEngine
 		virtual void	Init()override;
 		virtual void	Uninit()override;
 		virtual void	Tick(FLOAT deltaTime)override;
+		virtual void	FixedTick(FLOAT deltaTime);
 #ifdef _DEVELOPMENT_EDITOR
 		virtual void	EditorTick(FLOAT deltaTime)override;
 #endif

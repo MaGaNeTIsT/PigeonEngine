@@ -315,8 +315,10 @@
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Object.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\PScene.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\GameActor.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\SceneComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp">
@@ -476,8 +478,10 @@
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\PScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\GameActor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\Component.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\SceneComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">

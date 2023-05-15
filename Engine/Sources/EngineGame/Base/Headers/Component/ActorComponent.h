@@ -13,6 +13,11 @@ namespace PigeonEngine
 
 	public:
 
+	public:
+		virtual BOOL	ContainTransform()const;
+	protected:
+		PActorComponent*				ParentActorComponent;
+		std::vector<PActorComponent*>	ChildrenActorComponent;
 
 		CLASS_VIRTUAL_COPY_BODY(PActorComponent)
 

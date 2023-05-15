@@ -53,6 +53,7 @@
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\ActorComponent.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Component.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\SceneComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Transform.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\GameActor.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Object.h" />
     <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\PScene.h" />
@@ -351,6 +352,7 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
+    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\GameActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\PScene.cpp" />

@@ -8,24 +8,24 @@ namespace PigeonEngine
 #define EClass(Type, ParentType) \
     public:\
         static const char* TypeName() { return #Type; }\
-        virtual const size_t TypeIdInstance() const { return Type::TypeIdClass(); }\
+        virtual const size_t TypeIdInstance() const override { return Type::TypeIdClass(); }\
         static const size_t TypeIdClass() { static int d = 0; return (size_t) &d; }\
-        virtual ERTTI* QueryInterface( const size_t id )\
+        virtual ERTTI* QueryInterface( const size_t id ) override\
         {\
             if (id == TypeIdClass()) { return (ERTTI*)this; }\
             else { return ParentType::QueryInterface(id); }\
         }\
-        virtual const ERTTI* QueryInterface( const size_t id ) const\
+        virtual const ERTTI* QueryInterface( const size_t id ) const override\
         {\
             if (id == TypeIdClass()) { return (ERTTI*)this; }\
             else { return ParentType::QueryInterface(id); }\
         }\
-        virtual bool Is(const size_t id) const\
+        virtual bool Is(const size_t id) const override\
         {\
             if (id == TypeIdClass()) { return true; }\
             else { return ParentType::Is(id); }\
         }\
-        virtual bool Is(const char* name) const\
+        virtual bool Is(const char* name) const override\
         {\
             if (name == TypeName()) { return true; }\
             else { return ParentType::Is(name); }\
