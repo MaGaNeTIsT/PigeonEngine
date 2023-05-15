@@ -1,4 +1,4 @@
-#include "../Headers/ActorComponent.h"
+#include "../../Headers/Component/ActorComponent.h"
 
 namespace PigeonEngine
 {
