@@ -23,4 +23,16 @@ namespace PigeonEngine
 
 	};
 
+	enum class EMobilityTypes : UINT8
+	{
+		EMT_STATIC,
+		EMT_DYNAMIC,
+		EMT_STATION,
+	};
+
+	enum class ECoordinateSpaceTypes : UINT8
+	{
+		ECST_LOCAL,
+		ECST_WORLD,
+	};
 };
