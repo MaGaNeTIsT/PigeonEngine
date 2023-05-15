@@ -14,9 +14,9 @@ A game engine for pc (DirectX 11).
 | ---- | ---- |
 | _TClass_ | Naming conventions for template classes **START** with a "T" |
 | _EnumType_ | Naming conventions for enum type **END** with a "Type" |
-| _EClass_ | Naming conventions for general classes in engines **START** with a "E" |
-| _PClass_ | Naming conventions for game object classes **START** with a "P" |
-| _RClass_ | Naming conventions for render pipeline classes **START** with a "R" |
+| _EClass_ _EStruct_ | Naming conventions for general classes in engines **START** with a "E" |
+| _PClass_ _PStruct_ | Naming conventions for game object classes **START** with a "P" |
+| _RClass_ _RStruct_ | Naming conventions for render pipeline classes **START** with a "R" |
 
 ## Engine System
 
