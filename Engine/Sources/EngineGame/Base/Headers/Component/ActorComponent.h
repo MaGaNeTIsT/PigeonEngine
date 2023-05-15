@@ -6,6 +6,7 @@
 namespace PigeonEngine
 {
 
+	class PActor;
 	class PActorComponent : public PComponent
 	{
 
@@ -21,6 +22,12 @@ namespace PigeonEngine
 
 		CLASS_VIRTUAL_COPY_BODY(PActorComponent)
 
+	public:
+		PActor* GetOwnerActor()const;
+	protected:
+		void    SetOwnerActor(PActor* NewOwner);
+	private:
+		PActor* Owner = nullptr;
 	};
 
 };

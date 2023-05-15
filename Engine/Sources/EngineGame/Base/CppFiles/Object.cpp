@@ -9,6 +9,16 @@ namespace PigeonEngine
 	PObject::~PObject()
 	{
 	}
+
+	void PObject::SetIsTickable(const BOOL& bTickable)
+	{
+		this->bCanTick = bTickable;
+	}
+
+	BOOL PObject::IsTickable() const
+	{
+		return this->bCanTick;
+	}
 #ifdef _DEVELOPMENT_EDITOR
 	void PObject::SetName(const std::string& name)
 	{

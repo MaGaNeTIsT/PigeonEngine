@@ -17,10 +17,23 @@ namespace PigeonEngine
 		virtual BOOL	ContainTransform()const override;
 	protected:
 		ETransform	Transform;
-
+		
 
 		CLASS_VIRTUAL_COPY_BODY(PSceneComponent)
 
+    public:
+    	// WIP
+    	// 1 attach rules
+    	// 2 relative transform
+
+    	// Attach this component to another component
+    	void AttachToComponent(PSceneComponent* AttachTo);
+    	// Attach another component to this
+    	void AttachComponentTo(PSceneComponent* Component);
+    	static void AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo);
+    	
+    private:
+    	PSceneComponent* AttachedParentComponent = nullptr;
     };
 
 };
