@@ -4,7 +4,7 @@
 namespace PigeonEngine
 {
 
-	PActorComponent::PActorComponent() : ParentActorComponent(nullptr)
+	PActorComponent::PActorComponent() 
 	{
 	}
 	PActorComponent::~PActorComponent()
@@ -31,13 +31,6 @@ namespace PigeonEngine
 	{
 		return FALSE;
 	}
-	const class ETransform* PActorComponent::GetTransform()const
-	{
-		return nullptr;
-	}
-	const PActorComponent* PActorComponent::GetParent()const
-	{
-		return ParentActorComponent;
-	}
+
 
 };

@@ -1,5 +1,6 @@
 #include "../../Headers/Component/Transform.h"
 #include "../../Headers/Component/ActorComponent.h"
+#include "../../Headers/Component/SceneComponent.h"
 
 namespace PigeonEngine
 {
@@ -21,7 +22,7 @@ namespace PigeonEngine
 		return (*this);
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToMatrix4x4(const PActorComponent* InParentComponent)const
+	Matrix4x4 ETransform::ToMatrix4x4(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -41,7 +42,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetLocation(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetLocation(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -58,7 +59,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Quaternion ETransform::GetRotation(const PActorComponent* InParentComponent)const
+	Quaternion ETransform::GetRotation(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -75,7 +76,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetScaling(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetScaling(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -92,7 +93,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetForwardVector(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetForwardVector(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -109,7 +110,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetUpVector(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetUpVector(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -126,7 +127,7 @@ namespace PigeonEngine
 		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetRightVector(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetRightVector(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -142,14 +143,14 @@ namespace PigeonEngine
 			return (Vector3::XVector());
 		}
 	}
-	Matrix4x4 ETransform::GetLocalToWorldMatrix(const PActorComponent* InParentComponent)const
+	Matrix4x4 ETransform::GetLocalToWorldMatrix(const PSceneComponent* InParentComponent)const
 	{
 		return Matrix4x4(
 			GetWorldLocationInternal(InParentComponent),
 			GetWorldRotationInternal(InParentComponent),
 			GetWorldScalingInternal(InParentComponent));
 	}
-	Matrix4x4 ETransform::GetWorldToLocalMatrix(const PActorComponent* InParentComponent)const
+	Matrix4x4 ETransform::GetWorldToLocalMatrix(const PSceneComponent* InParentComponent)const
 	{
 		Matrix4x4 Result(
 			GetWorldLocationInternal(InParentComponent),
@@ -157,43 +158,43 @@ namespace PigeonEngine
 			GetWorldScalingInternal(InParentComponent));
 		return (Result.Inverse());
 	}
-	Vector3 ETransform::GetForwardVectorInternal(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetForwardVectorInternal(const PSceneComponent* InParentComponent)const
 	{
 		Quaternion WorldRot(LocalRotation);
 		GetWorldRotationInternal(WorldRot, InParentComponent);
 		return (WorldRot.MultiplyVector(Vector3::ZVector()));
 	}
-	Vector3 ETransform::GetUpVectorInternal(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetUpVectorInternal(const PSceneComponent* InParentComponent)const
 	{
 		Quaternion WorldRot(LocalRotation);
 		GetWorldRotationInternal(WorldRot, InParentComponent);
 		return (WorldRot.MultiplyVector(Vector3::YVector()));
 	}
-	Vector3 ETransform::GetRightVectorInternal(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetRightVectorInternal(const PSceneComponent* InParentComponent)const
 	{
 		Quaternion WorldRot(LocalRotation);
 		GetWorldRotationInternal(WorldRot, InParentComponent);
 		return (WorldRot.MultiplyVector(Vector3::XVector()));
 	}
-	Vector3 ETransform::GetWorldLocationInternal(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetWorldLocationInternal(const PSceneComponent* InParentComponent)const
 	{
 		Vector3 Result(LocalLocation);
 		GetWorldLocationInternal(Result, InParentComponent);
 		return Result;
 	}
-	Quaternion ETransform::GetWorldRotationInternal(const PActorComponent* InParentComponent)const
+	Quaternion ETransform::GetWorldRotationInternal(const PSceneComponent* InParentComponent)const
 	{
 		Quaternion Result(LocalRotation);
 		GetWorldRotationInternal(Result, InParentComponent);
 		return Result;
 	}
-	Vector3 ETransform::GetWorldScalingInternal(const PActorComponent* InParentComponent)const
+	Vector3 ETransform::GetWorldScalingInternal(const PSceneComponent* InParentComponent)const
 	{
 		Vector3 Result(LocalScaling);
 		GetWorldScalingInternal(Result, InParentComponent);
 		return Result;
 	}
-	void ETransform::GetWorldLocationInternal(Vector3& InOutWorldLocation, const PActorComponent* InParentComponent)const
+	void ETransform::GetWorldLocationInternal(Vector3& InOutWorldLocation, const PSceneComponent* InParentComponent)const
 	{
 		if (!InParentComponent)
 		{
@@ -203,9 +204,9 @@ namespace PigeonEngine
 		{
 			InOutWorldLocation += ParentTransform->LocalLocation;
 		}
-		GetWorldLocationInternal(InOutWorldLocation, InParentComponent->GetParent());
+		GetWorldLocationInternal(InOutWorldLocation, InParentComponent->GetAttachedParentComponent());
 	}
-	void ETransform::GetWorldRotationInternal(Quaternion& InOutWorldRotation, const PActorComponent* InParentComponent)const
+	void ETransform::GetWorldRotationInternal(Quaternion& InOutWorldRotation, const PSceneComponent* InParentComponent)const
 	{
 		if (!InParentComponent)
 		{
@@ -215,9 +216,9 @@ namespace PigeonEngine
 		{
 			InOutWorldRotation = ParentTransform->LocalRotation * InOutWorldRotation;
 		}
-		GetWorldRotationInternal(InOutWorldRotation, InParentComponent->GetParent());
+		GetWorldRotationInternal(InOutWorldRotation, InParentComponent->GetAttachedParentComponent());
 	}
-	void ETransform::GetWorldScalingInternal(Vector3& InOutWorldScaling, const PActorComponent* InParentComponent)const
+	void ETransform::GetWorldScalingInternal(Vector3& InOutWorldScaling, const PSceneComponent* InParentComponent)const
 	{
 		if (!InParentComponent)
 		{
@@ -227,7 +228,7 @@ namespace PigeonEngine
 		{
 			InOutWorldScaling *= ParentTransform->LocalScaling;
 		}
-		GetWorldScalingInternal(InOutWorldScaling, InParentComponent->GetParent());
+		GetWorldScalingInternal(InOutWorldScaling, InParentComponent->GetAttachedParentComponent());
 	}
 
 };

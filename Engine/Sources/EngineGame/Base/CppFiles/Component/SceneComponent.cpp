@@ -31,6 +31,12 @@ namespace PigeonEngine
 		}
 		AttachTo->AttachedParentComponent = AttachTo;
 		AttachTo->SetOwnerActor(AttachTo->GetOwnerActor());
+		AttachTo->ChildrenComponents.insert(Component);
+	}
+
+	PSceneComponent* PSceneComponent::GetAttachedParentComponent() const
+	{
+		return this->AttachedParentComponent;
 	}
 
 	BOOL PSceneComponent::ContainTransform()const

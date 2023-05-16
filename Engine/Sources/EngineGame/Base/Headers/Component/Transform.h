@@ -1,14 +1,15 @@
 #pragma once
 
 #include <Main.h>
+
+
 #include "../../../../EngineCore/Base/Headers/BaseType.h"
 #include "../../../../EngineCore/Base/Headers/ObjectBase.h"
 
 namespace PigeonEngine
 {
-
-	class PActorComponent;
-
+	
+	class PSceneComponent;
 	enum class ECoordinateSpaceType : UINT8
 	{
 		ECST_LOCAL,
@@ -29,32 +30,32 @@ namespace PigeonEngine
 
 	public:
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToMatrix4x4(const PActorComponent* InParentComponent = nullptr)const;
+		Matrix4x4	ToMatrix4x4(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetLocation(const PActorComponent* InParentComponent = nullptr)const;
+		Vector3		GetLocation(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Quaternion	GetRotation(const PActorComponent* InParentComponent = nullptr)const;
+		Quaternion	GetRotation(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetScaling(const PActorComponent* InParentComponent = nullptr)const;
+		Vector3		GetScaling(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetForwardVector(const PActorComponent* InParentComponent = nullptr)const;
+		Vector3		GetForwardVector(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetUpVector(const PActorComponent* InParentComponent = nullptr)const;
+		Vector3		GetUpVector(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetRightVector(const PActorComponent* InParentComponent = nullptr)const;
+		Vector3		GetRightVector(const PSceneComponent* InParentComponent = nullptr)const;
 	public:
-		Matrix4x4	GetLocalToWorldMatrix(const PActorComponent* InParentComponent)const;
-		Matrix4x4	GetWorldToLocalMatrix(const PActorComponent* InParentComponent)const;
+		Matrix4x4	GetLocalToWorldMatrix(const PSceneComponent* InParentComponent)const;
+		Matrix4x4	GetWorldToLocalMatrix(const PSceneComponent* InParentComponent)const;
 	private:
-		Vector3		GetForwardVectorInternal(const PActorComponent* InParentComponent)const;
-		Vector3		GetUpVectorInternal(const PActorComponent* InParentComponent)const;
-		Vector3		GetRightVectorInternal(const PActorComponent* InParentComponent)const;
-		Vector3		GetWorldLocationInternal(const PActorComponent* InParentComponent)const;
-		Quaternion	GetWorldRotationInternal(const PActorComponent* InParentComponent)const;
-		Vector3		GetWorldScalingInternal(const PActorComponent* InParentComponent)const;
-		void	GetWorldLocationInternal(Vector3& InOutWorldLocation, const PActorComponent* InParentComponent)const;
-		void	GetWorldRotationInternal(Quaternion& InOutWorldRotation, const PActorComponent* InParentComponent)const;
-		void	GetWorldScalingInternal(Vector3& InOutWorldScaling, const PActorComponent* InParentComponent)const;
+		Vector3		GetForwardVectorInternal(const PSceneComponent* InParentComponent)const;
+		Vector3		GetUpVectorInternal(const PSceneComponent* InParentComponent)const;
+		Vector3		GetRightVectorInternal(const PSceneComponent* InParentComponent)const;
+		Vector3		GetWorldLocationInternal(const PSceneComponent* InParentComponent)const;
+		Quaternion	GetWorldRotationInternal(const PSceneComponent* InParentComponent)const;
+		Vector3		GetWorldScalingInternal(const PSceneComponent* InParentComponent)const;
+		void	GetWorldLocationInternal(Vector3& InOutWorldLocation, const PSceneComponent* InParentComponent)const;
+		void	GetWorldRotationInternal(Quaternion& InOutWorldRotation, const PSceneComponent* InParentComponent)const;
+		void	GetWorldScalingInternal(Vector3& InOutWorldScaling, const PSceneComponent* InParentComponent)const;
 	protected:
 		Vector3		LocalLocation;
 		Quaternion	LocalRotation;

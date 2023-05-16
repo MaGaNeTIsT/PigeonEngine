@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <Main.h>
+#include <set>
+
 #include "./ActorComponent.h"
 #include "./Transform.h"
 
@@ -23,8 +25,8 @@ namespace PigeonEngine
     	Vector3    GetComponentWorldLocation() const;
     	Quaternion GetComponentWorldRotation() const;
     	Vector3    GetComponentWorldScale() const;
-
-        virtual const ETransform* GetTransform()const override;
+    	
+    	const ETransform* GetTransform()const ;
 
 	protected:
         ETransform	Transform;
@@ -42,9 +44,10 @@ namespace PigeonEngine
     	// Attach another component to this
     	void AttachComponentTo(PSceneComponent* Component);
     	static void AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo);
-    	
+    	PSceneComponent* GetAttachedParentComponent()const;
     private:
     	PSceneComponent* AttachedParentComponent = nullptr;
+    	std::set<PSceneComponent*> ChildrenComponents;
     };
 
 };
