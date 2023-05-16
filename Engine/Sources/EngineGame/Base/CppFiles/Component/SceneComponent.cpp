@@ -11,14 +11,6 @@ namespace PigeonEngine
 	PSceneComponent::~PSceneComponent()
 	{
 	}
-	PSceneComponent::PSceneComponent(const PSceneComponent& other)
-	{
-	}
-	PSceneComponent& PSceneComponent::operator=(const PSceneComponent& other)
-	{
-		//TODO
-		return (*this);
-	}
 
 	void PSceneComponent::AttachToComponent(PSceneComponent* AttachTo)
 	{
@@ -44,6 +36,10 @@ namespace PigeonEngine
 	BOOL PSceneComponent::ContainTransform()const
 	{
 		return TRUE;
+	}
+	const ETransform* PSceneComponent::GetTransform()const
+	{
+		return (&Transform);
 	}
 
 };

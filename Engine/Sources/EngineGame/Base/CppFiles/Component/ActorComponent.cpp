@@ -1,5 +1,4 @@
 #include "../../Headers/Component/ActorComponent.h"
-
 #include "../../Headers/Actor.h"
 
 namespace PigeonEngine
@@ -10,21 +9,6 @@ namespace PigeonEngine
 	}
 	PActorComponent::~PActorComponent()
 	{
-	}
-	PActorComponent::PActorComponent(const PActorComponent& other) : PComponent(other)
-	{
-		ParentActorComponent = other.ParentActorComponent;
-		ChildrenActorComponent = other.ChildrenActorComponent;
-	}
-	PActorComponent& PActorComponent::operator=(const PActorComponent& other)
-	{
-		m_Active = other.m_Active;
-#ifdef _DEVELOPMENT_EDITOR
-		m_Name = other.m_Name;
-#endif
-		ParentActorComponent = other.ParentActorComponent;
-		ChildrenActorComponent = other.ChildrenActorComponent;
-		return (*this);
 	}
 
 	PActor* PActorComponent::GetOwnerActor() const
@@ -46,6 +30,14 @@ namespace PigeonEngine
 	BOOL PActorComponent::ContainTransform()const
 	{
 		return FALSE;
+	}
+	const class ETransform* PActorComponent::GetTransform()const
+	{
+		return nullptr;
+	}
+	const PActorComponent* PActorComponent::GetParent()const
+	{
+		return ParentActorComponent;
 	}
 
 };
