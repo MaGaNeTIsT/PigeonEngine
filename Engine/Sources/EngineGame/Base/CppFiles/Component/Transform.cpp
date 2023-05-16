@@ -121,7 +121,7 @@ namespace PigeonEngine
 		}
 		else
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetForwardVector enum check coordinate space type failed.");
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetUpVector enum check coordinate space type failed.");
 			return (Vector3::YVector());
 		}
 	}
@@ -138,7 +138,7 @@ namespace PigeonEngine
 		}
 		else
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetForwardVector enum check coordinate space type failed.");
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetRightVector enum check coordinate space type failed.");
 			return (Vector3::XVector());
 		}
 	}
