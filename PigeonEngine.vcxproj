@@ -805,7 +805,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/Headers/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
     <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

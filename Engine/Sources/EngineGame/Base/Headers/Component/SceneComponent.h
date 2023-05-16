@@ -14,7 +14,7 @@ namespace PigeonEngine
 	public:
 
 	public:
-		virtual BOOL	ContainTransform()const override;
+		virtual BOOL ContainTransform()const override;
 	protected:
 		ETransform	Transform;
 		
