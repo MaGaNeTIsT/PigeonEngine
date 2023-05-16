@@ -42,11 +42,6 @@ namespace PigeonEngine
 		return (&Transform);
 	}
 
-	ETransform PSceneComponent::GetComponentTransform() const
-	{
-		return this->Transform;
-	}
-
 	Vector3 PSceneComponent::GetComponentLocation() const
 	{
 		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
