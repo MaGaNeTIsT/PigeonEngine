@@ -1,7 +1,9 @@
 #pragma once
 
+#include <Main.h>
 namespace PigeonEngine
 {
+	// class std::string;
 #ifdef _DEVELOPMENT_EDITOR
 	class DWindowsMessage
 	{
