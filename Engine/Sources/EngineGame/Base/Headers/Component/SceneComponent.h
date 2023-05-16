@@ -13,19 +13,21 @@ namespace PigeonEngine
 
 		EClass(PSceneComponent, PActorComponent)
 
-	public:
-
+	
 	public:
 		virtual BOOL ContainTransform()const override;
 
-    	Vector3    GetComponentLocation() const;
-    	Quaternion GetComponentRotation() const;
-    	Vector3    GetComponentScale() const;
+    	Vector3    GetComponentLocalLocation() const;
+    	Quaternion GetComponentLocalRotation() const;
+    	Vector3    GetComponentLocalScale() const;
 
     	Vector3    GetComponentWorldLocation() const;
     	Quaternion GetComponentWorldRotation() const;
     	Vector3    GetComponentWorldScale() const;
-    	
+
+    	Vector3 GetComponentForwardVector()const;
+    	Vector3 GetComponentRightVector()const;
+    	Vector3 GetComponentUpVector()const;
     	const ETransform* GetTransform()const ;
 
 	protected:
