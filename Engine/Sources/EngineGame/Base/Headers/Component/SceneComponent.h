@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "../../../../EngineCore/Core/Headers/Main.h"
+#include <Main.h>
 #include "./ActorComponent.h"
 #include "./Transform.h"
 
@@ -15,6 +15,15 @@ namespace PigeonEngine
 
 	public:
 		virtual BOOL ContainTransform()const override;
+
+    	ETransform GetComponentTransform() const;
+    	Vector3    GetComponentLocation() const;
+    	Quaternion GetComponentRotation() const;
+    	Vector3    GetComponentScale() const;
+
+    	Vector3    GetComponentWorldLocation() const;
+    	Quaternion GetComponentWorldRotation() const;
+    	Vector3    GetComponentWorldScale() const;
 	protected:
 		ETransform	Transform;
 		

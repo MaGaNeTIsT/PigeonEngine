@@ -46,4 +46,38 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	ETransform PSceneComponent::GetComponentTransform() const
+	{
+		return this->Transform;
+	}
+
+	Vector3 PSceneComponent::GetComponentLocation() const
+	{
+		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
+	}
+
+	Quaternion PSceneComponent::GetComponentRotation()const
+	{
+		return this->Transform.GetRotation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
+	}
+
+	Vector3 PSceneComponent::GetComponentScale() const
+	{
+		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
+	}
+
+	Vector3 PSceneComponent::GetComponentWorldLocation() const
+	{
+		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent);
+	}
+
+	Quaternion PSceneComponent::GetComponentWorldRotation() const
+	{
+		return this->Transform.GetRotation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent);
+	}
+
+	Vector3 PSceneComponent::GetComponentWorldScale() const
+	{
+		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent);
+	}
 };
