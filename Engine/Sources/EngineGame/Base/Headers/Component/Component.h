@@ -20,7 +20,7 @@ namespace PigeonEngine
 		virtual void	EditorTick(FLOAT deltaTime)override;
 #endif
 
-		CLASS_VIRTUAL_COPY_BODY(PComponent)
+		CLASS_VIRTUAL_NOCOPY_BODY(PComponent)
 
 	};
 

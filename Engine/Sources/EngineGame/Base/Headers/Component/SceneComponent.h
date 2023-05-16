@@ -16,7 +16,6 @@ namespace PigeonEngine
 	public:
 		virtual BOOL ContainTransform()const override;
 
-    	ETransform GetComponentTransform() const;
     	Vector3    GetComponentLocation() const;
     	Quaternion GetComponentRotation() const;
     	Vector3    GetComponentScale() const;
@@ -24,11 +23,14 @@ namespace PigeonEngine
     	Vector3    GetComponentWorldLocation() const;
     	Quaternion GetComponentWorldRotation() const;
     	Vector3    GetComponentWorldScale() const;
+
+        virtual const ETransform* GetTransform()const override;
+
 	protected:
-		ETransform	Transform;
+        ETransform	Transform;
 		
 
-		CLASS_VIRTUAL_COPY_BODY(PSceneComponent)
+        CLASS_VIRTUAL_NOCOPY_BODY(PSceneComponent)
 
     public:
     	// WIP
