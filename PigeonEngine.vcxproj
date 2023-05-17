@@ -22,82 +22,84 @@
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CBezierGrass.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CFuxkingWhySkeletonAnimation.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CReadWriteFile.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CSceneGameObject.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CSceneSkeletonMeshObject.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\DevelopmentDefines.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\BaseType.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Container\Array.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Math.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\ObjectBase.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\FileHelper.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\EngineDebugName.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\TemplateHeaders.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\ErrorCaption.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\Manager.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Input.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Keyboard.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Input\Headers\Mouse.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CSceneGameObject.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CSceneSkeletonMeshObject.h" />
+    <ClInclude Include="Engine\Sources\Development\Alert\DevelopmentDefines.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Math\Math.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\IO\FileHelper.h" />
+    <ClInclude Include="Engine\Sources\Development\Config\EngineDebugName.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\CoreMinimal.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\TemplateHeaders.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Config\ErrorCaption.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Main\Manager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Input.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Keyboard.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Mouse.h" />
     <ClInclude Include="Engine\EngineThirdParty\imGUI\Headers\imGUIManager.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CDebugScreen.h" />
-    <ClInclude Include="Engine\Sources\Development\Headers\CGPUProfiler.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CDebugScreen.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\Development\CGPUProfiler.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h" />
     <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\RTTI.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Base\Headers\Timer.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\BaseAsset.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Asset\Headers\ShaderAsset.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Actor.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\ActorComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Component.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\SceneComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Component\Transform.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\GameActor.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\Object.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Base\Headers\PScene.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CCamera.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CCube.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameBoundComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObject.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameObjectUtilty.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CGameStructCommon.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CMeshComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CLightType.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPlane.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2D.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CPolygon2DBase.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScene.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CScreenPolygon2D.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonAnimationComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkeletonComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineGame\Headers\CSkyBox.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CMeshManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShader.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CShaderManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CSkeletonAnimationManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureType.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\AssetsManager\Headers\CTextureManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUCulling.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQuery.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CGPUQueryManager.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMaterialBase.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CMeshRendererComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\DeviceD3D11.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderBase\Headers\CRenderPipeline.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Headers\Common.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CDynamicWind.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CPostProcessBase.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CGTAOPass.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderFeatures\Headers\CHZBPass.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClearCoatMaterial.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CClothMaterial.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CDefaultLitMaterial.h" />
-    <ClInclude Include="Engine\Sources\EngineRender\RenderMaterials\Headers\CScreenPolygon2DMaterial.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Headers\Main.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Timer\Timer.h" />
+    <ClInclude Include="Engine\Sources\Asset\BaseAsset.h" />
+    <ClInclude Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Actor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\SceneComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\Transform.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\GameActor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Object.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\PScene.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CCamera.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CComponent.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CCube.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CGameBoundComponent.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CGameObject.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CGameObjectUtilty.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CGameStructCommon.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CMeshComponent.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CLightType.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CPlane.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CPolygon2DBase.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CScene.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CScreenPolygon2D.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CSkeletonAnimationComponent.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CSkeletonComponent.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineGame\CSkyBox.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CMeshManager.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CShader.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CShaderManager.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CSkeletonAnimationManager.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CTextureType.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CTextureManager.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUCulling.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUQuery.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUQueryManager.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMaterialBase.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMeshRendererComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\DeviceD3D11.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CRenderPipeline.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Common.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CDynamicWind.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CPostProcessBase.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CGTAOPass.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CHZBPass.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CClearCoatMaterial.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CClothMaterial.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CDefaultLitMaterial.h" />
+    <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CScreenPolygon2DMaterial.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Main\Main.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui_internal.h" />
@@ -109,13 +111,13 @@
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonObject.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CBezierGrass.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CFuxkingWhySkeletonAnimation.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CReadWriteFile.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneGameObject.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CSceneSkeletonMeshObject.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\DevelopmentDefines.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Container\Array.cpp">
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CSceneGameObject.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CSceneSkeletonMeshObject.cpp" />
+    <ClCompile Include="Engine\Sources\Development\Alert\DevelopmentDefines.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -189,23 +191,23 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Math.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\ObjectBase.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\FileHelper.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Manager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Input.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Keyboard.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Input\CppFiles\Mouse.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Math\Math.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\IO\FileHelper.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Main\Manager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Input.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Keyboard.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Mouse.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\imGUI\CppFiles\imGUIManager.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CDebugScreen.cpp" />
-    <ClCompile Include="Engine\Sources\Development\CppFiles\CGPUProfiler.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CDebugScreen.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\Development\CGPUProfiler.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CBaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp" />
     <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Base\CppFiles\Timer.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Asset\CppFiles\ShaderAsset.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Actor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\ActorComponent.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Timer\Timer.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Actor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\ActorComponent.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -279,7 +281,7 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\Component.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\Component.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -353,7 +355,7 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\SceneComponent.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\SceneComponent.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <Optimization>Disabled</Optimization>
@@ -427,46 +429,46 @@
       <SDLCheck>true</SDLCheck>
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Component\Transform.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\GameActor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\Object.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\Base\CppFiles\PScene.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCamera.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CCube.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameBoundComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CGameObject.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CLightType.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPlane.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2D.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CPolygon2DBase.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScene.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CScreenPolygon2D.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonAnimationComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkeletonComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineGame\CppFiles\CSkyBox.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CMeshManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShader.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CShaderManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CSkeletonAnimationManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureType.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\AssetsManager\CppFiles\CTextureManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUCulling.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQuery.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CGPUQueryManager.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMaterialBase.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CMeshRendererComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\CppFiles\DeviceD3D11.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderBase\CppFiles\CRenderPipeline.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CDynamicWind.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CPostProcessBase.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CGTAOPass.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderFeatures\CppFiles\CHZBPass.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClearCoatMaterial.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CClothMaterial.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CDefaultLitMaterial.cpp" />
-    <ClCompile Include="Engine\Sources\EngineRender\RenderMaterials\CppFiles\CScreenPolygon2DMaterial.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\CppFiles\Main.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\Transform.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\GameActor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Object.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\PScene.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CCamera.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CComponent.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CCube.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CGameBoundComponent.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CGameObject.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CLightType.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CPlane.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CPolygon2DBase.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CScene.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CScreenPolygon2D.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CSkeletonAnimationComponent.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CSkeletonComponent.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineGame\CSkyBox.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CMeshManager.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CShader.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CShaderManager.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CSkeletonAnimationManager.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CTextureType.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CTextureManager.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUCulling.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUQuery.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CGPUQueryManager.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMaterialBase.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMeshRendererComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\DeviceD3D11.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CRenderPipeline.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CDynamicWind.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CPostProcessBase.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CGTAOPass.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CHZBPass.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CClearCoatMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CClothMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CDefaultLitMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderMaterials\CScreenPolygon2DMaterial.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_demo.cpp" />
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_draw.cpp" />
@@ -490,37 +492,37 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderDefCommon.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderDefCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFastMath.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFastMath.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderSpaceTransform.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderSpaceTransform.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderVariables.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderVariables.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -528,7 +530,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -536,7 +538,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -544,7 +546,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -552,7 +554,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -560,7 +562,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -568,7 +570,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -576,7 +578,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -584,7 +586,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -592,7 +594,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -600,7 +602,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -608,7 +610,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -616,7 +618,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -624,7 +626,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -632,7 +634,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -640,7 +642,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -648,7 +650,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -656,7 +658,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -664,7 +666,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -672,7 +674,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
@@ -680,7 +682,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -688,7 +690,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -696,7 +698,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -704,7 +706,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -712,7 +714,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
@@ -720,10 +722,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -731,7 +733,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -739,7 +741,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -747,7 +749,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -755,7 +757,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -763,7 +765,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -771,7 +773,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -779,10 +781,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <None Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
@@ -790,7 +792,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -798,7 +800,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -806,7 +808,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
@@ -814,7 +816,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
@@ -880,7 +882,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>./Engine/Sources/EngineCore/Core/Headers/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
     <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

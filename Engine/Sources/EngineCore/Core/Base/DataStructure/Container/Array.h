@@ -1,22 +1,24 @@
 ﻿#pragma once
 
 #include <Main.h>
+
 namespace PigeonEngine
 {
     template <typename T>
-    class EArray
+    class TArray
     {
         
     public:
-        EArray();
-        EArray(const EArray<T>& Other);
-        ~EArray();
+        TArray();
+        TArray(const TArray<T>& Other);
+        ~TArray();
         
         T& operator[](const UINT& Index);
 
         UINT Add     (const T& Element);
         T&   Get     (const UINT& Index) const;
         UINT Find    (const T& Element)const;
+        void Resize  (const UINT& NewSize);
         void RemoveAt(const UINT& Index);
         void Remove  (const T& Element);
         void Clear   ();
@@ -26,6 +28,4 @@ namespace PigeonEngine
     private:
         class std::vector<T> Elements;
     };
-
-    
 };

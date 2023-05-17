@@ -4,12 +4,12 @@
 namespace PigeonEngine
 {
     template <typename T>
-    EArray<T>::EArray()
+    TArray<T>::TArray()
     {
     }
 
     template <typename T>
-    EArray<T>::EArray(const EArray<T>& Other)
+    TArray<T>::TArray(const TArray<T>& Other)
     {
         for(UINT i = 0; i < Other.Length() - 1; ++i)
         {
@@ -18,46 +18,46 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    EArray<T>::~EArray()
+    TArray<T>::~TArray()
     {
         
     }
 
     template <typename T>
-    T& EArray<T>::operator[](const UINT& Index)
+    T& TArray<T>::operator[](const UINT& Index)
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return Elements[Index];
     }
 
     template <typename T>
-    UINT EArray<T>::Last() const
+    UINT TArray<T>::Last() const
     {
         return Length() > 0 ? Length() - 1 : 0;
     }
 
     template <typename T>
-    UINT EArray<T>::Add(const T& Element)
+    UINT TArray<T>::Add(const T& Element)
     {
         return this->Elements.push_back(Element);
     }
 
     template <typename T>
-    T& EArray<T>::Get(const UINT& Index) const
+    T& TArray<T>::Get(const UINT& Index) const
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return Elements[Index];
     }
 
     template <typename T>
-    void EArray<T>::RemoveAt(const UINT& Index)
+    void TArray<T>::RemoveAt(const UINT& Index)
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         this->Elements.erase(Elements.begin() + Index - 1);
     }
 
     template <typename T>
-    void EArray<T>::Remove(const T& Element)
+    void TArray<T>::Remove(const T& Element)
     {
         if(const UINT i = Find(Element) != -1)
         {
@@ -66,13 +66,13 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void EArray<T>::Clear()
+    void TArray<T>::Clear()
     {
         Elements.clear();
     }
 
     template <typename T>
-    UINT EArray<T>::Find(const T& Element) const
+    UINT TArray<T>::Find(const T& Element) const
     {
         for(UINT i = 0; i < Elements.size();++i)
         {
@@ -85,7 +85,16 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    UINT EArray<T>::Length() const
+    void TArray<T>::Resize(const UINT& NewSize)
+    {
+        if ((NewSize > 0u) && (this->Elements.size() != NewSize))
+        {
+            this->Elements.resize(NewSize);
+        }
+    }
+
+    template <typename T>
+    UINT TArray<T>::Length() const
     {
         return this->Elements.size();
     }
