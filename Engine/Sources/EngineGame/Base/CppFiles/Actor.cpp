@@ -75,7 +75,36 @@ namespace PigeonEngine
 		this->RootComponent = NewRoot;
 	}
 
+	Vector3 PActor::GetActorLocation() const
+	{
+		return this->RootComponent->GetComponentLocalLocation();
+	}
 
+	Quaternion PActor::GetActorRotation() const
+	{
+		return this->RootComponent->GetComponentLocalRotation();
+	}
+
+	Vector3 PActor::GetActorScale() const
+	{
+		return this->RootComponent->GetComponentLocalScale();
+	}
+
+	Vector3 PActor::GetActorForwardVector() const
+	{
+		return this->RootComponent->GetComponentForwardVector();
+	}
+
+	Vector3 PActor::GetActorRightVector() const
+	{
+		return this->RootComponent->GetComponentRightVector();
+	}
+
+	Vector3 PActor::GetActorUpVector() const
+	{
+		return this->RootComponent->GetComponentUpVector();
+	}
+	
 	void PActor::AttachComponent(PSceneComponent* Component)
 	{
 		AttachComponentToActor(Component, this);

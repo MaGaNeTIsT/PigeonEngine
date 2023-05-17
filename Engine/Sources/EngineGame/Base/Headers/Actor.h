@@ -4,7 +4,7 @@
 
 #include "../../../EngineCore/Core/Headers/Main.h"
 #include "./Object.h"
-
+#include "./Component/Transform.h"
 
 
 namespace PigeonEngine
@@ -40,7 +40,15 @@ namespace PigeonEngine
 	public:
 		PSceneComponent* GetRootComponent() const;
 		void             SetRootComponent(PSceneComponent* NewRoot);
-		
+
+		Vector3    GetActorLocation() const;
+		Quaternion GetActorRotation() const;
+		Vector3    GetActorScale() const;
+
+		Vector3 GetActorForwardVector()const;
+		Vector3 GetActorRightVector()const;
+		Vector3 GetActorUpVector()const;
+
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
@@ -49,7 +57,7 @@ namespace PigeonEngine
 		// WIP
 		// 1 attach rules
 		// 2 relative transform
-		void AttachComponent(PSceneComponent* Component);
+		void        AttachComponent(PSceneComponent* Component);
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor);
 
 		// if NewComponent is a PSceneComponent, please DO NOT call this directly

@@ -48,17 +48,17 @@ namespace PigeonEngine
 		return (&Transform);
 	}
 
-	Vector3 PSceneComponent::GetComponentLocation() const
+	Vector3 PSceneComponent::GetComponentLocalLocation() const
 	{
 		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
 	}
 
-	Quaternion PSceneComponent::GetComponentRotation()const
+	Quaternion PSceneComponent::GetComponentLocalRotation()const
 	{
 		return this->Transform.GetRotation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
 	}
 
-	Vector3 PSceneComponent::GetComponentScale() const
+	Vector3 PSceneComponent::GetComponentLocalScale() const
 	{
 		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent);
 	}
@@ -76,5 +76,20 @@ namespace PigeonEngine
 	Vector3 PSceneComponent::GetComponentWorldScale() const
 	{
 		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent);
+	}
+
+	Vector3 PSceneComponent::GetComponentForwardVector() const
+	{
+		return this->Transform.GetForwardVector<ECoordinateSpaceType::ECST_WORLD>();
+	}
+
+	Vector3 PSceneComponent::GetComponentRightVector() const
+	{
+		return this->Transform.GetRightVector<ECoordinateSpaceType::ECST_WORLD>();
+	}
+
+	Vector3 PSceneComponent::GetComponentUpVector() const
+	{
+		return this->Transform.GetUpVector<ECoordinateSpaceType::ECST_WORLD>();
 	}
 };
