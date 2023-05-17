@@ -1,9 +1,7 @@
 #pragma once
 
-#include "../RTTI.h"
-#include "../TemplateHeaders.h"
-#include "./BuiltInType.h"
 
+#include <CoreMinimal.h>
 namespace PigeonEngine
 {
 

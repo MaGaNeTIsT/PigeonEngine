@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Main/Main.h"
+#include <CoreMinimal.h>
 #include "./Mouse.h"
 #include "./Keyboard.h"
 

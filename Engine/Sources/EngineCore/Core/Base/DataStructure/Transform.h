@@ -1,10 +1,7 @@
 #pragma once
 
-#include <Main.h>
+#include <CoreMinimal.h>
 
-
-#include "../../../../EngineCore/Base/Headers/BaseType.h"
-#include "../../../../EngineCore/Base/Headers/ObjectBase.h"
 
 namespace PigeonEngine
 {

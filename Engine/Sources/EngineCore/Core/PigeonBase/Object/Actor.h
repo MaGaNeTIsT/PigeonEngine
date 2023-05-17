@@ -2,9 +2,9 @@
 
 #include <set>
 
-#include "../../../EngineCore/Core/Headers/Main.h"
+#include <CoreMinimal.h>
 #include "./Object.h"
-#include "./Component/Transform.h"
+
 
 
 namespace PigeonEngine
