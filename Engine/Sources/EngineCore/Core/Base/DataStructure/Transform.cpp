@@ -142,6 +142,21 @@ namespace PigeonEngine
 			return (Vector3::XVector());
 		}
 	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	void ETransform::SetLocation(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
+	{
+
+	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	void ETransform::SetRotation(const Quaternion& NewValue, const PSceneComponent* InParentComponent)const
+	{
+
+	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	void ETransform::SetScaling(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
+	{
+
+	}
 	Matrix4x4 ETransform::GetLocalToWorldMatrix(const PSceneComponent* InParentComponent)const
 	{
 		return Matrix4x4(
@@ -156,24 +171,6 @@ namespace PigeonEngine
 			GetWorldRotationInternal(InParentComponent),
 			GetWorldScalingInternal(InParentComponent));
 		return (Result.Inverse());
-	}
-	Vector3 ETransform::GetForwardVectorInternal(const PSceneComponent* InParentComponent)const
-	{
-		Quaternion WorldRot(LocalRotation);
-		GetWorldRotationInternal(WorldRot, InParentComponent);
-		return (WorldRot.MultiplyVector(Vector3::ZVector()));
-	}
-	Vector3 ETransform::GetUpVectorInternal(const PSceneComponent* InParentComponent)const
-	{
-		Quaternion WorldRot(LocalRotation);
-		GetWorldRotationInternal(WorldRot, InParentComponent);
-		return (WorldRot.MultiplyVector(Vector3::YVector()));
-	}
-	Vector3 ETransform::GetRightVectorInternal(const PSceneComponent* InParentComponent)const
-	{
-		Quaternion WorldRot(LocalRotation);
-		GetWorldRotationInternal(WorldRot, InParentComponent);
-		return (WorldRot.MultiplyVector(Vector3::XVector()));
 	}
 	Vector3 ETransform::GetWorldLocationInternal(const PSceneComponent* InParentComponent)const
 	{
@@ -228,6 +225,61 @@ namespace PigeonEngine
 			InOutWorldScaling *= ParentTransform->LocalScaling;
 		}
 		GetWorldScalingInternal(InOutWorldScaling, InParentComponent->GetAttachedParentComponent());
+	}
+	Vector3 ETransform::GetForwardVectorInternal(const PSceneComponent* InParentComponent)const
+	{
+		Quaternion WorldRot(LocalRotation);
+		GetWorldRotationInternal(WorldRot, InParentComponent);
+		return (WorldRot.MultiplyVector(Vector3::ZVector()));
+	}
+	Vector3 ETransform::GetUpVectorInternal(const PSceneComponent* InParentComponent)const
+	{
+		Quaternion WorldRot(LocalRotation);
+		GetWorldRotationInternal(WorldRot, InParentComponent);
+		return (WorldRot.MultiplyVector(Vector3::YVector()));
+	}
+	Vector3 ETransform::GetRightVectorInternal(const PSceneComponent* InParentComponent)const
+	{
+		Quaternion WorldRot(LocalRotation);
+		GetWorldRotationInternal(WorldRot, InParentComponent);
+		return (WorldRot.MultiplyVector(Vector3::XVector()));
+	}
+	void ETransform::SetWorldLocationInternal(const Vector3& NewWorldLocation, const PSceneComponent* InParentComponent)
+	{
+		if (InParentComponent)
+		{
+			Vector3 ParentWorldLocation(InParentComponent->GetComponentWorldLocation());
+			LocalLocation = NewWorldLocation - ParentWorldLocation;
+		}
+		else
+		{
+			LocalLocation = NewWorldLocation;
+		}
+	}
+	void ETransform::SetWorldRotationInternal(const Quaternion& NewWorldRotation, const PSceneComponent* InParentComponent)
+	{
+		if (InParentComponent)
+		{
+			Quaternion ParentWorldRotation(InParentComponent->GetComponentWorldRotation());
+			ParentWorldRotation.Inverse();
+			LocalRotation = ParentWorldRotation * NewWorldRotation;
+		}
+		else
+		{
+			LocalRotation = NewWorldRotation;
+		}
+	}
+	void ETransform::SetWorldScalingInternal(const Vector3& NewWorldScaling, const PSceneComponent* InParentComponent)
+	{
+		if (InParentComponent)
+		{
+			Vector3 ParentWorldScaling(InParentComponent->GetComponentWorldScale());
+			LocalScaling = NewWorldScaling / ParentWorldScaling;
+		}
+		else
+		{
+			LocalScaling = NewWorldScaling;
+		}
 	}
 
 };
