@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../Sources/EngineCore/Base/Headers/Math.h"
+#include <CoreMinimal.h>
 #include "../../../Sources/EngineCore/RenderCore/Headers/Common.h"
 #include "../../../Sources/EngineGame/Headers/CGameStructCommon.h"
 

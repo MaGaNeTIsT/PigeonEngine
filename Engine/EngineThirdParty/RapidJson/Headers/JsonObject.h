@@ -1,7 +1,7 @@
 #pragma once
 #define RAPIDJSON_NOMEMBERITERATORCLASS 
 #include "../../../ThirdParty/rapidjson/document.h"
-#include "../../../Sources/EngineCore/Core/Headers/Main.h"
+#include <CoreMinimal.h>
 using namespace rapidjson;
 
 namespace PigeonEngine
