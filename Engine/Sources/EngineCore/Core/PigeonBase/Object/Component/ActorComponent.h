@@ -1,7 +1,8 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include "./Component.h"
+
+#include "Component.h"
 
 namespace PigeonEngine
 {

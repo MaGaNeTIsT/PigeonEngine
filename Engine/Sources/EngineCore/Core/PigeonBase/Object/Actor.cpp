@@ -1,6 +1,6 @@
 #include <PigeonBase/Object/Actor.h>
 
-#include "Component/ActorComponent.h"
+#include "Component/SceneComponent.h"
 
 namespace PigeonEngine
 {
@@ -42,25 +42,21 @@ namespace PigeonEngine
 		return this->AttachedParentActor;
 	}
 
-	void PActor::AttachToActor(PActor* AttachTo)
+	void PActor::AttachToActor(PActor* AttachTo, const ETransform& RelativeTransform)
 	{
-		PActor::AttachActorToActor(this, AttachTo);
+		PActor::AttachActorToActor(this, AttachTo, RelativeTransform);
 	}
 
-	void PActor::AttachActorTo(PActor* Actor)
+	void PActor::AttachActorTo(PActor* Actor, const ETransform& RelativeTransform)
 	{
-		PActor::AttachActorToActor(Actor, this);
+		PActor::AttachActorToActor(Actor, this, RelativeTransform);
 	}
 
-	void PActor::AttachActorToActor(PActor* Actor, PActor* AttachTo)
+	void PActor::AttachActorToActor(PActor* Actor, PActor* AttachTo, const ETransform& RelativeTransform)
 	{
-		if(!Actor || !AttachTo)
-		{
-			// Need an alert here
-			return;
-		}
+		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !Actor || !AttachTo || !Actor->GetRootComponent() || !AttachTo->GetRootComponent());
 		Actor->AttachedParentActor = AttachTo;
-		PSceneComponent::AttachComponentToComponent(Actor->GetRootComponent(), AttachTo->GetRootComponent());
+		PSceneComponent::AttachComponentToComponent(Actor->GetRootComponent(), AttachTo->GetRootComponent(), RelativeTransform);
 	}
 
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
@@ -69,10 +65,8 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		if(RootComponent)
-		{
-			delete RootComponent;
-		}
+		NewRoot->SetComponentTransform(*RootComponent->GetTransform());
+		delete RootComponent;
 		this->RootComponent = NewRoot;
 	}
 
@@ -106,28 +100,20 @@ namespace PigeonEngine
 		return this->RootComponent->GetComponentUpVector();
 	}
 	
-	void PActor::AttachComponent(PSceneComponent* Component)
+	void PActor::AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform)
 	{
 		AttachComponentToActor(Component, this);
 	}
 
-	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor)
+	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform )
 	{
-		if(!Component || !Actor)
-		{
-			// Need an alert here
-			return;
-		}
-		PSceneComponent::AttachComponentToComponent(Component, Actor->GetRootComponent());
+		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !Component || !Actor || !Actor->GetRootComponent());
+		PSceneComponent::AttachComponentToComponent(Component, Actor->GetRootComponent(), RelativeTransform);
 	}
 
 	void PActor::AddComponent(PActorComponent* NewComponent)
 	{
-		if(!NewComponent)
-		{
-			// Need an alert here
-			return;
-		}
+		Check(ENGINE_ACTOR_ERROR, "Adding null component", !NewComponent );
 		this->Components.insert(NewComponent);
 	}
 

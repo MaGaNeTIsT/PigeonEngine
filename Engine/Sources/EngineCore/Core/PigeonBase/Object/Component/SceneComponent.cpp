@@ -11,27 +11,25 @@ namespace PigeonEngine
 	PSceneComponent::~PSceneComponent()
 	{
 	}
+	
 
-	void PSceneComponent::AttachToComponent(PSceneComponent* AttachTo)
+	void PSceneComponent::AttachToComponent(PSceneComponent* AttachTo, const ETransform& RelativeTransform)
 	{
-		AttachComponentToComponent(this, AttachTo);
+		AttachComponentToComponent(this, AttachTo, RelativeTransform);
 	}
 
-	void PSceneComponent::AttachComponentTo(PSceneComponent* Component)
+	void PSceneComponent::AttachComponentTo(PSceneComponent* Component, const ETransform& RelativeTransform)
 	{
-		AttachComponentToComponent(Component, this);
+		AttachComponentToComponent(Component, this, RelativeTransform);
 	}
 
-	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo)
+	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo, const ETransform& RelativeTransform)
 	{
-		if(!Component || !AttachTo || !AttachTo->GetOwnerActor())
-		{
-			// Need an alert here!
-			return;
-		}
+		Check(ENGINE_COMPONENT_ERROR, "Something is nullptr when attaching", !Component || !AttachTo || !AttachTo->GetOwnerActor());
 		AttachTo->AttachedParentComponent = AttachTo;
 		AttachTo->SetOwnerActor(AttachTo->GetOwnerActor());
 		AttachTo->ChildrenComponents.insert(Component);
+		Component->SetComponentTransform(RelativeTransform);
 	}
 
 	PSceneComponent* PSceneComponent::GetAttachedParentComponent() const
@@ -46,6 +44,50 @@ namespace PigeonEngine
 	const ETransform* PSceneComponent::GetTransform()const
 	{
 		return (&Transform);
+	}
+
+	void PSceneComponent::SetComponentLocation(const Vector3& Location)
+	{
+		Transform.SetLocation<ECoordinateSpaceType::ECST_LOCAL>(Location);
+	}
+
+	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
+	{
+		Transform.SetRotation<ECoordinateSpaceType::ECST_LOCAL>(Rotation);
+	}
+
+	void PSceneComponent::SetComponentScale(const Vector3& Scale)
+	{
+		Transform.SetScaling<ECoordinateSpaceType::ECST_LOCAL>(Scale);
+	}
+
+	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
+	{
+		SetComponentLocation(Trans.GetLocation<ECoordinateSpaceType::ECST_LOCAL>());
+		SetComponentRotation(Trans.GetRotation<ECoordinateSpaceType::ECST_LOCAL>());
+		SetComponentScale(Trans.GetScaling<ECoordinateSpaceType::ECST_LOCAL>());
+	}
+
+	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
+	{
+		Transform.SetLocation<ECoordinateSpaceType::ECST_WORLD>(Location);
+	}
+
+	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
+	{
+		Transform.SetRotation<ECoordinateSpaceType::ECST_WORLD>(Rotation);
+	}
+
+	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
+	{
+		Transform.SetScaling<ECoordinateSpaceType::ECST_WORLD>(Scale);
+	}
+
+	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
+	{
+		SetComponentWorldLocation(Trans.GetLocation<ECoordinateSpaceType::ECST_WORLD>());
+		SetComponentWorldRotation(Trans.GetRotation<ECoordinateSpaceType::ECST_WORLD>());
+		SetComponentWorldScale(Trans.GetScaling<ECoordinateSpaceType::ECST_WORLD>());
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const

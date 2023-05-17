@@ -26,12 +26,10 @@ namespace PigeonEngine
 	public:
 		
 		PActor* GetAttachedParentActor() const;
-		// WIP
-		// 1 attach rules
-		// 2 relative transform
-		void AttachToActor(PActor* AttachTo);
-		void AttachActorTo(PActor* Actor);
-		static void AttachActorToActor(PActor* Actor, PActor* AttachTo);
+		
+		void AttachToActor(PActor* AttachTo, const ETransform& RelativeTransform = ETransform());
+		void AttachActorTo(PActor* Actor, const ETransform& RelativeTransform = ETransform());
+		static void AttachActorToActor(PActor* Actor, PActor* AttachTo, const ETransform& RelativeTransform = ETransform());
 		
 	private:
 
@@ -57,8 +55,8 @@ namespace PigeonEngine
 		// WIP
 		// 1 attach rules
 		// 2 relative transform
-		void        AttachComponent(PSceneComponent* Component);
-		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor);
+		void        AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform = ETransform());
+		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 
 		// if NewComponent is a PSceneComponent, please DO NOT call this directly
 		void AddComponent     (PActorComponent* NewComponent);
