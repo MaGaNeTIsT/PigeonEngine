@@ -150,15 +150,6 @@
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CDebugScreen.h">
       <Filter>Engine\Sources\Development\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineBase\Headers\CBaseType.h">
-      <Filter>Engine\Sources\EngineBase\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineBase\Headers\CInput.h">
-      <Filter>Engine\Sources\EngineBase\Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineBase\Headers\CManager.h">
-      <Filter>Engine\Sources\EngineBase\Headers</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Timer\Timer.h">
       <Filter>Engine\Sources\EngineBase\Headers</Filter>
     </ClInclude>
@@ -309,19 +300,20 @@
     <ClInclude Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\ErrorCaption.h" />
     <ClInclude Include="Engine\Sources\EngineCore\IO\FileHelper.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Actor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\TemplateHeaders.h" />
     <ClInclude Include="Engine\Sources\Development\Config\EngineDebugName.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Object.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\PScene.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\GameActor.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\ActorComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\Component.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\SceneComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\Headers\Component\Transform.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\CoreMinimal.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\PScene.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -332,15 +324,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CDebugScreen.cpp">
       <Filter>Engine\Sources\Development\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CBaseType.cpp">
-      <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CInput.cpp">
-      <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineBase\CppFiles\CManager.cpp">
-      <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Timer\Timer.cpp">
       <Filter>Engine\Sources\EngineBase\CppFiles</Filter>
@@ -477,15 +460,15 @@
     <ClCompile Include="Engine\Sources\Development\Alert\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\IO\FileHelper.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Actor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Object.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\PScene.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\GameActor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\ActorComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\Component.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\SceneComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Base\CppFiles\Component\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\PScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
