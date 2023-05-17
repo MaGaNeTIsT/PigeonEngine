@@ -37,11 +37,11 @@ namespace PigeonEngine
 		Quaternion	GetRotation(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
 		Vector3		GetScaling(const PSceneComponent* InParentComponent = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
+		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
 		Vector3		GetForwardVector(const PSceneComponent* InParentComponent = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
+		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
 		Vector3		GetUpVector(const PSceneComponent* InParentComponent = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
+		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
 		Vector3		GetRightVector(const PSceneComponent* InParentComponent = nullptr)const;
 	public:
 		Matrix4x4	GetLocalToWorldMatrix(const PSceneComponent* InParentComponent)const;
