@@ -1,8 +1,8 @@
-#include "../Headers/Main.h"
-#include "../Headers/Manager.h"
-#include "../../Base/Headers/Timer.h"
+#include "./Main.h"
+#include "./Manager.h"
+#include <Base/Timer/Timer.h>
 #ifdef _DEVELOPMENT_EDITOR
-#include "../../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
+#include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

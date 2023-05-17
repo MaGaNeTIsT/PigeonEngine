@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../../Core/Headers/Main.h"
+#include "../RTTI.h"
+#include "../TemplateHeaders.h"
+#include "./BuiltInType.h"
 
 namespace PigeonEngine
 {

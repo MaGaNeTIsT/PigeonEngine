@@ -1,9 +1,7 @@
 #pragma once
 
-#include "Main.h"
-#include "../../Base/Headers/BaseType.h"
-#include "../../Base/Headers/Timer.h"
-#include "../../Base/Headers/Timer.h"
+#include <CoreMinimal.h>
+#include <Base/Timer/Timer.h>
 
 namespace PigeonEngine
 {

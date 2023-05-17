@@ -1,41 +1,12 @@
 #pragma once
 
+#include "../../../Main/Main.h"
+#include "../DataStructure/BuiltInType.h"
+
 namespace PigeonEngine
 {
-	typedef	char				BOOL8;
-	typedef	char				INT8;
-	typedef	char				CHAR;
-	typedef	unsigned char		UINT8;
-	typedef	unsigned char		BYTE;
-	typedef	short				BOOL16;
-	typedef	short				SHORT;
-	typedef	unsigned short		USHORT;
-	typedef	unsigned short		WORD;
-	typedef	int					BOOL;
-	typedef	int					BOOL32;
-	typedef	int					INT;
-	typedef	int					INT32;
-	typedef	unsigned int		UINT;
-	typedef	unsigned int		UINT32;
-	typedef	long				BOOL64;
-	typedef	long				LONG;
-	typedef	long				INT64;
-	typedef	unsigned long		ULONG;
-	typedef	unsigned long		UINT64;
-	typedef	unsigned long		DWORD;
-	typedef	unsigned long long	size_t;
-	typedef	unsigned long long	SIZE_T;
-	typedef	float				FLOAT;
-	typedef	double				DOUBLE;
-
-#define TRUE				(1)
-#define FALSE				(0)
-
 	class EMath
 	{
-	public:
-		EMath() {}
-		~EMath() {}
 	public:
 		static const FLOAT& GetPI();
 		static const FLOAT& GetDegToRad();
@@ -126,6 +97,17 @@ namespace PigeonEngine
 			IType d = t; IType oneMinusD = static_cast<IType>(1) - d;
 			IType two = static_cast<IType>(2), six = static_cast<IType>(6);
 			return ((v2 - v1 * two + v0) * six * oneMinusD + (v3 - v2 * two + v1) * six * d);
+		}
+	private:
+		EMath() {}
+		EMath(const EMath&) {}
+		~EMath() {}
+		EMath& operator=(const EMath&) {}
+	public:
+		static EMath* GetSingleton()
+		{
+			static EMath mathSingletonObject;
+			return (&mathSingletonObject);
 		}
 	};
 };

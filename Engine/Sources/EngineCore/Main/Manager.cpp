@@ -1,22 +1,9 @@
-#include "../Headers/Manager.h"
-#include "../../Input/Headers/Input.h"
-#include "../../Base/Headers/ObjectBase.h"
-#include "../../../../EngineThirdParty/assimp/Headers/assimpManager.h"
-#include "../../RenderCore/Headers/DeviceD3D11.h"
-#include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CTextureManager.h"
-#include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
-#include "../../EngineGame/Headers/CObjectManager.h"
-#include "../../EngineGame/Headers/CScene.h"
-#include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
-
-#include "../../EngineRender/RenderBase/Headers/CGPUQuery.h"
-#include "../../EngineRender/RenderBase/Headers/CGPUQueryManager.h"
+#include "./Manager.h"
 
 #ifdef _DEVELOPMENT_EDITOR
 
-#include "../../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
-#include "../../Development/Headers/CGPUProfiler.h"
+#include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
+#include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 
 #endif
 

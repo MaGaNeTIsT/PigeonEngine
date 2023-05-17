@@ -1,4 +1,4 @@
-#include "../Headers/EInput.h"
+#include "./Input.h"
 
 IController EInput::Controller;
 //BYTE EInput::m_OldKeyState[256];

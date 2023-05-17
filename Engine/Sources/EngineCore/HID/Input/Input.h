@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../Core/Headers/EMain.h"
-#include "./IMouse.h"
-#include "./IKeyboard.h"
+#include "../../Main/Main.h"
+#include "./Mouse.h"
+#include "./Keyboard.h"
 
 class IController
 {

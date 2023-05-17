@@ -1,4 +1,4 @@
-#include "../Headers/IMouse.h"
+#include "./Mouse.h"
 
 std::pair<INT, INT> IMouse::GetPos() const
 {

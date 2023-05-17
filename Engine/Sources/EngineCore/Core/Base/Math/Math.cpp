@@ -1,5 +1,4 @@
-#include "../Headers/Math.h"
-#include "../../Core/Headers/Main.h"
+#include "./Math.h"
 
 namespace PigeonEngine
 {
