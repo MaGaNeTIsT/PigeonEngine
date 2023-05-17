@@ -1,6 +1,8 @@
 #pragma once
 
-#include <CoreMinimal.h>
+#include "./BuiltInType.h"
+#include "./BaseType.h"
+#include "./ObjectBase.h"
 
 
 namespace PigeonEngine

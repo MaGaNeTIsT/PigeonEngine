@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include "../Object.h"
+#include <PigeonBase/Object/Object.h>
 
 namespace PigeonEngine
 {

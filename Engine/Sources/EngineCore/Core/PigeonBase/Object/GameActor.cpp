@@ -1,4 +1,6 @@
-#include "../Headers/GameActor.h"
+
+
+#include "GameActor.h"
 
 namespace PigeonEngine
 {

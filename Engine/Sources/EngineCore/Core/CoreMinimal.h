@@ -7,6 +7,7 @@
 #include <Base/DataStructure/BaseType.h>
 #include <Base/DataStructure/Container/Array.h>
 #include <Base/Math/Math.h>
+#include <Base/DataStructure/Transform.h>
 #include <Config/EngineConfig.h>
 #include <Config/ErrorCaption.h>
 #ifdef _DEVELOPMENT_EDITOR
