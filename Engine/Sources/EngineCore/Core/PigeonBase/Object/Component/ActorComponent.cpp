@@ -1,5 +1,5 @@
-#include "../../Headers/Component/ActorComponent.h"
-#include "../../Headers/Actor.h"
+#include "./ActorComponent.h"
+#include <PigeonBase/Object/Actor.h>
 
 namespace PigeonEngine
 {

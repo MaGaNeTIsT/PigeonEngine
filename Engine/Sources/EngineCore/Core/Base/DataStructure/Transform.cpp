@@ -1,5 +1,5 @@
-#include "../../Headers/Component/Transform.h"
-#include "../../Headers/Component/SceneComponent.h"
+#include "./Transform.h"
+#include <PigeonBase/Object/Component/SceneComponent.h>
 
 namespace PigeonEngine
 {

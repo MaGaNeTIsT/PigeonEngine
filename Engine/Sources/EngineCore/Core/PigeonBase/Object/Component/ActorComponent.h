@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../../EngineCore/Core/Headers/Main.h"
+#include <CoreMinimal.h>
 #include "./Component.h"
 
 namespace PigeonEngine

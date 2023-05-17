@@ -1,4 +1,4 @@
-#include "../../Headers/Component/Component.h"
+#include "./Component.h"
 
 namespace PigeonEngine
 {
