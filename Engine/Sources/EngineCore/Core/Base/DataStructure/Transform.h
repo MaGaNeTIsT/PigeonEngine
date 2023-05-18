@@ -28,7 +28,13 @@ namespace PigeonEngine
 
 	public:
 		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToMatrix4x4(const PSceneComponent* InParentComponent = nullptr)const;
+		Matrix4x4	ToMatrix4x4WithScaling(const PSceneComponent* InParentComponent = nullptr)const;
+		template<ECoordinateSpaceType _CoordinateSpaceType>
+		Matrix4x4	ToMatrix4x4NoScaling(const PSceneComponent* InParentComponent = nullptr)const;
+		template<ECoordinateSpaceType _CoordinateSpaceType>
+		Matrix4x4	ToInverseMatrix4x4WithScaling(const PSceneComponent* InParentComponent = nullptr)const;
+		template<ECoordinateSpaceType _CoordinateSpaceType>
+		Matrix4x4	ToInverseMatrix4x4NoScaling(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>
 		Vector3		GetLocation(const PSceneComponent* InParentComponent = nullptr)const;
 		template<ECoordinateSpaceType _CoordinateSpaceType>

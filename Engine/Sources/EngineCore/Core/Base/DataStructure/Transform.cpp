@@ -21,7 +21,7 @@ namespace PigeonEngine
 		return (*this);
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToMatrix4x4(const PSceneComponent* InParentComponent)const
+	Matrix4x4 ETransform::ToMatrix4x4WithScaling(const PSceneComponent* InParentComponent)const
 	{
 		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
 		{
@@ -36,7 +36,67 @@ namespace PigeonEngine
 		}
 		else
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToMatrix4x4 enum check coordinate space type failed.");
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToMatrix4x4WithScaling enum check coordinate space type failed.");
+			return (Matrix4x4::Identity());
+		}
+	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	Matrix4x4 ETransform::ToMatrix4x4NoScaling(const PSceneComponent* InParentComponent)const
+	{
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			return (Matrix4x4(LocalLocation, LocalRotation, Vector3::One()));
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			return (Matrix4x4(
+				GetWorldLocationInternal(InParentComponent),
+				GetWorldRotationInternal(InParentComponent),
+				Vector3::One()));
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToMatrix4x4NoScaling enum check coordinate space type failed.");
+			return (Matrix4x4::Identity());
+		}
+	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	Matrix4x4 ETransform::ToInverseMatrix4x4WithScaling(const PSceneComponent* InParentComponent)const
+	{
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			return (Matrix4x4(LocalLocation, LocalRotation, LocalScaling).Inverse());
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			return (Matrix4x4(
+				GetWorldLocationInternal(InParentComponent),
+				GetWorldRotationInternal(InParentComponent),
+				GetWorldScalingInternal(InParentComponent)).Inverse());
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToInverseMatrix4x4WithScaling enum check coordinate space type failed.");
+			return (Matrix4x4::Identity());
+		}
+	}
+	template<ECoordinateSpaceType _CoordinateSpaceType>
+	Matrix4x4 ETransform::ToInverseMatrix4x4NoScaling(const PSceneComponent* InParentComponent)const
+	{
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			return (Matrix4x4(LocalLocation, LocalRotation, Vector3::One()).Inverse());
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			return (Matrix4x4(
+				GetWorldLocationInternal(InParentComponent),
+				GetWorldRotationInternal(InParentComponent),
+				Vector3::One()).Inverse());
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToInverseMatrix4x4NoScaling enum check coordinate space type failed.");
 			return (Matrix4x4::Identity());
 		}
 	}

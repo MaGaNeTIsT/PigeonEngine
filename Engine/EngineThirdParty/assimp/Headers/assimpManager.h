@@ -1,7 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include "../../../Sources/EngineCore/RenderCore/Headers/Common.h"
+#include <RenderCommon.h>
 #include "../../../Sources/EngineGame/Headers/CGameStructCommon.h"
 
 namespace PigeonEngine
