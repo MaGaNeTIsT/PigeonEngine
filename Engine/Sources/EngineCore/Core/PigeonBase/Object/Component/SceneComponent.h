@@ -29,9 +29,9 @@ namespace PigeonEngine
     	Vector3 GetComponentUpVector()const;
     	const ETransform* GetTransform()const ;
 
-    	void SetComponentLocation(const Vector3& Location);
-    	void SetComponentRotation(const Quaternion& Rotation);
-    	void SetComponentScale   (const Vector3& Scale);
+    	void SetComponentLocation (const Vector3& Location);
+    	void SetComponentRotation (const Quaternion& Rotation);
+    	void SetComponentScale    (const Vector3& Scale);
 		void SetComponentTransform(const ETransform& Trans);
     	
     	void SetComponentWorldLocation(const Vector3& Location);
