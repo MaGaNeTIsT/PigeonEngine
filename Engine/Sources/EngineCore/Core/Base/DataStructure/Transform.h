@@ -1,9 +1,8 @@
 #pragma once
 
-#include "./BuiltInType.h"
-#include "./BaseType.h"
-#include "./ObjectBase.h"
-
+#include "BuiltInType.h"
+#include "BaseType.h"
+#include "ObjectBase.h"
 
 namespace PigeonEngine
 {

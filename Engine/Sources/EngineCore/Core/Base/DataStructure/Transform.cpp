@@ -1,4 +1,4 @@
-#include "./Transform.h"
+#include "Transform.h"
 #include <PigeonBase/Object/Component/SceneComponent.h>
 
 namespace PigeonEngine
@@ -145,17 +145,50 @@ namespace PigeonEngine
 	template<ECoordinateSpaceType _CoordinateSpaceType>
 	void ETransform::SetLocation(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
 	{
-
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			LocalLocation = NewValue;
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			SetWorldLocationInternal(NewValue, InParentComponent);
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetLocation enum check coordinate space type failed.");
+		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
 	void ETransform::SetRotation(const Quaternion& NewValue, const PSceneComponent* InParentComponent)const
 	{
-
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			LocalRotation = NewValue;
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			SetWorldRotationInternal(NewValue, InParentComponent);
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetRotation enum check coordinate space type failed.");
+		}
 	}
 	template<ECoordinateSpaceType _CoordinateSpaceType>
 	void ETransform::SetScaling(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
 	{
-
+		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
+		{
+			LocalScaling = NewValue;
+		}
+		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
+		{
+			SetWorldScalingInternal(NewValue, InParentComponent);
+		}
+		else
+		{
+			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetScaling enum check coordinate space type failed.");
+		}
 	}
 	Matrix4x4 ETransform::GetLocalToWorldMatrix(const PSceneComponent* InParentComponent)const
 	{
@@ -248,7 +281,8 @@ namespace PigeonEngine
 	{
 		if (InParentComponent)
 		{
-			Vector3 ParentWorldLocation(InParentComponent->GetComponentWorldLocation());
+			const ETransform* ParentTransform = InParentComponent->GetTransform();
+			Vector3 ParentWorldLocation(ParentTransform->GetWorldLocationInternal(InParentComponent));
 			LocalLocation = NewWorldLocation - ParentWorldLocation;
 		}
 		else
@@ -260,7 +294,8 @@ namespace PigeonEngine
 	{
 		if (InParentComponent)
 		{
-			Quaternion ParentWorldRotation(InParentComponent->GetComponentWorldRotation());
+			const ETransform* ParentTransform = InParentComponent->GetTransform();
+			Quaternion ParentWorldRotation(ParentTransform->GetWorldRotationInternal(InParentComponent));
 			ParentWorldRotation.Inverse();
 			LocalRotation = ParentWorldRotation * NewWorldRotation;
 		}
@@ -273,7 +308,8 @@ namespace PigeonEngine
 	{
 		if (InParentComponent)
 		{
-			Vector3 ParentWorldScaling(InParentComponent->GetComponentWorldScale());
+			const ETransform* ParentTransform = InParentComponent->GetTransform();
+			Vector3 ParentWorldScaling(ParentTransform->GetWorldScalingInternal(InParentComponent));
 			LocalScaling = NewWorldScaling / ParentWorldScaling;
 		}
 		else

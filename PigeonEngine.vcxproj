@@ -26,6 +26,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
@@ -88,7 +89,7 @@
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMeshRendererComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\DeviceD3D11.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CRenderPipeline.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Common.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderCommon.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CDynamicWind.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CPostProcessBase.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CGTAOPass.h" />
@@ -112,6 +113,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
