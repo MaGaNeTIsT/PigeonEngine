@@ -192,7 +192,7 @@
     <ClInclude Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMeshRendererComponent.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Device\DeviceD3D11.h">
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderDevice\DeviceD3D11.h">
       <Filter>Engine\Sources\EngineRender\RenderBase\Headers</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderCommon.h">
@@ -315,7 +315,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\PScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Config\RenderConfig.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -369,7 +369,7 @@
     <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderBase\CMeshRendererComponent.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Device\DeviceD3D11.cpp">
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderDevice\DeviceD3D11.cpp">
       <Filter>Engine\Sources\EngineRender\RenderBase\CppFiles</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\RenderFeatures\CGTAOPass.cpp">

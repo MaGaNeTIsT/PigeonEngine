@@ -1,7 +1,8 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include "./Common.h"
+#include <RenderConfig/RenderConfig.h>
+#include <RenderCommon.h>
 
 namespace PigeonEngine
 {

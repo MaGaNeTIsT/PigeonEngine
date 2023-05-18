@@ -3,13 +3,17 @@
 #include <CoreMinimal.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <RenderCommon.h>
+#include <RenderConfig/RenderConfig.h>
 
 namespace PigeonEngine
 {
 
 	struct PCameraViewInfo
 	{
-		PCameraViewInfo() : Viewport(RViewport(Vector2::Zero(), Vector2::One(), Vector2::YVector())) {}
+		PCameraViewInfo() : Viewport(RViewport(Vector2::Zero(), Vector2::One(), Vector2::YVector()))
+			, Fov(RENDER_CAMERA_FOV)
+		{
+		}
 
 		RViewport	Viewport;
 		FLOAT		Fov;

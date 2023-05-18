@@ -3,21 +3,21 @@
 namespace PigeonEngine
 {
 
-#define ENGINE_DEFAULT_CULLING_DISTANCE						(200000.f)
-#define ENGINE_DEFAULT_CULLING_OFFSET						(-5.f)
+#define RENDER_CULLING_DISTANCE								(200000.f)
+#define RENDER_CULLING_OFFSET								(-5.f)
 
-#define ENGINE_CAMERA_FOV									(60.f)
-#define ENGINE_CAMERA_NEAR									(5.f)
-#define ENGINE_CAMERA_FAR									(200000.f)
+#define RENDER_CAMERA_FOV									(60.f)
+#define RENDER_CAMERA_NEAR									(5.f)
+#define RENDER_CAMERA_FAR									(200000.f)
 
-#define ENGINE_SHADOW_MAP_SIZE								(4096)
+#define RENDER_SHADOW_MAP_SIZE								(4096)
 
 #ifdef _DEVELOPMENT_EDITOR
-#define ENGINE_GPU_PROFILER_NONE							("Render_GPUProfiler_None")
-#define ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
+#define RENDER_GPU_PROFILER_NONE							("Render_GPUProfiler_None")
+#define RENDER_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
 #endif
 
-#define ENGINE_GPU_QUERY_NONE								("Render_GPUQuery_None")
+#define RENDER_GPU_QUERY_NONE								("Render_GPUQuery_None")
 
 #define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
 #define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
