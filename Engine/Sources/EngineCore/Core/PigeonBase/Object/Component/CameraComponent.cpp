@@ -30,17 +30,9 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.MinDepth = 0.f;
 		CameraViewInfo.Viewport.MaxDepth = 1.f;
 	}
-	void PCameraComponent::SetFov(FLOAT InFovDegree)
+	void PCameraComponent::SetFov(FLOAT InFovAngleY)
 	{
-		CameraViewInfo.Fov = InFovDegree;
+		CameraViewInfo.Fov = InFovAngleY;
 	}
-	void PCameraComponent::TransformPointFromWorldToView(const Vector3& input, Vector3& output)const;
-	void PCameraComponent::TransformPointFromViewToWorld(const Vector3& input, Vector3& output)const;
-	void PCameraComponent::TransformWorldPointToScreenCoord(const Vector3& input, Vector2& output)const;
-	BOOL PCameraComponent::TransformWorldPointToScreenCoord(const Vector3& input, Vector3& output)const;
-	void PCameraComponent::TransformViewPointToScreenCoord(const Vector3& input, Vector2& output)const;
-	BOOL PCameraComponent::TransformViewPointToScreenCoord(const Vector3& input, Vector3& output)const;
-	void PCameraComponent::TransformScreenCoordToWorldPoint(const Vector2& mousePos, Vector3& output)const;
-	void PCameraComponent::TransformScreenCoordToViewPoint(const Vector2& mousePos, Vector3& output)const;
 
 };

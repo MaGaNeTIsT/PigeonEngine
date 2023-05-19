@@ -119,62 +119,6 @@ namespace PigeonEngine
 		STENCIL_MASK_LAND			= 0x2,
 		STENCIL_MASK_OPAQUE_BASE	= 0x4
 	};
-	struct RCameraFrustumInfo
-	{
-		RCameraFrustumInfo()noexcept
-			: PlaneTop(Vector3::Zero()), PlaneBottom(Vector3::Zero()), PlaneLeft(Vector3::Zero()), PlaneRight(Vector3::Zero())
-			, FarPlaneTopLeft(Vector3::Zero()), FarPlaneTopRight(Vector3::Zero())
-			, FarPlaneBottomLeft(Vector3::Zero()), FarPlaneBottomRight(Vector3::Zero())
-			, NearPlaneTopLeft(Vector3::Zero()), NearPlaneTopRight(Vector3::Zero())
-			, NearPlaneBottomLeft(Vector3::Zero()), NearPlaneBottomRight(Vector3::Zero()) {}
-		RCameraFrustumInfo(const RCameraFrustumInfo& other)
-			: PlaneTop(other.PlaneTop), PlaneBottom(other.PlaneBottom), PlaneLeft(other.PlaneLeft), PlaneRight(other.PlaneRight)
-			, FarPlaneTopLeft(other.FarPlaneTopLeft), FarPlaneTopRight(other.FarPlaneTopRight)
-			, FarPlaneBottomLeft(other.FarPlaneBottomLeft), FarPlaneBottomRight(other.FarPlaneBottomRight)
-			, NearPlaneTopLeft(other.NearPlaneTopLeft), NearPlaneTopRight(other.NearPlaneTopRight)
-			, NearPlaneBottomLeft(other.NearPlaneBottomLeft), NearPlaneBottomRight(other.NearPlaneBottomRight) {}
-		union
-		{
-			struct
-			{
-				Vector3		PlaneTop;
-				Vector3		PlaneBottom;
-				Vector3		PlaneLeft;
-				Vector3		PlaneRight;
-			};
-			Vector3		Plane[4];
-		};
-		union
-		{
-			struct
-			{
-				Vector3		FarPlaneTopLeft;
-				Vector3		FarPlaneTopRight;
-				Vector3		FarPlaneBottomLeft;
-				Vector3		FarPlaneBottomRight;
-				Vector3		NearPlaneTopLeft;
-				Vector3		NearPlaneTopRight;
-				Vector3		NearPlaneBottomLeft;
-				Vector3		NearPlaneBottomRight;
-			};
-			Vector3		FarNearPlanePoint[8];
-		};
-	};
-	struct RViewport
-	{
-		RViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(0.f), MaxDepth(0.f) {}
-		RViewport(const RViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
-		RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
-		constexpr RViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(0.f), MaxDepth(0.f) {}
-		constexpr RViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
-		constexpr RViewport(const RViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
-		FLOAT	TopLeftX;
-		FLOAT	TopLeftY;
-		FLOAT	Width;
-		FLOAT	Height;
-		FLOAT	MinDepth;
-		FLOAT	MaxDepth;
-	};
 	enum RComparisonFunctionType
 	{
 		COMPARISON_NEVER			= 1,
