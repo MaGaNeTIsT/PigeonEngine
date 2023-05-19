@@ -40,7 +40,8 @@ namespace PigeonEngine
 
 	public:
 		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = RENDER_CAMERA_FOV, FLOAT InFarDist = RENDER_CAMERA_FAR, FLOAT InNearDist = RENDER_CAMERA_NEAR);
-		const PCameraViewInfo& GetCameraViewInfo()const { return CameraViewInfo; }
+		const PCameraViewInfo&	GetCameraViewInfo()const { return CameraViewInfo; }
+		const ECameraMatrix&	GetCameraMatrix()const { return CameraMatrix; }
 	public:
 		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = RENDER_CAMERA_FOV, FLOAT InFarDist = RENDER_CAMERA_FAR, FLOAT InNearDist = RENDER_CAMERA_NEAR);
 		void	SetViewport(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight);
