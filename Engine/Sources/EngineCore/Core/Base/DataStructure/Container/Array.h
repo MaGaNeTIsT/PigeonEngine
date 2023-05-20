@@ -11,17 +11,24 @@ namespace PigeonEngine
     public:
         TArray();
         TArray(const TArray<T>& Other);
+        TArray(const std::vector<T>& Other);
+
         ~TArray();
         
-        T& operator[](const UINT& Index);
-
+        T&      operator[](const UINT& Index);
+        TArray& operator= (const TArray<T>& Other);
+        
         UINT Add     (const T& Element);
         T&   Get     (const UINT& Index);
         UINT Find    (const T& Element) const;
         void Resize  (const UINT& NewSize);
+        void Recapacity(const UINT& NewCapacity);
         void RemoveAt(const UINT& Index);
         void Remove  (const T& Element);
         void Clear   ();
+
+        typename std::vector<T>::iterator begin();
+        typename std::vector<T>::iterator end();
         
         UINT Length  ()const;
         UINT Last    ()const;
@@ -36,11 +43,17 @@ namespace PigeonEngine
 
     template <typename T>
     TArray<T>::TArray(const TArray<T>& Other)
+        :
+    Elements(Other.Elements)
     {
-        for(UINT i = 0; i < Other.Length() - 1; ++i)
-        {
-            this->Elements.push_back(Other[i]);
-        }
+        
+    }
+
+    template <typename T>
+    TArray<T>::TArray(const std::vector<T>& Other)
+        :
+    Elements(Other)
+    {
     }
 
     template <typename T>
@@ -54,6 +67,13 @@ namespace PigeonEngine
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return Elements[Index];
+    }
+
+    template <typename T>
+    TArray<T>& TArray<T>::operator=(const TArray<T>& Other)
+    {
+         Elements = Other.Elements;
+         return *this;
     }
 
     template <typename T>
@@ -100,6 +120,18 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    typename std::vector<T>::iterator TArray<T>::begin()
+     {
+         return Elements.begin();
+     }
+
+    template <typename T>
+    typename std::vector<T>::iterator TArray<T>::end()
+     {
+         return Elements.end(); 
+     }
+    
+    template <typename T>
     UINT TArray<T>::Find(const T& Element) const
     {
         for(UINT i = 0; i < Elements.size();++i)
@@ -119,6 +151,15 @@ namespace PigeonEngine
         {
             this->Elements.resize(NewSize);
         }
+    }
+
+    template <typename T>
+    void TArray<T>::Recapacity(const UINT& NewCapacity)
+    {
+         if ((NewCapacity > 0u) && (this->Elements.capacity() != NewCapacity))
+         {
+             this->Elements.reserve(NewCapacity);
+         }
     }
 
     template <typename T>
