@@ -18,6 +18,9 @@ namespace PigeonEngine
         typename std::map<K,V>::iterator begin();
         typename std::map<K,V>::iterator end();
 
+        void Add   (const K& Key, const V& Value);
+        void Remove(const K& Key);
+        
         BOOL ContainsKey(const K& Key) const;
         
         BOOL FindKey  (const V& Value, K& OutKey) const;
@@ -73,6 +76,18 @@ namespace PigeonEngine
     typename std::map<K, V>::iterator TMap<K, V>::end()
     {
         return Map.end();
+    }
+
+    template <typename K, typename V>
+    void TMap<K, V>::Add(const K& Key, const V& Value)
+    {
+        Map.insert(Key,Value);
+    }
+
+    template <typename K, typename V>
+    void TMap<K, V>::Remove(const K& Key)
+    {
+        Map.erase(Map.find(Key));
     }
 
     template <typename K, typename V>

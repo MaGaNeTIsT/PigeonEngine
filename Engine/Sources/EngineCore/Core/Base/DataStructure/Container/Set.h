@@ -10,6 +10,7 @@ namespace PigeonEngine
     public:
         TSet();
         TSet(const TSet<T>& Other);
+        TSet(const std::set<T>& Other);
         ~TSet();
         
         T& operator[](const UINT& Index);
@@ -36,11 +37,16 @@ namespace PigeonEngine
 
     template <typename T>
     TSet<T>::TSet(const TSet<T>& Other)
+        :
+    Elements(Other.Elements)
     {
-        for(const auto& elem : Other.Elements)
-        {
-            Add(elem);
-        }
+    }
+
+    template <typename T>
+    TSet<T>::TSet(const std::set<T>& Other)
+        :
+    Elements(Other)
+    {
     }
 
     template <typename T>
