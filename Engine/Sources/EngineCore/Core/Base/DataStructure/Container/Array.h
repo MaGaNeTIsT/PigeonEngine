@@ -2,6 +2,9 @@
 
 #include <CoreMinimal.h>
 
+#include <algorithm>
+#include <random>
+
 namespace PigeonEngine
 {
     template <typename T>
@@ -18,17 +21,25 @@ namespace PigeonEngine
         T&      operator[](const UINT& Index);
         TArray& operator= (const TArray<T>& Other);
         
-        UINT Add     (const T& Element);
-        T&   Get     (const UINT& Index);
-        UINT Find    (const T& Element) const;
-        void Resize  (const UINT& NewSize);
+        UINT Add       (const T& Element);
+        T&   Get       (const UINT& Index);
+        UINT Find      (const T& Element) const;
+        void Resize    (const UINT& NewSize);
         void Recapacity(const UINT& NewCapacity);
-        void RemoveAt(const UINT& Index);
-        void Remove  (const T& Element);
-        void Clear   ();
+        void RemoveAt  (const UINT& Index);
+        void Remove    (const T& Element);
+        void Clear     ();
 
+        void Append(const TArray<T>& Other);
+
+        void Sort   ();
+        void Sort   (bool Predicate(const T&, const T&));
+        void Shuffle();
+        
         typename std::vector<T>::iterator begin();
         typename std::vector<T>::iterator end();
+        typename std::vector<T>::iterator rbegin();
+        typename std::vector<T>::iterator rend();
         
         UINT Length  ()const;
         UINT Last    ()const;
@@ -120,6 +131,37 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    void TArray<T>::Append(const TArray<T>& Other)
+    {
+         const UINT Size = Length() + Other.Length();
+         Recapacity(Size * 2);
+         for(const auto& elem:Other)
+         {
+             Add(elem);
+         }
+    }
+
+    template <typename T>
+    void TArray<T>::Sort()
+    {
+        std::sort(Elements.begin(), Elements.end());
+    }
+
+    template <typename T>
+    void TArray<T>::Sort(bool Predicate(const T&, const T&))
+    {
+        std::sort(Elements.begin(), Elements.end(),Predicate);
+    }
+    
+    template <typename T>
+    void TArray<T>::Shuffle()
+    {
+        std::random_device rd;
+        std::mt19937 rng(rd());
+        std::shuffle(Elements.begin(), Elements.end(),rng);
+    }
+
+    template <typename T>
     typename std::vector<T>::iterator TArray<T>::begin()
      {
          return Elements.begin();
@@ -130,7 +172,19 @@ namespace PigeonEngine
      {
          return Elements.end(); 
      }
-    
+
+    template <typename T>
+    typename std::vector<T>::iterator TArray<T>::rbegin()
+    {
+        return Elements.rbegin();
+    }
+
+    template <typename T>
+    typename std::vector<T>::iterator TArray<T>::rend()
+    {
+        return Elements.rend();
+    }
+
     template <typename T>
     UINT TArray<T>::Find(const T& Element) const
     {
