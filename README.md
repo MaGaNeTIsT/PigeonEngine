@@ -25,6 +25,7 @@ A game engine for pc (DirectX 11).
 | _DEVELOP_MODE | This mode will run with **complete** log and **selectional** other profiler options. |
 | _TEST_MODE | This mode will run with **selectional** log and **few** other profiler options. |
 | _SHIPPING_MODE | This mode will run with **few** log and **NO** other profiler options. |
+| _EDITOR_ONLY | This define makes a distinction between **Editor** and **Runtime**. |
 
 ## Engine System
 
