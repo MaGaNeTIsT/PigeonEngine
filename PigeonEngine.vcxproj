@@ -22,6 +22,7 @@
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.h" />
@@ -115,6 +116,7 @@
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />

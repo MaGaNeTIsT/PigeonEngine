@@ -25,6 +25,7 @@ namespace PigeonEngine
         
         UINT Add       (const T& Element);
         T&   Get       (const UINT& Index);
+        // Find the index of given Element, return array's Length if the Element doesn't exist.
         UINT Find      (const T& Element) const;
         BOOL Contains  (const T& Element) const;
         void Resize    (const UINT& NewSize);

@@ -18,6 +18,8 @@ namespace PigeonEngine
         typename std::map<K,V>::iterator begin();
         typename std::map<K,V>::iterator end();
 
+        UINT Length() const;
+        
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);
         
@@ -76,6 +78,12 @@ namespace PigeonEngine
     typename std::map<K, V>::iterator TMap<K, V>::end()
     {
         return Map.end();
+    }
+
+    template <typename K, typename V>
+    UINT TMap<K, V>::Length() const
+    {
+        return Map.size();
     }
 
     template <typename K, typename V>

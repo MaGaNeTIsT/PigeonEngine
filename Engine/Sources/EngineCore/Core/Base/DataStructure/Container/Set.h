@@ -17,6 +17,7 @@ namespace PigeonEngine
 
         UINT Add     (const T& Element);
         T&   Get     (const UINT& Index) const;
+        // Find the index of given Element, return set's Length if the Element doesn't exist.
         UINT Find    (const T& Element) const;
         BOOL Contains(const T& Element) const;
         void RemoveAt(const UINT& Index);
