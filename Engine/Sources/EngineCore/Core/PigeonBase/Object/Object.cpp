@@ -10,6 +10,7 @@ namespace PigeonEngine
 	}
 	PObject::~PObject()
 	{
+		Destroy();
 	}
 
 	void PObject::SetIsTickable(const BOOL& bTickable)
@@ -21,12 +22,22 @@ namespace PigeonEngine
 	{
 		return this->bCanTick;
 	}
+
+	void PObject::Destroy()
+	{
+		delete this;
+	}
 #ifdef _DEVELOPMENT_EDITOR
 	void PObject::SetName(const std::string& name)
 	{
 		m_Name = name;
 	}
 #endif
+	void PObject::Uninit()
+	{
+		Destroy();
+	}
+
 	BOOL PObject::IsActive()const
 	{
 		return m_Active;

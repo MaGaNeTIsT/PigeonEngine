@@ -18,6 +18,7 @@ namespace PigeonEngine
         UINT Add     (const T& Element);
         T&   Get     (const UINT& Index) const;
         UINT Find    (const T& Element) const;
+        BOOL Contains(const T& Element) const;
         void RemoveAt(const UINT& Index);
         void Remove  (const T& Element);
         void Clear   ();
@@ -80,16 +81,32 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    BOOL TSet<T>::Contains(const T& Element) const
+    {
+        for(const auto& elem : Elements)
+        {
+            if(elem == Element)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template <typename T>
     void TSet<T>::RemoveAt(const UINT& Index)
     {
-        Check(ENGINE_SET_ERROR, "Set has no such index", Index > Length());
-        this->Elements.erase(Elements.begin() + Index - 1);
+        if(Index > Length())
+        {
+            return;
+        }
+        this->Elements.erase(Elements.begin() + Index );
     }
 
     template <typename T>
     void TSet<T>::Remove(const T& Element)
     {
-        UINT Index = Find(Element);
+        const UINT& Index = Find(Element);
         RemoveAt(Index);
     }
 

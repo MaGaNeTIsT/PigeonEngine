@@ -12,7 +12,7 @@ namespace PigeonEngine
 
 	public:
 		virtual void	Init() = 0;
-		virtual void	Uninit() = 0;
+		virtual void	Uninit();
 		virtual void	Tick(FLOAT deltaTime) = 0;
 #ifdef _DEVELOPMENT_EDITOR
 		virtual void	EditorTick(FLOAT deltaTime) = 0;
@@ -34,6 +34,8 @@ namespace PigeonEngine
 		BOOL IsTickable() const;
 	private:
 		BOOL bCanTick = false;
+	public:
+		virtual void Destroy();
 	};
 
 };

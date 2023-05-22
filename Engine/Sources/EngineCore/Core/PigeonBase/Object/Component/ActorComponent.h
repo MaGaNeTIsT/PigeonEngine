@@ -14,7 +14,8 @@ namespace PigeonEngine
 		EClass(PActorComponent, PComponent)
 
 	public:
-
+		virtual void Init() override;
+		virtual void Uninit() override;
 	public:
 		virtual BOOL ContainTransform()const;
 
@@ -22,10 +23,14 @@ namespace PigeonEngine
 
 	public:
 		PActor* GetOwnerActor()const;
+		void    RemoveFromOwnerActor();
 	protected:
 		void    SetOwnerActor(PActor* NewOwner);
 	private:
 		PActor* Owner = nullptr;
+
+	public:
+		virtual void Destroy() override;
 	};
 
 };

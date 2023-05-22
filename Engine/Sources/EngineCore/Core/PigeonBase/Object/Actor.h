@@ -4,7 +4,7 @@
 
 #include <CoreMinimal.h>
 #include "./Object.h"
-
+#include "Base/DataStructure/Container/Set.h"
 
 
 namespace PigeonEngine
@@ -18,6 +18,7 @@ namespace PigeonEngine
 
 	public:
 		virtual void    Init() override;
+		virtual void    Uninit() override;
 		virtual void	FixedTick(FLOAT deltaTime);
 	private:
 
@@ -52,16 +53,19 @@ namespace PigeonEngine
 		PSceneComponent* RootComponent = nullptr;
 
 	public:
-		// WIP
-		// 1 attach rules
-		// 2 relative transform
+		
 		void        AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform = ETransform());
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 
-		// if NewComponent is a PSceneComponent, please DO NOT call this directly
+		// Add a component, will not care about the transform
 		void AddComponent     (PActorComponent* NewComponent);
+		void DestoyComponent  (PActorComponent* Component);
+		void ClearComponents  ();
 	private:
-		std::set<PActorComponent*> Components;
+		TSet<PActorComponent*> Components;
+
+	public:
+		void Destroy() override;
 
 
 		

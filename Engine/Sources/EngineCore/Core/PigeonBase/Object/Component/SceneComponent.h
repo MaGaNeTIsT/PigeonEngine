@@ -3,6 +3,7 @@
 #include <set>
 
 #include "ActorComponent.h"
+#include "Base/DataStructure/Container/Set.h"
 
 namespace PigeonEngine
 {
@@ -13,6 +14,11 @@ namespace PigeonEngine
 		EClass(PSceneComponent, PActorComponent)
 
     	CLASS_VIRTUAL_NOCOPY_BODY(PSceneComponent)
+
+    public:
+    	virtual void Init() override;
+    	virtual void Uninit() override;
+    	virtual void Destroy() override;
 	public:
 		virtual BOOL ContainTransform()const override;
 
@@ -48,11 +54,32 @@ namespace PigeonEngine
     	void AttachToComponent(PSceneComponent* AttachTo, const ETransform& RelativeTransform = ETransform());
     	// Attach another component to this
     	void AttachComponentTo(PSceneComponent* Component, const ETransform& RelativeTransform = ETransform());
+
+    	// static function to attach
     	static void AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo, const ETransform& RelativeTransform = ETransform());
+
+    	// Get this component's attached parent component.
     	PSceneComponent* GetAttachedParentComponent()const;
+    	// Set this component's attached parent component, will keep the relative transform.
+    	void             SetAttachedParentComponent(PSceneComponent* NewParent);
+    	void             RemoveFromAttachedParent();
     private:
     	PSceneComponent* AttachedParentComponent = nullptr;
-    	std::set<PSceneComponent*> ChildrenComponents;
+
+    public:
+    	
+		void AddChildComponent         (PSceneComponent* NewChild);
+    	void RemoveChildComponent      (PSceneComponent* NewChild);
+    	void ReparentChildrenComponents(PSceneComponent* NewParent);
+    	void ClearChildren             ();
+    	
+    private:
+    	TSet<PSceneComponent*> ChildrenComponents;
+
+    public:
+
+    	
+    	
     };
 
 };

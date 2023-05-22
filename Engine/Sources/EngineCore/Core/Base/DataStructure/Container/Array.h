@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <random>
 
+
+
 namespace PigeonEngine
 {
     template <typename T>
@@ -24,6 +26,7 @@ namespace PigeonEngine
         UINT Add       (const T& Element);
         T&   Get       (const UINT& Index);
         UINT Find      (const T& Element) const;
+        BOOL Contains  (const T& Element) const;
         void Resize    (const UINT& NewSize);
         void Recapacity(const UINT& NewCapacity);
         void RemoveAt  (const UINT& Index);
@@ -110,15 +113,18 @@ namespace PigeonEngine
     template <typename T>
     void TArray<T>::RemoveAt(const UINT& Index)
     {
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+        if(Index > Length())
+        {
+            return;
+        }
         this->Elements.erase(Elements.begin() + Index);
     }
 
     template <typename T>
     void TArray<T>::Remove(const T& Element)
     {
-        const UINT i = Find(Element);
-        if(i != -1)
+        const UINT& i = Find(Element);
+        if(i != Length())
         {
             RemoveAt(i);
         }
@@ -195,7 +201,20 @@ namespace PigeonEngine
                 return i;
             }
         }
-        return -1;
+        return Length();
+    }
+
+    template <typename T>
+    BOOL TArray<T>::Contains(const T& Element) const
+    {
+         for(const auto& elem : Elements)
+         {
+             if(elem == Element)
+             {
+                 return true;
+             }
+         }
+         return false;
     }
 
     template <typename T>

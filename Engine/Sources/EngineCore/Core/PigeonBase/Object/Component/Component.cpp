@@ -9,12 +9,22 @@ namespace PigeonEngine
 	PComponent::~PComponent()
 	{
 	}
+
+	void PComponent::Destroy()
+	{
+		PObject::Destroy();
+	}
+
 	void PComponent::Init()
 	{
 	}
+
 	void PComponent::Uninit()
 	{
+		PObject::Uninit();
+		
 	}
+
 	void PComponent::Tick(FLOAT deltaTime)
 	{
 	}

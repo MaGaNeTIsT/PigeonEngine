@@ -10,6 +10,11 @@ namespace PigeonEngine
 		
 	}
 
+	void PActor::Uninit()
+	{
+		PObject::Uninit();
+	}
+
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
 		if(!IsTickable())
@@ -27,14 +32,15 @@ namespace PigeonEngine
 	}
 	PActor::~PActor()
 	{
-		for(auto& elem : Components)
-		{
-			if(elem)
-			{
-				delete elem;
-			}
-		}
-		Components.clear();
+		// for(auto& elem : Components)
+		// {
+		// 	if(elem)
+		// 	{
+		// 		delete elem;
+		// 	}
+		// }
+		// Components.clear();
+		
 	}
 
 	PActor* PActor::GetAttachedParentActor() const
@@ -54,17 +60,15 @@ namespace PigeonEngine
 
 	void PActor::AttachActorToActor(PActor* Actor, PActor* AttachTo, const ETransform& RelativeTransform)
 	{
-		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !Actor || !AttachTo || !Actor->GetRootComponent() || !AttachTo->GetRootComponent());
+		Check(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Actor == AttachTo);
+		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", !Actor || !AttachTo || !Actor->GetRootComponent() || !AttachTo->GetRootComponent());
 		Actor->AttachedParentActor = AttachTo;
 		PSceneComponent::AttachComponentToComponent(Actor->GetRootComponent(), AttachTo->GetRootComponent(), RelativeTransform);
 	}
 
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
 	{
-		if(!NewRoot)
-		{
-			return;
-		}
+		Check(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot == nullptr);
 		NewRoot->SetComponentTransform(*RootComponent->GetTransform());
 		delete RootComponent;
 		this->RootComponent = NewRoot;
@@ -102,7 +106,7 @@ namespace PigeonEngine
 	
 	void PActor::AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform)
 	{
-		AttachComponentToActor(Component, this);
+		AttachComponentToActor(Component, this, RelativeTransform);
 	}
 
 	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform )
@@ -113,8 +117,30 @@ namespace PigeonEngine
 
 	void PActor::AddComponent(PActorComponent* NewComponent)
 	{
-		Check(ENGINE_ACTOR_ERROR, "Adding null component", !NewComponent );
-		this->Components.insert(NewComponent);
+		Check(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent == nullptr );
+		this->Components.Add(NewComponent);
+	}
+
+	void PActor::DestoyComponent(PActorComponent* Component)
+	{
+		Check(ENGINE_ACTOR_ERROR, "You are destroy a component doesn't belonged to this", Components.Contains(Component));
+		Component->Destroy();
+	}
+
+	void PActor::ClearComponents()
+	{
+		for(const auto& elem : Components)
+		{
+			DestoyComponent(elem);
+		}
+		Components.Clear();
+	}
+
+	void PActor::Destroy()
+	{
+		// RemoveFromScene
+		ClearComponents();
+		PObject::Destroy();
 	}
 
 	PSceneComponent* PActor::GetRootComponent() const

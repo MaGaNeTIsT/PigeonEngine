@@ -21,7 +21,8 @@ namespace PigeonEngine
 #endif
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PComponent)
-
+	public:
+		void Destroy() override;
 	};
 
 };
