@@ -18,6 +18,15 @@ A game engine for pc (DirectX 11).
 | _PClass_ _PStruct_ | Naming conventions for game object classes **START** with a "P" |
 | _RClass_ _RStruct_ | Naming conventions for render pipeline classes **START** with a "R" |
 
+## Engine Define
+| Example Define Name |  Define Rule |
+| ---- | ---- |
+| _DEBUG_MODE | This mode will run with **complete** log and **complete** other profiler options. |
+| _DEVELOP_MODE | This mode will run with **complete** log and **selectional** other profiler options. |
+| _TEST_MODE | This mode will run with **selectional** log and **few** other profiler options. |
+| _SHIPPING_MODE | This mode will run with **few** log and **NO** other profiler options. |
+| _EDITOR_ONLY | This define makes a distinction between **Editor** and **Runtime**. |
+
 ## Engine System
 
 ### Actor System
