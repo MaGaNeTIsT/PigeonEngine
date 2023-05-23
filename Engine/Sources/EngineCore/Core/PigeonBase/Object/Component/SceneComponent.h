@@ -19,6 +19,12 @@ namespace PigeonEngine
     	virtual void Init() override;
     	virtual void Uninit() override;
     	virtual void Destroy() override;
+
+    public:
+    	EMobilityType GetMobility() const;
+    	void          SetMobility(const EMobilityType& NewMobility);
+    private:
+    	EMobilityType Mobility = EMobilityType::EMT_DYNAMIC;
 	public:
 		virtual BOOL ContainTransform()const override;
 

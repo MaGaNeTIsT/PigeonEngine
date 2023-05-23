@@ -89,7 +89,7 @@ namespace PigeonEngine
     template <typename K, typename V>
     void TMap<K, V>::Add(const K& Key, const V& Value)
     {
-        Map.insert(Key,Value);
+        Map.insert_or_assign(Key, Value);
     }
 
     template <typename K, typename V>
@@ -122,9 +122,9 @@ namespace PigeonEngine
     BOOL TMap<K, V>::FindValue(const K& Key, V& OutValue) const
     {
         auto It = Map.find(Key);
-        if(It != Map.end())
+        if(!(It < Map.end()))
         {
-            OutValue = *It->second;
+            OutValue = It->second;
             return true;
         }
         return false;

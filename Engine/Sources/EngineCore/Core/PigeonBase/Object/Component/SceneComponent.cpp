@@ -106,6 +106,16 @@ namespace PigeonEngine
 		
 	}
 
+	EMobilityType PSceneComponent::GetMobility() const
+	{
+		return Mobility;
+	}
+
+	void PSceneComponent::SetMobility(const EMobilityType& NewMobility)
+	{
+		this->Mobility = NewMobility;
+	}
+
 	BOOL PSceneComponent::ContainTransform()const
 	{
 		return TRUE;
