@@ -1,5 +1,4 @@
-#include "../Headers/ShaderAsset.h"
-#include "../../../EngineCore/Base/Headers/FileHelper.h"
+#include "ShaderAsset.h"
 
 namespace PigeonEngine
 {

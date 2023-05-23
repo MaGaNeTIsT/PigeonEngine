@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 	// class std::string;
-#ifdef _DEVELOPMENT_EDITOR
+#if !(_TEST_MODE || _SHIPPING_MODE)
 	class DWindowsMessage
 	{
 	public:

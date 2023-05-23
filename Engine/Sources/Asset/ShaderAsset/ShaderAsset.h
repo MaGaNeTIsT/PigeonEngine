@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../../../EngineCore/Core/Headers/Main.h"
-#include "./BaseAsset.h"
-#include "../../../EngineCore/RenderCore/Headers/Common.h"
-#include "../../../EngineCore/RenderCore/Headers/DeviceD3D11.h"
+#include <CoreMinimal.h>
+#include <BaseAsset.h>
+#include <RenderCommon.h>
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {

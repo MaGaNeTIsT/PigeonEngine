@@ -319,6 +319,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\EngineCommon.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.h" />
+    <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -477,6 +479,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
