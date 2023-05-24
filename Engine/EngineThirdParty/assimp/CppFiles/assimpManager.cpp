@@ -1,5 +1,4 @@
 #include "../Headers/assimpManager.h"
-#include "../../../Sources/EngineCore/Base/Headers/BaseType.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

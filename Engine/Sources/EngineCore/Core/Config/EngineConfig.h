@@ -3,6 +3,31 @@
 namespace PigeonEngine
 {
 
+	class ESettings
+	{
+	public:
+		constexpr static FLOAT	ENGINE_SCREEN_WIDTH			= 1600.f;
+		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT		= 900.f;
+		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME	= 60.f;
+		constexpr static FLOAT	ENGINE_UPDATE_FRAME			= 90.f;
+		constexpr static BOOL	ENGINE_WINDOWED				= TRUE;
+
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM		= 0.1f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF	= 0.05f;
+
+	public:
+		static ESettings* GetSingleton()
+		{
+			static ESettings classSingletonObject;
+			return (&classSingletonObject);
+		}
+		ESettings(const ESettings&) = delete;
+		ESettings& operator=(const ESettings&) = delete;
+	private:
+		ESettings() {}
+		~ESettings() {}
+	};
+
 #define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT>(sizeof(_ARR) / sizeof(*(_ARR))))
 
 #define ENGINE_NOT_EXIST_STRING								("ENGINE_NOT_EXIST")
@@ -12,13 +37,6 @@ namespace PigeonEngine
 #define ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE				("PEVS")
 #define ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE				("PEPS")
 #define ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE				("PECS")
-
-#define ENGINE_SCREEN_WIDTH									(1600)
-#define ENGINE_SCREEN_HEIGHT								(900)
-
-#define ENGINE_FIXED_UPDATE_FRAME							(60)
-#define ENGINE_UPDATE_FRAME									(90)
-#define ENGINE_WINDOWED										(1)
 
 #define ENGINE_DEFAULT_TEXTURE2D_WHITE						("./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga")
 #define ENGINE_DEFAULT_TEXTURE2D_BLACK						("./Engine/Assets/EngineTextures/Default/EngineDefaultBlack.tga")
