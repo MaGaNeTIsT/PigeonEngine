@@ -16,7 +16,7 @@ namespace PigeonEngine
     public:
         TArray();
         TArray(const TArray<T>& Other);
-        TArray(const std::vector<T>& Other);
+        explicit TArray(const std::vector<T>& Other);
 
         ~TArray();
         
@@ -44,9 +44,9 @@ namespace PigeonEngine
         typename std::vector<T>::iterator end();
         typename std::vector<T>::iterator rbegin();
         typename std::vector<T>::iterator rend();
-        
-        UINT Length  ()const;
-        UINT Last    ()const;
+
+        [[nodiscard]] UINT Length  ()const;
+        [[nodiscard]] UINT Last    ()const;
     private:
         class std::vector<T> Elements;
     };

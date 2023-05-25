@@ -19,14 +19,14 @@ namespace PigeonEngine
 
     public:
         THashMap();
-        THashMap(const THashMap<K, V, Pred, Alloc>& Other);
-        THashMap(const std::unordered_map<K, V, Pred, Alloc>& Other);
+        explicit THashMap(const THashMap<K, V, Pred, Alloc>& Other);
+        explicit THashMap(const std::unordered_map<K, V, Pred, Alloc>& Other);
         ~THashMap();
 
         THashMap<K, V, Hash, Pred, Alloc>& operator= (const THashMap<K, V, Pred, Alloc>& Other);
         V&                                 operator[](const K& Key);
 
-        UINT Length() const;
+        [[nodiscard]] UINT Length() const;
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);

@@ -10,7 +10,7 @@ namespace PigeonEngine
     public:
         TSet();
         TSet(const TSet<T>& Other);
-        TSet(const std::set<T>& Other);
+        explicit TSet(const std::set<T>& Other);
         ~TSet();
         
         T& operator[](const UINT& Index);

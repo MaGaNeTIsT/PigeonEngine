@@ -10,7 +10,7 @@ namespace PigeonEngine
     public:
         TMap();
         TMap(const TMap<K,V>& Other);
-        TMap(const std::map<K,V>& Other);
+        explicit TMap(const std::map<K,V>& Other);
         ~TMap();
 
         V& operator[](const K& Key);
@@ -18,7 +18,7 @@ namespace PigeonEngine
         typename std::map<K,V>::iterator begin();
         typename std::map<K,V>::iterator end();
 
-        UINT Length() const;
+        [[nodiscard]] UINT Length() const;
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);

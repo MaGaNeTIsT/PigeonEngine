@@ -23,9 +23,15 @@
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\EngineCommon.h" />
@@ -45,11 +51,7 @@
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CSceneGameObject.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CSceneSkeletonMeshObject.h" />
     <ClInclude Include="Engine\Sources\Development\Alert\DevelopmentDefines.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Math\Math.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
     <ClInclude Include="Engine\Sources\EngineCore\IO\FileHelper.h" />
     <ClInclude Include="Engine\Sources\Development\Config\EngineDebugName.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\CoreMinimal.h" />
@@ -122,6 +124,82 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.cpp">
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <Optimization>Disabled</Optimization>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <AssemblerOutput>NoListing</AssemblerOutput>
+      <AssemblerListingLocation>x64\Debug\</AssemblerListingLocation>
+      <UndefineAllPreprocessorDefinitions>false</UndefineAllPreprocessorDefinitions>
+      <BrowseInformation>false</BrowseInformation>
+      <BrowseInformationFile>x64\Debug\</BrowseInformationFile>
+      <CompileAs>Default</CompileAs>
+      <ConformanceMode>false</ConformanceMode>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <ExpandAttributedSource>false</ExpandAttributedSource>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableASAN>false</EnableASAN>
+      <EnableFuzzer>false</EnableFuzzer>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ForceConformanceInForLoopScope>true</ForceConformanceInForLoopScope>
+      <GenerateModuleDependencies>false</GenerateModuleDependencies>
+      <GenerateSourceDependencies>false</GenerateSourceDependencies>
+      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <IgnoreStandardIncludePath>false</IgnoreStandardIncludePath>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ModuleDependenciesFile>x64\Debug\</ModuleDependenciesFile>
+      <ModuleOutputFile>x64\Debug\</ModuleOutputFile>
+      <OmitDefaultLibName>false</OmitDefaultLibName>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <ObjectFileName>x64\Debug\</ObjectFileName>
+      <CallingConvention>Cdecl</CallingConvention>
+      <ProgramDataBaseFileName>x64\Debug\vc143.pdb</ProgramDataBaseFileName>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>x64\Debug\PigeonEngine.pch</PrecompiledHeaderOutputFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessKeepComments>false</PreprocessKeepComments>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+      <ShowIncludes>false</ShowIncludes>
+      <SourceDependenciesFile>x64\Debug\</SourceDependenciesFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
+      <SpectreMitigation>false</SpectreMitigation>
+      <StructMemberAlignment>Default</StructMemberAlignment>
+      <TrackerLogDirectory>x64\Debug\PigeonEngine.tlog\</TrackerLogDirectory>
+      <TranslateIncludes>false</TranslateIncludes>
+      <MinimalRebuildFromTracking>true</MinimalRebuildFromTracking>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <UseFullPaths>true</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <XMLDocumentationFileName>x64\Debug\</XMLDocumentationFileName>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <IntelJCCErratum>false</IntelJCCErratum>
+      <TreatAngleIncludeAsExternal>false</TreatAngleIncludeAsExternal>
+      <ExternalWarningLevel>InheritWarningLevel</ExternalWarningLevel>
+      <TreatExternalTemplatesAsInternal>true</TreatExternalTemplatesAsInternal>
+      <DisableAnalyzeExternal>false</DisableAnalyzeExternal>
+      <PreprocessorDefinitions>_DEBUG_MODE;_DEBUG;_WINDOWS;_MBCS;</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <LinkCompiled>true</LinkCompiled>
+    </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
@@ -212,7 +290,6 @@
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CSceneSkeletonMeshObject.cpp" />
     <ClCompile Include="Engine\Sources\Development\Alert\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Math\Math.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\IO\FileHelper.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Main\Manager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Input.cpp" />
