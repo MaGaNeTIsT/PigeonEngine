@@ -8,8 +8,8 @@ namespace PigeonEngine
     public:
         PString();
         PString(const PString& Other);
-
-        explicit PString(const std::string& Other);
+        
+        // explicit PString(const std::string& Other);
         explicit PString(std::string Other);
         explicit PString(const CHAR* Other);
         ~PString();
@@ -26,14 +26,17 @@ namespace PigeonEngine
         BOOL        operator==(const PString& Other)const;
         BOOL        operator!=(const PString& Other)const;
         
-        [[nodiscard]] UINT    Length()const;
-        [[nodiscard]] UINT    Find (const PString& SubString, UINT Offset = 0) const;
+        [[nodiscard]] UINT    Length   ()const;
+        [[nodiscard]] BOOL    StartWith(const PString& SubString)const;
+        [[nodiscard]] UINT    Find     (const PString& SubString, UINT Offset = 0) const;
         [[nodiscard]] UINT    RightFind(const PString& SubString, UINT Offset = 0) const;
-        [[nodiscard]] PString Replace(const PString& From, const PString& To) const;
+        [[nodiscard]] PString Replace  (const PString& From, const PString& To) const;
+        [[nodiscard]] PString Left     (const UINT& Count) const;
+        [[nodiscard]] PString Right    (const UINT& Count) const;
 
-        [[nodiscard]] BOOL   IsNumeric()const;
-        [[nodiscard]] INT    AtoI() const;
-        [[nodiscard]] FLOAT  AtoF() const;
+        [[nodiscard]] BOOL    IsNumeric()const;
+        [[nodiscard]] INT     AtoI() const;
+        [[nodiscard]] DOUBLE  AtoF() const;
     private:
         std::string Str;
     };

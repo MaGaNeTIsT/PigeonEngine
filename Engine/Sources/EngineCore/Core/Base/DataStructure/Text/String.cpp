@@ -11,12 +11,12 @@ namespace PigeonEngine
     {
     }
     
-    PString::PString(const std::string& Other)
-        :
-    Str(Other)
-    {
-
-    }
+    // PString::PString(const std::string& Other)
+    //     :
+    // Str(Other)
+    // {
+    //
+    // }
 
     PString::PString(std::string Other)
         :
@@ -94,6 +94,11 @@ namespace PigeonEngine
         return Str.length();
     }
 
+    BOOL PString::StartWith(const PString& SubString) const
+    {
+        return Find(SubString) == 0;
+    }
+
     UINT PString::Find(const PString& SubString, UINT Offset) const
     {
         return Str.find(*SubString, Offset);
@@ -117,6 +122,16 @@ namespace PigeonEngine
         return Temp;
     }
 
+    PString PString::Left(const UINT& Count) const
+    {
+        return PString(Str.substr(0, EMath::Min(Length(), Count)));
+    }
+
+    PString PString::Right(const UINT& Count) const
+    {
+        return PString(Str.substr(EMath::Max(Length() - Count, 0U), Count));
+    }
+
     BOOL PString::IsNumeric() const
     {
         for(const auto& elem : Str)
@@ -138,7 +153,7 @@ namespace PigeonEngine
         return atoi(Str.c_str());
     }
 
-    FLOAT PString::AtoF() const
+    DOUBLE PString::AtoF() const
     {
         if(!IsNumeric())
         {
