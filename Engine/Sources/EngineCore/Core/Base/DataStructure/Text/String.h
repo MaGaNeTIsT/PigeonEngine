@@ -8,15 +8,17 @@ namespace PigeonEngine
     public:
         PString();
         PString(const PString& Other);
-        
-        // explicit PString(const std::string& Other);
-        explicit PString(std::string Other);
+        PString(PString&& Other) noexcept;
+
+        explicit PString(const std::string& Other);
+        explicit PString(std::string&& Other);
         explicit PString(const CHAR* Other);
-        ~PString();
+        ~PString() = default;
 
         PString&    operator=(const PString& Other);
         PString&    operator=(const std::string& Other);
         PString&    operator=(const CHAR* Other);
+        PString&    operator=(PString&& Other) noexcept;
         PString&    operator+(const PString& Other);
         PString&    operator+(const std::string& Other);
         PString&    operator+(const CHAR* Other);

@@ -10,27 +10,29 @@ namespace PigeonEngine
     Str(Other.Str)
     {
     }
-    
-    // PString::PString(const std::string& Other)
-    //     :
-    // Str(Other)
-    // {
-    //
-    // }
 
-    PString::PString(std::string Other)
+    PString::PString(PString&& Other)
+    {
+        Str = std::move(Other.Str);
+        Other = "";
+    }
+
+    PString::PString(const std::string& Other)
+        :
+    Str(Other)
+    {
+    }
+
+    PString::PString(std::string&& Other)
         :
     Str(std::move(Other))
     {
+        Other.clear();
     }
 
     PString::PString(const CHAR* Other)
     {
         Str = Other;
-    }
-
-    PString::~PString()
-    {
     }
 
     PString& PString::operator=(const PString& Other)
@@ -48,6 +50,13 @@ namespace PigeonEngine
     PString& PString::operator=(const CHAR* Other)
     {
         Str = Other;
+        return *this;
+    }
+
+    PString& PString::operator=(PString&& Other) noexcept
+    {
+        Str = std::move(Other.Str);
+        Other = "";
         return *this;
     }
 

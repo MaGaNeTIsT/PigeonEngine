@@ -18,7 +18,7 @@ namespace PigeonEngine
         TArray(const TArray<T>& Other);
         explicit TArray(const std::vector<T>& Other);
 
-        ~TArray();
+        ~TArray() = default;
         
         T&      operator[](const UINT& Index);
         TArray& operator= (const TArray<T>& Other);
@@ -70,13 +70,7 @@ namespace PigeonEngine
     Elements(Other)
     {
     }
-
-    template <typename T>
-    TArray<T>::~TArray()
-    {
-        
-    }
-
+    
     template <typename T>
     T& TArray<T>::operator[](const UINT& Index)
     {

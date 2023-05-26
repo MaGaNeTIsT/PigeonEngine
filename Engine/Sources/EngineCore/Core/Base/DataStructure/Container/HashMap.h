@@ -21,6 +21,10 @@ namespace PigeonEngine
         THashMap();
         explicit THashMap(const THashMap<K, V, Pred, Alloc>& Other);
         explicit THashMap(const std::unordered_map<K, V, Pred, Alloc>& Other);
+
+        explicit THashMap(THashMap<K, V, Pred, Alloc>&& Other);
+        explicit THashMap(std::unordered_map<K, V, Pred, Alloc>&& Other);
+
         ~THashMap();
 
         THashMap<K, V, Hash, Pred, Alloc>& operator= (const THashMap<K, V, Pred, Alloc>& Other);
@@ -64,6 +68,22 @@ namespace PigeonEngine
         :
     HashMap(Other)
     {
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>::THashMap(THashMap<K, V, Pred, Alloc>&& Other)
+        :
+    HashMap(Other.HashMap)
+    {
+        Other.Clear();
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>::THashMap(std::unordered_map<K, V, Pred, Alloc>&& Other)
+        :
+    HashMap(Other)
+    {
+        Other.clear();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
