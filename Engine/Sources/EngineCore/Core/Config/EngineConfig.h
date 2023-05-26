@@ -3,6 +3,8 @@
 namespace PigeonEngine
 {
 
+#define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT>(sizeof(_ARR) / sizeof(*(_ARR))))
+
 	class ESettings
 	{
 	public:
@@ -27,8 +29,6 @@ namespace PigeonEngine
 		ESettings() {}
 		~ESettings() {}
 	};
-
-#define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT>(sizeof(_ARR) / sizeof(*(_ARR))))
 
 #define ENGINE_NOT_EXIST_STRING								("ENGINE_NOT_EXIST")
 #define ENGINE_DEFAULT_NAME									("PIGEON_ENGINE_DEFAULT_NAME")

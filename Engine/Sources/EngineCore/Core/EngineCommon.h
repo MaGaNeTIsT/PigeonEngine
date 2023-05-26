@@ -6,6 +6,51 @@
 namespace PigeonEngine
 {
 
+	struct EBoundAABB
+	{
+		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)) {}
+		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax) {}
+
+		Vector3	AABBMin;
+		Vector3	AABBMax;
+	};
+	struct EBox
+	{
+		EBox()noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Extent(Vector3(0.5f, 0.5f, 0.5f)) {}
+		EBox(const EBox& Other)noexcept : Origin(Other.Origin), Extent(Other.Extent) {}
+
+		Vector3	Origin;
+		Vector3	Extent;
+	};
+	struct ESphere
+	{
+		ESphere()noexcept : Origin(Vector3(0.f, 0.f, 0.f)), Radius(0.5f) {}
+		ESphere(const ESphere& Other)noexcept : Origin(Other.Origin), Radius(Other.Radius) {}
+
+		Vector3	Origin;
+		FLOAT	Radius;
+	};
+	struct ERect
+	{
+		ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
+		ERect(const ERect& Other)noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
+		ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom)noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
+		constexpr ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
+		constexpr ERect(const ERect& Other)noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
+		constexpr ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom)noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
+
+		union
+		{
+			struct
+			{
+				FLOAT	Left;
+				FLOAT	Top;
+				FLOAT	Right;
+				FLOAT	Bottom;
+			};
+			FLOAT	Edge[4];
+		};
+	};
 	struct EFrustum
 	{
 		EFrustum()noexcept

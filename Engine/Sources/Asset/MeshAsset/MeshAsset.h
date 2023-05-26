@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include <BaseAsset.h>
+#include <EngineCommon.h>
 #include <RenderCommon.h>
 #include <Base/DataStructure/Container/Array.h>
 
@@ -40,7 +41,8 @@ namespace PigeonEngine
 
 	class EMesh : public EObjectBase
 	{
-
+		EBoundAABB		BoundAABB;
+		std::string		MeshName;
 		mVertices mNormals mTangents mBitangents mColors mTextureCoords indices mBones mAABB mTextureCoordsNames mName
 	};
 
