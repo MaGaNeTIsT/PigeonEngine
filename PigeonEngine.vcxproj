@@ -980,8 +980,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
-    <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;./Engine/ThirdParty/JoltPhysics/;$(IncludePath)</IncludePath>
+    <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;./Engine/ThirdParty/JoltPhysics/lib/Debug/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -1014,7 +1014,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstaticd.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlibstaticd.lib;assimp-vc143-mtd.lib;Jolt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
