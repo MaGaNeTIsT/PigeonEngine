@@ -17,11 +17,16 @@ namespace PigeonEngine
         TArray();
         TArray(const TArray<T>& Other);
         explicit TArray(const std::vector<T>& Other);
-
+        TArray(TArray<T>&& Other) noexcept;
+        explicit TArray(std::vector<T>&& Other);
+        
         ~TArray() = default;
         
         T&      operator[](const UINT& Index);
-        TArray& operator= (const TArray<T>& Other);
+        TArray<T>& operator= (const TArray<T>& Other);
+        TArray<T>& operator= (TArray<T>&& Other) noexcept;
+        TArray<T>& operator= (std::vector<T>&& Other);
+
         
         UINT Add       (const T& Element);
         T&   Get       (const UINT& Index);
@@ -70,7 +75,23 @@ namespace PigeonEngine
     Elements(Other)
     {
     }
-    
+
+    template <typename T>
+    TArray<T>::TArray(TArray<T>&& Other) noexcept
+        :
+    Elements(std::move(Other.Elements))
+    {
+        Other.Clear();
+    }
+
+    template <typename T>
+    TArray<T>::TArray(std::vector<T>&& Other)
+        :
+    Elements(std::move(Other))
+    {
+        Other.clear();
+    }
+
     template <typename T>
     T& TArray<T>::operator[](const UINT& Index)
     {
@@ -84,6 +105,23 @@ namespace PigeonEngine
          Elements = Other.Elements;
          return *this;
     }
+
+    template <typename T>
+    TArray<T>& TArray<T>::operator=(TArray<T>&& Other) noexcept
+    {
+        Elements = std::move(Other.Elements);
+        Other.Clear();
+        return *this;
+    }
+
+    template <typename T>
+    TArray<T>& TArray<T>::operator=(std::vector<T>&& Other)
+    {
+         Elements = std::move(Other);
+         Other.clear();
+         return *this;
+    }
+
 
     template <typename T>
     UINT TArray<T>::Last() const

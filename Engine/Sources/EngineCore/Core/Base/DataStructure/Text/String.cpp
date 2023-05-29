@@ -27,7 +27,7 @@ namespace PigeonEngine
         :
     Str(std::move(Other))
     {
-        Other.clear();
+        Other="";
     }
 
     PString::PString(const CHAR* Other)
