@@ -312,7 +312,6 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\PScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
@@ -321,6 +320,12 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -475,12 +480,17 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\PScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
