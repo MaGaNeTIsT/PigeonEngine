@@ -1,127 +1,127 @@
 ﻿#include "String.h"
 namespace PigeonEngine
 {
-    PString::PString()
+    EString::EString()
     {
     }
 
-    PString::PString(const PString& Other)
+    EString::EString(const EString& Other)
         :
     Str(Other.Str)
     {
     }
 
-    PString::PString(PString&& Other)
+    EString::EString(EString&& Other)
     {
         Str = std::move(Other.Str);
         Other = "";
     }
 
-    PString::PString(const std::string& Other)
+    EString::EString(const std::string& Other)
         :
     Str(Other)
     {
     }
 
-    PString::PString(std::string&& Other)
+    EString::EString(std::string&& Other)
         :
     Str(std::move(Other))
     {
         Other="";
     }
 
-    PString::PString(const CHAR* Other)
+    EString::EString(const CHAR* Other)
     {
         Str = Other;
     }
 
-    PString& PString::operator=(const PString& Other)
+    EString& EString::operator=(const EString& Other)
     {
         Str = Other.Str;
         return *this;
     }
 
-    PString& PString::operator=(const std::string& Other)
+    EString& EString::operator=(const std::string& Other)
     {
         Str = Other;
         return *this;
     }
 
-    PString& PString::operator=(const CHAR* Other)
+    EString& EString::operator=(const CHAR* Other)
     {
         Str = Other;
         return *this;
     }
 
-    PString& PString::operator=(PString&& Other) noexcept
+    EString& EString::operator=(EString&& Other) noexcept
     {
         Str = std::move(Other.Str);
         Other = "";
         return *this;
     }
 
-    PString& PString::operator+(const PString& Other)
+    EString& EString::operator+(const EString& Other)
     {
         Str += Other.Str;
         return *this;
     }
 
-    PString& PString::operator+(const std::string& Other)
+    EString& EString::operator+(const std::string& Other)
     {
         Str += Other;
         return *this;
     }
 
-    PString& PString::operator+(const CHAR* Other)
+    EString& EString::operator+(const CHAR* Other)
     {
         Str += Other;
         return *this;
     }
 
-    const CHAR* PString::operator*() const
+    const CHAR* EString::operator*() const
     {
         return Str.c_str();
     }
 
-    CHAR PString::operator[](const UINT& Index) const
+    CHAR EString::operator[](const UINT& Index) const
     {
         return Str[Index];
     }
 
-    BOOL PString::operator==(const PString& Other) const
+    BOOL EString::operator==(const EString& Other) const
     {
         return Str == Other.Str;
     }
 
-    BOOL PString::operator!=(const PString& Other) const
+    BOOL EString::operator!=(const EString& Other) const
     {
         return Str != Other.Str;
     }
 
-    UINT PString::Length() const
+    UINT EString::Length() const
     {
         return Str.length();
     }
 
-    BOOL PString::StartWith(const PString& SubString) const
+    BOOL EString::StartWith(const EString& SubString) const
     {
         return Find(SubString) == 0;
     }
 
-    UINT PString::Find(const PString& SubString, UINT Offset) const
+    UINT EString::Find(const EString& SubString, UINT Offset) const
     {
         return Str.find(*SubString, Offset);
     }
 
-    UINT PString::RightFind(const PString& SubString, UINT Offset) const
+    UINT EString::RightFind(const EString& SubString, UINT Offset) const
     {
         return Str.rfind(*SubString, Offset);
     }
 
-    PString PString::Replace(const PString& From, const PString& To) const
+    EString EString::Replace(const EString& From, const EString& To) const
     {
         const UINT FromLength = From.Length();
-        PString Temp = *this;
+        EString Temp = *this;
         UINT FromStart  = Temp.Find(From);
         while(FromStart < Temp.Length())
         {
@@ -131,17 +131,17 @@ namespace PigeonEngine
         return Temp;
     }
 
-    PString PString::Left(const UINT& Count) const
+    EString EString::Left(const UINT& Count) const
     {
-        return PString(Str.substr(0, EMath::Min(Length(), Count)));
+        return EString(Str.substr(0, EMath::Min(Length(), Count)));
     }
 
-    PString PString::Right(const UINT& Count) const
+    EString EString::Right(const UINT& Count) const
     {
-        return PString(Str.substr(EMath::Max(Length() - Count, 0U), Count));
+        return EString(Str.substr(EMath::Max(Length() - Count, 0U), Count));
     }
 
-    BOOL PString::IsNumeric() const
+    BOOL EString::IsNumeric() const
     {
         for(const auto& elem : Str)
         {
@@ -153,7 +153,7 @@ namespace PigeonEngine
         return true;
     }
 
-    INT PString::AtoI() const
+    INT EString::AtoI() const
     {
         if(!IsNumeric())
         {
@@ -162,7 +162,7 @@ namespace PigeonEngine
         return atoi(Str.c_str());
     }
 
-    DOUBLE PString::AtoF() const
+    DOUBLE EString::AtoF() const
     {
         if(!IsNumeric())
         {

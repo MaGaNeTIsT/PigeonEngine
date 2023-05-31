@@ -31,26 +31,26 @@ namespace PigeonEngine
 
 	public:
 		TShaderBaseAsset(
-			const std::string& shaderPath
-#ifdef _DEVELOPMENT_EDITOR
-			, const std::string& name
+			const EString& shaderPath
+#ifdef _EDITOR_ONLY
+			, const EString& name
 #endif
 		) : TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>(
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			name
 #endif
-		), m_ShaderPath(shaderPath), m_ShaderFrequency(_ShaderFrequency)
+		), ShaderPath(shaderPath), ShaderFrequency(_ShaderFrequency)
 		{
 		}
 		virtual ~TShaderBaseAsset()
 		{
 		}
 	public:
-		const std::string&		GetShaderPath()const { return m_ShaderPath; }
-		RShaderFrequencyType	GetShaderFrequency()const { return m_ShaderFrequency; }
+		const EString&			GetShaderPath()const { return ShaderPath; }
+		RShaderFrequencyType	GetShaderFrequency()const { return ShaderFrequency; }
 	protected:
-		std::string				m_ShaderPath;
-		RShaderFrequencyType	m_ShaderFrequency;
+		EString					ShaderPath;
+		RShaderFrequencyType	ShaderFrequency;
 
 	public:
 		TShaderBaseAsset() = delete;
@@ -64,9 +64,9 @@ namespace PigeonEngine
 		//EClass(EVertexShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>)
 
 	public:
-		EVertexShaderAsset(const std::string& shaderPath
-#ifdef _DEVELOPMENT_EDITOR
-			, const std::string& name
+		EVertexShaderAsset(const EString& shaderPath
+#ifdef _EDITOR_ONLY
+			, const EString& name
 #endif
 			, const RInputLayoutDesc* inInputLayouts, const UINT& inInputLayoutNum);
 		virtual ~EVertexShaderAsset();
@@ -95,9 +95,9 @@ namespace PigeonEngine
 		//EClass(EPixelShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>)
 
 	public:
-		EPixelShaderAsset(const std::string& shaderPath
-#ifdef _DEVELOPMENT_EDITOR
-			, const std::string& name
+		EPixelShaderAsset(const EString& shaderPath
+#ifdef _EDITOR_ONLY
+			, const EString& name
 #endif
 		);
 		virtual ~EPixelShaderAsset();
@@ -120,9 +120,9 @@ namespace PigeonEngine
 		//EClass(EComputeShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>)
 
 	public:
-		EComputeShaderAsset(const std::string& shaderPath
-#ifdef _DEVELOPMENT_EDITOR
-			, const std::string& name
+		EComputeShaderAsset(const EString& shaderPath
+#ifdef _EDITOR_ONLY
+			, const EString& name
 #endif
 		);
 		virtual ~EComputeShaderAsset();
@@ -146,24 +146,24 @@ namespace PigeonEngine
 		EClass(EShaderAssetManager, EManagerBase)
 
 	public:
-		typedef TAssetManager<std::string, EVertexShaderAsset>		EVertexShaderManager;
-		typedef TAssetManager<std::string, EPixelShaderAsset>		EPixelShaderManager;
-		typedef TAssetManager<std::string, EComputeShaderAsset>		EComputeShaderManager;
+		typedef TAssetManager<EString, EVertexShaderAsset>		EVertexShaderManager;
+		typedef TAssetManager<EString, EPixelShaderAsset>		EPixelShaderManager;
+		typedef TAssetManager<EString, EComputeShaderAsset>		EComputeShaderManager;
 	public:
-		BOOL ImportShaderCSO(const std::string& inPath, const std::string& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
-		BOOL LoadVertexShaderAsset(std::string& loadPath, const EVertexShaderAsset*& outShaderAsset);
-		BOOL LoadPixelShaderAsset(std::string& loadPath, const EPixelShaderAsset*& outShaderAsset);
-		BOOL LoadComputeShaderAsset(std::string& loadPath, const EComputeShaderAsset*& outShaderAsset);
+		BOOL ImportShaderCSO(const EString& inPath, const EString& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
+		BOOL LoadVertexShaderAsset(EString& loadPath, const EVertexShaderAsset*& outShaderAsset);
+		BOOL LoadPixelShaderAsset(EString& loadPath, const EPixelShaderAsset*& outShaderAsset);
+		BOOL LoadComputeShaderAsset(EString& loadPath, const EComputeShaderAsset*& outShaderAsset);
 	private:
 		template<class TShaderAssetType>
-		TShaderAssetType* LoadShaderAsset(const std::string& loadPath);
-		BOOL SaveShaderAsset(const std::string& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
+		TShaderAssetType* LoadShaderAsset(const EString& loadPath);
+		BOOL SaveShaderAsset(const EString& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
 		template<class TShaderAssetType>
-		BOOL SaveShaderAsset(const std::string& savePath, const TShaderAssetType* inShaderAsset);
+		BOOL SaveShaderAsset(const EString& savePath, const TShaderAssetType* inShaderAsset);
 	private:
-		EVertexShaderManager	m_VSManager;
-		EPixelShaderManager		m_PSManager;
-		EComputeShaderManager	m_CSManager;
+		EVertexShaderManager	VertexShaderManager;
+		EPixelShaderManager		PixelShaderManager;
+		EComputeShaderManager	ComputeShaderManager;
 
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EShaderAssetManager)
 

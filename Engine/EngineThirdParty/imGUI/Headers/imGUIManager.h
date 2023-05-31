@@ -4,7 +4,7 @@
 
 namespace PigeonEngine
 {
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 
     class CimGUIManager
     {

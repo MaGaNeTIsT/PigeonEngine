@@ -1,17 +1,17 @@
-#include "../Headers/DevelopmentDefines.h"
-#include "../../EngineCore/Core/Headers/Main.h"
-#include "../../EngineCore/Core/Headers/Manager.h"
+#include "DevelopmentDefines.h"
+#include "../../EngineCore/Main/Main.h"
+#include "../../EngineCore/Main/Manager.h"
 
 namespace PigeonEngine
 {
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 
-	INT WindowsMessageBox(const std::string& outText, const std::string& outCaption, const UINT& type)
+	INT WindowsMessageBox(const EString& outText, const EString& outCaption, const UINT& type)
 	{
-		return (::MessageBox(EManager::GetWindowHandle(), outText.c_str(), outCaption.c_str(), type));
+		return (::MessageBox(EManager::GetWindowHandle(), *outText, *outCaption, type));
 	}
 
-	void DWindowsMessage::_Check_Default(const std::string& inCaption, const std::string& inText, const BOOL& condition)
+	void DWindowsMessage::_Check_Default(const EString& inCaption, const EString& inText, const BOOL& condition)
 	{
 		if (!condition)
 		{
