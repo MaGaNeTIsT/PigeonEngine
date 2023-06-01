@@ -35,6 +35,7 @@ namespace PigeonEngine
         [[nodiscard]] EString Replace  (const EString& From, const EString& To) const;
         [[nodiscard]] EString Left     (const UINT& Count) const;
         [[nodiscard]] EString Right    (const UINT& Count) const;
+        [[nodiscard]] EString Substring(const UINT& Start, const UINT& Count) const;
 
         [[nodiscard]] BOOL    IsNumeric()const;
         [[nodiscard]] INT     AtoI() const;

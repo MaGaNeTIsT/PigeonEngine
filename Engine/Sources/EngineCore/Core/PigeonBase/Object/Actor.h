@@ -20,6 +20,8 @@ namespace PigeonEngine
 		virtual void    Init() override;
 		virtual void    Uninit() override;
 		virtual void	FixedTick(FLOAT deltaTime);
+
+		void Destroy() override;
 	private:
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
@@ -64,8 +66,7 @@ namespace PigeonEngine
 	private:
 		TSet<PActorComponent*> Components;
 
-	public:
-		void Destroy() override;
+	
 
 
 		

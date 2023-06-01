@@ -141,6 +141,11 @@ namespace PigeonEngine
         return EString(Str.substr(EMath::Max(Length() - Count, 0U), Count));
     }
 
+    EString EString::Substring(const UINT& Start, const UINT& Count) const
+    {
+        return EString(Str.substr(EMath::Max(0u, Start), EMath::Min(Length() - Start, Count)));
+    }
+
     BOOL EString::IsNumeric() const
     {
         for(const auto& elem : Str)
