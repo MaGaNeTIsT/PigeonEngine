@@ -22,14 +22,16 @@ namespace PigeonEngine
         
         ~TArray() = default;
         
-        T&      operator[](const UINT& Index);
-        TArray<T>& operator= (const TArray<T>& Other);
-        TArray<T>& operator= (TArray<T>&& Other) noexcept;
-        TArray<T>& operator= (std::vector<T>&& Other);
+        T&          operator[](const UINT& Index);
+        const T&    operator[](const UINT& Index)const;
+        TArray<T>&  operator= (const TArray<T>& Other);
+        TArray<T>&  operator= (TArray<T>&& Other) noexcept;
+        TArray<T>&  operator= (std::vector<T>&& Other);
 
         
-        UINT Add       (const T& Element);
-        T&   Get       (const UINT& Index);
+        UINT        Add       (const T& Element);
+        T&          Get       (const UINT& Index);
+        const T&    Get       (const UINT& Index)const;
         // Find the index of given Element, return array's Length if the Element doesn't exist.
         UINT Find      (const T& Element) const;
         BOOL Contains  (const T& Element) const;
@@ -100,6 +102,13 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    const T& TArray<T>::operator[](const UINT& Index)const
+    {
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+        return Elements[Index];
+    }
+
+    template <typename T>
     TArray<T>& TArray<T>::operator=(const TArray<T>& Other)
     {
          Elements = Other.Elements;
@@ -138,6 +147,13 @@ namespace PigeonEngine
 
     template <typename T>
     T& TArray<T>::Get(const UINT& Index)
+    {
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+        return this->Elements[Index];
+    }
+
+    template <typename T>
+    const T& TArray<T>::Get(const UINT& Index)const
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return this->Elements[Index];
