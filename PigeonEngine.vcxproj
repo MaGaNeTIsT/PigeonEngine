@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
@@ -120,6 +122,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonObject.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />

@@ -326,6 +326,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -491,6 +493,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
