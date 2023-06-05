@@ -11,9 +11,14 @@ namespace PigeonEngine
         TMap();
         TMap(const TMap<K,V>& Other);
         explicit TMap(const std::map<K,V>& Other);
+        TMap(TMap<K,V>&& Other) noexcept;
+        explicit TMap(std::map<K,V>&& Other);
         ~TMap();
 
         V& operator[](const K& Key);
+        
+        TMap<K,V>& operator=(const TMap<K,V>& Other);
+        TMap<K,V>& operator=(TMap<K,V>&& Other) noexcept;
 
         typename std::map<K,V>::iterator begin();
         typename std::map<K,V>::iterator end();
@@ -58,6 +63,22 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
+    TMap<K, V>::TMap(TMap<K, V>&& Other) noexcept
+        :
+    Map(std::move(Other.Map))
+    {
+        Other.Clear();
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>::TMap(std::map<K, V>&& Other)
+        :
+    Map(std::move(Other))
+    {
+        Other.clear();
+    }
+
+    template <typename K, typename V>
     TMap<K, V>::~TMap()
     {
     }
@@ -66,6 +87,21 @@ namespace PigeonEngine
     V& TMap<K, V>::operator[](const K& Key)
     {
         return Map[Key];
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>& TMap<K, V>::operator=(const TMap<K, V>& Other)
+    {
+        Map = Other.Map;
+        return *this;
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>& TMap<K, V>::operator=(TMap<K, V>&& Other) noexcept
+    {
+        Map = std::move(Other.Map);
+        Other.Clear();
+        return *this;
     }
 
     template <typename K, typename V>

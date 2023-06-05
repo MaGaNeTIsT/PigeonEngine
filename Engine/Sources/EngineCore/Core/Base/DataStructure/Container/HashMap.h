@@ -28,6 +28,9 @@ namespace PigeonEngine
         ~THashMap();
 
         THashMap<K, V, Hash, Pred, Alloc>& operator= (const THashMap<K, V, Pred, Alloc>& Other);
+        THashMap<K, V, Hash, Pred, Alloc>& operator= (THashMap<K, V, Pred, Alloc>&& Other);
+        THashMap<K, V, Hash, Pred, Alloc>& operator= (std::unordered_map<K, V, Pred, Alloc>&& Other);
+
         V&                                 operator[](const K& Key);
 
         [[nodiscard]] UINT Length() const;
@@ -73,7 +76,7 @@ namespace PigeonEngine
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     THashMap<K, V, Hash, Pred, Alloc>::THashMap(THashMap<K, V, Pred, Alloc>&& Other)
         :
-    HashMap(Other.HashMap)
+    HashMap(std::move(Other.HashMap))
     {
         Other.Clear();
     }
@@ -81,7 +84,7 @@ namespace PigeonEngine
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     THashMap<K, V, Hash, Pred, Alloc>::THashMap(std::unordered_map<K, V, Pred, Alloc>&& Other)
         :
-    HashMap(Other)
+    HashMap(std::move(Other))
     {
         Other.clear();
     }
@@ -96,6 +99,23 @@ namespace PigeonEngine
         const THashMap<K, V, Pred, Alloc>& Other)
     {
         this->HashMap = Other.HashMap;
+        return *this;
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>& THashMap<K, V, Hash, Pred, Alloc>::operator=(THashMap<K, V, Pred, Alloc>&& Other)
+    {
+        HashMap = std::move(Other.HashMap);
+        Other.Clear();
+        return *this;
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>& THashMap<K, V, Hash, Pred, Alloc>::operator=(
+        std::unordered_map<K, V, Pred, Alloc>&& Other)
+    {
+        HashMap = std::move(Other);
+        Other.clear();
         return *this;
     }
 

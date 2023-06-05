@@ -1,14 +1,14 @@
-﻿#include "./FileHelper.h"
+﻿#include "FileHelper.h"
 #include <CoreMinimal.h>
 #include <fstream>
 
 namespace PigeonEngine
 {
 
-	BOOL EFileHelper::ReadFileAsBinary(const std::string& FilePath, void*& Return, ULONG& Size)
+	BOOL EFileHelper::ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size)
 	{
 		using namespace std;
-		ifstream  fin(FilePath, ios::in | ios::binary);;
+		ifstream  fin(*FilePath, ios::in | ios::binary);
 		if (!fin)
 		{
 #ifdef _DEVELOPMENT_EDITOR
@@ -28,10 +28,10 @@ namespace PigeonEngine
 		fin.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::ReadFileAsString(const std::string& FilePath, std::string& Return)
+	BOOL EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
 	{
 		using namespace std;
-		ifstream fin(FilePath, ios::in);
+		ifstream fin(*FilePath, ios::in);
 		if (!fin)
 		{
 #ifdef _DEVELOPMENT_EDITOR
@@ -48,10 +48,10 @@ namespace PigeonEngine
 		fin.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::SaveStringToFile(const std::string& FilePath, const std::string& Str)
+	BOOL EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str)
 	{
 		using namespace std;
-		ofstream out(FilePath, ios::out);
+		ofstream out(*FilePath, ios::out);
 		if (!out)
 		{
 #ifdef _DEVELOPMENT_EDITOR
@@ -63,14 +63,14 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		out << Str;
+		out << (*Str);
 		out.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::SaveBytesToFile(const std::string& FilePath, const void* Bytes, const ULONG& Size)
+	BOOL EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size)
 	{
 		using namespace std;
-		ofstream out(FilePath, ios::out | ios::binary);
+		ofstream out(*FilePath, ios::out | ios::binary);
 		if (!out)
 		{
 #ifdef _DEVELOPMENT_EDITOR

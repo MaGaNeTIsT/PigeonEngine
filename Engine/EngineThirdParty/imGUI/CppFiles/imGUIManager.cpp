@@ -2,7 +2,7 @@
 
 namespace PigeonEngine
 {
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 
 #include "../../../Sources/EngineCore/Core/Headers/Manager.h"
 #include "../../../Sources/EngineCore/Base/Headers/Timer.h"

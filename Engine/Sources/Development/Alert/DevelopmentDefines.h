@@ -14,7 +14,7 @@ namespace PigeonEngine
 			WINDOWS_BOX_TYPE_OK = 0,
 		};
 	public:
-		static void _Check_Default(const std::string& inCaption, const std::string& inText, const BOOL& condition);
+		static void _Check_Default(const EString& inCaption, const EString& inText, const BOOL& condition);
 
 		template<typename TConditionLambdaType>
 		static void _Check_Default(const TConditionLambdaType& conditionFunc);

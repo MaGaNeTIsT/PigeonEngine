@@ -1,7 +1,8 @@
 #pragma once
 
-
 #include <CoreMinimal.h>
+#include <Base/DataStructure/Text/String.h>
+
 namespace PigeonEngine
 {
 
@@ -16,12 +17,12 @@ namespace PigeonEngine
 		BOOL operator==(const EObjectBase& obj);
 		BOOL operator!=(const EObjectBase& obj);
 	private:
-		ULONGLONG m_UniqueID;
-#ifdef _DEVELOPMENT_EDITOR
+		ULONGLONG UniqueID;
+#ifdef _EDITOR_ONLY
 	public:
-		const std::string& GetName()const;
+		const EString& GetDebugName()const;
 	protected:
-		std::string m_Name;
+		EString DebugName;
 #endif
 
 		CLASS_VIRTUAL_NOCOPY_BODY(EObjectBase)
@@ -49,7 +50,7 @@ namespace PigeonEngine
 	public:
 		ULONGLONG AllocUniqueID();
 	private:
-		ULONGLONG m_AllocUniqueID;
+		ULONGLONG UsedAllocUniqueID;
 
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EUniqueIDManager)
 

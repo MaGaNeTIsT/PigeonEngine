@@ -12,14 +12,14 @@ namespace PigeonEngine
 
 	public:
 		TBaseAsset(
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			const std::string& name
 #endif
 		)
-			: m_Resource(nullptr)
-			, m_IsInitialized(FALSE)
-#ifdef _DEVELOPMENT_EDITOR
-			, m_Name(name)
+			: ResourceData(nullptr)
+			, bIsInitialized(FALSE)
+#ifdef _EDITOR_ONLY
+			, DebugName(name)
 #endif
 		{
 		}
@@ -29,35 +29,35 @@ namespace PigeonEngine
 		}
 	public:
 		virtual BOOL	IsValid() { return IsResourceValid(); }
-		virtual BOOL	IsInitialized() { return m_IsInitialized; }
+		virtual BOOL	IsInitialized() { return bIsInitialized; }
 		virtual BOOL	InitResource() { return FALSE; }
 		virtual void	UninitResource()
 		{
-			m_IsInitialized = FALSE;
+			bIsInitialized = FALSE;
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL	IsResourceValid()const { return (!!m_Resource); }
-		const TResourceType*	GetStoragedResource()const { return m_Resource; }
+		BOOL	IsResourceValid()const { return (!!ResourceData); }
+		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 	protected:
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
-			if (m_Resource)
+			if (ResourceData)
 			{
-#ifdef _DEVELOPMENT_EDITOR
-				std::string errorInfo = m_Name + " try to init a new resource, but already storage a resource.";
+#ifdef _EDITOR_ONLY
+				std::string errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
 			}
 			{
-				m_Resource = lStorageFunc();
+				ResourceData = lStorageFunc();
 			}
-			if (!m_Resource)
+			if (!ResourceData)
 			{
-#ifdef _DEVELOPMENT_EDITOR
-				std::string errorInfo = m_Name + " try to storage a null resource.";
+#ifdef _EDITOR_ONLY
+				std::string errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
@@ -66,16 +66,16 @@ namespace PigeonEngine
 		}
 		void ReleaseResourceInternal()
 		{
-			if (m_Resource)
+			if (ResourceData)
 			{
-				m_Resource->Release();
-				delete m_Resource;
-				m_Resource = nullptr;
+				ResourceData->Release();
+				delete ResourceData;
+				ResourceData = nullptr;
 			}
 		}
 	protected:
-		BOOL			m_IsInitialized;
-		TResourceType*	m_Resource;
+		BOOL			bIsInitialized;
+		TResourceType*	ResourceData;
 
 	public:
 		TBaseAsset() = delete;
@@ -91,26 +91,26 @@ namespace PigeonEngine
 
 	public:
 		TRenderBaseAsset(
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			const std::string& name
 #endif
 		)
-#ifdef _DEVELOPMENT_EDITOR
-			: TBaseAsset<TResourceType>(name), m_RenderResource(nullptr)
+#ifdef _EDITOR_ONLY
+			: TBaseAsset<TResourceType>(name), RenderResourceData(nullptr)
 #else
-			: m_RenderResource(nullptr)
+			: RenderResourceData(nullptr)
 #endif
-			, m_HoldResource(TRUE)
+			, bHoldResource(TRUE)
 		{
 		}
 		virtual ~TRenderBaseAsset()
 		{
 		}
 	public:
-		BOOL IsHoldResource()const { return m_HoldResource; }
+		BOOL IsHoldResource()const { return bHoldResource; }
 		virtual BOOL IsValid()override
 		{
-			if (m_HoldResource)
+			if (bHoldResource)
 			{
 				return IsResourceValid() && IsRenderResourceValid();
 			}
@@ -122,27 +122,27 @@ namespace PigeonEngine
 			ReleaseRenderResourceInternal();
 		}
 	public:
-		BOOL	IsRenderResourceValid()const { return (!!m_RenderResource); }
-		const TRenderResourceType*	GetRenderResource()const { return m_RenderResource; }
+		BOOL	IsRenderResourceValid()const { return (!!RenderResourceData); }
+		const TRenderResourceType*	GetRenderResource()const { return RenderResourceData; }
 	protected:
 		template<typename TCreateRenderResourceLambdaType>
 		BOOL CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL& bHoldStoragedResource)
 		{
-			if (m_RenderResource)
+			if (RenderResourceData)
 			{
-#ifdef _DEVELOPMENT_EDITOR
-				std::string errorInfo = m_Name + " try to create gpu resource, but already has a resource.";
+#ifdef _EDITOR_ONLY
+				std::string errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
 			}
 			{
-				m_RenderResource = lCreateFunc(m_Resource);
+				RenderResourceData = lCreateFunc(ResourceData);
 			}
-			if (!m_RenderResource)
+			if (!RenderResourceData)
 			{
-#ifdef _DEVELOPMENT_EDITOR
-				std::string errorInfo = m_Name + " try to storage a null resource.";
+#ifdef _EDITOR_ONLY
+				std::string errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
@@ -151,21 +151,21 @@ namespace PigeonEngine
 			{
 				ReleaseResourceInternal();
 			}
-			m_HoldResource = bHoldStoragedResource;
+			bHoldResource = bHoldStoragedResource;
 			return TRUE;
 		}
 		void ReleaseRenderResourceInternal()
 		{
-			if (m_RenderResource)
+			if (RenderResourceData)
 			{
-				m_RenderResource->Release();
-				delete m_RenderResource;
-				m_RenderResource = nullptr;
+				RenderResourceData->Release();
+				delete RenderResourceData;
+				RenderResourceData = nullptr;
 			}
 		}
 	protected:
-		BOOL					m_HoldResource;
-		TRenderResourceType*	m_RenderResource;
+		BOOL					bHoldResource;
+		TRenderResourceType*	RenderResourceData;
 
 	public:
 		TRenderBaseAsset() = delete;
@@ -183,13 +183,13 @@ namespace PigeonEngine
 		}
 		virtual ~TAssetManager()
 		{
-			if (m_Datas.size() > 0)
+			if (SavedDatas.size() > 0)
 			{
-				for (auto it = m_Datas.begin(); it != m_Datas.end(); it++)
+				for (auto it = SavedDatas.begin(); it != SavedDatas.end(); it++)
 				{
 					delete (it->second);
 				}
-				m_Datas.clear();
+				SavedDatas.clear();
 			}
 		}
 	public:
@@ -200,19 +200,19 @@ namespace PigeonEngine
 		*/
 		UINT Add(TKeyType&& keyValue, TAssetType* dataValue, const BOOL& replaceIfHaveKey = FALSE)
 		{
-			auto result = m_Datas.insert_or_assign(std::forward<TKeyType>(keyValue), dataValue);
+			auto result = SavedDatas.insert_or_assign(std::forward<TKeyType>(keyValue), dataValue);
 			if (!result.second)
 			{
 				if (replaceIfHaveKey)
 				{
-					TAssetType* oldValue = m_Datas[std::forward<TKeyType>(keyValue)];
-					m_Datas[std::forward<TKeyType>(keyValue)] = dataValue;
+					TAssetType* oldValue = SavedDatas[std::forward<TKeyType>(keyValue)];
+					SavedDatas[std::forward<TKeyType>(keyValue)] = dataValue;
 					delete oldValue;
-					return static_cast<UINT>(m_Datas.size());
+					return static_cast<UINT>(SavedDatas.size());
 				}
 				return 0u;
 			}
-			return static_cast<UINT>(m_Datas.size());
+			return static_cast<UINT>(SavedDatas.size());
 		}
 		/*
 		* Remove item with kayValue in mapped datas.
@@ -220,14 +220,14 @@ namespace PigeonEngine
 		*/
 		UINT Remove(TKeyType&& keyValue)
 		{
-			auto findIt = m_Datas.find(std::forward<TKeyType>(keyValue));
-			if (findIt != m_Datas.end())
+			auto findIt = SavedDatas.find(std::forward<TKeyType>(keyValue));
+			if (findIt != SavedDatas.end())
 			{
 				TAssetType* oldValue = findIt->second;
-				m_Datas.erase(std::forward<TKeyType>(keyValue));
+				SavedDatas.erase(std::forward<TKeyType>(keyValue));
 				delete oldValue;
 			}
-			return static_cast<UINT>(m_Datas.size());
+			return static_cast<UINT>(SavedDatas.size());
 		}
 		/*
 		* Find item with kayValue in mapped datas.
@@ -235,8 +235,8 @@ namespace PigeonEngine
 		*/
 		TAssetType* Find(const TKeyType& keyValue)
 		{
-			auto findIt = m_Datas.find(keyValue);
-			if (findIt != m_Datas.end())
+			auto findIt = SavedDatas.find(keyValue);
+			if (findIt != SavedDatas.end())
 			{
 				return (findIt->second);
 			}
@@ -248,8 +248,8 @@ namespace PigeonEngine
 		*/
 		BOOL Contain(const TKeyType& keyValue)const
 		{
-			auto findIt = m_Datas.find(keyValue);
-			if (findIt != m_Datas.end())
+			auto findIt = SavedDatas.find(keyValue);
+			if (findIt != SavedDatas.end())
 			{
 				return TRUE;
 			}
@@ -260,21 +260,21 @@ namespace PigeonEngine
 		*/
 		void Clear()
 		{
-			for (auto it = m_Datas.begin(); it != m_Datas.end(); it++)
+			for (auto it = SavedDatas.begin(); it != SavedDatas.end(); it++)
 			{
 				delete (it->second);
 			}
-			m_Datas.clear();
+			SavedDatas.clear();
 		}
 		/*
 		* Get size of mapped datas.
 		*/
 		UINT Size()const
 		{
-			return static_cast<UINT>(m_Datas.size());
+			return static_cast<UINT>(SavedDatas.size());
 		}
 	protected:
-		std::unordered_map<TKeyType, TAssetType*> m_Datas;
+		std::unordered_map<TKeyType, TAssetType*> SavedDatas;
 
 		CLASS_REMOVE_COPY_BODY(TAssetManager)
 	};

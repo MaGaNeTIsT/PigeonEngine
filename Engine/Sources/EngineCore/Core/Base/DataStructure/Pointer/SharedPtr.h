@@ -15,6 +15,7 @@ namespace PigeonEngine
         T*             operator->()const;
         TSharedPtr<T>& operator=(const TSharedPtr<T>& Other);
         TSharedPtr<T>& operator=(const std::shared_ptr<T>& Other);
+        explicit       operator bool() const;
         
         [[nodiscard]] BOOL IsValid()const;
         
@@ -70,6 +71,12 @@ namespace PigeonEngine
     {
         Shared = Other;
         return *this;
+    }
+
+    template <typename T>
+    TSharedPtr<T>::operator bool() const
+    {
+        return IsValid();
     }
 
     template <typename T>

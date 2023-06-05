@@ -1,13 +1,12 @@
-#include "./ObjectBase.h"
-#include <CoreMinimal.h>
+#include "ObjectBase.h"
 
 namespace PigeonEngine
 {
 
 	EObjectBase::EObjectBase()
-		: m_UniqueID(_AllocUniqueID())
-#ifdef _DEVELOPMENT_EDITOR
-		, m_Name(ENGINE_DEFAULT_NAME)
+		: UniqueID(_AllocUniqueID())
+#ifdef _EDITOR_ONLY
+		, DebugName(ENGINE_DEFAULT_NAME)
 #endif
 	{
 	}
@@ -16,7 +15,7 @@ namespace PigeonEngine
 	}
 	const ULONGLONG& EObjectBase::GetUniqueID()const
 	{
-		return m_UniqueID;
+		return UniqueID;
 	}
 	BOOL EObjectBase::operator==(const EObjectBase& obj)
 	{
@@ -26,10 +25,10 @@ namespace PigeonEngine
 	{
 		return (GetUniqueID() != obj.GetUniqueID());
 	}
-#ifdef _DEVELOPMENT_EDITOR
-	const std::string& EObjectBase::GetName()const
+#ifdef _EDITOR_ONLY
+	const EString& EObjectBase::GetDebugName()const
 	{
-		return m_Name;
+		return DebugName;
 	}
 #endif
 
@@ -40,10 +39,10 @@ namespace PigeonEngine
 	{
 	}
 
-	EUniqueIDManager::EUniqueIDManager() : m_AllocUniqueID(0u)
+	EUniqueIDManager::EUniqueIDManager() : UsedAllocUniqueID(0u)
 	{
-#ifdef _DEVELOPMENT_EDITOR
-		m_Name = ENGINE_UNIQUEID_MANAGER_NAME;
+#ifdef _EDITOR_ONLY
+		DebugName = ENGINE_UNIQUEID_MANAGER_NAME;
 #endif
 	}
 	EUniqueIDManager::~EUniqueIDManager()
@@ -51,8 +50,8 @@ namespace PigeonEngine
 	}
 	ULONGLONG EUniqueIDManager::AllocUniqueID()
 	{
-		m_AllocUniqueID += 1u;
-		return m_AllocUniqueID;
+		UsedAllocUniqueID += 1u;
+		return UsedAllocUniqueID;
 	}
 
 	ULONGLONG _AllocUniqueID()

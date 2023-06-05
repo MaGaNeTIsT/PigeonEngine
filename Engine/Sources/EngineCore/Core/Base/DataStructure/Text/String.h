@@ -3,38 +3,39 @@
 
 namespace PigeonEngine
 {
-    class PString
+    class EString
     {
     public:
-        PString();
-        PString(const PString& Other);
-        PString(PString&& Other) noexcept;
+        EString();
+        EString(const EString& Other);
+        EString(EString&& Other) noexcept;
 
-        explicit PString(const std::string& Other);
-        explicit PString(std::string&& Other);
-        explicit PString(const CHAR* Other);
-        ~PString() = default;
+        explicit EString(const std::string& Other);
+        explicit EString(std::string&& Other);
+        explicit EString(const CHAR* Other);
+        ~EString() = default;
 
-        PString&    operator=(const PString& Other);
-        PString&    operator=(const std::string& Other);
-        PString&    operator=(const CHAR* Other);
-        PString&    operator=(PString&& Other) noexcept;
-        PString&    operator+(const PString& Other);
-        PString&    operator+(const std::string& Other);
-        PString&    operator+(const CHAR* Other);
+        EString&    operator=(const EString& Other);
+        EString&    operator=(const std::string& Other);
+        EString&    operator=(const CHAR* Other);
+        EString&    operator=(EString&& Other) noexcept;
+        EString&    operator+(const EString& Other);
+        EString&    operator+(const std::string& Other);
+        EString&    operator+(const CHAR* Other);
         const CHAR* operator*()const;
         CHAR        operator[](const UINT& Index) const;
 
-        BOOL        operator==(const PString& Other)const;
-        BOOL        operator!=(const PString& Other)const;
+        BOOL        operator==(const EString& Other)const;
+        BOOL        operator!=(const EString& Other)const;
         
         [[nodiscard]] UINT    Length   ()const;
-        [[nodiscard]] BOOL    StartWith(const PString& SubString)const;
-        [[nodiscard]] UINT    Find     (const PString& SubString, UINT Offset = 0) const;
-        [[nodiscard]] UINT    RightFind(const PString& SubString, UINT Offset = 0) const;
-        [[nodiscard]] PString Replace  (const PString& From, const PString& To) const;
-        [[nodiscard]] PString Left     (const UINT& Count) const;
-        [[nodiscard]] PString Right    (const UINT& Count) const;
+        [[nodiscard]] BOOL    StartWith(const EString& SubString)const;
+        [[nodiscard]] UINT    Find     (const EString& SubString, UINT Offset = 0) const;
+        [[nodiscard]] UINT    RightFind(const EString& SubString, UINT Offset = 0) const;
+        [[nodiscard]] EString Replace  (const EString& From, const EString& To) const;
+        [[nodiscard]] EString Left     (const UINT& Count) const;
+        [[nodiscard]] EString Right    (const UINT& Count) const;
+        [[nodiscard]] EString Substring(const UINT& Start, const UINT& Count) const;
 
         [[nodiscard]] BOOL    IsNumeric()const;
         [[nodiscard]] INT     AtoI() const;
