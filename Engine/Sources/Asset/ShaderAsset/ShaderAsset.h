@@ -71,15 +71,15 @@ namespace PigeonEngine
 			, const RInputLayoutDesc* inInputLayouts, const UINT& inInputLayoutNum);
 		virtual ~EVertexShaderAsset();
 	public:
-		const RInputLayoutDesc*		GetShaderInputLayouts()const { return m_ShaderInputLayouts; }
-		const UINT&					GetShaderInputLayoutNum()const { return m_ShaderInputLayoutNum; }
+		const RInputLayoutDesc*		GetShaderInputLayouts()const { return ShaderInputLayouts; }
+		const UINT&					GetShaderInputLayoutNum()const { return ShaderInputLayoutNum; }
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
 		RDeviceD3D11::RVertexShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
 	protected:
-		RInputLayoutDesc*	m_ShaderInputLayouts;
-		UINT				m_ShaderInputLayoutNum;
+		RInputLayoutDesc*	ShaderInputLayouts;
+		UINT				ShaderInputLayoutNum;
 	private:
 		friend class EShaderAssetManager;
 

@@ -50,7 +50,7 @@ namespace PigeonEngine
 	public:
 		ULONGLONG AllocUniqueID();
 	private:
-		ULONGLONG m_AllocUniqueID;
+		ULONGLONG UsedAllocUniqueID;
 
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EUniqueIDManager)
 

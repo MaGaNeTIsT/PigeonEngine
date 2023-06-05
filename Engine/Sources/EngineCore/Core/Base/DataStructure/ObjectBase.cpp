@@ -39,7 +39,7 @@ namespace PigeonEngine
 	{
 	}
 
-	EUniqueIDManager::EUniqueIDManager() : m_AllocUniqueID(0u)
+	EUniqueIDManager::EUniqueIDManager() : UsedAllocUniqueID(0u)
 	{
 #ifdef _EDITOR_ONLY
 		DebugName = ENGINE_UNIQUEID_MANAGER_NAME;
@@ -50,8 +50,8 @@ namespace PigeonEngine
 	}
 	ULONGLONG EUniqueIDManager::AllocUniqueID()
 	{
-		m_AllocUniqueID += 1u;
-		return m_AllocUniqueID;
+		UsedAllocUniqueID += 1u;
+		return UsedAllocUniqueID;
 	}
 
 	ULONGLONG _AllocUniqueID()

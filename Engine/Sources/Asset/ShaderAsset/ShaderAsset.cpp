@@ -15,33 +15,33 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			, name
 #endif
-		), m_ShaderInputLayouts(nullptr), m_ShaderInputLayoutNum(0u)
+		), ShaderInputLayouts(nullptr), ShaderInputLayoutNum(0u)
 	{
 		if (inInputLayouts && inInputLayoutNum > 0u)
 		{
-			m_ShaderInputLayouts = new RInputLayoutDesc[inInputLayoutNum];
+			ShaderInputLayouts = new RInputLayoutDesc[inInputLayoutNum];
 			for (UINT i = 0u; i < inInputLayoutNum; i++)
 			{
-				m_ShaderInputLayouts[i] = inInputLayouts[i];
+				ShaderInputLayouts[i] = inInputLayouts[i];
 			}
-			m_ShaderInputLayoutNum = inInputLayoutNum;
+			ShaderInputLayoutNum = inInputLayoutNum;
 		}
 	}
 	EVertexShaderAsset::~EVertexShaderAsset()
 	{
-		if (m_ShaderInputLayouts)
+		if (ShaderInputLayouts)
 		{
-			delete[]m_ShaderInputLayouts;
-			m_ShaderInputLayouts = nullptr;
+			delete[]ShaderInputLayouts;
+			ShaderInputLayouts = nullptr;
 		}
 	}
 	BOOL EVertexShaderAsset::InitResource()
 	{
-		if (!m_ShaderInputLayouts || m_ShaderInputLayoutNum == 0u)
+		if (!ShaderInputLayouts || ShaderInputLayoutNum == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + m_ShaderPath + "] does not contain input layouts when init resource.";
+				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] does not contain input layouts when init resource.";
 				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
@@ -51,7 +51,7 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + m_ShaderPath + "] has been Initialized.";
+				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
@@ -64,7 +64,7 @@ namespace PigeonEngine
 			},
 			FALSE))
 		{
-			m_IsInitialized = TRUE;
+			bIsInitialized = TRUE;
 			return TRUE;
 		}
 		return FALSE;
@@ -76,7 +76,7 @@ namespace PigeonEngine
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
 			result = new RDeviceD3D11::RVertexShaderResource();
-			if (!deviceD3D11->CreateVertexShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result, m_ShaderInputLayouts, m_ShaderInputLayoutNum))
+			if (!deviceD3D11->CreateVertexShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result, ShaderInputLayouts, ShaderInputLayoutNum))
 			{
 				delete result;
 				result = nullptr;
@@ -106,7 +106,7 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + m_ShaderPath + "] has been Initialized.";
+				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
@@ -119,7 +119,7 @@ namespace PigeonEngine
 			},
 			FALSE))
 		{
-			m_IsInitialized = TRUE;
+			bIsInitialized = TRUE;
 			return TRUE;
 		}
 		return FALSE;
@@ -161,7 +161,7 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + m_ShaderPath + "] has been Initialized.";
+				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
@@ -173,7 +173,7 @@ namespace PigeonEngine
 				return (this->CreateShaderRenderResource(inResource));
 			}, FALSE))
 		{
-			m_IsInitialized = TRUE;
+			bIsInitialized = TRUE;
 			return TRUE;
 		}
 		return FALSE;
@@ -278,7 +278,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadVertexShaderAsset(EString& loadPath, const EVertexShaderAsset*& outShaderAsset)
 	{
-		EVertexShaderAsset* resultShaderAsset = m_VSManager.Find(loadPath);
+		EVertexShaderAsset* resultShaderAsset = VertexShaderManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
@@ -294,7 +294,7 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (m_VSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (VertexShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
@@ -310,7 +310,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadPixelShaderAsset(EString& loadPath, const EPixelShaderAsset*& outShaderAsset)
 	{
-		EPixelShaderAsset* resultShaderAsset = m_PSManager.Find(loadPath);
+		EPixelShaderAsset* resultShaderAsset = PixelShaderManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
@@ -326,7 +326,7 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (m_PSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (PixelShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
@@ -342,7 +342,7 @@ namespace PigeonEngine
 	}
 	BOOL EShaderAssetManager::LoadComputeShaderAsset(EString& loadPath, const EComputeShaderAsset*& outShaderAsset)
 	{
-		EComputeShaderAsset* resultShaderAsset = m_CSManager.Find(loadPath);
+		EComputeShaderAsset* resultShaderAsset = ComputeShaderManager.Find(loadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
@@ -358,7 +358,7 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (m_CSManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (ComputeShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
