@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <RenderConfig/RenderConfig.h>
 #include <RenderCommon.h>
+#include <EngineCommon.h>
 
 namespace PigeonEngine
 {
@@ -197,6 +198,19 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 		};
+		struct RBufferResource
+		{
+			RBufferResource() : Buffer(nullptr) {}
+			void Release()
+			{
+				if (Buffer)
+				{
+					Buffer->Release();
+					Buffer = nullptr;
+				}
+			};
+			Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
+		};
 	public:
 		void	Initialize();
 		void	ShutDown();
@@ -231,8 +245,8 @@ namespace PigeonEngine
 		void	SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum);
 		void	SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
 		void	SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs);
-		void	SetViewport(const RViewport& viewport);
-		void	SetViewports(const RViewport* viewports, const UINT& viewportNum);
+		void	SetViewport(const EViewport& viewport);
+		void	SetViewports(const EViewport* viewports, const UINT& viewportNum);
 	public:
 		void	SetNoVSShader();
 		void	SetNoPSShader();

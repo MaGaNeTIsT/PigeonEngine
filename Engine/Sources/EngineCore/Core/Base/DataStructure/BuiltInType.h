@@ -3,8 +3,6 @@
 namespace PigeonEngine
 {
 
-#define ENGINE_FLOAT32_MAX									(3.402823466e+38f)
-
 	typedef	char				BOOL8;
 	typedef	char				INT8;
 	typedef	char				CHAR;
@@ -31,7 +29,11 @@ namespace PigeonEngine
 	typedef	float				FLOAT;
 	typedef	double				DOUBLE;
 
-#define TRUE				(1)
-#define FALSE				(0)
+#define TRUE						(1)
+#define FALSE						(0)
+
+#define ENGINE_INLINE				inline
+#define ENGINE_NODISCARD			[[nodiscard]]
+#define ENGINE_FLOAT32_MAX			(3.402823466e+38f)
 
 };

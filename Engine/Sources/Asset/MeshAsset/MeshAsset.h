@@ -1,11 +1,12 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Base/DataStructure/Container/Array.h>
+#include <Base/DataStructure/Text/String.h>
 #include <BaseAsset.h>
 #include <EngineCommon.h>
 #include <RenderCommon.h>
-#include <Base/DataStructure/Container/Array.h>
-#include <Base/DataStructure/Text/String.h>
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
@@ -29,7 +30,9 @@ namespace PigeonEngine
 	struct EVertexDescriptor
 	{
 		EVertexDescriptor() noexcept : PartType(0u), ElementNum(0u), Stride(0u) {}
+		EVertexDescriptor(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
 		constexpr EVertexDescriptor() noexcept : PartType(0u), ElementNum(0u), Stride(0u) {}
+		constexpr EVertexDescriptor(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
 
 		UINT	PartType;
 		UINT	ElementNum;
@@ -38,6 +41,22 @@ namespace PigeonEngine
 	struct EIndexData : public EVertexDescriptor
 	{
 		EIndexData() noexcept : EVertexDescriptor(), Indices(nullptr) {}
+		EIndexData(UINT InStride, UINT InElementNum = 0u) noexcept
+			: EVertexDescriptor(), Indices(nullptr)
+		{
+#if _EDITOR_ONLY
+			if (InStride != 2u || InStride != 4u)
+			{
+				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check index data error(stride is not 4 bytes or 2 bytes)."));
+			}
+			else
+#endif
+			{
+				PartType = (InStride == 4u) ? EVertexLayoutType::MESH_INDEX_FULL : EVertexLayoutType::MESH_INDEX_HALF;
+				Stride = (PartType == EVertexLayoutType::MESH_INDEX_FULL) ? 4u : 2u;
+			}
+			ElementNum = InElementNum;
+		}
 		void Release()
 		{
 			if (Indices)
@@ -55,6 +74,31 @@ namespace PigeonEngine
 	struct EVertexData : public EVertexDescriptor
 	{
 		EVertexData() noexcept : EVertexDescriptor(), Datas(nullptr) {}
+		EVertexData(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept
+#if _EDITOR_ONLY
+			: EVertexDescriptor()
+#else
+			: EVertexDescriptor(InType, InStride, InElementNum)
+#endif
+			, Datas(nullptr)
+		{
+#if _EDITOR_ONLY
+			if (InType == EVertexLayoutType::MESH_INDEX_FULL || InType == EVertexLayoutType::MESH_INDEX_HALF || InType == EVertexLayoutType::MESH_SKIN)
+			{
+				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check vertex data error(part type is invalid)."));
+			}
+			else if ((InStride % 4u) != 0u)
+			{
+				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check vertex data error(stride is not time of 4 bytes)."));
+			}
+			else
+			{
+				PartType = InType;
+				Stride = InStride;
+			}
+			ElementNum = InElementNum;
+#endif
+		}
 		void Release()
 		{
 			if (Datas)
@@ -72,6 +116,26 @@ namespace PigeonEngine
 	struct ESkinData : public EVertexDescriptor
 	{
 		ESkinData() noexcept : EVertexDescriptor(), Indices(nullptr), Weights(nullptr) {}
+		ESkinData(UINT InStride, UINT InElementNum = 0u) noexcept
+#if _EDITOR_ONLY
+			: EVertexDescriptor(EVertexLayoutType::MESH_SKIN)
+#else
+			: EVertexDescriptor(EVertexLayoutType::MESH_SKIN, InStride, InElementNum)
+#endif
+			, Indices(nullptr), Weights(nullptr)
+		{
+#if _EDITOR_ONLY
+			if ((InStride % 4u) != 0u)
+			{
+				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check skin data error(stride is not time of 4 bytes)."));
+			}
+			else
+			{
+				Stride = InStride;
+			}
+			ElementNum = InElementNum;
+#endif
+		}
 		void Release()
 		{
 			if (Indices)
@@ -113,6 +177,8 @@ namespace PigeonEngine
 		const static UINT MeshVertexLayoutPartMaxNum = 4;
 	public:
 		EMesh(const EString& InMeshName);
+		virtual ~EMesh();
+		virtual void Release();
 	public:
 		BOOL CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
 		const EBoundAABB& GetBoundAABB()const;
@@ -151,7 +217,8 @@ namespace PigeonEngine
 	{
 	public:
 		EStaticMesh(const EString& InMeshName);
-
+		virtual ~EStaticMesh();
+		virtual void Release()override;
 	public:
 		EStaticMesh() = delete;
 
@@ -164,10 +231,12 @@ namespace PigeonEngine
 		typedef	TArray<ESkinData>		ESkinPart;
 	public:
 		ESkinnedMesh(const EString& InMeshName);
+		virtual ~ESkinnedMesh();
+		virtual void Release()override;
 	public:
 		BOOL AddSkinElement(ESkinData* InSkinData, UINT& OutLayoutIndex);
-		BOOL RemoveSkinElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex);
-		BOOL GetSkinElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
+		BOOL RemoveSkinElement(UINT InLayoutIndex);
+		BOOL GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
 	protected:
 		ESkinPart	Skins;
 	public:
@@ -175,5 +244,7 @@ namespace PigeonEngine
 
 		CLASS_REMOVE_COPY_BODY(ESkinnedMesh)
 	};
+
+
 
 };

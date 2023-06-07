@@ -36,6 +36,25 @@ namespace PigeonEngine
 		DebugName = InMeshName;
 #endif
 	}
+	EMesh::~EMesh()
+	{
+		Indices.Release();
+		for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+		{
+			Vertices[Index].Release();
+		}
+	}
+	void EMesh::Release()
+	{
+		Indices.Release();
+		for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+		{
+			Vertices[Index].Release();
+		}
+		Vertices.Clear();
+		Submeshes.Clear();
+		VertexLayout = 0u;
+	}
 	BOOL EMesh::CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const
 	{
 		if (InLayoutType == EVertexLayoutType::MESH_INDEX_FULL)
@@ -231,12 +250,33 @@ namespace PigeonEngine
 		}
 		if ((Vertices.Length() > 0u) && CheckVertexLayoutPartExist(InLayoutType, InLayoutIndex))
 		{
+			auto MoveVertexData = [](EVertexData& InA, EVertexData& InB)->void
+			{
+				EVertexData TempData;
+				TempData.PartType = InA.PartType;
+				TempData.ElementNum = InA.ElementNum;
+				TempData.Stride = InA.Stride;
+				TempData.Datas = InA.Datas;
+				InA.PartType = InB.PartType;
+				InA.ElementNum = InB.ElementNum;
+				InA.Stride = InB.Stride;
+				InA.Datas = InB.Datas;
+				InB.PartType = TempData.PartType;
+				InB.ElementNum = TempData.ElementNum;
+				InB.Stride = TempData.Stride;
+				InB.Datas = TempData.Datas;
+			};
 			const UINT DeleteLayoutType = InLayoutType << InLayoutIndex;
 			for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
 			{
 				if (Vertices[Index].PartType == DeleteLayoutType)
 				{
 					Vertices[Index].Release();
+					if (Index != (Length - 1u))
+					{
+						MoveVertexData(Vertices[Index], Vertices[Length - 1u]);
+					}
+					Vertices.Pop();
 					SetVertexLayoutPartExistInternal(InLayoutType, InLayoutIndex, FALSE);
 					return TRUE;
 				}
@@ -343,6 +383,130 @@ namespace PigeonEngine
 			}
 			VertexLayout = InIsExist ? (VertexLayout | (InLayoutType << InPartIndex)) : (VertexLayout & (~(InLayoutType << InPartIndex)));
 		}
+	}
+
+	EStaticMesh::EStaticMesh(const EString& InMeshName) : EMesh(InMeshName)
+	{
+	}
+	EStaticMesh::~EStaticMesh()
+	{
+	}
+	void EStaticMesh::Release()
+	{
+		EMesh::Release();
+	}
+
+	ESkinnedMesh::ESkinnedMesh(const EString& InMeshName) : EMesh(InMeshName)
+	{
+	}
+	ESkinnedMesh::~ESkinnedMesh()
+	{
+		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+		{
+			Skins[Index].Release();
+		}
+	}
+	void ESkinnedMesh::Release()
+	{
+		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+		{
+			Skins[Index].Release();
+		}
+		EMesh::Release();
+	}
+	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT& OutLayoutIndex)
+	{
+		if ((!InSkinData) || (InSkinData->ElementNum < 3u) || (InSkinData->PartType != EVertexLayoutType::MESH_SKIN) || ((InSkinData->Stride % 4u) != 0u) || (!(InSkinData->Indices)) || (!(InSkinData->Weights)))
+		{
+			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to add invalid skin data."));
+			return FALSE;
+		}
+		if (Skins.Length() >= EMesh::MeshVertexLayoutPartMaxNum)
+		{
+			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
+			return FALSE;
+		}
+		for (UINT FindIndex = 0u; FindIndex < EMesh::MeshVertexLayoutPartMaxNum; FindIndex++)
+		{
+			if (!CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, FindIndex))
+			{
+				SetVertexLayoutPartExistInternal(EVertexLayoutType::MESH_SKIN, FindIndex, TRUE);
+				const UINT NewIndex = Skins.Length();
+				Skins.Add(ESkinData());
+				Skins[NewIndex].PartType = InSkinData->PartType << FindIndex;
+				Skins[NewIndex].ElementNum = InSkinData->ElementNum;
+				Skins[NewIndex].Stride = InSkinData->Stride;
+				Skins[NewIndex].Indices = InSkinData->Indices;
+				Skins[NewIndex].Weights = InSkinData->Weights;
+				OutLayoutIndex = FindIndex;
+				return TRUE;
+			}
+		}
+		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
+		return FALSE;
+	}
+	BOOL ESkinnedMesh::RemoveSkinElement(UINT InLayoutIndex)
+	{
+		if ((Skins.Length() > 0u) && CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, InLayoutIndex))
+		{
+			auto MoveSkinData = [](ESkinData& InA, ESkinData& InB)->void
+			{
+				ESkinData TempData;
+				TempData.PartType = InA.PartType;
+				TempData.ElementNum = InA.ElementNum;
+				TempData.Stride = InA.Stride;
+				TempData.Indices = InA.Indices;
+				TempData.Weights = InA.Weights;
+				InA.PartType = InB.PartType;
+				InA.ElementNum = InB.ElementNum;
+				InA.Stride = InB.Stride;
+				InA.Indices = InB.Indices;
+				InA.Weights = InB.Weights;
+				InB.PartType = TempData.PartType;
+				InB.ElementNum = TempData.ElementNum;
+				InB.Stride = TempData.Stride;
+				InB.Indices = TempData.Indices;
+				InB.Weights = TempData.Weights;
+			};
+			const UINT DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
+			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			{
+				if (Skins[Index].PartType == DeleteLayoutType)
+				{
+					Skins[Index].Release();
+					if (Index != (Length - 1u))
+					{
+						MoveSkinData(Skins[Index], Skins[Length - 1u]);
+					}
+					Skins.Pop();
+					SetVertexLayoutPartExistInternal(EVertexLayoutType::MESH_SKIN, InLayoutIndex, FALSE);
+					return TRUE;
+				}
+			}
+		}
+#ifdef _DEBUG_MODE
+		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist skin data."));
+#endif
+		return FALSE;
+	}
+	BOOL ESkinnedMesh::GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const
+	{
+		if ((Skins.Length() > 0u) && CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, InLayoutIndex))
+		{
+			const UINT DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
+			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			{
+				if (Skins[Index].PartType == DeleteLayoutType)
+				{
+					OutSkinData = (const ESkinData*)(&(Skins[Index]));
+					return TRUE;
+				}
+			}
+		}
+#ifdef _DEBUG_MODE
+		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist skin data."));
+#endif
+		return FALSE;
 	}
 
 };

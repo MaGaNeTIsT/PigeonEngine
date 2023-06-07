@@ -26,7 +26,7 @@ namespace PigeonEngine
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Render device init failed. Invalid arguments");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Render device init failed. Invalid arguments"));
 			return;
 		}
 		UINT bufferWidth = static_cast<UINT>(bufferSize.x);
@@ -929,7 +929,7 @@ namespace PigeonEngine
 	{
 		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetState(rs.Get());
 	}
-	void RDeviceD3D11::SetViewport(const RViewport& viewport)
+	void RDeviceD3D11::SetViewport(const EViewport& viewport)
 	{
 		D3D11_VIEWPORT vp = {
 			viewport.TopLeftX, viewport.TopLeftY,
@@ -937,7 +937,7 @@ namespace PigeonEngine
 			viewport.MinDepth, viewport.MaxDepth };
 		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &vp);
 	}
-	void RDeviceD3D11::SetViewports(const RViewport* viewports, const UINT& viewportNum)
+	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT& viewportNum)
 	{
 		std::vector<D3D11_VIEWPORT> vps(viewportNum);
 		for (UINT i = 0u; i < viewportNum; i++)

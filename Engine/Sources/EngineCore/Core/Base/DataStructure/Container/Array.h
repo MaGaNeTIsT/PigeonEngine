@@ -39,6 +39,7 @@ namespace PigeonEngine
         void Recapacity(const UINT& NewCapacity);
         void RemoveAt  (const UINT& Index);
         void Remove    (const T& Element);
+        void Pop       ();
         void Clear     ();
 
         void Append(const TArray<T>& Other);
@@ -177,6 +178,12 @@ namespace PigeonEngine
         {
             RemoveAt(i);
         }
+    }
+
+    template <typename T>
+    void TArray<T>::Pop()
+    {
+        Elements.pop_back();
     }
 
     template <typename T>
