@@ -6,19 +6,22 @@ namespace PigeonEngine
 {
 #ifdef _EDITOR_ONLY
 
-    class CimGUIManager
+    class CImGUIManager : public EManagerBase
     {
+
+        EClass(CImGUIManager, EManagerBase)
+
     public:
         struct WndData
         {
             WndData() { ::ZeroMemory(this, sizeof(*this)); }
-            HWND                        hWnd;
-            HWND                        MouseHwnd;
-            BOOL                        MouseTracked;
-            INT                         MouseButtonsDown;
-            ImGuiMouseCursor            LastMouseCursor;
-            BOOL                        HasGamepad;
-            BOOL                        WantUpdateHasGamepad;
+            HWND                    hWnd;
+            HWND                    MouseHwnd;
+            BOOL                    MouseTracked;
+            INT                     MouseButtonsDown;
+            ImGuiMouseCursor        LastMouseCursor;
+            BOOL                    HasGamepad;
+            BOOL                    WantUpdateHasGamepad;
         };
         struct D3DData
         {
@@ -42,37 +45,32 @@ namespace PigeonEngine
             FLOAT MVP[4][4];
         };
     public:
-        static const CimGUIManager*     GetGUIManager() { return m_imGUIManager; }
-        static void                     Initialize();
-        static void                     ShutDown();
-    public:
-        static void                     Update();
-        static void                     Draw();
-        static IMGUI_IMPL_API LRESULT   WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        virtual void            Initialize()override;
+        virtual void            ShutDown()override;
+        void                    Update();
+        void                    Draw();
+        IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     private:
-        static void                     InitWnd();
-        static BOOL                     WndUpdateMouseCursor();
-        static BOOL                     WndIsVkDown(INT vk);
-        static void                     WndAddKeyEvent(ImGuiKey key, BOOL down, INT native_keycode, INT native_scancode = -1);
-        static void                     WndProcessKeyEventsWorkarounds();
-        static void                     WndUpdateKeyModifiers();
-        static ImGuiKey                 WndVirtualKeyToImGuiKey(WPARAM wParam);
+        void                    InitWnd();
+        BOOL                    WndUpdateMouseCursor();
+        BOOL                    WndIsVkDown(INT vk);
+        void                    WndAddKeyEvent(ImGuiKey key, BOOL down, INT native_keycode, INT native_scancode = -1);
+        void                    WndProcessKeyEventsWorkarounds();
+        void                    WndUpdateKeyModifiers();
+        ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
     private:
-        static void                     InitD3D();
-        static void                     D3DSetupRenderState(ImDrawData* drawData);
-        static void                     D3DRenderDrawData(ImDrawData* drawData);
-        static void                     D3DCreateFontsTexture();
-        static BOOL                     D3DCreateDeviceObjects();
-        static void                     D3DInvalidateDeviceObjects();
+        void                    InitD3D();
+        void                    D3DSetupRenderState(ImDrawData* drawData);
+        void                    D3DRenderDrawData(ImDrawData* drawData);
+        void                    D3DCreateFontsTexture();
+        BOOL                    D3DCreateDeviceObjects();
+        void                    D3DInvalidateDeviceObjects();
     private:
         WndData                 m_WndData;
         D3DData                 m_D3DData;
-    private:
-        static CimGUIManager*   m_imGUIManager;
-    private:
-        CimGUIManager() {}
-        CimGUIManager(const CimGUIManager&) {}
-        ~CimGUIManager() {}
+
+        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(CImGUIManager)
+
     };
 
 #endif

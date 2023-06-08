@@ -19,17 +19,6 @@ namespace PigeonEngine
 		Vector3		Anchor;
 		FLOAT		Radius;
 	};
-	struct RSubMeshInfo
-	{
-		RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
-		RSubMeshInfo(const RSubMeshInfo& other) noexcept :VertexStart(other.VertexStart), VertexCount(other.VertexCount), IndexStart(other.IndexStart), IndexCount(other.IndexCount) {}
-		constexpr RSubMeshInfo() noexcept :VertexStart(0u), VertexCount(0u), IndexStart(0u), IndexCount(0u) {}
-		constexpr RSubMeshInfo(const RSubMeshInfo& other) noexcept :VertexStart(other.VertexStart), VertexCount(other.VertexCount), IndexStart(other.IndexStart), IndexCount(other.IndexCount) {}
-		UINT	VertexStart;
-		UINT	VertexCount;
-		UINT	IndexStart;
-		UINT	IndexCount;
-	};
 	struct RPerLightInfo
 	{
 		RPerLightInfo() { ::ZeroMemory(this, sizeof(*this)); }

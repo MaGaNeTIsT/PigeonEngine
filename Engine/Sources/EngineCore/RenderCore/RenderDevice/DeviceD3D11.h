@@ -212,26 +212,25 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
 		};
 	public:
-		void	Initialize();
-		void	ShutDown();
-	public:
 		void	Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
 		void	Uninit();
 	public:
-		BOOL	LoadVertexShader(const std::string& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
-		BOOL	LoadPixelShader(const std::string& name, RPixelShaderResource& outShaderResource);
-		BOOL	LoadComputeShader(const std::string& name, RComputeShaderResource& outShaderResource);
 		BOOL	CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
 		BOOL	CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource);
 		BOOL	CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource);
-		BOOL	CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
-		void	UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
-		void	UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
+		BOOL	CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
 		BOOL	CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData = nullptr);
 		BOOL	CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc);
 		BOOL	CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc);
 		BOOL	CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
 		BOOL	CreateTextureCube(RTextureCubeResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData = nullptr);
+		BOOL	LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
+		BOOL	LoadPixelShader(const EString& name, RPixelShaderResource& outShaderResource);
+		BOOL	LoadComputeShader(const EString& name, RComputeShaderResource& outShaderResource);
+	public:
+		BOOL	CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData = nullptr);
+		void	UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch = 0u, UINT srcDepthPitch = 0u, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
+		void	UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 	public:
 		void	Present(const UINT& syncInterval = 0u);
 		void	SetDefaultDepthStencilState();
@@ -350,13 +349,16 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11Device>			m_Device;
 	private:
 		RDeviceD3D11() : m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr), m_DepthStencilView(nullptr), m_RenderTargetView(nullptr), m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT()) {}
-		RDeviceD3D11(const RDeviceD3D11&) : m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr), m_DepthStencilView(nullptr), m_RenderTargetView(nullptr), m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT()) {}
 		~RDeviceD3D11() {}
+		RDeviceD3D11(const RDeviceD3D11&) = delete;
+		RDeviceD3D11& operator=(const RDeviceD3D11&) = delete;
 	public:
-		static RDeviceD3D11* GetRenderDeviceD3D11();
+		static RDeviceD3D11* GetDeviceSingleton()
+		{
+			static RDeviceD3D11 deviceSingletonObject;
+			return (&deviceSingletonObject);
+		}
 	private:
-		static RDeviceD3D11* m_RenderDevice;
-	private:
-		friend class CimGUIManager;
+		friend class CImGUIManager;
 	};
 };

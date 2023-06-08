@@ -2,26 +2,6 @@
 
 namespace PigeonEngine
 {
-	RDeviceD3D11* RDeviceD3D11::m_RenderDevice = nullptr;
-	RDeviceD3D11* RDeviceD3D11::GetRenderDeviceD3D11()
-	{
-		return RDeviceD3D11::m_RenderDevice;
-	}
-	void RDeviceD3D11::Initialize()
-	{
-		if (RDeviceD3D11::m_RenderDevice == nullptr)
-		{
-			RDeviceD3D11::m_RenderDevice = new RDeviceD3D11();
-		}
-	}
-	void RDeviceD3D11::ShutDown()
-	{
-		if (RDeviceD3D11::m_RenderDevice != nullptr)
-		{
-			RDeviceD3D11::m_RenderDevice->Uninit();
-			delete (RDeviceD3D11::m_RenderDevice);
-		}
-	}
 	void RDeviceD3D11::Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE)
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
@@ -64,33 +44,33 @@ namespace PigeonEngine
 			7u,
 			D3D11_SDK_VERSION,
 			&sd,
-			RDeviceD3D11::m_RenderDevice->m_SwapChain.ReleaseAndGetAddressOf(),
-			RDeviceD3D11::m_RenderDevice->m_Device.ReleaseAndGetAddressOf(),
-			&(RDeviceD3D11::m_RenderDevice->m_FeatureLevel),
-			RDeviceD3D11::m_RenderDevice->m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
-		if (FAILED(hr) || !(RDeviceD3D11::m_RenderDevice->m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || RDeviceD3D11::m_RenderDevice->m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
+			m_SwapChain.ReleaseAndGetAddressOf(),
+			m_Device.ReleaseAndGetAddressOf(),
+			&(m_FeatureLevel),
+			m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
+		if (FAILED(hr) || !(m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create D3D11 device failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create D3D11 device failed."));
 			return;
 		}
-		RDeviceD3D11::m_RenderDevice->m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
-		RDeviceD3D11::m_RenderDevice->m_Viewport.Height = static_cast<FLOAT>(bufferHeight);
-		RDeviceD3D11::m_RenderDevice->m_Viewport.MinDepth = 0.f;
-		RDeviceD3D11::m_RenderDevice->m_Viewport.MaxDepth = 1.f;
-		RDeviceD3D11::m_RenderDevice->m_Viewport.TopLeftX = 0.f;
-		RDeviceD3D11::m_RenderDevice->m_Viewport.TopLeftY = 0.f;
+		m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
+		m_Viewport.Height = static_cast<FLOAT>(bufferHeight);
+		m_Viewport.MinDepth = 0.f;
+		m_Viewport.MaxDepth = 1.f;
+		m_Viewport.TopLeftX = 0.f;
+		m_Viewport.TopLeftY = 0.f;
 		ID3D11Texture2D* pBackBuffer = nullptr;
-		hr = RDeviceD3D11::m_RenderDevice->m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
+		hr = m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Failed to gather swap chain back buffer.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Failed to gather swap chain back buffer."));
 			return;
 		}
-		hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(pBackBuffer, nullptr, RDeviceD3D11::m_RenderDevice->m_RenderTargetView.ReleaseAndGetAddressOf());
+		hr = m_Device->CreateRenderTargetView(pBackBuffer, nullptr, m_RenderTargetView.ReleaseAndGetAddressOf());
 		pBackBuffer->Release();
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create swap chain back buffer RTV failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create swap chain back buffer RTV failed."));
 			return;
 		}
 		{
@@ -109,10 +89,10 @@ namespace PigeonEngine
 				td.CPUAccessFlags = 0u;
 				td.MiscFlags = 0u;
 			}
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, RDeviceD3D11::m_RenderDevice->m_DepthTexture.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateTexture2D(&td, nullptr, m_DepthTexture.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create main depth buffer failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create main depth buffer failed."));
 				return;
 			}
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
@@ -123,205 +103,56 @@ namespace PigeonEngine
 				dsvd.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
 			}
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilView(RDeviceD3D11::m_RenderDevice->m_DepthTexture.Get(), &dsvd, RDeviceD3D11::m_RenderDevice->m_DepthStencilView.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateDepthStencilView(m_DepthTexture.Get(), &dsvd, m_DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create main depth buffer DSV failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create main depth buffer DSV failed."));
 				return;
 			}
 		}
 	}
 	void RDeviceD3D11::Uninit()
 	{
-		if (RDeviceD3D11::m_RenderDevice->m_RenderTargetView)
+		if (m_RenderTargetView)
 		{
-			RDeviceD3D11::m_RenderDevice->m_RenderTargetView->Release();
-			RDeviceD3D11::m_RenderDevice->m_RenderTargetView = nullptr;
+			m_RenderTargetView->Release();
+			m_RenderTargetView = nullptr;
 		}
-		if (RDeviceD3D11::m_RenderDevice->m_DepthStencilView)
+		if (m_DepthStencilView)
 		{
-			RDeviceD3D11::m_RenderDevice->m_DepthStencilView->Release();
-			RDeviceD3D11::m_RenderDevice->m_DepthStencilView = nullptr;
+			m_DepthStencilView->Release();
+			m_DepthStencilView = nullptr;
 		}
-		if (RDeviceD3D11::m_RenderDevice->m_SwapChain)
+		if (m_SwapChain)
 		{
-			RDeviceD3D11::m_RenderDevice->m_SwapChain->Release();
-			RDeviceD3D11::m_RenderDevice->m_SwapChain = nullptr;
+			m_SwapChain->Release();
+			m_SwapChain = nullptr;
 		}
-		if (RDeviceD3D11::m_RenderDevice->m_ImmediateContext)
+		if (m_ImmediateContext)
 		{
-			RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Release();
-			RDeviceD3D11::m_RenderDevice->m_ImmediateContext = nullptr;
+			m_ImmediateContext->Release();
+			m_ImmediateContext = nullptr;
 		}
-		if (RDeviceD3D11::m_RenderDevice->m_Device)
+		if (m_Device)
 		{
-			RDeviceD3D11::m_RenderDevice->m_Device->Release();
-			RDeviceD3D11::m_RenderDevice->m_Device = nullptr;
+			m_Device->Release();
+			m_Device = nullptr;
 		}
-	}
-	BOOL RDeviceD3D11::LoadVertexShader(const std::string& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, name.c_str(), "rb");
-			if (!file)
-			{
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Can not open file path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Create vertex shader resource failed. path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-		}
-		{
-			if (inLayouts == nullptr)
-			{
-				delete[]buffer;
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader which needs fitted input layouts.");
-				return FALSE;
-			}
-			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
-			for (UINT i = 0u; i < inLayoutNum; i++)
-			{
-				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
-			}
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Create vertex shader input layout failed. path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
-	}
-	BOOL RDeviceD3D11::LoadPixelShader(const std::string& name, RPixelShaderResource& outShaderResource)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, name.c_str(), "rb");
-			if (!file)
-			{
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Can not open file path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Create pixel shader resource failed. path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
-	}
-	BOOL RDeviceD3D11::LoadComputeShader(const std::string& name, RComputeShaderResource& outShaderResource)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, name.c_str(), "rb");
-			if (!file)
-			{
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Can not open file path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#ifdef _DEVELOPMENT_EDITOR
-				{
-					std::string debugInfo("Create compute shader resource failed. path : ");
-					debugInfo += name;
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, debugInfo);
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
 	}
 	BOOL RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
 	{
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader resource failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader resource failed."));
 				return FALSE;
 			}
 		}
 		{
 			if (inLayouts == nullptr)
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader which needs fitted input layouts.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader which needs fitted input layouts."));
 				return FALSE;
 			}
 			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
@@ -329,10 +160,10 @@ namespace PigeonEngine
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create vertex shader input layout failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader input layout failed."));
 				return FALSE;
 			}
 		}
@@ -341,11 +172,11 @@ namespace PigeonEngine
 	BOOL RDeviceD3D11::CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource)
 	{
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreatePixelShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreatePixelShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create pixel shader resource failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create pixel shader resource failed."));
 				return FALSE;
 			}
 		}
@@ -354,63 +185,24 @@ namespace PigeonEngine
 	BOOL RDeviceD3D11::CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource)
 	{
 		{
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create compute shader resource failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create compute shader resource failed."));
 				return FALSE;
 			}
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
+	BOOL RDeviceD3D11::CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
 	{
-		D3D11_BUFFER_DESC bd;
-		{
-			::ZeroMemory(&bd, sizeof(bd));
-			bd.ByteWidth = bufferDesc.ByteWidth;
-			RDeviceD3D11::TranslateUsageFlag(bd.Usage, bufferDesc.Usage);
-			RDeviceD3D11::TranslateBindFlag(bd.BindFlags, bufferDesc.BindFlags);
-			RDeviceD3D11::TranslateCPUAccessFlag(bd.CPUAccessFlags, bufferDesc.CPUAccessFlags);
-			RDeviceD3D11::TranslateResourceMiscFlag(bd.MiscFlags, bufferDesc.MiscFlags);
-			bd.StructureByteStride = bufferDesc.StructureByteStride;
-		}
-		HRESULT hr = S_FALSE;
-		if (subData)
-		{
-			D3D11_SUBRESOURCE_DATA sd;
-			{
-				::ZeroMemory(&sd, sizeof(sd));
-				sd.pSysMem = subData->pSysMem;
-				sd.SysMemPitch = subData->SysMemPitch;
-				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
-			}
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBuffer(&bd, &sd, buffer.ReleaseAndGetAddressOf());
-		}
-		else
-		{
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBuffer(&bd, nullptr, buffer.ReleaseAndGetAddressOf());
-		}
-		if (FAILED(hr))
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create buffer resource failed.");
-			return FALSE;
-		}
-		return TRUE;
-	}
-	void RDeviceD3D11::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
-	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
-	}
-	void RDeviceD3D11::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
-	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+		return CreateBuffer(buffer.Buffer, bufferDesc, subData);
 	}
 	BOOL RDeviceD3D11::CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData)
 	{
 		if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource check failed (error description).");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource check failed (error description)."));
 			return FALSE;
 		}
 		output.Release();
@@ -419,7 +211,7 @@ namespace PigeonEngine
 			output.AccessMapWrite = (structuredBufferDesc.AccessFlags & RCPUAccessFlagType::CPU_ACCESS_WRITE) != 0;
 			if (structuredBufferDesc.GPUWritable && output.AccessMapWrite)
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource check failed (error access ability).");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource check failed (error access ability)."));
 				return FALSE;
 			}
 			D3D11_BUFFER_DESC bd;
@@ -457,15 +249,15 @@ namespace PigeonEngine
 				sd.pSysMem = subData->pSysMem;
 				sd.SysMemPitch = subData->SysMemPitch;
 				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBuffer(&bd, &sd, output.Buffer.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateBuffer(&bd, &sd, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			else
 			{
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBuffer(&bd, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateBuffer(&bd, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource failed."));
 				return FALSE;
 			}
 		}
@@ -476,10 +268,10 @@ namespace PigeonEngine
 			srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_BUFFER;
 			srvd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
 			srvd.Buffer.NumElements = structuredBufferDesc.NumElements;
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource SRV failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource SRV failed."));
 				return FALSE;
 			}
 		}
@@ -493,10 +285,10 @@ namespace PigeonEngine
 				uavd.Buffer.FirstElement = structuredBufferDesc.FirstElement;
 				uavd.Buffer.NumElements = structuredBufferDesc.NumElements;
 				RDeviceD3D11::TranslateUAVFlag(uavd.Buffer.Flags, structuredBufferDesc.UAVFlags);
-				HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+				HRESULT hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create structured buffer resource UAV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -508,7 +300,7 @@ namespace PigeonEngine
 		BOOL isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
 		if (!isDepthFormat && textureDesc.Depth != 0u)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D depth check failed (wrong depth format used).");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D depth check failed (wrong depth format used)."));
 			return FALSE;
 		}
 		output.Release();
@@ -550,10 +342,10 @@ namespace PigeonEngine
 			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
 			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource failed."));
 			return FALSE;
 		}
 		{
@@ -586,10 +378,10 @@ namespace PigeonEngine
 					srvd.Texture2D.MostDetailedMip = 0u;
 					srvd.Texture2D.MipLevels = td.MipLevels;
 				}
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource SRV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource SRV failed."));
 					return FALSE;
 				}
 			}
@@ -603,10 +395,10 @@ namespace PigeonEngine
 				RDeviceD3D11::TranslateResourceFormat(uavd.Format, textureDesc.UAVFormat);
 				uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE2D;
 				uavd.Texture2D.MipSlice = 0u;
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource UAV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -622,10 +414,10 @@ namespace PigeonEngine
 					rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
 					rtvd.Texture2D.MipSlice = 0u;
 				}
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource RTV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource RTV failed."));
 					return FALSE;
 				}
 			}
@@ -651,10 +443,10 @@ namespace PigeonEngine
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
 				dsvd.Texture2D.MipSlice = 0u;
 			}
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture2D resource DSV failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource DSV failed."));
 				return FALSE;
 			}
 		}
@@ -664,7 +456,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D check failed (wrong size used).");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D check failed (wrong size used)."));
 			return FALSE;
 		}
 		output.Release();
@@ -681,10 +473,10 @@ namespace PigeonEngine
 			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
 			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture3D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateTexture3D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource failed."));
 			return FALSE;
 		}
 		{
@@ -699,10 +491,10 @@ namespace PigeonEngine
 					srvd.Texture3D.MostDetailedMip = 0u;
 					srvd.Texture3D.MipLevels = td.MipLevels;
 				}
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource SRV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource SRV failed."));
 					return FALSE;
 				}
 			}
@@ -718,10 +510,10 @@ namespace PigeonEngine
 				uavd.Texture3D.MipSlice = 0u;
 				uavd.Texture3D.FirstWSlice = 0u;
 				uavd.Texture3D.WSize = textureDesc.Depth;
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource UAV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -739,10 +531,10 @@ namespace PigeonEngine
 					rtvd.Texture3D.FirstWSlice = 0u;
 					rtvd.Texture3D.WSize = textureDesc.Depth;
 				}
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create render texture3D resource RTV failed.");
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource RTV failed."));
 					return FALSE;
 				}
 			}
@@ -775,15 +567,15 @@ namespace PigeonEngine
 			subresourceData.SysMemPitch = subData->SysMemPitch;
 			subresourceData.SysMemSlicePitch = subData->SysMemSlicePitch;
 
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		else
 		{
-			hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		}
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture2D resource failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture2D resource failed."));
 			return FALSE;
 		}
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -794,10 +586,10 @@ namespace PigeonEngine
 			srvd.Texture2D.MostDetailedMip = 0u;
 			srvd.Texture2D.MipLevels = td.MipLevels;
 		}
-		hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+		hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture2D resource SRV failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture2D resource SRV failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -806,7 +598,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width != textureDesc.Height)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube check failed (size of texture cube must be a square).");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube check failed (size of texture cube must be a square)."));
 			return FALSE;
 		}
 		output.Release();
@@ -841,15 +633,15 @@ namespace PigeonEngine
 					sd[i].SysMemPitch = subData[i].SysMemPitch;
 					sd[i].SysMemSlicePitch = subData[i].SysMemSlicePitch;
 				}
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateTexture2D(&td, sd, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			else
 			{
-				hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+				hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 			}
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube resource failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube resource failed."));
 				return FALSE;
 			}
 		}
@@ -862,72 +654,266 @@ namespace PigeonEngine
 				srvd.Texture2D.MostDetailedMip = 0u;
 				srvd.Texture2D.MipLevels = textureDesc.MipLevels;
 			}
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create texture cube resource SRV failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube resource SRV failed."));
 				return FALSE;
 			}
 		}
 		return TRUE;
 	}
+	BOOL RDeviceD3D11::LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
+	{
+		LONG fsize;
+		BYTE* buffer;
+		FILE* file = nullptr;
+		{
+			fopen_s(&file, *name, "rb");
+			if (!file)
+			{
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Can not open file path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+			fsize = _filelength(_fileno(file));
+			buffer = new BYTE[fsize];
+			fread_s(buffer, fsize, fsize, 1u, file);
+			fclose(file);
+		}
+		{
+			HRESULT hr = m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				delete[]buffer;
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Create vertex shader resource failed. path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+		}
+		{
+			if (inLayouts == nullptr)
+			{
+				delete[]buffer;
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader which needs fitted input layouts."));
+				return FALSE;
+			}
+			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
+			for (UINT i = 0u; i < inLayoutNum; i++)
+			{
+				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
+			}
+			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				delete[]buffer;
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Create vertex shader input layout failed. path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+		}
+		delete[]buffer;
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::LoadPixelShader(const EString& name, RPixelShaderResource& outShaderResource)
+	{
+		LONG fsize;
+		BYTE* buffer;
+		FILE* file = nullptr;
+		{
+			fopen_s(&file, *name, "rb");
+			if (!file)
+			{
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Can not open file path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+			fsize = _filelength(_fileno(file));
+			buffer = new BYTE[fsize];
+			fread_s(buffer, fsize, fsize, 1u, file);
+			fclose(file);
+		}
+		{
+			HRESULT hr = m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				delete[]buffer;
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Create pixel shader resource failed. path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+		}
+		delete[]buffer;
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::LoadComputeShader(const EString& name, RComputeShaderResource& outShaderResource)
+	{
+		LONG fsize;
+		BYTE* buffer;
+		FILE* file = nullptr;
+		{
+			fopen_s(&file, *name, "rb");
+			if (!file)
+			{
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Can not open file path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+			fsize = _filelength(_fileno(file));
+			buffer = new BYTE[fsize];
+			fread_s(buffer, fsize, fsize, 1u, file);
+			fclose(file);
+		}
+		{
+			HRESULT hr = m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				delete[]buffer;
+#ifdef _EDITOR_ONLY
+				{
+					EString debugInfo("Create compute shader resource failed. path : ");
+					debugInfo = debugInfo + name;
+					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+				}
+#endif
+				return FALSE;
+			}
+		}
+		delete[]buffer;
+		return TRUE;
+	}
+	BOOL RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
+	{
+		D3D11_BUFFER_DESC bd;
+		{
+			::ZeroMemory(&bd, sizeof(bd));
+			bd.ByteWidth = bufferDesc.ByteWidth;
+			RDeviceD3D11::TranslateUsageFlag(bd.Usage, bufferDesc.Usage);
+			RDeviceD3D11::TranslateBindFlag(bd.BindFlags, bufferDesc.BindFlags);
+			RDeviceD3D11::TranslateCPUAccessFlag(bd.CPUAccessFlags, bufferDesc.CPUAccessFlags);
+			RDeviceD3D11::TranslateResourceMiscFlag(bd.MiscFlags, bufferDesc.MiscFlags);
+			bd.StructureByteStride = bufferDesc.StructureByteStride;
+		}
+		HRESULT hr = S_FALSE;
+		if (subData)
+		{
+			D3D11_SUBRESOURCE_DATA sd;
+			{
+				::ZeroMemory(&sd, sizeof(sd));
+				sd.pSysMem = subData->pSysMem;
+				sd.SysMemPitch = subData->SysMemPitch;
+				sd.SysMemSlicePitch = subData->SysMemSlicePitch;
+			}
+			hr = m_Device->CreateBuffer(&bd, &sd, buffer.ReleaseAndGetAddressOf());
+		}
+		else
+		{
+			hr = m_Device->CreateBuffer(&bd, nullptr, buffer.ReleaseAndGetAddressOf());
+		}
+		if (FAILED(hr))
+		{
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create buffer resource failed."));
+			return FALSE;
+		}
+		return TRUE;
+	}
+	void RDeviceD3D11::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
+	{
+		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+	}
+	void RDeviceD3D11::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
+	{
+		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
+	}
 	void RDeviceD3D11::Present(const UINT& syncInterval)
 	{
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
+		HRESULT hr = m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
 	}
 	void RDeviceD3D11::SetDefaultDepthStencilState()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetDepthStencilState(nullptr, 0x0u);
+		m_ImmediateContext->OMSetDepthStencilState(nullptr, 0x0u);
 	}
 	void RDeviceD3D11::SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT& stencilRef)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
+		m_ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
 	}
 	void RDeviceD3D11::SetDefaultBlendState()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffffu);
+		m_ImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffffu);
 	}
 	void RDeviceD3D11::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor, const UINT& sampleMask)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
+		m_ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
 	}
 	void RDeviceD3D11::SetNoRenderTarget()
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
+		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
 	}
 	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), nullptr);
+		m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), nullptr);
 	}
 	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtvs, dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, dsv.Get());
 	}
 	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), dsv.Get());
 	}
 	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum)
 	{
 		std::vector<ID3D11RenderTargetView*> rtvs(rtvNum);
 		for (UINT i = 0u; i < rtvNum; i++)
+		{
 			rtvs[i] = rtv[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), nullptr);
+		}
+		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), nullptr);
 	}
 	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 	{
 		std::vector<ID3D11RenderTargetView*> rtvs(rtvNum);
 		for (UINT i = 0u; i < rtvNum; i++)
+		{
 			rtvs[i] = rtv[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), dsv.Get());
+		}
+		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), dsv.Get());
 	}
 	void RDeviceD3D11::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetState(rs.Get());
+		m_ImmediateContext->RSSetState(rs.Get());
 	}
 	void RDeviceD3D11::SetViewport(const EViewport& viewport)
 	{
@@ -935,7 +921,7 @@ namespace PigeonEngine
 			viewport.TopLeftX, viewport.TopLeftY,
 			viewport.Width, viewport.Height,
 			viewport.MinDepth, viewport.MaxDepth };
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &vp);
+		m_ImmediateContext->RSSetViewports(1u, &vp);
 	}
 	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT& viewportNum)
 	{
@@ -949,164 +935,174 @@ namespace PigeonEngine
 			vps[i].MinDepth = viewports[i].MinDepth;
 			vps[i].MaxDepth = viewports[i].MaxDepth;
 		}
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetViewports(viewportNum, vps.data());
+		m_ImmediateContext->RSSetViewports(viewportNum, vps.data());
 	}
 	void RDeviceD3D11::SetNoVSShader()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetShader(nullptr, nullptr, 0u);
+		m_ImmediateContext->VSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetNoPSShader()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetShader(nullptr, nullptr, 0u);
+		m_ImmediateContext->PSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetNoCSShader()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetShader(nullptr, nullptr, 0u);
+		m_ImmediateContext->CSSetShader(nullptr, nullptr, 0u);
 	}
 	void RDeviceD3D11::SetVSShader(const Microsoft::WRL::ComPtr<ID3D11VertexShader>& vs)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetShader(vs.Get(), nullptr, 0u);
+		m_ImmediateContext->VSSetShader(vs.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::SetPSShader(const Microsoft::WRL::ComPtr<ID3D11PixelShader>& ps)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetShader(ps.Get(), nullptr, 0u);
+		m_ImmediateContext->PSSetShader(ps.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::SetCSShader(const Microsoft::WRL::ComPtr<ID3D11ComputeShader>& cs)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetShader(cs.Get(), nullptr, 0u);
+		m_ImmediateContext->CSSetShader(cs.Get(), nullptr, 0u);
 	}
 	void RDeviceD3D11::BindVSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		m_ImmediateContext->VSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
 		std::vector<ID3D11SamplerState*> sampler(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
+		{
 			sampler[i] = ss[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.data());
+		}
+		m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.data());
 	}
 	void RDeviceD3D11::BindPSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		m_ImmediateContext->PSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
 		std::vector<ID3D11SamplerState*> sampler(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
+		{
 			sampler[i] = ss[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.data());
+		}
+		m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.data());
 	}
 	void RDeviceD3D11::BindCSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetSamplers(startSlot, 1u, ss.GetAddressOf());
+		m_ImmediateContext->CSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
 		std::vector<ID3D11SamplerState*> sampler(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
+		{
 			sampler[i] = ss[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.data());
+		}
+		m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.data());
 	}
 	void RDeviceD3D11::BindVSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		m_ImmediateContext->VSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
 		std::vector<ID3D11Buffer*> buffers(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
+		{
 			buffers[i] = buffer[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		}
+		m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.data());
 	}
 	void RDeviceD3D11::BindPSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		m_ImmediateContext->PSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
 		std::vector<ID3D11Buffer*> buffers(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
+		{
 			buffers[i] = buffer[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		}
+		m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.data());
 	}
 	void RDeviceD3D11::BindCSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
+		m_ImmediateContext->CSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
 		std::vector<ID3D11Buffer*> buffers(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
+		{
 			buffers[i] = buffer[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		}
+		m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.data());
 	}
 	void RDeviceD3D11::BindVSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		m_ImmediateContext->VSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindVSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
 		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
+		{
 			srvs[i] = srv[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.data());
+		}
+		m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.data());
 	}
 	void RDeviceD3D11::BindPSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
 		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
+		{
 			srvs[i] = srv[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.data());
+		}
+		m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.data());
 	}
 	void RDeviceD3D11::BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
+		m_ImmediateContext->CSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
 	void RDeviceD3D11::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
 		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
+		{
 			srvs[i] = srv[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.data());
+		}
+		m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.data());
 	}
 	void RDeviceD3D11::BindNoCSUnorderedAccessView(const UINT& startSlot)
 	{
 		ID3D11UnorderedAccessView* uavs[] = { nullptr };
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, nullptr);
+		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, nullptr);
 	}
 	void RDeviceD3D11::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uav.GetAddressOf(), nullptr);
+		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uav.GetAddressOf(), nullptr);
 	}
 	void RDeviceD3D11::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum)
 	{
 		std::vector<ID3D11UnorderedAccessView*> uavs(uavNum);
 		for (UINT i = 0u; i < uavNum; i++)
+		{
 			uavs[i] = uav[i].Get();
-
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.data(), nullptr);
+		}
+		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.data(), nullptr);
 	}
 	void RDeviceD3D11::CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->CopyResource(dst.Get(), src.Get());
+		m_ImmediateContext->CopyResource(dst.Get(), src.Get());
 	}
 	void RDeviceD3D11::ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Color4& clearColor)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->ClearRenderTargetView(rtv.Get(), clearColor.rgba);
+		m_ImmediateContext->ClearRenderTargetView(rtv.Get(), clearColor.rgba);
 	}
 	void RDeviceD3D11::ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT flags, const FLOAT& depth, const UINT& stencil)
 	{
@@ -1114,79 +1110,79 @@ namespace PigeonEngine
 		RDeviceD3D11::TranslateClearDepthStencilFlag(clearFlags, flags);
 		UINT8 clearStencil = static_cast<UINT8>(EMath::Min(stencil, 0xffu));
 		FLOAT clearDepth = EMath::Clamp(depth, 0.f, 1.f);
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->ClearDepthStencilView(dsv.Get(), clearFlags, clearDepth, clearStencil);
+		m_ImmediateContext->ClearDepthStencilView(dsv.Get(), clearFlags, clearDepth, clearStencil);
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Color4& clearValue)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->ClearUnorderedAccessViewFloat(uav.Get(), clearValue.rgba);
+		m_ImmediateContext->ClearUnorderedAccessViewFloat(uav.Get(), clearValue.rgba);
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewUint(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Vector4Int& clearValue)
 	{
 		UINT values[4] = { static_cast<UINT>(clearValue.x), static_cast<UINT>(clearValue.y), static_cast<UINT>(clearValue.z), static_cast<UINT>(clearValue.w) };
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->ClearUnorderedAccessViewUint(uav.Get(), values);
+		m_ImmediateContext->ClearUnorderedAccessViewUint(uav.Get(), values);
 	}
 	void RDeviceD3D11::SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetInputLayout(layout.Get());
+		m_ImmediateContext->IASetInputLayout(layout.Get());
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
+		m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
 	}
 	void RDeviceD3D11::SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetInputLayout(layout.Get());
+		m_ImmediateContext->IASetInputLayout(layout.Get());
 	}
 	void RDeviceD3D11::SetNoInputLayout()
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetInputLayout(nullptr);
+		m_ImmediateContext->IASetInputLayout(nullptr);
 	}
 	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset)
 	{
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
+		m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
 	}
 	void RDeviceD3D11::SetNoVertexBuffer()
 	{
 		ID3D11Buffer* buffers[] = { nullptr };
 		UINT stride = 0u, offset = 0u;
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetVertexBuffers(0u, 1u, buffers, &stride, &offset);
+		m_ImmediateContext->IASetVertexBuffers(0u, 1u, buffers, &stride, &offset);
 	}
 	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT& offset, RFormatType format)
 	{
 		DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
 		RDeviceD3D11::TranslateResourceFormat(indexFormat, format);
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetIndexBuffer(ib.Get(), indexFormat, offset);
+		m_ImmediateContext->IASetIndexBuffer(ib.Get(), indexFormat, offset);
 	}
 	void RDeviceD3D11::SetNoIndexBuffer()
 	{
 		DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetIndexBuffer(nullptr, indexFormat, 0u);
+		m_ImmediateContext->IASetIndexBuffer(nullptr, indexFormat, 0u);
 	}
 	void RDeviceD3D11::SetPrimitiveTopology(RPrimitiveTopologyType topology)
 	{
 		D3D_PRIMITIVE_TOPOLOGY output = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		TranslatePrimitiveTopology(output, topology);
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->IASetPrimitiveTopology(output);
+		m_ImmediateContext->IASetPrimitiveTopology(output);
 	}
 	void RDeviceD3D11::Draw(const UINT& vertexCount, const UINT& startVertexLocation)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Draw(vertexCount, startVertexLocation);
+		m_ImmediateContext->Draw(vertexCount, startVertexLocation);
 	}
 	void RDeviceD3D11::DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation, const INT& baseVertexLocation)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
+		m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 	}
 	void RDeviceD3D11::DrawIndexedInstance(const UINT& instanceCount, const UINT& indexCountPerInstance, const UINT& startInstanceLocation, const UINT& startIndexLocation, const INT& BaseVertexLocation)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
+		m_ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
 	}
 	void RDeviceD3D11::Dispatch(const UINT& x, const UINT& y, const UINT& z)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Dispatch(x, y, z);
+		m_ImmediateContext->Dispatch(x, y, z);
 	}
 	void RDeviceD3D11::DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
+		m_ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
 	}
 	BOOL RDeviceD3D11::CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const RDepthState& depthState, const RStencilState* stencilState)
 	{
@@ -1195,10 +1191,10 @@ namespace PigeonEngine
 			::ZeroMemory(&dsd, sizeof(dsd));
 			RDeviceD3D11::TranslateDepthStencilState(dsd, depthState, stencilState);
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create depth stencil state failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create depth stencil state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1207,7 +1203,7 @@ namespace PigeonEngine
 	{
 		if (!blendStates || blendStateNum == 0u)
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create blend state check failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create blend state check failed."));
 			return FALSE;
 		}
 		D3D11_BLEND_DESC bd;
@@ -1224,10 +1220,10 @@ namespace PigeonEngine
 				RDeviceD3D11::TranslateBlendState(bd.RenderTarget[i], blendStates[i]);
 			}
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create blend state failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create blend state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1247,10 +1243,10 @@ namespace PigeonEngine
 			rd.MultisampleEnable = FALSE;
 			rd.AntialiasedLineEnable = FALSE;
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create rasterizer state failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create rasterizer state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1262,10 +1258,10 @@ namespace PigeonEngine
 			::ZeroMemory(&sd, sizeof(sd));
 			RDeviceD3D11::TranslateSamplerState(sd, samplerState);
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create sampler state failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create sampler state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1277,10 +1273,10 @@ namespace PigeonEngine
 			::ZeroMemory(&qd, sizeof(qd));
 			RDeviceD3D11::TranslateQueryDesc(qd, queryDesc);
 		}
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Create query failed.");
+			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create query failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1289,30 +1285,30 @@ namespace PigeonEngine
 	{
 		UINT getDataFlag = 0u;
 		RDeviceD3D11::TranslateGetDataFlag(getDataFlag, flag);
-		HRESULT hr = RDeviceD3D11::m_RenderDevice->m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
+		HRESULT hr = m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
 		return (!(FAILED(hr)));
 	}
 	void RDeviceD3D11::Begin(ID3D11Asynchronous* pAsync)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Begin(pAsync);
+		m_ImmediateContext->Begin(pAsync);
 	}
 	void RDeviceD3D11::End(ID3D11Asynchronous* pAsync)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->End(pAsync);
+		m_ImmediateContext->End(pAsync);
 	}
 	BOOL RDeviceD3D11::Map(const RStructuredBuffer& input, const UINT& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output)
 	{
 		{
 			if (!(input.AccessMapRead || input.AccessMapWrite))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer check failed (error input access flag).");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer check failed (error input access flag)."));
 				return FALSE;
 			}
 			BOOL needRead = mapType == RResourceMapType::RESOURCE_MAP_READ || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE;
 			BOOL needWrite = mapType == RResourceMapType::RESOURCE_MAP_WRITE || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE || mapType == RResourceMapType::RESOURCE_MAP_WRITE_DISCARD || mapType == RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE;
 			if (input.AccessMapRead != needRead || input.AccessMapWrite != needWrite)
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer check failed (error access flag).");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer check failed (error access flag)."));
 				return FALSE;
 			}
 		}
@@ -1322,7 +1318,7 @@ namespace PigeonEngine
 			::ZeroMemory(&ms, sizeof(ms));
 			RDeviceD3D11::TranslateResourceMapType(d3dMapType, mapType);
 			RDeviceD3D11::TranslateResourceMapFlag(d3dMapFlag, mapFlag);
-			HRESULT hr = RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Map(
+			HRESULT hr = m_ImmediateContext->Map(
 				input.Buffer.Get(),
 				indexSubResource,
 				d3dMapType,
@@ -1330,7 +1326,7 @@ namespace PigeonEngine
 				&ms);
 			if (FAILED(hr))
 			{
-				PE_FAILED(ENGINE_RENDER_CORE_ERROR, "Mapping resource buffer access failed.");
+				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer access failed."));
 				return FALSE;
 			}
 		}
@@ -1341,7 +1337,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::Unmap(const RStructuredBuffer& input, const UINT& indexSubResource)
 	{
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
+		m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
 	}
 	void RDeviceD3D11::TranslateBindFlag(UINT& output, RBindFlagType input)
 	{
@@ -1859,7 +1855,7 @@ namespace PigeonEngine
 		::ZeroMemory(&output, sizeof(output));
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return; }
 		{
-			std::string strSemanticName; UINT semanticName = input.SemanticName;
+			EString strSemanticName; UINT semanticName = input.SemanticName;
 			if ((semanticName >> 15) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TEXCOORD[n]
@@ -1921,8 +1917,8 @@ namespace PigeonEngine
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			output.SemanticIndex = semanticName & 0xfu;
-			if (output.SemanticIndex == 0u) { output.SemanticName = strSemanticName.c_str(); }
-			else { output.SemanticName = (strSemanticName + std::to_string(semanticName & 0xfu)).c_str(); }
+			if (output.SemanticIndex == 0u) { output.SemanticName = *strSemanticName; }
+			else { output.SemanticName = *(strSemanticName + ToString(semanticName & 0xfu)); }
 		}
 		output.InputSlot = input.InputSlot;
 		output.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
@@ -1931,12 +1927,12 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ClearFinalOutput()
 	{
-		RDeviceD3D11::ClearRenderTargetView(RDeviceD3D11::m_RenderDevice->m_RenderTargetView);
-		RDeviceD3D11::ClearDepthStencilView(RDeviceD3D11::m_RenderDevice->m_DepthStencilView);
+		RDeviceD3D11::ClearRenderTargetView(m_RenderTargetView);
+		RDeviceD3D11::ClearDepthStencilView(m_DepthStencilView);
 	}
 	void RDeviceD3D11::SetFinalOutput()
 	{
-		RDeviceD3D11::SetRenderTarget(RDeviceD3D11::m_RenderDevice->m_RenderTargetView, RDeviceD3D11::m_RenderDevice->m_DepthStencilView);
-		RDeviceD3D11::m_RenderDevice->m_ImmediateContext->RSSetViewports(1u, &(RDeviceD3D11::m_RenderDevice->m_Viewport));
+		RDeviceD3D11::SetRenderTarget(m_RenderTargetView, m_DepthStencilView);
+		m_ImmediateContext->RSSetViewports(1u, &(m_Viewport));
 	}
  };

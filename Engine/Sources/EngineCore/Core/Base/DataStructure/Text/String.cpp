@@ -176,5 +176,8 @@ namespace PigeonEngine
         return atof(Str.c_str());
     }
 
-  
+    inline EString ToString(const UINT& InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
 };

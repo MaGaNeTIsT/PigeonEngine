@@ -61,7 +61,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\CoreMinimal.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\TemplateHeaders.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\ErrorCaption.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Main\Manager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Main\MainManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Input.h" />
     <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Keyboard.h" />
     <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Mouse.h" />
@@ -298,7 +298,7 @@
     <ClCompile Include="Engine\Sources\Development\Alert\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Math\Math.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\IO\FileHelper.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Main\Manager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Main\MainManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Input.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Keyboard.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Mouse.cpp" />

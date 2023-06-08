@@ -50,6 +50,6 @@
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "xaudio2.lib")
 
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 #include "../../../ThirdParty/imgui/imgui.h"
 #endif

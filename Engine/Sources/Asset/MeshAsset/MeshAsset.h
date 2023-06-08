@@ -3,13 +3,39 @@
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
 #include <Base/DataStructure/Text/String.h>
-#include <BaseAsset.h>
 #include <EngineCommon.h>
 #include <RenderCommon.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include <BaseAsset.h>
 
 namespace PigeonEngine
 {
+
+	enum EMeshType
+	{
+		MESH_TYPE_STATIC	= 0,
+		MESH_TYPE_SKIN		= 1,
+		MESH_TYPE_COUNT
+	};
+
+	struct EMeshRenderResource
+	{
+		EMeshRenderResource() {}
+		void Release()
+		{
+			if (RenderResources.Length() > 0)
+			{
+				for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
+				{
+					RenderResources[Index].Release();
+				}
+				RenderResources.Clear();
+			}
+		}
+
+		TArray<RDeviceD3D11::RBufferResource> RenderResources;
+	};
+
 	// 32 bit number                    31 30| 29    26| 25    22| 21    18| 17    14| 13    10| 9     6 | 5     2 | 1 0
 	// Vertex layout by bit (32 bits) :  0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0
 	// Vertex layout layer :           NotUse|   Skin  |Bitangent|  Color  | Tangent |  Normal | TexCoord|  Vertex | Index
@@ -159,7 +185,9 @@ namespace PigeonEngine
 	struct ESubmeshData
 	{
 		ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
+		ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
 		constexpr ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
+		constexpr ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
 
 		UINT	StartVertex;
 		UINT	VertexNum;
@@ -211,6 +239,7 @@ namespace PigeonEngine
 		EMesh() = delete;
 
 		CLASS_REMOVE_COPY_BODY(EMesh)
+
 	};
 
 	class EStaticMesh : public EMesh
@@ -223,6 +252,7 @@ namespace PigeonEngine
 		EStaticMesh() = delete;
 
 		CLASS_REMOVE_COPY_BODY(EStaticMesh)
+
 	};
 
 	class ESkinnedMesh : public EMesh
@@ -243,8 +273,40 @@ namespace PigeonEngine
 		ESkinnedMesh() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkinnedMesh)
+
 	};
 
+	template<EMeshType _MeshType, typename TMeshResourceType>
+	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, EMeshRenderResource>
+	{
+	public:
+		TMeshBaseAsset(
+			const EString& InMeshPath
+#ifdef _EDITOR_ONLY
+			, const EString& InDebugName
+#endif
+		) : TRenderBaseAsset<TMeshResourceType, EMeshRenderResource>(
+#ifdef _EDITOR_ONLY
+			InDebugName
+#endif
+		), MeshPath(InMeshPath), MeshType(_MeshType)
+		{
+		}
+		virtual ~TMeshBaseAsset()
+		{
+		}
+	public:
+		const EString&	GetMeshPath()const { return MeshPath; }
+		EMeshType		GetMeshType()const { return MeshType; }
+	protected:
+		EString		MeshPath;
+		EMeshType	MeshType;
 
+	public:
+		TMeshBaseAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(TMeshBaseAsset)
+
+	};
 
 };

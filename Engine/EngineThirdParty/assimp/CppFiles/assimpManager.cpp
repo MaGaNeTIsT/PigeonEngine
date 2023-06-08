@@ -48,14 +48,14 @@ namespace PigeonEngine
 		}
 	}
 
-	std::string _GTranslateString(const aiString& s)
+	EString _GTranslateString(const aiString& s)
 	{
-		return (std::string(s.C_Str()));
+		return (EString(s.C_Str()));
 	}
 
-	aiString _GTranslateString(const std::string& s)
+	aiString _GTranslateString(const EString& s)
 	{
-		return (aiString(s));
+		return (aiString(*s));
 	}
 
 	struct _GVertexSemanticName
@@ -68,7 +68,7 @@ namespace PigeonEngine
 	struct _GMeshAssetImporterInfo
 	{
 		_GMeshAssetImporterInfo() { NumIndices = 0u; NumVertices = 0u; VertexStride = 0u; }
-		std::string				Name;
+		EString				Name;
 		UINT					NumIndices;
 		UINT					NumVertices;
 		UINT					VertexStride;
@@ -81,7 +81,7 @@ namespace PigeonEngine
 		_GVertexSemanticName	VertexBoneWeight;
 	};
 
-	void _GTranslateMeshDesc(const aiScene* scene, std::vector<RSubMeshInfo>& subMesh, std::vector<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateMeshDesc(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, TArray<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		if (subMesh.size() > 0)
 		{
@@ -181,7 +181,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const RSubMeshInfo& subMeshInfo, CHAR*& verticesData, std::vector<UINT>& indicesData, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<std::string, SHORT>& allGameNodeIndices, std::vector<SHORT>& allBoneList)
+	void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const RSubMeshInfo& subMeshInfo, CHAR*& verticesData, TArray<UINT>& indicesData, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<SHORT>& allBoneList)
 	{
 		{
 			const UINT numFaces = mesh->mNumFaces;
@@ -199,7 +199,7 @@ namespace PigeonEngine
 		{
 			const UINT	numVertices = mesh->mNumVertices;
 
-			std::vector<std::vector<std::pair<USHORT, FLOAT>>> blendIndicesWeights;
+			TArray<TArray<std::pair<USHORT, FLOAT>>> blendIndicesWeights;
 			UINT* blendWriteIndex = nullptr;
 
 			if (allGameNodes.size() != 0 && allGameNodeIndices.size() != 0 && allGameNodes.size() == allGameNodeIndices.size())
@@ -207,14 +207,14 @@ namespace PigeonEngine
 				blendWriteIndex = new UINT[numVertices];
 				blendIndicesWeights.resize(numVertices);
 
-				auto _FindBoneListIndex = [](const std::string& boneName, const std::map<std::string, SHORT>& allNodeIndices)->SHORT {
+				auto _FindBoneListIndex = [](const EString& boneName, const TMap<EString, SHORT>& allNodeIndices)->SHORT {
 					auto itFindName = allNodeIndices.find(boneName);
 					if (itFindName != allNodeIndices.end())
 					{
 						return (itFindName->second);
 					}
 					return -1; };
-				auto _GetBoneIndex = [](const SHORT& indexInAllGameNodes, std::vector<SHORT>& boneList)->USHORT {
+				auto _GetBoneIndex = [](const SHORT& indexInAllGameNodes, TArray<SHORT>& boneList)->USHORT {
 					USHORT boneListSize = static_cast<USHORT>(boneList.size());
 					for (USHORT i = 0u; i < boneListSize; i++)
 					{
@@ -226,7 +226,7 @@ namespace PigeonEngine
 					boneList.push_back(indexInAllGameNodes);
 					return (static_cast<USHORT>(boneList.size() - 1));
 				};
-				auto _SortBoneIndicesAndWeight = [](const UINT& num, std::vector<std::pair<USHORT, FLOAT>>& inputIndicesWeights) {
+				auto _SortBoneIndicesAndWeight = [](const UINT& num, TArray<std::pair<USHORT, FLOAT>>& inputIndicesWeights) {
 					BOOL needLoop = TRUE;
 					while (needLoop == TRUE)
 					{
@@ -401,7 +401,7 @@ namespace PigeonEngine
 					{
 						if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
 						{
-							std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
+							TArray<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneIndices = blendIndicesWeights[indexVertex];
 							UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
 							tempBoneIndices[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneIndices[0].first : 0u;
 							tempBoneIndices[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneIndices[1].first : 0u;
@@ -424,7 +424,7 @@ namespace PigeonEngine
 					{
 						if (blendWriteIndex != nullptr && blendIndicesWeights.size() > 0)
 						{
-							std::vector<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
+							TArray<std::pair<USHORT, FLOAT>>& tempSceneMeshBoneWeights = blendIndicesWeights[indexVertex];
 							UINT& tempSceneMeshBoneWriteIndex = blendWriteIndex[indexVertex];
 							tempBoneWeights[0] = tempSceneMeshBoneWriteIndex > 0u ? tempSceneMeshBoneWeights[0].second : 1.f;
 							tempBoneWeights[1] = tempSceneMeshBoneWriteIndex > 1u ? tempSceneMeshBoneWeights[1].second : 0.f;
@@ -449,7 +449,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GTranslateDefaultMeshData(const aiScene* scene, std::vector<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateDefaultMeshData(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		vertexStride = 0u;
 		numVertices = 0u;
@@ -464,7 +464,7 @@ namespace PigeonEngine
 			indices.clear();
 		}
 
-		std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
+		TArray<_GMeshAssetImporterInfo> sceneMeshesInfo;
 		UINT totalNumVertices, totalNumIndices;
 		_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, inputLayoutDesc, inputLayoutNum);
 
@@ -476,9 +476,9 @@ namespace PigeonEngine
 			indices.resize(totalNumIndices);
 		}
 
-		std::vector<CustomStruct::CGameBoneNodeInfo> tempSkeleton;
-		const std::map<std::string, SHORT> tempSkeletonNodeIndices;
-		std::vector<SHORT> tempBoneList;
+		TArray<CustomStruct::CGameBoneNodeInfo> tempSkeleton;
+		const TMap<EString, SHORT> tempSkeletonNodeIndices;
+		TArray<SHORT> tempBoneList;
 
 		UINT numMeshes = scene->mNumMeshes;
 		UINT indexSubMesh = 0u;
@@ -496,7 +496,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GTranslateSkeletonMeshData(const aiScene* scene, std::vector<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<std::string, SHORT>& allGameNodeIndices, std::vector<USHORT>& allBoneList, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateSkeletonMeshData(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		vertexStride = 0u;
 		numVertices = 0u;
@@ -515,7 +515,7 @@ namespace PigeonEngine
 			allBoneList.clear();
 		}
 
-		std::vector<_GMeshAssetImporterInfo> sceneMeshesInfo;
+		TArray<_GMeshAssetImporterInfo> sceneMeshesInfo;
 		UINT totalNumVertices, totalNumIndices;
 		_GTranslateMeshDesc(scene, subMesh, sceneMeshesInfo, totalNumVertices, totalNumIndices, inputLayoutDesc, inputLayoutNum);
 
@@ -527,7 +527,7 @@ namespace PigeonEngine
 			indices.resize(totalNumIndices);
 		}
 
-		std::vector<SHORT> tempBoneList;
+		TArray<SHORT> tempBoneList;
 		tempBoneList.push_back(-1);
 
 		UINT numMeshes = scene->mNumMeshes;
@@ -557,10 +557,10 @@ namespace PigeonEngine
 		}
 	}
 
-	const static std::string _GConstImporterNodeEmptyName = "_ConstImporterNodeEmptyName";
-	const static std::string _GConstDummyAnimationName = "_ConstDummyAnimationName";
+	const static EString _GConstImporterNodeEmptyName = "_ConstImporterNodeEmptyName";
+	const static EString _GConstDummyAnimationName = "_ConstDummyAnimationName";
 
-	void _GReadNodeTransformRecursion(const aiNode* node, std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const std::map<const aiNode*, std::string>& allNodeNames, const std::map<std::string, SHORT>& allNodeIndices, Matrix4x4 globalMatrix)
+	void _GReadNodeTransformRecursion(const aiNode* node, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<const aiNode*, EString>& allNodeNames, const TMap<EString, SHORT>& allNodeIndices, Matrix4x4 globalMatrix)
 	{
 		if (node == nullptr)
 		{
@@ -581,7 +581,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GGatherSingleNodeRecursion(const aiNode* node, std::vector<const aiNode*>& allNodes, std::map<const aiNode*, std::string>& allNodeNames, std::map<std::string, SHORT>& allNodeIndices)
+	void _GGatherSingleNodeRecursion(const aiNode* node, TArray<const aiNode*>& allNodes, TMap<const aiNode*, EString>& allNodeNames, TMap<EString, SHORT>& allNodeIndices)
 	{
 		if (node == nullptr)
 		{
@@ -592,7 +592,7 @@ namespace PigeonEngine
 		{
 			SHORT indexNode = static_cast<SHORT>(allNodes.size() - 1);
 
-			std::string tempNodeName;
+			EString tempNodeName;
 			if (node->mName.length > 0)
 			{
 				tempNodeName = _GTranslateString(node->mName);
@@ -604,8 +604,8 @@ namespace PigeonEngine
 
 			auto itFindNode = allNodeIndices.find(tempNodeName);
 
-			std::string tempOldName = tempNodeName + "_";
-			std::string tempNewName = tempNodeName;
+			EString tempOldName = tempNodeName + "_";
+			EString tempNewName = tempNodeName;
 			UINT tempSameNameIndex = 0u;
 			while (itFindNode != allNodeIndices.end())
 			{
@@ -625,8 +625,8 @@ namespace PigeonEngine
 	}
 
 	BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
-		std::vector<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices,
-		std::vector<CustomStruct::CGameBoneNodeInfo>& allGameNodes, std::map<std::string, SHORT>& allGameNodeIndices, std::vector<USHORT>& allBoneList,
+		TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices,
+		TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList,
 		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		// Init all output data.
@@ -668,7 +668,7 @@ namespace PigeonEngine
 		}
 
 		// Read data structures of all nodes.
-		std::vector<const aiNode*> allNodes; std::map<const aiNode*, std::string> allNodeNames; std::map<std::string, SHORT> allNodeIndices;
+		TArray<const aiNode*> allNodes; TMap<const aiNode*, EString> allNodeNames; TMap<EString, SHORT> allNodeIndices;
 		_GGatherSingleNodeRecursion(scene->mRootNode, allNodes, allNodeNames, allNodeIndices);
 
 		// Check read state.
@@ -806,7 +806,7 @@ namespace PigeonEngine
 		}
 	}
 
-	BOOL _GGatherAllAnimationDatas(const std::string& path, const aiScene* scene, std::map<std::string, CustomStruct::CGameAnimationInfo>& animationDatas)
+	BOOL _GGatherAllAnimationDatas(const EString& path, const aiScene* scene, TMap<EString, CustomStruct::CGameAnimationInfo>& animationDatas)
 	{
 		if (animationDatas.size() > 0)
 		{
@@ -825,7 +825,7 @@ namespace PigeonEngine
 				continue;
 			}
 
-			std::string tempAnimationNodeName;
+			EString tempAnimationNodeName;
 
 			if (tempAnimationNode->mName.length > 0)
 			{
@@ -859,19 +859,23 @@ namespace PigeonEngine
 		return result;
 	}
 
-	CassimpManager* CassimpManager::m_AssimpManager = nullptr;
-	void CassimpManager::Initialize()
+	CAssimpManager::CAssimpManager()
 	{
-		if (CassimpManager::m_AssimpManager == nullptr)
-		{
-			CassimpManager::m_AssimpManager = new CassimpManager();
-		}
+#ifdef _EDITOR_ONLY
+		DebugName = ENGINE_ASSIMP_MANAGER_NAME;
+#endif
+	}
+	CAssimpManager::~CAssimpManager()
+	{
+	}
+	void CAssimpManager::Initialize()
+	{
 		if (_GAssetImporter == nullptr)
 		{
 			_GAssetImporter = new Assimp::Importer();
 		}
 	}
-	void CassimpManager::ShutDown()
+	void CAssimpManager::ShutDown()
 	{
 		if (_GAssetImporter != nullptr)
 		{
@@ -879,32 +883,10 @@ namespace PigeonEngine
 			delete (_GAssetImporter);
 			_GAssetImporter = nullptr;
 		}
-		if (CassimpManager::m_AssimpManager != nullptr)
-		{
-			delete (CassimpManager::m_AssimpManager);
-			CassimpManager::m_AssimpManager = nullptr;
-		}
 	}
-	CassimpManager::CassimpReadFileState CassimpManager::ReadDefaultMeshFile(const std::string& path, std::vector<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices)
+	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadStaticMeshFile(const EString& path, EStaticMesh& OutMesh)
 	{
-		if (vertices != nullptr)
-		{
-			delete[]vertices;
-			vertices = nullptr;
-		}
-		if (indices.size() > 0)
-		{
-			indices.clear();
-		}
-		if (subMesh.size() > 0)
-		{
-			subMesh.clear();
-		}
-		vertexStride = 0u;
-		numVertices = 0u;
-		numIndices = 0u;
-
-		CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
 
 		Assimp::Importer* impoter = _GAssetImporter;
 		if (impoter == nullptr)
@@ -951,7 +933,7 @@ namespace PigeonEngine
 
 		if (!scene->HasMeshes())
 		{
-			result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain meshes
 			impoter->FreeScene();
 			return result;
@@ -963,12 +945,12 @@ namespace PigeonEngine
 		CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 		_GTranslateDefaultMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
 
-		result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED;
+		result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();
 		return result;
 	}
-	CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonMeshAndBoneFile(const std::string& path, std::vector<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, std::vector<UINT>& indices, UINT& numIndices, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList)
+	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)
 	{
 		if (vertices != nullptr)
 		{
@@ -1000,7 +982,7 @@ namespace PigeonEngine
 			boneList.clear();
 		}
 
-		CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
 
 		Assimp::Importer* impoter = _GAssetImporter;
 		if (impoter == nullptr)
@@ -1051,7 +1033,7 @@ namespace PigeonEngine
 
 		if (!scene->HasMeshes())
 		{
-			result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
 			impoter->FreeScene();
 			return result;
@@ -1060,15 +1042,15 @@ namespace PigeonEngine
 		// Now we can access the file's contents.
 		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-		result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();
 		return result;
 	}
-	CassimpManager::CassimpReadFileState CassimpManager::ReadSkeletonAnimationFile(const std::string& path, std::map<std::string, std::map<std::string, CustomStruct::CGameAnimationInfo>>& animationDatas)
+	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadSkeletonAnimationFile(const EString& path, TMap<EString, TMap<EString, CustomStruct::CGameAnimationInfo>>& animationDatas)
 	{
-		CassimpReadFileState result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
 
 		if (animationDatas.find(path) != animationDatas.end())
 		{
@@ -1108,17 +1090,17 @@ namespace PigeonEngine
 
 		if (!scene->HasAnimations())
 		{
-			result = CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
 			impoter->FreeScene();
 			return result;
 		}
 
 		// Now we can access the file's contents.
-		auto tempInsertResult = animationDatas.insert_or_assign(path, std::map<std::string, CustomStruct::CGameAnimationInfo>());
-		std::map<std::string, CustomStruct::CGameAnimationInfo>& tempAnimationContainer = tempInsertResult.first->second;
+		auto tempInsertResult = animationDatas.insert_or_assign(path, TMap<EString, CustomStruct::CGameAnimationInfo>());
+		TMap<EString, CustomStruct::CGameAnimationInfo>& tempAnimationContainer = tempInsertResult.first->second;
 
-		result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CassimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();

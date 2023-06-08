@@ -15,7 +15,7 @@ namespace PigeonEngine
 
 #define RENDER_SHADOW_MAP_SIZE								(4096)
 
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 #define RENDER_GPU_PROFILER_NONE							("Render_GPUProfiler_None")
 #define RENDER_GPU_PROFILER_RECORD_FRAME_COUNT				(5)
 #endif

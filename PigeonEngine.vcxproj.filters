@@ -291,7 +291,7 @@
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Main\Manager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Main\MainManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\HID\Input\Input.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Math\Math.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
@@ -467,7 +467,7 @@
     <ClCompile Include="Engine\Sources\OldEngineCode\EngineRender\AssetsManager\CSkeletonAnimationManager.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Main\Manager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Main\MainManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\HID\Input\Input.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\Math\Math.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />

@@ -1,12 +1,11 @@
 #include "../Headers/imGUIManager.h"
+#include "../../../Sources/EngineCore/Main/MainManager.h"
+#include <Base/Timer/Timer.h>
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
 #ifdef _EDITOR_ONLY
-
-#include "../../../Sources/EngineCore/Core/Headers/Manager.h"
-#include "../../../Sources/EngineCore/Base/Headers/Timer.h"
-#include "../../../Sources/EngineCore/RenderCore/Headers/DeviceD3D11.h"
 
 #define IM_VK_KEYPAD_ENTER      (VK_RETURN + 256)
 
@@ -17,56 +16,63 @@ namespace PigeonEngine
 #define DBT_DEVNODES_CHANGED    0x0007
 #endif
 
-    CimGUIManager*  CimGUIManager::m_imGUIManager   = new CimGUIManager();
-    void CimGUIManager::Initialize()
+    CImGUIManager::CImGUIManager()
+    {
+#ifdef _EDITOR_ONLY
+        DebugName = ENGINE_IMGUI_MANAGER_NAME;
+#endif
+    }
+    CImGUIManager::~CImGUIManager()
+    {
+    }
+    void CImGUIManager::Initialize()
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::StyleColorsDark();
 
-        CimGUIManager::InitWnd();
-        CimGUIManager::InitD3D();
+        InitWnd();
+        InitD3D();
 
         RECT rect = { 0, 0, 0, 0 };
-        ::GetClientRect(CimGUIManager::m_imGUIManager->m_WndData.hWnd, &rect);
+        ::GetClientRect(m_WndData.hWnd, &rect);
         io.DisplaySize = ImVec2((FLOAT)(rect.right - rect.left), (FLOAT)(rect.bottom - rect.top));
     }
-    void CimGUIManager::ShutDown()
+    void CImGUIManager::ShutDown()
     {
         ImGuiIO& io = ImGui::GetIO();
 
-        CimGUIManager::D3DInvalidateDeviceObjects();
-        io.BackendRendererName = NULL;
-        io.BackendRendererUserData = NULL;
+        D3DInvalidateDeviceObjects();
+        io.BackendRendererName = nullptr;
+        io.BackendRendererUserData = nullptr;
 
-        io.BackendPlatformName = NULL;
-        io.BackendPlatformUserData = NULL;
-
-        delete (CimGUIManager::m_imGUIManager);
-        CimGUIManager::m_imGUIManager = NULL;
+        io.BackendPlatformName = nullptr;
+        io.BackendPlatformUserData = nullptr;
     }
-    void CimGUIManager::Update()
+    void CImGUIManager::Update()
     {
         ImGuiIO& io = ImGui::GetIO();
+        const EGameTimer* GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
+        io.DeltaTime = static_cast<FLOAT>(GameTimer->GetDeltaTime());
 
-        io.DeltaTime = static_cast<FLOAT>(EManager::GetGameTimer()->GetDeltaTime());
-
-        CimGUIManager::WndProcessKeyEventsWorkarounds();
+        WndProcessKeyEventsWorkarounds();
 
         ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
-        if (CimGUIManager::m_imGUIManager->m_WndData.LastMouseCursor != mouse_cursor)
+        if (m_WndData.LastMouseCursor != mouse_cursor)
         {
-            CimGUIManager::m_imGUIManager->m_WndData.LastMouseCursor = mouse_cursor;
-            CimGUIManager::WndUpdateMouseCursor();
+            m_WndData.LastMouseCursor = mouse_cursor;
+            WndUpdateMouseCursor();
         }
 
-        if (!CimGUIManager::m_imGUIManager->m_D3DData.FontSampler)
-            CimGUIManager::D3DCreateDeviceObjects();
+        if (!m_D3DData.FontSampler)
+        {
+            D3DCreateDeviceObjects();
+        }
 
         ImGui::NewFrame();
     }
-    void CimGUIManager::Draw()
+    void CImGUIManager::Draw()
     {
         //{
         //    static ImVec4   clearColor = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -102,27 +108,27 @@ namespace PigeonEngine
         //}
 
         ImGui::Render();
-        CimGUIManager::D3DRenderDrawData(ImGui::GetDrawData());
+        D3DRenderDrawData(ImGui::GetDrawData());
     }
-    void CimGUIManager::InitWnd()
+    void CImGUIManager::InitWnd()
     {
         ImGuiIO& io = ImGui::GetIO();
-        IM_ASSERT(io.BackendPlatformUserData == NULL && "Already initialized a platform backend!");
+        IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
 
-        io.BackendPlatformUserData = (void*)(&CimGUIManager::m_imGUIManager->m_WndData);
+        io.BackendPlatformUserData = (void*)(&m_WndData);
         io.BackendPlatformName = "imgui_impl_win32";
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 
-        HWND hWnd = EManager::GetWindowHandle();
-        CimGUIManager::m_imGUIManager->m_WndData.hWnd = hWnd;
-        CimGUIManager::m_imGUIManager->m_WndData.WantUpdateHasGamepad = FALSE;
-        CimGUIManager::m_imGUIManager->m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;
+        HWND hWnd = EMainManager::GetManagerSingleton()->GetWindowHandle();
+        m_WndData.hWnd = hWnd;
+        m_WndData.WantUpdateHasGamepad = FALSE;
+        m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;
 
         ImGui::GetMainViewport()->PlatformHandleRaw = (void*)hWnd;
     }
-    IMGUI_IMPL_API LRESULT CimGUIManager::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    IMGUI_IMPL_API LRESULT CImGUIManager::WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        if (ImGui::GetCurrentContext() == NULL)
+        if (ImGui::GetCurrentContext() == nullptr)
             return 0;
 
         ImGuiIO& io = ImGui::GetIO();
@@ -130,19 +136,21 @@ namespace PigeonEngine
         switch (msg)
         {
         case WM_MOUSEMOVE:
-            CimGUIManager::m_imGUIManager->m_WndData.MouseHwnd = hWnd;
-            if (!CimGUIManager::m_imGUIManager->m_WndData.MouseTracked)
+            m_WndData.MouseHwnd = hWnd;
+            if (!m_WndData.MouseTracked)
             {
                 TRACKMOUSEEVENT tme = { sizeof(tme), TME_LEAVE, hWnd, 0 };
                 ::TrackMouseEvent(&tme);
-                CimGUIManager::m_imGUIManager->m_WndData.MouseTracked = TRUE;
+                m_WndData.MouseTracked = TRUE;
             }
             io.AddMousePosEvent((FLOAT)GET_X_LPARAM(lParam), (FLOAT)GET_Y_LPARAM(lParam));
             break;
         case WM_MOUSELEAVE:
-            if (CimGUIManager::m_imGUIManager->m_WndData.MouseHwnd == hWnd)
-                CimGUIManager::m_imGUIManager->m_WndData.MouseHwnd = NULL;
-            CimGUIManager::m_imGUIManager->m_WndData.MouseTracked = FALSE;
+            if (m_WndData.MouseHwnd == hWnd)
+            {
+                m_WndData.MouseHwnd = nullptr;
+            }
+            m_WndData.MouseTracked = FALSE;
             io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
             break;
         case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
@@ -155,9 +163,11 @@ namespace PigeonEngine
             if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONDBLCLK) { button = 1; }
             if (msg == WM_MBUTTONDOWN || msg == WM_MBUTTONDBLCLK) { button = 2; }
             if (msg == WM_XBUTTONDOWN || msg == WM_XBUTTONDBLCLK) { button = (GET_XBUTTON_WPARAM(wParam) == XBUTTON1) ? 3 : 4; }
-            if (CimGUIManager::m_imGUIManager->m_WndData.MouseButtonsDown == 0 && ::GetCapture() == NULL)
+            if (m_WndData.MouseButtonsDown == 0 && ::GetCapture() == nullptr)
+            {
                 ::SetCapture(hWnd);
-            CimGUIManager::m_imGUIManager->m_WndData.MouseButtonsDown |= 1 << button;
+            }
+            m_WndData.MouseButtonsDown |= 1 << button;
             io.AddMouseButtonEvent(button, TRUE);
             return 0;
         }
@@ -171,9 +181,11 @@ namespace PigeonEngine
             if (msg == WM_RBUTTONUP) { button = 1; }
             if (msg == WM_MBUTTONUP) { button = 2; }
             if (msg == WM_XBUTTONUP) { button = (GET_XBUTTON_WPARAM(wParam) == XBUTTON1) ? 3 : 4; }
-            CimGUIManager::m_imGUIManager->m_WndData.MouseButtonsDown &= ~(1 << button);
-            if (CimGUIManager::m_imGUIManager->m_WndData.MouseButtonsDown == 0 && ::GetCapture() == hWnd)
+            m_WndData.MouseButtonsDown &= ~(1 << button);
+            if (m_WndData.MouseButtonsDown == 0 && ::GetCapture() == hWnd)
+            {
                 ::ReleaseCapture();
+            }
             io.AddMouseButtonEvent(button, FALSE);
             return 0;
         }
@@ -191,31 +203,35 @@ namespace PigeonEngine
             const BOOL is_key_down = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
             if (wParam < 256)
             {
-                CimGUIManager::WndUpdateKeyModifiers();
+                CImGUIManager::WndUpdateKeyModifiers();
 
                 INT vk = (INT)wParam;
                 if ((wParam == VK_RETURN) && (HIWORD(lParam) & KF_EXTENDED))
+                {
                     vk = IM_VK_KEYPAD_ENTER;
+                }
 
-                const ImGuiKey key = CimGUIManager::WndVirtualKeyToImGuiKey(vk);
+                const ImGuiKey key = CImGUIManager::WndVirtualKeyToImGuiKey(vk);
                 const INT scancode = (INT)LOBYTE(HIWORD(lParam));
                 if (key != ImGuiKey_None)
-                    CimGUIManager::WndAddKeyEvent(key, is_key_down, vk, scancode);
+                {
+                    CImGUIManager::WndAddKeyEvent(key, is_key_down, vk, scancode);
+                }
 
                 if (vk == VK_SHIFT)
                 {
-                    if (CimGUIManager::WndIsVkDown(VK_LSHIFT) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_LeftShift, is_key_down, VK_LSHIFT, scancode); }
-                    if (CimGUIManager::WndIsVkDown(VK_RSHIFT) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_RightShift, is_key_down, VK_RSHIFT, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_LSHIFT) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_LeftShift, is_key_down, VK_LSHIFT, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_RSHIFT) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_RightShift, is_key_down, VK_RSHIFT, scancode); }
                 }
                 else if (vk == VK_CONTROL)
                 {
-                    if (CimGUIManager::WndIsVkDown(VK_LCONTROL) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_LeftCtrl, is_key_down, VK_LCONTROL, scancode); }
-                    if (CimGUIManager::WndIsVkDown(VK_RCONTROL) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_RightCtrl, is_key_down, VK_RCONTROL, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_LCONTROL) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_LeftCtrl, is_key_down, VK_LCONTROL, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_RCONTROL) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_RightCtrl, is_key_down, VK_RCONTROL, scancode); }
                 }
                 else if (vk == VK_MENU)
                 {
-                    if (CimGUIManager::WndIsVkDown(VK_LMENU) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_LeftAlt, is_key_down, VK_LMENU, scancode); }
-                    if (CimGUIManager::WndIsVkDown(VK_RMENU) == is_key_down) { CimGUIManager::WndAddKeyEvent(ImGuiKey_RightAlt, is_key_down, VK_RMENU, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_LMENU) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_LeftAlt, is_key_down, VK_LMENU, scancode); }
+                    if (CImGUIManager::WndIsVkDown(VK_RMENU) == is_key_down) { CImGUIManager::WndAddKeyEvent(ImGuiKey_RightAlt, is_key_down, VK_RMENU, scancode); }
                 }
             }
             return 0;
@@ -226,29 +242,37 @@ namespace PigeonEngine
             return 0;
         case WM_CHAR:
             if (wParam > 0 && wParam < 0x10000)
+            {
                 io.AddInputCharacterUTF16((USHORT)wParam);
+            }
             return 0;
         case WM_SETCURSOR:
-            if (LOWORD(lParam) == HTCLIENT && CimGUIManager::WndUpdateMouseCursor())
+            if (LOWORD(lParam) == HTCLIENT && CImGUIManager::WndUpdateMouseCursor())
+            {
                 return 1;
+            }
             return 0;
         case WM_DEVICECHANGE:
             if ((UINT)wParam == DBT_DEVNODES_CHANGED)
-                CimGUIManager::m_imGUIManager->m_WndData.WantUpdateHasGamepad = TRUE;
+            {
+                m_WndData.WantUpdateHasGamepad = TRUE;
+            }
             return 0;
         }
         return 0;
     }
-    BOOL CimGUIManager::WndUpdateMouseCursor()
+    BOOL CImGUIManager::WndUpdateMouseCursor()
     {
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
+        {
             return FALSE;
+        }
 
         ImGuiMouseCursor imgui_cursor = ImGui::GetMouseCursor();
         if (imgui_cursor == ImGuiMouseCursor_None || io.MouseDrawCursor)
         {
-            ::SetCursor(NULL);
+            ::SetCursor(nullptr);
         }
         else
         {
@@ -265,42 +289,49 @@ namespace PigeonEngine
             case ImGuiMouseCursor_Hand:         win32_cursor = IDC_HAND; break;
             case ImGuiMouseCursor_NotAllowed:   win32_cursor = IDC_NO; break;
             }
-            ::SetCursor(::LoadCursor(NULL, win32_cursor));
+            ::SetCursor(::LoadCursor(nullptr, win32_cursor));
         }
         return TRUE;
     }
-    BOOL CimGUIManager::WndIsVkDown(INT vk)
+    BOOL CImGUIManager::WndIsVkDown(INT vk)
     {
         return (::GetKeyState(vk) & 0x8000) != 0;
     }
-    void CimGUIManager::WndAddKeyEvent(ImGuiKey key, BOOL down, INT native_keycode, INT native_scancode)
+    void CImGUIManager::WndAddKeyEvent(ImGuiKey key, BOOL down, INT native_keycode, INT native_scancode)
     {
         ImGuiIO& io = ImGui::GetIO();
         io.AddKeyEvent(key, down);
         io.SetKeyEventNativeData(key, native_keycode, native_scancode);
         IM_UNUSED(native_scancode);
     }
-    void CimGUIManager::WndProcessKeyEventsWorkarounds()
+    void CImGUIManager::WndProcessKeyEventsWorkarounds()
     {
-        if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && !CimGUIManager::WndIsVkDown(VK_LSHIFT))
-            CimGUIManager::WndAddKeyEvent(ImGuiKey_LeftShift, FALSE, VK_LSHIFT);
-        if (ImGui::IsKeyDown(ImGuiKey_RightShift) && !CimGUIManager::WndIsVkDown(VK_RSHIFT))
-            CimGUIManager::WndAddKeyEvent(ImGuiKey_RightShift, FALSE, VK_RSHIFT);
-
-        if (ImGui::IsKeyDown(ImGuiKey_LeftSuper) && !CimGUIManager::WndIsVkDown(VK_LWIN))
-            CimGUIManager::WndAddKeyEvent(ImGuiKey_LeftSuper, FALSE, VK_LWIN);
-        if (ImGui::IsKeyDown(ImGuiKey_RightSuper) && !CimGUIManager::WndIsVkDown(VK_RWIN))
-            CimGUIManager::WndAddKeyEvent(ImGuiKey_RightSuper, FALSE, VK_RWIN);
+        if (ImGui::IsKeyDown(ImGuiKey_LeftShift) && !CImGUIManager::WndIsVkDown(VK_LSHIFT))
+        {
+            CImGUIManager::WndAddKeyEvent(ImGuiKey_LeftShift, FALSE, VK_LSHIFT);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_RightShift) && !CImGUIManager::WndIsVkDown(VK_RSHIFT))
+        {
+            CImGUIManager::WndAddKeyEvent(ImGuiKey_RightShift, FALSE, VK_RSHIFT);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_LeftSuper) && !CImGUIManager::WndIsVkDown(VK_LWIN))
+        {
+            CImGUIManager::WndAddKeyEvent(ImGuiKey_LeftSuper, FALSE, VK_LWIN);
+        }
+        if (ImGui::IsKeyDown(ImGuiKey_RightSuper) && !CImGUIManager::WndIsVkDown(VK_RWIN))
+        {
+            CImGUIManager::WndAddKeyEvent(ImGuiKey_RightSuper, FALSE, VK_RWIN);
+        }
     }
-    void CimGUIManager::WndUpdateKeyModifiers()
+    void CImGUIManager::WndUpdateKeyModifiers()
     {
         ImGuiIO& io = ImGui::GetIO();
-        io.AddKeyEvent(ImGuiKey_ModCtrl, CimGUIManager::WndIsVkDown(VK_CONTROL));
-        io.AddKeyEvent(ImGuiKey_ModShift, CimGUIManager::WndIsVkDown(VK_SHIFT));
-        io.AddKeyEvent(ImGuiKey_ModAlt, CimGUIManager::WndIsVkDown(VK_MENU));
-        io.AddKeyEvent(ImGuiKey_ModSuper, CimGUIManager::WndIsVkDown(VK_APPS));
+        io.AddKeyEvent(ImGuiKey_ModCtrl, CImGUIManager::WndIsVkDown(VK_CONTROL));
+        io.AddKeyEvent(ImGuiKey_ModShift, CImGUIManager::WndIsVkDown(VK_SHIFT));
+        io.AddKeyEvent(ImGuiKey_ModAlt, CImGUIManager::WndIsVkDown(VK_MENU));
+        io.AddKeyEvent(ImGuiKey_ModSuper, CImGUIManager::WndIsVkDown(VK_APPS));
     }
-    ImGuiKey CimGUIManager::WndVirtualKeyToImGuiKey(WPARAM wParam)
+    ImGuiKey CImGUIManager::WndVirtualKeyToImGuiKey(WPARAM wParam)
     {
         switch (wParam)
         {
@@ -411,18 +442,18 @@ namespace PigeonEngine
         default: return ImGuiKey_None;
         }
     }
-    void CimGUIManager::InitD3D()
+    void CImGUIManager::InitD3D()
     {
         ImGuiIO& io = ImGui::GetIO();
-        IM_ASSERT(io.BackendRendererUserData == NULL && "Already initialized a renderer backend!");
+        IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
-        io.BackendRendererUserData = (void*)(&CimGUIManager::m_imGUIManager->m_D3DData);
+        io.BackendRendererUserData = (void*)(&m_D3DData);
         io.BackendRendererName = "imgui_impl_dx11";
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     }
-    void CimGUIManager::D3DSetupRenderState(ImDrawData* drawData)
+    void CImGUIManager::D3DSetupRenderState(ImDrawData* drawData)
     {
-        Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = CRenderDevice::GetRenderDeviceContext();
+        Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = RDeviceD3D11::GetDeviceSingleton()->GetRenderDeviceContext();
 
         D3D11_VIEWPORT vp;
         ::ZeroMemory(&vp, sizeof(vp));
@@ -435,84 +466,94 @@ namespace PigeonEngine
 
         UINT stride = sizeof(ImDrawVert);
         UINT offset = 0u;
-        ctx->IASetInputLayout(CimGUIManager::m_imGUIManager->m_D3DData.InputLayout);
-        ctx->IASetVertexBuffers(0u, 1u, &CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer, &stride, &offset);
-        ctx->IASetIndexBuffer(CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer, sizeof(ImDrawIdx) == 2u ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0u);
+        ctx->IASetInputLayout(m_D3DData.InputLayout);
+        ctx->IASetVertexBuffers(0u, 1u, &m_D3DData.VertexBuffer, &stride, &offset);
+        ctx->IASetIndexBuffer(m_D3DData.IndexBuffer, sizeof(ImDrawIdx) == 2u ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT, 0u);
         ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        ctx->VSSetShader(CimGUIManager::m_imGUIManager->m_D3DData.VertexShader, NULL, 0u);
-        ctx->VSSetConstantBuffers(0u, 1u, &CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer);
-        ctx->PSSetShader(CimGUIManager::m_imGUIManager->m_D3DData.PixelShader, NULL, 0u);
-        ctx->PSSetSamplers(0u, 1u, &CimGUIManager::m_imGUIManager->m_D3DData.FontSampler);
-        ctx->GSSetShader(NULL, NULL, 0u);
-        ctx->HSSetShader(NULL, NULL, 0u);
-        ctx->DSSetShader(NULL, NULL, 0u);
-        ctx->CSSetShader(NULL, NULL, 0u);
+        ctx->VSSetShader(m_D3DData.VertexShader, nullptr, 0u);
+        ctx->VSSetConstantBuffers(0u, 1u, &m_D3DData.ConstantBuffer);
+        ctx->PSSetShader(m_D3DData.PixelShader, nullptr, 0u);
+        ctx->PSSetSamplers(0u, 1u, &m_D3DData.FontSampler);
+        ctx->GSSetShader(nullptr, nullptr, 0u);
+        ctx->HSSetShader(nullptr, nullptr, 0u);
+        ctx->DSSetShader(nullptr, nullptr, 0u);
+        ctx->CSSetShader(nullptr, nullptr, 0u);
 
         const FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-        ctx->OMSetBlendState(CimGUIManager::m_imGUIManager->m_D3DData.BlendState, blendFactor, 0xffffffff);
-        ctx->OMSetDepthStencilState(CimGUIManager::m_imGUIManager->m_D3DData.DepthStencilState, 0u);
-        ctx->RSSetState(CimGUIManager::m_imGUIManager->m_D3DData.RasterizerState);
+        ctx->OMSetBlendState(m_D3DData.BlendState, blendFactor, 0xffffffff);
+        ctx->OMSetDepthStencilState(m_D3DData.DepthStencilState, 0u);
+        ctx->RSSetState(m_D3DData.RasterizerState);
     }
-    void CimGUIManager::D3DRenderDrawData(ImDrawData* drawData)
+    void CImGUIManager::D3DRenderDrawData(ImDrawData* drawData)
     {
         if (drawData->DisplaySize.x <= 0.f || drawData->DisplaySize.y <= 0.f)
             return;
 
-        Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = CRenderDevice::GetRenderDeviceContext();
-        Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
+        Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = RDeviceD3D11::GetDeviceSingleton()->GetRenderDeviceContext();
+        Microsoft::WRL::ComPtr<ID3D11Device> dvc = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();
 
-        if (!CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer || CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize < drawData->TotalVtxCount)
+        if (!m_D3DData.VertexBuffer || m_D3DData.VertexBufferSize < drawData->TotalVtxCount)
         {
-            if (CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer = NULL; }
-            CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize = drawData->TotalVtxCount + 5000;
+            if (m_D3DData.VertexBuffer) { m_D3DData.VertexBuffer->Release(); m_D3DData.VertexBuffer = nullptr; }
+            m_D3DData.VertexBufferSize = drawData->TotalVtxCount + 5000;
             D3D11_BUFFER_DESC desc;
             ::ZeroMemory(&desc, sizeof(desc));
             desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.ByteWidth = CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize * sizeof(ImDrawVert);
+            desc.ByteWidth = m_D3DData.VertexBufferSize * sizeof(ImDrawVert);
             desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
             desc.MiscFlags = 0u;
-            HRESULT hr = dvc->CreateBuffer(&desc, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer);
+            HRESULT hr = dvc->CreateBuffer(&desc, nullptr, &m_D3DData.VertexBuffer);
             if (FAILED(hr))
+            {
                 return;
+            }
         }
-        if (!CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer || CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize < drawData->TotalIdxCount)
+        if (!m_D3DData.IndexBuffer || m_D3DData.IndexBufferSize < drawData->TotalIdxCount)
         {
-            if (CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer = NULL; }
-            CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize = drawData->TotalIdxCount + 10000;
+            if (m_D3DData.IndexBuffer) { m_D3DData.IndexBuffer->Release(); m_D3DData.IndexBuffer = nullptr; }
+            m_D3DData.IndexBufferSize = drawData->TotalIdxCount + 10000;
             D3D11_BUFFER_DESC desc;
             ::ZeroMemory(&desc, sizeof(desc));
             desc.Usage = D3D11_USAGE_DYNAMIC;
-            desc.ByteWidth = CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize * sizeof(ImDrawIdx);
+            desc.ByteWidth = m_D3DData.IndexBufferSize * sizeof(ImDrawIdx);
             desc.BindFlags = D3D11_BIND_INDEX_BUFFER;
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-            HRESULT hr = dvc->CreateBuffer(&desc, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer);
+            HRESULT hr = dvc->CreateBuffer(&desc, nullptr, &m_D3DData.IndexBuffer);
             if (FAILED(hr))
+            {
                 return;
+            }
         }
 
         D3D11_MAPPED_SUBRESOURCE vtxResource, idxResource;
-        if (ctx->Map(CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &vtxResource) != S_OK)
+        if (ctx->Map(m_D3DData.VertexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &vtxResource) != S_OK)
+        {
             return;
-        if (ctx->Map(CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &idxResource) != S_OK)
+        }
+        if (ctx->Map(m_D3DData.IndexBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &idxResource) != S_OK)
+        {
             return;
+        }
         ImDrawVert* vtxDst = (ImDrawVert*)vtxResource.pData;
         ImDrawIdx* idxDst = (ImDrawIdx*)idxResource.pData;
         for (INT n = 0; n < drawData->CmdListsCount; n++)
         {
             const ImDrawList* cmdList = drawData->CmdLists[n];
-            memcpy_s(vtxDst, CimGUIManager::m_imGUIManager->m_D3DData.VertexBufferSize * sizeof(ImDrawVert), cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-            memcpy_s(idxDst, CimGUIManager::m_imGUIManager->m_D3DData.IndexBufferSize * sizeof(ImDrawIdx), cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+            memcpy_s(vtxDst, m_D3DData.VertexBufferSize * sizeof(ImDrawVert), cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+            memcpy_s(idxDst, m_D3DData.IndexBufferSize * sizeof(ImDrawIdx), cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
             vtxDst += cmdList->VtxBuffer.Size;
             idxDst += cmdList->IdxBuffer.Size;
         }
-        ctx->Unmap(CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer, 0u);
-        ctx->Unmap(CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer, 0u);
+        ctx->Unmap(m_D3DData.VertexBuffer, 0u);
+        ctx->Unmap(m_D3DData.IndexBuffer, 0u);
 
         {
             D3D11_MAPPED_SUBRESOURCE mappedResource;
-            if (ctx->Map(CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &mappedResource) != S_OK)
+            if (ctx->Map(m_D3DData.ConstantBuffer, 0u, D3D11_MAP_WRITE_DISCARD, 0u, &mappedResource) != S_OK)
+            {
                 return;
+            }
             D3DConstantBuffer* constantBuffer = (D3DConstantBuffer*)mappedResource.pData;
             FLOAT L = drawData->DisplayPos.x;
             FLOAT R = drawData->DisplayPos.x + drawData->DisplaySize.x;
@@ -526,7 +567,7 @@ namespace PigeonEngine
                 { (R + L) / (L - R),    (T + B) / (B - T),  0.5f,   1.0f },
             };
             memcpy_s(&constantBuffer->MVP, sizeof(constantBuffer->MVP), mvp, sizeof(mvp));
-            ctx->Unmap(CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer, 0u);
+            ctx->Unmap(m_D3DData.ConstantBuffer, 0u);
         }
 
         struct BACKUP_DX11_STATE
@@ -534,24 +575,24 @@ namespace PigeonEngine
             UINT                        ScissorRectsCount, ViewportsCount;
             D3D11_RECT                  ScissorRects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
             D3D11_VIEWPORT              Viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-            ID3D11RasterizerState* RS;
-            ID3D11BlendState* BlendState;
+            ID3D11RasterizerState*      RS;
+            ID3D11BlendState*           BlendState;
             FLOAT                       BlendFactor[4];
             UINT                        SampleMask;
             UINT                        StencilRef;
-            ID3D11DepthStencilState* DepthStencilState;
-            ID3D11ShaderResourceView* PSShaderResource;
-            ID3D11SamplerState* PSSampler;
-            ID3D11PixelShader* PS;
-            ID3D11VertexShader* VS;
-            ID3D11GeometryShader* GS;
+            ID3D11DepthStencilState*    DepthStencilState;
+            ID3D11ShaderResourceView*   PSShaderResource;
+            ID3D11SamplerState*         PSSampler;
+            ID3D11PixelShader*          PS;
+            ID3D11VertexShader*         VS;
+            ID3D11GeometryShader*       GS;
             UINT                        PSInstancesCount, VSInstancesCount, GSInstancesCount;
-            ID3D11ClassInstance* PSInstances[256], * VSInstances[256], * GSInstances[256];
+            ID3D11ClassInstance*        PSInstances[256], * VSInstances[256], * GSInstances[256];
             D3D11_PRIMITIVE_TOPOLOGY    PrimitiveTopology;
-            ID3D11Buffer* IndexBuffer, * VertexBuffer, * VSConstantBuffer;
+            ID3D11Buffer                * IndexBuffer, * VertexBuffer, * VSConstantBuffer;
             UINT                        IndexBufferOffset, VertexBufferStride, VertexBufferOffset;
             DXGI_FORMAT                 IndexBufferFormat;
-            ID3D11InputLayout* InputLayout;
+            ID3D11InputLayout*          InputLayout;
         };
         BACKUP_DX11_STATE old = {};
         old.ScissorRectsCount = old.ViewportsCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
@@ -573,7 +614,7 @@ namespace PigeonEngine
         ctx->IAGetVertexBuffers(0u, 1u, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset);
         ctx->IAGetInputLayout(&old.InputLayout);
 
-        CimGUIManager::D3DSetupRenderState(drawData);
+        CImGUIManager::D3DSetupRenderState(drawData);
 
         INT globalIdxOffset = 0;
         INT globalVtxOffset = 0;
@@ -584,19 +625,25 @@ namespace PigeonEngine
             for (INT iCmd = 0; iCmd < cmdList->CmdBuffer.Size; iCmd++)
             {
                 const ImDrawCmd* pCmd = &cmdList->CmdBuffer[iCmd];
-                if (pCmd->UserCallback != NULL)
+                if (pCmd->UserCallback != nullptr)
                 {
                     if (pCmd->UserCallback == ImDrawCallback_ResetRenderState)
-                        CimGUIManager::D3DSetupRenderState(drawData);
+                    {
+                        CImGUIManager::D3DSetupRenderState(drawData);
+                    }
                     else
+                    {
                         pCmd->UserCallback(cmdList, pCmd);
+                    }
                 }
                 else
                 {
                     ImVec2 clipMin(pCmd->ClipRect.x - clipOff.x, pCmd->ClipRect.y - clipOff.y);
                     ImVec2 clipMax(pCmd->ClipRect.z - clipOff.x, pCmd->ClipRect.w - clipOff.y);
                     if (clipMax.x <= clipMin.x || clipMax.y <= clipMin.y)
+                    {
                         continue;
+                    }
 
                     const D3D11_RECT r = { (LONG)clipMin.x, (LONG)clipMin.y, (LONG)clipMax.x, (LONG)clipMax.y };
                     ctx->RSSetScissorRects(1u, &r);
@@ -628,9 +675,9 @@ namespace PigeonEngine
         ctx->IASetVertexBuffers(0u, 1u, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset); if (old.VertexBuffer) old.VertexBuffer->Release();
         ctx->IASetInputLayout(old.InputLayout); if (old.InputLayout) old.InputLayout->Release();
     }
-    void CimGUIManager::D3DCreateFontsTexture()
+    void CImGUIManager::D3DCreateFontsTexture()
     {
-        Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
+        Microsoft::WRL::ComPtr<ID3D11Device> dvc = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();
         ImGuiIO& io = ImGui::GetIO();
         UCHAR* pixels;
         INT width, height;
@@ -649,15 +696,17 @@ namespace PigeonEngine
             desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
             desc.CPUAccessFlags = 0u;
 
-            ID3D11Texture2D* texture2D = NULL;
+            ID3D11Texture2D* texture2D = nullptr;
             D3D11_SUBRESOURCE_DATA subResource;
             subResource.pSysMem = pixels;
             subResource.SysMemPitch = desc.Width * 4u;
             subResource.SysMemSlicePitch = 0u;
             HRESULT hr = dvc->CreateTexture2D(&desc, &subResource, &texture2D);
-            IM_ASSERT(texture2D != NULL);
+            IM_ASSERT(texture2D != nullptr);
             if (FAILED(hr))
+            {
                 return;
+            }
 
             D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
             ::ZeroMemory(&srvDesc, sizeof(srvDesc));
@@ -665,13 +714,15 @@ namespace PigeonEngine
             srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
             srvDesc.Texture2D.MipLevels = desc.MipLevels;
             srvDesc.Texture2D.MostDetailedMip = 0u;
-            hr = dvc->CreateShaderResourceView(texture2D, &srvDesc, &CimGUIManager::m_imGUIManager->m_D3DData.FontTextureView);
+            hr = dvc->CreateShaderResourceView(texture2D, &srvDesc, &m_D3DData.FontTextureView);
             texture2D->Release();
             if (FAILED(hr))
+            {
                 return;
+            }
         }
 
-        io.Fonts->SetTexID((ImTextureID)CimGUIManager::m_imGUIManager->m_D3DData.FontTextureView);
+        io.Fonts->SetTexID((ImTextureID)m_D3DData.FontTextureView);
 
         {
             D3D11_SAMPLER_DESC desc;
@@ -684,18 +735,24 @@ namespace PigeonEngine
             desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
             desc.MinLOD = 0.f;
             desc.MaxLOD = 0.f;
-            HRESULT hr = dvc->CreateSamplerState(&desc, &CimGUIManager::m_imGUIManager->m_D3DData.FontSampler);
+            HRESULT hr = dvc->CreateSamplerState(&desc, &m_D3DData.FontSampler);
             if (FAILED(hr))
+            {
                 return;
+            }
         }
     }
-    BOOL CimGUIManager::D3DCreateDeviceObjects()
+    BOOL CImGUIManager::D3DCreateDeviceObjects()
     {
-        Microsoft::WRL::ComPtr<ID3D11Device> dvc = CRenderDevice::GetRenderDevice();
+        Microsoft::WRL::ComPtr<ID3D11Device> dvc = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();
         if (!dvc)
+        {
             return FALSE;
-        if (CimGUIManager::m_imGUIManager->m_D3DData.FontSampler)
-            CimGUIManager::D3DInvalidateDeviceObjects();
+        }
+        if (m_D3DData.FontSampler)
+        {
+            CImGUIManager::D3DInvalidateDeviceObjects();
+        }
 
         {
             std::string vsName = "./Engine/Assets/EngineShaders/imGUIVS.cso";
@@ -704,8 +761,10 @@ namespace PigeonEngine
             BYTE* buffer;
             {
                 fopen_s(&file, vsName.c_str(), "rb");
-                if (file == NULL)
+                if (file == nullptr)
+                {
                     return FALSE;
+                }
                 fsize = _filelength(_fileno(file));
                 buffer = new BYTE[fsize];
                 fread_s(buffer, fsize, fsize, 1u, file);
@@ -713,7 +772,7 @@ namespace PigeonEngine
             }
 
             {
-                HRESULT hr = dvc->CreateVertexShader(static_cast<void*>(buffer), fsize, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.VertexShader);
+                HRESULT hr = dvc->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, &m_D3DData.VertexShader);
                 if (FAILED(hr))
                 {
                     delete[]buffer;
@@ -729,7 +788,7 @@ namespace PigeonEngine
                     tempLayout[1] = { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u };
                     tempLayout[2] = { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u };
                 }
-                HRESULT hr = dvc->CreateInputLayout(tempLayout.data(), 3u, static_cast<void*>(buffer), fsize, &CimGUIManager::m_imGUIManager->m_D3DData.InputLayout);
+                HRESULT hr = dvc->CreateInputLayout(tempLayout.data(), 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
                 if (FAILED(hr))
                 {
                     delete[]buffer;
@@ -745,9 +804,11 @@ namespace PigeonEngine
                 desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
                 desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                 desc.MiscFlags = 0u;
-                HRESULT hr = dvc->CreateBuffer(&desc, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer);
+                HRESULT hr = dvc->CreateBuffer(&desc, nullptr, &m_D3DData.ConstantBuffer);
                 if (FAILED(hr))
+                {
                     return FALSE;
+                }
             }
         }
 
@@ -758,8 +819,10 @@ namespace PigeonEngine
             BYTE* buffer;
             {
                 fopen_s(&file, psName.c_str(), "rb");
-                if (file == NULL)
+                if (file == nullptr)
+                {
                     return FALSE;
+                }
                 fsize = _filelength(_fileno(file));
                 buffer = new BYTE[fsize];
                 fread_s(buffer, fsize, fsize, 1u, file);
@@ -767,7 +830,7 @@ namespace PigeonEngine
             }
 
             {
-                HRESULT hr = dvc->CreatePixelShader(static_cast<void*>(buffer), fsize, NULL, &CimGUIManager::m_imGUIManager->m_D3DData.PixelShader);
+                HRESULT hr = dvc->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, &m_D3DData.PixelShader);
                 if (FAILED(hr))
                 {
                     delete[]buffer;
@@ -789,7 +852,7 @@ namespace PigeonEngine
             desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
             desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
             desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-            dvc->CreateBlendState(&desc, &CimGUIManager::m_imGUIManager->m_D3DData.BlendState);
+            dvc->CreateBlendState(&desc, &m_D3DData.BlendState);
         }
 
         {
@@ -799,7 +862,7 @@ namespace PigeonEngine
             desc.CullMode = D3D11_CULL_NONE;
             desc.ScissorEnable = TRUE;
             desc.DepthClipEnable = TRUE;
-            dvc->CreateRasterizerState(&desc, &CimGUIManager::m_imGUIManager->m_D3DData.RasterizerState);
+            dvc->CreateRasterizerState(&desc, &m_D3DData.RasterizerState);
         }
 
         {
@@ -812,24 +875,24 @@ namespace PigeonEngine
             desc.FrontFace.StencilFailOp = desc.FrontFace.StencilDepthFailOp = desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
             desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
             desc.BackFace = desc.FrontFace;
-            dvc->CreateDepthStencilState(&desc, &CimGUIManager::m_imGUIManager->m_D3DData.DepthStencilState);
+            dvc->CreateDepthStencilState(&desc, &m_D3DData.DepthStencilState);
         }
-        CimGUIManager::D3DCreateFontsTexture();
+        CImGUIManager::D3DCreateFontsTexture();
         return TRUE;
     }
-    void CimGUIManager::D3DInvalidateDeviceObjects()
+    void CImGUIManager::D3DInvalidateDeviceObjects()
     {
-        if (CimGUIManager::m_imGUIManager->m_D3DData.FontSampler) { CimGUIManager::m_imGUIManager->m_D3DData.FontSampler->Release(); CimGUIManager::m_imGUIManager->m_D3DData.FontSampler = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.FontTextureView) { CimGUIManager::m_imGUIManager->m_D3DData.FontTextureView->Release(); CimGUIManager::m_imGUIManager->m_D3DData.FontTextureView = NULL; ImGui::GetIO().Fonts->SetTexID(NULL); }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.IndexBuffer = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.VertexBuffer = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.BlendState) { CimGUIManager::m_imGUIManager->m_D3DData.BlendState->Release(); CimGUIManager::m_imGUIManager->m_D3DData.BlendState = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.DepthStencilState) { CimGUIManager::m_imGUIManager->m_D3DData.DepthStencilState->Release(); CimGUIManager::m_imGUIManager->m_D3DData.DepthStencilState = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.RasterizerState) { CimGUIManager::m_imGUIManager->m_D3DData.RasterizerState->Release(); CimGUIManager::m_imGUIManager->m_D3DData.RasterizerState = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.PixelShader) { CimGUIManager::m_imGUIManager->m_D3DData.PixelShader->Release(); CimGUIManager::m_imGUIManager->m_D3DData.PixelShader = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer) { CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer->Release(); CimGUIManager::m_imGUIManager->m_D3DData.ConstantBuffer = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.InputLayout) { CimGUIManager::m_imGUIManager->m_D3DData.InputLayout->Release(); CimGUIManager::m_imGUIManager->m_D3DData.InputLayout = NULL; }
-        if (CimGUIManager::m_imGUIManager->m_D3DData.VertexShader) { CimGUIManager::m_imGUIManager->m_D3DData.VertexShader->Release(); CimGUIManager::m_imGUIManager->m_D3DData.VertexShader = NULL; }
+        if (m_D3DData.FontSampler) { m_D3DData.FontSampler->Release(); m_D3DData.FontSampler = nullptr; }
+        if (m_D3DData.FontTextureView) { m_D3DData.FontTextureView->Release(); m_D3DData.FontTextureView = nullptr; ImGui::GetIO().Fonts->SetTexID(nullptr); }
+        if (m_D3DData.IndexBuffer) { m_D3DData.IndexBuffer->Release(); m_D3DData.IndexBuffer = nullptr; }
+        if (m_D3DData.VertexBuffer) { m_D3DData.VertexBuffer->Release(); m_D3DData.VertexBuffer = nullptr; }
+        if (m_D3DData.BlendState) { m_D3DData.BlendState->Release(); m_D3DData.BlendState = nullptr; }
+        if (m_D3DData.DepthStencilState) { m_D3DData.DepthStencilState->Release(); m_D3DData.DepthStencilState = nullptr; }
+        if (m_D3DData.RasterizerState) { m_D3DData.RasterizerState->Release(); m_D3DData.RasterizerState = nullptr; }
+        if (m_D3DData.PixelShader) { m_D3DData.PixelShader->Release(); m_D3DData.PixelShader = nullptr; }
+        if (m_D3DData.ConstantBuffer) { m_D3DData.ConstantBuffer->Release(); m_D3DData.ConstantBuffer = nullptr; }
+        if (m_D3DData.InputLayout) { m_D3DData.InputLayout->Release(); m_D3DData.InputLayout = nullptr; }
+        if (m_D3DData.VertexShader) { m_D3DData.VertexShader->Release(); m_D3DData.VertexShader = nullptr; }
     }
 
 #endif

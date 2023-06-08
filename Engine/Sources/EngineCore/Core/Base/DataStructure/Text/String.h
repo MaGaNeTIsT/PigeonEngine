@@ -28,20 +28,22 @@ namespace PigeonEngine
         BOOL        operator==(const EString& Other)const;
         BOOL        operator!=(const EString& Other)const;
         
-        [[nodiscard]] UINT    Length   ()const;
-        [[nodiscard]] BOOL    StartWith(const EString& SubString)const;
-        [[nodiscard]] UINT    Find     (const EString& SubString, UINT Offset = 0) const;
-        [[nodiscard]] UINT    RightFind(const EString& SubString, UINT Offset = 0) const;
-        [[nodiscard]] EString Replace  (const EString& From, const EString& To) const;
-        [[nodiscard]] EString Left     (const UINT& Count) const;
-        [[nodiscard]] EString Right    (const UINT& Count) const;
-        [[nodiscard]] EString Substring(const UINT& Start, const UINT& Count) const;
+        ENGINE_NODISCARD UINT    Length   ()const;
+        ENGINE_NODISCARD BOOL    StartWith(const EString& SubString)const;
+        ENGINE_NODISCARD UINT    Find     (const EString& SubString, UINT Offset = 0) const;
+        ENGINE_NODISCARD UINT    RightFind(const EString& SubString, UINT Offset = 0) const;
+        ENGINE_NODISCARD EString Replace  (const EString& From, const EString& To) const;
+        ENGINE_NODISCARD EString Left     (const UINT& Count) const;
+        ENGINE_NODISCARD EString Right    (const UINT& Count) const;
+        ENGINE_NODISCARD EString Substring(const UINT& Start, const UINT& Count) const;
 
-        [[nodiscard]] BOOL    IsNumeric()const;
-        [[nodiscard]] INT     AtoI() const;
-        [[nodiscard]] DOUBLE  AtoF() const;
+        ENGINE_NODISCARD BOOL    IsNumeric()const;
+        ENGINE_NODISCARD INT     AtoI() const;
+        ENGINE_NODISCARD DOUBLE  AtoF() const;
     private:
         std::string Str;
     };
+
+    extern inline EString ToString(const UINT& InValue);
 };
 
