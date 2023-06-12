@@ -197,6 +197,9 @@ namespace PigeonEngine
 
 	class EMesh : public EObjectBase
 	{
+
+		EClass(EMesh, EObjectBase)
+
 	public:
 		typedef	EIndexData				EIndexPart;
 		typedef	TArray<EVertexData>		EVertexPart;

@@ -328,6 +328,7 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
+    <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -494,6 +495,7 @@
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">

@@ -53,38 +53,6 @@ namespace PigeonEngine
 			FLOAT	Edge[4];
 		};
 	};
-	struct EBoneNodeInfo
-	{
-		EBoneNodeInfo()noexcept
-			: Index(-2), Name(ENGINE_BONE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
-			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
-			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
-		{
-		}
-		EBoneNodeInfo(const EString& InName)noexcept
-			: Index(-2), Name(InName), DefaultPosition(Vector3::Zero())
-			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
-			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
-		{
-		}
-
-		SHORT			Index;
-		EString			Name;
-		Vector3			DefaultPosition;
-		Quaternion		DefaultRotation;
-		Vector3			DefaultScaling;
-		Matrix4x4		BindPoseMatrix;
-		SHORT			Parent;
-		TArray<SHORT>	Children;
-	};
-	struct ESkeletonInfo
-	{
-		ESkeletonInfo()noexcept : Name(ENGINE_DEFAULT_NAME) {}
-		ESkeletonInfo(const EString& InName)noexcept : Name(InName) {}
-
-		EString					Name;
-		TArray<EBoneNodeInfo>	Bones;
-	};
 	template<typename TValueType>
 	struct EAnimationKey
 	{
@@ -116,10 +84,10 @@ namespace PigeonEngine
 		ANIMATION_BEHAVIOUR_LINEAR		= 2,
 		ANIMATION_BEHAVIOUR_REPEAT		= 3
 	};
-	struct EAnimationNodeInfo
+	struct EAnimationNode
 	{
-		EAnimationNodeInfo()noexcept : PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
-		EAnimationNodeInfo(const EString& InName)noexcept : Name(InName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EAnimationNode()noexcept : PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EAnimationNode(const EString& InName)noexcept : Name(InName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
 
 		EString								Name;
 		EAnimationBehaviourType				PreState;
@@ -136,7 +104,7 @@ namespace PigeonEngine
 		EString						Name;
 		DOUBLE						Duration;
 		DOUBLE						TicksPerSecond;
-		TArray<EAnimationNodeInfo>	AnimationNodes;
+		TArray<EAnimationNode>		AnimationNodes;
 	};
 	struct EFrustum
 	{
