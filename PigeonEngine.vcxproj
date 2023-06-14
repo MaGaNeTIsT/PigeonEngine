@@ -47,6 +47,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Map.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
@@ -217,6 +218,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Map.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.cpp">
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
