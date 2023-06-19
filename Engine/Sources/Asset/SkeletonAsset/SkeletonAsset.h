@@ -9,19 +9,27 @@
 namespace PigeonEngine
 {
 
-	struct EBoneNode
+	struct EBoneData
 	{
-		EBoneNode()noexcept
+		EBoneData()noexcept
 			: Index(-2), Name(ENGINE_BONE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
 			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
 		{
 		}
-		EBoneNode(const EString& InName)noexcept
+		EBoneData(const EString& InName)noexcept
 			: Index(-2), Name(InName), DefaultPosition(Vector3::Zero())
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
 			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
 		{
+		}
+		BOOL operator==(const EBoneData& Other)
+		{
+			return (Name == Other.Name);
+		}
+		BOOL operator!=(const EBoneData& Other)
+		{
+			return (Name != Other.Name);
 		}
 
 		SHORT			Index;
@@ -40,14 +48,21 @@ namespace PigeonEngine
 		EClass(ESkeleton, EObjectBase)
 
 	public:
+		typedef TArray<EBoneData>	EBonePart;
+	public:
 		ESkeleton(const EString& InSkeletonName);
 		virtual ~ESkeleton();
 		virtual void Release();
-
+	public:
+		BOOL	AddBoneElement(EBoneData* InIndexData);
+		BOOL	RemoveBoneElement(const EString& InBoneName);
+		BOOL	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
+		BOOL	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
+		BOOL	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
 	protected:
 		EString					SkeletonName;
-		TArray<EBoneNode>		BoneNodes;
-		TMap<EString,UINT>		BoneMaps;
+		EBonePart				Bones;
+		TMap<EString, USHORT>	BoneMapping;
 	public:
 		ESkeleton() = delete;
 

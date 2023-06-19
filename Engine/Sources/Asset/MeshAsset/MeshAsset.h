@@ -211,26 +211,26 @@ namespace PigeonEngine
 		virtual ~EMesh();
 		virtual void Release();
 	public:
-		BOOL CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
-		const EBoundAABB& GetBoundAABB()const;
-		UINT32 GetVertexLayout()const;
-		const EIndexPart& GetIndices()const;
-		const EVertexPart& GetVertices()const;
-		const ESubmeshPart& GetSubmeshes()const;
+		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
+		const EBoundAABB&	GetBoundAABB()const;
+		UINT32				GetVertexLayout()const;
+		const EIndexPart&	GetIndices()const;
+		const EVertexPart&	GetVertices()const;
+		const ESubmeshPart&	GetSubmeshes()const;
 	public:
-		void SetBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
-		void SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
-		BOOL AddIndexElement(EIndexData* InIndexData);
-		BOOL RemoveIndexElement();
-		BOOL GetIndexElement(const EIndexData*& OutIndexData)const;
-		BOOL AddVertexElement(EVertexData* InVertexData, UINT& OutLayoutIndex);
-		BOOL RemoveVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex);
-		BOOL GetVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const;
-		BOOL AddSubmesh(const ESubmeshData* InSubmeshData, UINT& OutSubmeshIndex);
-		BOOL RemoveSubmesh(UINT InSubmeshIndex);
-		BOOL GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
+		void	SetBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
+		void	SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
+		BOOL	AddIndexElement(EIndexData* InIndexData);
+		BOOL	RemoveIndexElement();
+		BOOL	GetIndexElement(const EIndexData*& OutIndexData)const;
+		BOOL	AddVertexElement(EVertexData* InVertexData, UINT* OutLayoutIndex = nullptr);
+		BOOL	RemoveVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex);
+		BOOL	GetVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const;
+		BOOL	AddSubmesh(const ESubmeshData* InSubmeshData, UINT* OutSubmeshIndex = nullptr);
+		BOOL	RemoveSubmesh(UINT InSubmeshIndex);
+		BOOL	GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
 	protected:
-		void SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
+		void	SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
 	protected:
 		EString					MeshName;
 		EBoundAABB				BoundAABB;
@@ -267,9 +267,9 @@ namespace PigeonEngine
 		virtual ~ESkinnedMesh();
 		virtual void Release()override;
 	public:
-		BOOL AddSkinElement(ESkinData* InSkinData, UINT& OutLayoutIndex);
-		BOOL RemoveSkinElement(UINT InLayoutIndex);
-		BOOL GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
+		BOOL	AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
+		BOOL	RemoveSkinElement(UINT InLayoutIndex);
+		BOOL	GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
 	protected:
 		ESkinPart	Skins;
 	public:

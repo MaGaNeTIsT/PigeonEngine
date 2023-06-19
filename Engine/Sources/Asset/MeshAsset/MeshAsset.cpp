@@ -183,9 +183,8 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::AddVertexElement(EVertexData* InVertexData, UINT& OutLayoutIndex)
+	BOOL EMesh::AddVertexElement(EVertexData* InVertexData, UINT* OutLayoutIndex)
 	{
-		OutLayoutIndex = EMesh::MeshVertexLayoutPartMaxNum;
 		if ((!InVertexData) || (InVertexData->PartType == 0u) || (InVertexData->ElementNum < 3u) ||
 			(!(InVertexData->Datas)) || ((InVertexData->Stride % 4u) != 0u))
 		{
@@ -233,7 +232,10 @@ namespace PigeonEngine
 			Vertices[NewElementIndex].ElementNum	= InVertexData->ElementNum;
 			Vertices[NewElementIndex].Stride		= InVertexData->Stride;
 			Vertices[NewElementIndex].Datas			= InVertexData->Datas;
-			OutLayoutIndex = FindIndex;
+			if (OutLayoutIndex)
+			{
+				*OutLayoutIndex = FindIndex;
+			}
 			return TRUE;
 		}
 		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex failed(fill in layout index is already exist)."));
@@ -313,7 +315,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::AddSubmesh(const ESubmeshData* InSubmeshData, UINT& OutSubmeshIndex)
+	BOOL EMesh::AddSubmesh(const ESubmeshData* InSubmeshData, UINT* OutSubmeshIndex)
 	{
 		if ((!InSubmeshData) || (InSubmeshData->VertexNum < 3u) || (InSubmeshData->IndexNum < 3u))
 		{
@@ -326,7 +328,10 @@ namespace PigeonEngine
 		Submeshes[NewIndex].VertexNum	= InSubmeshData->VertexNum;
 		Submeshes[NewIndex].StartIndex	= InSubmeshData->StartIndex;
 		Submeshes[NewIndex].IndexNum	= InSubmeshData->IndexNum;
-		OutSubmeshIndex = NewIndex;
+		if (OutSubmeshIndex)
+		{
+			*OutSubmeshIndex = NewIndex;
+		}
 		return TRUE;
 	}
 	BOOL EMesh::RemoveSubmesh(UINT InSubmeshIndex)
@@ -414,7 +419,7 @@ namespace PigeonEngine
 		}
 		EMesh::Release();
 	}
-	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT& OutLayoutIndex)
+	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex)
 	{
 		if ((!InSkinData) || (InSkinData->ElementNum < 3u) || (InSkinData->PartType != EVertexLayoutType::MESH_SKIN) || ((InSkinData->Stride % 4u) != 0u) || (!(InSkinData->Indices)) || (!(InSkinData->Weights)))
 		{
@@ -438,7 +443,10 @@ namespace PigeonEngine
 				Skins[NewIndex].Stride = InSkinData->Stride;
 				Skins[NewIndex].Indices = InSkinData->Indices;
 				Skins[NewIndex].Weights = InSkinData->Weights;
-				OutLayoutIndex = FindIndex;
+				if (OutLayoutIndex)
+				{
+					*OutLayoutIndex = FindIndex;
+				}
 				return TRUE;
 			}
 		}
