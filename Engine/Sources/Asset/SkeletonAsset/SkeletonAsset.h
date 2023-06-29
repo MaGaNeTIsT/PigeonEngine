@@ -60,6 +60,8 @@ namespace PigeonEngine
 		BOOL	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
 		BOOL	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
 	protected:
+		void	RemoveBoneInternal(USHORT InBoneIndex);
+	protected:
 		EString					SkeletonName;
 		EBonePart				Bones;
 		TMap<EString, USHORT>	BoneMapping;

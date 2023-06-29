@@ -884,9 +884,9 @@ namespace PigeonEngine
 			_GAssetImporter = nullptr;
 		}
 	}
-	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadStaticMeshFile(const EString& path, EStaticMesh& OutMesh)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& path, EStaticMesh& OutMesh)
 	{
-		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CReadFileStateType result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
 		Assimp::Importer* impoter = _GAssetImporter;
 		if (impoter == nullptr)
@@ -933,7 +933,7 @@ namespace PigeonEngine
 
 		if (!scene->HasMeshes())
 		{
-			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain meshes
 			impoter->FreeScene();
 			return result;
@@ -945,12 +945,12 @@ namespace PigeonEngine
 		CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 		_GTranslateDefaultMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
 
-		result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED;
+		result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();
 		return result;
 	}
-	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)
 	{
 		if (vertices != nullptr)
 		{
@@ -982,7 +982,7 @@ namespace PigeonEngine
 			boneList.clear();
 		}
 
-		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CReadFileStateType result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
 		Assimp::Importer* impoter = _GAssetImporter;
 		if (impoter == nullptr)
@@ -1033,7 +1033,7 @@ namespace PigeonEngine
 
 		if (!scene->HasMeshes())
 		{
-			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
 			impoter->FreeScene();
 			return result;
@@ -1042,15 +1042,15 @@ namespace PigeonEngine
 		// Now we can access the file's contents.
 		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
 		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-		result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();
 		return result;
 	}
-	CAssimpManager::CAssimpReadFileState CAssimpManager::ReadSkeletonAnimationFile(const EString& path, TMap<EString, TMap<EString, CustomStruct::CGameAnimationInfo>>& animationDatas)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonAnimationFile(const EString& path, TMap<EString, TMap<EString, CustomStruct::CGameAnimationInfo>>& animationDatas)
 	{
-		CAssimpReadFileState result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_FAILED;
+		CReadFileStateType result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
 		if (animationDatas.find(path) != animationDatas.end())
 		{
@@ -1090,7 +1090,7 @@ namespace PigeonEngine
 
 		if (!scene->HasAnimations())
 		{
-			result = CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+			result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
 			impoter->FreeScene();
 			return result;
@@ -1100,7 +1100,7 @@ namespace PigeonEngine
 		auto tempInsertResult = animationDatas.insert_or_assign(path, TMap<EString, CustomStruct::CGameAnimationInfo>());
 		TMap<EString, CustomStruct::CGameAnimationInfo>& tempAnimationContainer = tempInsertResult.first->second;
 
-		result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CAssimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED : CAssimpReadFileState::ASSIMP_READ_FILE_STATE_ERROR;
+		result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		impoter->FreeScene();
