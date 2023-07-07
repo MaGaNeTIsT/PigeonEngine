@@ -81,7 +81,7 @@ namespace PigeonEngine
 		_GVertexSemanticName	VertexBoneWeight;
 	};
 
-	void _GTranslateMeshDesc(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, TArray<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateMeshDesc(const aiScene* scene, TArray<ESubmeshData>& subMesh, TArray<_GMeshAssetImporterInfo>& sceneMeshesInfo, UINT& totalNumVertices, UINT& totalNumIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		if (subMesh.size() > 0)
 		{
@@ -181,7 +181,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const RSubMeshInfo& subMeshInfo, CHAR*& verticesData, TArray<UINT>& indicesData, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<SHORT>& allBoneList)
+	void _GTranslateMeshVertexData(const aiMesh* mesh, const _GMeshAssetImporterInfo& assetInfo, const ESubmeshData& subMeshInfo, CHAR*& verticesData, TArray<UINT>& indicesData, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<SHORT>& allBoneList)
 	{
 		{
 			const UINT numFaces = mesh->mNumFaces;
@@ -449,7 +449,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void _GTranslateDefaultMeshData(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateDefaultMeshData(const aiScene* scene, TArray<ESubmeshData>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		vertexStride = 0u;
 		numVertices = 0u;
@@ -490,13 +490,13 @@ namespace PigeonEngine
 				continue;
 			}
 			_GMeshAssetImporterInfo& sceneMeshInfo = sceneMeshesInfo[indexSubMesh];
-			RSubMeshInfo& subMeshInfo = subMesh[indexSubMesh];
+			ESubmeshData& subMeshInfo = subMesh[indexSubMesh];
 			_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, tempSkeleton, tempSkeletonNodeIndices, tempBoneList);
 			indexSubMesh += 1u;
 		}
 	}
 
-	void _GTranslateSkeletonMeshData(const aiScene* scene, TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+	void _GTranslateSkeletonMeshData(const aiScene* scene, TArray<ESubmeshData>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
 		vertexStride = 0u;
 		numVertices = 0u;
@@ -540,7 +540,7 @@ namespace PigeonEngine
 				continue;
 			}
 			_GMeshAssetImporterInfo& sceneMeshInfo = sceneMeshesInfo[indexSubMesh];
-			RSubMeshInfo& subMeshInfo = subMesh[indexSubMesh];
+			ESubmeshData& subMeshInfo = subMesh[indexSubMesh];
 			_GTranslateMeshVertexData(tempMesh, sceneMeshInfo, subMeshInfo, vertices, indices, allGameNodes, allGameNodeIndices, tempBoneList);
 			indexSubMesh += 1u;
 		}
@@ -625,7 +625,7 @@ namespace PigeonEngine
 	}
 
 	BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
-		TArray<RSubMeshInfo>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices,
+		TArray<ESubmeshData>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices,
 		TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList,
 		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
 	{
@@ -859,6 +859,32 @@ namespace PigeonEngine
 		return result;
 	}
 
+	BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RInputLayoutDesc>>& OutLayouts)
+	{
+		if (!InScene->HasMeshes())
+		{
+			return FALSE;
+		}
+
+		if (OutLayouts.Length() > 0u)
+		{
+			OutLayouts.Clear();
+		}
+		if (OutMeshes.Length() > 0u)
+		{
+			OutMeshes.Clear();
+		}
+
+		for (UINT i = 0u, n = InScene->mNumMeshes; i < n; i++)
+		{
+			const aiMesh* PerMesh = InScene->mMeshes[i];
+
+
+		}
+
+		return TRUE;
+	}
+
 	CAssimpManager::CAssimpManager()
 	{
 #ifdef _EDITOR_ONLY
@@ -903,7 +929,7 @@ namespace PigeonEngine
 		//Assimp::Importer::SetProperty###();
 
 		const aiScene* scene = impoter->ReadFile(
-			path,
+			*path,
 			aiProcess_CalcTangentSpace |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_MakeLeftHanded |
@@ -941,8 +967,8 @@ namespace PigeonEngine
 
 		// Now we can access the file's contents.
 		// Only access first mesh in scene.
-		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
-		CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+		const RInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+		RCommonSettings::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 		_GTranslateDefaultMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
 
 		result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
