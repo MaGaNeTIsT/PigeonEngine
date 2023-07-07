@@ -878,8 +878,8 @@ namespace PigeonEngine
 		for (UINT i = 0u, n = InScene->mNumMeshes; i < n; i++)
 		{
 			const aiMesh* PerMesh = InScene->mMeshes[i];
-
-
+			PerMesh->HasPositions();
+				PerMesh->
 		}
 
 		return TRUE;
