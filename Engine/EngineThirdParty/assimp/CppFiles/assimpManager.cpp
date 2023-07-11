@@ -859,7 +859,7 @@ namespace PigeonEngine
 		return result;
 	}
 
-	BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RInputLayoutDesc>>& OutLayouts)
+	BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh)
 	{
 		if (!InScene->HasMeshes())
 		{
@@ -874,12 +874,102 @@ namespace PigeonEngine
 		{
 			OutMeshes.Clear();
 		}
+		if (OutIsSkeletonMesh.Length() > 0u)
+		{
+			OutIsSkeletonMesh.Clear();
+		}
 
 		for (UINT i = 0u, n = InScene->mNumMeshes; i < n; i++)
 		{
 			const aiMesh* PerMesh = InScene->mMeshes[i];
-			PerMesh->HasPositions();
-				PerMesh->
+			if (PerMesh && PerMesh->HasPositions() && PerMesh->HasFaces())
+			{
+				OutMeshes.Add(PerMesh);
+			}
+		}
+
+		if (OutMeshes.Length() < 1u)
+		{
+			return FALSE;
+		}
+
+		for (UINT i = 0u, n = OutMeshes.Length(); i < n; i++)
+		{
+			OutLayouts.Add(TArray<RShaderSemanticType>());
+			OutIsSkeletonMesh.Add(FALSE);
+			const aiMesh* PerMesh = OutMeshes[i];
+			TArray<RShaderSemanticType>& PerMeshLayout = OutLayouts[OutLayouts.Length() - 1u];
+			if (PerMesh->HasPositions())
+			{
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_POSITION);
+			}
+			if (PerMesh->HasNormals())
+			{
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_NORMAL);
+			}
+			if (PerMesh->GetNumUVChannels() > 0)
+			{
+				UINT CurrentUV = 0u;
+				for (UINT IndexUV = 0u, MaxUV = AI_MAX_NUMBER_OF_TEXTURECOORDS; IndexUV < MaxUV; IndexUV++)
+				{
+					if (PerMesh->HasTextureCoords(IndexUV))
+					{
+						switch (CurrentUV)
+						{
+						case 0u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0);
+							break;
+						case 1u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1);
+							break;
+						case 2u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2);
+							break;
+						case 3u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD3);
+							break;
+						}
+						CurrentUV++;
+					}
+				}
+			}
+			if (PerMesh->HasTangentsAndBitangents())
+			{
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_TANGENT);
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_BINORMAL);
+			}
+			if (PerMesh->HasBones())
+			{
+				OutIsSkeletonMesh[OutIsSkeletonMesh.Length() - 1u] = TRUE;
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES);
+				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT);
+			}
+			if (PerMesh->GetNumColorChannels() > 0)
+			{
+				UINT CurrentColor = 0u;
+				for (UINT IndexColor = 0u, MaxColor = AI_MAX_NUMBER_OF_COLOR_SETS; IndexColor < MaxColor; IndexColor++)
+				{
+					if (PerMesh->HasVertexColors(IndexColor))
+					{
+						switch (CurrentColor)
+						{
+						case 0u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_COLOR0);
+							break;
+						case 1u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_COLOR1);
+							break;
+						case 2u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_COLOR2);
+							break;
+						case 3u:
+							PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_COLOR3);
+							break;
+						}
+						CurrentColor++;
+					}
+				}
+			}
 		}
 
 		return TRUE;
@@ -912,13 +1002,13 @@ namespace PigeonEngine
 	}
 	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& path, EStaticMesh& OutMesh)
 	{
-		CReadFileStateType result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
+		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
-		Assimp::Importer* impoter = _GAssetImporter;
-		if (impoter == nullptr)
+		Assimp::Importer* AssetImpoter = _GAssetImporter;
+		if (AssetImpoter == nullptr)
 		{
 			// TODO Do the error logging (did not create the instance of importer)
-			return result;
+			return Result;
 		}
 
 		// And have it read the given file with some example postprocessing
@@ -928,7 +1018,7 @@ namespace PigeonEngine
 		// Use SetPropertyInteger to modify config of importer
 		//Assimp::Importer::SetProperty###();
 
-		const aiScene* scene = impoter->ReadFile(
+		const aiScene* Scene = AssetImpoter->ReadFile(
 			*path,
 			aiProcess_CalcTangentSpace |
 			aiProcess_JoinIdenticalVertices |
@@ -950,31 +1040,33 @@ namespace PigeonEngine
 			aiProcess_GenBoundingBoxes);
 
 		// If the import failed, report it
-		if (scene == nullptr)
+		if (Scene == nullptr)
 		{
 			// TODO Do the error logging (importer.GetErrorString())
-			impoter->FreeScene();
-			return result;
+			AssetImpoter->FreeScene();
+			return Result;
 		}
 
-		if (!scene->HasMeshes())
+		if (!Scene->HasMeshes())
 		{
-			result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain meshes
-			impoter->FreeScene();
-			return result;
+			AssetImpoter->FreeScene();
+			return Result;
 		}
 
 		// Now we can access the file's contents.
 		// Only access first mesh in scene.
-		const RInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
-		RCommonSettings::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-		_GTranslateDefaultMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
+		TArray<const aiMesh*> Meshes; TArray<TArray<RShaderSemanticType>> MeshesLayouts; TArray<BOOL> IsSkeletonMesh;
+		FindMeshesAndVertexLayouts(Scene, Meshes, MeshesLayouts, IsSkeletonMesh);
+		const RShaderSemanticType* EngineLayouts; UINT EngineLayoutNum;
+		RCommonSettings::GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
+		_GTranslateDefaultMeshData(Scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
 
-		result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
+		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
-		impoter->FreeScene();
-		return result;
+		AssetImpoter->FreeScene();
+		return Result;
 	}
 	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)
 	{

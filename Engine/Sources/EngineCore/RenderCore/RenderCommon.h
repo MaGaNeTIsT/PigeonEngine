@@ -710,29 +710,35 @@ namespace PigeonEngine
 			else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 2u; }
 			return 0u;
 		}
-		static void GetEngineDefaultMeshInputLayouts(const RInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		static void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum)
 		{
-			const static RInputLayoutDesc _EngineDefaultMeshInputLayout[4u] = {
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TANGENT0),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0) };
+			const static RShaderSemanticType _EngineDefaultMeshInputLayout[7u] = {
+				RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0,
+				RShaderSemanticType::SHADER_SEMANTIC_NORMAL0,
+				RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
+				RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD3 };
 
-			inputLayoutDesc = _EngineDefaultMeshInputLayout;
-			inputLayoutNum = 4u;
+			OutLayouts = _EngineDefaultMeshInputLayout;
+			OutLayoutNum = 7u;
 		}
-		static void GetEngineSkeletonMeshInputLayouts(const RInputLayoutDesc*& inputLayoutDesc, UINT& inputLayoutNum)
+		static void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum)
 		{
-			const static RInputLayoutDesc _EngineSkeletonMeshInputLayout[6u] = {
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TANGENT),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES),
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT) };
+			const static RShaderSemanticType _EngineDefaultSkeletonMeshInputLayout[9u] = {
+				RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0,
+				RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0,
+				RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT0,
+				RShaderSemanticType::SHADER_SEMANTIC_NORMAL0,
+				RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
+				RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD3 };
 
-			inputLayoutDesc = _EngineSkeletonMeshInputLayout;
-			inputLayoutNum = 6u;
+			OutLayouts = _EngineDefaultSkeletonMeshInputLayout;
+			OutLayoutNum = 9u;
 		}
 	public:
 		RCommonSettings() {}
