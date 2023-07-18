@@ -136,6 +136,11 @@ namespace PigeonEngine
 		Components.Clear();
 	}
 
+	EBoundAABB PActor::GetComponentsBoundingBox()
+	{
+		
+	}
+
 	void PActor::Destroy()
 	{
 		// RemoveFromScene

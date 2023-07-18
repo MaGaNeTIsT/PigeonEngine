@@ -5,6 +5,7 @@ namespace PigeonEngine
 
 	PComponent::PComponent()
 	{
+		
 	}
 	PComponent::~PComponent()
 	{
@@ -14,6 +15,7 @@ namespace PigeonEngine
 	{
 		PObject::Destroy();
 	}
+
 
 	void PComponent::Init()
 	{

@@ -23,7 +23,7 @@ namespace PigeonEngine
         typename std::map<K,V>::iterator begin();
         typename std::map<K,V>::iterator end();
 
-        [[nodiscard]] UINT Length() const;
+        ENGINE_NODISCARD UINT Length() const;
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);

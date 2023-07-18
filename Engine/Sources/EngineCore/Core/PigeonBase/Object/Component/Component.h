@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <PigeonBase/Object/Object.h>
 
+
 namespace PigeonEngine
 {
 
@@ -23,6 +24,8 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PComponent)
 	public:
 		void Destroy() override;
+
+
 	};
 
 };

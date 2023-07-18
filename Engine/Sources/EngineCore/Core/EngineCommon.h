@@ -10,11 +10,27 @@ namespace PigeonEngine
 
 	struct EBoundAABB
 	{
-		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)) {}
-		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax) {}
-
+		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(true) {}
+		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
+		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
+		
 		Vector3	AABBMin;
 		Vector3	AABBMax;
+		BOOL IsValid;
+
+		EBoundAABB operator+=(const EBoundAABB& Other)
+		{
+			if(IsValid)
+			{
+				AABBMin = EMath::Min(AABBMin, Other.AABBMin);
+				AABBMax = EMath::Min(AABBMax, Other.AABBMax);
+			}
+			else if(Other.IsValid)
+			{
+				*this = Other;
+			}
+			return *this;
+		}
 	};
 	struct EBox
 	{

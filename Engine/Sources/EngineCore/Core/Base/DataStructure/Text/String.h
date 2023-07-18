@@ -9,10 +9,10 @@ namespace PigeonEngine
         EString();
         EString(const EString& Other);
         EString(EString&& Other) noexcept;
+        EString(const CHAR* Other);
 
         explicit EString(const std::string& Other);
         explicit EString(std::string&& Other);
-        explicit EString(const CHAR* Other);
         ~EString() = default;
 
         EString&    operator=(const EString& Other);
@@ -43,7 +43,7 @@ namespace PigeonEngine
     private:
         std::string Str;
     };
-
+    
     extern inline EString ToString(const UINT& InValue);
 };
 

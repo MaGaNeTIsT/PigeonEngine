@@ -4,6 +4,7 @@
 
 #include <CoreMinimal.h>
 #include "./Object.h"
+#include "EngineCommon.h"
 #include "Base/DataStructure/Container/Set.h"
 
 
@@ -66,9 +67,10 @@ namespace PigeonEngine
 	private:
 		TSet<PActorComponent*> Components;
 
-	
 
+	public:
 
+		EBoundAABB GetComponentsBoundingBox();
 		
 	};
 

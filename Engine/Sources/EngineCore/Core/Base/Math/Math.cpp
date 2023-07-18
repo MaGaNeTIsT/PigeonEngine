@@ -42,6 +42,12 @@ namespace PigeonEngine
 	{
 		return ((v0 > v1) ? v0 : v1);
 	}
+
+	Vector3 EMath::Max(const Vector3& v0, const Vector3& v1)
+	{
+		return Vector3(Max(v0.x, v1.x),Max(v0.y, v1.y), Max(v0.z, v1.z));
+	}
+
 	FLOAT EMath::Min(const FLOAT& v0, const FLOAT& v1)
 	{
 		return fminf(v0, v1);
@@ -54,6 +60,12 @@ namespace PigeonEngine
 	{
 		return ((v0 < v1) ? v0 : v1);
 	}
+
+	Vector3 EMath::Min(const Vector3& v0, const Vector3& v1)
+	{
+		return Vector3(Min(v0.x, v1.x),Min(v0.y, v1.y), Min(v0.z, v1.z));
+	}
+
 	FLOAT EMath::Abs(const FLOAT& v)
 	{
 		return fabsf(v);

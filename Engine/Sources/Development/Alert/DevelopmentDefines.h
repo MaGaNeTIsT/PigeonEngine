@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../EngineCore/Main/Main.h"
+#include "Base/DataStructure/Text/String.h"
 
 namespace PigeonEngine
 {

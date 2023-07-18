@@ -2,6 +2,7 @@
 
 #include "../../../Main/Main.h"
 #include "../DataStructure/BuiltInType.h"
+#include "Base/DataStructure/BaseType.h"
 
 namespace PigeonEngine
 {
@@ -21,9 +22,11 @@ namespace PigeonEngine
 		static FLOAT	Max(const FLOAT& v0, const FLOAT& v1);
 		static UINT		Max(const UINT& v0, const UINT& v1);
 		static INT		Max(const INT& v0, const INT& v1);
+		static Vector3  Max(const Vector3& v0, const Vector3& v1);
 		static FLOAT	Min(const FLOAT& v0, const FLOAT& v1);
 		static UINT		Min(const UINT& v0, const UINT& v1);
 		static INT		Min(const INT& v0, const INT& v1);
+		static Vector3  Min(const Vector3& v0, const Vector3& v1);
 		static FLOAT	Abs(const FLOAT& v);
 		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
 		static INT		Clamp(const INT& v, const INT& min, const INT& max);

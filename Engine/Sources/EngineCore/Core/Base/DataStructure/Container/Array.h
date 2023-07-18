@@ -27,7 +27,6 @@ namespace PigeonEngine
         TArray<T>&  operator= (const TArray<T>& Other);
         TArray<T>&  operator= (TArray<T>&& Other) noexcept;
         TArray<T>&  operator= (std::vector<T>&& Other);
-
         
         UINT        Add       (const T& Element);
         T&          Get       (const UINT& Index);
@@ -53,13 +52,13 @@ namespace PigeonEngine
         typename std::vector<T>::iterator rbegin();
         typename std::vector<T>::iterator rend();
 
-        [[nodiscard]] UINT Length  ()const;
-        [[nodiscard]] UINT Last    ()const;
+        ENGINE_NODISCARD UINT Length  ()const;
+        ENGINE_NODISCARD UINT Last    ()const;
     private:
         class std::vector<T> Elements;
     };
 
-         template <typename T>
+    template <typename T>
     TArray<T>::TArray()
     {
     }
