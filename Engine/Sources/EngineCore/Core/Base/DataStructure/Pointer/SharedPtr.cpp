@@ -3,7 +3,7 @@
 namespace PigeonEngine
 {
     template <typename T>
- TSharedPtr<T>::TSharedPtr()
+    TSharedPtr<T>::TSharedPtr()
     {
     }
 

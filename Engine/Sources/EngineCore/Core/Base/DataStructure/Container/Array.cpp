@@ -168,6 +168,14 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    TArray<T> TArray<T>::Reverse()
+    {
+        std::vector<T> Temp = Elements;
+        std::reverse(Temp.begin(), Temp.end());
+        return TArray<T>(Temp);
+    }
+
+    template <typename T>
     typename std::vector<T>::iterator TArray<T>::begin()
      {
          return Elements.begin();

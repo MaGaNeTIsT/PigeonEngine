@@ -10,16 +10,16 @@ namespace PigeonEngine
     public:
         TOctTreeNodeContent();
         ~TOctTreeNodeContent();
-        explicit TOctTreeNodeContent(const TArray<TSharedPtr<T>>& InContent);
+        explicit TOctTreeNodeContent(const TArray<T>& InContent);
         
     public:
-        TArray<TSharedPtr<T>>& GetContent();
-        void                   SetContent(const TArray<TSharedPtr<T>>& InContent);
+        TArray<T>& GetContent();
+        void       SetContent(const TArray<T>& InContent);
         
-        void AddItem   (const TSharedPtr<T>& InItem);
-        void RemoveItem(const TSharedPtr<T>& InItem);
+        void AddItem   (const T& InItem);
+        void RemoveItem(const T& InItem);
     private:
-        TArray<TSharedPtr<T>> Content;
+        TArray<T> Content;
     };
 
     
@@ -28,7 +28,7 @@ namespace PigeonEngine
     {
     public:
         TOctTreeNode() = delete;
-        TOctTreeNode(const TSharedPtr<TOctTreeNode<T>>& InParent, const UINT& CurrentDepth, const UINT& MaxDepth, const TArray<TSharedPtr<TOctTreeNode<T>>>& InContent = {});
+        TOctTreeNode(const TSharedPtr<TOctTreeNode<T>>& InParent, const UINT& CurrentDepth, const UINT& MaxDepth);
         
     public:
         ENGINE_NODISCARD BOOL IsLeafNode() const;
@@ -39,13 +39,13 @@ namespace PigeonEngine
         TArray<TSharedPtr<TOctTreeNode<T>>> Children;
         
     public:
-        TArray<TSharedPtr<T>>& GetContent();
-        void                   SetContent(const TArray<TSharedPtr<T>>& InContent);
+        TArray<T>& GetContent();
+        void       SetContent(const TArray<T>& InContent);
         
-        void AddItemToContent   (const TSharedPtr<T>& InItem);
-        void RemoveItemInContent(const TSharedPtr<T>& InItem);
+        void AddItemToContent   (const T& InItem);
+        void RemoveItemInContent(const T& InItem);
     private:
-        TOctTreeNodeContent<T>  Content;
+        TSharedPtr<TOctTreeNodeContent<T>>  Content;
     };
 
     
@@ -53,7 +53,7 @@ namespace PigeonEngine
     class TOctTree
     {
     public:
-        TOctTree() = delete;
+        TOctTree() = default;
         explicit TOctTree(const UINT& InDepth);
 
     public:

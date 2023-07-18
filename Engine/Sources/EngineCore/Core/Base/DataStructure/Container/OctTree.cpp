@@ -14,7 +14,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TOctTreeNodeContent<T>::TOctTreeNodeContent(const TArray<TSharedPtr<T>>& InContent)
+    TOctTreeNodeContent<T>::TOctTreeNodeContent(const TArray<T>& InContent)
         :
     Content(InContent)
     {
@@ -22,35 +22,34 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TArray<TSharedPtr<T>>& TOctTreeNodeContent<T>::GetContent()
+    TArray<T>& TOctTreeNodeContent<T>::GetContent()
     {
         return Content;
     }
 
     template <typename T>
-    void TOctTreeNodeContent<T>::SetContent(const TArray<TSharedPtr<T>>& InContent)
+    void TOctTreeNodeContent<T>::SetContent(const TArray<T>& InContent)
     {
         this->Content = InContent;
     }
 
     template <typename T>
-    void TOctTreeNodeContent<T>::AddItem(const TSharedPtr<T>& InItem)
+    void TOctTreeNodeContent<T>::AddItem(const T& InItem)
     {
         Content.Add(InItem);
     }
 
     template <typename T>
-    void TOctTreeNodeContent<T>::RemoveItem(const TSharedPtr<T>& InItem)
+    void TOctTreeNodeContent<T>::RemoveItem(const T& InItem)
     {
         Content.Remove(InItem);
     }
 
     template <typename T>
     TOctTreeNode<T>::TOctTreeNode(const TSharedPtr<TOctTreeNode<T>>& InParent, const UINT& CurrentDepth,
-        const UINT& MaxDepth, const TArray<TSharedPtr<TOctTreeNode<T>>>& InContent)
+        const UINT& MaxDepth)
         :
-    Parent(InParent),
-    Content(InContent)
+    Parent(InParent)
     {
         if(CurrentDepth < MaxDepth)
         {
@@ -59,6 +58,7 @@ namespace PigeonEngine
                 TSharedPtr<TOctTreeNode<T>> NewNode = TSharedPtr<T>::MakeShared(new TOctTreeNode<T>(this, CurrentDepth + 1, MaxDepth));
             }
         }
+        Content = TSharedPtr<T>::MakeShared(new TOctTreeNodeContent<T>());
     }
 
     template <typename T>
@@ -74,27 +74,27 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TArray<TSharedPtr<T>>& TOctTreeNode<T>::GetContent()
+    TArray<T>& TOctTreeNode<T>::GetContent()
     {
-        return Content.GetContent();
+        return Content->GetContent();
     }
 
     template <typename T>
-    void TOctTreeNode<T>::SetContent(const TArray<TSharedPtr<T>>& InContent)
+    void TOctTreeNode<T>::SetContent(const TArray<T>& InContent)
     {
-        Content.SetContent(InContent);
+        Content->SetContent(InContent);
     }
 
     template <typename T>
-    void TOctTreeNode<T>::AddItemToContent(const TSharedPtr<T>& InItem)
+    void TOctTreeNode<T>::AddItemToContent(const T& InItem)
     {
-        Content.AddItem(InItem);
+        Content->AddItem(InItem);
     }
 
     template <typename T>
-    void TOctTreeNode<T>::RemoveItemInContent(const TSharedPtr<T>& InItem)
+    void TOctTreeNode<T>::RemoveItemInContent(const T& InItem)
     {
-        Content.RemoveItem(InItem);
+        Content->RemoveItem(InItem);
     }
 
     template <typename T>

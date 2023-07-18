@@ -1,11 +1,7 @@
 ﻿#pragma once
 
 #include <CoreMinimal.h>
-
-
 #include <random>
-
-
 
 namespace PigeonEngine
 {
@@ -43,9 +39,10 @@ namespace PigeonEngine
 
         void Append(const TArray<T>& Other);
 
-        void Sort   ();
-        void Sort   (bool Predicate(const T&, const T&));
-        void Shuffle();
+        void       Sort   ();
+        void       Sort   (bool Predicate(const T&, const T&));
+        void       Shuffle();
+        TArray<T>  Reverse();
         
         typename std::vector<T>::iterator begin();
         typename std::vector<T>::iterator end();
