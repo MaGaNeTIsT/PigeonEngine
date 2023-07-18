@@ -67,7 +67,6 @@ namespace PigeonEngine
 	private:
 		TSet<PActorComponent*> Components;
 
-
 	public:
 
 		EBoundAABB GetComponentsBoundingBox();

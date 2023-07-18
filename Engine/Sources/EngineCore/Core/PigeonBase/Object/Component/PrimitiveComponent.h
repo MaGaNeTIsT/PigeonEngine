@@ -5,10 +5,10 @@
 
 namespace PigeonEngine
 {
-    class PMeshComponent : public PigeonEngine::PSceneComponent
+    class PPrimitiveComponent : public PSceneComponent
     {
-        EClass(PMeshComponent, PSceneComponent)
-        CLASS_VIRTUAL_NOCOPY_BODY(PMeshComponent)
+        EClass(PPrimitiveComponent, PSceneComponent)
+        CLASS_VIRTUAL_NOCOPY_BODY(PPrimitiveComponent)
     public:
         ENGINE_NODISCARD EBoundAABB GetBounds() const;
 
