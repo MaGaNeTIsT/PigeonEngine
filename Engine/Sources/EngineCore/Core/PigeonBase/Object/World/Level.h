@@ -4,11 +4,11 @@
 /*
  * this class is for scene's serialization and deserialization
  */
-class PMap : public PigeonEngine::PObject
+class PLevel : public PigeonEngine::PObject
 {
-    EClass(PMap, PObject)
+    EClass(PLevel, PObject)
 public:
-    CLASS_VIRTUAL_NOCOPY_BODY(PMap)
+    CLASS_VIRTUAL_NOCOPY_BODY(PLevel)
 
     
     

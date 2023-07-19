@@ -27,12 +27,17 @@ namespace PigeonEngine
         void AddSceneToWorld(PScene* NewScene, const ETransform& RelativeTransform = ETransform());
         void AddActorToWorld(PActor* NewActor, const ETransform& RelativeTransform = ETransform());
     private:
+
+        // all the loaded scene.
+        TArray<PScene*> AllScenes;
+#if _EDITOR_ONLY
         // Current operating scene.(in editor)
         PScene* CurrentScene    = nullptr;
         // Like unreal's persistent scene.
         PScene* PersistentScene = nullptr;
-        // all the loaded scene.
-        TArray<PScene*> AllScenes;
+#endif
+
+       
     };
 
 };

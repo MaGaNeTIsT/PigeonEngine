@@ -27,6 +27,7 @@ namespace PigeonEngine
 		friend class PWorld;
 
 		void AddActorToScene(PActor* NewActor, const ETransform& RelativeTransform = ETransform());
+		void LoadFromLevel(const EString& LevelFilePath);	
 	private:
 		// za wa lu do
 		PWorld* World = nullptr;

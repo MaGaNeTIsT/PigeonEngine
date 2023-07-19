@@ -42,6 +42,7 @@ namespace PigeonEngine
         TSharedPtr<TOctreeNode<T>> GetNode(const TArray<UINT>& Coordinate)const;
     private:
         TArray<UINT> Coordinate;
+        
     public:
         TArray<T>& GetContent();
         void       SetContent(const TArray<T>& InContent);

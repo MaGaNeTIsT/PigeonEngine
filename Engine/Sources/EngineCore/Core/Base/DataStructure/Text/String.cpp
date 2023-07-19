@@ -98,6 +98,12 @@ namespace PigeonEngine
         return Str != Other.Str;
     }
 
+    EString& EString::operator+=(const EString& Other)
+    {
+        Str += Other.Str;
+        return *this;
+    }
+
     UINT EString::Length() const
     {
         return Str.length();

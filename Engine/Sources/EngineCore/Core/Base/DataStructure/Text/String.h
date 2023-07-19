@@ -27,6 +27,9 @@ namespace PigeonEngine
 
         BOOL        operator==(const EString& Other)const;
         BOOL        operator!=(const EString& Other)const;
+
+        EString&    operator+=(const EString& Other);
+
         
         ENGINE_NODISCARD UINT    Length   ()const;
         ENGINE_NODISCARD BOOL    StartWith(const EString& SubString)const;
