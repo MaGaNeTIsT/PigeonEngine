@@ -984,6 +984,15 @@ namespace PigeonEngine
 	CAssimpManager::~CAssimpManager()
 	{
 	}
+	void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, const TArray<TArray<RShaderSemanticType>>& InMeshesLayouts, EStaticMesh& OutMesh)
+	{
+		for (UINT i = 0u, n = InMeshes.Length(); i < n; i++)
+		{
+			const aiMesh* AssimpMesh = InMeshes[i];
+			const TArray<RShaderSemanticType>& AssimpMeshLayouts = InMeshesLayouts[i];
+			OutMesh.AddVertexElement();
+		}
+	}
 	void CAssimpManager::Initialize()
 	{
 		if (_GAssetImporter == nullptr)
@@ -1057,10 +1066,37 @@ namespace PigeonEngine
 
 		// Now we can access the file's contents.
 		// Only access first mesh in scene.
-		TArray<const aiMesh*> Meshes; TArray<TArray<RShaderSemanticType>> MeshesLayouts; TArray<BOOL> IsSkeletonMesh;
-		FindMeshesAndVertexLayouts(Scene, Meshes, MeshesLayouts, IsSkeletonMesh);
+		TArray<const aiMesh*> Meshes; TArray<TArray<RShaderSemanticType>> MeshesLayouts;
+		{
+			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL> TempIsSkeletonMesh;
+			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletonMesh);
+			Check(EString(ENGINE_ASSET_ERROR), EString("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletonMesh.Length()));
+			for (UINT i = 0u, n = TempMeshes.Length(); i < n; i++)
+			{
+				if (TempIsSkeletonMesh[i])
+				{
+					continue;
+				}
+				Meshes.Add(TempMeshes[i]);
+				MeshesLayouts.Add(TempMeshesLayouts[i]);
+			}
+		}
+
+		if (Meshes.Length() == 0u)
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Scene does not contain static meshes
+			AssetImpoter->FreeScene();
+			return Result;
+		}
+
+		Check(EString(ENGINE_ASSET_ERROR), EString("Meshes and layouts are not matched."), (Meshes.Length() > 0u && Meshes.Length() == MeshesLayouts.Length()));
+
 		const RShaderSemanticType* EngineLayouts; UINT EngineLayoutNum;
 		RCommonSettings::GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
+
+
+
 		_GTranslateDefaultMeshData(Scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, inputLayoutDesc, inputLayoutNum);
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;

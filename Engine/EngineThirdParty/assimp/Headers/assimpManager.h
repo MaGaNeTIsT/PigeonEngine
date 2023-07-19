@@ -21,6 +21,8 @@ namespace PigeonEngine
 			ASSIMP_READ_FILE_STATE_FAILED,
 			ASSIMP_READ_FILE_STATE_ERROR
 		};
+	private:
+		void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, const TArray<TArray<RShaderSemanticType>>& InMeshesLayouts, EStaticMesh& OutMesh);
 	public:
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
