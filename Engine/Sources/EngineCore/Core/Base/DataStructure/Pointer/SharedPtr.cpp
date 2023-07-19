@@ -54,6 +54,18 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    bool TSharedPtr<T>::operator==(const TSharedPtr<T>& Other)
+    {
+        return this->Shared==Other.Shared;
+    }
+
+    template <typename T>
+    bool TSharedPtr<T>::operator!=(const TSharedPtr<T>& Other)
+    {
+        return !(*this==Other);
+    }
+
+    template <typename T>
     BOOL TSharedPtr<T>::IsValid() const
     {
         return Shared.get() == nullptr;
@@ -72,8 +84,11 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TSharedPtr<T> TSharedPtr<T>::MakeShared()
+    template <class ... Types>
+    TSharedPtr<T> TSharedPtr<T>::MakeShared(Types&&... Args)
     {
-        return TSharedPtr<T>(std::make_shared<T>());
+        return TSharedPtr<T>(std::make_shared<T>(Args));
     }
+
+
 }

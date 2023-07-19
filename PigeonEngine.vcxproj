@@ -34,7 +34,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\OctTree.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.h" />

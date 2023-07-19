@@ -78,7 +78,7 @@ namespace PigeonEngine
 
 
     template <typename T>
-    UINT TArray<T>::Last() const
+    UINT TArray<T>::LastIndex() const
     {
         return Length() > 0 ? Length() - 1 : 0;
     }
@@ -87,11 +87,11 @@ namespace PigeonEngine
     UINT TArray<T>::Add(const T& Element)
     {
          this->Elements.push_back(Element);
-         return Last();
+         return LastIndex();
     }
 
     template <typename T>
-    T& TArray<T>::Get(const UINT& Index)
+    T& TArray<T>::GetRef(const UINT& Index)
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return this->Elements[Index];
@@ -102,6 +102,12 @@ namespace PigeonEngine
     {
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
         return this->Elements[Index];
+    }
+
+    template <typename T>
+    const T& TArray<T>::Last()
+    {
+        return Elements[LastIndex()];
     }
 
     template <typename T>
@@ -168,7 +174,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TArray<T> TArray<T>::Reverse()
+    TArray<T> TArray<T>::Reverse() const
     {
         std::vector<T> Temp = Elements;
         std::reverse(Temp.begin(), Temp.end());

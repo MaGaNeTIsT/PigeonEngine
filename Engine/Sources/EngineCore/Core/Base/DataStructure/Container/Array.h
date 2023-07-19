@@ -25,8 +25,9 @@ namespace PigeonEngine
         TArray<T>&  operator= (std::vector<T>&& Other);
         
         UINT        Add       (const T& Element);
-        T&          Get       (const UINT& Index);
+        T&          GetRef    (const UINT& Index);
         const T&    Get       (const UINT& Index)const;
+        const T&    Last      ();
         // Find the index of given Element, return array's Length if the Element doesn't exist.
         UINT Find      (const T& Element) const;
         BOOL Contains  (const T& Element) const;
@@ -42,15 +43,15 @@ namespace PigeonEngine
         void       Sort   ();
         void       Sort   (bool Predicate(const T&, const T&));
         void       Shuffle();
-        TArray<T>  Reverse();
+        TArray<T>  Reverse() const;
         
         typename std::vector<T>::iterator begin();
         typename std::vector<T>::iterator end();
         typename std::vector<T>::iterator rbegin();
         typename std::vector<T>::iterator rend();
 
-        ENGINE_NODISCARD UINT Length  ()const;
-        ENGINE_NODISCARD UINT Last    ()const;
+        ENGINE_NODISCARD UINT Length       ()const;
+        ENGINE_NODISCARD UINT LastIndex    ()const;
     private:
         class std::vector<T> Elements;
     };

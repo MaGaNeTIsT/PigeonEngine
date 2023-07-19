@@ -5,12 +5,12 @@
 namespace PigeonEngine
 {
     template <typename T>
-    class TOctTreeNodeContent
+    class TOctreeNodeContent
     {
     public:
-        TOctTreeNodeContent();
-        ~TOctTreeNodeContent();
-        explicit TOctTreeNodeContent(const TArray<T>& InContent);
+        TOctreeNodeContent();
+        ~TOctreeNodeContent();
+        explicit TOctreeNodeContent(const TArray<T>& InContent);
         
     public:
         TArray<T>& GetContent();
@@ -24,20 +24,24 @@ namespace PigeonEngine
 
     
     template <typename T>
-    class TOctTreeNode
+    class TOctreeNode
     {
     public:
-        TOctTreeNode() = delete;
-        TOctTreeNode(const TSharedPtr<TOctTreeNode<T>>& InParent, const UINT& CurrentDepth, const UINT& MaxDepth);
+        TOctreeNode() = delete;
+        TOctreeNode(const TSharedPtr<TOctreeNode<T>>& InParent, const UINT& CurrentDepth, const UINT& MaxDepth, const UINT& IndexInSibling);
         
     public:
         ENGINE_NODISCARD BOOL IsLeafNode() const;
         ENGINE_NODISCARD BOOL IsRootNode() const;
-
     private:
-        TSharedPtr<TOctTreeNode<T>>         Parent = nullptr;
-        TArray<TSharedPtr<TOctTreeNode<T>>> Children;
-        
+        TSharedPtr<TOctreeNode<T>>         Parent = nullptr;
+        TArray<TSharedPtr<TOctreeNode<T>>> Children;
+
+    public:
+        ENGINE_NODISCARD const TArray<UINT>& GetCoordinate()const;
+        TSharedPtr<TOctreeNode<T>> GetNode(const TArray<UINT>& Coordinate)const;
+    private:
+        TArray<UINT> Coordinate;
     public:
         TArray<T>& GetContent();
         void       SetContent(const TArray<T>& InContent);
@@ -45,22 +49,24 @@ namespace PigeonEngine
         void AddItemToContent   (const T& InItem);
         void RemoveItemInContent(const T& InItem);
     private:
-        TSharedPtr<TOctTreeNodeContent<T>>  Content;
+        TSharedPtr<TOctreeNodeContent<T>>  Content;
     };
 
     
     template <typename T>
-    class TOctTree
+    class TOctree
     {
     public:
-        TOctTree() = default;
-        explicit TOctTree(const UINT& InDepth);
+        TOctree() = default;
+        explicit TOctree(const UINT& InDepth);
 
     public:
         ENGINE_NODISCARD BOOL IsValidTree() const;
+        TSharedPtr<TOctreeNode<T>> GetNode(const TArray<UINT>& Coordinate)const;
     private:
-        TSharedPtr<TOctTreeNode<T>> Root = nullptr;
+        TSharedPtr<TOctreeNode<T>> Root = nullptr;
         UINT Depth = 0;
     };
 
 }
+ 
