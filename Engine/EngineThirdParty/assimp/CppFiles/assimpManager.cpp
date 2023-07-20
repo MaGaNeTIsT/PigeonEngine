@@ -859,7 +859,7 @@ namespace PigeonEngine
 	//	return result;
 	//}
 
-	ENGINE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, UINT InOriginDataNum, UINT InStoredDataStrideInBytes, FLOAT*& OutStoredDatas)
+	ENGINE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideInBytes, FLOAT*& OutStoredDatas)
 	{
 		for (UINT i = 0u; i < InOriginDataNum; i++)
 		{
@@ -988,6 +988,35 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
+	void TryAddStaticMeshVertexPart(const aiVector3D* InDatas, const UINT InDataElementNum, const CAssimpManager::StoredMeshLayoutDesc& InStoredLayoutDesc, const UINT InSuccessAddMaxNum, EStaticMesh& OutMesh)
+	{
+		EVertexLayoutType TempTryStoredLayoutBaseType = InStoredLayoutDesc.BaseVertexLayout;
+		if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_VERTEX)
+		{
+			UINT TempAddNum = 0u;
+			for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < (InStoredLayoutDesc.TryStoredLayoutNum); TryStoredSlotIndex++)
+			{
+				UINT TempTryStoredLayoutSlot = InStoredLayoutDesc.TryStoredLayoutSlot[TryStoredSlotIndex];
+				if (OutMesh.CheckVertexLayoutPartExist(TempTryStoredLayoutBaseType, TempTryStoredLayoutSlot))
+				{
+					continue;
+				}
+				const static UINT PositionStrideInBytes = 4u;
+				EVertexData TempVertexData;
+				TempVertexData.PartType = TempTryStoredLayoutBaseType;
+				TempVertexData.ElementNum = InDataElementNum;
+				TempVertexData.Stride = PositionStrideInBytes * sizeof(FLOAT);
+				TempVertexData.Datas = new FLOAT[PositionStrideInBytes * InDataElementNum];
+				StoreVertexData(InDatas, InDataElementNum, PositionStrideInBytes, TempVertexData.Datas);
+				OutMesh.AddVertexElement(&TempVertexData);
+				TempAddNum += 1u;
+				if (TempAddNum >= InSuccessAddMaxNum)
+				{
+					return;
+				}
+			}
+		}
+	}
 	TArray<CAssimpManager::StoredMeshLayoutDesc> CAssimpManager::GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, UINT InLayoutNum)
 	{
 		TArray<StoredMeshLayoutDesc> Result;
@@ -1074,6 +1103,8 @@ namespace PigeonEngine
 				EVertexLayoutType TempTryStoredLayoutBaseType = StoredLayoutDesc.BaseVertexLayout;
 				if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_VERTEX)
 				{
+					const static UINT SuccessAddPositionMaxNum = 1u;
+					UINT TempAddPositionNum = 0u;
 					for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < (StoredLayoutDesc.TryStoredLayoutNum); TryStoredSlotIndex++)
 					{
 						UINT TempTryStoredLayoutSlot = StoredLayoutDesc.TryStoredLayoutSlot[TryStoredSlotIndex];
@@ -1089,15 +1120,38 @@ namespace PigeonEngine
 						TempVertexData.Datas = new FLOAT[PositionStrideInBytes * AssimpMesh->mNumVertices];
 						StoreVertexData(AssimpMesh->mVertices, AssimpMesh->mNumVertices, PositionStrideInBytes, TempVertexData.Datas);
 						OutMesh.AddVertexElement(&TempVertexData);
+						TempAddPositionNum += 1u;
+						if (TempAddPositionNum >= SuccessAddPositionMaxNum)
+						{
+							break;
+						}
 					}
 				}
 				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TEXTURECOORD)
 				{
-					const static UINT TexcoordStrideInBytes = 2u;
-					TempVertexData.ElementNum = AssimpMesh->mNumVertices;
-					TempVertexData.Stride = TexcoordStrideInBytes * sizeof(FLOAT);
-					TempVertexData.Datas = new FLOAT[TexcoordStrideInBytes * AssimpMesh->mNumVertices];
-					StoreVertexData(AssimpMesh->mVertices, AssimpMesh->mNumVertices, TexcoordStrideInBytes, TempVertexData.Datas);
+					const static UINT SuccessAddTexcoordMaxNum = 3u;
+					UINT TempAddTexcoordNum = 0u;
+					for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < (StoredLayoutDesc.TryStoredLayoutNum); TryStoredSlotIndex++)
+					{
+						UINT TempTryStoredLayoutSlot = StoredLayoutDesc.TryStoredLayoutSlot[TryStoredSlotIndex];
+						if (OutMesh.CheckVertexLayoutPartExist(TempTryStoredLayoutBaseType, TempTryStoredLayoutSlot))
+						{
+							continue;
+						}
+						const static UINT PositionStrideInBytes = 4u;
+						EVertexData TempVertexData;
+						TempVertexData.PartType = TempTryStoredLayoutBaseType;
+						TempVertexData.ElementNum = AssimpMesh->mNumVertices;
+						TempVertexData.Stride = PositionStrideInBytes * sizeof(FLOAT);
+						TempVertexData.Datas = new FLOAT[PositionStrideInBytes * AssimpMesh->mNumVertices];
+						StoreVertexData(AssimpMesh->mVertices, AssimpMesh->mNumVertices, PositionStrideInBytes, TempVertexData.Datas);
+						OutMesh.AddVertexElement(&TempVertexData);
+						TempAddPositionNum += 1u;
+						if (TempAddPositionNum >= SuccessAddPositionMaxNum)
+						{
+							break;
+						}
+					}
 				}
 				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_NORMAL)
 				{

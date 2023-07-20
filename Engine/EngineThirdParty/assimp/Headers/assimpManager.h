@@ -29,6 +29,7 @@ namespace PigeonEngine
 			UINT				TryStoredLayoutSlot[EMesh::MeshVertexLayoutPartMaxNum];
 		};
 		static BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh);
+		static void TryAddStaticMeshVertexPart();
 		static TArray<StoredMeshLayoutDesc> GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, UINT InLayoutNum);
 		static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes);
 	public:
