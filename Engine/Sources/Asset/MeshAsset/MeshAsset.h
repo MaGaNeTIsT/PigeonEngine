@@ -52,6 +52,8 @@ namespace PigeonEngine
 		MESH_SKIN			= (1 << 26)
 	};
 	extern UINT GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType);
+	extern EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType);
+	extern UINT TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
 
 	struct EVertexDescriptor
 	{
@@ -218,7 +220,7 @@ namespace PigeonEngine
 		const EVertexPart&	GetVertices()const;
 		const ESubmeshPart&	GetSubmeshes()const;
 	public:
-		void	SetBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
+		void	SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
 		void	SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
 		BOOL	AddIndexElement(EIndexData* InIndexData);
 		BOOL	RemoveIndexElement();

@@ -27,6 +27,55 @@ namespace PigeonEngine
 			return 26u;
 		}
 	}
+	EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType)
+	{
+		switch (InBaseType)
+		{
+		case RShaderSemanticType::SHADER_SEMANTIC_POSITION:
+			return EVertexLayoutType::MESH_VERTEX;
+		case RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD:
+			return EVertexLayoutType::MESH_TEXTURECOORD;
+		case RShaderSemanticType::SHADER_SEMANTIC_NORMAL:
+			return EVertexLayoutType::MESH_NORMAL;
+		case RShaderSemanticType::SHADER_SEMANTIC_TANGENT:
+			return EVertexLayoutType::MESH_TANGENT;
+		case RShaderSemanticType::SHADER_SEMANTIC_COLOR:
+			return EVertexLayoutType::MESH_COLOR;
+		case RShaderSemanticType::SHADER_SEMANTIC_BINORMAL:
+			return EVertexLayoutType::MESH_BITANGENT;
+		case RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES:
+			return EVertexLayoutType::MESH_SKIN;
+		case RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT:
+			return EVertexLayoutType::MESH_SKIN;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this shader semantic type for mesh layout."));
+		return EVertexLayoutType::MESH_VERTEX;	//TODO Not support type is fix output vertex type for now.
+	}
+	UINT TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType)
+	{
+		switch (InBaseType)
+		{
+		case EVertexLayoutType::MESH_INDEX_FULL:
+			return RShaderSemanticType::SHADER_SEMANTIC_NONE;
+		case EVertexLayoutType::MESH_INDEX_HALF:
+			return RShaderSemanticType::SHADER_SEMANTIC_NONE;
+		case EVertexLayoutType::MESH_VERTEX:
+			return RShaderSemanticType::SHADER_SEMANTIC_POSITION;
+		case EVertexLayoutType::MESH_TEXTURECOORD:
+			return RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD;
+		case EVertexLayoutType::MESH_NORMAL:
+			return RShaderSemanticType::SHADER_SEMANTIC_NORMAL;
+		case EVertexLayoutType::MESH_TANGENT:
+			return RShaderSemanticType::SHADER_SEMANTIC_TANGENT;
+		case EVertexLayoutType::MESH_COLOR:
+			return RShaderSemanticType::SHADER_SEMANTIC_COLOR;
+		case EVertexLayoutType::MESH_BITANGENT:
+			return RShaderSemanticType::SHADER_SEMANTIC_BINORMAL;
+		case EVertexLayoutType::MESH_SKIN:
+			return RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES | RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT;	//TODO Skin is mapping two type for now.
+		}
+		return RShaderSemanticType::SHADER_SEMANTIC_NONE;
+	}
 
 	EMesh::EMesh(const EString& InMeshName)
 		: MeshName(InMeshName)
@@ -94,7 +143,7 @@ namespace PigeonEngine
 	{
 		return Submeshes;
 	}
-	void EMesh::SetBoundAABB(const Vector3& InOrigin, const Vector3& InExtent)
+	void EMesh::SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent)
 	{
 		BoundAABB.AABBMin = InOrigin - InExtent;
 		BoundAABB.AABBMax = InOrigin + InExtent;
