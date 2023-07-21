@@ -42,5 +42,5 @@ TODO
 #### Render Features
 TODO
 
-##NOTE
+## NOTE
 Name of skeleton's bone can not large than 512 bytes(char[512]), because we use char[512] for serialization / deserialization
