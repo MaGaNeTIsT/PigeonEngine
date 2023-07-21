@@ -710,6 +710,28 @@ namespace PigeonEngine
 			else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 2u; }
 			return 0u;
 		}
+		static RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input)
+		{
+			if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return RShaderSemanticType::SHADER_SEMANTIC_NONE; }
+			UINT SemanticType = input;
+			if ((SemanticType >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD; }
+			else if ((SemanticType >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return RShaderSemanticType::SHADER_SEMANTIC_POSITION; }
+			else if ((SemanticType >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return RShaderSemanticType::SHADER_SEMANTIC_NORMAL; }
+			else if ((SemanticType >> 12) & 0x1u) { /*SHADER_SEMANTIC_TANGENT[n]*/return RShaderSemanticType::SHADER_SEMANTIC_TANGENT; }
+			else if ((SemanticType >> 11) & 0x1u) { /*SHADER_SEMANTIC_COLOR[n]*/return RShaderSemanticType::SHADER_SEMANTIC_COLOR; }
+			else if ((SemanticType >> 10) & 0x1u) { /*SHADER_SEMANTIC_BLENDINDICES[n]*/return RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES; }
+			else if ((SemanticType >> 9) & 0x1u) { /*SHADER_SEMANTIC_BLENDWEIGHT[n]*/return RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT; }
+			else if ((SemanticType >> 8) & 0x1u) { /*SHADER_SEMANTIC_BINORMAL[n]*/return RShaderSemanticType::SHADER_SEMANTIC_BINORMAL; }
+			else if ((SemanticType >> 7) & 0x1u) { /*SHADER_SEMANTIC_POSITIONT[n]*/return RShaderSemanticType::SHADER_SEMANTIC_POSITIONT; }
+			else if ((SemanticType >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return RShaderSemanticType::SHADER_SEMANTIC_PSIZE; }
+			return RShaderSemanticType::SHADER_SEMANTIC_NONE;
+		}
+		static UINT GetShaderSemanticTypeSlot(RShaderSemanticType input)
+		{
+			if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
+			UINT SemanticType = input;
+			return (SemanticType & 0xffu);
+		}
 		static void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum)
 		{
 			const static RShaderSemanticType _EngineDefaultMeshInputLayout[7u] = {
