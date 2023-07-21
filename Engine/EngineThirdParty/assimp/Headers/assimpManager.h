@@ -7,6 +7,9 @@
 #include <RenderCommon.h>
 #include <MeshAsset/MeshAsset.h>
 
+class aiScene;
+class aiMesh;
+
 namespace PigeonEngine
 {
 	class CAssimpManager : public EManagerBase
@@ -28,15 +31,17 @@ namespace PigeonEngine
 			UINT				TryStoredLayoutNum;
 			UINT				TryStoredLayoutSlot[EMesh::MeshVertexLayoutPartMaxNum];
 		};
-		static BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh);
-		static void TryAddStaticMeshVertexPart();
-		static TArray<StoredMeshLayoutDesc> GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, UINT InLayoutNum);
-		static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes);
+		BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh);
+
+		template<typename TDataType>
+		void TryAddStaticMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideInBytes, const UINT InSuccessAddMaxNum, EStaticMesh& OutMesh);
+		TArray<StoredMeshLayoutDesc> GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, const UINT InLayoutNum);
+		void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes);
 	public:
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
 	public:
-		static CReadFileStateType ReadStaticMeshFile(const EString& path, EStaticMesh& OutMesh);
+		CReadFileStateType ReadStaticMeshFile(const EString& path, TArray<EStaticMesh>& OutMeshes);
 		//CReadFileStateType ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList);
 		//CReadFileStateType ReadSkeletonAnimationFile(const EString& path, TMap<EString, TMap<EString, EAnimationInfo>>& animationDatas);
 

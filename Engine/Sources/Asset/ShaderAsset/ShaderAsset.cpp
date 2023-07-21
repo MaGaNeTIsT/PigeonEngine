@@ -74,7 +74,7 @@ namespace PigeonEngine
 		RDeviceD3D11::RVertexShaderResource* result = nullptr;
 		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
 		{
-			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
 			result = new RDeviceD3D11::RVertexShaderResource();
 			if (!deviceD3D11->CreateVertexShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result, ShaderInputLayouts, ShaderInputLayoutNum))
 			{
@@ -129,7 +129,7 @@ namespace PigeonEngine
 		RDeviceD3D11::RPixelShaderResource* result = nullptr;
 		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
 		{
-			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
 			result = new RDeviceD3D11::RPixelShaderResource();
 			if (!deviceD3D11->CreatePixelShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
 			{
@@ -183,7 +183,7 @@ namespace PigeonEngine
 		RDeviceD3D11::RComputeShaderResource* result = nullptr;
 		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
 		{
-			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetRenderDeviceD3D11();
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
 			result = new RDeviceD3D11::RComputeShaderResource();
 			if (!deviceD3D11->CreateComputeShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
 			{
@@ -215,7 +215,7 @@ namespace PigeonEngine
 		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input ps file path is too short."), inPath.Length() > importPixelShaderNameType.Length());
 		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input cs file path is too short."), inPath.Length() > importComputeShaderNameType.Length());
 
-		if (inPath.substr(inPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
+		if (inPath.Substring(inPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
 		{
 #ifdef _EDITOR_ONLY
 			{
@@ -228,11 +228,11 @@ namespace PigeonEngine
 		}
 
 		RShaderFrequencyType importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_COUNT;
-		if (inPath.substr(inPath.Length() - importPixelShaderNameType.Length(), importPixelShaderNameType.Length()) == importPixelShaderNameType)
+		if (inPath.Substring(inPath.Length() - importPixelShaderNameType.Length(), importPixelShaderNameType.Length()) == importPixelShaderNameType)
 		{
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_PIXEL;
 		}
-		else if (inPath.substr(inPath.Length() - importVertexShaderNameType.Length(), importVertexShaderNameType.Length()) == importVertexShaderNameType)
+		else if (inPath.Substring(inPath.Length() - importVertexShaderNameType.Length(), importVertexShaderNameType.Length()) == importVertexShaderNameType)
 		{
 			if (!inShaderInputLayouts || !inShaderInputLayoutNum)
 			{
@@ -241,7 +241,7 @@ namespace PigeonEngine
 			}
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_VERTEX;
 		}
-		else if (inPath.substr(inPath.Length() - importComputeShaderNameType.Length(), importComputeShaderNameType.Length()) == importComputeShaderNameType)
+		else if (inPath.Substring(inPath.Length() - importComputeShaderNameType.Length(), importComputeShaderNameType.Length()) == importComputeShaderNameType)
 		{
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE;
 		}

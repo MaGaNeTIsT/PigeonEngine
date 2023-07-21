@@ -741,7 +741,7 @@ namespace PigeonEngine
 				RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
 				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
 				RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
-				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD3 };
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2 };
 
 			OutLayouts = _EngineDefaultMeshInputLayout;
 			OutLayoutNum = 7u;
@@ -757,7 +757,7 @@ namespace PigeonEngine
 				RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
 				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
 				RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
-				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD3 };
+				RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2 };
 
 			OutLayouts = _EngineDefaultSkeletonMeshInputLayout;
 			OutLayoutNum = 9u;

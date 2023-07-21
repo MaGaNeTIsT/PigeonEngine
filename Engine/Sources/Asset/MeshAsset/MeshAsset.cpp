@@ -566,4 +566,48 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
+	EMeshRenderResource::EMeshRenderResource(EMesh* InMesh)
+		: Mesh(InMesh)
+	{
+	}
+	EMeshRenderResource::~EMeshRenderResource()
+	{
+		Release();
+	}
+	void EMeshRenderResource::Release()
+	{
+		Mesh = nullptr;
+		if (RenderResources.Length() > 0)
+		{
+			for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
+			{
+				RenderResources[Index].Release();
+			}
+			RenderResources.Clear();
+		}
+	}
+
+	EStaticMeshAsset::EStaticMeshAsset(
+		const EString& InMeshPath
+#ifdef _EDITOR_ONLY
+		, const EString& InDebugName
+#endif
+	)
+		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>(InMeshPath
+#ifdef _EDITOR_ONLY
+			, InDebugName
+#endif
+		)
+	{
+
+	}
+	EStaticMeshAsset::~EStaticMeshAsset()
+	{
+
+	}
+	BOOL EStaticMeshAsset::InitResource()
+	{
+
+	}
+
 };

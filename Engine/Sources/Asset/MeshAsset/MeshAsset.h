@@ -18,24 +18,6 @@ namespace PigeonEngine
 		MESH_TYPE_COUNT
 	};
 
-	struct EMeshRenderResource
-	{
-		EMeshRenderResource() {}
-		void Release()
-		{
-			if (RenderResources.Length() > 0)
-			{
-				for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
-				{
-					RenderResources[Index].Release();
-				}
-				RenderResources.Clear();
-			}
-		}
-
-		TArray<RDeviceD3D11::RBufferResource> RenderResources;
-	};
-
 	// 32 bit number                    31 30| 29    26| 25    22| 21    18| 17    14| 13    10| 9     6 | 5     2 | 1 0
 	// Vertex layout by bit (32 bits) :  0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0 0 0 | 0 0
 	// Vertex layout layer :           NotUse|   Skin  |Bitangent|  Color  | Tangent |  Normal | TexCoord|  Vertex | Index
@@ -281,8 +263,28 @@ namespace PigeonEngine
 
 	};
 
-	template<EMeshType _MeshType, typename TMeshResourceType>
-	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, EMeshRenderResource>
+	class EMeshRenderResource : public EObjectBase
+	{
+
+		EClass(EMeshRenderResource, EObjectBase)
+
+	public:
+		EMeshRenderResource(EMesh* InMesh);
+		virtual ~EMeshRenderResource();
+	public:
+		void Release();
+	protected:
+		EMesh*	Mesh;
+		TArray<RDeviceD3D11::RBufferResource> RenderResources;
+	public:
+		EMeshRenderResource() = delete;
+
+		CLASS_REMOVE_COPY_BODY(EMeshRenderResource)
+
+	};
+
+	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
+	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>
 	{
 	public:
 		TMeshBaseAsset(
@@ -290,7 +292,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
-		) : TRenderBaseAsset<TMeshResourceType, EMeshRenderResource>(
+		) : TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>(
 #ifdef _EDITOR_ONLY
 			InDebugName
 #endif
@@ -311,6 +313,25 @@ namespace PigeonEngine
 		TMeshBaseAsset() = delete;
 
 		CLASS_REMOVE_COPY_BODY(TMeshBaseAsset)
+
+	};
+
+	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>
+	{
+	public:
+		EStaticMeshAsset(
+			const EString& InMeshPath
+#ifdef _EDITOR_ONLY
+			, const EString& InDebugName
+#endif
+		);
+		virtual ~EStaticMeshAsset();
+	public:
+		virtual BOOL InitResource()override;
+	public:
+		EStaticMeshAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(EStaticMeshAsset)
 
 	};
 
