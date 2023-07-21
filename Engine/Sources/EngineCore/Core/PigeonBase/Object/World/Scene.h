@@ -10,7 +10,9 @@ namespace PigeonEngine
 {
 	class PWorld;
 	class PActor;
-	
+
+
+
 	/*
 	 * 
 	 */
@@ -24,21 +26,8 @@ namespace PigeonEngine
 		
 	protected:
 		
-		friend class PWorld;
 
-		void AddActorToScene(PActor* NewActor, const ETransform& RelativeTransform = ETransform());
-		void LoadFromLevel(const EString& LevelFilePath);	
-	private:
-		// za wa lu do
-		PWorld* World = nullptr;
 
-		// All actors in this scene, include children.
-		// For Actor Iteration
-		TArray<PActor*> Actors;
-		// actors attached direct to root
-		TArray<PActor*> RootActors;
-
-		PActor* SceneRoot;
 	};
 
 };

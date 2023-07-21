@@ -30,6 +30,7 @@ namespace PigeonEngine
             if (name == TypeName()) { return true; }\
             else { return ParentType::Is(name); }\
         }\
+        typedef ParentType Super;\
 
     //Runtime Interface,all types need rtti need to implement from this.
     class ERTTI

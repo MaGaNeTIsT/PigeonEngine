@@ -103,7 +103,12 @@ namespace PigeonEngine
 	{
 		return this->RootComponent->GetComponentUpVector();
 	}
-	
+
+	EMobilityType PActor::GetMobility() const
+	{
+		return RootComponent->GetMobility();
+	}
+
 	void PActor::AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform)
 	{
 		AttachComponentToActor(Component, this, RelativeTransform);

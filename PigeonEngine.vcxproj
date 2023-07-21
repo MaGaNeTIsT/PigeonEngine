@@ -136,7 +136,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\OctTree.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.cpp">

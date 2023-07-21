@@ -12,4 +12,6 @@ namespace PigeonEngine
 #define ENGINE_ARRAY_ERROR              ("ENGINE_ARRAY_ERROR")
 #define ENGINE_SET_ERROR                ("ENGINE_SET_ERROR")
 #define ENGINE_OCTREE_ERROR             ("ENGINE_OCTREE_ERROR")
+#define ENGINE_WORLD_ERROR              ("ENGINE_WORLD_ERROR")
+
 };

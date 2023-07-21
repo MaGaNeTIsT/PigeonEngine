@@ -22,6 +22,12 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    UINT TOctreeNodeContent<T>::GetContentNum() const
+    {
+        return Content.Length();
+    }
+
+    template <typename T>
     TArray<T>& TOctreeNodeContent<T>::GetContent()
     {
         return Content;
@@ -45,20 +51,32 @@ namespace PigeonEngine
         Content.Remove(InItem);
     }
 
+    
+
     template <typename T>
     TOctreeNode<T>::TOctreeNode(const TSharedPtr<TOctreeNode<T>>& InParent, const UINT& CurrentDepth,
         const UINT& MaxDepth, const UINT& IndexInSibling)
-        :
-    Parent(InParent)
     {
+       
         if(CurrentDepth < MaxDepth)
         {
             for(int i = 0; i < 8; ++i)
             {
                 TSharedPtr<TOctreeNode<T>> NewNode = TSharedPtr<T>::MakeShared(new TOctreeNode<T>(this, CurrentDepth + 1, MaxDepth, i));
+                this->Children.Add(NewNode);
             }
         }
-        Content = TSharedPtr<T>::MakeShared(new TOctreeNodeContent<T>());
+        // Content = TSharedPtr<T>::MakeShared(new TOctreeNodeContent<T>());
+        if(Parent)
+        {
+            this->Coordinate.Append(Parent->GetCoordinate());
+        }
+        this->Coordinate.Append(IndexInSibling);
+    }
+
+    template <typename T>
+    TOctreeNode<T>::TOctreeNode(const TSharedPtr<TOctreeNode<T>>& InParent, const UINT& IndexInSibling)
+    {
         if(Parent)
         {
             this->Coordinate.Append(Parent->GetCoordinate());
@@ -70,6 +88,21 @@ namespace PigeonEngine
     BOOL TOctreeNode<T>::IsLeafNode() const
     {
         return Children.Length() == 0;
+        
+    }
+
+    template <typename T>
+    BOOL TOctreeNode<T>::AddChildNode()
+    {
+        const UINT ChildrenCount = Children.Length();
+        Check(ENGINE_OCTREE_ERROR, "TOctreeNode<T>::AddChildNode :this node's children >= 8, so you can not add more. ", ChildrenCount > 7);
+        if(ChildrenCount == 8)
+        {
+            return false;
+        }
+        TSharedPtr<TOctreeNode<T>> NewNode = TSharedPtr<T>::MakeShared(new TOctreeNode<T>(this, ChildrenCount - 1));
+        this->Children.Add(NewNode);
+        return true;
     }
 
     template <typename T>
@@ -89,7 +122,7 @@ namespace PigeonEngine
     {
         TArray<UINT> TargetCoordinate = Coordinate;
         const UINT Index = TargetCoordinate.Last();
-        Check(ENGINE_OCTREE_ERROR, "Coordinate element greater than 7, this is an octree right?", Index > 7);
+        Check(ENGINE_OCTREE_ERROR, "TOctreeNode<T>::GetNode : At least one coordinate's element greater than 7", Index > 7);
         TargetCoordinate.Pop();
         if(TargetCoordinate.Length() > 0)
         {
@@ -102,27 +135,43 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    BOOL TOctreeNode<T>::HasContent() const
+    {
+        return Content.IsValid();
+    }
+
+    template <typename T>
     TArray<T>& TOctreeNode<T>::GetContent()
     {
+        Check(ENGINE_OCTREE_ERROR, "TOctreeNode<T>::GetContent : Content is not valid, so you can not get it.", Content.IsValid());
         return Content->GetContent();
     }
 
     template <typename T>
     void TOctreeNode<T>::SetContent(const TArray<T>& InContent)
     {
+        if(!Content.IsValid())
+            Content = TSharedPtr<T>::MakeShared(new TOctreeNodeContent<T>());
         Content->SetContent(InContent);
     }
 
     template <typename T>
     void TOctreeNode<T>::AddItemToContent(const T& InItem)
     {
+        if(!Content.IsValid())
+            Content = TSharedPtr<T>::MakeShared(new TOctreeNodeContent<T>());
         Content->AddItem(InItem);
     }
 
     template <typename T>
     void TOctreeNode<T>::RemoveItemInContent(const T& InItem)
     {
+        Check(ENGINE_OCTREE_ERROR, "TOctreeNode<T>::RemoveItemInContent : Content is not valid, so you can not remove item.", Content.IsValid());
         Content->RemoveItem(InItem);
+        if(Content->GetContentNum() == 0)
+        {
+            Content = nullptr;
+        }
     }
 
     template <typename T>
@@ -130,7 +179,7 @@ namespace PigeonEngine
         :
     Depth(InDepth)
     {
-        Check(ENGINE_OCTREE_ERROR, "Are you sure you want a octree whitch depth is SMALLER than 1?", Depth < 1);
+        Check(ENGINE_OCTREE_ERROR, "TOctree<T>::TOctree(const UINT& InDepth) : Are you sure you want a octree whitch depth is SMALLER than 1?", Depth < 1);
         Root = TSharedPtr<T>::MakeShared(new TOctreeNode<T>(nullptr, 1, Depth, 0));
     }
 
@@ -143,8 +192,8 @@ namespace PigeonEngine
     template <typename T>
     TSharedPtr<TOctreeNode<T>> TOctree<T>::GetNode(const TArray<UINT>& Coordinate) const
     {
-        Check(ENGINE_OCTREE_ERROR, "Octree has no valid root", Root);
-        Check(ENGINE_OCTREE_ERROR, "Octree has no such coordinates : Depth is larger than this tree.", Coordinate.Length() > Depth);
+        Check(ENGINE_OCTREE_ERROR, "TOctree<T>::GetNode : Octree has no valid root", Root);
+        Check(ENGINE_OCTREE_ERROR, "TOctree<T>::GetNode : Octree has no such coordinates : Depth is larger than this tree.", Coordinate.Length() > Depth);
         
         return Root->GetNode(Coordinate.Reverse().Pop());
     }

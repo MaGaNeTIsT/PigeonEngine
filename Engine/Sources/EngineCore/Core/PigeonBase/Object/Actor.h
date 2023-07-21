@@ -51,6 +51,8 @@ namespace PigeonEngine
 		Vector3 GetActorRightVector()const;
 		Vector3 GetActorUpVector()const;
 
+		EMobilityType GetMobility() const;
+
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;

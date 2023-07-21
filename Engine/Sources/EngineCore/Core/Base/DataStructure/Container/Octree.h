@@ -13,6 +13,8 @@ namespace PigeonEngine
         explicit TOctreeNodeContent(const TArray<T>& InContent);
         
     public:
+        ENGINE_NODISCARD UINT GetContentNum() const;
+        
         TArray<T>& GetContent();
         void       SetContent(const TArray<T>& InContent);
         
@@ -29,12 +31,18 @@ namespace PigeonEngine
     public:
         TOctreeNode() = delete;
         TOctreeNode(const TSharedPtr<TOctreeNode<T>>& InParent, const UINT& CurrentDepth, const UINT& MaxDepth, const UINT& IndexInSibling);
-        
+        TOctreeNode(const TSharedPtr<TOctreeNode<T>>& InParent, const UINT& IndexInSibling);
+
     public:
-        ENGINE_NODISCARD BOOL IsLeafNode() const;
+        
         ENGINE_NODISCARD BOOL IsRootNode() const;
     private:
         TSharedPtr<TOctreeNode<T>>         Parent = nullptr;
+    public:
+        ENGINE_NODISCARD BOOL IsLeafNode() const;
+        
+        BOOL AddChildNode();
+    private:
         TArray<TSharedPtr<TOctreeNode<T>>> Children;
 
     public:
@@ -44,6 +52,8 @@ namespace PigeonEngine
         TArray<UINT> Coordinate;
         
     public:
+        ENGINE_NODISCARD BOOL HasContent() const;
+        
         TArray<T>& GetContent();
         void       SetContent(const TArray<T>& InContent);
         

@@ -31,6 +31,15 @@ namespace PigeonEngine
 			}
 			return *this;
 		}
+
+		EBoundAABB operator=(const EBoundAABB& Other)
+		{
+			AABBMin = Other.AABBMin;
+			AABBMax = Other.AABBMax;
+			IsValid = Other.IsValid;
+			return *this;
+		}
+		
 	};
 	struct EBox
 	{
