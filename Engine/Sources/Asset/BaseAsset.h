@@ -13,7 +13,7 @@ namespace PigeonEngine
 	public:
 		TBaseAsset(
 #ifdef _EDITOR_ONLY
-			const std::string& name
+			const EString& name
 #endif
 		)
 			: ResourceData(nullptr)
@@ -46,7 +46,7 @@ namespace PigeonEngine
 			if (ResourceData)
 			{
 #ifdef _EDITOR_ONLY
-				std::string errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
+				EString errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
@@ -57,7 +57,7 @@ namespace PigeonEngine
 			if (!ResourceData)
 			{
 #ifdef _EDITOR_ONLY
-				std::string errorInfo = DebugName + " try to storage a null resource.";
+				EString errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
@@ -92,7 +92,7 @@ namespace PigeonEngine
 	public:
 		TRenderBaseAsset(
 #ifdef _EDITOR_ONLY
-			const std::string& name
+			const EString& name
 #endif
 		)
 #ifdef _EDITOR_ONLY
@@ -131,7 +131,7 @@ namespace PigeonEngine
 			if (RenderResourceData)
 			{
 #ifdef _EDITOR_ONLY
-				std::string errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
+				EString errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;
@@ -142,7 +142,7 @@ namespace PigeonEngine
 			if (!RenderResourceData)
 			{
 #ifdef _EDITOR_ONLY
-				std::string errorInfo = DebugName + " try to storage a null resource.";
+				EString errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
 				return FALSE;

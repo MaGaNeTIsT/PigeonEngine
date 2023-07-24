@@ -34,6 +34,7 @@ namespace PigeonEngine
 
 #define ENGINE_INLINE				inline
 #define ENGINE_NODISCARD			[[nodiscard]]
+#define ENGINE_RESTRICT				__restrict
 #define ENGINE_FLOAT32_MAX			(3.402823466e+38f)
 
 };
