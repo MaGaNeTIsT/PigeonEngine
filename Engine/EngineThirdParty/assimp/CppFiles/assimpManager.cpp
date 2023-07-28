@@ -578,49 +578,6 @@ namespace PigeonEngine
 	//	}
 	//}
 
-	static void AssimpGatherSingleNodeRecursion(const aiNode* InCurrentNode, TArray<const aiNode*>& OutNodes, TMap<const aiNode*, EString>& OutNodeNames, TMap<EString, SHORT>& OutNodeIndices)
-	{
-		if (InCurrentNode == nullptr)
-		{
-			return;
-		}
-
-		OutNodes.Add(InCurrentNode);
-		{
-			SHORT indexNode = static_cast<SHORT>(OutNodes.Length() - 1u);
-
-			EString tempNodeName;
-			if (InCurrentNode->mName.length > 0)
-			{
-				tempNodeName = AssimpTranslateString(InCurrentNode->mName);
-			}
-			else
-			{
-				tempNodeName = ENGINE_BONE_DEFAULT_NAME;
-			}
-
-			auto itFindNode = OutNodeIndices.ContainsKey(tempNodeName);
-
-			EString tempOldName = tempNodeName + "_";
-			EString tempNewName = tempNodeName;
-			UINT tempSameNameIndex = 0u;
-			while (itFindNode != OutNodeIndices.end())
-			{
-				tempNewName = tempOldName + std::to_string(tempSameNameIndex);
-				tempSameNameIndex += 1u;
-				itFindNode = OutNodeIndices.find(tempNewName);
-			}
-
-			OutNodeIndices.insert_or_assign(tempNewName, indexNode);
-			OutNodeNames.insert_or_assign(InCurrentNode, tempNewName);
-		}
-
-		for (UINT indexChild = 0u; indexChild < InCurrentNode->mNumChildren; indexChild++)
-		{
-			AssimpGatherSingleNodeRecursion(InCurrentNode->mChildren[indexChild], OutNodes, OutNodeNames, OutNodeIndices);
-		}
-	}
-
 	//BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
 	//	TArray<ESubmeshData>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices,
 	//	TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, TMap<EString, SHORT>& allGameNodeIndices, TArray<USHORT>& allBoneList,
@@ -902,6 +859,40 @@ namespace PigeonEngine
 				OutStoredDatas[i * InStoredDataStrideInBytes + 2u] = TempData.b;
 				OutStoredDatas[i * InStoredDataStrideInBytes + 3u] = TempData.a;
 			}
+		}
+	}
+	static void AssimpGatherSingleNodeRecursion(const aiNode* InCurrentNode, TArray<const aiNode*>& OutNodes, TMap<const aiNode*, EString>& OutNodeNames, TMap<EString, SHORT>& OutNodeIndices)
+	{
+		if (InCurrentNode == nullptr)
+		{
+			return;
+		}
+		OutNodes.Add(InCurrentNode);
+		{
+			SHORT NodeIndex = static_cast<SHORT>(OutNodes.Length() - 1u);
+			EString TempNodeName;
+			if (InCurrentNode->mName.length > 0)
+			{
+				TempNodeName = AssimpTranslateString(InCurrentNode->mName);
+			}
+			else
+			{
+				TempNodeName = ENGINE_BONE_DEFAULT_NAME;
+			}
+			EString TempOldName = TempNodeName + "_";
+			EString TempNewName = TempNodeName;
+			UINT tempSameNameIndex = 0u;
+			while (OutNodeIndices.ContainsKey(TempNewName))
+			{
+				TempNewName = TempOldName + ToString(tempSameNameIndex);
+				tempSameNameIndex += 1u;
+			}
+			OutNodeIndices.Add(TempNewName, NodeIndex);
+			OutNodeNames.Add(InCurrentNode, TempNewName);
+		}
+		for (UINT ChildIndex = 0u; ChildIndex < InCurrentNode->mNumChildren; ChildIndex++)
+		{
+			AssimpGatherSingleNodeRecursion(InCurrentNode->mChildren[ChildIndex], OutNodes, OutNodeNames, OutNodeIndices);
 		}
 	}
 	CAssimpManager::CAssimpManager()
@@ -1231,9 +1222,58 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void GatherAllBoneNodes()
+	BOOL GatherAllBoneNodes(const aiScene* InScene)
 	{
+		// Read data structures of all nodes.
+		TArray<const aiNode*> TempNodes; TMap<const aiNode*, EString> TempNodeNames; TMap<EString, SHORT> TempNodeIndices;
+		AssimpGatherSingleNodeRecursion(InScene->mRootNode, TempNodes, TempNodeNames, TempNodeIndices);
 
+		// Check read state.
+		if ((TempNodes.Length() < 1u) || (TempNodes.Length() != TempNodeNames.Length()) || (TempNodes.Length() != TempNodeIndices.Length()))
+		{
+			return FALSE;
+		}
+
+		// Create engine's hierarchical bones' data.
+		{
+			const UINT numAllNodes = static_cast<UINT>(allNodes.size());
+			for (UINT indexNode = 0u; indexNode < numAllNodes; indexNode++)
+			{
+				auto itFindNodeName = allNodeNames.find(allNodes[indexNode]);
+				CustomStruct::CGameBoneNodeInfo tempNewBone(itFindNodeName->second);
+				tempNewBone.Index = static_cast<SHORT>(indexNode);
+				tempNewBone.Parent = -1;
+				if (allNodes[indexNode]->mParent != nullptr)
+				{
+					auto itFindNodeParentName = allNodeNames.find(allNodes[indexNode]->mParent);
+					tempNewBone.Parent = allNodeIndices.find(itFindNodeParentName->second)->second;
+				}
+				allGameNodes.push_back(tempNewBone);
+				allGameNodeIndices.insert_or_assign(tempNewBone.Name, tempNewBone.Index);
+			}
+		}
+
+		// Read mesh data for skeleton mesh.
+		_GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, allGameNodes, allGameNodeIndices, allBoneList, inputLayoutDesc, inputLayoutNum);
+
+		// Read skeleton default transform.
+		Matrix4x4 dummyMat(Matrix4x4::Identity());
+		_GReadNodeTransformRecursion(scene->mRootNode, allGameNodes, allNodeNames, allNodeIndices, dummyMat);
+
+		// Save node's child relation.
+		{
+			const SHORT numAllGameNodes = static_cast<SHORT>(allGameNodes.size());
+			for (SHORT indexNode = 0; indexNode < numAllGameNodes; indexNode++)
+			{
+				CustomStruct::CGameBoneNodeInfo& gameNode = allGameNodes[indexNode];
+				if (indexNode != gameNode.Index || gameNode.Parent < 0 || gameNode.Parent >= numAllGameNodes)
+				{
+					continue;
+				}
+				CustomStruct::CGameBoneNodeInfo& gameParentNode = allGameNodes[gameNode.Parent];
+				gameParentNode.Children.push_back(gameNode.Index);
+			}
+		}
 	}
 	void CAssimpManager::Initialize()
 	{
