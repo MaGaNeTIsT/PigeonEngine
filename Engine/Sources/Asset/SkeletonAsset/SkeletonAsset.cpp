@@ -56,7 +56,6 @@ namespace PigeonEngine
 		TempBoneData.DefaultPosition = BoneData0.DefaultPosition;
 		TempBoneData.DefaultRotation = BoneData0.DefaultRotation;
 		TempBoneData.DefaultScaling = BoneData0.DefaultScaling;
-		TempBoneData.BindPoseMatrix = BoneData0.BindPoseMatrix;
 		TempBoneData.Parent = BoneData0.Parent;
 		if (BoneData0.Children.Length() > 0u)
 		{
@@ -74,7 +73,6 @@ namespace PigeonEngine
 		BoneData0.DefaultPosition = BoneData1.DefaultPosition;
 		BoneData0.DefaultRotation = BoneData1.DefaultRotation;
 		BoneData0.DefaultScaling = BoneData1.DefaultScaling;
-		BoneData0.BindPoseMatrix = BoneData1.BindPoseMatrix;
 		BoneData0.Parent = BoneData1.Parent;
 		BoneData0.Children.Clear();
 		if (BoneData1.Children.Length() > 0)
@@ -93,7 +91,6 @@ namespace PigeonEngine
 		BoneData1.DefaultPosition = TempBoneData.DefaultPosition;
 		BoneData1.DefaultRotation = TempBoneData.DefaultRotation;
 		BoneData1.DefaultScaling = TempBoneData.DefaultScaling;
-		BoneData1.BindPoseMatrix = TempBoneData.BindPoseMatrix;
 		BoneData1.Parent = TempBoneData.Parent;
 		BoneData1.Children.Clear();
 		if (TempBoneData.Children.Length() > 0u)
@@ -199,7 +196,6 @@ namespace PigeonEngine
 		Bones[NewIndex].DefaultPosition	= InIndexData->DefaultPosition;
 		Bones[NewIndex].DefaultRotation	= InIndexData->DefaultRotation;
 		Bones[NewIndex].DefaultScaling	= InIndexData->DefaultScaling;
-		Bones[NewIndex].BindPoseMatrix	= InIndexData->BindPoseMatrix;
 		Bones[NewIndex].Parent			= static_cast<SHORT>(InIndexData->Parent);
 		for (UINT ChildIndex = 0u, ChildrenNum = InIndexData->Children.Length(); ChildIndex < ChildrenNum; ChildIndex++)
 		{

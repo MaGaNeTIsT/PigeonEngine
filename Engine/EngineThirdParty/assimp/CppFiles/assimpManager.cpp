@@ -895,6 +895,34 @@ namespace PigeonEngine
 			AssimpGatherSingleNodeRecursion(InCurrentNode->mChildren[ChildIndex], OutNodes, OutNodeNames, OutNodeIndices);
 		}
 	}
+	static void AssimpReadNodeDefaultTransformRecursion(const aiNode* InCurrentNode, const TMap<const aiNode*, EString>& InNodeNames, const TMap<EString, SHORT>& InNodeIndices, TArray<EBoneData>& OutBoneDatas)
+	{
+		if (InCurrentNode == nullptr)
+		{
+			return;
+		}
+		{
+			EString TempNodeName;
+			if (InNodeNames.FindValue(InCurrentNode, TempNodeName))
+			{
+				SHORT TempNodeIndex = -2;
+				if (InNodeIndices.FindValue(TempNodeName, TempNodeIndex))
+				{
+					if (TempNodeIndex >= 0)
+					{
+						AssimpTranslateMatrix(InCurrentNode->mTransformation,
+							OutBoneDatas[TempNodeIndex].DefaultPosition,
+							OutBoneDatas[TempNodeIndex].DefaultRotation,
+							OutBoneDatas[TempNodeIndex].DefaultScaling);
+					}
+				}
+			}
+		}
+		for (UINT indexChild = 0u; indexChild < InCurrentNode->mNumChildren; indexChild++)
+		{
+			AssimpReadNodeDefaultTransformRecursion(InCurrentNode->mChildren[indexChild], InNodeNames, InNodeIndices, OutBoneDatas);
+		}
+	}
 	CAssimpManager::CAssimpManager()
 	{
 #ifdef _EDITOR_ONLY
@@ -1222,8 +1250,13 @@ namespace PigeonEngine
 			}
 		}
 	}
-	BOOL GatherAllBoneNodes(const aiScene* InScene)
+	BOOL CAssimpManager::GatherAllBoneNodeDatas(const aiScene* InScene, TArray<EBoneData>& OutBones, TMap<EString, SHORT>& OutBoneIndices)
 	{
+		if (OutBones.Length() > 0u)
+		{
+			OutBones.Clear();
+		}
+
 		// Read data structures of all nodes.
 		TArray<const aiNode*> TempNodes; TMap<const aiNode*, EString> TempNodeNames; TMap<EString, SHORT> TempNodeIndices;
 		AssimpGatherSingleNodeRecursion(InScene->mRootNode, TempNodes, TempNodeNames, TempNodeIndices);
@@ -1235,45 +1268,49 @@ namespace PigeonEngine
 		}
 
 		// Create engine's hierarchical bones' data.
+		for (UINT NodeIndex = 0u, NodeNum = TempNodes.Length(); NodeIndex < NodeNum; NodeIndex++)
 		{
-			const UINT numAllNodes = static_cast<UINT>(allNodes.size());
-			for (UINT indexNode = 0u; indexNode < numAllNodes; indexNode++)
+			EString TempNodeName;
+			if (!(TempNodeNames.FindValue(TempNodes[NodeIndex], TempNodeName)))
 			{
-				auto itFindNodeName = allNodeNames.find(allNodes[indexNode]);
-				CustomStruct::CGameBoneNodeInfo tempNewBone(itFindNodeName->second);
-				tempNewBone.Index = static_cast<SHORT>(indexNode);
-				tempNewBone.Parent = -1;
-				if (allNodes[indexNode]->mParent != nullptr)
-				{
-					auto itFindNodeParentName = allNodeNames.find(allNodes[indexNode]->mParent);
-					tempNewBone.Parent = allNodeIndices.find(itFindNodeParentName->second)->second;
-				}
-				allGameNodes.push_back(tempNewBone);
-				allGameNodeIndices.insert_or_assign(tempNewBone.Name, tempNewBone.Index);
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Bone node find name failed(This step must be finded)."));
+				continue;
 			}
+			OutBones.Add(EBoneData(TempNodeName));
+			EBoneData& NewBone = OutBones[OutBones.Length() - 1u];
+			NewBone.Index = static_cast<SHORT>(NodeIndex);
+			NewBone.Parent = -1;
+			if (TempNodes[NodeIndex]->mParent != nullptr)
+			{
+				EString TempNodeParentName;
+				if (TempNodeNames.FindValue(TempNodes[NodeIndex]->mParent, TempNodeParentName))
+				{
+					SHORT TempNodeParentIndex = -1;
+					if (TempNodeIndices.FindValue(TempNodeParentName, TempNodeParentIndex))
+					{
+						NewBone.Parent = TempNodeParentIndex;
+					}
+				}
+			}
+			OutBoneIndices.Add(NewBone.Name, NewBone.Index);
 		}
-
-		// Read mesh data for skeleton mesh.
-		_GTranslateSkeletonMeshData(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, allGameNodes, allGameNodeIndices, allBoneList, inputLayoutDesc, inputLayoutNum);
 
 		// Read skeleton default transform.
-		Matrix4x4 dummyMat(Matrix4x4::Identity());
-		_GReadNodeTransformRecursion(scene->mRootNode, allGameNodes, allNodeNames, allNodeIndices, dummyMat);
+		AssimpReadNodeDefaultTransformRecursion(InScene->mRootNode, TempNodeNames, OutBoneIndices, OutBones);
 
 		// Save node's child relation.
+		for (SHORT NodeIndex = 0, NodeNum = static_cast<SHORT>(OutBones.Length()); NodeIndex < NodeNum; NodeIndex++)
 		{
-			const SHORT numAllGameNodes = static_cast<SHORT>(allGameNodes.size());
-			for (SHORT indexNode = 0; indexNode < numAllGameNodes; indexNode++)
+			EBoneData& BoneData = OutBones[NodeIndex];
+			if ((NodeIndex != BoneData.Index) || (BoneData.Parent < 0) || (BoneData.Parent >= NodeNum))
 			{
-				CustomStruct::CGameBoneNodeInfo& gameNode = allGameNodes[indexNode];
-				if (indexNode != gameNode.Index || gameNode.Parent < 0 || gameNode.Parent >= numAllGameNodes)
-				{
-					continue;
-				}
-				CustomStruct::CGameBoneNodeInfo& gameParentNode = allGameNodes[gameNode.Parent];
-				gameParentNode.Children.push_back(gameNode.Index);
+				continue;
 			}
+			EBoneData& BoneParentData = OutBones[BoneData.Parent];
+			BoneParentData.Children.Add(BoneData.Index);
 		}
+
+		return TRUE;
 	}
 	void CAssimpManager::Initialize()
 	{
@@ -1457,9 +1494,16 @@ namespace PigeonEngine
 		}
 
 		// Now we can access the file's contents.
-		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
-		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
-		Result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+		TArray<EBoneData> BoneDatas; TMap<EString, SHORT> BoneIndices;
+		if (!GatherAllBoneNodeDatas(Scene, BoneDatas, BoneIndices))
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
+
+
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		AssImpoter->FreeScene();

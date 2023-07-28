@@ -14,14 +14,12 @@ namespace PigeonEngine
 	{
 		EBoneData()noexcept
 			: Index(-2), Name(ENGINE_BONE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
-			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
-			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
+			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}
 		EBoneData(const EString& InName)noexcept
 			: Index(-2), Name(InName), DefaultPosition(Vector3::Zero())
-			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One())
-			, BindPoseMatrix(Matrix4x4::Identity()), Parent(-2)
+			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}
 		BOOL operator==(const EBoneData& Other)
@@ -38,7 +36,6 @@ namespace PigeonEngine
 		Vector3			DefaultPosition;
 		Quaternion		DefaultRotation;
 		Vector3			DefaultScaling;
-		Matrix4x4		BindPoseMatrix;
 		SHORT			Parent;
 		TArray<SHORT>	Children;
 	};

@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
+#include <Base/DataStructure/Container/Map.h>
 #include <Base/DataStructure/Text/String.h>
 #include <EngineCommon.h>
 #include <RenderCommon.h>
@@ -245,7 +246,8 @@ namespace PigeonEngine
 	class ESkinnedMesh : public EMesh
 	{
 	public:
-		typedef	TArray<ESkinData>		ESkinPart;
+		typedef	TMap<EString, Matrix4x4>	ESkinBindPose;
+		typedef	TArray<ESkinData>			ESkinPart;
 	public:
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();
@@ -255,7 +257,8 @@ namespace PigeonEngine
 		BOOL	RemoveSkinElement(UINT InLayoutIndex);
 		BOOL	GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
 	protected:
-		ESkinPart	Skins;
+		ESkinBindPose	SkinBindPose;
+		ESkinPart		Skins;
 	public:
 		ESkinnedMesh() = delete;
 
