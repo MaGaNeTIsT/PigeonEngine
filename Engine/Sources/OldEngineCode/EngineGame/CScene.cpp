@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CScene.h"
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineBase/Headers/CTimer.h"
@@ -418,3 +419,4 @@ void CScene::OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& m
 	}
 }
 #endif
+*/

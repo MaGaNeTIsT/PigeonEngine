@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGPUQueryManager.h"
 #include "../Headers/CRenderDevice.h"
 #include "../Headers/CGPUQuery.h"
@@ -36,3 +37,4 @@ std::shared_ptr<CGPUQuery> CGPUQueryManager::FindQueryData(const std::string& na
 		return nullptr;
 	return (element->second);
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -60,3 +61,4 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_IntegralComputeShader;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_FilterComputeShader;
 };
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CSkeletonComponent.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../Headers/CGameObject.h"
@@ -409,3 +410,4 @@ void CSkeletonComponent::UpdateBoneTransformMatrix(SHORT nodeIndex, CustomType::
 		}
 	}
 }
+*/

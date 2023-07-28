@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -30,3 +31,4 @@ public:
 	CSceneSkeletonMeshObject(const BOOL& active, const class CScene* scene);
 	virtual ~CSceneSkeletonMeshObject();
 };
+*/

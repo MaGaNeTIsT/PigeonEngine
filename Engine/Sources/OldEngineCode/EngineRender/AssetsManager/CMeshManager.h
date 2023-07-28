@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -59,3 +60,4 @@ private:
 private:
 	static CMeshManager* m_MeshManager;
 };
+*/

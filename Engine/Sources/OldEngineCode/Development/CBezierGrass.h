@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -98,3 +99,4 @@ public:
 	CBezierGrass();
 	~CBezierGrass();
 };
+*/

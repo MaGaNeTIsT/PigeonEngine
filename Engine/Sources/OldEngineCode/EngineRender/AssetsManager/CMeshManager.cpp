@@ -1,3 +1,4 @@
+/*
 #include "CMeshManager.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 #include "../../../../EngineThirdParty/Cassimp/Headers/CassimpManager.h"
@@ -1245,3 +1246,4 @@ const CBaseMesh<UINT>* CMeshManager::FindMeshData(const std::string& name)
 	}
 	return NULL;
 }
+*/

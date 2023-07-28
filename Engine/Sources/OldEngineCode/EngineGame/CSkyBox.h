@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -41,3 +42,4 @@ protected:
 protected:
 	static const CBaseMesh<UINT>*				m_FullScreenMesh;
 };
+*/

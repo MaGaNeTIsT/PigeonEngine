@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGTAOPass.h"
 #include "../../RenderBase/Headers/CRenderPipeline.h"
 #include "../../RenderBase/Headers/CMeshRendererComponent.h"
@@ -203,3 +204,4 @@ void CGTAOPass::DrawDebug()
 	}
 }
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CCube.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
@@ -83,3 +84,4 @@ void CCube::Update()
 {
 	CGameObject::Update();
 }
+*/

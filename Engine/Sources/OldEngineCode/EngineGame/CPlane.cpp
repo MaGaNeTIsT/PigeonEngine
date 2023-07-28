@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CPlane.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderPipeline.h"
@@ -137,3 +138,4 @@ void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Ve
 		}
 	}
 }
+*/

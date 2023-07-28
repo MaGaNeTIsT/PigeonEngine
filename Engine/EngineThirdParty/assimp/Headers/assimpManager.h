@@ -6,6 +6,7 @@
 #include <Base/DataStructure/Container/Map.h>
 #include <RenderCommon.h>
 #include <MeshAsset/MeshAsset.h>
+#include <SkeletonAsset/SkeletonAsset.h>
 
 class aiScene;
 class aiMesh;
@@ -37,11 +38,13 @@ namespace PigeonEngine
 		void TryAddStaticMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideInBytes, const UINT InSuccessAddMaxNum, EStaticMesh& OutMesh);
 		TArray<StoredMeshLayoutDesc> GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, const UINT InLayoutNum);
 		void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes);
+		void GatherAllBoneNodes();
 	public:
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
 	public:
-		CReadFileStateType ReadStaticMeshFile(const EString& path, TArray<EStaticMesh>& OutMeshes);
+		CReadFileStateType ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes);
+		CReadFileStateType ReadSkeletonFile(const EString& InPath, ESkeleton& OutSkeleton);
 		//CReadFileStateType ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList);
 		//CReadFileStateType ReadSkeletonAnimationFile(const EString& path, TMap<EString, TMap<EString, EAnimationInfo>>& animationDatas);
 

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -77,3 +78,4 @@ public:
 	CDynamicWind();
 	virtual ~CDynamicWind();
 };
+*/

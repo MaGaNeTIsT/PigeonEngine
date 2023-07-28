@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -153,3 +154,4 @@ public:
 	CRenderComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate) {}
 	virtual ~CRenderComponent() {}
 };
+*/

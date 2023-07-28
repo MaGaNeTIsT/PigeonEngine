@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGameObject.h"
 #include "../Headers/CComponent.h"
 #include "../Headers/CMeshComponent.h"
@@ -928,3 +929,4 @@ void CGameObject::SelectedEditorUpdate()
 	}
 }
 #endif
+*/

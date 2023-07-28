@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGPUCulling.h"
 #include "../../AssetsManager/Headers/CShader.h"
 #include "../../AssetsManager/Headers/CShaderManager.h"
@@ -227,3 +228,4 @@ BOOL CGPUCulling::ReadBackFromResource(const ULONGLONG& frameIndex)
 	}
 	return result;
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -35,3 +36,4 @@ private:
 private:
 	static CShaderManager* m_ShaderManager;
 };
+*/

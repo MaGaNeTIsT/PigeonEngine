@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -47,3 +48,4 @@ public:
 protected:
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_Shader;
 };
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CClothMaterial.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../AssetsManager/Headers/CTextureType.h"
@@ -838,3 +839,4 @@ void CClothAnisotropicMaterial::SelectedEditorUpdate()
 	renderParams->AnisotropyStrengthDirection = DirectX::XMFLOAT4(anisotropyStrength, anisotropyDirection, 0.f, 0.f);
 }
 #endif
+*/

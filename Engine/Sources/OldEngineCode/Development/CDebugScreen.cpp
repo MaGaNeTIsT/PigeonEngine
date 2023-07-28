@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CDebugScreen.h"
 
 #ifdef _DEVELOPMENT_EDITOR
@@ -89,3 +90,4 @@ void CDebugScreen::SetShadowMap(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>
 }
 
 #endif
+*/

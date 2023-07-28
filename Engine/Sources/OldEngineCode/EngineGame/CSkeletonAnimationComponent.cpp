@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CSkeletonAnimationComponent.h"
 #include "../../EngineBase/Headers/CManager.h"
 #include "../../EngineBase/Headers/CTimer.h"
@@ -262,3 +263,4 @@ const CustomStruct::CGameAnimationInfo* CSkeletonAnimationComponent::FindAnimati
 	}
 	return nullptr;
 }
+*/

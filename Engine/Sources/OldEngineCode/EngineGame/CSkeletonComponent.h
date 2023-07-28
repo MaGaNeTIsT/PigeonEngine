@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -110,3 +111,4 @@ public:
 private:
 	friend class CSkeletonAnimationComponent;
 };
+*/

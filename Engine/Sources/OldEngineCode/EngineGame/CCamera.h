@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -101,3 +102,4 @@ protected:
 	CustomType::Vector4					m_ViewportSizeAndInvSize;
 	CustomType::Vector2					m_DeviceZToViewZMulAdd;
 };
+*/

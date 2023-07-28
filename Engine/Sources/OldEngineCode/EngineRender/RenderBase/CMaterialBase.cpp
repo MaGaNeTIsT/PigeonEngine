@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CMaterialBase.h"
 #include "../../AssetsManager/Headers/CShader.h"
 #include "../../AssetsManager/Headers/CTextureType.h"
@@ -904,3 +905,4 @@ void CReadWriteMaterialParamsFile::InitAllPath()
 		this->m_PropertyPath[i] = _GStaticNotExistString;
 	}
 }
+*/

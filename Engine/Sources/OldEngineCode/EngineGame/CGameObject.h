@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../EngineCore/Core/Headers/Main.h"
@@ -370,3 +371,4 @@ public:
 	CGameObject(const BOOL& active, const class CScene* scene);
 	virtual ~CGameObject();
 };
+*/

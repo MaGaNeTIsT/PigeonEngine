@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -112,3 +113,4 @@ public:
 	CGameBoundBoxComponent(const CustomType::Vector3& anchor, const FLOAT& x, const FLOAT& y, const FLOAT& z);
 	virtual ~CGameBoundBoxComponent();
 };
+*/

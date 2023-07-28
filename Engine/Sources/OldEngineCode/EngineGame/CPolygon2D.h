@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -9,3 +10,4 @@ public:
 	CPolygon2D(const BOOL& active, const class CScene* scene);
 	virtual ~CPolygon2D();
 };
+*/

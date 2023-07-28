@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CPolygon2DBase.h"
 
 CPolygon2DBase::CPolygon2DBase(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
@@ -11,3 +12,4 @@ void CPolygon2DBase::SetScreenPosition(const CustomType::Vector4& rect)
 {
 	m_2DPosition = rect;
 }
+*/

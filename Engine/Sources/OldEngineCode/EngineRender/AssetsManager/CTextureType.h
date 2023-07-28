@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../RenderBase/Headers/CRenderDevice.h"
@@ -66,3 +67,4 @@ public:
 protected:
 	std::string m_NameFace[5u];
 };
+*/

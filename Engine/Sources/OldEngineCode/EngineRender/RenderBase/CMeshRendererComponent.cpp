@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CMeshRendererComponent.h"
 #include "../Headers/CRenderDevice.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -186,3 +187,4 @@ void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
 		this->m_Material->GetPixelShader()->Bind();
 	}
 }
+*/

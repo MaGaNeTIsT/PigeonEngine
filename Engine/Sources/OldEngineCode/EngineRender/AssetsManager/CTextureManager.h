@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 class CTextureManager
@@ -28,3 +29,4 @@ private:
 private:
 	static CTextureManager* m_TextureManager;
 };
+*/

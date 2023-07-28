@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -196,3 +197,4 @@ protected:
 	CustomType::Matrix4x4	m_ViewMatrix[2];
 	CustomType::Matrix4x4	m_ProjectionMatrix[2];
 };
+*/

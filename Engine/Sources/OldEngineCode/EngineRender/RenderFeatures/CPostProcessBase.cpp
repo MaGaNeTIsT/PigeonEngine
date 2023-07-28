@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CPostProcessBase.h"
 #include "../../AssetsManager/Headers/CShader.h"
 #include "../../AssetsManager/Headers/CShaderManager.h"
@@ -47,3 +48,4 @@ void CPostProcessBase::Draw(PostProcessType type)
 	this->m_PostShader[type]->Bind();
 	this->m_SwapIndex = 1 - this->m_SwapIndex;
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -28,3 +29,4 @@ protected:
 };
 
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -25,3 +26,4 @@ private:
 private:
 	static CSkeletonAnimationManager*	m_SkeletonAnimationManager;
 };
+*/

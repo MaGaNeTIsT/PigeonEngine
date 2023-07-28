@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -169,3 +170,4 @@ namespace CustomStruct
 		std::vector<CGameAnimationNodeInfo>		AnimationNodes;
 	};
 }
+*/

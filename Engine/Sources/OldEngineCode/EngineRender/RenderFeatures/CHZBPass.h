@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -42,3 +43,4 @@ private:
 	std::vector<CustomType::Vector2Int>						m_HZBSizes;
 	INT														m_HZBMipLevels;
 };
+*/

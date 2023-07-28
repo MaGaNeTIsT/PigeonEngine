@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -23,3 +24,4 @@ public:
 	CScreenPolygon2DMaterial();
 	virtual ~CScreenPolygon2DMaterial();
 };
+*/

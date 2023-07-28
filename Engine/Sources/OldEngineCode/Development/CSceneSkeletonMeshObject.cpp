@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CSceneSkeletonMeshObject.h"
 #include "../../EngineGame/Headers/CComponent.h"
 #include "../../EngineGame/Headers/CGameBoundComponent.h"
@@ -145,3 +146,4 @@ void CSceneSkeletonMeshObject::SelectedEditorUpdate()
 	}
 }
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CClearCoatMaterial.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -380,3 +381,4 @@ void CClearCoatMaterial::SelectedEditorUpdate()
 	renderParams->MetallicnessReflectanceIsGlossy	= DirectX::XMFLOAT4(clearCoatStrength, clearCoatRoughness, 0.f, 0.f);
 }
 #endif
+*/

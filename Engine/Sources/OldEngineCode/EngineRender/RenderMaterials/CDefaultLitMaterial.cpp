@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CDefaultLitMaterial.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -860,3 +861,4 @@ void CAnisotropicMaterial::SelectedEditorUpdate()
 	renderParams->AnisotropyStrengthDirection				= DirectX::XMFLOAT4(anisotropyStrength, anisotropyDirection, 0.f, 0.f);
 }
 #endif
+*/

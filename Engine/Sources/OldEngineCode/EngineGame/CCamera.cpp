@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CCamera.h"
 #include "../../EngineBase/Headers/CTimer.h"
 #include "../../EngineBase/Headers/CInput.h"
@@ -449,3 +450,4 @@ void CCamera::SelectedEditorUpdate()
 	this->m_CameraControlInfo.LookSpeed = CustomType::CMath::Max(0.001f, lookSpeed);
 }
 #endif
+*/

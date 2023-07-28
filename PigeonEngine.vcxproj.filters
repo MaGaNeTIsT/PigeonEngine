@@ -329,6 +329,9 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
     <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -496,105 +499,9 @@
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />
     <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
-      <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
-      <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl" />
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
@@ -629,5 +536,102 @@
     </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl" />
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl" />
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\GTAO</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\PostProcess</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
+    </None>
+    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
+      <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
+    </None>
+    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
+      <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
+    </None>
   </ItemGroup>
 </Project>

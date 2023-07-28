@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -76,3 +77,4 @@ public:
 };
 
 #endif
+*/

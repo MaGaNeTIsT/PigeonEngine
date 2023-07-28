@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CShaderManager.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 #include "../Headers/CShader.h"
@@ -107,3 +108,4 @@ void CShaderManager::FindComputeShaderData(const std::string& name, Microsoft::W
 	std::map<std::string, Microsoft::WRL::ComPtr<ID3D11ComputeShader>>::iterator is = m_ShaderManager->m_ComputeShaderData.find(name);
 	shader = (is == m_ShaderManager->m_ComputeShaderData.end()) ? nullptr : (is->second);
 }
+*/

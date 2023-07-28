@@ -3,7 +3,7 @@
 namespace PigeonEngine
 {
 
-	void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
+	static void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());
 		EBoneData& BoneData = InOutDatas[InBoneIndex];
@@ -21,7 +21,7 @@ namespace PigeonEngine
 		}
 		BoneData.Children.Clear();
 	}
-	void ExchangeBoneData(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex0, USHORT InBoneIndex1)
+	static void ExchangeBoneData(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex0, USHORT InBoneIndex1)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());
 		EBoneData& BoneData0 = InOutDatas[InBoneIndex0];
@@ -105,7 +105,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void RecursionRemoveBone(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
+	static void RecursionRemoveBone(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		USHORT CurrentBoneNum = static_cast<USHORT>(InOutDatas.Length());
 		if (CurrentBoneNum > 0u)
@@ -175,6 +175,10 @@ namespace PigeonEngine
 		SkeletonName = ENGINE_DEFAULT_NAME;
 		Bones.Clear();
 		BoneMapping.Clear();
+	}
+	UINT ESkeleton::GetBoneCount()const
+	{
+		return (this->Bones.Length());
 	}
 	BOOL ESkeleton::AddBoneElement(EBoneData* InIndexData)
 	{
@@ -288,4 +292,52 @@ namespace PigeonEngine
 	{
 		RecursionRemoveBone(this->Bones, InBoneIndex);
 	}
+
+	ESkeletonRenderResource::ESkeletonRenderResource(ESkeleton* InSkeleton)
+		: Skeleton(InSkeleton)
+	{
+
+	}
+	ESkeletonRenderResource::~ESkeletonRenderResource()
+	{
+		Release();
+	}
+	void ESkeletonRenderResource::Release()
+	{
+		Skeleton = nullptr;
+		if (RenderResources.Length() > 0)
+		{
+			for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
+			{
+				RenderResources[Index].Release();
+			}
+			RenderResources.Clear();
+		}
+	}
+
+	ESkeletonAsset::ESkeletonAsset(const EString& InSkeletonPath
+#ifdef _EDITOR_ONLY
+		, const EString& InDebugName
+#endif
+	) : TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>(
+#ifdef _EDITOR_ONLY
+		InDebugName
+#endif
+	), SkeletonPath(InSkeletonPath)
+	{
+
+	}
+	ESkeletonAsset::~ESkeletonAsset()
+	{
+
+	}
+	const EString& ESkeletonAsset::GetSkeletonPath()const
+	{
+		return SkeletonPath;
+	}
+	BOOL ESkeletonAsset::InitResource()
+	{
+
+	}
+
 };

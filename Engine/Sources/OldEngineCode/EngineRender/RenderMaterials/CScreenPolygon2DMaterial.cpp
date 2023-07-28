@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CScreenPolygon2DMaterial.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 #include "../../AssetsManager/Headers/CShader.h"
@@ -61,3 +62,4 @@ void CScreenPolygon2DMaterial::SelectedEditorUpdate()
 
 }
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CFuxkingWhySkeletonAnimation.h"
 #include "../../EngineBase/Headers/CBaseType.h"
 #include "../../EngineRender/RenderBase/Headers/CRenderDevice.h"
@@ -576,3 +577,4 @@ void CFuxkingWhySkeletonAnimation::Uninit()
 		this->m_AssimpAnimScene = nullptr;
 	}
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -14,3 +15,4 @@ public:
 	CCube(const BOOL& active, const class CScene* scene);
 	virtual ~CCube();
 };
+*/

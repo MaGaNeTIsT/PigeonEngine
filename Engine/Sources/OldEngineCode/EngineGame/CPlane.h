@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -29,3 +30,4 @@ protected:
 	class CMeshComponent*		m_MeshComponent;
 	CPlaneMeshInfo				m_PlaneMeshInfo;
 };
+*/

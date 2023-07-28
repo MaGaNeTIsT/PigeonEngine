@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -236,3 +237,4 @@ public:
 protected:
 	friend class CRenderPipeline;
 };
+*/

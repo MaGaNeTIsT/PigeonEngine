@@ -557,9 +557,6 @@ namespace PigeonEngine
 	//	}
 	//}
 
-	//const static EString _GConstImporterNodeEmptyName = "_ConstImporterNodeEmptyName";
-	//const static EString _GConstDummyAnimationName = "_ConstDummyAnimationName";
-
 	//void _GReadNodeTransformRecursion(const aiNode* node, TArray<CustomStruct::CGameBoneNodeInfo>& allGameNodes, const TMap<const aiNode*, EString>& allNodeNames, const TMap<EString, SHORT>& allNodeIndices, Matrix4x4 globalMatrix)
 	//{
 	//	if (node == nullptr)
@@ -581,48 +578,48 @@ namespace PigeonEngine
 	//	}
 	//}
 
-	//void _GGatherSingleNodeRecursion(const aiNode* node, TArray<const aiNode*>& allNodes, TMap<const aiNode*, EString>& allNodeNames, TMap<EString, SHORT>& allNodeIndices)
-	//{
-	//	if (node == nullptr)
-	//	{
-	//		return;
-	//	}
+	static void AssimpGatherSingleNodeRecursion(const aiNode* InCurrentNode, TArray<const aiNode*>& OutNodes, TMap<const aiNode*, EString>& OutNodeNames, TMap<EString, SHORT>& OutNodeIndices)
+	{
+		if (InCurrentNode == nullptr)
+		{
+			return;
+		}
 
-	//	allNodes.push_back(node);
-	//	{
-	//		SHORT indexNode = static_cast<SHORT>(allNodes.size() - 1);
+		OutNodes.Add(InCurrentNode);
+		{
+			SHORT indexNode = static_cast<SHORT>(OutNodes.Length() - 1u);
 
-	//		EString tempNodeName;
-	//		if (node->mName.length > 0)
-	//		{
-	//			tempNodeName = _GTranslateString(node->mName);
-	//		}
-	//		else
-	//		{
-	//			tempNodeName = _GConstImporterNodeEmptyName;
-	//		}
+			EString tempNodeName;
+			if (InCurrentNode->mName.length > 0)
+			{
+				tempNodeName = AssimpTranslateString(InCurrentNode->mName);
+			}
+			else
+			{
+				tempNodeName = ENGINE_BONE_DEFAULT_NAME;
+			}
 
-	//		auto itFindNode = allNodeIndices.find(tempNodeName);
+			auto itFindNode = OutNodeIndices.ContainsKey(tempNodeName);
 
-	//		EString tempOldName = tempNodeName + "_";
-	//		EString tempNewName = tempNodeName;
-	//		UINT tempSameNameIndex = 0u;
-	//		while (itFindNode != allNodeIndices.end())
-	//		{
-	//			tempNewName = tempOldName + std::to_string(tempSameNameIndex);
-	//			tempSameNameIndex += 1u;
-	//			itFindNode = allNodeIndices.find(tempNewName);
-	//		}
+			EString tempOldName = tempNodeName + "_";
+			EString tempNewName = tempNodeName;
+			UINT tempSameNameIndex = 0u;
+			while (itFindNode != OutNodeIndices.end())
+			{
+				tempNewName = tempOldName + std::to_string(tempSameNameIndex);
+				tempSameNameIndex += 1u;
+				itFindNode = OutNodeIndices.find(tempNewName);
+			}
 
-	//		allNodeIndices.insert_or_assign(tempNewName, indexNode);
-	//		allNodeNames.insert_or_assign(node, tempNewName);
-	//	}
+			OutNodeIndices.insert_or_assign(tempNewName, indexNode);
+			OutNodeNames.insert_or_assign(InCurrentNode, tempNewName);
+		}
 
-	//	for (UINT indexChild = 0u; indexChild < node->mNumChildren; indexChild++)
-	//	{
-	//		_GGatherSingleNodeRecursion(node->mChildren[indexChild], allNodes, allNodeNames, allNodeIndices);
-	//	}
-	//}
+		for (UINT indexChild = 0u; indexChild < InCurrentNode->mNumChildren; indexChild++)
+		{
+			AssimpGatherSingleNodeRecursion(InCurrentNode->mChildren[indexChild], OutNodes, OutNodeNames, OutNodeIndices);
+		}
+	}
 
 	//BOOL _GGatherSkeletonMeshAllNodeStructures(const aiScene* scene,
 	//	TArray<ESubmeshData>& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices,
@@ -1234,6 +1231,10 @@ namespace PigeonEngine
 			}
 		}
 	}
+	void GatherAllBoneNodes()
+	{
+
+	}
 	void CAssimpManager::Initialize()
 	{
 		if (_GAssetImporter == nullptr)
@@ -1250,7 +1251,7 @@ namespace PigeonEngine
 			_GAssetImporter = nullptr;
 		}
 	}
-	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& path, TArray<EStaticMesh>& OutMeshes)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes)
 	{
 		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
@@ -1278,7 +1279,7 @@ namespace PigeonEngine
 		//Assimp::Importer::SetProperty###();
 
 		const aiScene* Scene = AssetImpoter->ReadFile(
-			*path,
+			*InPath,
 			aiProcess_CalcTangentSpace |
 			aiProcess_JoinIdenticalVertices |
 			aiProcess_MakeLeftHanded |
@@ -1349,6 +1350,79 @@ namespace PigeonEngine
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
 		AssetImpoter->FreeScene();
+		return Result;
+	}
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonFile(const EString& InPath, ESkeleton& OutSkeleton)
+	{
+		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
+
+		if (OutSkeleton.GetBoneCount() > 0u)
+		{
+			OutSkeleton.Release();
+		}
+
+		Assimp::Importer* AssImpoter = _GAssetImporter;
+		if (AssImpoter == nullptr)
+		{
+			// TODO Do the error logging (did not create the instance of importer)
+			return Result;
+		}
+
+		// And have it read the given file with some example postprocessing
+		// Usually - if speed is not the most important aspect for you - you'll
+		// probably to request more postprocessing than we do in this example.
+
+		// Use SetPropertyInteger to modify config of importer
+		//Assimp::Importer::SetProperty###();
+
+		//const aiScene* scene = impoter->ReadFile(
+		//	path,
+		//	aiProcess_CalcTangentSpace |
+		//	aiProcess_JoinIdenticalVertices |
+		//	aiProcess_MakeLeftHanded |
+		//	aiProcess_Triangulate |
+		//	aiProcess_RemoveComponent |
+		//	aiProcess_GenSmoothNormals |
+		//	aiProcess_SplitLargeMeshes |
+		//	/*aiProcess_LimitBoneWeights |*/
+		//	aiProcess_RemoveRedundantMaterials |
+		//	aiProcess_FixInfacingNormals |
+		//	aiProcess_PopulateArmatureData |
+		//	aiProcess_SortByPType |
+		//	aiProcess_FindInvalidData |
+		//	aiProcess_GenUVCoords |
+		//	aiProcess_OptimizeMeshes |
+		//	aiProcess_FlipUVs |
+		//	aiProcess_FlipWindingOrder |
+		//	/*aiProcess_SplitByBoneCount |*/
+		//	/*aiProcess_Debone |*/
+		//	aiProcess_GenBoundingBoxes);
+
+		const aiScene* Scene = AssImpoter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
+
+		// If the import failed, report it
+		if (Scene == nullptr)
+		{
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
+
+		if (!Scene->HasMeshes())
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
+
+		// Now we can access the file's contents.
+		const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
+		Result = _GGatherSkeletonMeshAllNodeStructures(scene, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList, inputLayoutDesc, inputLayoutNum) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+
+		// We're done. Everything will be cleaned up by the importer destructor
+		AssImpoter->FreeScene();
 		return Result;
 	}
 	//CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)

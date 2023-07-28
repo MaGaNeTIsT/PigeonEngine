@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -43,3 +44,4 @@ public:
 	CSceneGameObject(const BOOL& active, const class CScene* scene);
 	virtual ~CSceneGameObject();
 };
+*/

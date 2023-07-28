@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../EngineCore/Core/Headers/Main.h"
@@ -218,3 +219,4 @@ public:
 public:
 	virtual ~CTempFileWriter();
 };
+*/

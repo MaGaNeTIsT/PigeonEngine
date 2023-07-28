@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CComponent.h"
 #include "../Headers/CGameObject.h"
 
@@ -483,3 +484,4 @@ void CTransform::SelectedEditorUpdate()
 	}
 }
 #endif
+*/

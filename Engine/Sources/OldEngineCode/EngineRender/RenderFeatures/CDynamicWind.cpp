@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CDynamicWind.h"
 #include "../../RenderBase/Headers/CRenderStructCommon.h"
 
@@ -469,3 +470,4 @@ void CDynamicWind::VelocityStep(const UINT& iter, const UINT& w, const UINT& h, 
 	CDynamicWind::ProjectionSolver(iter, w, h, u, v, u0, v0);
 }
 #endif
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CScreenPolygon2D.h"
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/AssetsManager/Headers/CShader.h"
@@ -29,3 +30,4 @@ void CScreenPolygon2D::Update()
 {
 	CGameObject::Update();
 }
+*/

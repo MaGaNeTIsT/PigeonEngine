@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGPUQuery.h"
 
 CGPUQuery::CGPUQuery(const std::string& name, const CustomStruct::CRenderQueryDesc& desc, const Microsoft::WRL::ComPtr<ID3D11Query>& query)
@@ -15,3 +16,4 @@ CGPUQuery::CGPUQuery(const CGPUQuery& input)
 CGPUQuery::~CGPUQuery()
 {
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -14,3 +15,4 @@ public:
 protected:
 	CustomType::Vector4		m_2DPosition;
 };
+*/

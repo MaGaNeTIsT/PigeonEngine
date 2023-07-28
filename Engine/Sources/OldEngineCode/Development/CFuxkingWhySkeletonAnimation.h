@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -70,3 +71,4 @@ public:
 	CFuxkingWhySkeletonAnimation();
 	~CFuxkingWhySkeletonAnimation();
 };
+*/

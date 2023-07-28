@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGPUProfiler.h"
 
 #ifdef _DEVELOPMENT_EDITOR
@@ -264,3 +265,4 @@ void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& curr
 }
 
 #endif
+*/

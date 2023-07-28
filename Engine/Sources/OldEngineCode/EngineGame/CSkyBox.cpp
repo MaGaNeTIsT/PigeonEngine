@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CSkyBox.h"
 #include "../../EngineRender/AssetsManager/Headers/CShader.h"
 #include "../../EngineRender/AssetsManager/Headers/CShaderManager.h"
@@ -104,3 +105,4 @@ void CSkyBox::Draw()
 	this->PrepareDraw();
 	CRenderDevice::DrawIndexed(CSkyBox::m_FullScreenMesh->GetIndexCount());
 }
+*/

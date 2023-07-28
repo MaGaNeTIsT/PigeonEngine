@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CBezierGrass.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineGame/Headers/CScreenPolygon2D.h"
@@ -493,3 +494,4 @@ void CBezierGrass::DrawDebug()
 	}
 }
 #endif
+*/

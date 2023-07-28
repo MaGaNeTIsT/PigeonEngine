@@ -358,7 +358,7 @@
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
+    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -371,8 +371,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -385,7 +386,8 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
+      <FileType>Document</FileType>
+    </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -416,7 +418,7 @@
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugCS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -429,8 +431,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestBezierGrassDebugScreenCS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -443,8 +446,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -457,8 +461,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassVS.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
@@ -471,8 +476,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -485,8 +491,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\TestSkeletonMeshVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -499,8 +506,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -513,8 +521,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineClothAnisotropicVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -527,8 +536,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -541,8 +551,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultAnisotropicForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -555,8 +566,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -569,8 +581,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClearCoatForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -583,8 +596,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -597,8 +611,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultClothVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -611,8 +626,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -625,8 +641,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardSkeletonMeshVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -639,8 +656,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultLitForwardVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -653,8 +671,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -667,8 +686,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultTerrainVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -681,8 +701,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineDefaultVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -695,8 +716,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -709,8 +731,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -723,8 +746,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -737,8 +761,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -751,8 +776,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxVS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -765,11 +791,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
+      <FileType>Document</FileType>
+    </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindAdvection.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -782,8 +809,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindDiffusion.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -796,8 +824,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCPUDebug.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -810,8 +839,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAODebugType.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -824,8 +854,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialFilter.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -838,8 +869,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\GTAO\GTAOSpatialIntegral.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -852,8 +884,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\BuildHZBComputeShader.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -866,11 +899,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
+      <FileType>Document</FileType>
+    </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\RawDownSamplingComputeShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -883,8 +917,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\PostProcess\ColorGrading.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
@@ -897,8 +932,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineDirectLightPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -911,8 +947,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGBufferWritePS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -925,8 +962,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
+      <FileType>Document</FileType>
+    </None>
+    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">./Engine/Assets/EngineShaders/%(Filename).cso</ObjectFileOutput>
@@ -939,7 +977,8 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Test|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
-    </FxCompile>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

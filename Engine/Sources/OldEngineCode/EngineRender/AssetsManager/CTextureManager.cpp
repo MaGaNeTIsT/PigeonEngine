@@ -1,3 +1,4 @@
+/*
 #include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CTextureManager.h"
 #include "../Headers/CTextureType.h"
@@ -311,3 +312,4 @@ CTextureCube* CTextureManager::FindTextureCubeData(const std::string& name)
 		return NULL;
 	return (element->second);
 }
+*/

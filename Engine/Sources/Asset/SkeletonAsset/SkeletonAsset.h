@@ -4,6 +4,7 @@
 #include <Base/DataStructure/Container/Array.h>
 #include <Base/DataStructure/Container/Map.h>
 #include <Base/DataStructure/Text/String.h>
+#include <RenderDevice/DeviceD3D11.h>
 #include <BaseAsset.h>
 
 namespace PigeonEngine
@@ -54,6 +55,7 @@ namespace PigeonEngine
 		virtual ~ESkeleton();
 		virtual void Release();
 	public:
+		UINT	GetBoneCount()const;
 		BOOL	AddBoneElement(EBoneData* InIndexData);
 		BOOL	RemoveBoneElement(const EString& InBoneName);
 		BOOL	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
@@ -69,6 +71,48 @@ namespace PigeonEngine
 		ESkeleton() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkeleton)
+	};
+
+	class ESkeletonRenderResource : public EObjectBase
+	{
+
+		EClass(ESkeletonRenderResource, EObjectBase)
+
+	public:
+		ESkeletonRenderResource(ESkeleton* InSkeleton);
+		virtual ~ESkeletonRenderResource();
+	public:
+		void	Release();
+	protected:
+		ESkeleton*								Skeleton;
+		TArray<RDeviceD3D11::RBufferResource>	RenderResources;
+	public:
+		ESkeletonRenderResource() = delete;
+
+		CLASS_REMOVE_COPY_BODY(ESkeletonRenderResource)
+
+	};
+
+	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
+	{
+	public:
+		ESkeletonAsset(const EString& InSkeletonPath
+#ifdef _EDITOR_ONLY
+			, const EString& InDebugName
+#endif
+		);
+		virtual ~ESkeletonAsset();
+	public:
+		const EString&	GetSkeletonPath()const;
+	public:
+		virtual BOOL	InitResource()override;
+	protected:
+		EString			SkeletonPath;
+	public:
+		ESkeletonAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(ESkeletonAsset)
+
 	};
 
 };

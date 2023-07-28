@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CRenderPipeline.h"
 #include "../../../EngineBase/Headers/CManager.h"
 #include "../../../EngineGame/Headers/CGameObject.h"
@@ -1296,3 +1297,4 @@ std::shared_ptr<CPixelShader> CRenderPipeline::GetDefaultEmptyPS()
 {
 	return (CRenderPipeline::m_DefaultEmptyPS);
 }
+*/

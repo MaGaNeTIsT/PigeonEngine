@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CLightType.h"
 #include "../Headers/CCamera.h"
 
@@ -530,3 +531,4 @@ void CLightSpot::Update()
 	this->m_FrameCounter = 1 - this->m_FrameCounter;
 	CGameObject::Update();
 }
+*/

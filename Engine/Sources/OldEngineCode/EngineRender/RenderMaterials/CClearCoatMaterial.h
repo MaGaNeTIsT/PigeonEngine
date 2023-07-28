@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -67,3 +68,4 @@ public:
 	CClearCoatMaterial();
 	virtual ~CClearCoatMaterial();
 };
+*/

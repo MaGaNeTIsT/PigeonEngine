@@ -1,3 +1,4 @@
+/*
 #include "../../../../../Entry/EngineMain.h"
 #include "../Headers/CTextureType.h"
 #include "../Headers/CTextureManager.h"
@@ -59,3 +60,4 @@ CTextureCubeCombine::CTextureCubeCombine(const CTextureCubeCombine& v) : CTextur
 	this->m_NameFace[3] = v.m_NameFace[3];
 	this->m_NameFace[4] = v.m_NameFace[4];
 }
+*/

@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CGameBoundComponent.h"
 #include "../Headers/CGameObject.h"
 #include "../Headers/CCamera.h"
@@ -766,3 +767,4 @@ void CGameBoundBoxComponent::SelectedEditorUpdate()
 
 }
 #endif
+*/

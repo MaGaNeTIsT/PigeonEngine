@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -148,3 +149,4 @@ public:
 	CClothAnisotropicMaterial();
 	virtual ~CClothAnisotropicMaterial();
 };
+*/

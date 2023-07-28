@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CReadWriteFile.h"
 #include <filesystem>
 
@@ -342,3 +343,4 @@ CTempFileWriter::~CTempFileWriter()
 {
 
 }
+*/

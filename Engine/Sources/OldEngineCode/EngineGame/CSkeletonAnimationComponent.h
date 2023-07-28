@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../Entry/EngineMain.h"
@@ -56,3 +57,4 @@ public:
 	CSkeletonAnimationComponent();
 	virtual ~CSkeletonAnimationComponent();
 };
+*/

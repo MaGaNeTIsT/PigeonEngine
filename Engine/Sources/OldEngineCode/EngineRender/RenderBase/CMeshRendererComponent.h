@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -70,3 +71,4 @@ protected:
 	CustomStruct::CRenderBufferDesc						m_ConstantBufferDesc;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_ConstantBuffer;
 };
+*/

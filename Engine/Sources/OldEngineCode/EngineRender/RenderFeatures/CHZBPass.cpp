@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CHZBPass.h"
 #include "../../RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../../EngineGame/Headers/CCamera.h"
@@ -154,3 +155,4 @@ void CHZBPass::InitHZBBuffers()
 				CustomStruct::CRenderFormat::FORMAT_R32_FLOAT));
 	}
 }
+*/

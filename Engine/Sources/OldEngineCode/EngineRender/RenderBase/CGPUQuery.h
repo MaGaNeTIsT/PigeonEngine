@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../../../../../Entry/EngineMain.h"
@@ -16,3 +17,4 @@ protected:
     CustomStruct::CRenderQueryDesc		m_QueryDesc;
 	Microsoft::WRL::ComPtr<ID3D11Query>	m_Query;
 };
+*/

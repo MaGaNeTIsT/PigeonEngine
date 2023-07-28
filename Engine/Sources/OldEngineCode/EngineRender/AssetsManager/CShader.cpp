@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CShader.h"
 #include "../../RenderBase/Headers/CRenderDevice.h"
 
@@ -54,3 +55,4 @@ void CComputeShader::Bind()const
 {
 	CRenderDevice::SetCSShader(this->m_Shader);
 }
+*/

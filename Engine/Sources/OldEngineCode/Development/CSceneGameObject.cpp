@@ -1,3 +1,4 @@
+/*
 #include "../Headers/CSceneGameObject.h"
 #include "../../EngineGame/Headers/CComponent.h"
 #include "../../EngineGame/Headers/CGameBoundComponent.h"
@@ -393,3 +394,4 @@ void CSceneGameObject::SelectedEditorUpdate()
 	}
 }
 #endif
+*/
