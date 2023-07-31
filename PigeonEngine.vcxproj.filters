@@ -502,6 +502,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

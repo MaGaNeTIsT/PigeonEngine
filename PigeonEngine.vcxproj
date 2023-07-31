@@ -132,6 +132,7 @@
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />

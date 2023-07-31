@@ -6,6 +6,7 @@
 
 namespace PigeonEngine
 {
+
 	struct Matrix4x4;
 	struct Quaternion;
 	struct Vector2;
@@ -17,192 +18,27 @@ namespace PigeonEngine
 	struct Color3;
 	struct Color4;
 
-	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)
-	{
-		return (Matrix4x4(
-			lm._11 + rm._11, lm._12 + rm._12, lm._13 + rm._13, lm._14 + rm._14,
-			lm._21 + rm._21, lm._22 + rm._22, lm._23 + rm._23, lm._24 + rm._24,
-			lm._31 + rm._31, lm._32 + rm._32, lm._33 + rm._33, lm._34 + rm._34,
-			lm._41 + rm._41, lm._42 + rm._42, lm._43 + rm._43, lm._44 + rm._44));
-	}
-	Matrix4x4 operator-(const Matrix4x4& lm, const Matrix4x4& rm)
-	{
-		return (Matrix4x4(
-			lm._11 - rm._11, lm._12 - rm._12, lm._13 - rm._13, lm._14 - rm._14,
-			lm._21 - rm._21, lm._22 - rm._22, lm._23 - rm._23, lm._24 - rm._24,
-			lm._31 - rm._31, lm._32 - rm._32, lm._33 - rm._33, lm._34 - rm._34,
-			lm._41 - rm._41, lm._42 - rm._42, lm._43 - rm._43, lm._44 - rm._44));
-	}
-	Matrix4x4 operator*(const Matrix4x4& lm, const FLOAT& rv)
-	{
-		return (Matrix4x4(
-			lm._11 * rv, lm._12 * rv, lm._13 * rv, lm._14 * rv,
-			lm._21 * rv, lm._22 * rv, lm._23 * rv, lm._24 * rv,
-			lm._31 * rv, lm._32 * rv, lm._33 * rv, lm._34 * rv,
-			lm._41 * rv, lm._42 * rv, lm._43 * rv, lm._44 * rv));
-	}
-	Matrix4x4 operator*(const FLOAT& lv, const Matrix4x4& rm)
-	{
-		return (Matrix4x4(
-			lv * rm._11, lv * rm._12, lv * rm._13, lv * rm._14,
-			lv * rm._21, lv * rm._22, lv * rm._23, lv * rm._24,
-			lv * rm._31, lv * rm._32, lv * rm._33, lv * rm._34,
-			lv * rm._41, lv * rm._42, lv * rm._43, lv * rm._44));
-	}
-	Matrix4x4 operator*(const Matrix4x4& lm, const Matrix4x4& rm) { return (Matrix4x4::MultiplyMatrix(lm, rm)); }
-	Matrix4x4 operator*(const Matrix4x4& lm, const Quaternion& rq) { return (Matrix4x4::MultiplyMatrix(lm, rq.GetMatrix())); }
-	Matrix4x4 operator*(const Quaternion& lq, const Matrix4x4& rm) { return (Matrix4x4::MultiplyMatrix(lq.GetMatrix(), rm)); }
-	Quaternion operator*(const Quaternion& lq, const Quaternion& rq) { return (Quaternion::MultiplyQuaternion(lq, rq)); }
-	Vector2 operator+(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x + rv.x, lv.y + rv.y)); }
-	Vector2 operator+(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x + rv, lv.y + rv)); }
-	Vector2 operator+(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv + rv.x, lv + rv.y)); }
-	Vector2 operator-(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x - rv.x, lv.y - rv.y)); }
-	Vector2 operator-(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x - rv, lv.y - rv)); }
-	Vector2 operator-(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv - rv.x, lv - rv.y)); }
-	Vector2 operator*(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x * rv.x, lv.y * rv.y)); }
-	Vector2 operator*(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x * rv, lv.y * rv)); }
-	Vector2 operator*(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv * rv.x, lv * rv.y)); }
-	Vector2 operator/(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x / rv.x, lv.y / rv.y)); }
-	Vector2 operator/(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x / rv, lv.y / rv)); }
-	Vector2 operator/(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv / rv.x, lv / rv.y)); }
-	Vector3 operator+(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Vector3 operator+(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Vector3 operator+(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv + rv.x, lv + rv.y, lv + rv.z)); }
-	Vector3 operator-(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Vector3 operator-(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Vector3 operator-(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv - rv.x, lv - rv.y, lv - rv.z)); }
-	Vector3 operator*(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Vector3 operator*(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Vector3 operator*(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv * rv.x, lv * rv.y, lv * rv.z)); }
-	Vector3 operator/(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Vector3 operator/(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Vector3 operator/(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv / rv.x, lv / rv.y, lv / rv.z)); }
-	Vector4 operator+(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Vector4 operator+(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
-	Vector4 operator+(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
-	Vector4 operator-(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Vector4 operator-(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
-	Vector4 operator-(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
-	Vector4 operator*(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Vector4 operator*(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
-	Vector4 operator*(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
-	Vector4 operator/(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Vector4 operator/(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
-	Vector4 operator/(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
-	Vector2Int operator+(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x + rv.x, lv.y + rv.y)); }
-	Vector2Int operator+(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x + rv, lv.y + rv)); }
-	Vector2Int operator+(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv + rv.x, lv + rv.y)); }
-	Vector2Int operator-(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x - rv.x, lv.y - rv.y)); }
-	Vector2Int operator-(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x - rv, lv.y - rv)); }
-	Vector2Int operator-(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv - rv.x, lv - rv.y)); }
-	Vector2Int operator*(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x * rv.x, lv.y * rv.y)); }
-	Vector2Int operator*(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x * rv, lv.y * rv)); }
-	Vector2Int operator*(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv * rv.x, lv * rv.y)); }
-	Vector2Int operator/(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x / rv.x, lv.y / rv.y)); }
-	Vector2Int operator/(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x / rv, lv.y / rv)); }
-	Vector2Int operator/(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv / rv.x, lv / rv.y)); }
-	Vector3Int operator+(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Vector3Int operator+(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Vector3Int operator+(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv + rv.x, lv + rv.y, lv + rv.z)); }
-	Vector3Int operator-(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Vector3Int operator-(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Vector3Int operator-(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv - rv.x, lv - rv.y, lv - rv.z)); }
-	Vector3Int operator*(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Vector3Int operator*(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Vector3Int operator*(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv * rv.x, lv * rv.y, lv * rv.z)); }
-	Vector3Int operator/(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Vector3Int operator/(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Vector3Int operator/(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv / rv.x, lv / rv.y, lv / rv.z)); }
-	Vector4Int operator+(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Vector4Int operator+(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
-	Vector4Int operator+(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
-	Vector4Int operator-(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Vector4Int operator-(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
-	Vector4Int operator-(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
-	Vector4Int operator*(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Vector4Int operator*(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
-	Vector4Int operator*(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
-	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Vector4Int operator/(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
-	Vector4Int operator/(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
-	Color3 operator+(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Color3 operator+(const FLOAT& lv, const Color3& rv) { return (Color3(lv + rv.x, lv + rv.y, lv + rv.z)); }
-	Color3 operator+(const Color3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Color3& lv, const Vector3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Vector3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color4 operator+(const Color4& lv, const Color4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Color4 operator+(const Color4& lv, const Vector4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Color4 operator+(const Vector4& lv, const Color4& rv) { return (Color4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Color3 operator+(const Color3& lv, const Vector4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Vector4& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Color4& lv, const Vector3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Vector3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Color4& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator+(const Color3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator-(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Color3 operator-(const FLOAT& lv, const Color3& rv) { return (Color3(lv - rv.x, lv - rv.y, lv - rv.z)); }
-	Color3 operator-(const Color3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Color3& lv, const Vector3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Vector3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color4 operator-(const Color4& lv, const Color4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Color4 operator-(const Color4& lv, const Vector4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Color4 operator-(const Vector4& lv, const Color4& rv) { return (Color4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Color3 operator-(const Color3& lv, const Vector4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Vector4& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Color4& lv, const Vector3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Vector3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Color4& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator-(const Color3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator*(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Color3 operator*(const FLOAT& lv, const Color3& rv) { return (Color3(lv * rv.x, lv * rv.y, lv * rv.z)); }
-	Color3 operator*(const Color3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Color3& lv, const Vector3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Vector3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color4 operator*(const Color4& lv, const Color4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Color4 operator*(const Color4& lv, const Vector4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Color4 operator*(const Vector4& lv, const Color4& rv) { return (Color4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Color3 operator*(const Color3& lv, const Vector4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Vector4& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Color4& lv, const Vector3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Vector3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Color4& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator*(const Color3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator/(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Color3 operator/(const FLOAT& lv, const Color3& rv) { return (Color3(lv / rv.x, lv / rv.y, lv / rv.z)); }
-	Color3 operator/(const Color3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Color3& lv, const Vector3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Vector3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color4 operator/(const Color4& lv, const Color4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Color4 operator/(const Color4& lv, const Vector4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Color4 operator/(const Vector4& lv, const Color4& rv) { return (Color4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Color3 operator/(const Color3& lv, const Vector4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Vector4& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Color4& lv, const Vector3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Vector3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Color4& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Color3 operator/(const Color3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-
 	struct Matrix4x4
 	{
-		Matrix4x4() noexcept :
-			_11(0.f), _12(0.f), _13(0.f), _14(0.f),
-			_21(0.f), _22(0.f), _23(0.f), _24(0.f),
-			_31(0.f), _32(0.f), _33(0.f), _34(0.f),
-			_41(0.f), _42(0.f), _43(0.f), _44(0.f) {}
-		Matrix4x4(
-			const FLOAT& m00, const FLOAT& m01, const FLOAT& m02, const FLOAT& m03,
-			const FLOAT& m10, const FLOAT& m11, const FLOAT& m12, const FLOAT& m13,
-			const FLOAT& m20, const FLOAT& m21, const FLOAT& m22, const FLOAT& m23,
-			const FLOAT& m30, const FLOAT& m31, const FLOAT& m32, const FLOAT& m33) noexcept :
+		constexpr Matrix4x4(
+			FLOAT m00, FLOAT m01, FLOAT m02, FLOAT m03,
+			FLOAT m10, FLOAT m11, FLOAT m12, FLOAT m13,
+			FLOAT m20, FLOAT m21, FLOAT m22, FLOAT m23,
+			FLOAT m30, FLOAT m31, FLOAT m32, FLOAT m33)noexcept :
 			_11(m00), _12(m01), _13(m02), _14(m03),
 			_21(m10), _22(m11), _23(m12), _24(m13),
 			_31(m20), _32(m21), _33(m22), _34(m23),
 			_41(m30), _42(m31), _43(m32), _44(m33) {}
-		Matrix4x4(const DirectX::XMFLOAT4X4& xm) noexcept :
+		constexpr Matrix4x4(const DirectX::XMFLOAT4X4& xm)noexcept :
 			_11(xm._11), _12(xm._12), _13(xm._13), _14(xm._14),
 			_21(xm._21), _22(xm._22), _23(xm._23), _24(xm._24),
 			_31(xm._31), _32(xm._32), _33(xm._33), _34(xm._34),
 			_41(xm._41), _42(xm._42), _43(xm._43), _44(xm._44) {}
+		Matrix4x4()noexcept :
+			_11(0.f), _12(0.f), _13(0.f), _14(0.f),
+			_21(0.f), _22(0.f), _23(0.f), _24(0.f),
+			_31(0.f), _32(0.f), _33(0.f), _34(0.f),
+			_41(0.f), _42(0.f), _43(0.f), _44(0.f) {}
 		Matrix4x4(DirectX::CXMMATRIX xm)
 		{
 			DirectX::XMFLOAT4X4 tempM;
@@ -212,49 +48,30 @@ namespace PigeonEngine
 			_31 = tempM._31; _32 = tempM._32; _33 = tempM._33; _34 = tempM._34;
 			_41 = tempM._41; _42 = tempM._42; _43 = tempM._43; _44 = tempM._44;
 		}
-		Matrix4x4(const Matrix4x4& mm) noexcept :
+		Matrix4x4(const Matrix4x4& mm)noexcept :
 			_11(mm._11), _12(mm._12), _13(mm._13), _14(mm._14),
 			_21(mm._21), _22(mm._22), _23(mm._23), _24(mm._24),
 			_31(mm._31), _32(mm._32), _33(mm._33), _34(mm._34),
 			_41(mm._41), _42(mm._42), _43(mm._43), _44(mm._44) {}
-		Matrix4x4(const Quaternion& v)
-		{
-			(*this) = v.GetMatrix();
-		}
-		Matrix4x4(const Vector3& t, const Quaternion& r)
-		{
-			(*this) = r.GetMatrix() * TranslationMatrixFromVector3(t);
-		}
-		Matrix4x4(const Vector3& t, const Quaternion& r, const Vector3& s)
-		{
-			(*this) = ScalingMatrixFromVector3(s) * r.GetMatrix() * TranslationMatrixFromVector3(t);
-		}
+		Matrix4x4(const Quaternion& v);
+		Matrix4x4(const Vector3& t, const Quaternion& r);
+		Matrix4x4(const Vector3& t, const Quaternion& r, const Vector3& s);
 		static const Matrix4x4& Identity()
 		{
 			const static Matrix4x4 _StaticIdentityMatrix4x4(DirectX::XMMatrixIdentity());
 			return _StaticIdentityMatrix4x4;
 		}
-		static Matrix4x4 Inverse(const Matrix4x4& mm, Vector4* det = nullptr)
-		{
-			if (det != nullptr)
-			{
-				DirectX::XMVECTOR tempV = DirectX::XMVectorZero();
-				Matrix4x4 result(DirectX::XMMatrixInverse(&tempV, mm.GetDirectXMatrix()));
-				(*det) = Vector4(tempV);
-				return result;
-			}
-			return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, mm.GetDirectXMatrix())));
-		}
+		static Matrix4x4 Inverse(const Matrix4x4& mm, Vector4* det = nullptr);
 		static Matrix4x4 Transpose(const Matrix4x4& mm) { return (Matrix4x4(DirectX::XMMatrixTranspose(mm.GetDirectXMatrix()))); }
 		static Matrix4x4 MultiplyMatrix(const Matrix4x4& lm, const Matrix4x4& rm) { return (Matrix4x4(DirectX::XMMatrixMultiply(lm.GetDirectXMatrix(), rm.GetDirectXMatrix()))); }
-		static Matrix4x4 TranslationMatrix(const FLOAT& offsetX, const FLOAT& offsetY, const FLOAT& offsetZ) { return (Matrix4x4(DirectX::XMMatrixTranslation(offsetX, offsetY, offsetZ))); }
-		static Matrix4x4 TranslationMatrixFromVector3(const Vector3& offset) { return (Matrix4x4(DirectX::XMMatrixTranslation(offset.x, offset.y, offset.z))); }
-		static Matrix4x4 ScalingMatrixFrom(const FLOAT& sclX, const FLOAT& sclY, const FLOAT& sclZ) { return (Matrix4x4(DirectX::XMMatrixScaling(sclX, sclY, sclZ))); }
-		static Matrix4x4 ScalingMatrixFromVector3(const Vector3& scl) { return (Matrix4x4(DirectX::XMMatrixScaling(scl.x, scl.y, scl.z))); }
-		static Matrix4x4 RotationPitchYawRollMatrix(const FLOAT& pitch, const FLOAT& yaw, const FLOAT& roll) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll))); }
-		static Matrix4x4 RotationPitchYawRollMatrixFromVector3(const Vector3& rot) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z))); }
-		static Matrix4x4 PerspectiveMatrix(const FLOAT& fovYDeg, const FLOAT& aspectRatio, const FLOAT& nearPlane, const FLOAT& farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * EMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
-		static Matrix4x4 OrthographicMatrix(const FLOAT& left, const FLOAT& top, const FLOAT& right, const FLOAT& bottom, const FLOAT& nearPlane, const FLOAT& farPlane) { return (Matrix4x4(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane))); }
+		static Matrix4x4 TranslationMatrix(FLOAT offsetX, FLOAT offsetY, FLOAT offsetZ) { return (Matrix4x4(DirectX::XMMatrixTranslation(offsetX, offsetY, offsetZ))); }
+		static Matrix4x4 TranslationMatrixFromVector3(const Vector3& offset);
+		static Matrix4x4 ScalingMatrixFrom(FLOAT sclX, FLOAT sclY, FLOAT sclZ) { return (Matrix4x4(DirectX::XMMatrixScaling(sclX, sclY, sclZ))); }
+		static Matrix4x4 ScalingMatrixFromVector3(const Vector3& scl);
+		static Matrix4x4 RotationPitchYawRollMatrix(FLOAT pitch, FLOAT yaw, FLOAT roll) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll))); }
+		static Matrix4x4 RotationPitchYawRollMatrixFromVector3(const Vector3& rot);
+		static Matrix4x4 PerspectiveMatrix(FLOAT fovYDeg, FLOAT aspectRatio, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * EMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
+		static Matrix4x4 OrthographicMatrix(FLOAT left, FLOAT top, FLOAT right, FLOAT bottom, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane))); }
 		void SetDirectXQuaternion(DirectX::CXMVECTOR xq)
 		{
 			DirectX::XMFLOAT4X4 tempM;
@@ -289,7 +106,7 @@ namespace PigeonEngine
 			_31 = xm._31; _32 = xm._32; _33 = xm._33; _34 = xm._34;
 			_41 = xm._41; _42 = xm._42; _43 = xm._43; _44 = xm._44;
 		}
-		DirectX::XMFLOAT4X4 GetDirectXValue4x4() const
+		DirectX::XMFLOAT4X4 GetDirectXValue4x4()const
 		{
 			return (DirectX::XMFLOAT4X4(
 				_11, _12, _13, _14,
@@ -297,36 +114,26 @@ namespace PigeonEngine
 				_31, _32, _33, _34,
 				_41, _42, _43, _44));
 		}
-		DirectX::XMMATRIX GetDirectXMatrix() const
+		DirectX::XMMATRIX GetDirectXMatrix()const
 		{
 			DirectX::XMFLOAT4X4 tempM(GetDirectXValue4x4());
 			return (DirectX::XMLoadFloat4x4(&tempM));
 		}
-		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4() const
+		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4()const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, DirectX::XMMatrixTranspose(GetDirectXMatrix()));
 			return tempM;
 		}
-		Quaternion GetQuaternion() const { return Quaternion(GetDirectXValue4x4()); }
+		Quaternion GetQuaternion()const;
 		void Reset() { (*this) = Matrix4x4::Identity(); }
-		Matrix4x4 Inverse(Vector4* det = nullptr) const
-		{
-			if (det != nullptr)
-			{
-				DirectX::XMVECTOR tempV = DirectX::XMVectorZero();
-				Matrix4x4 result(DirectX::XMMatrixInverse(&tempV, GetDirectXMatrix()));
-				(*det) = Vector4(tempV);
-				return result;
-			}
-			return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix())));
-		}
-		Matrix4x4 Transpose() const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
-		Vector4 MultiplyVector(const Vector4& v) const { return (Vector4(DirectX::XMVector4Transform(DirectX::XMVectorSet(v.x, v.y, v.z, v.w), GetDirectXMatrix()))); }
-		Vector3 MultiplyPosition(const Vector3& v) const { return (Vector3(DirectX::XMVector3TransformCoord(DirectX::XMVectorSet(v.x, v.y, v.z, 1.f), GetDirectXMatrix()))); }
-		Vector3 MultiplyDirection(const Vector3& v) const { return (Vector3(DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), GetDirectXMatrix()))); }
-		FLOAT	operator()(const UINT& row, const UINT& column) const noexcept { return m[row][column]; }
-		FLOAT&	operator()(const UINT& row, const UINT& column) noexcept { return m[row][column]; }
+		Matrix4x4 Inverse(Vector4* det = nullptr)const;
+		Matrix4x4 Transpose()const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
+		Vector4 MultiplyVector(const Vector4& v)const;
+		Vector3 MultiplyPosition(const Vector3& v)const;
+		Vector3 MultiplyDirection(const Vector3& v)const;
+		FLOAT operator()(UINT row, UINT column)const noexcept { return m[row][column]; }
+		FLOAT& operator()(UINT row, UINT column)noexcept { return m[row][column]; }
 		void operator=(const Matrix4x4& mm)
 		{
 			_11 = mm._11; _12 = mm._12; _13 = mm._13; _14 = mm._14;
@@ -334,31 +141,7 @@ namespace PigeonEngine
 			_31 = mm._31; _32 = mm._32; _33 = mm._33; _34 = mm._34;
 			_41 = mm._41; _42 = mm._42; _43 = mm._43; _44 = mm._44;
 		}
-		void operator*=(const Matrix4x4& mm) { (*this) = (*this) * mm; }
-		constexpr Matrix4x4() noexcept :
-			_11(0.f), _12(0.f), _13(0.f), _14(0.f),
-			_21(0.f), _22(0.f), _23(0.f), _24(0.f),
-			_31(0.f), _32(0.f), _33(0.f), _34(0.f),
-			_41(0.f), _42(0.f), _43(0.f), _44(0.f) {}
-		constexpr Matrix4x4(
-			const FLOAT& m00, const FLOAT& m01, const FLOAT& m02, const FLOAT& m03,
-			const FLOAT& m10, const FLOAT& m11, const FLOAT& m12, const FLOAT& m13,
-			const FLOAT& m20, const FLOAT& m21, const FLOAT& m22, const FLOAT& m23,
-			const FLOAT& m30, const FLOAT& m31, const FLOAT& m32, const FLOAT& m33) noexcept :
-			_11(m00), _12(m01), _13(m02), _14(m03),
-			_21(m10), _22(m11), _23(m12), _24(m13),
-			_31(m20), _32(m21), _33(m22), _34(m23),
-			_41(m30), _42(m31), _43(m32), _44(m33) {}
-		constexpr Matrix4x4(const DirectX::XMFLOAT4X4& xm) noexcept :
-			_11(xm._11), _12(xm._12), _13(xm._13), _14(xm._14),
-			_21(xm._21), _22(xm._22), _23(xm._23), _24(xm._24),
-			_31(xm._31), _32(xm._32), _33(xm._33), _34(xm._34),
-			_41(xm._41), _42(xm._42), _43(xm._43), _44(xm._44) {}
-		constexpr Matrix4x4(const Matrix4x4& mm) noexcept :
-			_11(mm._11), _12(mm._12), _13(mm._13), _14(mm._14),
-			_21(mm._21), _22(mm._22), _23(mm._23), _24(mm._24),
-			_31(mm._31), _32(mm._32), _33(mm._33), _34(mm._34),
-			_41(mm._41), _42(mm._42), _43(mm._43), _44(mm._44) {}
+		void operator*=(const Matrix4x4& mm);
 		union
 		{
 			struct
@@ -374,8 +157,10 @@ namespace PigeonEngine
 
 	struct Quaternion
 	{
-		Quaternion() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
-		Quaternion(const DirectX::XMFLOAT4& xq) noexcept : x(xq.x), y(xq.y), z(xq.z), w(xq.w) {}
+		constexpr Quaternion(FLOAT qx, FLOAT qy, FLOAT qz, FLOAT qw)noexcept : x(qx), y(qy), z(qz), w(qw) {}
+		constexpr Quaternion(const DirectX::XMFLOAT4& xq)noexcept : x(xq.x), y(xq.y), z(xq.z), w(xq.w) {}
+		constexpr Quaternion(const Vector4& q)noexcept;
+		Quaternion()noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
 		Quaternion(DirectX::CXMVECTOR xq)
 		{
 			DirectX::XMFLOAT4 tempQ;
@@ -394,21 +179,14 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationMatrix(xm));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		Quaternion(const Quaternion& q) noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
-		Quaternion(const Vector4& q) noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
-		Quaternion(const Vector3& axis, const FLOAT& radian)
-		{
-			DirectX::XMFLOAT4 tempQ;
-			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(axis.x, axis.y, axis.z, 0.f), radian));
-			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
-		}
-		Quaternion(const FLOAT& pitch, const FLOAT& yaw, const FLOAT& roll)
+		Quaternion(const Quaternion& q)noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
+		Quaternion(const Vector3& axis, FLOAT radian);
+		Quaternion(FLOAT pitch, FLOAT yaw, FLOAT roll)
 		{
 			DirectX::XMFLOAT4 tempQ;
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationRollPitchYaw(pitch, yaw, roll));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		Quaternion(const FLOAT& qx, const FLOAT& qy, const FLOAT& qz, const FLOAT& qw) noexcept : x(qx), y(qy), z(qz), w(qw) {}
 		static const Quaternion& Identity()
 		{
 			const static Quaternion _StaticIdentityQuaternion(DirectX::XMQuaternionIdentity());
@@ -417,8 +195,8 @@ namespace PigeonEngine
 		static Quaternion Inverse(const Quaternion& q) { return (Quaternion(DirectX::XMQuaternionInverse(DirectX::XMVectorSet(q.x, q.y, q.z, q.w)))); }
 		static Quaternion Normalize(const Quaternion& q) { return (Quaternion(DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(q.x, q.y, q.z, q.w)))); }
 		static Quaternion MultiplyQuaternion(const Quaternion& q1, const Quaternion& q2) { return (Quaternion(DirectX::XMQuaternionMultiply(DirectX::XMVectorSet(q1.x, q1.y, q1.z, q1.w), DirectX::XMVectorSet(q2.x, q2.y, q2.z, q2.w)))); }
-		static Quaternion RotationAxis(const Vector3& axis, const FLOAT& radian) { return (Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(axis.x, axis.y, axis.z, 0.f), radian))); }
-		static Quaternion NLerp(const Quaternion& q1, const Quaternion& q2, const FLOAT& t)
+		static Quaternion RotationAxis(const Vector3& axis, FLOAT radian);
+		static Quaternion NLerp(const Quaternion& q1, const Quaternion& q2, FLOAT t)
 		{
 			return (Quaternion(DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(
 				q1.x * (1.f - t) + q2.x * t,
@@ -426,7 +204,7 @@ namespace PigeonEngine
 				q1.z * (1.f - t) + q2.z * t,
 				q1.w * (1.f - t) + q2.w * t))));
 		}
-		static Quaternion NLerp(const Quaternion& q1, const Quaternion& q2, const DOUBLE& t)
+		static Quaternion NLerp(const Quaternion& q1, const Quaternion& q2, DOUBLE t)
 		{
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Quaternion(DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(
@@ -435,8 +213,8 @@ namespace PigeonEngine
 				q1.z * (1.f - ft) + q2.z * ft,
 				q1.w * (1.f - ft) + q2.w * ft))));
 		}
-		static Quaternion SLerp(const Quaternion& q1, const Quaternion& q2, const FLOAT& t) { return (Quaternion(DirectX::XMQuaternionSlerp(DirectX::XMVectorSet(q1.x, q1.y, q1.z, q1.w), DirectX::XMVectorSet(q2.x, q2.y, q2.z, q2.w), t))); }
-		static Quaternion SLerp(const Quaternion& q1, const Quaternion& q2, const DOUBLE& t) { return (Quaternion(DirectX::XMQuaternionSlerp(DirectX::XMVectorSet(q1.x, q1.y, q1.z, q1.w), DirectX::XMVectorSet(q2.x, q2.y, q2.z, q2.w), static_cast<FLOAT>(t)))); }
+		static Quaternion SLerp(const Quaternion& q1, const Quaternion& q2, FLOAT t) { return (Quaternion(DirectX::XMQuaternionSlerp(DirectX::XMVectorSet(q1.x, q1.y, q1.z, q1.w), DirectX::XMVectorSet(q2.x, q2.y, q2.z, q2.w), t))); }
+		static Quaternion SLerp(const Quaternion& q1, const Quaternion& q2, DOUBLE t) { return (Quaternion(DirectX::XMQuaternionSlerp(DirectX::XMVectorSet(q1.x, q1.y, q1.z, q1.w), DirectX::XMVectorSet(q2.x, q2.y, q2.z, q2.w), static_cast<FLOAT>(t)))); }
 		void SetDirectXVector(DirectX::CXMVECTOR xq)
 		{
 			DirectX::XMFLOAT4 tempQ;
@@ -456,22 +234,22 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationMatrix(DirectX::XMLoadFloat4x4(&xm)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		DirectX::XMMATRIX GetDirectXMatrix() const { return (DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))); }
-		DirectX::XMFLOAT4X4 GetDirectXValue4x4() const
+		DirectX::XMMATRIX GetDirectXMatrix()const { return (DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))); }
+		DirectX::XMFLOAT4X4 GetDirectXValue4x4()const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, GetDirectXMatrix());
 			return tempM;
 		}
-		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4() const
+		DirectX::XMFLOAT4X4 GetDirectXTransposeValue4x4()const
 		{
 			DirectX::XMFLOAT4X4 tempM;
 			DirectX::XMStoreFloat4x4(&tempM, DirectX::XMMatrixTranspose(DirectX::XMMatrixRotationQuaternion(DirectX::XMVectorSet(x, y, z, w))));
 			return tempM;
 		}
 		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, z, w)); }
-		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, z, w)); }
-		Matrix4x4 GetMatrix() const { return (Matrix4x4(GetDirectXValue4x4())); }
+		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, z, w)); }
+		Matrix4x4 GetMatrix()const { return (Matrix4x4(GetDirectXValue4x4())); }
 		void Reset() { (*this) = Quaternion::Identity(); }
 		void Inverse()
 		{
@@ -485,35 +263,19 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(x, y, z, w)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		Vector3 MultiplyVector(const Vector3& v) const
-		{
-			return (Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(x, y, z, w))));
-		}
+		Vector3 MultiplyVector(const Vector3& v)const;
 		void operator=(const Quaternion& q)
 		{
 			x = q.x; y = q.y; z = q.z; w = q.w;
 		}
-		void operator=(const Vector4& q)
-		{
-			x = q.x; y = q.y; z = q.z; w = q.w;
-		}
+		void operator=(const Vector4& q);
 		void operator*=(const Quaternion& q)
 		{
 			DirectX::XMFLOAT4 tempQ;
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionMultiply(DirectX::XMVectorSet(x, y, z, w), DirectX::XMVectorSet(q.x, q.y, q.z, q.w)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
-		void operator*=(const Vector4& q)
-		{
-			DirectX::XMFLOAT4 tempQ;
-			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionMultiply(DirectX::XMVectorSet(x, y, z, w), DirectX::XMVectorSet(q.x, q.y, q.z, q.w)));
-			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
-		}
-		constexpr Quaternion() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
-		constexpr Quaternion(const DirectX::XMFLOAT4& xq) noexcept : x(xq.x), y(xq.y), z(xq.z), w(xq.w) {}
-		constexpr Quaternion(const Quaternion& q) noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
-		constexpr Quaternion(const Vector4& q) noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
-		constexpr Quaternion(const FLOAT& qx, const FLOAT& qy, const FLOAT& qz, const FLOAT& qw) noexcept : x(qx), y(qy), z(qz), w(qw) {}
+		void operator*=(const Vector4& q);
 		union
 		{
 			struct
@@ -526,31 +288,31 @@ namespace PigeonEngine
 
 	struct Vector2
 	{
-		Vector2() noexcept : x(0.f), y(0.f) {}
-		Vector2(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y) {}
-		Vector2(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y) {}
-		Vector2(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y) {}
-		Vector2(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		Vector2(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		Vector2(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
+		constexpr Vector2(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y) {}
+		constexpr Vector2(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
+		constexpr Vector2(FLOAT v = 0.f)noexcept : x(v), y(v) {}
+		constexpr Vector2(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy) {}
+		constexpr Vector2(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
+		constexpr Vector2(INT vx, INT vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
+		constexpr Vector2(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
+		constexpr Vector2(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
+		constexpr Vector2(const Vector3& vv)noexcept;
+		constexpr Vector2(const Vector4& vv)noexcept;
+		constexpr Vector2(const Vector2Int& vv)noexcept;
+		constexpr Vector2(const Vector3Int& vv)noexcept;
+		constexpr Vector2(const Vector4Int& vv)noexcept;
+		Vector2()noexcept : x(0.f), y(0.f) {}
 		Vector2(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
 			x = tempV.x; y = tempV.y;
 		}
-		Vector2(const FLOAT& v) noexcept : x(v), y(v) {}
-		Vector2(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy) {}
-		Vector2(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		Vector2(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
-		Vector2(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		Vector2(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
-		Vector2(const Vector2& vv) noexcept : x(vv.x), y(vv.y) {}
-		Vector2(const Vector3& vv) noexcept : x(vv.x), y(vv.y) {}
-		Vector2(const Vector4& vv) noexcept : x(vv.x), y(vv.y) {}
-		Vector2(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
-		Vector2(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
-		Vector2(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
+		Vector2(const Vector2& vv)noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2& Zero()
 		{
 			const static Vector2 _StaticVector2Zero(0.f, 0.f);
@@ -590,7 +352,7 @@ namespace PigeonEngine
 			DirectX::XMVECTOR tempV = DirectX::XMVectorSet(v1.x - v2.x, v1.y - v2.y, 0.f, 0.f);
 			return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(tempV, tempV)));
 		}
-		static Vector2 Lerp(const Vector2& v1, const Vector2& v2, const FLOAT& t) { return (Vector2(v1.x * (1.f - t) + v2.x * t, v1.y * (1.f - t) + v2.y * t)); }
+		static Vector2 Lerp(const Vector2& v1, const Vector2& v2, FLOAT t) { return (Vector2(v1.x * (1.f - t) + v2.x * t, v1.y * (1.f - t) + v2.y * t)); }
 		static Vector2 Reciprocal(const Vector2& vv) { return Vector2(1.f / vv.x, 1.f / vv.y); }
 		void SetDirectXVector(DirectX::CXMVECTOR xv)
 		{
@@ -599,10 +361,10 @@ namespace PigeonEngine
 			x = tempV.x; y = tempV.y;
 		}
 		void SetDirectXValue2(const DirectX::XMFLOAT2& xv) { x = xv.x; y = xv.y; }
-		DirectX::XMVECTOR GetDirectXVector() const { return (DirectX::XMVectorSet(x, y, 0.f, 0.f)); }
-		DirectX::XMFLOAT2 GetDirectXValue2() const { return (DirectX::XMFLOAT2(x, y)); }
-		DirectX::XMFLOAT3 GetDirectXValue3() const { return (DirectX::XMFLOAT3(x, y, 0.f)); }
-		DirectX::XMFLOAT4 GetDirectXValue4() const { return (DirectX::XMFLOAT4(x, y, 0.f, 0.f)); }
+		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(x, y, 0.f, 0.f)); }
+		DirectX::XMFLOAT2 GetDirectXValue2()const { return (DirectX::XMFLOAT2(x, y)); }
+		DirectX::XMFLOAT3 GetDirectXValue3()const { return (DirectX::XMFLOAT3(x, y, 0.f)); }
+		DirectX::XMFLOAT4 GetDirectXValue4()const { return (DirectX::XMFLOAT4(x, y, 0.f, 0.f)); }
 		void Reset() { (*this) = Vector2::Zero(); }
 		void Normalize()
 		{
@@ -610,70 +372,70 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat2(&tempV, DirectX::XMVector2Normalize(DirectX::XMVectorSet(x, y, 0.f, 0.f)));
 			x = tempV.x; y = tempV.y;
 		}
-		FLOAT Dot(const Vector2& vv) const { return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(DirectX::XMVectorSet(x, y, 0.f, 0.f), DirectX::XMVectorSet(vv.x, vv.y, 0.f, 0.f)))); }
-		FLOAT Length() const { return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
-		FLOAT LengthSquare() const { return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
-		FLOAT Distance(const Vector2& vv) const
+		FLOAT Dot(const Vector2& vv)const { return (DirectX::XMVectorGetX(DirectX::XMVector2Dot(DirectX::XMVectorSet(x, y, 0.f, 0.f), DirectX::XMVectorSet(vv.x, vv.y, 0.f, 0.f)))); }
+		FLOAT Length()const { return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
+		FLOAT LengthSquare()const { return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(x, y, 0.f, 0.f)))); }
+		FLOAT Distance(const Vector2& vv)const
 		{
 			Vector2 tempV(x - vv.x, y - vv.y);
 			return (DirectX::XMVectorGetX(DirectX::XMVector2Length(DirectX::XMVectorSet(tempV.x, tempV.y, 0.f, 0.f))));
 		}
-		FLOAT DistanceSquare(const Vector2& vv) const
+		FLOAT DistanceSquare(const Vector2& vv)const
 		{
 			Vector2 tempV(x - vv.x, y - vv.y);
 			return (DirectX::XMVectorGetX(DirectX::XMVector2LengthSq(DirectX::XMVectorSet(tempV.x, tempV.y, 0.f, 0.f))));
 		}
-		Vector2 Lerp(const Vector2& vv, const FLOAT& t) const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
-		Vector2 Reciprocal() const { return Vector2(1.f / x, 1.f / y); }
-		void operator=(const FLOAT& v) { x = y = v; }
-		void operator=(const INT& v) { x = y = static_cast<FLOAT>(v); }
-		void operator=(const DOUBLE& v) { x = y = static_cast<FLOAT>(v); }
+		Vector2 Lerp(const Vector2& vv, FLOAT t)const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
+		Vector2 Reciprocal()const { return Vector2(1.f / x, 1.f / y); }
+		void operator=(FLOAT v) { x = y = v; }
+		void operator=(INT v) { x = y = static_cast<FLOAT>(v); }
+		void operator=(DOUBLE v) { x = y = static_cast<FLOAT>(v); }
 		void operator=(const Vector2& vv) { x = vv.x; y = vv.y; }
-		void operator=(const Vector3& vv) { x = vv.x; y = vv.y; }
-		void operator=(const Vector4& vv) { x = vv.x; y = vv.y; }
-		void operator=(const Vector2Int& vv) { x = static_cast<FLOAT>(vv.x); y = static_cast<FLOAT>(vv.y); }
-		void operator=(const Vector3Int& vv) { x = static_cast<FLOAT>(vv.x); y = static_cast<FLOAT>(vv.y); }
-		void operator=(const Vector4Int& vv) { x = static_cast<FLOAT>(vv.x); y = static_cast<FLOAT>(vv.y); }
-		void operator+=(const FLOAT& v) { x += v; y += v; }
-		void operator-=(const FLOAT& v) { x -= v; y -= v; }
-		void operator*=(const FLOAT& v) { x *= v; y *= v; }
-		void operator/=(const FLOAT& v) { x /= v; y /= v; }
-		void operator+=(const INT& v)
+		void operator=(const Vector3& vv);
+		void operator=(const Vector4& vv);
+		void operator=(const Vector2Int& vv);
+		void operator=(const Vector3Int& vv);
+		void operator=(const Vector4Int& vv);
+		void operator+=(FLOAT v) { x += v; y += v; }
+		void operator-=(FLOAT v) { x -= v; y -= v; }
+		void operator*=(FLOAT v) { x *= v; y *= v; }
+		void operator/=(FLOAT v) { x /= v; y /= v; }
+		void operator+=(INT v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x += fv; y += fv;
 		}
-		void operator-=(const INT& v)
+		void operator-=(INT v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x -= fv; y -= fv;
 		}
-		void operator*=(const INT& v)
+		void operator*=(INT v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x *= fv; y *= fv;
 		}
-		void operator/=(const INT& v)
+		void operator/=(INT v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x /= fv; y /= fv;
 		}
-		void operator+=(const DOUBLE& v)
+		void operator+=(DOUBLE v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x += fv; y += fv;
 		}
-		void operator-=(const DOUBLE& v)
+		void operator-=(DOUBLE v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x -= fv; y -= fv;
 		}
-		void operator*=(const DOUBLE& v)
+		void operator*=(DOUBLE v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x *= fv; y *= fv;
 		}
-		void operator/=(const DOUBLE& v)
+		void operator/=(DOUBLE v)
 		{
 			FLOAT fv = static_cast<FLOAT>(v);
 			x /= fv; y /= fv;
@@ -690,37 +452,18 @@ namespace PigeonEngine
 		void operator-=(const Vector4& vv) { x -= vv.x; y -= vv.y; }
 		void operator*=(const Vector4& vv) { x *= vv.x; y *= vv.y; }
 		void operator/=(const Vector4& vv) { x /= vv.x; y /= vv.y; }
-		void operator+=(const Vector2Int& vv) { x += static_cast<FLOAT>(vv.x); y += static_cast<FLOAT>(vv.y); }
-		void operator-=(const Vector2Int& vv) { x -= static_cast<FLOAT>(vv.x); y -= static_cast<FLOAT>(vv.y); }
-		void operator*=(const Vector2Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); }
-		void operator/=(const Vector2Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
-		void operator+=(const Vector3Int& vv) { x += static_cast<FLOAT>(vv.x); y += static_cast<FLOAT>(vv.y); }
-		void operator-=(const Vector3Int& vv) { x -= static_cast<FLOAT>(vv.x); y -= static_cast<FLOAT>(vv.y); }
-		void operator*=(const Vector3Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); }
-		void operator/=(const Vector3Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
-		void operator+=(const Vector4Int& vv) { x += static_cast<FLOAT>(vv.x); y += static_cast<FLOAT>(vv.y); }
-		void operator-=(const Vector4Int& vv) { x -= static_cast<FLOAT>(vv.x); y -= static_cast<FLOAT>(vv.y); }
-		void operator*=(const Vector4Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); }
-		void operator/=(const Vector4Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
-		constexpr Vector2() noexcept : x(0.f), y(0.f) {}
-		constexpr Vector2(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(const FLOAT& v) noexcept : x(v), y(v) {}
-		constexpr Vector2(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy) {}
-		constexpr Vector2(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		constexpr Vector2(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
-		constexpr Vector2(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		constexpr Vector2(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
-		constexpr Vector2(const Vector2& vv) noexcept : x(vv.x), y(vv.y) {}
-		constexpr Vector2(const Vector3& vv) noexcept : x(vv.x), y(vv.y) {}
-		constexpr Vector2(const Vector4& vv) noexcept : x(vv.x), y(vv.y) {}
-		constexpr Vector2(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
-		constexpr Vector2(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
-		constexpr Vector2(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)) {}
+		void operator+=(const Vector2Int& vv);
+		void operator-=(const Vector2Int& vv);
+		void operator*=(const Vector2Int& vv);
+		void operator/=(const Vector2Int& vv);
+		void operator+=(const Vector3Int& vv);
+		void operator-=(const Vector3Int& vv);
+		void operator*=(const Vector3Int& vv);
+		void operator/=(const Vector3Int& vv);
+		void operator+=(const Vector4Int& vv);
+		void operator-=(const Vector4Int& vv);
+		void operator*=(const Vector4Int& vv);
+		void operator/=(const Vector4Int& vv);
 		union
 		{
 			struct
@@ -938,27 +681,27 @@ namespace PigeonEngine
 		void operator*=(const Vector4Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); z *= static_cast<FLOAT>(vv.z); }
 		void operator/=(const Vector4Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); z /= static_cast<FLOAT>(vv.z); }
 		constexpr Vector3() noexcept : x(0.f), y(0.f), z(0.f) {}
-		constexpr Vector3(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f) {}
-		constexpr Vector3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f) {}
-		constexpr Vector3(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
-		constexpr Vector3(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
-		constexpr Vector3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
-		constexpr Vector3(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy), z(0.f) {}
-		constexpr Vector3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
-		constexpr Vector3(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
-		constexpr Vector3(const INT& vx, const INT& vy, const INT& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		constexpr Vector3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
-		constexpr Vector3(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
-		constexpr Vector3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		constexpr Vector3(const Vector2& vv) noexcept : x(vv.x), y(vv.y), z(0.f) {}
-		constexpr Vector3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Vector3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Vector3(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f) {}
-		constexpr Vector3(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)) {}
-		constexpr Vector3(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)) {}
+		//constexpr Vector3(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f) {}
+		//constexpr Vector3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Vector3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Vector3(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f) {}
+		//constexpr Vector3(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
+		//constexpr Vector3(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
+		//constexpr Vector3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
+		//constexpr Vector3(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy), z(0.f) {}
+		//constexpr Vector3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
+		//constexpr Vector3(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		//constexpr Vector3(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
+		//constexpr Vector3(const INT& vx, const INT& vy, const INT& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		//constexpr Vector3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		//constexpr Vector3(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
+		//constexpr Vector3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		//constexpr Vector3(const Vector2& vv) noexcept : x(vv.x), y(vv.y), z(0.f) {}
+		//constexpr Vector3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Vector3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Vector3(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f) {}
+		//constexpr Vector3(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)) {}
+		//constexpr Vector3(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)) {}
 		union
 		{
 			struct
@@ -1156,30 +899,30 @@ namespace PigeonEngine
 		void operator*=(const Vector4Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); z *= static_cast<FLOAT>(vv.z); w *= static_cast<FLOAT>(vv.w); }
 		void operator/=(const Vector4Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); z /= static_cast<FLOAT>(vv.z); w /= static_cast<FLOAT>(vv.w); }
 		constexpr Vector4() noexcept : x(0.f), y(0.f), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0.f) {}
-		constexpr Vector4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(static_cast<FLOAT>(xv.w)) {}
-		constexpr Vector4(const FLOAT& v) noexcept : x(v), y(v), z(v), w(v) {}
-		constexpr Vector4(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
-		constexpr Vector4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(0.f) {}
-		constexpr Vector4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
-		constexpr Vector4(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(const INT& vx, const INT& vy, const INT& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
-		constexpr Vector4(const INT& vx, const INT& vy, const INT& vz, const INT& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
-		constexpr Vector4(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
-		constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
-		constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
-		constexpr Vector4(const Vector2& vv) noexcept : x(vv.x), y(vv.y), z(0.f), w(0.f) {}
-		constexpr Vector4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(0.f) {}
-		constexpr Vector4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
-		constexpr Vector4(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f), w(0.f) {}
-		constexpr Vector4(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(0.f) {}
-		constexpr Vector4(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(static_cast<FLOAT>(vv.w)) {}
+		//constexpr Vector4(const DirectX::XMFLOAT2& xv) noexcept : x(xv.x), y(xv.y), z(0.f), w(0.f) {}
+		//constexpr Vector4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0.f) {}
+		//constexpr Vector4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		//constexpr Vector4(const DirectX::XMINT2& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f), w(0.f) {}
+		//constexpr Vector4(const DirectX::XMINT3& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(0.f) {}
+		//constexpr Vector4(const DirectX::XMINT4& xv) noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(static_cast<FLOAT>(xv.w)) {}
+		//constexpr Vector4(const FLOAT& v) noexcept : x(v), y(v), z(v), w(v) {}
+		//constexpr Vector4(const FLOAT& vx, const FLOAT& vy) noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
+		//constexpr Vector4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(0.f) {}
+		//constexpr Vector4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		//constexpr Vector4(const INT& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
+		//constexpr Vector4(const INT& vx, const INT& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
+		//constexpr Vector4(const INT& vx, const INT& vy, const INT& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
+		//constexpr Vector4(const INT& vx, const INT& vy, const INT& vz, const INT& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		//constexpr Vector4(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
+		//constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
+		//constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
+		//constexpr Vector4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		//constexpr Vector4(const Vector2& vv) noexcept : x(vv.x), y(vv.y), z(0.f), w(0.f) {}
+		//constexpr Vector4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(0.f) {}
+		//constexpr Vector4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		//constexpr Vector4(const Vector2Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f), w(0.f) {}
+		//constexpr Vector4(const Vector3Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(0.f) {}
+		//constexpr Vector4(const Vector4Int& vv) noexcept : x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(static_cast<FLOAT>(vv.w)) {}
 		union
 		{
 			struct
@@ -1340,26 +1083,26 @@ namespace PigeonEngine
 		void operator*=(const Vector4Int& vv) { x *= vv.x; y *= vv.y; }
 		void operator/=(const Vector4Int& vv) { x /= vv.x; y /= vv.y; }
 		constexpr Vector2Int() noexcept : x(0), y(0) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(const INT& v) noexcept : x(v), y(v) {}
-		constexpr Vector2Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy) {}
-		constexpr Vector2Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
-		constexpr Vector2Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
-		constexpr Vector2Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
-		constexpr Vector2Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y) {}
-		constexpr Vector2Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y) {}
-		constexpr Vector2Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y) {}
+		//constexpr Vector2Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
+		//constexpr Vector2Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
+		//constexpr Vector2Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
+		//constexpr Vector2Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y) {}
+		//constexpr Vector2Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y) {}
+		//constexpr Vector2Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y) {}
+		//constexpr Vector2Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
+		//constexpr Vector2Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
+		//constexpr Vector2Int(const INT& v) noexcept : x(v), y(v) {}
+		//constexpr Vector2Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy) {}
+		//constexpr Vector2Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
+		//constexpr Vector2Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
+		//constexpr Vector2Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
+		//constexpr Vector2Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
+		//constexpr Vector2Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
+		//constexpr Vector2Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
+		//constexpr Vector2Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
+		//constexpr Vector2Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y) {}
+		//constexpr Vector2Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y) {}
+		//constexpr Vector2Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y) {}
 		union
 		{
 			struct
@@ -1524,30 +1267,30 @@ namespace PigeonEngine
 		void operator*=(const Vector4Int& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
 		void operator/=(const Vector4Int& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
 		constexpr Vector3Int() noexcept : x(0), y(0), z(0) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0) {}
-		constexpr Vector3Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(const INT& v) noexcept : x(v), y(v), z(v) {}
-		constexpr Vector3Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy), z(0) {}
-		constexpr Vector3Int(const INT& vx, const INT& vy, const INT& vz) noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(const UINT& vx, const UINT& vy, const UINT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(0) {}
-		constexpr Vector3Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)) {}
-		constexpr Vector3Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)) {}
-		constexpr Vector3Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y), z(0) {}
-		constexpr Vector3Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Vector3Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Vector3Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0) {}
+		//constexpr Vector3Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
+		//constexpr Vector3Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
+		//constexpr Vector3Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0) {}
+		//constexpr Vector3Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Vector3Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Vector3Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
+		//constexpr Vector3Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
+		//constexpr Vector3Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
+		//constexpr Vector3Int(const INT& v) noexcept : x(v), y(v), z(v) {}
+		//constexpr Vector3Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy), z(0) {}
+		//constexpr Vector3Int(const INT& vx, const INT& vy, const INT& vz) noexcept : x(vx), y(vy), z(vz) {}
+		//constexpr Vector3Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
+		//constexpr Vector3Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
+		//constexpr Vector3Int(const UINT& vx, const UINT& vy, const UINT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
+		//constexpr Vector3Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
+		//constexpr Vector3Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
+		//constexpr Vector3Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
+		//constexpr Vector3Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(0) {}
+		//constexpr Vector3Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)) {}
+		//constexpr Vector3Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)) {}
+		//constexpr Vector3Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y), z(0) {}
+		//constexpr Vector3Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Vector3Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		union
 		{
 			struct
@@ -1716,34 +1459,34 @@ namespace PigeonEngine
 		void operator*=(const Vector4Int& vv) { x *= vv.x; y *= vv.y; z *= vv.z; w *= vv.w; }
 		void operator/=(const Vector4Int& vv) { x /= vv.x; y /= vv.y; z /= vv.z; w /= vv.w; }
 		constexpr Vector4Int() noexcept : x(0), y(0), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(static_cast<INT>(xv.w)) {}
-		constexpr Vector4Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
-		constexpr Vector4Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(const INT& v) noexcept : x(v), y(v), z(v), w(v) {}
-		constexpr Vector4Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy), z(0), w(0) {}
-		constexpr Vector4Int(const INT& vx, const INT& vy, const INT& vz) noexcept : x(vx), y(vy), z(vz), w(0) {}
-		constexpr Vector4Int(const INT& vx, const INT& vy, const INT& vz, const INT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(const UINT& vx, const UINT& vy, const UINT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(const UINT& vx, const UINT& vy, const UINT& vz, const UINT& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(0), w(0) {}
-		constexpr Vector4Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)), w(0) {}
-		constexpr Vector4Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)), w(static_cast<INT>(vv.w)) {}
-		constexpr Vector4Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y), z(0), w(0) {}
-		constexpr Vector4Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(0) {}
-		constexpr Vector4Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		//constexpr Vector4Int(const DirectX::XMFLOAT2& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0), w(0) {}
+		//constexpr Vector4Int(const DirectX::XMFLOAT3& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(0) {}
+		//constexpr Vector4Int(const DirectX::XMFLOAT4& xv) noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(static_cast<INT>(xv.w)) {}
+		//constexpr Vector4Int(const DirectX::XMINT2& xv) noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
+		//constexpr Vector4Int(const DirectX::XMINT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
+		//constexpr Vector4Int(const DirectX::XMINT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		//constexpr Vector4Int(const FLOAT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
+		//constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
+		//constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
+		//constexpr Vector4Int(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
+		//constexpr Vector4Int(const INT& v) noexcept : x(v), y(v), z(v), w(v) {}
+		//constexpr Vector4Int(const INT& vx, const INT& vy) noexcept : x(vx), y(vy), z(0), w(0) {}
+		//constexpr Vector4Int(const INT& vx, const INT& vy, const INT& vz) noexcept : x(vx), y(vy), z(vz), w(0) {}
+		//constexpr Vector4Int(const INT& vx, const INT& vy, const INT& vz, const INT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		//constexpr Vector4Int(const UINT& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
+		//constexpr Vector4Int(const UINT& vx, const UINT& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
+		//constexpr Vector4Int(const UINT& vx, const UINT& vy, const UINT& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
+		//constexpr Vector4Int(const UINT& vx, const UINT& vy, const UINT& vz, const UINT& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
+		//constexpr Vector4Int(const DOUBLE& v) noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
+		//constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
+		//constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
+		//constexpr Vector4Int(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
+		//constexpr Vector4Int(const Vector2& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(0), w(0) {}
+		//constexpr Vector4Int(const Vector3& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)), w(0) {}
+		//constexpr Vector4Int(const Vector4& vv) noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)), w(static_cast<INT>(vv.w)) {}
+		//constexpr Vector4Int(const Vector2Int& vv) noexcept : x(vv.x), y(vv.y), z(0), w(0) {}
+		//constexpr Vector4Int(const Vector3Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(0) {}
+		//constexpr Vector4Int(const Vector4Int& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		union
 		{
 			struct
@@ -1870,18 +1613,18 @@ namespace PigeonEngine
 		void operator*=(const Color4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; }
 		void operator/=(const Color4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; }
 		constexpr Color3() noexcept : x(0.f), y(0.f), z(0.f) {}
-		constexpr Color3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Color3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Color3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
-		constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Color3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
-		constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
-		constexpr Color3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Color3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Color3(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
-		constexpr Color3(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Color3(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Color3(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z) {}
+		//constexpr Color3(const FLOAT& v) noexcept : x(v), y(v), z(v) {}
+		//constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz) {}
+		//constexpr Color3(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz) {}
+		//constexpr Color3(const DOUBLE& v) noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		//constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		//constexpr Color3(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		//constexpr Color3(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Color3(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Color3(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
+		//constexpr Color3(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		union
 		{
 			struct
@@ -2009,16 +1752,16 @@ namespace PigeonEngine
 		void operator*=(const Color4& vv) { x *= vv.x; y *= vv.y; z *= vv.z; w *= vv.w; }
 		void operator/=(const Color4& vv) { x /= vv.x; y /= vv.y; z /= vv.z; w /= vv.w; }
 		constexpr Color4() noexcept : x(0.f), y(0.f), z(0.f), w(1.f) {}
-		constexpr Color4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
-		constexpr Color4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(1.f) {}
-		constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
-		constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
-		constexpr Color4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
-		constexpr Color4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
-		constexpr Color4(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
-		constexpr Color4(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		//constexpr Color4(const DirectX::XMFLOAT3& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(1.f) {}
+		//constexpr Color4(const DirectX::XMFLOAT4& xv) noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
+		//constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz) noexcept : x(vx), y(vy), z(vz), w(1.f) {}
+		//constexpr Color4(const FLOAT& vx, const FLOAT& vy, const FLOAT& vz, const FLOAT& vw) noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		//constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(1.f) {}
+		//constexpr Color4(const DOUBLE& vx, const DOUBLE& vy, const DOUBLE& vz, const DOUBLE& vw) noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		//constexpr Color4(const Vector3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		//constexpr Color4(const Vector4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
+		//constexpr Color4(const Color3& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(1.f) {}
+		//constexpr Color4(const Color4& vv) noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		union
 		{
 			struct
@@ -2033,4 +1776,142 @@ namespace PigeonEngine
 			FLOAT rgba[4];
 		};
 	};
+
+	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm);
+	Matrix4x4 operator-(const Matrix4x4& lm, const Matrix4x4& rm);
+	Matrix4x4 operator*(const Matrix4x4& lm, const FLOAT& rv);
+	Matrix4x4 operator*(const FLOAT& lv, const Matrix4x4& rm);
+	Matrix4x4 operator*(const Matrix4x4& lm, const Matrix4x4& rm);
+	Matrix4x4 operator*(const Matrix4x4& lm, const Quaternion& rq);
+	Matrix4x4 operator*(const Quaternion& lq, const Matrix4x4& rm);
+	Quaternion operator*(const Quaternion& lq, const Quaternion& rq);
+	Vector2 operator+(const Vector2& lv, const Vector2& rv);
+	Vector2 operator+(const Vector2& lv, const FLOAT& rv);
+	Vector2 operator+(const FLOAT& lv, const Vector2& rv);
+	Vector2 operator-(const Vector2& lv, const Vector2& rv);
+	Vector2 operator-(const Vector2& lv, const FLOAT& rv);
+	Vector2 operator-(const FLOAT& lv, const Vector2& rv);
+	Vector2 operator*(const Vector2& lv, const Vector2& rv);
+	Vector2 operator*(const Vector2& lv, const FLOAT& rv);
+	Vector2 operator*(const FLOAT& lv, const Vector2& rv);
+	Vector2 operator/(const Vector2& lv, const Vector2& rv);
+	Vector2 operator/(const Vector2& lv, const FLOAT& rv);
+	Vector2 operator/(const FLOAT& lv, const Vector2& rv);
+	Vector3 operator+(const Vector3& lv, const Vector3& rv);
+	Vector3 operator+(const Vector3& lv, const FLOAT& rv);
+	Vector3 operator+(const FLOAT& lv, const Vector3& rv);
+	Vector3 operator-(const Vector3& lv, const Vector3& rv);
+	Vector3 operator-(const Vector3& lv, const FLOAT& rv);
+	Vector3 operator-(const FLOAT& lv, const Vector3& rv);
+	Vector3 operator*(const Vector3& lv, const Vector3& rv);
+	Vector3 operator*(const Vector3& lv, const FLOAT& rv);
+	Vector3 operator*(const FLOAT& lv, const Vector3& rv);
+	Vector3 operator/(const Vector3& lv, const Vector3& rv);
+	Vector3 operator/(const Vector3& lv, const FLOAT& rv);
+	Vector3 operator/(const FLOAT& lv, const Vector3& rv);
+	Vector4 operator+(const Vector4& lv, const Vector4& rv);
+	Vector4 operator+(const Vector4& lv, const FLOAT& rv);
+	Vector4 operator+(const FLOAT& lv, const Vector4& rv);
+	Vector4 operator-(const Vector4& lv, const Vector4& rv);
+	Vector4 operator-(const Vector4& lv, const FLOAT& rv);
+	Vector4 operator-(const FLOAT& lv, const Vector4& rv);
+	Vector4 operator*(const Vector4& lv, const Vector4& rv);
+	Vector4 operator*(const Vector4& lv, const FLOAT& rv);
+	Vector4 operator*(const FLOAT& lv, const Vector4& rv);
+	Vector4 operator/(const Vector4& lv, const Vector4& rv);
+	Vector4 operator/(const Vector4& lv, const FLOAT& rv);
+	Vector4 operator/(const FLOAT& lv, const Vector4& rv);
+	Vector2Int operator+(const Vector2Int& lv, const Vector2Int& rv);
+	Vector2Int operator+(const Vector2Int& lv, const INT& rv);
+	Vector2Int operator+(const INT& lv, const Vector2Int& rv);
+	Vector2Int operator-(const Vector2Int& lv, const Vector2Int& rv);
+	Vector2Int operator-(const Vector2Int& lv, const INT& rv);
+	Vector2Int operator-(const INT& lv, const Vector2Int& rv);
+	Vector2Int operator*(const Vector2Int& lv, const Vector2Int& rv);
+	Vector2Int operator*(const Vector2Int& lv, const INT& rv);
+	Vector2Int operator*(const INT& lv, const Vector2Int& rv);
+	Vector2Int operator/(const Vector2Int& lv, const Vector2Int& rv);
+	Vector2Int operator/(const Vector2Int& lv, const INT& rv);
+	Vector2Int operator/(const INT& lv, const Vector2Int& rv);
+	Vector3Int operator+(const Vector3Int& lv, const Vector3Int& rv);
+	Vector3Int operator+(const Vector3Int& lv, const INT& rv);
+	Vector3Int operator+(const INT& lv, const Vector3Int& rv);
+	Vector3Int operator-(const Vector3Int& lv, const Vector3Int& rv);
+	Vector3Int operator-(const Vector3Int& lv, const INT& rv);
+	Vector3Int operator-(const INT& lv, const Vector3Int& rv);
+	Vector3Int operator*(const Vector3Int& lv, const Vector3Int& rv);
+	Vector3Int operator*(const Vector3Int& lv, const INT& rv);
+	Vector3Int operator*(const INT& lv, const Vector3Int& rv);
+	Vector3Int operator/(const Vector3Int& lv, const Vector3Int& rv);
+	Vector3Int operator/(const Vector3Int& lv, const INT& rv);
+	Vector3Int operator/(const INT& lv, const Vector3Int& rv);
+	Vector4Int operator+(const Vector4Int& lv, const Vector4Int& rv);
+	Vector4Int operator+(const Vector4Int& lv, const INT& rv);
+	Vector4Int operator+(const INT& lv, const Vector4Int& rv);
+	Vector4Int operator-(const Vector4Int& lv, const Vector4Int& rv);
+	Vector4Int operator-(const Vector4Int& lv, const INT& rv);
+	Vector4Int operator-(const INT& lv, const Vector4Int& rv);
+	Vector4Int operator*(const Vector4Int& lv, const Vector4Int& rv);
+	Vector4Int operator*(const Vector4Int& lv, const INT& rv);
+	Vector4Int operator*(const INT& lv, const Vector4Int& rv);
+	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv);
+	Vector4Int operator/(const Vector4Int& lv, const INT& rv);
+	Vector4Int operator/(const INT& lv, const Vector4Int& rv);
+	Color3 operator+(const Color3& lv, const FLOAT& rv);
+	Color3 operator+(const FLOAT& lv, const Color3& rv);
+	Color3 operator+(const Color3& lv, const Color3& rv);
+	Color3 operator+(const Color3& lv, const Vector3& rv);
+	Color3 operator+(const Vector3& lv, const Color3& rv);
+	Color4 operator+(const Color4& lv, const Color4& rv);
+	Color4 operator+(const Color4& lv, const Vector4& rv);
+	Color4 operator+(const Vector4& lv, const Color4& rv);
+	Color3 operator+(const Color3& lv, const Vector4& rv);
+	Color3 operator+(const Vector4& lv, const Color3& rv);
+	Color3 operator+(const Color4& lv, const Vector3& rv);
+	Color3 operator+(const Vector3& lv, const Color4& rv);
+	Color3 operator+(const Color4& lv, const Color3& rv);
+	Color3 operator+(const Color3& lv, const Color4& rv);
+	Color3 operator-(const Color3& lv, const FLOAT& rv);
+	Color3 operator-(const FLOAT& lv, const Color3& rv);
+	Color3 operator-(const Color3& lv, const Color3& rv);
+	Color3 operator-(const Color3& lv, const Vector3& rv);
+	Color3 operator-(const Vector3& lv, const Color3& rv);
+	Color4 operator-(const Color4& lv, const Color4& rv);
+	Color4 operator-(const Color4& lv, const Vector4& rv);
+	Color4 operator-(const Vector4& lv, const Color4& rv);
+	Color3 operator-(const Color3& lv, const Vector4& rv);
+	Color3 operator-(const Vector4& lv, const Color3& rv);
+	Color3 operator-(const Color4& lv, const Vector3& rv);
+	Color3 operator-(const Vector3& lv, const Color4& rv);
+	Color3 operator-(const Color4& lv, const Color3& rv);
+	Color3 operator-(const Color3& lv, const Color4& rv);
+	Color3 operator*(const Color3& lv, const FLOAT& rv);
+	Color3 operator*(const FLOAT& lv, const Color3& rv);
+	Color3 operator*(const Color3& lv, const Color3& rv);
+	Color3 operator*(const Color3& lv, const Vector3& rv);
+	Color3 operator*(const Vector3& lv, const Color3& rv);
+	Color4 operator*(const Color4& lv, const Color4& rv);
+	Color4 operator*(const Color4& lv, const Vector4& rv);
+	Color4 operator*(const Vector4& lv, const Color4& rv);
+	Color3 operator*(const Color3& lv, const Vector4& rv);
+	Color3 operator*(const Vector4& lv, const Color3& rv);
+	Color3 operator*(const Color4& lv, const Vector3& rv);
+	Color3 operator*(const Vector3& lv, const Color4& rv);
+	Color3 operator*(const Color4& lv, const Color3& rv);
+	Color3 operator*(const Color3& lv, const Color4& rv);
+	Color3 operator/(const Color3& lv, const FLOAT& rv);
+	Color3 operator/(const FLOAT& lv, const Color3& rv);
+	Color3 operator/(const Color3& lv, const Color3& rv);
+	Color3 operator/(const Color3& lv, const Vector3& rv);
+	Color3 operator/(const Vector3& lv, const Color3& rv);
+	Color4 operator/(const Color4& lv, const Color4& rv);
+	Color4 operator/(const Color4& lv, const Vector4& rv);
+	Color4 operator/(const Vector4& lv, const Color4& rv);
+	Color3 operator/(const Color3& lv, const Vector4& rv);
+	Color3 operator/(const Vector4& lv, const Color3& rv);
+	Color3 operator/(const Color4& lv, const Vector3& rv);
+	Color3 operator/(const Vector3& lv, const Color4& rv);
+	Color3 operator/(const Color4& lv, const Color3& rv);
+	Color3 operator/(const Color3& lv, const Color4& rv);
+
 };

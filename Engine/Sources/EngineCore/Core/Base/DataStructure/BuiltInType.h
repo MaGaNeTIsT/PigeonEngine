@@ -29,8 +29,14 @@ namespace PigeonEngine
 	typedef	float				FLOAT;
 	typedef	double				DOUBLE;
 
-#define TRUE						(1)
-#define FALSE						(0)
+#ifdef TRUE
+#undef TRUE
+#endif
+#define TRUE						(0x1)
+#ifdef FALSE
+#undef FALSE
+#endif
+#define FALSE						(0x0)
 
 #define ENGINE_INLINE				inline
 #define ENGINE_NODISCARD			[[nodiscard]]
