@@ -1,7 +1,29 @@
 #pragma once
 
+#include <CoreMinimal.h>
+
 namespace PigeonEngine
 {
+
+	class RCommonSettings
+	{
+	public:
+		constexpr static FLOAT		BoundMinimum = 0.01f;
+		constexpr static FLOAT		BoundHalfMinimum = 0.005f;
+		constexpr static USHORT		SupportLightMax = 16u;
+		constexpr static USHORT		SkeletonBoneMax = 286u;
+	public:
+		static RCommonSettings* GetSingleton()
+		{
+			static RCommonSettings classSingletonObject;
+			return (&classSingletonObject);
+		}
+		RCommonSettings(const RCommonSettings&) = delete;
+		RCommonSettings& operator=(const RCommonSettings&) = delete;
+	private:
+		RCommonSettings() {}
+		~RCommonSettings() {}
+	};
 
 #define RENDER_CULLING_DISTANCE								(200000.f)
 #define RENDER_CULLING_OFFSET								(-5.f)

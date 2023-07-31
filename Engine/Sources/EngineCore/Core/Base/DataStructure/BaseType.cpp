@@ -147,6 +147,46 @@ namespace PigeonEngine
 		x = static_cast<FLOAT>(vv.x);
 		y = static_cast<FLOAT>(vv.y);
 	}
+	void Vector2::operator+=(const Vector3& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector2::operator-=(const Vector3& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector2::operator*=(const Vector3& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector2::operator/=(const Vector3& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
+	void Vector2::operator+=(const Vector4& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector2::operator-=(const Vector4& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector2::operator*=(const Vector4& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector2::operator/=(const Vector4& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
 	void Vector2::operator+=(const Vector2Int& vv)
 	{
 		x += static_cast<FLOAT>(vv.x);
@@ -162,15 +202,507 @@ namespace PigeonEngine
 		x *= static_cast<FLOAT>(vv.x);
 		y *= static_cast<FLOAT>(vv.y);
 	}
-	void Vector2::operator/=(const Vector2Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator+=(const Vector3Int& vv) { x += static_cast<FLOAT>(vv.x); y += static_cast<FLOAT>(vv.y); }
-	void Vector2::operator-=(const Vector3Int& vv) { x -= static_cast<FLOAT>(vv.x); y -= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator*=(const Vector3Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator/=(const Vector3Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator+=(const Vector4Int& vv) { x += static_cast<FLOAT>(vv.x); y += static_cast<FLOAT>(vv.y); }
-	void Vector2::operator-=(const Vector4Int& vv) { x -= static_cast<FLOAT>(vv.x); y -= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator*=(const Vector4Int& vv) { x *= static_cast<FLOAT>(vv.x); y *= static_cast<FLOAT>(vv.y); }
-	void Vector2::operator/=(const Vector4Int& vv) { x /= static_cast<FLOAT>(vv.x); y /= static_cast<FLOAT>(vv.y); }
+	void Vector2::operator/=(const Vector2Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator+=(const Vector3Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator-=(const Vector3Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator*=(const Vector3Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator/=(const Vector3Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator+=(const Vector4Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator-=(const Vector4Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator*=(const Vector4Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+	}
+	void Vector2::operator/=(const Vector4Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+	}
+
+	constexpr Vector3::Vector3(const Vector2& vv)noexcept
+		: x(vv.x), y(vv.y), z(0.f)
+	{
+	}
+	constexpr Vector3::Vector3(const Vector4& vv)noexcept
+		: x(vv.x), y(vv.y), z(vv.z)
+	{
+	}
+	constexpr Vector3::Vector3(const Vector2Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f)
+	{
+	}
+	constexpr Vector3::Vector3(const Vector3Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z))
+	{
+	}
+	constexpr Vector3::Vector3(const Vector4Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z))
+	{
+	}
+	void Vector3::operator=(const Vector2& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+	}
+	void Vector3::operator=(const Vector4& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+		z = vv.z;
+	}
+	void Vector3::operator=(const Vector2Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+	}
+	void Vector3::operator=(const Vector3Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+		z = static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator=(const Vector4Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+		z = static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator+=(const Vector2& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector3::operator-=(const Vector2& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector3::operator*=(const Vector2& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector3::operator/=(const Vector2& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
+	void Vector3::operator+=(const Vector4& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+		z += vv.z;
+	}
+	void Vector3::operator-=(const Vector4& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+		z -= vv.z;
+	}
+	void Vector3::operator*=(const Vector4& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+		z *= vv.z;
+	}
+	void Vector3::operator/=(const Vector4& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+		z /= vv.z;
+	}
+	void Vector3::operator+=(const Vector2Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+	}
+	void Vector3::operator-=(const Vector2Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+	}
+	void Vector3::operator*=(const Vector2Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+	}
+	void Vector3::operator/=(const Vector2Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+	}
+	void Vector3::operator+=(const Vector3Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+		z += static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator-=(const Vector3Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+		z -= static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator*=(const Vector3Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+		z *= static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator/=(const Vector3Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+		z /= static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator+=(const Vector4Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+		z += static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator-=(const Vector4Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+		z -= static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator*=(const Vector4Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+		z *= static_cast<FLOAT>(vv.z);
+	}
+	void Vector3::operator/=(const Vector4Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+		z /= static_cast<FLOAT>(vv.z);
+	}
+
+	constexpr Vector4::Vector4(const Vector2& vv)noexcept
+		: x(vv.x), y(vv.y), z(0.f), w(0.f)
+	{
+	}
+	constexpr Vector4::Vector4(const Vector3& vv)noexcept
+		: x(vv.x), y(vv.y), z(vv.z), w(0.f)
+	{
+	}
+	constexpr Vector4::Vector4(const Vector2Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f), w(0.f)
+	{
+	}
+	constexpr Vector4::Vector4(const Vector3Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(0.f)
+	{
+	}
+	constexpr Vector4::Vector4(const Vector4Int& vv)noexcept
+		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(static_cast<FLOAT>(vv.w))
+	{
+	}
+	void Vector4::operator=(const Vector2& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+	}
+	void Vector4::operator=(const Vector3& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+		z = vv.z;
+	}
+	void Vector4::operator=(const Vector2Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+	}
+	void Vector4::operator=(const Vector3Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+		z = static_cast<FLOAT>(vv.z);
+	}
+	void Vector4::operator=(const Vector4Int& vv)
+	{
+		x = static_cast<FLOAT>(vv.x);
+		y = static_cast<FLOAT>(vv.y);
+		z = static_cast<FLOAT>(vv.z);
+		w = static_cast<FLOAT>(vv.w);
+	}
+	void Vector4::operator+=(const Vector2& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector4::operator-=(const Vector2& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector4::operator*=(const Vector2& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector4::operator/=(const Vector2& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
+	void Vector4::operator+=(const Vector3& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+		z += vv.z;
+	}
+	void Vector4::operator-=(const Vector3& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+		z -= vv.z;
+	}
+	void Vector4::operator*=(const Vector3& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+		z *= vv.z;
+	}
+	void Vector4::operator/=(const Vector3& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+		z /= vv.z;
+	}
+	void Vector4::operator+=(const Vector2Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+	}
+	void Vector4::operator-=(const Vector2Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+	}
+	void Vector4::operator*=(const Vector2Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+	}
+	void Vector4::operator/=(const Vector2Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+	}
+	void Vector4::operator+=(const Vector3Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+		z += static_cast<FLOAT>(vv.z);
+	}
+	void Vector4::operator-=(const Vector3Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+		z -= static_cast<FLOAT>(vv.z);
+	}
+	void Vector4::operator*=(const Vector3Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+		z *= static_cast<FLOAT>(vv.z);
+	}
+	void Vector4::operator/=(const Vector3Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+		z /= static_cast<FLOAT>(vv.z);
+	}
+	void Vector4::operator+=(const Vector4Int& vv)
+	{
+		x += static_cast<FLOAT>(vv.x);
+		y += static_cast<FLOAT>(vv.y);
+		z += static_cast<FLOAT>(vv.z);
+		w += static_cast<FLOAT>(vv.w);
+	}
+	void Vector4::operator-=(const Vector4Int& vv)
+	{
+		x -= static_cast<FLOAT>(vv.x);
+		y -= static_cast<FLOAT>(vv.y);
+		z -= static_cast<FLOAT>(vv.z);
+		w -= static_cast<FLOAT>(vv.w);
+	}
+	void Vector4::operator*=(const Vector4Int& vv)
+	{
+		x *= static_cast<FLOAT>(vv.x);
+		y *= static_cast<FLOAT>(vv.y);
+		z *= static_cast<FLOAT>(vv.z);
+		w *= static_cast<FLOAT>(vv.w);
+	}
+	void Vector4::operator/=(const Vector4Int& vv)
+	{
+		x /= static_cast<FLOAT>(vv.x);
+		y /= static_cast<FLOAT>(vv.y);
+		z /= static_cast<FLOAT>(vv.z);
+		w /= static_cast<FLOAT>(vv.w);
+	}
+
+	constexpr Vector2Int::Vector2Int(const Vector3Int& vv)noexcept
+		: x(vv.x), y(vv.y)
+	{
+	}
+	constexpr Vector2Int::Vector2Int(const Vector4Int& vv)noexcept
+		: x(vv.x), y(vv.y)
+	{
+	}
+	void Vector2Int::operator=(const Vector3Int& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+	}
+	void Vector2Int::operator=(const Vector4Int& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+	}
+	void Vector2Int::operator+=(const Vector3Int& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector2Int::operator-=(const Vector3Int& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector2Int::operator*=(const Vector3Int& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector2Int::operator/=(const Vector3Int& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
+	void Vector2Int::operator+=(const Vector4Int& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+	}
+	void Vector2Int::operator-=(const Vector4Int& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+	}
+	void Vector2Int::operator*=(const Vector4Int& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+	}
+	void Vector2Int::operator/=(const Vector4Int& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+	}
+
+	constexpr Vector3Int::Vector3Int(const Vector4Int& vv)noexcept
+		: x(vv.x), y(vv.y), z(vv.z)
+	{
+	}
+	void Vector3Int::operator=(const Vector4Int& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+		z = vv.z;
+	}
+	void Vector3Int::operator+=(const Vector4Int& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+		z += vv.z;
+	}
+	void Vector3Int::operator-=(const Vector4Int& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+		z -= vv.z;
+	}
+	void Vector3Int::operator*=(const Vector4Int& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+		z *= vv.z;
+	}
+	void Vector3Int::operator/=(const Vector4Int& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+		z /= vv.z;
+	}
+
+	constexpr Color3::Color3(const Color4& vv)noexcept
+		: x(vv.x), y(vv.y), z(vv.z)
+	{
+	}
+	void Color3::operator=(const Color4& vv)
+	{
+		x = vv.x;
+		y = vv.y;
+		z = vv.z;
+	}
+	void Color3::operator+=(const Color4& vv)
+	{
+		x += vv.x;
+		y += vv.y;
+		z += vv.z;
+	}
+	void Color3::operator-=(const Color4& vv)
+	{
+		x -= vv.x;
+		y -= vv.y;
+		z -= vv.z;
+	}
+	void Color3::operator*=(const Color4& vv)
+	{
+		x *= vv.x;
+		y *= vv.y;
+		z *= vv.z;
+	}
+	void Color3::operator/=(const Color4& vv)
+	{
+		x /= vv.x;
+		y /= vv.y;
+		z /= vv.z;
+	}
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)
 	{
@@ -188,7 +720,7 @@ namespace PigeonEngine
 			lm._31 - rm._31, lm._32 - rm._32, lm._33 - rm._33, lm._34 - rm._34,
 			lm._41 - rm._41, lm._42 - rm._42, lm._43 - rm._43, lm._44 - rm._44));
 	}
-	Matrix4x4 operator*(const Matrix4x4& lm, const FLOAT& rv)
+	Matrix4x4 operator*(const Matrix4x4& lm, FLOAT rv)
 	{
 		return (Matrix4x4(
 			lm._11 * rv, lm._12 * rv, lm._13 * rv, lm._14 * rv,
@@ -196,7 +728,7 @@ namespace PigeonEngine
 			lm._31 * rv, lm._32 * rv, lm._33 * rv, lm._34 * rv,
 			lm._41 * rv, lm._42 * rv, lm._43 * rv, lm._44 * rv));
 	}
-	Matrix4x4 operator*(const FLOAT& lv, const Matrix4x4& rm)
+	Matrix4x4 operator*(FLOAT lv, const Matrix4x4& rm)
 	{
 		return (Matrix4x4(
 			lv * rm._11, lv * rm._12, lv * rm._13, lv * rm._14,
@@ -209,79 +741,79 @@ namespace PigeonEngine
 	Matrix4x4 operator*(const Quaternion& lq, const Matrix4x4& rm) { return (Matrix4x4::MultiplyMatrix(lq.GetMatrix(), rm)); }
 	Quaternion operator*(const Quaternion& lq, const Quaternion& rq) { return (Quaternion::MultiplyQuaternion(lq, rq)); }
 	Vector2 operator+(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x + rv.x, lv.y + rv.y)); }
-	Vector2 operator+(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x + rv, lv.y + rv)); }
-	Vector2 operator+(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv + rv.x, lv + rv.y)); }
+	Vector2 operator+(const Vector2& lv, FLOAT rv) { return (Vector2(lv.x + rv, lv.y + rv)); }
+	Vector2 operator+(FLOAT lv, const Vector2& rv) { return (Vector2(lv + rv.x, lv + rv.y)); }
 	Vector2 operator-(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x - rv.x, lv.y - rv.y)); }
-	Vector2 operator-(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x - rv, lv.y - rv)); }
-	Vector2 operator-(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv - rv.x, lv - rv.y)); }
+	Vector2 operator-(const Vector2& lv, FLOAT rv) { return (Vector2(lv.x - rv, lv.y - rv)); }
+	Vector2 operator-(FLOAT lv, const Vector2& rv) { return (Vector2(lv - rv.x, lv - rv.y)); }
 	Vector2 operator*(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x * rv.x, lv.y * rv.y)); }
-	Vector2 operator*(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x * rv, lv.y * rv)); }
-	Vector2 operator*(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv * rv.x, lv * rv.y)); }
+	Vector2 operator*(const Vector2& lv, FLOAT rv) { return (Vector2(lv.x * rv, lv.y * rv)); }
+	Vector2 operator*(FLOAT lv, const Vector2& rv) { return (Vector2(lv * rv.x, lv * rv.y)); }
 	Vector2 operator/(const Vector2& lv, const Vector2& rv) { return (Vector2(lv.x / rv.x, lv.y / rv.y)); }
-	Vector2 operator/(const Vector2& lv, const FLOAT& rv) { return (Vector2(lv.x / rv, lv.y / rv)); }
-	Vector2 operator/(const FLOAT& lv, const Vector2& rv) { return (Vector2(lv / rv.x, lv / rv.y)); }
+	Vector2 operator/(const Vector2& lv, FLOAT rv) { return (Vector2(lv.x / rv, lv.y / rv)); }
+	Vector2 operator/(FLOAT lv, const Vector2& rv) { return (Vector2(lv / rv.x, lv / rv.y)); }
 	Vector3 operator+(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Vector3 operator+(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Vector3 operator+(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv + rv.x, lv + rv.y, lv + rv.z)); }
+	Vector3 operator+(const Vector3& lv, FLOAT rv) { return (Vector3(lv.x + rv, lv.y + rv, lv.z + rv)); }
+	Vector3 operator+(FLOAT lv, const Vector3& rv) { return (Vector3(lv + rv.x, lv + rv.y, lv + rv.z)); }
 	Vector3 operator-(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Vector3 operator-(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Vector3 operator-(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv - rv.x, lv - rv.y, lv - rv.z)); }
+	Vector3 operator-(const Vector3& lv, FLOAT rv) { return (Vector3(lv.x - rv, lv.y - rv, lv.z - rv)); }
+	Vector3 operator-(FLOAT lv, const Vector3& rv) { return (Vector3(lv - rv.x, lv - rv.y, lv - rv.z)); }
 	Vector3 operator*(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Vector3 operator*(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Vector3 operator*(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv * rv.x, lv * rv.y, lv * rv.z)); }
+	Vector3 operator*(const Vector3& lv, FLOAT rv) { return (Vector3(lv.x * rv, lv.y * rv, lv.z * rv)); }
+	Vector3 operator*(FLOAT lv, const Vector3& rv) { return (Vector3(lv * rv.x, lv * rv.y, lv * rv.z)); }
 	Vector3 operator/(const Vector3& lv, const Vector3& rv) { return (Vector3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Vector3 operator/(const Vector3& lv, const FLOAT& rv) { return (Vector3(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Vector3 operator/(const FLOAT& lv, const Vector3& rv) { return (Vector3(lv / rv.x, lv / rv.y, lv / rv.z)); }
+	Vector3 operator/(const Vector3& lv, FLOAT rv) { return (Vector3(lv.x / rv, lv.y / rv, lv.z / rv)); }
+	Vector3 operator/(FLOAT lv, const Vector3& rv) { return (Vector3(lv / rv.x, lv / rv.y, lv / rv.z)); }
 	Vector4 operator+(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Vector4 operator+(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
-	Vector4 operator+(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
+	Vector4 operator+(const Vector4& lv, FLOAT rv) { return (Vector4(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
+	Vector4 operator+(FLOAT lv, const Vector4& rv) { return (Vector4(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
 	Vector4 operator-(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Vector4 operator-(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
-	Vector4 operator-(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
+	Vector4 operator-(const Vector4& lv, FLOAT rv) { return (Vector4(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
+	Vector4 operator-(FLOAT lv, const Vector4& rv) { return (Vector4(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
 	Vector4 operator*(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Vector4 operator*(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
-	Vector4 operator*(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
+	Vector4 operator*(const Vector4& lv, FLOAT rv) { return (Vector4(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
+	Vector4 operator*(FLOAT lv, const Vector4& rv) { return (Vector4(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
 	Vector4 operator/(const Vector4& lv, const Vector4& rv) { return (Vector4(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Vector4 operator/(const Vector4& lv, const FLOAT& rv) { return (Vector4(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
-	Vector4 operator/(const FLOAT& lv, const Vector4& rv) { return (Vector4(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
+	Vector4 operator/(const Vector4& lv, FLOAT rv) { return (Vector4(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
+	Vector4 operator/(FLOAT lv, const Vector4& rv) { return (Vector4(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
 	Vector2Int operator+(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x + rv.x, lv.y + rv.y)); }
-	Vector2Int operator+(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x + rv, lv.y + rv)); }
-	Vector2Int operator+(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv + rv.x, lv + rv.y)); }
+	Vector2Int operator+(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x + rv, lv.y + rv)); }
+	Vector2Int operator+(INT lv, const Vector2Int& rv) { return (Vector2Int(lv + rv.x, lv + rv.y)); }
 	Vector2Int operator-(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x - rv.x, lv.y - rv.y)); }
-	Vector2Int operator-(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x - rv, lv.y - rv)); }
-	Vector2Int operator-(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv - rv.x, lv - rv.y)); }
+	Vector2Int operator-(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x - rv, lv.y - rv)); }
+	Vector2Int operator-(INT lv, const Vector2Int& rv) { return (Vector2Int(lv - rv.x, lv - rv.y)); }
 	Vector2Int operator*(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x * rv.x, lv.y * rv.y)); }
-	Vector2Int operator*(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x * rv, lv.y * rv)); }
-	Vector2Int operator*(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv * rv.x, lv * rv.y)); }
+	Vector2Int operator*(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x * rv, lv.y * rv)); }
+	Vector2Int operator*(INT lv, const Vector2Int& rv) { return (Vector2Int(lv * rv.x, lv * rv.y)); }
 	Vector2Int operator/(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x / rv.x, lv.y / rv.y)); }
-	Vector2Int operator/(const Vector2Int& lv, const INT& rv) { return (Vector2Int(lv.x / rv, lv.y / rv)); }
-	Vector2Int operator/(const INT& lv, const Vector2Int& rv) { return (Vector2Int(lv / rv.x, lv / rv.y)); }
+	Vector2Int operator/(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x / rv, lv.y / rv)); }
+	Vector2Int operator/(INT lv, const Vector2Int& rv) { return (Vector2Int(lv / rv.x, lv / rv.y)); }
 	Vector3Int operator+(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Vector3Int operator+(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Vector3Int operator+(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv + rv.x, lv + rv.y, lv + rv.z)); }
+	Vector3Int operator+(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x + rv, lv.y + rv, lv.z + rv)); }
+	Vector3Int operator+(INT lv, const Vector3Int& rv) { return (Vector3Int(lv + rv.x, lv + rv.y, lv + rv.z)); }
 	Vector3Int operator-(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Vector3Int operator-(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Vector3Int operator-(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv - rv.x, lv - rv.y, lv - rv.z)); }
+	Vector3Int operator-(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x - rv, lv.y - rv, lv.z - rv)); }
+	Vector3Int operator-(INT lv, const Vector3Int& rv) { return (Vector3Int(lv - rv.x, lv - rv.y, lv - rv.z)); }
 	Vector3Int operator*(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Vector3Int operator*(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Vector3Int operator*(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv * rv.x, lv * rv.y, lv * rv.z)); }
+	Vector3Int operator*(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x * rv, lv.y * rv, lv.z * rv)); }
+	Vector3Int operator*(INT lv, const Vector3Int& rv) { return (Vector3Int(lv * rv.x, lv * rv.y, lv * rv.z)); }
 	Vector3Int operator/(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Vector3Int operator/(const Vector3Int& lv, const INT& rv) { return (Vector3Int(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Vector3Int operator/(const INT& lv, const Vector3Int& rv) { return (Vector3Int(lv / rv.x, lv / rv.y, lv / rv.z)); }
+	Vector3Int operator/(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x / rv, lv.y / rv, lv.z / rv)); }
+	Vector3Int operator/(INT lv, const Vector3Int& rv) { return (Vector3Int(lv / rv.x, lv / rv.y, lv / rv.z)); }
 	Vector4Int operator+(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Vector4Int operator+(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
-	Vector4Int operator+(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
+	Vector4Int operator+(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
+	Vector4Int operator+(INT lv, const Vector4Int& rv) { return (Vector4Int(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
 	Vector4Int operator-(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Vector4Int operator-(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
-	Vector4Int operator-(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
+	Vector4Int operator-(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
+	Vector4Int operator-(INT lv, const Vector4Int& rv) { return (Vector4Int(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
 	Vector4Int operator*(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Vector4Int operator*(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
-	Vector4Int operator*(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
+	Vector4Int operator*(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
+	Vector4Int operator*(INT lv, const Vector4Int& rv) { return (Vector4Int(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
 	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Vector4Int operator/(const Vector4Int& lv, const INT& rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
-	Vector4Int operator/(const INT& lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
-	Color3 operator+(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Color3 operator+(const FLOAT& lv, const Color3& rv) { return (Color3(lv + rv.x, lv + rv.y, lv + rv.z)); }
+	Vector4Int operator/(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
+	Vector4Int operator/(INT lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
+	Color3 operator+(const Color3& lv, FLOAT rv) { return (Color3(lv.x + rv, lv.y + rv, lv.z + rv)); }
+	Color3 operator+(FLOAT lv, const Color3& rv) { return (Color3(lv + rv.x, lv + rv.y, lv + rv.z)); }
 	Color3 operator+(const Color3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
 	Color3 operator+(const Color3& lv, const Vector3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
 	Color3 operator+(const Vector3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
@@ -294,8 +826,8 @@ namespace PigeonEngine
 	Color3 operator+(const Vector3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
 	Color3 operator+(const Color4& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
 	Color3 operator+(const Color3& lv, const Color4& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Color3 operator-(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Color3 operator-(const FLOAT& lv, const Color3& rv) { return (Color3(lv - rv.x, lv - rv.y, lv - rv.z)); }
+	Color3 operator-(const Color3& lv, FLOAT rv) { return (Color3(lv.x - rv, lv.y - rv, lv.z - rv)); }
+	Color3 operator-(FLOAT lv, const Color3& rv) { return (Color3(lv - rv.x, lv - rv.y, lv - rv.z)); }
 	Color3 operator-(const Color3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
 	Color3 operator-(const Color3& lv, const Vector3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
 	Color3 operator-(const Vector3& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
@@ -308,8 +840,8 @@ namespace PigeonEngine
 	Color3 operator-(const Vector3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
 	Color3 operator-(const Color4& lv, const Color3& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
 	Color3 operator-(const Color3& lv, const Color4& rv) { return (Color3(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Color3 operator*(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Color3 operator*(const FLOAT& lv, const Color3& rv) { return (Color3(lv * rv.x, lv * rv.y, lv * rv.z)); }
+	Color3 operator*(const Color3& lv, FLOAT rv) { return (Color3(lv.x * rv, lv.y * rv, lv.z * rv)); }
+	Color3 operator*(FLOAT lv, const Color3& rv) { return (Color3(lv * rv.x, lv * rv.y, lv * rv.z)); }
 	Color3 operator*(const Color3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
 	Color3 operator*(const Color3& lv, const Vector3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
 	Color3 operator*(const Vector3& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
@@ -322,8 +854,8 @@ namespace PigeonEngine
 	Color3 operator*(const Vector3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
 	Color3 operator*(const Color4& lv, const Color3& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
 	Color3 operator*(const Color3& lv, const Color4& rv) { return (Color3(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Color3 operator/(const Color3& lv, const FLOAT& rv) { return (Color3(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Color3 operator/(const FLOAT& lv, const Color3& rv) { return (Color3(lv / rv.x, lv / rv.y, lv / rv.z)); }
+	Color3 operator/(const Color3& lv, FLOAT rv) { return (Color3(lv.x / rv, lv.y / rv, lv.z / rv)); }
+	Color3 operator/(FLOAT lv, const Color3& rv) { return (Color3(lv / rv.x, lv / rv.y, lv / rv.z)); }
 	Color3 operator/(const Color3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
 	Color3 operator/(const Color3& lv, const Vector3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
 	Color3 operator/(const Vector3& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }

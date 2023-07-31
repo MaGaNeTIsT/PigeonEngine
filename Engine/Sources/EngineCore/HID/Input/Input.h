@@ -13,8 +13,8 @@ namespace PigeonEngine
 		void Initialize(HWND InhWnd, INT WindowSizeX, INT WindowSizeY);
 
 	private:
-		INT WindowSizeX = ESettings::ENGINE_SCREEN_WIDTH;
-		INT WindowSizeY = ESettings::ENGINE_SCREEN_HEIGHT;
+		INT WindowSizeX = static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH);
+		INT WindowSizeY = static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT);
 		HWND hWnd = NULL;
 
 		/*Mouse part start*/

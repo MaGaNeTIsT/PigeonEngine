@@ -299,6 +299,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.cpp" />
@@ -1040,18 +1041,18 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
-    <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;$(LibraryPath)</LibraryPath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;./Engine/ThirdParty/JoltPhysics/;$(IncludePath)</IncludePath>
+    <LibraryPath>./Engine/ThirdParty/assimp/lib/Debug/;./Engine/ThirdParty/JoltPhysics/lib/Release/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
-    <LibraryPath>./Engine/ThirdParty/assimp/lib/Release/;$(LibraryPath)</LibraryPath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;./Engine/ThirdParty/JoltPhysics/;$(IncludePath)</IncludePath>
+    <LibraryPath>./Engine/ThirdParty/assimp/lib/Release/;./Engine/ThirdParty/JoltPhysics/lib/Release/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;$(IncludePath)</IncludePath>
-    <LibraryPath>./Engine/ThirdParty/assimp/lib/Release/;$(LibraryPath)</LibraryPath>
+    <IncludePath>./Engine/Sources/EngineCore/Core/;./Engine/Sources/EngineCore/RenderCore/;./Engine/Sources/EngineCore/PhysicCore/;./Engine/Sources/Asset/;./Engine/ThirdParty/assimp/;./Engine/ThirdParty/rapidjson/;./Engine/ThirdParty/JoltPhysics/;$(IncludePath)</IncludePath>
+    <LibraryPath>./Engine/ThirdParty/assimp/lib/Release/;./Engine/ThirdParty/JoltPhysics/lib/Release/;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -1088,7 +1089,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstaticd.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlibstaticd.lib;assimp-vc143-mtd.lib;Jolt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">
@@ -1111,7 +1112,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstatic.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlibstatic.lib;assimp-vc143-mt.lib;Jolt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
@@ -1134,7 +1135,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>zlibstatic.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>zlibstatic.lib;assimp-vc143-mt.lib;Jolt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
