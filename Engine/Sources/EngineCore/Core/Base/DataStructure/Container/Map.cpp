@@ -17,6 +17,12 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
+    TMap<K, V>::TMap(TInitList InInitList)
+        : Map(InInitList)
+    {
+    }
+
+    template <typename K, typename V>
     TMap<K, V>::TMap(const std::map<K, V>& Other)
         :
     Map(Other)
@@ -48,6 +54,14 @@ namespace PigeonEngine
     V& TMap<K, V>::operator[](const K& Key)
     {
         return Map[Key];
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>& TMap<K, V>::operator=(TInitList InInitList)
+    {
+        Clear();
+        Map.insert(InInitList);
+        return *this;
     }
 
     template <typename K, typename V>
