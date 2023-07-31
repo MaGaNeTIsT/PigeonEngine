@@ -10,25 +10,27 @@ namespace PigeonEngine
 
 		EClass(EMainManager, EManagerBase)
 
-		void		InitManager(HWND hWnd);
-		void		UninitManager();
-		void		UpdateManager();
 	public:
-		void		Init();
-		void		Uninit();
-		void		Update();
-		void		FixedUpdate();
-		void		Draw();
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
+		void			SetInitializer(HWND hWnd);
+		void			UpdateManager();
+	public:
+		void			Init();
+		void			Uninit();
+		void			Update();
+		void			FixedUpdate();
+		void			Draw();
 #ifdef _EDITOR_ONLY
 	public:
-		void		EditorUpdate();
+		void			EditorUpdate();
 	private:
-		BOOL		m_EditorOpen;
+		BOOL			m_EditorOpen;
 #endif
 	public:
-		HWND							GetWindowHandle();
-		const EBaseTimer&				GetWindowTimer();
-		const EGameTimer*				GetGameTimer();
+		HWND						GetWindowHandle();
+		const EBaseTimer&			GetWindowTimer();
+		const EGameTimer*			GetGameTimer();
 	private:
 		HWND						m_HWND;
 		Vector2Int					m_WindowSize;

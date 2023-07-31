@@ -1,91 +1,96 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include "./Mouse.h"
-#include "./Keyboard.h"
+#include "Mouse.h"
+#include "Keyboard.h"
 
-class IController
+namespace PigeonEngine
 {
-public:
-	void Initialize(HWND InhWnd, INT WindowSizeX, INT WindowSizeY);
 
-private:
-	INT WindowSizeX = ENGINE_SCREEN_WIDTH;
-	INT WindowSizeY = ENGINE_SCREEN_HEIGHT;
-	HWND hWnd = NULL;
+	class IController
+	{
+	public:
+		void Initialize(HWND InhWnd, INT WindowSizeX, INT WindowSizeY);
 
-	/*Mouse part start*/
+	private:
+		INT WindowSizeX = ESettings::ENGINE_SCREEN_WIDTH;
+		INT WindowSizeY = ESettings::ENGINE_SCREEN_HEIGHT;
+		HWND hWnd = NULL;
 
-public:
-	std::pair<INT, INT> GetMousePosition() const;
+		/*Mouse part start*/
 
-	void EnableCursor();
-	void DisableCursor();
-	BOOL IsCursorEnabled() const;
+	public:
+		std::pair<INT, INT> GetMousePosition() const;
 
-	void ConfineCursor();
-	void FreeCursor();
-	void HideCursor();
-	void ShowCursor();
+		void EnableCursor();
+		void DisableCursor();
+		BOOL IsCursorEnabled() const;
 
-	void EnableMouseRaw();
-	void DisableMouseRaw();
-	BOOL IsMouseRawEnabled() const;
+		void ConfineCursor();
+		void FreeCursor();
+		void HideCursor();
+		void ShowCursor();
 
-	BOOL IsLeftMouseButtonDown()const;
-	BOOL IsRightMouseButtonDown()const;
-	std::optional<IMouse::RawDelta> ReadRawDelta();
+		void EnableMouseRaw();
+		void DisableMouseRaw();
+		BOOL IsMouseRawEnabled() const;
 
-private:
-	IMouse Mouse;
-	BOOL bCursorEnabled = false;
-	std::vector<BYTE> rawBuffer;
+		BOOL IsLeftMouseButtonDown()const;
+		BOOL IsRightMouseButtonDown()const;
+		std::optional<IMouse::RawDelta> ReadRawDelta();
 
-	/*Mouse part end*/
+	private:
+		IMouse Mouse;
+		BOOL bCursorEnabled = false;
+		std::vector<BYTE> rawBuffer;
 
-	/*Keyboard Part Start*/
-public:
-	// key event stuff
-	BOOL IsKeyPressed(unsigned char keycode) const;
-	std::optional<IKeyboard::Event> ReadKey();
-	BOOL IsKeyEmpty() const;
-	void FlushKey();
-	// char event stuff
-	std::optional<char> ReadChar();
-	BOOL IsCharEmpty() const;
-	void FlushChar();
-	void Flush();
-	// autorepeat control
-	void EnableAutorepeat();
-	void DisableAutorepeat();
-	BOOL IsAutorepeatEnabled() const;
-private:
-	IKeyboard Keyboard;
+		/*Mouse part end*/
 
-	/*Keyboard Part End*/
+		/*Keyboard Part Start*/
+	public:
+		// key event stuff
+		BOOL IsKeyPressed(unsigned char keycode) const;
+		std::optional<IKeyboard::Event> ReadKey();
+		BOOL IsKeyEmpty() const;
+		void FlushKey();
+		// char event stuff
+		std::optional<char> ReadChar();
+		BOOL IsCharEmpty() const;
+		void FlushChar();
+		void Flush();
+		// autorepeat control
+		void EnableAutorepeat();
+		void DisableAutorepeat();
+		BOOL IsAutorepeatEnabled() const;
+	private:
+		IKeyboard Keyboard;
 
-public:
-	// WIndow message handler
-	LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-};
+		/*Keyboard Part End*/
 
-class EInput
-{
-public:
-	static void		Initialize(HWND hWnd);
-	static void		ShutDown();
-	static void		Update();
-//public:
-//	static BOOL		GetKeyPress(BYTE KeyCode);
-//	static BOOL		GetKeyTrigger(BYTE KeyCode);
-//private:
-//	static BYTE		m_OldKeyState[256];
-//	static BYTE		m_KeyState[256];
-public:
-	static std::optional<IMouse::RawDelta>	ReadRawDelta();
-public:
-	// WIndow message handler
-	static LRESULT	HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-public:
-	static IController	Controller;
+	public:
+		// WIndow message handler
+		LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	};
+
+	class EInput
+	{
+	public:
+		static void		Initialize(HWND hWnd);
+		static void		ShutDown();
+		static void		Update();
+		//public:
+		//	static BOOL		GetKeyPress(BYTE KeyCode);
+		//	static BOOL		GetKeyTrigger(BYTE KeyCode);
+		//private:
+		//	static BYTE		m_OldKeyState[256];
+		//	static BYTE		m_KeyState[256];
+	public:
+		static std::optional<IMouse::RawDelta>	ReadRawDelta();
+	public:
+		// WIndow message handler
+		static LRESULT	HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+	public:
+		static IController	Controller;
+	};
+
 };

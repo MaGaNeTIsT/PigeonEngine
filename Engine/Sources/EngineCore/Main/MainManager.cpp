@@ -3,10 +3,8 @@
 #include <RenderDevice/DeviceD3D11.h>
 
 #ifdef _EDITOR_ONLY
-
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
-
 #endif
 
 namespace PigeonEngine
@@ -37,34 +35,32 @@ namespace PigeonEngine
 	{
 		return EInput::HandleMsg(hWnd, msg, wParam, lParam);
 	}
-	void EMainManager::InitManager(HWND hWnd)
+	void EMainManager::Initialize()
 	{
-		m_HWND = hWnd;
+		EInput::Initialize(m_HWND);
 
-		EInput::Initialize(hWnd);
-
-		m_RenderDeviceD3D11->Init(hWnd, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
+		m_RenderDeviceD3D11->Init(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
 
 #ifdef _EDITOR_ONLY
-
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
-
 #endif
 
 		m_WindowTimer.Init();
 	}
-	void EMainManager::UninitManager()
+	void EMainManager::ShutDown()
 	{
 #ifdef _EDITOR_ONLY
-
 		m_AssimpManager->ShutDown();
 		m_ImGUIManager->ShutDown();
-
 #endif
 
 		m_RenderDeviceD3D11->Uninit();
 		EInput::ShutDown();
+	}
+	void EMainManager::SetInitializer(HWND hWnd)
+	{
+		m_HWND = hWnd;
 	}
 	void EMainManager::UpdateManager()
 	{

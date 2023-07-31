@@ -1,9 +1,6 @@
-#include "./Main.h"
-#include "./Manager.h"
+#include "Main.h"
+#include "MainManager.h"
 #include <Base/Timer/Timer.h>
-#ifdef _DEVELOPMENT_EDITOR
-#include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
-#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -29,7 +26,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		{
 			return TRUE;
 		}
-		RECT clientRect = { 0,0,ENGINE_SCREEN_WIDTH,ENGINE_SCREEN_HEIGHT };
+		RECT clientRect = { 0, 0, PigeonEngine::ESettings::ENGINE_SCREEN_WIDTH, PigeonEngine::ESettings::ENGINE_SCREEN_HEIGHT };
 		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
 		::AdjustWindowRect(&clientRect, style, FALSE);
 		windowHandle = ::CreateWindowEx(
@@ -47,14 +44,16 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			NULL);
 	}
 
-	PigeonEngine::EManager::Initialize(windowHandle);
+	PigeonEngine::EMainManager* MainManager = PigeonEngine::EMainManager::GetManagerSingleton();
+	MainManager->SetInitializer(windowHandle);
+	MainManager->Initialize();
 
-	PigeonEngine::EManager::Init();
+	MainManager->Init();
 
 	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
-	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_FIXED_UPDATE_FRAME);
-	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(ENGINE_UPDATE_FRAME);
-	currentTime = fixedLastTime = updateLastTime = PigeonEngine::EManager::GetWindowTimer().GetClockTime();
+	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::ESettings::ENGINE_FIXED_UPDATE_FRAME);
+	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::ESettings::ENGINE_UPDATE_FRAME);
+	currentTime = fixedLastTime = updateLastTime = MainManager->GetWindowTimer().GetClockTime();
 
 	// register mouse raw input device
 	RAWINPUTDEVICE rid;
@@ -84,27 +83,30 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		}
 		else
 		{
-			PigeonEngine::EManager::StaticUpdate();
-			currentTime = PigeonEngine::EManager::GetWindowTimer().GetClockTime();
+			MainManager->UpdateManager();
+			currentTime = MainManager->GetWindowTimer().GetClockTime();
 			if ((currentTime - fixedLastTime) >= fixedStepTime)
 			{
 				fixedLastTime = currentTime;
-				PigeonEngine::EManager::FixedUpdate();
+				MainManager->FixedUpdate();
 			}
 			if ((currentTime - updateLastTime) >= updateStepTime)
 			{
 				updateLastTime = currentTime;
-				PigeonEngine::EManager::Update();
-				PigeonEngine::EManager::Draw();
+#ifdef _EDITOR_ONLY
+				MainManager->EditorUpdate();
+#endif
+				MainManager->Update();
+				MainManager->Draw();
 			}
 		}
 	}
 
-	PigeonEngine::EManager::Uninit();
+	MainManager->Uninit();
 
 	::UnregisterClass(CLASS_NAME, wcex.hInstance);
 
-	PigeonEngine::EManager::ShutDown();
+	MainManager->ShutDown();
 
 	return (INT)msg.wParam;
 }
@@ -135,5 +137,5 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 
-	return (PigeonEngine::EManager::HandleMsg(hWnd, uMsg, wParam, lParam));
+	return (PigeonEngine::EMainManager::HandleMsg(hWnd, uMsg, wParam, lParam));
 }

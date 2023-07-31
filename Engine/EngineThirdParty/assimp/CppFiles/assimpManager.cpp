@@ -1474,7 +1474,6 @@ namespace PigeonEngine
 		//	/*aiProcess_SplitByBoneCount |*/
 		//	/*aiProcess_Debone |*/
 		//	aiProcess_GenBoundingBoxes);
-
 		const aiScene* Scene = AssImpoter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
 
 		// If the import failed, report it
@@ -1503,8 +1502,99 @@ namespace PigeonEngine
 			return Result;
 		}
 
+		for (UINT i = 0u, n = BoneDatas.Length(); i < n; i++)
+		{
+			OutSkeleton.AddBoneElement(&(BoneDatas[i]));
+		}
+
+		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
+		// We're done. Everything will be cleaned up by the importer destructor
+		AssImpoter->FreeScene();
+		return Result;
+	}
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes)
+	{
+		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
+
+		if (OutMeshes.Length() > 0u)
+		{
+			for (UINT i = 0u, n = OutMeshes.Length(); i < n; i++)
+			{
+				OutMeshes[i].Release();
+			}
+			OutMeshes.Clear();
+		}
+
+		Assimp::Importer* AssImpoter = _GAssetImporter;
+		if (AssImpoter == nullptr)
+		{
+			// TODO Do the error logging (did not create the instance of importer)
+			return Result;
+		}
+
+		// And have it read the given file with some example postprocessing
+		// Usually - if speed is not the most important aspect for you - you'll
+		// probably to request more postprocessing than we do in this example.
+
+		// Use SetPropertyInteger to modify config of importer
+		//Assimp::Importer::SetProperty###();
+
+		//const aiScene* scene = impoter->ReadFile(
+		//	path,
+		//	aiProcess_CalcTangentSpace |
+		//	aiProcess_JoinIdenticalVertices |
+		//	aiProcess_MakeLeftHanded |
+		//	aiProcess_Triangulate |
+		//	aiProcess_RemoveComponent |
+		//	aiProcess_GenSmoothNormals |
+		//	aiProcess_SplitLargeMeshes |
+		//	/*aiProcess_LimitBoneWeights |*/
+		//	aiProcess_RemoveRedundantMaterials |
+		//	aiProcess_FixInfacingNormals |
+		//	aiProcess_PopulateArmatureData |
+		//	aiProcess_SortByPType |
+		//	aiProcess_FindInvalidData |
+		//	aiProcess_GenUVCoords |
+		//	aiProcess_OptimizeMeshes |
+		//	aiProcess_FlipUVs |
+		//	aiProcess_FlipWindingOrder |
+		//	/*aiProcess_SplitByBoneCount |*/
+		//	/*aiProcess_Debone |*/
+		//	aiProcess_GenBoundingBoxes);
+		const aiScene* Scene = AssImpoter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
+
+		// If the import failed, report it
+		if (Scene == nullptr)
+		{
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
+
+		if (!Scene->HasMeshes())
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
+
+		// Now we can access the file's contents.
+		// Read data structures of all nodes.
+		TArray<const aiNode*> TempNodes; TMap<const aiNode*, EString> TempNodeNames; TMap<EString, SHORT> TempNodeIndices;
+		AssimpGatherSingleNodeRecursion(Scene->mRootNode, TempNodes, TempNodeNames, TempNodeIndices);
+		// Check read state.
+		if ((TempNodes.Length() < 1u) || (TempNodes.Length() != TempNodeNames.Length()) || (TempNodes.Length() != TempNodeIndices.Length()))
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImpoter->FreeScene();
+			return Result;
+		}
 
 
+
+		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
 		AssImpoter->FreeScene();
 		return Result;

@@ -1,376 +1,381 @@
-#include "./Input.h"
+#include "Input.h"
 
-IController EInput::Controller;
-//BYTE EInput::m_OldKeyState[256];
-//BYTE EInput::m_KeyState[256];
+namespace PigeonEngine
+{
 
-void EInput::Initialize(HWND hWnd)
-{
-	// Controller Initialization
-	Controller.Initialize(hWnd, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
+	IController EInput::Controller;
+	//BYTE EInput::m_OldKeyState[256];
+	//BYTE EInput::m_KeyState[256];
 
-	//memset(m_OldKeyState, 0, 256);
-	//memset(m_KeyState, 0, 256);
-}
-void EInput::ShutDown()
-{
-}
-void EInput::Update()
-{
-	//{
-	//	memcpy(m_OldKeyState, m_KeyState, 256);
-	//}
-
-	//{
-	//	BOOL keyResult = GetKeyboardState(m_KeyState);
-	//}
-}
-//BOOL EInput::GetKeyPress(BYTE KeyCode)
-//{
-//	INT curr = (m_KeyState[KeyCode] & 0x80);
-//	return (curr > 0);
-//}
-//BOOL EInput::GetKeyTrigger(BYTE KeyCode)
-//{
-//	INT curr = (m_KeyState[KeyCode] & 0x80);
-//	INT prev = (m_OldKeyState[KeyCode] & 0x80);
-//	return ((curr > 0) && (prev == 0));
-//}
-std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
-{
-	return Controller.ReadRawDelta();
-}
-LRESULT EInput::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	return Controller.HandleMsg(hWnd, msg, wParam, lParam);
-}
-void IController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
-{
-	hWnd = InhWnd;
-	WindowSizeX = InWindowSizeX;
-	WindowSizeY = InWindowSizeY;
-}
-std::pair<INT, INT> IController::GetMousePosition() const
-{
-	return Mouse.GetPos();
-}
-void IController::EnableCursor()
-{
-	bCursorEnabled = true;
-	ShowCursor();
-	//EnableImGuiMouse();
-	FreeCursor();
-}
-void IController::DisableCursor()
-{
-	bCursorEnabled = false;
-	HideCursor();
-	//DisableImGuiMouse();
-	ConfineCursor();
-}
-BOOL IController::IsCursorEnabled() const
-{
-	return bCursorEnabled;
-}
-void IController::ConfineCursor()
-{
-	RECT rect;
-	GetClientRect(hWnd, &rect);
-	MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
-	ClipCursor(&rect);
-}
-void IController::FreeCursor()
-{
-	ClipCursor(nullptr);
-}
-void IController::HideCursor()
-{
-	while (::ShowCursor(FALSE) >= 0);
-}
-void IController::ShowCursor()
-{
-	while (::ShowCursor(TRUE) < 0);
-}
-void IController::EnableMouseRaw()
-{
-	Mouse.EnableRaw();
-}
-void IController::DisableMouseRaw()
-{
-	Mouse.DisableRaw();
-}
-BOOL IController::IsMouseRawEnabled() const
-{
-	return Mouse.IsRawEnabled();
-}
-BOOL IController::IsLeftMouseButtonDown() const
-{
-	return Mouse.LeftIsPressed();
-}
-BOOL IController::IsRightMouseButtonDown() const
-{
-	return Mouse.RightIsPressed();
-}
-std::optional<IMouse::RawDelta> IController::ReadRawDelta()
-{
-	return Mouse.ReadRawDelta();
-}
-LRESULT IController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	switch (msg)
+	void EInput::Initialize(HWND hWnd)
 	{
-	case WM_KILLFOCUS:
-		Keyboard.ClearState();
-		break;
+		// Controller Initialization
+		Controller.Initialize(hWnd, ESettings::ENGINE_SCREEN_WIDTH, ESettings::ENGINE_SCREEN_HEIGHT);
 
-	case WM_ACTIVATE:
-		OutputDebugString("activeate\n");
-		// confine/free cursor on window to foreground/background if cursor disabled
-		if (!IsCursorEnabled())
-		{
-			if (wParam & WA_ACTIVE)
-			{
-				OutputDebugString("activeate => confine\n");
-				ConfineCursor();
-				HideCursor();
-
-			}
-			else
-			{
-				OutputDebugString("activeate => free\n");
-				FreeCursor();
-				ShowCursor();
-
-			}
-		}
-		break;
-		/*********** KEYBOARD MESSAGES ***********/
-	case WM_KEYDOWN:
-		// syskey commands need to be handled to track ALT key (VK_MENU) and F10
-	case WM_SYSKEYDOWN:
-		/*if (imio.WantCaptureKeyboard)
-		{
-			break;
-		}*/
-		if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
-		{
-			Keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
-		}
-		break;
-	case WM_KEYUP:
-	case WM_SYSKEYUP:
-		/*if (imio.WantCaptureKeyboard)
-		{
-			break;
-		}*/
-		Keyboard.OnKeyReleased(static_cast<unsigned char>(wParam));
-		break;
-	case WM_CHAR:
-		/*if (imio.WantCaptureKeyboard)
-		{
-			break;
-		}*/
-		Keyboard.OnChar(static_cast<unsigned char>(wParam));
-		break;
-		/*********** END KEYBOARD MESSAGES ***********/
-		/************* MOUSE MESSAGES ****************/
-	case WM_MOUSEMOVE:
+		//memset(m_OldKeyState, 0, 256);
+		//memset(m_KeyState, 0, 256);
+	}
+	void EInput::ShutDown()
 	{
-		const POINTS pt = MAKEPOINTS(lParam);
-		// cursorless exclusive gets first dibs
-		if (!bCursorEnabled)
-		{
-			if (!Mouse.IsInWindow())
-			{
-				SetCapture(hWnd);
-				Mouse.OnMouseEnter();
-				HideCursor();
-			}
-			break;
-		}
-		//// stifle this mouse message if imgui wants to capture
-		//if (imio.WantCaptureMouse)
+	}
+	void EInput::Update()
+	{
 		//{
-		//	break;
+		//	memcpy(m_OldKeyState, m_KeyState, 256);
 		//}
 
-		// in client region -> log move, and log enter + capture mouse (if not previously in window)
-		if (pt.x >= 0 && pt.x < WindowSizeX && pt.y >= 0 && pt.y < WindowSizeY)
+		//{
+		//	BOOL keyResult = GetKeyboardState(m_KeyState);
+		//}
+	}
+	//BOOL EInput::GetKeyPress(BYTE KeyCode)
+	//{
+	//	INT curr = (m_KeyState[KeyCode] & 0x80);
+	//	return (curr > 0);
+	//}
+	//BOOL EInput::GetKeyTrigger(BYTE KeyCode)
+	//{
+	//	INT curr = (m_KeyState[KeyCode] & 0x80);
+	//	INT prev = (m_OldKeyState[KeyCode] & 0x80);
+	//	return ((curr > 0) && (prev == 0));
+	//}
+	std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
+	{
+		return Controller.ReadRawDelta();
+	}
+	LRESULT EInput::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		return Controller.HandleMsg(hWnd, msg, wParam, lParam);
+	}
+	void IController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
+	{
+		hWnd = InhWnd;
+		WindowSizeX = InWindowSizeX;
+		WindowSizeY = InWindowSizeY;
+	}
+	std::pair<INT, INT> IController::GetMousePosition() const
+	{
+		return Mouse.GetPos();
+	}
+	void IController::EnableCursor()
+	{
+		bCursorEnabled = true;
+		ShowCursor();
+		//EnableImGuiMouse();
+		FreeCursor();
+	}
+	void IController::DisableCursor()
+	{
+		bCursorEnabled = false;
+		HideCursor();
+		//DisableImGuiMouse();
+		ConfineCursor();
+	}
+	BOOL IController::IsCursorEnabled() const
+	{
+		return bCursorEnabled;
+	}
+	void IController::ConfineCursor()
+	{
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+		ClipCursor(&rect);
+	}
+	void IController::FreeCursor()
+	{
+		ClipCursor(nullptr);
+	}
+	void IController::HideCursor()
+	{
+		while (::ShowCursor(FALSE) >= 0);
+	}
+	void IController::ShowCursor()
+	{
+		while (::ShowCursor(TRUE) < 0);
+	}
+	void IController::EnableMouseRaw()
+	{
+		Mouse.EnableRaw();
+	}
+	void IController::DisableMouseRaw()
+	{
+		Mouse.DisableRaw();
+	}
+	BOOL IController::IsMouseRawEnabled() const
+	{
+		return Mouse.IsRawEnabled();
+	}
+	BOOL IController::IsLeftMouseButtonDown() const
+	{
+		return Mouse.LeftIsPressed();
+	}
+	BOOL IController::IsRightMouseButtonDown() const
+	{
+		return Mouse.RightIsPressed();
+	}
+	std::optional<IMouse::RawDelta> IController::ReadRawDelta()
+	{
+		return Mouse.ReadRawDelta();
+	}
+	LRESULT IController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		switch (msg)
 		{
-			Mouse.OnMouseMove(pt.x, pt.y);
-			if (!Mouse.IsInWindow())
+		case WM_KILLFOCUS:
+			Keyboard.ClearState();
+			break;
+
+		case WM_ACTIVATE:
+			OutputDebugString("activeate\n");
+			// confine/free cursor on window to foreground/background if cursor disabled
+			if (!IsCursorEnabled())
 			{
-				SetCapture(hWnd);
-				Mouse.OnMouseEnter();
+				if (wParam & WA_ACTIVE)
+				{
+					OutputDebugString("activeate => confine\n");
+					ConfineCursor();
+					HideCursor();
+
+				}
+				else
+				{
+					OutputDebugString("activeate => free\n");
+					FreeCursor();
+					ShowCursor();
+
+				}
 			}
-		}
-		// not in client -> log move / maintain capture if button down
-		else
+			break;
+			/*********** KEYBOARD MESSAGES ***********/
+		case WM_KEYDOWN:
+			// syskey commands need to be handled to track ALT key (VK_MENU) and F10
+		case WM_SYSKEYDOWN:
+			/*if (imio.WantCaptureKeyboard)
+			{
+				break;
+			}*/
+			if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
+			{
+				Keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
+			}
+			break;
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			/*if (imio.WantCaptureKeyboard)
+			{
+				break;
+			}*/
+			Keyboard.OnKeyReleased(static_cast<unsigned char>(wParam));
+			break;
+		case WM_CHAR:
+			/*if (imio.WantCaptureKeyboard)
+			{
+				break;
+			}*/
+			Keyboard.OnChar(static_cast<unsigned char>(wParam));
+			break;
+			/*********** END KEYBOARD MESSAGES ***********/
+			/************* MOUSE MESSAGES ****************/
+		case WM_MOUSEMOVE:
 		{
-			if (wParam & (MK_LBUTTON | MK_RBUTTON))
+			const POINTS pt = MAKEPOINTS(lParam);
+			// cursorless exclusive gets first dibs
+			if (!bCursorEnabled)
+			{
+				if (!Mouse.IsInWindow())
+				{
+					SetCapture(hWnd);
+					Mouse.OnMouseEnter();
+					HideCursor();
+				}
+				break;
+			}
+			//// stifle this mouse message if imgui wants to capture
+			//if (imio.WantCaptureMouse)
+			//{
+			//	break;
+			//}
+
+			// in client region -> log move, and log enter + capture mouse (if not previously in window)
+			if (pt.x >= 0 && pt.x < WindowSizeX && pt.y >= 0 && pt.y < WindowSizeY)
 			{
 				Mouse.OnMouseMove(pt.x, pt.y);
+				if (!Mouse.IsInWindow())
+				{
+					SetCapture(hWnd);
+					Mouse.OnMouseEnter();
+				}
 			}
-			// button up -> release capture / log event for leaving
+			// not in client -> log move / maintain capture if button down
 			else
+			{
+				if (wParam & (MK_LBUTTON | MK_RBUTTON))
+				{
+					Mouse.OnMouseMove(pt.x, pt.y);
+				}
+				// button up -> release capture / log event for leaving
+				else
+				{
+					ReleaseCapture();
+					Mouse.OnMouseLeave();
+				}
+			}
+			break;
+		}
+		case WM_LBUTTONDOWN:
+		{
+			/*if (imio.WantCaptureMouse)
+			{
+				break;
+			}*/
+			const POINTS pt = MAKEPOINTS(lParam);
+			Mouse.OnLeftPressed(pt.x, pt.y);
+			SetForegroundWindow(hWnd);
+			break;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			/*if (imio.WantCaptureMouse)
+			{
+				break;
+			}*/
+			const POINTS pt = MAKEPOINTS(lParam);
+			Mouse.OnRightPressed(pt.x, pt.y);
+			break;
+		}
+		case WM_LBUTTONUP:
+		{
+			/*	if (imio.WantCaptureMouse)
+				{
+					break;
+				}*/
+			const POINTS pt = MAKEPOINTS(lParam);
+			Mouse.OnLeftReleased(pt.x, pt.y);
+			// release mouse if outside of window
+			if (pt.x < 0 || pt.x >= WindowSizeX || pt.y < 0 || pt.y >= WindowSizeY)
 			{
 				ReleaseCapture();
 				Mouse.OnMouseLeave();
 			}
+			break;
 		}
-		break;
-	}
-	case WM_LBUTTONDOWN:
-	{
-		/*if (imio.WantCaptureMouse)
+		case WM_RBUTTONUP:
 		{
-			break;
-		}*/
-		const POINTS pt = MAKEPOINTS(lParam);
-		Mouse.OnLeftPressed(pt.x, pt.y);
-		SetForegroundWindow(hWnd);
-		break;
-	}
-	case WM_RBUTTONDOWN:
-	{
-		/*if (imio.WantCaptureMouse)
-		{
-			break;
-		}*/
-		const POINTS pt = MAKEPOINTS(lParam);
-		Mouse.OnRightPressed(pt.x, pt.y);
-		break;
-	}
-	case WM_LBUTTONUP:
-	{
-		/*	if (imio.WantCaptureMouse)
+			/*if (imio.WantCaptureMouse)
 			{
 				break;
 			}*/
-		const POINTS pt = MAKEPOINTS(lParam);
-		Mouse.OnLeftReleased(pt.x, pt.y);
-		// release mouse if outside of window
-		if (pt.x < 0 || pt.x >= WindowSizeX || pt.y < 0 || pt.y >= WindowSizeY)
-		{
-			ReleaseCapture();
-			Mouse.OnMouseLeave();
+			const POINTS pt = MAKEPOINTS(lParam);
+			Mouse.OnRightReleased(pt.x, pt.y);
+			// release mouse if outside of window
+			if (pt.x < 0 || pt.x >= WindowSizeX || pt.y < 0 || pt.y >= WindowSizeY)
+			{
+				ReleaseCapture();
+				Mouse.OnMouseLeave();
+			}
+			break;
 		}
-		break;
+		case WM_MOUSEWHEEL:
+		{
+			/*if (imio.WantCaptureMouse)
+			{
+				break;
+			}*/
+			const POINTS pt = MAKEPOINTS(lParam);
+			const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+			Mouse.OnWheelDelta(pt.x, pt.y, delta);
+			break;
+		}
+		/************** END MOUSE MESSAGES **************/
+		/************** RAW MOUSE MESSAGES **************/
+		case WM_INPUT:
+		{
+			if (!Mouse.IsRawEnabled())
+			{
+				break;
+			}
+			UINT size = 0u;
+			// first get the size of the input data
+			if (GetRawInputData(
+				reinterpret_cast<HRAWINPUT>(lParam),
+				RID_INPUT,
+				nullptr,
+				&size,
+				sizeof(RAWINPUTHEADER)) == -1)
+			{
+				// bail msg processing if error
+				break;
+			}
+			rawBuffer.resize(size);
+			// read in the input data
+			if (GetRawInputData(
+				reinterpret_cast<HRAWINPUT>(lParam),
+				RID_INPUT,
+				rawBuffer.data(),
+				&size,
+				sizeof(RAWINPUTHEADER)) != size)
+			{
+				// bail msg processing if error
+				break;
+			}
+			// process the raw input data
+			auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+			if (ri.header.dwType == RIM_TYPEMOUSE &&
+				(ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
+			{
+				Mouse.OnRawDelta(ri.data.mouse.lLastX, ri.data.mouse.lLastY);
+			}
+			break;
+		}
+		/************** END RAW MOUSE MESSAGES **************/
+		}
+
+		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
-	case WM_RBUTTONUP:
+	BOOL IController::IsKeyPressed(unsigned char keycode) const
 	{
-		/*if (imio.WantCaptureMouse)
-		{
-			break;
-		}*/
-		const POINTS pt = MAKEPOINTS(lParam);
-		Mouse.OnRightReleased(pt.x, pt.y);
-		// release mouse if outside of window
-		if (pt.x < 0 || pt.x >= WindowSizeX || pt.y < 0 || pt.y >= WindowSizeY)
-		{
-			ReleaseCapture();
-			Mouse.OnMouseLeave();
-		}
-		break;
+		return Keyboard.IsKeyPressed(keycode);
 	}
-	case WM_MOUSEWHEEL:
+	std::optional<IKeyboard::Event> IController::ReadKey()
 	{
-		/*if (imio.WantCaptureMouse)
-		{
-			break;
-		}*/
-		const POINTS pt = MAKEPOINTS(lParam);
-		const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-		Mouse.OnWheelDelta(pt.x, pt.y, delta);
-		break;
+		return Keyboard.ReadKey();
 	}
-	/************** END MOUSE MESSAGES **************/
-	/************** RAW MOUSE MESSAGES **************/
-	case WM_INPUT:
+	BOOL IController::IsKeyEmpty() const
 	{
-		if (!Mouse.IsRawEnabled())
-		{
-			break;
-		}
-		UINT size = 0u;
-		// first get the size of the input data
-		if (GetRawInputData(
-			reinterpret_cast<HRAWINPUT>(lParam),
-			RID_INPUT,
-			nullptr,
-			&size,
-			sizeof(RAWINPUTHEADER)) == -1)
-		{
-			// bail msg processing if error
-			break;
-		}
-		rawBuffer.resize(size);
-		// read in the input data
-		if (GetRawInputData(
-			reinterpret_cast<HRAWINPUT>(lParam),
-			RID_INPUT,
-			rawBuffer.data(),
-			&size,
-			sizeof(RAWINPUTHEADER)) != size)
-		{
-			// bail msg processing if error
-			break;
-		}
-		// process the raw input data
-		auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
-		if (ri.header.dwType == RIM_TYPEMOUSE &&
-			(ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
-		{
-			Mouse.OnRawDelta(ri.data.mouse.lLastX, ri.data.mouse.lLastY);
-		}
-		break;
+		return Keyboard.IsKeyEmpty();
 	}
-	/************** END RAW MOUSE MESSAGES **************/
+	void IController::FlushKey()
+	{
+		Keyboard.FlushKey();
+	}
+	std::optional<char> IController::ReadChar()
+	{
+		return Keyboard.ReadChar();
+	}
+	BOOL IController::IsCharEmpty() const
+	{
+		return Keyboard.IsCharEmpty();
+	}
+	void IController::FlushChar()
+	{
+		Keyboard.FlushChar();
+	}
+	void IController::Flush()
+	{
+		Keyboard.Flush();
+	}
+	void IController::EnableAutorepeat()
+	{
+		Keyboard.EnableAutorepeat();
+	}
+	void IController::DisableAutorepeat()
+	{
+		Keyboard.DisableAutorepeat();
+	}
+	BOOL IController::IsAutorepeatEnabled() const
+	{
+		return Keyboard.IsAutorepeatEnabled();
 	}
 
-	return DefWindowProc(hWnd, msg, wParam, lParam);
-}
-BOOL IController::IsKeyPressed(unsigned char keycode) const
-{
-	return Keyboard.IsKeyPressed(keycode);
-}
-std::optional<IKeyboard::Event> IController::ReadKey()
-{
-	return Keyboard.ReadKey();
-}
-BOOL IController::IsKeyEmpty() const
-{
-	return Keyboard.IsKeyEmpty();
-}
-void IController::FlushKey()
-{
-	Keyboard.FlushKey();
-}
-std::optional<char> IController::ReadChar()
-{
-	return Keyboard.ReadChar();
-}
-BOOL IController::IsCharEmpty() const
-{
-	return Keyboard.IsCharEmpty();
-}
-void IController::FlushChar()
-{
-	Keyboard.FlushChar();
-}
-void IController::Flush()
-{
-	Keyboard.Flush();
-}
-void IController::EnableAutorepeat()
-{
-	Keyboard.EnableAutorepeat();
-}
-void IController::DisableAutorepeat()
-{
-	Keyboard.DisableAutorepeat();
-}
-BOOL IController::IsAutorepeatEnabled() const
-{
-	return Keyboard.IsAutorepeatEnabled();
-}
+};
