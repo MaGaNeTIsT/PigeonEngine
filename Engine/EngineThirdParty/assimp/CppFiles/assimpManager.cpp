@@ -813,51 +813,51 @@ namespace PigeonEngine
 	//	return result;
 	//}
 
-	ENGINE_INLINE static void StoreVertexData(const aiVector2D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideInBytes, FLOAT*& OutStoredDatas)
+	ENGINE_INLINE static void StoreVertexData(const aiVector2D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
 		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in bytes."), (InStoredDataStrideInBytes >= 2u));
+		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		for (UINT i = 0u; i < InOriginDataNum; i++)
 		{
 			const aiVector2D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideInBytes + 0u] = TempData.x;
-			OutStoredDatas[i * InStoredDataStrideInBytes + 1u] = TempData.y;
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
 		}
 	}
-	ENGINE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideInBytes, FLOAT*& OutStoredDatas)
+	ENGINE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
 		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in bytes."), (InStoredDataStrideInBytes >= 2u));
+		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		for (UINT i = 0u; i < InOriginDataNum; i++)
 		{
 			const aiVector3D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideInBytes + 0u] = TempData.x;
-			OutStoredDatas[i * InStoredDataStrideInBytes + 1u] = TempData.y;
-			if (InStoredDataStrideInBytes > 2u)
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
+			if (InStoredDataStrideIn32Bits > 2u)
 			{
-				OutStoredDatas[i * InStoredDataStrideInBytes + 2u] = TempData.z;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.z;
 			}
 		}
 	}
-	ENGINE_INLINE static void StoreVertexData(const aiColor4D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideInBytes, FLOAT*& OutStoredDatas)
+	ENGINE_INLINE static void StoreVertexData(const aiColor4D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
 		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in bytes."), (InStoredDataStrideInBytes >= 2u));
+		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		for (UINT i = 0u; i < InOriginDataNum; i++)
 		{
 			const aiColor4D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideInBytes + 0u] = TempData.r;
-			OutStoredDatas[i * InStoredDataStrideInBytes + 1u] = TempData.g;
-			if (InStoredDataStrideInBytes > 2u)
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.r;
+			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.g;
+			if (InStoredDataStrideIn32Bits > 2u)
 			{
-				OutStoredDatas[i * InStoredDataStrideInBytes + 2u] = TempData.b;
-				OutStoredDatas[i * InStoredDataStrideInBytes + 3u] = TempData.a;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.b;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 3u] = TempData.a;
 			}
 		}
 	}
@@ -1042,8 +1042,8 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	template<typename TDataType>
-	void CAssimpManager::TryAddStaticMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideInBytes, const UINT InSuccessAddMaxNum, EStaticMesh& OutMesh)
+	template<typename TDataType, typename TMeshType>
+	void CAssimpManager::TryAddStaticMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideIn32Bits, const UINT InSuccessAddMaxNum, TMeshType& OutMesh)
 	{
 		UINT AddElementCounter = 0u;
 		for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)
@@ -1061,9 +1061,9 @@ namespace PigeonEngine
 			EVertexData TempVertexData;
 			TempVertexData.PartType = InStoredLayoutBaseType;
 			TempVertexData.ElementNum = DataElementNum;
-			TempVertexData.Stride = InStrideInBytes * sizeof(FLOAT);
-			TempVertexData.Datas = new FLOAT[InStrideInBytes * DataElementNum];
-			StoreVertexData(InDatas[AddElementCounter], DataElementNum, InStrideInBytes, TempVertexData.Datas);
+			TempVertexData.Stride = InStrideIn32Bits * sizeof(FLOAT);
+			TempVertexData.Datas = new FLOAT[InStrideIn32Bits * DataElementNum];
+			StoreVertexData(InDatas[AddElementCounter], DataElementNum, InStrideIn32Bits, TempVertexData.Datas);
 			if (OutMesh.AddVertexElement(&TempVertexData))
 			{
 				AddElementCounter += 1u;
@@ -1080,7 +1080,7 @@ namespace PigeonEngine
 		TArray<UINT> BlendIndicesSlots, BlendWeightsSlots;
 		for (UINT LayoutIndex = 0u; LayoutIndex < InLayoutNum; LayoutIndex++)
 		{
-			RShaderSemanticType SemanticBaseType = RCommonSettings::GetShaderSemanticBaseType(InLayouts[LayoutIndex]);
+			RShaderSemanticType SemanticBaseType = GetShaderSemanticBaseType(InLayouts[LayoutIndex]);
 			if (SemanticBaseType == RShaderSemanticType::SHADER_SEMANTIC_NONE)
 			{
 				continue;
@@ -1088,15 +1088,15 @@ namespace PigeonEngine
 			//We calculate skin data after this part.
 			if (SemanticBaseType == RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES)
 			{
-				BlendIndicesSlots.Add(RCommonSettings::GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]));
+				BlendIndicesSlots.Add(GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]));
 				continue;
 			}
 			if (SemanticBaseType == RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT)
 			{
-				BlendWeightsSlots.Add(RCommonSettings::GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]));
+				BlendWeightsSlots.Add(GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]));
 				continue;
 			}
-			UINT SemanticTypeSlot = RCommonSettings::GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]);
+			UINT SemanticTypeSlot = GetShaderSemanticTypeSlot(InLayouts[LayoutIndex]);
 			if (SemanticTypeSlot >= EMesh::MeshVertexLayoutPartMaxNum)
 			{
 				continue;
@@ -1250,6 +1250,126 @@ namespace PigeonEngine
 			}
 		}
 	}
+	void CAssimpManager::TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<ESkinnedMesh>& OutMeshes)
+	{
+		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
+		for (UINT MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+		{
+			const aiMesh* AssimpMesh = InMeshes[MeshIndex];
+			if ((!AssimpMesh) || ((AssimpMesh->mNumVertices) < 3u) || (!(AssimpMesh->HasFaces())) || ((AssimpMesh->mNumFaces) < 3u))
+			{
+				continue;
+			}
+			OutMeshes.Add(ESkinnedMesh(AssimpTranslateString(AssimpMesh->mName)));
+			ESkinnedMesh& OutMesh = OutMeshes[OutMeshes.Length() - 1u];
+			{
+				OutMesh.SetBoundAABB(AssimpTranslateVector3(AssimpMesh->mAABB.mMin), AssimpTranslateVector3(AssimpMesh->mAABB.mMax));
+			}
+			for (UINT LayoutDescIndex = 0u, LayoutDescNum = ShouldStoredLayoutDescriptions.Length(); LayoutDescIndex < LayoutDescNum; LayoutDescIndex++)
+			{
+				StoredMeshLayoutDesc& StoredLayoutDesc = ShouldStoredLayoutDescriptions[LayoutDescIndex];
+				EVertexLayoutType TempTryStoredLayoutBaseType = StoredLayoutDesc.BaseVertexLayout;
+				if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_VERTEX)
+				{
+					const UINT SuccessAddPositionMaxNum = 1u;
+					const UINT PositionStrideInBytes = 4u;
+					TArray<const aiVector3D*> TempPositionDatas;
+					TArray<UINT> TempPositionNum;
+					TempPositionDatas.Add(AssimpMesh->mVertices);
+					TempPositionNum.Add(AssimpMesh->mNumVertices);
+					TryAddStaticMeshVertexPart(TempPositionDatas, TempPositionNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, PositionStrideInBytes, SuccessAddPositionMaxNum, OutMesh);
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TEXTURECOORD)
+				{
+					if (AssimpMesh->GetNumUVChannels() > 0)
+					{
+						const UINT SuccessAddTexcoordMaxNum = 3u;
+						const UINT TexcoordStrideInBytes = 2u;
+						TArray<const aiVector3D*> TempTexcoordDatas;
+						TArray<UINT> TempTexcoordNum;
+						for (UINT TexcoordIndex = 0u, TexcoordMax = AI_MAX_NUMBER_OF_TEXTURECOORDS; TexcoordIndex < TexcoordMax; TexcoordIndex++)
+						{
+							if (!(AssimpMesh->HasTextureCoords(TexcoordIndex)))
+							{
+								continue;
+							}
+							TempTexcoordDatas.Add(AssimpMesh->mTextureCoords[TexcoordIndex]);
+							TempTexcoordNum.Add(AssimpMesh->mNumVertices);
+						}
+						TryAddStaticMeshVertexPart(TempTexcoordDatas, TempTexcoordNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TexcoordStrideInBytes, SuccessAddTexcoordMaxNum, OutMesh);
+					}
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_NORMAL)
+				{
+					if (AssimpMesh->HasNormals())
+					{
+						const UINT SuccessAddNormalMaxNum = 1u;
+						const UINT NormalStrideInBytes = 4u;
+						TArray<const aiVector3D*> TempNormalDatas;
+						TArray<UINT> TempNormalNum;
+						TempNormalDatas.Add(AssimpMesh->mNormals);
+						TempNormalNum.Add(AssimpMesh->mNumVertices);
+						TryAddStaticMeshVertexPart(TempNormalDatas, TempNormalNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, NormalStrideInBytes, SuccessAddNormalMaxNum, OutMesh);
+					}
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TANGENT)
+				{
+					if (AssimpMesh->HasTangentsAndBitangents())
+					{
+						const UINT SuccessAddTangentMaxNum = 1u;
+						const UINT TangentStrideInBytes = 4u;
+						TArray<const aiVector3D*> TempTangentDatas;
+						TArray<UINT> TempTangentNum;
+						TempTangentDatas.Add(AssimpMesh->mTangents);
+						TempTangentNum.Add(AssimpMesh->mNumVertices);
+						TryAddStaticMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideInBytes, SuccessAddTangentMaxNum, OutMesh);
+					}
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_COLOR)
+				{
+					if (AssimpMesh->GetNumColorChannels() > 0)
+					{
+						const UINT SuccessAddColorMaxNum = 1u;
+						const UINT ColorStrideInBytes = 4u;
+						TArray<const aiColor4D*> TempColorDatas;
+						TArray<UINT> TempColorNum;
+						for (UINT ColorIndex = 0u, ColorMax = AI_MAX_NUMBER_OF_COLOR_SETS; ColorIndex < ColorMax; ColorIndex++)
+						{
+							if (!(AssimpMesh->HasVertexColors(ColorIndex)))
+							{
+								continue;
+							}
+							TempColorDatas.Add(AssimpMesh->mColors[ColorIndex]);
+							TempColorNum.Add(AssimpMesh->mNumVertices);
+						}
+						TryAddStaticMeshVertexPart(TempColorDatas, TempColorNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, ColorStrideInBytes, SuccessAddColorMaxNum, OutMesh);
+					}
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_BITANGENT)
+				{
+					if (AssimpMesh->HasTangentsAndBitangents())
+					{
+						const UINT SuccessAddBitangentMaxNum = 1u;
+						const UINT BitangentStrideInBytes = 4u;
+						TArray<const aiVector3D*> TempBitangentDatas;
+						TArray<UINT> TempBitangentNum;
+						TempBitangentDatas.Add(AssimpMesh->mBitangents);
+						TempBitangentNum.Add(AssimpMesh->mNumVertices);
+						TryAddStaticMeshVertexPart(TempBitangentDatas, TempBitangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, BitangentStrideInBytes, SuccessAddBitangentMaxNum, OutMesh);
+					}
+				}
+				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_SKIN)
+				{
+					if (AssimpMesh->HasBones())
+					{
+						const UINT SuccessAddNormalMaxNum = 1u;
+						const UINT NormalStrideInBytes = 4u;
+
+					}
+				}
+			}
+		}
+	}
 	BOOL CAssimpManager::GatherAllBoneNodeDatas(const aiScene* InScene, TArray<EBoneData>& OutBones, TMap<EString, SHORT>& OutBoneIndices)
 	{
 		if (OutBones.Length() > 0u)
@@ -1341,8 +1461,8 @@ namespace PigeonEngine
 			OutMeshes.Clear();
 		}
 
-		Assimp::Importer* AssetImpoter = _GAssetImporter;
-		if (AssetImpoter == nullptr)
+		Assimp::Importer* AssImporter = _GAssetImporter;
+		if (AssImporter == nullptr)
 		{
 			// TODO Do the error logging (did not create the instance of importer)
 			return Result;
@@ -1355,7 +1475,7 @@ namespace PigeonEngine
 		// Use SetPropertyInteger to modify config of importer
 		//Assimp::Importer::SetProperty###();
 
-		const aiScene* Scene = AssetImpoter->ReadFile(
+		const aiScene* Scene = AssImporter->ReadFile(
 			*InPath,
 			aiProcess_CalcTangentSpace |
 			aiProcess_JoinIdenticalVertices |
@@ -1380,7 +1500,7 @@ namespace PigeonEngine
 		if (Scene == nullptr)
 		{
 			// TODO Do the error logging (importer.GetErrorString())
-			AssetImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1388,7 +1508,7 @@ namespace PigeonEngine
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain meshes
-			AssetImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1413,20 +1533,20 @@ namespace PigeonEngine
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain static meshes
-			AssetImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
 		Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (Meshes.Length() > 0u));
 
 		const RShaderSemanticType* EngineLayouts; UINT EngineLayoutNum;
-		RCommonSettings::GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
+		GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
 		TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
-		AssetImpoter->FreeScene();
+		AssImporter->FreeScene();
 		return Result;
 	}
 	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonFile(const EString& InPath, ESkeleton& OutSkeleton)
@@ -1438,8 +1558,8 @@ namespace PigeonEngine
 			OutSkeleton.Release();
 		}
 
-		Assimp::Importer* AssImpoter = _GAssetImporter;
-		if (AssImpoter == nullptr)
+		Assimp::Importer* AssImporter = _GAssetImporter;
+		if (AssImporter == nullptr)
 		{
 			// TODO Do the error logging (did not create the instance of importer)
 			return Result;
@@ -1474,21 +1594,13 @@ namespace PigeonEngine
 		//	/*aiProcess_SplitByBoneCount |*/
 		//	/*aiProcess_Debone |*/
 		//	aiProcess_GenBoundingBoxes);
-		const aiScene* Scene = AssImpoter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
+		const aiScene* Scene = AssImporter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
 
 		// If the import failed, report it
 		if (Scene == nullptr)
 		{
 			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
-			return Result;
-		}
-
-		if (!Scene->HasMeshes())
-		{
-			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
-			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1498,7 +1610,7 @@ namespace PigeonEngine
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1509,7 +1621,7 @@ namespace PigeonEngine
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
-		AssImpoter->FreeScene();
+		AssImporter->FreeScene();
 		return Result;
 	}
 	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes)
@@ -1525,8 +1637,8 @@ namespace PigeonEngine
 			OutMeshes.Clear();
 		}
 
-		Assimp::Importer* AssImpoter = _GAssetImporter;
-		if (AssImpoter == nullptr)
+		Assimp::Importer* AssImporter = _GAssetImporter;
+		if (AssImporter == nullptr)
 		{
 			// TODO Do the error logging (did not create the instance of importer)
 			return Result;
@@ -1561,13 +1673,13 @@ namespace PigeonEngine
 		//	/*aiProcess_SplitByBoneCount |*/
 		//	/*aiProcess_Debone |*/
 		//	aiProcess_GenBoundingBoxes);
-		const aiScene* Scene = AssImpoter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
+		const aiScene* Scene = AssImporter->ReadFile(*InPath, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_ConvertToLeftHanded);
 
 		// If the import failed, report it
 		if (Scene == nullptr)
 		{
 			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1575,7 +1687,7 @@ namespace PigeonEngine
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
@@ -1588,15 +1700,44 @@ namespace PigeonEngine
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
-			AssImpoter->FreeScene();
+			AssImporter->FreeScene();
 			return Result;
 		}
 
+		TArray<const aiMesh*> Meshes;
+		{
+			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL> TempIsSkeletonMesh;
+			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletonMesh);
+			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletonMesh.Length()));
+			for (UINT i = 0u, n = TempMeshes.Length(); i < n; i++)
+			{
+				if (TempIsSkeletonMesh[i])
+				{
+					continue;
+				}
+				Meshes.Add(TempMeshes[i]);
+			}
+		}
+
+		if (Meshes.Length() == 0u)
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Scene does not contain static meshes
+			AssImporter->FreeScene();
+			return Result;
+		}
+
+		Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (Meshes.Length() > 0u));
+
+		const RShaderSemanticType* EngineLayouts; UINT EngineLayoutNum;
+		GetEngineDefaultSkeletonMeshInputLayouts(EngineLayouts, EngineLayoutNum);
+
+		TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
 
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
-		AssImpoter->FreeScene();
+		AssImporter->FreeScene();
 		return Result;
 	}
 	//CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonMeshAndBoneFile(const EString& path, EMesh::ESubmeshPart& subMesh, UINT& vertexStride, CHAR*& vertices, UINT& numVertices, TArray<UINT>& indices, UINT& numIndices, ESkeletonInfo& skeleton, TMap<EString, SHORT>& boneIndexMap, TArray<USHORT>& boneList)

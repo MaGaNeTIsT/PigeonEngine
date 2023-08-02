@@ -10,7 +10,7 @@ namespace PigeonEngine
 
 	struct EBoundAABB
 	{
-		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(true) {}
+		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
 		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
 		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
 		
@@ -22,8 +22,8 @@ namespace PigeonEngine
 		{
 			if(IsValid)
 			{
-				AABBMin = EMath::Min(AABBMin, Other.AABBMin);
-				AABBMax = EMath::Min(AABBMax, Other.AABBMax);
+				AABBMin = Vector3(EMath::Min(AABBMin.x, Other.AABBMin.x), EMath::Min(AABBMin.y, Other.AABBMin.y), EMath::Min(AABBMin.z, Other.AABBMin.z));
+				AABBMax = Vector3(EMath::Max(AABBMin.x, Other.AABBMin.x), EMath::Max(AABBMin.y, Other.AABBMin.y), EMath::Max(AABBMin.z, Other.AABBMin.z));
 			}
 			else if(Other.IsValid)
 			{
@@ -147,7 +147,7 @@ namespace PigeonEngine
 			, NearPlaneBottomLeft(other.NearPlaneBottomLeft), NearPlaneBottomRight(other.NearPlaneBottomRight) {}
 		void GenerateFrustumInfo(FLOAT InFovAngleY, FLOAT InAspectRatio, FLOAT InNearDist, FLOAT InFarDist)
 		{
-			Vector3 TempPosVec[4];
+			Vector3 TempPosVec[4] = { Vector3(0.f), Vector3(0.f), Vector3(0.f), Vector3(0.f) };
 			{
 				FLOAT SinHalfAngleY, CosHalfAngleY;
 				EMath::SinCos(SinHalfAngleY, CosHalfAngleY, (0.5f * InFovAngleY) * EMath::GetDegToRad());
