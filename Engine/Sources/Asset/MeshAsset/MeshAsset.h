@@ -253,9 +253,13 @@ namespace PigeonEngine
 		virtual ~ESkinnedMesh();
 		virtual void Release()override;
 	public:
-		BOOL	AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
-		BOOL	RemoveSkinElement(UINT InLayoutIndex);
-		BOOL	GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
+		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
+		BOOL					RemoveBindPose(const EString& InBoneName);
+		void					ClearBindPose();
+		const ESkinBindPose&	GetBindPose()const;
+		BOOL					AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
+		BOOL					RemoveSkinElement(UINT InLayoutIndex);
+		BOOL					GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
 	protected:
 		ESkinBindPose	SkinBindPose;
 		ESkinPart		Skins;
