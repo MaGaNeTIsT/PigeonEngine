@@ -468,6 +468,37 @@ namespace PigeonEngine
 		}
 		EMesh::Release();
 	}
+	BOOL ESkinnedMesh::AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose)
+	{
+		BOOL Result = FALSE;
+		if (!(SkinBindPose.ContainsKey(InBoneName)))
+		{
+			SkinBindPose.Add(InBoneName, InBindPose);
+			Result = TRUE;
+		}
+		return Result;
+	}
+	BOOL ESkinnedMesh::RemoveBindPose(const EString& InBoneName)
+	{
+		BOOL Result = FALSE;
+		if (SkinBindPose.ContainsKey(InBoneName))
+		{
+			SkinBindPose.Remove(InBoneName);
+			Result = TRUE;
+		}
+		return Result;
+	}
+	void ESkinnedMesh::ClearBindPose()
+	{
+		if (SkinBindPose.Length() > 0u)
+		{
+			SkinBindPose.Clear();
+		}
+	}
+	const ESkinnedMesh::ESkinBindPose& ESkinnedMesh::GetBindPose()const
+	{
+		return SkinBindPose;
+	}
 	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex)
 	{
 		if ((!InSkinData) || (InSkinData->ElementNum < 3u) || (InSkinData->PartType != EVertexLayoutType::MESH_SKIN) || ((InSkinData->Stride % 4u) != 0u) || (!(InSkinData->Indices)) || (!(InSkinData->Weights)))
