@@ -4,7 +4,7 @@
 
 namespace PigeonEngine
 {
-	typedef Jolt::CPhysics_Jolt CPhysicsInterface;
+	typedef CPhysics_Jolt CPhysicsInterface;
 
 	class CPhysicsManager : public CPhysicsInterface
 	{

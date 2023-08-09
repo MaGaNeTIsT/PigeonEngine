@@ -11,11 +11,18 @@ namespace PigeonEngine
 		Vector3 Max;
 	};
 
-	class Shape : ERTTI
+	class FShape : ERTTI
 	{
-		EClass(Shape, ERTTI)
-		Shape();
-		virtual ~Shape() = default;
+		EClass(FShape, ERTTI)
+		FShape();
+		virtual ~FShape() = default;
 		virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale);
+	};
+
+	class FCastRay : ERTTI
+	{
+		EClass(FCastRay, ERTTI)
+		FCastRay();
+		virtual ~FCastRay() = default;
 	};
 }
