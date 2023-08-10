@@ -18,11 +18,11 @@ namespace PigeonEngine
 	typedef	int					INT32;
 	typedef	unsigned int		UINT;
 	typedef	unsigned int		UINT32;
-	typedef	long				BOOL64;
+	typedef	long long			BOOL64;
 	typedef	long				LONG;
-	typedef	long				INT64;
+	typedef	long long			INT64;
 	typedef	unsigned long		ULONG;
-	typedef	unsigned long		UINT64;
+	typedef	unsigned long long	UINT64;
 	typedef	unsigned long		DWORD;
 	typedef	unsigned long long	size_t;
 	typedef	unsigned long long	SIZE_T;

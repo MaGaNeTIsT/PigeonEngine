@@ -8,7 +8,9 @@ namespace PigeonEngine
     template <typename T>
     class TArray
     {
-        
+    public:
+        using TIterator         = typename std::vector<T>::iterator;
+        using TConstIterator    = typename std::vector<T>::const_iterator;
     public:
         TArray();
         TArray(const TArray<T>& Other);
@@ -45,10 +47,12 @@ namespace PigeonEngine
         void       Shuffle();
         TArray<T>  Reverse() const;
         
-        typename std::vector<T>::iterator begin();
-        typename std::vector<T>::iterator end();
-        typename std::vector<T>::iterator rbegin();
-        typename std::vector<T>::iterator rend();
+        TIterator Begin();
+        TConstIterator Begin()const;
+        TIterator End();
+        TConstIterator End()const;
+        TIterator Rbegin();
+        TIterator Rend();
 
         ENGINE_NODISCARD UINT Length       ()const;
         ENGINE_NODISCARD UINT LastIndex    ()const;
@@ -56,5 +60,4 @@ namespace PigeonEngine
         class std::vector<T> Elements;
     };
 
-    
 };

@@ -11,6 +11,7 @@ namespace PigeonEngine
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
 	{
+		ETimeKey(const TTimeType& InTime, const TValueType& InValue) : Time(InTime), Value(InValue) {}
 		TTimeType	Time;
 		TValueType	Value;
 	};

@@ -182,25 +182,37 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    typename std::vector<T>::iterator TArray<T>::begin()
-     {
-         return Elements.begin();
-     }
+    TArray<T>::TIterator TArray<T>::Begin()
+    {
+        return Elements.begin();
+    }
 
     template <typename T>
-    typename std::vector<T>::iterator TArray<T>::end()
-     {
-         return Elements.end(); 
-     }
+    TArray<T>::TConstIterator TArray<T>::Begin()const
+    {
+        return Elements.begin();
+    }
 
     template <typename T>
-    typename std::vector<T>::iterator TArray<T>::rbegin()
+    TArray<T>::TIterator TArray<T>::End()
+    {
+        return Elements.end();
+    }
+
+    template <typename T>
+    TArray<T>::TConstIterator TArray<T>::End()const
+    {
+        return Elements.end();
+    }
+
+    template <typename T>
+    TArray<T>::TIterator TArray<T>::Rbegin()
     {
         return Elements.rbegin();
     }
 
     template <typename T>
-    typename std::vector<T>::iterator TArray<T>::rend()
+    TArray<T>::TIterator TArray<T>::Rend()
     {
         return Elements.rend();
     }

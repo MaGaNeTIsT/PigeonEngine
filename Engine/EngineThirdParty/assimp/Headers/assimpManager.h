@@ -12,6 +12,7 @@
 class aiScene;
 class aiMesh;
 class aiBone;
+class aiAnimation;
 
 namespace PigeonEngine
 {
@@ -43,6 +44,7 @@ namespace PigeonEngine
 		void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes);
 		void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<ESkinnedMesh>& OutMeshes);
 		BOOL GatherAllBoneNodeDatas(const aiScene* InScene, TArray<EBoneData>& OutBones, TMap<EString, SHORT>& OutBoneIndices);
+		BOOL GatherAllAnimationChannelDatas(const TMap<EString, const aiAnimation*>& InAnimations, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips);
 	public:
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
