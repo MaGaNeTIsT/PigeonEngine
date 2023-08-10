@@ -17,6 +17,7 @@ A game engine for pc (DirectX 11).
 | _EClass_ _EStruct_ | Naming conventions for general classes in engines **START** with a "E" |
 | _PClass_ _PStruct_ | Naming conventions for game object classes **START** with a "P" |
 | _RClass_ _RStruct_ | Naming conventions for render pipeline classes **START** with a "R" |
+| _FClass_ _FStruct_ | Naming conventions for physics classes **START** with a "F" |
 
 ## Engine Define
 | Example Define Name |  Define Rule |
@@ -44,3 +45,4 @@ TODO
 
 ## NOTE
 Name of skeleton's bone can not large than 512 bytes(char[512]), because we use char[512] for serialization / deserialization
+For now we can not import skeleton mesh that effect bone num is over 16
