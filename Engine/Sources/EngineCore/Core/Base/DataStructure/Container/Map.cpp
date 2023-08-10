@@ -80,13 +80,25 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
-    typename std::map<K, V>::iterator TMap<K, V>::begin()
+    TMap<K, V>::TIterator TMap<K, V>::Begin()
     {
         return Map.begin();
     }
 
     template <typename K, typename V>
-    typename std::map<K, V>::iterator TMap<K, V>::end()
+    TMap<K, V>::TConstIterator TMap<K, V>::Begin()const
+    {
+        return Map.begin();
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>::TIterator TMap<K, V>::End()
+    {
+        return Map.end();
+    }
+
+    template <typename K, typename V>
+    TMap<K, V>::TConstIterator TMap<K, V>::End()const
     {
         return Map.end();
     }

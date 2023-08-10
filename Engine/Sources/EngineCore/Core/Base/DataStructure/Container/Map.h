@@ -8,8 +8,10 @@ namespace PigeonEngine
     class TMap
     {
     public:
-        using TValueType = std::pair<const K, V>;
-        using TInitList = std::initializer_list<TValueType>;
+        using TValueType        = std::pair<const K, V>;
+        using TInitList         = std::initializer_list<TValueType>;
+        using TIterator         = std::map<K, V>::iterator;
+        using TConstIterator    = std::map<K, V>::const_iterator;
     public:
         TMap();
         TMap(const TMap<K,V>& Other);
@@ -25,8 +27,10 @@ namespace PigeonEngine
         TMap<K,V>& operator=(const TMap<K,V>& Other);
         TMap<K,V>& operator=(TMap<K,V>&& Other) noexcept;
 
-        typename std::map<K,V>::iterator begin();
-        typename std::map<K,V>::iterator end();
+        TIterator Begin();
+        TConstIterator Begin()const;
+        TIterator End();
+        TConstIterator End()const;
 
         ENGINE_NODISCARD UINT Length() const;
         

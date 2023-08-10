@@ -328,14 +328,11 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsUtility.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManagerInterface.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsListener.h" />
     <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
+    <ClInclude Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -508,6 +505,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

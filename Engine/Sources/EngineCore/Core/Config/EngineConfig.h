@@ -8,14 +8,16 @@ namespace PigeonEngine
 	class ESettings
 	{
 	public:
-		constexpr static FLOAT	ENGINE_SCREEN_WIDTH			= 1600.f;
-		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT		= 900.f;
-		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME	= 60.f;
-		constexpr static FLOAT	ENGINE_UPDATE_FRAME			= 90.f;
-		constexpr static BOOL	ENGINE_WINDOWED				= TRUE;
+		constexpr static FLOAT	ENGINE_SCREEN_WIDTH				= 1600.f;
+		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT			= 900.f;
+		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME		= 60.f;
+		constexpr static FLOAT	ENGINE_UPDATE_FRAME				= 90.f;
+		constexpr static BOOL	ENGINE_WINDOWED					= TRUE;
 
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM		= 0.1f;
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF	= 0.05f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM			= 0.1f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF		= 0.05f;
+
+		constexpr static UINT	ENGINE_BONE_WEIGHT_NUM_MAXIMUM	= 16u;
 
 	public:
 		static ESettings* GetSingleton()
@@ -32,8 +34,6 @@ namespace PigeonEngine
 
 #define ENGINE_NOT_EXIST_STRING								("ENGINE_NOT_EXIST")
 #define ENGINE_DEFAULT_NAME									("PIGEON_ENGINE_DEFAULT_NAME")
-
-#define ENGINE_BONE_DEFAULT_NAME							("ENGINE_BONE_DEFAULT_NAME")
 
 #define ENGINE_IMPORT_SHADER_NAME_TYPE						(".cso")
 #define ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE				("PEVS")

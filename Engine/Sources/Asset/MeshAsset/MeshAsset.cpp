@@ -450,7 +450,8 @@ namespace PigeonEngine
 		EMesh::Release();
 	}
 
-	ESkinnedMesh::ESkinnedMesh(const EString& InMeshName) : EMesh(InMeshName)
+	ESkinnedMesh::ESkinnedMesh(const EString& InMeshName)
+		: EMesh(InMeshName), EffectBoneNum(0u)
 	{
 	}
 	ESkinnedMesh::~ESkinnedMesh()
@@ -471,9 +472,9 @@ namespace PigeonEngine
 	BOOL ESkinnedMesh::AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose)
 	{
 		BOOL Result = FALSE;
-		if (!(SkinBindPose.ContainsKey(InBoneName)))
+		if (!(BindPoseValue.ContainsKey(InBoneName)))
 		{
-			SkinBindPose.Add(InBoneName, InBindPose);
+			BindPoseValue.Add(InBoneName, InBindPose);
 			Result = TRUE;
 		}
 		return Result;
@@ -481,23 +482,53 @@ namespace PigeonEngine
 	BOOL ESkinnedMesh::RemoveBindPose(const EString& InBoneName)
 	{
 		BOOL Result = FALSE;
-		if (SkinBindPose.ContainsKey(InBoneName))
+		if (BindPoseValue.ContainsKey(InBoneName))
 		{
-			SkinBindPose.Remove(InBoneName);
+			BindPoseValue.Remove(InBoneName);
 			Result = TRUE;
 		}
 		return Result;
 	}
 	void ESkinnedMesh::ClearBindPose()
 	{
-		if (SkinBindPose.Length() > 0u)
+		if (BindPoseValue.Length() > 0u)
 		{
-			SkinBindPose.Clear();
+			BindPoseValue.Clear();
 		}
 	}
-	const ESkinnedMesh::ESkinBindPose& ESkinnedMesh::GetBindPose()const
+	void ESkinnedMesh::GenerateBindPoseIndex()
 	{
-		return SkinBindPose;
+		if (BindPoseIndex.Length() > 0u)
+		{
+			BindPoseIndex.Clear();
+		}
+		EffectBoneNum = 0u;
+		if (BindPoseValue.Length() == 0u)
+		{
+			return;
+		}
+		USHORT TempIndex = 0u;
+		for (auto It = BindPoseValue.Begin(); It != BindPoseValue.End(); It++)
+		{
+			if (!(BindPoseIndex.ContainsKey(It->first)))
+			{
+				BindPoseIndex.Add(It->first, TempIndex);
+				TempIndex += 1u;
+			}
+		}
+		EffectBoneNum = TempIndex;
+	}
+	const ESkinnedMesh::EBindPoseValue& ESkinnedMesh::GetBindPoseValue()const
+	{
+		return BindPoseValue;
+	}
+	const ESkinnedMesh::EBindPoseIndex& ESkinnedMesh::GetBindPoseIndex()const
+	{
+		return BindPoseIndex;
+	}
+	USHORT ESkinnedMesh::GetEffectBoneNum()const
+	{
+		return EffectBoneNum;
 	}
 	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex)
 	{

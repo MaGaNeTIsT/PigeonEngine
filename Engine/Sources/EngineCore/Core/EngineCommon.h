@@ -8,6 +8,39 @@
 namespace PigeonEngine
 {
 
+	template<typename TValueType, typename TTimeType>
+	struct ETimeKey
+	{
+		TTimeType	Time;
+		TValueType	Value;
+	};
+	template<typename TValueType, typename TTimeType>
+	BOOL operator>(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	{
+		return (InKey0.Time > InKey1.Time);
+	}
+	template<typename TValueType, typename TTimeType>
+	BOOL operator<(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	{
+		return (InKey0.Time < InKey1.Time);
+	}
+	template<typename TValueType, typename TTimeType>
+	BOOL operator>=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	{
+		return (InKey0.Time >= InKey1.Time);
+	}
+	template<typename TValueType, typename TTimeType>
+	BOOL operator<=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	{
+		return (InKey0.Time <= InKey1.Time);
+	}
+	template<typename TTimeType>
+	struct ETransformTimeCurve
+	{
+		TArray<ETimeKey<Vector3, TTimeType>>	PositionKeys;
+		TArray<ETimeKey<Quaternion, TTimeType>>	RotationKeys;
+		TArray<ETimeKey<Vector3, TTimeType>>	ScalingKeys;
+	};
 	struct EBoundAABB
 	{
 		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
@@ -77,59 +110,6 @@ namespace PigeonEngine
 			};
 			FLOAT	Edge[4];
 		};
-	};
-	template<typename TValueType>
-	struct EAnimationKey
-	{
-		EAnimationKey()noexcept : Time(static_cast<DOUBLE>(0)) {}
-		BOOL operator>(const EAnimationKey<TValueType>& InKey)
-		{
-			return (Time > InKey.Time);
-		}
-		BOOL operator<(const EAnimationKey<TValueType>& InKey)
-		{
-			return (Time < InKey.Time);
-		}
-		BOOL operator>=(const EAnimationKey<TValueType>& InKey)
-		{
-			return (Time >= InKey.Time);
-		}
-		BOOL operator<=(const EAnimationKey<TValueType>& InKey)
-		{
-			return (Time <= InKey.Time);
-		}
-
-		DOUBLE		Time;
-		TValueType	Value;
-	};
-	enum EAnimationBehaviourType
-	{
-		ANIMATION_BEHAVIOUR_DEFAULT		= 0,
-		ANIMATION_BEHAVIOUR_CONSTANT	= 1,
-		ANIMATION_BEHAVIOUR_LINEAR		= 2,
-		ANIMATION_BEHAVIOUR_REPEAT		= 3
-	};
-	struct EAnimationNode
-	{
-		EAnimationNode()noexcept : PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
-		EAnimationNode(const EString& InName)noexcept : Name(InName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
-
-		EString								Name;
-		EAnimationBehaviourType				PreState;
-		EAnimationBehaviourType				PostState;
-		TArray<EAnimationKey<Vector3>>		PositionKeys;
-		TArray<EAnimationKey<Quaternion>>	RotationKeys;
-		TArray<EAnimationKey<Vector3>>		ScalingKeys;
-	};
-	struct EAnimationInfo
-	{
-		EAnimationInfo()noexcept : Duration(static_cast<DOUBLE>(0)), TicksPerSecond(static_cast<DOUBLE>(0)) {}
-		EAnimationInfo(const EString& InName)noexcept : Name(InName), Duration(static_cast<DOUBLE>(0)), TicksPerSecond(static_cast<DOUBLE>(0)) {}
-
-		EString						Name;
-		DOUBLE						Duration;
-		DOUBLE						TicksPerSecond;
-		TArray<EAnimationNode>		AnimationNodes;
 	};
 	struct EFrustum
 	{

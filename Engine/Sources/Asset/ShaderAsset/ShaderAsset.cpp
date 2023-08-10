@@ -107,7 +107,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
-				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
+				PE_FAILED((ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
 			return TRUE;

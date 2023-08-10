@@ -246,7 +246,8 @@ namespace PigeonEngine
 	class ESkinnedMesh : public EMesh
 	{
 	public:
-		typedef	TMap<EString, Matrix4x4>	ESkinBindPose;
+		typedef	TMap<EString, Matrix4x4>	EBindPoseValue;
+		typedef	TMap<EString, USHORT>		EBindPoseIndex;
 		typedef	TArray<ESkinData>			ESkinPart;
 	public:
 		ESkinnedMesh(const EString& InMeshName);
@@ -256,12 +257,17 @@ namespace PigeonEngine
 		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
 		BOOL					RemoveBindPose(const EString& InBoneName);
 		void					ClearBindPose();
-		const ESkinBindPose&	GetBindPose()const;
+		void					GenerateBindPoseIndex();
+		const EBindPoseValue&	GetBindPoseValue()const;
+		const EBindPoseIndex&	GetBindPoseIndex()const;
+		USHORT					GetEffectBoneNum()const;
 		BOOL					AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
 		BOOL					RemoveSkinElement(UINT InLayoutIndex);
 		BOOL					GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
 	protected:
-		ESkinBindPose	SkinBindPose;
+		EBindPoseValue	BindPoseValue;
+		EBindPoseIndex	BindPoseIndex;
+		USHORT			EffectBoneNum;
 		ESkinPart		Skins;
 	public:
 		ESkinnedMesh() = delete;

@@ -30,42 +30,16 @@ namespace PigeonEngine
 	{
 		return (v0 * (1.f - t) + v1 * t);
 	}
-	FLOAT EMath::Max(const FLOAT& v0, const FLOAT& v1)
+	template<typename TValueType>
+	TValueType EMath::Max(TValueType v0, TValueType v1)
 	{
-		return fmaxf(v0, v1);
+		return ((v1 > v0) ? v1 : v0);
 	}
-	UINT EMath::Max(const UINT& v0, const UINT& v1)
+	template<typename TValueType>
+	TValueType EMath::Min(TValueType v0, TValueType v1)
 	{
-		return ((v0 > v1) ? v0 : v1);
+		return ((v0 > v1) ? v1 : v0);
 	}
-	INT EMath::Max(const INT& v0, const INT& v1)
-	{
-		return ((v0 > v1) ? v0 : v1);
-	}
-
-	Vector3 EMath::Max(const Vector3& v0, const Vector3& v1)
-	{
-		return Vector3(Max(v0.x, v1.x),Max(v0.y, v1.y), Max(v0.z, v1.z));
-	}
-
-	FLOAT EMath::Min(const FLOAT& v0, const FLOAT& v1)
-	{
-		return fminf(v0, v1);
-	}
-	UINT EMath::Min(const UINT& v0, const UINT& v1)
-	{
-		return ((v0 < v1) ? v0 : v1);
-	}
-	INT EMath::Min(const INT& v0, const INT& v1)
-	{
-		return ((v0 < v1) ? v0 : v1);
-	}
-
-	Vector3 EMath::Min(const Vector3& v0, const Vector3& v1)
-	{
-		return Vector3(Min(v0.x, v1.x),Min(v0.y, v1.y), Min(v0.z, v1.z));
-	}
-
 	FLOAT EMath::Abs(const FLOAT& v)
 	{
 		return fabsf(v);

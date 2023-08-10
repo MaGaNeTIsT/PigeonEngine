@@ -861,6 +861,44 @@ namespace PigeonEngine
 			}
 		}
 	}
+	struct EReaderVertexWeights
+	{
+		EReaderVertexWeights()noexcept : MaxCount(0u)
+		{
+			for (UINT i = 0u; i < ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM; i++)
+			{
+				Indices[i] = 0u;
+				Weights[i] = 0.f;
+			}
+		}
+		USHORT	MaxCount;
+		USHORT	Indices[ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
+		FLOAT	Weights[ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
+	};
+	ENGINE_INLINE static void StoreSkinData(const TArray<EReaderVertexWeights>& InDatas, const UINT InMaxEffectNum, UINT*& OutIndices, FLOAT*& OutWeights)
+	{
+		Check((ENGINE_ASSET_ERROR), ("Stored origin skin data can not be null."), (InDatas.Length() > 0u));
+		Check((ENGINE_ASSET_ERROR), ("Stored skin data's effect bone num must be bigger than 1."), (InMaxEffectNum >= 1u));
+		Check((ENGINE_ASSET_ERROR), ("Stored indices data can not be null."), (!!OutIndices));
+		Check((ENGINE_ASSET_ERROR), ("Stored weights data can not be null."), (!!OutWeights));
+		for (UINT i = 0u, n = InDatas.Length(); i < n; i++)
+		{
+			const EReaderVertexWeights& TempData = InDatas[i];
+			for (UINT EffectIndex = 0u; EffectIndex < InMaxEffectNum; EffectIndex++)
+			{
+				if (EffectIndex < TempData.MaxCount)
+				{
+					OutIndices[i * InMaxEffectNum + EffectIndex] = TempData.Indices[EffectIndex];
+					OutWeights[i * InMaxEffectNum + EffectIndex] = TempData.Weights[EffectIndex];
+				}
+				else
+				{
+					OutIndices[i * InMaxEffectNum + EffectIndex] = 0u;
+					OutWeights[i * InMaxEffectNum + EffectIndex] = 0.f;
+				}
+			}
+		}
+	}
 	static void AssimpGatherSingleNodeRecursion(const aiNode* InCurrentNode, TArray<const aiNode*>& OutNodes, TMap<const aiNode*, EString>& OutNodeNames, TMap<EString, SHORT>& OutNodeIndices)
 	{
 		if (InCurrentNode == nullptr)
@@ -877,7 +915,7 @@ namespace PigeonEngine
 			}
 			else
 			{
-				TempNodeName = ENGINE_BONE_DEFAULT_NAME;
+				TempNodeName = ENGINE_DEFAULT_NAME;
 			}
 			EString TempOldName = TempNodeName + "_";
 			EString TempNewName = TempNodeName;
@@ -934,7 +972,7 @@ namespace PigeonEngine
 	}
 	BOOL CAssimpManager::FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh)
 	{
-		if (!InScene->HasMeshes())
+		if (!(InScene->HasMeshes()))
 		{
 			return FALSE;
 		}
@@ -1074,35 +1112,100 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void TryAddMeshSkinPart(TArray<const aiBone*> InBones, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideIn32Bits, const UINT InSuccessAddMaxNum, ESkinnedMesh& OutMesh)
+	void CAssimpManager::TryAddMeshSkinPart(const TArray<const aiBone*>& InBones, const UINT InVertexNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InSuccessAddMaxNum, ESkinnedMesh& OutMesh)
 	{
 		const UINT AssimpMeshSkinElementMaxCount = 1u;	//For assimp we assum that every mesh contains only ONE skinned data.
-
-		UINT AddElementCounter = 0u;
-		for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)
 		{
-			if (AddElementCounter >= AssimpMeshSkinElementMaxCount)
+			//Add bind pose for skinned datas.
+			OutMesh.ClearBindPose();
+			for (UINT i = 0u, n = InBones.Length(); i < n; i++)
+			{
+				const aiBone* TempBone = InBones[i];
+				if (!TempBone)
+				{
+					continue;
+				}
+				OutMesh.AddBindPose(AssimpTranslateString(TempBone->mName), AssimpTranslateMatrix(TempBone->mOffsetMatrix, TRUE));
+			}
+			OutMesh.GenerateBindPoseIndex();
+		}
+		TArray<EReaderVertexWeights> TempVertexWeights;
+		USHORT TempMaxWeightCount = 0u;
+		{
+			const ESkinnedMesh::EBindPoseIndex& TempBoneList = OutMesh.GetBindPoseIndex();
+			if (TempBoneList.Length() == 0u)
 			{
 				return;
 			}
-			UINT TryStoredLayoutSlot = InStoredLayoutSlots[TryStoredSlotIndex];
-			if (OutMesh.CheckVertexLayoutPartExist(InStoredLayoutBaseType, TryStoredLayoutSlot))
+			TempVertexWeights.Recapacity(InVertexNum);
+			for (UINT i = 0u; i < InVertexNum; i++)
 			{
-				continue;
+				TempVertexWeights.Add(EReaderVertexWeights());
 			}
-			const UINT DataElementNum = InDataElementNum[AddElementCounter];
-			EVertexData TempVertexData;
-			TempVertexData.PartType = InStoredLayoutBaseType;
-			TempVertexData.ElementNum = DataElementNum;
-			TempVertexData.Stride = InStrideIn32Bits * sizeof(FLOAT);
-			TempVertexData.Datas = new FLOAT[InStrideIn32Bits * DataElementNum];
-			StoreVertexData(InDatas[AddElementCounter], DataElementNum, InStrideIn32Bits, TempVertexData.Datas);
-			if (OutMesh.AddVertexElement(&TempVertexData))
+			for (UINT i = 0u, n = InBones.Length(); i < n; i++)
 			{
-				AddElementCounter += 1u;
-				if (AddElementCounter >= InSuccessAddMaxNum)
+				const aiBone* TempBone = InBones[i];
+				if (!TempBone)
+				{
+					continue;
+				}
+				for (UINT WeightIndex = 0u, WeightNum = TempBone->mNumWeights; WeightIndex < WeightNum; WeightIndex++)
+				{
+					const aiVertexWeight& TempAssimpWeight = TempBone->mWeights[WeightIndex];
+					if (TempAssimpWeight.mVertexId < InVertexNum)
+					{
+						EReaderVertexWeights& ModifyWeight = TempVertexWeights[TempAssimpWeight.mVertexId];
+						if (ModifyWeight.MaxCount < static_cast<USHORT>(ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM))
+						{
+							if (TempBoneList.FindValue(AssimpTranslateString(TempBone->mName), ModifyWeight.Indices[ModifyWeight.MaxCount]))
+							{
+								ModifyWeight.Weights[ModifyWeight.MaxCount] = TempAssimpWeight.mWeight;
+								ModifyWeight.MaxCount += 1u;
+								TempMaxWeightCount = EMath::Max(TempMaxWeightCount, ModifyWeight.MaxCount);
+							}
+						}
+					}
+#ifdef _EDITOR_ONLY
+					else
+					{
+						PE_FAILED((ENGINE_ASSET_ERROR), ("Read skinned mesh bone's vertex id is not matching vertex max count, maybe used wrong bone list."));
+					}
+#endif
+				}
+			}
+			if (TempMaxWeightCount == 0u)
+			{
+				return;
+			}
+		}
+		{
+			UINT AddElementCounter = 0u;
+			for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)
+			{
+				if (AddElementCounter >= AssimpMeshSkinElementMaxCount)
 				{
 					return;
+				}
+				UINT TryStoredLayoutSlot = InStoredLayoutSlots[TryStoredSlotIndex];
+				if (OutMesh.CheckVertexLayoutPartExist(InStoredLayoutBaseType, TryStoredLayoutSlot))
+				{
+					continue;
+				}
+				const UINT DataElementNum = InVertexNum;
+				ESkinData TempSkinData;
+				TempSkinData.PartType = InStoredLayoutBaseType;
+				TempSkinData.ElementNum = DataElementNum;
+				TempSkinData.Stride = TempMaxWeightCount * sizeof(FLOAT);
+				TempSkinData.Indices = new UINT[TempMaxWeightCount * DataElementNum];
+				TempSkinData.Weights = new FLOAT[TempMaxWeightCount * DataElementNum];
+				StoreSkinData(TempVertexWeights, TempMaxWeightCount, TempSkinData.Indices, TempSkinData.Weights);
+				if (OutMesh.AddSkinElement(&TempSkinData))
+				{
+					AddElementCounter += 1u;
+					if (AddElementCounter >= InSuccessAddMaxNum)
+					{
+						return;
+					}
 				}
 			}
 		}
@@ -1396,8 +1499,20 @@ namespace PigeonEngine
 					if (AssimpMesh->HasBones())
 					{
 						const UINT SuccessAddBoneMaxNum = 1u;
-						const UINT BoneStrideIn32Bits = 4u;
-
+						TArray<const aiBone*> TempBones;
+						for (UINT BoneIndex = 0u; BoneIndex < AssimpMesh->mNumBones; BoneIndex++)
+						{
+							const aiBone* TempBone = AssimpMesh->mBones[BoneIndex];
+							if (!TempBone)
+							{
+								continue;
+							}
+							if (TempBone->mNumWeights > 0u)
+							{
+								TempBones.Add(TempBone);
+							}
+						}
+						TryAddMeshSkinPart(TempBones, AssimpMesh->mNumVertices, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, SuccessAddBoneMaxNum, OutMesh);
 					}
 				}
 			}
@@ -1537,7 +1652,7 @@ namespace PigeonEngine
 			return Result;
 		}
 
-		if (!Scene->HasMeshes())
+		if (!(Scene->HasMeshes()))
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Scene does not contain meshes
@@ -1716,7 +1831,7 @@ namespace PigeonEngine
 			return Result;
 		}
 
-		if (!Scene->HasMeshes())
+		if (!(Scene->HasMeshes()))
 		{
 			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 			// TODO Do the error logging (importer.GetErrorString())
@@ -1726,17 +1841,6 @@ namespace PigeonEngine
 
 		// Now we can access the file's contents.
 		// Read data structures of all nodes.
-		TArray<const aiNode*> TempNodes; TMap<const aiNode*, EString> TempNodeNames; TMap<EString, SHORT> TempNodeIndices;
-		AssimpGatherSingleNodeRecursion(Scene->mRootNode, TempNodes, TempNodeNames, TempNodeIndices);
-		// Check read state.
-		if ((TempNodes.Length() < 1u) || (TempNodes.Length() != TempNodeNames.Length()) || (TempNodes.Length() != TempNodeIndices.Length()))
-		{
-			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
-			// TODO Do the error logging (importer.GetErrorString())
-			AssImporter->FreeScene();
-			return Result;
-		}
-
 		TArray<const aiMesh*> Meshes;
 		{
 			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL> TempIsSkeletonMesh;
@@ -1744,7 +1848,7 @@ namespace PigeonEngine
 			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletonMesh.Length()));
 			for (UINT i = 0u, n = TempMeshes.Length(); i < n; i++)
 			{
-				if (TempIsSkeletonMesh[i])
+				if (!(TempIsSkeletonMesh[i]))
 				{
 					continue;
 				}
@@ -1760,8 +1864,6 @@ namespace PigeonEngine
 			return Result;
 		}
 
-		Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (Meshes.Length() > 0u));
-
 		const RShaderSemanticType* EngineLayouts; UINT EngineLayoutNum;
 		GetEngineDefaultSkeletonMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
@@ -1769,6 +1871,64 @@ namespace PigeonEngine
 
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
+		// We're done. Everything will be cleaned up by the importer destructor
+		AssImporter->FreeScene();
+		return Result;
+	}
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkeletonAnimationFile(const EString& path, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips)
+	{
+		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
+
+		if (OutSkeletonAnimationClips.Length() > 0u)
+		{
+			OutSkeletonAnimationClips.Clear();
+		}
+
+		Assimp::Importer* AssImporter = _GAssetImporter;
+		if (AssImporter == nullptr)
+		{
+			// TODO Do the error logging (did not create the instance of importer)
+			return Result;
+		}
+
+		// And have it read the given file with some example postprocessing
+		// Usually - if speed is not the most important aspect for you - you'll
+		// probably to request more postprocessing than we do in this example.
+
+		// Use SetPropertyInteger to modify config of importer
+		//Assimp::Importer::SetProperty###();
+
+		//const aiScene* scene = impoter->ReadFile(
+		//	path,
+		//	aiProcess_MakeLeftHanded |
+		//	aiProcess_RemoveComponent |
+		//	aiProcess_RemoveRedundantMaterials |
+		//	aiProcess_PopulateArmatureData);
+
+		const aiScene* scene = AssImporter->ReadFile(*path, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_MakeLeftHanded);
+
+		// If the import failed, report it
+		if (scene == nullptr)
+		{
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImporter->FreeScene();
+			return Result;
+		}
+
+		if (!scene->HasAnimations())
+		{
+			Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+			// TODO Do the error logging (importer.GetErrorString())
+			AssImporter->FreeScene();
+			return Result;
+		}
+
+		// Now we can access the file's contents.
+		auto tempInsertResult = animationDatas.insert_or_assign(path, TMap<EString, CustomStruct::CGameAnimationInfo>());
+		TMap<EString, CustomStruct::CGameAnimationInfo>& tempAnimationContainer = tempInsertResult.first->second;
+
+		Result = _GGatherAllAnimationDatas(path, scene, tempAnimationContainer) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+
 		// We're done. Everything will be cleaned up by the importer destructor
 		AssImporter->FreeScene();
 		return Result;

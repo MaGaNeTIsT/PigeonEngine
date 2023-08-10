@@ -21,15 +21,12 @@
   <ItemGroup>
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsListener.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManagerInterface.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsUtility.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
+    <ClInclude Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
@@ -134,6 +131,7 @@
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonObject.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
