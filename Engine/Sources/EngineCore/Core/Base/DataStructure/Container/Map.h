@@ -10,8 +10,8 @@ namespace PigeonEngine
     public:
         using TValueType        = std::pair<const K, V>;
         using TInitList         = std::initializer_list<TValueType>;
-        using TIterator         = std::map<K, V>::iterator;
-        using TConstIterator    = std::map<K, V>::const_iterator;
+        using TIterator         = typename std::map<K, V>::iterator;
+        using TConstIterator    = typename std::map<K, V>::const_iterator;
     public:
         TMap();
         TMap(const TMap<K,V>& Other);
