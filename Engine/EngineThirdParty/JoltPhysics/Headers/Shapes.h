@@ -11,7 +11,7 @@ namespace PigeonEngine
 		Vector3 Max;
 	};
 
-	class FShape : ERTTI
+	class FShape /*: public ERTTI*/
 	{
 		//EClass(FShape, ERTTI)
 		FShape();
@@ -19,7 +19,7 @@ namespace PigeonEngine
 		virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale);
 	};
 
-	class FCastRay : ERTTI
+	class FCastRay /*: public ERTTI*/
 	{
 		//EClass(FCastRay, ERTTI)
 		FCastRay();

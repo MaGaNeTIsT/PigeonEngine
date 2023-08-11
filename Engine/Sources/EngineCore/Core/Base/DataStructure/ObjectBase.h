@@ -6,7 +6,7 @@
 namespace PigeonEngine
 {
 
-	class EObjectBase : public ERTTI
+	class EObjectBase /*: public ERTTI*/
 	{
 
 		//EClass(EObjectBase, ERTTI)
