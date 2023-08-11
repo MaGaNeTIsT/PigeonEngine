@@ -57,9 +57,9 @@ namespace PigeonEngine
 
 	void PSceneComponent::ClearChildren()
 	{
-		for(const auto& elem : ChildrenComponents)
+		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
 		{
-			elem->Destroy();
+			(*elem)->Destroy();
 		}
 		ChildrenComponents.Clear();
 	}
@@ -78,10 +78,10 @@ namespace PigeonEngine
 	void PSceneComponent::ReparentChildrenComponents(PSceneComponent* NewParent)
 	{
 		Check(ENGINE_COMPONENT_ERROR, "You are reparent childrents to a nullptr. ", NewParent == nullptr);
-		for(const auto& Child : ChildrenComponents)
+		for (auto Child = ChildrenComponents.Begin(); Child != ChildrenComponents.End(); Child++)
 		{
-			Child->SetAttachedParentComponent(NewParent);
-			// Child->SetOwnerActor(NewParent->GetOwnerActor());
+			(*Child)->SetAttachedParentComponent(NewParent);
+			//(*Child)->SetOwnerActor(NewParent->GetOwnerActor());
 		}
 		ChildrenComponents.Clear();
 	}

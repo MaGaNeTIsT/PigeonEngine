@@ -10,6 +10,9 @@ namespace PigeonEngine
     class TSet
     {
     public:
+        using TIterator         = typename std::set<T>::iterator;
+        using TConstIterator    = typename std::set<T>::const_iterator;
+    public:
         TSet();
         TSet(const TSet<T>& Other);
         explicit TSet(const std::set<T>& Other);
@@ -26,10 +29,26 @@ namespace PigeonEngine
         void Remove  (const T& Element);
         void Clear   ();
 
-        typename std::set<T>::iterator begin();
-        typename std::set<T>::iterator end();
-        
-        UINT Length  ()const;
+        typename TIterator Begin()
+        {
+            return Elements.begin();
+        }
+        typename TConstIterator Begin() const
+        {
+            return Elements.begin();
+        }
+        typename TIterator End()
+        {
+            return Elements.end();
+        }
+        typename TConstIterator End() const
+        {
+            return Elements.end();
+        }
+        UINT Length()const
+        {
+            return static_cast<UINT>(Elements.size());
+        }
         UINT Last    ()const;
     private:
         class std::set<T> Elements;

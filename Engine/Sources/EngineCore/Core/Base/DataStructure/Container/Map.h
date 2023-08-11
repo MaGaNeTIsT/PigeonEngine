@@ -30,12 +30,26 @@ namespace PigeonEngine
         TMap<K,V>& operator=(const TMap<K,V>& Other);
         TMap<K,V>& operator=(TMap<K,V>&& Other) noexcept;
 
-        typename TIterator      Begin();
-        typename TConstIterator Begin()const;
-        typename TIterator      End();
-        typename TConstIterator End()const;
-
-        ENGINE_NODISCARD UINT Length() const;
+        typename TIterator Begin()
+        {
+            return Map.begin();
+        }
+        typename TConstIterator Begin()const
+        {
+            return Map.begin();
+        }
+        typename TIterator End()
+        {
+            return Map.end();
+        }
+        typename TConstIterator End()const
+        {
+            return Map.end();
+        }
+        ENGINE_NODISCARD UINT Length() const
+        {
+            return (static_cast<UINT>(Map.size()));
+        }
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);
@@ -43,7 +57,16 @@ namespace PigeonEngine
         BOOL ContainsKey(const K& Key) const;
         
         BOOL FindKey  (const V& Value, K& OutKey) const;
-        BOOL FindValue(const K& Key,   V& OutValue) const;
+        BOOL FindValue(const K& Key,   V& OutValue) const
+        {
+            auto It = Map.find(Key);
+            if (It != Map.end())
+            {
+                OutValue = It->second;
+                return TRUE;
+            }
+            return FALSE;
+        }
 
         void GenerateKeyArray  (TArray<K>& OutKeys);
         void GenerateValueArray(TArray<V>& OutValues);

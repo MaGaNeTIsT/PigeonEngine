@@ -2,8 +2,8 @@
 
 namespace PigeonEngine
 {
-        template <typename T>
-      TSet<T>::TSet()
+    template <typename T>
+    TSet<T>::TSet()
     {
     }
 
@@ -85,24 +85,6 @@ namespace PigeonEngine
     void TSet<T>::Clear()
     {
         Elements.clear();
-    }
-
-    template <typename T>
-    typename std::set<T>::iterator TSet<T>::begin()
-    {
-        return Elements.begin();
-    }
-
-    template <typename T>
-    typename std::set<T>::iterator TSet<T>::end()
-    {
-        return Elements.end();
-    }
-
-    template <typename T>
-    UINT TSet<T>::Length() const
-    {
-        return Elements.size();
     }
 
     template <typename T>

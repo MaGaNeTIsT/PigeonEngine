@@ -134,9 +134,9 @@ namespace PigeonEngine
 
 	void PActor::ClearComponents()
 	{
-		for(const auto& elem : Components)
+		for (auto elem = Components.Begin(); elem != Components.End(); elem++)
 		{
-			DestoyComponent(elem);
+			DestoyComponent(*elem);
 		}
 		Components.Clear();
 	}

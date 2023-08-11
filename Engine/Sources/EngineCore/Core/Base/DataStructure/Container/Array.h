@@ -52,14 +52,34 @@ namespace PigeonEngine
         void       Shuffle();
         TArray<T>  Reverse() const;
         
-        typename TIterator      Begin();
-        typename TConstIterator Begin()const;
-        typename TIterator      End();
-        typename TConstIterator End()const;
-        typename TIterator      Rbegin();
-        typename TIterator      Rend();
-
-        ENGINE_NODISCARD UINT Length       ()const;
+        typename TIterator Begin()
+        {
+            return Elements.begin();
+        }
+        typename TConstIterator Begin()const
+        {
+            return Elements.begin();
+        }
+        typename TIterator End()
+        {
+            return Elements.end();
+        }
+        typename TConstIterator End()const
+        {
+            return Elements.end();
+        }
+        typename TIterator Rbegin()
+        {
+            return Elements.rbegin();
+        }
+        typename TIterator Rend()
+        {
+            return Elements.rend();
+        }
+        ENGINE_NODISCARD UINT Length()const
+        {
+            return static_cast<UINT>(this->Elements.size());
+        }
         ENGINE_NODISCARD UINT LastIndex    ()const;
     private:
         class std::vector<T> Elements;

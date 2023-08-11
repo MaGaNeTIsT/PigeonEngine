@@ -210,42 +210,6 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    typename TArray<T>::TIterator TArray<T>::Begin()
-    {
-        return Elements.begin();
-    }
-
-    template <typename T>
-    typename TArray<T>::TConstIterator TArray<T>::Begin()const
-    {
-        return Elements.begin();
-    }
-
-    template <typename T>
-    typename TArray<T>::TIterator TArray<T>::End()
-    {
-        return Elements.end();
-    }
-
-    template <typename T>
-    typename TArray<T>::TConstIterator TArray<T>::End()const
-    {
-        return Elements.end();
-    }
-
-    template <typename T>
-    typename TArray<T>::TIterator TArray<T>::Rbegin()
-    {
-        return Elements.rbegin();
-    }
-
-    template <typename T>
-    typename TArray<T>::TIterator TArray<T>::Rend()
-    {
-        return Elements.rend();
-    }
-
-    template <typename T>
     UINT TArray<T>::Find(const T& Element) const
     {
         for(UINT i = 0; i < Elements.size();++i)
@@ -287,12 +251,6 @@ namespace PigeonEngine
          {
              this->Elements.reserve(NewCapacity);
          }
-    }
-
-    template <typename T>
-    UINT TArray<T>::Length() const
-    {
-        return this->Elements.size();
     }
     
 }

@@ -80,36 +80,6 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
-    typename TMap<K, V>::TIterator TMap<K, V>::Begin()
-    {
-        return Map.begin();
-    }
-
-    template <typename K, typename V>
-    typename TMap<K, V>::TConstIterator TMap<K, V>::Begin()const
-    {
-        return Map.begin();
-    }
-
-    template <typename K, typename V>
-    typename TMap<K, V>::TIterator TMap<K, V>::End()
-    {
-        return Map.end();
-    }
-
-    template <typename K, typename V>
-    typename TMap<K, V>::TConstIterator TMap<K, V>::End()const
-    {
-        return Map.end();
-    }
-
-    template <typename K, typename V>
-    UINT TMap<K, V>::Length() const
-    {
-        return static_cast<Map.size()>;
-    }
-
-    template <typename K, typename V>
     void TMap<K, V>::Add(const K& Key, const V& Value)
     {
         Map.insert_or_assign(Key, Value);
@@ -137,18 +107,6 @@ namespace PigeonEngine
                 OutKey = elem.first;
                 return true;
            }
-        }
-        return false;
-    }
-
-    template <typename K, typename V>
-    BOOL TMap<K, V>::FindValue(const K& Key, V& OutValue) const
-    {
-        auto It = Map.find(Key);
-        if(!(It < Map.end()))
-        {
-            OutValue = It->second;
-            return true;
         }
         return false;
     }

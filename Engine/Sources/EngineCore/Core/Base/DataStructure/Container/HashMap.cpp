@@ -74,12 +74,6 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    UINT THashMap<K, V, Hash, Pred, Alloc>::Length() const
-    {
-        return HashMap.size();
-    }
-
-    template <typename K, typename V, class Hash, class Pred, class Alloc>
     void THashMap<K, V, Hash, Pred, Alloc>::Add(const K& Key, const V& Value)
     {
         HashMap.insert_or_assign(Key, Value);
@@ -145,30 +139,6 @@ namespace PigeonEngine
     void THashMap<K, V, Hash, Pred, Alloc>::Clear()
     {
         HashMap.clear();
-    }
-
-    template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::Begin()
-    {
-        return HashMap.begin();
-    }
-
-    template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::Begin() const
-    {
-        return HashMap.begin();
-    }
-
-    template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::End()
-    {
-        return HashMap.end();
-    }
-
-    template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::End() const
-    {
-        return HashMap.end();
     }
     
 }
