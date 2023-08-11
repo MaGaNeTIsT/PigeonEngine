@@ -1,4 +1,8 @@
 ﻿#include "Array.h"
+#ifdef _EDITOR_ONLY
+#include "../../../../../Development/Alert/DevelopmentDefines.h"
+#include "../../../../Core/Config/ErrorCaption.h"
+#endif
 #include <algorithm>
 
 namespace PigeonEngine
@@ -42,14 +46,20 @@ namespace PigeonEngine
     template <typename T>
     T& TArray<T>::operator[](const UINT& Index)
     {
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+#ifdef _EDITOR_ONLY
+        UINT NumElements = Length();
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+#endif
         return Elements[Index];
     }
 
     template <typename T>
     const T& TArray<T>::operator[](const UINT& Index)const
     {
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+#ifdef _EDITOR_ONLY
+        UINT NumElements = Length();
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+#endif
         return Elements[Index];
     }
 
@@ -93,14 +103,20 @@ namespace PigeonEngine
     template <typename T>
     T& TArray<T>::GetRef(const UINT& Index)
     {
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+#ifdef _EDITOR_ONLY
+        UINT NumElements = Length();
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+#endif
         return this->Elements[Index];
     }
 
     template <typename T>
     const T& TArray<T>::Get(const UINT& Index)const
     {
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", Index > Length());
+#ifdef _EDITOR_ONLY
+        UINT NumElements = Length();
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+#endif
         return this->Elements[Index];
     }
 

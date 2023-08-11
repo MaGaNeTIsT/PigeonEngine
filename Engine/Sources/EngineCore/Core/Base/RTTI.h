@@ -25,7 +25,7 @@ namespace PigeonEngine
             if (id == TypeIdClass()) { return true; }\
             else { return ParentType::Is(id); }\
         }\
-        virtual bool Is(const char* name) const override\
+        virtual bool Is(const CHAR* name) const override\
         {\
             if (name == TypeName()) { return true; }\
             else { return ParentType::Is(name); }\
@@ -56,7 +56,7 @@ namespace PigeonEngine
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        virtual bool Is(const char* name) const
+        virtual bool Is(const CHAR* name) const
         {
             return false;
         }
