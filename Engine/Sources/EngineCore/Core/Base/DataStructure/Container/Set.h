@@ -1,5 +1,7 @@
 ﻿#pragma once
-#include <CoreMinimal.h>
+
+#include "../../../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
 #include <set>
 
 namespace PigeonEngine

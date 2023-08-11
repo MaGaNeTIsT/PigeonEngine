@@ -6,7 +6,7 @@ namespace PigeonEngine
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Render device init failed. Invalid arguments"));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Render device init failed. Invalid arguments"));
 			return;
 		}
 		UINT bufferWidth = static_cast<UINT>(bufferSize.x);
@@ -50,7 +50,7 @@ namespace PigeonEngine
 			m_ImmediateContext.ReleaseAndGetAddressOf());	//D3D11_CREATE_DEVICE_FLAG
 		if (FAILED(hr) || !(m_FeatureLevel == D3D_FEATURE_LEVEL_11_1 || m_FeatureLevel == D3D_FEATURE_LEVEL_11_0))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create D3D11 device failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create D3D11 device failed."));
 			return;
 		}
 		m_Viewport.Width = static_cast<FLOAT>(bufferWidth);
@@ -63,14 +63,14 @@ namespace PigeonEngine
 		hr = m_SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (LPVOID*)(&pBackBuffer));
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Failed to gather swap chain back buffer."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Failed to gather swap chain back buffer."));
 			return;
 		}
 		hr = m_Device->CreateRenderTargetView(pBackBuffer, nullptr, m_RenderTargetView.ReleaseAndGetAddressOf());
 		pBackBuffer->Release();
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create swap chain back buffer RTV failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create swap chain back buffer RTV failed."));
 			return;
 		}
 		{
@@ -92,7 +92,7 @@ namespace PigeonEngine
 			hr = m_Device->CreateTexture2D(&td, nullptr, m_DepthTexture.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create main depth buffer failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create main depth buffer failed."));
 				return;
 			}
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
@@ -106,7 +106,7 @@ namespace PigeonEngine
 			hr = m_Device->CreateDepthStencilView(m_DepthTexture.Get(), &dsvd, m_DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create main depth buffer DSV failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create main depth buffer DSV failed."));
 				return;
 			}
 		}
@@ -145,25 +145,26 @@ namespace PigeonEngine
 			HRESULT hr = m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader resource failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader resource failed."));
 				return FALSE;
 			}
 		}
 		{
 			if (inLayouts == nullptr)
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader which needs fitted input layouts."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader which needs fitted input layouts."));
 				return FALSE;
 			}
-			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
+			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
+			tempLayouts.Resize(inLayoutNum);
 			for (UINT i = 0u; i < inLayoutNum; i++)
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
-			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.RawData(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader input layout failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader input layout failed."));
 				return FALSE;
 			}
 		}
@@ -176,7 +177,7 @@ namespace PigeonEngine
 			if (FAILED(hr))
 			{
 
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create pixel shader resource failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create pixel shader resource failed."));
 				return FALSE;
 			}
 		}
@@ -188,7 +189,7 @@ namespace PigeonEngine
 			HRESULT hr = m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create compute shader resource failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create compute shader resource failed."));
 				return FALSE;
 			}
 		}
@@ -202,7 +203,7 @@ namespace PigeonEngine
 	{
 		if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource check failed (error description)."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource check failed (error description)."));
 			return FALSE;
 		}
 		output.Release();
@@ -211,7 +212,7 @@ namespace PigeonEngine
 			output.AccessMapWrite = (structuredBufferDesc.AccessFlags & RCPUAccessFlagType::CPU_ACCESS_WRITE) != 0;
 			if (structuredBufferDesc.GPUWritable && output.AccessMapWrite)
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource check failed (error access ability)."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource check failed (error access ability)."));
 				return FALSE;
 			}
 			D3D11_BUFFER_DESC bd;
@@ -257,7 +258,7 @@ namespace PigeonEngine
 			}
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource failed."));
 				return FALSE;
 			}
 		}
@@ -271,7 +272,7 @@ namespace PigeonEngine
 			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource SRV failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource SRV failed."));
 				return FALSE;
 			}
 		}
@@ -288,7 +289,7 @@ namespace PigeonEngine
 				HRESULT hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create structured buffer resource UAV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -300,7 +301,7 @@ namespace PigeonEngine
 		BOOL isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
 		if (!isDepthFormat && textureDesc.Depth != 0u)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D depth check failed (wrong depth format used)."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D depth check failed (wrong depth format used)."));
 			return FALSE;
 		}
 		output.Release();
@@ -345,7 +346,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource failed."));
 			return FALSE;
 		}
 		{
@@ -381,7 +382,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource SRV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource SRV failed."));
 					return FALSE;
 				}
 			}
@@ -398,7 +399,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource UAV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -417,7 +418,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource RTV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource RTV failed."));
 					return FALSE;
 				}
 			}
@@ -446,7 +447,7 @@ namespace PigeonEngine
 			hr = m_Device->CreateDepthStencilView(output.Buffer.Get(), &dsvd, output.DepthStencilView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture2D resource DSV failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource DSV failed."));
 				return FALSE;
 			}
 		}
@@ -456,7 +457,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D check failed (wrong size used)."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D check failed (wrong size used)."));
 			return FALSE;
 		}
 		output.Release();
@@ -476,7 +477,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateTexture3D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource failed."));
 			return FALSE;
 		}
 		{
@@ -494,7 +495,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource SRV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource SRV failed."));
 					return FALSE;
 				}
 			}
@@ -513,7 +514,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource UAV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource UAV failed."));
 					return FALSE;
 				}
 			}
@@ -534,7 +535,7 @@ namespace PigeonEngine
 				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
 				if (FAILED(hr))
 				{
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create render texture3D resource RTV failed."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource RTV failed."));
 					return FALSE;
 				}
 			}
@@ -575,7 +576,7 @@ namespace PigeonEngine
 		}
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture2D resource failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture2D resource failed."));
 			return FALSE;
 		}
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -589,7 +590,7 @@ namespace PigeonEngine
 		hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture2D resource SRV failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture2D resource SRV failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -598,7 +599,7 @@ namespace PigeonEngine
 	{
 		if (textureDesc.Width != textureDesc.Height)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube check failed (size of texture cube must be a square)."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture cube check failed (size of texture cube must be a square)."));
 			return FALSE;
 		}
 		output.Release();
@@ -641,7 +642,7 @@ namespace PigeonEngine
 			}
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube resource failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture cube resource failed."));
 				return FALSE;
 			}
 		}
@@ -657,7 +658,7 @@ namespace PigeonEngine
 			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create texture cube resource SRV failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture cube resource SRV failed."));
 				return FALSE;
 			}
 		}
@@ -676,7 +677,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -695,7 +696,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create vertex shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -705,15 +706,16 @@ namespace PigeonEngine
 			if (inLayouts == nullptr)
 			{
 				delete[]buffer;
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create vertex shader which needs fitted input layouts."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader which needs fitted input layouts."));
 				return FALSE;
 			}
-			std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayouts(inLayoutNum);
+			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
+			tempLayouts.Resize(inLayoutNum);
 			for (UINT i = 0u; i < inLayoutNum; i++)
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
-			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.data(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.RawData(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				delete[]buffer;
@@ -721,7 +723,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create vertex shader input layout failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -743,7 +745,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -762,7 +764,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create pixel shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -784,7 +786,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -803,7 +805,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create compute shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
 				}
 #endif
 				return FALSE;
@@ -842,7 +844,7 @@ namespace PigeonEngine
 		}
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create buffer resource failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create buffer resource failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -895,21 +897,23 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum)
 	{
-		std::vector<ID3D11RenderTargetView*> rtvs(rtvNum);
+		TArray<ID3D11RenderTargetView*> rtvs;
+		rtvs.Resize(rtvNum);
 		for (UINT i = 0u; i < rtvNum; i++)
 		{
 			rtvs[i] = rtv[i].Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), nullptr);
+		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.RawData(), nullptr);
 	}
 	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 	{
-		std::vector<ID3D11RenderTargetView*> rtvs(rtvNum);
+		TArray<ID3D11RenderTargetView*> rtvs;
+		rtvs.Resize(rtvNum);
 		for (UINT i = 0u; i < rtvNum; i++)
 		{
 			rtvs[i] = rtv[i].Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.data(), dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.RawData(), dsv.Get());
 	}
 	void RDeviceD3D11::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs)
 	{
@@ -925,7 +929,8 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT& viewportNum)
 	{
-		std::vector<D3D11_VIEWPORT> vps(viewportNum);
+		TArray<D3D11_VIEWPORT> vps;
+		vps.Resize(viewportNum);
 		for (UINT i = 0u; i < viewportNum; i++)
 		{
 			vps[i].TopLeftX = viewports[i].TopLeftX;
@@ -935,7 +940,7 @@ namespace PigeonEngine
 			vps[i].MinDepth = viewports[i].MinDepth;
 			vps[i].MaxDepth = viewports[i].MaxDepth;
 		}
-		m_ImmediateContext->RSSetViewports(viewportNum, vps.data());
+		m_ImmediateContext->RSSetViewports(viewportNum, vps.RawData());
 	}
 	void RDeviceD3D11::SetNoVSShader()
 	{
@@ -967,12 +972,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindVSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
-		std::vector<ID3D11SamplerState*> sampler(ssNum);
+		TArray<ID3D11SamplerState*> sampler;
+		sampler.Resize(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.data());
+		m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
 	void RDeviceD3D11::BindPSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
 	{
@@ -980,12 +986,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindPSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
-		std::vector<ID3D11SamplerState*> sampler(ssNum);
+		TArray<ID3D11SamplerState*> sampler;
+		sampler.Resize(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.data());
+		m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
 	void RDeviceD3D11::BindCSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
 	{
@@ -993,12 +1000,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindCSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
 	{
-		std::vector<ID3D11SamplerState*> sampler(ssNum);
+		TArray<ID3D11SamplerState*> sampler;
+		sampler.Resize(ssNum);
 		for (UINT i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
-		m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.data());
+		m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
 	void RDeviceD3D11::BindVSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
@@ -1006,12 +1014,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindVSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
-		std::vector<ID3D11Buffer*> buffers(bufferNum);
+		TArray<ID3D11Buffer*> buffers;
+		buffers.Resize(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
 	void RDeviceD3D11::BindPSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
@@ -1019,12 +1028,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindPSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
-		std::vector<ID3D11Buffer*> buffers(bufferNum);
+		TArray<ID3D11Buffer*> buffers;
+		buffers.Resize(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
 	void RDeviceD3D11::BindCSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
 	{
@@ -1032,12 +1042,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindCSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
 	{
-		std::vector<ID3D11Buffer*> buffers(bufferNum);
+		TArray<ID3D11Buffer*> buffers;
+		buffers.Resize(bufferNum);
 		for (UINT i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
-		m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.data());
+		m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
 	void RDeviceD3D11::BindVSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
@@ -1045,12 +1056,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindVSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
-		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
+		TArray<ID3D11ShaderResourceView*> srvs;
+		srvs.Resize(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.data());
+		m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
 	void RDeviceD3D11::BindPSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
@@ -1058,12 +1070,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
-		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
+		TArray<ID3D11ShaderResourceView*> srvs;
+		srvs.Resize(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.data());
+		m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
 	void RDeviceD3D11::BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
 	{
@@ -1071,12 +1084,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
 	{
-		std::vector<ID3D11ShaderResourceView*> srvs(srvNum);
+		TArray<ID3D11ShaderResourceView*> srvs;
+		srvs.Resize(srvNum);
 		for (UINT i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
-		m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.data());
+		m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
 	void RDeviceD3D11::BindNoCSUnorderedAccessView(const UINT& startSlot)
 	{
@@ -1089,12 +1103,13 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum)
 	{
-		std::vector<ID3D11UnorderedAccessView*> uavs(uavNum);
+		TArray<ID3D11UnorderedAccessView*> uavs;
+		uavs.Resize(uavNum);
 		for (UINT i = 0u; i < uavNum; i++)
 		{
 			uavs[i] = uav[i].Get();
 		}
-		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.data(), nullptr);
+		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, uavNum, uavs.RawData(), nullptr);
 	}
 	void RDeviceD3D11::CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst)
 	{
@@ -1194,7 +1209,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateDepthStencilState(&dsd, dss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create depth stencil state failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create depth stencil state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1203,7 +1218,7 @@ namespace PigeonEngine
 	{
 		if (!blendStates || blendStateNum == 0u)
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create blend state check failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create blend state check failed."));
 			return FALSE;
 		}
 		D3D11_BLEND_DESC bd;
@@ -1223,7 +1238,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create blend state failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create blend state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1246,7 +1261,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateRasterizerState(&rd, rs.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create rasterizer state failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create rasterizer state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1261,7 +1276,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateSamplerState(&sd, ss.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create sampler state failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create sampler state failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1276,7 +1291,7 @@ namespace PigeonEngine
 		HRESULT hr = m_Device->CreateQuery(&qd, q.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
-			PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Create query failed."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create query failed."));
 			return FALSE;
 		}
 		return TRUE;
@@ -1301,14 +1316,14 @@ namespace PigeonEngine
 		{
 			if (!(input.AccessMapRead || input.AccessMapWrite))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer check failed (error input access flag)."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mapping resource buffer check failed (error input access flag)."));
 				return FALSE;
 			}
 			BOOL needRead = mapType == RResourceMapType::RESOURCE_MAP_READ || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE;
 			BOOL needWrite = mapType == RResourceMapType::RESOURCE_MAP_WRITE || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE || mapType == RResourceMapType::RESOURCE_MAP_WRITE_DISCARD || mapType == RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE;
 			if (input.AccessMapRead != needRead || input.AccessMapWrite != needWrite)
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer check failed (error access flag)."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mapping resource buffer check failed (error access flag)."));
 				return FALSE;
 			}
 		}
@@ -1326,7 +1341,7 @@ namespace PigeonEngine
 				&ms);
 			if (FAILED(hr))
 			{
-				PE_FAILED(EString(ENGINE_RENDER_CORE_ERROR), EString("Mapping resource buffer access failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mapping resource buffer access failed."));
 				return FALSE;
 			}
 		}
@@ -1378,7 +1393,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateUsageFlag(D3D11_USAGE& output, RUsageFlagType input)
 	{
-		static std::map<RUsageFlagType, D3D11_USAGE> usageFlagMap = {
+		static TMap<RUsageFlagType, D3D11_USAGE> usageFlagMap = {
 			{ RUsageFlagType::USAGE_DEFAULT, D3D11_USAGE::D3D11_USAGE_DEFAULT },
 			{ RUsageFlagType::USAGE_IMMUTABLE, D3D11_USAGE::D3D11_USAGE_IMMUTABLE },
 			{ RUsageFlagType::USAGE_DYNAMIC, D3D11_USAGE::D3D11_USAGE_DYNAMIC },
@@ -1443,7 +1458,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateResourceFormat(DXGI_FORMAT& output, RFormatType input)
 	{
-		static std::map<RFormatType, DXGI_FORMAT> formatMap =
+		static TMap<RFormatType, DXGI_FORMAT> formatMap =
 		{
 			{ RFormatType::FORMAT_UNKNOWN						, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN						},
 			{ RFormatType::FORMAT_R32G32B32A32_TYPELESS			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_TYPELESS		},
@@ -1588,7 +1603,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateComparisonFunction(D3D11_COMPARISON_FUNC& output, RComparisonFunctionType input)
 	{
-		static std::map<RComparisonFunctionType, D3D11_COMPARISON_FUNC> comparisonFuncMap = {
+		static TMap<RComparisonFunctionType, D3D11_COMPARISON_FUNC> comparisonFuncMap = {
 			{ RComparisonFunctionType::COMPARISON_NEVER, D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER },
 			{ RComparisonFunctionType::COMPARISON_LESS, D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS },
 			{ RComparisonFunctionType::COMPARISON_EQUAL, D3D11_COMPARISON_FUNC::D3D11_COMPARISON_EQUAL },
@@ -1601,7 +1616,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateStencilStateType(D3D11_DEPTH_STENCILOP_DESC& output, const RStencilStateType& input)
 	{
-		static std::map<RStencilOperationType, D3D11_STENCIL_OP> stencilOpMap = {
+		static TMap<RStencilOperationType, D3D11_STENCIL_OP> stencilOpMap = {
 			{ RStencilOperationType::STENCIL_OP_KEEP, D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP },
 			{ RStencilOperationType::STENCIL_OP_ZERO, D3D11_STENCIL_OP::D3D11_STENCIL_OP_ZERO },
 			{ RStencilOperationType::STENCIL_OP_REPLACE, D3D11_STENCIL_OP::D3D11_STENCIL_OP_REPLACE },
@@ -1617,7 +1632,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateDepthStencilState(D3D11_DEPTH_STENCIL_DESC& output, const RDepthState& depthInput, const RStencilState* stencilInput)
 	{
-		static std::map<RDepthWriteMaskType, D3D11_DEPTH_WRITE_MASK> depthWriteMap = {
+		static TMap<RDepthWriteMaskType, D3D11_DEPTH_WRITE_MASK> depthWriteMap = {
 			{ RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ZERO },
 			{ RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL, D3D11_DEPTH_WRITE_MASK::D3D11_DEPTH_WRITE_MASK_ALL } };
 		output.DepthEnable = depthInput.DepthEnable;
@@ -1635,7 +1650,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateBlendState(D3D11_RENDER_TARGET_BLEND_DESC& output, const RBlendState& input)
 	{
-		static std::map<RBlendOptionType, D3D11_BLEND> blendMap = {
+		static TMap<RBlendOptionType, D3D11_BLEND> blendMap = {
 			{ RBlendOptionType::BLEND_ZERO, D3D11_BLEND::D3D11_BLEND_ZERO },
 			{ RBlendOptionType::BLEND_ONE, D3D11_BLEND::D3D11_BLEND_ONE },
 			{ RBlendOptionType::BLEND_SRC_COLOR, D3D11_BLEND::D3D11_BLEND_SRC_COLOR },
@@ -1649,7 +1664,7 @@ namespace PigeonEngine
 			{ RBlendOptionType::BLEND_SRC_ALPHA_SAT, D3D11_BLEND::D3D11_BLEND_SRC_ALPHA_SAT },
 			{ RBlendOptionType::BLEND_BLEND_FACTOR, D3D11_BLEND::D3D11_BLEND_BLEND_FACTOR },
 			{ RBlendOptionType::BLEND_INV_BLEND_FACTOR, D3D11_BLEND::D3D11_BLEND_INV_BLEND_FACTOR } };
-		static std::map<RBlendOperationType, D3D11_BLEND_OP> blendOpMap = {
+		static TMap<RBlendOperationType, D3D11_BLEND_OP> blendOpMap = {
 			{ RBlendOperationType::BLEND_OP_ADD, D3D11_BLEND_OP::D3D11_BLEND_OP_ADD },
 			{ RBlendOperationType::BLEND_OP_SUBTRACT, D3D11_BLEND_OP::D3D11_BLEND_OP_SUBTRACT },
 			{ RBlendOperationType::BLEND_OP_REV_SUBTRACT, D3D11_BLEND_OP::D3D11_BLEND_OP_REV_SUBTRACT },
@@ -1694,11 +1709,11 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateRasterizerState(D3D11_CULL_MODE& outputCull, D3D11_FILL_MODE& outputFill, const RRasterizerState& input)
 	{
-		static std::map<RCullModeType, D3D11_CULL_MODE> cullMap = {
+		static TMap<RCullModeType, D3D11_CULL_MODE> cullMap = {
 			{ RCullModeType::CULL_NONE, D3D11_CULL_MODE::D3D11_CULL_NONE },
 			{ RCullModeType::CULL_FRONT, D3D11_CULL_MODE::D3D11_CULL_FRONT },
 			{ RCullModeType::CULL_BACK, D3D11_CULL_MODE::D3D11_CULL_BACK } };
-		static std::map<RFillModeType, D3D11_FILL_MODE> fillMap = {
+		static TMap<RFillModeType, D3D11_FILL_MODE> fillMap = {
 			{ RFillModeType::FILL_WIREFRAME, D3D11_FILL_MODE::D3D11_FILL_WIREFRAME },
 			{ RFillModeType::FILL_SOLID, D3D11_FILL_MODE::D3D11_FILL_SOLID } };
 		outputCull = cullMap[input.CullMode];
@@ -1706,11 +1721,11 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateSamplerState(D3D11_SAMPLER_DESC& output, const RSamplerState& input)
 	{
-		static std::map<RFilterType, D3D11_FILTER> filterMap = {
+		static TMap<RFilterType, D3D11_FILTER> filterMap = {
 			{ RFilterType::FILTER_POINT, D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_POINT },
 			{ RFilterType::FILTER_LINEAR, D3D11_FILTER::D3D11_FILTER_MIN_MAG_MIP_LINEAR },
 			{ RFilterType::FILTER_ANISOTROPIC, D3D11_FILTER::D3D11_FILTER_ANISOTROPIC } };
-		static std::map<RTextureAddressModeType, D3D11_TEXTURE_ADDRESS_MODE> textureAddressModeMap = {
+		static TMap<RTextureAddressModeType, D3D11_TEXTURE_ADDRESS_MODE> textureAddressModeMap = {
 			{ RTextureAddressModeType::TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_WRAP },
 			{ RTextureAddressModeType::TEXTURE_ADDRESS_MIRROR, D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_MIRROR },
 			{ RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP, D3D11_TEXTURE_ADDRESS_MODE::D3D11_TEXTURE_ADDRESS_CLAMP },
@@ -1757,7 +1772,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslatePrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY& output, RPrimitiveTopologyType input)
 	{
-		static std::map<RPrimitiveTopologyType, D3D_PRIMITIVE_TOPOLOGY> primitiveTopologyMap = {
+		static TMap<RPrimitiveTopologyType, D3D_PRIMITIVE_TOPOLOGY> primitiveTopologyMap = {
 			{ RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_UNDEFINED, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED },
 			{ RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_POINTLIST, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_POINTLIST },
 			{ RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST, D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST },
@@ -1768,7 +1783,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateQueryDesc(D3D11_QUERY_DESC& output, const RQueryDesc& input)
 	{
-		static std::map<RQueryType, D3D11_QUERY> queryTypeMap = {
+		static TMap<RQueryType, D3D11_QUERY> queryTypeMap = {
 			{ RQueryType::QUERY_EVENT, D3D11_QUERY::D3D11_QUERY_EVENT },
 			{ RQueryType::QUERY_OCCLUSION, D3D11_QUERY::D3D11_QUERY_OCCLUSION },
 			{ RQueryType::QUERY_TIMESTAMP, D3D11_QUERY::D3D11_QUERY_TIMESTAMP },
@@ -1832,7 +1847,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateResourceMapType(D3D11_MAP& output, RResourceMapType input)
 	{
-		static std::map<RResourceMapType, D3D11_MAP> resourceMapTypes = {
+		static TMap<RResourceMapType, D3D11_MAP> resourceMapTypes = {
 			{ RResourceMapType::RESOURCE_MAP_READ, D3D11_MAP::D3D11_MAP_READ },
 			{ RResourceMapType::RESOURCE_MAP_WRITE, D3D11_MAP::D3D11_MAP_WRITE },
 			{ RResourceMapType::RESOURCE_MAP_READ_WRITE, D3D11_MAP::D3D11_MAP_READ_WRITE },
@@ -1842,14 +1857,14 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateResourceMapFlag(UINT& output, RResourceMapFlagType input)
 	{
-		static std::map<RResourceMapFlagType, UINT> resourceMapFlagTypes = {
+		static TMap<RResourceMapFlagType, UINT> resourceMapFlagTypes = {
 			{ RResourceMapFlagType::RESOURCE_MAP_FLAG_NONE, 0u },
 			{ RResourceMapFlagType::RESOURCE_MAP_FLAG_DO_NOT_WAIT, D3D11_MAP_FLAG::D3D11_MAP_FLAG_DO_NOT_WAIT } };
 		output = resourceMapFlagTypes[input];
 	}
 	void RDeviceD3D11::TranslateInputLayoutDesc(D3D11_INPUT_ELEMENT_DESC& output, const RInputLayoutDesc& input)
 	{
-		static std::map<RInputClassificationType, D3D11_INPUT_CLASSIFICATION> classificationMap = {
+		static TMap<RInputClassificationType, D3D11_INPUT_CLASSIFICATION> classificationMap = {
 			{ RInputClassificationType::INPUT_PER_VERTEX_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA },
 			{ RInputClassificationType::INPUT_PER_INSTANCE_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA } };
 		::ZeroMemory(&output, sizeof(output));

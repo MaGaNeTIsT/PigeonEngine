@@ -28,7 +28,7 @@ namespace PigeonEngine
 		delete this;
 	}
 #ifdef _EDITOR_ONLY
-	void PObject::SetName(const std::string& name)
+	void PObject::SetName(const EString& name)
 	{
 		DebugName = name;
 	}

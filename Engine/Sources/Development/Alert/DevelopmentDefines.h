@@ -1,11 +1,11 @@
 #pragma once
 
 #include "../../EngineCore/Main/Main.h"
-#include "Base/DataStructure/Text/String.h"
+#include <Base/DataStructure/Text/String.h>
 
 namespace PigeonEngine
 {
-	// class std::string;
+
 #if !(_TEST_MODE || _SHIPPING_MODE)
 	class DWindowsMessage
 	{
@@ -32,11 +32,10 @@ namespace PigeonEngine
 	};
 
 #define PE_FAILED(_Caption,_Text)			(DWindowsMessage::_Check_Default((_Caption),(_Text),(FALSE)))
-// #define Check(_Condition)					(DWindowsMessage::_Check_Default(("CheckError"),(#_Condition),(_Condition)))
 #define Check(_Caption,_Text,_Condition)	(DWindowsMessage::_Check_Default((_Caption),(_Text),(_Condition)))
 #else
 #define PE_FAILED(_Caption,_Text)			(;)
-#define Check(_Condition)					(;)
 #define Check(_Caption, _Text, _Condition)	(;)
 #endif
+
 };

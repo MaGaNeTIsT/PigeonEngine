@@ -16,6 +16,9 @@ namespace PigeonEngine
 #define DBT_DEVNODES_CHANGED    0x0007
 #endif
 
+#define IMGUI_VS_PATH           ("./Engine/EngineThirdParty/imGUI/HLSLResources/imGUIVS.cso")
+#define IMGUI_PS_PATH           ("./Engine/EngineThirdParty/imGUI/HLSLResources/imGUIPS.cso")
+
     CImGUIManager::CImGUIManager()
     {
 #ifdef _EDITOR_ONLY
@@ -755,12 +758,12 @@ namespace PigeonEngine
         }
 
         {
-            std::string vsName = "./Engine/Assets/EngineShaders/imGUIVS.cso";
+            EString vsName(IMGUI_VS_PATH);
             FILE* file;
             LONG fsize;
             BYTE* buffer;
             {
-                fopen_s(&file, vsName.c_str(), "rb");
+                fopen_s(&file, *vsName, "rb");
                 if (file == nullptr)
                 {
                     return FALSE;
@@ -781,14 +784,14 @@ namespace PigeonEngine
             }
 
             {
-                std::vector<D3D11_INPUT_ELEMENT_DESC> tempLayout;
+                TArray<D3D11_INPUT_ELEMENT_DESC> tempLayout;
                 {
-                    tempLayout.resize(3u);
+                    tempLayout.Resize(3u);
                     tempLayout[0] = { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0u };
                     tempLayout[1] = { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u };
                     tempLayout[2] = { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u };
                 }
-                HRESULT hr = dvc->CreateInputLayout(tempLayout.data(), 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
+                HRESULT hr = dvc->CreateInputLayout(tempLayout.RawData(), 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
                 if (FAILED(hr))
                 {
                     delete[]buffer;
@@ -813,12 +816,12 @@ namespace PigeonEngine
         }
 
         {
-            std::string psName = "./Engine/Assets/EngineShaders/imGUIPS.cso";
+            EString psName(IMGUI_VS_PATH);
             FILE* file;
             LONG fsize;
             BYTE* buffer;
             {
-                fopen_s(&file, psName.c_str(), "rb");
+                fopen_s(&file, *psName, "rb");
                 if (file == nullptr)
                 {
                     return FALSE;

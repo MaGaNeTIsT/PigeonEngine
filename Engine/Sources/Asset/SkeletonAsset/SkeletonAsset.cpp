@@ -207,7 +207,7 @@ namespace PigeonEngine
 	{
 		if (Bones.Length() == 0u)
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to removing bone from empty skeleton."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing bone from empty skeleton."));
 			return FALSE;
 		}
 		USHORT TempIndex = 0u;
@@ -217,14 +217,14 @@ namespace PigeonEngine
 			EString ErrorInfo("Try to removing not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), ErrorInfo);
+			PE_FAILED((ENGINE_ASSET_ERROR), ErrorInfo);
 #endif
 			return FALSE;
 		}
 #if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
 		if (TempIndex >= Bones.Length())
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check error that index out of bones list."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
 			return FALSE;
 		}
 #endif
@@ -235,13 +235,13 @@ namespace PigeonEngine
 	{
 		if (Bones.Length() == 0u)
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to removing bone from empty skeleton."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing bone from empty skeleton."));
 			return FALSE;
 		}
 #if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
 		if (InBoneIndex >= Bones.Length())
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check error that index out of bones list."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
 			return FALSE;
 		}
 #endif
@@ -261,7 +261,7 @@ namespace PigeonEngine
 			EString ErrorInfo("Try to getting not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), ErrorInfo);
+			PE_FAILED((ENGINE_ASSET_ERROR), ErrorInfo);
 #endif
 			return FALSE;
 		}
@@ -271,13 +271,13 @@ namespace PigeonEngine
 	{
 		if (Bones.Length() == 0u)
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to removing bone from empty skeleton."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing bone from empty skeleton."));
 			return FALSE;
 		}
 #if (defined(_DEBUG_MODE) || defined(_DEVELOP_MODE))
 		if (InBoneIndex >= Bones.Length())
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check error that index out of bones list."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check error that index out of bones list."));
 			return FALSE;
 		}
 #endif

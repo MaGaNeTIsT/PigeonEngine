@@ -42,7 +42,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] does not contain input layouts when init resource.";
-				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
+				PE_FAILED((ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
 			return FALSE;
@@ -52,7 +52,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
-				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
+				PE_FAILED((ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
 			return TRUE;
@@ -162,7 +162,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
-				PE_FAILED(EString(ENGINE_SHADER_ERROR), errorInfo);
+				PE_FAILED((ENGINE_SHADER_ERROR), errorInfo);
 			}
 #endif
 			return TRUE;
@@ -210,10 +210,10 @@ namespace PigeonEngine
 		const static EString importPixelShaderNameType = EString(ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE) + importShaderNameType;
 		const static EString importComputeShaderNameType = EString(ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE) + importShaderNameType;
 
-		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input file path is too short."), inPath.Length() > importShaderNameType.Length());
-		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input vs file path is too short."), inPath.Length() > importVertexShaderNameType.Length());
-		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input ps file path is too short."), inPath.Length() > importPixelShaderNameType.Length());
-		Check(EString(ENGINE_ASSET_ERROR), EString("Import shader cso. Input cs file path is too short."), inPath.Length() > importComputeShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input file path is too short."), inPath.Length() > importShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input vs file path is too short."), inPath.Length() > importVertexShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input ps file path is too short."), inPath.Length() > importPixelShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input cs file path is too short."), inPath.Length() > importComputeShaderNameType.Length());
 
 		if (inPath.Substring(inPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
 		{
@@ -221,7 +221,7 @@ namespace PigeonEngine
 			{
 				EString errorData("Error file type for shader importer (input file path : ");
 				errorData = errorData + inPath + ").";
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), errorData);
+				PE_FAILED((ENGINE_ASSET_ERROR), errorData);
 			}
 #endif
 			return FALSE;
@@ -236,7 +236,7 @@ namespace PigeonEngine
 		{
 			if (!inShaderInputLayouts || !inShaderInputLayoutNum)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Error, try to import vertex shader without input layouts."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Error, try to import vertex shader without input layouts."));
 				return FALSE;
 			}
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_VERTEX;
@@ -251,7 +251,7 @@ namespace PigeonEngine
 			{
 				EString errorData("Not support type for shader import (input file path : ");
 				errorData = errorData + inPath + ").";
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), errorData);
+				PE_FAILED((ENGINE_ASSET_ERROR), errorData);
 			}
 #endif
 			return FALSE;
@@ -294,12 +294,12 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (VertexShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (VertexShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Vertex shader path = [") + loadPath + "] add into manager list failed.";
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), errorInfo);
+				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
 			delete resultShaderAsset;
@@ -326,12 +326,12 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (PixelShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (PixelShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Pixel shader path = [") + loadPath + "] add into manager list failed.";
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), errorInfo);
+				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
 			delete resultShaderAsset;
@@ -358,12 +358,12 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (ComputeShaderManager.Add(std::move(loadPath), resultShaderAsset, TRUE) == 0u)
+		if (ComputeShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
 				EString errorInfo = EString("Pixel shader path = [") + loadPath + "] add into manager list failed.";
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), errorInfo);
+				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
 			delete resultShaderAsset;
@@ -396,12 +396,12 @@ namespace PigeonEngine
 		INT shaderFrequency = ((INT*)readFileMem)[0];
 		UINT shaderInputLayoutNum = static_cast<UINT>(((INT*)readFileMem)[1]);
 		ULONG shaderCSOSize = readFileSize - sizeof(INT) * 2u;
-		std::vector<RInputLayoutDesc> shaderInputLayouts;
+		TArray<RInputLayoutDesc> shaderInputLayouts;
 		if (shaderInputLayoutNum > 0u)
 		{
 			shaderCSOSize = shaderCSOSize - sizeof(RInputLayoutDesc) * shaderInputLayoutNum;
 			RInputLayoutDesc* tempInputlayouts = (RInputLayoutDesc*)(&(((INT*)readFileMem)[2]));
-			shaderInputLayouts.resize(shaderInputLayoutNum);
+			shaderInputLayouts.Resize(shaderInputLayoutNum);
 			for (UINT layoutIndex = 0u; layoutIndex < shaderInputLayoutNum; layoutIndex++)
 			{
 				shaderInputLayouts[layoutIndex] = tempInputlayouts[layoutIndex];
@@ -414,7 +414,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 				, loadPath
 #endif
-				, shaderInputLayouts.data(), shaderInputLayoutNum);
+				, shaderInputLayouts.RawData(), shaderInputLayoutNum);
 			result = reinterpret_cast<TShaderAssetType*>(TempShaderAsset);
 			if (!result)
 			{
@@ -473,7 +473,7 @@ namespace PigeonEngine
 			{
 				if (!inShaderInputLayouts || !inShaderInputLayoutNum)
 				{
-					PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to save vertex shader asset, but do not contain input layouts."));
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try to save vertex shader asset, but do not contain input layouts."));
 					return FALSE;
 				}
 				shaderInputLayoutNum = static_cast<INT>(*inShaderInputLayoutNum);
@@ -487,7 +487,7 @@ namespace PigeonEngine
 			break;
 			default:
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Not support type for shader import or save"));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Not support type for shader import or save"));
 			}
 			break;
 			}
@@ -506,7 +506,7 @@ namespace PigeonEngine
 					cpyStart = (void*)(&(((BYTE*)cpyStart)[shaderInputLayoutDescSize]));
 					rstSize = rstSize - shaderInputLayoutDescSize;
 				}
-				Check(EString(ENGINE_ASSET_ERROR), EString("New copy buffer can not contain shader code."), rstSize == inShaderResource->ShaderByteCodeSize);
+				Check((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), rstSize == inShaderResource->ShaderByteCodeSize);
 				memcpy_s(cpyStart, rstSize, inShaderResource->ShaderByteCode, inShaderResource->ShaderByteCodeSize);
 			}
 
@@ -523,7 +523,7 @@ namespace PigeonEngine
 		{
 			EString errorData("Save shader asset failed (output file path : ");
 			errorData = errorData + savePath + ").";
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), errorData);
+			PE_FAILED((ENGINE_ASSET_ERROR), errorData);
 		}
 #endif
 		return FALSE;

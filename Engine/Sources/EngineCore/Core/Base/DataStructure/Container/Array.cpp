@@ -143,6 +143,18 @@ namespace PigeonEngine
     }
 
     template <typename T>
+    T* TArray<T>::RawData()
+    {
+        return Elements.data();
+    }
+
+    template <typename T>
+    const T* TArray<T>::RawData() const
+    {
+        return Elements.data();
+    }
+
+    template <typename T>
     void TArray<T>::Append(const TArray<T>& Other)
     {
          const UINT Size = Length() + Other.Length();

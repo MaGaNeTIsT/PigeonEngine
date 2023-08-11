@@ -1,9 +1,6 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include <Base/DataStructure/Container/Array.h>
-#include <Base/DataStructure/Container/Map.h>
-#include <Base/DataStructure/Text/String.h>
 #include <EngineCommon.h>
 #include <RenderCommon.h>
 #include <RenderDevice/DeviceD3D11.h>
@@ -57,7 +54,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			if (InStride != 2u || InStride != 4u)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check index data error(stride is not 4 bytes or 2 bytes)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Check index data error(stride is not 4 bytes or 2 bytes)."));
 			}
 			else
 #endif
@@ -97,11 +94,11 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			if (InType == EVertexLayoutType::MESH_INDEX_FULL || InType == EVertexLayoutType::MESH_INDEX_HALF || InType == EVertexLayoutType::MESH_SKIN)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check vertex data error(part type is invalid)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Check vertex data error(part type is invalid)."));
 			}
 			else if ((InStride % 4u) != 0u)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check vertex data error(stride is not time of 4 bytes)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Check vertex data error(stride is not time of 4 bytes)."));
 			}
 			else
 			{
@@ -141,7 +138,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			if ((InStride % 4u) != 0u)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Check skin data error(stride is not time of 4 bytes)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Check skin data error(stride is not time of 4 bytes)."));
 			}
 			else
 			{
@@ -250,9 +247,9 @@ namespace PigeonEngine
 	class ESkinnedMesh : public EMesh
 	{
 	public:
-		typedef	TMap<EString, Matrix4x4>	EBindPoseValue;
-		typedef	TMap<EString, USHORT>		EBindPoseIndex;
-		typedef	TArray<ESkinData>			ESkinPart;
+		using EBindPoseValue	= TMap<EString, Matrix4x4>;
+		using EBindPoseIndex	= TMap<EString, USHORT>;
+		using ESkinPart			= TArray<ESkinData>;
 	public:
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();

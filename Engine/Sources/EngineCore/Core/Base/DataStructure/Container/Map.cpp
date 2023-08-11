@@ -106,7 +106,7 @@ namespace PigeonEngine
     template <typename K, typename V>
     UINT TMap<K, V>::Length() const
     {
-        return Map.size();
+        return static_cast<Map.size()>;
     }
 
     template <typename K, typename V>

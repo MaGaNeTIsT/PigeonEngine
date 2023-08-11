@@ -17,7 +17,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 		virtual void	EditorTick(FLOAT deltaTime) = 0;
 	public:
-		void	SetName(const std::string& name);
+		void	SetName(const EString& name);
 #endif
 	public:
 		virtual BOOL	IsActive()const;

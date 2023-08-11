@@ -1,7 +1,8 @@
 ﻿#pragma once
-#include <CoreMinimal.h>
-#include <unordered_map>
 
+#include "../../../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
+#include <unordered_map>
 #include "Array.h"
 
 namespace PigeonEngine

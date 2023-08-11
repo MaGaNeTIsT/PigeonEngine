@@ -161,7 +161,7 @@ namespace PigeonEngine
 		if ((!InIndexData) || (InIndexData->PartType == 0u) || (InIndexData->ElementNum < 3u) ||
 			(!(InIndexData->Indices)) || ((InIndexData->Stride != 2u) || (InIndexData->Stride != 4u)))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add index descriptor check failed."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add index descriptor check failed."));
 			return FALSE;
 		}
 		if (Indices.PartType != 0u)
@@ -170,7 +170,7 @@ namespace PigeonEngine
 			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
 				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh [old] index check failed. Part type is not match with stride."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh [old] index check failed. Part type is not match with stride."));
 				return FALSE;
 			}
 			Indices.Release();
@@ -180,7 +180,7 @@ namespace PigeonEngine
 		if (((NewPartType == EVertexLayoutType::MESH_INDEX_HALF) && (InIndexData->Stride != 2u)) ||
 			((NewPartType == EVertexLayoutType::MESH_INDEX_FULL) && (InIndexData->Stride != 4u)))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh [new] index check failed. Part type is not match with stride."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh [new] index check failed. Part type is not match with stride."));
 			return FALSE;
 		}
 		Indices.PartType	= NewPartType;
@@ -199,7 +199,7 @@ namespace PigeonEngine
 			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
 				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Removed index check failed. Part type is not match with stride."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Removed index check failed. Part type is not match with stride."));
 			}
 #endif
 			Indices.Release();
@@ -207,7 +207,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to removing indices of mesh but do not exist."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing indices of mesh but do not exist."));
 #endif
 		return FALSE;
 	}
@@ -224,14 +224,14 @@ namespace PigeonEngine
 			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
 				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Get index check failed. Part type is not match with stride."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Get index check failed. Part type is not match with stride."));
 			}
 #endif
 			OutIndexData = (const EIndexData*)(&Indices);
 			return TRUE;
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to getting indices of mesh but do not exist."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to getting indices of mesh but do not exist."));
 #endif
 		return FALSE;
 	}
@@ -241,10 +241,10 @@ namespace PigeonEngine
 			(!(InVertexData->Datas)) || ((InVertexData->Stride % 4u) != 0u))
 		{
 #ifdef _DEBUG_MODE
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex descriptor check failed."));
-			if ((InVertexData->Stride % 4u) != 0u)
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex descriptor check failed."));
+			if (InVertexData && (InVertexData->Stride % 4u) != 0u)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex check failed(stride is not 4 bytes alignment)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex check failed(stride is not 4 bytes alignment)."));
 			}
 #endif
 			return FALSE;
@@ -254,7 +254,7 @@ namespace PigeonEngine
 			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
 			(InLayoutType == EVertexLayoutType::MESH_SKIN))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex layout type check failed(wrong type)."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex layout type check failed(wrong type)."));
 			return FALSE;
 		}
 		UINT FindIndex = 0u;
@@ -271,7 +271,7 @@ namespace PigeonEngine
 			}
 			if (FindIndex == EMesh::MeshVertexLayoutPartMaxNum)
 			{
-				PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex failed(same type layout is full)."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex failed(same type layout is full)."));
 				return FALSE;
 			}
 		}
@@ -290,7 +290,7 @@ namespace PigeonEngine
 			}
 			return TRUE;
 		}
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh add vertex failed(fill in layout index is already exist)."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex failed(fill in layout index is already exist)."));
 		return FALSE;
 	}
 	BOOL EMesh::RemoveVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex)
@@ -299,7 +299,7 @@ namespace PigeonEngine
 			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
 			(InLayoutType == EVertexLayoutType::MESH_SKIN))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh remove vertex layout type check failed(wrong type)."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh remove vertex layout type check failed(wrong type)."));
 			return FALSE;
 		}
 		if ((Vertices.Length() > 0u) && CheckVertexLayoutPartExist(InLayoutType, InLayoutIndex))
@@ -337,7 +337,7 @@ namespace PigeonEngine
 			}
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to remove not exist vertex."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to remove not exist vertex."));
 #endif
 		return FALSE;
 	}
@@ -347,7 +347,7 @@ namespace PigeonEngine
 			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
 			(InLayoutType == EVertexLayoutType::MESH_SKIN))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Mesh get vertex layout type check failed(wrong type)."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh get vertex layout type check failed(wrong type)."));
 			return FALSE;
 		}
 		if ((Vertices.Length() > 0u) && CheckVertexLayoutPartExist(InLayoutType, InLayoutIndex))
@@ -363,7 +363,7 @@ namespace PigeonEngine
 			}
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist vertex."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist vertex."));
 #endif
 		return FALSE;
 	}
@@ -371,7 +371,7 @@ namespace PigeonEngine
 	{
 		if ((!InSubmeshData) || (InSubmeshData->VertexNum < 3u) || (InSubmeshData->IndexNum < 3u))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to add invalid submesh."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to add invalid submesh."));
 			return FALSE;
 		}
 		const UINT NewIndex = Submeshes.Length();
@@ -390,7 +390,7 @@ namespace PigeonEngine
 	{
 		if (UINT TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to remove not exist submesh."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to remove not exist submesh."));
 			return FALSE;
 		}
 		Submeshes.RemoveAt(InSubmeshIndex);
@@ -400,7 +400,7 @@ namespace PigeonEngine
 	{
 		if (UINT TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist submesh."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist submesh."));
 			return FALSE;
 		}
 		OutSubmeshData = (const ESubmeshData*)(&(Submeshes[InSubmeshIndex]));
@@ -537,12 +537,12 @@ namespace PigeonEngine
 	{
 		if ((!InSkinData) || (InSkinData->ElementNum < 3u) || (InSkinData->PartType != EVertexLayoutType::MESH_SKIN) || ((InSkinData->Stride % 4u) != 0u) || (!(InSkinData->Indices)) || (!(InSkinData->Weights)))
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to add invalid skin data."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to add invalid skin data."));
 			return FALSE;
 		}
 		if (Skins.Length() >= EMesh::MeshVertexLayoutPartMaxNum)
 		{
-			PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
 			return FALSE;
 		}
 		for (UINT FindIndex = 0u; FindIndex < EMesh::MeshVertexLayoutPartMaxNum; FindIndex++)
@@ -564,7 +564,7 @@ namespace PigeonEngine
 				return TRUE;
 			}
 		}
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
 		return FALSE;
 	}
 	BOOL ESkinnedMesh::RemoveSkinElement(UINT InLayoutIndex)
@@ -607,7 +607,7 @@ namespace PigeonEngine
 			}
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist skin data."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist skin data."));
 #endif
 		return FALSE;
 	}
@@ -626,7 +626,7 @@ namespace PigeonEngine
 			}
 		}
 #ifdef _DEBUG_MODE
-		PE_FAILED(EString(ENGINE_ASSET_ERROR), EString("Try to get not exist skin data."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist skin data."));
 #endif
 		return FALSE;
 	}

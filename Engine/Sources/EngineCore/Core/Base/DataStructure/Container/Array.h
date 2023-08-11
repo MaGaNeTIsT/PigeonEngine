@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-#include <CoreMinimal.h>
+#include "../../../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
+#include <vector>
 #include <random>
 
 namespace PigeonEngine
@@ -39,6 +41,9 @@ namespace PigeonEngine
         void Remove    (const T& Element);
         void Pop       ();
         void Clear     ();
+
+        T*          RawData();
+        const T*    RawData() const;
 
         void Append(const TArray<T>& Other);
 

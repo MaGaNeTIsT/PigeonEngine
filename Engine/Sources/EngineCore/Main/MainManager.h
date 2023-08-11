@@ -1,7 +1,10 @@
 #pragma once
 
-#include <CoreMinimal.h>
+#include "Main.h"
+#include <Base/DataStructure/BuiltInType.h>
+#include <Base/DataStructure/BaseType.h>
 #include <Base/Timer/Timer.h>
+#include <Base/DataStructure/ObjectBase.h>
 
 namespace PigeonEngine
 {

@@ -1,7 +1,10 @@
 ﻿#pragma once
-#include <CoreMinimal.h>
+
+#include "../../../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
 #include <map>
 #include "Array.h"
+
 namespace PigeonEngine
 {
     template <typename K, typename V>

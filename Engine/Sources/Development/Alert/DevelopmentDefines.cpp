@@ -26,7 +26,7 @@ namespace PigeonEngine
 	template<typename TConditionLambdaType>
 	void DWindowsMessage::_Check_Default(const TConditionLambdaType& conditionFunc)
 	{
-		std::string tempText, tempCaption; const UINT tempType = MB_OK;
+		EString tempText, tempCaption; const UINT tempType = MB_OK;
 		if (!(conditionFunc(tempText, tempCaption)))
 		{
 			if (WindowsMessageBox(tempText, tempCaption, tempType) == IDOK)
@@ -39,7 +39,7 @@ namespace PigeonEngine
 	template<typename TConditionLambdaType, typename TExecuteLambdaType>
 	void DWindowsMessage::_Check_Full(const TConditionLambdaType& conditionFunc, const TExecuteLambdaType& executeFunc)
 	{
-		std::string tempText, tempCaption; UINT tempType = 0u;
+		EString tempText, tempCaption; UINT tempType = 0u;
 		if (!(conditionFunc(tempText, tempCaption, tempType)))
 		{
 			executeFunc(WindowsMessageBox(tempText, tempCaption, tempType));
