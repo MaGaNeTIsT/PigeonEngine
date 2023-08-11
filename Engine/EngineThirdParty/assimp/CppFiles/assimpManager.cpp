@@ -1,4 +1,5 @@
 #include "../Headers/assimpManager.h"
+#include <Base/DataStructure/Container/Map.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -6,6 +7,13 @@
 namespace PigeonEngine
 {
 #define CUSTOM_IS_QNAN(f)	(f != f)
+
+	struct StoredMeshLayoutDesc
+	{
+		EVertexLayoutType	BaseVertexLayout;
+		UINT				TryStoredLayoutNum;
+		UINT				TryStoredLayoutSlot[EMesh::MeshVertexLayoutPartMaxNum];
+	};
 
 	static Assimp::Importer* _GAssetImporter = nullptr;
 
@@ -288,7 +296,7 @@ namespace PigeonEngine
 	CAssimpManager::~CAssimpManager()
 	{
 	}
-	BOOL CAssimpManager::FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh)
+	static BOOL FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL>& OutIsSkeletonMesh)
 	{
 		if (!(InScene->HasMeshes()))
 		{
@@ -399,7 +407,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 	template<typename TDataType, typename TMeshType>
-	void CAssimpManager::TryAddMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideIn32Bits, const UINT InSuccessAddMaxNum, TMeshType& OutMesh)
+	static void TryAddMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InStrideIn32Bits, const UINT InSuccessAddMaxNum, TMeshType& OutMesh)
 	{
 		UINT AddElementCounter = 0u;
 		for (UINT TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)
@@ -430,7 +438,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void CAssimpManager::TryAddMeshSkinPart(const TArray<const aiBone*>& InBones, const UINT InVertexNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InSuccessAddMaxNum, ESkinnedMesh& OutMesh)
+	static void TryAddMeshSkinPart(const TArray<const aiBone*>& InBones, const UINT InVertexNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InSuccessAddMaxNum, ESkinnedMesh& OutMesh)
 	{
 		const UINT AssimpMeshSkinElementMaxCount = 1u;	//For assimp we assum that every mesh contains only ONE skinned data.
 		{
@@ -528,7 +536,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	TArray<CAssimpManager::StoredMeshLayoutDesc> CAssimpManager::GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, const UINT InLayoutNum)
+	static TArray<StoredMeshLayoutDesc> GetShouldStoredMeshLayoutDescriptions(const RShaderSemanticType* InLayouts, const UINT InLayoutNum)
 	{
 		TArray<StoredMeshLayoutDesc> Result;
 		TArray<UINT> BlendIndicesSlots, BlendWeightsSlots;
@@ -593,7 +601,7 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	void CAssimpManager::TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes)
+	static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes)
 	{
 		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
 		for (UINT MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
@@ -704,7 +712,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void CAssimpManager::TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<ESkinnedMesh>& OutMeshes)
+	static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<ESkinnedMesh>& OutMeshes)
 	{
 		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
 		for (UINT MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
@@ -836,7 +844,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	BOOL CAssimpManager::GatherAllBoneNodeDatas(const aiScene* InScene, TArray<EBoneData>& OutBones, TMap<EString, SHORT>& OutBoneIndices)
+	static BOOL GatherAllBoneNodeDatas(const aiScene* InScene, TArray<EBoneData>& OutBones, TMap<EString, SHORT>& OutBoneIndices)
 	{
 		if (OutBones.Length() > 0u)
 		{
@@ -898,7 +906,7 @@ namespace PigeonEngine
 
 		return TRUE;
 	}
-	BOOL CAssimpManager::GatherAllAnimationChannelDatas(const TMap<EString, const aiAnimation*>& InAnimations, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips)
+	static BOOL GatherAllAnimationChannelDatas(const TMap<EString, const aiAnimation*>& InAnimations, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips)
 	{
 		if (OutSkeletonAnimationClips.Length() > 0u)
 		{

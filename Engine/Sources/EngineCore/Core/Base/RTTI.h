@@ -30,7 +30,7 @@ namespace PigeonEngine
             if (name == TypeName()) { return true; }\
             else { return ParentType::Is(name); }\
         }\
-        typedef ParentType Super;\
+        using Super = ParentType;\
 
     //Runtime Interface,all types need rtti need to implement from this.
     class ERTTI
@@ -46,12 +46,16 @@ namespace PigeonEngine
         {
             return nullptr;
         }
-
         virtual bool Is(const size_t id) const
         {
             return false;
         }
 
+        /// <summary>
+        /// This function CAN NOT used for those class that inherited from template type class.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         virtual bool Is(const char* name) const
         {
             return false;

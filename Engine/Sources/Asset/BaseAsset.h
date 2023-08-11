@@ -9,7 +9,8 @@ namespace PigeonEngine
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-		//EClass(TBaseAsset<TResourceType>, EObjectBase)
+
+		EClass(TBaseAsset, EObjectBase)
 
 	public:
 		TBaseAsset(
@@ -88,7 +89,10 @@ namespace PigeonEngine
 	template<typename TResourceType, typename TRenderResourceType>
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
 	{
-		//EClass(TRenderBaseAsset<TResourceType, TRenderResourceType>, TBaseAsset<TResourceType>)
+	public:
+		typedef TBaseAsset<TResourceType> Super;
+
+		EClass(TRenderBaseAsset, Super)
 
 	public:
 		TRenderBaseAsset(
