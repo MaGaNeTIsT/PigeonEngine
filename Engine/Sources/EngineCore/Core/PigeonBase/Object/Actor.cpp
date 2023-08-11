@@ -143,7 +143,8 @@ namespace PigeonEngine
 
 	EBoundAABB PActor::GetComponentsBoundingBox()
 	{
-		
+		//TODO
+		return EBoundAABB();
 	}
 
 	void PActor::Destroy()

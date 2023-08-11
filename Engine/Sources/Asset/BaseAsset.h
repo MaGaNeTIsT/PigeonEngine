@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Base/DataStructure/Container/Map.h>
 
 namespace PigeonEngine
 {
@@ -183,100 +184,103 @@ namespace PigeonEngine
 		}
 		virtual ~TAssetManager()
 		{
-			if (SavedDatas.size() > 0)
-			{
-				for (auto it = SavedDatas.begin(); it != SavedDatas.end(); it++)
-				{
-					delete (it->second);
-				}
-				SavedDatas.clear();
-			}
+			Clear();
 		}
 	public:
 		/*
 		* Add item into mapped datas. This action may reconstruct whole memories.
-		* Params [replaceIfHaveKey]: true = If already contain data with keyValue will replace it. This action will delete old asset. false = If already contain data with keyValue will not do anything.
+		* Params [InReplaceIfHaveKey]: true = If already contain data with InKeyValue will replace it. This action will delete old asset. false = If already contain data with InKeyValue will not do anything.
 		* Return [UINT]: 0 = Add failed. value = Mapped datas' size(after add value).
 		*/
-		UINT Add(TKeyType&& keyValue, TAssetType* dataValue, const BOOL& replaceIfHaveKey = FALSE)
+		UINT Add(const TKeyType& InKeyValue, TAssetType* InDataValue, const BOOL& InReplaceIfHaveKey = FALSE)
 		{
-			auto result = SavedDatas.insert_or_assign(std::forward<TKeyType>(keyValue), dataValue);
-			if (!result.second)
+			if (!InDataValue)
 			{
-				if (replaceIfHaveKey)
-				{
-					TAssetType* oldValue = SavedDatas[std::forward<TKeyType>(keyValue)];
-					SavedDatas[std::forward<TKeyType>(keyValue)] = dataValue;
-					delete oldValue;
-					return static_cast<UINT>(SavedDatas.size());
-				}
 				return 0u;
 			}
-			return static_cast<UINT>(SavedDatas.size());
+			BOOL NeedReplace = FALSE;
+			if (SavedDatas.ContainsKey(InKeyValue))
+			{
+				NeedReplace = TRUE;
+				if (!InReplaceIfHaveKey)
+				{
+					return 0u;
+				}
+			}
+			if (NeedReplace)
+			{
+				TAssetType* TempData = nullptr;
+				if (SavedDatas.FindValue(InKeyValue, TempData))
+				{
+					if (TempData && TempData == InDataValue)
+					{
+						return (SavedDatas.Length());
+					}
+					SavedDatas.Remove(InKeyValue);
+					delete TempData;
+				}
+			}
+			SavedDatas.Add(InKeyValue, InDataValue);
+			return (SavedDatas.Length());
 		}
 		/*
-		* Remove item with kayValue in mapped datas.
+		* Remove item with InKeyValue in mapped datas.
 		* Return [UINT]: Mapped datas' size(after remove value).
 		*/
-		UINT Remove(TKeyType&& keyValue)
+		UINT Remove(const TKeyType& InKeyValue)
 		{
-			auto findIt = SavedDatas.find(std::forward<TKeyType>(keyValue));
-			if (findIt != SavedDatas.end())
+			TAssetType* TempData = nullptr;
+			if (SavedDatas.FindValue(InKeyValue, TempData))
 			{
-				TAssetType* oldValue = findIt->second;
-				SavedDatas.erase(std::forward<TKeyType>(keyValue));
-				delete oldValue;
+				SavedDatas.Remove(InKeyValue);
+				delete TempData;
 			}
-			return static_cast<UINT>(SavedDatas.size());
+			return (SavedDatas.Length());
 		}
 		/*
-		* Find item with kayValue in mapped datas.
+		* Find item with InKeyValue in mapped datas.
 		* Return [TAssetType*]: If contain key return asset. If not then return nullptr.
 		*/
-		TAssetType* Find(const TKeyType& keyValue)
+		TAssetType* Find(const TKeyType& InKeyValue)
 		{
-			auto findIt = SavedDatas.find(keyValue);
-			if (findIt != SavedDatas.end())
-			{
-				return (findIt->second);
-			}
-			return nullptr;
+			TAssetType* TempData = nullptr;
+			SavedDatas.FindValue(InKeyValue, TempData);
+			return TempData;
 		}
 		/*
-		* Check if contains item with kayValue in mapped datas.
+		* Check if contains item with InKeyValue in mapped datas.
 		* Return [BOOL]: If contains return TRUE. If not then return FALSE.
 		*/
-		BOOL Contain(const TKeyType& keyValue)const
+		BOOL Contain(const TKeyType& InKeyValue)const
 		{
-			auto findIt = SavedDatas.find(keyValue);
-			if (findIt != SavedDatas.end())
-			{
-				return TRUE;
-			}
-			return FALSE;
+			return (SavedDatas.ContainsKey(InKeyValue));
 		}
 		/*
 		* Clear whole data list.
 		*/
 		void Clear()
 		{
-			for (auto it = SavedDatas.begin(); it != SavedDatas.end(); it++)
+			if (SavedDatas.Length() > 0u)
 			{
-				delete (it->second);
+				for (auto it = SavedDatas.Begin(); it != SavedDatas.End(); it++)
+				{
+					delete (it->second);
+				}
+				SavedDatas.Clear();
 			}
-			SavedDatas.clear();
 		}
 		/*
 		* Get size of mapped datas.
 		*/
 		UINT Size()const
 		{
-			return static_cast<UINT>(SavedDatas.size());
+			return (SavedDatas.Length());
 		}
 	protected:
-		std::unordered_map<TKeyType, TAssetType*> SavedDatas;
+		TMap<TKeyType, TAssetType*> SavedDatas;
 
 		CLASS_REMOVE_COPY_BODY(TAssetManager)
+
 	};
 
 };

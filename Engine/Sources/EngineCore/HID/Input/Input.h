@@ -1,6 +1,9 @@
 #pragma once
 
-#include <CoreMinimal.h>
+#include "../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
+#include <Base/DataStructure/BaseType.h>
+#include <Config/EngineConfig.h>
 #include "Mouse.h"
 #include "Keyboard.h"
 

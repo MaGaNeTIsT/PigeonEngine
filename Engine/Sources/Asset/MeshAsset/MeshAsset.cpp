@@ -26,6 +26,9 @@ namespace PigeonEngine
 		case EVertexLayoutType::MESH_SKIN:
 			return 26u;
 		}
+		//TODO 32 bit index can not get 32 in fact.
+		PE_FAILED((ENGINE_ASSET_ERROR), ("MeshVertexLayoutType 32 bit index can not get 32 in fact."));
+		return 32u;
 	}
 	EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType)
 	{
@@ -669,7 +672,7 @@ namespace PigeonEngine
 	}
 	BOOL EStaticMeshAsset::InitResource()
 	{
-
+		return FALSE;
 	}
 
 };

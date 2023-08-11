@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Base/DataStructure/BuiltInType.h>
+
 namespace PigeonEngine
 {
 

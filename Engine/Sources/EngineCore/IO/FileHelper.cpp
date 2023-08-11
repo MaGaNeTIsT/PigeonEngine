@@ -11,17 +11,18 @@ namespace PigeonEngine
 		ifstream  fin(*FilePath, ios::in | ios::binary);
 		if (!fin)
 		{
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			{
-				string errorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
-				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
+				EString errorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
+				errorData += FilePath;
+				errorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
 			}
 #endif
 			return FALSE;
 		}
 		fin.seekg(0, ios_base::end);
-		Size = fin.tellg();
+		Size = static_cast<ULONG>(fin.tellg());
 		fin.seekg(0, ios_base::beg);
 		Return = new CHAR[Size];
 		fin.read((CHAR*)Return, sizeof(CHAR) * Size);
@@ -34,11 +35,12 @@ namespace PigeonEngine
 		ifstream fin(*FilePath, ios::in);
 		if (!fin)
 		{
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			{
-				string errorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
-				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
+				EString errorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
+				errorData += FilePath;
+				errorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
 			}
 #endif
 			return FALSE;
@@ -54,11 +56,12 @@ namespace PigeonEngine
 		ofstream out(*FilePath, ios::out);
 		if (!out)
 		{
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			{
-				string errorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
-				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
+				EString errorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
+				errorData += FilePath;
+				errorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
 			}
 #endif
 			return FALSE;
@@ -73,11 +76,12 @@ namespace PigeonEngine
 		ofstream out(*FilePath, ios::out | ios::binary);
 		if (!out)
 		{
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 			{
-				string errorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
-				errorData += FilePath + ").";
-				PE_FAILED(ENGINE_IO_FILE_ERROR, errorData);
+				EString errorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
+				errorData += FilePath;
+				errorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
 			}
 #endif
 			return FALSE;

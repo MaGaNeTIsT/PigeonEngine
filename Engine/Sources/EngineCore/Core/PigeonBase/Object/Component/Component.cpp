@@ -33,7 +33,7 @@ namespace PigeonEngine
 	void PComponent::FixedTick(FLOAT deltaTime)
 	{
 	}
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 	void PComponent::EditorTick(FLOAT deltaTime)
 	{
 	}

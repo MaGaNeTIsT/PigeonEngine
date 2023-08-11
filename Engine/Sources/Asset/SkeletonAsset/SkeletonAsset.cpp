@@ -333,7 +333,7 @@ namespace PigeonEngine
 	}
 	BOOL ESkeletonAsset::InitResource()
 	{
-
+		return FALSE;
 	}
 
 };

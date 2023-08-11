@@ -1,6 +1,10 @@
 #include "Main.h"
 #include "MainManager.h"
 #include <Base/Timer/Timer.h>
+#include <Config/EngineConfig.h>
+#ifdef _EDITOR_ONLY
+#include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
+#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -26,7 +30,7 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		{
 			return TRUE;
 		}
-		RECT clientRect = { 0, 0, PigeonEngine::ESettings::ENGINE_SCREEN_WIDTH, PigeonEngine::ESettings::ENGINE_SCREEN_HEIGHT };
+		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::ESettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::ESettings::ENGINE_SCREEN_HEIGHT) };
 		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
 		::AdjustWindowRect(&clientRect, style, FALSE);
 		windowHandle = ::CreateWindowEx(
@@ -111,12 +115,19 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	return (INT)msg.wParam;
 }
 
+#ifdef _EDITOR_ONLY
+static PigeonEngine::CImGUIManager* GImGUIManager = PigeonEngine::CImGUIManager::GetManagerSingleton();
+#endif
+
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-#ifdef _DEVELOPMENT_EDITOR
-	if (PigeonEngine::CimGUIManager::WndProcHandler(hWnd, uMsg, wParam, lParam))
+#ifdef _EDITOR_ONLY
+	if (GImGUIManager)
 	{
-		return TRUE;
+		if (GImGUIManager->WndProcHandler(hWnd, uMsg, wParam, lParam))
+		{
+			return TRUE;
+		}
 	}
 #endif
 

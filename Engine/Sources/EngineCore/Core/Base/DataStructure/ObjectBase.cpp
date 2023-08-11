@@ -1,4 +1,8 @@
 #include "ObjectBase.h"
+#include <Config/EngineConfig.h>
+#ifdef _EDITOR_ONLY
+#include "../../../../Development/Config/EngineDebugName.h"
+#endif
 
 namespace PigeonEngine
 {

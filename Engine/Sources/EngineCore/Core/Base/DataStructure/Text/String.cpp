@@ -1,4 +1,6 @@
 ﻿#include "String.h"
+#include <Base/Math/Math.h>
+
 namespace PigeonEngine
 {
     EString::EString()
@@ -11,7 +13,7 @@ namespace PigeonEngine
     {
     }
 
-    EString::EString(EString&& Other)
+    EString::EString(EString&& Other) noexcept
     {
         Str = std::move(Other.Str);
         Other = "";
@@ -106,7 +108,7 @@ namespace PigeonEngine
 
     UINT EString::Length() const
     {
-        return Str.length();
+        return static_cast<UINT>(Str.length());
     }
 
     BOOL EString::StartWith(const EString& SubString) const
@@ -116,12 +118,12 @@ namespace PigeonEngine
 
     UINT EString::Find(const EString& SubString, UINT Offset) const
     {
-        return Str.find(*SubString, Offset);
+        return static_cast<UINT>(Str.find(*SubString, Offset));
     }
 
     UINT EString::RightFind(const EString& SubString, UINT Offset) const
     {
-        return Str.rfind(*SubString, Offset);
+        return static_cast<UINT>(Str.rfind(*SubString, Offset));
     }
 
     EString EString::Replace(const EString& From, const EString& To) const

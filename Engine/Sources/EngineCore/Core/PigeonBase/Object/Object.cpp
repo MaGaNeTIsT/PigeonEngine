@@ -27,10 +27,10 @@ namespace PigeonEngine
 	{
 		delete this;
 	}
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 	void PObject::SetName(const std::string& name)
 	{
-		m_Name = name;
+		DebugName = name;
 	}
 #endif
 	void PObject::Uninit()

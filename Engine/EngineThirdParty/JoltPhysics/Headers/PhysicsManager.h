@@ -24,7 +24,7 @@ namespace PigeonEngine
 			GetSingleton()->PostPhysicsUpdate();
 		}
 		static void		Draw()						{}
-#ifdef _DEVELOPMENT_EDITOR
+#ifdef _EDITOR_ONLY
 	public:
 		static void		EditorUpdate() {}
 	private:

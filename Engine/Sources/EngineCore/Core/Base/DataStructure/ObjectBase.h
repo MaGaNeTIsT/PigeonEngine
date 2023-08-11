@@ -1,15 +1,18 @@
 #pragma once
 
-#include <CoreMinimal.h>
+#include "../../../Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
+#include <Base/DataStructure/BaseType.h>
+#include <Base/TemplateHeaders.h>
 #include <Base/DataStructure/Text/String.h>
 
 namespace PigeonEngine
 {
 
-	class EObjectBase /*: public ERTTI*/
+	class EObjectBase : public ERTTI
 	{
-
-		//EClass(EObjectBase, ERTTI)
+		
+		EClass(EObjectBase, ERTTI)
 
 	public:
 		const ULONGLONG& GetUniqueID()const;

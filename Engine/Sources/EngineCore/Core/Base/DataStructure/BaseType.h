@@ -294,7 +294,7 @@ namespace PigeonEngine
 		constexpr Vector2(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
 		constexpr Vector2(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
 		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(FLOAT v = 0.f)noexcept : x(v), y(v) {}
+		constexpr Vector2(FLOAT v)noexcept : x(v), y(v) {}
 		constexpr Vector2(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy) {}
 		constexpr Vector2(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
 		constexpr Vector2(INT vx, INT vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
@@ -482,7 +482,7 @@ namespace PigeonEngine
 		constexpr Vector3(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f) {}
 		constexpr Vector3(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
 		constexpr Vector3(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
-		constexpr Vector3(FLOAT v = 0.f)noexcept : x(v), y(v), z(v) {}
+		constexpr Vector3(FLOAT v)noexcept : x(v), y(v), z(v) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
 		constexpr Vector3(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
@@ -698,7 +698,7 @@ namespace PigeonEngine
 		constexpr Vector4(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f), w(0.f) {}
 		constexpr Vector4(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(0.f) {}
 		constexpr Vector4(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(static_cast<FLOAT>(xv.w)) {}
-		constexpr Vector4(FLOAT v = 0.f)noexcept : x(v), y(v), z(v), w(v) {}
+		constexpr Vector4(FLOAT v)noexcept : x(v), y(v), z(v), w(v) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
@@ -896,7 +896,7 @@ namespace PigeonEngine
 		constexpr Vector2Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2Int(FLOAT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
 		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(INT v = 0)noexcept : x(v), y(v) {}
+		constexpr Vector2Int(INT v)noexcept : x(v), y(v) {}
 		constexpr Vector2Int(INT vx, INT vy)noexcept : x(vx), y(vy) {}
 		constexpr Vector2Int(UINT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
 		constexpr Vector2Int(UINT vx, UINT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
@@ -1056,7 +1056,7 @@ namespace PigeonEngine
 		constexpr Vector3Int(FLOAT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
 		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
 		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(INT v = 0)noexcept : x(v), y(v), z(v) {}
+		constexpr Vector3Int(INT v)noexcept : x(v), y(v), z(v) {}
 		constexpr Vector3Int(INT vx, INT vy)noexcept : x(vx), y(vy), z(0) {}
 		constexpr Vector3Int(INT vx, INT vy, INT vz)noexcept : x(vx), y(vy), z(vz) {}
 		constexpr Vector3Int(UINT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
@@ -1220,7 +1220,7 @@ namespace PigeonEngine
 		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
 		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
 		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(INT v = 0)noexcept : x(v), y(v), z(v), w(v) {}
+		constexpr Vector4Int(INT v)noexcept : x(v), y(v), z(v), w(v) {}
 		constexpr Vector4Int(INT vx, INT vy)noexcept : x(vx), y(vy), z(0), w(0) {}
 		constexpr Vector4Int(INT vx, INT vy, INT vz)noexcept : x(vx), y(vy), z(vz), w(0) {}
 		constexpr Vector4Int(INT vx, INT vy, INT vz, INT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
@@ -1379,7 +1379,7 @@ namespace PigeonEngine
 	{
 		constexpr Color3(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
 		constexpr Color3(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Color3(FLOAT v = 0.f)noexcept : x(v), y(v), z(v) {}
+		constexpr Color3(FLOAT v)noexcept : x(v), y(v), z(v) {}
 		constexpr Color3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
 		constexpr Color3(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz) {}
 		constexpr Color3(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}

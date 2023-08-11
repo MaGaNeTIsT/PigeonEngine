@@ -10,7 +10,7 @@ namespace PigeonEngine
 	void EInput::Initialize(HWND hWnd)
 	{
 		// Controller Initialization
-		Controller.Initialize(hWnd, ESettings::ENGINE_SCREEN_WIDTH, ESettings::ENGINE_SCREEN_HEIGHT);
+		Controller.Initialize(hWnd, static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT));
 
 		//memset(m_OldKeyState, 0, 256);
 		//memset(m_KeyState, 0, 256);
