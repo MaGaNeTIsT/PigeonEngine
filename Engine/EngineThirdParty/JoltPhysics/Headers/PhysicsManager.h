@@ -17,10 +17,10 @@ namespace PigeonEngine
 		static void		Init()						{ GetSingleton()->InitPhysics(); }
 		static void		Uninit()					{ GetSingleton()->UninitPhysics(); }
 		static void		Update()					{}
-		static void		FixedUpdate()
+		static void		FixedUpdate(float DeltaTime)
 		{
 			GetSingleton()->PrePhysicsUpdate();
-			GetSingleton()->PhysicsUpdate();
+			GetSingleton()->PhysicsUpdate(DeltaTime);
 			GetSingleton()->PostPhysicsUpdate();
 		}
 		static void		Draw()						{}
