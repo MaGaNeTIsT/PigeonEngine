@@ -48,19 +48,19 @@ namespace PigeonEngine
 
 	void CPhysics_Jolt::UninitPhysics()
 	{
-		for (const auto& body : m_Bodys)
+		for (auto& body = m_Bodys.Begin(); body != m_Bodys.End(); ++body)
 		{
-			PhysicsData->BodyInterface->RemoveBody(body.second.ID);
-			PhysicsData->BodyInterface->DestroyBody(body.second.ID);
+			PhysicsData->BodyInterface->RemoveBody(body->second.ID);
+			PhysicsData->BodyInterface->DestroyBody(body->second.ID);
 		}
 
-		for (const auto& bodyCreateSettings : m_BodyCreationSettings)
+		for (auto& bodyCreateSettings = m_BodyCreationSettings.Begin(); bodyCreateSettings != m_BodyCreationSettings.End(); ++bodyCreateSettings)
 		{
-			if (bodyCreateSettings.second->GetShapeSettings())
-				delete bodyCreateSettings.second->GetShapeSettings();
+			if (bodyCreateSettings->second->GetShapeSettings())
+				delete bodyCreateSettings->second->GetShapeSettings();
 			//if (bodyCreateSettings.second->GetShape())
 			//	delete bodyCreateSettings.second->GetShape();
-			delete bodyCreateSettings.second;
+			delete bodyCreateSettings->second;
 		}
 
 		PhysicsData->BodyInterface = nullptr;
