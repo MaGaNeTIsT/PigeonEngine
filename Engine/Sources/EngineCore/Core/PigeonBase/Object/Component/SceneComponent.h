@@ -11,7 +11,7 @@ namespace PigeonEngine
     class PSceneComponent : public PActorComponent
     {
 
-		EClass(PSceneComponent, PActorComponent)
+		//EClass(PSceneComponent, PActorComponent)
 
     	CLASS_VIRTUAL_NOCOPY_BODY(PSceneComponent)
 

@@ -11,7 +11,7 @@ namespace PigeonEngine
 	class PActorComponent : public PComponent
 	{
 
-		EClass(PActorComponent, PComponent)
+		//EClass(PActorComponent, PComponent)
 
 	public:
 		virtual void Init() override;

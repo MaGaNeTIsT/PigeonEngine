@@ -134,11 +134,8 @@ namespace PigeonEngine
 	struct RRasterizerState
 	{
 		RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
-		RRasterizerState(RCullModeType cull, RFillModeType fill = RFillModeType::FILL_SOLID) noexcept : CullMode(cull), FillMode(fill) {}
 		RRasterizerState(const RRasterizerState& other) noexcept : CullMode(other.CullMode), FillMode(other.FillMode) {}
-		constexpr RRasterizerState() noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
-		constexpr RRasterizerState(RCullModeType cull, RFillModeType fill = RFillModeType::FILL_SOLID) noexcept : CullMode(cull), FillMode(fill) {}
-		constexpr RRasterizerState(const RRasterizerState& other) noexcept : CullMode(other.CullMode), FillMode(other.FillMode) {}
+		constexpr RRasterizerState(RCullModeType cull = RCullModeType::CULL_BACK, RFillModeType fill = RFillModeType::FILL_SOLID) noexcept : CullMode(cull), FillMode(fill) {}
 		RCullModeType	CullMode;
 		RFillModeType	FillMode;
 	};
@@ -150,11 +147,8 @@ namespace PigeonEngine
 	struct RDepthState
 	{
 		RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
-		RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
 		RDepthState(const RDepthState& other) noexcept : DepthEnable(other.DepthEnable), DepthWriteMask(other.DepthWriteMask), DepthFunc(other.DepthFunc) {}
-		constexpr RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		constexpr RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
-		constexpr RDepthState(const RDepthState& other) noexcept : DepthEnable(other.DepthEnable), DepthWriteMask(other.DepthWriteMask), DepthFunc(other.DepthFunc) {}
 		BOOL						DepthEnable;
 		RDepthWriteMaskType			DepthWriteMask;
 		RComparisonFunctionType		DepthFunc;
@@ -173,11 +167,8 @@ namespace PigeonEngine
 	struct RStencilStateType
 	{
 		RStencilStateType() noexcept : StencilFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilDepthFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilPassOp(RStencilOperationType::STENCIL_OP_KEEP), StencilFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
-		RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP) noexcept : StencilFailOp(stencilFailOp), StencilDepthFailOp(depthFailOp), StencilPassOp(passOp), StencilFunc(func) {}
 		RStencilStateType(const RStencilStateType& other) noexcept : StencilFailOp(other.StencilFailOp), StencilDepthFailOp(other.StencilDepthFailOp), StencilPassOp(other.StencilPassOp), StencilFunc(other.StencilFunc) {}
-		constexpr RStencilStateType() noexcept : StencilFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilDepthFailOp(RStencilOperationType::STENCIL_OP_KEEP), StencilPassOp(RStencilOperationType::STENCIL_OP_KEEP), StencilFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		constexpr RStencilStateType(RComparisonFunctionType func, RStencilOperationType passOp, RStencilOperationType depthFailOp = RStencilOperationType::STENCIL_OP_KEEP, RStencilOperationType stencilFailOp = RStencilOperationType::STENCIL_OP_KEEP) noexcept : StencilFailOp(stencilFailOp), StencilDepthFailOp(depthFailOp), StencilPassOp(passOp), StencilFunc(func) {}
-		constexpr RStencilStateType(const RStencilStateType& other) noexcept : StencilFailOp(other.StencilFailOp), StencilDepthFailOp(other.StencilDepthFailOp), StencilPassOp(other.StencilPassOp), StencilFunc(other.StencilFunc) {}
 		RStencilOperationType		StencilFailOp;
 		RStencilOperationType		StencilDepthFailOp;
 		RStencilOperationType		StencilPassOp;
@@ -230,11 +221,8 @@ namespace PigeonEngine
 	struct RBlendState
 	{
 		RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
-		RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
 		RBlendState(const RBlendState& other) noexcept : BlendEnable(other.BlendEnable), SrcBlend(other.SrcBlend), DstBlend(other.DstBlend), BlendOp(other.BlendOp), SrcBlendAlpha(other.SrcBlendAlpha), DstBlendAlpha(other.DstBlendAlpha), BlendOpAlpha(other.BlendOpAlpha), RenderTargetWriteMask(other.RenderTargetWriteMask) {}
-		constexpr RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
 		constexpr RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
-		constexpr RBlendState(const RBlendState& other) noexcept : BlendEnable(other.BlendEnable), SrcBlend(other.SrcBlend), DstBlend(other.DstBlend), BlendOp(other.BlendOp), SrcBlendAlpha(other.SrcBlendAlpha), DstBlendAlpha(other.DstBlendAlpha), BlendOpAlpha(other.BlendOpAlpha), RenderTargetWriteMask(other.RenderTargetWriteMask) {}
 		BOOL					BlendEnable;
 		RBlendOptionType		SrcBlend;
 		RBlendOptionType		DstBlend;
@@ -317,10 +305,9 @@ namespace PigeonEngine
 	};
 	struct RBufferDesc
 	{
-		RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
+		RBufferDesc()noexcept : ByteWidth(0u), Usage(RUsageFlagType::USAGE_DEFAULT), BindFlags(RBindFlagType::BIND_NONE), CPUAccessFlags(RCPUAccessFlagType::CPU_ACCESS_DEFAULT), MiscFlags(RResourceMiscFlagType::RESOURCE_MISC_NONE), StructureByteStride(0u) {}
 		RBufferDesc(const RBufferDesc& other) noexcept : ByteWidth(other.ByteWidth), Usage(other.Usage), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags), MiscFlags(other.MiscFlags), StructureByteStride(other.StructureByteStride) {}
 		constexpr RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
-		constexpr RBufferDesc(const RBufferDesc& other) noexcept : ByteWidth(other.ByteWidth), Usage(other.Usage), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags), MiscFlags(other.MiscFlags), StructureByteStride(other.StructureByteStride) {}
 		UINT					ByteWidth;
 		RUsageFlagType			Usage;
 		RBindFlagType			BindFlags;
@@ -331,11 +318,8 @@ namespace PigeonEngine
 	struct RSubresourceDataDesc
 	{
 		RSubresourceDataDesc() noexcept : pSysMem(nullptr), SysMemPitch(0u), SysMemSlicePitch(0u) {}
-		RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
 		RSubresourceDataDesc(const RSubresourceDataDesc& other) noexcept : pSysMem(other.pSysMem), SysMemPitch(other.SysMemPitch), SysMemSlicePitch(other.SysMemSlicePitch) {}
-		constexpr RSubresourceDataDesc() noexcept : pSysMem(nullptr), SysMemPitch(0u), SysMemSlicePitch(0u) {}
 		constexpr RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
-		constexpr RSubresourceDataDesc(const RSubresourceDataDesc& other) noexcept : pSysMem(other.pSysMem), SysMemPitch(other.SysMemPitch), SysMemSlicePitch(other.SysMemSlicePitch) {}
 		const void*		pSysMem;
 		UINT			SysMemPitch;
 		UINT			SysMemSlicePitch;
@@ -457,11 +441,8 @@ namespace PigeonEngine
 	struct RTextureSampleDesc
 	{
 		RTextureSampleDesc() noexcept : Count(1u), Quality(0u) {}
-		RTextureSampleDesc(const UINT& count, const UINT& quality) noexcept : Count(count), Quality(quality) {}
 		RTextureSampleDesc(const RTextureSampleDesc& other) noexcept : Count(other.Count), Quality(other.Quality) {}
-		constexpr RTextureSampleDesc() noexcept : Count(1u), Quality(0u) {}
 		constexpr RTextureSampleDesc(const UINT& count, const UINT& quality) noexcept : Count(count), Quality(quality) {}
-		constexpr RTextureSampleDesc(const RTextureSampleDesc& other) noexcept : Count(other.Count), Quality(other.Quality) {}
 		UINT	Count;
 		UINT	Quality;
 	};
@@ -502,10 +483,9 @@ namespace PigeonEngine
 	};
 	struct RStructuredBufferDesc
 	{
-		RStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
+		RStructuredBufferDesc() noexcept : GPUWritable(FALSE), AccessFlags(RCPUAccessFlagType::CPU_ACCESS_DEFAULT), StructureSize(0u), FirstElement(0u), NumElements(0u), UAVFlags(RUAVFlagType::UAV_FLAG_NONE) {}
 		RStructuredBufferDesc(const RStructuredBufferDesc& other) noexcept : GPUWritable(other.GPUWritable), AccessFlags(other.AccessFlags), StructureSize(other.StructureSize), FirstElement(other.FirstElement), NumElements(other.NumElements), UAVFlags(other.UAVFlags) {}
 		constexpr RStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
-		constexpr RStructuredBufferDesc(const RStructuredBufferDesc& other) noexcept : GPUWritable(other.GPUWritable), AccessFlags(other.AccessFlags), StructureSize(other.StructureSize), FirstElement(other.FirstElement), NumElements(other.NumElements), UAVFlags(other.UAVFlags) {}
 		BOOL					GPUWritable;
 		RCPUAccessFlagType		AccessFlags;
 		UINT					StructureSize;
@@ -518,6 +498,7 @@ namespace PigeonEngine
 		INPUT_PER_VERTEX_DATA		= 0,
 		INPUT_PER_INSTANCE_DATA		= 1
 	};
+
 
 #define SHADER_SEMANTIC_DEFINE(Name)\
 	SHADER_SEMANTIC##Name##0 =  SHADER_SEMANTIC##Name + 0,\
@@ -536,6 +517,7 @@ namespace PigeonEngine
 	SHADER_SEMANTIC##Name##13 =  SHADER_SEMANTIC##Name + 13,\
 	SHADER_SEMANTIC##Name##14 =  SHADER_SEMANTIC##Name + 14,\
 	SHADER_SEMANTIC##Name##15 =  SHADER_SEMANTIC##Name + 15\
+
 
 	enum RShaderSemanticType
 	{
@@ -562,15 +544,15 @@ namespace PigeonEngine
 		SHADER_SEMANTIC_DEFINE(_TEXCOORD)
 	};
 
-#undef SHADER_SEMANTIC_DEFINE(Name)
+
+#undef SHADER_SEMANTIC_DEFINE
+
 
 	struct RInputLayoutDesc
 	{
 		RInputLayoutDesc() noexcept : SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE), SemanticIndex(0u), InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA), InstanceDataStepRate(0u) {}
-		RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
 		RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
 		constexpr RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
-		constexpr RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
 		RShaderSemanticType			SemanticName;
 		UINT						SemanticIndex;
 		UINT						InputSlot;
@@ -593,7 +575,8 @@ namespace PigeonEngine
 	struct RMappedResource
 	{
 		RMappedResource() noexcept : pData(nullptr), RowPitch(0u), DepthPitch(0u) {}
-		constexpr RMappedResource() noexcept : pData(nullptr), RowPitch(0u), DepthPitch(0u) {}
+		RMappedResource(const RMappedResource& other) noexcept : pData(other.pData), RowPitch(other.RowPitch), DepthPitch(other.DepthPitch) {}
+		constexpr RMappedResource(void* InData, UINT InRowPitch, UINT InDepthPitch) noexcept : pData(InData), RowPitch(InRowPitch), DepthPitch(InDepthPitch) {}
 		void*	pData;
 		UINT	RowPitch;
 		UINT	DepthPitch;
@@ -624,7 +607,8 @@ namespace PigeonEngine
 	};
 	struct RQueryDesc
 	{
-		RQueryDesc(RQueryType queryType, RQueryMiscFlagType miscFlags = RQueryMiscFlagType::QUERY_MISC_DEFAULT) noexcept : QueryType(queryType), MiscFlags(miscFlags) {}
+		RQueryDesc() noexcept : QueryType(RQueryType::QUERY_EVENT), MiscFlags(RQueryMiscFlagType::QUERY_MISC_DEFAULT) {}
+		RQueryDesc(const RQueryDesc& other) noexcept : QueryType(other.QueryType), MiscFlags(other.MiscFlags) {}
 		constexpr RQueryDesc(RQueryType queryType, RQueryMiscFlagType miscFlags = RQueryMiscFlagType::QUERY_MISC_DEFAULT) noexcept : QueryType(queryType), MiscFlags(miscFlags) {}
 		RQueryType			QueryType;
 		RQueryMiscFlagType	MiscFlags;
@@ -637,8 +621,9 @@ namespace PigeonEngine
 	struct RQueryTimestampDisjoint
 	{
 		RQueryTimestampDisjoint() noexcept : Frequency(1u), Disjoint(TRUE) {}
+		RQueryTimestampDisjoint(const RQueryTimestampDisjoint& other) noexcept : Frequency(other.Frequency), Disjoint(other.Disjoint) {}
+		constexpr RQueryTimestampDisjoint(ULONGLONG	InFrequency, BOOL InDisjoint) noexcept : Frequency(InFrequency), Disjoint(InDisjoint) {}
 		void Reset() { Frequency = 1u; Disjoint = TRUE; }
-		constexpr RQueryTimestampDisjoint() noexcept : Frequency(1u), Disjoint(TRUE) {}
 		ULONGLONG	Frequency;
 		BOOL		Disjoint;
 	};

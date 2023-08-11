@@ -7,7 +7,7 @@ namespace PigeonEngine
 {
     class PPrimitiveComponent : public PSceneComponent
     {
-        EClass(PPrimitiveComponent, PSceneComponent)
+        //EClass(PPrimitiveComponent, PSceneComponent)
         CLASS_VIRTUAL_NOCOPY_BODY(PPrimitiveComponent)
     public:
         ENGINE_NODISCARD EBoundAABB GetBounds() const;

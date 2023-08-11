@@ -9,17 +9,17 @@
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <AnimationAsset/SkeletonAnimationAsset.h>
 
-class aiScene;
-class aiMesh;
-class aiBone;
-class aiAnimation;
+struct aiScene;
+struct aiMesh;
+struct aiBone;
+struct aiAnimation;
 
 namespace PigeonEngine
 {
 	class CAssimpManager : public EManagerBase
 	{
 
-		EClass(CAssimpManager, EManagerBase)
+		//EClass(CAssimpManager, EManagerBase)
 
 	public:
 		enum CReadFileStateType

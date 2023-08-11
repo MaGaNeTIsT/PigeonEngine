@@ -13,7 +13,7 @@ namespace PigeonEngine
 	struct EBoneData
 	{
 		EBoneData()noexcept
-			: Index(-2), Name(ENGINE_BONE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
+			: Index(-2), Name(ENGINE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}
@@ -43,7 +43,7 @@ namespace PigeonEngine
 	class ESkeleton : public EObjectBase
 	{
 
-		EClass(ESkeleton, EObjectBase)
+		//EClass(ESkeleton, EObjectBase)
 
 	public:
 		typedef TArray<EBoneData>	EBonePart;
@@ -73,7 +73,7 @@ namespace PigeonEngine
 	class ESkeletonRenderResource : public EObjectBase
 	{
 
-		EClass(ESkeletonRenderResource, EObjectBase)
+		//EClass(ESkeletonRenderResource, EObjectBase)
 
 	public:
 		ESkeletonRenderResource(ESkeleton* InSkeleton);

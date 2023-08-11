@@ -27,10 +27,10 @@ namespace PigeonEngine
         TMap<K,V>& operator=(const TMap<K,V>& Other);
         TMap<K,V>& operator=(TMap<K,V>&& Other) noexcept;
 
-        TIterator Begin();
-        TConstIterator Begin()const;
-        TIterator End();
-        TConstIterator End()const;
+        typename TIterator      Begin();
+        typename TConstIterator Begin()const;
+        typename TIterator      End();
+        typename TConstIterator End()const;
 
         ENGINE_NODISCARD UINT Length() const;
         

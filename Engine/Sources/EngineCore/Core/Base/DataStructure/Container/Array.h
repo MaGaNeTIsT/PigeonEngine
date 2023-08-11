@@ -47,12 +47,12 @@ namespace PigeonEngine
         void       Shuffle();
         TArray<T>  Reverse() const;
         
-        TIterator Begin();
-        TConstIterator Begin()const;
-        TIterator End();
-        TConstIterator End()const;
-        TIterator Rbegin();
-        TIterator Rend();
+        typename TIterator      Begin();
+        typename TConstIterator Begin()const;
+        typename TIterator      End();
+        typename TConstIterator End()const;
+        typename TIterator      Rbegin();
+        typename TIterator      Rend();
 
         ENGINE_NODISCARD UINT Length       ()const;
         ENGINE_NODISCARD UINT LastIndex    ()const;

@@ -9,7 +9,7 @@ namespace PigeonEngine
 	class EObjectBase : public ERTTI
 	{
 
-		EClass(EObjectBase, ERTTI)
+		//EClass(EObjectBase, ERTTI)
 
 	public:
 		const ULONGLONG& GetUniqueID()const;
@@ -32,7 +32,7 @@ namespace PigeonEngine
 	class EManagerBase : public EObjectBase
 	{
 
-		EClass(EManagerBase, EObjectBase)
+		//EClass(EManagerBase, EObjectBase)
 
 	public:
 		virtual void Initialize() {}
@@ -45,7 +45,7 @@ namespace PigeonEngine
 	class EUniqueIDManager : public EManagerBase
 	{
 
-		EClass(EUniqueIDManager, EManagerBase)
+		//EClass(EUniqueIDManager, EManagerBase)
 
 	public:
 		ULONGLONG AllocUniqueID();

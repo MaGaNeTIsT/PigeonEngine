@@ -13,7 +13,7 @@ namespace PigeonEngine
 
 	class FShape : ERTTI
 	{
-		EClass(FShape, ERTTI)
+		//EClass(FShape, ERTTI)
 		FShape();
 		virtual ~FShape() = default;
 		virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale);
@@ -21,7 +21,7 @@ namespace PigeonEngine
 
 	class FCastRay : ERTTI
 	{
-		EClass(FCastRay, ERTTI)
+		//EClass(FCastRay, ERTTI)
 		FCastRay();
 		virtual ~FCastRay() = default;
 	};

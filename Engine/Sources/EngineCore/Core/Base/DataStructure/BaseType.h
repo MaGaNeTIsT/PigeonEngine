@@ -144,7 +144,6 @@ namespace PigeonEngine
 		void operator*=(const Matrix4x4& mm);
 		union
 		{
-			FLOAT m[4][4];
 			struct
 			{
 				FLOAT _11, _12, _13, _14;
@@ -152,6 +151,7 @@ namespace PigeonEngine
 				FLOAT _31, _32, _33, _34;
 				FLOAT _41, _42, _43, _44;
 			};
+			FLOAT m[4][4];
 		};
 	};
 

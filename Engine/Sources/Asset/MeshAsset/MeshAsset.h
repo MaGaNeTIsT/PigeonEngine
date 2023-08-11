@@ -41,8 +41,7 @@ namespace PigeonEngine
 	struct EVertexDescriptor
 	{
 		EVertexDescriptor() noexcept : PartType(0u), ElementNum(0u), Stride(0u) {}
-		EVertexDescriptor(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
-		constexpr EVertexDescriptor() noexcept : PartType(0u), ElementNum(0u), Stride(0u) {}
+		EVertexDescriptor(const EVertexDescriptor& Other) noexcept : PartType(Other.PartType), ElementNum(Other.ElementNum), Stride(Other.Stride) {}
 		constexpr EVertexDescriptor(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
 
 		UINT	PartType;
@@ -68,6 +67,8 @@ namespace PigeonEngine
 			}
 			ElementNum = InElementNum;
 		}
+		EIndexData(const EIndexData&) = delete;
+		EIndexData& operator=(const EIndexData&) = delete;
 		void Release()
 		{
 			if (Indices)
@@ -110,6 +111,8 @@ namespace PigeonEngine
 			ElementNum = InElementNum;
 #endif
 		}
+		EVertexData(const EVertexData&) = delete;
+		EVertexData& operator=(const EVertexData&) = delete;
 		void Release()
 		{
 			if (Datas)
@@ -147,6 +150,8 @@ namespace PigeonEngine
 			ElementNum = InElementNum;
 #endif
 		}
+		ESkinData(const ESkinData&) = delete;
+		ESkinData& operator=(const ESkinData&) = delete;
 		void Release()
 		{
 			if (Indices)
@@ -171,8 +176,7 @@ namespace PigeonEngine
 	{
 		ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
 		ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
-		constexpr ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
-		constexpr ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
+		constexpr ESubmeshData(UINT InStartVertex, UINT InVertexNum, UINT InStartIndex, UINT InIndexNum) noexcept : StartVertex(InStartVertex), VertexNum(InVertexNum), StartIndex(InStartIndex), IndexNum(InIndexNum) {}
 
 		UINT	StartVertex;
 		UINT	VertexNum;
@@ -183,7 +187,7 @@ namespace PigeonEngine
 	class EMesh : public EObjectBase
 	{
 
-		EClass(EMesh, EObjectBase)
+		//EClass(EMesh, EObjectBase)
 
 	public:
 		typedef	EIndexData				EIndexPart;
@@ -279,7 +283,7 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase
 	{
 
-		EClass(EMeshRenderResource, EObjectBase)
+		//EClass(EMeshRenderResource, EObjectBase)
 
 	public:
 		EMeshRenderResource(EMesh* InMesh);

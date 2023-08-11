@@ -143,7 +143,7 @@ namespace PigeonEngine
 	class EShaderAssetManager : public EManagerBase
 	{
 
-		EClass(EShaderAssetManager, EManagerBase)
+		//EClass(EShaderAssetManager, EManagerBase)
 
 	public:
 		typedef TAssetManager<EString, EVertexShaderAsset>		EVertexShaderManager;

@@ -8,7 +8,7 @@ namespace PigeonEngine
 	class EMainManager : public EManagerBase
 	{
 
-		EClass(EMainManager, EManagerBase)
+		//EClass(EMainManager, EManagerBase)
 
 	public:
 		virtual void	Initialize()override;

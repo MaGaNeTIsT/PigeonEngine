@@ -182,37 +182,37 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TArray<T>::TIterator TArray<T>::Begin()
+    typename TArray<T>::TIterator TArray<T>::Begin()
     {
         return Elements.begin();
     }
 
     template <typename T>
-    TArray<T>::TConstIterator TArray<T>::Begin()const
+    typename TArray<T>::TConstIterator TArray<T>::Begin()const
     {
         return Elements.begin();
     }
 
     template <typename T>
-    TArray<T>::TIterator TArray<T>::End()
+    typename TArray<T>::TIterator TArray<T>::End()
     {
         return Elements.end();
     }
 
     template <typename T>
-    TArray<T>::TConstIterator TArray<T>::End()const
+    typename TArray<T>::TConstIterator TArray<T>::End()const
     {
         return Elements.end();
     }
 
     template <typename T>
-    TArray<T>::TIterator TArray<T>::Rbegin()
+    typename TArray<T>::TIterator TArray<T>::Rbegin()
     {
         return Elements.rbegin();
     }
 
     template <typename T>
-    TArray<T>::TIterator TArray<T>::Rend()
+    typename TArray<T>::TIterator TArray<T>::Rend()
     {
         return Elements.rend();
     }

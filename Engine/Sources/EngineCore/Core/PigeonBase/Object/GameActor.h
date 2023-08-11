@@ -9,7 +9,7 @@ namespace PigeonEngine
 	class PGameActor : public PActor
 	{
 
-		EClass(PGameActor, PActor)
+		//EClass(PGameActor, PActor)
 
 	public:
 

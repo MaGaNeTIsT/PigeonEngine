@@ -13,15 +13,15 @@ namespace PigeonEngine
 	public:
 		TBaseAsset(
 #ifdef _EDITOR_ONLY
-			const EString& name
+			const EString& InDebugName
 #endif
 		)
 			: ResourceData(nullptr)
 			, bIsInitialized(FALSE)
-#ifdef _EDITOR_ONLY
-			, DebugName(name)
-#endif
 		{
+#ifdef _EDITOR_ONLY
+			DebugName = InDebugName;
+#endif
 		}
 		virtual ~TBaseAsset()
 		{

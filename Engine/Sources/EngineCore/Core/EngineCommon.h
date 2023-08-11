@@ -95,9 +95,6 @@ namespace PigeonEngine
 	{
 		ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
 		ERect(const ERect& Other)noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
-		ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom)noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
-		constexpr ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
-		constexpr ERect(const ERect& Other)noexcept : Left(Other.Left), Top(Other.Top), Right(Other.Right), Bottom(Other.Bottom) {}
 		constexpr ERect(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom)noexcept : Left(InLeft), Top(InTop), Right(InRight), Bottom(InBottom) {}
 
 		union
@@ -208,10 +205,7 @@ namespace PigeonEngine
 	{
 		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RENDER_DEPTH_MIN), MaxDepth(RENDER_DEPTH_MAX) {}
 		EViewport(const EViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
-		EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
-		constexpr EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(0.f), MaxDepth(0.f) {}
 		constexpr EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
-		constexpr EViewport(const EViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
 
 		FLOAT	TopLeftX;
 		FLOAT	TopLeftY;
