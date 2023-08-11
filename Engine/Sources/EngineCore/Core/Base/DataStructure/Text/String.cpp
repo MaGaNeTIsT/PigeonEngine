@@ -100,6 +100,26 @@ namespace PigeonEngine
         return Str != Other.Str;
     }
 
+    BOOL EString::operator>(const EString& Other) const
+    {
+        return this->Str > Other.Str;
+    }
+
+    BOOL EString::operator<(const EString& Other) const
+    {
+        return this->Str < Other.Str;
+    }
+
+    BOOL EString::operator>=(const EString& Other) const
+    {
+        return this->Str >= Other.Str;
+    }
+
+    BOOL EString::operator<=(const EString& Other) const
+    {
+        return this->Str <= Other.Str;
+    }
+
     EString& EString::operator+=(const EString& Other)
     {
         Str += Other.Str;

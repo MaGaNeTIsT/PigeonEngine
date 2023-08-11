@@ -30,6 +30,10 @@ namespace PigeonEngine
 
         BOOL        operator==(const EString& Other)const;
         BOOL        operator!=(const EString& Other)const;
+        BOOL        operator>(const EString& Other)const;
+        BOOL        operator<(const EString& Other)const;
+        BOOL        operator>=(const EString& Other)const;
+        BOOL        operator<=(const EString& Other)const;
 
         EString&    operator+=(const EString& Other);
 
