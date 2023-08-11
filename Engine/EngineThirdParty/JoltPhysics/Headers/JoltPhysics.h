@@ -40,6 +40,57 @@ namespace PigeonEngine
 	struct PhysicsBodyId
 	{
 		BodyID ID;
+
+		/// Equals check
+		inline bool				operator == (const PhysicsBodyId& inRHS) const
+		{
+			return ID == inRHS.ID;
+		}
+
+		/// Not equals check
+		inline bool				operator != (const PhysicsBodyId& inRHS) const
+		{
+			return ID != inRHS.ID;
+		}
+
+		/// Smaller than operator, can be used for sorting bodies
+		inline bool				operator < (const PhysicsBodyId& inRHS) const
+		{
+			return ID < inRHS.ID;
+		}
+
+		/// Greater than operator, can be used for sorting bodies
+		inline bool				operator > (const PhysicsBodyId& inRHS) const
+		{
+			return ID > inRHS.ID;
+		}
+
+		/// Get index in body array
+		inline uint32			GetIndex() const
+		{
+			return ID.GetIndex();;
+		}
+
+		/// Get sequence number of body.
+		/// The sequence number can be used to check if a body ID with the same body index has been reused by another body.
+		/// It is mainly used in multi threaded situations where a body is removed and its body index is immediately reused by a body created from another thread.
+		/// Functions querying the broadphase can (after aquiring a body lock) detect that the body has been removed (we assume that this won't happen more than 128 times in a row).
+		inline uint8			GetSequenceNumber() const
+		{
+			return ID.GetSequenceNumber();
+		}
+
+		/// Returns the index and sequence number combined in an uint32
+		inline uint32			GetIndexAndSequenceNumber() const
+		{
+			return ID.GetIndexAndSequenceNumber();
+		}
+
+		/// Check if the ID is valid
+		inline bool				IsInvalid() const
+		{
+			return ID.IsInvalid();
+		}
 	};
 	
 	enum class EActive
@@ -58,6 +109,8 @@ namespace PigeonEngine
 
 		// Print to the TTY
 	}
+
+	//template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>, class Alloc = std::allocator<std::pair<const Key, T>>> using THashMap = std::unordered_map<Key, T, Hash, KeyEqual, Alloc>;
 
 	class CPhysics_Jolt : public IPhysicsManagerInterface
 	{
