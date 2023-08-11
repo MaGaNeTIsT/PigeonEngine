@@ -36,7 +36,7 @@ namespace PigeonEngine
 
         V&                                 operator[](const K& Key);
 
-        [[nodiscard]] UINT Length() const;
+        ENGINE_NODISCARD UINT Length() const;
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);
@@ -51,10 +51,10 @@ namespace PigeonEngine
 
         void Clear();
         
-        TIterator       Begin();
-        TConstIterator  Begin() const;
-        TIterator       End();
-        TConstIterator  End() const;
+        typename TIterator      Begin();
+        typename TConstIterator Begin() const;
+        typename TIterator      End();
+        typename TConstIterator End() const;
     private:
         std::unordered_map<K, V, Hash, Pred, Alloc> HashMap;
     };

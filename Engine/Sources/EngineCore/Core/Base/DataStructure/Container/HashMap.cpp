@@ -148,25 +148,25 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::Begin()
+    typename THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::Begin()
     {
         return HashMap.begin();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::Begin() const
+    typename THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::Begin() const
     {
         return HashMap.begin();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::End()
+    typename THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::End()
     {
         return HashMap.end();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::End() const
+    typename THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::End() const
     {
         return HashMap.end();
     }
