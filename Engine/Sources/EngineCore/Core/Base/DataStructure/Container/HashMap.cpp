@@ -148,13 +148,25 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename std::unordered_map<K, V, Hash, Pred, Alloc>::iterator THashMap<K, V, Hash, Pred, Alloc>::begin()
+    THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::Begin()
     {
         return HashMap.begin();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    typename std::unordered_map<K, V, Hash, Pred, Alloc>::iterator THashMap<K, V, Hash, Pred, Alloc>::end()
+    THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::Begin() const
+    {
+        return HashMap.begin();
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>::TIterator THashMap<K, V, Hash, Pred, Alloc>::End()
+    {
+        return HashMap.end();
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    THashMap<K, V, Hash, Pred, Alloc>::TConstIterator THashMap<K, V, Hash, Pred, Alloc>::End() const
     {
         return HashMap.end();
     }

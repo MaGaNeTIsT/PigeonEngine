@@ -17,7 +17,9 @@ namespace PigeonEngine
     >
     class THashMap
     {
-
+    public:
+        using TIterator         = typename std::unordered_map<K, V, Hash, Pred, Alloc>::iterator;
+        using TConstIterator    = typename std::unordered_map<K, V, Hash, Pred, Alloc>::const_iterator;
     public:
         THashMap();
         explicit THashMap(const THashMap<K, V, Pred, Alloc>& Other);
@@ -49,8 +51,10 @@ namespace PigeonEngine
 
         void Clear();
         
-        typename std::unordered_map<K, V, Hash, Pred, Alloc>::iterator begin();
-        typename std::unordered_map<K, V, Hash, Pred, Alloc>::iterator end();
+        TIterator       Begin();
+        TConstIterator  Begin() const;
+        TIterator       End();
+        TConstIterator  End() const;
     private:
         std::unordered_map<K, V, Hash, Pred, Alloc> HashMap;
     };
