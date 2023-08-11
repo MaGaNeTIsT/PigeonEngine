@@ -187,7 +187,7 @@ namespace PigeonEngine
 	class EMesh : public EObjectBase
 	{
 
-		//EClass(EMesh, EObjectBase)
+		EClass(EMesh, EObjectBase)
 
 	public:
 		typedef	EIndexData				EIndexPart;
@@ -283,7 +283,7 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase
 	{
 
-		//EClass(EMeshRenderResource, EObjectBase)
+		EClass(EMeshRenderResource, EObjectBase)
 
 	public:
 		EMeshRenderResource(EMesh* InMesh);

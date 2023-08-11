@@ -26,7 +26,7 @@ namespace PigeonEngine
 	class ETransform : public EObjectBase
 	{
 
-		//EClass(ETransform, EObjectBase)
+		EClass(ETransform, EObjectBase)
 
 	public:
 		template<ECoordinateSpaceType _CoordinateSpaceType>

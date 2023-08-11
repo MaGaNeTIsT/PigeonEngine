@@ -212,7 +212,7 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
 		};
 	public:
-		void	Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE);
+		void	Init(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth = 24u, UINT frameNum = 60u, BOOL windowed = TRUE);
 		void	Uninit();
 	public:
 		BOOL	CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);

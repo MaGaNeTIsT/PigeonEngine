@@ -19,7 +19,7 @@ namespace PigeonEngine
 	class CAssimpManager : public EManagerBase
 	{
 
-		//EClass(CAssimpManager, EManagerBase)
+		EClass(CAssimpManager, EManagerBase)
 
 	public:
 		enum CReadFileStateType

@@ -488,7 +488,7 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 		CustomType::Vector3 forwardVec(this->m_Transform->GetForwardVector());
 
 		CustomType::Vector3 tempPoint(rightVec * this->m_RenderBoundingBox->Anchor.X() * scale.X() + upVec * this->m_RenderBoundingBox->Anchor.Y() * scale.Y() + forwardVec * this->m_RenderBoundingBox->Anchor.Z() * scale.Z() + position);
-		/*
+		//
 		//            5--------6                Y(up vector)
 		//           /|       /|                ^
 		//          / |      / |  (dimension y) |
@@ -498,7 +498,7 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 		//         |/       |/                  | /
 		// (anchor)0--------3                   0---------------->X(right vector)
 		//                                         (dimension x)
-		*/
+		//
 		points[0u * 3u + 0u] = tempPoint.X();
 		points[0u * 3u + 1u] = tempPoint.Y();
 		points[0u * 3u + 2u] = tempPoint.Z();

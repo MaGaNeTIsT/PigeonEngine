@@ -18,7 +18,7 @@ namespace PigeonEngine
 	 */
 	class PScene : public PObject
 	{
-		//EClass(PScene, PObject)
+		EClass(PScene, PObject)
 		
 	public:
 		

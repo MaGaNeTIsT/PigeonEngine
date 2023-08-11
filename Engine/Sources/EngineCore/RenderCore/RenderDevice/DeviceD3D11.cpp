@@ -2,7 +2,7 @@
 
 namespace PigeonEngine
 {
-	void RDeviceD3D11::Init(HWND hWnd, const Vector2Int& bufferSize, const UINT& bufferDepth = 24u, const UINT& frameNum = 60u, const BOOL& windowed = TRUE)
+	void RDeviceD3D11::Init(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth, UINT frameNum, BOOL windowed)
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{

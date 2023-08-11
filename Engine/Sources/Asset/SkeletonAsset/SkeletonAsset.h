@@ -43,7 +43,7 @@ namespace PigeonEngine
 	class ESkeleton : public EObjectBase
 	{
 
-		//EClass(ESkeleton, EObjectBase)
+		EClass(ESkeleton, EObjectBase)
 
 	public:
 		typedef TArray<EBoneData>	EBonePart;
@@ -73,7 +73,7 @@ namespace PigeonEngine
 	class ESkeletonRenderResource : public EObjectBase
 	{
 
-		//EClass(ESkeletonRenderResource, EObjectBase)
+		EClass(ESkeletonRenderResource, EObjectBase)
 
 	public:
 		ESkeletonRenderResource(ESkeleton* InSkeleton);

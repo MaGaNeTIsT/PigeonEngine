@@ -33,7 +33,7 @@ namespace PigeonEngine
 	};
 	class ESkeletonAnimation : public EObjectBase
 	{
-		//EClass(ESkeletonAnimation, EObjectBase)
+		EClass(ESkeletonAnimation, EObjectBase)
 
 	public:
 		ESkeletonAnimation(const EString& InMeshName);

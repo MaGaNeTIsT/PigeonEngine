@@ -385,8 +385,9 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			{
 				EString errorData("Load shader asset failed (load file path : ");
-				errorData += loadPath + ").";
-				PE_FAILED(ENGINE_ASSET_ERROR, errorData);
+				errorData += loadPath;
+				errorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
 			}
 #endif
 			return nullptr;
@@ -409,11 +410,18 @@ namespace PigeonEngine
 		TShaderAssetType* result = nullptr;
 		if (shaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 		{
-			result = new EVertexShaderAsset(loadPath
+			EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(loadPath
 #ifdef _EDITOR_ONLY
 				, loadPath
 #endif
 				, shaderInputLayouts.data(), shaderInputLayoutNum);
+			result = reinterpret_cast<TShaderAssetType*>(TempShaderAsset);
+			if (!result)
+			{
+				TempShaderAsset->UninitResource();
+				delete TempShaderAsset;
+				TempShaderAsset = nullptr;
+			}
 		}
 		else
 		{
@@ -423,25 +431,27 @@ namespace PigeonEngine
 #endif
 			);
 		}
-		EShaderResource* storagedResource = nullptr;
-		if (!result->StorageResourceInternal(
-			[readFileMem, readFileSize, shaderCSOSize, &storagedResource]()->EShaderResource*
-			{
-				void* shaderCSO = new BYTE[shaderCSOSize];
-				memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
-				storagedResource = new EShaderResource();
-				storagedResource->ShaderByteCode = shaderCSO;
-				storagedResource->ShaderByteCodeSize = shaderCSOSize;
-				return storagedResource;
-			}))
+		if (result)
 		{
-			if (storagedResource)
+			EShaderResource* storagedResource = nullptr;
+			if (!result->StorageResourceInternal(
+				[readFileMem, readFileSize, shaderCSOSize, &storagedResource]()->EShaderResource*
+				{
+					void* shaderCSO = new BYTE[shaderCSOSize];
+					memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
+					storagedResource = new EShaderResource();
+					storagedResource->ShaderByteCode = shaderCSO;
+					storagedResource->ShaderByteCodeSize = shaderCSOSize;
+					return storagedResource;
+				}))
 			{
-				storagedResource->Release();
-				delete storagedResource;
+				if (storagedResource)
+				{
+					storagedResource->Release();
+					delete storagedResource;
+				}
 			}
 		}
-
 		delete[]readFileMem;
 		return result;
 	}

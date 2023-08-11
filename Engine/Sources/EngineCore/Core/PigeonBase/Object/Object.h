@@ -8,7 +8,7 @@ namespace PigeonEngine
 	class PObject : public EObjectBase
 	{
 
-		//EClass(PObject, EObjectBase)
+		EClass(PObject, EObjectBase)
 
 	public:
 		virtual void	Init() = 0;

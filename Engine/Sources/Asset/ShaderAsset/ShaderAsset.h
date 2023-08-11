@@ -68,7 +68,7 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 			, const EString& name
 #endif
-			, const RInputLayoutDesc* inInputLayouts, const UINT& inInputLayoutNum);
+			, const RInputLayoutDesc* inInputLayouts = nullptr, const UINT& inInputLayoutNum = 0u);
 		virtual ~EVertexShaderAsset();
 	public:
 		const RInputLayoutDesc*		GetShaderInputLayouts()const { return ShaderInputLayouts; }
@@ -143,7 +143,7 @@ namespace PigeonEngine
 	class EShaderAssetManager : public EManagerBase
 	{
 
-		//EClass(EShaderAssetManager, EManagerBase)
+		EClass(EShaderAssetManager, EManagerBase)
 
 	public:
 		typedef TAssetManager<EString, EVertexShaderAsset>		EVertexShaderManager;

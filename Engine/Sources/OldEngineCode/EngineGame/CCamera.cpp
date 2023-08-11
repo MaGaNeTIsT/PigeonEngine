@@ -296,7 +296,7 @@ void CCamera::Uninit()
 }
 void CCamera::Update()
 {
-	/*while (const auto e = CInput::Controller.ReadKey())
+	while (const auto e = CInput::Controller.ReadKey())
 	{
 		if (!e->IsPress())
 		{
@@ -319,7 +319,7 @@ void CCamera::Update()
 			}
 			break;
 		}
-	}*/
+	}
 	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
 	{
 		BOOL moveForward	= CInput::Controller.IsKeyPressed('W');

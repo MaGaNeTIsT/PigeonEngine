@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class PComponent : public PObject
 	{
 
-		//EClass(PComponent, PObject)
+		EClass(PComponent, PObject)
 
 	public:
 		virtual void	Init()override;

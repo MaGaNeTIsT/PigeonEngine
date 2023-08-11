@@ -43,7 +43,7 @@ namespace PigeonEngine
      */
     class PWorld : public PObject
     {
-        //EClass(PWorld, PObject)
+        EClass(PWorld, PObject)
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PWorld)
         
