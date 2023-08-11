@@ -43,6 +43,7 @@ namespace PigeonEngine
 		BOOL						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
+		class CPhysicsManager*		m_PhysicsManager	= nullptr;
 		class RDeviceD3D11*			m_RenderDeviceD3D11	= nullptr;
 #ifdef _EDITOR_ONLY
 		class CImGUIManager*		m_ImGUIManager		= nullptr;

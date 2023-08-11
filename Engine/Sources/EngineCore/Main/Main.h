@@ -49,3 +49,5 @@
 #ifdef _EDITOR_ONLY
 #include "../../../ThirdParty/imgui/imgui.h"
 #endif
+
+#define AAA 2

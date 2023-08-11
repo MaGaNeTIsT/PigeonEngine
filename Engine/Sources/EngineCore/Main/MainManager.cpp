@@ -1,6 +1,8 @@
 #include "MainManager.h"
+#include <CoreMinimal.h>
 #include <Config/EngineConfig.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
 #ifdef _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
@@ -18,6 +20,7 @@ namespace PigeonEngine
 		m_Windowed		= ESettings::ENGINE_WINDOWED;
 
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
+		m_PhysicsManager	= CPhysicsManager::GetSingleton();
 #if _EDITOR_ONLY
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();

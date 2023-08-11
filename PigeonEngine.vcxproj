@@ -21,7 +21,11 @@
   <ItemGroup>
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsListener.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManagerInterface.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsUtility.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Shapes.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
