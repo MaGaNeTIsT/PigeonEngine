@@ -37,6 +37,8 @@ namespace PigeonEngine
         TArray<T>&  operator= (std::vector<T>&& Other);
         
         UINT        Add       (const T& Element);
+        UINT        Add       (T&& Element);
+
         T&          Add_Default_GetRef()
         {
             T Temp;
@@ -193,6 +195,13 @@ namespace PigeonEngine
     {
          this->Elements.push_back(Element);
          return LastIndex();
+    }
+
+    template <typename T>
+    UINT TArray<T>::Add(T&& Element)
+    {
+        this->Elements.push_back(Element);
+        return LastIndex();
     }
 
     template <typename T>

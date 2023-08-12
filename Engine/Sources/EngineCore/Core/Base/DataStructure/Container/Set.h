@@ -100,7 +100,17 @@ namespace PigeonEngine
     template <typename T>
     UINT TSet<T>::Find(const T& Element) const
     {
-        return Elements.find(Element) - Elements.begin();
+        UINT iIndex = 0;
+        auto it = Elements.begin();
+        while(it!=Elements.end())
+        {
+            if(*it == Element)
+            {
+                return iIndex;
+            }
+            iIndex++;
+        }
+        return -1;
     }
 
     template <typename T>
@@ -123,7 +133,13 @@ namespace PigeonEngine
         {
             return;
         }
-        this->Elements.erase(Elements.begin() + Index );
+        UINT iIndex = 0;
+        auto it = Elements.begin();
+        while(iIndex < Index)
+        {
+            ++it;
+        }
+        this->Elements.erase(it);
     }
 
     template <typename T>
