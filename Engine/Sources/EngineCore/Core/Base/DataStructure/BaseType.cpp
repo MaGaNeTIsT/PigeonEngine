@@ -2,73 +2,31 @@
 
 namespace PigeonEngine
 {
-
-	Matrix4x4::Matrix4x4(const Quaternion& v)
-	{
-		(*this) = v.GetMatrix();
-	}
-	Matrix4x4::Matrix4x4(const Vector3& t, const Quaternion& r)
-	{
-		(*this) = r.GetMatrix() * TranslationMatrixFromVector3(t);
-	}
-	Matrix4x4::Matrix4x4(const Vector3& t, const Quaternion& r, const Vector3& s)
-	{
-		(*this) = ScalingMatrixFromVector3(s) * r.GetMatrix() * TranslationMatrixFromVector3(t);
-	}
-	Matrix4x4 Matrix4x4::Inverse(const Matrix4x4& mm, Vector4* det)
+	Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation) { return Matrix4x4(DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
+	Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z)); }
+	Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
+	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix()); }
+	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	Matrix4x4 InverseMatrix4x4(const Matrix4x4& m, Vector4* det)
 	{
 		if (det != nullptr)
 		{
 			DirectX::XMVECTOR tempV = DirectX::XMVectorZero();
-			Matrix4x4 result(DirectX::XMMatrixInverse(&tempV, mm.GetDirectXMatrix()));
+			Matrix4x4 result(DirectX::XMMatrixInverse(&tempV, m.GetDirectXMatrix()));
 			(*det) = Vector4(tempV);
 			return result;
 		}
-		return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, mm.GetDirectXMatrix())));
+		return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, m.GetDirectXMatrix())));
 	}
-	Matrix4x4 Matrix4x4::TranslationMatrixFromVector3(const Vector3& offset)
-	{
-		return (Matrix4x4(DirectX::XMMatrixTranslation(offset.x, offset.y, offset.z)));
-	}
-	Matrix4x4 Matrix4x4::ScalingMatrixFromVector3(const Vector3& scl)
-	{
-		return (Matrix4x4(DirectX::XMMatrixScaling(scl.x, scl.y, scl.z)));
-	}
-	Matrix4x4 Matrix4x4::RotationPitchYawRollMatrixFromVector3(const Vector3& rot)
-	{
-		return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(rot.x, rot.y, rot.z)));
-	}
-	Quaternion Matrix4x4::GetQuaternion()const
-	{
-		return Quaternion(GetDirectXValue4x4());
-	}
-	Matrix4x4 Matrix4x4::Inverse(Vector4* det)const
-	{
-		if (det != nullptr)
-		{
-			DirectX::XMVECTOR tempV = DirectX::XMVectorZero();
-			Matrix4x4 result(DirectX::XMMatrixInverse(&tempV, GetDirectXMatrix()));
-			(*det) = Vector4(tempV);
-			return result;
-		}
-		return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix())));
-	}
-	Vector4 Matrix4x4::MultiplyVector(const Vector4& v)const
-	{
-		return (Vector4(DirectX::XMVector4Transform(DirectX::XMVectorSet(v.x, v.y, v.z, v.w), GetDirectXMatrix())));
-	}
-	Vector3 Matrix4x4::MultiplyPosition(const Vector3& v)const
-	{
-		return (Vector3(DirectX::XMVector3TransformCoord(DirectX::XMVectorSet(v.x, v.y, v.z, 1.f), GetDirectXMatrix())));
-	}
-	Vector3 Matrix4x4::MultiplyDirection(const Vector3& v)const
-	{
-		return (Vector3(DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), GetDirectXMatrix())));
-	}
-	void Matrix4x4::operator*=(const Matrix4x4& mm)
-	{
-		(*this) = (*this) * mm;
-	}
+	Vector4 Matrix4x4TransformVector(const Matrix4x4& m, const Vector4& v) { return (Vector4(DirectX::XMVector4Transform(DirectX::XMVectorSet(v.x, v.y, v.z, v.w), m.GetDirectXMatrix()))); }
+	Vector3 Matrix4x4TransformPosition(const Matrix4x4& m, const Vector3& v) { return (Vector3(DirectX::XMVector3TransformCoord(DirectX::XMVectorSet(v.x, v.y, v.z, 1.f), m.GetDirectXMatrix()))); }
+	Vector3 Matrix4x4TransformDirection(const Matrix4x4& m, const Vector3& v) { return (Vector3(DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), m.GetDirectXMatrix()))); }
+	Quaternion MakeQuaternion(const Matrix4x4& m) { return Quaternion(m.GetDirectXMatrix()); }
+	Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
+	Vector3 MakeVector3(const Vector4& v) { return Vector3(v.x, v.y, v.z); }
 
 	constexpr Quaternion::Quaternion(const Vector4& q)noexcept
 		: x(q.x), y(q.y), z(q.z), w(q.w)
@@ -252,10 +210,10 @@ namespace PigeonEngine
 		: x(vv.x), y(vv.y), z(0.f)
 	{
 	}
-	constexpr Vector3::Vector3(const Vector4& vv)noexcept
-		: x(vv.x), y(vv.y), z(vv.z)
-	{
-	}
+	//constexpr Vector3::Vector3(const Vector4& vv)noexcept
+	//	: x(vv.x), y(vv.y), z(vv.z)
+	//{
+	//}
 	constexpr Vector3::Vector3(const Vector2Int& vv)noexcept
 		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(0.f)
 	{

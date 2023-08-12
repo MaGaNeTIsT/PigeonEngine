@@ -53,23 +53,16 @@ namespace PigeonEngine
 			_21(mm._21), _22(mm._22), _23(mm._23), _24(mm._24),
 			_31(mm._31), _32(mm._32), _33(mm._33), _34(mm._34),
 			_41(mm._41), _42(mm._42), _43(mm._43), _44(mm._44) {}
-		Matrix4x4(const Quaternion& v);
-		Matrix4x4(const Vector3& t, const Quaternion& r);
-		Matrix4x4(const Vector3& t, const Quaternion& r, const Vector3& s);
 		static const Matrix4x4& Identity()
 		{
 			const static Matrix4x4 _StaticIdentityMatrix4x4(DirectX::XMMatrixIdentity());
 			return _StaticIdentityMatrix4x4;
 		}
-		static Matrix4x4 Inverse(const Matrix4x4& mm, Vector4* det = nullptr);
 		static Matrix4x4 Transpose(const Matrix4x4& mm) { return (Matrix4x4(DirectX::XMMatrixTranspose(mm.GetDirectXMatrix()))); }
 		static Matrix4x4 MultiplyMatrix(const Matrix4x4& lm, const Matrix4x4& rm) { return (Matrix4x4(DirectX::XMMatrixMultiply(lm.GetDirectXMatrix(), rm.GetDirectXMatrix()))); }
 		static Matrix4x4 TranslationMatrix(FLOAT offsetX, FLOAT offsetY, FLOAT offsetZ) { return (Matrix4x4(DirectX::XMMatrixTranslation(offsetX, offsetY, offsetZ))); }
-		static Matrix4x4 TranslationMatrixFromVector3(const Vector3& offset);
 		static Matrix4x4 ScalingMatrixFrom(FLOAT sclX, FLOAT sclY, FLOAT sclZ) { return (Matrix4x4(DirectX::XMMatrixScaling(sclX, sclY, sclZ))); }
-		static Matrix4x4 ScalingMatrixFromVector3(const Vector3& scl);
 		static Matrix4x4 RotationPitchYawRollMatrix(FLOAT pitch, FLOAT yaw, FLOAT roll) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll))); }
-		static Matrix4x4 RotationPitchYawRollMatrixFromVector3(const Vector3& rot);
 		static Matrix4x4 PerspectiveMatrix(FLOAT fovYDeg, FLOAT aspectRatio, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * EMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
 		static Matrix4x4 OrthographicMatrix(FLOAT left, FLOAT top, FLOAT right, FLOAT bottom, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane))); }
 		void SetDirectXQuaternion(DirectX::CXMVECTOR xq)
@@ -125,13 +118,9 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4x4(&tempM, DirectX::XMMatrixTranspose(GetDirectXMatrix()));
 			return tempM;
 		}
-		Quaternion GetQuaternion()const;
 		void Reset() { (*this) = Matrix4x4::Identity(); }
-		Matrix4x4 Inverse(Vector4* det = nullptr)const;
+		Matrix4x4 Inverse()const { return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix()))); }
 		Matrix4x4 Transpose()const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
-		Vector4 MultiplyVector(const Vector4& v)const;
-		Vector3 MultiplyPosition(const Vector3& v)const;
-		Vector3 MultiplyDirection(const Vector3& v)const;
 		FLOAT operator()(UINT row, UINT column)const noexcept { return m[row][column]; }
 		FLOAT& operator()(UINT row, UINT column)noexcept { return m[row][column]; }
 		void operator=(const Matrix4x4& mm)
@@ -141,7 +130,7 @@ namespace PigeonEngine
 			_31 = mm._31; _32 = mm._32; _33 = mm._33; _34 = mm._34;
 			_41 = mm._41; _42 = mm._42; _43 = mm._43; _44 = mm._44;
 		}
-		void operator*=(const Matrix4x4& mm);
+		void operator*=(const Matrix4x4& mm) { (*this) = (Matrix4x4::MultiplyMatrix(GetDirectXMatrix(), mm.GetDirectXMatrix())); }
 		union
 		{
 			struct
@@ -492,7 +481,6 @@ namespace PigeonEngine
 		constexpr Vector3(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
 		constexpr Vector3(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
 		constexpr Vector3(const Vector2& vv)noexcept;
-		constexpr Vector3(const Vector4& vv)noexcept;
 		constexpr Vector3(const Vector2Int& vv)noexcept;
 		constexpr Vector3(const Vector3Int& vv)noexcept;
 		constexpr Vector3(const Vector4Int& vv)noexcept;
@@ -1767,5 +1755,21 @@ namespace PigeonEngine
 	Color3 operator/(const Vector3& lv, const Color4& rv);
 	Color3 operator/(const Color4& lv, const Color3& rv);
 	Color3 operator/(const Color3& lv, const Color4& rv);
+
+	extern Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation);
+	extern Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation);
+	extern Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling);
+	extern Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation);
+	extern Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation);
+	extern Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling);
+	extern Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling);
+	extern Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling);
+	extern Matrix4x4 InverseMatrix4x4(const Matrix4x4& m, Vector4* det = nullptr);
+	extern Vector4 Matrix4x4TransformVector(const Matrix4x4& m, const Vector4& v);
+	extern Vector3 Matrix4x4TransformPosition(const Matrix4x4& m, const Vector3& v);
+	extern Vector3 Matrix4x4TransformDirection(const Matrix4x4& m, const Vector3& v);
+	extern Quaternion MakeQuaternion(const Matrix4x4& m);
+	extern Quaternion MakeQuaternion(const Vector4& v);
+	extern Vector3 MakeVector3(const Vector4& v);
 
 };

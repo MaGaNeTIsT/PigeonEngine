@@ -27,7 +27,10 @@ namespace PigeonEngine
 	template<RShaderFrequencyType _ShaderFrequency, typename TShaderRenderResourceType>
 	class TShaderBaseAsset : public TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>
 	{
-		//EClass(TShaderBaseAsset<_ShaderFrequency, TShaderRenderResourceType>, TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>)
+	public:
+		typedef TRenderBaseAsset<EShaderResource, TShaderRenderResourceType> Super;
+
+		EClass(TShaderBaseAsset, Super)
 
 	public:
 		TShaderBaseAsset(

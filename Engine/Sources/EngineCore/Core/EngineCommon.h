@@ -237,11 +237,11 @@ namespace PigeonEngine
 		ECameraMatrix(const ECameraMatrix& Other)noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
 		void TransformWorldPointToView(const Vector3& InPositionWS, Vector3& OutPositionVS)const
 		{
-			OutPositionVS = ViewPart.ViewMatrix.MultiplyPosition(InPositionWS);
+			OutPositionVS = Matrix4x4TransformPosition(ViewPart.ViewMatrix, InPositionWS);
 		}
 		void TransformViewPointToWorld(const Vector3& InPositionVS, Vector3& OutPositionWS)const
 		{
-			OutPositionWS = ViewPart.InverseViewMatrix.MultiplyPosition(InPositionVS);
+			OutPositionWS = Matrix4x4TransformPosition(ViewPart.InverseViewMatrix, InPositionVS);
 		}
 		/*
 		* Return value : if return false, the point is out of screen coord, else in screen.
@@ -254,7 +254,7 @@ namespace PigeonEngine
 			const Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
-			TempPoint = ViewProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
 
 			BOOL bIfOutScreen =
 				(TempPoint.x < -1.f) ||
@@ -285,7 +285,7 @@ namespace PigeonEngine
 			const Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
-			TempPoint = ViewProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
 			TempPoint = TempPoint / TempPoint.w;
 
 			BOOL bIfOutScreen =
@@ -302,7 +302,7 @@ namespace PigeonEngine
 			Vector3 ViewPortPointMul(InViewport.Width, InViewport.Height, 1.f);
 			Vector3 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY, 0.f);
 
-			Vector3 Result(TempPoint);
+			Vector3 Result(TempPoint.x, TempPoint.y, TempPoint.z);
 			OutPositionSS = (Result * _StaticPointScl + _StaticPointAdd) * ViewPortPointMul + ViewPortPointAdd;
 
 			return (!bIfOutScreen);
@@ -313,7 +313,7 @@ namespace PigeonEngine
 			const Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionVS.x, InPositionVS.y, InPositionVS.z, 1.f);
-			TempPoint = ProjectionPart.ProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ProjectionPart.ProjectionMatrix, TempPoint);
 
 			BOOL bIfOutScreen =
 				(TempPoint.x < -1.f) ||
@@ -344,7 +344,7 @@ namespace PigeonEngine
 			const Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionVS.x, InPositionVS.y, InPositionVS.z, 1.f);
-			TempPoint = ProjectionPart.ProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ProjectionPart.ProjectionMatrix, TempPoint);
 			TempPoint = TempPoint / TempPoint.w;
 
 			BOOL bIfOutScreen =
@@ -361,7 +361,7 @@ namespace PigeonEngine
 			Vector3 ViewPortPointMul(InViewport.Width, InViewport.Height, 1.f);
 			Vector3 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY, 0.f);
 
-			Vector3 Result(TempPoint);
+			Vector3 Result(TempPoint.x, TempPoint.y, TempPoint.z);
 			OutPositionSS = (Result * _StaticPointScl + _StaticPointAdd) * ViewPortPointMul + ViewPortPointAdd;
 
 			return (!bIfOutScreen);
@@ -376,9 +376,9 @@ namespace PigeonEngine
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
 				1.f, 1.f);
-			InverseViewProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(InverseViewProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
-			OutPositionWS = Vector3(TempPoint);
+			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
 		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionWS)const
 		{
@@ -386,9 +386,9 @@ namespace PigeonEngine
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
 				EMath::Clamp(InPositionSS.z, RENDER_DEPTH_MIN, RENDER_DEPTH_MAX), 1.f);
-			InverseViewProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(InverseViewProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
-			OutPositionWS = Vector3(TempPoint);
+			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
 		void TransformScreenPointToView(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionVS)const
 		{
@@ -396,9 +396,9 @@ namespace PigeonEngine
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
 				1.f, 1.f);
-			ProjectionPart.InverseProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ProjectionPart.InverseProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
-			OutPositionVS = Vector3(TempPoint);
+			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
 		void TransformScreenPointToView(const EViewport& InViewport, const Vector3& InPositionSS, Vector3& OutPositionVS)const
 		{
@@ -406,13 +406,13 @@ namespace PigeonEngine
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
 				EMath::Clamp(InPositionSS.z, RENDER_DEPTH_MIN, RENDER_DEPTH_MAX), 1.f);
-			ProjectionPart.InverseProjectionMatrix.MultiplyVector(TempPoint);
+			TempPoint = Matrix4x4TransformVector(ProjectionPart.InverseProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
-			OutPositionVS = Vector3(TempPoint);
+			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
 		void GenerateViewPart(const Vector3& InCameraWorldLocation, const Quaternion& InCameraWorldRotation)
 		{
-			ViewPart.InverseViewMatrix = Matrix4x4(InCameraWorldLocation, InCameraWorldRotation);
+			ViewPart.InverseViewMatrix = MakeMatrix4x4(InCameraWorldLocation, InCameraWorldRotation);
 			ViewPart.ViewMatrix = ViewPart.InverseViewMatrix.Inverse();
 		}
 		void GenerateProjectPart(const EViewport& InViewport, FLOAT InFovAngleY, FLOAT InNearDist, FLOAT InFarDist)
