@@ -1,8 +1,13 @@
 #pragma once
 
+#include "../../../Main/Main.h"
 #include "BuiltInType.h"
 #include "BaseType.h"
 #include "ObjectBase.h"
+#if _EDITOR_ONLY
+#include <Config/ErrorCaption.h>
+#include "../../../../Development/Alert/DevelopmentDefines.h"
+#endif
 
 namespace PigeonEngine
 {
@@ -29,33 +34,46 @@ namespace PigeonEngine
 		EClass(ETransform, EObjectBase)
 
 	public:
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToMatrix4x4WithScaling(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToMatrix4x4NoScaling(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToInverseMatrix4x4WithScaling(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Matrix4x4	ToInverseMatrix4x4NoScaling(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetLocation(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Quaternion	GetRotation(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		Vector3		GetScaling(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
-		Vector3		GetForwardVector(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
-		Vector3		GetUpVector(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType = ECoordinateSpaceType::ECST_WORLD>
-		Vector3		GetRightVector(const PSceneComponent* InParentComponent = nullptr, const PActor* InParentActor = nullptr)const;
+		Matrix4x4	ToMatrix4x4WithScaling_Local()const;
+		Matrix4x4	ToMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const;
+		Matrix4x4	ToMatrix4x4WithScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Matrix4x4	ToMatrix4x4NoScaling_Local()const;
+		Matrix4x4	ToMatrix4x4NoScaling_Actor(const PSceneComponent* InParentComponent)const;
+		Matrix4x4	ToMatrix4x4NoScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Matrix4x4	ToInverseMatrix4x4WithScaling_Local()const;
+		Matrix4x4	ToInverseMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const;
+		Matrix4x4	ToInverseMatrix4x4WithScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Matrix4x4	ToInverseMatrix4x4NoScaling_Local()const;
+		Matrix4x4	ToInverseMatrix4x4NoScaling_Actor(const PSceneComponent* InParentComponent)const;
+		Matrix4x4	ToInverseMatrix4x4NoScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Vector3		GetLocation_Local()const;
+		Vector3		GetLocation_Actor(const PSceneComponent* InParentComponent)const;
+		Vector3		GetLocation_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Quaternion	GetRotation_Local()const;
+		Quaternion	GetRotation_Actor(const PSceneComponent* InParentComponent)const;
+		Quaternion	GetRotation_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Vector3		GetScaling_Local()const;
+		Vector3		GetScaling_Actor(const PSceneComponent* InParentComponent)const;
+		Vector3		GetScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Vector3		GetForwardVector_Local()const;
+		Vector3		GetForwardVector_Actor(const PSceneComponent* InParentComponent)const;
+		Vector3		GetForwardVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Vector3		GetUpVector_Local()const;
+		Vector3		GetUpVector_Actor(const PSceneComponent* InParentComponent)const;
+		Vector3		GetUpVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
+		Vector3		GetRightVector_Local()const;
+		Vector3		GetRightVector_Actor(const PSceneComponent* InParentComponent)const;
+		Vector3		GetRightVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
 	public:
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		void	SetLocation(const Vector3& NewValue, const PSceneComponent* InParentComponent = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		void	SetRotation(const Quaternion& NewValue, const PSceneComponent* InParentComponent = nullptr)const;
-		template<ECoordinateSpaceType _CoordinateSpaceType>
-		void	SetScaling(const Vector3& NewValue, const PSceneComponent* InParentComponent = nullptr)const;
+		void	SetLocation_Local(const Vector3& NewValue);
+		void	SetLocation_Actor(const Vector3& NewValue, const PSceneComponent* InParentComponent);
+		void	SetLocation_World(const Vector3& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor);
+		void	SetRotation_Local(const Quaternion& NewValue);
+		void	SetRotation_Actor(const Quaternion& NewValue, const PSceneComponent* InParentComponent);
+		void	SetRotation_World(const Quaternion& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor);
+		void	SetScaling_Local(const Vector3& NewValue);
+		void	SetScaling_Actor(const Vector3& NewValue, const PSceneComponent* InParentComponent);
+		void	SetScaling_World(const Vector3& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor);
 	public:
 		Matrix4x4	GetLocalToWorldMatrix(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
 		Matrix4x4	GetWorldToLocalMatrix(const PSceneComponent* InParentComponent, const PActor* InParentActor)const;
@@ -95,288 +113,5 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_COPY_BODY(ETransform)
 
 	};
-
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToMatrix4x4WithScaling(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (Matrix4x4(LocalLocation, LocalRotation, LocalScaling));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (Matrix4x4(
-				GetLocalToActorLocationInternal(InParentComponent),
-				GetLocalToActorRotationInternal(InParentComponent),
-				GetLocalToActorScalingInternal(InParentComponent)));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (Matrix4x4(
-				GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldScalingInternal(InParentComponent, InParentActor)));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToMatrix4x4WithScaling enum check coordinate space type failed.");
-			return (Matrix4x4::Identity());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToMatrix4x4NoScaling(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (Matrix4x4(LocalLocation, LocalRotation, Vector3::One()));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (Matrix4x4(
-				GetLocalToActorLocationInternal(InParentComponent),
-				GetLocalToActorRotationInternal(InParentComponent),
-				Vector3::One()));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (Matrix4x4(
-				GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
-				Vector3::One()));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToMatrix4x4NoScaling enum check coordinate space type failed.");
-			return (Matrix4x4::Identity());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToInverseMatrix4x4WithScaling(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (Matrix4x4(LocalLocation, LocalRotation, LocalScaling).Inverse());
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (Matrix4x4(
-				GetLocalToActorLocationInternal(InParentComponent),
-				GetLocalToActorRotationInternal(InParentComponent),
-				GetLocalToActorScalingInternal(InParentComponent)).Inverse());
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (Matrix4x4(
-				GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldScalingInternal(InParentComponent, InParentActor)).Inverse());
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToInverseMatrix4x4WithScaling enum check coordinate space type failed.");
-			return (Matrix4x4::Identity());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Matrix4x4 ETransform::ToInverseMatrix4x4NoScaling(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (Matrix4x4(LocalLocation, LocalRotation, Vector3::One()).Inverse());
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (Matrix4x4(
-				GetLocalToActorLocationInternal(InParentComponent),
-				GetLocalToActorRotationInternal(InParentComponent),
-				Vector3::One()).Inverse());
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (Matrix4x4(
-				GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
-				GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
-				Vector3::One()).Inverse());
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::ToInverseMatrix4x4NoScaling enum check coordinate space type failed.");
-			return (Matrix4x4::Identity());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetLocation(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return LocalLocation;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorLocationInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldLocationInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetLocation enum check coordinate space type failed.");
-			return (Vector3::Zero());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Quaternion ETransform::GetRotation(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return LocalRotation;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorRotationInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldRotationInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetRotation enum check coordinate space type failed.");
-			return (Quaternion::Identity());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetScaling(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return LocalScaling;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorScalingInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldScalingInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetScaling enum check coordinate space type failed.");
-			return (Vector3::One());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetForwardVector(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (LocalRotation.MultiplyVector(Vector3::ZVector()));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorForwardVectorInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldForwardVectorInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetForwardVector enum check coordinate space type failed.");
-			return (Vector3::ZVector());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetUpVector(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (LocalRotation.MultiplyVector(Vector3::YVector()));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorUpVectorInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldUpVectorInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetUpVector enum check coordinate space type failed.");
-			return (Vector3::YVector());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	Vector3 ETransform::GetRightVector(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			return (LocalRotation.MultiplyVector(Vector3::XVector()));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_ACTOR)
-		{
-			return (GetLocalToActorRightVectorInternal(InParentComponent));
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			return (GetLocalToWorldRightVectorInternal(InParentComponent, InParentActor));
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::GetRightVector enum check coordinate space type failed.");
-			return (Vector3::XVector());
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	void ETransform::SetLocation(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			LocalLocation = NewValue;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			SetWorldLocationInternal(NewValue, InParentComponent);
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetLocation enum check coordinate space type failed.");
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	void ETransform::SetRotation(const Quaternion& NewValue, const PSceneComponent* InParentComponent)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			LocalRotation = NewValue;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			SetWorldRotationInternal(NewValue, InParentComponent);
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetRotation enum check coordinate space type failed.");
-		}
-	}
-	template<ECoordinateSpaceType _CoordinateSpaceType>
-	void ETransform::SetScaling(const Vector3& NewValue, const PSceneComponent* InParentComponent)const
-	{
-		if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_LOCAL)
-		{
-			LocalScaling = NewValue;
-		}
-		else if (_CoordinateSpaceType == ECoordinateSpaceType::ECST_WORLD)
-		{
-			SetWorldScalingInternal(NewValue, InParentComponent);
-		}
-		else
-		{
-			PE_FAILED(ENGINE_RENDER_CORE_ERROR, "The function of ETransform::SetScaling enum check coordinate space type failed.");
-		}
-	}
 
 };

@@ -225,5 +225,185 @@ namespace PigeonEngine
 	{
 		return (GetLocalToWorldRotationInternal(InParentComponent, InParentActor).MultiplyVector(Vector3::XVector()));
 	}
+	Matrix4x4 ETransform::ToMatrix4x4WithScaling_Local()const
+	{
+		return (MakeMatrix4x4(LocalLocation, LocalRotation, LocalScaling));
+	}
+	Matrix4x4 ETransform::ToMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToActorLocationInternal(InParentComponent),
+			GetLocalToActorRotationInternal(InParentComponent),
+			GetLocalToActorScalingInternal(InParentComponent)));
+	}
+	Matrix4x4 ETransform::ToMatrix4x4WithScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldScalingInternal(InParentComponent, InParentActor)));
+	}
+	Matrix4x4 ETransform::ToMatrix4x4NoScaling_Local()const
+	{
+		return (MakeMatrix4x4(LocalLocation, LocalRotation, Vector3::One()));
+	}
+	Matrix4x4 ETransform::ToMatrix4x4NoScaling_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToActorLocationInternal(InParentComponent),
+			GetLocalToActorRotationInternal(InParentComponent),
+			Vector3::One()));
+	}
+	Matrix4x4 ETransform::ToMatrix4x4NoScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
+			Vector3::One()));
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4WithScaling_Local()const
+	{
+		return (MakeMatrix4x4(LocalLocation, LocalRotation, LocalScaling).Inverse());
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToActorLocationInternal(InParentComponent),
+			GetLocalToActorRotationInternal(InParentComponent),
+			GetLocalToActorScalingInternal(InParentComponent)).Inverse());
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4WithScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldScalingInternal(InParentComponent, InParentActor)).Inverse());
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4NoScaling_Local()const
+	{
+		return (MakeMatrix4x4(LocalLocation, LocalRotation, Vector3::One()).Inverse());
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4NoScaling_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToActorLocationInternal(InParentComponent),
+			GetLocalToActorRotationInternal(InParentComponent),
+			Vector3::One()).Inverse());
+	}
+	Matrix4x4 ETransform::ToInverseMatrix4x4NoScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (MakeMatrix4x4(
+			GetLocalToWorldLocationInternal(InParentComponent, InParentActor),
+			GetLocalToWorldRotationInternal(InParentComponent, InParentActor),
+			Vector3::One()).Inverse());
+	}
+	Vector3 ETransform::GetLocation_Local()const
+	{
+		return LocalLocation;
+	}
+	Vector3 ETransform::GetLocation_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorLocationInternal(InParentComponent));
+	}
+	Vector3 ETransform::GetLocation_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldLocationInternal(InParentComponent, InParentActor));
+	}
+	Quaternion ETransform::GetRotation_Local()const
+	{
+		return LocalRotation;
+	}
+	Quaternion ETransform::GetRotation_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorRotationInternal(InParentComponent));
+	}
+	Quaternion ETransform::GetRotation_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldRotationInternal(InParentComponent, InParentActor));
+	}
+	Vector3 ETransform::GetScaling_Local()const
+	{
+		return LocalScaling;
+	}
+	Vector3 ETransform::GetScaling_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorScalingInternal(InParentComponent));
+	}
+	Vector3 ETransform::GetScaling_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldScalingInternal(InParentComponent, InParentActor));
+	}
+	Vector3 ETransform::GetForwardVector_Local()const
+	{
+		return (LocalRotation.MultiplyVector(Vector3::ZVector()));
+	}
+	Vector3 ETransform::GetForwardVector_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorForwardVectorInternal(InParentComponent));
+	}
+	Vector3 ETransform::GetForwardVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldForwardVectorInternal(InParentComponent, InParentActor));
+	}
+	Vector3 ETransform::GetUpVector_Local()const
+	{
+		return (LocalRotation.MultiplyVector(Vector3::YVector()));
+	}
+	Vector3 ETransform::GetUpVector_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorUpVectorInternal(InParentComponent));
+	}
+	Vector3 ETransform::GetUpVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldUpVectorInternal(InParentComponent, InParentActor));
+	}
+	Vector3 ETransform::GetRightVector_Local()const
+	{
+		return (LocalRotation.MultiplyVector(Vector3::XVector()));
+	}
+	Vector3 ETransform::GetRightVector_Actor(const PSceneComponent* InParentComponent)const
+	{
+		return (GetLocalToActorRightVectorInternal(InParentComponent));
+	}
+	Vector3 ETransform::GetRightVector_World(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
+	{
+		return (GetLocalToWorldRightVectorInternal(InParentComponent, InParentActor));
+	}
+	void ETransform::SetLocation_Local(const Vector3& NewValue)
+	{
+		LocalLocation = NewValue;
+	}
+	void ETransform::SetLocation_Actor(const Vector3& NewValue, const PSceneComponent* InParentComponent)
+	{
+		SetLocalToActorLocationInternal(NewValue, InParentComponent);
+	}
+	void ETransform::SetLocation_World(const Vector3& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor)
+	{
+		SetLocalToWorldLocationInternal(NewValue, InParentComponent, InParentActor);
+	}
+	void ETransform::SetRotation_Local(const Quaternion& NewValue)
+	{
+		LocalRotation = NewValue;
+	}
+	void ETransform::SetRotation_Actor(const Quaternion& NewValue, const PSceneComponent* InParentComponent)
+	{
+		SetLocalToActorRotationInternal(NewValue, InParentComponent);
+	}
+	void ETransform::SetRotation_World(const Quaternion& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor)
+	{
+		SetLocalToWorldRotationInternal(NewValue, InParentComponent, InParentActor);
+	}
+	void ETransform::SetScaling_Local(const Vector3& NewValue)
+	{
+		LocalScaling = NewValue;
+	}
+	void ETransform::SetScaling_Actor(const Vector3& NewValue, const PSceneComponent* InParentComponent)
+	{
+		SetLocalToActorScalingInternal(NewValue, InParentComponent);
+	}
+	void ETransform::SetScaling_World(const Vector3& NewValue, const PSceneComponent* InParentComponent, const PActor* InParentActor)
+	{
+		SetLocalToWorldScalingInternal(NewValue, InParentComponent, InParentActor);
+	}
 
 };
