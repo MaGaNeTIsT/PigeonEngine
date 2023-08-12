@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <rapidjson.h>
 #ifdef _EDITOR_ONLY
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
 
@@ -19,6 +20,7 @@ namespace PigeonEngine
     public:
         using TIterator         = typename std::vector<T>::iterator;
         using TConstIterator    = typename std::vector<T>::const_iterator;
+        using SizeType = UINT;
     public:
         TArray();
         TArray(const TArray<T>& Other);
@@ -35,6 +37,14 @@ namespace PigeonEngine
         TArray<T>&  operator= (std::vector<T>&& Other);
         
         UINT        Add       (const T& Element);
+        T&          Add_GetRef()
+        {
+            // CheckAddress(&Item);
+            T Temp;
+            Elements.push_back(std::move(Temp));
+            return Elements[Elements.size()-1];
+        }
+        
         T&          GetRef    (const UINT& Index);
         const T&    Get       (const UINT& Index)const;
         const T&    Last      ();
@@ -87,6 +97,8 @@ namespace PigeonEngine
             return static_cast<UINT>(this->Elements.size());
         }
         ENGINE_NODISCARD UINT LastIndex    ()const;
+
+    
     private:
         class std::vector<T> Elements;
     };
@@ -170,8 +182,7 @@ namespace PigeonEngine
          Other.clear();
          return *this;
     }
-
-
+    
     template <typename T>
     UINT TArray<T>::LastIndex() const
     {

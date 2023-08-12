@@ -3,7 +3,7 @@
 #include "../../../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <set>
-
+#include "../../../../Core/Config/ErrorCaption.h"
 namespace PigeonEngine
 {
     template <typename T>
@@ -20,7 +20,7 @@ namespace PigeonEngine
         
         T& operator[](const UINT& Index);
 
-        UINT Add     (const T& Element);
+        BOOL Add     (const T& Element);
         T&   Get     (const UINT& Index) const;
         // Find the index of given Element, return set's Length if the Element doesn't exist.
         UINT Find    (const T& Element) const;
@@ -85,9 +85,9 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    UINT TSet<T>::Add(const T& Element)
+    BOOL TSet<T>::Add(const T& Element)
     {
-        return Elements.insert(Element);
+        return Elements.insert(Element).second;
     }
 
     template <typename T>
