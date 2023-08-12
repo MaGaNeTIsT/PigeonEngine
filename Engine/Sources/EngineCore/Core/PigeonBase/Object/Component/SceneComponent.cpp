@@ -127,90 +127,90 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentLocation(const Vector3& Location)
 	{
-		Transform.SetLocation<ECoordinateSpaceType::ECST_LOCAL>(Location, this->AttachedParentComponent);
+		Transform.SetLocation_Local(Location);
 	}
 
 	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
 	{
-		Transform.SetRotation<ECoordinateSpaceType::ECST_LOCAL>(Rotation, this->AttachedParentComponent);
+		Transform.SetRotation_Local(Rotation);
 	}
 
 	void PSceneComponent::SetComponentScale(const Vector3& Scale)
 	{
-		Transform.SetScaling<ECoordinateSpaceType::ECST_LOCAL>(Scale, this->AttachedParentComponent);
+		Transform.SetScaling_Local(Scale);
 	}
 
 	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
 	{
-		SetComponentLocation(Trans.GetLocation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentRotation(Trans.GetRotation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentScale(Trans.GetScaling<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor()));
+		SetComponentLocation(Trans.GetLocation_Local());
+		SetComponentRotation(Trans.GetRotation_Local());
+		SetComponentScale(Trans.GetScaling_Local());
 	}
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
 	{
-		Transform.SetLocation<ECoordinateSpaceType::ECST_WORLD>(Location, this->AttachedParentComponent);
+		Transform.SetLocation_World(Location, this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
 	{
-		Transform.SetRotation<ECoordinateSpaceType::ECST_WORLD>(Rotation, this->AttachedParentComponent);
+		Transform.SetRotation_World(Rotation, this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
 	{
-		Transform.SetScaling<ECoordinateSpaceType::ECST_WORLD>(Scale, this->AttachedParentComponent);
+		Transform.SetScaling_World(Scale, this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
 	{
-		SetComponentWorldLocation(Trans.GetLocation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentWorldRotation(Trans.GetRotation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentWorldScale(Trans.GetScaling<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor()));
+		SetComponentWorldLocation(Trans.GetLocation_World(this->AttachedParentComponent, this->GetOwnerActor()));
+		SetComponentWorldRotation(Trans.GetRotation_World(this->AttachedParentComponent, this->GetOwnerActor()));
+		SetComponentWorldScale(Trans.GetScaling_World(this->AttachedParentComponent, this->GetOwnerActor()));
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const
 	{
-		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetLocation_Local();
 	}
 
 	Quaternion PSceneComponent::GetComponentLocalRotation()const
 	{
-		return this->Transform.GetRotation<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRotation_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalScale() const
 	{
-		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_LOCAL>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetScaling_Local();
 	}
 
 	Vector3 PSceneComponent::GetComponentWorldLocation() const
 	{
-		return this->Transform.GetLocation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetLocation_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	Quaternion PSceneComponent::GetComponentWorldRotation() const
 	{
-		return this->Transform.GetRotation<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRotation_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentWorldScale() const
 	{
-		return this->Transform.GetScaling<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetScaling_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentForwardVector() const
 	{
-		return this->Transform.GetForwardVector<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetForwardVector_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentRightVector() const
 	{
-		return this->Transform.GetRightVector<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRightVector_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentUpVector() const
 	{
-		return this->Transform.GetUpVector<ECoordinateSpaceType::ECST_WORLD>(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetUpVector_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
 };
