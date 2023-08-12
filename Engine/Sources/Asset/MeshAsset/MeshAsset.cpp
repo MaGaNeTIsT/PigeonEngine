@@ -126,6 +126,10 @@ namespace PigeonEngine
 			return ((VertexLayout & (InLayoutType << InPartIndex)) > 0);
 		}
 	}
+	const EString& EMesh::GetMeshName()const
+	{
+		return MeshName;
+	}
 	const EBoundAABB& EMesh::GetBoundAABB()const
 	{
 		return BoundAABB;
@@ -145,6 +149,10 @@ namespace PigeonEngine
 	const EMesh::ESubmeshPart& EMesh::GetSubmeshes()const
 	{
 		return Submeshes;
+	}
+	void EMesh::SetMeshName(const EString& InMeshName)
+	{
+		MeshName = InMeshName;
 	}
 	void EMesh::SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent)
 	{
@@ -442,6 +450,9 @@ namespace PigeonEngine
 		}
 	}
 
+	EStaticMesh::EStaticMesh() : EMesh(ENGINE_DEFAULT_NAME)
+	{
+	}
 	EStaticMesh::EStaticMesh(const EString& InMeshName) : EMesh(InMeshName)
 	{
 	}
@@ -453,6 +464,11 @@ namespace PigeonEngine
 		EMesh::Release();
 	}
 
+	ESkinnedMesh::ESkinnedMesh()
+		: EMesh(ENGINE_DEFAULT_NAME), EffectBoneNum(0u)
+	{
+
+	}
 	ESkinnedMesh::ESkinnedMesh(const EString& InMeshName)
 		: EMesh(InMeshName), EffectBoneNum(0u)
 	{

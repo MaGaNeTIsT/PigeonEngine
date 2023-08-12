@@ -52,7 +52,7 @@ namespace PigeonEngine
 			: EVertexDescriptor(), Indices(nullptr)
 		{
 #if _EDITOR_ONLY
-			if (InStride != 2u || InStride != 4u)
+			if ((InStride != 2u) && (InStride != 4u))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check index data error(stride is not 4 bytes or 2 bytes)."));
 			}
@@ -92,7 +92,7 @@ namespace PigeonEngine
 			, Datas(nullptr)
 		{
 #if _EDITOR_ONLY
-			if (InType == EVertexLayoutType::MESH_INDEX_FULL || InType == EVertexLayoutType::MESH_INDEX_HALF || InType == EVertexLayoutType::MESH_SKIN)
+			if ((InType == EVertexLayoutType::MESH_INDEX_FULL) || (InType == EVertexLayoutType::MESH_INDEX_HALF) || (InType == EVertexLayoutType::MESH_SKIN))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check vertex data error(part type is invalid)."));
 			}
@@ -198,12 +198,14 @@ namespace PigeonEngine
 		virtual void Release();
 	public:
 		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
+		const EString&		GetMeshName()const;
 		const EBoundAABB&	GetBoundAABB()const;
 		UINT32				GetVertexLayout()const;
 		const EIndexPart&	GetIndices()const;
 		const EVertexPart&	GetVertices()const;
 		const ESubmeshPart&	GetSubmeshes()const;
 	public:
+		void	SetMeshName(const EString& InMeshName);
 		void	SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
 		void	SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
 		BOOL	AddIndexElement(EIndexData* InIndexData);
@@ -234,11 +236,11 @@ namespace PigeonEngine
 	class EStaticMesh : public EMesh
 	{
 	public:
+		EStaticMesh();
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
 		virtual void Release()override;
 	public:
-		EStaticMesh() = delete;
 
 		CLASS_REMOVE_COPY_BODY(EStaticMesh)
 
@@ -251,6 +253,7 @@ namespace PigeonEngine
 		using EBindPoseIndex	= TMap<EString, USHORT>;
 		using ESkinPart			= TArray<ESkinData>;
 	public:
+		ESkinnedMesh();
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();
 		virtual void Release()override;
@@ -271,7 +274,6 @@ namespace PigeonEngine
 		USHORT			EffectBoneNum;
 		ESkinPart		Skins;
 	public:
-		ESkinnedMesh() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkinnedMesh)
 
