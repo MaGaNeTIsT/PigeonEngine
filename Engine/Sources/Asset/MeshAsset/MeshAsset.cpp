@@ -80,6 +80,14 @@ namespace PigeonEngine
 		return RShaderSemanticType::SHADER_SEMANTIC_NONE;
 	}
 
+	EMesh::EMesh()
+		: MeshName(ENGINE_DEFAULT_NAME)
+		, VertexLayout(0u)
+	{
+#ifdef _EDITOR_ONLY
+		DebugName = ENGINE_DEFAULT_NAME;
+#endif
+	}
 	EMesh::EMesh(const EString& InMeshName)
 		: MeshName(InMeshName)
 		, VertexLayout(0u)
@@ -88,6 +96,25 @@ namespace PigeonEngine
 		DebugName = InMeshName;
 #endif
 	}
+	EMesh::EMesh(const EMesh& Other)
+		: MeshName(Other.MeshName)
+		, BoundAABB(Other.BoundAABB)
+		, VertexLayout(Other.VertexLayout)
+		, Indices(Other.Indices)
+	{
+		for (UINT i = 0u, n = Other.Vertices.Length(); i < n; i++)
+		{
+			const EVertexData& OtherVertex = Other.Vertices[i];
+			Vertices.Add(EVertexData());
+			Vertices[Vertices.Length() - 1u] = OtherVertex;
+		}
+		for (UINT i = 0u, n = Other.Submeshes.Length(); i < n; i++)
+		{
+			const ESubmeshData& OtherSubmesh = Other.Submeshes[i];
+			Submeshes.Add(ESubmeshData());
+			Submeshes[Submeshes.Length() - 1u] = OtherSubmesh;
+		}
+	}
 	EMesh::~EMesh()
 	{
 		Indices.Release();
@@ -95,6 +122,11 @@ namespace PigeonEngine
 		{
 			Vertices[Index].Release();
 		}
+	}
+	EMesh& EMesh::operator=(const EMesh& Other)
+	{
+		CopyBaseDataFromOtherInternal(Other);
+		return (*this);
 	}
 	void EMesh::Release()
 	{
@@ -414,6 +446,41 @@ namespace PigeonEngine
 		OutSubmeshData = (const ESubmeshData*)(&(Submeshes[InSubmeshIndex]));
 		return TRUE;
 	}
+	void EMesh::CopyBaseDataFromOtherInternal(const EMesh& Other)
+	{
+		MeshName		= Other.MeshName;
+		BoundAABB		= Other.BoundAABB;
+		VertexLayout	= Other.VertexLayout;
+
+		Indices.Release();
+		Indices = Other.Indices;
+
+		if (Vertices.Length() > 0u)
+		{
+			for (UINT i = 0u, n = Vertices.Length(); i < n; i++)
+			{
+				Vertices[i].Release();
+			}
+			Vertices.Clear();
+		}
+		for (UINT i = 0u, n = Other.Vertices.Length(); i < n; i++)
+		{
+			const EVertexData& OtherVertex = Other.Vertices[i];
+			Vertices.Add(EVertexData());
+			Vertices[Vertices.Length() - 1u] = OtherVertex;
+		}
+
+		if (Submeshes.Length() > 0u)
+		{
+			Submeshes.Clear();
+		}
+		for (UINT i = 0u, n = Other.Submeshes.Length(); i < n; i++)
+		{
+			const ESubmeshData& OtherSubmesh = Other.Submeshes[i];
+			Submeshes.Add(ESubmeshData());
+			Submeshes[Submeshes.Length() - 1u] = OtherSubmesh;
+		}
+	}
 	void EMesh::SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist)
 	{
 		if (InLayoutType == EVertexLayoutType::MESH_INDEX_FULL)
@@ -450,14 +517,25 @@ namespace PigeonEngine
 		}
 	}
 
-	EStaticMesh::EStaticMesh() : EMesh(ENGINE_DEFAULT_NAME)
+	EStaticMesh::EStaticMesh()
+		: EMesh(ENGINE_DEFAULT_NAME)
 	{
 	}
-	EStaticMesh::EStaticMesh(const EString& InMeshName) : EMesh(InMeshName)
+	EStaticMesh::EStaticMesh(const EStaticMesh& Other)
+		: EMesh(Other)
+	{
+	}
+	EStaticMesh::EStaticMesh(const EString& InMeshName)
+		: EMesh(InMeshName)
 	{
 	}
 	EStaticMesh::~EStaticMesh()
 	{
+	}
+	EStaticMesh& EStaticMesh::operator=(const EStaticMesh& Other)
+	{
+		CopyBaseDataFromOtherInternal(Other);
+		return (*this);
 	}
 	void EStaticMesh::Release()
 	{
@@ -465,9 +543,28 @@ namespace PigeonEngine
 	}
 
 	ESkinnedMesh::ESkinnedMesh()
-		: EMesh(ENGINE_DEFAULT_NAME), EffectBoneNum(0u)
+		: EMesh(ENGINE_DEFAULT_NAME)
+		, EffectBoneNum(0u)
 	{
-
+	}
+	ESkinnedMesh::ESkinnedMesh(const ESkinnedMesh& Other)
+		: EMesh(Other)
+		, EffectBoneNum(Other.EffectBoneNum)
+	{
+		for (auto It = Other.BindPoseValue.Begin(); It != Other.BindPoseValue.End(); It++)
+		{
+			BindPoseValue.Add(It->first, It->second);
+		}
+		for (auto It = Other.BindPoseIndex.Begin(); It != Other.BindPoseIndex.End(); It++)
+		{
+			BindPoseIndex.Add(It->first, It->second);
+		}
+		for (UINT i = 0u, n = Other.Skins.Length(); i < n; i++)
+		{
+			const ESkinData& OtherSkin = Other.Skins[i];
+			Skins.Add(ESkinData());
+			Skins[Skins.Length() - 1u] = OtherSkin;
+		}
 	}
 	ESkinnedMesh::ESkinnedMesh(const EString& InMeshName)
 		: EMesh(InMeshName), EffectBoneNum(0u)
@@ -479,6 +576,47 @@ namespace PigeonEngine
 		{
 			Skins[Index].Release();
 		}
+	}
+	ESkinnedMesh& ESkinnedMesh::operator=(const ESkinnedMesh& Other)
+	{
+		CopyBaseDataFromOtherInternal(Other);
+
+		if (BindPoseValue.Length() > 0u)
+		{
+			BindPoseValue.Clear();
+		}
+		for (auto It = Other.BindPoseValue.Begin(); It != Other.BindPoseValue.End(); It++)
+		{
+			BindPoseValue.Add(It->first, It->second);
+		}
+
+		if (BindPoseIndex.Length() > 0u)
+		{
+			BindPoseIndex.Clear();
+		}
+		for (auto It = Other.BindPoseIndex.Begin(); It != Other.BindPoseIndex.End(); It++)
+		{
+			BindPoseIndex.Add(It->first, It->second);
+		}
+
+		EffectBoneNum = Other.EffectBoneNum;
+
+		if (Skins.Length() > 0u)
+		{
+			for (UINT i = 0u, n = Skins.Length(); i < n; i++)
+			{
+				Skins[i].Release();
+			}
+			Skins.Clear();
+		}
+		for (UINT i = 0u, n = Other.Skins.Length(); i < n; i++)
+		{
+			const ESkinData& OtherSkin = Other.Skins[i];
+			Skins.Add(ESkinData());
+			Skins[Skins.Length() - 1u] = OtherSkin;
+		}
+
+		return (*this);
 	}
 	void ESkinnedMesh::Release()
 	{
@@ -513,6 +651,10 @@ namespace PigeonEngine
 		if (BindPoseValue.Length() > 0u)
 		{
 			BindPoseValue.Clear();
+		}
+		if (BindPoseIndex.Length() > 0u)
+		{
+			BindPoseIndex.Clear();
 		}
 	}
 	void ESkinnedMesh::GenerateBindPoseIndex()

@@ -87,11 +87,14 @@ namespace PigeonEngine
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
-		for (UINT i = 0u; i < InOriginDataNum; i++)
+		if (InOriginDatas && OutStoredDatas)
 		{
-			const aiVector2D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
+			for (UINT i = 0u; i < InOriginDataNum; i++)
+			{
+				const aiVector2D& TempData = InOriginDatas[i];
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
+			}
 		}
 	}
 	ENGINE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, const UINT InOriginDataNum, const UINT InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
@@ -100,14 +103,17 @@ namespace PigeonEngine
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
-		for (UINT i = 0u; i < InOriginDataNum; i++)
+		if (InOriginDatas && OutStoredDatas)
 		{
-			const aiVector3D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
-			if (InStoredDataStrideIn32Bits > 2u)
+			for (UINT i = 0u; i < InOriginDataNum; i++)
 			{
-				OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.z;
+				const aiVector3D& TempData = InOriginDatas[i];
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.x;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.y;
+				if (InStoredDataStrideIn32Bits > 2u)
+				{
+					OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.z;
+				}
 			}
 		}
 	}
@@ -117,15 +123,18 @@ namespace PigeonEngine
 		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
 		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
-		for (UINT i = 0u; i < InOriginDataNum; i++)
+		if (InOriginDatas && OutStoredDatas)
 		{
-			const aiColor4D& TempData = InOriginDatas[i];
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.r;
-			OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.g;
-			if (InStoredDataStrideIn32Bits > 2u)
+			for (UINT i = 0u; i < InOriginDataNum; i++)
 			{
-				OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.b;
-				OutStoredDatas[i * InStoredDataStrideIn32Bits + 3u] = TempData.a;
+				const aiColor4D& TempData = InOriginDatas[i];
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 0u] = TempData.r;
+				OutStoredDatas[i * InStoredDataStrideIn32Bits + 1u] = TempData.g;
+				if (InStoredDataStrideIn32Bits > 2u)
+				{
+					OutStoredDatas[i * InStoredDataStrideIn32Bits + 2u] = TempData.b;
+					OutStoredDatas[i * InStoredDataStrideIn32Bits + 3u] = TempData.a;
+				}
 			}
 		}
 	}
@@ -149,20 +158,23 @@ namespace PigeonEngine
 		Check((ENGINE_ASSET_ERROR), ("Stored skin data's effect bone num must be bigger than 1."), (InMaxEffectNum >= 1u));
 		Check((ENGINE_ASSET_ERROR), ("Stored indices data can not be null."), (!!OutIndices));
 		Check((ENGINE_ASSET_ERROR), ("Stored weights data can not be null."), (!!OutWeights));
-		for (UINT i = 0u, n = InDatas.Length(); i < n; i++)
+		if (OutIndices && OutWeights && InDatas.Length() > 0u)
 		{
-			const EReaderVertexWeights& TempData = InDatas[i];
-			for (UINT EffectIndex = 0u; EffectIndex < InMaxEffectNum; EffectIndex++)
+			for (UINT i = 0u, n = InDatas.Length(); i < n; i++)
 			{
-				if (EffectIndex < TempData.MaxCount)
+				const EReaderVertexWeights& TempData = InDatas[i];
+				for (UINT EffectIndex = 0u; EffectIndex < InMaxEffectNum; EffectIndex++)
 				{
-					OutIndices[i * InMaxEffectNum + EffectIndex] = TempData.Indices[EffectIndex];
-					OutWeights[i * InMaxEffectNum + EffectIndex] = TempData.Weights[EffectIndex];
-				}
-				else
-				{
-					OutIndices[i * InMaxEffectNum + EffectIndex] = 0u;
-					OutWeights[i * InMaxEffectNum + EffectIndex] = 0.f;
+					if (EffectIndex < TempData.MaxCount)
+					{
+						OutIndices[i * InMaxEffectNum + EffectIndex] = TempData.Indices[EffectIndex];
+						OutWeights[i * InMaxEffectNum + EffectIndex] = TempData.Weights[EffectIndex];
+					}
+					else
+					{
+						OutIndices[i * InMaxEffectNum + EffectIndex] = 0u;
+						OutWeights[i * InMaxEffectNum + EffectIndex] = 0.f;
+					}
 				}
 			}
 		}

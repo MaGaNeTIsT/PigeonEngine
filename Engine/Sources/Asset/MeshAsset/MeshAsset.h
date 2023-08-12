@@ -64,8 +64,41 @@ namespace PigeonEngine
 			}
 			ElementNum = InElementNum;
 		}
-		EIndexData(const EIndexData&) = delete;
-		EIndexData& operator=(const EIndexData&) = delete;
+		EIndexData(const EIndexData& Other)
+			: Indices(nullptr)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Other.Indices && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				Indices = new UINT[ElementNum * sizeof(UINT)];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					Indices[i] = Other.Indices[i];
+				}
+			}
+		}
+		EIndexData& operator=(const EIndexData& Other)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Indices)
+			{
+				delete[]Indices;
+				Indices = nullptr;
+			}
+			if (Other.Indices && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				Indices = new UINT[ElementNum * sizeof(UINT)];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					Indices[i] = Other.Indices[i];
+				}
+			}
+			return (*this);
+		}
 		void Release()
 		{
 			if (Indices)
@@ -108,8 +141,49 @@ namespace PigeonEngine
 			ElementNum = InElementNum;
 #endif
 		}
-		EVertexData(const EVertexData&) = delete;
-		EVertexData& operator=(const EVertexData&) = delete;
+		EVertexData(const EVertexData& Other)
+			: Datas(nullptr)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Other.Datas && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				Datas = new FLOAT[ElementNum * StrideIn32Bits];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					{
+						Datas[i * StrideIn32Bits + StrideIndex] = Other.Datas[i * StrideIn32Bits + StrideIndex];
+					}
+				}
+			}
+		}
+		EVertexData& operator=(const EVertexData& Other)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Datas)
+			{
+				delete[]Datas;
+				Datas = nullptr;
+			}
+			if (Other.Datas && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				Datas = new FLOAT[ElementNum * StrideIn32Bits];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					{
+						Datas[i * StrideIn32Bits + StrideIndex] = Other.Datas[i * StrideIn32Bits + StrideIndex];
+					}
+				}
+			}
+			return (*this);
+		}
 		void Release()
 		{
 			if (Datas)
@@ -147,8 +221,58 @@ namespace PigeonEngine
 			ElementNum = InElementNum;
 #endif
 		}
-		ESkinData(const ESkinData&) = delete;
-		ESkinData& operator=(const ESkinData&) = delete;
+		ESkinData(const ESkinData& Other)
+			: Indices(nullptr), Weights(nullptr)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Other.Indices && Other.Weights && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				Indices = new UINT[ElementNum * StrideIn32Bits];
+				Weights = new FLOAT[ElementNum * StrideIn32Bits];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					{
+						Indices[i * StrideIn32Bits + StrideIndex] = Other.Indices[i * StrideIn32Bits + StrideIndex];
+						Weights[i * StrideIn32Bits + StrideIndex] = Other.Weights[i * StrideIn32Bits + StrideIndex];
+					}
+				}
+			}
+		}
+		ESkinData& operator=(const ESkinData& Other)
+		{
+			PartType	= Other.PartType;
+			Stride		= Other.Stride;
+			ElementNum	= Other.ElementNum;
+			if (Indices)
+			{
+				delete[]Indices;
+				Indices = nullptr;
+			}
+			if (Weights)
+			{
+				delete[]Weights;
+				Weights = nullptr;
+			}
+			if (Other.Indices && Other.Weights && Other.Stride > 0u && Other.ElementNum > 0u)
+			{
+				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				Indices = new UINT[ElementNum * StrideIn32Bits];
+				Weights = new FLOAT[ElementNum * StrideIn32Bits];
+				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				{
+					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					{
+						Indices[i * StrideIn32Bits + StrideIndex] = Other.Indices[i * StrideIn32Bits + StrideIndex];
+						Weights[i * StrideIn32Bits + StrideIndex] = Other.Weights[i * StrideIn32Bits + StrideIndex];
+					}
+				}
+			}
+			return (*this);
+		}
 		void Release()
 		{
 			if (Indices)
@@ -174,6 +298,14 @@ namespace PigeonEngine
 		ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
 		ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
 		constexpr ESubmeshData(UINT InStartVertex, UINT InVertexNum, UINT InStartIndex, UINT InIndexNum) noexcept : StartVertex(InStartVertex), VertexNum(InVertexNum), StartIndex(InStartIndex), IndexNum(InIndexNum) {}
+		ESubmeshData& operator=(const ESubmeshData& Other)
+		{
+			StartVertex	= Other.StartVertex;
+			VertexNum	= Other.VertexNum;
+			StartIndex	= Other.StartIndex;
+			IndexNum	= Other.IndexNum;
+			return (*this);
+		}
 
 		UINT	StartVertex;
 		UINT	VertexNum;
@@ -193,8 +325,11 @@ namespace PigeonEngine
 	public:
 		const static UINT MeshVertexLayoutPartMaxNum = 4;
 	public:
+		EMesh();
 		EMesh(const EString& InMeshName);
+		EMesh(const EMesh& Other);
 		virtual ~EMesh();
+		EMesh& operator=(const EMesh& Other);
 		virtual void Release();
 	public:
 		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
@@ -218,6 +353,7 @@ namespace PigeonEngine
 		BOOL	RemoveSubmesh(UINT InSubmeshIndex);
 		BOOL	GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
 	protected:
+		void	CopyBaseDataFromOtherInternal(const EMesh& Other);
 		void	SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
 	protected:
 		EString					MeshName;
@@ -226,36 +362,37 @@ namespace PigeonEngine
 		EIndexPart				Indices;
 		EVertexPart				Vertices;
 		ESubmeshPart			Submeshes;
-	public:
-		EMesh() = delete;
-
-		CLASS_REMOVE_COPY_BODY(EMesh)
-
 	};
 
 	class EStaticMesh : public EMesh
 	{
+
+		EClass(EStaticMesh, EMesh)
+
 	public:
 		EStaticMesh();
+		EStaticMesh(const EStaticMesh& Other);
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
+		EStaticMesh& operator=(const EStaticMesh& Other);
 		virtual void Release()override;
-	public:
-
-		CLASS_REMOVE_COPY_BODY(EStaticMesh)
-
 	};
 
 	class ESkinnedMesh : public EMesh
 	{
+
+		EClass(ESkinnedMesh, EMesh)
+
 	public:
 		using EBindPoseValue	= TMap<EString, Matrix4x4>;
 		using EBindPoseIndex	= TMap<EString, USHORT>;
 		using ESkinPart			= TArray<ESkinData>;
 	public:
 		ESkinnedMesh();
+		ESkinnedMesh(const ESkinnedMesh& Other);
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();
+		ESkinnedMesh& operator=(const ESkinnedMesh& Other);
 		virtual void Release()override;
 	public:
 		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
@@ -273,10 +410,6 @@ namespace PigeonEngine
 		EBindPoseIndex	BindPoseIndex;
 		USHORT			EffectBoneNum;
 		ESkinPart		Skins;
-	public:
-
-		CLASS_REMOVE_COPY_BODY(ESkinnedMesh)
-
 	};
 
 	class EMeshRenderResource : public EObjectBase
