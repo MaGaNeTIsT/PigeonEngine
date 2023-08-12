@@ -376,15 +376,15 @@ namespace PigeonEngine
 		}
 		Vector2 Lerp(const Vector2& vv, FLOAT t)const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
 		Vector2 Reciprocal()const { return Vector2(1.f / x, 1.f / y); }
-		void operator=(FLOAT v) { x = y = v; }
-		void operator=(INT v) { x = y = static_cast<FLOAT>(v); }
-		void operator=(DOUBLE v) { x = y = static_cast<FLOAT>(v); }
+		//void operator=(FLOAT v) { x = y = v; }
+		//void operator=(INT v) { x = y = static_cast<FLOAT>(v); }
+		//void operator=(DOUBLE v) { x = y = static_cast<FLOAT>(v); }
 		void operator=(const Vector2& vv) { x = vv.x; y = vv.y; }
-		void operator=(const Vector3& vv);
-		void operator=(const Vector4& vv);
-		void operator=(const Vector2Int& vv);
-		void operator=(const Vector3Int& vv);
-		void operator=(const Vector4Int& vv);
+		//void operator=(const Vector3& vv);
+		//void operator=(const Vector4& vv);
+		//void operator=(const Vector2Int& vv);
+		//void operator=(const Vector3Int& vv);
+		//void operator=(const Vector4Int& vv);
 		void operator+=(FLOAT v) { x += v; y += v; }
 		void operator-=(FLOAT v) { x -= v; y -= v; }
 		void operator*=(FLOAT v) { x *= v; y *= v; }
@@ -591,15 +591,15 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat3(&tempV, DirectX::XMVector3Cross(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)));
 			return (Vector3(tempV.x, tempV.y, tempV.z));
 		}
-		void operator=(FLOAT v) { x = y = z = v; }
-		void operator=(INT v) { x = y = z = static_cast<FLOAT>(v); }
-		void operator=(DOUBLE v) { x = y = z = static_cast<FLOAT>(v); }
-		void operator=(const Vector2& vv);
+		//void operator=(FLOAT v) { x = y = z = v; }
+		//void operator=(INT v) { x = y = z = static_cast<FLOAT>(v); }
+		//void operator=(DOUBLE v) { x = y = z = static_cast<FLOAT>(v); }
+		//void operator=(const Vector2& vv);
 		void operator=(const Vector3& vv) { x = vv.x; y = vv.y; z = vv.z; }
-		void operator=(const Vector4& vv);
-		void operator=(const Vector2Int& vv);
-		void operator=(const Vector3Int& vv);
-		void operator=(const Vector4Int& vv);
+		//void operator=(const Vector4& vv);
+		//void operator=(const Vector2Int& vv);
+		//void operator=(const Vector3Int& vv);
+		//void operator=(const Vector4Int& vv);
 		void operator+=(FLOAT v) { x += v; y += v; z += v; }
 		void operator-=(FLOAT v) { x -= v; y -= v; z -= v; }
 		void operator*=(FLOAT v) { x *= v; y *= v; z *= v; }
@@ -787,15 +787,15 @@ namespace PigeonEngine
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Vector4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));
 		}
-		void operator=(FLOAT v) { x = y = z = w = v; }
-		void operator=(INT v) { x = y = z = w = static_cast<FLOAT>(v); }
-		void operator=(DOUBLE v) { x = y = z = w = static_cast<FLOAT>(v); }
-		void operator=(const Vector2& vv);
-		void operator=(const Vector3& vv);
+		//void operator=(FLOAT v) { x = y = z = w = v; }
+		//void operator=(INT v) { x = y = z = w = static_cast<FLOAT>(v); }
+		//void operator=(DOUBLE v) { x = y = z = w = static_cast<FLOAT>(v); }
+		//void operator=(const Vector2& vv);
+		//void operator=(const Vector3& vv);
 		void operator=(const Vector4& vv) { x = vv.x; y = vv.y; z = vv.z; w = vv.w; }
-		void operator=(const Vector2Int& vv);
-		void operator=(const Vector3Int& vv);
-		void operator=(const Vector4Int& vv);
+		//void operator=(const Vector2Int& vv);
+		//void operator=(const Vector3Int& vv);
+		//void operator=(const Vector4Int& vv);
 		void operator+=(FLOAT v) { x += v; y += v; z += v; w += v; }
 		void operator-=(FLOAT v) { x -= v; y -= v; z -= v; w -= v; }
 		void operator*=(FLOAT v) { x *= v; y *= v; z *= v; w *= v; }

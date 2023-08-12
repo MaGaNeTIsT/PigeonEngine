@@ -28,7 +28,11 @@ namespace PigeonEngine
 	public:
 		static void		EditorUpdate() {}
 	private:
-		BOOL			m_EditorOpen;
+		BOOL			m_EditorOpen = FALSE;
 #endif
 	};
+
+	CPhysicsManager::CPhysicsManager() {}
+	CPhysicsManager::~CPhysicsManager() {}
+
 };

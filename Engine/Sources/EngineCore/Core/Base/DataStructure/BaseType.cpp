@@ -80,31 +80,31 @@ namespace PigeonEngine
 		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y))
 	{
 	}
-	void Vector2::operator=(const Vector3& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-	}
-	void Vector2::operator=(const Vector4& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-	}
-	void Vector2::operator=(const Vector2Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-	}
-	void Vector2::operator=(const Vector3Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-	}
-	void Vector2::operator=(const Vector4Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-	}
+	//void Vector2::operator=(const Vector3& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//}
+	//void Vector2::operator=(const Vector4& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//}
+	//void Vector2::operator=(const Vector2Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//}
+	//void Vector2::operator=(const Vector3Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//}
+	//void Vector2::operator=(const Vector4Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//}
 	void Vector2::operator+=(const Vector3& vv)
 	{
 		x += vv.x;
@@ -226,34 +226,34 @@ namespace PigeonEngine
 		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z))
 	{
 	}
-	void Vector3::operator=(const Vector2& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-	}
-	void Vector3::operator=(const Vector4& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-		z = vv.z;
-	}
-	void Vector3::operator=(const Vector2Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-	}
-	void Vector3::operator=(const Vector3Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-		z = static_cast<FLOAT>(vv.z);
-	}
-	void Vector3::operator=(const Vector4Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-		z = static_cast<FLOAT>(vv.z);
-	}
+	//void Vector3::operator=(const Vector2& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//}
+	//void Vector3::operator=(const Vector4& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//	z = vv.z;
+	//}
+	//void Vector3::operator=(const Vector2Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//}
+	//void Vector3::operator=(const Vector3Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//	z = static_cast<FLOAT>(vv.z);
+	//}
+	//void Vector3::operator=(const Vector4Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//	z = static_cast<FLOAT>(vv.z);
+	//}
 	void Vector3::operator+=(const Vector2& vv)
 	{
 		x += vv.x;
@@ -387,35 +387,35 @@ namespace PigeonEngine
 		: x(static_cast<FLOAT>(vv.x)), y(static_cast<FLOAT>(vv.y)), z(static_cast<FLOAT>(vv.z)), w(static_cast<FLOAT>(vv.w))
 	{
 	}
-	void Vector4::operator=(const Vector2& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-	}
-	void Vector4::operator=(const Vector3& vv)
-	{
-		x = vv.x;
-		y = vv.y;
-		z = vv.z;
-	}
-	void Vector4::operator=(const Vector2Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-	}
-	void Vector4::operator=(const Vector3Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-		z = static_cast<FLOAT>(vv.z);
-	}
-	void Vector4::operator=(const Vector4Int& vv)
-	{
-		x = static_cast<FLOAT>(vv.x);
-		y = static_cast<FLOAT>(vv.y);
-		z = static_cast<FLOAT>(vv.z);
-		w = static_cast<FLOAT>(vv.w);
-	}
+	//void Vector4::operator=(const Vector2& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//}
+	//void Vector4::operator=(const Vector3& vv)
+	//{
+	//	x = vv.x;
+	//	y = vv.y;
+	//	z = vv.z;
+	//}
+	//void Vector4::operator=(const Vector2Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//}
+	//void Vector4::operator=(const Vector3Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//	z = static_cast<FLOAT>(vv.z);
+	//}
+	//void Vector4::operator=(const Vector4Int& vv)
+	//{
+	//	x = static_cast<FLOAT>(vv.x);
+	//	y = static_cast<FLOAT>(vv.y);
+	//	z = static_cast<FLOAT>(vv.z);
+	//	w = static_cast<FLOAT>(vv.w);
+	//}
 	void Vector4::operator+=(const Vector2& vv)
 	{
 		x += vv.x;
