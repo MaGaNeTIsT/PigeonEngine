@@ -30,16 +30,6 @@ namespace PigeonEngine
 	{
 		return (v0 * (1.f - t) + v1 * t);
 	}
-	template<typename TValueType>
-	TValueType EMath::Max(TValueType v0, TValueType v1)
-	{
-		return ((v1 > v0) ? v1 : v0);
-	}
-	template<typename TValueType>
-	TValueType EMath::Min(TValueType v0, TValueType v1)
-	{
-		return ((v0 > v1) ? v1 : v0);
-	}
 	FLOAT EMath::Abs(const FLOAT& v)
 	{
 		return fabsf(v);
