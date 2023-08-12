@@ -52,7 +52,7 @@ namespace PigeonEngine
 			: EVertexDescriptor(), Indices(nullptr)
 		{
 #if _EDITOR_ONLY
-			if (InStride != 2u || InStride != 4u)
+			if ((InStride != 2u) && (InStride != 4u))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check index data error(stride is not 4 bytes or 2 bytes)."));
 			}
@@ -92,7 +92,7 @@ namespace PigeonEngine
 			, Datas(nullptr)
 		{
 #if _EDITOR_ONLY
-			if (InType == EVertexLayoutType::MESH_INDEX_FULL || InType == EVertexLayoutType::MESH_INDEX_HALF || InType == EVertexLayoutType::MESH_SKIN)
+			if ((InType == EVertexLayoutType::MESH_INDEX_FULL) || (InType == EVertexLayoutType::MESH_INDEX_HALF) || (InType == EVertexLayoutType::MESH_SKIN))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check vertex data error(part type is invalid)."));
 			}
@@ -236,7 +236,7 @@ namespace PigeonEngine
 	class EStaticMesh : public EMesh
 	{
 	public:
-		EStaticMesh() = delete;
+		EStaticMesh();
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
 		virtual void Release()override;
