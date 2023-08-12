@@ -6,7 +6,7 @@ namespace PigeonEngine
 {
 	void PActor::Init()
 	{
-		PObject::Init();
+		/*PObject::Init();*/
 		
 	}
 
