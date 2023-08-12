@@ -1,6 +1,6 @@
 #pragma once
 #include <CoreMinimal.h>
-#include <Base/DataStructure/Container/HashMap.h>
+#include <Base/DataStructure/Container/Map.h>
 #include "JoltIncludes.h"
 #include "JoltPhysicsLayer.h"
 #include "JoltPhysicsListener.h"
@@ -136,8 +136,8 @@ namespace PigeonEngine
 
 		void SetGravity(Vector3 inGravity);
 	private:
-		THashMap<SIZE_T, PhysicsBodyId>							m_Bodys;
-		THashMap<PhysicsBodyId, BodyCreationSettings*>			m_BodyCreationSettings;
+		TMap<SIZE_T, PhysicsBodyId>							m_Bodys;
+		TMap<PhysicsBodyId, BodyCreationSettings*>			m_BodyCreationSettings;
 	private:
 		CPhysicsData* PhysicsData;
 	};
