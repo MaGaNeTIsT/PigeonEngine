@@ -37,9 +37,8 @@ namespace PigeonEngine
         TArray<T>&  operator= (std::vector<T>&& Other);
         
         UINT        Add       (const T& Element);
-        T&          Add_GetRef()
+        T&          Add_Default_GetRef()
         {
-            // CheckAddress(&Item);
             T Temp;
             Elements.push_back(std::move(Temp));
             return Elements[Elements.size()-1];
