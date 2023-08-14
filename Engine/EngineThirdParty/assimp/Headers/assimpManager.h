@@ -34,7 +34,7 @@ namespace PigeonEngine
 		CReadFileStateType ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes);
 		CReadFileStateType ReadSkeletonAnimationFile(const EString& path, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips);
 
-		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(CAssimpManager)
+		CLASS_MANAGER_SINGLETON_BODY(CAssimpManager)
 
 	};
 };

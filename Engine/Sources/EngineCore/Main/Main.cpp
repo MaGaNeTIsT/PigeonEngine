@@ -2,9 +2,6 @@
 #include "MainManager.h"
 #include <Base/Timer/Timer.h>
 #include <Config/EngineConfig.h>
-#ifdef _EDITOR_ONLY
-#include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
-#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
