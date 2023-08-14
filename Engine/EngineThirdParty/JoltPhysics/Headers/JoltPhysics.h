@@ -1,6 +1,7 @@
 #pragma once
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Map.h>
+#include <PigeonBase/Object/Component/PrimitiveComponent.h>
 #include "JoltIncludes.h"
 #include "JoltPhysicsLayer.h"
 #include "JoltPhysicsListener.h"
@@ -125,6 +126,8 @@ namespace PigeonEngine
 		virtual void PostPhysicsUpdate();
 
 	public:
+		void AddBody(PPrimitiveComponent Object,PhysicsBodyId& BodyId,BodyCreationSettings Settings);
+
 		Vector3 GetPosition(const PhysicsBodyId& PhysicsBodyId);
 		Quaternion GetRotation(const PhysicsBodyId& PhysicsBodyId);
 		void SetPosition(const PhysicsBodyId& inPhysicsBodyId, Vector3 inPosition, EActive inActivationMode = EActive::DontActive);
