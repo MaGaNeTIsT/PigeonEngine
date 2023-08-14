@@ -45,9 +45,6 @@ namespace PigeonEngine
 
 	EUniqueIDManager::EUniqueIDManager() : UsedAllocUniqueID(0u)
 	{
-#ifdef _EDITOR_ONLY
-		DebugName = ENGINE_UNIQUEID_MANAGER_NAME;
-#endif
 	}
 	EUniqueIDManager::~EUniqueIDManager()
 	{

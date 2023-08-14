@@ -16,8 +16,8 @@ namespace PigeonEngine
 #define DBT_DEVNODES_CHANGED    0x0007
 #endif
 
-#define IMGUI_VS_PATH           ("./Engine/EngineThirdParty/imGUI/HLSLResources/imGUIVS.cso")
-#define IMGUI_PS_PATH           ("./Engine/EngineThirdParty/imGUI/HLSLResources/imGUIPS.cso")
+#define IMGUI_VS_PATH           ("./Engine/Temp/OutputShaders/imGUIVS.cso")
+#define IMGUI_PS_PATH           ("./Engine/Temp/OutputShaders/imGUIPS.cso")
 
     CImGUIManager::CImGUIManager()
     {
@@ -784,14 +784,13 @@ namespace PigeonEngine
             }
 
             {
-                TArray<D3D11_INPUT_ELEMENT_DESC> tempLayout;
+                D3D11_INPUT_ELEMENT_DESC tempLayout[3] =
                 {
-                    tempLayout.Resize(3u);
-                    tempLayout[0] = { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0u };
-                    tempLayout[1] = { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u };
-                    tempLayout[2] = { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u };
-                }
-                HRESULT hr = dvc->CreateInputLayout(tempLayout.RawData(), 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
+                    { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0u },
+                    { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u },
+                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u }
+                };
+                HRESULT hr = dvc->CreateInputLayout(tempLayout, 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
                 if (FAILED(hr))
                 {
                     delete[]buffer;
@@ -816,7 +815,7 @@ namespace PigeonEngine
         }
 
         {
-            EString psName(IMGUI_VS_PATH);
+            EString psName(IMGUI_PS_PATH);
             FILE* file;
             LONG fsize;
             BYTE* buffer;

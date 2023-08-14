@@ -104,6 +104,8 @@ namespace PigeonEngine
 	}
 	void EMainManager::Draw()
 	{
+		m_RenderDeviceD3D11->ClearFinalOutput();
+		m_RenderDeviceD3D11->SetFinalOutput();
 #ifdef _EDITOR_ONLY
 		m_ImGUIManager->Draw();
 #endif
@@ -112,11 +114,11 @@ namespace PigeonEngine
 #ifdef _EDITOR_ONLY
 	void EMainManager::EditorUpdate()
 	{
-		bool editorOpen = m_EditorOpen;
-		ImGui::Begin("EditorRoot", &editorOpen, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+		bool TempEditorOpen = m_EditorOpen;
+		ImGui::Begin("EditorRoot", &TempEditorOpen, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
-		m_EditorOpen = editorOpen;
+		m_EditorOpen = TempEditorOpen;
 	}
 #endif
 	HWND EMainManager::GetWindowHandle()

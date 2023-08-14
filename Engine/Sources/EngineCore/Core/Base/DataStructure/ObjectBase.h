@@ -46,17 +46,17 @@ namespace PigeonEngine
 
 	};
 
-	class EUniqueIDManager : public EManagerBase
+	class EUniqueIDManager : public ERTTI
 	{
 
-		EClass(EUniqueIDManager, EManagerBase)
+		EClass(EUniqueIDManager, ERTTI)
 
 	public:
 		ULONGLONG AllocUniqueID();
 	private:
 		ULONGLONG UsedAllocUniqueID;
 
-		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EUniqueIDManager)
+		CLASS_MANAGER_SINGLETON_BODY(EUniqueIDManager)
 
 	};
 

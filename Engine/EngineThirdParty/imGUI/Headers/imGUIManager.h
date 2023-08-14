@@ -69,7 +69,7 @@ namespace PigeonEngine
         WndData                 m_WndData;
         D3DData                 m_D3DData;
 
-        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(CImGUIManager)
+        CLASS_MANAGER_SINGLETON_BODY(CImGUIManager)
 
     };
 

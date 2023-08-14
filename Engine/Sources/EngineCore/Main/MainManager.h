@@ -28,7 +28,7 @@ namespace PigeonEngine
 	public:
 		void			EditorUpdate();
 	private:
-		BOOL			m_EditorOpen;
+		BOOL			m_EditorOpen = FALSE;
 #endif
 	public:
 		HWND						GetWindowHandle();

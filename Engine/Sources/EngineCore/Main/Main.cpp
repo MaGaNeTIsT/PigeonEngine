@@ -97,9 +97,6 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			if ((currentTime - updateLastTime) >= updateStepTime)
 			{
 				updateLastTime = currentTime;
-#ifdef _EDITOR_ONLY
-				MainManager->EditorUpdate();
-#endif
 				MainManager->Update();
 				MainManager->Draw();
 			}

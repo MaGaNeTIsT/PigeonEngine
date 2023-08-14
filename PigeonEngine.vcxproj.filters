@@ -635,11 +635,13 @@
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </None>
-    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
-    </None>
-    <None Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
+    </FxCompile>
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
-    </None>
+    </FxCompile>
   </ItemGroup>
 </Project>
