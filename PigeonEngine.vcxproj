@@ -58,6 +58,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.h" />
@@ -306,6 +308,8 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.cpp" />
