@@ -7,24 +7,25 @@
 #include "JoltPhysicsListener.h"
 #include "PhysicsManagerInterface.h"
 #include "PhysicsUtility.h"
+#include "Shapes.h"
 
 namespace PigeonEngine
 {
 	// All Jolt symbols are in the JPH namespace
 	using namespace JPH;
+	using namespace PhysicsUtility;
 
 	struct CPhysicsData
 	{
 		//Initialized Parameters
-		uint PreAllocatedSize = 70 * 1024 * 1024;		//pre-allocated memory for simulation.
-		uint MaxBodies = 65535;							//Max amount of rigid bodies.
-		uint NumBodyMutexes = 0;						//Mutexes count,0 to default setting.
-		uint MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
-		uint MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
+		UINT PreAllocatedSize = 70 * 1024 * 1024;		//pre-allocated memory for simulation.
+		UINT MaxBodies = 65535;							//Max amount of rigid bodies.
+		UINT NumBodyMutexes = 0;						//Mutexes count,0 to default setting.
+		UINT MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
+		UINT MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
 
 		//Runtime Parameters
 		int CollisionSteps = 1;							// Do n collision step per cDeltaTime
-		int IntegrationSubSteps = 1;					// If you want more accurate step results you can do multiple sub steps within a collision step. Usually you would set this to 1.
 
 		//Physics Parameters
 		PhysicsSystem*										PhysicsSystem;
@@ -67,7 +68,7 @@ namespace PigeonEngine
 		}
 
 		/// Get index in body array
-		inline uint32			GetIndex() const
+		inline UINT32			GetIndex() const
 		{
 			return ID.GetIndex();;
 		}
@@ -76,13 +77,13 @@ namespace PigeonEngine
 		/// The sequence number can be used to check if a body ID with the same body index has been reused by another body.
 		/// It is mainly used in multi threaded situations where a body is removed and its body index is immediately reused by a body created from another thread.
 		/// Functions querying the broadphase can (after aquiring a body lock) detect that the body has been removed (we assume that this won't happen more than 128 times in a row).
-		inline uint8			GetSequenceNumber() const
+		inline UINT8			GetSequenceNumber() const
 		{
 			return ID.GetSequenceNumber();
 		}
 
 		/// Returns the index and sequence number combined in an uint32
-		inline uint32			GetIndexAndSequenceNumber() const
+		inline UINT32			GetIndexAndSequenceNumber() const
 		{
 			return ID.GetIndexAndSequenceNumber();
 		}
@@ -92,12 +93,6 @@ namespace PigeonEngine
 		{
 			return ID.IsInvalid();
 		}
-	};
-	
-	enum class EActive
-	{
-		Active,				///< Activate the body, making it part of the simulation
-		DontActive			///< Leave activation state as it is (will not deactivate an active body)
 	};
 
 	static void TraceImpl(const char* inFMT, ...)
@@ -126,7 +121,8 @@ namespace PigeonEngine
 		virtual void PostPhysicsUpdate();
 
 	public:
-		void AddBody(PPrimitiveComponent Object,PhysicsBodyId& BodyId,BodyCreationSettings Settings);
+		bool TryCreateBody(FShape* inShape, bool CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID);
+		void AddBody(const ULONGLONG& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode = EActive::DontActive);
 
 		Vector3 GetPosition(const PhysicsBodyId& PhysicsBodyId);
 		Quaternion GetRotation(const PhysicsBodyId& PhysicsBodyId);
@@ -139,8 +135,8 @@ namespace PigeonEngine
 
 		void SetGravity(Vector3 inGravity);
 	private:
-		TMap<SIZE_T, PhysicsBodyId>							m_Bodys;
-		TMap<PhysicsBodyId, BodyCreationSettings*>			m_BodyCreationSettings;
+		TMap<ULONGLONG, PhysicsBodyId>							m_Bodys;
+		TMap<PhysicsBodyId, FShape*>							m_Shapes;
 	private:
 		CPhysicsData* PhysicsData;
 	};

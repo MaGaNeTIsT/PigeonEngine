@@ -114,7 +114,7 @@ namespace PigeonEngine
 			GUID_WICPixelFormat64bppRGBHalf;
 			GUID_WICPixelFormat48bppRGBHalf;
 
-			if ()
+			if (false)
 			{
 
 			}

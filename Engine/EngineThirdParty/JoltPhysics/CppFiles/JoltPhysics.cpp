@@ -43,7 +43,7 @@ namespace PigeonEngine
 
 	void CPhysics_Jolt::PhysicsUpdate(float InDeltaTime)
 	{
-		PhysicsData->PhysicsSystem->Update(InDeltaTime, PhysicsData->CollisionSteps, PhysicsData->IntegrationSubSteps, PhysicsData->TempAllocator, PhysicsData->JobSystem);
+		PhysicsData->PhysicsSystem->Update(InDeltaTime, PhysicsData->CollisionSteps, PhysicsData->TempAllocator, PhysicsData->JobSystem);
 	}
 
 	void CPhysics_Jolt::UninitPhysics()
@@ -54,12 +54,8 @@ namespace PigeonEngine
 			PhysicsData->BodyInterface->DestroyBody(body->second.ID);
 		}
 
-		for (auto bodyCreateSettings = m_BodyCreationSettings.Begin(); bodyCreateSettings != m_BodyCreationSettings.End(); ++bodyCreateSettings)
+		for (auto bodyCreateSettings = m_Shapes.Begin(); bodyCreateSettings != m_Shapes.End(); ++bodyCreateSettings)
 		{
-			if (bodyCreateSettings->second->GetShapeSettings())
-				delete bodyCreateSettings->second->GetShapeSettings();
-			//if (bodyCreateSettings.second->GetShape())
-			//	delete bodyCreateSettings.second->GetShape();
 			delete bodyCreateSettings->second;
 		}
 
@@ -90,9 +86,9 @@ namespace PigeonEngine
 
 	void CPhysics_Jolt::PrePhysicsUpdate()
 	{
-		//for (const auto& obj : m_Bodys)
+		//for (auto body = m_Bodys.Begin(); body != m_Bodys.End(); ++body)
 		//{
-		//	CGameObject* gameObject = GetScene()->GetGameObjectById(obj.first);
+		//	EGameObject* gameObject = GetScene()->GetGameObjectById(body->first);
 
 		//	SetPosition(obj.second, PhysicsUtility::Convert2Meter(gameObject->GetWorldPosition()));
 		//	SetRoation(obj.second, PhysicsUtility::Convert(gameObject->GetWorldRotation()));
@@ -107,6 +103,24 @@ namespace PigeonEngine
 		//	gameObject->SetWorldPosition(PhysicsUtility::Convert2Centimeter(GetPosition(obj.second)));
 		//	gameObject->SetWorldRotation(PhysicsUtility::Convert(GetRotation(obj.second)));
 		//}
+	}
+
+	bool CPhysics_Jolt::TryCreateBody(FShape* inShape, bool CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID)
+	{
+		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer));
+		if (body)
+		{
+			outBodyID.ID = body->GetID();
+			m_Shapes.Add(outBodyID, inShape);
+			return true;
+		}
+		return false;
+	}
+
+	void CPhysics_Jolt::AddBody(const ULONGLONG& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode)
+	{
+		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActive::Active ? EActivation::Activate : EActivation::DontActivate);
+		m_Bodys.Add(GameObjectId, inBodyID);
 	}
 
 	Vector3 CPhysics_Jolt::GetPosition(const PhysicsBodyId& PhysicsBodyId)

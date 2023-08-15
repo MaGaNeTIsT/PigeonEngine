@@ -78,6 +78,23 @@ public:
 	/// Set the interface that tests collision between wheel and ground
 	void						SetVehicleCollisionTester(const VehicleCollisionTester *inTester) { mVehicleCollisionTester = inTester; }
 
+	/// Callback function to combine the friction of a tire with the friction of the body it is colliding with.
+	using CombineFunction = float (*)(float inTireFriction, const Body &inBody2, const SubShapeID &inSubShapeID2);
+
+	/// Set the function that combines the friction of two bodies and returns it
+	/// Default method is the geometric mean: sqrt(friction1 * friction2).
+	void						SetCombineFriction(CombineFunction inCombineFriction) { mCombineFriction = inCombineFriction; }
+	CombineFunction				GetCombineFriction() const					{ return mCombineFriction; }
+
+	/// Callback function to notify that PhysicsStepListener::OnStep has completed for this vehicle.
+	using PostStepCallback = function<void(VehicleConstraint &inVehicle, float inDeltaTime, PhysicsSystem &inPhysicsSystem)>;
+
+	/// Callback function to notify that PhysicsStepListener::OnStep has completed for this vehicle. Default is to do nothing.
+	/// Can be used to adjust the velocity of the vehicle to allow higher-level code to e.g. control the vehicle in the air.
+	/// You should not change the position of the vehicle in this callback as the wheel collision checks have already been performed.
+	const PostStepCallback &	GetPostStepCallback() const					{ return mPostStepCallback; }
+	void						SetPostStepCallback(const PostStepCallback &inPostStepCallback) { mPostStepCallback = inPostStepCallback; }
+
 	/// Get the local space forward vector of the vehicle
 	Vec3						GetLocalForward() const						{ return mForward; }
 
@@ -146,11 +163,11 @@ private:
 	// See: PhysicsStepListener
 	virtual void				OnStep(float inDeltaTime, PhysicsSystem &inPhysicsSystem) override;
 
-	// Calculate the contact positions of the wheel in world space, relative to the center of mass of both bodies
-	void						CalculateWheelContactPoint(const Wheel &inWheel, Vec3 &outR1PlusU, Vec3 &outR2) const;
+	// Calculate the position where the suspension and traction forces should be applied in world space, relative to the center of mass of both bodies
+	void						CalculateSuspensionForcePoint(const Wheel &inWheel, Vec3 &outR1PlusU, Vec3 &outR2) const;
 
 	// Calculate the constraint properties for mPitchRollPart
-	void						CalculatePitchRollConstraintProperties(float inDeltaTime, RMat44Arg inBodyTransform);
+	void						CalculatePitchRollConstraintProperties(RMat44Arg inBodyTransform);
 
 	// Simluation information
 	Body *						mBody;										///< Body of the vehicle
@@ -170,6 +187,8 @@ private:
 
 	// Interfaces
 	RefConst<VehicleCollisionTester> mVehicleCollisionTester;				///< Class that performs testing of collision for the wheels
+	CombineFunction				mCombineFriction = [](float inTireFriction, const Body &inBody2, const SubShapeID &) { return sqrt(inTireFriction * inBody2.GetFriction()); };
+	PostStepCallback			mPostStepCallback;
 };
 
 JPH_NAMESPACE_END

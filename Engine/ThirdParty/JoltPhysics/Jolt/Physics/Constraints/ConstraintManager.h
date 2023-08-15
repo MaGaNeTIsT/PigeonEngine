@@ -12,6 +12,7 @@ JPH_NAMESPACE_BEGIN
 
 class IslandBuilder;
 class BodyManager;
+class StateRecorderFilter;
 #ifdef JPH_DEBUG_RENDERER
 class DebugRenderer;
 #endif // JPH_DEBUG_RENDERER
@@ -56,9 +57,6 @@ public:
 	/// Prior to solving the velocity constraints, you must call SetupVelocityConstraints once to precalculate values that are independent of velocity
 	static void				sSetupVelocityConstraints(Constraint **inActiveConstraints, uint32 inNumActiveConstraints, float inDeltaTime);
 
-	/// Same as above, but applies to a limited amount of constraints only
-	static void				sSetupVelocityConstraints(Constraint **inActiveConstraints, const uint32 *inConstraintIdxBegin, const uint32 *inConstraintIdxEnd, float inDeltaTime);
-
 	/// Apply last frame's impulses, must be called prior to SolveVelocityConstraints
 	static void				sWarmStartVelocityConstraints(Constraint **inActiveConstraints, const uint32 *inConstraintIdxBegin, const uint32 *inConstraintIdxEnd, float inWarmStartImpulseRatio);
 
@@ -86,7 +84,7 @@ public:
 #endif // JPH_DEBUG_RENDERER
 
 	/// Save state of constraints
-	void					SaveState(StateRecorder &inStream) const;
+	void					SaveState(StateRecorder &inStream, const StateRecorderFilter *inFilter) const;
 
 	/// Restore the state of constraints. Returns false if failed.
 	bool					RestoreState(StateRecorder &inStream);

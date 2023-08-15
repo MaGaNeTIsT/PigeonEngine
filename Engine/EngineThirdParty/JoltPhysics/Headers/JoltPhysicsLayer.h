@@ -14,7 +14,6 @@ namespace PigeonEngine
 		static constexpr uint8 MOVING = 1;
 		static constexpr uint8 NUM_LAYERS = 2;
 	}
-#define PhysicsLayers Layers
 
 	namespace BroadPhaseLayers
 	{
@@ -22,7 +21,6 @@ namespace PigeonEngine
 		static constexpr BroadPhaseLayer MOVING(1);
 		static constexpr uint NUM_LAYERS(2);
 	};
-#define PhysicsBroadPhaseLayers BroadPhaseLayers
 
 	// BroadPhaseLayerInterface implementation
 	// This defines a mapping between object and broadphase layers.
