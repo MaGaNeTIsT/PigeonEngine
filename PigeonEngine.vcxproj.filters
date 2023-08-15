@@ -339,6 +339,7 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsUtility.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
+    <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -514,6 +515,7 @@
     <ClCompile Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

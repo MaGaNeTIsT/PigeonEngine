@@ -33,6 +33,7 @@ namespace PigeonEngine
 	};
 	class ESkeletonAnimation : public EObjectBase
 	{
+
 		EClass(ESkeletonAnimation, EObjectBase)
 
 	public:
@@ -46,6 +47,7 @@ namespace PigeonEngine
 		ESkeletonAnimation() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkeletonAnimation)
+
 	};
 
 };

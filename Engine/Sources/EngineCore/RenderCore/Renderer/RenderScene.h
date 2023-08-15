@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	class RScene
+	class RScene : public EObjectBase
 	{
 
 	};

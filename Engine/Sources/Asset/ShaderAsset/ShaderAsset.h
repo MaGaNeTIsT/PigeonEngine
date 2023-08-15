@@ -64,7 +64,10 @@ namespace PigeonEngine
 
 	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>
 	{
-		//EClass(EVertexShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>)
+	public:
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource> Super;
+
+		EClass(EVertexShaderAsset, Super)
 
 	public:
 		EVertexShaderAsset(const EString& shaderPath
@@ -95,7 +98,10 @@ namespace PigeonEngine
 
 	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>
 	{
-		//EClass(EPixelShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>)
+	public:
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource> Super;
+
+		EClass(EPixelShaderAsset, Super)
 
 	public:
 		EPixelShaderAsset(const EString& shaderPath
@@ -120,7 +126,10 @@ namespace PigeonEngine
 
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>
 	{
-		//EClass(EComputeShaderAsset, TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>)
+	public:
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource> Super;
+
+		EClass(EComputeShaderAsset, Super)
 
 	public:
 		EComputeShaderAsset(const EString& shaderPath

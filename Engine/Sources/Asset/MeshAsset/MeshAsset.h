@@ -436,6 +436,11 @@ namespace PigeonEngine
 	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>
 	{
 	public:
+		typedef TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType> Super;
+
+		EClass(TMeshBaseAsset, Super)
+
+	public:
 		TMeshBaseAsset(
 			const EString& InMeshPath
 #ifdef _EDITOR_ONLY
@@ -467,6 +472,11 @@ namespace PigeonEngine
 
 	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>
 	{
+	public:
+		typedef TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource> Super;
+
+		EClass(EStaticMeshAsset, Super)
+
 	public:
 		EStaticMeshAsset(
 			const EString& InMeshPath

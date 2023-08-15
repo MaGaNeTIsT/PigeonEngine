@@ -93,6 +93,11 @@ namespace PigeonEngine
 	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
 	{
 	public:
+		typedef TRenderBaseAsset<ESkeleton, ESkeletonRenderResource> Super;
+
+		EClass(ESkeletonAsset, Super)
+
+	public:
 		ESkeletonAsset(const EString& InSkeletonPath
 #ifdef _EDITOR_ONLY
 			, const EString& InDebugName

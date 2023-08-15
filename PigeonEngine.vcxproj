@@ -33,6 +33,7 @@
     <ClInclude Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
+    <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.h" />
@@ -140,6 +141,7 @@
     <ClCompile Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
