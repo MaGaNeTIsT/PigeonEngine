@@ -24,8 +24,8 @@ namespace PigeonEngine
 	public:
 		static ESettings* GetSingleton()
 		{
-			static ESettings classSingletonObject;
-			return (&classSingletonObject);
+			static ESettings _StaticSingletonObject;
+			return (&_StaticSingletonObject);
 		}
 		ESettings(const ESettings&) = delete;
 		ESettings& operator=(const ESettings&) = delete;

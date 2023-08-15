@@ -29,16 +29,16 @@ namespace PigeonEngine
 		_ClassName();\
 		~_ClassName();\
 	public:\
-		_ClassName(const _ClassName& other);\
-		_ClassName& operator=(const _ClassName& other);\
+		_ClassName(const _ClassName& Other);\
+		_ClassName& operator=(const _ClassName& Other);\
 
 #define CLASS_VIRTUAL_COPY_BODY(_ClassName) \
 	public:\
 		_ClassName();\
 		virtual ~_ClassName();\
 	public:\
-		_ClassName(const _ClassName& other);\
-		_ClassName& operator=(const _ClassName& other);\
+		_ClassName(const _ClassName& Other);\
+		_ClassName& operator=(const _ClassName& Other);\
 
 #define CLASS_SINGLETON_BODY(_ClassName) \
 	private:\
@@ -49,8 +49,8 @@ namespace PigeonEngine
 	public:\
 		static _ClassName* GetSingleton()\
 		{\
-			static _ClassName classSingletonObject;\
-			return (&classSingletonObject);\
+			static _ClassName _StaticSingletonObject;\
+			return (&_StaticSingletonObject);\
 		}\
 
 #define CLASS_VIRTUAL_SINGLETON_BODY(_ClassName) \
@@ -62,8 +62,8 @@ namespace PigeonEngine
 	public:\
 		static _ClassName* GetSingleton()\
 		{\
-			static _ClassName classSingletonObject;\
-			return (&classSingletonObject);\
+			static _ClassName _StaticSingletonObject;\
+			return (&_StaticSingletonObject);\
 		}\
 
 #define CLASS_MANAGER_SINGLETON_BODY(_ClassName) \
@@ -76,8 +76,8 @@ namespace PigeonEngine
 	public:\
 		static _ClassName* GetManagerSingleton()\
 		{\
-			static _ClassName classSingletonObject;\
-			return (&classSingletonObject);\
+			static _ClassName _StaticSingletonObject;\
+			return (&_StaticSingletonObject);\
 		}\
 
 #define CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(_ClassName) \
@@ -90,8 +90,8 @@ namespace PigeonEngine
 	public:\
 		static _ClassName* GetManagerSingleton()\
 		{\
-			static _ClassName classSingletonObject;\
-			return (&classSingletonObject);\
+			static _ClassName _StaticSingletonObject;\
+			return (&_StaticSingletonObject);\
 		}\
 
 };

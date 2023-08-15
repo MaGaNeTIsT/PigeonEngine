@@ -2,7 +2,7 @@
 
 namespace PigeonEngine
 {
-	void RDeviceD3D11::Init(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth, UINT frameNum, BOOL windowed)
+	void RDeviceD3D11::SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth, UINT frameNum, BOOL windowed)
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{
@@ -111,7 +111,10 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void RDeviceD3D11::Uninit()
+	void RDeviceD3D11::Initialize()
+	{
+	}
+	void RDeviceD3D11::ShutDown()
 	{
 		if (m_RenderTargetView)
 		{
@@ -123,21 +126,26 @@ namespace PigeonEngine
 			m_DepthStencilView->Release();
 			m_DepthStencilView = nullptr;
 		}
+		if (m_DepthTexture)
+		{
+			m_DepthTexture->Release();
+			m_DepthTexture = nullptr;
+		}
 		if (m_SwapChain)
 		{
 			m_SwapChain->Release();
 			m_SwapChain = nullptr;
 		}
-		if (m_ImmediateContext)
-		{
-			m_ImmediateContext->Release();
-			m_ImmediateContext = nullptr;
-		}
-		if (m_Device)
-		{
-			m_Device->Release();
-			m_Device = nullptr;
-		}
+		//if (m_ImmediateContext)
+		//{
+		//	m_ImmediateContext->Release();
+		//	m_ImmediateContext = nullptr;
+		//}
+		//if (m_Device)
+		//{
+		//	m_Device->Release();
+		//	m_Device = nullptr;
+		//}
 	}
 	BOOL RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
 	{

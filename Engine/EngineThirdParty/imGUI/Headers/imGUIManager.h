@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../Main/Main.h"
+#include <DirectXMath.h>
 #include "BuiltInType.h"
 #include "../Math/Math.h"
 

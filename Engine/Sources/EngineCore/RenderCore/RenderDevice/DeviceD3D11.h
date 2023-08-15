@@ -1,13 +1,17 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <d3d11.h>
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "winmm.lib")
+#pragma comment (lib, "xaudio2.lib")
 #include <RenderConfig/RenderConfig.h>
 #include <RenderCommon.h>
 #include <EngineCommon.h>
 
 namespace PigeonEngine
 {
-	class RDeviceD3D11
+	class RDeviceD3D11 : public EManagerBase
 	{
 	public:
 		struct RVertexShaderResource
@@ -212,8 +216,9 @@ namespace PigeonEngine
 			Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
 		};
 	public:
-		void	Init(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth = 24u, UINT frameNum = 60u, BOOL windowed = TRUE);
-		void	Uninit();
+		void			SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth = 24u, UINT frameNum = 60u, BOOL windowed = TRUE);
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
 	public:
 		BOOL	CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum);
 		BOOL	CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource);
@@ -355,8 +360,8 @@ namespace PigeonEngine
 	public:
 		static RDeviceD3D11* GetDeviceSingleton()
 		{
-			static RDeviceD3D11 deviceSingletonObject;
-			return (&deviceSingletonObject);
+			static RDeviceD3D11 _DeviceSingletonObject;
+			return (&_DeviceSingletonObject);
 		}
 	private:
 		friend class CImGUIManager;

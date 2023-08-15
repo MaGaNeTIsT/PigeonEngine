@@ -8,6 +8,7 @@ namespace PigeonEngine
 	typedef	char				BOOL8;
 	typedef	char				INT8;
 	typedef	char				CHAR;
+	typedef	wchar_t				WCHAR;
 	typedef	unsigned char		UINT8;
 	typedef	unsigned char		BYTE;
 	typedef	short				BOOL16;
@@ -35,10 +36,16 @@ namespace PigeonEngine
 #undef TRUE
 #endif
 #define TRUE						(0x1)
+
 #ifdef FALSE
 #undef FALSE
 #endif
 #define FALSE						(0x0)
+
+#ifdef NULL
+#undef NULL
+#endif
+#define NULL						(0)
 
 #define ENGINE_INLINE				inline
 #define ENGINE_NODISCARD			[[nodiscard]]

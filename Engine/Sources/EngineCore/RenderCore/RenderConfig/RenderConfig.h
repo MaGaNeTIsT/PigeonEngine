@@ -15,8 +15,8 @@ namespace PigeonEngine
 	public:
 		static RCommonSettings* GetSingleton()
 		{
-			static RCommonSettings classSingletonObject;
-			return (&classSingletonObject);
+			static RCommonSettings _StaticSingletonObject;
+			return (&_StaticSingletonObject);
 		}
 		RCommonSettings(const RCommonSettings&) = delete;
 		RCommonSettings& operator=(const RCommonSettings&) = delete;

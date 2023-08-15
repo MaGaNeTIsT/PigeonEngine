@@ -110,8 +110,8 @@ namespace PigeonEngine
 	public:
 		static EMath* GetSingleton()
 		{
-			static EMath mathSingletonObject;
-			return (&mathSingletonObject);
+			static EMath _MathSingletonObject;
+			return (&_MathSingletonObject);
 		}
 	};
 };

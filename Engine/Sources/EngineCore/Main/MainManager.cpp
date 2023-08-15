@@ -42,7 +42,8 @@ namespace PigeonEngine
 	{
 		EInput::Initialize(m_HWND);
 
-		m_RenderDeviceD3D11->Init(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
+		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
+		m_RenderDeviceD3D11->Initialize();
 
 #ifdef _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
@@ -58,7 +59,7 @@ namespace PigeonEngine
 		m_ImGUIManager->ShutDown();
 #endif
 
-		m_RenderDeviceD3D11->Uninit();
+		m_RenderDeviceD3D11->ShutDown();
 		EInput::ShutDown();
 	}
 	void EMainManager::SetInitializer(HWND hWnd)
