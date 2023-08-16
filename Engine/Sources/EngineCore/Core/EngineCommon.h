@@ -8,6 +8,17 @@
 namespace PigeonEngine
 {
 
+	class EResourceInterface
+	{
+	public:
+		EResourceInterface() = default;
+		EResourceInterface(const EResourceInterface&) = default;
+		virtual ~EResourceInterface() = default;
+		EResourceInterface& operator=(const EResourceInterface&) = default;
+	public:
+		virtual BOOL IsValid()const = 0;
+		virtual void Release() = 0;
+	};
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
 	{

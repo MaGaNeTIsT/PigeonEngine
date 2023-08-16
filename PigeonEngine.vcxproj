@@ -61,6 +61,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.h" />
@@ -225,6 +226,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />

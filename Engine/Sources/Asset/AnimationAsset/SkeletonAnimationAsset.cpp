@@ -10,6 +10,10 @@ namespace PigeonEngine
 	ESkeletonAnimation::~ESkeletonAnimation()
 	{
 	}
+	BOOL ESkeletonAnimation::IsValid()const
+	{
+		return FALSE;
+	}
 	void ESkeletonAnimation::Release()
 	{
 	}

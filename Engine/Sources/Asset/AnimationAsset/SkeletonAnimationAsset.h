@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Array.h>
 #include <EngineCommon.h>
+#include <BaseAsset.h>
 
 namespace PigeonEngine
 {
@@ -31,7 +32,7 @@ namespace PigeonEngine
 		FLOAT							TicksPerSecond;
 		TArray<EBoneAnimationCurve>		AnimationCurves;
 	};
-	class ESkeletonAnimation : public EObjectBase
+	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
 
 		EClass(ESkeletonAnimation, EObjectBase)
@@ -39,7 +40,8 @@ namespace PigeonEngine
 	public:
 		ESkeletonAnimation(const EString& InMeshName);
 		virtual ~ESkeletonAnimation();
-		virtual void Release();
+		virtual BOOL IsValid()const override;
+		virtual void Release()override;
 	protected:
 		EString							AnimationName;
 		TArray<ESkeletonAnimationClip>	AnimationClips;

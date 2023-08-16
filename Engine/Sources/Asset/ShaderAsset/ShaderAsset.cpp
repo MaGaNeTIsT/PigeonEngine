@@ -1,30 +1,31 @@
 #include "ShaderAsset.h"
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
 
 	EVertexShaderAsset::EVertexShaderAsset(
-		const EString& shaderPath
+		const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-		, const EString& name
+		, const EString& InDebugName
 #endif
-		, const RInputLayoutDesc* inInputLayouts
-		, const UINT& inInputLayoutNum)
-		: TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>(
-			shaderPath
+		, const RInputLayoutDesc* InInputLayouts
+		, const UINT& InInputLayoutNum)
+		: TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>(
+			InShaderPath
 #ifdef _EDITOR_ONLY
-			, name
+			, InDebugName
 #endif
 		), ShaderInputLayouts(nullptr), ShaderInputLayoutNum(0u)
 	{
-		if (inInputLayouts && inInputLayoutNum > 0u)
+		if (InInputLayouts && InInputLayoutNum > 0u)
 		{
-			ShaderInputLayouts = new RInputLayoutDesc[inInputLayoutNum];
-			for (UINT i = 0u; i < inInputLayoutNum; i++)
+			ShaderInputLayouts = new RInputLayoutDesc[InInputLayoutNum];
+			for (UINT i = 0u; i < InInputLayoutNum; i++)
 			{
-				ShaderInputLayouts[i] = inInputLayouts[i];
+				ShaderInputLayouts[i] = InInputLayouts[i];
 			}
-			ShaderInputLayoutNum = inInputLayoutNum;
+			ShaderInputLayoutNum = InInputLayoutNum;
 		}
 	}
 	EVertexShaderAsset::~EVertexShaderAsset()
@@ -58,7 +59,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		if (CreateRenderResourceInternal(
-			[this](EShaderResource* inResource)->RDeviceD3D11::RVertexShaderResource*
+			[this](EShaderResource* inResource)->RVertexShaderResource*
 			{
 				return (this->CreateShaderRenderResource(inResource));
 			},
@@ -69,14 +70,14 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	RDeviceD3D11::RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
+	RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RDeviceD3D11::RVertexShaderResource* result = nullptr;
-		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
+		RVertexShaderResource* result = nullptr;
+		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RDeviceD3D11::RVertexShaderResource();
-			if (!deviceD3D11->CreateVertexShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result, ShaderInputLayouts, ShaderInputLayoutNum))
+			result = new RVertexShaderResource();
+			if (!deviceD3D11->CreateVertexShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result, ShaderInputLayouts, ShaderInputLayoutNum))
 			{
 				delete result;
 				result = nullptr;
@@ -85,14 +86,14 @@ namespace PigeonEngine
 		return result;
 	}
 
-	EPixelShaderAsset::EPixelShaderAsset(const EString& shaderPath
+	EPixelShaderAsset::EPixelShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-		, const EString& name
+		, const EString& InDebugName
 #endif
-	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>(
-		shaderPath
+	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>(
+		InShaderPath
 #ifdef _EDITOR_ONLY
-		, name
+		, InDebugName
 #endif
 	)
 	{
@@ -113,7 +114,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		if (CreateRenderResourceInternal(
-			[this](EShaderResource* inResource)->RDeviceD3D11::RPixelShaderResource*
+			[this](EShaderResource* inResource)->RPixelShaderResource*
 			{
 				return (this->CreateShaderRenderResource(inResource));
 			},
@@ -124,14 +125,14 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	RDeviceD3D11::RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
+	RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RDeviceD3D11::RPixelShaderResource* result = nullptr;
-		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
+		RPixelShaderResource* result = nullptr;
+		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RDeviceD3D11::RPixelShaderResource();
-			if (!deviceD3D11->CreatePixelShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
+			result = new RPixelShaderResource();
+			if (!deviceD3D11->CreatePixelShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result))
 			{
 				delete result;
 				result = nullptr;
@@ -140,14 +141,14 @@ namespace PigeonEngine
 		return result;
 	}
 
-	EComputeShaderAsset::EComputeShaderAsset(const EString& shaderPath
+	EComputeShaderAsset::EComputeShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-		, const EString& name
+		, const EString& InDebugName
 #endif
-	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>(
-		shaderPath
+	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>(
+		InShaderPath
 #ifdef _EDITOR_ONLY
-		, name
+		, InDebugName
 #endif
 	)
 	{
@@ -168,7 +169,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		if (CreateRenderResourceInternal(
-			[this](EShaderResource* inResource)->RDeviceD3D11::RComputeShaderResource*
+			[this](EShaderResource* inResource)->RComputeShaderResource*
 			{
 				return (this->CreateShaderRenderResource(inResource));
 			}, FALSE))
@@ -178,14 +179,14 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	RDeviceD3D11::RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource(EShaderResource* inResource)
+	RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RDeviceD3D11::RComputeShaderResource* result = nullptr;
-		if (inResource && inResource->ShaderByteCode && (inResource->ShaderByteCodeSize > 0u))
+		RComputeShaderResource* result = nullptr;
+		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RDeviceD3D11::RComputeShaderResource();
-			if (!deviceD3D11->CreateComputeShaderResource(inResource->ShaderByteCode, inResource->ShaderByteCodeSize, *result))
+			result = new RComputeShaderResource();
+			if (!deviceD3D11->CreateComputeShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result))
 			{
 				delete result;
 				result = nullptr;
@@ -438,7 +439,7 @@ namespace PigeonEngine
 				[readFileMem, readFileSize, shaderCSOSize, &storagedResource]()->EShaderResource*
 				{
 					void* shaderCSO = new BYTE[shaderCSOSize];
-					memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
+					::memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
 					storagedResource = new EShaderResource();
 					storagedResource->ShaderByteCode = shaderCSO;
 					storagedResource->ShaderByteCodeSize = shaderCSOSize;
@@ -502,12 +503,12 @@ namespace PigeonEngine
 				ULONG rstSize = shaderSaveSize - sizeof(INT) * 2u;
 				if (shaderInputLayoutNum > 0)
 				{
-					memcpy_s(cpyStart, rstSize, inShaderInputLayouts, shaderInputLayoutDescSize);
+					::memcpy_s(cpyStart, rstSize, inShaderInputLayouts, shaderInputLayoutDescSize);
 					cpyStart = (void*)(&(((BYTE*)cpyStart)[shaderInputLayoutDescSize]));
 					rstSize = rstSize - shaderInputLayoutDescSize;
 				}
 				Check((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), rstSize == inShaderResource->ShaderByteCodeSize);
-				memcpy_s(cpyStart, rstSize, inShaderResource->ShaderByteCode, inShaderResource->ShaderByteCodeSize);
+				::memcpy_s(cpyStart, rstSize, inShaderResource->ShaderByteCode, inShaderResource->ShaderByteCodeSize);
 			}
 
 			if (EFileHelper::SaveBytesToFile(savePath, saveMem, shaderSaveSize))

@@ -1,10 +1,8 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include <Base/DataStructure/Container/Array.h>
-#include <Base/DataStructure/Container/Map.h>
-#include <Base/DataStructure/Text/String.h>
-#include <RenderDevice/DeviceD3D11.h>
+#include <RenderResource.h>
+#include <EngineCommon.h>
 #include <BaseAsset.h>
 
 namespace PigeonEngine
@@ -40,7 +38,7 @@ namespace PigeonEngine
 		TArray<SHORT>	Children;
 	};
 
-	class ESkeleton : public EObjectBase
+	class ESkeleton : public EObjectBase, public EResourceInterface
 	{
 
 		EClass(ESkeleton, EObjectBase)
@@ -50,7 +48,8 @@ namespace PigeonEngine
 	public:
 		ESkeleton(const EString& InSkeletonName);
 		virtual ~ESkeleton();
-		virtual void Release();
+		virtual BOOL IsValid()const override;
+		virtual void Release()override;
 	public:
 		UINT	GetBoneCount()const;
 		BOOL	AddBoneElement(EBoneData* InIndexData);
@@ -70,7 +69,7 @@ namespace PigeonEngine
 		CLASS_REMOVE_COPY_BODY(ESkeleton)
 	};
 
-	class ESkeletonRenderResource : public EObjectBase
+	class ESkeletonRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 
 		EClass(ESkeletonRenderResource, EObjectBase)
@@ -79,10 +78,10 @@ namespace PigeonEngine
 		ESkeletonRenderResource(ESkeleton* InSkeleton);
 		virtual ~ESkeletonRenderResource();
 	public:
-		void	Release();
+		virtual void Release()override;
 	protected:
-		ESkeleton*								Skeleton;
-		TArray<RDeviceD3D11::RBufferResource>	RenderResources;
+		ESkeleton*				Skeleton;
+		TArray<RBufferResource>	RenderResources;
 	public:
 		ESkeletonRenderResource() = delete;
 

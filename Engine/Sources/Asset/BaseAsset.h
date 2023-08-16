@@ -30,8 +30,8 @@ namespace PigeonEngine
 			UninitResource();
 		}
 	public:
-		virtual BOOL	IsValid() { return IsResourceValid(); }
-		virtual BOOL	IsInitialized() { return bIsInitialized; }
+		virtual BOOL	IsValid()const { return IsResourceValid(); }
+		virtual BOOL	IsInitialized()const { return bIsInitialized; }
 		virtual BOOL	InitResource() { return FALSE; }
 		virtual void	UninitResource()
 		{
@@ -39,7 +39,7 @@ namespace PigeonEngine
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL	IsResourceValid()const { return (!!ResourceData); }
+		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsValid())); }
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 	protected:
 		template<typename TInitResourceLambdaType>
@@ -97,11 +97,11 @@ namespace PigeonEngine
 	public:
 		TRenderBaseAsset(
 #ifdef _EDITOR_ONLY
-			const EString& name
+			const EString& InDebugName
 #endif
 		)
 #ifdef _EDITOR_ONLY
-			: TBaseAsset<TResourceType>(name), RenderResourceData(nullptr)
+			: TBaseAsset<TResourceType>(InDebugName), RenderResourceData(nullptr)
 #else
 			: RenderResourceData(nullptr)
 #endif
@@ -113,7 +113,7 @@ namespace PigeonEngine
 		}
 	public:
 		BOOL IsHoldResource()const { return bHoldResource; }
-		virtual BOOL IsValid()override
+		virtual BOOL IsValid()const override
 		{
 			if (bHoldResource)
 			{

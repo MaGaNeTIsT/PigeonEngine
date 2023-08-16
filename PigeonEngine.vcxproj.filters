@@ -340,6 +340,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -516,6 +517,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

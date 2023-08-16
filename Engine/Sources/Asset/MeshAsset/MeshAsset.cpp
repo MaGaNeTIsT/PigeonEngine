@@ -128,6 +128,20 @@ namespace PigeonEngine
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
 	}
+	BOOL EMesh::IsValid()const
+	{
+		if (Vertices.Length() > 0u)
+		{
+			BOOL Result = FALSE;
+			for (UINT i = 0u, n = Vertices.Length(); i < n; i++)
+			{
+				const EVertexData& TempVertexData = Vertices[i];
+				Result = Result || ((TempVertexData.ElementNum > 3u) && (TempVertexData.Stride > 0u) && (!!(TempVertexData.Datas)));
+			}
+			return (Result && ((Indices.ElementNum > 0u) && (Indices.Stride > 0u) && (!!(Indices.Indices))));
+		}
+		return FALSE;
+	}
 	void EMesh::Release()
 	{
 		Indices.Release();
@@ -537,6 +551,10 @@ namespace PigeonEngine
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
 	}
+	BOOL EStaticMesh::IsValid()const
+	{
+		return (EMesh::IsValid());
+	}
 	void EStaticMesh::Release()
 	{
 		EMesh::Release();
@@ -617,6 +635,19 @@ namespace PigeonEngine
 		}
 
 		return (*this);
+	}
+	BOOL ESkinnedMesh::IsValid()const
+	{
+		if (Skins.Length() > 0u)
+		{
+			BOOL Result = FALSE;
+			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			{
+				Result = Result || ((Skins[Index].ElementNum > 3u) && (Skins[Index].Stride > 0u));
+			}
+			return (Result && (EMesh::IsValid()));
+		}
+		return FALSE;
 	}
 	void ESkinnedMesh::Release()
 	{

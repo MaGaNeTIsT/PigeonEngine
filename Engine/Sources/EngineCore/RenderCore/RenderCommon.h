@@ -6,6 +6,16 @@
 namespace PigeonEngine
 {
 
+	class RRenderResourceInterface
+	{
+	public:
+		RRenderResourceInterface() = default;
+		RRenderResourceInterface(const RRenderResourceInterface&) = default;
+		virtual ~RRenderResourceInterface() = default;
+		RRenderResourceInterface& operator=(const RRenderResourceInterface&) = default;
+	public:
+		virtual void Release() = 0;
+	};
 	struct RBoundingBox
 	{
 		RBoundingBox(const RBoundingBox& other) noexcept : Anchor(other.Anchor), Dimensions(other.Dimensions) {}

@@ -167,6 +167,10 @@ namespace PigeonEngine
 	{
 
 	}
+	BOOL ESkeleton::IsValid()const
+	{
+		return ((Bones.Length() > 0u) && (Bones.Length() == BoneMapping.Length()));
+	}
 	void ESkeleton::Release()
 	{
 		SkeletonName = ENGINE_DEFAULT_NAME;

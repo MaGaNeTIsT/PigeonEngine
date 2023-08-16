@@ -2,16 +2,40 @@
 
 #include <CoreMinimal.h>
 #include <BaseAsset.h>
+#include <EngineCommon.h>
 #include <RenderCommon.h>
-#include <RenderDevice/DeviceD3D11.h>
+#include <RenderResource.h>
 
 namespace PigeonEngine
 {
 
-	struct EShaderResource
+	class EShaderResource : public EResourceInterface
 	{
+	public:
 		EShaderResource() : ShaderByteCode(nullptr), ShaderByteCodeSize(0u) {}
-		void Release()
+		EShaderResource(const EShaderResource& Other)
+			: ShaderByteCode(nullptr), ShaderByteCodeSize(0u)
+		{
+			if ((!!(Other.ShaderByteCode)) && (Other.ShaderByteCodeSize > 0u))
+			{
+				ShaderByteCodeSize = Other.ShaderByteCodeSize;
+				ShaderByteCode = new BYTE[Other.ShaderByteCodeSize];
+				::memcpy_s(ShaderByteCode, Other.ShaderByteCodeSize, Other.ShaderByteCode, Other.ShaderByteCodeSize);
+			}
+		}
+		virtual ~EShaderResource() { Release(); }
+		EShaderResource& operator=(const EShaderResource& Other)
+		{
+			Release();
+			if ((!!(Other.ShaderByteCode)) && (Other.ShaderByteCodeSize > 0u))
+			{
+				ShaderByteCodeSize = Other.ShaderByteCodeSize;
+				ShaderByteCode = new BYTE[Other.ShaderByteCodeSize];
+				::memcpy_s(ShaderByteCode, Other.ShaderByteCodeSize, Other.ShaderByteCode, Other.ShaderByteCodeSize);
+			}
+		}
+		virtual BOOL IsValid()const override { return ((ShaderByteCode != nullptr) && (ShaderByteCodeSize > 0u)); }
+		virtual void Release()override
 		{
 			if (ShaderByteCode != nullptr)
 			{
@@ -34,15 +58,15 @@ namespace PigeonEngine
 
 	public:
 		TShaderBaseAsset(
-			const EString& shaderPath
+			const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-			, const EString& name
+			, const EString& InDebugName
 #endif
 		) : TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>(
 #ifdef _EDITOR_ONLY
-			name
+			InDebugName
 #endif
-		), ShaderPath(shaderPath), ShaderFrequency(_ShaderFrequency)
+		), ShaderPath(InShaderPath), ShaderFrequency(_ShaderFrequency)
 		{
 		}
 		virtual ~TShaderBaseAsset()
@@ -62,19 +86,19 @@ namespace PigeonEngine
 
 	};
 
-	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource>
+	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RDeviceD3D11::RVertexShaderResource> Super;
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource> Super;
 
 		EClass(EVertexShaderAsset, Super)
 
 	public:
-		EVertexShaderAsset(const EString& shaderPath
+		EVertexShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-			, const EString& name
+			, const EString& InDebugName
 #endif
-			, const RInputLayoutDesc* inInputLayouts = nullptr, const UINT& inInputLayoutNum = 0u);
+			, const RInputLayoutDesc* InInputLayouts = nullptr, const UINT& InInputLayoutNum = 0u);
 		virtual ~EVertexShaderAsset();
 	public:
 		const RInputLayoutDesc*		GetShaderInputLayouts()const { return ShaderInputLayouts; }
@@ -82,7 +106,7 @@ namespace PigeonEngine
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RVertexShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
+		RVertexShaderResource*		CreateShaderRenderResource(EShaderResource* InResource);
 	protected:
 		RInputLayoutDesc*	ShaderInputLayouts;
 		UINT				ShaderInputLayoutNum;
@@ -96,24 +120,24 @@ namespace PigeonEngine
 
 	};
 
-	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource>
+	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RDeviceD3D11::RPixelShaderResource> Super;
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource> Super;
 
 		EClass(EPixelShaderAsset, Super)
 
 	public:
-		EPixelShaderAsset(const EString& shaderPath
+		EPixelShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-			, const EString& name
+			, const EString& InDebugName
 #endif
 		);
 		virtual ~EPixelShaderAsset();
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RPixelShaderResource*		CreateShaderRenderResource(EShaderResource* inResource);
+		RPixelShaderResource*	CreateShaderRenderResource(EShaderResource* InResource);
 	private:
 		friend class EShaderAssetManager;
 
@@ -124,24 +148,24 @@ namespace PigeonEngine
 
 	};
 
-	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource>
+	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RDeviceD3D11::RComputeShaderResource> Super;
+		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource> Super;
 
 		EClass(EComputeShaderAsset, Super)
 
 	public:
-		EComputeShaderAsset(const EString& shaderPath
+		EComputeShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
-			, const EString& name
+			, const EString& InDebugName
 #endif
 		);
 		virtual ~EComputeShaderAsset();
 	public:
 		virtual BOOL	InitResource()override;
 	protected:
-		RDeviceD3D11::RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* inResource);
+		RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* InResource);
 	private:
 		friend class EShaderAssetManager;
 

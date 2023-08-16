@@ -543,8 +543,8 @@ namespace PigeonEngine
         for (INT n = 0; n < drawData->CmdListsCount; n++)
         {
             const ImDrawList* cmdList = drawData->CmdLists[n];
-            memcpy_s(vtxDst, m_D3DData.VertexBufferSize * sizeof(ImDrawVert), cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-            memcpy_s(idxDst, m_D3DData.IndexBufferSize * sizeof(ImDrawIdx), cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
+            ::memcpy_s(vtxDst, m_D3DData.VertexBufferSize * sizeof(ImDrawVert), cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+            ::memcpy_s(idxDst, m_D3DData.IndexBufferSize * sizeof(ImDrawIdx), cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx));
             vtxDst += cmdList->VtxBuffer.Size;
             idxDst += cmdList->IdxBuffer.Size;
         }
@@ -569,7 +569,7 @@ namespace PigeonEngine
                 { 0.0f,                 0.0f,               0.5f,   0.0f },
                 { (R + L) / (L - R),    (T + B) / (B - T),  0.5f,   1.0f },
             };
-            memcpy_s(&constantBuffer->MVP, sizeof(constantBuffer->MVP), mvp, sizeof(mvp));
+            ::memcpy_s(&constantBuffer->MVP, sizeof(constantBuffer->MVP), mvp, sizeof(mvp));
             ctx->Unmap(m_D3DData.ConstantBuffer, 0u);
         }
 

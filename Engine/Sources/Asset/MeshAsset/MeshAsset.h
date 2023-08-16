@@ -3,7 +3,7 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include <RenderCommon.h>
-#include <RenderDevice/DeviceD3D11.h>
+#include <RenderResource.h>
 #include <BaseAsset.h>
 
 namespace PigeonEngine
@@ -313,7 +313,7 @@ namespace PigeonEngine
 		UINT	IndexNum;
 	};
 
-	class EMesh : public EObjectBase
+	class EMesh : public EObjectBase, public EResourceInterface
 	{
 
 		EClass(EMesh, EObjectBase)
@@ -330,7 +330,8 @@ namespace PigeonEngine
 		EMesh(const EMesh& Other);
 		virtual ~EMesh();
 		EMesh& operator=(const EMesh& Other);
-		virtual void Release();
+		virtual BOOL IsValid()const override;
+		virtual void Release()override;
 	public:
 		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
 		const EString&		GetMeshName()const;
@@ -375,6 +376,7 @@ namespace PigeonEngine
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
 		EStaticMesh& operator=(const EStaticMesh& Other);
+		virtual BOOL IsValid()const override;
 		virtual void Release()override;
 	};
 
@@ -393,6 +395,7 @@ namespace PigeonEngine
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();
 		ESkinnedMesh& operator=(const ESkinnedMesh& Other);
+		virtual BOOL IsValid()const override;
 		virtual void Release()override;
 	public:
 		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
@@ -412,7 +415,7 @@ namespace PigeonEngine
 		ESkinPart		Skins;
 	};
 
-	class EMeshRenderResource : public EObjectBase
+	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 
 		EClass(EMeshRenderResource, EObjectBase)
@@ -421,10 +424,10 @@ namespace PigeonEngine
 		EMeshRenderResource(EMesh* InMesh);
 		virtual ~EMeshRenderResource();
 	public:
-		void Release();
+		virtual void Release()override;
 	protected:
-		EMesh*	Mesh;
-		TArray<RDeviceD3D11::RBufferResource> RenderResources;
+		EMesh*					Mesh;
+		TArray<RBufferResource>	RenderResources;
 	public:
 		EMeshRenderResource() = delete;
 
