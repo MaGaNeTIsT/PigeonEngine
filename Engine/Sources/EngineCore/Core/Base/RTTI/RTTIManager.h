@@ -509,11 +509,11 @@ namespace PigeonEngine
         const _TToType* Result = nullptr;
         if (IsClass<_TFromType, _TToType>(InFromPtr))
         {
-            Result = InFromPtr;
+            Result = dynamic_cast<const _TToType*>(InFromPtr);
         }
         else if (IsParentClass<_TFromType, _TToType>(InFromPtr))
         {
-            Result = static_cast<const _TToType*>(InFromPtr);
+            Result = dynamic_cast<const _TToType*>(InFromPtr);
         }
         return Result;
     }
@@ -530,11 +530,11 @@ namespace PigeonEngine
         _TToType* Result = nullptr;
         if (IsClass<_TFromType, _TToType>(InFromPtr))
         {
-            Result = InFromPtr;
+            Result = dynamic_cast<_TToType*>(InFromPtr);
         }
         else if (IsParentClass<_TFromType, _TToType>(InFromPtr))
         {
-            Result = static_cast<_TToType*>(InFromPtr);
+            Result = dynamic_cast<_TToType*>(InFromPtr);
         }
         return Result;
     }

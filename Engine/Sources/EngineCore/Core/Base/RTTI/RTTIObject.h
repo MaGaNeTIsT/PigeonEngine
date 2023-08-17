@@ -55,11 +55,11 @@ namespace PigeonEngine
             _Type* Result = nullptr;
             if (this->IsTypeOf<_Type>())
             {
-                Result = this;
+                Result = dynamic_cast<_Type*>(this);
             }
             else if (this->IsChildOf<_Type>())
             {
-                Result = static_cast<_Type*>(this);
+                Result = dynamic_cast<_Type*>(this);
             }
             return Result;
         }
@@ -76,11 +76,11 @@ namespace PigeonEngine
             const _Type* Result = nullptr;
             if (this->IsTypeOf<_Type>())
             {
-                Result = this;
+                Result = dynamic_cast<const _Type*>(this);
             }
             else if (this->IsChildOf<_Type>())
             {
-                Result = static_cast<const _Type*>(this);
+                Result = dynamic_cast<const _Type*>(this);
             }
             return Result;
         }
