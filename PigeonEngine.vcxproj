@@ -227,7 +227,6 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
