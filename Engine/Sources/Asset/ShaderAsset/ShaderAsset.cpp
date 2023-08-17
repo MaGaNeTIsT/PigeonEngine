@@ -4,6 +4,28 @@
 namespace PigeonEngine
 {
 
+	template <typename _TAssetRenderResourceType, RShaderFrequencyType _ShaderFrequency, typename _AssetType>
+	static void RegisterShaderClassTypes()
+	{
+		RegisterClassType<TRenderBaseAsset<EShaderResource, _TAssetRenderResourceType>, TBaseAsset<EShaderResource>>();
+		RegisterClassType<TShaderBaseAsset<_ShaderFrequency, _TAssetRenderResourceType>, TRenderBaseAsset<EShaderResource, _TAssetRenderResourceType>>();
+		RegisterClassType<_AssetType, TShaderBaseAsset<_ShaderFrequency, _TAssetRenderResourceType>>();
+	}
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<EShaderResource, EResourceInterface>();
+		RegisterClassType<TBaseAsset<EShaderResource>, EObjectBase>();
+
+		RegisterShaderClassTypes<RVertexShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, EVertexShaderAsset>();
+		RegisterShaderClassTypes<RPixelShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, EPixelShaderAsset>();
+		RegisterShaderClassTypes<RComputeShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, EComputeShaderAsset>();
+
+		RegisterClassType<EShaderAssetManager, EManagerBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	EVertexShaderAsset::EVertexShaderAsset(
 		const EString& InShaderPath
 #ifdef _EDITOR_ONLY

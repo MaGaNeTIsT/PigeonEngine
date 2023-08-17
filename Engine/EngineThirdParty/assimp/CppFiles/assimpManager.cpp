@@ -8,6 +8,17 @@ namespace PigeonEngine
 {
 #define CUSTOM_IS_QNAN(f)	(f != f)
 
+#if _EDITOR_ONLY
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<CAssimpManager, EManagerBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+#endif
+
 	struct StoredMeshLayoutDesc
 	{
 		EVertexLayoutType	BaseVertexLayout;

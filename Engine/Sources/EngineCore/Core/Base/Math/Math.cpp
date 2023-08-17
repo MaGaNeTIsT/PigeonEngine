@@ -105,7 +105,7 @@ namespace PigeonEngine
 	{
 		FLOAT e = log2f(input);
 		e = floorf(e);
-		output = exp2(e);
+		output = exp2f(e);
 		return static_cast<INT>(e);
 	}
 	INT EMath::PowerOfTwoFloor(INT& output, const INT& input)

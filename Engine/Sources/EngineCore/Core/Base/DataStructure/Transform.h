@@ -30,9 +30,6 @@ namespace PigeonEngine
 
 	class ETransform : public EObjectBase
 	{
-
-		EClass(ETransform, EObjectBase)
-
 	public:
 		Matrix4x4	ToMatrix4x4WithScaling_Local()const;
 		Matrix4x4	ToMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const;

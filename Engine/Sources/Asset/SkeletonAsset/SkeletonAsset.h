@@ -40,9 +40,6 @@ namespace PigeonEngine
 
 	class ESkeleton : public EObjectBase, public EResourceInterface
 	{
-
-		EClass(ESkeleton, EObjectBase)
-
 	public:
 		typedef TArray<EBoneData>	EBonePart;
 	public:
@@ -71,9 +68,6 @@ namespace PigeonEngine
 
 	class ESkeletonRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
-
-		EClass(ESkeletonRenderResource, EObjectBase)
-
 	public:
 		ESkeletonRenderResource(ESkeleton* InSkeleton);
 		virtual ~ESkeletonRenderResource();
@@ -91,11 +85,6 @@ namespace PigeonEngine
 
 	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
 	{
-	public:
-		typedef TRenderBaseAsset<ESkeleton, ESkeletonRenderResource> Super;
-
-		EClass(ESkeletonAsset, Super)
-
 	public:
 		ESkeletonAsset(const EString& InSkeletonPath
 #ifdef _EDITOR_ONLY

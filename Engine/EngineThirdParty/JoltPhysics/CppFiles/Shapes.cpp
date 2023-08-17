@@ -1,6 +1,19 @@
 #include "../Headers/Shapes.h"
 namespace PigeonEngine
 {
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<FShape, ERTTIObject>();
+		RegisterClassType<FCastRay, ERTTIObject>();
+		RegisterClassType<FBoxShape, FShape>();
+		RegisterClassType<FSphereShape, FShape>();
+		RegisterClassType<FCapsuleShape, FShape>();
+		RegisterClassType<FCylinerShape, FShape>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	FShape::FShape() :
 		m_Shape(nullptr),
 		m_ShapeSettings(nullptr)

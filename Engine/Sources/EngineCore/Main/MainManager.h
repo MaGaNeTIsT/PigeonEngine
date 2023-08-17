@@ -10,9 +10,6 @@ namespace PigeonEngine
 {
 	class EMainManager : public EManagerBase
 	{
-
-		EClass(EMainManager, EManagerBase)
-
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
@@ -43,12 +40,13 @@ namespace PigeonEngine
 		BOOL						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
-		class CPhysicsManager*		m_PhysicsManager	= nullptr;
-		class RDeviceD3D11*			m_RenderDeviceD3D11	= nullptr;
+		class CPhysicsManager*				m_PhysicsManager			= nullptr;
+		class RDeviceD3D11*					m_RenderDeviceD3D11			= nullptr;
 #ifdef _EDITOR_ONLY
-		class CImGUIManager*		m_ImGUIManager		= nullptr;
-		class CAssimpManager*		m_AssimpManager		= nullptr;
+		class CImGUIManager*				m_ImGUIManager				= nullptr;
+		class CAssimpManager*				m_AssimpManager				= nullptr;
 #endif
+		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager	= nullptr;
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

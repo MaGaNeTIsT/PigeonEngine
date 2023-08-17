@@ -315,6 +315,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CReadWriteFile.cpp" />

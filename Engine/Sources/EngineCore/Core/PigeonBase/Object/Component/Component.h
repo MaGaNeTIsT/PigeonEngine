@@ -9,9 +9,6 @@ namespace PigeonEngine
 
 	class PComponent : public PObject
 	{
-
-		EClass(PComponent, PObject)
-
 	public:
 		virtual void	Init()override;
 		virtual void	Uninit()override;

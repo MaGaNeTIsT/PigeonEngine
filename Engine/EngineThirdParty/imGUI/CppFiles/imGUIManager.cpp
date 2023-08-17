@@ -19,6 +19,13 @@ namespace PigeonEngine
 #define IMGUI_VS_PATH           ("./Engine/Temp/OutputShaders/imGUIVS.cso")
 #define IMGUI_PS_PATH           ("./Engine/Temp/OutputShaders/imGUIPS.cso")
 
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<CImGUIManager, EManagerBase>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
     CImGUIManager::CImGUIManager()
     {
 #ifdef _EDITOR_ONLY

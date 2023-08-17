@@ -5,16 +5,13 @@
 #include <Base/DataStructure/BaseType.h>
 #include <Base/TemplateHeaders.h>
 #include <Base/DataStructure/Text/String.h>
-#include <Base/RTTI.h>
+#include <Base/RTTI/RTTIObject.h>
 
 namespace PigeonEngine
 {
 
-	class EObjectBase : public ERTTI
+	class EObjectBase : public ERTTIObject
 	{
-		
-		EClass(EObjectBase, ERTTI)
-
 	public:
 		const ULONGLONG& GetUniqueID()const;
 	public:
@@ -35,9 +32,6 @@ namespace PigeonEngine
 
 	class EManagerBase : public EObjectBase
 	{
-
-		EClass(EManagerBase, EObjectBase)
-
 	public:
 		virtual void Initialize() {}
 		virtual void ShutDown() {}
@@ -46,11 +40,8 @@ namespace PigeonEngine
 
 	};
 
-	class EUniqueIDManager : public ERTTI
+	class EUniqueIDManager : public ERTTIObject
 	{
-
-		EClass(EUniqueIDManager, ERTTI)
-
 	public:
 		ULONGLONG AllocUniqueID();
 	private:

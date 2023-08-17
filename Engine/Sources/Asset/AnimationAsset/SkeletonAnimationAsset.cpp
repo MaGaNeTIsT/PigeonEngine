@@ -3,6 +3,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<ESkeletonAnimation, EObjectBase, EResourceInterface>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	ESkeletonAnimation::ESkeletonAnimation(const EString& InMeshName)
 		: AnimationName(InMeshName)
 	{

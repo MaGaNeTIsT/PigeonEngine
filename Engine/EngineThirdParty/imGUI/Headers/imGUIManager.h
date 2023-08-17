@@ -9,9 +9,6 @@ namespace PigeonEngine
 
     class CImGUIManager : public EManagerBase
     {
-
-        EClass(CImGUIManager, EManagerBase)
-
     public:
         struct WndData
         {

@@ -34,9 +34,6 @@ namespace PigeonEngine
 	};
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
-
-		EClass(ESkeletonAnimation, EObjectBase)
-
 	public:
 		ESkeletonAnimation(const EString& InMeshName);
 		virtual ~ESkeletonAnimation();

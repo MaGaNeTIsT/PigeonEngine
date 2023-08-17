@@ -5,6 +5,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PSceneComponent, PActorComponent>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	PSceneComponent::PSceneComponent()
 	{
 	}

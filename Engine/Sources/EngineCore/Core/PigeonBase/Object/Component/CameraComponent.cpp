@@ -3,6 +3,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PCameraComponent, PSceneComponent>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	PCameraComponent::PCameraComponent()
 	{
 	}

@@ -1,15 +1,18 @@
 ﻿#pragma once
 #include "PigeonBase/Object/Object.h"
 
-/*
- * this class is for scene's serialization and deserialization
- */
-class PLevel : public PigeonEngine::PObject
+namespace PigeonEngine
 {
-    EClass(PLevel, PObject)
-public:
-    CLASS_VIRTUAL_NOCOPY_BODY(PLevel)
 
-    
-    
+    /*
+    * this class is for scene's serialization and deserialization
+    */
+    class PLevel : public PObject
+    {
+    public:
+
+        CLASS_VIRTUAL_NOCOPY_BODY(PLevel)
+
+    };
+
 };

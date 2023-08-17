@@ -3,6 +3,24 @@
 namespace PigeonEngine
 {
 
+	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, typename _AssetType>
+	static void RegisterSkeletonClassTypes()
+	{
+		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
+		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterClassType<_AssetType, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
+	}
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<ESkeleton, EObjectBase, EResourceInterface>();
+		RegisterClassType<ESkeletonRenderResource, EObjectBase, RRenderResourceInterface>();
+
+		RegisterSkeletonClassTypes<ESkeleton, ESkeletonRenderResource, ESkeletonAsset>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	static void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());

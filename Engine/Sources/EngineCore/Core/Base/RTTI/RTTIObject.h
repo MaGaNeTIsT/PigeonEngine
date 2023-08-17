@@ -112,18 +112,26 @@ namespace PigeonEngine
                 EClassTypeRegisterManager::GetManagerSingleton()->AddRegisterFunction<_TClassTypeRegisterFunctionType>(InClassTypeRegisterFunction);
             }
         public:
+            ~EClassTypeRegisterObject() {}
             EClassTypeRegisterObject() = delete;
-            ~EClassTypeRegisterObject() = delete;
             EClassTypeRegisterObject(const EClassTypeRegisterObject&) = delete;
             EClassTypeRegisterObject& operator=(const EClassTypeRegisterObject&) = delete;
         };
     public:
-
-        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EClassTypeRegisterManager)
-
+        EClassTypeRegisterManager(const EClassTypeRegisterManager&) = delete;
+        EClassTypeRegisterManager& operator=(const EClassTypeRegisterManager&) = delete;
+    private:
+        EClassTypeRegisterManager() {}
+        virtual ~EClassTypeRegisterManager() {}
+    public:
+        static EClassTypeRegisterManager* GetManagerSingleton()
+        {
+            static EClassTypeRegisterManager _StaticManagerSingletonObject;
+            return (&_StaticManagerSingletonObject);
+        }
     };
 
 #define PE_REGISTER_CLASS_TYPE(__Func) \
-    static EClassTypeRegisterManager::EClassTypeRegisterObject __EClassTypeRegisterObject##__Func(__Func);\
+    static PigeonEngine::EClassTypeRegisterManager::EClassTypeRegisterObject ClassTypeRegisterObject(__Func);\
 
 };

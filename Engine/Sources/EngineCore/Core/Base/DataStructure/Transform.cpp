@@ -5,6 +5,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<ETransform, EObjectBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	ETransform::ETransform() : LocalLocation(Vector3::Zero()), LocalRotation(Quaternion::Identity()), LocalScaling(Vector3::One())
 	{
 	}

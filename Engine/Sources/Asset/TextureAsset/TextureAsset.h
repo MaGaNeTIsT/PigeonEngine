@@ -14,9 +14,6 @@ namespace PigeonEngine
 
 	class ETexture2D : public EObjectBase, public EResourceInterface
 	{
-
-		EClass(ETexture2D, EObjectBase)
-
 	public:
 		virtual BOOL IsValid()const override;
 		virtual void Release()override;
@@ -38,11 +35,6 @@ namespace PigeonEngine
 
 	class ETexture2DAsset : public TRenderBaseAsset<ETexture2D, RTexture2DResource>
 	{
-	public:
-		typedef TRenderBaseAsset<ETexture2D, RTexture2DResource> Super;
-
-		EClass(ETexture2DAsset, Super)
-
 	public:
 		ETexture2DAsset(
 			const EString& InPath
@@ -67,9 +59,6 @@ namespace PigeonEngine
 
 	class ETextureAssetManager : public EManagerBase
 	{
-
-		EClass(ETextureAssetManager, EManagerBase)
-
 	public:
 		typedef TAssetManager<EString, ETexture2DAsset>		ETexture2DAssetManager;
 	public:

@@ -4,6 +4,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PActorComponent, PComponent>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	PActorComponent::PActorComponent() 
 	{
 	}

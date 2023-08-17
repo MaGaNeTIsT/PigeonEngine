@@ -4,6 +4,25 @@
 namespace PigeonEngine
 {
 
+	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, typename _AssetType>
+	static void RegisterTextureClassTypes()
+	{
+		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
+		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterClassType<_AssetType, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
+	}
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<ETexture2D, EObjectBase, EResourceInterface>();
+
+		RegisterTextureClassTypes<ETexture2D, RTexture2DResource, ETexture2DAsset>();
+
+		RegisterClassType<ETextureAssetManager, EManagerBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	static BYTE* ReadAndDecodingDigitalImage(const EString& InPathName)
 	{
 		HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);

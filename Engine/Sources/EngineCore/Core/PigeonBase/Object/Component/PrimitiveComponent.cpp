@@ -2,6 +2,14 @@
 
 namespace PigeonEngine
 {
+
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<PPrimitiveComponent, PSceneComponent>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
     PPrimitiveComponent::PPrimitiveComponent()
     {
         Bounds = EBoundAABB(Vector3(0), Vector3(0), false);

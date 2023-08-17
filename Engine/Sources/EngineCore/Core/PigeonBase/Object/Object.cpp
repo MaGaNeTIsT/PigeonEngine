@@ -5,6 +5,13 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PObject, EObjectBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	PObject::PObject() : m_Active(FALSE)
 	{
 	}

@@ -2,6 +2,14 @@
 namespace PigeonEngine
 {
     
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<PWorld, PObject>();
+        RegisterClassType<ESceneTreeNode, TOctreeNode<PActor*>>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
     ESceneTreeNode::~ESceneTreeNode()
     {
     }

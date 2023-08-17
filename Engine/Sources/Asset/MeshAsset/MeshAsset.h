@@ -315,9 +315,6 @@ namespace PigeonEngine
 
 	class EMesh : public EObjectBase, public EResourceInterface
 	{
-
-		EClass(EMesh, EObjectBase)
-
 	public:
 		typedef	EIndexData				EIndexPart;
 		typedef	TArray<EVertexData>		EVertexPart;
@@ -367,9 +364,6 @@ namespace PigeonEngine
 
 	class EStaticMesh : public EMesh
 	{
-
-		EClass(EStaticMesh, EMesh)
-
 	public:
 		EStaticMesh();
 		EStaticMesh(const EStaticMesh& Other);
@@ -382,9 +376,6 @@ namespace PigeonEngine
 
 	class ESkinnedMesh : public EMesh
 	{
-
-		EClass(ESkinnedMesh, EMesh)
-
 	public:
 		using EBindPoseValue	= TMap<EString, Matrix4x4>;
 		using EBindPoseIndex	= TMap<EString, USHORT>;
@@ -417,9 +408,6 @@ namespace PigeonEngine
 
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
-
-		EClass(EMeshRenderResource, EObjectBase)
-
 	public:
 		EMeshRenderResource(EMesh* InMesh);
 		virtual ~EMeshRenderResource();
@@ -438,11 +426,6 @@ namespace PigeonEngine
 	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
 	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>
 	{
-	public:
-		typedef TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType> Super;
-
-		EClass(TMeshBaseAsset, Super)
-
 	public:
 		TMeshBaseAsset(
 			const EString& InMeshPath
@@ -475,11 +458,6 @@ namespace PigeonEngine
 
 	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>
 	{
-	public:
-		typedef TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource> Super;
-
-		EClass(EStaticMeshAsset, Super)
-
 	public:
 		EStaticMeshAsset(
 			const EString& InMeshPath

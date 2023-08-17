@@ -519,6 +519,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

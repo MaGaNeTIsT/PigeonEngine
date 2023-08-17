@@ -52,11 +52,6 @@ namespace PigeonEngine
 	class TShaderBaseAsset : public TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>
 	{
 	public:
-		typedef TRenderBaseAsset<EShaderResource, TShaderRenderResourceType> Super;
-
-		EClass(TShaderBaseAsset, Super)
-
-	public:
 		TShaderBaseAsset(
 			const EString& InShaderPath
 #ifdef _EDITOR_ONLY
@@ -89,11 +84,6 @@ namespace PigeonEngine
 	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource> Super;
-
-		EClass(EVertexShaderAsset, Super)
-
-	public:
 		EVertexShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
 			, const EString& InDebugName
@@ -123,11 +113,6 @@ namespace PigeonEngine
 	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource> Super;
-
-		EClass(EPixelShaderAsset, Super)
-
-	public:
 		EPixelShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
 			, const EString& InDebugName
@@ -151,11 +136,6 @@ namespace PigeonEngine
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>
 	{
 	public:
-		typedef TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource> Super;
-
-		EClass(EComputeShaderAsset, Super)
-
-	public:
 		EComputeShaderAsset(const EString& InShaderPath
 #ifdef _EDITOR_ONLY
 			, const EString& InDebugName
@@ -178,9 +158,6 @@ namespace PigeonEngine
 
 	class EShaderAssetManager : public EManagerBase
 	{
-
-		EClass(EShaderAssetManager, EManagerBase)
-
 	public:
 		typedef TAssetManager<EString, EVertexShaderAsset>		EVertexShaderManager;
 		typedef TAssetManager<EString, EPixelShaderAsset>		EPixelShaderManager;

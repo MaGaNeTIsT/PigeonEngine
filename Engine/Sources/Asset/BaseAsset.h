@@ -9,9 +9,6 @@ namespace PigeonEngine
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{
-
-		EClass(TBaseAsset, EObjectBase)
-
 	public:
 		TBaseAsset(
 #ifdef _EDITOR_ONLY
@@ -89,11 +86,6 @@ namespace PigeonEngine
 	template<typename TResourceType, typename TRenderResourceType>
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
 	{
-	public:
-		typedef TBaseAsset<TResourceType> Super;
-
-		EClass(TRenderBaseAsset, Super)
-
 	public:
 		TRenderBaseAsset(
 #ifdef _EDITOR_ONLY

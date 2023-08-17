@@ -4,6 +4,14 @@
 
 namespace PigeonEngine
 {
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PActor, PObject>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	void PActor::Init()
 	{
 		/*PObject::Init();*/

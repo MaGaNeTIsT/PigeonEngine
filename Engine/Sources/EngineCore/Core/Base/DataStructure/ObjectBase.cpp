@@ -7,6 +7,15 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<EObjectBase, ERTTIObject>();
+		RegisterClassType<EManagerBase, EObjectBase>();
+		RegisterClassType<EUniqueIDManager, ERTTIObject>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	EObjectBase::EObjectBase()
 		: UniqueID(_AllocUniqueID())
 #ifdef _EDITOR_ONLY

@@ -11,6 +11,13 @@
 
 namespace PigeonEngine
 {
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<EMainManager, EManagerBase>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	EMainManager::EMainManager()
 	{
 		m_HWND			= nullptr;
@@ -25,6 +32,7 @@ namespace PigeonEngine
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
 #endif
+		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
 	}
 	EMainManager::~EMainManager()
 	{
@@ -40,6 +48,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::Initialize()
 	{
+		m_ClassTypeRegisterManager->DoRegister();
 		EInput::Initialize(m_HWND);
 
 		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);

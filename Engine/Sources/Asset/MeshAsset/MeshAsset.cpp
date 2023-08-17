@@ -3,6 +3,27 @@
 namespace PigeonEngine
 {
 
+	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, EMeshType _MeshType, typename _MeshAssetType>
+	static void RegisterMeshClassTypes()
+	{
+		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
+		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterClassType<TMeshBaseAsset<_MeshType, _TAssetResourceType, _TAssetRenderResourceType>, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
+		RegisterClassType<_MeshAssetType, TMeshBaseAsset<_MeshType, _TAssetResourceType, _TAssetRenderResourceType>>();
+	}
+
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<EMesh, EObjectBase, EResourceInterface>();
+		RegisterClassType<EStaticMesh, EMesh>();
+		RegisterClassType<ESkinnedMesh, EMesh>();
+		RegisterClassType<EMeshRenderResource, EObjectBase, RRenderResourceInterface>();
+
+		RegisterMeshClassTypes<EStaticMesh, EMeshRenderResource, EMeshType::MESH_TYPE_STATIC, EStaticMeshAsset>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
 	UINT GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType)
 	{
 		switch (InType)

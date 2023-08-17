@@ -13,9 +13,9 @@ namespace PigeonEngine
 		Vector3 Max;
 	};
 
-	class FShape : public ERTTI
+	class FShape : public ERTTIObject
 	{
-		EClass(FShape, ERTTI)
+	public:
 		FShape();
 		virtual ~FShape();
 		virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
@@ -41,9 +41,9 @@ namespace PigeonEngine
 		ShapeSettings* CreateShapeSettings(BOOL bCreateNew = false);
 	};
 
-	class FCastRay : public ERTTI
+	class FCastRay : public ERTTIObject
 	{
-		EClass(FCastRay, ERTTI)
+	public:
 		FCastRay();
 		virtual ~FCastRay() = default;
 	};
@@ -51,7 +51,6 @@ namespace PigeonEngine
 
 	class FBoxShape : public FShape
 	{
-		EClass(FBoxShape, FShape)
 	public:
 		Vector3 HalfExtent;
 		FLOAT ConvexRadius;
@@ -87,7 +86,6 @@ namespace PigeonEngine
 
 	class FSphereShape : public FShape
 	{
-		EClass(FSphereShape, FShape)
 	public:
 		FLOAT Raidus;
 		PhysicsMaterial* Material = nullptr;
@@ -116,7 +114,6 @@ namespace PigeonEngine
 
 	class FCapsuleShape : public FShape
 	{
-		EClass(FCapsuleShape, FShape)
 	public:
 		FLOAT HalfHeightOfCylinder;
 		FLOAT Raidus;
@@ -146,7 +143,6 @@ namespace PigeonEngine
 
 	class FCylinerShape : public FShape
 	{
-		EClass(FCylinerShape, FShape)
 	public:
 		FLOAT HalfHeight;
 		FLOAT Raidus;
