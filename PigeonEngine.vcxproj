@@ -45,6 +45,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\EngineCommon.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.h" />
@@ -81,7 +82,7 @@
     <ClInclude Include="Engine\EngineThirdParty\imGUI\Headers\imGUIManager.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CDebugScreen.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CGPUProfiler.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Timer\Timer.h" />
     <ClInclude Include="Engine\Sources\Asset\BaseAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.h" />
@@ -226,7 +227,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />

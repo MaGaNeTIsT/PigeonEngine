@@ -2,6 +2,7 @@
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <Config/EngineConfig.h>
+#include <typeinfo>
 #include <map>
 #include <string>
 #include <set>
@@ -9,150 +10,96 @@
 namespace PigeonEngine
 {
 
-    class ERTTI;
-
-#define EClass(Type, ParentType) \
-    public:\
-        static const char* TypeName() { return #Type; }\
-        virtual const size_t TypeIdInstance() const override { return Type::TypeIdClass(); }\
-        static const size_t TypeIdClass() { static int d = 0; return (size_t) &d; }\
-        virtual ERTTI* QueryInterface( const size_t id ) override\
-        {\
-            if (id == TypeIdClass()) { return (ERTTI*)this; }\
-            else { return ParentType::QueryInterface(id); }\
-        }\
-        virtual const ERTTI* QueryInterface( const size_t id ) const override\
-        {\
-            if (id == TypeIdClass()) { return (ERTTI*)this; }\
-            else { return ParentType::QueryInterface(id); }\
-        }\
-        virtual bool Is(const size_t id) const override\
-        {\
-            if (id == TypeIdClass()) { return true; }\
-            else { return ParentType::Is(id); }\
-        }\
-        virtual bool Is(const CHAR* name) const override\
-        {\
-            if (name == TypeName()) { return true; }\
-            else { return ParentType::Is(name); }\
-        }\
-        using Super = ParentType;\
-
-    //Runtime Interface,all types need rtti need to implement from this.
-    class ERTTI
-    {
-    public:
-        virtual const size_t TypeIdInstance() const = 0;
-
-        virtual ERTTI* QueryInterface(const size_t)
-        {
-            return nullptr;
-        }
-        virtual const ERTTI* QueryInterface(const size_t) const
-        {
-            return nullptr;
-        }
-        virtual bool Is(const size_t id) const
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// This function CAN NOT used for those class that inherited from template type class.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        virtual bool Is(const CHAR* name) const
-        {
-            return false;
-        }
-
-        template <typename T>
-        ERTTI* QueryInterfaceT()
-        {
-            return QueryInterface(T::TypeIdClass());
-        }
-
-        template <typename T>
-        const ERTTI* QueryInterfaceT() const
-        {
-            return QueryInterface(T::TypeIdClass());
-        }
-
-        template <typename T>
-        bool IsT() const
-        {
-            return Is(T::TypeIdClass());
-        }
-
-        template <typename T>
-        T* As()
-        {
-            if (Is(T::TypeIdClass()))
-            {
-                return (T*)this;
-            }
-
-            return nullptr;
-        }
-        template <typename T>
-        const T* As() const
-        {
-            if (Is(T::TypeIdClass()))
-            {
-                return (T*)this;
-            }
-
-            return nullptr;
-        }
-    };
-
-    template<typename _TType, typename... _TParentTypes>
-    extern inline void RegisterClassType();
-
-    template<typename _TType>
-    extern inline size_t GetClassHashCode();
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsChildClass();
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsParentClass();
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsChildClass(const _TFromType& InRef);
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsParentClass(const _TFromType& InRef);
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsChildClass(const _TFromType* InPtr);
-
-    template<typename _TFromType, typename _TToType>
-    extern inline BOOL IsParentClass(const _TFromType* InPtr);
-
-    class ERTTIObject
-    {
-    public:
-        template<typename _Type>
-        BOOL IsChildOf()
-        {
-            return 
-        }
-    };
-
     class ERTTIManager
     {
     public:
+        /// <summary>
+        /// Get hash code of [_TType]
+        /// </summary>
+        /// <typeparam name="_TType"></typeparam>
+        /// <returns></returns>
         template<typename _TType>
-        size_t GetClassHashCode()
+        size_t GetClassHashCode()const
         {
             return (typeid(_TType).hash_code());
         }
+
+        /// <summary>
+        /// Get hash code of class object that [_TType] point to
+        /// </summary>
+        /// <typeparam name="_TType"></typeparam>
+        /// <param name="InTypePtr"></param>
+        /// <returns></returns>
+        template<typename _TType>
+        size_t GetClassHashCode(const _TType* InTypePtr)const
+        {
+            return (typeid((*InTypePtr)).hash_code());
+        }
+
+        /// <summary>
+        /// Register [_TType] with its list of [_TParentTypes]
+        /// </summary>
+        /// <typeparam name="_TType"></typeparam>
+        /// <typeparam name="..._TParentTypes"></typeparam>
         template<typename _TType, typename... _TParentTypes>
         void SaveClassInfo()
         {
             ProcessClassInfoInternal<_TType, _TParentTypes...>();
+        }
+
+        /// <summary>
+        /// Find if [InTestTypeHash] inherit from [InTypeHash]
+        /// [TypeHash] is [typeid(_Type).hash_code()]
+        /// </summary>
+        /// <param name="InTypeHash"></param>
+        /// <param name="InTestTypeHash"></param>
+        /// <returns></returns>
+        BOOL IsChildClassType(const size_t& InTypeHash, const size_t& InTestTypeHash)const
+        {
+            BOOL Result = FALSE;
+            BOOL NeedContinueRecursion = TRUE;
+            const size_t TestHashCode = InTestTypeHash;
+            ForwardRecursion(InTypeHash,
+                [&TestHashCode, &Result, &NeedContinueRecursion](const EClassTypeInfo& InTypeInfo)->void
+                {
+                    if (InTypeInfo.TypeHashCode == TestHashCode)
+                    {
+                        Result = TRUE;
+                        NeedContinueRecursion = FALSE;
+                    }
+                },
+                [&NeedContinueRecursion](const EClassTypeInfo& InTypeInfo)->BOOL
+                {
+                    return NeedContinueRecursion;
+                });
+            return Result;
+        }
+
+        /// <summary>
+        /// Find if [InTypeHash] inherit from [InTestTypeHash]
+        /// [TypeHash] is [typeid(_Type).hash_code()]
+        /// </summary>
+        /// <param name="InTypeHash"></param>
+        /// <param name="InTestTypeHash"></param>
+        BOOL IsParentClassType(const size_t& InTypeHash, const size_t& InTestTypeHash)const
+        {
+            BOOL Result = FALSE;
+            BOOL NeedContinueRecursion = TRUE;
+            const size_t TestHashCode = InTestTypeHash;
+            BackwardRecursion(InTypeHash,
+                [&TestHashCode, &Result, &NeedContinueRecursion](const EClassTypeInfo& InTypeInfo)->void
+                {
+                    if (InTypeInfo.TypeHashCode == TestHashCode)
+                    {
+                        Result = TRUE;
+                        NeedContinueRecursion = FALSE;
+                    }
+                },
+                [&NeedContinueRecursion](const EClassTypeInfo& InTypeInfo)->BOOL
+                {
+                    return NeedContinueRecursion;
+                });
+            return Result;
         }
 
         /// <summary>
@@ -162,7 +109,7 @@ namespace PigeonEngine
         /// <typeparam name="_TTestType"></typeparam>
         /// <returns></returns>
         template<typename _TInType, typename _TTestType>
-        BOOL IsChildClassType()
+        BOOL IsChildClassType()const
         {
             BOOL Result = FALSE;
             BOOL NeedContinueRecursion = TRUE;
@@ -189,7 +136,7 @@ namespace PigeonEngine
         /// <typeparam name="_TInType"></typeparam>
         /// <typeparam name="_TTestType"></typeparam>
         template<typename _TInType, typename _TTestType>
-        void IsParentClassType()
+        BOOL IsParentClassType()const
         {
             BOOL Result = FALSE;
             BOOL NeedContinueRecursion = TRUE;
@@ -295,7 +242,7 @@ namespace PigeonEngine
             ProcessClassInfoInternal<_TType, _RestParentTypes...>();
         }
         template<typename TFunctionType, typename TConditionType>
-        void ForwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)
+        void ForwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)const
         {
             auto CurrentItem = ClassTypeInfos.find(InHashCode);
             if (CurrentItem == ClassTypeInfos.end())
@@ -316,7 +263,7 @@ namespace PigeonEngine
             }
         }
         template<typename TFunctionType, typename TConditionType>
-        void BackwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)
+        void BackwardRecursion(size_t InHashCode, const TFunctionType& InFunc, const TConditionType& InCond)const
         {
             auto CurrentItem = ClassTypeInfos.find(InHashCode);
             if (CurrentItem == ClassTypeInfos.end())
@@ -336,7 +283,7 @@ namespace PigeonEngine
                 }
             }
         }
-    public:
+    private:
         std::map<size_t, EClassTypeInfo> ClassTypeInfos;
     private:
         ERTTIManager() {}
@@ -350,5 +297,92 @@ namespace PigeonEngine
             return (&_ManagerSingletonObject);
         }
     };
+
+    /// <summary>
+    /// Register [_TType] class type with its type list of [_TParentTypes]
+    /// </summary>
+    template<typename _TType, typename... _TParentTypes>
+    extern ENGINE_INLINE void RegisterClassType();
+
+    // Gather hash code of [_TType] class type
+    template<typename _TType>
+    extern ENGINE_INLINE size_t GetClassHashCode();
+
+    // Gather hash code of class type that [_TType] point to
+    template<typename _TType>
+    extern ENGINE_INLINE size_t GetClassHashCode(const _TType* InTypePtr);
+
+    // Test if [_TToType] inherit from [_TFromType]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsChildClass();
+
+    // Test if [_TFromType] inherit from [_TToType]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsParentClass();
+
+    // Test if [_TToType] inherit from [*InFromPtr]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsChildClass(const _TFromType* InFromPtr);
+
+    // Test if [*InFromPtr] inherit from [_TToType]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsParentClass(const _TFromType* InFromPtr);
+
+    // Test if [_TToType] inherit from [InFromTypeHash]
+    template<typename _TToType>
+    extern ENGINE_INLINE BOOL IsChildClass(const size_t& InFromTypeHash);
+
+    // Test if [InFromTypeHash] inherit from [_TToType]
+    template<typename _TToType>
+    extern ENGINE_INLINE BOOL IsParentClass(const size_t& InFromTypeHash);
+
+    // Test if [InToTypeHash] inherit from [InFromTypeHash]
+    extern ENGINE_INLINE BOOL IsChildClass(const size_t& InFromTypeHash, const size_t& InToTypeHash);
+
+    // Test if [InFromTypeHash] inherit from [InToTypeHash]
+    extern ENGINE_INLINE BOOL IsParentClass(const size_t& InFromTypeHash, const size_t& InToTypeHash);
+
+    // Test if [*InToPtr] inherit from [*InFromPtr]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsChildClass(const _TFromType* InFromPtr, const _TToType* InToPtr);
+
+    // Test if [*InFromPtr] inherit from [*InToPtr]
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsParentClass(const _TFromType* InFromPtr, const _TToType* InToPtr);
+
+    // Test if [InFromHash] class is [_TToType] class
+    template<typename _TToType>
+    extern ENGINE_INLINE BOOL IsClass(const size_t& InFromHash);
+
+    // Test if [*InFromPtr] class is [_TToType] class
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsClass(const _TFromType* InFromPtr);
+
+    // Test if [InFromHash] class is [InToHash] class
+    extern ENGINE_INLINE BOOL IsClass(const size_t& InFromHash, const size_t& InToHash);
+
+    // Test if [InFromHash] class is [*InToPtr] class
+    template<typename _TToType>
+    extern ENGINE_INLINE BOOL IsClass(const size_t& InFromHash, const _TToType* InToPtr);
+
+    // Test if [*InFromPtr] class is [InToHash] class
+    template<typename _TFromType>
+    extern ENGINE_INLINE BOOL IsClass(const _TFromType* InFromPtr, const size_t& InToHash);
+
+    // Test if [*InFromPtr] class is [*InToPtr] class
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE BOOL IsClass(const _TFromType* InFromPtr, const _TToType* InToPtr);
+
+    template<typename _TToType>
+    extern ENGINE_INLINE const _TToType* AsClassPtrUnsafe(const void* InFromPtr);
+
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE const _TToType* AsClassPtr(const _TFromType* InFromPtr);
+
+    template<typename _TToType>
+    extern ENGINE_INLINE _TToType* AsClassPtrUnsafe(void* InFromPtr);
+
+    template<typename _TFromType, typename _TToType>
+    extern ENGINE_INLINE _TToType* AsClassPtr(_TFromType* InFromPtr);
 
 };

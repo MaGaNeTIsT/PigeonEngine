@@ -275,7 +275,7 @@
     </ClInclude>
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonObject.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIManager.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imconfig.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui.h" />
     <ClInclude Include="Engine\ThirdParty\imgui\imgui_internal.h" />
@@ -341,6 +341,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -517,7 +518,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
