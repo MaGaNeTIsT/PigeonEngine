@@ -299,9 +299,7 @@ namespace PigeonEngine
         }
     };
 
-    /// <summary>
-    /// Register [_TType] class type with its type list of [_TParentTypes]
-    /// </summary>
+    // Register [_TType] class type with its type list of [_TParentTypes]
     template<typename _TType, typename... _TParentTypes>
     extern ENGINE_INLINE void RegisterClassType();
 
