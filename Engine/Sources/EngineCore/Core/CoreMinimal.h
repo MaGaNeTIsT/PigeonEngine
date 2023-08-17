@@ -5,7 +5,8 @@
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
 
-#include <Base/RTTI.h>
+#include <Base/RTTI/RTTIManager.h>
+#include <Base/RTTI/RTTIObject.h>
 #include <Base/TemplateHeaders.h>
 
 #include <Base/DataStructure/BaseType.h>

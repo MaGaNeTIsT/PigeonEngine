@@ -342,6 +342,7 @@
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RegisterBase.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">

@@ -45,6 +45,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RegisterBase.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\EngineCommon.h" />

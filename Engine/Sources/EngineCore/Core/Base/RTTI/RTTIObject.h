@@ -1,6 +1,8 @@
 #pragma once
 
 #include "RTTIManager.h"
+#include <Base/RegisterBase.h>
+#include <Base/TemplateHeaders.h>
 
 namespace PigeonEngine
 {
@@ -91,6 +93,37 @@ namespace PigeonEngine
         {
             return (GetClassHashCode(this));
         }
+    public:
+        ERTTIObject() {}
+        ERTTIObject(const ERTTIObject&) {}
+        virtual ~ERTTIObject() {}
+        ERTTIObject& operator=(const ERTTIObject&) {}
     };
+
+    class EClassTypeRegisterManager final : public ERegisterBase
+    {
+    public:
+        class EClassTypeRegisterObject final
+        {
+        public:
+            template<typename _TClassTypeRegisterFunctionType>
+            EClassTypeRegisterObject(_TClassTypeRegisterFunctionType InClassTypeRegisterFunction)
+            {
+                EClassTypeRegisterManager::GetManagerSingleton()->AddRegisterFunction<_TClassTypeRegisterFunctionType>(InClassTypeRegisterFunction);
+            }
+        public:
+            EClassTypeRegisterObject() = delete;
+            ~EClassTypeRegisterObject() = delete;
+            EClassTypeRegisterObject(const EClassTypeRegisterObject&) = delete;
+            EClassTypeRegisterObject& operator=(const EClassTypeRegisterObject&) = delete;
+        };
+    public:
+
+        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EClassTypeRegisterManager)
+
+    };
+
+#define PE_REGISTER_CLASS_TYPE(__Func) \
+    static EClassTypeRegisterManager::EClassTypeRegisterObject __EClassTypeRegisterObject##__Func(__Func);\
 
 };
