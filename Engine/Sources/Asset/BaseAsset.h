@@ -49,7 +49,6 @@ namespace PigeonEngine
 	public:
 		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsValid())); }
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
-	protected:
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
@@ -74,6 +73,7 @@ namespace PigeonEngine
 			}
 			return TRUE;
 		}
+	protected:
 		void ReleaseResourceInternal()
 		{
 			if (ResourceData)

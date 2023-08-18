@@ -166,16 +166,16 @@ namespace PigeonEngine
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
 	public:
-		BOOL ImportShaderCSO(const EString& inPath, const EString& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
-		BOOL LoadVertexShaderAsset(EString& loadPath, const EVertexShaderAsset*& outShaderAsset);
-		BOOL LoadPixelShaderAsset(EString& loadPath, const EPixelShaderAsset*& outShaderAsset);
-		BOOL LoadComputeShaderAsset(EString& loadPath, const EComputeShaderAsset*& outShaderAsset);
+		BOOL ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
+		BOOL LoadVertexShaderAsset(EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
+		BOOL LoadPixelShaderAsset(EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
+		BOOL LoadComputeShaderAsset(EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
 	private:
 		template<class TShaderAssetType>
-		TShaderAssetType* LoadShaderAsset(const EString& loadPath);
-		BOOL SaveShaderAsset(const EString& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
+		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath);
+		BOOL SaveShaderAsset(const EString& InSavePath, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
 		template<class TShaderAssetType>
-		BOOL SaveShaderAsset(const EString& savePath, const TShaderAssetType* inShaderAsset);
+		BOOL SaveShaderAsset(const EString& InSavePath, const TShaderAssetType* InShaderAsset);
 	private:
 		EVertexShaderManager	VertexShaderManager;
 		EPixelShaderManager		PixelShaderManager;

@@ -13,10 +13,10 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
-				errorData += FilePath;
-				errorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
+				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
+				ErrorData += FilePath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
@@ -37,10 +37,10 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
-				errorData += FilePath;
-				errorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
+				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
+				ErrorData += FilePath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
@@ -58,10 +58,10 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
-				errorData += FilePath;
-				errorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
+				EString ErrorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
+				ErrorData += FilePath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
@@ -78,10 +78,10 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
-				errorData += FilePath;
-				errorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (errorData));
+				EString ErrorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
+				ErrorData += FilePath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_IO_FILE_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;

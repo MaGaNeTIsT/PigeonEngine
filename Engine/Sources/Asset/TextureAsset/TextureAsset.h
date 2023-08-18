@@ -12,6 +12,13 @@
 namespace PigeonEngine
 {
 
+	enum ETextureType : UINT8
+	{
+		TEXTURE_TYPE_UNKNOWN	= 0,
+		TEXTURE_TYPE_TEXTURE2D,
+		TEXTURE_TYPE_COUNT
+	};
+
 	struct ETextureResourceProperty
 	{
 		ETextureResourceProperty()noexcept : Width(0u), Height(0u), Depth(0u), PixelByteCount(0u), Format(RFormatType::FORMAT_UNKNOWN) {}
@@ -39,13 +46,17 @@ namespace PigeonEngine
 	public:
 		virtual BOOL	IsValid()const override;
 		virtual void	Release()override;
+	public:
+		ETextureType	GetTextureType()const { return TextureType; }
 		void			SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB);
 	protected:
+		ETextureType				TextureType;
 		BYTE*						ByteCode;
 		ETextureResourceProperty	ResourceProperties;
 		BOOL						SRGB;
 	public:
 		friend class ETexture2DAsset;
+		friend class ETextureAssetManager;
 	public:
 
 		CLASS_VIRTUAL_COPY_BODY(ETexture2D)
@@ -85,8 +96,8 @@ namespace PigeonEngine
 		virtual void ShutDown()override;
 	public:
 		BOOL ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
-		BOOL LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
 	private:
+		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride = nullptr);
 		BOOL SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource);
 	private:
 		ETexture2DAssetManager	Texture2DAssetManager;

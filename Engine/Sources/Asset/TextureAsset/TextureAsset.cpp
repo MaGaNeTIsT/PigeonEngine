@@ -269,13 +269,15 @@ namespace PigeonEngine
 	}
 
 	ETexture2D::ETexture2D()
-		: ByteCode(nullptr)
+		: TextureType(ETextureType::TEXTURE_TYPE_TEXTURE2D)
+		, ByteCode(nullptr)
 		, ResourceProperties()
 		, SRGB(FALSE)
 	{
 	}
 	ETexture2D::ETexture2D(const ETexture2D& Other)
-		: ByteCode(nullptr)
+		: TextureType(ETextureType::TEXTURE_TYPE_TEXTURE2D)
+		, ByteCode(nullptr)
 		, ResourceProperties(Other.ResourceProperties)
 		, SRGB(Other.SRGB)
 	{
@@ -294,6 +296,7 @@ namespace PigeonEngine
 	}
 	ETexture2D& ETexture2D::operator=(const ETexture2D& Other)
 	{
+		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
 		if (ByteCode)
 		{
 			delete[]ByteCode;
@@ -327,6 +330,7 @@ namespace PigeonEngine
 	}
 	void ETexture2D::SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB)
 	{
+		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
 		if (ByteCode)
 		{
 			delete[]ByteCode;
@@ -419,6 +423,17 @@ namespace PigeonEngine
 	}
 	BOOL ETextureAssetManager::ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath)
 	{
+		if ((InImportPath.Length() < 3u) || (InSaveAssetPath.Length() < 3u))
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for texture 2d importer (import file path : ");
+				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				PE_FAILED((ENGINE_TEXTURE_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
 		BYTE* ReadByteCode = nullptr; UINT ReadWidth = 0u, ReadHeight = 0u, ReadPixelByteCount = 0u; RFormatType ReadFormat = RFormatType::FORMAT_UNKNOWN;
 		if (!ReadAndDecodingDigitalImage(InImportPath, ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat))
 		{
@@ -439,22 +454,152 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
-		ETextureResourceProperty NeedSaveTexture2DProperties;
-		NeedSaveTexture2DProperties.Width			= ReadWidth;
-		NeedSaveTexture2DProperties.Height			= ReadHeight;
-		NeedSaveTexture2DProperties.PixelByteCount	= ReadPixelByteCount;
-		NeedSaveTexture2DProperties.Format			= ReadFormat;
 		NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
 
-		return FALSE;
+		BOOL Result = SaveTexture2DAsset(InSaveAssetPath, NeedSaveTexture2DResource);
+
+		NeedSaveTexture2DResource->Release();
+		delete NeedSaveTexture2DResource;
+		return Result;
 	}
-	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset)
+	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride)
 	{
-		return FALSE;
+		ETexture2DAsset* OutTextureAsset = nullptr;
+		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
+		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		{
+			if (ReadFileMem)
+			{
+				delete[]ReadFileMem;
+			}
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorData("Load shader asset failed (load file path : ");
+				ErrorData += InLoadPath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		BOOL Result = FALSE;
+		void* TempPtr = ReadFileMem;
+		ULONG RstSize = ReadFileSize;
+		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
+		ETextureType ReadTextureType = ETextureType::TEXTURE_TYPE_UNKNOWN;
+		BOOL ReadSRGB = FALSE;
+		ETextureResourceProperty ReadResourceProperty;
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			ReadAssetType = static_cast<EAssetType>(SavedAssetTypePtr[0]);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			UINT8 TempTextureType = static_cast<UINT8>(SavedAssetTypePtr[0]);
+			ReadTextureType = static_cast<ETextureType>(TempTextureType);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			BOOL* SavedAssetTypePtr = (BOOL*)TempPtr;
+			ReadSRGB = SavedAssetTypePtr[0];
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(BOOL);
+		}
+		{
+			ETextureResourceProperty* SavedAssetTypePtr = (ETextureResourceProperty*)TempPtr;
+			ReadResourceProperty = SavedAssetTypePtr[0];
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(ETextureResourceProperty);
+		}
+		if ((ReadAssetType == EAssetType::ASSET_TYPE_TEXTURE) &&
+			(ReadTextureType == ETextureType::TEXTURE_TYPE_TEXTURE2D) &&
+			(ReadResourceProperty.Width > 0u) &&
+			(ReadResourceProperty.Height > 0u) &&
+			(ReadResourceProperty.PixelByteCount > 0u) &&
+			(ReadResourceProperty.Format != RFormatType::FORMAT_UNKNOWN))
+		{
+			const UINT ByteCodeStride = ReadResourceProperty.Width * ReadResourceProperty.PixelByteCount;
+			const UINT ByteCodeSize = ByteCodeStride * ReadResourceProperty.Height;
+			BYTE* ReadByteCode = new BYTE[ByteCodeSize];
+			::memcpy_s(ReadByteCode, ByteCodeSize, TempPtr, RstSize);
+			if (InSRGBOverride)
+			{
+				ReadSRGB = (*InSRGBOverride);
+			}
+			OutTextureAsset = new ETexture2DAsset(InLoadPath
+#ifdef _EDITOR_ONLY
+				, InLoadPath
+#endif
+			);
+			ETexture2D* StoragedResource = nullptr;
+			if (!(OutTextureAsset->StorageResourceInternal(
+				[ReadSRGB, ReadByteCode, &ReadResourceProperty, &StoragedResource]()->ETexture2D*
+				{
+					StoragedResource = new ETexture2D();
+					StoragedResource->SetData(ReadByteCode, ReadResourceProperty.Width, ReadResourceProperty.Height, ReadResourceProperty.PixelByteCount, ReadResourceProperty.Format, ReadSRGB);
+					return StoragedResource;
+				})))
+			{
+				if (StoragedResource)
+				{
+					StoragedResource->Release();
+					delete StoragedResource;
+				}
+			}
+		}
+		delete[]ReadFileMem;
+		return OutTextureAsset;
 	}
 	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource)
 	{
-		return FALSE;
+		if ((InSavePath.Length() < 3u) || (!InTextureResource) || (!(InTextureResource->IsValid())))
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorData("Saving texture 2d asset error.(import file path : ");
+				ErrorData = ErrorData + InSavePath + ", is asset valid : " +
+					((!!InTextureResource) ? ((InTextureResource->IsValid()) ? "true" : "false") : "false")
+					+ ").";
+				PE_FAILED((ENGINE_TEXTURE_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+
+		const UINT ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
+		const UINT ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height;
+		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL) + ByteCodeSize;
+		void* SavedMem = new BYTE[NeedSavedSize];
+		void* TempPtr = SavedMem;
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			SavedAssetTypePtr[0] = EAssetType::ASSET_TYPE_TEXTURE;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			SavedAssetTypePtr[0] = static_cast<UINT32>(InTextureResource->TextureType);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			BOOL* SavedAssetTypePtr = (BOOL*)TempPtr;
+			SavedAssetTypePtr[0] = InTextureResource->SRGB;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			ETextureResourceProperty* SavedAssetTypePtr = (ETextureResourceProperty*)TempPtr;
+			SavedAssetTypePtr[0] = InTextureResource->ResourceProperties;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		::memcpy_s(TempPtr, ByteCodeSize, InTextureResource->ByteCode, ByteCodeSize);
+
+		BOOL Result = EFileHelper::SaveBytesToFile(InSavePath, SavedMem, NeedSavedSize);
+
+		delete[]SavedMem;
+		return Result;
 	}
 
 };

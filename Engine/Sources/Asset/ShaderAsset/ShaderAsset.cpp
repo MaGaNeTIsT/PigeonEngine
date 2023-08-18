@@ -94,18 +94,18 @@ namespace PigeonEngine
 	}
 	RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RVertexShaderResource* result = nullptr;
+		RVertexShaderResource* Result = nullptr;
 		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RVertexShaderResource();
-			if (!deviceD3D11->CreateVertexShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result, ShaderInputLayouts, ShaderInputLayoutNum))
+			Result = new RVertexShaderResource();
+			if (!deviceD3D11->CreateVertexShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result, ShaderInputLayouts, ShaderInputLayoutNum))
 			{
-				delete result;
-				result = nullptr;
+				delete Result;
+				Result = nullptr;
 			}
 		}
-		return result;
+		return Result;
 	}
 
 	EPixelShaderAsset::EPixelShaderAsset(const EString& InShaderPath
@@ -149,18 +149,18 @@ namespace PigeonEngine
 	}
 	RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RPixelShaderResource* result = nullptr;
+		RPixelShaderResource* Result = nullptr;
 		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RPixelShaderResource();
-			if (!deviceD3D11->CreatePixelShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result))
+			Result = new RPixelShaderResource();
+			if (!deviceD3D11->CreatePixelShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result))
 			{
-				delete result;
-				result = nullptr;
+				delete Result;
+				Result = nullptr;
 			}
 		}
-		return result;
+		return Result;
 	}
 
 	EComputeShaderAsset::EComputeShaderAsset(const EString& InShaderPath
@@ -203,18 +203,18 @@ namespace PigeonEngine
 	}
 	RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
 	{
-		RComputeShaderResource* result = nullptr;
+		RComputeShaderResource* Result = nullptr;
 		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			result = new RComputeShaderResource();
-			if (!deviceD3D11->CreateComputeShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *result))
+			Result = new RComputeShaderResource();
+			if (!deviceD3D11->CreateComputeShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result))
 			{
-				delete result;
-				result = nullptr;
+				delete Result;
+				Result = nullptr;
 			}
 		}
-		return result;
+		return Result;
 	}
 
 	EShaderAssetManager::EShaderAssetManager()
@@ -232,36 +232,36 @@ namespace PigeonEngine
 	void EShaderAssetManager::ShutDown()
 	{
 	}
-	BOOL EShaderAssetManager::ImportShaderCSO(const EString& inPath, const EString& outPath, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
+	BOOL EShaderAssetManager::ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
 	{
 		const static EString importShaderNameType(ENGINE_IMPORT_SHADER_NAME_TYPE);
 		const static EString importVertexShaderNameType = EString(ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE) + importShaderNameType;
 		const static EString importPixelShaderNameType = EString(ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE) + importShaderNameType;
 		const static EString importComputeShaderNameType = EString(ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE) + importShaderNameType;
 
-		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input file path is too short."), inPath.Length() > importShaderNameType.Length());
-		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input vs file path is too short."), inPath.Length() > importVertexShaderNameType.Length());
-		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input ps file path is too short."), inPath.Length() > importPixelShaderNameType.Length());
-		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input cs file path is too short."), inPath.Length() > importComputeShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input file path is too short."), InPath.Length() > importShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input vs file path is too short."), InPath.Length() > importVertexShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input ps file path is too short."), InPath.Length() > importPixelShaderNameType.Length());
+		Check((ENGINE_ASSET_ERROR), ("Import shader cso. Input cs file path is too short."), InPath.Length() > importComputeShaderNameType.Length());
 
-		if (inPath.Substring(inPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
+		if (InPath.Substring(InPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Error file type for shader importer (input file path : ");
-				errorData = errorData + inPath + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), errorData);
+				EString ErrorData("Error file type for shader importer (input file path : ");
+				ErrorData = ErrorData + InPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), ErrorData);
 			}
 #endif
 			return FALSE;
 		}
 
 		RShaderFrequencyType importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_COUNT;
-		if (inPath.Substring(inPath.Length() - importPixelShaderNameType.Length(), importPixelShaderNameType.Length()) == importPixelShaderNameType)
+		if (InPath.Substring(InPath.Length() - importPixelShaderNameType.Length(), importPixelShaderNameType.Length()) == importPixelShaderNameType)
 		{
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_PIXEL;
 		}
-		else if (inPath.Substring(inPath.Length() - importVertexShaderNameType.Length(), importVertexShaderNameType.Length()) == importVertexShaderNameType)
+		else if (InPath.Substring(InPath.Length() - importVertexShaderNameType.Length(), importVertexShaderNameType.Length()) == importVertexShaderNameType)
 		{
 			if (!inShaderInputLayouts || !inShaderInputLayoutNum)
 			{
@@ -270,7 +270,7 @@ namespace PigeonEngine
 			}
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_VERTEX;
 		}
-		else if (inPath.Substring(inPath.Length() - importComputeShaderNameType.Length(), importComputeShaderNameType.Length()) == importComputeShaderNameType)
+		else if (InPath.Substring(InPath.Length() - importComputeShaderNameType.Length(), importComputeShaderNameType.Length()) == importComputeShaderNameType)
 		{
 			importShaderFrequency = RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE;
 		}
@@ -278,42 +278,37 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Not support type for shader import (input file path : ");
-				errorData = errorData + inPath + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), errorData);
+				EString ErrorData("Not support type for shader import (input file path : ");
+				ErrorData = ErrorData + InPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), ErrorData);
 			}
 #endif
 			return FALSE;
 		}
 
 		EShaderResource* outResource = new EShaderResource();
-		if (!EFileHelper::ReadFileAsBinary(inPath, outResource->ShaderByteCode, outResource->ShaderByteCodeSize))
+		if (!EFileHelper::ReadFileAsBinary(InPath, outResource->ShaderByteCode, outResource->ShaderByteCodeSize))
 		{
 			outResource->Release();
 			delete outResource;
 			return FALSE;
 		}
 
-		if (SaveShaderAsset(outPath, outResource, importShaderFrequency, inShaderInputLayouts, inShaderInputLayoutNum))
-		{
-			outResource->Release();
-			delete outResource;
-			return TRUE;
-		}
+		BOOL Result = SaveShaderAsset(OutPath, outResource, importShaderFrequency, inShaderInputLayouts, inShaderInputLayoutNum);
 
 		outResource->Release();
 		delete outResource;
-		return FALSE;
+		return Result;
 	}
-	BOOL EShaderAssetManager::LoadVertexShaderAsset(EString& loadPath, const EVertexShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadVertexShaderAsset(EString& InLoadPath, const EVertexShaderAsset*& outShaderAsset)
 	{
-		EVertexShaderAsset* resultShaderAsset = VertexShaderManager.Find(loadPath);
+		EVertexShaderAsset* resultShaderAsset = VertexShaderManager.Find(InLoadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
 			return TRUE;
 		}
-		resultShaderAsset = LoadShaderAsset<EVertexShaderAsset>(loadPath);
+		resultShaderAsset = LoadShaderAsset<EVertexShaderAsset>(InLoadPath);
 		if (!resultShaderAsset)
 		{
 			return FALSE;
@@ -323,11 +318,11 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (VertexShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
+		if (VertexShaderManager.Add(InLoadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Vertex shader path = [") + loadPath + "] add into manager list failed.";
+				EString errorInfo = EString("Vertex shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
@@ -337,15 +332,15 @@ namespace PigeonEngine
 		outShaderAsset = resultShaderAsset;
 		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadPixelShaderAsset(EString& loadPath, const EPixelShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadPixelShaderAsset(EString& InLoadPath, const EPixelShaderAsset*& outShaderAsset)
 	{
-		EPixelShaderAsset* resultShaderAsset = PixelShaderManager.Find(loadPath);
+		EPixelShaderAsset* resultShaderAsset = PixelShaderManager.Find(InLoadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
 			return TRUE;
 		}
-		resultShaderAsset = LoadShaderAsset<EPixelShaderAsset>(loadPath);
+		resultShaderAsset = LoadShaderAsset<EPixelShaderAsset>(InLoadPath);
 		if (!resultShaderAsset)
 		{
 			return FALSE;
@@ -355,11 +350,11 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (PixelShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
+		if (PixelShaderManager.Add(InLoadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Pixel shader path = [") + loadPath + "] add into manager list failed.";
+				EString errorInfo = EString("Pixel shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
@@ -369,15 +364,15 @@ namespace PigeonEngine
 		outShaderAsset = resultShaderAsset;
 		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadComputeShaderAsset(EString& loadPath, const EComputeShaderAsset*& outShaderAsset)
+	BOOL EShaderAssetManager::LoadComputeShaderAsset(EString& InLoadPath, const EComputeShaderAsset*& outShaderAsset)
 	{
-		EComputeShaderAsset* resultShaderAsset = ComputeShaderManager.Find(loadPath);
+		EComputeShaderAsset* resultShaderAsset = ComputeShaderManager.Find(InLoadPath);
 		if (resultShaderAsset)
 		{
 			outShaderAsset = resultShaderAsset;
 			return TRUE;
 		}
-		resultShaderAsset = LoadShaderAsset<EComputeShaderAsset>(loadPath);
+		resultShaderAsset = LoadShaderAsset<EComputeShaderAsset>(InLoadPath);
 		if (!resultShaderAsset)
 		{
 			return FALSE;
@@ -387,11 +382,11 @@ namespace PigeonEngine
 			delete resultShaderAsset;
 			return FALSE;
 		}
-		if (ComputeShaderManager.Add(loadPath, resultShaderAsset, TRUE) == 0u)
+		if (ComputeShaderManager.Add(InLoadPath, resultShaderAsset, TRUE) == 0u)
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Pixel shader path = [") + loadPath + "] add into manager list failed.";
+				EString errorInfo = EString("Pixel shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), errorInfo);
 			}
 #endif
@@ -402,124 +397,123 @@ namespace PigeonEngine
 		return TRUE;
 	}
 	template<class TShaderAssetType>
-	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const EString& loadPath)
+	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const EString& InLoadPath)
 	{
-		void* readFileMem = nullptr; ULONG readFileSize = 0u;
-		if (!EFileHelper::ReadFileAsBinary(loadPath, readFileMem, readFileSize))
+		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
+		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
 		{
-			if (readFileMem)
+			if (ReadFileMem)
 			{
-				delete[]readFileMem;
+				delete[]ReadFileMem;
 			}
 #ifdef _EDITOR_ONLY
 			{
-				EString errorData("Load shader asset failed (load file path : ");
-				errorData += loadPath;
-				errorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
+				EString ErrorData("Load shader asset failed (load file path : ");
+				ErrorData += InLoadPath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return nullptr;
 		}
-		Check(ENGINE_ASSET_ERROR, "Error read shader asset file size are too small.", (readFileSize > (sizeof(INT) * 2u)));
-		EAssetType AssetType = static_cast<EAssetType>(((UINT32*)readFileMem)[0]);
-		if (AssetType == EAssetType::ASSET_TYPE_UNKNOWN || AssetType >= EAssetType::ASSET_TYPE_COUNT)
+		Check(ENGINE_ASSET_ERROR, "Error read shader asset file size are too small.", (ReadFileSize > (sizeof(INT) * 2u)));
+		void* TempPtr = ReadFileMem;
+		ULONG RstSize = ReadFileSize;
+		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
+		RShaderFrequencyType ReadShaderFrequencyType = RShaderFrequencyType::SHADER_FREQUENCY_COUNT;
+		UINT ReadInputLayoutNum = 0u;
 		{
-#ifdef _EDITOR_ONLY
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			ReadAssetType = static_cast<EAssetType>(SavedAssetTypePtr[0]);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			UINT8 TempType = static_cast<UINT8>(SavedAssetTypePtr[0]);
+			ReadShaderFrequencyType = static_cast<RShaderFrequencyType>(TempType);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			ReadInputLayoutNum = SavedAssetTypePtr[0];
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		TShaderAssetType* OutShaderAsset = nullptr;
+		if ((ReadAssetType == EAssetType::ASSET_TYPE_SHADER) &&
+			(ReadShaderFrequencyType < RShaderFrequencyType::SHADER_FREQUENCY_COUNT) &&
+			(RstSize > 0u))
+		{
+			TArray<RInputLayoutDesc> TempInputLayouts;
+			if (ReadInputLayoutNum > 0u)
 			{
-				EString errorData("Try to loading shader asset but is not shader asset type. (load file path : ");
-				errorData += loadPath;
-				errorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
-			}
-#endif
-			delete[]readFileMem;
-			return nullptr;
-		}
-		UINT32 ReadShaderFrequency = ((UINT32*)readFileMem)[1];
-		RShaderFrequencyType ShaderFrequency = static_cast<RShaderFrequencyType>(static_cast<UINT8>(ReadShaderFrequency));
-		if (ShaderFrequency >= RShaderFrequencyType::SHADER_FREQUENCY_COUNT)
-		{
-#ifdef _EDITOR_ONLY
-			{
-				EString errorData("Try to loading shader asset but shader frequency is error type. (load file path : ");
-				errorData += loadPath;
-				errorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
-			}
-#endif
-			delete[]readFileMem;
-			return nullptr;
-		}
-		UINT shaderInputLayoutNum = static_cast<UINT>(((UINT32*)readFileMem)[2]);
-		ULONG shaderCSOSize = readFileSize - (sizeof(UINT32) * 2u) - sizeof(UINT32);
-		TArray<RInputLayoutDesc> shaderInputLayouts;
-		if (shaderInputLayoutNum > 0u)
-		{
-			shaderCSOSize = shaderCSOSize - (sizeof(RInputLayoutDesc) * shaderInputLayoutNum);
-			RInputLayoutDesc* tempInputlayouts = (RInputLayoutDesc*)(&(((UINT32*)readFileMem)[3]));
-			shaderInputLayouts.Resize(shaderInputLayoutNum);
-			for (UINT layoutIndex = 0u; layoutIndex < shaderInputLayoutNum; layoutIndex++)
-			{
-				shaderInputLayouts[layoutIndex] = tempInputlayouts[layoutIndex];
-			}
-		}
-		TShaderAssetType* result = nullptr;
-		if (ShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
-		{
-			EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(loadPath
-#ifdef _EDITOR_ONLY
-				, loadPath
-#endif
-				, shaderInputLayouts.RawData(), shaderInputLayoutNum);
-			result = reinterpret_cast<TShaderAssetType*>(TempShaderAsset);
-			if (!result)
-			{
-				TempShaderAsset->UninitResource();
-				delete TempShaderAsset;
-				TempShaderAsset = nullptr;
-			}
-		}
-		else
-		{
-			result = new TShaderAssetType(loadPath
-#ifdef _EDITOR_ONLY
-				, loadPath
-#endif
-			);
-		}
-		if (result)
-		{
-			EShaderResource* storagedResource = nullptr;
-			if (!result->StorageResourceInternal(
-				[readFileMem, readFileSize, shaderCSOSize, &storagedResource]()->EShaderResource*
+				TempInputLayouts.Resize(ReadInputLayoutNum);
+				for (UINT LayoutIndex = 0u; LayoutIndex < ReadInputLayoutNum; LayoutIndex++)
 				{
-					void* shaderCSO = new BYTE[shaderCSOSize];
-					::memcpy_s(shaderCSO, shaderCSOSize, &(((BYTE*)readFileMem)[readFileSize - shaderCSOSize]), shaderCSOSize);
-					storagedResource = new EShaderResource();
-					storagedResource->ShaderByteCode = shaderCSO;
-					storagedResource->ShaderByteCodeSize = shaderCSOSize;
-					return storagedResource;
-				}))
+					RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
+					TempInputLayouts[LayoutIndex] = SavedAssetTypePtr[0];
+					TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+					RstSize = RstSize - sizeof(RInputLayoutDesc);
+				}
+			}
+			if (ReadShaderFrequencyType == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 			{
-				if (storagedResource)
+				EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(InLoadPath
+#ifdef _EDITOR_ONLY
+					, InLoadPath
+#endif
+					, TempInputLayouts.RawData(), ReadInputLayoutNum);
+				OutShaderAsset = dynamic_cast<TShaderAssetType*>(TempShaderAsset);
+				if (!OutShaderAsset)
 				{
-					storagedResource->Release();
-					delete storagedResource;
+					TempShaderAsset->UninitResource();
+					delete TempShaderAsset;
+					TempShaderAsset = nullptr;
+				}
+			}
+			else
+			{
+				OutShaderAsset = new TShaderAssetType(InLoadPath
+#ifdef _EDITOR_ONLY
+					, InLoadPath
+#endif
+				);
+			}
+			if (OutShaderAsset)
+			{
+				EShaderResource* StoragedResource = nullptr;
+				if (!(OutShaderAsset->StorageResourceInternal(
+					[TempPtr, RstSize, &StoragedResource]()->EShaderResource*
+					{
+						void* TempShaderCSO = new BYTE[RstSize];
+						::memcpy_s(TempShaderCSO, RstSize, TempPtr, RstSize);
+						StoragedResource = new EShaderResource();
+						StoragedResource->ShaderByteCode = TempShaderCSO;
+						StoragedResource->ShaderByteCodeSize = RstSize;
+						return StoragedResource;
+					})))
+				{
+					if (StoragedResource)
+					{
+						StoragedResource->Release();
+						delete StoragedResource;
+					}
 				}
 			}
 		}
-		delete[]readFileMem;
-		return result;
+		delete[]ReadFileMem;
+		return OutShaderAsset;
 	}
-	BOOL EShaderAssetManager::SaveShaderAsset(const EString& savePath, const EShaderResource* inShaderResource, RShaderFrequencyType inShaderFrequency, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
+	BOOL EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts, const UINT* InShaderInputLayoutNum)
 	{
-		if (inShaderResource && inShaderResource->ShaderByteCode && (inShaderResource->ShaderByteCodeSize > 0u))
+		if (InShaderResource && InShaderResource->ShaderByteCode && (InShaderResource->ShaderByteCodeSize > 0u))
 		{
-			const UINT32 shaderFrequency = static_cast<UINT32>(inShaderFrequency);
-			UINT32 shaderInputLayoutNum = 0u;
-			ULONG shaderSaveSize = sizeof(UINT32) + (sizeof(UINT32) * 2u) + inShaderResource->ShaderByteCodeSize;
-			switch (inShaderFrequency)
+			const UINT32 shaderFrequency = static_cast<UINT32>(InShaderFrequency);
+			UINT32 ShaderInputLayoutNum = 0u;
+			ULONG ShaderSaveSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(UINT32) + InShaderResource->ShaderByteCodeSize;
+			switch (InShaderFrequency)
 			{
 			case RShaderFrequencyType::SHADER_FREQUENCY_PIXEL:
 			{
@@ -528,13 +522,13 @@ namespace PigeonEngine
 			break;
 			case RShaderFrequencyType::SHADER_FREQUENCY_VERTEX:
 			{
-				if (!inShaderInputLayouts || !inShaderInputLayoutNum)
+				if (!InShaderInputLayouts || !InShaderInputLayoutNum)
 				{
 					PE_FAILED((ENGINE_ASSET_ERROR), ("Try to save vertex shader asset, but do not contain input layouts."));
 					return FALSE;
 				}
-				shaderInputLayoutNum = static_cast<UINT32>(*inShaderInputLayoutNum);
-				shaderSaveSize += sizeof(RInputLayoutDesc) * static_cast<ULONG>(shaderInputLayoutNum);
+				ShaderInputLayoutNum = static_cast<UINT32>(*InShaderInputLayoutNum);
+				ShaderSaveSize += sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
 			}
 			break;
 			case RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE:
@@ -550,62 +544,76 @@ namespace PigeonEngine
 			}
 
 			//TODO We copy whole cso memory into a new memory that only for header info. So we could change save code for reduce cost.
-			void* saveMem = new BYTE[shaderSaveSize];
+			void* SaveMem = new BYTE[ShaderSaveSize];
+			void* TempPtr = SaveMem;
+			ULONG RstSize = ShaderSaveSize;
 			{
-				const UINT shaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(shaderInputLayoutNum);
-				((UINT32*)saveMem)[0] = EAssetType::ASSET_TYPE_SHADER;
-				((UINT32*)saveMem)[1] = shaderFrequency;
-				((UINT32*)saveMem)[2] = shaderInputLayoutNum;
-				void* cpyStart = (void*)(&(((UINT32*)saveMem)[3]));
-				ULONG rstSize = shaderSaveSize - (sizeof(UINT32) * 3u);
-				if (shaderInputLayoutNum > 0u)
-				{
-					::memcpy_s(cpyStart, rstSize, inShaderInputLayouts, shaderInputLayoutDescSize);
-					cpyStart = (void*)(&(((BYTE*)cpyStart)[shaderInputLayoutDescSize]));
-					rstSize = rstSize - shaderInputLayoutDescSize;
-				}
-				Check((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), rstSize == inShaderResource->ShaderByteCodeSize);
-				::memcpy_s(cpyStart, rstSize, inShaderResource->ShaderByteCode, inShaderResource->ShaderByteCodeSize);
+				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+				SavedAssetTypePtr[0] = EAssetType::ASSET_TYPE_SHADER;
+				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+				RstSize = RstSize - sizeof(UINT32);
 			}
-
-			if (EFileHelper::SaveBytesToFile(savePath, saveMem, shaderSaveSize))
 			{
-				delete[]saveMem;
+				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+				SavedAssetTypePtr[0] = shaderFrequency;
+				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+				RstSize = RstSize - sizeof(UINT32);
+			}
+			{
+				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+				SavedAssetTypePtr[0] = ShaderInputLayoutNum;
+				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+				RstSize = RstSize - sizeof(UINT32);
+			}
+			if (ShaderInputLayoutNum > 0u)
+			{
+				const UINT ShaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
+				::memcpy_s(TempPtr, RstSize, InShaderInputLayouts, ShaderInputLayoutDescSize);
+				RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
+				TempPtr = (void*)(&(SavedAssetTypePtr[ShaderInputLayoutNum]));
+				RstSize = RstSize - ShaderInputLayoutDescSize;
+			}
+			Check((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), RstSize == InShaderResource->ShaderByteCodeSize);
+			::memcpy_s(TempPtr, RstSize, InShaderResource->ShaderByteCode, InShaderResource->ShaderByteCodeSize);
+
+			if (EFileHelper::SaveBytesToFile(InSavePath, SaveMem, ShaderSaveSize))
+			{
+				delete[]SaveMem;
 				return TRUE;
 			}
 
-			delete[]saveMem;
+			delete[]SaveMem;
 		}
 
 #ifdef _EDITOR_ONLY
 		{
-			EString errorData("Save shader asset failed (output file path : ");
-			errorData = errorData + savePath + ").";
-			PE_FAILED((ENGINE_ASSET_ERROR), errorData);
+			EString ErrorData("Save shader asset failed (output file path : ");
+			ErrorData = ErrorData + InSavePath + ").";
+			PE_FAILED((ENGINE_ASSET_ERROR), ErrorData);
 		}
 #endif
 		return FALSE;
 	}
 	template<class TShaderAssetType>
-	BOOL EShaderAssetManager::SaveShaderAsset(const EString& savePath, const TShaderAssetType* inShaderAsset)
+	BOOL EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const TShaderAssetType* InShaderAsset)
 	{
-		if (!inShaderAsset)
+		if (!InShaderAsset)
 		{
 			PE_FAILED(ENGINE_ASSET_ERROR, "Error try to save a null shader asset.");
 			return FALSE;
 		}
-		const EShaderResource* saveShaderResource = inShaderAsset->GetStoragedResource();
+		const EShaderResource* saveShaderResource = InShaderAsset->GetStoragedResource();
 		if (!saveShaderResource)
 		{
 			PE_FAILED(ENGINE_ASSET_ERROR, "Error try to save a shader asset without resource.");
 			return FALSE;
 		}
-		RShaderFrequencyType saveShaderFrequency = inShaderAsset->GetShaderFrequency();
+		RShaderFrequencyType saveShaderFrequency = InShaderAsset->GetShaderFrequency();
 		const RInputLayoutDesc* saveShaderInputLayouts = nullptr;
 		UINT saveShaderInputLayoutNum = 0u;
 		if (saveShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 		{
-			const EVertexShaderAsset* tempVertexShaderAsset = reinterpret_cast<const EVertexShaderAsset*>(inShaderAsset);
+			const EVertexShaderAsset* tempVertexShaderAsset = dynamic_cast<const EVertexShaderAsset*>(InShaderAsset);
 			if (!tempVertexShaderAsset)
 			{
 				PE_FAILED(ENGINE_ASSET_ERROR, "Error try to saving a shader asset frequency is vertex, but actually is not vertex shader asset.");
@@ -614,7 +622,7 @@ namespace PigeonEngine
 			saveShaderInputLayouts = tempVertexShaderAsset->GetShaderInputLayouts();
 			saveShaderInputLayoutNum = tempVertexShaderAsset->GetShaderInputLayoutNum();
 		}
-		if (SaveShaderAsset(savePath, saveShaderResource, saveShaderFrequency, saveShaderInputLayouts, &saveShaderInputLayoutNum))
+		if (SaveShaderAsset(InSavePath, saveShaderResource, saveShaderFrequency, saveShaderInputLayouts, &saveShaderInputLayoutNum))
 		{
 			return TRUE;
 		}
