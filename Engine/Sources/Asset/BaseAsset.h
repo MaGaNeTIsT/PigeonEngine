@@ -6,6 +6,17 @@
 namespace PigeonEngine
 {
 
+	enum EAssetType : UINT32
+	{
+		ASSET_TYPE_UNKNOWN		= 0,
+		ASSET_TYPE_TEXTURE,
+		ASSET_TYPE_MESH,
+		ASSET_TYPE_SKELETON,
+		ASSET_TYPE_ANIMATION,
+		ASSET_TYPE_SHADER,
+		ASSET_TYPE_COUNT,
+	};
+
 	template<typename TResourceType>
 	class TBaseAsset : public EObjectBase
 	{

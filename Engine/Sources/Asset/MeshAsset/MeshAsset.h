@@ -9,7 +9,7 @@
 namespace PigeonEngine
 {
 
-	enum EMeshType
+	enum EMeshType : UINT8
 	{
 		MESH_TYPE_STATIC	= 0,
 		MESH_TYPE_SKIN		= 1,

@@ -94,14 +94,14 @@ namespace PigeonEngine
 		DirectX::XMFLOAT4		SkeletonBoneNum;
 		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::SkeletonBoneMax * 2u];
 	};
-	enum RShaderFrequencyType
+	enum RShaderFrequencyType : UINT8
 	{
 		SHADER_FREQUENCY_COMPUTE	= 0,
 		SHADER_FREQUENCY_VERTEX		= 1,
 		SHADER_FREQUENCY_PIXEL		= 2,
 		SHADER_FREQUENCY_COUNT
 	};
-	enum RDefaultTextureType
+	enum RDefaultTextureType : UINT8
 	{
 		TEXTURE2D_WHITE		= 0,
 		TEXTURE2D_BLACK		= 1,
@@ -113,13 +113,13 @@ namespace PigeonEngine
 		TEXTURE2D_PROPERTY	= 7,
 		TEXTURE2D_COUNT
 	};
-	enum RStencilMaskType
+	enum RStencilMaskType : UINT8
 	{
 		STENCIL_MASK_SKY			= 0x1,
 		STENCIL_MASK_LAND			= 0x2,
 		STENCIL_MASK_OPAQUE_BASE	= 0x4
 	};
-	enum RComparisonFunctionType
+	enum RComparisonFunctionType : UINT8
 	{
 		COMPARISON_NEVER			= 1,
 		COMPARISON_LESS				= 2,
@@ -130,13 +130,13 @@ namespace PigeonEngine
 		COMPARISON_GREATER_EQUAL	= 7,
 		COMPARISON_ALWAYS			= 8
 	};
-	enum RCullModeType
+	enum RCullModeType : UINT8
 	{
 		CULL_NONE	= 1,
 		CULL_FRONT	= 2,
 		CULL_BACK	= 3
 	};
-	enum RFillModeType
+	enum RFillModeType : UINT8
 	{
 		FILL_WIREFRAME	= 2,
 		FILL_SOLID		= 3
@@ -149,7 +149,7 @@ namespace PigeonEngine
 		RCullModeType	CullMode;
 		RFillModeType	FillMode;
 	};
-	enum RDepthWriteMaskType
+	enum RDepthWriteMaskType : UINT8
 	{
 		DEPTH_WRITE_MASK_ZERO	= 0,
 		DEPTH_WRITE_MASK_ALL	= 1
@@ -163,7 +163,7 @@ namespace PigeonEngine
 		RDepthWriteMaskType			DepthWriteMask;
 		RComparisonFunctionType		DepthFunc;
 	};
-	enum RStencilOperationType
+	enum RStencilOperationType : UINT8
 	{
 		STENCIL_OP_KEEP			= 1,
 		STENCIL_OP_ZERO			= 2,
@@ -196,7 +196,7 @@ namespace PigeonEngine
 		RStencilStateType	FrontFace;
 		RStencilStateType	BackFace;
 	};
-	enum RBlendOptionType
+	enum RBlendOptionType : UINT8
 	{
 		BLEND_ZERO				= 1,
 		BLEND_ONE				= 2,
@@ -212,7 +212,7 @@ namespace PigeonEngine
 		BLEND_BLEND_FACTOR		= 12,
 		BLEND_INV_BLEND_FACTOR	= 13
 	};
-	enum RBlendOperationType
+	enum RBlendOperationType : UINT8
 	{
 		BLEND_OP_ADD			= 1,
 		BLEND_OP_SUBTRACT		= 2,
@@ -220,7 +220,7 @@ namespace PigeonEngine
 		BLEND_OP_MIN			= 4,
 		BLEND_OP_MAX			= 5
 	};
-	enum RColorWriteMaskType
+	enum RColorWriteMaskType : UINT8
 	{
 		COLOR_WRITE_MASK_RED	= 0x1,
 		COLOR_WRITE_MASK_GREEN	= 0x2,
@@ -242,13 +242,13 @@ namespace PigeonEngine
 		RBlendOperationType		BlendOpAlpha;
 		RColorWriteMaskType		RenderTargetWriteMask;
 	};
-	enum RFilterType
+	enum RFilterType : UINT8
 	{
 		FILTER_POINT		= 1,
 		FILTER_LINEAR		= 2,
 		FILTER_ANISOTROPIC	= 3
 	};
-	enum RTextureAddressModeType
+	enum RTextureAddressModeType : UINT8
 	{
 		TEXTURE_ADDRESS_WRAP		= 1,
 		TEXTURE_ADDRESS_MIRROR		= 2,
@@ -272,7 +272,7 @@ namespace PigeonEngine
 		FLOAT						MinLOD;
 		FLOAT						MaxLOD;
 	};
-	enum RBindFlagType
+	enum RBindFlagType : UINT8
 	{
 		BIND_NONE				= 0,
 		BIND_VERTEX_BUFFER		= (1 << 0),
@@ -284,7 +284,7 @@ namespace PigeonEngine
 		BIND_DEPTH_STENCIL		= (1 << 6),
 		BIND_UNORDERED_ACCESS	= (1 << 7)
 	};
-	enum RResourceMiscFlagType
+	enum RResourceMiscFlagType : UINT8
 	{
 		RESOURCE_MISC_NONE					= 0,
 		RESOURCE_MISC_GENERATE_MIPS			= (1 << 0),
@@ -293,20 +293,20 @@ namespace PigeonEngine
 		RESOURCE_MISC_BUFFER_STRUCTURED		= (1 << 3),
 		RESOURCE_MISC_RESOURCE_CLAMP		= (1 << 4)
 	};
-	enum RUsageFlagType
+	enum RUsageFlagType : UINT8
 	{
 		USAGE_DEFAULT		= 0,
 		USAGE_IMMUTABLE		= 1,
 		USAGE_DYNAMIC		= 2,
 		USAGE_STAGING		= 3
 	};
-	enum RCPUAccessFlagType
+	enum RCPUAccessFlagType : UINT8
 	{
 		CPU_ACCESS_DEFAULT	= 0,
 		CPU_ACCESS_WRITE	= (1 << 0),
 		CPU_ACCESS_READ		= (1 << 1)
 	};
-	enum RUAVFlagType
+	enum RUAVFlagType : UINT8
 	{
 		UAV_FLAG_NONE		= 0,
 		UAV_FLAG_RAW		= (1 << 0),
@@ -334,7 +334,7 @@ namespace PigeonEngine
 		UINT			SysMemPitch;
 		UINT			SysMemSlicePitch;
 	};
-	enum RFormatType
+	enum RFormatType : UINT32
 	{
 		FORMAT_UNKNOWN						= 0,
 		FORMAT_R32G32B32A32_TYPELESS		= 1,
@@ -503,7 +503,7 @@ namespace PigeonEngine
 		UINT					NumElements;
 		RUAVFlagType			UAVFlags;
 	};
-	enum RInputClassificationType
+	enum RInputClassificationType : UINT8
 	{
 		INPUT_PER_VERTEX_DATA		= 0,
 		INPUT_PER_INSTANCE_DATA		= 1
@@ -529,7 +529,7 @@ namespace PigeonEngine
 	SHADER_SEMANTIC##Name##15 =  SHADER_SEMANTIC##Name + 15\
 
 
-	enum RShaderSemanticType
+	enum RShaderSemanticType : UINT16
 	{
 		SHADER_SEMANTIC_NONE			= 0,
 		SHADER_SEMANTIC_PSIZE			= (1 << 6),
@@ -569,7 +569,7 @@ namespace PigeonEngine
 		RInputClassificationType	InputSlotClass;
 		UINT						InstanceDataStepRate;
 	};
-	enum RResourceMapType
+	enum RResourceMapType : UINT8
 	{
 		RESOURCE_MAP_READ				= 1,
 		RESOURCE_MAP_WRITE				= 2,
@@ -577,7 +577,7 @@ namespace PigeonEngine
 		RESOURCE_MAP_WRITE_DISCARD		= 4,
 		RESOURCE_MAP_WRITE_NO_OVERWRITE = 5
 	};
-	enum RResourceMapFlagType
+	enum RResourceMapFlagType : UINT8
 	{
 		RESOURCE_MAP_FLAG_NONE			= 0,
 		RESOURCE_MAP_FLAG_DO_NOT_WAIT	= 1
@@ -591,7 +591,7 @@ namespace PigeonEngine
 		UINT	RowPitch;
 		UINT	DepthPitch;
 	};
-	enum RQueryType
+	enum RQueryType : UINT8
 	{
 		QUERY_EVENT								= 0,
 		QUERY_OCCLUSION							= 1,
@@ -610,7 +610,7 @@ namespace PigeonEngine
 		QUERY_SO_STATISTICS_STREAM3				= 14,
 		QUERY_SO_OVERFLOW_PREDICATE_STREAM3		= 15
 	};
-	enum RQueryMiscFlagType
+	enum RQueryMiscFlagType : UINT8
 	{
 		QUERY_MISC_DEFAULT			= 0,
 		QUERY_MISC_PREDICATEHINT	= (1 << 0)
@@ -623,7 +623,7 @@ namespace PigeonEngine
 		RQueryType			QueryType;
 		RQueryMiscFlagType	MiscFlags;
 	};
-	enum RAsyncGetDataFlagType
+	enum RAsyncGetDataFlagType : UINT8
 	{
 		ASYNC_GETDATA_DEFAULT		= 0,
 		ASYNC_GETDATA_DONOTFLUSH	= (1 << 0)
@@ -637,13 +637,13 @@ namespace PigeonEngine
 		ULONGLONG	Frequency;
 		BOOL		Disjoint;
 	};
-	enum RClearDepthStencilFlagType
+	enum RClearDepthStencilFlagType : UINT8
 	{
 		CLEAR_NONE		= 0,
 		CLEAR_DEPTH		= (1 << 0),
 		CLEAR_STENCIL	= (1 << 1)
 	};
-	enum RPrimitiveTopologyType
+	enum RPrimitiveTopologyType : UINT8
 	{
 		PRIMITIVE_TOPOLOGY_UNDEFINED		= 0,
 		PRIMITIVE_TOPOLOGY_POINTLIST		= 1,

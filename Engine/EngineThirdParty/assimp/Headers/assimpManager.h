@@ -16,7 +16,7 @@ namespace PigeonEngine
 	class CAssimpManager : public EManagerBase
 	{
 	public:
-		enum CReadFileStateType
+		enum CReadFileStateType : UINT8
 		{
 			ASSIMP_READ_FILE_STATE_SUCCEED,
 			ASSIMP_READ_FILE_STATE_FAILED,

@@ -23,13 +23,27 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	static BYTE* ReadAndDecodingDigitalImage(const EString& InPathName)
+	static BOOL ReadAndDecodingDigitalImage(const EString& InPathName, BYTE*& OutByteCode, UINT& OutWidth, UINT& OutHeight, UINT& OutPixelByteCount, RFormatType& OutFormat)
 	{
+		// Initialize output values
+		{
+			if (OutByteCode)
+			{
+				delete[]OutByteCode;
+				OutByteCode = nullptr;
+			}
+			OutWidth = 0u;
+			OutHeight = 0u;
+			OutPixelByteCount = 0u;
+			OutFormat = RFormatType::FORMAT_UNKNOWN;
+		}
+
 		HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 		if (FAILED(hr))
 		{
-			return nullptr;
+			return FALSE;
 		}
+
 		IWICImagingFactory* WICImagingFactory = nullptr;
 		{
 			hr = ::CoCreateInstance(
@@ -46,9 +60,10 @@ namespace PigeonEngine
 					WICImagingFactory->Release();
 					WICImagingFactory = nullptr;
 				}
-				return nullptr;
+				return FALSE;
 			}
 		}
+
 		IWICBitmapDecoder* WICBitmapDecoder = nullptr;
 		{
 			INT WideCharSize = ::MultiByteToWideChar(CP_UTF8, 0u, *InPathName, -1, NULL, 0);
@@ -77,9 +92,10 @@ namespace PigeonEngine
 					WICImagingFactory->Release();
 					WICImagingFactory = nullptr;
 				}
-				return nullptr;
+				return FALSE;
 			}
 		}
+
 		IWICBitmapFrameDecode* WICBitmapFrameDecode = nullptr;
 		{
 			hr = WICBitmapDecoder->GetFrame(0, &WICBitmapFrameDecode);
@@ -101,9 +117,10 @@ namespace PigeonEngine
 					WICImagingFactory->Release();
 					WICImagingFactory = nullptr;
 				}
-				return nullptr;
+				return FALSE;
 			}
 		}
+
 		BYTE* OutputRenderPixelData = nullptr;
 		{
 			//Execute load texture logic.
@@ -217,8 +234,18 @@ namespace PigeonEngine
 						}
 					}
 				}
+
+				// Storage output values
+				{
+					OutByteCode = OutputRenderPixelData;
+					OutWidth = FrameWidth;
+					OutHeight = FrameHeight;
+					OutPixelByteCount = RenderDataByteCount;
+					OutFormat = RFormatType::FORMAT_UNKNOWN;
+				}
 			}
 		}
+
 		//Release COM that we created.
 		{
 			if (WICBitmapFrameDecode)
@@ -238,30 +265,25 @@ namespace PigeonEngine
 			}
 		}
 		::CoUninitialize();
-		return OutputRenderPixelData;
+		return (!!OutputRenderPixelData);
 	}
 
 	ETexture2D::ETexture2D()
 		: ByteCode(nullptr)
-		, Width(0u)
-		, Height(0u)
-		, PixelByteCount(0u)
-		, Format(RFormatType::FORMAT_UNKNOWN)
+		, ResourceProperties()
 		, SRGB(FALSE)
 	{
 	}
 	ETexture2D::ETexture2D(const ETexture2D& Other)
 		: ByteCode(nullptr)
-		, Width(Other.Width)
-		, Height(Other.Height)
-		, PixelByteCount(Other.PixelByteCount)
-		, Format(Other.Format)
+		, ResourceProperties(Other.ResourceProperties)
 		, SRGB(Other.SRGB)
 	{
-		if ((!!(Other.ByteCode)) && (Other.Width > 0u) && (Other.Height > 0u) && (Other.PixelByteCount > 0u) && (Other.Format != RFormatType::FORMAT_UNKNOWN))
+		ResourceProperties.Depth = 0u;
+		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
 		{
-			const UINT DataStride = Other.Width * Other.PixelByteCount;
-			const UINT DataSize = DataStride * Other.Height;
+			const UINT DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT DataSize = DataStride * Other.ResourceProperties.Height;
 			ByteCode = new BYTE[DataSize];
 			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
 		}
@@ -277,15 +299,13 @@ namespace PigeonEngine
 			delete[]ByteCode;
 			ByteCode = nullptr;
 		}
-		Width			= Other.Width;
-		Height			= Other.Height;
-		PixelByteCount	= Other.PixelByteCount;
-		Format			= Other.Format;
-		SRGB			= Other.SRGB;
-		if ((!!(Other.ByteCode)) && (Other.Width > 0u) && (Other.Height > 0u) && (Other.PixelByteCount > 0u) && (Other.Format != RFormatType::FORMAT_UNKNOWN))
+		ResourceProperties	= Other.ResourceProperties;
+		SRGB				= Other.SRGB;
+		ResourceProperties.Depth = 0u;
+		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
 		{
-			const UINT DataStride = Other.Width * Other.PixelByteCount;
-			const UINT DataSize = DataStride * Other.Height;
+			const UINT DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT DataSize = DataStride * Other.ResourceProperties.Height;
 			ByteCode = new BYTE[DataSize];
 			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
 		}
@@ -293,29 +313,28 @@ namespace PigeonEngine
 	}
 	BOOL ETexture2D::IsValid()const
 	{
-		return ((!!ByteCode) && (Width > 0u) && (Height > 0u) && (PixelByteCount > 0u) && (Format != RFormatType::FORMAT_UNKNOWN));
+		return ((!!ByteCode) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN));
 	}
 	void ETexture2D::Release()
 	{
-		Width			= 0u;
-		Height			= 0u;
-		PixelByteCount	= 0u;
-		Format			= RFormatType::FORMAT_UNKNOWN;
-		SRGB			= FALSE;
+		ResourceProperties	= ETextureResourceProperty();
+		SRGB				= FALSE;
 		if (ByteCode)
 		{
 			delete[]ByteCode;
 			ByteCode = nullptr;
 		}
 	}
-	void ETexture2D::SetData(BYTE* InByteCode, UINT InWidth, UINT InHeight, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB)
+	void ETexture2D::SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB)
 	{
-		ByteCode		= InByteCode;
-		Width			= InWidth;
-		Height			= InHeight;
-		PixelByteCount	= InPixelByteCount;
-		Format			= InFormat;
-		SRGB			= InSRGB;
+		if (ByteCode)
+		{
+			delete[]ByteCode;
+			ByteCode = nullptr;
+		}
+		ByteCode			= InByteCode;
+		ResourceProperties	= ETextureResourceProperty(InWidth, InHeigh, 0u, InPixelByteCount, InFormat);
+		SRGB				= InSRGB;
 	}
 
 	ETexture2DAsset::ETexture2DAsset(
@@ -335,6 +354,26 @@ namespace PigeonEngine
 	}
 	BOOL ETexture2DAsset::InitResource()
 	{
+		if (IsInitialized())
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString errorInfo = EString("Texture2D name=[") + DebugName + "] path = [" + TexturePath + "] has been Initialized.";
+				PE_FAILED((ENGINE_TEXTURE_ERROR), errorInfo);
+			}
+#endif
+			return TRUE;
+		}
+		if (CreateRenderResourceInternal(
+			[this](ETexture2D* InResource)->RTexture2DResource*
+			{
+				return (this->CreateTextureResource(InResource));
+			},
+			FALSE))
+		{
+			bIsInitialized = TRUE;
+			return TRUE;
+		}
 		return FALSE;
 	}
 	const EString& ETexture2DAsset::GetTexturePath()const
@@ -344,17 +383,78 @@ namespace PigeonEngine
 	RTexture2DResource* ETexture2DAsset::CreateTextureResource(ETexture2D* InResource)
 	{
 		RTexture2DResource* Result = nullptr;
-		//if ((!!InResource) && (InResource->IsValid()))
-		//{
-		//	RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-		//	Result = new RTexture2DResource();
-		//	if (!deviceD3D11->CreateTexture2D())
-		//	{
-		//		delete Result;
-		//		Result = nullptr;
-		//	}
-		//}
+		if ((!!InResource) && (InResource->IsValid()))
+		{
+			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
+			RSubresourceDataDesc TempInitData;
+			{
+				TempInitData.pSysMem = InResource->ByteCode;
+				TempInitData.SysMemPitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount;
+				TempInitData.SysMemSlicePitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount * InResource->ResourceProperties.Height;
+			}
+			Result = new RTexture2DResource();
+			if (!deviceD3D11->CreateTexture2D(*Result, RTextureDesc(InResource->ResourceProperties.Width, InResource->ResourceProperties.Height, RBindFlagType::BIND_SHADER_RESOURCE, InResource->ResourceProperties.Format), &TempInitData))
+			{
+				delete Result;
+				Result = nullptr;
+			}
+		}
 		return Result;
+	}
+
+	ETextureAssetManager::ETextureAssetManager()
+	{
+#ifdef _EDITOR_ONLY
+		DebugName = ENGINE_TEXTURE_ASSET_MANAGER_NAME;
+#endif
+	}
+	ETextureAssetManager::~ETextureAssetManager()
+	{
+	}
+	void ETextureAssetManager::Initialize()
+	{
+	}
+	void ETextureAssetManager::ShutDown()
+	{
+	}
+	BOOL ETextureAssetManager::ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath)
+	{
+		BYTE* ReadByteCode = nullptr; UINT ReadWidth = 0u, ReadHeight = 0u, ReadPixelByteCount = 0u; RFormatType ReadFormat = RFormatType::FORMAT_UNKNOWN;
+		if (!ReadAndDecodingDigitalImage(InImportPath, ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat))
+		{
+			if (ReadByteCode)
+			{
+				delete[]ReadByteCode;
+				ReadByteCode = nullptr;
+			}
+			return FALSE;
+		}
+		if ((!ReadByteCode) || (ReadWidth == 0u) || (ReadHeight == 0u) || (ReadPixelByteCount == 0u) || (ReadFormat == RFormatType::FORMAT_UNKNOWN))
+		{
+			if (ReadByteCode)
+			{
+				delete[]ReadByteCode;
+				ReadByteCode = nullptr;
+			}
+			return FALSE;
+		}
+		ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
+		ETextureResourceProperty NeedSaveTexture2DProperties;
+		NeedSaveTexture2DProperties.Width			= ReadWidth;
+		NeedSaveTexture2DProperties.Height			= ReadHeight;
+		NeedSaveTexture2DProperties.PixelByteCount	= ReadPixelByteCount;
+		NeedSaveTexture2DProperties.Format			= ReadFormat;
+		NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
+
+		return FALSE;
+	}
+	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset)
+	{
+		return FALSE;
+	}
+	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource)
+	{
+		return FALSE;
 	}
 
 };

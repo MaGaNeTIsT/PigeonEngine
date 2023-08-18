@@ -8,7 +8,7 @@
 namespace PigeonEngine
 {
 
-	enum EAnimationBehaviourType
+	enum EAnimationBehaviourType : UINT8
 	{
 		ANIMATION_BEHAVIOUR_DEFAULT		= 0,
 		ANIMATION_BEHAVIOUR_CONSTANT	= 1,

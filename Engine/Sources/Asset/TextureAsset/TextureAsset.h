@@ -12,19 +12,38 @@
 namespace PigeonEngine
 {
 
+	struct ETextureResourceProperty
+	{
+		ETextureResourceProperty()noexcept : Width(0u), Height(0u), Depth(0u), PixelByteCount(0u), Format(RFormatType::FORMAT_UNKNOWN) {}
+		ETextureResourceProperty(const ETextureResourceProperty& Other)noexcept : Width(Other.Width), Height(Other.Height), Depth(Other.Depth), PixelByteCount(Other.PixelByteCount), Format(Other.Format) {}
+		ETextureResourceProperty(UINT InWidth, UINT InHeight, UINT InDepth, UINT InPixelByteCount, RFormatType InFormat)noexcept : Width(InWidth), Height(InHeight), Depth(InDepth), PixelByteCount(InPixelByteCount), Format(InFormat) {}
+		ETextureResourceProperty& operator=(const ETextureResourceProperty& Other)
+		{
+			Width			= Other.Width;
+			Height			= Other.Height;
+			Depth			= Other.Depth;
+			PixelByteCount	= Other.PixelByteCount;
+			Format			= Other.Format;
+			return (*this);
+		}
+
+		UINT			Width;
+		UINT			Height;
+		UINT			Depth;
+		UINT			PixelByteCount;
+		RFormatType		Format;
+	};
+
 	class ETexture2D : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
-		void	SetData(BYTE* InByteCode, UINT InWidth, UINT InHeight, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB);
+		virtual BOOL	IsValid()const override;
+		virtual void	Release()override;
+		void			SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB);
 	protected:
-		BYTE*			ByteCode;
-		UINT			Width;
-		UINT			Height;
-		UINT			PixelByteCount;
-		RFormatType		Format;
-		BOOL			SRGB;
+		BYTE*						ByteCode;
+		ETextureResourceProperty	ResourceProperties;
+		BOOL						SRGB;
 	public:
 		friend class ETexture2DAsset;
 	public:
@@ -49,7 +68,7 @@ namespace PigeonEngine
 	protected:
 		RTexture2DResource*	CreateTextureResource(ETexture2D* InResource);
 	protected:
-		EString		TexturePath;
+		EString TexturePath;
 	public:
 		ETexture2DAsset() = delete;
 
@@ -62,9 +81,13 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, ETexture2DAsset>		ETexture2DAssetManager;
 	public:
-
+		virtual void Initialize()override;
+		virtual void ShutDown()override;
+	public:
+		BOOL ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
 	private:
-
+		BOOL SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource);
 	private:
 		ETexture2DAssetManager	Texture2DAssetManager;
 

@@ -226,6 +226,12 @@ namespace PigeonEngine
 	EShaderAssetManager::~EShaderAssetManager()
 	{
 	}
+	void EShaderAssetManager::Initialize()
+	{
+	}
+	void EShaderAssetManager::ShutDown()
+	{
+	}
 	BOOL EShaderAssetManager::ImportShaderCSO(const EString& inPath, const EString& outPath, const RInputLayoutDesc* inShaderInputLayouts, const UINT* inShaderInputLayoutNum)
 	{
 		const static EString importShaderNameType(ENGINE_IMPORT_SHADER_NAME_TYPE);
@@ -416,14 +422,42 @@ namespace PigeonEngine
 			return nullptr;
 		}
 		Check(ENGINE_ASSET_ERROR, "Error read shader asset file size are too small.", (readFileSize > (sizeof(INT) * 2u)));
-		INT shaderFrequency = ((INT*)readFileMem)[0];
-		UINT shaderInputLayoutNum = static_cast<UINT>(((INT*)readFileMem)[1]);
-		ULONG shaderCSOSize = readFileSize - sizeof(INT) * 2u;
+		EAssetType AssetType = static_cast<EAssetType>(((UINT32*)readFileMem)[0]);
+		if (AssetType == EAssetType::ASSET_TYPE_UNKNOWN || AssetType >= EAssetType::ASSET_TYPE_COUNT)
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString errorData("Try to loading shader asset but is not shader asset type. (load file path : ");
+				errorData += loadPath;
+				errorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
+			}
+#endif
+			delete[]readFileMem;
+			return nullptr;
+		}
+		UINT32 ReadShaderFrequency = ((UINT32*)readFileMem)[1];
+		RShaderFrequencyType ShaderFrequency = static_cast<RShaderFrequencyType>(static_cast<UINT8>(ReadShaderFrequency));
+		if (ShaderFrequency >= RShaderFrequencyType::SHADER_FREQUENCY_COUNT)
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString errorData("Try to loading shader asset but shader frequency is error type. (load file path : ");
+				errorData += loadPath;
+				errorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (errorData));
+			}
+#endif
+			delete[]readFileMem;
+			return nullptr;
+		}
+		UINT shaderInputLayoutNum = static_cast<UINT>(((UINT32*)readFileMem)[2]);
+		ULONG shaderCSOSize = readFileSize - (sizeof(UINT32) * 2u) - sizeof(UINT32);
 		TArray<RInputLayoutDesc> shaderInputLayouts;
 		if (shaderInputLayoutNum > 0u)
 		{
-			shaderCSOSize = shaderCSOSize - sizeof(RInputLayoutDesc) * shaderInputLayoutNum;
-			RInputLayoutDesc* tempInputlayouts = (RInputLayoutDesc*)(&(((INT*)readFileMem)[2]));
+			shaderCSOSize = shaderCSOSize - (sizeof(RInputLayoutDesc) * shaderInputLayoutNum);
+			RInputLayoutDesc* tempInputlayouts = (RInputLayoutDesc*)(&(((UINT32*)readFileMem)[3]));
 			shaderInputLayouts.Resize(shaderInputLayoutNum);
 			for (UINT layoutIndex = 0u; layoutIndex < shaderInputLayoutNum; layoutIndex++)
 			{
@@ -431,7 +465,7 @@ namespace PigeonEngine
 			}
 		}
 		TShaderAssetType* result = nullptr;
-		if (shaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
+		if (ShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 		{
 			EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(loadPath
 #ifdef _EDITOR_ONLY
@@ -482,9 +516,9 @@ namespace PigeonEngine
 	{
 		if (inShaderResource && inShaderResource->ShaderByteCode && (inShaderResource->ShaderByteCodeSize > 0u))
 		{
-			const INT shaderFrequency = static_cast<INT>(inShaderFrequency);
-			INT shaderInputLayoutNum = 0;
-			ULONG shaderSaveSize = inShaderResource->ShaderByteCodeSize + sizeof(INT) * 2u;
+			const UINT32 shaderFrequency = static_cast<UINT32>(inShaderFrequency);
+			UINT32 shaderInputLayoutNum = 0u;
+			ULONG shaderSaveSize = sizeof(UINT32) + (sizeof(UINT32) * 2u) + inShaderResource->ShaderByteCodeSize;
 			switch (inShaderFrequency)
 			{
 			case RShaderFrequencyType::SHADER_FREQUENCY_PIXEL:
@@ -499,8 +533,8 @@ namespace PigeonEngine
 					PE_FAILED((ENGINE_ASSET_ERROR), ("Try to save vertex shader asset, but do not contain input layouts."));
 					return FALSE;
 				}
-				shaderInputLayoutNum = static_cast<INT>(*inShaderInputLayoutNum);
-				shaderSaveSize += sizeof(RInputLayoutDesc) * static_cast<UINT>(shaderInputLayoutNum);
+				shaderInputLayoutNum = static_cast<UINT32>(*inShaderInputLayoutNum);
+				shaderSaveSize += sizeof(RInputLayoutDesc) * static_cast<ULONG>(shaderInputLayoutNum);
 			}
 			break;
 			case RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE:
@@ -518,12 +552,13 @@ namespace PigeonEngine
 			//TODO We copy whole cso memory into a new memory that only for header info. So we could change save code for reduce cost.
 			void* saveMem = new BYTE[shaderSaveSize];
 			{
-				const UINT shaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<UINT>(shaderInputLayoutNum);
-				((INT*)saveMem)[0] = shaderFrequency;
-				((INT*)saveMem)[1] = shaderInputLayoutNum;
-				void* cpyStart = (void*)(&(((INT*)saveMem)[2]));
-				ULONG rstSize = shaderSaveSize - sizeof(INT) * 2u;
-				if (shaderInputLayoutNum > 0)
+				const UINT shaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(shaderInputLayoutNum);
+				((UINT32*)saveMem)[0] = EAssetType::ASSET_TYPE_SHADER;
+				((UINT32*)saveMem)[1] = shaderFrequency;
+				((UINT32*)saveMem)[2] = shaderInputLayoutNum;
+				void* cpyStart = (void*)(&(((UINT32*)saveMem)[3]));
+				ULONG rstSize = shaderSaveSize - (sizeof(UINT32) * 3u);
+				if (shaderInputLayoutNum > 0u)
 				{
 					::memcpy_s(cpyStart, rstSize, inShaderInputLayouts, shaderInputLayoutDescSize);
 					cpyStart = (void*)(&(((BYTE*)cpyStart)[shaderInputLayoutDescSize]));

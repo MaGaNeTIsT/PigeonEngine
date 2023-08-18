@@ -22,7 +22,16 @@ namespace PigeonEngine
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
 	{
+		ETimeKey() = default;
+		ETimeKey(const ETimeKey& Other) : Time(Other.Time), Value(Other.Value) {}
 		ETimeKey(const TTimeType& InTime, const TValueType& InValue) : Time(InTime), Value(InValue) {}
+		ETimeKey& operator=(const ETimeKey& Other)
+		{
+			Time	= Other.Time;
+			Value	= Other.Value;
+			return (*this);
+		}
+
 		TTimeType	Time;
 		TValueType	Value;
 	};
@@ -49,6 +58,69 @@ namespace PigeonEngine
 	template<typename TTimeType>
 	struct ETransformTimeCurve
 	{
+		ETransformTimeCurve() = default;
+		ETransformTimeCurve(const ETransformTimeCurve& Other)
+		{
+			if (Other.PositionKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
+				{
+					PositionKeys.Add(Other.PositionKeys[i]);
+				}
+			}
+			if (Other.RotationKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.RotationKeys.Length(); i < n; i++)
+				{
+					RotationKeys.Add(Other.RotationKeys[i]);
+				}
+			}
+			if (Other.ScalingKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.ScalingKeys.Length(); i < n; i++)
+				{
+					ScalingKeys.Add(Other.ScalingKeys[i]);
+				}
+			}
+		}
+		ETransformTimeCurve& operator=(const ETransformTimeCurve& Other)
+		{
+			if (PositionKeys.Length() > 0u)
+			{
+				PositionKeys.Clear();
+			}
+			if (RotationKeys.Length() > 0u)
+			{
+				RotationKeys.Clear();
+			}
+			if (ScalingKeys.Length() > 0u)
+			{
+				ScalingKeys.Clear();
+			}
+			if (Other.PositionKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
+				{
+					PositionKeys.Add(Other.PositionKeys[i]);
+				}
+			}
+			if (Other.RotationKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.RotationKeys.Length(); i < n; i++)
+				{
+					RotationKeys.Add(Other.RotationKeys[i]);
+				}
+			}
+			if (Other.ScalingKeys.Length() > 0u)
+			{
+				for (UINT i = 0u, n = Other.ScalingKeys.Length(); i < n; i++)
+				{
+					ScalingKeys.Add(Other.ScalingKeys[i]);
+				}
+			}
+			return (*this);
+		}
+
 		TArray<ETimeKey<Vector3, TTimeType>>	PositionKeys;
 		TArray<ETimeKey<Quaternion, TTimeType>>	RotationKeys;
 		TArray<ETimeKey<Vector3, TTimeType>>	ScalingKeys;

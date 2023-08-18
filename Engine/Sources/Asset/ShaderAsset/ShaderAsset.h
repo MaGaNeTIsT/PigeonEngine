@@ -163,6 +163,9 @@ namespace PigeonEngine
 		typedef TAssetManager<EString, EPixelShaderAsset>		EPixelShaderManager;
 		typedef TAssetManager<EString, EComputeShaderAsset>		EComputeShaderManager;
 	public:
+		virtual void Initialize()override;
+		virtual void ShutDown()override;
+	public:
 		BOOL ImportShaderCSO(const EString& inPath, const EString& outPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
 		BOOL LoadVertexShaderAsset(EString& loadPath, const EVertexShaderAsset*& outShaderAsset);
 		BOOL LoadPixelShaderAsset(EString& loadPath, const EPixelShaderAsset*& outShaderAsset);

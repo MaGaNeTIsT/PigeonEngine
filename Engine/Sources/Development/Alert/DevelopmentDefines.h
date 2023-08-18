@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../EngineCore/Main/Main.h"
+#include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
 
 namespace PigeonEngine
@@ -10,7 +11,7 @@ namespace PigeonEngine
 	class DWindowsMessage
 	{
 	public:
-		enum DWindowsBoxType
+		enum DWindowsBoxType : UINT8
 		{
 			WINDOWS_BOX_TYPE_OK = 0,
 		};
