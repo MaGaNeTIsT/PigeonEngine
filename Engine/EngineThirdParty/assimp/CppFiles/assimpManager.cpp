@@ -635,7 +635,7 @@ namespace PigeonEngine
 	static EIndexData* TranslateAssimpMeshFaceToEngineMeshIndices(const aiMesh* InMesh)
 	{
 		const UINT ElementNum = InMesh->mNumFaces * 3u;
-		const UINT IndexStride = (ElementNum > 0xffffu) ? 4u : 2u;	// Index stride is integer_32bit or integer_16bit
+		const UINT IndexStride = ((InMesh->mNumVertices) > 0xffffu) ? 4u : 2u;	// Index stride is integer_32bit or integer_16bit
 		EIndexData* OutMeshIndices = new EIndexData(IndexStride, ElementNum);
 		if (!(OutMeshIndices->Indices))
 		{
@@ -647,7 +647,16 @@ namespace PigeonEngine
 			Check((ENGINE_ASSET_ERROR), ("We must import mesh that only consist of triangles."), (TempFace.mNumIndices == 3u));
 			for (UINT TriangleIndex = 0u; TriangleIndex < 3u; TriangleIndex++)
 			{
-				OutMeshIndices->Indices[FaceIndex * 3u + TriangleIndex] = TempFace.mIndices[TriangleIndex];
+				if ((FaceIndex * 3u + TriangleIndex) < ElementNum)
+				{
+#if _EDITOR_ONLY
+					if (IndexStride == 2u)
+					{
+						Check((ENGINE_ASSET_ERROR), ("Half type index buffer can not greater than 65535u."), ((TempFace.mIndices[TriangleIndex]) <= 0xffffu));
+					}
+#endif
+					OutMeshIndices->Indices[FaceIndex * 3u + TriangleIndex] = TempFace.mIndices[TriangleIndex];
+				}
 			}
 		}
 		return OutMeshIndices;

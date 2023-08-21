@@ -408,6 +408,7 @@ namespace PigeonEngine
 		BOOL					AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
 		BOOL					RemoveSkinElement(UINT InLayoutIndex);
 		BOOL					GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
+		const ESkinPart&		GetSkins()const;
 	protected:
 		EBindPoseValue	BindPoseValue;
 		EBindPoseIndex	BindPoseIndex;
@@ -430,7 +431,9 @@ namespace PigeonEngine
 		EMeshRenderResource(const EMeshRenderResource& Other);
 		virtual ~EMeshRenderResource();
 	protected:
-		void CopyRenderResourcesInternal(const EMeshRenderResource* Other);
+		BOOL	CreateIndexRenderResourceInternal(const EMesh* InMesh);
+		BOOL	CreateVertexRenderResourceInternal(const EMesh* InMesh);
+		void	CopyRenderResourcesInternal(const EMeshRenderResource* Other);
 	protected:
 		RBufferResource			IndexRenderResource;
 		TArray<RBufferResource>	VertexRenderResources;
@@ -467,9 +470,13 @@ namespace PigeonEngine
 		ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other);
 		virtual ~ESkinnedMeshRenderResource();
 	protected:
+		BOOL	CreateSkeletonRenderResourceInternal();
+		void	CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other);
+	protected:
 		const class ESkeleton*	Skeleton;
 		RBufferResource			SkeletonRenderResource;
 		ESkinnedMesh*			SkinnedMesh;
+		TArray<RBufferResource>	SkinRenderResources;
 	};
 
 	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
@@ -505,7 +512,7 @@ namespace PigeonEngine
 
 	};
 
-	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>
+	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>
 	{
 	public:
 		EStaticMeshAsset(
@@ -518,7 +525,7 @@ namespace PigeonEngine
 	public:
 		virtual BOOL InitResource()override;
 	protected:
-		EMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
+		EStaticMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
 	public:
 		EStaticMeshAsset() = delete;
 

@@ -1,4 +1,5 @@
 #include "MeshAsset.h"
+#include <RenderDevice/DeviceD3D11.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
 namespace PigeonEngine
@@ -22,7 +23,7 @@ namespace PigeonEngine
 		RegisterClassType<EStaticMeshRenderResource, EMeshRenderResource>();
 		RegisterClassType<ESkinnedMeshRenderResource, EMeshRenderResource>();
 
-		RegisterMeshClassTypes<EStaticMesh, EMeshRenderResource, EMeshType::MESH_TYPE_STATIC, EStaticMeshAsset>();
+		RegisterMeshClassTypes<EStaticMesh, EStaticMeshRenderResource, EMeshType::MESH_TYPE_STATIC, EStaticMeshAsset>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -867,6 +868,10 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
+	const ESkinnedMesh::ESkinPart& ESkinnedMesh::GetSkins()const
+	{
+		return Skins;
+	}
 
 	EMeshRenderResource::EMeshRenderResource()
 	{
@@ -903,6 +908,121 @@ namespace PigeonEngine
 			}
 			VertexRenderResources.Clear();
 		}
+	}
+	BOOL EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		if (const EIndexData* OutIndexData = nullptr; InMesh->GetIndexElement(OutIndexData))
+		{
+			if (IndexRenderResource.IsRenderResourceValid())
+			{
+				IndexRenderResource.ReleaseRenderResource();
+			}
+			UINT32 IndexType = static_cast<UINT32>(OutIndexData->PartType);
+			if ((IndexType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
+			{
+				RSubresourceDataDesc SubresourceDataDesc;
+				SubresourceDataDesc.pSysMem = OutIndexData->Indices;
+				if (!(RenderDevice->CreateBuffer(
+					(IndexRenderResource.Buffer),
+					RBufferDesc((4u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
+					(&SubresourceDataDesc))))
+				{
+#if _EDITOR_ONLY
+					EString ErrorInfo("Create mesh [name = ");
+					ErrorInfo += InMesh->GetDebugName();
+					ErrorInfo += "] index buffer [num = ";
+					ErrorInfo += ToString(OutIndexData->ElementNum);
+					ErrorInfo += "] [stride = 32bits] failed.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+					return FALSE;
+				}
+			}
+			else if ((IndexType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
+			{
+				UINT16* TempIndices = new UINT16[OutIndexData->ElementNum];
+				for (UINT i = 0u, n = OutIndexData->ElementNum; i < n; i++)
+				{
+					Check((ENGINE_ASSET_ERROR), ("Mesh index type check failed, half index element num must lower than 65535u."), ((OutIndexData->Indices[i]) < 0xffffu));
+					TempIndices[i] = static_cast<UINT16>(OutIndexData->Indices[i]);
+				}
+				RSubresourceDataDesc SubresourceDataDesc;
+				SubresourceDataDesc.pSysMem = TempIndices;
+				if (!(RenderDevice->CreateBuffer(
+					(IndexRenderResource.Buffer),
+					RBufferDesc((4u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
+					(&SubresourceDataDesc))))
+				{
+#if _EDITOR_ONLY
+					EString ErrorInfo("Create mesh [name = ");
+					ErrorInfo += InMesh->GetDebugName();
+					ErrorInfo += "] index buffer [num = ";
+					ErrorInfo += ToString(OutIndexData->ElementNum);
+					ErrorInfo += "] [stride = 16bits] failed.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+					delete[]TempIndices;
+					return FALSE;
+				}
+				delete[]TempIndices;
+			}
+			else
+			{
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	BOOL EMeshRenderResource::CreateVertexRenderResourceInternal(const EMesh* InMesh)
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		const EMesh::EVertexPart& MeshVertices = InMesh->GetVertices();
+		if (MeshVertices.Length() == 0u)
+		{
+#if _EDITOR_ONLY
+			EString ErrorInfo("Create vertex render resource but mesh [name = ");
+			ErrorInfo += InMesh->GetDebugName();
+			ErrorInfo += "] does not contain vertex datas";
+			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+			return FALSE;
+		}
+		if (VertexRenderResources.Length() > 0u)
+		{
+			for (UINT i = 0u, n = VertexRenderResources.Length(); i < n; i++)
+			{
+				VertexRenderResources[i].ReleaseRenderResource();
+			}
+			VertexRenderResources.Clear();
+		}
+		BOOL FullyCreated = TRUE;
+		for (UINT MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
+		{
+			const EVertexData& MeshVertexData = MeshVertices[MeshVertexIndex];
+			RSubresourceDataDesc SubresourceDataDesc;
+			SubresourceDataDesc.pSysMem = MeshVertexData.Datas;
+			RBufferResource NewVertexRenderResource;
+			if (!(RenderDevice->CreateBuffer(
+				(NewVertexRenderResource.Buffer),
+				RBufferDesc((MeshVertexData.Stride * MeshVertexData.ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+				(&SubresourceDataDesc))))
+			{
+#if _EDITOR_ONLY
+				EString ErrorInfo("Create mesh [name = ");
+				ErrorInfo += InMesh->GetDebugName();
+				ErrorInfo += "] vertex buffer [num = ";
+				ErrorInfo += ToString(MeshVertexData.ElementNum);
+				ErrorInfo += "] [stride = ";
+				ErrorInfo += ToString(MeshVertexData.Stride);
+				ErrorInfo += "] failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+				FullyCreated = FALSE;
+			}
+			VertexRenderResources.Add(NewVertexRenderResource);
+		}
+		return FullyCreated;
 	}
 	void EMeshRenderResource::CopyRenderResourcesInternal(const EMeshRenderResource* Other)
 	{
@@ -948,20 +1068,21 @@ namespace PigeonEngine
 	}
 	BOOL EStaticMeshRenderResource::InitRenderResource()
 	{
+		if (EMeshRenderResource::IsRenderResourceValid())
+		{
+			EMeshRenderResource::ReleaseRenderResource();
+		}
 		if ((!!StaticMesh) && (StaticMesh->IsResourceValid()))
 		{
-			if (const EIndexData* OutIndexData = nullptr; StaticMesh->GetIndexElement(OutIndexData))
+			if (!(EMeshRenderResource::CreateIndexRenderResourceInternal(StaticMesh)))
 			{
-				EVertexLayoutType IndexType = static_cast<EVertexLayoutType>(OutIndexData->PartType);
-				if ((IndexType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
-				{
-
-				}
-				else if ((IndexType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
-				{
-
-				}
+				return FALSE;
 			}
+			if (!(EMeshRenderResource::CreateVertexRenderResourceInternal(StaticMesh)))
+			{
+				return FALSE;
+			}
+			return TRUE;
 		}
 		return FALSE;
 	}
@@ -982,6 +1103,7 @@ namespace PigeonEngine
 	ESkinnedMeshRenderResource::ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other)
 		: EMeshRenderResource(Other), Skeleton(Other.Skeleton), SkinnedMesh(Other.SkinnedMesh)
 	{
+
 	}
 	ESkinnedMeshRenderResource::~ESkinnedMeshRenderResource()
 	{
@@ -997,11 +1119,36 @@ namespace PigeonEngine
 	}
 	BOOL ESkinnedMeshRenderResource::IsRenderResourceValid()const
 	{
-		return ((!!Skeleton) && (!!SkinnedMesh) && (SkeletonRenderResource.IsRenderResourceValid()) && (EMeshRenderResource::IsRenderResourceValid()));
+		if (SkinRenderResources.Length() > 0u)
+		{
+			BOOL Result = TRUE;
+			for (UINT i = 0u, n = SkinRenderResources.Length(); i < n; i++)
+			{
+				Result = Result && SkinRenderResources[i].IsRenderResourceValid();
+			}
+			return (Result && (!!Skeleton) && (!!SkinnedMesh) && (SkeletonRenderResource.IsRenderResourceValid()) && (EMeshRenderResource::IsRenderResourceValid()));
+		}
+		return FALSE;
 	}
 	BOOL ESkinnedMeshRenderResource::InitRenderResource()
 	{
-		//TODO
+		if (EMeshRenderResource::IsRenderResourceValid())
+		{
+			EMeshRenderResource::ReleaseRenderResource();
+		}
+		if ((!!SkinnedMesh) && (SkinnedMesh->IsResourceValid()))
+		{
+			if (!(EMeshRenderResource::CreateIndexRenderResourceInternal(SkinnedMesh)))
+			{
+				return FALSE;
+			}
+			if (!(EMeshRenderResource::CreateVertexRenderResourceInternal(SkinnedMesh)))
+			{
+				return FALSE;
+			}
+
+			return TRUE;
+		}
 		return FALSE;
 	}
 	void ESkinnedMeshRenderResource::ReleaseRenderResource()
@@ -1010,6 +1157,70 @@ namespace PigeonEngine
 		SkinnedMesh = nullptr;
 		SkeletonRenderResource.ReleaseRenderResource();
 		EMeshRenderResource::ReleaseRenderResource();
+	}
+	BOOL ESkinnedMeshRenderResource::CreateSkeletonRenderResourceInternal()
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		const EMesh::EVertexPart& MeshVertices = SkinnedMesh->GetSkinElement();
+		if (MeshVertices.Length() == 0u)
+		{
+#if _EDITOR_ONLY
+			EString ErrorInfo("Create vertex render resource but mesh [name = ");
+			ErrorInfo += InMesh->GetDebugName();
+			ErrorInfo += "] does not contain vertex datas";
+			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+			return FALSE;
+		}
+		if (VertexRenderResources.Length() > 0u)
+		{
+			for (UINT i = 0u, n = VertexRenderResources.Length(); i < n; i++)
+			{
+				VertexRenderResources[i].ReleaseRenderResource();
+			}
+			VertexRenderResources.Clear();
+		}
+		BOOL FullyCreated = TRUE;
+		for (UINT MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
+		{
+			const EVertexData& MeshVertexData = MeshVertices[MeshVertexIndex];
+			RSubresourceDataDesc SubresourceDataDesc;
+			SubresourceDataDesc.pSysMem = MeshVertexData.Datas;
+			RBufferResource NewVertexRenderResource;
+			if (!(RenderDevice->CreateBuffer(
+				(NewVertexRenderResource.Buffer),
+				RBufferDesc((MeshVertexData.Stride * MeshVertexData.ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+				(&SubresourceDataDesc))))
+			{
+#if _EDITOR_ONLY
+				EString ErrorInfo("Create mesh [name = ");
+				ErrorInfo += InMesh->GetDebugName();
+				ErrorInfo += "] vertex buffer [num = ";
+				ErrorInfo += ToString(MeshVertexData.ElementNum);
+				ErrorInfo += "] [stride = ";
+				ErrorInfo += ToString(MeshVertexData.Stride);
+				ErrorInfo += "] failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+				FullyCreated = FALSE;
+			}
+			VertexRenderResources.Add(NewVertexRenderResource);
+		}
+		return FullyCreated;
+	}
+	void ESkinnedMeshRenderResource::CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other)
+	{
+		if ((!Other) || (!(Other->IsRenderResourceValid())))
+		{
+			return;
+		}
+		if (Other->SkinRenderResources.Length() > 0u)
+		{
+			for (UINT i = 0u, n = Other->SkinRenderResources.Length(); i < n; i++)
+			{
+				SkinRenderResources.Add(Other->SkinRenderResources[i]);
+			}
+		}
 	}
 
 	EStaticMeshAsset::EStaticMeshAsset(
@@ -1052,7 +1263,7 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	EMeshRenderResource* EStaticMeshAsset::CreateMeshResource(EStaticMesh* InResource)
+	EStaticMeshRenderResource* EStaticMeshAsset::CreateMeshResource(EStaticMesh* InResource)
 	{
 
 		return nullptr;
