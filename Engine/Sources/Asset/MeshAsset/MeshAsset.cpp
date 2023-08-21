@@ -1,4 +1,5 @@
 #include "MeshAsset.h"
+#include <SkeletonAsset/SkeletonAsset.h>
 
 namespace PigeonEngine
 {
@@ -18,6 +19,8 @@ namespace PigeonEngine
 		RegisterClassType<EStaticMesh, EMesh>();
 		RegisterClassType<ESkinnedMesh, EMesh>();
 		RegisterClassType<EMeshRenderResource, EObjectBase, RRenderResourceInterface>();
+		RegisterClassType<EStaticMeshRenderResource, EMeshRenderResource>();
+		RegisterClassType<ESkinnedMeshRenderResource, EMeshRenderResource>();
 
 		RegisterMeshClassTypes<EStaticMesh, EMeshRenderResource, EMeshType::MESH_TYPE_STATIC, EStaticMeshAsset>();
 	}
@@ -149,7 +152,7 @@ namespace PigeonEngine
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
 	}
-	BOOL EMesh::IsValid()const
+	BOOL EMesh::IsResourceValid()const
 	{
 		if (Vertices.Length() > 0u)
 		{
@@ -163,7 +166,12 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	void EMesh::Release()
+	BOOL EMesh::InitResource()
+	{
+		// Mesh resource must init by mesh manager.
+		return TRUE;
+	}
+	void EMesh::ReleaseResource()
 	{
 		Indices.Release();
 		for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
@@ -176,13 +184,13 @@ namespace PigeonEngine
 	}
 	BOOL EMesh::CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const
 	{
-		if (InLayoutType == EVertexLayoutType::MESH_INDEX_FULL)
+		if ((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
 		{
-			return ((VertexLayout & EVertexLayoutType::MESH_INDEX_FULL) > 0);
+			return ((VertexLayout & EVertexLayoutType::MESH_INDEX_FULL) != 0u);
 		}
-		else if (InLayoutType == EVertexLayoutType::MESH_INDEX_HALF)
+		else if ((InLayoutType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
 		{
-			return ((VertexLayout & EVertexLayoutType::MESH_INDEX_HALF) > 0);
+			return ((VertexLayout & EVertexLayoutType::MESH_INDEX_HALF) != 0u);
 		}
 		else
 		{
@@ -190,7 +198,7 @@ namespace PigeonEngine
 			{
 				return FALSE;
 			}
-			return ((VertexLayout & (InLayoutType << InPartIndex)) > 0);
+			return ((VertexLayout & (InLayoutType << InPartIndex)) != 0u);
 		}
 	}
 	const EString& EMesh::GetMeshName()const
@@ -242,8 +250,8 @@ namespace PigeonEngine
 		if (Indices.PartType != 0u)
 		{
 			EVertexLayoutType OldPartType = static_cast<EVertexLayoutType>(Indices.PartType);
-			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
-				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
+			if ((((OldPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (Indices.Stride != 2u)) ||
+				(((OldPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (Indices.Stride != 4u)))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh [old] index check failed. Part type is not match with stride."));
 				return FALSE;
@@ -252,8 +260,8 @@ namespace PigeonEngine
 			SetVertexLayoutPartExistInternal(OldPartType, 0u, FALSE);
 		}
 		EVertexLayoutType NewPartType = static_cast<EVertexLayoutType>(InIndexData->PartType);
-		if (((NewPartType == EVertexLayoutType::MESH_INDEX_HALF) && (InIndexData->Stride != 2u)) ||
-			((NewPartType == EVertexLayoutType::MESH_INDEX_FULL) && (InIndexData->Stride != 4u)))
+		if ((((NewPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (InIndexData->Stride != 2u)) ||
+			(((NewPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (InIndexData->Stride != 4u)))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh [new] index check failed. Part type is not match with stride."));
 			return FALSE;
@@ -271,8 +279,8 @@ namespace PigeonEngine
 		{
 			EVertexLayoutType OldPartType = static_cast<EVertexLayoutType>(Indices.PartType);
 #ifdef _DEBUG_MODE
-			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
-				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
+			if ((((OldPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (Indices.Stride != 2u)) ||
+				(((OldPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (Indices.Stride != 4u)))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Removed index check failed. Part type is not match with stride."));
 			}
@@ -296,8 +304,8 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			EVertexLayoutType OldPartType = static_cast<EVertexLayoutType>(Indices.PartType);
-			if (((OldPartType == EVertexLayoutType::MESH_INDEX_HALF) && (Indices.Stride != 2u)) ||
-				((OldPartType == EVertexLayoutType::MESH_INDEX_FULL) && (Indices.Stride != 4u)))
+			if ((((OldPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (Indices.Stride != 2u)) ||
+				(((OldPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (Indices.Stride != 4u)))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Get index check failed. Part type is not match with stride."));
 			}
@@ -325,9 +333,12 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		const EVertexLayoutType InLayoutType = static_cast<EVertexLayoutType>(InVertexData->PartType);
-		if ((InLayoutType == EVertexLayoutType::MESH_INDEX_FULL) ||
-			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
-			(InLayoutType == EVertexLayoutType::MESH_SKIN))
+		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
+			((InLayoutType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 0u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 1u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 2u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 3u)) != 0u))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex layout type check failed(wrong type)."));
 			return FALSE;
@@ -370,9 +381,12 @@ namespace PigeonEngine
 	}
 	BOOL EMesh::RemoveVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex)
 	{
-		if ((InLayoutType == EVertexLayoutType::MESH_INDEX_FULL) ||
-			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
-			(InLayoutType == EVertexLayoutType::MESH_SKIN))
+		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
+			((InLayoutType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 0u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 1u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 2u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 3u)) != 0u))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh remove vertex layout type check failed(wrong type)."));
 			return FALSE;
@@ -418,9 +432,12 @@ namespace PigeonEngine
 	}
 	BOOL EMesh::GetVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const
 	{
-		if ((InLayoutType == EVertexLayoutType::MESH_INDEX_FULL) ||
-			(InLayoutType == EVertexLayoutType::MESH_INDEX_HALF) ||
-			(InLayoutType == EVertexLayoutType::MESH_SKIN))
+		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
+			((InLayoutType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 0u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 1u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 2u)) != 0u) ||
+			((InLayoutType & (EVertexLayoutType::MESH_SKIN << 3u)) != 0u))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh get vertex layout type check failed(wrong type)."));
 			return FALSE;
@@ -518,19 +535,19 @@ namespace PigeonEngine
 	}
 	void EMesh::SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist)
 	{
-		if (InLayoutType == EVertexLayoutType::MESH_INDEX_FULL)
+		if ((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
 		{
 			if (OutIsAlreadyExist)
 			{
-				(*OutIsAlreadyExist) = (VertexLayout & EVertexLayoutType::MESH_INDEX_FULL) > 0;
+				(*OutIsAlreadyExist) = (VertexLayout & EVertexLayoutType::MESH_INDEX_FULL) != 0u;
 			}
 			VertexLayout = InIsExist ? (VertexLayout | EVertexLayoutType::MESH_INDEX_FULL) : (VertexLayout & (~(EVertexLayoutType::MESH_INDEX_FULL)));
 		}
-		else if (InLayoutType == EVertexLayoutType::MESH_INDEX_HALF)
+		else if ((InLayoutType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
 		{
 			if (OutIsAlreadyExist)
 			{
-				(*OutIsAlreadyExist) = (VertexLayout & EVertexLayoutType::MESH_INDEX_HALF) > 0;
+				(*OutIsAlreadyExist) = (VertexLayout & EVertexLayoutType::MESH_INDEX_HALF) != 0u;
 			}
 			VertexLayout = InIsExist ? (VertexLayout | EVertexLayoutType::MESH_INDEX_HALF) : (VertexLayout & (~(EVertexLayoutType::MESH_INDEX_HALF)));
 		}
@@ -546,7 +563,7 @@ namespace PigeonEngine
 			}
 			if (OutIsAlreadyExist)
 			{
-				(*OutIsAlreadyExist) = (VertexLayout & (InLayoutType << InPartIndex)) > 0;
+				(*OutIsAlreadyExist) = (VertexLayout & (InLayoutType << InPartIndex)) != 0u;
 			}
 			VertexLayout = InIsExist ? (VertexLayout | (InLayoutType << InPartIndex)) : (VertexLayout & (~(InLayoutType << InPartIndex)));
 		}
@@ -567,18 +584,23 @@ namespace PigeonEngine
 	EStaticMesh::~EStaticMesh()
 	{
 	}
+	BOOL EStaticMesh::IsResourceValid()const
+	{
+		return (EMesh::IsResourceValid());
+	}
+	BOOL EStaticMesh::InitResource()
+	{
+		// Mesh resource must init by mesh manager.
+		return (EMesh::InitResource());
+	}
+	void EStaticMesh::ReleaseResource()
+	{
+		EMesh::ReleaseResource();
+	}
 	EStaticMesh& EStaticMesh::operator=(const EStaticMesh& Other)
 	{
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
-	}
-	BOOL EStaticMesh::IsValid()const
-	{
-		return (EMesh::IsValid());
-	}
-	void EStaticMesh::Release()
-	{
-		EMesh::Release();
 	}
 
 	ESkinnedMesh::ESkinnedMesh()
@@ -615,6 +637,32 @@ namespace PigeonEngine
 		{
 			Skins[Index].Release();
 		}
+	}
+	BOOL ESkinnedMesh::IsResourceValid()const
+	{
+		if (Skins.Length() > 0u)
+		{
+			BOOL Result = FALSE;
+			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			{
+				Result = Result || ((Skins[Index].ElementNum > 3u) && (Skins[Index].Stride > 0u));
+			}
+			return (Result && (EMesh::IsResourceValid()));
+		}
+		return FALSE;
+	}
+	BOOL ESkinnedMesh::InitResource()
+	{
+		// Mesh resource must init by mesh manager.
+		return (EMesh::InitResource());
+	}
+	void ESkinnedMesh::ReleaseResource()
+	{
+		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+		{
+			Skins[Index].Release();
+		}
+		EMesh::ReleaseResource();
 	}
 	ESkinnedMesh& ESkinnedMesh::operator=(const ESkinnedMesh& Other)
 	{
@@ -656,27 +704,6 @@ namespace PigeonEngine
 		}
 
 		return (*this);
-	}
-	BOOL ESkinnedMesh::IsValid()const
-	{
-		if (Skins.Length() > 0u)
-		{
-			BOOL Result = FALSE;
-			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
-			{
-				Result = Result || ((Skins[Index].ElementNum > 3u) && (Skins[Index].Stride > 0u));
-			}
-			return (Result && (EMesh::IsValid()));
-		}
-		return FALSE;
-	}
-	void ESkinnedMesh::Release()
-	{
-		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
-		{
-			Skins[Index].Release();
-		}
-		EMesh::Release();
 	}
 	BOOL ESkinnedMesh::AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose)
 	{
@@ -841,25 +868,148 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	EMeshRenderResource::EMeshRenderResource(EMesh* InMesh)
-		: Mesh(InMesh)
+	EMeshRenderResource::EMeshRenderResource()
 	{
+	}
+	EMeshRenderResource::EMeshRenderResource(const EMeshRenderResource& Other)
+	{
+		CopyRenderResourcesInternal(&Other);
 	}
 	EMeshRenderResource::~EMeshRenderResource()
 	{
-		Release();
+		ReleaseRenderResource();
 	}
-	void EMeshRenderResource::Release()
+	BOOL EMeshRenderResource::IsRenderResourceValid()const
 	{
-		Mesh = nullptr;
-		if (RenderResources.Length() > 0)
+		if ((IndexRenderResource.IsRenderResourceValid()) && (VertexRenderResources.Length() > 0u))
 		{
-			for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
+			BOOL Result = TRUE;
+			for (UINT Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
 			{
-				RenderResources[Index].Release();
+				Result = Result && (VertexRenderResources[Index].IsRenderResourceValid());
 			}
-			RenderResources.Clear();
+			return Result;
 		}
+		return FALSE;
+	}
+	void EMeshRenderResource::ReleaseRenderResource()
+	{
+		IndexRenderResource.ReleaseRenderResource();
+		if (VertexRenderResources.Length() > 0u)
+		{
+			for (UINT Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
+			{
+				VertexRenderResources[Index].ReleaseRenderResource();
+			}
+			VertexRenderResources.Clear();
+		}
+	}
+	void EMeshRenderResource::CopyRenderResourcesInternal(const EMeshRenderResource* Other)
+	{
+		if ((!Other) || (!(Other->IsRenderResourceValid())))
+		{
+			return;
+		}
+		IndexRenderResource = Other->IndexRenderResource;
+		if (Other->VertexRenderResources.Length() > 0u)
+		{
+			for (UINT i = 0u, n = Other->VertexRenderResources.Length(); i < n; i++)
+			{
+				VertexRenderResources.Add(Other->VertexRenderResources[i]);
+			}
+		}
+	}
+
+	EStaticMeshRenderResource::EStaticMeshRenderResource()
+		: StaticMesh(nullptr)
+	{
+	}
+	EStaticMeshRenderResource::EStaticMeshRenderResource(EStaticMesh* InMesh)
+		: StaticMesh(InMesh)
+	{
+	}
+	EStaticMeshRenderResource::EStaticMeshRenderResource(const EStaticMeshRenderResource& Other)
+		: EMeshRenderResource(Other), StaticMesh(Other.StaticMesh)
+	{
+	}
+	EStaticMeshRenderResource::~EStaticMeshRenderResource()
+	{
+		ReleaseRenderResource();
+	}
+	EStaticMeshRenderResource& EStaticMeshRenderResource::operator=(const EStaticMeshRenderResource& Other)
+	{
+		ReleaseRenderResource();
+		CopyRenderResourcesInternal(&Other);
+		return (*this);
+	}
+	BOOL EStaticMeshRenderResource::IsRenderResourceValid()const
+	{
+		return ((!!StaticMesh) && (EMeshRenderResource::IsRenderResourceValid()));
+	}
+	BOOL EStaticMeshRenderResource::InitRenderResource()
+	{
+		if ((!!StaticMesh) && (StaticMesh->IsResourceValid()))
+		{
+			if (const EIndexData* OutIndexData = nullptr; StaticMesh->GetIndexElement(OutIndexData))
+			{
+				EVertexLayoutType IndexType = static_cast<EVertexLayoutType>(OutIndexData->PartType);
+				if ((IndexType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
+				{
+
+				}
+				else if ((IndexType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
+				{
+
+				}
+			}
+		}
+		return FALSE;
+	}
+	void EStaticMeshRenderResource::ReleaseRenderResource()
+	{
+		StaticMesh = nullptr;
+		EMeshRenderResource::ReleaseRenderResource();
+	}
+
+	ESkinnedMeshRenderResource::ESkinnedMeshRenderResource()
+		: Skeleton(nullptr), SkinnedMesh(nullptr)
+	{
+	}
+	ESkinnedMeshRenderResource::ESkinnedMeshRenderResource(const ESkeleton* InSkeleton, ESkinnedMesh* InMesh)
+		: Skeleton(InSkeleton), SkinnedMesh(InMesh)
+	{
+	}
+	ESkinnedMeshRenderResource::ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other)
+		: EMeshRenderResource(Other), Skeleton(Other.Skeleton), SkinnedMesh(Other.SkinnedMesh)
+	{
+	}
+	ESkinnedMeshRenderResource::~ESkinnedMeshRenderResource()
+	{
+		ReleaseRenderResource();
+	}
+	ESkinnedMeshRenderResource& ESkinnedMeshRenderResource::operator=(const ESkinnedMeshRenderResource& Other)
+	{
+		ReleaseRenderResource();
+		CopyRenderResourcesInternal(&Other);
+		Skeleton		= Other.Skeleton;
+		SkinnedMesh		= Other.SkinnedMesh;
+		return (*this);
+	}
+	BOOL ESkinnedMeshRenderResource::IsRenderResourceValid()const
+	{
+		return ((!!Skeleton) && (!!SkinnedMesh) && (SkeletonRenderResource.IsRenderResourceValid()) && (EMeshRenderResource::IsRenderResourceValid()));
+	}
+	BOOL ESkinnedMeshRenderResource::InitRenderResource()
+	{
+		//TODO
+		return FALSE;
+	}
+	void ESkinnedMeshRenderResource::ReleaseRenderResource()
+	{
+		Skeleton = nullptr;
+		SkinnedMesh = nullptr;
+		SkeletonRenderResource.ReleaseRenderResource();
+		EMeshRenderResource::ReleaseRenderResource();
 	}
 
 	EStaticMeshAsset::EStaticMeshAsset(
@@ -874,15 +1024,38 @@ namespace PigeonEngine
 #endif
 		)
 	{
-
 	}
 	EStaticMeshAsset::~EStaticMeshAsset()
 	{
-
 	}
 	BOOL EStaticMeshAsset::InitResource()
 	{
+		if (IsInitialized())
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Static mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			return TRUE;
+		}
+		if (CreateRenderResourceInternal(
+			[this](EStaticMesh* InResource)->EMeshRenderResource*
+			{
+				return (this->CreateMeshResource(InResource));
+			},
+			FALSE))
+		{
+			bIsInitialized = TRUE;
+			return TRUE;
+		}
 		return FALSE;
+	}
+	EMeshRenderResource* EStaticMeshAsset::CreateMeshResource(EStaticMesh* InResource)
+	{
+
+		return nullptr;
 	}
 
 };

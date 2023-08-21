@@ -40,7 +40,7 @@ namespace PigeonEngine
 		ERegisterBase() {}
 		~ERegisterBase() {}
 		ERegisterBase(const ERegisterBase&) {}
-		ERegisterBase& operator=(const ERegisterBase&) {}
+		ERegisterBase& operator=(const ERegisterBase&) { return (*this); }
 	};
 
 };

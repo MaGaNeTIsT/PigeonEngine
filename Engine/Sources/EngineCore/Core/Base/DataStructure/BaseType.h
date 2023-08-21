@@ -8,6 +8,9 @@
 namespace PigeonEngine
 {
 
+#pragma warning(push)
+#pragma warning(disable : 26495)
+
 	struct Matrix4x4;
 	struct Quaternion;
 	struct Vector2;
@@ -1757,6 +1760,8 @@ namespace PigeonEngine
 			FLOAT rgba[4];
 		};
 	};
+
+#pragma warning(pop)
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm);
 	Matrix4x4 operator-(const Matrix4x4& lm, const Matrix4x4& rm);

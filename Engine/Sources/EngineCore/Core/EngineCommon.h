@@ -11,13 +11,14 @@ namespace PigeonEngine
 	class EResourceInterface
 	{
 	public:
+		virtual BOOL IsResourceValid()const = 0;
+		virtual BOOL InitResource() = 0;
+		virtual void ReleaseResource() = 0;
+	public:
 		EResourceInterface() = default;
 		EResourceInterface(const EResourceInterface&) = default;
 		virtual ~EResourceInterface() = default;
 		EResourceInterface& operator=(const EResourceInterface&) = default;
-	public:
-		virtual BOOL IsValid()const = 0;
-		virtual void Release() = 0;
 	};
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
@@ -135,7 +136,7 @@ namespace PigeonEngine
 		Vector3	AABBMax;
 		BOOL IsValid;
 
-		EBoundAABB operator+=(const EBoundAABB& Other)
+		EBoundAABB& operator+=(const EBoundAABB& Other)
 		{
 			if(IsValid)
 			{
@@ -146,15 +147,15 @@ namespace PigeonEngine
 			{
 				*this = Other;
 			}
-			return *this;
+			return (*this);
 		}
 
-		EBoundAABB operator=(const EBoundAABB& Other)
+		EBoundAABB& operator=(const EBoundAABB& Other)
 		{
 			AABBMin = Other.AABBMin;
 			AABBMax = Other.AABBMax;
 			IsValid = Other.IsValid;
-			return *this;
+			return (*this);
 		}
 		
 	};
@@ -174,6 +175,10 @@ namespace PigeonEngine
 		Vector3	Origin;
 		FLOAT	Radius;
 	};
+
+#pragma warning(push)
+#pragma warning(disable : 26495)
+
 	struct ERect
 	{
 		ERect()noexcept : Left(0.f), Top(0.f), Right(0.f), Bottom(0.f) {}
@@ -284,6 +289,9 @@ namespace PigeonEngine
 			Vector3		FarNearPlanePoint[8];
 		};
 	};
+
+#pragma warning(pop)
+
 	struct EViewport
 	{
 		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RENDER_DEPTH_MIN), MaxDepth(RENDER_DEPTH_MAX) {}

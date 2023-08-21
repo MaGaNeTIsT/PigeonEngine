@@ -183,13 +183,18 @@ namespace PigeonEngine
 	}
 	ESkeleton::~ESkeleton()
 	{
-
+		ReleaseResource();
 	}
-	BOOL ESkeleton::IsValid()const
+	BOOL ESkeleton::IsResourceValid()const
 	{
 		return ((Bones.Length() > 0u) && (Bones.Length() == BoneMapping.Length()));
 	}
-	void ESkeleton::Release()
+	BOOL ESkeleton::InitResource()
+	{
+		// Skeleton resource must init by skeleton manager.
+		return TRUE;
+	}
+	void ESkeleton::ReleaseResource()
 	{
 		SkeletonName = ENGINE_DEFAULT_NAME;
 		Bones.Clear();
@@ -318,16 +323,26 @@ namespace PigeonEngine
 	}
 	ESkeletonRenderResource::~ESkeletonRenderResource()
 	{
-		Release();
+		ReleaseRenderResource();
 	}
-	void ESkeletonRenderResource::Release()
+	BOOL ESkeletonRenderResource::IsRenderResourceValid()const
+	{
+		//TODO
+		return FALSE;
+	}
+	BOOL ESkeletonRenderResource::InitRenderResource()
+	{
+		//TODO
+		return FALSE;
+	}
+	void ESkeletonRenderResource::ReleaseRenderResource()
 	{
 		Skeleton = nullptr;
 		if (RenderResources.Length() > 0)
 		{
 			for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
 			{
-				RenderResources[Index].Release();
+				RenderResources[Index].ReleaseRenderResource();
 			}
 			RenderResources.Clear();
 		}

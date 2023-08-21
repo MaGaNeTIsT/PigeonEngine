@@ -459,6 +459,10 @@ namespace PigeonEngine
 					return;
 				}
 			}
+			else
+			{
+				TempVertexData.Release();
+			}
 		}
 	}
 	static void TryAddMeshSkinPart(const TArray<const aiBone*>& InBones, const UINT InVertexNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT* InStoredLayoutSlots, const UINT InStoredLayoutNum, const UINT InSuccessAddMaxNum, ESkinnedMesh& OutMesh)
@@ -556,6 +560,10 @@ namespace PigeonEngine
 						return;
 					}
 				}
+				else
+				{
+					TempSkinData.Release();
+				}
 			}
 		}
 	}
@@ -624,6 +632,26 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
+	static EIndexData* TranslateAssimpMeshFaceToEngineMeshIndices(const aiMesh* InMesh)
+	{
+		const UINT ElementNum = InMesh->mNumFaces * 3u;
+		const UINT IndexStride = (ElementNum > 0xffffu) ? 4u : 2u;	// Index stride is integer_32bit or integer_16bit
+		EIndexData* OutMeshIndices = new EIndexData(IndexStride, ElementNum);
+		if (!(OutMeshIndices->Indices))
+		{
+			OutMeshIndices->Indices = new UINT[ElementNum];
+		}
+		for (UINT FaceIndex = 0u, FaceNum = InMesh->mNumFaces; FaceIndex < FaceNum; FaceIndex++)
+		{
+			const aiFace& TempFace = InMesh->mFaces[FaceIndex];
+			Check((ENGINE_ASSET_ERROR), ("We must import mesh that only consist of triangles."), (TempFace.mNumIndices == 3u));
+			for (UINT TriangleIndex = 0u; TriangleIndex < 3u; TriangleIndex++)
+			{
+				OutMeshIndices->Indices[FaceIndex * 3u + TriangleIndex] = TempFace.mIndices[TriangleIndex];
+			}
+		}
+		return OutMeshIndices;
+	}
 	static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes)
 	{
 		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
@@ -638,12 +666,19 @@ namespace PigeonEngine
 			EStaticMesh& OutMesh = OutMeshes[OutMeshes.Length() - 1u];
 			{
 				OutMesh.SetBoundAABB(AssimpTranslateVector3(AssimpMesh->mAABB.mMin), AssimpTranslateVector3(AssimpMesh->mAABB.mMax));
+
+				EIndexData* MeshIndices = TranslateAssimpMeshFaceToEngineMeshIndices(AssimpMesh);
+				if (!(OutMesh.AddIndexElement(MeshIndices)))
+				{
+					MeshIndices->Release();
+					delete MeshIndices;
+				}
 			}
 			for (UINT LayoutDescIndex = 0u, LayoutDescNum = ShouldStoredLayoutDescriptions.Length(); LayoutDescIndex < LayoutDescNum; LayoutDescIndex++)
 			{
 				StoredMeshLayoutDesc& StoredLayoutDesc = ShouldStoredLayoutDescriptions[LayoutDescIndex];
 				EVertexLayoutType TempTryStoredLayoutBaseType = StoredLayoutDesc.BaseVertexLayout;
-				if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_VERTEX)
+				if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_VERTEX) != 0u)
 				{
 					const UINT SuccessAddPositionMaxNum = 1u;
 					const UINT PositionStrideIn32Bits = 4u;
@@ -653,7 +688,7 @@ namespace PigeonEngine
 					TempPositionNum.Add(AssimpMesh->mNumVertices);
 					TryAddMeshVertexPart(TempPositionDatas, TempPositionNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, PositionStrideIn32Bits, SuccessAddPositionMaxNum, OutMesh);
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TEXTURECOORD)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_TEXTURECOORD) != 0u)
 				{
 					if (AssimpMesh->GetNumUVChannels() > 0)
 					{
@@ -673,7 +708,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempTexcoordDatas, TempTexcoordNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TexcoordStrideIn32Bits, SuccessAddTexcoordMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_NORMAL)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_NORMAL) != 0u)
 				{
 					if (AssimpMesh->HasNormals())
 					{
@@ -686,7 +721,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempNormalDatas, TempNormalNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, NormalStrideIn32Bits, SuccessAddNormalMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TANGENT)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_TANGENT) != 0u)
 				{
 					if (AssimpMesh->HasTangentsAndBitangents())
 					{
@@ -699,7 +734,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_COLOR)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_COLOR) != 0u)
 				{
 					if (AssimpMesh->GetNumColorChannels() > 0)
 					{
@@ -719,7 +754,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempColorDatas, TempColorNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, ColorStrideIn32Bits, SuccessAddColorMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_BITANGENT)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_BITANGENT) != 0u)
 				{
 					if (AssimpMesh->HasTangentsAndBitangents())
 					{
@@ -749,12 +784,19 @@ namespace PigeonEngine
 			ESkinnedMesh& OutMesh = OutMeshes[OutMeshes.Length() - 1u];
 			{
 				OutMesh.SetBoundAABB(AssimpTranslateVector3(AssimpMesh->mAABB.mMin), AssimpTranslateVector3(AssimpMesh->mAABB.mMax));
+
+				EIndexData* MeshIndices = TranslateAssimpMeshFaceToEngineMeshIndices(AssimpMesh);
+				if (!(OutMesh.AddIndexElement(MeshIndices)))
+				{
+					MeshIndices->Release();
+					delete MeshIndices;
+				}
 			}
 			for (UINT LayoutDescIndex = 0u, LayoutDescNum = ShouldStoredLayoutDescriptions.Length(); LayoutDescIndex < LayoutDescNum; LayoutDescIndex++)
 			{
 				StoredMeshLayoutDesc& StoredLayoutDesc = ShouldStoredLayoutDescriptions[LayoutDescIndex];
 				EVertexLayoutType TempTryStoredLayoutBaseType = StoredLayoutDesc.BaseVertexLayout;
-				if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_VERTEX)
+				if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_VERTEX) != 0u)
 				{
 					const UINT SuccessAddPositionMaxNum = 1u;
 					const UINT PositionStrideIn32Bits = 4u;
@@ -764,7 +806,7 @@ namespace PigeonEngine
 					TempPositionNum.Add(AssimpMesh->mNumVertices);
 					TryAddMeshVertexPart(TempPositionDatas, TempPositionNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, PositionStrideIn32Bits, SuccessAddPositionMaxNum, OutMesh);
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TEXTURECOORD)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_TEXTURECOORD) != 0u)
 				{
 					if (AssimpMesh->GetNumUVChannels() > 0)
 					{
@@ -784,7 +826,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempTexcoordDatas, TempTexcoordNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TexcoordStrideIn32Bits, SuccessAddTexcoordMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_NORMAL)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_NORMAL) != 0u)
 				{
 					if (AssimpMesh->HasNormals())
 					{
@@ -797,7 +839,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempNormalDatas, TempNormalNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, NormalStrideIn32Bits, SuccessAddNormalMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_TANGENT)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_TANGENT) != 0u)
 				{
 					if (AssimpMesh->HasTangentsAndBitangents())
 					{
@@ -810,7 +852,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_COLOR)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_COLOR) != 0u)
 				{
 					if (AssimpMesh->GetNumColorChannels() > 0)
 					{
@@ -830,7 +872,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempColorDatas, TempColorNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, ColorStrideIn32Bits, SuccessAddColorMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_BITANGENT)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_BITANGENT) != 0u)
 				{
 					if (AssimpMesh->HasTangentsAndBitangents())
 					{
@@ -843,7 +885,7 @@ namespace PigeonEngine
 						TryAddMeshVertexPart(TempBitangentDatas, TempBitangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, BitangentStrideIn32Bits, SuccessAddBitangentMaxNum, OutMesh);
 					}
 				}
-				else if (TempTryStoredLayoutBaseType == EVertexLayoutType::MESH_SKIN)
+				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_SKIN) != 0u)
 				{
 					if (AssimpMesh->HasBones())
 					{
@@ -971,7 +1013,7 @@ namespace PigeonEngine
 		{
 			for (UINT i = 0u, n = OutMeshes.Length(); i < n; i++)
 			{
-				OutMeshes[i].Release();
+				OutMeshes[i].ReleaseResource();
 			}
 			OutMeshes.Clear();
 		}
@@ -1070,7 +1112,7 @@ namespace PigeonEngine
 
 		if (OutSkeleton.GetBoneCount() > 0u)
 		{
-			OutSkeleton.Release();
+			OutSkeleton.ReleaseResource();
 		}
 
 		Assimp::Importer* AssImporter = _GAssetImporter;
@@ -1147,7 +1189,7 @@ namespace PigeonEngine
 		{
 			for (UINT i = 0u, n = OutMeshes.Length(); i < n; i++)
 			{
-				OutMeshes[i].Release();
+				OutMeshes[i].ReleaseResource();
 			}
 			OutMeshes.Clear();
 		}

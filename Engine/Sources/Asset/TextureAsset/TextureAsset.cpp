@@ -182,7 +182,7 @@ namespace PigeonEngine
 			WICPixelFormatToRenderFormat(GUID_WICPixelFormat128bppRGBAFloat, 16u, RFormatType::FORMAT_R32G32B32A32_FLOAT, 16u, FALSE)
 			else
 			{
-				PE_FAILED((ENGINE_TEXTURE_ERROR), ("Try to load texture that pixel format is not supported."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try to load texture that pixel format is not supported."));
 				NeedAllocate = FALSE;
 			}
 
@@ -216,20 +216,26 @@ namespace PigeonEngine
 							UINT RenderCoord = y * RenderPixelStride + x * RenderDataByteCount;
 							for (UINT ByteIndex = 0u; ByteIndex < RenderDataByteCount; ByteIndex++)
 							{
-								if (ByteIndex < FormatByteCount)
+								if ((RenderCoord + ByteIndex) < RenderPixelByteSize)
 								{
-									OutputRenderPixelData[RenderCoord + ByteIndex] = RawPixelData[RawCoord + ByteIndex];
-								}
-								else
-								{
-									OutputRenderPixelData[RenderCoord + ByteIndex] = static_cast<BYTE>(0);
+									if (ByteIndex < FormatByteCount)
+									{
+										OutputRenderPixelData[RenderCoord + ByteIndex] = RawPixelData[RawCoord + ByteIndex];
+									}
+									else
+									{
+										OutputRenderPixelData[RenderCoord + ByteIndex] = static_cast<BYTE>(0);
+									}
 								}
 							}
 							if (NeedSwitchRB)
 							{
-								BYTE TempValue = OutputRenderPixelData[RenderCoord + 0u];
-								OutputRenderPixelData[RenderCoord + 0u] = OutputRenderPixelData[RenderCoord + 2u];
-								OutputRenderPixelData[RenderCoord + 2u] = TempValue;
+								if ((RenderCoord + 2u) < RenderPixelByteSize)
+								{
+									BYTE TempValue = OutputRenderPixelData[RenderCoord + 0u];
+									OutputRenderPixelData[RenderCoord + 0u] = OutputRenderPixelData[RenderCoord + 2u];
+									OutputRenderPixelData[RenderCoord + 2u] = TempValue;
+								}
 							}
 						}
 					}
@@ -292,7 +298,7 @@ namespace PigeonEngine
 	}
 	ETexture2D::~ETexture2D()
 	{
-		Release();
+		ReleaseResource();
 	}
 	ETexture2D& ETexture2D::operator=(const ETexture2D& Other)
 	{
@@ -314,14 +320,19 @@ namespace PigeonEngine
 		}
 		return (*this);
 	}
-	BOOL ETexture2D::IsValid()const
+	BOOL ETexture2D::IsResourceValid()const
 	{
 		return ((!!ByteCode) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN));
 	}
-	void ETexture2D::Release()
+	BOOL ETexture2D::InitResource()
 	{
-		ResourceProperties	= ETextureResourceProperty();
-		SRGB				= FALSE;
+		// Texture2D resource must init by texture manager.
+		return TRUE;
+	}
+	void ETexture2D::ReleaseResource()
+	{
+		ResourceProperties = ETextureResourceProperty();
+		SRGB = FALSE;
 		if (ByteCode)
 		{
 			delete[]ByteCode;
@@ -362,8 +373,8 @@ namespace PigeonEngine
 		{
 #ifdef _EDITOR_ONLY
 			{
-				EString errorInfo = EString("Texture2D name=[") + DebugName + "] path = [" + TexturePath + "] has been Initialized.";
-				PE_FAILED((ENGINE_TEXTURE_ERROR), errorInfo);
+				EString ErrorInfo = EString("Texture2D name=[") + DebugName + "] path = [" + TexturePath + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -387,7 +398,7 @@ namespace PigeonEngine
 	RTexture2DResource* ETexture2DAsset::CreateTextureResource(ETexture2D* InResource)
 	{
 		RTexture2DResource* Result = nullptr;
-		if ((!!InResource) && (InResource->IsValid()))
+		if ((!!InResource) && (InResource->IsResourceValid()))
 		{
 			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
 			RSubresourceDataDesc TempInitData;
@@ -429,7 +440,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
-				PE_FAILED((ENGINE_TEXTURE_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
@@ -458,9 +469,41 @@ namespace PigeonEngine
 
 		BOOL Result = SaveTexture2DAsset(InSaveAssetPath, NeedSaveTexture2DResource);
 
-		NeedSaveTexture2DResource->Release();
+		NeedSaveTexture2DResource->ReleaseResource();
 		delete NeedSaveTexture2DResource;
 		return Result;
+	}
+	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset)
+	{
+		ETexture2DAsset* ResultAsset = Texture2DManager.Find(InLoadPath);
+		if (ResultAsset)
+		{
+			OutTextureAsset = ResultAsset;
+			return TRUE;
+		}
+		ResultAsset = LoadTexture2DAsset(InLoadPath);
+		if (!ResultAsset)
+		{
+			return FALSE;
+		}
+		if (!ResultAsset->InitResource())
+		{
+			delete ResultAsset;
+			return FALSE;
+		}
+		if (Texture2DManager.Add(InLoadPath, ResultAsset, TRUE) == 0u)
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Texture2D path = [") + InLoadPath + "] add into manager list failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			delete ResultAsset;
+			return FALSE;
+		}
+		OutTextureAsset = ResultAsset;
+		return TRUE;
 	}
 	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride)
 	{
@@ -482,6 +525,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
+		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL) + sizeof(ETextureResourceProperty))));
 		BOOL Result = FALSE;
 		void* TempPtr = ReadFileMem;
 		ULONG RstSize = ReadFileSize;
@@ -545,7 +589,7 @@ namespace PigeonEngine
 			{
 				if (StoragedResource)
 				{
-					StoragedResource->Release();
+					StoragedResource->ReleaseResource();
 					delete StoragedResource;
 				}
 			}
@@ -555,15 +599,15 @@ namespace PigeonEngine
 	}
 	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource)
 	{
-		if ((InSavePath.Length() < 3u) || (!InTextureResource) || (!(InTextureResource->IsValid())))
+		if ((InSavePath.Length() < 3u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
 #ifdef _EDITOR_ONLY
 			{
 				EString ErrorData("Saving texture 2d asset error.(import file path : ");
 				ErrorData = ErrorData + InSavePath + ", is asset valid : " +
-					((!!InTextureResource) ? ((InTextureResource->IsValid()) ? "true" : "false") : "false")
+					((!!InTextureResource) ? ((InTextureResource->IsResourceValid()) ? "true" : "false") : "false")
 					+ ").";
-				PE_FAILED((ENGINE_TEXTURE_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;

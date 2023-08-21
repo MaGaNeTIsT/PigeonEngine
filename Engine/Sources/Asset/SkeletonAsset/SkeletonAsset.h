@@ -43,10 +43,9 @@ namespace PigeonEngine
 	public:
 		typedef TArray<EBoneData>	EBonePart;
 	public:
-		ESkeleton(const EString& InSkeletonName);
-		virtual ~ESkeleton();
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
 	public:
 		UINT	GetBoneCount()const;
 		BOOL	AddBoneElement(EBoneData* InIndexData);
@@ -61,6 +60,9 @@ namespace PigeonEngine
 		EBonePart				Bones;
 		TMap<EString, USHORT>	BoneMapping;
 	public:
+		ESkeleton(const EString& InSkeletonName);
+		virtual ~ESkeleton();
+	public:
 		ESkeleton() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkeleton)
@@ -69,13 +71,15 @@ namespace PigeonEngine
 	class ESkeletonRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		ESkeletonRenderResource(ESkeleton* InSkeleton);
-		virtual ~ESkeletonRenderResource();
-	public:
-		virtual void Release()override;
+		virtual BOOL	IsRenderResourceValid()const override;
+		virtual BOOL	InitRenderResource()override;
+		virtual void	ReleaseRenderResource()override;
 	protected:
 		ESkeleton*				Skeleton;
 		TArray<RBufferResource>	RenderResources;
+	public:
+		ESkeletonRenderResource(ESkeleton* InSkeleton);
+		virtual ~ESkeletonRenderResource();
 	public:
 		ESkeletonRenderResource() = delete;
 

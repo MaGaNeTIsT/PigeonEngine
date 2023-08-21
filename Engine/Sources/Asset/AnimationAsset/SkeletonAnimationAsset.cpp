@@ -16,13 +16,21 @@ namespace PigeonEngine
 	}
 	ESkeletonAnimation::~ESkeletonAnimation()
 	{
+		ReleaseResource();
 	}
-	BOOL ESkeletonAnimation::IsValid()const
+	BOOL ESkeletonAnimation::IsResourceValid()const
 	{
+		//TODO
 		return FALSE;
 	}
-	void ESkeletonAnimation::Release()
+	BOOL ESkeletonAnimation::InitResource()
 	{
+		//TODO
+		return FALSE;
+	}
+	void ESkeletonAnimation::ReleaseResource()
+	{
+		//TODO
 	}
 
 };

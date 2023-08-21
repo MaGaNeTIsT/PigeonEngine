@@ -23,19 +23,28 @@ namespace PigeonEngine
 				::memcpy_s(ShaderByteCode, Other.ShaderByteCodeSize, Other.ShaderByteCode, Other.ShaderByteCodeSize);
 			}
 		}
-		virtual ~EShaderResource() { Release(); }
+		virtual ~EShaderResource() { ReleaseResource(); }
 		EShaderResource& operator=(const EShaderResource& Other)
 		{
-			Release();
+			ReleaseResource();
 			if ((!!(Other.ShaderByteCode)) && (Other.ShaderByteCodeSize > 0u))
 			{
 				ShaderByteCodeSize = Other.ShaderByteCodeSize;
 				ShaderByteCode = new BYTE[Other.ShaderByteCodeSize];
 				::memcpy_s(ShaderByteCode, Other.ShaderByteCodeSize, Other.ShaderByteCode, Other.ShaderByteCodeSize);
 			}
+			return (*this);
 		}
-		virtual BOOL IsValid()const override { return ((ShaderByteCode != nullptr) && (ShaderByteCodeSize > 0u)); }
-		virtual void Release()override
+		virtual BOOL IsResourceValid()const override
+		{
+			return ((ShaderByteCode != nullptr) && (ShaderByteCodeSize > 0u));
+		}
+		virtual BOOL InitResource()override
+		{
+			// Shader resource must init by shader manager.
+			return TRUE;
+		}
+		virtual void ReleaseResource()override
 		{
 			if (ShaderByteCode != nullptr)
 			{
@@ -166,10 +175,10 @@ namespace PigeonEngine
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
 	public:
-		BOOL ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* inShaderInputLayouts = nullptr, const UINT* inShaderInputLayoutNum = nullptr);
-		BOOL LoadVertexShaderAsset(EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
-		BOOL LoadPixelShaderAsset(EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
-		BOOL LoadComputeShaderAsset(EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
+		BOOL ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
+		BOOL LoadVertexShaderAsset(const EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
+		BOOL LoadPixelShaderAsset(const EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
+		BOOL LoadComputeShaderAsset(const EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
 	private:
 		template<class TShaderAssetType>
 		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath);

@@ -47,7 +47,7 @@ namespace PigeonEngine
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsValid())); }
+		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsResourceValid())); }
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
@@ -78,7 +78,7 @@ namespace PigeonEngine
 		{
 			if (ResourceData)
 			{
-				ResourceData->Release();
+				ResourceData->ReleaseResource();
 				delete ResourceData;
 				ResourceData = nullptr;
 			}
@@ -130,7 +130,7 @@ namespace PigeonEngine
 			ReleaseRenderResourceInternal();
 		}
 	public:
-		BOOL	IsRenderResourceValid()const { return (!!RenderResourceData); }
+		BOOL	IsRenderResourceValid()const { return ((!!RenderResourceData) && (RenderResourceData->IsRenderResourceValid())); }
 		const TRenderResourceType*	GetRenderResource()const { return RenderResourceData; }
 	protected:
 		template<typename TCreateRenderResourceLambdaType>
@@ -166,7 +166,7 @@ namespace PigeonEngine
 		{
 			if (RenderResourceData)
 			{
-				RenderResourceData->Release();
+				RenderResourceData->ReleaseRenderResource();
 				delete RenderResourceData;
 				RenderResourceData = nullptr;
 			}
