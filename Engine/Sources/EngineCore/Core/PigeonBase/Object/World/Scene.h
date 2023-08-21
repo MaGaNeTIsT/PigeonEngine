@@ -14,7 +14,7 @@ namespace PigeonEngine
 
 
 	/*
-	 * 
+	 * used for serialization and deserializaition to a scene.
 	 */
 	class PScene : public PObject
 	{
