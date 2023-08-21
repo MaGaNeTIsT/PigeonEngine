@@ -6,6 +6,7 @@
 #include "../../../../Core/Config/ErrorCaption.h"
 namespace PigeonEngine
 {
+    // -------------------   Declarations   -----------------------------
     template <typename T>
     class TSet
     {
@@ -54,6 +55,7 @@ namespace PigeonEngine
         class std::set<T> Elements;
     };
 
+    // -------------------   Implementations   -----------------------------
     template <typename T>
     TSet<T>::TSet()
     {

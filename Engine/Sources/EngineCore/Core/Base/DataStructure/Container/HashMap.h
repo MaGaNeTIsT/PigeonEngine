@@ -7,6 +7,7 @@
 
 namespace PigeonEngine
 {
+    // -------------------   Declarations   -----------------------------
     template
     <
         typename K,
@@ -73,7 +74,9 @@ namespace PigeonEngine
     private:
         std::unordered_map<K, V, Hash, Pred, Alloc> HashMap;
     };
- template <typename K, typename V, class Hash, class Pred, class Alloc>
+
+    // -------------------   Implementations   -----------------------------
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
     THashMap<K, V, Hash, Pred, Alloc>::THashMap()
     {
     }

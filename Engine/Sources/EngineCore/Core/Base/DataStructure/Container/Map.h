@@ -7,6 +7,7 @@
 
 namespace PigeonEngine
 {
+    // -------------------   Declarations   -----------------------------
     template <typename K, typename V>
     class TMap
     {
@@ -77,8 +78,8 @@ namespace PigeonEngine
         std::map<K,V> Map;
     };
 
-
-      template <typename K, typename V>
+    // -------------------   Implementations   -----------------------------
+    template <typename K, typename V>
     TMap<K, V>::TMap()
     {
     }

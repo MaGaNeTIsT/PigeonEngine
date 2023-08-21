@@ -13,7 +13,7 @@
 
 namespace PigeonEngine
 {
- 
+    // -------------------   Declarations   -----------------------------
     template <typename T>
     class TArray
     {
@@ -105,7 +105,8 @@ namespace PigeonEngine
     };
 
 
-        template <typename T>
+    // -------------------   Implementations   -----------------------------
+    template <typename T>
     TArray<T>::TArray()
     {
     }
