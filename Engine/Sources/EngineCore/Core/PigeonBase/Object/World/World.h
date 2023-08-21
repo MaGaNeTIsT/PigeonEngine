@@ -3,7 +3,7 @@
 
 #include "EngineCommon.h"
 #include "Base/DataStructure/Container/Array.h"
-#include "Base/DataStructure/Container/Octree.h"
+#include "PigeonBase/Object/Actor.h"
 #include "PigeonBase/Object/Object.h"
 
 namespace PigeonEngine
@@ -11,59 +11,54 @@ namespace PigeonEngine
     class PScene;
     class PActor;
     
-    class ESceneTreeNode : public TOctreeNode<PActor*>
-    {
-    public:
-        ESceneTreeNode() = delete;
-        ~ESceneTreeNode();
-    public:
-        EBoundAABB GetBoundBox() const;
-        void SetBoundBox(const EBoundAABB& InBox);
-
-        BOOL IsInBox(const EBoundAABB& Other) const;
-
-    private:
-        EBoundAABB Box;
-    };
-    
-    class ESceneTree : public TOctree<PActor*>
-    {
-        
-    };
-    
-   
     enum EWorldType : UINT8
     {
         EWT_GAME,
-        EWT_EDITOR
+        EWT_EDITOR,
+        EWT_RUN_IN_EDITOR, // maybe useless
     };
     
     /*
-     *
+     * actual world in runtime
      */
-    class PWorld : public PObject
+    class PWorld final : public PObject
     {
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PWorld)
         
+    // Begin PObject Interface
     public:
-        
-        void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
-    private:
-        ESceneTree* StaticTree = nullptr;
+        void	Init() override;
+        void	Uninit() override;
+        void	Tick(FLOAT deltaTime) override;
+#ifdef _EDITOR_ONLY
+        void	EditorTick(FLOAT deltaTime) override;
+#endif
+    public:
+        void Destroy() override;
+    // End PObject Interface
 
-        ESceneTree* DynamicTree = nullptr;
-        // all the loaded scene.
-        TArray<PScene*> AllScenes;
+    // Actors in world management
+    public:
+        void AddActor(PActor* NewActor, PActor* Parent = nullptr, const ETransform& Trans = ETransform());
+    protected:
+        void CheckRenderInfoWhenAddingActor(PActor* NewActor);
+    private:
+        TArray<PActor*> RootActors;
 
 #if _EDITOR_ONLY
+    public:
+        void AddSceneToWorld(PScene* NewScene);
+        void RemoveSceneFromWorld(PScene* Scene);
+        void SetCurrentScene(PScene* Scene);
+    private:
         // Current operating scene.(in editor)
         PScene* CurrentScene    = nullptr;
         // Like unreal's persistent scene.
         PScene* PersistentScene = nullptr;
+        TArray<PScene*> Scenes;
 #endif
 
-       
     };
 
 };

@@ -1,40 +1,74 @@
 ﻿#include "World.h"
+
+#include "PigeonBase/Object/Component/SceneComponent.h"
+
 namespace PigeonEngine
 {
-    
     static void RegisterClassTypes()
     {
         RegisterClassType<PWorld, PObject>();
-        RegisterClassType<ESceneTreeNode, TOctreeNode<PActor*>>();
+        // RegisterClassType<ESceneTreeNode, TOctreeNode<PActor*>>();
     }
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-    ESceneTreeNode::~ESceneTreeNode()
+    void PWorld::Init()
     {
     }
 
-    EBoundAABB ESceneTreeNode::GetBoundBox() const
+    void PWorld::Uninit()
     {
-        return Box;
+        PObject::Uninit();
     }
 
-    BOOL ESceneTreeNode::IsInBox(const EBoundAABB& Other) const
+    void PWorld::Tick(FLOAT deltaTime)
     {
-        if(!Box.IsValid)
-            return false;
-        return Box.AABBMin.x > Other.AABBMin.x && Box.AABBMin.y > Other.AABBMin.y && Box.AABBMin.z > Other.AABBMin.z && Box.AABBMax.x < Other.AABBMax.x && Box.AABBMax.y < Other.AABBMax.y && Box.AABBMax.z < Other.AABBMax.z;
     }
 
-    void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
+    void PWorld::EditorTick(FLOAT deltaTime)
     {
-        
-        Check(ENGINE_WORLD_ERROR, "TOctreeNode<T>::GetContent : Content is not valid, so you can not get it.", NewActor==nullptr);
-        
     }
 
-    void ESceneTreeNode::SetBoundBox(const EBoundAABB& InBox)
+  
+    void PWorld::Destroy()
     {
-        Box = InBox;
+        PObject::Destroy();
     }
+
+    void PWorld::AddActor(PActor* NewActor, PActor* Parent, const ETransform& Trans)
+    {
+        Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor == nullptr);
+
+        if(!Parent)
+        {
+            this->RootActors.Add(NewActor);
+            NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
+            CheckRenderInfoWhenAddingActor(NewActor);
+            return;
+        }
+
+        NewActor->AttachToActor(Parent, Trans);
+        CheckRenderInfoWhenAddingActor(NewActor);
+    }
+
+    void PWorld::CheckRenderInfoWhenAddingActor(PActor* NewActor)
+    {
+        // to be done
+    }
+#if _EDITOR_ONLY
+    void PWorld::AddSceneToWorld(PScene* NewScene)
+    {
+        Scenes.Add(NewScene);
+    }
+
+    void PWorld::RemoveSceneFromWorld(PScene* Scene)
+    {
+        Scenes.Remove(Scene);
+    }
+
+    void PWorld::SetCurrentScene(PScene* Scene)
+    {
+        CurrentScene = Scene;
+    }
+#endif
 };

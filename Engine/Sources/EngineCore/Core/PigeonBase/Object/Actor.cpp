@@ -56,14 +56,14 @@ namespace PigeonEngine
 		return this->AttachedParentActor;
 	}
 
-	void PActor::AttachToActor(PActor* AttachTo, const ETransform& RelativeTransform)
+	void PActor::AttachToActor(PActor* Another, const ETransform& RelativeTransform)
 	{
-		PActor::AttachActorToActor(this, AttachTo, RelativeTransform);
+		PActor::AttachActorToActor(this, Another, RelativeTransform);
 	}
 
-	void PActor::AttachActorTo(PActor* Actor, const ETransform& RelativeTransform)
+	void PActor::AttachActorTo(PActor* Another, const ETransform& RelativeTransform)
 	{
-		PActor::AttachActorToActor(Actor, this, RelativeTransform);
+		PActor::AttachActorToActor(Another, this, RelativeTransform);
 	}
 
 	void PActor::AttachActorToActor(PActor* Actor, PActor* AttachTo, const ETransform& RelativeTransform)
