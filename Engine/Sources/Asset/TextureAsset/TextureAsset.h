@@ -44,8 +44,9 @@ namespace PigeonEngine
 	class ETexture2D : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL	IsValid()const override;
-		virtual void	Release()override;
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
 	public:
 		ETextureType	GetTextureType()const { return TextureType; }
 		void			SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB);
@@ -96,11 +97,12 @@ namespace PigeonEngine
 		virtual void ShutDown()override;
 	public:
 		BOOL ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
 	private:
 		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride = nullptr);
 		BOOL SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource);
 	private:
-		ETexture2DAssetManager	Texture2DAssetManager;
+		ETexture2DAssetManager	Texture2DManager;
 
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ETextureAssetManager)
 

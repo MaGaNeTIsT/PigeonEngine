@@ -214,7 +214,7 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create structured buffer resource check failed (error description)."));
 			return FALSE;
 		}
-		output.Release();
+		output.ReleaseRenderResource();
 		{
 			output.AccessMapRead = (structuredBufferDesc.AccessFlags & RCPUAccessFlagType::CPU_ACCESS_READ) != 0;
 			output.AccessMapWrite = (structuredBufferDesc.AccessFlags & RCPUAccessFlagType::CPU_ACCESS_WRITE) != 0;
@@ -312,7 +312,7 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D depth check failed (wrong depth format used)."));
 			return FALSE;
 		}
-		output.Release();
+		output.ReleaseRenderResource();
 		D3D11_TEXTURE2D_DESC td;
 		{
 			UINT tBindFlags = 0u;
@@ -468,7 +468,7 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D check failed (wrong size used)."));
 			return FALSE;
 		}
-		output.Release();
+		output.ReleaseRenderResource();
 		D3D11_TEXTURE3D_DESC td;
 		{
 			::ZeroMemory(&td, sizeof(td));
@@ -552,7 +552,7 @@ namespace PigeonEngine
 	}
 	BOOL RDeviceD3D11::CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
 	{
-		output.Release();
+		output.ReleaseRenderResource();
 		D3D11_TEXTURE2D_DESC td;
 		{
 			::ZeroMemory(&td, sizeof(td));
@@ -610,7 +610,7 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture cube check failed (size of texture cube must be a square)."));
 			return FALSE;
 		}
-		output.Release();
+		output.ReleaseRenderResource();
 		{
 			D3D11_TEXTURE2D_DESC td;
 			{

@@ -14,7 +14,9 @@ namespace PigeonEngine
 		virtual ~RRenderResourceInterface() = default;
 		RRenderResourceInterface& operator=(const RRenderResourceInterface&) = default;
 	public:
-		virtual void Release() = 0;
+		virtual BOOL IsRenderResourceValid()const = 0;
+		virtual BOOL InitRenderResource() = 0;
+		virtual void ReleaseRenderResource() = 0;
 	};
 	struct RBoundingBox
 	{

@@ -125,7 +125,12 @@ namespace PigeonEngine
 			, Datas(nullptr)
 		{
 #if _EDITOR_ONLY
-			if ((InType == EVertexLayoutType::MESH_INDEX_FULL) || (InType == EVertexLayoutType::MESH_INDEX_HALF) || (InType == EVertexLayoutType::MESH_SKIN))
+			if (((InType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
+				((InType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) ||
+				((InType & (EVertexLayoutType::MESH_SKIN << 0)) != 0u) ||
+				((InType & (EVertexLayoutType::MESH_SKIN << 1)) != 0u) ||
+				((InType & (EVertexLayoutType::MESH_SKIN << 2)) != 0u) ||
+				((InType & (EVertexLayoutType::MESH_SKIN << 3)) != 0u))
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Check vertex data error(part type is invalid)."));
 			}
@@ -322,13 +327,11 @@ namespace PigeonEngine
 	public:
 		const static UINT MeshVertexLayoutPartMaxNum = 4;
 	public:
-		EMesh();
-		EMesh(const EString& InMeshName);
-		EMesh(const EMesh& Other);
-		virtual ~EMesh();
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
+	public:
 		EMesh& operator=(const EMesh& Other);
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
 	public:
 		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
 		const EString&		GetMeshName()const;
@@ -360,18 +363,26 @@ namespace PigeonEngine
 		EIndexPart				Indices;
 		EVertexPart				Vertices;
 		ESubmeshPart			Submeshes;
+	public:
+		EMesh();
+		EMesh(const EString& InMeshName);
+		EMesh(const EMesh& Other);
+		virtual ~EMesh();
 	};
 
 	class EStaticMesh : public EMesh
 	{
 	public:
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
+	public:
+		EStaticMesh& operator=(const EStaticMesh& Other);
+	public:
 		EStaticMesh();
 		EStaticMesh(const EStaticMesh& Other);
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
-		EStaticMesh& operator=(const EStaticMesh& Other);
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
 	};
 
 	class ESkinnedMesh : public EMesh
@@ -381,13 +392,11 @@ namespace PigeonEngine
 		using EBindPoseIndex	= TMap<EString, USHORT>;
 		using ESkinPart			= TArray<ESkinData>;
 	public:
-		ESkinnedMesh();
-		ESkinnedMesh(const ESkinnedMesh& Other);
-		ESkinnedMesh(const EString& InMeshName);
-		virtual ~ESkinnedMesh();
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
+	public:
 		ESkinnedMesh& operator=(const ESkinnedMesh& Other);
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
 	public:
 		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
 		BOOL					RemoveBindPose(const EString& InBoneName);
@@ -404,23 +413,63 @@ namespace PigeonEngine
 		EBindPoseIndex	BindPoseIndex;
 		USHORT			EffectBoneNum;
 		ESkinPart		Skins;
+	public:
+		ESkinnedMesh();
+		ESkinnedMesh(const ESkinnedMesh& Other);
+		ESkinnedMesh(const EString& InMeshName);
+		virtual ~ESkinnedMesh();
 	};
 
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		EMeshRenderResource(EMesh* InMesh);
+		virtual BOOL	IsRenderResourceValid()const override;
+		virtual void	ReleaseRenderResource()override;
+	public:
+		EMeshRenderResource();
+		EMeshRenderResource(const EMeshRenderResource& Other);
 		virtual ~EMeshRenderResource();
-	public:
-		virtual void Release()override;
 	protected:
-		EMesh*					Mesh;
-		TArray<RBufferResource>	RenderResources;
+		void CopyRenderResourcesInternal(const EMeshRenderResource* Other);
+	protected:
+		RBufferResource			IndexRenderResource;
+		TArray<RBufferResource>	VertexRenderResources;
+	};
+
+	class EStaticMeshRenderResource : public EMeshRenderResource
+	{
 	public:
-		EMeshRenderResource() = delete;
+		virtual BOOL	IsRenderResourceValid()const override;
+		virtual BOOL	InitRenderResource()override;
+		virtual void	ReleaseRenderResource()override;
+	public:
+		EStaticMeshRenderResource& operator=(const EStaticMeshRenderResource& Other);
+	public:
+		EStaticMeshRenderResource();
+		EStaticMeshRenderResource(EStaticMesh* InMesh);
+		EStaticMeshRenderResource(const EStaticMeshRenderResource& Other);
+		virtual ~EStaticMeshRenderResource();
+	protected:
+		EStaticMesh* StaticMesh;
+	};
 
-		CLASS_REMOVE_COPY_BODY(EMeshRenderResource)
-
+	class ESkinnedMeshRenderResource : public EMeshRenderResource
+	{
+	public:
+		virtual BOOL	IsRenderResourceValid()const override;
+		virtual BOOL	InitRenderResource()override;
+		virtual void	ReleaseRenderResource()override;
+	public:
+		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
+	public:
+		ESkinnedMeshRenderResource();
+		ESkinnedMeshRenderResource(const class ESkeleton* InSkeleton, ESkinnedMesh* InMesh);
+		ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other);
+		virtual ~ESkinnedMeshRenderResource();
+	protected:
+		const class ESkeleton*	Skeleton;
+		RBufferResource			SkeletonRenderResource;
+		ESkinnedMesh*			SkinnedMesh;
 	};
 
 	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
@@ -468,6 +517,8 @@ namespace PigeonEngine
 		virtual ~EStaticMeshAsset();
 	public:
 		virtual BOOL InitResource()override;
+	protected:
+		EMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
 	public:
 		EStaticMeshAsset() = delete;
 

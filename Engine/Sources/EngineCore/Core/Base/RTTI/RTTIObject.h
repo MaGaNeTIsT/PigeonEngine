@@ -97,7 +97,7 @@ namespace PigeonEngine
         ERTTIObject() {}
         ERTTIObject(const ERTTIObject&) {}
         virtual ~ERTTIObject() {}
-        ERTTIObject& operator=(const ERTTIObject&) {}
+        ERTTIObject& operator=(const ERTTIObject&) { return (*this); }
     };
 
     class EClassTypeRegisterManager final : public ERegisterBase

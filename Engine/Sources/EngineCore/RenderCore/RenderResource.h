@@ -28,10 +28,10 @@ namespace PigeonEngine
 				}
 			}
 		}
-		virtual ~RVertexShaderResource() { Release(); }
+		virtual ~RVertexShaderResource() { ReleaseRenderResource(); }
 		RVertexShaderResource& operator=(const RVertexShaderResource& Other)
 		{
-			Release();
+			ReleaseRenderResource();
 			Shader		= Other.Shader;
 			InputLayout	= Other.InputLayout;
 			if ((!!(Other.RawLayouts)) && (Other.LayoutNum > 0u))
@@ -43,8 +43,19 @@ namespace PigeonEngine
 					RawLayouts[i] = Other.RawLayouts[i];
 				}
 			}
+			return (*this);
 		}
-		virtual void Release()override
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return ((!!Shader) && (!!InputLayout) && (!!RawLayouts) && (LayoutNum > 0u));
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Shader		= nullptr;
 			InputLayout	= nullptr;
@@ -65,9 +76,23 @@ namespace PigeonEngine
 	public:
 		RPixelShaderResource() : Shader(nullptr) {}
 		RPixelShaderResource(const RPixelShaderResource& Other) : Shader(Other.Shader) {}
-		virtual ~RPixelShaderResource() { Release(); }
-		RPixelShaderResource& operator=(const RPixelShaderResource& Other) { Shader = Other.Shader; }
-		virtual void Release()override
+		virtual ~RPixelShaderResource() { ReleaseRenderResource(); }
+		RPixelShaderResource& operator=(const RPixelShaderResource& Other)
+		{
+			Shader = Other.Shader;
+			return (*this);
+		}
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Shader);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Shader = nullptr;
 		};
@@ -78,9 +103,23 @@ namespace PigeonEngine
 	public:
 		RComputeShaderResource() : Shader(nullptr) {}
 		RComputeShaderResource(const RComputeShaderResource& Other) : Shader(Other.Shader) {}
-		virtual ~RComputeShaderResource() { Release(); }
-		RComputeShaderResource& operator=(const RComputeShaderResource& Other) { Shader = Other.Shader; }
-		virtual void Release()override
+		virtual ~RComputeShaderResource() { ReleaseRenderResource(); }
+		RComputeShaderResource& operator=(const RComputeShaderResource& Other)
+		{
+			Shader = Other.Shader;
+			return (*this);
+		}
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Shader);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Shader = nullptr;
 		};
@@ -91,7 +130,7 @@ namespace PigeonEngine
 	public:
 		RStructuredBuffer() : AccessMapRead(FALSE), AccessMapWrite(FALSE), Buffer(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr) {}
 		RStructuredBuffer(const RStructuredBuffer& Other) : AccessMapRead(Other.AccessMapRead), AccessMapWrite(Other.AccessMapWrite), Buffer(Other.Buffer), UnorderedAccessView(Other.UnorderedAccessView), ShaderResourceView(Other.ShaderResourceView) {}
-		virtual ~RStructuredBuffer() { Release(); }
+		virtual ~RStructuredBuffer() { ReleaseRenderResource(); }
 		RStructuredBuffer& operator=(const RStructuredBuffer& Other)
 		{
 			AccessMapRead		= Other.AccessMapRead;
@@ -99,8 +138,20 @@ namespace PigeonEngine
 			Buffer				= Other.Buffer;
 			UnorderedAccessView	= Other.UnorderedAccessView;
 			ShaderResourceView	= Other.ShaderResourceView;
+			return (*this);
 		}
-		virtual void Release()override
+		// StructuredBuffer can bind UAV or SRV, so this function only determines by buffer valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Buffer);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			AccessMapRead		= FALSE;
 			AccessMapWrite		= FALSE;
@@ -119,7 +170,7 @@ namespace PigeonEngine
 	public:
 		RRenderTexture2D() : Buffer(nullptr), RenderTargetView(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr), DepthStencilView(nullptr) {}
 		RRenderTexture2D(const RRenderTexture2D& Other) : Buffer(Other.Buffer), RenderTargetView(Other.RenderTargetView), UnorderedAccessView(Other.UnorderedAccessView), ShaderResourceView(Other.ShaderResourceView), DepthStencilView(Other.DepthStencilView) {}
-		virtual ~RRenderTexture2D() { Release(); }
+		virtual ~RRenderTexture2D() { ReleaseRenderResource(); }
 		RRenderTexture2D& operator=(const RRenderTexture2D& Other)
 		{
 			Buffer				= Other.Buffer;
@@ -127,8 +178,20 @@ namespace PigeonEngine
 			UnorderedAccessView	= Other.UnorderedAccessView;
 			ShaderResourceView	= Other.ShaderResourceView;
 			DepthStencilView	= Other.DepthStencilView;
+			return (*this);
 		}
-		virtual void Release()override
+		// RenderTexture2D can bind RTV, UAV, SRV or DSV, so this function only determines by buffer valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Buffer);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Buffer				= nullptr;
 			RenderTargetView	= nullptr;
@@ -147,15 +210,27 @@ namespace PigeonEngine
 	public:
 		RRenderTexture3D() : Buffer(nullptr), RenderTargetView(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr) {}
 		RRenderTexture3D(const RRenderTexture3D& Other) : Buffer(Other.Buffer), RenderTargetView(Other.RenderTargetView), UnorderedAccessView(Other.UnorderedAccessView), ShaderResourceView(Other.ShaderResourceView) {}
-		virtual ~RRenderTexture3D() { Release(); }
+		virtual ~RRenderTexture3D() { ReleaseRenderResource(); }
 		RRenderTexture3D& operator=(const RRenderTexture3D& Other)
 		{
 			Buffer				= Other.Buffer;
 			RenderTargetView	= Other.RenderTargetView;
 			UnorderedAccessView	= Other.UnorderedAccessView;
 			ShaderResourceView	= Other.ShaderResourceView;
+			return (*this);
 		}
-		virtual void Release()override
+		// RenderTexture3D can bind RTV, UAV or SRV, so this function only determines by buffer valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Buffer);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Buffer				= nullptr;
 			RenderTargetView	= nullptr;
@@ -172,13 +247,25 @@ namespace PigeonEngine
 	public:
 		RTexture2DResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
 		RTexture2DResource(const RTexture2DResource& Other) : Buffer(Other.Buffer), ShaderResourceView(Other.ShaderResourceView) {}
-		virtual ~RTexture2DResource() { Release(); }
+		virtual ~RTexture2DResource() { ReleaseRenderResource(); }
 		RTexture2DResource& operator=(const RTexture2DResource& Other)
 		{
 			Buffer				= Other.Buffer;
 			ShaderResourceView	= Other.ShaderResourceView;
+			return (*this);
 		}
-		virtual void Release()override
+		// Texture2DResource must bind SRV, so this function determines by buffer valid and SRV valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return ((!!Buffer) && (!!ShaderResourceView));
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
@@ -191,13 +278,25 @@ namespace PigeonEngine
 	public:
 		RTextureCubeResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
 		RTextureCubeResource(const RTextureCubeResource& Other) : Buffer(Other.Buffer), ShaderResourceView(Other.ShaderResourceView) {}
-		virtual ~RTextureCubeResource() { Release(); }
+		virtual ~RTextureCubeResource() { ReleaseRenderResource(); }
 		RTextureCubeResource& operator=(const RTextureCubeResource& Other)
 		{
 			Buffer				= Other.Buffer;
 			ShaderResourceView	= Other.ShaderResourceView;
+			return (*this);
 		}
-		virtual void Release()override
+		// TextureCubeResource must bind SRV, so this function determines by buffer valid and SRV valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return ((!!Buffer) && (!!ShaderResourceView));
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
@@ -210,16 +309,28 @@ namespace PigeonEngine
 	public:
 		RBufferResource() : Buffer(nullptr) {}
 		RBufferResource(const RBufferResource& Other) : Buffer(Other.Buffer) {}
-		virtual ~RBufferResource() { Release(); }
+		virtual ~RBufferResource() { ReleaseRenderResource(); }
 		RBufferResource& operator=(const RBufferResource& Other)
 		{
 			Buffer = Other.Buffer;
+			return (*this);
 		}
-		virtual void Release()override
+		// BufferResource is raw buffer resource, so this function only determines by buffer valid.
+		virtual BOOL IsRenderResourceValid()const override
+		{
+			return (!!Buffer);
+		}
+		virtual BOOL InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
 		{
 			Buffer = nullptr;
 		}
-		Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
+		Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	};
 
 };

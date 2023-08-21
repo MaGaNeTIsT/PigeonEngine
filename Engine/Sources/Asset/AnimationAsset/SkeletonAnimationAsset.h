@@ -35,13 +35,15 @@ namespace PigeonEngine
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
 	public:
-		ESkeletonAnimation(const EString& InMeshName);
-		virtual ~ESkeletonAnimation();
-		virtual BOOL IsValid()const override;
-		virtual void Release()override;
+		virtual BOOL	IsResourceValid()const override;
+		virtual BOOL	InitResource()override;
+		virtual void	ReleaseResource()override;
 	protected:
 		EString							AnimationName;
 		TArray<ESkeletonAnimationClip>	AnimationClips;
+	public:
+		ESkeletonAnimation(const EString& InMeshName);
+		virtual ~ESkeletonAnimation();
 	public:
 		ESkeletonAnimation() = delete;
 

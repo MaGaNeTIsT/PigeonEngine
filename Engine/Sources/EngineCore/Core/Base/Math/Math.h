@@ -106,7 +106,7 @@ namespace PigeonEngine
 		EMath() {}
 		EMath(const EMath&) {}
 		~EMath() {}
-		EMath& operator=(const EMath&) {}
+		EMath& operator=(const EMath&) { return (*this); }
 	public:
 		static EMath* GetSingleton()
 		{
