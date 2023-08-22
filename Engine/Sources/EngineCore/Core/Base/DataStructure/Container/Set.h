@@ -6,6 +6,7 @@
 #include "../../../../Core/Config/ErrorCaption.h"
 namespace PigeonEngine
 {
+
     // -------------------   Declarations   -----------------------------
     template <typename T>
     class TSet
@@ -46,11 +47,23 @@ namespace PigeonEngine
         {
             return Elements.end();
         }
+
+        /**
+         * DO NOT USE DIRECTLY
+         * STL-like iterators to enable range-based for loop support.
+         */
+        typename TConstIterator begin()const{return Elements.begin();}
+        typename TConstIterator end()const{return Elements.end();}
+        typename TIterator      begin(){return Elements.begin();}
+        typename TIterator      end(){return Elements.end();}
+        
         UINT Length()const
         {
             return static_cast<UINT>(Elements.size());
         }
         UINT Last    ()const;
+
+        
     private:
         class std::set<T> Elements;
     };

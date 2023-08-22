@@ -34,6 +34,8 @@ namespace PigeonEngine
 	{
 		delete this;
 	}
+
+
 #ifdef _EDITOR_ONLY
 	void PObject::SetName(const EString& name)
 	{

@@ -10,7 +10,7 @@ namespace PigeonEngine
 {
     class PScene;
     class PActor;
-    
+    class EGameTimer;
     enum EWorldType : UINT8
     {
         EWT_GAME,
@@ -44,8 +44,8 @@ namespace PigeonEngine
     protected:
         void CheckRenderInfoWhenAddingActor(PActor* NewActor);
     private:
-        TArray<PActor*> RootActors;
-
+        TSet<PActor*> RootActors;
+        TSet<PActor*> AllActors;
 #if _EDITOR_ONLY
     public:
         void AddSceneToWorld(PScene* NewScene);
@@ -59,6 +59,10 @@ namespace PigeonEngine
         TArray<PScene*> Scenes;
 #endif
 
+
+    private:
+        // Timer
+        const EGameTimer* GameTimer = nullptr;
     };
 
 };

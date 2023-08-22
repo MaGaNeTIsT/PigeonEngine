@@ -11,10 +11,21 @@ namespace PigeonEngine
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-
+	
+	PActor::PActor()
+	{
+		if(!RootComponent)
+		{
+			RootComponent = new PSceneComponent();
+		}
+	}
+	
+	PActor::~PActor()
+	{
+	}
+	
 	void PActor::Init()
 	{
-		/*PObject::Init();*/
 		
 	}
 
@@ -23,32 +34,37 @@ namespace PigeonEngine
 		PObject::Uninit();
 	}
 
+	void PActor::Tick(FLOAT deltaTime)
+	{
+#ifdef _EDITOR_ONLY.
+		EditorTick(deltaTime);
+		return;
+#endif
+		FixedTick(deltaTime);
+	}
+
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
 		if(!IsTickable())
 		{
 			return;
 		}
-	}
-
-	PActor::PActor()
-	{
-		if(!RootComponent)
+		for(const auto& Component : Components)
 		{
-			RootComponent = new PSceneComponent();
+			Component->FixedTick(deltaTime);
 		}
 	}
-	PActor::~PActor()
+
+	void PActor::EditorTick(FLOAT deltaTime)
 	{
-		// for(auto& elem : Components)
-		// {
-		// 	if(elem)
-		// 	{
-		// 		delete elem;
-		// 	}
-		// }
-		// Components.clear();
-		
+		if(!IsTickable())
+		{
+			return;
+		}
+		for(const auto& Component : Components)
+		{
+			Component->EditorTick(deltaTime);
+		}
 	}
 
 	PActor* PActor::GetAttachedParentActor() const

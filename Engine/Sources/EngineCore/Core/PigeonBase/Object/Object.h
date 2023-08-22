@@ -33,6 +33,8 @@ namespace PigeonEngine
 		BOOL bCanTick = false;
 	public:
 		virtual void Destroy();
+
+
 	};
 
 };

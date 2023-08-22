@@ -47,6 +47,16 @@ namespace PigeonEngine
         {
             return Map.end();
         }
+
+        /**
+         * DO NOT USE DIRECTLY
+         * STL-like iterators to enable range-based for loop support.
+         */
+        typename TConstIterator begin()const{return Map.begin();}
+        typename TConstIterator end()const{return Map.end();}
+        typename TIterator      begin(){return Map.begin();}
+        typename TIterator      end(){return Map.end();}
+        
         ENGINE_NODISCARD UINT Length() const
         {
             return (static_cast<UINT>(Map.size()));

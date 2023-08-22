@@ -71,6 +71,15 @@ namespace PigeonEngine
         {
             return HashMap.end();
         }
+
+        /**
+         * DO NOT USE DIRECTLY
+         * STL-like iterators to enable range-based for loop support.
+         */
+        typename TConstIterator begin()const{return HashMap.begin();}
+        typename TConstIterator end()const{return HashMap.end();}
+        typename TIterator      begin(){return HashMap.begin();}
+        typename TIterator      end(){return HashMap.end();}
     private:
         std::unordered_map<K, V, Hash, Pred, Alloc> HashMap;
     };

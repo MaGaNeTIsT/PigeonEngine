@@ -22,11 +22,14 @@ namespace PigeonEngine
 	public:
 		void    Init() override;
 		void    Uninit() override;
+		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
-
+#ifdef _EDITOR_ONLY
+		void	EditorTick(FLOAT deltaTime) override;
+#endif
 		void    Destroy() override;
 	public:
-		
+		 
 		PActor* GetAttachedParentActor() const;
 
 		// Attach this actor to another;
