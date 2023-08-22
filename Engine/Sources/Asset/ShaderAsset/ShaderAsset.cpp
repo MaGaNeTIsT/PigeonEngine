@@ -231,6 +231,9 @@ namespace PigeonEngine
 	}
 	void EShaderAssetManager::ShutDown()
 	{
+		ClearVertexShaders();
+		ClearPixelShaders();
+		ClearComputeShaders();
 	}
 	BOOL EShaderAssetManager::ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* InShaderInputLayouts, const UINT* InShaderInputLayoutNum)
 	{
@@ -396,6 +399,18 @@ namespace PigeonEngine
 		OutShaderAsset = ResultShaderAsset;
 		return TRUE;
 	}
+	void EShaderAssetManager::ClearVertexShaders()
+	{
+		VertexShaderManager.Clear();
+	}
+	void EShaderAssetManager::ClearPixelShaders()
+	{
+		PixelShaderManager.Clear();
+	}
+	void EShaderAssetManager::ClearComputeShaders()
+	{
+		ComputeShaderManager.Clear();
+	}
 	template<class TShaderAssetType>
 	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const EString& InLoadPath)
 	{
@@ -512,7 +527,7 @@ namespace PigeonEngine
 		{
 			const UINT32 ShaderFrequency = static_cast<UINT32>(InShaderFrequency);
 			UINT32 ShaderInputLayoutNum = 0u;
-			ULONG ShaderSaveSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(UINT32) + InShaderResource->ShaderByteCodeSize;
+			ULONG ShaderSaveSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(UINT32) + InShaderResource->ShaderByteCodeSize;	// EAssetType + RShaderFrequencyType + ShaderInputLayoutNum + ShaderByteCodeSize
 			switch (InShaderFrequency)
 			{
 			case RShaderFrequencyType::SHADER_FREQUENCY_PIXEL:

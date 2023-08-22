@@ -471,10 +471,11 @@ namespace PigeonEngine
 		virtual ~ESkinnedMeshRenderResource();
 	protected:
 		BOOL	CreateSkeletonRenderResourceInternal();
+		BOOL	CreateSkinRenderResourceInternal();
 		void	CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other);
 	protected:
 		const class ESkeleton*	Skeleton;
-		RBufferResource			SkeletonRenderResource;
+		RStructuredBuffer		SkeletonRenderResource;
 		ESkinnedMesh*			SkinnedMesh;
 		TArray<RBufferResource>	SkinRenderResources;
 	};
@@ -523,13 +524,69 @@ namespace PigeonEngine
 		);
 		virtual ~EStaticMeshAsset();
 	public:
-		virtual BOOL InitResource()override;
+		virtual BOOL	InitResource()override;
 	protected:
 		EStaticMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
 	public:
 		EStaticMeshAsset() = delete;
 
 		CLASS_REMOVE_COPY_BODY(EStaticMeshAsset)
+
+	};
+
+	class ESkinnedMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>
+	{
+	public:
+		ESkinnedMeshAsset(
+			const EString& InMeshPath
+#ifdef _EDITOR_ONLY
+			, const EString& InDebugName
+#endif
+		);
+		virtual ~ESkinnedMeshAsset();
+	public:
+		virtual BOOL	InitResource()override;
+	public:
+		void	SetSkeleton(const class ESkeleton* InSkeleton);
+		const class ESkeleton*	GetSkeleton()const;
+	protected:
+		ESkinnedMeshRenderResource*	CreateMeshResource(ESkinnedMesh* InResource);
+	protected:
+		const class ESkeleton* Skeleton;
+	public:
+		ESkinnedMeshAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(ESkinnedMeshAsset)
+
+	};
+
+	class EMeshAssetManager : public EManagerBase
+	{
+	public:
+		typedef TAssetManager<EString, EStaticMeshAsset>	EStaticMeshAssetManager;
+		typedef TAssetManager<EString, ESkinnedMeshAsset>	ESkinnedMeshAssetManager;
+	public:
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
+	public:
+#if _EDITOR_ONLY
+		BOOL	ImportMesh(const EString& InImportPath, const EString& InSaveAssetPath);
+#endif
+		BOOL	LoadStaticMeshAsset(const EString& InLoadPath, const EStaticMeshAsset*& OutStaticMeshAsset);
+		BOOL	LoadSkinnedMeshAsset(const EString& InLoadPath, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
+	private:
+		void	ClearStaticMeshes();
+		void	ClearSkinnedMeshes();
+	private:
+		template<typename _TMeshResourceType, typename _TMeshAssetType>
+		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath);
+		template<typename _TMeshResourceType, typename _TMeshAssetType>
+		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
+	private:
+		EStaticMeshAssetManager		StaticMeshManager;
+		ESkinnedMeshAssetManager	SkinnedMeshManager;
+
+		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EMeshAssetManager)
 
 	};
 

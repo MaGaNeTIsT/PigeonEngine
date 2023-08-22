@@ -5,9 +5,11 @@
 #include <RenderResource.h>
 #include <EngineCommon.h>
 #include <BaseAsset.h>
+#if _EDITOR_ONLY
 #include <wincodec.h>
 #include <wincodecsdk.h>
 #pragma comment (lib, "windowscodecs.lib")
+#endif
 
 namespace PigeonEngine
 {
@@ -93,11 +95,15 @@ namespace PigeonEngine
 	public:
 		typedef TAssetManager<EString, ETexture2DAsset>		ETexture2DAssetManager;
 	public:
-		virtual void Initialize()override;
-		virtual void ShutDown()override;
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
 	public:
-		BOOL ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
-		BOOL LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
+#if _EDITOR_ONLY
+		BOOL	ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
+#endif
+		BOOL	LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
+	private:
+		void	ClearTexture2Ds();
 	private:
 		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride = nullptr);
 		BOOL SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource);

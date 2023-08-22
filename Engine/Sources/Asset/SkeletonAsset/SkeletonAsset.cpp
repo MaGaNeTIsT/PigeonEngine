@@ -202,7 +202,7 @@ namespace PigeonEngine
 	}
 	UINT ESkeleton::GetBoneCount()const
 	{
-		return (this->Bones.Length());
+		return (Bones.Length());
 	}
 	BOOL ESkeleton::AddBoneElement(EBoneData* InIndexData)
 	{

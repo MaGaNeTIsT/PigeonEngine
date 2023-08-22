@@ -1,6 +1,9 @@
 #include "MeshAsset.h"
 #include <RenderDevice/DeviceD3D11.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#if _EDITOR_ONLY
+#include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
+#endif
 
 namespace PigeonEngine
 {
@@ -24,6 +27,9 @@ namespace PigeonEngine
 		RegisterClassType<ESkinnedMeshRenderResource, EMeshRenderResource>();
 
 		RegisterMeshClassTypes<EStaticMesh, EStaticMeshRenderResource, EMeshType::MESH_TYPE_STATIC, EStaticMeshAsset>();
+		RegisterMeshClassTypes<ESkinnedMesh, ESkinnedMeshRenderResource, EMeshType::MESH_TYPE_SKIN, ESkinnedMeshAsset>();
+
+		RegisterClassType<EMeshAssetManager, EManagerBase>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -646,7 +652,16 @@ namespace PigeonEngine
 			BOOL Result = FALSE;
 			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 			{
-				Result = Result || ((Skins[Index].ElementNum > 3u) && (Skins[Index].Stride > 0u));
+				Result = Result ||
+					(
+						(Skins[Index].ElementNum > 3u) &&
+						(Skins[Index].Stride > 0u) &&
+						(BindPoseIndex.Length() > 0u) &&
+						(BindPoseIndex.Length() <= RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX) &&
+						(BindPoseIndex.Length() == BindPoseValue.Length()) &&
+						(EffectBoneNum > 0u) &&
+						(EffectBoneNum <= ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)
+						);
 			}
 			return (Result && (EMesh::IsResourceValid()));
 		}
@@ -911,20 +926,20 @@ namespace PigeonEngine
 	}
 	BOOL EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
 	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		if (const EIndexData* OutIndexData = nullptr; InMesh->GetIndexElement(OutIndexData))
 		{
 			if (IndexRenderResource.IsRenderResourceValid())
 			{
 				IndexRenderResource.ReleaseRenderResource();
 			}
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 			UINT32 IndexType = static_cast<UINT32>(OutIndexData->PartType);
 			if ((IndexType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
 			{
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = OutIndexData->Indices;
 				if (!(RenderDevice->CreateBuffer(
-					(IndexRenderResource.Buffer),
+					IndexRenderResource,
 					RBufferDesc((4u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
 					(&SubresourceDataDesc))))
 				{
@@ -950,7 +965,7 @@ namespace PigeonEngine
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = TempIndices;
 				if (!(RenderDevice->CreateBuffer(
-					(IndexRenderResource.Buffer),
+					IndexRenderResource,
 					RBufferDesc((4u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
 					(&SubresourceDataDesc))))
 				{
@@ -976,14 +991,13 @@ namespace PigeonEngine
 	}
 	BOOL EMeshRenderResource::CreateVertexRenderResourceInternal(const EMesh* InMesh)
 	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		const EMesh::EVertexPart& MeshVertices = InMesh->GetVertices();
 		if (MeshVertices.Length() == 0u)
 		{
 #if _EDITOR_ONLY
 			EString ErrorInfo("Create vertex render resource but mesh [name = ");
 			ErrorInfo += InMesh->GetDebugName();
-			ErrorInfo += "] does not contain vertex datas";
+			ErrorInfo += "] does not contain vertex datas.";
 			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 #endif
 			return FALSE;
@@ -996,6 +1010,7 @@ namespace PigeonEngine
 			}
 			VertexRenderResources.Clear();
 		}
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		BOOL FullyCreated = TRUE;
 		for (UINT MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
 		{
@@ -1004,7 +1019,7 @@ namespace PigeonEngine
 			SubresourceDataDesc.pSysMem = MeshVertexData.Datas;
 			RBufferResource NewVertexRenderResource;
 			if (!(RenderDevice->CreateBuffer(
-				(NewVertexRenderResource.Buffer),
+				NewVertexRenderResource,
 				RBufferDesc((MeshVertexData.Stride * MeshVertexData.ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
 				(&SubresourceDataDesc))))
 			{
@@ -1103,7 +1118,7 @@ namespace PigeonEngine
 	ESkinnedMeshRenderResource::ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other)
 		: EMeshRenderResource(Other), Skeleton(Other.Skeleton), SkinnedMesh(Other.SkinnedMesh)
 	{
-
+		CopySkinRenderResourcesInternal(&Other);
 	}
 	ESkinnedMeshRenderResource::~ESkinnedMeshRenderResource()
 	{
@@ -1115,6 +1130,7 @@ namespace PigeonEngine
 		CopyRenderResourcesInternal(&Other);
 		Skeleton		= Other.Skeleton;
 		SkinnedMesh		= Other.SkinnedMesh;
+		CopySkinRenderResourcesInternal(&Other);
 		return (*this);
 	}
 	BOOL ESkinnedMeshRenderResource::IsRenderResourceValid()const
@@ -1146,65 +1162,239 @@ namespace PigeonEngine
 			{
 				return FALSE;
 			}
-
+			if (!(CreateSkinRenderResourceInternal()))
+			{
+				return FALSE;
+			}
+			if (!(CreateSkeletonRenderResourceInternal()))
+			{
+				return FALSE;
+			}
 			return TRUE;
 		}
 		return FALSE;
 	}
 	void ESkinnedMeshRenderResource::ReleaseRenderResource()
 	{
-		Skeleton = nullptr;
-		SkinnedMesh = nullptr;
+		Skeleton	= nullptr;
+		SkinnedMesh	= nullptr;
 		SkeletonRenderResource.ReleaseRenderResource();
+		for (UINT i = 0u, n = SkinRenderResources.Length(); i < n; i++)
+		{
+			SkinRenderResources[i].ReleaseRenderResource();
+		}
 		EMeshRenderResource::ReleaseRenderResource();
 	}
 	BOOL ESkinnedMeshRenderResource::CreateSkeletonRenderResourceInternal()
 	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		const EMesh::EVertexPart& MeshVertices = SkinnedMesh->GetSkinElement();
-		if (MeshVertices.Length() == 0u)
+		const UINT SkeletonBoneNum = ((!!Skeleton) && Skeleton->IsResourceValid()) ? (Skeleton->GetBoneCount()) : 0u;
+		const UINT MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
+		if ((!Skeleton) || (!(Skeleton->IsResourceValid())) || (!SkinnedMesh) || (!(SkinnedMesh->IsResourceValid())) || (SkeletonBoneNum < MeshSkinnedBoneNum))
 		{
 #if _EDITOR_ONLY
-			EString ErrorInfo("Create vertex render resource but mesh [name = ");
-			ErrorInfo += InMesh->GetDebugName();
-			ErrorInfo += "] does not contain vertex datas";
-			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			if (!Skeleton)
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Create skeleton render resource but skeleton is null."));
+			}
+			else if (SkeletonBoneNum == 0u)
+			{
+				EString ErrorInfo("Create skeleton render resource but skeleton [name = ");
+				ErrorInfo += Skeleton->GetDebugName();
+				ErrorInfo += "] does not contain bone datas.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+			if (!SkinnedMesh)
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Create skeleton render resource but skinned mesh is null."));
+			}
+			else if (MeshSkinnedBoneNum == 0u)
+			{
+				EString ErrorInfo("Create skeleton render resource but skinned mesh [name = ");
+				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += "] does not contain bone datas.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+			if (SkeletonBoneNum < MeshSkinnedBoneNum)
+			{
+				EString ErrorInfo("Create skeleton render resource but skeleton [name = ");
+				ErrorInfo += Skeleton->GetDebugName();
+				ErrorInfo += "]'s bone num [";
+				ErrorInfo += ToString(SkeletonBoneNum);
+				ErrorInfo += "] is lower than skinned mesh [name = ";
+				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += "]'s bone num [";
+				ErrorInfo += ToString(MeshSkinnedBoneNum);
+				ErrorInfo += "].";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX)
+			{
+				EString ErrorInfo("Create skeleton render resource but skinned mesh [name = ");
+				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += "]'s bone num [";
+				ErrorInfo += ToString(MeshSkinnedBoneNum);
+				ErrorInfo += "] is greater than engine's bone max num [";
+				ErrorInfo += ToString(RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX);
+				ErrorInfo += "].";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
 #endif
 			return FALSE;
 		}
-		if (VertexRenderResources.Length() > 0u)
+		if (SkeletonRenderResource.IsRenderResourceValid())
 		{
-			for (UINT i = 0u, n = VertexRenderResources.Length(); i < n; i++)
-			{
-				VertexRenderResources[i].ReleaseRenderResource();
-			}
-			VertexRenderResources.Clear();
+			SkeletonRenderResource.ReleaseRenderResource();
 		}
-		BOOL FullyCreated = TRUE;
-		for (UINT MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		{
-			const EVertexData& MeshVertexData = MeshVertices[MeshVertexIndex];
+			DirectX::XMFLOAT4X4 SkeletonMatrices[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX];
+			{
+				DirectX::XMFLOAT4X4 TempIdentity;
+				DirectX::XMStoreFloat4x4((&TempIdentity), DirectX::XMMatrixIdentity());
+				for (UINT i = 0u; (i < MeshSkinnedBoneNum) && (i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX); i++)
+				{
+					SkeletonMatrices[i] = TempIdentity;
+				}
+			}
 			RSubresourceDataDesc SubresourceDataDesc;
-			SubresourceDataDesc.pSysMem = MeshVertexData.Datas;
-			RBufferResource NewVertexRenderResource;
-			if (!(RenderDevice->CreateBuffer(
-				(NewVertexRenderResource.Buffer),
-				RBufferDesc((MeshVertexData.Stride * MeshVertexData.ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+			SubresourceDataDesc.pSysMem = SkeletonMatrices;
+			if (!(RenderDevice->CreateStructuredBuffer(
+				SkeletonRenderResource,
+				RStructuredBufferDesc(sizeof(DirectX::XMFLOAT4X4), MeshSkinnedBoneNum),
 				(&SubresourceDataDesc))))
 			{
 #if _EDITOR_ONLY
-				EString ErrorInfo("Create mesh [name = ");
-				ErrorInfo += InMesh->GetDebugName();
-				ErrorInfo += "] vertex buffer [num = ";
-				ErrorInfo += ToString(MeshVertexData.ElementNum);
-				ErrorInfo += "] [stride = ";
-				ErrorInfo += ToString(MeshVertexData.Stride);
+				EString ErrorInfo("Create skeleton resource [name = ");
+				ErrorInfo += Skeleton->GetDebugName();
+				ErrorInfo += "] bones buffer [num = ";
+				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 #endif
-				FullyCreated = FALSE;
+				return FALSE;
 			}
-			VertexRenderResources.Add(NewVertexRenderResource);
+		}
+		return TRUE;
+	}
+	BOOL ESkinnedMeshRenderResource::CreateSkinRenderResourceInternal()
+	{
+		const UINT MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
+		if ((!SkinnedMesh) || (!(SkinnedMesh->IsResourceValid())))
+		{
+#if _EDITOR_ONLY
+			if (!SkinnedMesh)
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Create skin render resource but skinned mesh is null."));
+			}
+			else if (MeshSkinnedBoneNum == 0u)
+			{
+				EString ErrorInfo("Create skin render resource but skinned mesh [name = ");
+				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += "] does not contain bone datas.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX)
+			{
+				EString ErrorInfo("Create skin render resource but skinned mesh [name = ");
+				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += "]'s bone num [";
+				ErrorInfo += ToString(MeshSkinnedBoneNum);
+				ErrorInfo += "] is greater than engine's bone max num [";
+				ErrorInfo += ToString(RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX);
+				ErrorInfo += "].";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			return FALSE;
+		}
+		if (const UINT SkinRenderResourceNum = SkinRenderResources.Length(); SkinRenderResourceNum > 0u)
+		{
+			for (UINT SkinRenderResourceIndex = 0u; SkinRenderResourceIndex < SkinRenderResourceNum; SkinRenderResourceIndex++)
+			{
+				SkinRenderResources[SkinRenderResourceIndex].ReleaseRenderResource();
+			}
+			SkinRenderResources.Clear();
+		}
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		BOOL FullyCreated = TRUE;
+		const ESkinnedMesh::ESkinPart& Skins = SkinnedMesh->GetSkins();
+		for (UINT SkinIndex = 0u, SkinNum = Skins.Length(); SkinIndex < SkinNum; SkinIndex++)
+		{
+			const ESkinData& SkinData = Skins[SkinIndex];
+			const UINT EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
+			Check((ENGINE_ASSET_ERROR), ("Check effect bone num failed when create skin render resource."), (EffectBoneNum == SkinnedMesh->GetEffectBoneNum()));
+			{
+				const UINT IndexNum = EffectBoneNum * SkinData.ElementNum;
+				UINT16* TempSkinIndexMem = new UINT16[IndexNum];
+				for (UINT i = 0u, n = SkinData.ElementNum; i < n; i++)
+				{
+					for (UINT BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
+					{
+						if ((i * EffectBoneNum + BoneIndex) < IndexNum)
+						{
+							Check((ENGINE_ASSET_ERROR), ("Check skin bone index is lower than 65535u failed when create skin render resource."), ((SkinData.Indices[i * EffectBoneNum + BoneIndex]) <= 0xffffu));
+							TempSkinIndexMem[i * EffectBoneNum + BoneIndex] = static_cast<UINT16>(SkinData.Indices[i * EffectBoneNum + BoneIndex]);
+						}
+					}
+				}
+				const UINT IndexStride = EffectBoneNum * sizeof(UINT16);	//We assum the number of bone can not greater than 65535u.
+				RSubresourceDataDesc SubresourceDataDesc;
+				SubresourceDataDesc.pSysMem = TempSkinIndexMem;
+				RBufferResource TempSkinIndexBufferResource;
+				if (!(RenderDevice->CreateBuffer(
+					TempSkinIndexBufferResource,
+					RBufferDesc(IndexStride * SkinData.ElementNum, RBindFlagType::BIND_VERTEX_BUFFER, 2u),
+					(&SubresourceDataDesc))))
+				{
+#if _EDITOR_ONLY
+					EString ErrorInfo("Create skin resource skinned mesh [name = ");
+					ErrorInfo += SkinnedMesh->GetDebugName();
+					ErrorInfo += "] skin index buffer [num = ";
+					ErrorInfo += ToString(SkinData.ElementNum);
+					ErrorInfo += "] failed.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+					FullyCreated = FALSE;
+				}
+				delete[]TempSkinIndexMem;
+				SkinRenderResources.Add(TempSkinIndexBufferResource);
+			}
+
+			{
+				const UINT WeightNum = EffectBoneNum * SkinData.ElementNum;
+				FLOAT* TempSkinWeightMem = new FLOAT[WeightNum];
+				for (UINT i = 0u, n = SkinData.ElementNum; i < n; i++)
+				{
+					for (UINT BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
+					{
+						if ((i * EffectBoneNum + BoneIndex) < WeightNum)
+						{
+							TempSkinWeightMem[i * EffectBoneNum + BoneIndex] = SkinData.Weights[i * EffectBoneNum + BoneIndex];
+						}
+					}
+				}
+				const UINT WeightStride = EffectBoneNum * sizeof(FLOAT);
+				RSubresourceDataDesc SubresourceDataDesc;
+				SubresourceDataDesc.pSysMem = TempSkinWeightMem;
+				RBufferResource TempSkinWeightBufferResource;
+				if (!(RenderDevice->CreateBuffer(
+					TempSkinWeightBufferResource,
+					RBufferDesc(WeightStride * SkinData.ElementNum, RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+					(&SubresourceDataDesc))))
+				{
+#if _EDITOR_ONLY
+					EString ErrorInfo("Create skin resource skinned mesh [name = ");
+					ErrorInfo += SkinnedMesh->GetDebugName();
+					ErrorInfo += "] skin weight buffer [num = ";
+					ErrorInfo += ToString(SkinData.ElementNum);
+					ErrorInfo += "] failed.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+					FullyCreated = FALSE;
+				}
+				delete[]TempSkinWeightMem;
+				SkinRenderResources.Add(TempSkinWeightBufferResource);
+			}
 		}
 		return FullyCreated;
 	}
@@ -1221,6 +1411,10 @@ namespace PigeonEngine
 				SkinRenderResources.Add(Other->SkinRenderResources[i]);
 			}
 		}
+		if (Other->SkeletonRenderResource.IsRenderResourceValid())
+		{
+			SkeletonRenderResource = Other->SkeletonRenderResource;
+		}
 	}
 
 	EStaticMeshAsset::EStaticMeshAsset(
@@ -1229,7 +1423,7 @@ namespace PigeonEngine
 		, const EString& InDebugName
 #endif
 	)
-		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EMeshRenderResource>(InMeshPath
+		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>(InMeshPath
 #ifdef _EDITOR_ONLY
 			, InDebugName
 #endif
@@ -1252,7 +1446,7 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		if (CreateRenderResourceInternal(
-			[this](EStaticMesh* InResource)->EMeshRenderResource*
+			[this](EStaticMesh* InResource)->EStaticMeshRenderResource*
 			{
 				return (this->CreateMeshResource(InResource));
 			},
@@ -1265,8 +1459,193 @@ namespace PigeonEngine
 	}
 	EStaticMeshRenderResource* EStaticMeshAsset::CreateMeshResource(EStaticMesh* InResource)
 	{
+		EStaticMeshRenderResource* Result = nullptr;
+		if ((!InResource) || (!(InResource->IsResourceValid())))
+		{
+			return Result;
+		}
+		Result = new EStaticMeshRenderResource(InResource);
+		if (!(Result->InitRenderResource()))
+		{
+			Result->ReleaseRenderResource();
+			delete Result;
+			Result = nullptr;
+		}
+		return Result;
+	}
 
-		return nullptr;
+	ESkinnedMeshAsset::ESkinnedMeshAsset(
+		const EString& InMeshPath
+#ifdef _EDITOR_ONLY
+		, const EString& InDebugName
+#endif
+	)
+		: TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>(InMeshPath
+#ifdef _EDITOR_ONLY
+			, InDebugName
+#endif
+		), Skeleton(nullptr)
+	{
+	}
+	ESkinnedMeshAsset::~ESkinnedMeshAsset()
+	{
+	}
+	BOOL ESkinnedMeshAsset::InitResource()
+	{
+		if (IsInitialized())
+		{
+#ifdef _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Skinned mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			return TRUE;
+		}
+		if (CreateRenderResourceInternal(
+			[this](ESkinnedMesh* InResource)->ESkinnedMeshRenderResource*
+			{
+				return (this->CreateMeshResource(InResource));
+			},
+			FALSE))
+		{
+			bIsInitialized = TRUE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	void ESkinnedMeshAsset::SetSkeleton(const ESkeleton* InSkeleton)
+	{
+		if (!!InSkeleton)
+		{
+			Skeleton = InSkeleton;
+		}
+	}
+	const ESkeleton* ESkinnedMeshAsset::GetSkeleton()const
+	{
+		return Skeleton;
+	}
+	ESkinnedMeshRenderResource* ESkinnedMeshAsset::CreateMeshResource(ESkinnedMesh* InResource)
+	{
+		ESkinnedMeshRenderResource* Result = nullptr;
+		if ((!InResource) || (!(InResource->IsResourceValid())))
+		{
+			return Result;
+		}
+		Result = new ESkinnedMeshRenderResource(Skeleton, InResource);
+		if (!(Result->InitRenderResource()))
+		{
+			Result->ReleaseRenderResource();
+			delete Result;
+			Result = nullptr;
+		}
+		return Result;
+	}
+
+	EMeshAssetManager::EMeshAssetManager()
+	{
+#ifdef _EDITOR_ONLY
+		DebugName = ENGINE_MESH_ASSET_MANAGER_NAME;
+#endif
+	}
+	EMeshAssetManager::~EMeshAssetManager()
+	{
+	}
+	void EMeshAssetManager::Initialize()
+	{
+	}
+	void EMeshAssetManager::ShutDown()
+	{
+		ClearStaticMeshes();
+		ClearSkinnedMeshes();
+	}
+#if _EDITOR_ONLY
+	BOOL EMeshAssetManager::ImportMesh(const EString& InImportPath, const EString& InSaveAssetPath)
+	{
+
+	}
+#endif
+	BOOL EMeshAssetManager::LoadStaticMeshAsset(const EString& InLoadPath, const EStaticMeshAsset*& OutStaticMeshAsset)
+	{
+
+	}
+	BOOL EMeshAssetManager::LoadSkinnedMeshAsset(const EString& InLoadPath, const ESkinnedMeshAsset*& OutSkinnedMeshAsset)
+	{
+
+	}
+	void EMeshAssetManager::ClearStaticMeshes()
+	{
+		StaticMeshManager.Clear();
+	}
+	void EMeshAssetManager::ClearSkinnedMeshes()
+	{
+		SkinnedMeshManager.Clear();
+	}
+	template<typename _TMeshResourceType, typename _TMeshAssetType>
+	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath)
+	{
+
+	}
+	template<typename _TMeshResourceType, typename _TMeshAssetType>
+	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource)
+	{
+		auto CalculateMeshVertexBytes = [](const _TMeshResourceType* InMesh)->ULONG
+		{
+			ULONG Result = sizeof(UINT32) + sizeof(UINT32);	// EAssetType + EMeshType
+			{
+				Result += sizeof(CHAR) * 1024u;		// Mesh name
+				Result += sizeof(EBoundAABB);		// AABB
+				Result += sizeof(UINT32);			// Vertex layout
+				Result += sizeof(UINT32);			// Submesh element num
+				Result += sizeof(ESubmeshData) * InMeshResource->GetSubmeshes().Length();	// Submesh datas
+			}
+			{
+				Result += sizeof(UINT32);	// Indices element num
+				Result += sizeof(UINT32);	// Indices stride
+				Result += sizeof(UINT32);	// Indices part type
+				Result += sizeof(UINT32) * InMeshResource->GetIndices().ElementNum;	// Indices datas
+			}
+			{
+				const EMesh::EVertexPart& VertexPart = InMeshResource->GetVertices();
+				Result += sizeof(UINT32);	// Vertex part element num
+				for (UINT VertexIndex = 0u, VertexNum = VertexPart.Length(); VertexIndex < VertexNum; VertexIndex++)
+				{
+					const EVertexData& VertexData = VertexPart[VertexIndex];
+					Result += sizeof(UINT32);	// Vertices element num
+					Result += sizeof(UINT32);	// Vertices stride
+					Result += sizeof(UINT32);	// Vertices part type
+					Result += VertexData.Stride * VertexData.ElementNum;	// Vertices datas
+				}
+			}
+			if (InMeshResource->IsTypeOf<ESkinnedMesh>())
+			{
+				const ESkinnedMesh* TempMeshPtr = InMeshResource->AsType<ESkinnedMesh>();
+				if (TempMeshPtr)
+				{
+					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
+					Result += sizeof(UINT32);	// Bind pose num
+					Result += (sizeof(CHAR) * 512u + sizeof(Matrix4x4)) * TempMeshPtr->GetBindPoseValue().Length();	// Bind pose value datas
+					Result += (sizeof(CHAR) * 512u + sizeof(USHORT)) * TempMeshPtr->GetBindPoseIndex().Length();	// Bind pose Index datas
+					Result += sizeof(UINT32);	// Effect bone num
+					const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkins();
+					Result += sizeof(UINT32);	// Skin part num
+					for (UINT SkinIndex = 0u, SkinNum = SkinPart.Length(); SkinIndex < SkinNum; SkinIndex++)
+					{
+						const ESkinData& SkinData = SkinPart[SkinIndex];
+						const UINT EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
+						Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), (EffectBoneNum == (TempMeshPtr->GetEffectBoneNum())));
+						Result += sizeof(UINT32);	// Skin element num
+						Result += sizeof(UINT32);	// Skin part type
+						Result += sizeof(UINT) * EffectBoneNum * SkinData.ElementNum;	// Skin index datas
+						Result += sizeof(FLOAT) * EffectBoneNum * SkinData.ElementNum;	// Skin weight datas
+					}
+				}
+			}
+			return Result;
+		};
+
+		EAssetType SavedAssetType = EAssetType::ASSET_TYPE_MESH;
+		EMeshType SavedMeshType;
 	}
 
 };

@@ -23,6 +23,7 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+#if _EDITOR_ONLY
 	static BOOL ReadAndDecodingDigitalImage(const EString& InPathName, BYTE*& OutByteCode, UINT& OutWidth, UINT& OutHeight, UINT& OutPixelByteCount, RFormatType& OutFormat)
 	{
 		// Initialize output values
@@ -273,6 +274,7 @@ namespace PigeonEngine
 		::CoUninitialize();
 		return (!!OutputRenderPixelData);
 	}
+#endif
 
 	ETexture2D::ETexture2D()
 		: TextureType(ETextureType::TEXTURE_TYPE_TEXTURE2D)
@@ -431,7 +433,9 @@ namespace PigeonEngine
 	}
 	void ETextureAssetManager::ShutDown()
 	{
+		ClearTexture2Ds();
 	}
+#if _EDITOR_ONLY
 	BOOL ETextureAssetManager::ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath)
 	{
 		if ((InImportPath.Length() < 3u) || (InSaveAssetPath.Length() < 3u))
@@ -473,6 +477,7 @@ namespace PigeonEngine
 		delete NeedSaveTexture2DResource;
 		return Result;
 	}
+#endif
 	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset)
 	{
 		ETexture2DAsset* ResultAsset = Texture2DManager.Find(InLoadPath);
@@ -504,6 +509,10 @@ namespace PigeonEngine
 		}
 		OutTextureAsset = ResultAsset;
 		return TRUE;
+	}
+	void ETextureAssetManager::ClearTexture2Ds()
+	{
+		Texture2DManager.Clear();
 	}
 	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride)
 	{
@@ -615,7 +624,7 @@ namespace PigeonEngine
 
 		const UINT ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
 		const UINT ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height;
-		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL) + ByteCodeSize;
+		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL) + ByteCodeSize;	// EAssetType + TextureType + ETextureResourceProperty + SRGB + ByteCodeSize
 		void* SavedMem = new BYTE[NeedSavedSize];
 		void* TempPtr = SavedMem;
 		{

@@ -43,9 +43,9 @@ namespace PigeonEngine
 	struct RLightConstantBuffer
 	{
 		RLightConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
-		RLightConstantBuffer(const RLightConstantBuffer& other) : LightCount(other.LightCount) { for (USHORT i = 0u; i < RCommonSettings::SupportLightMax; i++) { LightParams[i] = other.LightParams[i]; } }
+		RLightConstantBuffer(const RLightConstantBuffer& other) : LightCount(other.LightCount) { for (USHORT i = 0u; i < RCommonSettings::RENDER_SUPPORT_LIGHT_NUM_MAX; i++) { LightParams[i] = other.LightParams[i]; } }
 		DirectX::XMINT4		LightCount;
-		RPerLightInfo		LightParams[RCommonSettings::SupportLightMax];
+		RPerLightInfo		LightParams[RCommonSettings::RENDER_SUPPORT_LIGHT_NUM_MAX];
 	};
 	struct RPerFrameConstantBuffer
 	{

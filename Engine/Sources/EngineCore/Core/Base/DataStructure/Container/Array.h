@@ -357,4 +357,5 @@ namespace PigeonEngine
              this->Elements.reserve(NewCapacity);
          }
     }
+
 };

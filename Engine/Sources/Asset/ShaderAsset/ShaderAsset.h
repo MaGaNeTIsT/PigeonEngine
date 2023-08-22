@@ -172,13 +172,17 @@ namespace PigeonEngine
 		typedef TAssetManager<EString, EPixelShaderAsset>		EPixelShaderManager;
 		typedef TAssetManager<EString, EComputeShaderAsset>		EComputeShaderManager;
 	public:
-		virtual void Initialize()override;
-		virtual void ShutDown()override;
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
 	public:
-		BOOL ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
-		BOOL LoadVertexShaderAsset(const EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
-		BOOL LoadPixelShaderAsset(const EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
-		BOOL LoadComputeShaderAsset(const EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
+		BOOL	ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
+		BOOL	LoadVertexShaderAsset(const EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
+		BOOL	LoadPixelShaderAsset(const EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
+		BOOL	LoadComputeShaderAsset(const EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
+	private:
+		void	ClearVertexShaders();
+		void	ClearPixelShaders();
+		void	ClearComputeShaders();
 	private:
 		template<class TShaderAssetType>
 		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath);

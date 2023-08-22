@@ -8,10 +8,8 @@ namespace PigeonEngine
 	class RCommonSettings
 	{
 	public:
-		constexpr static FLOAT		BoundMinimum = 0.01f;
-		constexpr static FLOAT		BoundHalfMinimum = 0.005f;
-		constexpr static USHORT		SupportLightMax = 16u;
-		constexpr static USHORT		SkeletonBoneMax = 286u;
+		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
+		constexpr static USHORT		RENDER_SKELETON_BONE_NUM_MAX	= 256u;
 	public:
 		static RCommonSettings* GetSingleton()
 		{
