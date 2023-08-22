@@ -1,5 +1,6 @@
 ﻿#include "World.h"
 
+#include "../../../../Main/MainManager.h"
 #include "PigeonBase/Object/Component/SceneComponent.h"
 
 namespace PigeonEngine
@@ -14,6 +15,8 @@ namespace PigeonEngine
 
     void PWorld::Init()
     {
+        PObject::Init();
+        GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
     }
 
     void PWorld::Uninit()
@@ -23,6 +26,11 @@ namespace PigeonEngine
 
     void PWorld::Tick(FLOAT deltaTime)
     {
+        Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", GameTimer == nullptr);
+        for(const auto& Actor : AllActors)
+        {
+            Actor->FixedTick(GameTimer->GetDeltaTime());
+        }
     }
 
     void PWorld::EditorTick(FLOAT deltaTime)
@@ -42,6 +50,7 @@ namespace PigeonEngine
         if(!Parent)
         {
             this->RootActors.Add(NewActor);
+            this->AllActors.Add(NewActor);
             NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
             CheckRenderInfoWhenAddingActor(NewActor);
             return;

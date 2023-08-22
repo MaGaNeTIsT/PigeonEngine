@@ -13,6 +13,7 @@
 
 namespace PigeonEngine
 {
+    
     // -------------------   Declarations   -----------------------------
     template <typename T>
     class TArray
@@ -93,6 +94,16 @@ namespace PigeonEngine
         {
             return Elements.rend();
         }
+
+        /**
+         * DO NOT USE DIRECTLY
+         * STL-like iterators to enable range-based for loop support.
+         */
+        typename TConstIterator begin()const{return Elements.begin();}
+        typename TConstIterator end()const{return Elements.end();}
+        typename TIterator      begin(){return Elements.begin();}
+        typename TIterator      end(){return Elements.end();}
+        
         ENGINE_NODISCARD UINT Length()const
         {
             return static_cast<UINT>(this->Elements.size());
