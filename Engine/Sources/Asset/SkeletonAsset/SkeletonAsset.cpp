@@ -177,7 +177,7 @@ namespace PigeonEngine
 	ESkeleton::ESkeleton(const EString& InSkeletonName)
 		: SkeletonName(InSkeletonName)
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = InSkeletonName;
 #endif
 	}
@@ -349,11 +349,11 @@ namespace PigeonEngine
 	}
 
 	ESkeletonAsset::ESkeletonAsset(const EString& InSkeletonPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		InDebugName
 #endif
 	), SkeletonPath(InSkeletonPath)

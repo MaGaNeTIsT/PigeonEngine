@@ -71,7 +71,7 @@ namespace PigeonEngine
 	public:
 		ETexture2DAsset(
 			const EString& InPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);

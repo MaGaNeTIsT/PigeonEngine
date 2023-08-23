@@ -31,7 +31,7 @@ namespace PigeonEngine
         void	Init() override;
         void	Uninit() override;
         void	Tick(FLOAT deltaTime) override;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
         void	EditorTick(FLOAT deltaTime) override;
 #endif
     public:

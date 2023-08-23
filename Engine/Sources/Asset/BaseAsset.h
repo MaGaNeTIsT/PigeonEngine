@@ -22,14 +22,14 @@ namespace PigeonEngine
 	{
 	public:
 		TBaseAsset(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			const EString& InDebugName
 #endif
 		)
 			: ResourceData(nullptr)
 			, bIsInitialized(FALSE)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			DebugName = InDebugName;
 #endif
 		}
@@ -54,7 +54,7 @@ namespace PigeonEngine
 		{
 			if (ResourceData)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
@@ -65,7 +65,7 @@ namespace PigeonEngine
 			}
 			if (!ResourceData)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
@@ -99,11 +99,11 @@ namespace PigeonEngine
 	{
 	public:
 		TRenderBaseAsset(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			const EString& InDebugName
 #endif
 		)
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			: TBaseAsset<TResourceType>(InDebugName), RenderResourceData(nullptr)
 #else
 			: RenderResourceData(nullptr)
@@ -138,7 +138,7 @@ namespace PigeonEngine
 		{
 			if (RenderResourceData)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
@@ -149,7 +149,7 @@ namespace PigeonEngine
 			}
 			if (!RenderResourceData)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to storage a null resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif

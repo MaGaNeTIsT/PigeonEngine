@@ -19,7 +19,7 @@ namespace PigeonEngine
 		BOOL operator!=(const EObjectBase& obj);
 	private:
 		ULONGLONG UniqueID;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	public:
 		const EString& GetDebugName()const;
 	protected:

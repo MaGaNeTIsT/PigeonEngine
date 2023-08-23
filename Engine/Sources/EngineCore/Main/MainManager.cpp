@@ -4,7 +4,7 @@
 #include <RenderDevice/DeviceD3D11.h>
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
@@ -54,7 +54,7 @@ namespace PigeonEngine
 		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
 		m_RenderDeviceD3D11->Initialize();
 
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
 #endif
@@ -63,7 +63,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::ShutDown()
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		m_AssimpManager->ShutDown();
 		m_ImGUIManager->ShutDown();
 #endif
@@ -87,7 +87,7 @@ namespace PigeonEngine
 			m_GameTimer = nullptr;
 		}
 		m_GameTimer = new EGameTimer(&(this->m_WindowTimer));
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		m_EditorOpen = true;
 #endif
 		m_GameTimer->Reset();
@@ -103,7 +103,7 @@ namespace PigeonEngine
 	void EMainManager::Update()
 	{
 		m_GameTimer->Update();
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		m_ImGUIManager->Update();
 		EMainManager::EditorUpdate();
 #endif
@@ -116,12 +116,12 @@ namespace PigeonEngine
 	{
 		m_RenderDeviceD3D11->ClearFinalOutput();
 		m_RenderDeviceD3D11->SetFinalOutput();
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		m_ImGUIManager->Draw();
 #endif
 		m_RenderDeviceD3D11->Present();
 	}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	void EMainManager::EditorUpdate()
 	{
 		bool TempEditorOpen = m_EditorOpen;

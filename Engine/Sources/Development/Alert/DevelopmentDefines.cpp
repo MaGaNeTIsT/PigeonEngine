@@ -4,7 +4,7 @@
 
 namespace PigeonEngine
 {
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 
 	INT WindowsMessageBox(const EString& outText, const EString& outCaption, const UINT& type)
 	{

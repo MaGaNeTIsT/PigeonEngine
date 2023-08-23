@@ -312,7 +312,7 @@ namespace PigeonEngine
 	}
 	CAssimpManager::CAssimpManager()
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = ENGINE_ASSIMP_MANAGER_NAME;
 #endif
 	}
@@ -518,7 +518,7 @@ namespace PigeonEngine
 							}
 						}
 					}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 					else
 					{
 						PE_FAILED((ENGINE_ASSET_ERROR), ("Read skinned mesh bone's vertex id is not matching vertex max count, maybe used wrong bone list."));

@@ -28,14 +28,14 @@ namespace PigeonEngine
 
 	EVertexShaderAsset::EVertexShaderAsset(
 		const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 		, const RInputLayoutDesc* InInputLayouts
 		, const UINT& InInputLayoutNum)
 		: TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>(
 			InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, InDebugName
 #endif
 		), ShaderInputLayouts(nullptr), ShaderInputLayoutNum(0u)
@@ -62,7 +62,7 @@ namespace PigeonEngine
 	{
 		if (!ShaderInputLayouts || ShaderInputLayoutNum == 0u)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] does not contain input layouts when init resource.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -72,7 +72,7 @@ namespace PigeonEngine
 		}
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -109,12 +109,12 @@ namespace PigeonEngine
 	}
 
 	EPixelShaderAsset::EPixelShaderAsset(const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>(
 		InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -127,7 +127,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -164,12 +164,12 @@ namespace PigeonEngine
 	}
 
 	EComputeShaderAsset::EComputeShaderAsset(const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>(
 		InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, InDebugName
 #endif
 	)
@@ -182,7 +182,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + DebugName + "] path = [" + ShaderPath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -219,7 +219,7 @@ namespace PigeonEngine
 
 	EShaderAssetManager::EShaderAssetManager()
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = ENGINE_SHADER_ASSET_MANAGER_NAME;
 #endif
 	}
@@ -249,7 +249,7 @@ namespace PigeonEngine
 
 		if (InPath.Substring(InPath.Length() - importShaderNameType.Length(), importShaderNameType.Length()) != importShaderNameType)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file type for shader importer (input file path : ");
 				ErrorData = ErrorData + InPath + ").";
@@ -279,7 +279,7 @@ namespace PigeonEngine
 		}
 		else
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Not support type for shader import (input file path : ");
 				ErrorData = ErrorData + InPath + ").";
@@ -323,7 +323,7 @@ namespace PigeonEngine
 		}
 		if (VertexShaderManager.Add(InLoadPath, ResultShaderAsset, TRUE) == 0u)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -355,7 +355,7 @@ namespace PigeonEngine
 		}
 		if (PixelShaderManager.Add(InLoadPath, ResultShaderAsset, TRUE) == 0u)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -387,7 +387,7 @@ namespace PigeonEngine
 		}
 		if (ComputeShaderManager.Add(InLoadPath, ResultShaderAsset, TRUE) == 0u)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -421,7 +421,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Load shader asset failed (load file path : ");
 				ErrorData += InLoadPath;
@@ -476,7 +476,7 @@ namespace PigeonEngine
 			if (ReadShaderFrequencyType == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 			{
 				EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(InLoadPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 					, InLoadPath
 #endif
 					, TempInputLayouts.RawData(), ReadInputLayoutNum);
@@ -491,7 +491,7 @@ namespace PigeonEngine
 			else
 			{
 				OutShaderAsset = new TShaderAssetType(InLoadPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 					, InLoadPath
 #endif
 				);
@@ -600,7 +600,7 @@ namespace PigeonEngine
 			delete[]SaveMem;
 		}
 
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		{
 			EString ErrorData("Save shader asset failed (output file path : ");
 			ErrorData = ErrorData + InSavePath + ").";

@@ -36,7 +36,7 @@ namespace PigeonEngine
 
 	void PActor::Tick(FLOAT deltaTime)
 	{
-#ifdef _EDITOR_ONLY.
+#if _EDITOR_ONLY
 		EditorTick(deltaTime);
 		return;
 #endif

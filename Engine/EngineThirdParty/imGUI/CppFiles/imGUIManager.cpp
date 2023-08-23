@@ -5,7 +5,7 @@
 
 namespace PigeonEngine
 {
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 
 #define IM_VK_KEYPAD_ENTER      (VK_RETURN + 256)
 
@@ -28,7 +28,7 @@ namespace PigeonEngine
 
     CImGUIManager::CImGUIManager()
     {
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
         DebugName = ENGINE_IMGUI_MANAGER_NAME;
 #endif
     }

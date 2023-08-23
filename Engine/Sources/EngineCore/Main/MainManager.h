@@ -21,7 +21,7 @@ namespace PigeonEngine
 		void			Update();
 		void			FixedUpdate();
 		void			Draw();
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	public:
 		void			EditorUpdate();
 	private:
@@ -42,7 +42,7 @@ namespace PigeonEngine
 	private:
 		class CPhysicsManager*				m_PhysicsManager			= nullptr;
 		class RDeviceD3D11*					m_RenderDeviceD3D11			= nullptr;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		class CImGUIManager*				m_ImGUIManager				= nullptr;
 		class CAssimpManager*				m_AssimpManager				= nullptr;
 #endif

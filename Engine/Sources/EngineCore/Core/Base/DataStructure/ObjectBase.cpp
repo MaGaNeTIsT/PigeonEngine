@@ -1,6 +1,6 @@
 #include "ObjectBase.h"
 #include <Config/EngineConfig.h>
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 #include "../../../../Development/Config/EngineDebugName.h"
 #endif
 
@@ -18,7 +18,7 @@ namespace PigeonEngine
 
 	EObjectBase::EObjectBase()
 		: UniqueID(_AllocUniqueID())
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, DebugName(ENGINE_DEFAULT_NAME)
 #endif
 	{
@@ -38,7 +38,7 @@ namespace PigeonEngine
 	{
 		return (GetUniqueID() != obj.GetUniqueID());
 	}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	const EString& EObjectBase::GetDebugName()const
 	{
 		return DebugName;

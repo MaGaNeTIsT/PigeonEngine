@@ -11,7 +11,7 @@ namespace PigeonEngine
 		virtual void	Init() = 0;
 		virtual void	Uninit();
 		virtual void	Tick(FLOAT deltaTime) = 0;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		virtual void	EditorTick(FLOAT deltaTime) = 0;
 	public:
 		virtual void	SetName(const EString& name);

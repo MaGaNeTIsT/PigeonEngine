@@ -36,7 +36,7 @@ namespace PigeonEngine
 
 	void PComponent::Tick(FLOAT deltaTime)
 	{
-#ifdef _EDITOR_ONLY.
+#if _EDITOR_ONLY
 		EditorTick(deltaTime);
 		return;
 #endif
@@ -49,7 +49,7 @@ namespace PigeonEngine
 			return;
 		}
 	}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	void PComponent::EditorTick(FLOAT deltaTime)
 	{
 		if(!IsTickable())

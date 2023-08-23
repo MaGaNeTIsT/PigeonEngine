@@ -63,11 +63,11 @@ namespace PigeonEngine
 	public:
 		TShaderBaseAsset(
 			const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		) : TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			InDebugName
 #endif
 		), ShaderPath(InShaderPath), ShaderFrequency(_ShaderFrequency)
@@ -94,7 +94,7 @@ namespace PigeonEngine
 	{
 	public:
 		EVertexShaderAsset(const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 			, const RInputLayoutDesc* InInputLayouts = nullptr, const UINT& InInputLayoutNum = 0u);
@@ -123,7 +123,7 @@ namespace PigeonEngine
 	{
 	public:
 		EPixelShaderAsset(const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
@@ -146,7 +146,7 @@ namespace PigeonEngine
 	{
 	public:
 		EComputeShaderAsset(const EString& InShaderPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);

@@ -91,7 +91,7 @@ namespace PigeonEngine
 	{
 	public:
 		ESkeletonAsset(const EString& InSkeletonPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);

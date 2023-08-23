@@ -20,7 +20,7 @@
 #include <Base/DataStructure/Transform.h>
 #include <Config/EngineConfig.h>
 #include <Config/ErrorCaption.h>
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 #include "../../Development/Config/EngineDebugName.h"
 #endif
 #include "../../Development/Alert/DevelopmentDefines.h"

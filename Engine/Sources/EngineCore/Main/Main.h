@@ -39,6 +39,6 @@
 #include <dwmapi.h>
 #include <memory>
 
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 #include "../../../ThirdParty/imgui/imgui.h"
 #endif

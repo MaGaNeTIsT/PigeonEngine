@@ -356,11 +356,11 @@ namespace PigeonEngine
 
 	ETexture2DAsset::ETexture2DAsset(
 		const EString& InPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	) : TRenderBaseAsset<ETexture2D, RTexture2DResource>(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		InDebugName
 #endif
 	), TexturePath(InPath)
@@ -373,7 +373,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D name=[") + DebugName + "] path = [" + TexturePath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -421,7 +421,7 @@ namespace PigeonEngine
 
 	ETextureAssetManager::ETextureAssetManager()
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = ENGINE_TEXTURE_ASSET_MANAGER_NAME;
 #endif
 	}
@@ -440,7 +440,7 @@ namespace PigeonEngine
 	{
 		if ((InImportPath.Length() < 3u) || (InSaveAssetPath.Length() < 3u))
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
@@ -498,7 +498,7 @@ namespace PigeonEngine
 		}
 		if (Texture2DManager.Add(InLoadPath, ResultAsset, TRUE) == 0u)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D path = [") + InLoadPath + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -524,7 +524,7 @@ namespace PigeonEngine
 			{
 				delete[]ReadFileMem;
 			}
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Load shader asset failed (load file path : ");
 				ErrorData += InLoadPath;
@@ -583,7 +583,7 @@ namespace PigeonEngine
 				ReadSRGB = (*InSRGBOverride);
 			}
 			OutTextureAsset = new ETexture2DAsset(InLoadPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				, InLoadPath
 #endif
 			);
@@ -610,7 +610,7 @@ namespace PigeonEngine
 	{
 		if ((InSavePath.Length() < 3u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Saving texture 2d asset error.(import file path : ");
 				ErrorData = ErrorData + InSavePath + ", is asset valid : " +

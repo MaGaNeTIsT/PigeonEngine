@@ -681,7 +681,7 @@ namespace PigeonEngine
 			fopen_s(&file, *name, "rb");
 			if (!file)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
@@ -700,7 +700,7 @@ namespace PigeonEngine
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Create vertex shader resource failed. path : ");
 					debugInfo = debugInfo + name;
@@ -727,7 +727,7 @@ namespace PigeonEngine
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Create vertex shader input layout failed. path : ");
 					debugInfo = debugInfo + name;
@@ -749,7 +749,7 @@ namespace PigeonEngine
 			fopen_s(&file, *name, "rb");
 			if (!file)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
@@ -768,7 +768,7 @@ namespace PigeonEngine
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Create pixel shader resource failed. path : ");
 					debugInfo = debugInfo + name;
@@ -790,7 +790,7 @@ namespace PigeonEngine
 			fopen_s(&file, *name, "rb");
 			if (!file)
 			{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
@@ -809,7 +809,7 @@ namespace PigeonEngine
 			if (FAILED(hr))
 			{
 				delete[]buffer;
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 				{
 					EString debugInfo("Create compute shader resource failed. path : ");
 					debugInfo = debugInfo + name;

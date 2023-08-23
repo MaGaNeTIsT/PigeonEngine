@@ -11,7 +11,7 @@ namespace PigeonEngine
 		ifstream  fin(*FilePath, ios::in | ios::binary);
 		if (!fin)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
 				ErrorData += FilePath;
@@ -35,7 +35,7 @@ namespace PigeonEngine
 		ifstream fin(*FilePath, ios::in);
 		if (!fin)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
 				ErrorData += FilePath;
@@ -56,7 +56,7 @@ namespace PigeonEngine
 		ofstream out(*FilePath, ios::out);
 		if (!out)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
 				ErrorData += FilePath;
@@ -76,7 +76,7 @@ namespace PigeonEngine
 		ofstream out(*FilePath, ios::out | ios::binary);
 		if (!out)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
 				ErrorData += FilePath;

@@ -486,11 +486,11 @@ namespace PigeonEngine
 	public:
 		TMeshBaseAsset(
 			const EString& InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		) : TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>(
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			InDebugName
 #endif
 		), MeshPath(InMeshPath), MeshType(_MeshType)
@@ -518,7 +518,7 @@ namespace PigeonEngine
 	public:
 		EStaticMeshAsset(
 			const EString& InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
@@ -539,7 +539,7 @@ namespace PigeonEngine
 	public:
 		ESkinnedMeshAsset(
 			const EString& InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);

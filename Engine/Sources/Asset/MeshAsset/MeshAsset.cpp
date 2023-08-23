@@ -115,7 +115,7 @@ namespace PigeonEngine
 		: MeshName(ENGINE_DEFAULT_NAME)
 		, VertexLayout(0u)
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = ENGINE_DEFAULT_NAME;
 #endif
 	}
@@ -123,7 +123,7 @@ namespace PigeonEngine
 		: MeshName(InMeshName)
 		, VertexLayout(0u)
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = InMeshName;
 #endif
 	}
@@ -285,7 +285,7 @@ namespace PigeonEngine
 		if (Indices.PartType != 0u)
 		{
 			EVertexLayoutType OldPartType = static_cast<EVertexLayoutType>(Indices.PartType);
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 			if ((((OldPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (Indices.Stride != 2u)) ||
 				(((OldPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (Indices.Stride != 4u)))
 			{
@@ -296,7 +296,7 @@ namespace PigeonEngine
 			SetVertexLayoutPartExistInternal(OldPartType, 0u, FALSE);
 			return TRUE;
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to removing indices of mesh but do not exist."));
 #endif
 		return FALSE;
@@ -304,12 +304,12 @@ namespace PigeonEngine
 	BOOL EMesh::GetIndexElement(const EIndexData*& OutIndexData)const
 	{
 		if ((Indices.PartType != 0u)
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			&& (Indices.ElementNum > 2u) && (!!(Indices.Indices))
 #endif
 			)
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			EVertexLayoutType OldPartType = static_cast<EVertexLayoutType>(Indices.PartType);
 			if ((((OldPartType & EVertexLayoutType::MESH_INDEX_HALF) != 0u) && (Indices.Stride != 2u)) ||
 				(((OldPartType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) && (Indices.Stride != 4u)))
@@ -320,7 +320,7 @@ namespace PigeonEngine
 			OutIndexData = (const EIndexData*)(&Indices);
 			return TRUE;
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to getting indices of mesh but do not exist."));
 #endif
 		return FALSE;
@@ -330,7 +330,7 @@ namespace PigeonEngine
 		if ((!InVertexData) || (InVertexData->PartType == 0u) || (InVertexData->ElementNum < 3u) ||
 			(!(InVertexData->Datas)) || ((InVertexData->Stride % 4u) != 0u))
 		{
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex descriptor check failed."));
 			if (InVertexData && (InVertexData->Stride % 4u) != 0u)
 			{
@@ -432,7 +432,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to remove not exist vertex."));
 #endif
 		return FALSE;
@@ -461,7 +461,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist vertex."));
 #endif
 		return FALSE;
@@ -859,7 +859,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist skin data."));
 #endif
 		return FALSE;
@@ -878,7 +878,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-#ifdef _DEBUG_MODE
+#if _DEBUG_MODE
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist skin data."));
 #endif
 		return FALSE;
@@ -1419,12 +1419,12 @@ namespace PigeonEngine
 
 	EStaticMeshAsset::EStaticMeshAsset(
 		const EString& InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
 		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>(InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, InDebugName
 #endif
 		)
@@ -1437,7 +1437,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Static mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -1476,12 +1476,12 @@ namespace PigeonEngine
 
 	ESkinnedMeshAsset::ESkinnedMeshAsset(
 		const EString& InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
 		: TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>(InMeshPath
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			, InDebugName
 #endif
 		), Skeleton(nullptr)
@@ -1494,7 +1494,7 @@ namespace PigeonEngine
 	{
 		if (IsInitialized())
 		{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skinned mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
@@ -1544,7 +1544,7 @@ namespace PigeonEngine
 
 	EMeshAssetManager::EMeshAssetManager()
 	{
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		DebugName = ENGINE_MESH_ASSET_MANAGER_NAME;
 #endif
 	}

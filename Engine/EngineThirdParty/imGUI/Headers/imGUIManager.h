@@ -5,7 +5,7 @@
 
 namespace PigeonEngine
 {
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 
     class CImGUIManager : public EManagerBase
     {

@@ -2,7 +2,7 @@
 #include "MainManager.h"
 #include <Base/Timer/Timer.h>
 #include <Config/EngineConfig.h>
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #endif
 
@@ -112,13 +112,13 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	return (INT)msg.wParam;
 }
 
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 static PigeonEngine::CImGUIManager* GImGUIManager = PigeonEngine::CImGUIManager::GetManagerSingleton();
 #endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 	if (GImGUIManager)
 	{
 		if (GImGUIManager->WndProcHandler(hWnd, uMsg, wParam, lParam))

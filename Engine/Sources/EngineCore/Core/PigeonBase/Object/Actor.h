@@ -24,7 +24,7 @@ namespace PigeonEngine
 		void    Uninit() override;
 		void	Tick(FLOAT deltaTime) override;
 		void	FixedTick(FLOAT deltaTime);
-#ifdef _EDITOR_ONLY
+#if _EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 		void    Destroy() override;
