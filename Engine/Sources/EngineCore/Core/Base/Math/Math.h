@@ -19,19 +19,29 @@ namespace PigeonEngine
 		static BOOL			Lerp(const INT& x0, const INT& y0, const INT& x1, const INT& y1, const INT& t, INT& phi);
 		static FLOAT		Lerp(const FLOAT& v0, const FLOAT& v1, const FLOAT& t);
 		template<typename TValueType>
-		static TValueType Max(TValueType v0, TValueType v1)
+		static TValueType Max(const TValueType& v0, const TValueType& v1)
 		{
 			return ((v1 > v0) ? v1 : v0);
 		}
 		template<typename TValueType>
-		static TValueType Min(TValueType v0, TValueType v1)
+		static TValueType Min(const TValueType& v0, const TValueType& v1)
 		{
 			return ((v0 > v1) ? v1 : v0);
 		}
+		template<typename TValueType>
+		static TValueType Clamp(const TValueType& v, const TValueType& min, const TValueType& max)
+		{
+			if (v > max)
+			{
+				return max;
+			}
+			else if (v < min)
+			{
+				return min;
+			}
+			return v;
+		}
 		static FLOAT	Abs(const FLOAT& v);
-		static FLOAT	Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max);
-		static INT		Clamp(const INT& v, const INT& min, const INT& max);
-		static UINT		Clamp(const UINT& v, const UINT& min, const UINT& max);
 		static FLOAT	Mod(const FLOAT& numerator, const FLOAT& denominator);
 		static DOUBLE	Mod(const DOUBLE& numerator, const DOUBLE& denominator);
 		static FLOAT	Frac(const FLOAT& v);

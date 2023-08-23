@@ -34,18 +34,6 @@ namespace PigeonEngine
 	{
 		return fabsf(v);
 	}
-	FLOAT EMath::Clamp(const FLOAT& v, const FLOAT& min, const FLOAT& max)
-	{
-		return fmaxf(min, fminf(max, v));
-	}
-	INT EMath::Clamp(const INT& v, const INT& min, const INT& max)
-	{
-		return EMath::Max(min, EMath::Min(max, v));
-	}
-	UINT EMath::Clamp(const UINT& v, const UINT& min, const UINT& max)
-	{
-		return EMath::Max(min, EMath::Min(max, v));
-	}
 	FLOAT EMath::Mod(const FLOAT& numerator, const FLOAT& denominator)
 	{
 		return fmodf(numerator, denominator);

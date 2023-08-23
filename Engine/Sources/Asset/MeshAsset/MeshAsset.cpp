@@ -1581,32 +1581,38 @@ namespace PigeonEngine
 	{
 		SkinnedMeshManager.Clear();
 	}
-	template<typename _TMeshResourceType, typename _TMeshAssetType>
+	template<typename _TMeshAssetType, typename _TMeshResourceType>
 	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath)
 	{
 
+		return nullptr;
 	}
-	template<typename _TMeshResourceType, typename _TMeshAssetType>
-	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource)
+	template<typename _TMeshAssetType, typename _TMeshResourceType>
+	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset)
 	{
+		if ((!!InMeshAsset) || (!(InMeshAsset->IsValid())))
+		{
+			return FALSE;
+		}
+
 		auto CalculateMeshVertexBytes = [](const _TMeshResourceType* InMesh)->ULONG
 		{
 			ULONG Result = sizeof(UINT32) + sizeof(UINT32);	// EAssetType + EMeshType
 			{
-				Result += sizeof(CHAR) * 1024u;		// Mesh name
+				Result += sizeof(CHAR) * 1024u;		// Mesh name (path)
 				Result += sizeof(EBoundAABB);		// AABB
 				Result += sizeof(UINT32);			// Vertex layout
 				Result += sizeof(UINT32);			// Submesh element num
-				Result += sizeof(ESubmeshData) * InMeshResource->GetSubmeshes().Length();	// Submesh datas
+				Result += sizeof(ESubmeshData) * InMesh->GetSubmeshes().Length();	// Submesh datas
 			}
 			{
 				Result += sizeof(UINT32);	// Indices element num
 				Result += sizeof(UINT32);	// Indices stride
 				Result += sizeof(UINT32);	// Indices part type
-				Result += sizeof(UINT32) * InMeshResource->GetIndices().ElementNum;	// Indices datas
+				Result += sizeof(UINT) * InMesh->GetIndices().ElementNum;	// Indices datas
 			}
 			{
-				const EMesh::EVertexPart& VertexPart = InMeshResource->GetVertices();
+				const EMesh::EVertexPart& VertexPart = InMesh->GetVertices();
 				Result += sizeof(UINT32);	// Vertex part element num
 				for (UINT VertexIndex = 0u, VertexNum = VertexPart.Length(); VertexIndex < VertexNum; VertexIndex++)
 				{
@@ -1617,10 +1623,9 @@ namespace PigeonEngine
 					Result += VertexData.Stride * VertexData.ElementNum;	// Vertices datas
 				}
 			}
-			if (InMeshResource->IsTypeOf<ESkinnedMesh>())
+			if (InMesh->IsTypeOf<ESkinnedMesh>())
 			{
-				const ESkinnedMesh* TempMeshPtr = InMeshResource->AsType<ESkinnedMesh>();
-				if (TempMeshPtr)
+				const ESkinnedMesh* TempMeshPtr = InMesh;
 				{
 					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
 					Result += sizeof(UINT32);	// Bind pose num
@@ -1644,8 +1649,141 @@ namespace PigeonEngine
 			return Result;
 		};
 
-		EAssetType SavedAssetType = EAssetType::ASSET_TYPE_MESH;
-		EMeshType SavedMeshType;
+		const _TMeshResourceType* InMeshResource = InMeshAsset->GetStoragedResource();
+		const ULONG OutputMemSize = CalculateMeshVertexBytes(InMeshResource);
+		BYTE* OutputMem = new BYTE[OutputMemSize];
+
+		void* RstMemPtr = OutputMem;
+		LONGLONG RstMemSize = OutputMemSize;
+
+#define SAVE_ASSET_MEMORY(__Type, __Value) \
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
+			__Type* __TempPtr = RstMemPtr;\
+			__TempPtr[0] = (__Value);\
+			RstMemPtr = &(__TempPtr[1]);\
+			RstMemSize -= (sizeof(__Type));\
+		}\
+
+#define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
+			CHAR* TempPtr = RstMemPtr;\
+			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > NameLengthMax));\
+			const EString& SavedName = (__EString);\
+			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
+			RstMemPtr = &(TempPtr[(__LengthMax)]);\
+			RstMemSize -= NameLengthMax;\
+		}\
+
+#define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
+			BYTE* TempPtr = RstMemPtr;\
+			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > MemSize));\
+			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
+			RstMemPtr = &(TempPtr[MemSize]);\
+			RstMemSize -= MemSize;\
+		}\
+
+		SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_MESH));
+		SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InMeshAsset->GetMeshType()));
+		SAVE_ASSET_STRING_MEMORY(InMeshAsset->GetMeshPath(), 1024u);
+		SAVE_ASSET_MEMORY(EBoundAABB, InMeshResource->GetBoundAABB());
+		SAVE_ASSET_MEMORY(UINT32, InMeshResource->GetVertexLayout());
+		{
+			const EMesh::ESubmeshPart& SubmeshPart = InMeshResource->GetSubmeshes();
+
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SubmeshPart.Length()));
+
+			for (UINT i = 0u, n = SubmeshPart.Length(); i < n; i++)
+			{
+				const ESubmeshData& SubmeshData = SubmeshPart[i];
+
+				SAVE_ASSET_MEMORY(ESubmeshData, SubmeshData);
+			}
+		};
+		{
+			const EMesh::EIndexPart& IndexPart = InMeshResource->GetIndices();
+
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.ElementNum));
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.Stride));
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.PartType));
+			SAVE_ASSET_PTR_MEMORY(sizeof(UINT), IndexPart.ElementNum, IndexPart.Indices);
+		};
+		{
+			const EMesh::EVertexPart& VertexPart = InMeshResource->GetVertices();
+
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(VertexPart.Length()));
+
+			for (UINT i = 0u, n = VertexPart.Length(); i < n; i++)
+			{
+				const EVertexData& VertexData = VertexPart[i];
+
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(VertexData.ElementNum));
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(VertexData.Stride));
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(VertexData.PartType));
+				SAVE_ASSET_PTR_MEMORY(VertexData.Stride, VertexData.ElementNum, VertexData.Datas);
+			}
+		};
+		if (InMeshResource->IsTypeOf<ESkinnedMesh>())
+		{
+			const ESkinnedMesh* TempMeshPtr = InMeshResource;
+			{
+				const ESkinnedMesh::EBindPoseValue& BindPoseValues = TempMeshPtr->GetBindPoseValue();
+				const ESkinnedMesh::EBindPoseIndex& BindPoseIndices = TempMeshPtr->GetBindPoseIndex();
+				Check((ENGINE_ASSET_ERROR), ("Check save skinned mesh asset bind pose num error."), (BindPoseValues.Length() == BindPoseIndices.Length()));
+				const UINT BindPoseNum = BindPoseValues.Length();
+
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(BindPoseNum));
+
+				for (auto ItValue = BindPoseValues.Begin(); ItValue != BindPoseValues.End(); ItValue++)
+				{
+					SAVE_ASSET_STRING_MEMORY(ItValue->first, 512u);
+					SAVE_ASSET_MEMORY(Matrix4x4, (ItValue->second));
+				}
+				for (auto ItIndices = BindPoseIndices.Begin(); ItIndices != BindPoseIndices.End(); ItIndices++)
+				{
+					SAVE_ASSET_STRING_MEMORY(ItIndices->first, 512u);
+					SAVE_ASSET_MEMORY(USHORT, (ItIndices->second));
+				}
+			};
+			{
+				const UINT EffectBoneNum = static_cast<UINT>(TempMeshPtr->GetEffectBoneNum());
+
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EffectBoneNum));
+
+				const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkins();
+
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinPart.Length()));
+
+				for (UINT i = 0u, n = SkinPart.Length(); i < n; i++)
+				{
+					const ESkinData& SkinData = SkinPart[i];
+					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), ((SkinData.Stride / sizeof(FLOAT)) == EffectBoneNum));
+
+					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.ElementNum));
+					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.PartType));
+					SAVE_ASSET_PTR_MEMORY((EffectBoneNum * sizeof(UINT)), SkinData.ElementNum, SkinData.Indices);
+					SAVE_ASSET_PTR_MEMORY((EffectBoneNum * sizeof(FLOAT)), SkinData.ElementNum, SkinData.Weights);
+				}
+			};
+		}
+
+#undef SAVE_ASSET_MEMORY
+#undef SAVE_ASSET_STRING_MEMORY
+#undef SAVE_ASSET_PTR_MEMORY
+
+		if (EFileHelper::SaveBytesToFile(InSavePath, OutputMem, OutputMemSize))
+		{
+			delete[]OutputMem;
+			return TRUE;
+		}
+		delete[]OutputMem;
+		return FALSE;
 	}
 
 };
