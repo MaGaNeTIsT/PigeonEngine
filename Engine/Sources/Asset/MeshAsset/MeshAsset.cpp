@@ -1582,16 +1582,126 @@ namespace PigeonEngine
 		SkinnedMeshManager.Clear();
 	}
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
-	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath)
+	_TMeshResourceType* EMeshAssetManager::LoadMeshResource(const EString& InLoadPath)
 	{
+		_TMeshResourceType* LoadedMeshResource = nullptr;
+		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
+		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		{
+			if (ReadFileMem)
+			{
+				delete[]ReadFileMem;
+			}
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Load mesh asset failed (load file path : ");
+				ErrorData += InLoadPath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return LoadedMeshResource;
+		}
 
+		const void* RstMemPtr = ReadFileMem;
+		LONGLONG RstMemSize = static_cast<LONGLONG>(ReadFileSize);
+
+#define LOAD_ASSET_MEMORY(__MemType, __MemSize, __OutputValue) \
+		__MemType __OutputValue;\
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
+			const __MemType* TempPtr = RstMemPtr;\
+			(__OutputValue) = TempPtr[0];\
+			RstMemPtr = &(TempPtr[1]);\
+			RstMemSize -= (__MemSize);\
+		}\
+
+#define LOAD_ASSET_STRING_MEMORY(__LengthMax, __OutputEString) \
+		EString __OutputEString;\
+		{\
+			const UINT StrStride = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= StrStride));\
+			const CHAR* TempPtr = RstMemPtr;\
+			CHAR StrValues[(__LengthMax)];\
+			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
+			(__OutputEString) = StrValues;\
+			RstMemPtr = &(TempPtr[(__LengthMax)]);\
+			RstMemSize -= StrStride;\
+		}\
+
+		EMeshType MeshType = EMeshType::MESH_TYPE_COUNT;
+		{
+			EAssetType AssetType = EAssetType::ASSET_TYPE_UNKNOWN;
+			{
+				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempAssetType);
+				AssetType = static_cast<EAssetType>(TempAssetType);
+			}
+			{
+				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempMeshType);
+				MeshType = static_cast<EMeshType>(TempMeshType);
+			}
+			if (AssetType != EAssetType::ASSET_TYPE_MESH)
+			{
+#if _EDITOR_ONLY
+				{
+					EString ErrorData("Load mesh asset failed (load file path : ");
+					ErrorData += InLoadPath;
+					ErrorData += ") this asset is not mesh type.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				}
+#endif
+				return LoadedMeshResource;
+			}
+			switch (MeshType)
+			{
+			case EMeshType::MESH_TYPE_STATIC:
+				if (!(IsClass(GetClassHashCode<_TMeshAssetType>(), GetClassHashCode<EStaticMeshAsset>())) ||
+					!(IsClass(GetClassHashCode<_TMeshResourceType>(), GetClassHashCode<EStaticMesh>())))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Load mesh asset failed, type check failed. This asset is static mesh asset which is not wanted."));
+					return LoadedMeshResource;
+				}
+				break;
+			case EMeshType::MESH_TYPE_SKIN:
+				if (!(IsClass(GetClassHashCode<_TMeshAssetType>(), GetClassHashCode<ESkinnedMeshAsset>())) ||
+					!(IsClass(GetClassHashCode<_TMeshResourceType>(), GetClassHashCode<ESkinnedMesh>())))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Load mesh asset failed, type check failed. This asset is skinned mesh asset which is not wanted."));
+					return LoadedMeshResource;
+				}
+				break;
+			default:
+#if _EDITOR_ONLY
+				{
+					EString ErrorData("Load mesh asset failed (load file path : ");
+					ErrorData += InLoadPath;
+					ErrorData += ") this asset is not mesh type.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				}
+#endif
+				return LoadedMeshResource;
+			}
+		}
+
+		{
+			LOAD_ASSET_STRING_MEMORY(1024u, TempMeshName);
+			LoadedMeshResource = new _TMeshResourceType(TempMeshName);
+		}
+
+
+
+#undef LOAD_ASSET_MEMORY
+#undef LOAD_ASSET_STRING_MEMORY
+
+		delete[]ReadFileMem;
 		return nullptr;
 	}
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
-	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset)
+	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource)
 	{
-		if ((!!InMeshAsset) || (!(InMeshAsset->IsValid())))
+		if ((!InMeshResource) || (!(InMeshResource->IsResourceValid())))
 		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check saved mesh resource error, mesh resource is null."));
 			return FALSE;
 		}
 
@@ -1649,12 +1759,26 @@ namespace PigeonEngine
 			return Result;
 		};
 
-		const _TMeshResourceType* InMeshResource = InMeshAsset->GetStoragedResource();
+		EMeshType MeshType = EMeshType::MESH_TYPE_COUNT;
+		if (InMeshResource->IsTypeOf<EStaticMesh>())
+		{
+			MeshType = EMeshType::MESH_TYPE_STATIC;
+		}
+		else if (InMeshResource->IsTypeOf<ESkinnedMesh>())
+		{
+			MeshType = EMeshType::MESH_TYPE_SKIN;
+		}
+		if (MeshType >= EMeshType::MESH_TYPE_COUNT)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check saved mesh resource error, mesh resource type is weird."));
+			return FALSE;
+		}
+
 		const ULONG OutputMemSize = CalculateMeshVertexBytes(InMeshResource);
 		BYTE* OutputMem = new BYTE[OutputMemSize];
 
 		void* RstMemPtr = OutputMem;
-		LONGLONG RstMemSize = OutputMemSize;
+		LONGLONG RstMemSize = static_cast<LONGLONG>(OutputMemSize);
 
 #define SAVE_ASSET_MEMORY(__Type, __Value) \
 		{\
@@ -1690,8 +1814,8 @@ namespace PigeonEngine
 		}\
 
 		SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_MESH));
-		SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InMeshAsset->GetMeshType()));
-		SAVE_ASSET_STRING_MEMORY(InMeshAsset->GetMeshPath(), 1024u);
+		SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(MeshType));
+		SAVE_ASSET_STRING_MEMORY(InMeshResource->GetMeshName(), 1024u);
 		SAVE_ASSET_MEMORY(EBoundAABB, InMeshResource->GetBoundAABB());
 		SAVE_ASSET_MEMORY(UINT32, InMeshResource->GetVertexLayout());
 		{

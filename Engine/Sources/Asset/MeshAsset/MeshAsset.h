@@ -579,9 +579,9 @@ namespace PigeonEngine
 		void	ClearSkinnedMeshes();
 	private:
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath);
+		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath);
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset);
+		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
 	private:
 		EStaticMeshAssetManager		StaticMeshManager;
 		ESkinnedMeshAssetManager	SkinnedMeshManager;
