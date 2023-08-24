@@ -9,6 +9,9 @@ namespace PigeonEngine
     class EString
     {
     public:
+        // This may not be useful. Because we return UINT replace size_t.
+        static constexpr auto NonePos{ std::string::npos };
+    public:
         EString();
         EString(const EString& Other);
         EString(EString&& Other) noexcept;
@@ -54,6 +57,9 @@ namespace PigeonEngine
         std::string Str;
     };
     
-    extern inline EString ToString(const UINT& InValue);
+    extern ENGINE_INLINE EString ToString(const UINT& InValue);
+
+    extern ENGINE_INLINE BOOL SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr);
+
 };
 

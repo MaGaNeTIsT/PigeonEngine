@@ -1,5 +1,8 @@
 ﻿#include "String.h"
+#include <Config/ErrorCaption.h>
 #include <Base/Math/Math.h>
+#include <Config/EngineConfig.h>
+#include "../../../../../Development/Alert/DevelopmentDefines.h"
 
 namespace PigeonEngine
 {
@@ -204,8 +207,32 @@ namespace PigeonEngine
         return atof(Str.c_str());
     }
 
-    inline EString ToString(const UINT& InValue)
+    ENGINE_INLINE EString ToString(const UINT& InValue)
     {
         return EString(std::to_string(InValue).c_str());
     }
+
+    ENGINE_INLINE BOOL SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr)
+    {
+        const UINT OriginStrLen = InOriginStr.Length();
+        if (OriginStrLen <= 3u)
+        {
+            OutDotForwardStr    = ENGINE_DEFAULT_NAME;
+            OutDotBackwardStr   = ENGINE_DEFAULT_NAME;
+            return FALSE;
+        }
+        const CHAR TempCharSign[1] = { InSplitSign };
+        const UINT LastDot = InOriginStr.RightFind(TempCharSign);
+        if (LastDot >= OriginStrLen)
+        {
+            OutDotForwardStr    = ENGINE_DEFAULT_NAME;
+            OutDotBackwardStr   = ENGINE_DEFAULT_NAME;
+            return FALSE;
+        }
+        Check((ENGINE_STRING_ERROR), ("Check string rest length error."), (OriginStrLen >= (LastDot + 1u)));
+        OutDotForwardStr    = InOriginStr.Substring(0u, LastDot);
+        OutDotBackwardStr   = InOriginStr.Substring((LastDot + 1u), OriginStrLen - (LastDot + 1u));
+        return TRUE;
+    }
+
 };

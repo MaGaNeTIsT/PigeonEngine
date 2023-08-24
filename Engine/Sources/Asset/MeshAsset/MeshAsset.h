@@ -577,7 +577,8 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportMesh(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL	ImportStaticMesh(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL	ImportSkinnedMesh(const EString& InImportPath, const EString& InSaveAssetPath);
 #endif
 		BOOL	LoadStaticMeshAsset(const EString& InLoadPath, const EStaticMeshAsset*& OutStaticMeshAsset);
 		BOOL	LoadSkinnedMeshAsset(const EString& InLoadPath, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
@@ -585,10 +586,14 @@ namespace PigeonEngine
 		void	ClearStaticMeshes();
 		void	ClearSkinnedMeshes();
 	private:
+		template<typename _TMeshAssetType, typename _TMeshResourceType>
+		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath);
+		template<typename _TMeshAssetType, typename _TMeshResourceType>
+		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset);
 		template<typename _TMeshResourceType>
 		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath);
 		template<typename _TMeshResourceType>
-		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
+		BOOL SaveMeshResource(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
 	private:
 		EStaticMeshAssetManager		StaticMeshManager;
 		ESkinnedMeshAssetManager	SkinnedMeshManager;
