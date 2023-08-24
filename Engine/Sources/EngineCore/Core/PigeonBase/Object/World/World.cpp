@@ -29,7 +29,7 @@ namespace PigeonEngine
         Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", GameTimer == nullptr);
         for(const auto& Actor : AllActors)
         {
-            Actor->FixedTick(GameTimer->GetDeltaTime());
+            Actor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
         }
     }
 

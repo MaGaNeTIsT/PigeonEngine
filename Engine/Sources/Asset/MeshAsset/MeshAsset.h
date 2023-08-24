@@ -34,6 +34,7 @@ namespace PigeonEngine
 	extern UINT GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType);
 	extern EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType);
 	extern UINT TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
+	extern EVertexLayoutType TranslateVertexPartTypeToVertexBaseLayout(UINT32 InVertexPartType);
 
 	struct EVertexDescriptor
 	{
@@ -333,7 +334,7 @@ namespace PigeonEngine
 	public:
 		EMesh& operator=(const EMesh& Other);
 	public:
-		BOOL				CheckVertexLayoutPartExist(EVertexLayoutType InLayoutType, UINT InPartIndex)const;
+		BOOL				CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT InPartIndex)const;
 		const EString&		GetMeshName()const;
 		const EBoundAABB&	GetBoundAABB()const;
 		UINT32				GetVertexLayout()const;
@@ -348,14 +349,14 @@ namespace PigeonEngine
 		BOOL	RemoveIndexElement();
 		BOOL	GetIndexElement(const EIndexData*& OutIndexData)const;
 		BOOL	AddVertexElement(EVertexData* InVertexData, UINT* OutLayoutIndex = nullptr);
-		BOOL	RemoveVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex);
-		BOOL	GetVertexElement(EVertexLayoutType InLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const;
+		BOOL	RemoveVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex);
+		BOOL	GetVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const;
 		BOOL	AddSubmesh(const ESubmeshData* InSubmeshData, UINT* OutSubmeshIndex = nullptr);
 		BOOL	RemoveSubmesh(UINT InSubmeshIndex);
 		BOOL	GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
 	protected:
 		void	CopyBaseDataFromOtherInternal(const EMesh& Other);
-		void	SetVertexLayoutPartExistInternal(EVertexLayoutType InLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
+		void	SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
 	protected:
 		EString					MeshName;
 		EBoundAABB				BoundAABB;
@@ -368,6 +369,8 @@ namespace PigeonEngine
 		EMesh(const EString& InMeshName);
 		EMesh(const EMesh& Other);
 		virtual ~EMesh();
+	private:
+		friend class EMeshAssetManager;
 	};
 
 	class EStaticMesh : public EMesh
@@ -383,6 +386,8 @@ namespace PigeonEngine
 		EStaticMesh(const EStaticMesh& Other);
 		EStaticMesh(const EString& InMeshName);
 		virtual ~EStaticMesh();
+	private:
+		friend class EMeshAssetManager;
 	};
 
 	class ESkinnedMesh : public EMesh
@@ -419,6 +424,8 @@ namespace PigeonEngine
 		ESkinnedMesh(const ESkinnedMesh& Other);
 		ESkinnedMesh(const EString& InMeshName);
 		virtual ~ESkinnedMesh();
+	private:
+		friend class EMeshAssetManager;
 	};
 
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
@@ -578,9 +585,9 @@ namespace PigeonEngine
 		void	ClearStaticMeshes();
 		void	ClearSkinnedMeshes();
 	private:
-		template<typename _TMeshAssetType, typename _TMeshResourceType>
+		template<typename _TMeshResourceType>
 		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath);
-		template<typename _TMeshAssetType, typename _TMeshResourceType>
+		template<typename _TMeshResourceType>
 		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
 	private:
 		EStaticMeshAssetManager		StaticMeshManager;
