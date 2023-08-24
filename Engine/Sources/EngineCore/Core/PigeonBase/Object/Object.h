@@ -24,8 +24,7 @@ namespace PigeonEngine
 		BOOL			m_Active;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PObject)
-
-
+	
 	public:
 		void SetIsTickable(const BOOL& bTickable);
 		BOOL IsTickable() const;

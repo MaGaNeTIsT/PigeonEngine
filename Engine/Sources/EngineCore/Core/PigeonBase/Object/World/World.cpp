@@ -15,7 +15,6 @@ namespace PigeonEngine
 
     void PWorld::Init()
     {
-        PObject::Init();
         GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
     }
 
