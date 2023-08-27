@@ -54,9 +54,9 @@ namespace PigeonEngine
 			PhysicsData->BodyInterface->DestroyBody(body->second.ID);
 		}
 
-		for (auto bodyCreateSettings = m_Shapes.Begin(); bodyCreateSettings != m_Shapes.End(); ++bodyCreateSettings)
+		for (auto shape = m_Shapes.Begin(); shape != m_Shapes.End(); ++shape)
 		{
-			delete bodyCreateSettings->second;
+			delete shape->second;
 		}
 
 		PhysicsData->BodyInterface = nullptr;
@@ -121,6 +121,23 @@ namespace PigeonEngine
 	{
 		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActive::Active ? EActivation::Activate : EActivation::DontActivate);
 		m_Bodys.Add(GameObjectId, inBodyID);
+	}
+
+	void CPhysics_Jolt::RemoveBody(const ULONGLONG& GameObjectId, bool bDeleteShape/* = true*/)
+	{
+		PhysicsBodyId ID;
+		if (m_Bodys.FindValue(GameObjectId, ID))
+		{
+			PhysicsData->BodyInterface->RemoveBody(ID.ID);
+			m_Bodys.Remove(GameObjectId);
+			FShape* Shape;
+			if (m_Shapes.FindValue(ID, Shape))
+			{
+				m_Shapes.Remove(ID);
+				if(bDeleteShape)
+					delete Shape;
+			}
+		}
 	}
 
 	Vector3 CPhysics_Jolt::GetPosition(const PhysicsBodyId& PhysicsBodyId)

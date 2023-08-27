@@ -111,7 +111,7 @@ namespace PigeonEngine
 	class CPhysics_Jolt : public IPhysicsManagerInterface
 	{
 	public:
-		CPhysics_Jolt() {}
+		CPhysics_Jolt() :PhysicsData(nullptr) {}
 		virtual ~CPhysics_Jolt() {}
 	public:
 		virtual void InitPhysics();
@@ -123,6 +123,12 @@ namespace PigeonEngine
 	public:
 		bool TryCreateBody(FShape* inShape, bool CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID);
 		void AddBody(const ULONGLONG& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode = EActive::DontActive);
+		/// <summary>
+		/// remove a rigid body by a GameObjectId.
+		/// </summary>
+		/// <param name="GameObjectId">Id</param>
+		/// <param name="bDeleteShape">true to delete shape at sametime,if your shape is shared to other bodys, set false.</param>
+		void RemoveBody(const ULONGLONG& GameObjectId, bool bDeleteShape = true);
 
 		Vector3 GetPosition(const PhysicsBodyId& PhysicsBodyId);
 		Quaternion GetRotation(const PhysicsBodyId& PhysicsBodyId);
