@@ -510,11 +510,7 @@ namespace PigeonEngine
 						return StoragedResource;
 					})))
 				{
-					if (StoragedResource)
-					{
-						StoragedResource->ReleaseResource();
-						delete StoragedResource;
-					}
+					//TODO
 				}
 			}
 		}

@@ -1,4 +1,9 @@
 #include "SkeletonAsset.h"
+#include <RenderDevice/DeviceD3D11.h>
+#include <Config/EngineConfig.h>
+#if _EDITOR_ONLY
+#include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
+#endif
 
 namespace PigeonEngine
 {
@@ -6,8 +11,7 @@ namespace PigeonEngine
 	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, typename _AssetType>
 	static void RegisterSkeletonClassTypes()
 	{
-		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
-		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterRenderBaseAssetClassTypes<_TAssetResourceType, _TAssetRenderResourceType>();
 		RegisterClassType<_AssetType, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
 	}
 
@@ -15,6 +19,7 @@ namespace PigeonEngine
 	{
 		RegisterClassType<ESkeleton, EObjectBase, EResourceInterface>();
 		RegisterClassType<ESkeletonRenderResource, EObjectBase, RRenderResourceInterface>();
+		RegisterClassType<ESkeletonAssetManager, EManagerBase>();
 
 		RegisterSkeletonClassTypes<ESkeleton, ESkeletonRenderResource, ESkeletonAsset>();
 	}
@@ -175,7 +180,7 @@ namespace PigeonEngine
 	}
 
 	ESkeleton::ESkeleton(const EString& InSkeletonName)
-		: SkeletonName(InSkeletonName)
+		: SkeletonType(ESkeletonType::SKELETON_TYPE_NORMAL), SkeletonName(InSkeletonName)
 	{
 #if _EDITOR_ONLY
 		DebugName = InSkeletonName;
@@ -199,6 +204,22 @@ namespace PigeonEngine
 		SkeletonName = ENGINE_DEFAULT_NAME;
 		Bones.Clear();
 		BoneMapping.Clear();
+	}
+	ESkeletonType ESkeleton::GetSkeletonType()const
+	{
+		return SkeletonType;
+	}
+	const EString& ESkeleton::GetSkeletonName()const
+	{
+		return SkeletonName;
+	}
+	const ESkeleton::EBonePart& ESkeleton::GetBonePart()const
+	{
+		return Bones;
+	}
+	const TMap<EString, USHORT>& ESkeleton::GetBoneMapping()const
+	{
+		return BoneMapping;
 	}
 	UINT ESkeleton::GetBoneCount()const
 	{
@@ -319,7 +340,6 @@ namespace PigeonEngine
 	ESkeletonRenderResource::ESkeletonRenderResource(ESkeleton* InSkeleton)
 		: Skeleton(InSkeleton)
 	{
-
 	}
 	ESkeletonRenderResource::~ESkeletonRenderResource()
 	{
@@ -327,24 +347,71 @@ namespace PigeonEngine
 	}
 	BOOL ESkeletonRenderResource::IsRenderResourceValid()const
 	{
-		//TODO
+		if ((!!Skeleton) && Skeleton->IsResourceValid())
+		{
+			BOOL Result = TRUE;
+			for (UINT i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
+			{
+				Result = Result && (RenderResource[i].IsRenderResourceValid());
+			}
+			return Result;
+		}
 		return FALSE;
 	}
 	BOOL ESkeletonRenderResource::InitRenderResource()
 	{
-		//TODO
+		for (UINT i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
+		{
+			if (RenderResource[i].IsRenderResourceValid())
+			{
+				RenderResource[i].ReleaseRenderResource();
+			}
+		}
+		if ((!!Skeleton) && Skeleton->IsResourceValid())
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			const UINT SkeletonBoneNum = Skeleton->GetBoneCount();
+			for (UINT i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
+			{
+				DirectX::XMFLOAT4X4* SkeletonMatrices = new DirectX::XMFLOAT4X4[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX];
+				{
+					DirectX::XMFLOAT4X4 TempIdentity;
+					DirectX::XMStoreFloat4x4((&TempIdentity), DirectX::XMMatrixIdentity());
+					for (UINT i = 0u; (i < SkeletonBoneNum) && (i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX); i++)
+					{
+						SkeletonMatrices[i] = TempIdentity;
+					}
+				}
+				RSubresourceDataDesc SubresourceDataDesc;
+				SubresourceDataDesc.pSysMem = SkeletonMatrices;
+				if (!(RenderDevice->CreateStructuredBuffer(
+					(RenderResource[i]),
+					RStructuredBufferDesc(sizeof(DirectX::XMFLOAT4X4), SkeletonBoneNum, TRUE),
+					(&SubresourceDataDesc))))
+				{
+#if _EDITOR_ONLY
+					EString ErrorInfo("Create skeleton resource [name = ");
+					ErrorInfo += Skeleton->GetDebugName();
+					ErrorInfo += "] bones buffer [num = ";
+					ErrorInfo += ToString(SkeletonBoneNum);
+					ErrorInfo += "] failed.";
+					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+#endif
+					delete[]SkeletonMatrices;
+					return FALSE;
+				}
+				delete[]SkeletonMatrices;
+			}
+			return TRUE;
+		}
 		return FALSE;
 	}
 	void ESkeletonRenderResource::ReleaseRenderResource()
 	{
 		Skeleton = nullptr;
-		if (RenderResources.Length() > 0)
+		for (UINT i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 		{
-			for (UINT Index = 0u, Length = RenderResources.Length(); Index < Length; Index++)
-			{
-				RenderResources[Index].ReleaseRenderResource();
-			}
-			RenderResources.Clear();
+			RenderResource[i].ReleaseRenderResource();
 		}
 	}
 
@@ -362,7 +429,6 @@ namespace PigeonEngine
 	}
 	ESkeletonAsset::~ESkeletonAsset()
 	{
-
 	}
 	const EString& ESkeletonAsset::GetSkeletonPath()const
 	{
@@ -370,6 +436,501 @@ namespace PigeonEngine
 	}
 	BOOL ESkeletonAsset::InitResource()
 	{
+		if (IsInitialized())
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Skeleton name=[") + DebugName + "] path = [" + SkeletonPath + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			return TRUE;
+		}
+		if (CreateRenderResourceInternal(
+			[](ESkeleton* InResource)->ESkeletonRenderResource*
+			{
+				ESkeletonRenderResource* RenderResource = nullptr;
+				if ((!!InResource) && (InResource->IsResourceValid()))
+				{
+					RenderResource = new ESkeletonRenderResource(InResource);
+					RenderResource->InitRenderResource();
+				}
+				return RenderResource;
+			},
+			TRUE))
+		{
+			bIsInitialized = TRUE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	ESkeletonAssetManager::ESkeletonAssetManager()
+	{
+#if _EDITOR_ONLY
+		DebugName = ENGINE_SKELETON_ASSET_MANAGER_NAME;
+#endif
+	}
+	ESkeletonAssetManager::~ESkeletonAssetManager()
+	{
+	}
+	void ESkeletonAssetManager::Initialize()
+	{
+
+	}
+	void ESkeletonAssetManager::ShutDown()
+	{
+		ClearSkeletons();
+	}
+#if _EDITOR_ONLY
+	BOOL ESkeletonAssetManager::ImportSkeleton(const EString& InImportPath, const EString& InSaveSkeletonAssetName, const EString& InSaveSkeletonAssetPath)
+	{
+		if ((InImportPath.Length() < 3u) || (InSaveSkeletonAssetPath.Length() < 3u))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for skeleton importer (import file path : ");
+				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		EString ImportPathName; EString ImportFileType;
+		if (!(SplitByLastSign('.', InImportPath, ImportPathName, ImportFileType)))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for skeleton importer (import file path : ");
+				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		//TODO Check import type(like fbx, ab...).
+		if (ImportPathName.Length() <= 3u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for skeleton importer (import file path : ");
+				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		EString UsedSkeletonName;
+		if (InSaveSkeletonAssetName.Length() < 2u)
+		{
+			UsedSkeletonName = ENGINE_DEFAULT_NAME;
+		}
+		else
+		{
+			UsedSkeletonName = InSaveSkeletonAssetName;
+		}
+		ESkeleton AssimpSkeleton(UsedSkeletonName);
+		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
+		if ((AssimpManager->ReadSkeletonFile(InImportPath, AssimpSkeleton)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Assimp importer can not load skeleton file from path (import file path : ");
+				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+
+		EString OutputPathName(InSaveSkeletonAssetPath);
+		{
+			OutputPathName += UsedSkeletonName;
+			OutputPathName += ENGINE_ASSET_NAME_TYPE;
+		}
+		if (!(SaveSkeletonResource(OutputPathName, (&(AssimpSkeleton)))))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
+#endif
+	BOOL ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const ESkeletonAsset*& OutSkeletonAsset)
+	{
+		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(InLoadPath);
+		if (ResultSkeletonAsset)
+		{
+			OutSkeletonAsset = ResultSkeletonAsset;
+			return TRUE;
+		}
+		ResultSkeletonAsset = LoadSkeletonAsset(InLoadPath);
+		if (!ResultSkeletonAsset)
+		{
+			return FALSE;
+		}
+		if (!ResultSkeletonAsset->InitResource())
+		{
+			delete ResultSkeletonAsset;
+			return FALSE;
+		}
+		if (SkeletonAssetDataManager.Add(InLoadPath, ResultSkeletonAsset, TRUE) == 0u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Skeleton asset path = [") + InLoadPath + "] add into manager list failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+			delete ResultSkeletonAsset;
+			return FALSE;
+		}
+		OutSkeletonAsset = ResultSkeletonAsset;
+		return TRUE;
+	}
+	void ESkeletonAssetManager::ClearSkeletons()
+	{
+		SkeletonAssetDataManager.Clear();
+	}
+	ESkeletonAsset* ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath)
+	{
+		ESkeletonAsset* NewSkeletonAsset = nullptr;
+		ESkeleton* LoadedSkeletonResource = LoadSkeletonResource(InLoadPath);
+		if ((!LoadedSkeletonResource) || (!(LoadedSkeletonResource->IsResourceValid())))
+		{
+			return NewSkeletonAsset;
+		}
+
+		ESkeletonAsset* NewSkeletonAsset = new ESkeletonAsset(InLoadPath
+#if _EDITOR_ONLY
+			, InLoadPath
+#endif
+		);
+		if (!(NewSkeletonAsset->StorageResourceInternal(
+			[LoadedSkeletonResource]()->ESkeleton*
+			{
+				return LoadedSkeletonResource;
+			})))
+		{
+			//TODO
+			delete NewSkeletonAsset;
+			NewSkeletonAsset = nullptr;
+			return NewSkeletonAsset;
+		}
+		return NewSkeletonAsset;
+	}
+	BOOL ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const ESkeletonAsset* InSkeletonAsset)
+	{
+		if (!InSkeletonAsset)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Save skeleton asset failed (save file path : ");
+				ErrorData += InSavePath;
+				ErrorData += ") this asset is null.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		const ESkeleton* SavedSkeletonResource = InSkeletonAsset->GetStoragedResource();
+		if ((!SavedSkeletonResource) || (!(SavedSkeletonResource->IsResourceValid())))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Save skeleton asset failed (save file path : ");
+				ErrorData += InSavePath;
+				ErrorData += ", skeleton asset name : ";
+				ErrorData += InSkeletonAsset->GetDebugName();
+				ErrorData += ") this asset is not contain valid skeleton resource.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		return (SaveSkeletonResource(InSavePath, SavedSkeletonResource));
+	}
+	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath)
+	{
+		ESkeleton* LoadedSkeletonResource = nullptr;
+		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
+		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		{
+			if (ReadFileMem)
+			{
+				delete[]ReadFileMem;
+			}
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Load skeleton asset failed (load file path : ");
+				ErrorData += InLoadPath;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return LoadedSkeletonResource;
+		}
+
+		const void* RstMemPtr = ReadFileMem;
+		LONGLONG RstMemSize = static_cast<LONGLONG>(ReadFileSize);
+
+#define LOAD_ASSET_MEMORY(__MemType, __MemSize, __OutputValue) \
+		__MemType __OutputValue;\
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
+			const __MemType* TempPtr = (const __MemType*)RstMemPtr;\
+			(__OutputValue) = TempPtr[0];\
+			RstMemPtr = &(TempPtr[1]);\
+			RstMemSize -= (__MemSize);\
+		}\
+
+#define LOAD_ASSET_STRING_MEMORY(__LengthMax, __OutputEString) \
+		EString __OutputEString;\
+		{\
+			const UINT StrStride = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= StrStride));\
+			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
+			CHAR StrValues[(__LengthMax)];\
+			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
+			(__OutputEString) = StrValues;\
+			RstMemPtr = &(TempPtr[(__LengthMax)]);\
+			RstMemSize -= StrStride;\
+		}\
+
+#define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __Ptr) \
+		__PtrType* __Ptr = nullptr;\
+		{\
+			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			void* NewPtr = new BYTE[MemSize];\
+			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
+			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
+			(__Ptr) = (__PtrType*)NewPtr;\
+			RstMemPtr = &(TempPtr[MemSize]);\
+			RstMemSize -= MemSize;\
+		}\
+
+		{
+			{
+				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempAssetType);
+				EAssetType AssetType = static_cast<EAssetType>(TempAssetType);
+				if (AssetType != EAssetType::ASSET_TYPE_SKELETON)
+				{
+#if _EDITOR_ONLY
+					{
+						EString ErrorData("Load skeleton asset failed (load file path : ");
+						ErrorData += InLoadPath;
+						ErrorData += ") this asset is not skeleton type.";
+						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					}
+#endif
+					delete[]ReadFileMem;
+					return LoadedSkeletonResource;
+				}
+			}
+			{
+				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSkeletonType);
+				ESkeletonType SkeletonType = static_cast<ESkeletonType>(TempSkeletonType);
+				if ((TempSkeletonType == ESkeletonType::SKELETON_TYPE_UNKNOWN) || (TempSkeletonType >= ESkeletonType::SKELETON_TYPE_COUNT))
+				{
+#if _EDITOR_ONLY
+					{
+						EString ErrorData("Load skeleton asset failed (load file path : ");
+						ErrorData += InLoadPath;
+						ErrorData += ") this asset is not skeleton type.";
+						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					}
+#endif
+					delete[]ReadFileMem;
+					return LoadedSkeletonResource;
+				}
+			}
+			{
+				LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX, TempSkeletonName);
+				LoadedSkeletonResource = new ESkeleton(TempSkeletonName);
+			}
+			{
+				LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempBoneNum);
+
+				ESkeleton::EBonePart&	BonePart	= LoadedSkeletonResource->Bones;
+				TMap<EString, USHORT>&	BoneMapping	= LoadedSkeletonResource->BoneMapping;
+
+				for (SHORT i = 0u, n = static_cast<SHORT>(TempBoneNum); i < n; i++)
+				{
+					LOAD_ASSET_MEMORY(SHORT, sizeof(SHORT), TempIndex);
+					LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
+					LOAD_ASSET_MEMORY(Vector3, sizeof(Vector3), TempDefaultPosition);
+					LOAD_ASSET_MEMORY(Quaternion, sizeof(Quaternion), TempDefaultRotation);
+					LOAD_ASSET_MEMORY(Vector3, sizeof(Vector3), TempDefaultScaling);
+					LOAD_ASSET_MEMORY(SHORT, sizeof(SHORT), TempParentIndex);
+					LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempChildrenNum);
+
+					EBoneData& BoneData = BonePart.Add_Default_GetRef();
+
+					for (USHORT ChildIndex = 0u; ChildIndex < TempChildrenNum; ChildIndex++)
+					{
+						LOAD_ASSET_MEMORY(SHORT, sizeof(SHORT), TempChildIndex);
+
+						BoneData.Children.Add(TempChildIndex);
+					}
+
+					Check((ENGINE_ASSET_ERROR), ("Check read skeleton resource's bone index failed"), (TempIndex == i));
+
+					BoneData.Index				= TempIndex;
+					BoneData.Name				= TempBoneName;
+					BoneData.DefaultPosition	= TempDefaultPosition;
+					BoneData.DefaultRotation	= TempDefaultRotation;
+					BoneData.DefaultScaling		= TempDefaultScaling;
+					BoneData.Parent				= TempParentIndex;
+				}
+				for (USHORT i = 0u; i < TempBoneNum; i++)
+				{
+					LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
+					LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempBoneIndex);
+
+					BoneMapping.Add(TempBoneName, TempBoneIndex);
+				}
+			}
+
+			Check((ENGINE_ASSET_ERROR), ("Check read skeleton resource rest memory already failed."), (RstMemSize == 0));
+		}
+
+#undef LOAD_ASSET_MEMORY
+#undef LOAD_ASSET_STRING_MEMORY
+#undef LOAD_ASSET_PTR_MEMORY
+
+		delete[]ReadFileMem;
+		if (!(LoadedSkeletonResource->IsResourceValid()))
+		{
+			delete LoadedSkeletonResource;
+			LoadedSkeletonResource = nullptr;
+		}
+		return LoadedSkeletonResource;
+	}
+	BOOL ESkeletonAssetManager::SaveSkeletonResource(const EString& InSavePath, const ESkeleton* InSkeletonResource)
+	{
+		if ((!InSkeletonResource) || (!(InSkeletonResource->IsResourceValid())))
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check skeleton resource error, skeleton resource is null."));
+			return FALSE;
+		}
+
+		auto CalculateSkeletonBytes = [](const ESkeleton* InSkeleton)->ULONG
+		{
+			ULONG Result = 0u;
+
+			Result += sizeof(UINT32);		// EAssetType
+			Result += sizeof(UINT32);		// ESkeletonType
+			Result += sizeof(CHAR) * ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX;	// Skeleton name
+			Result += sizeof(USHORT);		// Bone num and bone mapping
+
+			const ESkeleton::EBonePart& BonePart = InSkeleton->GetBonePart();
+			for (UINT i = 0u, n = BonePart.Length(); i < n; i++)
+			{
+				const EBoneData& BoneData = BonePart[i];
+
+				Result += sizeof(SHORT);		// Bone data index
+				Result += sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone data name
+				Result += sizeof(Vector3);		// Bone data default position
+				Result += sizeof(Quaternion);	// Bone data default rotation
+				Result += sizeof(Vector3);		// Bone data default scaling
+				Result += sizeof(SHORT);		// Bone data parent index
+				Result += sizeof(USHORT);		// Bone data children num
+				Result += sizeof(SHORT) * BoneData.Children.Length();	// Bone data children index
+			}
+			Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Length();	// Bone mapping datas
+
+			return Result;
+		};
+
+		const ULONG OutputMemSize = CalculateSkeletonBytes(InSkeletonResource);
+		BYTE* OutputMem = new BYTE[OutputMemSize];
+
+		void* RstMemPtr = OutputMem;
+		LONGLONG RstMemSize = static_cast<LONGLONG>(OutputMemSize);
+
+#define SAVE_ASSET_MEMORY(__Type, __Value) \
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			__Type* TempPtr = (__Type*)RstMemPtr;\
+			TempPtr[0] = (__Value);\
+			RstMemPtr = &(TempPtr[1]);\
+			RstMemSize -= (sizeof(__Type));\
+		}\
+
+#define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
+		{\
+			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
+			const EString& SavedName = (__EString);\
+			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			CHAR* TempPtr = (CHAR*)RstMemPtr;\
+			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
+			RstMemPtr = &(TempPtr[(__LengthMax)]);\
+			RstMemSize -= NameLengthMax;\
+		}\
+
+#define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
+		{\
+			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			BYTE* TempPtr = (BYTE*)RstMemPtr;\
+			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
+			RstMemPtr = &(TempPtr[MemSize]);\
+			RstMemSize -= MemSize;\
+		}\
+
+		{
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_SKELETON));
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InSkeletonResource->GetSkeletonType()));
+			SAVE_ASSET_STRING_MEMORY(InSkeletonResource->GetSkeletonName(), ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
+
+			const ESkeleton::EBonePart&		BonePart	= InSkeletonResource->GetBonePart();
+			const TMap<EString, USHORT>&	BoneMapping = InSkeletonResource->GetBoneMapping();
+			const USHORT BoneNum = static_cast<USHORT>(BonePart.Length());	// Skeleton bone num can not greater than 65535u.
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset bone num failed, bone mapping num is not match bone num."), ((BoneNum > 0u) && (BoneNum == static_cast<USHORT>(BoneMapping.Length()))));
+
+			SAVE_ASSET_MEMORY(USHORT, BoneNum);
+
+			for (USHORT i = 0u; i < BoneNum; i++)
+			{
+				const EBoneData& BondData = BonePart[i];
+
+				SAVE_ASSET_MEMORY(SHORT, BondData.Index);
+				SAVE_ASSET_STRING_MEMORY(BondData.Name, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultPosition);
+				SAVE_ASSET_MEMORY(Quaternion, BondData.DefaultRotation);
+				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultScaling);
+				SAVE_ASSET_MEMORY(SHORT, BondData.Parent);
+
+				const TArray<SHORT>& ChildrenDatas = BondData.Children;
+				const USHORT ChildrenNum = static_cast<USHORT>(ChildrenDatas.Length());
+
+				SAVE_ASSET_MEMORY(USHORT, ChildrenNum);
+
+				for (USHORT ChildIndex = 0u; ChildIndex < ChildrenNum; ChildIndex++)
+				{
+					SAVE_ASSET_MEMORY(SHORT, ChildrenDatas[ChildIndex]);
+				}
+			}
+			for (auto ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
+			{
+				SAVE_ASSET_STRING_MEMORY(ItMapping->first, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
+			}
+
+			Check((ENGINE_ASSET_ERROR), ("Check write skeleton resource rest memory already failed."), (RstMemSize == 0));
+		}
+
+#undef SAVE_ASSET_MEMORY
+#undef SAVE_ASSET_STRING_MEMORY
+#undef SAVE_ASSET_PTR_MEMORY
+
+		if (EFileHelper::SaveBytesToFile(InSavePath, OutputMem, OutputMemSize))
+		{
+			delete[]OutputMem;
+			return TRUE;
+		}
+		delete[]OutputMem;
 		return FALSE;
 	}
 

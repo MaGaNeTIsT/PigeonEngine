@@ -52,16 +52,22 @@ namespace PigeonEngine
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
+			TResourceType* TempData = lStorageFunc();
 			if (ResourceData)
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
+				if (TempData)
+				{
+					TempData->ReleaseResource();
+					delete TempData;
+				}
 				return FALSE;
 			}
 			{
-				ResourceData = lStorageFunc();
+				ResourceData = TempData;
 			}
 			if (!ResourceData)
 			{
@@ -93,6 +99,12 @@ namespace PigeonEngine
 		CLASS_REMOVE_COPY_BODY(TBaseAsset)
 
 	};
+
+	template <typename _TAssetResourceType>
+	ENGINE_INLINE void RegisterBaseAssetClassTypes()
+	{
+		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
+	}
 
 	template<typename TResourceType, typename TRenderResourceType>
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
@@ -136,16 +148,22 @@ namespace PigeonEngine
 		template<typename TCreateRenderResourceLambdaType>
 		BOOL CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL& bHoldStoragedResource)
 		{
+			TRenderResourceType* TempData = lCreateFunc(ResourceData);
 			if (RenderResourceData)
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
 				PE_FAILED(ENGINE_ASSET_ERROR, errorInfo);
 #endif
+				if (TempData)
+				{
+					TempData->ReleaseRenderResource();
+					delete TempData;
+				}
 				return FALSE;
 			}
 			{
-				RenderResourceData = lCreateFunc(ResourceData);
+				RenderResourceData = TempData;
 			}
 			if (!RenderResourceData)
 			{
@@ -181,6 +199,13 @@ namespace PigeonEngine
 		CLASS_REMOVE_COPY_BODY(TRenderBaseAsset)
 
 	};
+
+	template <typename _TAssetResourceType, typename _TAssetRenderResourceType>
+	ENGINE_INLINE void RegisterRenderBaseAssetClassTypes()
+	{
+		RegisterBaseAssetClassTypes<_TAssetResourceType>();
+		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+	}
 
 	template<typename TKeyType, typename TAssetType>
 	class TAssetManager

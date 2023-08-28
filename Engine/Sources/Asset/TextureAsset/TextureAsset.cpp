@@ -7,8 +7,7 @@ namespace PigeonEngine
 	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, typename _AssetType>
 	static void RegisterTextureClassTypes()
 	{
-		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
-		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterRenderBaseAssetClassTypes<_TAssetResourceType, _TAssetRenderResourceType>();
 		RegisterClassType<_AssetType, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
 	}
 
@@ -596,11 +595,7 @@ namespace PigeonEngine
 					return StoragedResource;
 				})))
 			{
-				if (StoragedResource)
-				{
-					StoragedResource->ReleaseResource();
-					delete StoragedResource;
-				}
+				//TODO
 			}
 		}
 		delete[]ReadFileMem;

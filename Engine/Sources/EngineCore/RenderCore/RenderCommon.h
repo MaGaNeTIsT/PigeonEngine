@@ -92,9 +92,9 @@ namespace PigeonEngine
 	struct RPerSkeletonConstantBuffer
 	{
 		RPerSkeletonConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
-		RPerSkeletonConstantBuffer(const RPerSkeletonConstantBuffer& other) : SkeletonBoneNum(other.SkeletonBoneNum) { for (USHORT i = 0u; i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX * 2u; i++) { SkeletonMatrix[i] = other.SkeletonMatrix[i]; } }
+		RPerSkeletonConstantBuffer(const RPerSkeletonConstantBuffer& other) : SkeletonBoneNum(other.SkeletonBoneNum) { for (USHORT i = 0u; i < RCommonSettings::RENDER_MESH_BONE_NUM_MAX * 2u; i++) { SkeletonMatrix[i] = other.SkeletonMatrix[i]; } }
 		DirectX::XMFLOAT4		SkeletonBoneNum;
-		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX * 2u];
+		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::RENDER_MESH_BONE_NUM_MAX * 2u];
 	};
 	enum RShaderFrequencyType : UINT8
 	{

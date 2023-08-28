@@ -22,6 +22,7 @@ namespace PigeonEngine
 		constexpr static UINT	ENGINE_BONE_WEIGHT_NUM_MAXIMUM	= 16u;
 
 		constexpr static UINT	ENGINE_MESH_NAME_LENGTH_MAX		= 1024u;
+		constexpr static UINT	ENGINE_SKELETON_NAME_LENGTH_MAX = 1024u;
 		constexpr static UINT	ENGINE_BONE_NAME_LENGTH_MAX		= 512u;
 
 	public:

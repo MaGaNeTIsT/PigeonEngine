@@ -44,7 +44,7 @@ namespace PigeonEngine
         {
             T Temp;
             Elements.push_back(std::move(Temp));
-            return Elements[Elements.size()-1];
+            return Elements[Elements.size() - 1u];
         }
         
         T&          GetRef    (const UINT& Index);

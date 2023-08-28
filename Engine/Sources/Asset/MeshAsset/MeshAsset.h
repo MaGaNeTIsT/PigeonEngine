@@ -338,9 +338,9 @@ namespace PigeonEngine
 		const EString&		GetMeshName()const;
 		const EBoundAABB&	GetBoundAABB()const;
 		UINT32				GetVertexLayout()const;
-		const EIndexPart&	GetIndices()const;
-		const EVertexPart&	GetVertices()const;
-		const ESubmeshPart&	GetSubmeshes()const;
+		const EIndexPart&	GetIndexPart()const;
+		const EVertexPart&	GetVertexPart()const;
+		const ESubmeshPart&	GetSubmeshPart()const;
 	public:
 		void	SetMeshName(const EString& InMeshName);
 		void	SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
@@ -413,7 +413,7 @@ namespace PigeonEngine
 		BOOL					AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
 		BOOL					RemoveSkinElement(UINT InLayoutIndex);
 		BOOL					GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
-		const ESkinPart&		GetSkins()const;
+		const ESkinPart&		GetSkinPart()const;
 	protected:
 		EBindPoseValue	BindPoseValue;
 		EBindPoseIndex	BindPoseIndex;
@@ -477,12 +477,12 @@ namespace PigeonEngine
 		ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other);
 		virtual ~ESkinnedMeshRenderResource();
 	protected:
-		BOOL	CreateSkeletonRenderResourceInternal();
+		BOOL	CreateMeshSkeletonRenderResourceInternal();
 		BOOL	CreateSkinRenderResourceInternal();
 		void	CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other);
 	protected:
 		const class ESkeleton*	Skeleton;
-		RStructuredBuffer		SkeletonRenderResource;
+		RStructuredBuffer		MeshSkeletonRenderResource;
 		ESkinnedMesh*			SkinnedMesh;
 		TArray<RBufferResource>	SkinRenderResources;
 	};
