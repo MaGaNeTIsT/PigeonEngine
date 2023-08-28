@@ -20,6 +20,12 @@ namespace PigeonEngine
 		virtual ~EResourceInterface() = default;
 		EResourceInterface& operator=(const EResourceInterface&) = default;
 	};
+	enum EAnimationType : UINT8
+	{
+		ANIMATION_TYPE_UNKNOWN	= 0,
+		ANIMATION_TYPE_SKELETON,
+		ANIMATION_TYPE_COUNT
+	};
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
 	{
@@ -120,6 +126,10 @@ namespace PigeonEngine
 				}
 			}
 			return (*this);
+		}
+		void CopyFromOtherCurve()
+		{
+
 		}
 
 		TArray<ETimeKey<Vector3, TTimeType>>	PositionKeys;

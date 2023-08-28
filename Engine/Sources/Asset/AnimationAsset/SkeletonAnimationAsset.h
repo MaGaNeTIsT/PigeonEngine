@@ -15,14 +15,23 @@ namespace PigeonEngine
 		ANIMATION_BEHAVIOUR_LINEAR		= 2,
 		ANIMATION_BEHAVIOUR_REPEAT		= 3
 	};
+
 	struct EBoneAnimationCurve : public ETransformTimeCurve<FLOAT>
 	{
 		EBoneAnimationCurve()noexcept : BoneName(ENGINE_DEFAULT_NAME), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EBoneAnimationCurve(const EBoneAnimationCurve& Other)noexcept : ETransformTimeCurve<FLOAT>(Other), BoneName(Other.BoneName), PreState(Other.PreState), PostState(Other.PostState) {}
 		EBoneAnimationCurve(const EString& InBoneName)noexcept : BoneName(InBoneName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EBoneAnimationCurve& operator=(const EBoneAnimationCurve& Other)
+		{
+			ETransformTimeCurve<FLOAT>(Other), BoneName(Other.BoneName), PreState(Other.PreState), PostState(Other.PostState)
+			return (*this);
+		}
+
 		EString									BoneName;
 		EAnimationBehaviourType					PreState;
 		EAnimationBehaviourType					PostState;
 	};
+
 	struct ESkeletonAnimationClip
 	{
 		ESkeletonAnimationClip()noexcept : ClipName(ENGINE_DEFAULT_NAME), Duration(0.f), TicksPerSecond(0.f) {}
@@ -32,6 +41,7 @@ namespace PigeonEngine
 		FLOAT							TicksPerSecond;
 		TArray<EBoneAnimationCurve>		AnimationCurves;
 	};
+
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
 	public:
@@ -50,5 +60,7 @@ namespace PigeonEngine
 		CLASS_REMOVE_COPY_BODY(ESkeletonAnimation)
 
 	};
+
+
 
 };
