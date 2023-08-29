@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <functional>
 
+#include "Base/DataStructure/BuiltInType.h"
+
 namespace PigeonEngine
 {
     // use std::function for now.
@@ -10,13 +12,46 @@ namespace PigeonEngine
     template <typename Ret, typename... Args>
     class TFunction<Ret (Args...)>
     {
+        
     public:
-        TFunction(std::function<Ret(Args...)> Op) : Operation(Op) {}
-
-        Ret operator()(Args... Arguments){return Operation(Arguments...);}
+        TFunction() = default;
+        explicit TFunction(std::function<Ret(Args ...)>&& op) : Operation(std::move(op)) {}
+        ~TFunction(){Operation = nullptr;}
+    public:
+        TFunction<Ret(Args...)>& operator=(const TFunction<Ret(Args ...)>& Other);
+        TFunction<Ret(Args...)>& operator=(std::function<Ret(Args ...)> Other);
+        Ret                      operator()(Args... Arguments);
+        BOOL                     operator==(const TFunction<Ret(Args ...)>& Other);
+        
     private:
-        std::function<Ret(Args...)> Operation;
+        std::function<Ret(Args...)> Operation = nullptr;
     };
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>& TFunction<Ret(Args...)>::operator=(const TFunction<Ret(Args...)>& Other)
+    {
+        this->Operation = Other.Operation;
+        return *this;
+    }
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>& TFunction<Ret(Args...)>::operator=(std::function<Ret(Args...)> Other)
+    {
+        this->Operation = std::move(Other);
+        return *this;
+    }
+
+    template <typename Ret, typename ... Args>
+    Ret TFunction<Ret(Args...)>::operator()(Args... Arguments)
+    {
+        return Operation(Arguments...);
+    }
+
+    template <typename Ret, typename ... Args>
+    BOOL TFunction<Ret(Args...)>::operator==(const TFunction<Ret(Args...)>& Other)
+    {
+        return this->Operation == Other.Operation;
+    }
 
     // // examples
     // 1, for a normal function,
