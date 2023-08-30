@@ -113,4 +113,6 @@ namespace PigeonEngine
     Ret TDelegateSingle<Ret, Args...>::Execute(Args... Arguments)
     {
         if(this->Ops)
-  
+            return this->Ops(Arguments);
+        return Ret();
+    }

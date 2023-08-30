@@ -7,7 +7,7 @@
 #include "Mouse.h"
 #include "Keyboard.h"
 #include "Base/Delegate/Delegate.h"
-
+MAKE_DELEGATE_MULTI_ONE_PARAM(EOnKeyDown, UINT);
 namespace PigeonEngine
 {
 
@@ -20,6 +20,8 @@ namespace PigeonEngine
 		INT WindowSizeX = static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH);
 		INT WindowSizeY = static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT);
 		HWND hWnd = NULL;
+
+		EOnKeyDown OnKeyDown;
 		/*Mouse part start*/
 	public:
 		std::pair<INT, INT> GetMousePosition() const;
