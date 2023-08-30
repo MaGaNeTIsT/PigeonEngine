@@ -12,11 +12,10 @@ namespace PigeonEngine
     template <typename Ret, typename... Args>
     class TFunction<Ret (Args...)>
     {
-        
     public:
-        TFunction() = default;
-        explicit TFunction(std::function<Ret(Args ...)>&& op) : Operation(std::move(op)) {}
-        ~TFunction(){Operation = nullptr;}
+        TFunction();
+        explicit TFunction(std::function<Ret(Args ...)>&& op);
+        ~TFunction();
     public:
         TFunction<Ret(Args...)>& operator=(const TFunction<Ret(Args ...)>& Other);
         TFunction<Ret(Args...)>& operator=(std::function<Ret(Args ...)> Other);
@@ -26,6 +25,19 @@ namespace PigeonEngine
     private:
         std::function<Ret(Args...)> Operation = nullptr;
     };
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>::TFunction()
+    {
+    }
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>::TFunction(std::function<Ret(Args...)>&& op): Operation(std::move(op))
+    {}
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>::~TFunction()
+    {Operation = nullptr;}
 
     template <typename Ret, typename ... Args>
     TFunction<Ret(Args...)>& TFunction<Ret(Args...)>::operator=(const TFunction<Ret(Args...)>& Other)
@@ -62,7 +74,7 @@ namespace PigeonEngine
     // TFunction<int(int)> Func(Test);
     // int out = Func(5);
     // ---------------------------------
-    // 2, for a member function.
+    // 2, for a member function. use lambda
     // class A
     // {
     // public:

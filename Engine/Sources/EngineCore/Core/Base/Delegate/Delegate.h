@@ -5,6 +5,7 @@
 
 namespace PigeonEngine
 {
+    /*------------------ Declaration ------------------*/
     template <typename FuncType>
     class TDelegate;
 
@@ -12,18 +13,7 @@ namespace PigeonEngine
     template <typename Ret, typename... Args>
     class TDelegate<Ret (Args...)>
     {
-    public:
-        TDelegate<Ret (Args...)>() = default;
-        virtual ~TDelegate() = default;
-    public:
-        // virtual void Add(const TFunction<Ret (Args...)>& New) = 0;
-        // virtual void Remove(const TFunction<Ret (Args...)>& Old) = 0;
-        // virtual void RemoveAll() = 0;
-        // virtual void Bind(const TFunction<Ret (Args...)>& New) = 0;
-        // virtual void Unbind() = 0;
-        // virtual void Broadcast(Args... Arguments) = 0;
-        // virtual Ret  Execute(Args... Arguments) = 0;
-   
+
     };
 
     // Delegate no return, multi execution
@@ -41,21 +31,45 @@ namespace PigeonEngine
         TArray<TFunction<void (Args...)>> ToCall{};
     };
     
-    // Delegate no return, multi execution
+    // Delegate with return, single execution
     template <typename Ret, typename... Args>
     class TDelegateSingle<Ret(Args...)> : public TDelegate<Ret (Args...)>
     {
     public:
-        ~TDelegateSingle<Ret(Args...)>() override {Unbind();}
+        ~TDelegateSingle<Ret(Args...)>() {Unbind();}
     public:
-        virtual void Bind(const TFunction<Ret (Args...)>& New);
-        virtual void Unbind();
-        virtual Ret  Execute(Args... Arguments);
+        void Bind(const TFunction<Ret (Args...)>& New);
+        void Unbind();
+        Ret  Execute(Args... Arguments);
     private:
         TFunction<Ret(Args...)> Ops = nullptr;
     };
 
-    
+    /*------------------ Macros ------------------*/
+#define MAKE_DELEGATE_MULTI_ONE_PARAM(_DelegateName, _ParamType)\
+    class _DelegateName : public TDelegateBroadcast<_ParamType>{};
+#define MAKE_DELEGATE_MULTI_TWO_PARAM(_DelegateName, _ParamType1, _ParamType2)\
+    class _DelegateName : public TDelegateBroadcast<(_ParamType1), (_ParamType2)>{};
+#define MAKE_DELEGATE_MULTI_THREE_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3)\
+    class _DelegateName : public TDelegateBroadcast<(_ParamType1), (_ParamType2), (_ParamType3)>{};
+#define MAKE_DELEGATE_MULTI_FOUR_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3, _ParamType4)\
+    class _DelegateName : public TDelegateBroadcast<(_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4)>{};
+#define MAKE_DELEGATE_MULTI_FIVE_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)\
+    class _DelegateName : public TDelegateBroadcast<(_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4), (_ParamType5)>{};
+
+#define MAKE_DELEGATE_SINGLE_RET_ONE_PARAM(_DelegateName, _ReturnType, _ParamType)\
+    class _DelegateName : public TDelegateSingle<_ReturnType((_ParamType))>{};
+#define MAKE_DELEGATE_SINGLE_RET_TWO_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2)\
+    class _DelegateName : public TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2))>{};
+#define MAKE_DELEGATE_SINGLE_RET_THREE_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3)\
+    class _DelegateName : public TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3))>{};
+#define MAKE_DELEGATE_SINGLE_RET_FOUR_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3, _ParamType4)\
+    class _DelegateName : public TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4))>{};
+#define MAKE_DELEGATE_SINGLE_RET_FIVE_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)\
+    class _DelegateName : public TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4), (_ParamType5))>{};
+
+
+    /*------------------ Implementation ------------------*/
     template <typename ... Args>
     void TDelegateBroadcast<Args...>::Add(const TFunction<void(Args...)>& New)
     {
@@ -88,7 +102,7 @@ namespace PigeonEngine
     {
         this->Ops = New;
     }
-
+    
     template <typename Ret, typename ... Args>
     void TDelegateSingle<Ret, Args...>::Unbind()
     {
@@ -98,6 +112,8 @@ namespace PigeonEngine
     template <typename Ret, typename ... Args>
     Ret TDelegateSingle<Ret, Args...>::Execute(Args... Arguments)
     {
-        return this->Ops(Arguments);
+        if(this->Ops)
+            return this->Ops(Arguments);
+        return Ret();
     }
 }
