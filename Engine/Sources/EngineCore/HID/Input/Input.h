@@ -6,6 +6,7 @@
 #include <Config/EngineConfig.h>
 #include "Mouse.h"
 #include "Keyboard.h"
+#include "Base/Delegate/Delegate.h"
 
 namespace PigeonEngine
 {
@@ -19,9 +20,7 @@ namespace PigeonEngine
 		INT WindowSizeX = static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH);
 		INT WindowSizeY = static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT);
 		HWND hWnd = NULL;
-
 		/*Mouse part start*/
-
 	public:
 		std::pair<INT, INT> GetMousePosition() const;
 
