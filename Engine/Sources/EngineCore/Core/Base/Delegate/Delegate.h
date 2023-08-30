@@ -49,24 +49,24 @@ namespace PigeonEngine
 #define MAKE_DELEGATE_MULTI_ONE_PARAM(_DelegateName, _ParamType)\
     class _DelegateName : public PigeonEngine::TDelegateBroadcast<void (_ParamType)>{};
 #define MAKE_DELEGATE_MULTI_TWO_PARAM(_DelegateName, _ParamType1, _ParamType2)\
-    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void ((_ParamType1), (_ParamType2))>{};
+    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void (_ParamType1, _ParamType2)>{};
 #define MAKE_DELEGATE_MULTI_THREE_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3)\
-    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void ((_ParamType1), (_ParamType2), (_ParamType3))>{};
+    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void (_ParamType1, _ParamType2, _ParamType3)>{};
 #define MAKE_DELEGATE_MULTI_FOUR_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3, _ParamType4)\
-    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void ((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4))>{};
+    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void (_ParamType1, _ParamType2, _ParamType3, _ParamType4)>{};
 #define MAKE_DELEGATE_MULTI_FIVE_PARAM(_DelegateName, _ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)\
-    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void ((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4), (_ParamType5))>{};
+    class _DelegateName : public PigeonEngine::TDelegateBroadcast<void (_ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)>{};
 
 #define MAKE_DELEGATE_SINGLE_RET_ONE_PARAM(_DelegateName, _ReturnType, _ParamType)\
     class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType((_ParamType))>{};
 #define MAKE_DELEGATE_SINGLE_RET_TWO_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2)\
-    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2))>{};
+    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType(_ParamType1, _ParamType2)>{};
 #define MAKE_DELEGATE_SINGLE_RET_THREE_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3)\
-    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3))>{};
+    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType(_ParamType1, _ParamType2, _ParamType3)>{};
 #define MAKE_DELEGATE_SINGLE_RET_FOUR_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3, _ParamType4)\
-    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4))>{};
+    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType(_ParamType1, _ParamType2, _ParamType3, _ParamType4)>{};
 #define MAKE_DELEGATE_SINGLE_RET_FIVE_PARAM(_DelegateName, _ReturnType, _ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)\
-    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType((_ParamType1), (_ParamType2), (_ParamType3), (_ParamType4), (_ParamType5))>{};
+    class _DelegateName : public PigeonEngine::TDelegateSingle<_ReturnType(_ParamType1, _ParamType2, _ParamType3, _ParamType4, _ParamType5)>{};
 
 
     /*------------------ Implementation ------------------*/
