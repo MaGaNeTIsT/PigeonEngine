@@ -42,6 +42,8 @@ namespace PigeonEngine
 	void ESkeletonAnimation::ReleaseResource()
 	{
 		// Skeleton animation resource do not need release.
+		AnimationClips.Clear();
+		AnimationClipMapping.Clear();
 	}
 	const EString& ESkeletonAnimation::GetAnimationName()const
 	{
@@ -53,11 +55,11 @@ namespace PigeonEngine
 	}
 	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(const EString& InClipName)const
 	{
-		for (UINT i = 0u, n = AnimationClips.Length(); i < n; i++)
+		if (UINT FindIndex = 0u; AnimationClipMapping.FindValue(InClipName, FindIndex))
 		{
-			if (AnimationClips[i].ClipName == InClipName)
+			if (FindIndex < AnimationClips.Length())
 			{
-				return (&(AnimationClips[i]));
+				return (&(AnimationClips[FindIndex]));
 			}
 		}
 		return nullptr;
@@ -73,6 +75,39 @@ namespace PigeonEngine
 	const TArray<ESkeletonAnimationClip>& ESkeletonAnimation::GetAnimationClips()const
 	{
 		return AnimationClips;
+	}
+	const TMap<EString, UINT>& ESkeletonAnimation::GetAnimationClipMapping()const
+	{
+		return AnimationClipMapping;
+	}
+	BOOL ESkeletonAnimation::AddAnimationClip(const ESkeletonAnimationClip& InClip)
+	{
+		if (InClip.IsValid())
+		{
+			if (!(AnimationClipMapping.ContainsKey(InClip.ClipName)))
+			{
+				AnimationClips.Add(InClip);
+				AnimationClipMapping.Add(InClip.ClipName, AnimationClips.Length() - 1u);
+				return TRUE;
+			}
+#if _EDITOR_ONLY
+			else
+			{
+				EString ErrorInfo = EString("Try to add animation clip but already exist [animation clip name = ") + InClip.ClipName + "].";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			}
+#endif
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Add skeleton animation clip failed."));
+		return FALSE;
+	}
+	BOOL ESkeletonAnimation::RemoveAnimationClip(UINT InIndex)
+	{
+		return FALSE;
+	}
+	BOOL ESkeletonAnimation::RemoveAnimationClip(const EString& InClipName)
+	{
+		return FALSE;
 	}
 
 	ESkeletonAnimationAsset::ESkeletonAnimationAsset(const EString& InAssetPath, const EString& InAssetName
@@ -136,9 +171,9 @@ namespace PigeonEngine
 	}
 	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName)
 	{
-		/*EString TempFullPathName(InLoadPath);
-		TempFullPathName += InLoadName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		/*
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -306,151 +341,154 @@ namespace PigeonEngine
 			delete LoadedSkeletonAnimationResource;
 			LoadedSkeletonAnimationResource = nullptr;
 		}
-		return LoadedSkeletonAnimationResource;*/
+		return LoadedSkeletonAnimationResource;
+		*/
 		return nullptr;
 	}
 	BOOL EAnimationManager::SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource)
 	{
-//		if ((!InSkeletonAnimationResource) || (!(InSkeletonAnimationResource->IsResourceValid())))
-//		{
-//			PE_FAILED((ENGINE_ASSET_ERROR), ("Check skeleton animation resource error, skeleton animation resource is null."));
-//			return FALSE;
-//		}
-//		EString TempFullPathName(InSavePath);
-//		TempFullPathName += InSaveName;
-//		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
-//		if (TempFullPathName.Length() < 10u)
-//		{
-//#if _EDITOR_ONLY
-//			{
-//				EString ErrorData("Save skeleton animation asset path name check failed (save file path : ");
-//				ErrorData += InSavePath;
-//				ErrorData += ", save file name : ";
-//				ErrorData += InSaveName;
-//				ErrorData += ").";
-//				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
-//			}
-//#endif
-//			return FALSE;
-//		}
-//
-//		auto CalculateSkeletonAnimationBytes = [](const ESkeletonAnimation* InSkeletonAnimation)->ULONG
-//		{
-//			ULONG Result = 0u;
-//
-//			Result += sizeof(UINT32);		// EAssetType
-//			Result += sizeof(UINT32);		// EAnimationType
-//			Result += sizeof(CHAR) * ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX;	// Skeleton animation name
-//			Result += sizeof(UINT32);		// Animation clip num
-//
-//			const ESkeleton::EBonePart& BonePart = InSkeletonAnimation->get();
-//			for (UINT i = 0u, n = BonePart.Length(); i < n; i++)
-//			{
-//				const EBoneData& BoneData = BonePart[i];
-//
-//				Result += sizeof(SHORT);		// Bone data index
-//				Result += sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone data name
-//				Result += sizeof(Vector3);		// Bone data default position
-//				Result += sizeof(Quaternion);	// Bone data default rotation
-//				Result += sizeof(Vector3);		// Bone data default scaling
-//				Result += sizeof(SHORT);		// Bone data parent index
-//				Result += sizeof(USHORT);		// Bone data children num
-//				Result += sizeof(SHORT) * BoneData.Children.Length();	// Bone data children index
-//			}
-//			Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Length();	// Bone mapping datas
-//
-//			return Result;
-//		};
-//
-//		const ULONG OutputMemSize = CalculateSkeletonAnimationBytes(InSkeletonAnimationResource);
-//		BYTE* OutputMem = new BYTE[OutputMemSize];
-//
-//		void* RstMemPtr = OutputMem;
-//		LONGLONG RstMemSize = static_cast<LONGLONG>(OutputMemSize);
-//
-//#define SAVE_ASSET_MEMORY(__Type, __Value) \
-//		{\
-//			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
-//			__Type* TempPtr = (__Type*)RstMemPtr;\
-//			TempPtr[0] = (__Value);\
-//			RstMemPtr = &(TempPtr[1]);\
-//			RstMemSize -= (sizeof(__Type));\
-//		}\
-//
-//#define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
-//		{\
-//			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
-//			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
-//			const EString& SavedName = (__EString);\
-//			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
-//			CHAR* TempPtr = (CHAR*)RstMemPtr;\
-//			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
-//			RstMemPtr = &(TempPtr[(__LengthMax)]);\
-//			RstMemSize -= NameLengthMax;\
-//		}\
-//
-//#define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
-//		{\
-//			const UINT MemSize = (__ElementStride) * (__ElementNum);\
-//			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
-//			BYTE* TempPtr = (BYTE*)RstMemPtr;\
-//			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
-//			RstMemPtr = &(TempPtr[MemSize]);\
-//			RstMemSize -= MemSize;\
-//		}\
-//
-//		{
-//			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_SKELETON));
-//			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InSkeletonAnimationResource->GetSkeletonType()));
-//			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetSkeletonName(), ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
-//
-//			const ESkeleton::EBonePart& BonePart = InSkeletonAnimationResource->GetBonePart();
-//			const TMap<EString, USHORT>& BoneMapping = InSkeletonAnimationResource->GetBoneMapping();
-//			const USHORT BoneNum = static_cast<USHORT>(BonePart.Length());	// Skeleton bone num can not greater than 65535u.
-//			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset bone num failed, bone mapping num is not match bone num."), ((BoneNum > 0u) && (BoneNum == static_cast<USHORT>(BoneMapping.Length()))));
-//
-//			SAVE_ASSET_MEMORY(USHORT, BoneNum);
-//
-//			for (USHORT i = 0u; i < BoneNum; i++)
-//			{
-//				const EBoneData& BondData = BonePart[i];
-//
-//				SAVE_ASSET_MEMORY(SHORT, BondData.Index);
-//				SAVE_ASSET_STRING_MEMORY(BondData.Name, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
-//				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultPosition);
-//				SAVE_ASSET_MEMORY(Quaternion, BondData.DefaultRotation);
-//				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultScaling);
-//				SAVE_ASSET_MEMORY(SHORT, BondData.Parent);
-//
-//				const TArray<SHORT>& ChildrenDatas = BondData.Children;
-//				const USHORT ChildrenNum = static_cast<USHORT>(ChildrenDatas.Length());
-//
-//				SAVE_ASSET_MEMORY(USHORT, ChildrenNum);
-//
-//				for (USHORT ChildIndex = 0u; ChildIndex < ChildrenNum; ChildIndex++)
-//				{
-//					SAVE_ASSET_MEMORY(SHORT, ChildrenDatas[ChildIndex]);
-//				}
-//			}
-//			for (auto ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
-//			{
-//				SAVE_ASSET_STRING_MEMORY(ItMapping->first, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
-//				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
-//			}
-//
-//			Check((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));
-//		}
-//
-//#undef SAVE_ASSET_MEMORY
-//#undef SAVE_ASSET_STRING_MEMORY
-//#undef SAVE_ASSET_PTR_MEMORY
-//
-//		if (EFileHelper::SaveBytesToFile(TempFullPathName, OutputMem, OutputMemSize))
-//		{
-//			delete[]OutputMem;
-//			return TRUE;
-//		}
-//		delete[]OutputMem;
+		/*
+		if ((!InSkeletonAnimationResource) || (!(InSkeletonAnimationResource->IsResourceValid())))
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Check skeleton animation resource error, skeleton animation resource is null."));
+			return FALSE;
+		}
+		EString TempFullPathName(InSavePath);
+		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Save skeleton animation asset path name check failed (save file path : ");
+				ErrorData += InSavePath;
+				ErrorData += ", save file name : ";
+				ErrorData += InSaveName;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+
+		auto CalculateSkeletonAnimationBytes = [](const ESkeletonAnimation* InSkeletonAnimation)->ULONG
+		{
+			ULONG Result = 0u;
+
+			Result += sizeof(UINT32);		// EAssetType
+			Result += sizeof(UINT32);		// EAnimationType
+			Result += sizeof(CHAR) * ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX;	// Skeleton animation name
+			Result += sizeof(UINT32);		// Animation clip num
+
+			const ESkeleton::EBonePart& BonePart = InSkeletonAnimation->get();
+			for (UINT i = 0u, n = BonePart.Length(); i < n; i++)
+			{
+				const EBoneData& BoneData = BonePart[i];
+
+				Result += sizeof(SHORT);		// Bone data index
+				Result += sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone data name
+				Result += sizeof(Vector3);		// Bone data default position
+				Result += sizeof(Quaternion);	// Bone data default rotation
+				Result += sizeof(Vector3);		// Bone data default scaling
+				Result += sizeof(SHORT);		// Bone data parent index
+				Result += sizeof(USHORT);		// Bone data children num
+				Result += sizeof(SHORT) * BoneData.Children.Length();	// Bone data children index
+			}
+			Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Length();	// Bone mapping datas
+
+			return Result;
+		};
+
+		const ULONG OutputMemSize = CalculateSkeletonAnimationBytes(InSkeletonAnimationResource);
+		BYTE* OutputMem = new BYTE[OutputMemSize];
+
+		void* RstMemPtr = OutputMem;
+		LONGLONG RstMemSize = static_cast<LONGLONG>(OutputMemSize);
+
+#define SAVE_ASSET_MEMORY(__Type, __Value) \
+		{\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			__Type* TempPtr = (__Type*)RstMemPtr;\
+			TempPtr[0] = (__Value);\
+			RstMemPtr = &(TempPtr[1]);\
+			RstMemSize -= (sizeof(__Type));\
+		}\
+
+#define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
+		{\
+			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
+			const EString& SavedName = (__EString);\
+			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			CHAR* TempPtr = (CHAR*)RstMemPtr;\
+			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
+			RstMemPtr = &(TempPtr[(__LengthMax)]);\
+			RstMemSize -= NameLengthMax;\
+		}\
+
+#define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
+		{\
+			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			BYTE* TempPtr = (BYTE*)RstMemPtr;\
+			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
+			RstMemPtr = &(TempPtr[MemSize]);\
+			RstMemSize -= MemSize;\
+		}\
+
+		{
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_SKELETON));
+			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InSkeletonAnimationResource->GetSkeletonType()));
+			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetSkeletonName(), ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
+
+			const ESkeleton::EBonePart& BonePart = InSkeletonAnimationResource->GetBonePart();
+			const TMap<EString, USHORT>& BoneMapping = InSkeletonAnimationResource->GetBoneMapping();
+			const USHORT BoneNum = static_cast<USHORT>(BonePart.Length());	// Skeleton bone num can not greater than 65535u.
+			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset bone num failed, bone mapping num is not match bone num."), ((BoneNum > 0u) && (BoneNum == static_cast<USHORT>(BoneMapping.Length()))));
+
+			SAVE_ASSET_MEMORY(USHORT, BoneNum);
+
+			for (USHORT i = 0u; i < BoneNum; i++)
+			{
+				const EBoneData& BondData = BonePart[i];
+
+				SAVE_ASSET_MEMORY(SHORT, BondData.Index);
+				SAVE_ASSET_STRING_MEMORY(BondData.Name, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultPosition);
+				SAVE_ASSET_MEMORY(Quaternion, BondData.DefaultRotation);
+				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultScaling);
+				SAVE_ASSET_MEMORY(SHORT, BondData.Parent);
+
+				const TArray<SHORT>& ChildrenDatas = BondData.Children;
+				const USHORT ChildrenNum = static_cast<USHORT>(ChildrenDatas.Length());
+
+				SAVE_ASSET_MEMORY(USHORT, ChildrenNum);
+
+				for (USHORT ChildIndex = 0u; ChildIndex < ChildrenNum; ChildIndex++)
+				{
+					SAVE_ASSET_MEMORY(SHORT, ChildrenDatas[ChildIndex]);
+				}
+			}
+			for (auto ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
+			{
+				SAVE_ASSET_STRING_MEMORY(ItMapping->first, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
+			}
+
+			Check((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));
+		}
+
+#undef SAVE_ASSET_MEMORY
+#undef SAVE_ASSET_STRING_MEMORY
+#undef SAVE_ASSET_PTR_MEMORY
+
+		if (EFileHelper::SaveBytesToFile(TempFullPathName, OutputMem, OutputMemSize))
+		{
+			delete[]OutputMem;
+			return TRUE;
+		}
+		delete[]OutputMem;
+		return FALSE;
+		*/
 		return FALSE;
 	}
 

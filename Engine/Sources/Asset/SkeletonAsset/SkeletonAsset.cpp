@@ -482,8 +482,7 @@ namespace PigeonEngine
 	BOOL ESkeletonAssetManager::ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName += InAssetName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -551,8 +550,7 @@ namespace PigeonEngine
 	BOOL ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName += InLoadName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(TempFullPathName);
 		if (ResultSkeletonAsset)
 		{
@@ -617,8 +615,7 @@ namespace PigeonEngine
 	BOOL ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName += InSaveName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -665,8 +662,7 @@ namespace PigeonEngine
 	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName += InLoadName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -844,8 +840,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		EString TempFullPathName(InSavePath);
-		TempFullPathName += InSaveName;
-		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
