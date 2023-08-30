@@ -74,8 +74,6 @@ namespace PigeonEngine
     void TDelegateBroadcast<Args...>::Add(const TFunction<void(Args...)>& New)
     {
         ToCall.Add(New);
-        MAKE_DELEGATE_MULTI_ONE_PARAM(FASDAS, int);
-        FASDAS in;
     }
 
     template <typename ... Args>
