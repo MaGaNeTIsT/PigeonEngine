@@ -69,7 +69,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
-		), ShaderPath(InShaderPath), ShaderFrequency(_ShaderFrequency)
+		), ShaderFrequency(_ShaderFrequency)
 		{
 		}
 		virtual ~TShaderBaseAsset()

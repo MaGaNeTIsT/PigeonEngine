@@ -596,7 +596,7 @@ namespace PigeonEngine
 			return NewSkeletonAsset;
 		}
 
-		ESkeletonAsset* NewSkeletonAsset = new ESkeletonAsset(InLoadPath, InLoadName
+		NewSkeletonAsset = new ESkeletonAsset(InLoadPath, InLoadName
 #if _EDITOR_ONLY
 			, InLoadName
 #endif

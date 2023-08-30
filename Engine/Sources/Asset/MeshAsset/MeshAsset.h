@@ -499,12 +499,16 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
-		)
+		), MeshType(_MeshType)
 		{
 		}
 		virtual ~TMeshBaseAsset()
 		{
 		}
+	public:
+		EMeshType	GetMeshType()const { return MeshType; }
+	protected:
+		EMeshType	MeshType;
 	public:
 		TMeshBaseAsset() = delete;
 

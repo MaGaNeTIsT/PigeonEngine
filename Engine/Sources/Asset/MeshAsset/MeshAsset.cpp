@@ -1831,8 +1831,9 @@ namespace PigeonEngine
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
 	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
-		EString TempLoadFullPathName = InLoadPath + InLoadName + ENGINE_ASSET_NAME_TYPE;
-		_TMeshAssetType* NewMeshAsset = new _TMeshAssetType(TempLoadFullPathName
+		EString TempLoadFullPathName(InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		_TMeshAssetType* NewMeshAsset = new _TMeshAssetType(InLoadPath, InLoadName
 #if _EDITOR_ONLY
 			, InLoadName
 #endif
@@ -2001,7 +2002,8 @@ namespace PigeonEngine
 	template<typename _TMeshResourceType>
 	_TMeshResourceType* EMeshAssetManager::LoadMeshResource(const EString& InLoadPath, const EString& InLoadName)
 	{
-		EString TempLoadFullPathName = InLoadPath + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		EString TempLoadFullPathName = (InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		_TMeshResourceType* LoadedMeshResource = nullptr;
 		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
 		if (!EFileHelper::ReadFileAsBinary(TempLoadFullPathName, ReadFileMem, ReadFileSize))
@@ -2289,7 +2291,8 @@ namespace PigeonEngine
 			}
 			if (InMesh->IsTypeOf<ESkinnedMesh>())
 			{
-				const ESkinnedMesh* TempMeshPtr = InMesh;
+				const ESkinnedMesh* TempMeshPtr = dynamic_cast<const ESkinnedMesh*>(InMesh);
+				Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
 				{
 					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
 					Result += sizeof(UINT32);	// Bind pose num
@@ -2407,7 +2410,8 @@ namespace PigeonEngine
 		};
 		if (InMeshResource->IsTypeOf<ESkinnedMesh>())
 		{
-			const ESkinnedMesh* TempMeshPtr = InMeshResource;
+			const ESkinnedMesh* TempMeshPtr = dynamic_cast<const ESkinnedMesh*>(InMeshResource);
+			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
 			{
 				const ESkinnedMesh::EBindPoseValue& BindPoseValues = TempMeshPtr->GetBindPoseValue();
 				const ESkinnedMesh::EBindPoseIndex& BindPoseIndices = TempMeshPtr->GetBindPoseIndex();
@@ -2455,7 +2459,8 @@ namespace PigeonEngine
 #undef SAVE_ASSET_STRING_MEMORY
 #undef SAVE_ASSET_PTR_MEMORY
 
-		EString TempSaveFullPathName = InSavePath + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		EString TempSaveFullPathName(InSavePath);
+		TempSaveFullPathName = TempSaveFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
 		if (EFileHelper::SaveBytesToFile(TempSaveFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;
