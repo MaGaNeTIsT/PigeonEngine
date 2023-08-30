@@ -1610,8 +1610,7 @@ namespace PigeonEngine
 	BOOL EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempSaveFullPathName(InSavePath);
-		TempSaveFullPathName += InAssetName;
-		TempSaveFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -1681,8 +1680,7 @@ namespace PigeonEngine
 	BOOL EMeshAssetManager::ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempSaveFullPathName(InSavePath);
-		TempSaveFullPathName += InAssetName;
-		TempSaveFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -1753,8 +1751,7 @@ namespace PigeonEngine
 	BOOL EMeshAssetManager::LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset)
 	{
 		EString TempLoadFullPathName(InLoadPath);
-		TempLoadFullPathName += InLoadName;
-		TempLoadFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		EStaticMeshAsset* ResultMeshAsset = StaticMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
@@ -1788,8 +1785,7 @@ namespace PigeonEngine
 	BOOL EMeshAssetManager::LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset)
 	{
 		EString TempLoadFullPathName(InLoadPath);
-		TempLoadFullPathName += InLoadName;
-		TempLoadFullPathName += ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		ESkinnedMeshAsset* ResultMeshAsset = SkinnedMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
