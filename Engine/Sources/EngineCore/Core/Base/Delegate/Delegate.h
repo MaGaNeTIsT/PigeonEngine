@@ -11,34 +11,39 @@ namespace PigeonEngine
 
     // Prototype, should not be used directly
     template <typename Ret, typename... Args>
-    class TDelegate<Ret (Args...)>
+    class TDelegate<Ret(Args...)>
     {
 
     };
 
+    template <typename FuncType>
+    class TDelegateBroadcast;
     // Delegate no return, multi execution
     template <typename... Args>
-    class TDelegateBroadcast<void (Args...)> : public TDelegate<void (Args...)>
+    class TDelegateBroadcast<void(Args...)> : public TDelegate<void(Args...)>
     {
     public:
-        ~TDelegateBroadcast<void (Args...)>() override {RemoveAll();}
+        ~TDelegateBroadcast<void(Args...)>() { RemoveAll(); }
     public:
-        void Add(const TFunction<void (Args...)>& New) override;
-        void Remove(const TFunction<void (Args...)>& Old) override;
-        void RemoveAll() override;
-        void Broadcast(Args... Arguments) override;
+        void Add(const TFunction<void(Args...)>& New);
+        void Remove(const TFunction<void(Args...)>& Old);
+        void RemoveAll();
+        void Broadcast(Args... Arguments);
     private:
-        TArray<TFunction<void (Args...)>> ToCall{};
+        TArray<TFunction<void(Args...)>> ToCall{};
     };
-    
+
     // Delegate with return, single execution
+    template <typename FuncType>
+    class TDelegateSingle;
+
     template <typename Ret, typename... Args>
-    class TDelegateSingle<Ret(Args...)> : public TDelegate<Ret (Args...)>
+    class TDelegateSingle<Ret(Args...)> : public TDelegate<Ret(Args...)>
     {
     public:
-        ~TDelegateSingle<Ret(Args...)>() {Unbind();}
+        ~TDelegateSingle<Ret(Args...)>() { Unbind(); }
     public:
-        void Bind(const TFunction<Ret (Args...)>& New);
+        void Bind(const TFunction<Ret(Args...)>& New);
         void Unbind();
         Ret  Execute(Args... Arguments);
     private:
@@ -71,48 +76,50 @@ namespace PigeonEngine
 
     /*------------------ Implementation ------------------*/
     template <typename ... Args>
-    void TDelegateBroadcast<Args...>::Add(const TFunction<void(Args...)>& New)
+    void TDelegateBroadcast<void(Args...)>::Add(const TFunction<void(Args...)>& New)
     {
         ToCall.Add(New);
     }
 
     template <typename ... Args>
-    void TDelegateBroadcast<Args...>::Remove(const TFunction<void(Args...)>& Old)
+    void TDelegateBroadcast<void(Args...)>::Remove(const TFunction<void(Args...)>& Old)
     {
         ToCall.Remove(Old);
     }
 
     template <typename ... Args>
-    void TDelegateBroadcast<Args...>::RemoveAll()
+    void TDelegateBroadcast<void(Args...)>::RemoveAll()
     {
         ToCall.Clear();
     }
 
     template <typename ... Args>
-    void TDelegateBroadcast<Args...>::Broadcast(Args... Arguments)
+    void TDelegateBroadcast<void(Args...)>::Broadcast(Args... Arguments)
     {
-        for(const auto& elem : ToCall)
+        for (const auto& elem : ToCall)
         {
             elem(Arguments...);
         }
     }
 
     template <typename Ret, typename ... Args>
-    void TDelegateSingle<Ret, Args...>::Bind(const TFunction<Ret(Args...)>& New)
+    void TDelegateSingle<Ret(Args...)>::Bind(const TFunction<Ret(Args...)>& New)
     {
         this->Ops = New;
     }
-    
+
     template <typename Ret, typename ... Args>
-    void TDelegateSingle<Ret, Args...>::Unbind()
+    void TDelegateSingle<Ret(Args...)>::Unbind()
     {
         this->Ops = nullptr;
     }
 
     template <typename Ret, typename ... Args>
-    Ret TDelegateSingle<Ret, Args...>::Execute(Args... Arguments)
+    Ret TDelegateSingle<Ret(Args...)>::Execute(Args... Arguments)
     {
-        if(this->Ops)
+        if (this->Ops)
             return this->Ops(Arguments);
         return Ret();
     }
+
+}
