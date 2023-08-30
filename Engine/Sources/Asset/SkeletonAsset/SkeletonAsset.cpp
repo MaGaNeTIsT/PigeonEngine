@@ -415,24 +415,20 @@ namespace PigeonEngine
 		}
 	}
 
-	ESkeletonAsset::ESkeletonAsset(const EString& InSkeletonPath
+	ESkeletonAsset::ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
-	) : TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>(
+	) : TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
-		InDebugName
+		, InDebugName
 #endif
-	), SkeletonPath(InSkeletonPath)
+	)
 	{
 
 	}
 	ESkeletonAsset::~ESkeletonAsset()
 	{
-	}
-	const EString& ESkeletonAsset::GetSkeletonPath()const
-	{
-		return SkeletonPath;
 	}
 	BOOL ESkeletonAsset::InitResource()
 	{
@@ -440,7 +436,7 @@ namespace PigeonEngine
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Skeleton name=[") + DebugName + "] path = [" + SkeletonPath + "] has been Initialized.";
+				EString ErrorInfo = EString("Skeleton name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -483,26 +479,29 @@ namespace PigeonEngine
 		ClearSkeletons();
 	}
 #if _EDITOR_ONLY
-	BOOL ESkeletonAssetManager::ImportSkeleton(const EString& InImportPath, const EString& InSaveSkeletonAssetName, const EString& InSaveSkeletonAssetPath)
+	BOOL ESkeletonAssetManager::ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
-		if ((InImportPath.Length() < 3u) || (InSaveSkeletonAssetPath.Length() < 3u))
+		EString TempFullPathName(InSavePath);
+		TempFullPathName += InAssetName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
 		EString ImportPathName; EString ImportFileType;
-		if (!(SplitByLastSign('.', InImportPath, ImportPathName, ImportFileType)))
+		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
@@ -514,56 +513,53 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
 		EString UsedSkeletonName;
-		if (InSaveSkeletonAssetName.Length() < 2u)
+		if (InAssetName.Length() < 2u)
 		{
 			UsedSkeletonName = ENGINE_DEFAULT_NAME;
 		}
 		else
 		{
-			UsedSkeletonName = InSaveSkeletonAssetName;
+			UsedSkeletonName = InAssetName;
 		}
 		ESkeleton AssimpSkeleton(UsedSkeletonName);
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
-		if ((AssimpManager->ReadSkeletonFile(InImportPath, AssimpSkeleton)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		if ((AssimpManager->ReadSkeletonFile(InImportFullPathName, AssimpSkeleton)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Assimp importer can not load skeleton file from path (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveSkeletonAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
-
-		EString OutputPathName(InSaveSkeletonAssetPath);
-		{
-			OutputPathName += UsedSkeletonName;
-			OutputPathName += ENGINE_ASSET_NAME_TYPE;
-		}
-		if (!(SaveSkeletonResource(OutputPathName, (&(AssimpSkeleton)))))
+		if (!(SaveSkeletonResource(InSavePath, InAssetName, (&(AssimpSkeleton)))))
 		{
 			return FALSE;
 		}
 		return TRUE;
 	}
 #endif
-	BOOL ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const ESkeletonAsset*& OutSkeletonAsset)
+	BOOL ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset)
 	{
-		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(InLoadPath);
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName += InLoadName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(TempFullPathName);
 		if (ResultSkeletonAsset)
 		{
 			OutSkeletonAsset = ResultSkeletonAsset;
 			return TRUE;
 		}
-		ResultSkeletonAsset = LoadSkeletonAsset(InLoadPath);
+		ResultSkeletonAsset = LoadSkeletonAsset(InLoadPath, InLoadName);
 		if (!ResultSkeletonAsset)
 		{
 			return FALSE;
@@ -573,11 +569,11 @@ namespace PigeonEngine
 			delete ResultSkeletonAsset;
 			return FALSE;
 		}
-		if (SkeletonAssetDataManager.Add(InLoadPath, ResultSkeletonAsset, TRUE) == 0u)
+		if (SkeletonAssetDataManager.Add(TempFullPathName, ResultSkeletonAsset, TRUE) == 0u)
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Skeleton asset path = [") + InLoadPath + "] add into manager list failed.";
+				EString ErrorInfo = EString("Skeleton asset path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -591,18 +587,18 @@ namespace PigeonEngine
 	{
 		SkeletonAssetDataManager.Clear();
 	}
-	ESkeletonAsset* ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath)
+	ESkeletonAsset* ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
 		ESkeletonAsset* NewSkeletonAsset = nullptr;
-		ESkeleton* LoadedSkeletonResource = LoadSkeletonResource(InLoadPath);
+		ESkeleton* LoadedSkeletonResource = LoadSkeletonResource(InLoadPath, InLoadName);
 		if ((!LoadedSkeletonResource) || (!(LoadedSkeletonResource->IsResourceValid())))
 		{
 			return NewSkeletonAsset;
 		}
 
-		ESkeletonAsset* NewSkeletonAsset = new ESkeletonAsset(InLoadPath
+		ESkeletonAsset* NewSkeletonAsset = new ESkeletonAsset(InLoadPath, InLoadName
 #if _EDITOR_ONLY
-			, InLoadPath
+			, InLoadName
 #endif
 		);
 		if (!(NewSkeletonAsset->StorageResourceInternal(
@@ -618,14 +614,31 @@ namespace PigeonEngine
 		}
 		return NewSkeletonAsset;
 	}
-	BOOL ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const ESkeletonAsset* InSkeletonAsset)
+	BOOL ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset)
 	{
+		EString TempFullPathName(InSavePath);
+		TempFullPathName += InSaveName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Save skeleton asset path name check failed (save file path : ");
+				ErrorData += InSavePath;
+				ErrorData += ", save file name : ";
+				ErrorData += InSaveName;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
 		if (!InSkeletonAsset)
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Save skeleton asset failed (save file path : ");
-				ErrorData += InSavePath;
+				ErrorData += TempFullPathName;
 				ErrorData += ") this asset is null.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
@@ -638,7 +651,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Save skeleton asset failed (save file path : ");
-				ErrorData += InSavePath;
+				ErrorData += TempFullPathName;
 				ErrorData += ", skeleton asset name : ";
 				ErrorData += InSkeletonAsset->GetDebugName();
 				ErrorData += ") this asset is not contain valid skeleton resource.";
@@ -647,13 +660,30 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		return (SaveSkeletonResource(InSavePath, SavedSkeletonResource));
+		return (SaveSkeletonResource(InSavePath, InSaveName, SavedSkeletonResource));
 	}
-	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath)
+	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName)
 	{
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName += InLoadName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Load skeleton asset path name check failed (load file path : ");
+				ErrorData += InLoadPath;
+				ErrorData += ", load file name : ";
+				ErrorData += InLoadName;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return nullptr;
+		}
 		ESkeleton* LoadedSkeletonResource = nullptr;
 		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
-		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		if (!EFileHelper::ReadFileAsBinary(TempFullPathName, ReadFileMem, ReadFileSize))
 		{
 			if (ReadFileMem)
 			{
@@ -662,7 +692,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Load skeleton asset failed (load file path : ");
-				ErrorData += InLoadPath;
+				ErrorData += TempFullPathName;
 				ErrorData += ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
@@ -718,7 +748,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton asset failed (load file path : ");
-						ErrorData += InLoadPath;
+						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton type.";
 						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 					}
@@ -735,7 +765,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 					{
 						EString ErrorData("Load skeleton asset failed (load file path : ");
-						ErrorData += InLoadPath;
+						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton type.";
 						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 					}
@@ -806,11 +836,28 @@ namespace PigeonEngine
 		}
 		return LoadedSkeletonResource;
 	}
-	BOOL ESkeletonAssetManager::SaveSkeletonResource(const EString& InSavePath, const ESkeleton* InSkeletonResource)
+	BOOL ESkeletonAssetManager::SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource)
 	{
 		if ((!InSkeletonResource) || (!(InSkeletonResource->IsResourceValid())))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Check skeleton resource error, skeleton resource is null."));
+			return FALSE;
+		}
+		EString TempFullPathName(InSavePath);
+		TempFullPathName += InSaveName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Save skeleton asset path name check failed (save file path : ");
+				ErrorData += InSavePath;
+				ErrorData += ", save file name : ";
+				ErrorData += InSaveName;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
 			return FALSE;
 		}
 
@@ -925,7 +972,7 @@ namespace PigeonEngine
 #undef SAVE_ASSET_STRING_MEMORY
 #undef SAVE_ASSET_PTR_MEMORY
 
-		if (EFileHelper::SaveBytesToFile(InSavePath, OutputMem, OutputMemSize))
+		if (EFileHelper::SaveBytesToFile(TempFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;
 			return TRUE;

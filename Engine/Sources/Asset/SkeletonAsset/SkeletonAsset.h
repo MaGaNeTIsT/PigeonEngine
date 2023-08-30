@@ -144,18 +144,14 @@ namespace PigeonEngine
 	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
 	{
 	public:
-		ESkeletonAsset(const EString& InSkeletonPath
+		ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ESkeletonAsset();
 	public:
-		const EString&	GetSkeletonPath()const;
-	public:
 		virtual BOOL	InitResource()override;
-	protected:
-		EString			SkeletonPath;
 	private:
 		friend class ESkeletonAssetManager;
 	public:
@@ -174,16 +170,16 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportSkeleton(const EString& InImportPath, const EString& InSaveSkeletonAssetName, const EString& InSaveSkeletonAssetPath);
+		BOOL	ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadSkeletonAsset(const EString& InLoadPath, const ESkeletonAsset*& OutSkeletonAsset);
+		BOOL	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset);
 	private:
 		void	ClearSkeletons();
 	private:
-		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath);
-		BOOL SaveSkeletonAsset(const EString& InSavePath, const ESkeletonAsset* InSkeletonAsset);
-		ESkeleton* LoadSkeletonResource(const EString& InLoadPath);
-		BOOL SaveSkeletonResource(const EString& InSavePath, const ESkeleton* InSkeletonResource);
+		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName);
+		BOOL SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
+		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName);
+		BOOL SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
 	private:
 		ESkeletonAssetDataManager SkeletonAssetDataManager;
 

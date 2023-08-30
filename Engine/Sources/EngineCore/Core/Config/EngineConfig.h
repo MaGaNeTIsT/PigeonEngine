@@ -10,20 +10,21 @@ namespace PigeonEngine
 	class ESettings
 	{
 	public:
-		constexpr static FLOAT	ENGINE_SCREEN_WIDTH				= 1600.f;
-		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT			= 900.f;
-		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME		= 60.f;
-		constexpr static FLOAT	ENGINE_UPDATE_FRAME				= 90.f;
-		constexpr static BOOL	ENGINE_WINDOWED					= TRUE;
+		constexpr static FLOAT	ENGINE_SCREEN_WIDTH					= 1600.f;
+		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT				= 900.f;
+		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME			= 60.f;
+		constexpr static FLOAT	ENGINE_UPDATE_FRAME					= 90.f;
+		constexpr static BOOL	ENGINE_WINDOWED						= TRUE;
 
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM			= 0.1f;
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF		= 0.05f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM				= 0.1f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF			= 0.05f;
 
-		constexpr static UINT	ENGINE_BONE_WEIGHT_NUM_MAXIMUM	= 16u;
+		constexpr static UINT	ENGINE_BONE_WEIGHT_NUM_MAXIMUM		= 16u;
 
-		constexpr static UINT	ENGINE_MESH_NAME_LENGTH_MAX		= 1024u;
-		constexpr static UINT	ENGINE_SKELETON_NAME_LENGTH_MAX = 1024u;
-		constexpr static UINT	ENGINE_BONE_NAME_LENGTH_MAX		= 512u;
+		constexpr static UINT	ENGINE_MESH_NAME_LENGTH_MAX			= 1024u;
+		constexpr static UINT	ENGINE_SKELETON_NAME_LENGTH_MAX		= 1024u;
+		constexpr static UINT	ENGINE_ANIMATION_NAME_LENGTH_MAX	= 1024u;
+		constexpr static UINT	ENGINE_BONE_NAME_LENGTH_MAX			= 512u;
 
 	public:
 		static ESettings* GetSingleton()
@@ -41,7 +42,7 @@ namespace PigeonEngine
 #define ENGINE_NOT_EXIST_STRING								("ENGINE_NOT_EXIST")
 #define ENGINE_DEFAULT_NAME									("PIGEON_ENGINE_DEFAULT_NAME")
 
-#define ENGINE_ASSET_NAME_TYPE								("PAsset")
+#define ENGINE_ASSET_NAME_TYPE								(".PAsset")
 
 #define ENGINE_IMPORT_SHADER_NAME_TYPE						(".cso")
 

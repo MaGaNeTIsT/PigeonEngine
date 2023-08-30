@@ -69,8 +69,7 @@ namespace PigeonEngine
 	class ETexture2DAsset : public TRenderBaseAsset<ETexture2D, RTexture2DResource>
 	{
 	public:
-		ETexture2DAsset(
-			const EString& InPath
+		ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -78,11 +77,8 @@ namespace PigeonEngine
 		virtual ~ETexture2DAsset();
 	public:
 		virtual BOOL	InitResource()override;
-		const EString&	GetTexturePath()const;
 	protected:
 		RTexture2DResource*	CreateTextureResource(ETexture2D* InResource);
-	protected:
-		EString TexturePath;
 	public:
 		ETexture2DAsset() = delete;
 
@@ -99,14 +95,14 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL	ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset);
+		BOOL	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
 	private:
 		void	ClearTexture2Ds();
 	private:
-		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride = nullptr);
-		BOOL SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource);
+		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL* InSRGBOverride = nullptr);
+		BOOL SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource);
 	private:
 		ETexture2DAssetManager	Texture2DManager;
 

@@ -353,16 +353,15 @@ namespace PigeonEngine
 		SRGB				= InSRGB;
 	}
 
-	ETexture2DAsset::ETexture2DAsset(
-		const EString& InPath
+	ETexture2DAsset::ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
-	) : TRenderBaseAsset<ETexture2D, RTexture2DResource>(
+	) : TRenderBaseAsset<ETexture2D, RTexture2DResource>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
-		InDebugName
+		, InDebugName
 #endif
-	), TexturePath(InPath)
+	)
 	{
 	}
 	ETexture2DAsset::~ETexture2DAsset()
@@ -374,7 +373,7 @@ namespace PigeonEngine
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Texture2D name=[") + DebugName + "] path = [" + TexturePath + "] has been Initialized.";
+				EString ErrorInfo = EString("Texture2D name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -391,10 +390,6 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		return FALSE;
-	}
-	const EString& ETexture2DAsset::GetTexturePath()const
-	{
-		return TexturePath;
 	}
 	RTexture2DResource* ETexture2DAsset::CreateTextureResource(ETexture2D* InResource)
 	{
@@ -435,21 +430,48 @@ namespace PigeonEngine
 		ClearTexture2Ds();
 	}
 #if _EDITOR_ONLY
-	BOOL ETextureAssetManager::ImportTexture2D(const EString& InImportPath, const EString& InSaveAssetPath)
+	BOOL ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
-		if ((InImportPath.Length() < 3u) || (InSaveAssetPath.Length() < 3u))
+		EString TempFullPathName(InSavePath);
+		TempFullPathName += InAssetName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		EString ImportPathName; EString ImportFileType;
+		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for texture 2d importer (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		//TODO Check import type(like jpg, png, tiff...).
+		if (ImportPathName.Length() <= 3u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for texture 2d importer (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
 		BYTE* ReadByteCode = nullptr; UINT ReadWidth = 0u, ReadHeight = 0u, ReadPixelByteCount = 0u; RFormatType ReadFormat = RFormatType::FORMAT_UNKNOWN;
-		if (!ReadAndDecodingDigitalImage(InImportPath, ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat))
+		if (!ReadAndDecodingDigitalImage(InImportFullPathName, ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat))
 		{
 			if (ReadByteCode)
 			{
@@ -470,22 +492,25 @@ namespace PigeonEngine
 		ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
 		NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
 
-		BOOL Result = SaveTexture2DAsset(InSaveAssetPath, NeedSaveTexture2DResource);
+		BOOL Result = SaveTexture2DAsset(InSavePath, InAssetName, NeedSaveTexture2DResource);
 
 		NeedSaveTexture2DResource->ReleaseResource();
 		delete NeedSaveTexture2DResource;
 		return Result;
 	}
 #endif
-	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const ETexture2DAsset*& OutTextureAsset)
+	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset)
 	{
-		ETexture2DAsset* ResultAsset = Texture2DManager.Find(InLoadPath);
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName += InLoadName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		ETexture2DAsset* ResultAsset = Texture2DManager.Find(TempFullPathName);
 		if (ResultAsset)
 		{
 			OutTextureAsset = ResultAsset;
 			return TRUE;
 		}
-		ResultAsset = LoadTexture2DAsset(InLoadPath);
+		ResultAsset = LoadTexture2DAsset(InLoadPath, InLoadName);
 		if (!ResultAsset)
 		{
 			return FALSE;
@@ -495,11 +520,11 @@ namespace PigeonEngine
 			delete ResultAsset;
 			return FALSE;
 		}
-		if (Texture2DManager.Add(InLoadPath, ResultAsset, TRUE) == 0u)
+		if (Texture2DManager.Add(TempFullPathName, ResultAsset, TRUE) == 0u)
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Texture2D path = [") + InLoadPath + "] add into manager list failed.";
+				EString ErrorInfo = EString("Texture2D path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -513,11 +538,25 @@ namespace PigeonEngine
 	{
 		Texture2DManager.Clear();
 	}
-	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const BOOL* InSRGBOverride)
+	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL* InSRGBOverride)
 	{
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName += InLoadName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Loading texture 2d asset error.(load file path : ");
+				ErrorData = ErrorData + TempFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return nullptr;
+		}
 		ETexture2DAsset* OutTextureAsset = nullptr;
 		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
-		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		if (!EFileHelper::ReadFileAsBinary(TempFullPathName, ReadFileMem, ReadFileSize))
 		{
 			if (ReadFileMem)
 			{
@@ -526,12 +565,12 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Load shader asset failed (load file path : ");
-				ErrorData += InLoadPath;
+				ErrorData += TempFullPathName;
 				ErrorData += ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
-			return FALSE;
+			return nullptr;
 		}
 		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL) + sizeof(ETextureResourceProperty))));
 		BOOL Result = FALSE;
@@ -581,9 +620,9 @@ namespace PigeonEngine
 			{
 				ReadSRGB = (*InSRGBOverride);
 			}
-			OutTextureAsset = new ETexture2DAsset(InLoadPath
+			OutTextureAsset = new ETexture2DAsset(InLoadPath, InLoadName
 #if _EDITOR_ONLY
-				, InLoadPath
+				, InLoadName
 #endif
 			);
 			ETexture2D* StoragedResource = nullptr;
@@ -601,14 +640,17 @@ namespace PigeonEngine
 		delete[]ReadFileMem;
 		return OutTextureAsset;
 	}
-	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const ETexture2D* InTextureResource)
+	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource)
 	{
-		if ((InSavePath.Length() < 3u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
+		EString TempFullPathName(InSavePath);
+		TempFullPathName += InSaveName;
+		TempFullPathName += ENGINE_ASSET_NAME_TYPE;
+		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorData("Saving texture 2d asset error.(import file path : ");
-				ErrorData = ErrorData + InSavePath + ", is asset valid : " +
+				EString ErrorData("Saving texture 2d asset error.(save file path : ");
+				ErrorData = ErrorData + TempFullPathName + ", is asset valid : " +
 					((!!InTextureResource) ? ((InTextureResource->IsResourceValid()) ? "true" : "false") : "false")
 					+ ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
@@ -644,7 +686,7 @@ namespace PigeonEngine
 		}
 		::memcpy_s(TempPtr, ByteCodeSize, InTextureResource->ByteCode, ByteCodeSize);
 
-		BOOL Result = EFileHelper::SaveBytesToFile(InSavePath, SavedMem, NeedSavedSize);
+		BOOL Result = EFileHelper::SaveBytesToFile(TempFullPathName, SavedMem, NeedSavedSize);
 
 		delete[]SavedMem;
 		return Result;

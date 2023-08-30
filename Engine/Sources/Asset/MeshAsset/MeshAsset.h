@@ -491,28 +491,20 @@ namespace PigeonEngine
 	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>
 	{
 	public:
-		TMeshBaseAsset(
-			const EString& InMeshPath
+		TMeshBaseAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
-		) : TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>(
+		) : TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>(InMeshPath, InMeshName
 #if _EDITOR_ONLY
-			InDebugName
+			, InDebugName
 #endif
-		), MeshPath(InMeshPath), MeshType(_MeshType)
+		)
 		{
 		}
 		virtual ~TMeshBaseAsset()
 		{
 		}
-	public:
-		const EString&	GetMeshPath()const { return MeshPath; }
-		EMeshType		GetMeshType()const { return MeshType; }
-	protected:
-		EString		MeshPath;
-		EMeshType	MeshType;
-
 	public:
 		TMeshBaseAsset() = delete;
 
@@ -523,8 +515,7 @@ namespace PigeonEngine
 	class EStaticMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>
 	{
 	public:
-		EStaticMeshAsset(
-			const EString& InMeshPath
+		EStaticMeshAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -544,8 +535,7 @@ namespace PigeonEngine
 	class ESkinnedMeshAsset : public TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>
 	{
 	public:
-		ESkinnedMeshAsset(
-			const EString& InMeshPath
+		ESkinnedMeshAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -577,23 +567,23 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportStaticMesh(const EString& InImportPath, const EString& InSaveAssetPath);
-		BOOL	ImportSkinnedMesh(const EString& InImportPath, const EString& InSaveAssetPath);
+		BOOL	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadStaticMeshAsset(const EString& InLoadPath, const EStaticMeshAsset*& OutStaticMeshAsset);
-		BOOL	LoadSkinnedMeshAsset(const EString& InLoadPath, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
+		BOOL	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset);
+		BOOL	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
 	private:
 		void	ClearStaticMeshes();
 		void	ClearSkinnedMeshes();
 	private:
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath);
+		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName);
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		BOOL SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset);
+		BOOL SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset);
 		template<typename _TMeshResourceType>
-		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath);
+		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath, const EString& InLoadName);
 		template<typename _TMeshResourceType>
-		BOOL SaveMeshResource(const EString& InSavePath, const _TMeshResourceType* InMeshResource);
+		BOOL SaveMeshResource(const EString& InSavePath, const EString& InSaveName, const _TMeshResourceType* InMeshResource);
 	private:
 		EStaticMeshAssetManager		StaticMeshManager;
 		ESkinnedMeshAssetManager	SkinnedMeshManager;

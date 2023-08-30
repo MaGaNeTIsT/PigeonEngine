@@ -21,13 +21,15 @@ namespace PigeonEngine
 	class TBaseAsset : public EObjectBase
 	{
 	public:
-		TBaseAsset(
+		TBaseAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
-			const EString& InDebugName
+			, const EString& InDebugName
 #endif
 		)
-			: ResourceData(nullptr)
-			, bIsInitialized(FALSE)
+			: bIsInitialized(FALSE)
+			, AssetPath(InAssetPath)
+			, AssetName(InAssetName)
+			, ResourceData(nullptr)
 		{
 #if _EDITOR_ONLY
 			DebugName = InDebugName;
@@ -49,6 +51,9 @@ namespace PigeonEngine
 	public:
 		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsResourceValid())); }
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
+		const EString&			GetAssetPath()const { return AssetPath; }
+		const EString&			GetAssetName()const { return AssetName; }
+		const EString&			GetAssetFullPathName()const { return (AssetPath + AssetName + ENGINE_ASSET_NAME_TYPE); }
 		template<typename TInitResourceLambdaType>
 		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
@@ -91,6 +96,8 @@ namespace PigeonEngine
 		}
 	protected:
 		BOOL			bIsInitialized;
+		EString			AssetPath;
+		EString			AssetName;
 		TResourceType*	ResourceData;
 
 	public:
@@ -110,17 +117,16 @@ namespace PigeonEngine
 	class TRenderBaseAsset : public TBaseAsset<TResourceType>
 	{
 	public:
-		TRenderBaseAsset(
+		TRenderBaseAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
-			const EString& InDebugName
+			, const EString& InDebugName
 #endif
 		)
+			: TBaseAsset<TResourceType>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
-			: TBaseAsset<TResourceType>(InDebugName), RenderResourceData(nullptr)
-#else
-			: RenderResourceData(nullptr)
+				, InDebugName
 #endif
-			, bHoldResource(TRUE)
+			), bHoldResource(TRUE), RenderResourceData(nullptr)
 		{
 		}
 		virtual ~TRenderBaseAsset()

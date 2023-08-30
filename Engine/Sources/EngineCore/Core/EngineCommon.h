@@ -68,27 +68,7 @@ namespace PigeonEngine
 		ETransformTimeCurve() = default;
 		ETransformTimeCurve(const ETransformTimeCurve& Other)
 		{
-			if (Other.PositionKeys.Length() > 0u)
-			{
-				for (UINT i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
-				{
-					PositionKeys.Add(Other.PositionKeys[i]);
-				}
-			}
-			if (Other.RotationKeys.Length() > 0u)
-			{
-				for (UINT i = 0u, n = Other.RotationKeys.Length(); i < n; i++)
-				{
-					RotationKeys.Add(Other.RotationKeys[i]);
-				}
-			}
-			if (Other.ScalingKeys.Length() > 0u)
-			{
-				for (UINT i = 0u, n = Other.ScalingKeys.Length(); i < n; i++)
-				{
-					ScalingKeys.Add(Other.ScalingKeys[i]);
-				}
-			}
+			CopyFromOtherCurve(Other);
 		}
 		ETransformTimeCurve& operator=(const ETransformTimeCurve& Other)
 		{
@@ -104,6 +84,11 @@ namespace PigeonEngine
 			{
 				ScalingKeys.Clear();
 			}
+			CopyFromOtherCurve(Other);
+			return (*this);
+		}
+		void CopyFromOtherCurve(const ETransformTimeCurve& Other)
+		{
 			if (Other.PositionKeys.Length() > 0u)
 			{
 				for (UINT i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
@@ -125,11 +110,6 @@ namespace PigeonEngine
 					ScalingKeys.Add(Other.ScalingKeys[i]);
 				}
 			}
-			return (*this);
-		}
-		void CopyFromOtherCurve()
-		{
-
 		}
 
 		TArray<ETimeKey<Vector3, TTimeType>>	PositionKeys;

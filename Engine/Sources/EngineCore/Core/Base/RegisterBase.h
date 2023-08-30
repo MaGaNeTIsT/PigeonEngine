@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class ERegisterBase
 	{
 	public:
-		typedef std::function<void()> _FunctionType;
+		typedef std::function<void(void)> _FunctionType;
 	public:
 		template<typename _TRegisterFunctionType>
 		void AddRegisterFunction(_TRegisterFunctionType InRegisterFunction)

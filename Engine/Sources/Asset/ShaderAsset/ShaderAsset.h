@@ -61,14 +61,13 @@ namespace PigeonEngine
 	class TShaderBaseAsset : public TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>
 	{
 	public:
-		TShaderBaseAsset(
-			const EString& InShaderPath
+		TShaderBaseAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
-		) : TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>(
+		) : TRenderBaseAsset<EShaderResource, TShaderRenderResourceType>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
-			InDebugName
+			, InDebugName
 #endif
 		), ShaderPath(InShaderPath), ShaderFrequency(_ShaderFrequency)
 		{
@@ -77,10 +76,8 @@ namespace PigeonEngine
 		{
 		}
 	public:
-		const EString&			GetShaderPath()const { return ShaderPath; }
 		RShaderFrequencyType	GetShaderFrequency()const { return ShaderFrequency; }
 	protected:
-		EString					ShaderPath;
 		RShaderFrequencyType	ShaderFrequency;
 
 	public:
@@ -93,7 +90,7 @@ namespace PigeonEngine
 	class EVertexShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>
 	{
 	public:
-		EVertexShaderAsset(const EString& InShaderPath
+		EVertexShaderAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -122,7 +119,7 @@ namespace PigeonEngine
 	class EPixelShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>
 	{
 	public:
-		EPixelShaderAsset(const EString& InShaderPath
+		EPixelShaderAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -145,7 +142,7 @@ namespace PigeonEngine
 	class EComputeShaderAsset : public TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>
 	{
 	public:
-		EComputeShaderAsset(const EString& InShaderPath
+		EComputeShaderAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
@@ -175,20 +172,24 @@ namespace PigeonEngine
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
 	public:
-		BOOL	ImportShaderCSO(const EString& InPath, const EString& OutPath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
-		BOOL	LoadVertexShaderAsset(const EString& InLoadPath, const EVertexShaderAsset*& OutShaderAsset);
-		BOOL	LoadPixelShaderAsset(const EString& InLoadPath, const EPixelShaderAsset*& OutShaderAsset);
-		BOOL	LoadComputeShaderAsset(const EString& InLoadPath, const EComputeShaderAsset*& OutShaderAsset);
+#if _EDITOR_ONLY
+		BOOL	ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
+		BOOL	ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL	ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+#endif
+		BOOL	LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset);
+		BOOL	LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset);
+		BOOL	LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset);
 	private:
 		void	ClearVertexShaders();
 		void	ClearPixelShaders();
 		void	ClearComputeShaders();
 	private:
 		template<class TShaderAssetType>
-		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath);
-		BOOL SaveShaderAsset(const EString& InSavePath, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
+		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath, const EString& InLoadName);
+		BOOL SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
 		template<class TShaderAssetType>
-		BOOL SaveShaderAsset(const EString& InSavePath, const TShaderAssetType* InShaderAsset);
+		BOOL SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset);
 	private:
 		EVertexShaderManager	VertexShaderManager;
 		EPixelShaderManager		PixelShaderManager;

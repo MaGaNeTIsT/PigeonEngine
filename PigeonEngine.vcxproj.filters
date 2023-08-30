@@ -343,6 +343,10 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RegisterBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Delegate\Delegate.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Delegate\Function.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.h" />
+    <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -520,6 +524,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
