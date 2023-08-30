@@ -2,4 +2,4 @@
 x64/
 .vs/
 .idea/
-Engine/Assets/EngineShaders/
+Engine/Temp/OutputShaders/
