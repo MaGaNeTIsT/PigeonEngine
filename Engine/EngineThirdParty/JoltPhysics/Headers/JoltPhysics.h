@@ -111,7 +111,7 @@ namespace PigeonEngine
 	class CPhysics_Jolt : public IPhysicsManagerInterface
 	{
 	public:
-		CPhysics_Jolt() {}
+		CPhysics_Jolt() : PhysicsData(nullptr) {}
 		virtual ~CPhysics_Jolt() {}
 	public:
 		virtual void InitPhysics();

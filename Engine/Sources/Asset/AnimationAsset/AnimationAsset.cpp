@@ -13,6 +13,8 @@ namespace PigeonEngine
 		RegisterBaseAssetClassTypes<ESkeletonAnimation>();
 
 		RegisterClassType<ESkeletonAnimationAsset, TBaseAsset<ESkeletonAnimation>>();
+
+		RegisterClassType<EAnimationManager, EManagerBase>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

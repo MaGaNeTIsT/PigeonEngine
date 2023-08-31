@@ -8,6 +8,17 @@ namespace PigeonEngine
 	class RCommonSettings
 	{
 	public:
+		constexpr static FLOAT		RENDER_CULLING_DISTANCE			= 200000.f;
+		constexpr static FLOAT		RENDER_CULLING_OFFSET			= -5.f;
+		constexpr static FLOAT		RENDER_DEPTH_MIN				= 0.f;
+		constexpr static FLOAT		RENDER_DEPTH_MAX				= 1.f;
+
+		constexpr static FLOAT		RENDER_CAMERA_FOV				= 60.f;
+		constexpr static FLOAT		RENDER_CAMERA_NEAR				= 5.f;
+		constexpr static FLOAT		RENDER_CAMERA_FAR				= 200000.f;
+
+		constexpr static UINT		RENDER_SHADOW_MAP_SIZE			= 4096u;
+
 		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
 		constexpr static USHORT		RENDER_MESH_BONE_NUM_MAX		= 256u;
 		constexpr static USHORT		RENDER_SKELETON_BONE_NUM_MAX	= 512u;
@@ -23,18 +34,6 @@ namespace PigeonEngine
 		RCommonSettings() {}
 		~RCommonSettings() {}
 	};
-
-#define RENDER_CULLING_DISTANCE								(200000.f)
-#define RENDER_CULLING_OFFSET								(-5.f)
-
-#define RENDER_DEPTH_MIN									(0.f)
-#define RENDER_DEPTH_MAX									(1.f)
-
-#define RENDER_CAMERA_FOV									(60.f)
-#define RENDER_CAMERA_NEAR									(5.f)
-#define RENDER_CAMERA_FAR									(200000.f)
-
-#define RENDER_SHADOW_MAP_SIZE								(4096)
 
 #if _EDITOR_ONLY
 #define RENDER_GPU_PROFILER_NONE							("Render_GPUProfiler_None")

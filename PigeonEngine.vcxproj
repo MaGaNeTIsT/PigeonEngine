@@ -66,6 +66,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.h" />
@@ -314,6 +316,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CFuxkingWhySkeletonAnimation.cpp" />

@@ -199,12 +199,24 @@ namespace PigeonEngine
 			, FarPlaneBottomLeft(Vector3::Zero()), FarPlaneBottomRight(Vector3::Zero())
 			, NearPlaneTopLeft(Vector3::Zero()), NearPlaneTopRight(Vector3::Zero())
 			, NearPlaneBottomLeft(Vector3::Zero()), NearPlaneBottomRight(Vector3::Zero()) {}
-		EFrustum(const EFrustum& other)noexcept
-			: PlaneTop(other.PlaneTop), PlaneBottom(other.PlaneBottom), PlaneLeft(other.PlaneLeft), PlaneRight(other.PlaneRight)
-			, FarPlaneTopLeft(other.FarPlaneTopLeft), FarPlaneTopRight(other.FarPlaneTopRight)
-			, FarPlaneBottomLeft(other.FarPlaneBottomLeft), FarPlaneBottomRight(other.FarPlaneBottomRight)
-			, NearPlaneTopLeft(other.NearPlaneTopLeft), NearPlaneTopRight(other.NearPlaneTopRight)
-			, NearPlaneBottomLeft(other.NearPlaneBottomLeft), NearPlaneBottomRight(other.NearPlaneBottomRight) {}
+		EFrustum(const EFrustum& Other)noexcept
+			: PlaneTop(Other.PlaneTop), PlaneBottom(Other.PlaneBottom), PlaneLeft(Other.PlaneLeft), PlaneRight(Other.PlaneRight)
+			, FarPlaneTopLeft(Other.FarPlaneTopLeft), FarPlaneTopRight(Other.FarPlaneTopRight)
+			, FarPlaneBottomLeft(Other.FarPlaneBottomLeft), FarPlaneBottomRight(Other.FarPlaneBottomRight)
+			, NearPlaneTopLeft(Other.NearPlaneTopLeft), NearPlaneTopRight(Other.NearPlaneTopRight)
+			, NearPlaneBottomLeft(Other.NearPlaneBottomLeft), NearPlaneBottomRight(Other.NearPlaneBottomRight) {}
+		EFrustum& operator=(const EFrustum& Other)
+		{
+			for (UINT i = 0u; i < 4u; i++)
+			{
+				Plane[i] = Other.Plane[i];
+			}
+			for (UINT i = 0u; i < 8u; i++)
+			{
+				FarNearPlanePoint[i] = Other.FarNearPlanePoint[i];
+			}
+			return (*this);
+		}
 		void GenerateFrustumInfo(FLOAT InFovAngleY, FLOAT InAspectRatio, FLOAT InNearDist, FLOAT InFarDist)
 		{
 			Vector3 TempPosVec[4] = { Vector3(0.f), Vector3(0.f), Vector3(0.f), Vector3(0.f) };
@@ -241,14 +253,14 @@ namespace PigeonEngine
 				}
 			}
 			{
-				for (INT i = 0; i < 4; i++)
+				for (UINT i = 0u; i < 4u; i++)
 				{
 					TempPosVec[i].Normalize();
 				}
-				Plane[0] = Vector3::Cross(TempPosVec[0], TempPosVec[1]);
-				Plane[1] = Vector3::Cross(TempPosVec[3], TempPosVec[2]);
-				Plane[2] = Vector3::Cross(TempPosVec[2], TempPosVec[0]);
-				Plane[3] = Vector3::Cross(TempPosVec[1], TempPosVec[3]);
+				Plane[0] = Vector3::Cross(TempPosVec[1], TempPosVec[0]);
+				Plane[1] = Vector3::Cross(TempPosVec[2], TempPosVec[3]);
+				Plane[2] = Vector3::Cross(TempPosVec[0], TempPosVec[2]);
+				Plane[3] = Vector3::Cross(TempPosVec[3], TempPosVec[1]);
 				for (UINT i = 0u; i < 4u; i++)
 				{
 					Plane[i].Normalize();
@@ -288,9 +300,19 @@ namespace PigeonEngine
 
 	struct EViewport
 	{
-		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RENDER_DEPTH_MIN), MaxDepth(RENDER_DEPTH_MAX) {}
-		EViewport(const EViewport& other) noexcept : TopLeftX(other.TopLeftX), TopLeftY(other.TopLeftY), Width(other.Width), Height(other.Height), MinDepth(other.MinDepth), MaxDepth(other.MaxDepth) {}
+		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RCommonSettings::RENDER_DEPTH_MIN), MaxDepth(RCommonSettings::RENDER_DEPTH_MAX) {}
+		EViewport(const EViewport& Other) noexcept : TopLeftX(Other.TopLeftX), TopLeftY(Other.TopLeftY), Width(Other.Width), Height(Other.Height), MinDepth(Other.MinDepth), MaxDepth(Other.MaxDepth) {}
 		constexpr EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
+		EViewport& operator=(const EViewport& Other)
+		{
+			TopLeftX	= Other.TopLeftX;
+			TopLeftY	= Other.TopLeftY;
+			Width		= Other.Width;
+			Height		= Other.Height;
+			MinDepth	= Other.MinDepth;
+			MaxDepth	= Other.MaxDepth;
+			return (*this);
+		}
 
 		FLOAT	TopLeftX;
 		FLOAT	TopLeftY;
@@ -305,6 +327,12 @@ namespace PigeonEngine
 		{
 			EViewPart()noexcept : ViewMatrix(Matrix4x4::Identity()), InverseViewMatrix(Matrix4x4::Identity()) {}
 			EViewPart(const EViewPart& Other)noexcept : ViewMatrix(Other.ViewMatrix), InverseViewMatrix(Other.InverseViewMatrix) {}
+			EViewPart& operator=(const EViewPart& Other)
+			{
+				ViewMatrix			= Other.ViewMatrix;
+				InverseViewMatrix	= Other.InverseViewMatrix;
+				return (*this);
+			}
 
 			Matrix4x4	ViewMatrix;
 			Matrix4x4	InverseViewMatrix;
@@ -313,6 +341,13 @@ namespace PigeonEngine
 		{
 			EProjectionPart()noexcept : ProjectionMatrix(Matrix4x4::Identity()), InverseProjectionMatrix(Matrix4x4::Identity()), DeviceZToViewZMulAdd(Vector2::XVector()) {}
 			EProjectionPart(const EProjectionPart& Other)noexcept : ProjectionMatrix(Other.ProjectionMatrix), InverseProjectionMatrix(Other.InverseProjectionMatrix), DeviceZToViewZMulAdd(Other.DeviceZToViewZMulAdd) {}
+			EProjectionPart& operator=(const EProjectionPart& Other)
+			{
+				ProjectionMatrix		= Other.ProjectionMatrix;
+				InverseProjectionMatrix	= Other.InverseProjectionMatrix;
+				DeviceZToViewZMulAdd	= Other.DeviceZToViewZMulAdd;
+				return (*this);
+			}
 
 			Matrix4x4	ProjectionMatrix;
 			Matrix4x4	InverseProjectionMatrix;
@@ -320,6 +355,14 @@ namespace PigeonEngine
 		};
 		ECameraMatrix()noexcept : ViewProjectionMatrix(Matrix4x4::Identity()), InverseViewProjectionMatrix(Matrix4x4::Identity()) {}
 		ECameraMatrix(const ECameraMatrix& Other)noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
+		ECameraMatrix& operator=(const ECameraMatrix& Other)
+		{
+			ViewPart					= Other.ViewPart;
+			ProjectionPart				= Other.ProjectionPart;
+			ViewProjectionMatrix		= Other.ViewProjectionMatrix;
+			InverseViewProjectionMatrix	= Other.InverseViewProjectionMatrix;
+			return (*this);
+		}
 		void TransformWorldPointToView(const Vector3& InPositionWS, Vector3& OutPositionVS)const
 		{
 			OutPositionVS = Matrix4x4TransformPosition(ViewPart.ViewMatrix, InPositionWS);
@@ -346,8 +389,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
 			FLOAT ScreenCoordX = EMath::Clamp(TempPoint.x / TempPoint.w, -1.f, 1.f);
 			FLOAT ScreenCoordY = EMath::Clamp(TempPoint.y / TempPoint.w, -1.f, 1.f);
@@ -378,8 +421,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
 			const static Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
 			const static Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
@@ -405,8 +448,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
 			FLOAT ScreenCoordX = EMath::Clamp(TempPoint.x / TempPoint.w, -1.f, 1.f);
 			FLOAT ScreenCoordY = EMath::Clamp(TempPoint.y / TempPoint.w, -1.f, 1.f);
@@ -437,8 +480,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
 			const static Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
 			const static Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
@@ -470,7 +513,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
-				EMath::Clamp(InPositionSS.z, RENDER_DEPTH_MIN, RENDER_DEPTH_MAX), 1.f);
+				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX), 1.f);
 			TempPoint = Matrix4x4TransformVector(InverseViewProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
 			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
@@ -490,7 +533,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
-				EMath::Clamp(InPositionSS.z, RENDER_DEPTH_MIN, RENDER_DEPTH_MAX), 1.f);
+				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX), 1.f);
 			TempPoint = Matrix4x4TransformVector(ProjectionPart.InverseProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
 			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);

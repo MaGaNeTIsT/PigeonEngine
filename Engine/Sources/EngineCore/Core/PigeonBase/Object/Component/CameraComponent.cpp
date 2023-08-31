@@ -31,8 +31,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
 		CameraViewInfo.Viewport.Width = InWidth;
 		CameraViewInfo.Viewport.Height = InHeight;
-		CameraViewInfo.Viewport.MinDepth = RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
+		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
 		CameraViewInfo.FovAngleY = InFovAngleY;
 		CameraViewInfo.FarDist = InFarDist;
 		CameraViewInfo.NearDist = InNearDist;
@@ -46,8 +46,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
 		CameraViewInfo.Viewport.Width = InWidth;
 		CameraViewInfo.Viewport.Height = InHeight;
-		CameraViewInfo.Viewport.MinDepth = RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
+		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
 
 		CameraMatrix.GenerateProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
