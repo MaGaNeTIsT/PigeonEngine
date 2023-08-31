@@ -29,7 +29,7 @@ namespace PigeonEngine
 	template<typename TValueType, typename TTimeType>
 	struct ETimeKey
 	{
-		ETimeKey() = default;
+		ETimeKey() : Time(TTimeType()), Value(TValueType()) {}
 		ETimeKey(const ETimeKey& Other) : Time(Other.Time), Value(Other.Value) {}
 		ETimeKey(const TTimeType& InTime, const TValueType& InValue) : Time(InTime), Value(InValue) {}
 		ETimeKey& operator=(const ETimeKey& Other)
@@ -65,6 +65,10 @@ namespace PigeonEngine
 	template<typename TTimeType>
 	struct ETransformTimeCurve
 	{
+		using TPositionKey	= ETimeKey<Vector3, TTimeType>;
+		using TRotationKey	= ETimeKey<Quaternion, TTimeType>;
+		using TScalingKey	= ETimeKey<Vector3, TTimeType>;
+
 		ETransformTimeCurve() = default;
 		ETransformTimeCurve(const ETransformTimeCurve& Other)
 		{
@@ -112,9 +116,9 @@ namespace PigeonEngine
 			}
 		}
 
-		TArray<ETimeKey<Vector3, TTimeType>>	PositionKeys;
-		TArray<ETimeKey<Quaternion, TTimeType>>	RotationKeys;
-		TArray<ETimeKey<Vector3, TTimeType>>	ScalingKeys;
+		TArray<TPositionKey>	PositionKeys;
+		TArray<TRotationKey>	RotationKeys;
+		TArray<TScalingKey>		ScalingKeys;
 	};
 	struct EBoundAABB
 	{

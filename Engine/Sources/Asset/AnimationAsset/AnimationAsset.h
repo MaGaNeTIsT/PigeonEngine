@@ -81,6 +81,7 @@ namespace PigeonEngine
 					AnimationCurves.Add(Other.AnimationCurves[i]);
 				}
 			}
+			return (*this);
 		}
 		BOOL IsValid()const
 		{
@@ -111,20 +112,21 @@ namespace PigeonEngine
 	public:
 		const EString&							GetAnimationName()const;
 		UINT									GetAnimationClipNum()const;
-		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName)const;
 		const ESkeletonAnimationClip*			GetAnimationClip(UINT InIndex)const;
+		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName)const;
 		const TArray<ESkeletonAnimationClip>&	GetAnimationClips()const;
 		const TMap<EString, UINT>&				GetAnimationClipMapping()const;
 	public:
-		BOOL AddAnimationClip(const ESkeletonAnimationClip& InClip);
-		BOOL RemoveAnimationClip(UINT InIndex);
-		BOOL RemoveAnimationClip(const EString& InClipName);
+		void	RebuildWholeMapping();
+		BOOL	AddAnimationClip(const ESkeletonAnimationClip& InClip);
+		BOOL	RemoveAnimationClip(UINT InIndex);
+		BOOL	RemoveAnimationClip(const EString& InClipName);
 	protected:
 		EString							AnimationName;
 		TArray<ESkeletonAnimationClip>	AnimationClips;
 		TMap<EString, UINT>				AnimationClipMapping;
 	public:
-		ESkeletonAnimation(const EString& InMeshName);
+		ESkeletonAnimation(const EString& InName);
 		virtual ~ESkeletonAnimation();
 	private:
 		friend class EAnimationManager;

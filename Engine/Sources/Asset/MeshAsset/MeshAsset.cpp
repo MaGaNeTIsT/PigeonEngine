@@ -1264,11 +1264,11 @@ namespace PigeonEngine
 			if (SkeletonBoneNum < MeshSkinnedBoneNum)
 			{
 				EString ErrorInfo("Create mesh skeleton render resource but skeleton [name = ");
-				ErrorInfo += Skeleton->GetSkeletonName();
+				ErrorInfo += (!Skeleton) ? ("null") : (Skeleton->GetSkeletonName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(SkeletonBoneNum);
 				ErrorInfo += "] is lower than skinned mesh [name = ";
-				ErrorInfo += SkinnedMesh->GetMeshName();
+				ErrorInfo += (!SkinnedMesh) ? ("null") : (SkinnedMesh->GetMeshName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "].";
@@ -1277,7 +1277,7 @@ namespace PigeonEngine
 			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX)
 			{
 				EString ErrorInfo("Create mesh skeleton render resource but skinned mesh [name = ");
-				ErrorInfo += SkinnedMesh->GetMeshName();
+				ErrorInfo += (!SkinnedMesh) ? ("null") : (SkinnedMesh->GetMeshName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] is greater than engine's bone max num [";
@@ -2187,6 +2187,10 @@ namespace PigeonEngine
 		if (MeshType == EMeshType::MESH_TYPE_SKIN)
 		{
 			ESkinnedMesh* TempMeshPtr = LoadedMeshResource->AsType<ESkinnedMesh>();
+			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+			if (TempMeshPtr)
+#endif
 			{
 				ESkinnedMesh::EBindPoseValue& MeshBindPoseValue = TempMeshPtr->BindPoseValue;
 				ESkinnedMesh::EBindPoseIndex& MeshBindPoseIndex = TempMeshPtr->BindPoseIndex;
@@ -2287,8 +2291,11 @@ namespace PigeonEngine
 			}
 			if (InMesh->IsTypeOf<ESkinnedMesh>())
 			{
-				const ESkinnedMesh* TempMeshPtr = dynamic_cast<const ESkinnedMesh*>(InMesh);
+				const ESkinnedMesh* TempMeshPtr = InMesh->AsType<ESkinnedMesh>();
 				Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+				if (TempMeshPtr)
+#endif
 				{
 					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
 					Result += sizeof(UINT32);	// Bind pose num
@@ -2406,8 +2413,11 @@ namespace PigeonEngine
 		};
 		if (InMeshResource->IsTypeOf<ESkinnedMesh>())
 		{
-			const ESkinnedMesh* TempMeshPtr = dynamic_cast<const ESkinnedMesh*>(InMeshResource);
+			const ESkinnedMesh* TempMeshPtr = InMeshResource->AsType<ESkinnedMesh>();
 			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+			if (TempMeshPtr)
+#endif
 			{
 				const ESkinnedMesh::EBindPoseValue& BindPoseValues = TempMeshPtr->GetBindPoseValue();
 				const ESkinnedMesh::EBindPoseIndex& BindPoseIndices = TempMeshPtr->GetBindPoseIndex();

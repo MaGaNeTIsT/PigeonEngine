@@ -599,7 +599,7 @@ namespace PigeonEngine
 					, InLoadName
 #endif
 					, TempInputLayouts.RawData(), ReadInputLayoutNum);
-				OutShaderAsset = dynamic_cast<TShaderAssetType*>(TempShaderAsset);
+				OutShaderAsset = TempShaderAsset->AsType<TShaderAssetType>();
 				if (!OutShaderAsset)
 				{
 					TempShaderAsset->UninitResource();
@@ -775,7 +775,7 @@ namespace PigeonEngine
 		UINT SaveShaderInputLayoutNum = 0u;
 		if (SaveShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 		{
-			const EVertexShaderAsset* TempVertexShaderAsset = dynamic_cast<const EVertexShaderAsset*>(InShaderAsset);
+			const EVertexShaderAsset* TempVertexShaderAsset = InShaderAsset->AsType<EVertexShaderAsset>();
 			if (!TempVertexShaderAsset)
 			{
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to saving a shader asset frequency is vertex, but actually is not vertex shader asset."));
@@ -784,11 +784,7 @@ namespace PigeonEngine
 			SaveShaderInputLayouts = TempVertexShaderAsset->GetShaderInputLayouts();
 			SaveShaderInputLayoutNum = TempVertexShaderAsset->GetShaderInputLayoutNum();
 		}
-		if (SaveShaderAsset(InSavePath, InSaveName, SaveShaderResource, SaveShaderFrequency, SaveShaderInputLayouts, &SaveShaderInputLayoutNum))
-		{
-			return TRUE;
-		}
-		return FALSE;
+		return (SaveShaderAsset(InSavePath, InSaveName, SaveShaderResource, SaveShaderFrequency, SaveShaderInputLayouts, &SaveShaderInputLayoutNum));
 	}
 
 };
