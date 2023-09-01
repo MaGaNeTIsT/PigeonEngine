@@ -127,12 +127,12 @@ namespace PigeonEngine
 		* @param InValue	Floating point value to convert
 		* @return			Truncated integer.
 		*/
-		static PE_CONSTEXPR PE_FORCEINLINE INT32		TruncToInt32(const FLOAT InFloat) { return ((INT32)InFloat); }
-		static PE_CONSTEXPR PE_FORCEINLINE INT32		TruncToInt32(const DOUBLE InDouble) { return ((INT32)InDouble); }
+		static PE_CONSTEXPR PE_FORCEINLINE INT32	TruncToInt32(const FLOAT InFloat) { return ((INT32)InFloat); }
+		static PE_CONSTEXPR PE_FORCEINLINE INT32	TruncToInt32(const DOUBLE InDouble) { return ((INT32)InDouble); }
 		static PE_CONSTEXPR PE_FORCEINLINE INT64	TruncToInt64(const FLOAT InFloat) { return ((INT64)InFloat); }
 		static PE_CONSTEXPR PE_FORCEINLINE INT64	TruncToInt64(const DOUBLE InDouble) { return ((INT64)InDouble); }
-		static PE_CONSTEXPR PE_FORCEINLINE UINT32		TruncToUint32(const FLOAT InFloat) { return ((UINT32)InFloat); }
-		static PE_CONSTEXPR PE_FORCEINLINE UINT32		TruncToUint32(const DOUBLE InDouble) { return ((UINT32)InDouble); }
+		static PE_CONSTEXPR PE_FORCEINLINE UINT32	TruncToUint32(const FLOAT InFloat) { return ((UINT32)InFloat); }
+		static PE_CONSTEXPR PE_FORCEINLINE UINT32	TruncToUint32(const DOUBLE InDouble) { return ((UINT32)InDouble); }
 		static PE_CONSTEXPR PE_FORCEINLINE UINT64	TruncToUint64(const FLOAT InFloat) { return ((UINT64)InFloat); }
 		static PE_CONSTEXPR PE_FORCEINLINE UINT64	TruncToUint64(const DOUBLE InDouble) { return ((UINT64)InDouble); }
 
@@ -288,7 +288,7 @@ namespace PigeonEngine
 		* @param InValue	The value to compute the log of
 		* @return			Log2 of InValue. 0 if InValue is 0.
 		*/
-		static PE_FORCEINLINE UINT32		FloorLog2(UINT32 InValue)
+		static PE_FORCEINLINE UINT32 FloorLog2(UINT32 InValue)
 		{
 			UINT32 pos = 0;
 			if (InValue >= 1 << 16) { InValue >>= 16; pos += 16; }
@@ -306,7 +306,7 @@ namespace PigeonEngine
 		 * @param InValue	The value to compute the log of
 		 * @return			Log2 of InValue. 0 if InValue is 0.
 		 */
-		static PE_FORCEINLINE UINT64	FloorLog2_64(UINT64 InValue)
+		static PE_FORCEINLINE UINT64 FloorLog2_64(UINT64 InValue)
 		{
 			UINT64 pos = 0;
 			if (InValue >= 1ull << 32) { InValue >>= 32; pos += 32; }
@@ -325,7 +325,7 @@ namespace PigeonEngine
 		 *
 		 * @return the number of zeros before the first "on" bit
 		 */
-		static PE_FORCEINLINE UINT32		CountLeadingZeros(const UINT32 InValue)
+		static PE_FORCEINLINE UINT32 CountLeadingZeros(const UINT32 InValue)
 		{
 			if (InValue == 0u)
 			{
@@ -341,7 +341,7 @@ namespace PigeonEngine
 		 *
 		 * @return the number of zeros before the first "on" bit
 		 */
-		static PE_FORCEINLINE UINT64	CountLeadingZeros64(const UINT64 InValue)
+		static PE_FORCEINLINE UINT64 CountLeadingZeros64(const UINT64 InValue)
 		{
 			if (InValue == 0u)
 			{
@@ -354,13 +354,13 @@ namespace PigeonEngine
 		 * Returns smallest N such that (1<<N)>=Arg.
 		 * Note: CeilLogTwo(0)=0
 		 */
-		static PE_FORCEINLINE UINT32		CeilLogTwo(UINT32 InArg)
+		static PE_FORCEINLINE UINT32 CeilLogTwo(UINT32 InArg)
 		{
 			// if Arg is 0, change it to 1 so that we return 0
 			InArg = InArg ? InArg : 1u;
 			return (32u - CountLeadingZeros(InArg - 1u));
 		}
-		static PE_FORCEINLINE UINT64	CeilLogTwo64(UINT64 InArg)
+		static PE_FORCEINLINE UINT64 CeilLogTwo64(UINT64 InArg)
 		{
 			// if Arg is 0, change it to 1 so that we return 0
 			InArg = InArg ? InArg : 1u;
@@ -368,17 +368,17 @@ namespace PigeonEngine
 		}
 
 		/** @return Rounds the given number up to the next highest power of two. */
-		static PE_FORCEINLINE UINT32		RoundUpToPowerOfTwo(const UINT32 InArg)
+		static PE_FORCEINLINE UINT32 RoundUpToPowerOfTwo(const UINT32 InArg)
 		{
 			return (1u << CeilLogTwo(InArg));
 		}
 
-		static PE_FORCEINLINE UINT64	RoundUpToPowerOfTwo64(const UINT64 InArg)
+		static PE_FORCEINLINE UINT64 RoundUpToPowerOfTwo64(const UINT64 InArg)
 		{
 			return (UINT64(1u) << CeilLogTwo64(InArg));
 		}
 
-		static PE_FORCEINLINE FLOAT		FMod(const FLOAT X, const FLOAT Y)
+		static PE_FORCEINLINE FLOAT FMod(const FLOAT X, const FLOAT Y)
 		{
 			const FLOAT AbsY = Abs(Y);
 			if (AbsY <= PE_SMALL_NUMBER)	// Note: this constant should match that used by VectorMod() implementations
@@ -388,7 +388,7 @@ namespace PigeonEngine
 			}
 			return fmodf(X, Y);
 		}
-		static PE_FORCEINLINE DOUBLE	FMod(const DOUBLE X, const DOUBLE Y)
+		static PE_FORCEINLINE DOUBLE FMod(const DOUBLE X, const DOUBLE Y)
 		{
 			const DOUBLE AbsY = Abs(Y);
 			if (AbsY <= PE_DOUBLE_SMALL_NUMBER)	// Note: this constant should match that used by VectorMod() implementations
@@ -413,7 +413,8 @@ namespace PigeonEngine
 		static PE_FORCEINLINE DOUBLE	Tan(const DOUBLE InValue) { return tan(InValue); }
 		static PE_FORCEINLINE FLOAT		ATan(const FLOAT InValue) { return atanf(InValue); }
 		static PE_FORCEINLINE DOUBLE	ATan(const DOUBLE InValue) { return atan(InValue); }
-		static FLOAT					Atan2(const FLOAT Y, const FLOAT X)
+
+		static FLOAT Atan2(const FLOAT Y, const FLOAT X)
 		{
 			//return atan2f(Y,X);
 			// atan2f occasionally returns NaN with perfectly valid input (possibly due to a compiler or library bug).
@@ -460,7 +461,7 @@ namespace PigeonEngine
 
 			return t3;
 		}
-		static DOUBLE					Atan2(const DOUBLE Y, const DOUBLE X)
+		static DOUBLE Atan2(const DOUBLE Y, const DOUBLE X)
 		{
 			if (X == 0.0 && Y == 0.0)
 			{
@@ -468,59 +469,58 @@ namespace PigeonEngine
 			}
 			return atan2(Y, X);
 		}
-		static PE_FORCEINLINE void		SinCos(FLOAT& OutSinValue, FLOAT& OutCosValue, const FLOAT InValue)
+		static PE_FORCEINLINE void SinCos(FLOAT& OutSinValue, FLOAT& OutCosValue, const FLOAT InValue)
 		{
 			OutSinValue = Sin(InValue);
 			OutCosValue = Cos(InValue);
 		}
-		static PE_FORCEINLINE void		SinCos(DOUBLE& OutSinValue, DOUBLE& OutCosValue, const DOUBLE InValue)
+		static PE_FORCEINLINE void SinCos(DOUBLE& OutSinValue, DOUBLE& OutCosValue, const DOUBLE InValue)
 		{
 			OutSinValue = Sin(InValue);
 			OutCosValue = Cos(InValue);
 		}
-		static PE_FORCEINLINE FLOAT		Sqrt(const FLOAT InValue) { return sqrtf(InValue); }
-		static PE_FORCEINLINE DOUBLE	Sqrt(const DOUBLE InValue) { return sqrt(InValue); }
-		static PE_FORCEINLINE FLOAT		Pow(const FLOAT A, const FLOAT B) { return powf(A, B); }
-		static PE_FORCEINLINE DOUBLE	Pow(const DOUBLE A, const DOUBLE B) { return pow(A, B); }
+		static PE_FORCEINLINE FLOAT			Sqrt(const FLOAT InValue) { return sqrtf(InValue); }
+		static PE_FORCEINLINE DOUBLE		Sqrt(const DOUBLE InValue) { return sqrt(InValue); }
+		static PE_FORCEINLINE FLOAT			Pow(const FLOAT A, const FLOAT B) { return powf(A, B); }
+		static PE_FORCEINLINE DOUBLE		Pow(const DOUBLE A, const DOUBLE B) { return pow(A, B); }
 
 		/** Computes a fully accurate inverse square root */
-		static PE_FORCEINLINE FLOAT		InvSqrt(const FLOAT InValue) { return 1.0f / sqrtf(InValue); }
-		static PE_FORCEINLINE DOUBLE	InvSqrt(const DOUBLE InValue) { return 1.0 / sqrt(InValue); }
+		static PE_FORCEINLINE FLOAT			InvSqrt(const FLOAT InValue) { return 1.0f / sqrtf(InValue); }
+		static PE_FORCEINLINE DOUBLE		InvSqrt(const DOUBLE InValue) { return 1.0 / sqrt(InValue); }
 
 		/** Computes a faster but less accurate inverse square root */
-		static PE_FORCEINLINE FLOAT		InvSqrtEst(const FLOAT InValue) { return InvSqrt(InValue); }
-		static PE_FORCEINLINE DOUBLE	InvSqrtEst(const DOUBLE InValue) { return InvSqrt(InValue); }
+		static PE_FORCEINLINE FLOAT			InvSqrtEst(const FLOAT InValue) { return InvSqrt(InValue); }
+		static PE_FORCEINLINE DOUBLE		InvSqrtEst(const DOUBLE InValue) { return InvSqrt(InValue); }
 
 		/** Return true if value is NaN (not a number). */
-		static PE_FORCEINLINE BOOL32		IsNaN(const FLOAT InValue)
+		static PE_FORCEINLINE BOOL32 IsNaN(const FLOAT InValue)
 		{
 			return ((AsUint32(InValue) & 0x7FFFFFFFU) > 0x7F800000U);
 		}
-		static PE_FORCEINLINE BOOL32		IsNaN(const DOUBLE InValue)
+		static PE_FORCEINLINE BOOL32 IsNaN(const DOUBLE InValue)
 		{
 			return ((AsUint64(InValue) & 0x7FFFFFFFFFFFFFFFULL) > 0x7FF0000000000000ULL);
 		}
 
 		/** Return true if value is finite (not NaN and not Infinity). */
-		static PE_FORCEINLINE BOOL32		IsFinite(const FLOAT InValue)
+		static PE_FORCEINLINE BOOL32 IsFinite(const FLOAT InValue)
 		{
 			return ((AsUint32(InValue) & 0x7F800000U) != 0x7F800000U);
 		}
-		static PE_FORCEINLINE BOOL32		IsFinite(const DOUBLE InValue)
+		static PE_FORCEINLINE BOOL32 IsFinite(const DOUBLE InValue)
 		{
 			return ((AsUint64(InValue) & 0x7FF0000000000000ULL) != 0x7FF0000000000000ULL);
 		}
 
-		static PE_FORCEINLINE BOOL32		IsNegativeOrNegativeZero(const FLOAT InValue)
+		static PE_FORCEINLINE BOOL32 IsNegativeOrNegativeZero(const FLOAT InValue)
 		{
 			return (AsUint32(InValue) >= ((UINT32)0x80000000));	// Detects sign bit.
 		}
-		static PE_FORCEINLINE BOOL32		IsNegativeOrNegativeZero(const DOUBLE InValue)
+		static PE_FORCEINLINE BOOL32 IsNegativeOrNegativeZero(const DOUBLE InValue)
 		{
 			return (AsUint64(InValue) >= ((UINT64)0x8000000000000000));	// Detects sign bit.
 		}
-
-		static PE_FORCEINLINE UINT32		CountBits(UINT64 InBits)
+		static PE_FORCEINLINE UINT32 CountBits(UINT64 InBits)
 		{
 			// https://en.wikipedia.org/wiki/Hamming_weight
 			InBits -= (InBits >> 1) & 0x5555555555555555ull;
@@ -548,7 +548,7 @@ namespace PigeonEngine
 		static void						SRandInit(const INT32 InSeed);
 
 		/** Returns the current seed for SRand(). */
-		static INT32						GetRandSeed();
+		static INT32					GetRandSeed();
 
 		/** Returns a seeded random float in the range [0,1), using the seed from SRandInit(). */
 		static FLOAT					SRand();

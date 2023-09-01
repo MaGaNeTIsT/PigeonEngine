@@ -18,7 +18,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		INT32							NodeIndex;
+		INT32						NodeIndex;
 		TArray<RPrimitiveProxy*>	Primitives;
 	};
 
@@ -36,7 +36,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		Vector3		Origin;
+		Vector3			Origin;
 		INT32			ElementIndex;
 		INT32			ParentIndex;
 		TArray<INT32>	ChildrenIndex;
@@ -55,7 +55,7 @@ namespace PigeonEngine
 		}
 
 		INT32		NodeNum;
-		Vector3	Extent;
+		Vector3		Extent;
 		INT32		StartIndex;
 	};
 
