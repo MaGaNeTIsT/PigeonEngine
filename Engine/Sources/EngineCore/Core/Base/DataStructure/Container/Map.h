@@ -57,18 +57,18 @@ namespace PigeonEngine
         typename TIterator      begin(){return Map.begin();}
         typename TIterator      end(){return Map.end();}
         
-        ENGINE_NODISCARD UINT Length() const
+        PE_NODISCARD UINT32 Length() const
         {
-            return (static_cast<UINT>(Map.size()));
+            return (static_cast<UINT32>(Map.size()));
         }
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);
         
-        BOOL ContainsKey(const K& Key) const;
+        BOOL32 ContainsKey(const K& Key) const;
         
-        BOOL FindKey  (const V& Value, K& OutKey) const;
-        BOOL FindValue(const K& Key,   V& OutValue) const
+        BOOL32 FindKey  (const V& Value, K& OutKey) const;
+        BOOL32 FindValue(const K& Key,   V& OutValue) const
         {
             auto It = Map.find(Key);
             if (It != Map.end())
@@ -178,13 +178,13 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
-    BOOL TMap<K, V>::ContainsKey(const K& Key) const
+    BOOL32 TMap<K, V>::ContainsKey(const K& Key) const
     {
         return Map.find(Key) != Map.end();
     }
 
     template <typename K, typename V>
-    BOOL TMap<K, V>::FindKey(const V& Value, K& OutKey) const
+    BOOL32 TMap<K, V>::FindKey(const V& Value, K& OutKey) const
     {
         for(const auto& elem : Map)
         {

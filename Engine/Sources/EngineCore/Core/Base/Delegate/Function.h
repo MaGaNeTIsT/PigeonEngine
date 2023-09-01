@@ -20,7 +20,7 @@ namespace PigeonEngine
         TFunction<Ret(Args...)>& operator=(const TFunction<Ret(Args ...)>& Other);
         TFunction<Ret(Args...)>& operator=(std::function<Ret(Args ...)> Other);
         Ret                      operator()(Args... Arguments);
-        BOOL                     operator==(const TFunction<Ret(Args ...)>& Other);
+        BOOL32                     operator==(const TFunction<Ret(Args ...)>& Other);
         
     private:
         std::function<Ret(Args...)> Operation = nullptr;
@@ -60,7 +60,7 @@ namespace PigeonEngine
     }
 
     template <typename Ret, typename ... Args>
-    BOOL TFunction<Ret(Args...)>::operator==(const TFunction<Ret(Args...)>& Other)
+    BOOL32 TFunction<Ret(Args...)>::operator==(const TFunction<Ret(Args...)>& Other)
     {
         return this->Operation == Other.Operation;
     }

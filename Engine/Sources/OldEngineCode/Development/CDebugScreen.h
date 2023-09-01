@@ -22,7 +22,7 @@ public:
 	CDebugScreen();
 	~CDebugScreen();
 protected:
-	static UINT DEBUGPOLYGON_COUNT;
+	static UINT32 DEBUGPOLYGON_COUNT;
 protected:
 	std::vector<class CScreenPolygon2D*> m_Polygons;
 	std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> m_SRVs;

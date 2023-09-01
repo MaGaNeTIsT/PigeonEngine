@@ -40,22 +40,22 @@ namespace PigeonEngine
 			UninitResource();
 		}
 	public:
-		virtual BOOL	IsValid()const { return IsResourceValid(); }
-		virtual BOOL	IsInitialized()const { return bIsInitialized; }
-		virtual BOOL	InitResource() { return FALSE; }
+		virtual BOOL32	IsValid()const { return IsResourceValid(); }
+		virtual BOOL32	IsInitialized()const { return bIsInitialized; }
+		virtual BOOL32	InitResource() { return FALSE; }
 		virtual void	UninitResource()
 		{
 			bIsInitialized = FALSE;
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsResourceValid())); }
+		BOOL32					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsResourceValid())); }
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 		const EString&			GetAssetPath()const { return AssetPath; }
 		const EString&			GetAssetName()const { return AssetName; }
 		const EString&			GetAssetFullPathName()const { return (AssetPath + AssetName + ENGINE_ASSET_NAME_TYPE); }
 		template<typename TInitResourceLambdaType>
-		BOOL StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
+		BOOL32 StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{
 			TResourceType* TempData = lStorageFunc();
 			if (ResourceData)
@@ -95,7 +95,7 @@ namespace PigeonEngine
 			}
 		}
 	protected:
-		BOOL			bIsInitialized;
+		BOOL32			bIsInitialized;
 		EString			AssetPath;
 		EString			AssetName;
 		TResourceType*	ResourceData;
@@ -108,7 +108,7 @@ namespace PigeonEngine
 	};
 
 	template <typename _TAssetResourceType>
-	ENGINE_INLINE void RegisterBaseAssetClassTypes()
+	PE_INLINE void RegisterBaseAssetClassTypes()
 	{
 		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
 	}
@@ -133,8 +133,8 @@ namespace PigeonEngine
 		{
 		}
 	public:
-		BOOL IsHoldResource()const { return bHoldResource; }
-		virtual BOOL IsValid()const override
+		BOOL32 IsHoldResource()const { return bHoldResource; }
+		virtual BOOL32 IsValid()const override
 		{
 			if (bHoldResource)
 			{
@@ -148,11 +148,11 @@ namespace PigeonEngine
 			ReleaseRenderResourceInternal();
 		}
 	public:
-		BOOL	IsRenderResourceValid()const { return ((!!RenderResourceData) && (RenderResourceData->IsRenderResourceValid())); }
+		BOOL32	IsRenderResourceValid()const { return ((!!RenderResourceData) && (RenderResourceData->IsRenderResourceValid())); }
 		const TRenderResourceType*	GetRenderResource()const { return RenderResourceData; }
 	protected:
 		template<typename TCreateRenderResourceLambdaType>
-		BOOL CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL& bHoldStoragedResource)
+		BOOL32 CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL32& bHoldStoragedResource)
 		{
 			TRenderResourceType* TempData = lCreateFunc(ResourceData);
 			if (RenderResourceData)
@@ -196,7 +196,7 @@ namespace PigeonEngine
 			}
 		}
 	protected:
-		BOOL					bHoldResource;
+		BOOL32					bHoldResource;
 		TRenderResourceType*	RenderResourceData;
 
 	public:
@@ -207,7 +207,7 @@ namespace PigeonEngine
 	};
 
 	template <typename _TAssetResourceType, typename _TAssetRenderResourceType>
-	ENGINE_INLINE void RegisterRenderBaseAssetClassTypes()
+	PE_INLINE void RegisterRenderBaseAssetClassTypes()
 	{
 		RegisterBaseAssetClassTypes<_TAssetResourceType>();
 		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
@@ -228,15 +228,15 @@ namespace PigeonEngine
 		/*
 		* Add item into mapped datas. This action may reconstruct whole memories.
 		* Params [InReplaceIfHaveKey]: true = If already contain data with InKeyValue will replace it. This action will delete old asset. false = If already contain data with InKeyValue will not do anything.
-		* Return [UINT]: 0 = Add failed. value = Mapped datas' size(after add value).
+		* Return [UINT32]: 0 = Add failed. value = Mapped datas' size(after add value).
 		*/
-		UINT Add(const TKeyType& InKeyValue, TAssetType* InDataValue, const BOOL& InReplaceIfHaveKey = FALSE)
+		UINT32 Add(const TKeyType& InKeyValue, TAssetType* InDataValue, const BOOL32& InReplaceIfHaveKey = FALSE)
 		{
 			if (!InDataValue)
 			{
 				return 0u;
 			}
-			BOOL NeedReplace = FALSE;
+			BOOL32 NeedReplace = FALSE;
 			if (SavedDatas.ContainsKey(InKeyValue))
 			{
 				NeedReplace = TRUE;
@@ -263,9 +263,9 @@ namespace PigeonEngine
 		}
 		/*
 		* Remove item with InKeyValue in mapped datas.
-		* Return [UINT]: Mapped datas' size(after remove value).
+		* Return [UINT32]: Mapped datas' size(after remove value).
 		*/
-		UINT Remove(const TKeyType& InKeyValue)
+		UINT32 Remove(const TKeyType& InKeyValue)
 		{
 			TAssetType* TempData = nullptr;
 			if (SavedDatas.FindValue(InKeyValue, TempData))
@@ -287,9 +287,9 @@ namespace PigeonEngine
 		}
 		/*
 		* Check if contains item with InKeyValue in mapped datas.
-		* Return [BOOL]: If contains return TRUE. If not then return FALSE.
+		* Return [BOOL32]: If contains return TRUE. If not then return FALSE.
 		*/
-		BOOL Contain(const TKeyType& InKeyValue)const
+		BOOL32 Contain(const TKeyType& InKeyValue)const
 		{
 			return (SavedDatas.ContainsKey(InKeyValue));
 		}
@@ -310,7 +310,7 @@ namespace PigeonEngine
 		/*
 		* Get size of mapped datas.
 		*/
-		UINT Size()const
+		UINT32 Size()const
 		{
 			return (SavedDatas.Length());
 		}

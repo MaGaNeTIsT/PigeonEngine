@@ -15,11 +15,11 @@ namespace PigeonEngine
             WndData() { ::ZeroMemory(this, sizeof(*this)); }
             HWND                    hWnd;
             HWND                    MouseHwnd;
-            BOOL                    MouseTracked;
-            INT                     MouseButtonsDown;
+            BOOL32                  MouseTracked;
+            INT32                   MouseButtonsDown;
             ImGuiMouseCursor        LastMouseCursor;
-            BOOL                    HasGamepad;
-            BOOL                    WantUpdateHasGamepad;
+            BOOL32                  HasGamepad;
+            BOOL32                  WantUpdateHasGamepad;
         };
         struct D3DData
         {
@@ -35,8 +35,8 @@ namespace PigeonEngine
             ID3D11DepthStencilState*    DepthStencilState;
             ID3D11Buffer*               VertexBuffer;
             ID3D11Buffer*               IndexBuffer;
-            INT                         VertexBufferSize;
-            INT                         IndexBufferSize;
+            INT32                       VertexBufferSize;
+            INT32                       IndexBufferSize;
         };
         struct D3DConstantBuffer
         {
@@ -47,12 +47,12 @@ namespace PigeonEngine
         virtual void            ShutDown()override;
         void                    Update();
         void                    Draw();
-        IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
     private:
         void                    InitWnd();
-        BOOL                    WndUpdateMouseCursor();
-        BOOL                    WndIsVkDown(INT vk);
-        void                    WndAddKeyEvent(ImGuiKey key, BOOL down, INT native_keycode, INT native_scancode = -1);
+        BOOL32                  WndUpdateMouseCursor();
+        BOOL32                  WndIsVkDown(INT32 vk);
+        void                    WndAddKeyEvent(ImGuiKey key, BOOL32 down, INT32 native_keycode, INT32 native_scancode = -1);
         void                    WndProcessKeyEventsWorkarounds();
         void                    WndUpdateKeyModifiers();
         ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
@@ -61,7 +61,7 @@ namespace PigeonEngine
         void                    D3DSetupRenderState(ImDrawData* drawData);
         void                    D3DRenderDrawData(ImDrawData* drawData);
         void                    D3DCreateFontsTexture();
-        BOOL                    D3DCreateDeviceObjects();
+        BOOL32                  D3DCreateDeviceObjects();
         void                    D3DInvalidateDeviceObjects();
     private:
         WndData                 m_WndData;

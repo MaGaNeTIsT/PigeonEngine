@@ -2,7 +2,7 @@
 #include "../Headers/CReadWriteFile.h"
 #include <filesystem>
 
-BOOL CTempFileHelper::FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index, UINT* extra1Index)
+BOOL32 CTempFileHelper::FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT32& sign0Num, const CHAR* sign1Char, const UINT32& sign1Num, const std::string& failedStr, UINT32* extra0Index, UINT32* extra1Index)
 {
 	std::string& ptrStr0 = dst[0];
 	std::string& ptrStr1 = dst[1];
@@ -45,14 +45,14 @@ BOOL CTempFileHelper::FetchStringIntoThreePartInvOrder(const std::string& src, s
 
 	return TRUE;
 }
-BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR** signChar, const UINT* signNum, const std::string& failedStr, UINT* extraIndex)
+BOOL32 CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT32& numPart, const CHAR** signChar, const UINT32* signNum, const std::string& failedStr, UINT32* extraIndex)
 {
-	UINT num_m_1 = numPart - 1;
+	UINT32 num_m_1 = numPart - 1;
 	std::string lastStr = src;
-	for (UINT i = 0u; i < num_m_1; i++)
+	for (UINT32 i = 0u; i < num_m_1; i++)
 	{
 		const CHAR*& tempSign = signChar[i];
-		const UINT& tempSignNum = signNum[i];
+		const UINT32& tempSignNum = signNum[i];
 
 		if (extraIndex != nullptr)
 		{
@@ -74,11 +74,11 @@ BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* 
 	dst[num_m_1] = lastStr;
 	return TRUE;
 }
-BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr)
+BOOL32 CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT32& numPart, const CHAR& signChar, const std::string& failedStr)
 {
-	UINT num_m_1 = numPart - 1;
+	UINT32 num_m_1 = numPart - 1;
 	std::string lastStr = src;
-	for (UINT i = 0u; i < num_m_1; i++)
+	for (UINT32 i = 0u; i < num_m_1; i++)
 	{
 		if (!CTempFileHelper::FetchPosAndString<FALSE, TRUE, FALSE>(lastStr, dst[i], &signChar, 1u, failedStr, &lastStr))
 		{
@@ -89,7 +89,7 @@ BOOL CTempFileHelper::FetchStringIntoNPart(const std::string& src, std::string* 
 	dst[num_m_1] = lastStr;
 	return TRUE;
 }
-INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames)
+INT32 CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames)
 {
 	if (fileNames.size() != 0)
 	{
@@ -102,7 +102,7 @@ INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std:
 		{
 			return -1;
 		}
-		BOOL bRegularFile = std::filesystem::is_regular_file(pathRoot);
+		BOOL32 bRegularFile = std::filesystem::is_regular_file(pathRoot);
 		if (!std::filesystem::is_directory(pathRoot) && !bRegularFile)
 		{
 			return -1;
@@ -122,7 +122,7 @@ INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std:
 		}
 	}
 
-	INT fileNum = 0;
+	INT32 fileNum = 0;
 	std::filesystem::directory_iterator folderIterator(path);
 	for (auto& folderItem : folderIterator)
 	{
@@ -141,7 +141,7 @@ INT CTempFileHelper::CountFileNumberInFolder(const std::string& path, const std:
 
 
 
-CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& fullNamePath)
+CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& fullNamePath)
 {
 	this->m_SeparatorState = FALSE;
 	this->m_RunState = FALSE;
@@ -150,10 +150,10 @@ CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const
 	std::string failedRead(fullNamePath);
 	failedRead = "[" + failedRead + "] is invalid path.";
 
-	INT success = 1;
+	INT32 success = 1;
 	{
 		std::string tempStr;
-		UINT pathNameSeparatorIndex = 0u;
+		UINT32 pathNameSeparatorIndex = 0u;
 
 		success &= CTempFileHelper::FetchPosAndString<TRUE, TRUE>(fullNamePath, this->m_FileType, CTempFileHelper::_NameTypeSeparator, failedRead, &tempStr);
 		success &= CTempFileHelper::FetchPosAndString<TRUE, TRUE, TRUE>(tempStr, this->m_FileName, CTempFileHelper::_PathNameSeparator, CTempFileHelper::_PathNameSeparatorNum, failedRead, &tempStr, &pathNameSeparatorIndex);
@@ -169,7 +169,7 @@ CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const
 		this->m_SeparatorState = TRUE;
 	}
 }
-CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& path, const std::string& nameWithType)
+CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType)
 {
 	this->m_SeparatorState = FALSE;
 	this->m_RunState = FALSE;
@@ -179,7 +179,7 @@ CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const
 	std::string failedRead(tempFullNamePath);
 	failedRead = "[" + failedRead + "] is invalid path.";
 
-	BOOL success = CTempFileHelper::FetchPosAndString<TRUE, TRUE>(nameWithType, this->m_FileType, CTempFileHelper::_NameTypeSeparator, failedRead, &(this->m_FileName));
+	BOOL32 success = CTempFileHelper::FetchPosAndString<TRUE, TRUE>(nameWithType, this->m_FileType, CTempFileHelper::_NameTypeSeparator, failedRead, &(this->m_FileName));
 
 	this->m_FilePath = (success == 1) ? path : failedRead;
 	this->m_FullPath = (success == 1) ? (path + nameWithType) : failedRead;
@@ -189,7 +189,7 @@ CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const
 		this->m_SeparatorState = TRUE;
 	}
 }
-CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type)
+CTempFileReaderWriterBase::CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type)
 {
 	this->m_SeparatorState = TRUE;
 	this->m_RunState = FALSE;
@@ -207,27 +207,27 @@ CTempFileReaderWriterBase::~CTempFileReaderWriterBase()
 		this->m_FileStream.close();
 	}
 }
-BOOL CTempFileReaderWriterBase::IsSuccessSeparate()const
+BOOL32 CTempFileReaderWriterBase::IsSuccessSeparate()const
 {
 	return (this->m_SeparatorState);
 }
-BOOL CTempFileReaderWriterBase::IsSuccessRun()const
+BOOL32 CTempFileReaderWriterBase::IsSuccessRun()const
 {
 	return (this->m_RunState);
 }
-BOOL CTempFileReaderWriterBase::IsFileBinary()const
+BOOL32 CTempFileReaderWriterBase::IsFileBinary()const
 {
 	return (this->m_IsBinary);
 }
-void CTempFileReaderWriterBase::SetSeparatorState(const BOOL& state)
+void CTempFileReaderWriterBase::SetSeparatorState(const BOOL32& state)
 {
 	this->m_SeparatorState = state;
 }
-void CTempFileReaderWriterBase::SetRunState(const BOOL& state)
+void CTempFileReaderWriterBase::SetRunState(const BOOL32& state)
 {
 	this->m_RunState = state;
 }
-void CTempFileReaderWriterBase::SetFileBinaryState(const BOOL& state)
+void CTempFileReaderWriterBase::SetFileBinaryState(const BOOL32& state)
 {
 	this->m_IsBinary = state;
 }
@@ -266,7 +266,7 @@ void CTempFileReaderWriterBase::SetFullPath(const std::string& str)
 
 
 
-CTempFileReader::CTempFileReader(const BOOL& isBinary, const std::string& fullNamePath, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, fullNamePath)
+CTempFileReader::CTempFileReader(const BOOL32& isBinary, const std::string& fullNamePath, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, fullNamePath)
 {
 	if (this->IsSuccessSeparate())
 	{
@@ -277,7 +277,7 @@ CTempFileReader::CTempFileReader(const BOOL& isBinary, const std::string& fullNa
 		this->SetRunState(func(this->m_FileStream, this));
 	}
 }
-CTempFileReader::CTempFileReader(const BOOL& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, nameWithType)
+CTempFileReader::CTempFileReader(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, nameWithType)
 {
 	if (this->IsSuccessSeparate())
 	{
@@ -288,7 +288,7 @@ CTempFileReader::CTempFileReader(const BOOL& isBinary, const std::string& path, 
 		this->SetRunState(func(this->m_FileStream, this));
 	}
 }
-CTempFileReader::CTempFileReader(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, name, type)
+CTempFileReader::CTempFileReader(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, name, type)
 {
 	if (this->IsSuccessSeparate())
 	{
@@ -306,7 +306,7 @@ CTempFileReader::~CTempFileReader()
 
 
 
-CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& fullNamePath, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, fullNamePath)
+CTempFileWriter::CTempFileWriter(const BOOL32& isBinary, const std::string& fullNamePath, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, fullNamePath)
 {
 	if (this->IsSuccessSeparate())
 	{
@@ -317,7 +317,7 @@ CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& fullNa
 		this->SetRunState(func(this->m_FileStream, this));
 	}
 }
-CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, nameWithType)
+CTempFileWriter::CTempFileWriter(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, nameWithType)
 {
 	if (this->IsSuccessSeparate())
 	{
@@ -328,7 +328,7 @@ CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& path, 
 		this->SetRunState(func(this->m_FileStream, this));
 	}
 }
-CTempFileWriter::CTempFileWriter(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, name, type)
+CTempFileWriter::CTempFileWriter(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func) : CTempFileReaderWriterBase(isBinary, path, name, type)
 {
 	if (this->IsSuccessSeparate())
 	{

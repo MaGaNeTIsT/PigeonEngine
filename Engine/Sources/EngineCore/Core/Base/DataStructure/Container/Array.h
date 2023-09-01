@@ -21,7 +21,7 @@ namespace PigeonEngine
     public:
         using TIterator         = typename std::vector<T>::iterator;
         using TConstIterator    = typename std::vector<T>::const_iterator;
-        using SizeType = UINT;
+        using SizeType = UINT32;
     public:
         TArray();
         TArray(const TArray<T>& Other);
@@ -31,14 +31,14 @@ namespace PigeonEngine
         
         ~TArray() = default;
         
-        T&          operator[](const UINT& Index);
-        const T&    operator[](const UINT& Index)const;
+        T&          operator[](const UINT32& Index);
+        const T&    operator[](const UINT32& Index)const;
         TArray<T>&  operator= (const TArray<T>& Other);
         TArray<T>&  operator= (TArray<T>&& Other) noexcept;
         TArray<T>&  operator= (std::vector<T>&& Other);
         
-        UINT        Add       (const T& Element);
-        UINT        Add       (T&& Element);
+        UINT32        Add       (const T& Element);
+        UINT32        Add       (T&& Element);
 
         T&          Add_Default_GetRef()
         {
@@ -47,15 +47,15 @@ namespace PigeonEngine
             return Elements[Elements.size() - 1u];
         }
         
-        T&          GetRef    (const UINT& Index);
-        const T&    Get       (const UINT& Index)const;
+        T&          GetRef    (const UINT32& Index);
+        const T&    Get       (const UINT32& Index)const;
         const T&    Last      ();
         // Find the index of given Element, return array's Length if the Element doesn't exist.
-        UINT Find      (const T& Element) const;
-        BOOL Contains  (const T& Element) const;
-        void Resize    (const UINT& NewSize);
-        void Recapacity(const UINT& NewCapacity);
-        void RemoveAt  (const UINT& Index);
+        UINT32 Find      (const T& Element) const;
+        BOOL32 Contains  (const T& Element) const;
+        void Resize    (const UINT32& NewSize);
+        void Recapacity(const UINT32& NewCapacity);
+        void RemoveAt  (const UINT32& Index);
         void Remove    (const T& Element);
         void Pop       ();
         void Clear     ();
@@ -104,11 +104,11 @@ namespace PigeonEngine
         typename TIterator      begin(){return Elements.begin();}
         typename TIterator      end(){return Elements.end();}
         
-        ENGINE_NODISCARD UINT Length()const
+        PE_NODISCARD UINT32 Length()const
         {
-            return static_cast<UINT>(this->Elements.size());
+            return static_cast<UINT32>(this->Elements.size());
         }
-        ENGINE_NODISCARD UINT LastIndex    ()const;
+        PE_NODISCARD UINT32 LastIndex    ()const;
 
     
     private:
@@ -154,20 +154,20 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    T& TArray<T>::operator[](const UINT& Index)
+    T& TArray<T>::operator[](const UINT32& Index)
     {
 #if _EDITOR_ONLY
-        UINT NumElements = Length();
+        UINT32 NumElements = Length();
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
 #endif
         return Elements[Index];
     }
 
     template <typename T>
-    const T& TArray<T>::operator[](const UINT& Index)const
+    const T& TArray<T>::operator[](const UINT32& Index)const
     {
 #if _EDITOR_ONLY
-        UINT NumElements = Length();
+        UINT32 NumElements = Length();
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
 #endif
         return Elements[Index];
@@ -197,40 +197,40 @@ namespace PigeonEngine
     }
     
     template <typename T>
-    UINT TArray<T>::LastIndex() const
+    UINT32 TArray<T>::LastIndex() const
     {
         return Length() > 0 ? Length() - 1 : 0;
     }
 
     template <typename T>
-    UINT TArray<T>::Add(const T& Element)
+    UINT32 TArray<T>::Add(const T& Element)
     {
          this->Elements.push_back(Element);
          return LastIndex();
     }
 
     template <typename T>
-    UINT TArray<T>::Add(T&& Element)
+    UINT32 TArray<T>::Add(T&& Element)
     {
         this->Elements.push_back(Element);
         return LastIndex();
     }
 
     template <typename T>
-    T& TArray<T>::GetRef(const UINT& Index)
+    T& TArray<T>::GetRef(const UINT32& Index)
     {
 #if _EDITOR_ONLY
-        UINT NumElements = Length();
+        UINT32 NumElements = Length();
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
 #endif
         return this->Elements[Index];
     }
 
     template <typename T>
-    const T& TArray<T>::Get(const UINT& Index)const
+    const T& TArray<T>::Get(const UINT32& Index)const
     {
 #if _EDITOR_ONLY
-        UINT NumElements = Length();
+        UINT32 NumElements = Length();
         Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
 #endif
         return this->Elements[Index];
@@ -243,7 +243,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void TArray<T>::RemoveAt(const UINT& Index)
+    void TArray<T>::RemoveAt(const UINT32& Index)
     {
         if(Index > Length())
         {
@@ -255,7 +255,7 @@ namespace PigeonEngine
     template <typename T>
     void TArray<T>::Remove(const T& Element)
     {
-        const UINT& i = Find(Element);
+        const UINT32& i = Find(Element);
         if(i != Length())
         {
             RemoveAt(i);
@@ -289,7 +289,7 @@ namespace PigeonEngine
     template <typename T>
     void TArray<T>::Append(const TArray<T>& Other)
     {
-         const UINT Size = Length() + Other.Length();
+         const UINT32 Size = Length() + Other.Length();
          Recapacity(Size * 2);
          for(const auto& elem:Other)
          {
@@ -326,9 +326,9 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    UINT TArray<T>::Find(const T& Element) const
+    UINT32 TArray<T>::Find(const T& Element) const
     {
-        for(UINT i = 0; i < Elements.size();++i)
+        for(UINT32 i = 0; i < Elements.size();++i)
         {
             if(Elements[i] == Element)
             {
@@ -339,7 +339,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    BOOL TArray<T>::Contains(const T& Element) const
+    BOOL32 TArray<T>::Contains(const T& Element) const
     {
          for(const auto& elem : Elements)
          {
@@ -352,7 +352,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void TArray<T>::Resize(const UINT& NewSize)
+    void TArray<T>::Resize(const UINT32& NewSize)
     {
         if ((NewSize > 0u) && (this->Elements.size() != NewSize))
         {
@@ -361,7 +361,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void TArray<T>::Recapacity(const UINT& NewCapacity)
+    void TArray<T>::Recapacity(const UINT32& NewCapacity)
     {
          if ((NewCapacity > 0u) && (this->Elements.capacity() != NewCapacity))
          {

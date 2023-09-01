@@ -12,11 +12,11 @@ public:
 public:
 	static void										ClearData();
 public:
-	static const CustomStruct::CGameAnimationInfo*	LoadSkeletonAnimationAsset(const std::string& path, const std::string* animationName, UINT* animationIndex = nullptr);
+	static const CustomStruct::CGameAnimationInfo*	LoadSkeletonAnimationAsset(const std::string& path, const std::string* animationName, UINT32* animationIndex = nullptr);
 private:
 	static void										ImportAssetSkeletonAnimation(const std::string& path);
 private:
-	static const CustomStruct::CGameAnimationInfo*	FindData(const std::string& path, const std::string* name, const UINT* index = nullptr);
+	static const CustomStruct::CGameAnimationInfo*	FindData(const std::string& path, const std::string* name, const UINT32* index = nullptr);
 private:
 	std::map<std::string, std::map<std::string, CustomStruct::CGameAnimationInfo>>	m_Data;
 private:

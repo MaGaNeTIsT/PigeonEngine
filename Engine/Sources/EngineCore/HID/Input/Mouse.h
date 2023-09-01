@@ -14,7 +14,7 @@ namespace PigeonEngine
 	public:
 		struct RawDelta
 		{
-			INT x, y;
+			INT32 x, y;
 		};
 		class Event
 		{
@@ -35,10 +35,10 @@ namespace PigeonEngine
 
 		private:
 			EType Type;
-			BOOL bLeftIsPressed = false;
-			BOOL bRightIsPressed = false;
-			INT x;
-			INT y;
+			BOOL32 bLeftIsPressed = false;
+			BOOL32 bRightIsPressed = false;
+			INT32 x;
+			INT32 y;
 
 		public:
 			Event(EType INType, const IMouse& Parent)
@@ -51,23 +51,23 @@ namespace PigeonEngine
 			{
 				return Type;
 			}
-			std::pair<INT, INT> GetPos() const
+			std::pair<INT32, INT32> GetPos() const
 			{
 				return{ x,y };
 			}
-			INT GetPosX() const
+			INT32 GetPosX() const
 			{
 				return x;
 			}
-			INT GetPosY() const
+			INT32 GetPosY() const
 			{
 				return y;
 			}
-			BOOL LeftIsPressed() const
+			BOOL32 LeftIsPressed() const
 			{
 				return bLeftIsPressed;
 			}
-			BOOL RightIsPressed() const
+			BOOL32 RightIsPressed() const
 			{
 				return bRightIsPressed;
 			}
@@ -77,47 +77,47 @@ namespace PigeonEngine
 		IMouse() = default;
 		IMouse(const IMouse&) = delete;
 		IMouse& operator=(const IMouse&) = delete;
-		std::pair<INT, INT> GetPos() const;
+		std::pair<INT32, INT32> GetPos() const;
 		std::optional<RawDelta> ReadRawDelta();
-		INT GetPosX() const;
-		INT GetPosY() const;
-		BOOL IsInWindow() const;
-		BOOL LeftIsPressed() const;
-		BOOL RightIsPressed() const;
+		INT32 GetPosX() const;
+		INT32 GetPosY() const;
+		BOOL32 IsInWindow() const;
+		BOOL32 LeftIsPressed() const;
+		BOOL32 RightIsPressed() const;
 		std::optional<IMouse::Event> Read();
-		BOOL IsEmpty() const
+		BOOL32 IsEmpty() const
 		{
 			return Buffer.empty();
 		}
 		void Flush();
 		void EnableRaw();
 		void DisableRaw();
-		BOOL IsRawEnabled() const;
+		BOOL32 IsRawEnabled() const;
 
 	public:
-		void OnMouseMove(INT x, INT y);
+		void OnMouseMove(INT32 x, INT32 y);
 		void OnMouseLeave();
 		void OnMouseEnter();
-		void OnRawDelta(INT dx, INT dy);
-		void OnLeftPressed(INT x, INT y);
-		void OnLeftReleased(INT x, INT y);
-		void OnRightPressed(INT x, INT y);
-		void OnRightReleased(INT x, INT y);
-		void OnWheelUp(INT x, INT y);
-		void OnWheelDown(INT x, INT y);
+		void OnRawDelta(INT32 dx, INT32 dy);
+		void OnLeftPressed(INT32 x, INT32 y);
+		void OnLeftReleased(INT32 x, INT32 y);
+		void OnRightPressed(INT32 x, INT32 y);
+		void OnRightReleased(INT32 x, INT32 y);
+		void OnWheelUp(INT32 x, INT32 y);
+		void OnWheelDown(INT32 x, INT32 y);
 		void TrimBuffer();
 		void TrimRawInputBuffer();
-		void OnWheelDelta(INT x, INT y, INT delta);
+		void OnWheelDelta(INT32 x, INT32 y, INT32 delta);
 
 	private:
-		const UINT BufferSize = 16u;
-		INT x = 0;
-		INT y = 0;
-		BOOL bLeftIsPressed = false;
-		BOOL bRightIsPressed = false;
-		BOOL bIsInWindow = false;
-		INT WheelDeltaCarry = 0;
-		BOOL RawEnabled = true;
+		const UINT32 BufferSize = 16u;
+		INT32 x = 0;
+		INT32 y = 0;
+		BOOL32 bLeftIsPressed = false;
+		BOOL32 bRightIsPressed = false;
+		BOOL32 bIsInWindow = false;
+		INT32 WheelDeltaCarry = 0;
+		BOOL32 RawEnabled = true;
 		std::queue<Event> Buffer;
 		std::queue<RawDelta> RawDeltaBuffer;
 	};

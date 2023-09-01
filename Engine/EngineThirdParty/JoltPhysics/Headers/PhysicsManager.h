@@ -28,7 +28,7 @@ namespace PigeonEngine
 	public:
 		static void		EditorUpdate() {}
 	private:
-		BOOL			m_EditorOpen = FALSE;
+		BOOL32			m_EditorOpen = FALSE;
 #endif
 	};
 

@@ -22,7 +22,7 @@ namespace PigeonEngine
 			{
 				RawLayouts = new RInputLayoutDesc[Other.LayoutNum];
 				LayoutNum = Other.LayoutNum;
-				for (UINT i = 0u, n = Other.LayoutNum; i < n; i++)
+				for (UINT32 i = 0u, n = Other.LayoutNum; i < n; i++)
 				{
 					RawLayouts[i] = Other.RawLayouts[i];
 				}
@@ -38,18 +38,18 @@ namespace PigeonEngine
 			{
 				RawLayouts = new RInputLayoutDesc[Other.LayoutNum];
 				LayoutNum = Other.LayoutNum;
-				for (UINT i = 0u, n = Other.LayoutNum; i < n; i++)
+				for (UINT32 i = 0u, n = Other.LayoutNum; i < n; i++)
 				{
 					RawLayouts[i] = Other.RawLayouts[i];
 				}
 			}
 			return (*this);
 		}
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return ((!!Shader) && (!!InputLayout) && (!!RawLayouts) && (LayoutNum > 0u));
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -69,7 +69,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	Shader;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>	InputLayout;
 		RInputLayoutDesc*							RawLayouts;
-		UINT										LayoutNum;
+		UINT32										LayoutNum;
 	};
 	class RPixelShaderResource : public RRenderResourceInterface
 	{
@@ -82,11 +82,11 @@ namespace PigeonEngine
 			Shader = Other.Shader;
 			return (*this);
 		}
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Shader);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -109,11 +109,11 @@ namespace PigeonEngine
 			Shader = Other.Shader;
 			return (*this);
 		}
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Shader);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -141,11 +141,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// StructuredBuffer can bind UAV or SRV, so this function only determines by buffer valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Buffer);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -159,8 +159,8 @@ namespace PigeonEngine
 			UnorderedAccessView	= nullptr;
 			ShaderResourceView	= nullptr;
 		}
-		BOOL	AccessMapRead;
-		BOOL	AccessMapWrite;
+		BOOL32	AccessMapRead;
+		BOOL32	AccessMapWrite;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
@@ -181,11 +181,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// RenderTexture2D can bind RTV, UAV, SRV or DSV, so this function only determines by buffer valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Buffer);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -220,11 +220,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// RenderTexture3D can bind RTV, UAV or SRV, so this function only determines by buffer valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Buffer);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -255,11 +255,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// Texture2DResource must bind SRV, so this function determines by buffer valid and SRV valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return ((!!Buffer) && (!!ShaderResourceView));
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -286,11 +286,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// TextureCubeResource must bind SRV, so this function determines by buffer valid and SRV valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return ((!!Buffer) && (!!ShaderResourceView));
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.
@@ -316,11 +316,11 @@ namespace PigeonEngine
 			return (*this);
 		}
 		// BufferResource is raw buffer resource, so this function only determines by buffer valid.
-		virtual BOOL IsRenderResourceValid()const override
+		virtual BOOL32 IsRenderResourceValid()const override
 		{
 			return (!!Buffer);
 		}
-		virtual BOOL InitRenderResource()override
+		virtual BOOL32 InitRenderResource()override
 		{
 			// Render resource must init by specific type and input.
 			// We do not want raw render resource init.

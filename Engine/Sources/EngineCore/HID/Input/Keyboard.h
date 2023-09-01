@@ -31,11 +31,11 @@ namespace PigeonEngine
 				Type(InType),
 				Code(InCode)
 			{}
-			BOOL IsPress() const
+			BOOL32 IsPress() const
 			{
 				return Type == EType::Press;
 			}
-			BOOL IsRelease() const
+			BOOL32 IsRelease() const
 			{
 				return Type == EType::Release;
 			}
@@ -51,19 +51,19 @@ namespace PigeonEngine
 
 	public:
 		// key event stuff
-		BOOL IsKeyPressed(unsigned char keycode) const;
+		BOOL32 IsKeyPressed(unsigned char keycode) const;
 		std::optional<Event> ReadKey();
-		BOOL IsKeyEmpty() const;
+		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
 		// char event stuff
 		std::optional<char> ReadChar();
-		BOOL IsCharEmpty() const;
+		BOOL32 IsCharEmpty() const;
 		void FlushChar();
 		void Flush();
 		// autorepeat control
 		void EnableAutorepeat();
 		void DisableAutorepeat();
-		BOOL IsAutorepeatEnabled() const;
+		BOOL32 IsAutorepeatEnabled() const;
 
 	private:
 		void OnKeyPressed(unsigned char keycode);
@@ -74,9 +74,9 @@ namespace PigeonEngine
 		static void TrimBuffer(std::queue<T>& buffer);
 
 	private:
-		static constexpr UINT nKeys = 256u;
-		static constexpr UINT BufferSize = 16u;
-		BOOL bAutorepeatEnabled = false;
+		static constexpr UINT32 nKeys = 256u;
+		static constexpr UINT32 BufferSize = 16u;
+		BOOL32 bAutorepeatEnabled = false;
 		std::bitset<nKeys> KeyStates;
 		std::queue<Event> KeyBuffer;
 		std::queue<char> CharBuffer;

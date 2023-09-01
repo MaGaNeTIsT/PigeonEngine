@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	BOOL EFileHelper::ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size)
+	BOOL32 EFileHelper::ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size)
 	{
 		using namespace std;
 		ifstream  fin(*FilePath, ios::in | ios::binary);
@@ -29,7 +29,7 @@ namespace PigeonEngine
 		fin.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
+	BOOL32 EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
 	{
 		using namespace std;
 		ifstream fin(*FilePath, ios::in);
@@ -50,7 +50,7 @@ namespace PigeonEngine
 		fin.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str)
+	BOOL32 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str)
 	{
 		using namespace std;
 		ofstream out(*FilePath, ios::out);
@@ -70,7 +70,7 @@ namespace PigeonEngine
 		out.close();
 		return TRUE;
 	}
-	BOOL EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size)
+	BOOL32 EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size)
 	{
 		using namespace std;
 		ofstream out(*FilePath, ios::out | ios::binary);

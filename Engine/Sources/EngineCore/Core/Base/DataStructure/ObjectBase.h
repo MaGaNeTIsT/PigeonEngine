@@ -15,8 +15,8 @@ namespace PigeonEngine
 	public:
 		const ULONGLONG& GetUniqueID()const;
 	public:
-		BOOL operator==(const EObjectBase& obj);
-		BOOL operator!=(const EObjectBase& obj);
+		BOOL32 operator==(const EObjectBase& obj);
+		BOOL32 operator!=(const EObjectBase& obj);
 	private:
 		ULONGLONG UniqueID;
 #if _EDITOR_ONLY

@@ -32,7 +32,7 @@ public:
 	class CTexture2D*	GetAmbientOcclusionTexture()const;
 	class CTexture2D*	GetReflectanceTexture()const;
 public:
-	virtual void	SetIsGlossyRoughness(const BOOL& v);
+	virtual void	SetIsGlossyRoughness(const BOOL32& v);
 	virtual void	SetRoughness(const FLOAT& v);
 	virtual void	SetMetallicness(const FLOAT& v);
 	virtual void	SetReflectance(const FLOAT& v);
@@ -40,7 +40,7 @@ public:
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr);
 	virtual void	SetEmissiveColor(const CustomStruct::CColor& clr);
 public:
-	virtual BOOL					GetIsGlossyRoughness()const;
+	virtual BOOL32					GetIsGlossyRoughness()const;
 	virtual FLOAT					GetRoughness()const;
 	virtual FLOAT					GetMetallicness()const;
 	virtual FLOAT					GetReflectance()const;
@@ -58,14 +58,14 @@ public:
 	virtual void			SelectedDefaultLitUpdate();
 	virtual void			SelectedEditorUpdate()override;
 protected:
-	BOOL		m_IsGlossy;
-	INT			m_NormalSelect;
-	INT			m_AlbedoSelect;
-	INT			m_EmissiveSelect;
-	INT			m_RoughnessSelect;
-	INT			m_MetallicnessSelect;
-	INT			m_AmbientOcclusionSelect;
-	INT			m_ReflectanceSelect;
+	BOOL32		m_IsGlossy;
+	INT32			m_NormalSelect;
+	INT32			m_AlbedoSelect;
+	INT32			m_EmissiveSelect;
+	INT32			m_RoughnessSelect;
+	INT32			m_MetallicnessSelect;
+	INT32			m_AmbientOcclusionSelect;
+	INT32			m_ReflectanceSelect;
 	CHAR		m_NormalPath[512];
 	CHAR		m_AlbedoPath[512];
 	CHAR		m_EmissivePath[512];
@@ -85,7 +85,7 @@ protected:
 	class CTexture2D*	m_ReflectanceTexture;
 public:
 	CDefaultLitMaterial();
-	CDefaultLitMaterial(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName);
+	CDefaultLitMaterial(const std::string& name, MaterialType materialType, const UINT32& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT32& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName);
 	virtual ~CDefaultLitMaterial();
 };
 
@@ -116,7 +116,7 @@ public:
 public:
 	void			SetAnisotropyStrength(const FLOAT& v);
 	void			SetAnisotropyDirection(const FLOAT& v);
-	virtual void	SetIsGlossyRoughness(const BOOL& v)override;
+	virtual void	SetIsGlossyRoughness(const BOOL32& v)override;
 	virtual void	SetRoughness(const FLOAT& v)override;
 	virtual void	SetMetallicness(const FLOAT& v)override;
 	virtual void	SetReflectance(const FLOAT& v)override;
@@ -126,7 +126,7 @@ public:
 public:
 	FLOAT							GetAnisotropyStrength()const;
 	FLOAT							GetAnisotropyDirection()const;
-	virtual BOOL					GetIsGlossyRoughness()const override;
+	virtual BOOL32					GetIsGlossyRoughness()const override;
 	virtual FLOAT					GetRoughness()const override;
 	virtual FLOAT					GetMetallicness()const override;
 	virtual FLOAT					GetReflectance()const override;
@@ -142,8 +142,8 @@ public:
 	virtual void	HookApplyTextureUpdate()override;
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	INT			m_AnisotropyStrengthSelect;
-	INT			m_AnisotropyDirectionSelect;
+	INT32			m_AnisotropyStrengthSelect;
+	INT32			m_AnisotropyDirectionSelect;
 	CHAR		m_AnisotropyStrengthPath[512];
 	CHAR		m_AnisotropyDirectionPath[512];
 #endif

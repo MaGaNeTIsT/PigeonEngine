@@ -23,7 +23,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 #if _EDITOR_ONLY
-	static BOOL ReadAndDecodingDigitalImage(const EString& InPathName, BYTE*& OutByteCode, UINT& OutWidth, UINT& OutHeight, UINT& OutPixelByteCount, RFormatType& OutFormat)
+	static BOOL32 ReadAndDecodingDigitalImage(const EString& InPathName, BYTE*& OutByteCode, UINT32& OutWidth, UINT32& OutHeight, UINT32& OutPixelByteCount, RFormatType& OutFormat)
 	{
 		// Initialize output values
 		{
@@ -66,7 +66,7 @@ namespace PigeonEngine
 
 		IWICBitmapDecoder* WICBitmapDecoder = nullptr;
 		{
-			INT WideCharSize = ::MultiByteToWideChar(CP_UTF8, 0u, *InPathName, -1, NULL, 0);
+			INT32 WideCharSize = ::MultiByteToWideChar(CP_UTF8, 0u, *InPathName, -1, NULL, 0);
 			WCHAR* WideCharPathName = new WCHAR[WideCharSize];
 			::MultiByteToWideChar(CP_UTF8, 0u, *InPathName, -1, WideCharPathName, WideCharSize);
 
@@ -124,17 +124,17 @@ namespace PigeonEngine
 		BYTE* OutputRenderPixelData = nullptr;
 		{
 			//Execute load texture logic.
-			UINT FrameWidth = 0u, FrameHeight = 0u;
+			UINT32 FrameWidth = 0u, FrameHeight = 0u;
 			WICBitmapFrameDecode->GetSize(&FrameWidth, &FrameHeight);
 
 			WICPixelFormatGUID FramePixelFormat;
 			WICBitmapFrameDecode->GetPixelFormat(&FramePixelFormat);
 
-			BOOL NeedAllocate = TRUE;
-			UINT FormatByteCount = 0u;
+			BOOL32 NeedAllocate = TRUE;
+			UINT32 FormatByteCount = 0u;
 			RFormatType FormatType = RFormatType::FORMAT_UNKNOWN;
-			UINT RenderDataByteCount = 0u;
-			BOOL NeedSwitchRB = FALSE;
+			UINT32 RenderDataByteCount = 0u;
+			BOOL32 NeedSwitchRB = FALSE;
 
 #define WICPixelFormatToRenderFormat(_WICPixelFormatType, _WICFormatByteCount, _RenderFormat, _RenderDataByteCount, _NeedSwitchRB) \
 			else if (FramePixelFormat == _WICPixelFormatType)\
@@ -192,14 +192,14 @@ namespace PigeonEngine
 			{
 				TArray<BYTE> RawPixelData;
 
-				const UINT PixelStride = FrameWidth * FormatByteCount;
-				const UINT PixelByteSize = PixelStride * FrameHeight;
+				const UINT32 PixelStride = FrameWidth * FormatByteCount;
+				const UINT32 PixelByteSize = PixelStride * FrameHeight;
 				RawPixelData.Resize(PixelByteSize);
 
 				WICBitmapFrameDecode->CopyPixels(NULL, PixelStride, RawPixelData.Length(), RawPixelData.RawData());
 
-				const UINT RenderPixelStride = FrameWidth * RenderDataByteCount;
-				const UINT RenderPixelByteSize = RenderPixelStride * FrameHeight;
+				const UINT32 RenderPixelStride = FrameWidth * RenderDataByteCount;
+				const UINT32 RenderPixelByteSize = RenderPixelStride * FrameHeight;
 				OutputRenderPixelData = new BYTE[RenderPixelByteSize];
 
 				if ((RenderPixelByteSize == PixelByteSize) && (!NeedSwitchRB))
@@ -208,13 +208,13 @@ namespace PigeonEngine
 				}
 				else
 				{
-					for (UINT y = 0u; y < FrameHeight; y++)
+					for (UINT32 y = 0u; y < FrameHeight; y++)
 					{
-						for (UINT x = 0u; x < FrameWidth; x++)
+						for (UINT32 x = 0u; x < FrameWidth; x++)
 						{
-							UINT RawCoord = y * PixelStride + x * FormatByteCount;
-							UINT RenderCoord = y * RenderPixelStride + x * RenderDataByteCount;
-							for (UINT ByteIndex = 0u; ByteIndex < RenderDataByteCount; ByteIndex++)
+							UINT32 RawCoord = y * PixelStride + x * FormatByteCount;
+							UINT32 RenderCoord = y * RenderPixelStride + x * RenderDataByteCount;
+							for (UINT32 ByteIndex = 0u; ByteIndex < RenderDataByteCount; ByteIndex++)
 							{
 								if ((RenderCoord + ByteIndex) < RenderPixelByteSize)
 								{
@@ -291,8 +291,8 @@ namespace PigeonEngine
 		ResourceProperties.Depth = 0u;
 		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
 		{
-			const UINT DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
-			const UINT DataSize = DataStride * Other.ResourceProperties.Height;
+			const UINT32 DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize = DataStride * Other.ResourceProperties.Height;
 			ByteCode = new BYTE[DataSize];
 			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
 		}
@@ -314,18 +314,18 @@ namespace PigeonEngine
 		ResourceProperties.Depth = 0u;
 		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
 		{
-			const UINT DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
-			const UINT DataSize = DataStride * Other.ResourceProperties.Height;
+			const UINT32 DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize = DataStride * Other.ResourceProperties.Height;
 			ByteCode = new BYTE[DataSize];
 			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
 		}
 		return (*this);
 	}
-	BOOL ETexture2D::IsResourceValid()const
+	BOOL32 ETexture2D::IsResourceValid()const
 	{
 		return ((!!ByteCode) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN));
 	}
-	BOOL ETexture2D::InitResource()
+	BOOL32 ETexture2D::InitResource()
 	{
 		// Texture2D resource must init by texture manager.
 		return TRUE;
@@ -340,7 +340,7 @@ namespace PigeonEngine
 			ByteCode = nullptr;
 		}
 	}
-	void ETexture2D::SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB)
+	void ETexture2D::SetData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB)
 	{
 		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
 		if (ByteCode)
@@ -367,7 +367,7 @@ namespace PigeonEngine
 	ETexture2DAsset::~ETexture2DAsset()
 	{
 	}
-	BOOL ETexture2DAsset::InitResource()
+	BOOL32 ETexture2DAsset::InitResource()
 	{
 		if (IsInitialized())
 		{
@@ -430,7 +430,7 @@ namespace PigeonEngine
 		ClearTexture2Ds();
 	}
 #if _EDITOR_ONLY
-	BOOL ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
@@ -469,7 +469,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		BYTE* ReadByteCode = nullptr; UINT ReadWidth = 0u, ReadHeight = 0u, ReadPixelByteCount = 0u; RFormatType ReadFormat = RFormatType::FORMAT_UNKNOWN;
+		BYTE* ReadByteCode = nullptr; UINT32 ReadWidth = 0u, ReadHeight = 0u, ReadPixelByteCount = 0u; RFormatType ReadFormat = RFormatType::FORMAT_UNKNOWN;
 		if (!ReadAndDecodingDigitalImage(InImportFullPathName, ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat))
 		{
 			if (ReadByteCode)
@@ -491,14 +491,14 @@ namespace PigeonEngine
 		ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
 		NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
 
-		BOOL Result = SaveTexture2DAsset(InSavePath, InAssetName, NeedSaveTexture2DResource);
+		BOOL32 Result = SaveTexture2DAsset(InSavePath, InAssetName, NeedSaveTexture2DResource);
 
 		NeedSaveTexture2DResource->ReleaseResource();
 		delete NeedSaveTexture2DResource;
 		return Result;
 	}
 #endif
-	BOOL ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset)
+	BOOL32 ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -536,7 +536,7 @@ namespace PigeonEngine
 	{
 		Texture2DManager.Clear();
 	}
-	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL* InSRGBOverride)
+	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32* InSRGBOverride)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -569,13 +569,13 @@ namespace PigeonEngine
 #endif
 			return nullptr;
 		}
-		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL) + sizeof(ETextureResourceProperty))));
-		BOOL Result = FALSE;
+		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
+		BOOL32 Result = FALSE;
 		void* TempPtr = ReadFileMem;
 		ULONG RstSize = ReadFileSize;
 		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
 		ETextureType ReadTextureType = ETextureType::TEXTURE_TYPE_UNKNOWN;
-		BOOL ReadSRGB = FALSE;
+		BOOL32 ReadSRGB = FALSE;
 		ETextureResourceProperty ReadResourceProperty;
 		{
 			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
@@ -591,10 +591,10 @@ namespace PigeonEngine
 			RstSize = RstSize - sizeof(UINT32);
 		}
 		{
-			BOOL* SavedAssetTypePtr = (BOOL*)TempPtr;
+			BOOL32* SavedAssetTypePtr = (BOOL32*)TempPtr;
 			ReadSRGB = SavedAssetTypePtr[0];
 			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-			RstSize = RstSize - sizeof(BOOL);
+			RstSize = RstSize - sizeof(BOOL32);
 		}
 		{
 			ETextureResourceProperty* SavedAssetTypePtr = (ETextureResourceProperty*)TempPtr;
@@ -609,8 +609,8 @@ namespace PigeonEngine
 			(ReadResourceProperty.PixelByteCount > 0u) &&
 			(ReadResourceProperty.Format != RFormatType::FORMAT_UNKNOWN))
 		{
-			const UINT ByteCodeStride = ReadResourceProperty.Width * ReadResourceProperty.PixelByteCount;
-			const UINT ByteCodeSize = ByteCodeStride * ReadResourceProperty.Height;
+			const UINT32 ByteCodeStride = ReadResourceProperty.Width * ReadResourceProperty.PixelByteCount;
+			const UINT32 ByteCodeSize = ByteCodeStride * ReadResourceProperty.Height;
 			BYTE* ReadByteCode = new BYTE[ByteCodeSize];
 			::memcpy_s(ReadByteCode, ByteCodeSize, TempPtr, RstSize);
 			if (InSRGBOverride)
@@ -637,7 +637,7 @@ namespace PigeonEngine
 		delete[]ReadFileMem;
 		return OutTextureAsset;
 	}
-	BOOL ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource)
+	BOOL32 ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
@@ -655,9 +655,9 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		const UINT ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
-		const UINT ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height;
-		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL) + ByteCodeSize;	// EAssetType + TextureType + ETextureResourceProperty + SRGB + ByteCodeSize
+		const UINT32 ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
+		const UINT32 ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height;
+		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL32) + ByteCodeSize;	// EAssetType + TextureType + ETextureResourceProperty + SRGB + ByteCodeSize
 		void* SavedMem = new BYTE[NeedSavedSize];
 		void* TempPtr = SavedMem;
 		{
@@ -671,7 +671,7 @@ namespace PigeonEngine
 			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
 		}
 		{
-			BOOL* SavedAssetTypePtr = (BOOL*)TempPtr;
+			BOOL32* SavedAssetTypePtr = (BOOL32*)TempPtr;
 			SavedAssetTypePtr[0] = InTextureResource->SRGB;
 			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
 		}
@@ -682,7 +682,7 @@ namespace PigeonEngine
 		}
 		::memcpy_s(TempPtr, ByteCodeSize, InTextureResource->ByteCode, ByteCodeSize);
 
-		BOOL Result = EFileHelper::SaveBytesToFile(TempFullPathName, SavedMem, NeedSavedSize);
+		BOOL32 Result = EFileHelper::SaveBytesToFile(TempFullPathName, SavedMem, NeedSavedSize);
 
 		delete[]SavedMem;
 		return Result;

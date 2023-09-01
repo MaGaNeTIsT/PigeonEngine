@@ -5,7 +5,7 @@
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../Headers/CScene.h"
 
-CGameObjectBase::CGameObjectBase(const BOOL& active, const CScene* scene)
+CGameObjectBase::CGameObjectBase(const BOOL32& active, const CScene* scene)
 {
 	this->m_Active = active;
 	this->m_Scene = scene;
@@ -15,11 +15,11 @@ CGameObjectBase::~CGameObjectBase()
 {
 
 }
-BOOL CGameObjectBase::HasScene()const
+BOOL32 CGameObjectBase::HasScene()const
 {
 	return (this->m_Scene != nullptr);
 }
-BOOL CGameObjectBase::IsBelongScene(const CScene* scene)const
+BOOL32 CGameObjectBase::IsBelongScene(const CScene* scene)const
 {
 	return (this->m_Scene->GetUniqueID() == scene->GetUniqueID());
 }
@@ -27,7 +27,7 @@ const CScene* CGameObjectBase::GetScene()const
 {
 	return (this->m_Scene);
 }
-const BOOL& CGameObjectBase::IsActive()const
+const BOOL32& CGameObjectBase::IsActive()const
 {
 	return (this->m_Active);
 }
@@ -53,7 +53,7 @@ void CGameObjectBase::SetName(const std::string& name)
 
 
 
-CGameObjectTransformBase::CGameObjectTransformBase(const BOOL& active, const CScene* scene) : CGameObjectBase(active, scene)
+CGameObjectTransformBase::CGameObjectTransformBase(const BOOL32& active, const CScene* scene) : CGameObjectBase(active, scene)
 {
 	this->m_Transform = nullptr;
 	this->AddNewTransform();
@@ -200,11 +200,11 @@ void CGameObjectTransformBase::SetLocalScale(const CustomType::Vector3& localSca
 		this->m_Transform->SetLocalScale(localScale);
 	}
 }
-BOOL CGameObjectTransformBase::HasTransform()const
+BOOL32 CGameObjectTransformBase::HasTransform()const
 {
 	return (this->m_Transform != nullptr);
 }
-BOOL CGameObjectTransformBase::IsBelongTransform(const ULONGLONG& transformID)const
+BOOL32 CGameObjectTransformBase::IsBelongTransform(const ULONGLONG& transformID)const
 {
 	return (this->m_Transform->GetUniqueID() == transformID);
 }
@@ -261,7 +261,7 @@ void CGameObjectTransformBase::RemoveTransform()
 		this->DisconnectGameObjectAndTransform(this, this->m_Transform);
 	}
 }
-void CGameObjectTransformBase::BaseRemoveTransform(const BOOL& bDeleteTransform)
+void CGameObjectTransformBase::BaseRemoveTransform(const BOOL32& bDeleteTransform)
 {
 	if (this->HasTransform())
 	{
@@ -312,7 +312,7 @@ void CGameObjectTransformBase::DisconnectGameObjectAndTransform(CGameObjectTrans
 		gameObject->BaseRemoveTransform(TRUE);
 	}
 }
-BOOL CGameObjectTransformBase::HasParent()const
+BOOL32 CGameObjectTransformBase::HasParent()const
 {
 	if (this->HasTransform())
 	{
@@ -320,7 +320,7 @@ BOOL CGameObjectTransformBase::HasParent()const
 	}
 	return FALSE;
 }
-BOOL CGameObjectTransformBase::HasChild()const
+BOOL32 CGameObjectTransformBase::HasChild()const
 {
 	if (this->HasTransform())
 	{
@@ -328,7 +328,7 @@ BOOL CGameObjectTransformBase::HasChild()const
 	}
 	return FALSE;
 }
-BOOL CGameObjectTransformBase::IsParent(const ULONGLONG& parentID)const
+BOOL32 CGameObjectTransformBase::IsParent(const ULONGLONG& parentID)const
 {
 	if (this->HasTransform())
 	{
@@ -336,7 +336,7 @@ BOOL CGameObjectTransformBase::IsParent(const ULONGLONG& parentID)const
 	}
 	return FALSE;
 }
-BOOL CGameObjectTransformBase::IsChild(const ULONGLONG& childID)const
+BOOL32 CGameObjectTransformBase::IsChild(const ULONGLONG& childID)const
 {
 	if (this->HasTransform())
 	{
@@ -428,7 +428,7 @@ CGameObjectTransformBase* CGameObjectTransformBase::GetChildByTransformID(const 
 
 
 
-CGameObject::CGameObject(const BOOL& active, const CScene* scene) : CGameObjectTransformBase(active, scene)
+CGameObject::CGameObject(const BOOL32& active, const CScene* scene) : CGameObjectTransformBase(active, scene)
 {
 	this->m_RenderBoundingBox			= nullptr;
 	this->m_RenderBoundingSphere		= nullptr;
@@ -453,11 +453,11 @@ CGameObject::~CGameObject()
 		this->RemoveComponents();
 	}
 }
-BOOL CGameObject::HasRenderBoundingBox()const
+BOOL32 CGameObject::HasRenderBoundingBox()const
 {
 	return (this->m_RenderBoundingBox != nullptr);
 }
-BOOL CGameObject::HasRenderBoundingSphere()const
+BOOL32 CGameObject::HasRenderBoundingSphere()const
 {
 	return (this->m_RenderBoundingSphere != nullptr);
 }
@@ -533,9 +533,9 @@ void CGameObject::GetRenderWorldAABBBoundingBox(CustomType::Vector3& boundingMin
 	{
 		FLOAT minPoint[3] = { points[0], points[1], points[2] };
 		FLOAT maxPoint[3] = { points[0], points[1], points[2] };
-		for (INT i = 1; i < 8; i++)
+		for (INT32 i = 1; i < 8; i++)
 		{
-			for (INT d = 0; d < 3; d++)
+			for (INT32 d = 0; d < 3; d++)
 			{
 				minPoint[d] = CustomType::CMath::Min(points[i * 3 + d], minPoint[d]);
 				maxPoint[d] = CustomType::CMath::Max(points[i * 3 + d], maxPoint[d]);
@@ -771,7 +771,7 @@ CBaseComponent* CGameObject::BaseGetComponentByComponentID(const ULONGLONG& id)c
 	}
 	return NULL;
 }
-BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)const
+BOOL32 CGameObject::IsBelongComponent(const CBaseComponent* component)const
 {
 	if (component != NULL && this->HasComponent())
 	{
@@ -783,7 +783,7 @@ BOOL CGameObject::IsBelongComponent(const CBaseComponent* component)const
 	}
 	return FALSE;
 }
-BOOL CGameObject::IsBelongComponent(const ULONGLONG& componentID)const
+BOOL32 CGameObject::IsBelongComponent(const ULONGLONG& componentID)const
 {
 	if (this->HasComponent())
 	{
@@ -795,23 +795,23 @@ BOOL CGameObject::IsBelongComponent(const ULONGLONG& componentID)const
 	}
 	return FALSE;
 }
-BOOL CGameObject::HasComponent()const
+BOOL32 CGameObject::HasComponent()const
 {
 	return (this->m_Components.size() > 0);
 }
-BOOL CGameObject::HasMeshComponent()const
+BOOL32 CGameObject::HasMeshComponent()const
 {
 	return (this->m_MeshComponentID > 0u);
 }
-BOOL CGameObject::HasMeshRendererComponent()const
+BOOL32 CGameObject::HasMeshRendererComponent()const
 {
 	return (this->m_MeshRendererComponentID > 0u);
 }
-BOOL CGameObject::HasGameBoundComponent()const
+BOOL32 CGameObject::HasGameBoundComponent()const
 {
 	return (this->m_GameBoundComponentID > 0u);
 }
-BOOL CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const
+BOOL32 CGameObject::FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const
 {
 	if (this->HasComponent())
 	{

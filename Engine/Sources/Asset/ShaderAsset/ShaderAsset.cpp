@@ -31,7 +31,7 @@ namespace PigeonEngine
 		, const EString& InDebugName
 #endif
 		, const RInputLayoutDesc* InInputLayouts
-		, const UINT& InInputLayoutNum)
+		, const UINT32& InInputLayoutNum)
 		: TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
 			, InDebugName
@@ -41,7 +41,7 @@ namespace PigeonEngine
 		if (InInputLayouts && InInputLayoutNum > 0u)
 		{
 			ShaderInputLayouts = new RInputLayoutDesc[InInputLayoutNum];
-			for (UINT i = 0u; i < InInputLayoutNum; i++)
+			for (UINT32 i = 0u; i < InInputLayoutNum; i++)
 			{
 				ShaderInputLayouts[i] = InInputLayouts[i];
 			}
@@ -56,7 +56,7 @@ namespace PigeonEngine
 			ShaderInputLayouts = nullptr;
 		}
 	}
-	BOOL EVertexShaderAsset::InitResource()
+	BOOL32 EVertexShaderAsset::InitResource()
 	{
 		if (!ShaderInputLayouts || ShaderInputLayoutNum == 0u)
 		{
@@ -120,7 +120,7 @@ namespace PigeonEngine
 	EPixelShaderAsset::~EPixelShaderAsset()
 	{
 	}
-	BOOL EPixelShaderAsset::InitResource()
+	BOOL32 EPixelShaderAsset::InitResource()
 	{
 		if (IsInitialized())
 		{
@@ -174,7 +174,7 @@ namespace PigeonEngine
 	EComputeShaderAsset::~EComputeShaderAsset()
 	{
 	}
-	BOOL EComputeShaderAsset::InitResource()
+	BOOL32 EComputeShaderAsset::InitResource()
 	{
 		if (IsInitialized())
 		{
@@ -232,7 +232,7 @@ namespace PigeonEngine
 		ClearComputeShaders();
 	}
 #if _EDITOR_ONLY
-	BOOL EShaderAssetManager::ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts, const UINT* InShaderInputLayoutNum)
+	BOOL32 EShaderAssetManager::ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
 	{
 		if ((!InShaderInputLayouts) || (!InShaderInputLayoutNum) || ((*InShaderInputLayoutNum) < 1u))
 		{
@@ -285,13 +285,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		BOOL Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, InShaderInputLayouts, InShaderInputLayoutNum);
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, InShaderInputLayouts, InShaderInputLayoutNum);
 
 		OutResource->ReleaseResource();
 		delete OutResource;
 		return Result;
 	}
-	BOOL EShaderAssetManager::ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EShaderAssetManager::ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullSavePathName(InSavePath);
 		TempFullSavePathName = TempFullSavePathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
@@ -339,13 +339,13 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		BOOL Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_PIXEL);
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_PIXEL);
 
 		OutResource->ReleaseResource();
 		delete OutResource;
 		return Result;
 	}
-	BOOL EShaderAssetManager::ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EShaderAssetManager::ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullSavePathName(InSavePath);
 		TempFullSavePathName = TempFullSavePathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
@@ -393,14 +393,14 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		BOOL Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE);
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE);
 
 		OutResource->ReleaseResource();
 		delete OutResource;
 		return Result;
 	}
 #endif
-	BOOL EShaderAssetManager::LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset)
+	BOOL32 EShaderAssetManager::LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
 		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -434,7 +434,7 @@ namespace PigeonEngine
 		OutShaderAsset = ResultShaderAsset;
 		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset)
+	BOOL32 EShaderAssetManager::LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
 		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -468,7 +468,7 @@ namespace PigeonEngine
 		OutShaderAsset = ResultShaderAsset;
 		return TRUE;
 	}
-	BOOL EShaderAssetManager::LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset)
+	BOOL32 EShaderAssetManager::LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
 		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -555,7 +555,7 @@ namespace PigeonEngine
 		ULONG RstSize = ReadFileSize;
 		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
 		RShaderFrequencyType ReadShaderFrequencyType = RShaderFrequencyType::SHADER_FREQUENCY_COUNT;
-		UINT ReadInputLayoutNum = 0u;
+		UINT32 ReadInputLayoutNum = 0u;
 		{
 			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
 			ReadAssetType = static_cast<EAssetType>(SavedAssetTypePtr[0]);
@@ -584,7 +584,7 @@ namespace PigeonEngine
 			if (ReadInputLayoutNum > 0u)
 			{
 				TempInputLayouts.Resize(ReadInputLayoutNum);
-				for (UINT LayoutIndex = 0u; LayoutIndex < ReadInputLayoutNum; LayoutIndex++)
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < ReadInputLayoutNum; LayoutIndex++)
 				{
 					RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
 					TempInputLayouts[LayoutIndex] = SavedAssetTypePtr[0];
@@ -636,7 +636,7 @@ namespace PigeonEngine
 		delete[]ReadFileMem;
 		return OutShaderAsset;
 	}
-	BOOL EShaderAssetManager::SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts, const UINT* InShaderInputLayoutNum)
+	BOOL32 EShaderAssetManager::SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
 	{
 		EString TempFullSavePathName(InSavePath);
 		TempFullSavePathName = TempFullSavePathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
@@ -713,7 +713,7 @@ namespace PigeonEngine
 			}
 			if (ShaderInputLayoutNum > 0u)
 			{
-				const UINT ShaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
+				const UINT32 ShaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
 				::memcpy_s(TempPtr, RstSize, InShaderInputLayouts, ShaderInputLayoutDescSize);
 				RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
 				TempPtr = (void*)(&(SavedAssetTypePtr[ShaderInputLayoutNum]));
@@ -741,7 +741,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 	template<class TShaderAssetType>
-	BOOL EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset)
+	BOOL32 EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset)
 	{
 		EString TempFullSavePathName(InSavePath);
 		TempFullSavePathName = TempFullSavePathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
@@ -772,7 +772,7 @@ namespace PigeonEngine
 		}
 		RShaderFrequencyType SaveShaderFrequency = InShaderAsset->GetShaderFrequency();
 		const RInputLayoutDesc* SaveShaderInputLayouts = nullptr;
-		UINT SaveShaderInputLayoutNum = 0u;
+		UINT32 SaveShaderInputLayoutNum = 0u;
 		if (SaveShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
 		{
 			const EVertexShaderAsset* TempVertexShaderAsset = InShaderAsset->AsType<EVertexShaderAsset>();

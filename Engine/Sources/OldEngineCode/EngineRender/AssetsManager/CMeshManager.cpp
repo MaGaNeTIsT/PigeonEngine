@@ -23,13 +23,13 @@ void CMeshManager::ClearMeshData()
 		m_MeshManager->m_Data.clear();
 	}
 }
-const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& path, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadDefaultMeshAsset(const std::string& path, const BOOL32& needVertexData)
 {
-	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT32 inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(path + descName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(path + descName);
 		if (findResult != NULL)
 		{
 			return findResult;
@@ -37,7 +37,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 	}
 
 	{
-		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetDefaultMesh(path, needVertexData);
+		CBaseMesh<UINT32>* resultMesh = CMeshManager::ImportAssetDefaultMesh(path, needVertexData);
 		if (resultMesh == NULL)
 		{
 			return NULL;
@@ -46,14 +46,14 @@ const CBaseMesh<UINT>* CMeshManager::LoadDefaultMeshAsset(const std::string& pat
 		return resultMesh;
 	}
 }
-const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadSkeletonMeshAsset(const std::string& path, BOOL32& isOutputSkeleton, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL32& needVertexData)
 {
 	isOutputSkeleton = FALSE;
-	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT32 inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(path + descName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(path + descName);
 		if (findResult != NULL)
 		{
 			return findResult;
@@ -61,7 +61,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& pa
 	}
 
 	{
-		CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneIndexMap, boneList, needVertexData);
+		CBaseMesh<UINT32>* resultMesh = CMeshManager::ImportAssetSkeletonMesh(path, skeleton, boneIndexMap, boneList, needVertexData);
 		if (resultMesh == NULL)
 		{
 			return NULL;
@@ -71,7 +71,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadSkeletonMeshAsset(const std::string& pa
 		return resultMesh;
 	}
 }
-const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType baseType, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	if (baseType == CEngineBaseModelType::ENGINE_BASE_NONE || baseType == CEngineBaseModelType::ENGINE_BASE_COUNT)
 	{
@@ -91,14 +91,14 @@ const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType ba
 	std::string baseName = baseModelMap[baseType];
 	std::string tempName = baseName + CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(tempName);
 		if (findResult != NULL)
 		{
 			return findResult;
 		}
 	}
-	//CBaseMesh<UINT>* resultMesh = CMeshManager::LoadOBJMesh(baseName, inputLayoutDesc, inputLayoutNum, needVertexData);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::ImportAssetDefaultMesh(baseName, needVertexData);
+	//CBaseMesh<UINT32>* resultMesh = CMeshManager::LoadOBJMesh(baseName, inputLayoutDesc, inputLayoutNum, needVertexData);
+	CBaseMesh<UINT32>* resultMesh = CMeshManager::ImportAssetDefaultMesh(baseName, needVertexData);
 	if (resultMesh == NULL)
 	{
 		return NULL;
@@ -106,11 +106,11 @@ const CBaseMesh<UINT>* CMeshManager::LoadEngineBaseModel(CEngineBaseModelType ba
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
-const CBaseMesh<UINT>* CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadMeshFromFile(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	std::string descName = CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(name + descName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(name + descName);
 		if (findResult != NULL)
 		{
 			return findResult;
@@ -120,7 +120,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadMeshFromFile(const std::string& name, c
 	{
 		const static std::string _objName = "obj";
 
-		CBaseMesh<UINT>* resultMesh = NULL;
+		CBaseMesh<UINT32>* resultMesh = NULL;
 		size_t pos = name.find_last_of('.');
 		if (pos == std::string::npos)
 		{
@@ -145,7 +145,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadMeshFromFile(const std::string& name, c
 		return resultMesh;
 	}
 }
-const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	if (inputLayoutNum < 1u || inputLayoutDesc == NULL)
 	{
@@ -169,18 +169,18 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 		"_v_" + std::to_string(uv.Y());
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(tempName);
 		if (findResult != NULL)
 		{
 			return findResult;
 		}
 	}
 	void* vertices = nullptr;
-	UINT vertexNum = 0u;
+	UINT32 vertexNum = 0u;
 	{
-		vertexNum = static_cast<UINT>(vertexCount.X() * vertexCount.Y());
-		UINT vertexStride = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		vertexNum = static_cast<UINT32>(vertexCount.X() * vertexCount.Y());
+		UINT32 vertexStride = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
 		}
@@ -204,9 +204,9 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 		FLOAT* position = new FLOAT[4u * vertexNum];
 		FLOAT* texcoord = new FLOAT[2u * vertexNum];
 		FLOAT tx = 0.f, tz = 0.f, px = 0.f, pz = 0.f, u = 0.f, v = 0.f;
-		for (INT z = 0; z < vertexCount.Y(); z++)
+		for (INT32 z = 0; z < vertexCount.Y(); z++)
 		{
-			for (INT x = 0; x < vertexCount.X(); x++)
+			for (INT32 x = 0; x < vertexCount.X(); x++)
 			{
 				tx = static_cast<FLOAT>(x) / static_cast<FLOAT>(vertexCount.X() - 1);
 				px = CustomType::CMath::Lerp(length.X() * (-0.5f), length.X() * 0.5f, tx);
@@ -224,10 +224,10 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 				texcoord[(z * vertexCount.X() + x) * 2 + 1] = v;
 			}
 		}
-		for (UINT vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
+		for (UINT32 vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
 		{
 			CHAR* tempVertex = &((static_cast<CHAR*>(vertices))[vertexIndex * vertexStride]);
-			for (UINT layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
+			for (UINT32 layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
 			{
 				if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
 				{
@@ -277,12 +277,12 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 		delete[]position;
 		delete[]texcoord;
 	}
-	std::vector<UINT> index;
+	std::vector<UINT32> index;
 	{
 		index.resize((vertexCount.X() - 1) * (vertexCount.Y() - 1) * 6);
-		for (INT z = 0; z < (vertexCount.Y() - 1); z++)
+		for (INT32 z = 0; z < (vertexCount.Y() - 1); z++)
 		{
-			for (INT x = 0; x < (vertexCount.X() - 1); x++)
+			for (INT32 x = 0; x < (vertexCount.X() - 1); x++)
 			{
 				index[(z * (vertexCount.X() - 1) + x) * 6 + 0] = (z + 0) * vertexCount.X() + (x + 0);
 				index[(z * (vertexCount.X() - 1) + x) * 6 + 1] = (z + 0) * vertexCount.X() + (x + 1);
@@ -295,23 +295,23 @@ const CBaseMesh<UINT>* CMeshManager::LoadPlaneMesh(const CustomType::Vector2& le
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
+	CBaseMesh<UINT32>* resultMesh = CMeshManager::CreateMeshObject<UINT32>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
-const CBaseMesh<UINT>* CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadPolygonMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_NAME;
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(tempName);
 		if (findResult != NULL)
 		{
 			return findResult;
 		}
 	}
 	void* vertices = nullptr;
-	UINT vertexNum = 4u;
+	UINT32 vertexNum = 4u;
 	{
 		//
 		//          Y
@@ -338,8 +338,8 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygonMesh(const CustomStruct::CRender
 			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f,
 			1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f };
 		const static FLOAT texcoord[4u * 2u] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
-		UINT vertexStride = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		UINT32 vertexStride = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
 		}
@@ -347,18 +347,18 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygonMesh(const CustomStruct::CRender
 		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
 			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
-	std::vector<UINT> index;
+	std::vector<UINT32> index;
 	{
 		index.resize(6);
 		index[0] = 0; index[1] = 1; index[2] = 2;
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
+	CBaseMesh<UINT32>* resultMesh = CMeshManager::CreateMeshObject<UINT32>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
-const CBaseMesh<UINT>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int& customSize, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_POLYGON_2D_NAME;
 	tempName = tempName +
@@ -368,14 +368,14 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int&
 		"_w_" + std::to_string(customSize.W());
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(tempName);
 		if (findResult != NULL)
 		{
 			return findResult;
 		}
 	}
 	void* vertices = nullptr;
-	UINT vertexNum = 4u;
+	UINT32 vertexNum = 4u;
 	{
 		//
 		//  (x, y)
@@ -403,8 +403,8 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int&
 			static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.Y()), 0.f, 1.f,
 			static_cast<FLOAT>(customSize.X()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f,
 			static_cast<FLOAT>(customSize.Z()), static_cast<FLOAT>(customSize.W()), 0.f, 1.f };
-		UINT vertexStride = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		UINT32 vertexStride = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
 		}
@@ -412,30 +412,30 @@ const CBaseMesh<UINT>* CMeshManager::LoadPolygon2D(const CustomType::Vector4Int&
 		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
 			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
-	std::vector<UINT> index;
+	std::vector<UINT32> index;
 	{
 		index.resize(6);
 		index[0] = 0; index[1] = 1; index[2] = 2;
 		index[3] = 1; index[4] = 3; index[5] = 2;
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
+	CBaseMesh<UINT32>* resultMesh = CMeshManager::CreateMeshObject<UINT32>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
-const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+const CBaseMesh<UINT32>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	std::string tempName = ENGINE_MESH_CUBE_NAME;
 	tempName += CMeshManager::TranslateInputLayoutDesc(inputLayoutDesc, inputLayoutNum);
 	{
-		const CBaseMesh<UINT>* findResult = CMeshManager::FindMeshData(tempName);
+		const CBaseMesh<UINT32>* findResult = CMeshManager::FindMeshData(tempName);
 		if (findResult != NULL)
 		{
 			return findResult;
 		}
 	}
 	void* vertices = nullptr;
-	UINT vertexNum = 24u;
+	UINT32 vertexNum = 24u;
 	{
 		//
 		// Back->Right->Forward->Left->Top->Bottom
@@ -509,8 +509,8 @@ const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInp
 			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
 			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f,
 			0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f };
-		UINT vertexStride = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		UINT32 vertexStride = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			vertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
 		}
@@ -518,10 +518,10 @@ const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInp
 		CMeshManager::CombineForVertexData(vertices, vertexNum, vertexStride, inputLayoutDesc,
 			inputLayoutNum, position, normal, tangent, texcoord, NULL);
 	}
-	std::vector<UINT> index;
+	std::vector<UINT32> index;
 	{
 		index.resize(36);
-		for (UINT i = 0u; i < 6u; i++)
+		for (UINT32 i = 0u; i < 6u; i++)
 		{
 			index[i * 6u + 0u] = i * 4u + 0u;
 			index[i * 6u + 1u] = i * 4u + 1u;
@@ -533,7 +533,7 @@ const CBaseMesh<UINT>* CMeshManager::LoadCubeMesh(const CustomStruct::CRenderInp
 		}
 	}
 	std::vector<CustomStruct::CSubMeshInfo> submesh(0);
-	CBaseMesh<UINT>* resultMesh = CMeshManager::CreateMeshObject<UINT>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
+	CBaseMesh<UINT32>* resultMesh = CMeshManager::CreateMeshObject<UINT32>(tempName, inputLayoutDesc, inputLayoutNum, vertices, vertexNum, index, submesh, needVertexData);
 	CMeshManager::AddMeshData(tempName, resultMesh);
 	return resultMesh;
 }
@@ -559,13 +559,13 @@ CustomType::Vector3 CMeshManager::CalculateTangentForTriangle(const CustomType::
 		st2.Y() * q1.Y() + (-st1.Y()) * q2.Y(),
 		st2.Y() * q1.Z() + (-st1.Y()) * q2.Z()) * scale);
 }
-void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum)
+void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomType::Vector3& boundMax, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, void* vertexData, const UINT32& vertexNum)
 {
-	BOOL havePosition = FALSE;
-	UINT vertexStride = 0u;
-	UINT offsetPosition = 0u;
+	BOOL32 havePosition = FALSE;
+	UINT32 vertexStride = 0u;
+	UINT32 offsetPosition = 0u;
 
-	for (UINT i = 0u; i < inputLayoutNum; i++)
+	for (UINT32 i = 0u; i < inputLayoutNum; i++)
 	{
 		if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
 		{
@@ -577,7 +577,7 @@ void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomTyp
 
 	if (havePosition)
 	{
-		FLOAT minmax[6] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX, -ENGINE_FLOAT32_MAX };
+		FLOAT minmax[6] = { PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX };
 		auto compareMinMax = [&](const FLOAT* input) {
 			minmax[0 * 3 + 0] = CustomType::CMath::Min(input[0u], minmax[0 * 3 + 0]);
 			minmax[0 * 3 + 1] = CustomType::CMath::Min(input[1u], minmax[0 * 3 + 1]);
@@ -585,7 +585,7 @@ void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomTyp
 			minmax[1 * 3 + 0] = CustomType::CMath::Max(input[0u], minmax[1 * 3 + 0]);
 			minmax[1 * 3 + 1] = CustomType::CMath::Max(input[1u], minmax[1 * 3 + 1]);
 			minmax[1 * 3 + 2] = CustomType::CMath::Max(input[2u], minmax[1 * 3 + 2]); };
-		for (UINT i = 0u; i < vertexNum; i++)
+		for (UINT32 i = 0u; i < vertexNum; i++)
 		{
 			const CHAR* tempVertex = &(((const CHAR*)(vertexData))[i * vertexStride]);
 			const FLOAT* tempPosition = (const FLOAT*)(&(tempVertex[offsetPosition]));
@@ -601,9 +601,9 @@ void CMeshManager::CalculateBoundMinMax(CustomType::Vector3& boundMin, CustomTyp
 	}
 }
 template<typename IndexType>
-void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubMeshInfo>& submesh, const std::vector<IndexType>& indices, void* vertices, const UINT& vertexNum, const UINT& vertexStride, const UINT& offsetPosition, const UINT& offsetTexcoord, const UINT& offsetTangent)
+void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubMeshInfo>& submesh, const std::vector<IndexType>& indices, void* vertices, const UINT32& vertexNum, const UINT32& vertexStride, const UINT32& offsetPosition, const UINT32& offsetTexcoord, const UINT32& offsetTangent)
 {
-	for (UINT i = 0u; i < vertexNum; i++)
+	for (UINT32 i = 0u; i < vertexNum; i++)
 	{
 		CHAR* tempVertex = (&(((CHAR*)vertices)[i * vertexStride]));
 		FLOAT* tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
@@ -617,18 +617,18 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 		CustomType::Vector3 p[3u];
 		CustomType::Vector2 uv[3u];
 		CustomType::Vector3 newT, tempT;
-		UINT triangleNum, triangleIndex, vertexIndex;
+		UINT32 triangleNum, triangleIndex, vertexIndex;
 		CHAR* tempVertex; FLOAT* tempPosition; FLOAT* tempTexcoord; FLOAT* tempTangent;
-		for (UINT subIndex = 0u; subIndex < submesh.size(); subIndex++)
+		for (UINT32 subIndex = 0u; subIndex < submesh.size(); subIndex++)
 		{
 			const CustomStruct::CSubMeshInfo& subInfo = submesh[subIndex];
 			triangleNum = subInfo.IndexCount / 3u;
-			for (UINT i = 0u; i < triangleNum; i++)
+			for (UINT32 i = 0u; i < triangleNum; i++)
 			{
-				for (UINT j = 0u; j < 3u; j++)
+				for (UINT32 j = 0u; j < 3u; j++)
 				{
 					triangleIndex = subInfo.IndexStart + i * 3u + j;
-					vertexIndex = subInfo.VertexStart + static_cast<UINT>(indices[triangleIndex]);
+					vertexIndex = subInfo.VertexStart + static_cast<UINT32>(indices[triangleIndex]);
 					tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
 					tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
 					tempTexcoord = (FLOAT*)(&(tempVertex[offsetTexcoord]));
@@ -636,10 +636,10 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 					uv[j] = CustomType::Vector2(tempTexcoord[0u], tempTexcoord[1u]);
 				}
 				newT = CMeshManager::CalculateTangentForTriangle(p[0u], p[1u], p[2u], uv[0u], uv[1u], uv[2u]);
-				for (UINT j = 0u; j < 3u; j++)
+				for (UINT32 j = 0u; j < 3u; j++)
 				{
 					triangleIndex = subInfo.IndexStart + i * 3u + j;
-					vertexIndex = subInfo.VertexStart + static_cast<UINT>(indices[triangleIndex]);
+					vertexIndex = subInfo.VertexStart + static_cast<UINT32>(indices[triangleIndex]);
 					tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
 					tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
 					tempT = CustomType::Vector3(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
@@ -657,15 +657,15 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 		CustomType::Vector3 p[3u];
 		CustomType::Vector2 uv[3u];
 		CustomType::Vector3 newT, tempT;
-		UINT triangleIndex, vertexIndex;
+		UINT32 triangleIndex, vertexIndex;
 		CHAR* tempVertex; FLOAT* tempPosition; FLOAT* tempTexcoord; FLOAT* tempTangent;
-		UINT triangleNum = static_cast<UINT>(indices.size()) / 3u;
-		for (UINT i = 0u; i < triangleNum; i++)
+		UINT32 triangleNum = static_cast<UINT32>(indices.size()) / 3u;
+		for (UINT32 i = 0u; i < triangleNum; i++)
 		{
-			for (UINT j = 0u; j < 3u; j++)
+			for (UINT32 j = 0u; j < 3u; j++)
 			{
 				triangleIndex = i * 3u + j;
-				vertexIndex = static_cast<UINT>(indices[triangleIndex]);
+				vertexIndex = static_cast<UINT32>(indices[triangleIndex]);
 				tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
 				tempPosition = (FLOAT*)(&(tempVertex[offsetPosition]));
 				tempTexcoord = (FLOAT*)(&(tempVertex[offsetTexcoord]));
@@ -673,10 +673,10 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 				uv[j] = CustomType::Vector2(tempTexcoord[0u], tempTexcoord[1u]);
 			}
 			newT = CMeshManager::CalculateTangentForTriangle(p[0u], p[1u], p[2u], uv[0u], uv[1u], uv[2u]);
-			for (UINT j = 0u; j < 3u; j++)
+			for (UINT32 j = 0u; j < 3u; j++)
 			{
 				triangleIndex = i * 3u + j;
-				vertexIndex = static_cast<UINT>(indices[triangleIndex]);
+				vertexIndex = static_cast<UINT32>(indices[triangleIndex]);
 				tempVertex = (&(((CHAR*)vertices)[vertexIndex * vertexStride]));
 				tempTangent = (FLOAT*)(&(tempVertex[offsetTangent]));
 				tempT = CustomType::Vector3(tempTangent[0u], tempTangent[1u], tempTangent[2u]);
@@ -690,20 +690,20 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 	}
 
 	{
-		auto swapValue = [](std::vector<UINT>& pool, const UINT& index0, const UINT& index1) {
-			UINT tempV = pool[index0];
+		auto swapValue = [](std::vector<UINT32>& pool, const UINT32& index0, const UINT32& index1) {
+			UINT32 tempV = pool[index0];
 			pool[index0] = pool[index1];
 			pool[index1] = tempV; };
-		std::vector<UINT> tempVertexPool;
-		UINT tempVertexPoolNum = vertexNum;
+		std::vector<UINT32> tempVertexPool;
+		UINT32 tempVertexPoolNum = vertexNum;
 		tempVertexPool.resize(vertexNum);
-		for (UINT i = 0u; i < vertexNum; i++)
+		for (UINT32 i = 0u; i < vertexNum; i++)
 		{
 			tempVertexPool[i] = i;
 		}
 		while (tempVertexPoolNum > 0)
 		{
-			UINT tempCurrentIndex = tempVertexPool[0];
+			UINT32 tempCurrentIndex = tempVertexPool[0];
 
 			CHAR* tempCurrentVertex = (&(((CHAR*)vertices)[tempCurrentIndex * vertexStride]));
 			FLOAT* tempCurrentPosition = (FLOAT*)(&(tempCurrentVertex[offsetPosition]));
@@ -711,8 +711,8 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 			FLOAT* tempCurrentTangent = (FLOAT*)(&(tempCurrentVertex[offsetTangent]));
 			CustomType::Vector3 totalTangent(tempCurrentTangent[0], tempCurrentTangent[1], tempCurrentTangent[2]);
 
-			std::vector<UINT> tempRemoveList;
-			for (UINT indexVertexPool = 1u; indexVertexPool < tempVertexPoolNum; indexVertexPool++)
+			std::vector<UINT32> tempRemoveList;
+			for (UINT32 indexVertexPool = 1u; indexVertexPool < tempVertexPoolNum; indexVertexPool++)
 			{
 				CHAR* tempPooledVertex = (&(((CHAR*)vertices)[(tempVertexPool[indexVertexPool]) * vertexStride]));
 				FLOAT* tempPooledPosition = (FLOAT*)(&(tempPooledVertex[offsetPosition]));
@@ -741,33 +741,33 @@ void CMeshManager::CalculateTangentForMesh(const std::vector<CustomStruct::CSubM
 			{
 				if (tempVertexPoolNum > 0)
 				{
-					UINT tempRemoveIndex = tempRemoveList[indexRemoveList];
-					UINT tempEndIndex = tempVertexPoolNum - 1;
+					UINT32 tempRemoveIndex = tempRemoveList[indexRemoveList];
+					UINT32 tempEndIndex = tempVertexPoolNum - 1;
 					swapValue(tempVertexPool, tempRemoveIndex, tempEndIndex);
 					tempVertexPoolNum = tempVertexPoolNum - 1;
 				}
 			}
 			if (tempVertexPoolNum > 0)
 			{
-				UINT tempRemoveIndex = 0;
-				UINT tempEndIndex = tempVertexPoolNum - 1;
+				UINT32 tempRemoveIndex = 0;
+				UINT32 tempEndIndex = tempVertexPoolNum - 1;
 				swapValue(tempVertexPool, tempRemoveIndex, tempEndIndex);
 				tempVertexPoolNum = tempVertexPoolNum - 1;
 			}
 		}
 	}
 }
-void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, const UINT& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color)
+void CMeshManager::CombineForVertexData(void* vertices, const UINT32& vertexNum, const UINT32& vertexStride, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const FLOAT* position, const FLOAT* normal, const FLOAT* tangent, const FLOAT* texcoord, const FLOAT* color)
 {
 	const static FLOAT defaultPosition[4] = { 0.f, 0.f, 0.f, 1.f };
 	const static FLOAT defaultTexcoord[2] = { 0.f, 0.f };
 	const static FLOAT defaultNormal[4] = { 0.f, 1.f, 0.f, 0.f };
 	const static FLOAT defaultTangent[4] = { 1.f, 0.f, 0.f, 0.f };
 	const static FLOAT defaultColor[4] = { 0.5f, 0.5f, 0.5f, 1.f };
-	for (UINT vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
+	for (UINT32 vertexIndex = 0u; vertexIndex < vertexNum; vertexIndex++)
 	{
 		CHAR* tempVertex = &((static_cast<CHAR*>(vertices))[vertexIndex * vertexStride]);
-		for (UINT layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
+		for (UINT32 layoutIndex = 0u; layoutIndex < inputLayoutNum; layoutIndex++)
 		{
 			if (inputLayoutDesc[layoutIndex].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
 			{
@@ -863,20 +863,20 @@ void CMeshManager::CombineForVertexData(void* vertices, const UINT& vertexNum, c
 		}
 	}
 }
-CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, const BOOL& needVertexData)
+CBaseMesh<UINT32>* CMeshManager::ImportOBJMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, const BOOL32& needVertexData)
 {
 	void* vertices = nullptr;
-	UINT verticesNum = 0u;
-	std::vector<UINT> index;
+	UINT32 verticesNum = 0u;
+	std::vector<UINT32> index;
 	std::vector<CustomStruct::CSubMeshInfo> submesh;
 	{
-		UINT	positionNum	= 0u;
-		UINT	normalNum	= 0u;
-		UINT	texcoordNum = 0u;
-		UINT	vertexNum	= 0u;
-		UINT	indexNum	= 0u;
-		UINT	in			= 0u;
-		UINT	subMeshNum	= 0u;
+		UINT32	positionNum	= 0u;
+		UINT32	normalNum	= 0u;
+		UINT32	texcoordNum = 0u;
+		UINT32	vertexNum	= 0u;
+		UINT32	indexNum	= 0u;
+		UINT32	in			= 0u;
+		UINT32	subMeshNum	= 0u;
 
 		CHAR	str[256];
 		CHAR*	s;
@@ -937,10 +937,10 @@ CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const Cust
 		std::vector<CustomType::Vector2> texcoordArray(texcoordNum);
 
 		verticesNum = vertexNum;
-		UINT vertexStride = 0u;
-		BOOL needPosition = FALSE, needTexcoord = FALSE, needNormal = FALSE, needTangent = FALSE, needColor = FALSE;
-		UINT offsetPosition = 0u, offsetTexcoord = 0u, offsetNormal = 0u, offsetTangent = 0u, offsetColor = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		UINT32 vertexStride = 0u;
+		BOOL32 needPosition = FALSE, needTexcoord = FALSE, needNormal = FALSE, needTangent = FALSE, needColor = FALSE;
+		UINT32 offsetPosition = 0u, offsetTexcoord = 0u, offsetNormal = 0u, offsetTangent = 0u, offsetColor = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			if (inputLayoutDesc[i].SemanticName == CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION)
 			{
@@ -973,13 +973,13 @@ CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const Cust
 		index.resize(indexNum);
 		submesh.resize(subMeshNum);
 
-		UINT indexPos		= 0u;
-		UINT indexNormal	= 0u;
-		UINT indexUV		= 0u;
+		UINT32 indexPos		= 0u;
+		UINT32 indexNormal	= 0u;
+		UINT32 indexUV		= 0u;
 
-		UINT vc	= 0u;
-		UINT ic = 0u;
-		UINT sc = 0u;
+		UINT32 vc	= 0u;
+		UINT32 ic = 0u;
+		UINT32 sc = 0u;
 
 		fseek(file, 0, SEEK_SET);
 
@@ -1128,40 +1128,40 @@ CBaseMesh<UINT>* CMeshManager::ImportOBJMesh(const std::string& name, const Cust
 
 		if (needTangent)
 		{
-			CMeshManager::CalculateTangentForMesh<UINT>(submesh, index, vertices, verticesNum, vertexStride, offsetPosition, offsetTexcoord, offsetTangent);
+			CMeshManager::CalculateTangentForMesh<UINT32>(submesh, index, vertices, verticesNum, vertexStride, offsetPosition, offsetTexcoord, offsetTangent);
 		}
 	}
-	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData));
+	return (CMeshManager::CreateMeshObject<UINT32>(name, inputLayoutDesc, inputLayoutNum, vertices, verticesNum, index, submesh, needVertexData));
 }
-CBaseMesh<UINT>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, const BOOL& needVertexData)
+CBaseMesh<UINT32>* CMeshManager::ImportAssetDefaultMesh(const std::string& name, const BOOL32& needVertexData)
 {
-	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
-	UINT numVertices, numIndices, vertexStride;
+	CHAR* vertices = nullptr; std::vector<UINT32> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+	UINT32 numVertices, numIndices, vertexStride;
 	if (CassimpManager::ReadDefaultMeshFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}
 
-	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT32 inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineDefaultMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 
-	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
+	return (CMeshManager::CreateMeshObject<UINT32>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }
-CBaseMesh<UINT>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL& needVertexData)
+CBaseMesh<UINT32>* CMeshManager::ImportAssetSkeletonMesh(const std::string& name, std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, std::map<std::string, SHORT>& boneIndexMap, std::vector<USHORT>& boneList, const BOOL32& needVertexData)
 {
-	CHAR* vertices = nullptr; std::vector<UINT> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
-	UINT numVertices, numIndices, vertexStride;
+	CHAR* vertices = nullptr; std::vector<UINT32> indices; std::vector<CustomStruct::CSubMeshInfo> subMesh;
+	UINT32 numVertices, numIndices, vertexStride;
 	if (CassimpManager::ReadSkeletonMeshAndBoneFile(name, subMesh, vertexStride, vertices, numVertices, indices, numIndices, skeleton, boneIndexMap, boneList) != CassimpManager::CassimpReadFileState::ASSIMP_READ_FILE_STATE_SUCCEED)
 	{
 		return NULL;
 	}
 
-	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT inputLayoutNum;
+	const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc; UINT32 inputLayoutNum;
 	CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(inputLayoutDesc, inputLayoutNum);
 
-	return (CMeshManager::CreateMeshObject<UINT>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
+	return (CMeshManager::CreateMeshObject<UINT32>(name, inputLayoutDesc, inputLayoutNum, (void*)(vertices), numVertices, indices, subMesh, needVertexData));
 }
-std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum)
+std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum)
 {
 	static std::map<CustomStruct::CRenderShaderSemantic, std::string> semanticStringMap = {
 		{ CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION, "Position" },
@@ -1177,7 +1177,7 @@ std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderIn
 
 	std::string result = "_";
 	result += std::to_string(inputLayoutNum);
-	for (UINT i = 0u; i < inputLayoutNum; i++)
+	for (UINT32 i = 0u; i < inputLayoutNum; i++)
 	{
 		result += "_";
 		result += semanticStringMap[inputLayoutDesc[i].SemanticName];
@@ -1185,19 +1185,19 @@ std::string CMeshManager::TranslateInputLayoutDesc(const CustomStruct::CRenderIn
 	return result;
 }
 template<typename IndexType>
-CBaseMesh<IndexType>* CMeshManager::CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vertexData, const UINT& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL& needVertexData)
+CBaseMesh<IndexType>* CMeshManager::CreateMeshObject(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, void* vertexData, const UINT32& vertexNum, std::vector<IndexType>& indexData, const std::vector<CustomStruct::CSubMeshInfo>& submeshData, const BOOL32& needVertexData)
 {
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer = nullptr;
 	{
-		UINT vertexSize = 0u;
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		UINT32 vertexSize = 0u;
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			vertexSize += inputLayoutDesc[i].GetSemanticSizeByByte();
 		}
 		if (!CRenderDevice::CreateBuffer(
 			vertexBuffer,
 			CustomStruct::CRenderBufferDesc(
-				static_cast<UINT>(vertexSize * vertexNum),
+				static_cast<UINT32>(vertexSize * vertexNum),
 				CustomStruct::CRenderBindFlag::BIND_VERTEX_BUFFER, 0u),
 			&CustomStruct::CRenderSubresourceData(vertexData, 0u, 0u)))
 		{
@@ -1209,7 +1209,7 @@ CBaseMesh<IndexType>* CMeshManager::CreateMeshObject(const std::string& name, co
 		if (!CRenderDevice::CreateBuffer(
 			indexBuffer,
 			CustomStruct::CRenderBufferDesc(
-				static_cast<UINT>(sizeof(IndexType) * indexData.size()),
+				static_cast<UINT32>(sizeof(IndexType) * indexData.size()),
 				CustomStruct::CRenderBindFlag::BIND_INDEX_BUFFER, 0u),
 			&CustomStruct::CRenderSubresourceData(static_cast<const void*>(indexData.data()), 0u, 0u)))
 		{
@@ -1230,11 +1230,11 @@ CBaseMesh<IndexType>* CMeshManager::CreateMeshObject(const std::string& name, co
 		return mesh;
 	}
 }
-void CMeshManager::AddMeshData(const std::string& name, CBaseMesh<UINT>* mesh)
+void CMeshManager::AddMeshData(const std::string& name, CBaseMesh<UINT32>* mesh)
 {
 	m_MeshManager->m_Data.insert_or_assign(name, mesh);
 }
-const CBaseMesh<UINT>* CMeshManager::FindMeshData(const std::string& name)
+const CBaseMesh<UINT32>* CMeshManager::FindMeshData(const std::string& name)
 {
 	if (m_MeshManager->m_Data.size() > 0)
 	{

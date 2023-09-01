@@ -25,7 +25,7 @@ namespace PigeonEngine
 	{
 		ETextureResourceProperty()noexcept : Width(0u), Height(0u), Depth(0u), PixelByteCount(0u), Format(RFormatType::FORMAT_UNKNOWN) {}
 		ETextureResourceProperty(const ETextureResourceProperty& Other)noexcept : Width(Other.Width), Height(Other.Height), Depth(Other.Depth), PixelByteCount(Other.PixelByteCount), Format(Other.Format) {}
-		ETextureResourceProperty(UINT InWidth, UINT InHeight, UINT InDepth, UINT InPixelByteCount, RFormatType InFormat)noexcept : Width(InWidth), Height(InHeight), Depth(InDepth), PixelByteCount(InPixelByteCount), Format(InFormat) {}
+		ETextureResourceProperty(UINT32 InWidth, UINT32 InHeight, UINT32 InDepth, UINT32 InPixelByteCount, RFormatType InFormat)noexcept : Width(InWidth), Height(InHeight), Depth(InDepth), PixelByteCount(InPixelByteCount), Format(InFormat) {}
 		ETextureResourceProperty& operator=(const ETextureResourceProperty& Other)
 		{
 			Width			= Other.Width;
@@ -36,27 +36,27 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		UINT			Width;
-		UINT			Height;
-		UINT			Depth;
-		UINT			PixelByteCount;
+		UINT32			Width;
+		UINT32			Height;
+		UINT32			Depth;
+		UINT32			PixelByteCount;
 		RFormatType		Format;
 	};
 
 	class ETexture2D : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		ETextureType	GetTextureType()const { return TextureType; }
-		void			SetData(BYTE* InByteCode, UINT InWidth, UINT InHeigh, UINT InPixelByteCount, RFormatType InFormat, BOOL InSRGB);
+		void			SetData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB);
 	protected:
 		ETextureType				TextureType;
 		BYTE*						ByteCode;
 		ETextureResourceProperty	ResourceProperties;
-		BOOL						SRGB;
+		BOOL32						SRGB;
 	public:
 		friend class ETexture2DAsset;
 		friend class ETextureAssetManager;
@@ -76,7 +76,7 @@ namespace PigeonEngine
 		);
 		virtual ~ETexture2DAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	protected:
 		RTexture2DResource*	CreateTextureResource(ETexture2D* InResource);
 	public:
@@ -95,14 +95,14 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
+		BOOL32	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
 	private:
 		void	ClearTexture2Ds();
 	private:
-		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL* InSRGBOverride = nullptr);
-		BOOL SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource);
+		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32* InSRGBOverride = nullptr);
+		BOOL32 SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource);
 	private:
 		ETexture2DAssetManager	Texture2DManager;
 

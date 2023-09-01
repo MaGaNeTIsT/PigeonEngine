@@ -27,7 +27,7 @@ public:
 public:
 	void			SetClearCoatStrength(const FLOAT& v);
 	void			SetClearCoatRoughness(const FLOAT& v);
-	virtual void	SetIsGlossyRoughness(const BOOL& v)override;
+	virtual void	SetIsGlossyRoughness(const BOOL32& v)override;
 	virtual void	SetRoughness(const FLOAT& v)override;
 	virtual void	SetMetallicness(const FLOAT& v)override;
 	virtual void	SetReflectance(const FLOAT& v)override;
@@ -37,7 +37,7 @@ public:
 public:
 	FLOAT							GetClearCoatStrength()const;
 	FLOAT							GetClearCoatRoughness()const;
-	virtual BOOL					GetIsGlossyRoughness()const override;
+	virtual BOOL32					GetIsGlossyRoughness()const override;
 	virtual FLOAT					GetRoughness()const override;
 	virtual FLOAT					GetMetallicness()const override;
 	virtual FLOAT					GetReflectance()const override;
@@ -53,9 +53,9 @@ public:
 	virtual void	HookApplyTextureUpdate()override;
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	INT			m_ClearCoatStrengthSelect;
-	INT			m_ClearCoatRoughnessSelect;
-	INT			m_ClearCoatNormalSelect;
+	INT32			m_ClearCoatStrengthSelect;
+	INT32			m_ClearCoatRoughnessSelect;
+	INT32			m_ClearCoatNormalSelect;
 	CHAR		m_ClearCoatStrengthPath[512];
 	CHAR		m_ClearCoatRoughnessPath[512];
 	CHAR		m_ClearCoatNormalPath[512];

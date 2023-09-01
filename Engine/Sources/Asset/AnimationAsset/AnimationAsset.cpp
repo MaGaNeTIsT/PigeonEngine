@@ -27,12 +27,12 @@ namespace PigeonEngine
 	{
 		ReleaseResource();
 	}
-	BOOL ESkeletonAnimation::IsResourceValid()const
+	BOOL32 ESkeletonAnimation::IsResourceValid()const
 	{
-		BOOL Result = FALSE;
-		if (const UINT AnimationClipNum = AnimationClips.Length(); AnimationClipNum > 0u)
+		BOOL32 Result = FALSE;
+		if (const UINT32 AnimationClipNum = AnimationClips.Length(); AnimationClipNum > 0u)
 		{
-			for (UINT i = 0u; i < AnimationClipNum; i++)
+			for (UINT32 i = 0u; i < AnimationClipNum; i++)
 			{
 				Result = Result || (AnimationClips[i].IsValid());
 			}
@@ -40,7 +40,7 @@ namespace PigeonEngine
 		Check((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
 		return Result;
 	}
-	BOOL ESkeletonAnimation::InitResource()
+	BOOL32 ESkeletonAnimation::InitResource()
 	{
 		// Skeleton animation resource must init by animation manager.
 		return TRUE;
@@ -55,11 +55,11 @@ namespace PigeonEngine
 	{
 		return AnimationName;
 	}
-	UINT ESkeletonAnimation::GetAnimationClipNum()const
+	UINT32 ESkeletonAnimation::GetAnimationClipNum()const
 	{
 		return (AnimationClips.Length());
 	}
-	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(UINT InIndex)const
+	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(UINT32 InIndex)const
 	{
 		if (InIndex < AnimationClips.Length())
 		{
@@ -69,7 +69,7 @@ namespace PigeonEngine
 	}
 	const ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(const EString& InClipName)const
 	{
-		if (UINT FindIndex = 0u; AnimationClipMapping.FindValue(InClipName, FindIndex))
+		if (UINT32 FindIndex = 0u; AnimationClipMapping.FindValue(InClipName, FindIndex))
 		{
 			return (GetAnimationClip(FindIndex));
 		}
@@ -79,20 +79,20 @@ namespace PigeonEngine
 	{
 		return AnimationClips;
 	}
-	const TMap<EString, UINT>& ESkeletonAnimation::GetAnimationClipMapping()const
+	const TMap<EString, UINT32>& ESkeletonAnimation::GetAnimationClipMapping()const
 	{
 		return AnimationClipMapping;
 	}
 	void ESkeletonAnimation::RebuildWholeMapping()
 	{
 		AnimationClipMapping.Clear();
-		for (UINT i = 0u, n = AnimationClips.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = AnimationClips.Length(); i < n; i++)
 		{
 			AnimationClipMapping.Add(AnimationClips[i].ClipName, i);
 		}
 		Check((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
 	}
-	BOOL ESkeletonAnimation::AddAnimationClip(const ESkeletonAnimationClip& InClip)
+	BOOL32 ESkeletonAnimation::AddAnimationClip(const ESkeletonAnimationClip& InClip)
 	{
 		if (InClip.IsValid())
 		{
@@ -114,7 +114,7 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Add skeleton animation clip failed."));
 		return FALSE;
 	}
-	BOOL ESkeletonAnimation::RemoveAnimationClip(UINT InIndex)
+	BOOL32 ESkeletonAnimation::RemoveAnimationClip(UINT32 InIndex)
 	{
 		if (InIndex < AnimationClips.Length())
 		{
@@ -130,9 +130,9 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	BOOL ESkeletonAnimation::RemoveAnimationClip(const EString& InClipName)
+	BOOL32 ESkeletonAnimation::RemoveAnimationClip(const EString& InClipName)
 	{
-		if (UINT FindIndex = 0u; AnimationClipMapping.FindValue(InClipName, FindIndex))
+		if (UINT32 FindIndex = 0u; AnimationClipMapping.FindValue(InClipName, FindIndex))
 		{
 			return (RemoveAnimationClip(FindIndex));
 		}
@@ -153,7 +153,7 @@ namespace PigeonEngine
 	ESkeletonAnimationAsset::~ESkeletonAnimationAsset()
 	{
 	}
-	BOOL ESkeletonAnimationAsset::InitResource()
+	BOOL32 ESkeletonAnimationAsset::InitResource()
 	{
 		// Skeleton animation resource do not need to initialize.
 		return TRUE;
@@ -177,7 +177,7 @@ namespace PigeonEngine
 		ClearSkeletonAnimations();
 	}
 #if _EDITOR_ONLY
-	BOOL EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
@@ -239,14 +239,14 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		for (UINT i = 0u, n = AssimpSkeletonAnimationClips.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = AssimpSkeletonAnimationClips.Length(); i < n; i++)
 		{
 			AssimpSkeletonAnimation.AddAnimationClip(AssimpSkeletonAnimationClips[i]);
 		}
 		return (SaveSkeletonAnimationResource(InSavePath, InAssetName, (&(AssimpSkeletonAnimation))));
 	}
 #endif
-	BOOL EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset)
+	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
@@ -310,7 +310,7 @@ namespace PigeonEngine
 		}
 		return NewAsset;
 	}
-	BOOL EAnimationManager::SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset)
+	BOOL32 EAnimationManager::SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset)
 	{
 		if (!InSkeletonAnimationAsset)
 		{
@@ -378,7 +378,7 @@ namespace PigeonEngine
 #define LOAD_ASSET_STRING_MEMORY(__LengthMax, __OutputEString) \
 		EString __OutputEString;\
 		{\
-			const UINT StrStride = sizeof(CHAR) * (__LengthMax);\
+			const UINT32 StrStride = sizeof(CHAR) * (__LengthMax);\
 			Check((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= StrStride));\
 			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
 			CHAR StrValues[(__LengthMax)];\
@@ -391,7 +391,7 @@ namespace PigeonEngine
 #define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __Ptr) \
 		__PtrType* __Ptr = nullptr;\
 		{\
-			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
 			Check((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
@@ -519,7 +519,7 @@ namespace PigeonEngine
 		}
 		return LoadedSkeletonAnimationResource;
 	}
-	BOOL EAnimationManager::SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource)
+	BOOL32 EAnimationManager::SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource)
 	{
 		if ((!InSkeletonAnimationResource) || (!(InSkeletonAnimationResource->IsResourceValid())))
 		{
@@ -553,7 +553,7 @@ namespace PigeonEngine
 			Result += sizeof(UINT32);		// Animation clip num
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimation->GetAnimationClips();
-			for (UINT i = 0u, n = AnimationClips.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = AnimationClips.Length(); i < n; i++)
 			{
 				const ESkeletonAnimationClip& AnimationClip = AnimationClips[i];
 
@@ -563,7 +563,7 @@ namespace PigeonEngine
 				Result += sizeof(UINT32);	// Animation clip bone animation curve num
 
 				const TArray<EBoneAnimationCurve>& BoneAnimationCurves = AnimationClip.AnimationCurves;
-				for (UINT j = 0u, m = BoneAnimationCurves.Length(); j < m; j++)
+				for (UINT32 j = 0u, m = BoneAnimationCurves.Length(); j < m; j++)
 				{
 					const EBoneAnimationCurve& BoneAnimationCurve = BoneAnimationCurves[j];
 
@@ -604,10 +604,10 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
 		{\
-			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
+			const UINT32 NameLengthMax = sizeof(CHAR) * (__LengthMax);\
 			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
 			const EString& SavedName = (__EString);\
-			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
 			CHAR* TempPtr = (CHAR*)RstMemPtr;\
 			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
 			RstMemPtr = &(TempPtr[(__LengthMax)]);\
@@ -616,7 +616,7 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
 		{\
-			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
 			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			BYTE* TempPtr = (BYTE*)RstMemPtr;\
 			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
@@ -630,11 +630,11 @@ namespace PigeonEngine
 			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetAnimationName(), ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX);
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimationResource->GetAnimationClips();
-			const UINT AnimationClipNum = AnimationClips.Length();
+			const UINT32 AnimationClipNum = AnimationClips.Length();
 
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(AnimationClipNum));
 
-			for (UINT i = 0u; i < AnimationClipNum; i++)
+			for (UINT32 i = 0u; i < AnimationClipNum; i++)
 			{
 				const ESkeletonAnimationClip& AnimationClip = AnimationClips[i];
 
@@ -643,11 +643,11 @@ namespace PigeonEngine
 				SAVE_ASSET_MEMORY(FLOAT, AnimationClip.TicksPerSecond);
 
 				const TArray<EBoneAnimationCurve>& BoneAnimationCurves = AnimationClip.AnimationCurves;
-				const UINT BoneAnimationCurveNum = BoneAnimationCurves.Length();
+				const UINT32 BoneAnimationCurveNum = BoneAnimationCurves.Length();
 
 				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(BoneAnimationCurveNum));
 
-				for (UINT j = 0u; j < BoneAnimationCurveNum; j++)
+				for (UINT32 j = 0u; j < BoneAnimationCurveNum; j++)
 				{
 					const EBoneAnimationCurve& BoneAnimationCurve = BoneAnimationCurves[j];
 
@@ -660,27 +660,27 @@ namespace PigeonEngine
 						const TArray<EBoneAnimationCurve::TPositionKey>& TransformPositionKeys = BoneAnimationCurve.PositionKeys;
 						const TArray<EBoneAnimationCurve::TRotationKey>& TransformRotationKeys = BoneAnimationCurve.RotationKeys;
 						const TArray<EBoneAnimationCurve::TScalingKey>& TransformScalingKeys = BoneAnimationCurve.ScalingKeys;
-						const UINT TransformPositionKeyNum = TransformPositionKeys.Length();
-						const UINT TransformRotationKeyNum = TransformRotationKeys.Length();
-						const UINT TransformScalingKeyNum = TransformScalingKeys.Length();
+						const UINT32 TransformPositionKeyNum = TransformPositionKeys.Length();
+						const UINT32 TransformRotationKeyNum = TransformRotationKeys.Length();
+						const UINT32 TransformScalingKeyNum = TransformScalingKeys.Length();
 
-						SAVE_ASSET_MEMORY(UINT, static_cast<UINT>(TransformPositionKeyNum));
-						SAVE_ASSET_MEMORY(UINT, static_cast<UINT>(TransformRotationKeyNum));
-						SAVE_ASSET_MEMORY(UINT, static_cast<UINT>(TransformScalingKeyNum));
+						SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(TransformPositionKeyNum));
+						SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(TransformRotationKeyNum));
+						SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(TransformScalingKeyNum));
 
-						for (UINT k = 0u; k < TransformPositionKeyNum; k++)
+						for (UINT32 k = 0u; k < TransformPositionKeyNum; k++)
 						{
 							const EBoneAnimationCurve::TPositionKey& TransformPositionKey = TransformPositionKeys[k];
 
 							SAVE_ASSET_MEMORY(EBoneAnimationCurve::TPositionKey, TransformPositionKey);
 						}
-						for (UINT k = 0u; k < TransformRotationKeyNum; k++)
+						for (UINT32 k = 0u; k < TransformRotationKeyNum; k++)
 						{
 							const EBoneAnimationCurve::TRotationKey& TransformRotationKey = TransformRotationKeys[k];
 
 							SAVE_ASSET_MEMORY(EBoneAnimationCurve::TRotationKey, TransformRotationKey);
 						}
-						for (UINT k = 0u; k < TransformScalingKeyNum; k++)
+						for (UINT32 k = 0u; k < TransformScalingKeyNum; k++)
 						{
 							const EBoneAnimationCurve::TScalingKey& TransformScalingKey = TransformScalingKeys[k];
 

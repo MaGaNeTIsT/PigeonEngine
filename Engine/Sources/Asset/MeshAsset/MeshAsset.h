@@ -31,25 +31,25 @@ namespace PigeonEngine
 		MESH_BITANGENT		= (1 << 22),
 		MESH_SKIN			= (1 << 26)
 	};
-	extern UINT GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType);
+	extern UINT32 GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType);
 	extern EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType);
-	extern UINT TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
+	extern UINT32 TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
 	extern EVertexLayoutType TranslateVertexPartTypeToVertexBaseLayout(UINT32 InVertexPartType);
 
 	struct EVertexDescriptor
 	{
 		EVertexDescriptor() noexcept : PartType(0u), ElementNum(0u), Stride(0u) {}
 		EVertexDescriptor(const EVertexDescriptor& Other) noexcept : PartType(Other.PartType), ElementNum(Other.ElementNum), Stride(Other.Stride) {}
-		constexpr EVertexDescriptor(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
+		constexpr EVertexDescriptor(EVertexLayoutType InType, UINT32 InStride = 0u, UINT32 InElementNum = 0u) noexcept : PartType(InType), ElementNum(InElementNum), Stride(InStride) {}
 
-		UINT	PartType;
-		UINT	ElementNum;
-		UINT	Stride;
+		UINT32	PartType;
+		UINT32	ElementNum;
+		UINT32	Stride;
 	};
 	struct EIndexData : public EVertexDescriptor
 	{
 		EIndexData() noexcept : EVertexDescriptor(), Indices(nullptr) {}
-		EIndexData(UINT InStride, UINT InElementNum = 0u) noexcept
+		EIndexData(UINT32 InStride, UINT32 InElementNum = 0u) noexcept
 			: EVertexDescriptor(), Indices(nullptr)
 		{
 #if _EDITOR_ONLY
@@ -73,8 +73,8 @@ namespace PigeonEngine
 			ElementNum	= Other.ElementNum;
 			if (Other.Indices && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				Indices = new UINT[ElementNum * sizeof(UINT)];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				Indices = new UINT32[ElementNum * sizeof(UINT32)];
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
 					Indices[i] = Other.Indices[i];
 				}
@@ -92,8 +92,8 @@ namespace PigeonEngine
 			}
 			if (Other.Indices && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				Indices = new UINT[ElementNum * sizeof(UINT)];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				Indices = new UINT32[ElementNum * sizeof(UINT32)];
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
 					Indices[i] = Other.Indices[i];
 				}
@@ -112,12 +112,12 @@ namespace PigeonEngine
 			Stride		= 0u;
 		}
 
-		UINT*	Indices;
+		UINT32*	Indices;
 	};
 	struct EVertexData : public EVertexDescriptor
 	{
 		EVertexData() noexcept : EVertexDescriptor(), Datas(nullptr) {}
-		EVertexData(EVertexLayoutType InType, UINT InStride = 0u, UINT InElementNum = 0u) noexcept
+		EVertexData(EVertexLayoutType InType, UINT32 InStride = 0u, UINT32 InElementNum = 0u) noexcept
 #if _EDITOR_ONLY
 			: EVertexDescriptor()
 #else
@@ -155,11 +155,11 @@ namespace PigeonEngine
 			ElementNum	= Other.ElementNum;
 			if (Other.Datas && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				const UINT32 StrideIn32Bits = Stride / sizeof(FLOAT);
 				Datas = new FLOAT[ElementNum * StrideIn32Bits];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
-					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					for (UINT32 StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
 					{
 						Datas[i * StrideIn32Bits + StrideIndex] = Other.Datas[i * StrideIn32Bits + StrideIndex];
 					}
@@ -178,11 +178,11 @@ namespace PigeonEngine
 			}
 			if (Other.Datas && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
+				const UINT32 StrideIn32Bits = Stride / sizeof(FLOAT);
 				Datas = new FLOAT[ElementNum * StrideIn32Bits];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
-					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					for (UINT32 StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
 					{
 						Datas[i * StrideIn32Bits + StrideIndex] = Other.Datas[i * StrideIn32Bits + StrideIndex];
 					}
@@ -207,7 +207,7 @@ namespace PigeonEngine
 	struct ESkinData : public EVertexDescriptor
 	{
 		ESkinData() noexcept : EVertexDescriptor(), Indices(nullptr), Weights(nullptr) {}
-		ESkinData(UINT InStride, UINT InElementNum = 0u) noexcept
+		ESkinData(UINT32 InStride, UINT32 InElementNum = 0u) noexcept
 #if _EDITOR_ONLY
 			: EVertexDescriptor(EVertexLayoutType::MESH_SKIN)
 #else
@@ -235,12 +235,12 @@ namespace PigeonEngine
 			ElementNum	= Other.ElementNum;
 			if (Other.Indices && Other.Weights && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
-				Indices = new UINT[ElementNum * StrideIn32Bits];
+				const UINT32 StrideIn32Bits = Stride / sizeof(FLOAT);
+				Indices = new UINT32[ElementNum * StrideIn32Bits];
 				Weights = new FLOAT[ElementNum * StrideIn32Bits];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
-					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					for (UINT32 StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
 					{
 						Indices[i * StrideIn32Bits + StrideIndex] = Other.Indices[i * StrideIn32Bits + StrideIndex];
 						Weights[i * StrideIn32Bits + StrideIndex] = Other.Weights[i * StrideIn32Bits + StrideIndex];
@@ -265,12 +265,12 @@ namespace PigeonEngine
 			}
 			if (Other.Indices && Other.Weights && Other.Stride > 0u && Other.ElementNum > 0u)
 			{
-				const UINT StrideIn32Bits = Stride / sizeof(FLOAT);
-				Indices = new UINT[ElementNum * StrideIn32Bits];
+				const UINT32 StrideIn32Bits = Stride / sizeof(FLOAT);
+				Indices = new UINT32[ElementNum * StrideIn32Bits];
 				Weights = new FLOAT[ElementNum * StrideIn32Bits];
-				for (UINT i = 0u, n = ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = ElementNum; i < n; i++)
 				{
-					for (UINT StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
+					for (UINT32 StrideIndex = 0u; StrideIndex < StrideIn32Bits; StrideIndex++)
 					{
 						Indices[i * StrideIn32Bits + StrideIndex] = Other.Indices[i * StrideIn32Bits + StrideIndex];
 						Weights[i * StrideIn32Bits + StrideIndex] = Other.Weights[i * StrideIn32Bits + StrideIndex];
@@ -296,14 +296,14 @@ namespace PigeonEngine
 			Stride		= 0u;
 		}
 
-		UINT*	Indices;
+		UINT32*	Indices;
 		FLOAT*	Weights;
 	};
 	struct ESubmeshData
 	{
 		ESubmeshData() noexcept : StartVertex(0u), VertexNum(0u), StartIndex(0u), IndexNum(0u) {}
 		ESubmeshData(const ESubmeshData& Other) noexcept : StartVertex(Other.StartVertex), VertexNum(Other.VertexNum), StartIndex(Other.StartIndex), IndexNum(Other.IndexNum) {}
-		constexpr ESubmeshData(UINT InStartVertex, UINT InVertexNum, UINT InStartIndex, UINT InIndexNum) noexcept : StartVertex(InStartVertex), VertexNum(InVertexNum), StartIndex(InStartIndex), IndexNum(InIndexNum) {}
+		constexpr ESubmeshData(UINT32 InStartVertex, UINT32 InVertexNum, UINT32 InStartIndex, UINT32 InIndexNum) noexcept : StartVertex(InStartVertex), VertexNum(InVertexNum), StartIndex(InStartIndex), IndexNum(InIndexNum) {}
 		ESubmeshData& operator=(const ESubmeshData& Other)
 		{
 			StartVertex	= Other.StartVertex;
@@ -313,10 +313,10 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		UINT	StartVertex;
-		UINT	VertexNum;
-		UINT	StartIndex;
-		UINT	IndexNum;
+		UINT32	StartVertex;
+		UINT32	VertexNum;
+		UINT32	StartIndex;
+		UINT32	IndexNum;
 	};
 
 	class EMesh : public EObjectBase, public EResourceInterface
@@ -326,15 +326,15 @@ namespace PigeonEngine
 		typedef	TArray<EVertexData>		EVertexPart;
 		typedef	TArray<ESubmeshData>	ESubmeshPart;
 	public:
-		const static UINT MeshVertexLayoutPartMaxNum = 4;
+		const static UINT32 MeshVertexLayoutPartMaxNum = 4;
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		EMesh& operator=(const EMesh& Other);
 	public:
-		BOOL				CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT InPartIndex)const;
+		BOOL32				CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex)const;
 		const EString&		GetMeshName()const;
 		const EBoundAABB&	GetBoundAABB()const;
 		UINT32				GetVertexLayout()const;
@@ -345,18 +345,18 @@ namespace PigeonEngine
 		void	SetMeshName(const EString& InMeshName);
 		void	SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
 		void	SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
-		BOOL	AddIndexElement(EIndexData* InIndexData);
-		BOOL	RemoveIndexElement();
-		BOOL	GetIndexElement(const EIndexData*& OutIndexData)const;
-		BOOL	AddVertexElement(EVertexData* InVertexData, UINT* OutLayoutIndex = nullptr);
-		BOOL	RemoveVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex);
-		BOOL	GetVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const;
-		BOOL	AddSubmesh(const ESubmeshData* InSubmeshData, UINT* OutSubmeshIndex = nullptr);
-		BOOL	RemoveSubmesh(UINT InSubmeshIndex);
-		BOOL	GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
+		BOOL32	AddIndexElement(EIndexData* InIndexData);
+		BOOL32	RemoveIndexElement();
+		BOOL32	GetIndexElement(const EIndexData*& OutIndexData)const;
+		BOOL32	AddVertexElement(EVertexData* InVertexData, UINT32* OutLayoutIndex = nullptr);
+		BOOL32	RemoveVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex);
+		BOOL32	GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData)const;
+		BOOL32	AddSubmesh(const ESubmeshData* InSubmeshData, UINT32* OutSubmeshIndex = nullptr);
+		BOOL32	RemoveSubmesh(UINT32 InSubmeshIndex);
+		BOOL32	GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
 	protected:
 		void	CopyBaseDataFromOtherInternal(const EMesh& Other);
-		void	SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist = nullptr);
+		void	SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT32 InPartIndex, BOOL32 InIsExist, BOOL32* OutIsAlreadyExist = nullptr);
 	protected:
 		EString					MeshName;
 		EBoundAABB				BoundAABB;
@@ -376,8 +376,8 @@ namespace PigeonEngine
 	class EStaticMesh : public EMesh
 	{
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		EStaticMesh& operator=(const EStaticMesh& Other);
@@ -397,22 +397,22 @@ namespace PigeonEngine
 		using EBindPoseIndex	= TMap<EString, USHORT>;
 		using ESkinPart			= TArray<ESkinData>;
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		ESkinnedMesh& operator=(const ESkinnedMesh& Other);
 	public:
-		BOOL					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
-		BOOL					RemoveBindPose(const EString& InBoneName);
+		BOOL32					AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose);
+		BOOL32					RemoveBindPose(const EString& InBoneName);
 		void					ClearBindPose();
 		void					GenerateBindPoseIndex();
 		const EBindPoseValue&	GetBindPoseValue()const;
 		const EBindPoseIndex&	GetBindPoseIndex()const;
 		USHORT					GetEffectBoneNum()const;
-		BOOL					AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex = nullptr);
-		BOOL					RemoveSkinElement(UINT InLayoutIndex);
-		BOOL					GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const;
+		BOOL32					AddSkinElement(ESkinData* InSkinData, UINT32* OutLayoutIndex = nullptr);
+		BOOL32					RemoveSkinElement(UINT32 InLayoutIndex);
+		BOOL32					GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData)const;
 		const ESkinPart&		GetSkinPart()const;
 	protected:
 		EBindPoseValue	BindPoseValue;
@@ -431,15 +431,15 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		virtual BOOL	IsRenderResourceValid()const override;
+		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual void	ReleaseRenderResource()override;
 	public:
 		EMeshRenderResource();
 		EMeshRenderResource(const EMeshRenderResource& Other);
 		virtual ~EMeshRenderResource();
 	protected:
-		BOOL	CreateIndexRenderResourceInternal(const EMesh* InMesh);
-		BOOL	CreateVertexRenderResourceInternal(const EMesh* InMesh);
+		BOOL32	CreateIndexRenderResourceInternal(const EMesh* InMesh);
+		BOOL32	CreateVertexRenderResourceInternal(const EMesh* InMesh);
 		void	CopyRenderResourcesInternal(const EMeshRenderResource* Other);
 	protected:
 		RBufferResource			IndexRenderResource;
@@ -449,8 +449,8 @@ namespace PigeonEngine
 	class EStaticMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL	IsRenderResourceValid()const override;
-		virtual BOOL	InitRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const override;
+		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
 	public:
 		EStaticMeshRenderResource& operator=(const EStaticMeshRenderResource& Other);
@@ -466,8 +466,8 @@ namespace PigeonEngine
 	class ESkinnedMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL	IsRenderResourceValid()const override;
-		virtual BOOL	InitRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const override;
+		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
 	public:
 		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
@@ -477,8 +477,8 @@ namespace PigeonEngine
 		ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other);
 		virtual ~ESkinnedMeshRenderResource();
 	protected:
-		BOOL	CreateMeshSkeletonRenderResourceInternal();
-		BOOL	CreateSkinRenderResourceInternal();
+		BOOL32	CreateMeshSkeletonRenderResourceInternal();
+		BOOL32	CreateSkinRenderResourceInternal();
 		void	CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other);
 	protected:
 		const class ESkeleton*	Skeleton;
@@ -526,7 +526,7 @@ namespace PigeonEngine
 		);
 		virtual ~EStaticMeshAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	protected:
 		EStaticMeshRenderResource*	CreateMeshResource(EStaticMesh* InResource);
 	public:
@@ -546,7 +546,7 @@ namespace PigeonEngine
 		);
 		virtual ~ESkinnedMeshAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	public:
 		void	SetSkeleton(const class ESkeleton* InSkeleton);
 		const class ESkeleton*	GetSkeleton()const;
@@ -571,11 +571,11 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
-		BOOL	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset);
-		BOOL	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
+		BOOL32	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset);
+		BOOL32	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
 	private:
 		void	ClearStaticMeshes();
 		void	ClearSkinnedMeshes();
@@ -583,11 +583,11 @@ namespace PigeonEngine
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
 		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName);
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		BOOL SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset);
+		BOOL32 SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset);
 		template<typename _TMeshResourceType>
 		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath, const EString& InLoadName);
 		template<typename _TMeshResourceType>
-		BOOL SaveMeshResource(const EString& InSavePath, const EString& InSaveName, const _TMeshResourceType* InMeshResource);
+		BOOL32 SaveMeshResource(const EString& InSavePath, const EString& InSaveName, const _TMeshResourceType* InMeshResource);
 	private:
 		EStaticMeshAssetManager		StaticMeshManager;
 		ESkinnedMeshAssetManager	SkinnedMeshManager;

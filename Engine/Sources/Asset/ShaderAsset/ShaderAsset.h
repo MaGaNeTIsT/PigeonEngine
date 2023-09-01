@@ -35,11 +35,11 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
-		virtual BOOL IsResourceValid()const override
+		virtual BOOL32 IsResourceValid()const override
 		{
 			return ((ShaderByteCode != nullptr) && (ShaderByteCodeSize > 0u));
 		}
-		virtual BOOL InitResource()override
+		virtual BOOL32 InitResource()override
 		{
 			// Shader resource must init by shader manager.
 			return TRUE;
@@ -94,18 +94,18 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
-			, const RInputLayoutDesc* InInputLayouts = nullptr, const UINT& InInputLayoutNum = 0u);
+			, const RInputLayoutDesc* InInputLayouts = nullptr, const UINT32& InInputLayoutNum = 0u);
 		virtual ~EVertexShaderAsset();
 	public:
 		const RInputLayoutDesc*		GetShaderInputLayouts()const { return ShaderInputLayouts; }
-		const UINT&					GetShaderInputLayoutNum()const { return ShaderInputLayoutNum; }
+		const UINT32&					GetShaderInputLayoutNum()const { return ShaderInputLayoutNum; }
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	protected:
 		RVertexShaderResource*		CreateShaderRenderResource(EShaderResource* InResource);
 	protected:
 		RInputLayoutDesc*	ShaderInputLayouts;
-		UINT				ShaderInputLayoutNum;
+		UINT32				ShaderInputLayoutNum;
 	private:
 		friend class EShaderAssetManager;
 
@@ -126,7 +126,7 @@ namespace PigeonEngine
 		);
 		virtual ~EPixelShaderAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	protected:
 		RPixelShaderResource*	CreateShaderRenderResource(EShaderResource* InResource);
 	private:
@@ -149,7 +149,7 @@ namespace PigeonEngine
 		);
 		virtual ~EComputeShaderAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	protected:
 		RComputeShaderResource*	CreateShaderRenderResource(EShaderResource* InResource);
 	private:
@@ -173,13 +173,13 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
-		BOOL	ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
-		BOOL	ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT32* InShaderInputLayoutNum = nullptr);
+		BOOL32	ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset);
-		BOOL	LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset);
-		BOOL	LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset);
+		BOOL32	LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset);
+		BOOL32	LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset);
+		BOOL32	LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset);
 	private:
 		void	ClearVertexShaders();
 		void	ClearPixelShaders();
@@ -187,9 +187,9 @@ namespace PigeonEngine
 	private:
 		template<class TShaderAssetType>
 		TShaderAssetType* LoadShaderAsset(const EString& InLoadPath, const EString& InLoadName);
-		BOOL SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT* InShaderInputLayoutNum = nullptr);
+		BOOL32 SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT32* InShaderInputLayoutNum = nullptr);
 		template<class TShaderAssetType>
-		BOOL SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset);
+		BOOL32 SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset);
 	private:
 		EVertexShaderManager	VertexShaderManager;
 		EPixelShaderManager		PixelShaderManager;

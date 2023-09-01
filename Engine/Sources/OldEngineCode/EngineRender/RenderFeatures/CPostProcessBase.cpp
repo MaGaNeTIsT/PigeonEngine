@@ -7,7 +7,7 @@ CPostProcessBase::CPostProcessBase()
 {
 	this->m_SwapRenderTarget[0] = NULL;
 	this->m_SwapRenderTarget[1] = NULL;
-	for (INT i = 0; i < PostProcessType::POST_PROCESS_COUNT; i++)
+	for (INT32 i = 0; i < PostProcessType::POST_PROCESS_COUNT; i++)
 	{
 		this->m_PostShader[i] = NULL;
 	}
@@ -16,7 +16,7 @@ CPostProcessBase::CPostProcessBase()
 }
 CPostProcessBase::~CPostProcessBase()
 {
-	for (INT i = 0; i < PostProcessType::POST_PROCESS_COUNT; i++)
+	for (INT32 i = 0; i < PostProcessType::POST_PROCESS_COUNT; i++)
 	{
 		if (this->m_PostShader[i] != NULL)
 		{
@@ -41,8 +41,8 @@ void CPostProcessBase::Draw(PostProcessType type)
 	{
 		return;
 	}
-	INT currentSrc = this->m_SwapIndex;
-	INT currentDst = 1 - this->m_SwapIndex;
+	INT32 currentSrc = this->m_SwapIndex;
+	INT32 currentDst = 1 - this->m_SwapIndex;
 	CRenderDevice::SetRenderTarget(this->m_SwapRenderTarget[currentDst]->RenderTargetView);
 	CRenderDevice::BindPSShaderResourceView(this->m_SwapRenderTarget[currentSrc]->ShaderResourceView, ENGINE_SCENE_COLOR);
 	this->m_PostShader[type]->Bind();

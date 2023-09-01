@@ -17,7 +17,7 @@ namespace PigeonEngine
 	public:
 		RViewProxy(const RScene* InScene, const PCameraComponent* InComponent);
 	protected:
-		TMap<TPrimitiveObjectID, BOOL>	VisibilityMap;
+		TMap<TPrimitiveObjectID, BOOL32>	VisibilityMap;
 	protected:
 		PCameraViewInfo					CameraViewInfo;
 		EViewport						RenderViewport;

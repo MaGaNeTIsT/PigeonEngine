@@ -56,7 +56,7 @@ CScene::~CScene()
 		}
 		this->m_Lights.clear();
 	}
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	for (INT32 i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		if (this->m_GameObjects[i].size() > 0u)
 		{
@@ -103,8 +103,8 @@ void CScene::Init()
 	{
 		std::string materialConfigPath = "./Engine/Assets/Development/MaterialConfigs/";
 		std::string materialTypeName = "mat_tex_cfg";
-		BOOL showDebugFabric = FALSE;
-		BOOL useModelFromFile = TRUE;
+		BOOL32 showDebugFabric = FALSE;
+		BOOL32 useModelFromFile = TRUE;
 		FLOAT modelY = 200.f;
 		FLOAT modelOffsetX = 300.f;
 		FLOAT modelOffsetZ = 300.f;
@@ -122,18 +122,18 @@ void CScene::Init()
 				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_TEXCOORD) };
 
 			std::vector<std::string> fileNames;
-			INT fileNum = CTempFileHelper::CountFileNumberInFolder(materialConfigPath, materialTypeName, fileNames);
+			INT32 fileNum = CTempFileHelper::CountFileNumberInFolder(materialConfigPath, materialTypeName, fileNames);
 			if (fileNum > 0)
 			{
 				CReadWriteMaterialParamsFile materialFileReadWrite;
 
-				INT objNum = (CustomType::CMath::Log2Ceil(fileNum));
+				INT32 objNum = (CustomType::CMath::Log2Ceil(fileNum));
 				FLOAT maxX = ((objNum - 1.f) * 0.5f) * modelOffsetX;
 				FLOAT minX = -maxX;
 				FLOAT maxZ = ((objNum - 1.f) * 0.5f) * modelOffsetZ;
 				FLOAT minZ = -maxZ;
 
-				for (INT i = 0; i < fileNum; i++)
+				for (INT32 i = 0; i < fileNum; i++)
 				{
 					FLOAT z = static_cast<FLOAT>(i / (objNum));
 					FLOAT x = static_cast<FLOAT>(i % (objNum));
@@ -185,7 +185,7 @@ void CScene::Uninit()
 		}
 		this->m_Lights.clear();
 	}
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	for (INT32 i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		if (this->m_GameObjects[i].size() > 0u)
 		{
@@ -209,7 +209,7 @@ void CScene::Update()
 	{
 		object.second->Update();
 	}
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	for (INT32 i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObjects[i])
 		{
@@ -225,7 +225,7 @@ void CScene::FixedUpdate()
 	{
 		object.second->FixedUpdate();
 	}
-	for (INT i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
+	for (INT32 i = 0; i < SceneLayout::LAYOUT_COUNT; ++i)
 	{
 		for (const auto& object : this->m_GameObjects[i])
 		{
@@ -255,7 +255,7 @@ void CScene::EditorUpdate()
 		ImGui::Begin("CurrentSceneInfo");
 
 		{
-			std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+			std::pair<INT32, INT32> mousePos = CInput::Controller.GetMousePosition();
 			ImGui::Text("Mouse position : x = %d, y = %d.", mousePos.first, mousePos.second);
 			ImGui::Text("Mouse focus : any window = %d.", (ImGui::IsWindowFocused(ImGuiFocusedFlags_::ImGuiFocusedFlags_AnyWindow) ? 1 : 0));
 			ImGui::Text("Mouse press : left = %d right = %d.", CInput::Controller.IsLeftMouseButtonDown(), CInput::Controller.IsRightMouseButtonDown());
@@ -273,7 +273,7 @@ void CScene::EditorUpdate()
 		}
 
 		{
-			UINT index = 0u;
+			UINT32 index = 0u;
 			for (const auto& object : this->m_Lights)
 			{
 				CGameObjectTransformBase* obj = reinterpret_cast<CGameObjectTransformBase*>(object.second);
@@ -307,7 +307,7 @@ void CScene::EditorUpdate()
 	}
 	if (showSelectObjectInfo)
 	{
-		std::pair<INT, INT> mousePos = CInput::Controller.GetMousePosition();
+		std::pair<INT32, INT32> mousePos = CInput::Controller.GetMousePosition();
 		this->OnClickReselectSceneObjectWithBound(mousePos.first, mousePos.second);
 
 		if (this->m_SelectedObject != nullptr)
@@ -323,7 +323,7 @@ void CScene::EditorUpdate()
 	this->m_ShowLightInfo = showLightInfo;
 	this->m_ShowSelectObjectInfo = showSelectObjectInfo;
 }
-void CScene::OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY)
+void CScene::OnClickReselectSceneObjectWithBound(const INT32& mouseX, const INT32& mouseY)
 {
 	if (this->m_MainCamera == nullptr)
 	{

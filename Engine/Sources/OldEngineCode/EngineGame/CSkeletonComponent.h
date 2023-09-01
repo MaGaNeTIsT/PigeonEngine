@@ -10,10 +10,10 @@
 class CSkeletonSingleNode : public CObjectBase
 {
 public:
-	BOOL	IsRootNode()const;
-	BOOL	IsBoneNode()const;
-	BOOL	HasParentNode()const;
-	BOOL	HasChildrenNode()const;
+	BOOL32	IsRootNode()const;
+	BOOL32	IsBoneNode()const;
+	BOOL32	HasParentNode()const;
+	BOOL32	HasChildrenNode()const;
 public:
 	const CustomType::Matrix4x4&	GetBoneSpaceGlobalMatrix()const;
 	const CustomType::Matrix4x4&	GetBindPoseMatrix()const;
@@ -75,7 +75,7 @@ public:
 	virtual void		Uninit()override;
 	virtual void		Update()override;
 public:
-	BOOL				IsValid()const;
+	BOOL32				IsValid()const;
 public:
 	const std::string&	GetSkeletonName()const;
 public:
@@ -87,15 +87,15 @@ protected:
 public:
 	void	SetSkeleton(const std::vector<CustomStruct::CGameBoneNodeInfo>& skeleton, const std::map<std::string, SHORT>& boneIndexMap, const std::vector<USHORT>& boneList);
 public:
-	void	BindVSSkeletonGPUConstantBuffer(const UINT& startSlot)const;
-	void	BindPSSkeletonGPUConstantBuffer(const UINT& startSlot)const;
-	void	BindCSSkeletonGPUConstantBuffer(const UINT& startSlot)const;
+	void	BindVSSkeletonGPUConstantBuffer(const UINT32& startSlot)const;
+	void	BindPSSkeletonGPUConstantBuffer(const UINT32& startSlot)const;
+	void	BindCSSkeletonGPUConstantBuffer(const UINT32& startSlot)const;
 	void	UpdateSkeletonTransformInfo();
 	void	UploadSkeletonGPUConstantBuffer()const;
 protected:
 	void	UpdateBoneTransformMatrix(SHORT nodeIndex, CustomType::Matrix4x4 globalTransform);
 protected:
-	mutable BOOL									m_SkeletonPerFrameUpload;
+	mutable BOOL32									m_SkeletonPerFrameUpload;
 	CustomStruct::CShaderSkeletonMatrix				m_SkeletonGPUCBufferData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>			m_SkeletonGPUCBuffer;
 protected:

@@ -11,17 +11,17 @@ class CCamera;
 class CGameBoundBaseComponent : public CBaseComponent
 {
 public:
-	virtual BOOL					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const = 0;
+	virtual BOOL32					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const = 0;
 	virtual CustomStruct::CRect		GetScreenCoordRect(const CCamera* camera)const = 0;
 #ifdef _DEVELOPMENT_EDITOR
 public:
-	virtual BOOL	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const = 0;
+	virtual BOOL32	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const = 0;
 #endif
 public:
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const = 0;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const = 0;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const = 0;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const = 0;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const = 0;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const = 0;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const = 0;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const = 0;
 public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
@@ -45,17 +45,17 @@ public:
 	void	SetLocalAnchor(const CustomType::Vector3& v);
 	void	SetRadius(const FLOAT& v);
 public:
-	virtual BOOL					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const override;
+	virtual BOOL32					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const override;
 	virtual CustomStruct::CRect		GetScreenCoordRect(const CCamera* camera)const override;
 #ifdef _DEVELOPMENT_EDITOR
 public:
-	virtual BOOL	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const override;
+	virtual BOOL32	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const override;
 #endif
 public:
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const override;
 public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;
@@ -86,17 +86,17 @@ public:
 	void	SetExtent(const CustomType::Vector3& v);
 	void	SetExtent(const FLOAT& x, const FLOAT& y, const FLOAT& z);
 public:
-	virtual BOOL					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const override;
+	virtual BOOL32					InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const override;
 	virtual CustomStruct::CRect		GetScreenCoordRect(const CCamera* camera)const override;
 #ifdef _DEVELOPMENT_EDITOR
 public:
-	virtual BOOL	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const override;
+	virtual BOOL32	SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const override;
 #endif
 public:
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const override;
-	virtual BOOL	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const override;
+	virtual BOOL32	RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const override;
 public:
 	virtual void	Init()override;
 	virtual void	Uninit()override;

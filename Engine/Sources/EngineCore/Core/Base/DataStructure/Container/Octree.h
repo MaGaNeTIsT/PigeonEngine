@@ -16,13 +16,13 @@ namespace PigeonEngine
 
         EOctreeBounds(const EBoundAABB& InBounds);
 
-        ENGINE_NODISCARD EBoundAABB ToBoundAABB()const;
+        PE_NODISCARD EBoundAABB ToBoundAABB()const;
 
-        ENGINE_NODISCARD Vector3 GetMax() const;
-        ENGINE_NODISCARD Vector3 GetMin() const;
+        PE_NODISCARD Vector3 GetMax() const;
+        PE_NODISCARD Vector3 GetMin() const;
 
-        ENGINE_NODISCARD BOOL IsPointInBounds(const Vector3& Point) const;
-        ENGINE_NODISCARD BOOL IsIntercectingWith(const EOctreeBounds& OtherBounds) const;
+        PE_NODISCARD BOOL32 IsPointInBounds(const Vector3& Point) const;
+        PE_NODISCARD BOOL32 IsIntercectingWith(const EOctreeBounds& OtherBounds) const;
     };
 
     // Content in octree's node, can be anything
@@ -53,7 +53,7 @@ namespace PigeonEngine
         TOctreeNode<ContentType>* Parent;
         TArray<TSharedPtr<TOctreeNode<ContentType>>> Children;
     public:
-        ENGINE_NODISCARD const EOctreeBounds& GetBounds()const;
+        PE_NODISCARD const EOctreeBounds& GetBounds()const;
     private:
         EOctreeBounds Bounds;
 

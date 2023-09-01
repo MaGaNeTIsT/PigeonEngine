@@ -10,15 +10,15 @@
 //
 //public:
 //
-//	BOOL IsHiddenInGame()const;
-//	void SetHiddenInGame(BOOL HiddenInGame);
+//	BOOL32 IsHiddenInGame()const;
+//	void SetHiddenInGame(BOOL32 HiddenInGame);
 //
 //	std::string GetNodeName()const;
 //	void SetNodeName(const std::string& NewNodeName);
 //
 //private:
 //
-//	BOOL bHiddenInGame;
+//	BOOL32 bHiddenInGame;
 //	std::string Name;
 //
 //};
@@ -86,7 +86,7 @@ protected:
 		return  (reinterpret_cast<T*>(gameObject));
 	}
 	template <class T>
-	T* AddGameObject(const UINT& layout)
+	T* AddGameObject(const UINT32& layout)
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
@@ -101,7 +101,7 @@ protected:
 		return  (reinterpret_cast<T*>(gameObject));
 	}
 	template <class T>
-	T* GetGameObjectFirst(const UINT& layout)const
+	T* GetGameObjectFirst(const UINT32& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
@@ -124,7 +124,7 @@ protected:
 		return nullptr;
 	}
 	template <class T>
-	T* GetGameObjectByIndex(const UINT& layout, const UINT& idx)const
+	T* GetGameObjectByIndex(const UINT32& layout, const UINT32& idx)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
@@ -134,7 +134,7 @@ protected:
 		{
 			return nullptr;
 		}
-		UINT number = idx;
+		UINT32 number = idx;
 		for (const auto& obj : (this->m_GameObjects[layout]))
 		{
 			if ((obj.second) != nullptr)
@@ -155,7 +155,7 @@ protected:
 		return nullptr;
 	}
 	template <class T>
-	std::vector<T*>	GetGameObjectAll(const UINT& layout)const
+	std::vector<T*>	GetGameObjectAll(const UINT32& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
@@ -199,7 +199,7 @@ protected:
 		return listObj;
 	}
 public:
-	std::vector<CGameObjectBase*> GetGameObjectAll(const UINT& layout)const
+	std::vector<CGameObjectBase*> GetGameObjectAll(const UINT32& layout)const
 	{
 		if (layout >= SceneLayout::LAYOUT_COUNT)
 		{
@@ -223,12 +223,12 @@ public:
 public:
 	virtual void	EditorUpdate();
 protected:
-	virtual void	OnClickReselectSceneObjectWithBound(const INT& mouseX, const INT& mouseY);
+	virtual void	OnClickReselectSceneObjectWithBound(const INT32& mouseX, const INT32& mouseY);
 protected:
-	BOOL				m_ShowSceneInfo;
-	BOOL				m_ShowCameraInfo;
-	BOOL				m_ShowLightInfo;
-	BOOL				m_ShowSelectObjectInfo;
+	BOOL32				m_ShowSceneInfo;
+	BOOL32				m_ShowCameraInfo;
+	BOOL32				m_ShowLightInfo;
+	BOOL32				m_ShowSelectObjectInfo;
 	CGameObjectBase*	m_SelectedObject;
 #endif
 public:

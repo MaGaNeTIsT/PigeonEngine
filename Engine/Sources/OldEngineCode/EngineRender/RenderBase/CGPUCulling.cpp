@@ -20,7 +20,7 @@ CGPUCulling::CGPUCulling()
 CGPUCulling::~CGPUCulling()
 {
 }
-void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT& waitingFrameNum, const UINT& baseSceneObjectsNum)
+void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT32& waitingFrameNum, const UINT32& baseSceneObjectsNum)
 {
 	this->m_HZBPass = hzb;
 	this->m_MostDetailHZBIndex = hzb->GetHZBBufferNum() - 1u;
@@ -33,7 +33,7 @@ void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT& waitingFrameNu
 	this->m_PassingCount = 0u;
 	this->m_MappedUIDCullingResult.clear();
 	this->m_CachedCullingInfo.resize(this->m_CachedCount);
-	for (UINT i = 0u; i < this->m_CachedCount; i++)
+	for (UINT32 i = 0u; i < this->m_CachedCount; i++)
 	{
 		CGPUCulling::ReCreateBufferSize(i, baseSceneObjectsNum);
 	}
@@ -55,18 +55,18 @@ void CGPUCulling::Update(const ULONGLONG& frameIndex)
 	this->m_EditorFrameCount = frameIndex;
 #endif
 }
-void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& inputCullingResult, std::vector<BOOL>& outputCullingResult)
+void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& inputCullingResult, std::vector<BOOL32>& outputCullingResult)
 {
-	UINT index = frameIndex % (this->m_CachedCount);
+	UINT32 index = frameIndex % (this->m_CachedCount);
 	outputCullingResult.resize(inputCullingResult.size(), TRUE);
 	if (frameIndex > this->m_CachedCount)
 	{
 		this->m_PassingCount = 0u;	//TODO Delte counter for shipping.
 		if (this->ReadBackFromResource(frameIndex))
 		{
-			for (UINT i = 0u; i < inputCullingResult.size(); i++)
+			for (UINT32 i = 0u; i < inputCullingResult.size(); i++)
 			{
-				std::map<ULONGLONG, UINT>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetUniqueID());
+				std::map<ULONGLONG, UINT32>::iterator occluded = this->m_MappedUIDCullingResult.find(inputCullingResult[i]->GetUniqueID());
 				if (occluded != this->m_MappedUIDCullingResult.end())
 				{
 					outputCullingResult[i] = (occluded->second) == 1u;
@@ -84,16 +84,16 @@ void CGPUCulling::ReadBackAndPrepareCullingResult(const ULONGLONG& frameIndex, c
 }
 void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 {
-	UINT index = frameIndex % (this->m_CachedCount);
+	UINT32 index = frameIndex % (this->m_CachedCount);
 
 	{		
-		INT layerCount = static_cast<INT>(this->m_HZBPass->GetHZBBufferNum());
-		INT mostDetail = CustomType::CMath::Clamp(this->m_MostDetailHZBIndex, 0, layerCount - 1);
-		INT numLayer = CustomType::CMath::Clamp(this->m_UsedHZBNum, 1, layerCount - mostDetail);
+		INT32 layerCount = static_cast<INT32>(this->m_HZBPass->GetHZBBufferNum());
+		INT32 mostDetail = CustomType::CMath::Clamp(this->m_MostDetailHZBIndex, 0, layerCount - 1);
+		INT32 numLayer = CustomType::CMath::Clamp(this->m_UsedHZBNum, 1, layerCount - mostDetail);
 		numLayer = CustomType::CMath::Clamp(numLayer, 1, 7);
 		std::vector<Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>> hzbBuffers(numLayer);
-		INT indexHZB = mostDetail;
-		for (INT i = 0; i < numLayer; i++)
+		INT32 indexHZB = mostDetail;
+		for (INT32 i = 0; i < numLayer; i++)
 		{
 			CRenderDevice::RenderTexture2DViewInfo usedHZBBuffer;
 			this->m_HZBPass->GetHZBBufferByMipIndex(usedHZBBuffer, indexHZB);
@@ -104,7 +104,7 @@ void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 		CRenderDevice::UploadBuffer(this->m_CachedCullingInfo[index].CullingBoundingInfo.Buffer, static_cast<void*>(this->m_CachedAABBInfo.data()), sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum, sizeof(PrimitivesAABBBoxInfo) * this->m_CachedAABBNum);
 		CRenderDevice::UploadBuffer(this->m_CullingConstantBuffer, static_cast<void*>(&(this->m_CullingData)));
 		CRenderDevice::BindCSConstantBuffer(this->m_CullingConstantBuffer, 1u);
-		for (UINT i = 0u; i < static_cast<UINT>(numLayer); i++)
+		for (UINT32 i = 0u; i < static_cast<UINT32>(numLayer); i++)
 		{
 			CRenderDevice::BindCSShaderResourceView(hzbBuffers[i], 1u + i);
 		}
@@ -122,29 +122,29 @@ void CGPUCulling::ComputeCulling(const ULONGLONG& frameIndex)
 #ifdef _DEVELOPMENT_EDITOR
 void CGPUCulling::EditorUpdate()
 {
-	INT index, readBackIndex;
+	INT32 index, readBackIndex;
 	{
-		index = static_cast<INT>(this->m_EditorFrameCount % (this->m_CachedCount));
-		INT totalCount = static_cast<INT>(this->m_CachedCount);
-		readBackIndex = static_cast<INT>(index) - totalCount + 1;
+		index = static_cast<INT32>(this->m_EditorFrameCount % (this->m_CachedCount));
+		INT32 totalCount = static_cast<INT32>(this->m_CachedCount);
+		readBackIndex = static_cast<INT32>(index) - totalCount + 1;
 		readBackIndex = (readBackIndex < 0) ? (readBackIndex + totalCount) : readBackIndex;
 	}
 
-	INT mostDetailHZBIndex = this->m_MostDetailHZBIndex;
-	INT usedHZBNum = this->m_UsedHZBNum;
-	INT layerCount = static_cast<INT>(this->m_HZBPass->GetHZBBufferNum());
+	INT32 mostDetailHZBIndex = this->m_MostDetailHZBIndex;
+	INT32 usedHZBNum = this->m_UsedHZBNum;
+	INT32 layerCount = static_cast<INT32>(this->m_HZBPass->GetHZBBufferNum());
 	ImGui::Begin("Occlusion test parameters");
 	ImGui::Text("Current  index = %d number of objects = %d", index, this->m_CachedCullingInfo[index].NumObjects);
 	ImGui::Text("ReadBack index = %d number of objects = %d", readBackIndex, this->m_CachedCullingInfo[readBackIndex].NumObjects);
 	ImGui::Text("Passing number of objects = %d", this->m_PassingCount);
-	ImGui::SliderInt("Most HZB layer", &mostDetailHZBIndex, 0, static_cast<INT>(this->m_HZBPass->GetHZBBufferNum() - 1u));
+	ImGui::SliderInt("Most HZB layer", &mostDetailHZBIndex, 0, static_cast<INT32>(this->m_HZBPass->GetHZBBufferNum() - 1u));
 	ImGui::SliderInt("Used number of HZB layers", &usedHZBNum, 1, layerCount - mostDetailHZBIndex);
 	ImGui::End();
 	this->m_MostDetailHZBIndex = mostDetailHZBIndex;
 	this->m_UsedHZBNum = usedHZBNum;
 }
 #endif
-void CGPUCulling::ReCreateBufferSize(const UINT& idx, const UINT& num)
+void CGPUCulling::ReCreateBufferSize(const UINT32& idx, const UINT32& num)
 {
 	if (idx >= this->m_CachedCullingInfo.size())
 	{
@@ -161,7 +161,7 @@ void CGPUCulling::ReCreateBufferSize(const UINT& idx, const UINT& num)
 		CRenderDevice::CreateStructuredBuffer(
 			this->m_CachedCullingInfo[idx].CullingResultInfo,
 			CustomStruct::CRenderStructuredBufferDesc(
-				sizeof(UINT), num, TRUE, CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_READ));
+				sizeof(UINT32), num, TRUE, CustomStruct::CRenderCPUAccessFlag::CPU_ACCESS_READ));
 	}
 }
 void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vector<CGameObject*>& fromCPUCullingResult)
@@ -170,10 +170,10 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 	{
 		this->m_CachedAABBInfo.resize(fromCPUCullingResult.size());
 		std::vector<ULONGLONG> objectsUID(fromCPUCullingResult.size());
-		UINT numCounter = 0u;
+		UINT32 numCounter = 0u;
 		{
 			CustomType::Vector3 min, max;
-			for (UINT i = 0u; i < fromCPUCullingResult.size(); i++)
+			for (UINT32 i = 0u; i < fromCPUCullingResult.size(); i++)
 			{
 				if (fromCPUCullingResult[i]->HasRenderBoundingBox())
 				{
@@ -190,7 +190,7 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 			}
 			this->m_CachedAABBNum = numCounter;
 		}
-		UINT index = frameIndex % (this->m_CachedCount);
+		UINT32 index = frameIndex % (this->m_CachedCount);
 		{
 			this->ReCreateBufferSize(index, numCounter);
 			CachedCullingInfo* currentUsedInfo = &(this->m_CachedCullingInfo[index]);
@@ -198,30 +198,30 @@ void CGPUCulling::PrepareCullingInfo(const ULONGLONG& frameIndex, const std::vec
 		}
 	}
 }
-BOOL CGPUCulling::ReadBackFromResource(const ULONGLONG& frameIndex)
+BOOL32 CGPUCulling::ReadBackFromResource(const ULONGLONG& frameIndex)
 {
-	INT readBackIndex;
+	INT32 readBackIndex;
 	{
-		UINT index = frameIndex % (this->m_CachedCount);
-		INT totalCount = static_cast<INT>(this->m_CachedCount);
-		readBackIndex = static_cast<INT>(index) - totalCount + 1;
+		UINT32 index = frameIndex % (this->m_CachedCount);
+		INT32 totalCount = static_cast<INT32>(this->m_CachedCount);
+		readBackIndex = static_cast<INT32>(index) - totalCount + 1;
 		readBackIndex = (readBackIndex < 0) ? (readBackIndex + totalCount) : readBackIndex;
 	}
-	BOOL result = FALSE;
+	BOOL32 result = FALSE;
 	CachedCullingInfo* currentUsedInfo = &(this->m_CachedCullingInfo[readBackIndex]);
-	std::vector<UINT> currentCullingResult(currentUsedInfo->NumObjects, TRUE);
+	std::vector<UINT32> currentCullingResult(currentUsedInfo->NumObjects, TRUE);
 	{
 		CustomStruct::CRenderMappedResource mr;
 		result = CRenderDevice::Map(currentUsedInfo->CullingResultInfo, 0u, CustomStruct::CRenderMapType::MAP_READ, CustomStruct::CRenderMapFlag::MAP_FLAG_DO_NOT_WAIT, mr);
 		if (result)
 		{
-			memcpy_s(currentCullingResult.data(), sizeof(UINT) * currentUsedInfo->NumObjects, mr.pData, sizeof(UINT) * currentUsedInfo->NumObjects);
+			memcpy_s(currentCullingResult.data(), sizeof(UINT32) * currentUsedInfo->NumObjects, mr.pData, sizeof(UINT32) * currentUsedInfo->NumObjects);
 		}
 		CRenderDevice::Unmap(currentUsedInfo->CullingResultInfo, 0u);
 	}
 	if (result)
 	{
-		for (UINT i = 0u; i < currentUsedInfo->NumObjects; i++)
+		for (UINT32 i = 0u; i < currentUsedInfo->NumObjects; i++)
 		{
 			this->m_MappedUIDCullingResult[currentUsedInfo->MappingCullingResult[i]] = currentCullingResult[i] & 0x1u;
 		}

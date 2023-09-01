@@ -19,7 +19,7 @@ namespace PigeonEngine
         bool           operator==(const TSharedPtr<T>& Other);
         bool           operator!=(const TSharedPtr<T>& Other);
         
-        ENGINE_NODISCARD BOOL IsValid()const;
+        PE_NODISCARD BOOL32 IsValid()const;
         
         T* Get() const;
 
@@ -97,7 +97,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    BOOL TSharedPtr<T>::IsValid() const
+    BOOL32 TSharedPtr<T>::IsValid() const
     {
         return Shared.get() == nullptr;
     }

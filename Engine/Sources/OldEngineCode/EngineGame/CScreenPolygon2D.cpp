@@ -6,7 +6,7 @@
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 #include "../../EngineRender/RenderMaterials/Headers/CScreenPolygon2DMaterial.h"
 
-CScreenPolygon2D::CScreenPolygon2D(const BOOL& active, const class CScene* scene, const std::string& pixelShaderName, CustomType::Vector4 screenPosition) : CPolygon2DBase(active, scene)
+CScreenPolygon2D::CScreenPolygon2D(const BOOL32& active, const class CScene* scene, const std::string& pixelShaderName, CustomType::Vector4 screenPosition) : CPolygon2DBase(active, scene)
 {
 	this->m_2DPosition = screenPosition;
 	{

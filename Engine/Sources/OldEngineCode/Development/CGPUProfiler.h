@@ -13,33 +13,33 @@ public:
 	class CGPUProfiler
 	{
 	public:
-		void	ResetAll(const UINT* newRecordFrameCount = NULL, const std::string* newName = NULL);
+		void	ResetAll(const UINT32* newRecordFrameCount = NULL, const std::string* newName = NULL);
 		void	ResetData();
 		void	Begin();
 		void	End();
 	public:
 		void	Counter(const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func);
 	public:
-		BOOL	IsAlreadyInitialize() { return (this->m_AlreadyInit); }
-		BOOL	IsAlreadyBegin() { return (this->m_AlreadyBegin); }
-		UINT	GetRecordFrameCount() { return (this->m_RecordFrameCount); }
+		BOOL32	IsAlreadyInitialize() { return (this->m_AlreadyInit); }
+		BOOL32	IsAlreadyBegin() { return (this->m_AlreadyBegin); }
+		UINT32	GetRecordFrameCount() { return (this->m_RecordFrameCount); }
 		DOUBLE	GetAverageTime() { return (this->m_AverageTime); }
 	public:
 		CGPUProfiler();
 		CGPUProfiler(const std::string& name);
-		CGPUProfiler(const std::string& name, const UINT& recordFrameCount);
+		CGPUProfiler(const std::string& name, const UINT32& recordFrameCount);
 		CGPUProfiler(const CGPUProfiler& profiler);
 		~CGPUProfiler();
 	private:
 		std::string													m_Name;
-		BOOL														m_AlreadyInit;
-		BOOL														m_AlreadyBegin;
-		UINT														m_RecordFrameCount;
+		BOOL32														m_AlreadyInit;
+		BOOL32														m_AlreadyBegin;
+		UINT32														m_RecordFrameCount;
 		DOUBLE														m_AverageTime;
 		std::vector<std::shared_ptr<class CGPUQuery>>				m_QueryTimeStart;
 		std::vector<std::shared_ptr<class CGPUQuery>>				m_QueryTimeEnd;
 		std::vector<std::shared_ptr<class CGPUQuery>>				m_QueryTimeDisjoint;
-		std::vector<BOOL>											m_ReadBackSucceed;
+		std::vector<BOOL32>											m_ReadBackSucceed;
 		std::vector<ULONGLONG>										m_StartData;
 		std::vector<ULONGLONG>										m_EndData;
 		std::vector<CustomStruct::CRenderQueryTimestampDisjoint>	m_DisjointData;
@@ -47,11 +47,11 @@ public:
 public:
 	static void		ShutDown();
 public:
-	static void		AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
+	static void		AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT32& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
 	static DOUBLE	GetPassAverageTime(const std::string& name);
 public:
 	static void		ClearProfilers();
-	static std::shared_ptr<CGPUProfiler>	NewProfiler(const std::string& name, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
+	static std::shared_ptr<CGPUProfiler>	NewProfiler(const std::string& name, const UINT32& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
 private:
 	static void								AddProfiler(const std::string& name, std::shared_ptr<CGPUProfiler> profiler);
 	static std::shared_ptr<CGPUProfiler>	FindProfiler(const std::string& name);
@@ -70,7 +70,7 @@ private:
 class CGPUProfilerManager
 {
 public:
-	static void AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
+	static void AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT32& recordFrameCount = ENGINE_GPU_PROFILER_RECORD_FRAME_COUNT);
 public:
 	CGPUProfilerManager() {}
 	~CGPUProfilerManager() {}

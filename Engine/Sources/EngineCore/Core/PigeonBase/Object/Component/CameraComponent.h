@@ -58,7 +58,7 @@ namespace PigeonEngine
 		void	SetFov(FLOAT InFovAngleY);
 	public:
 		Vector3	TransformScreenToWorld(const Vector3& InScreenCoordWithZ)const;
-		BOOL	TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const;
+		BOOL32	TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const;
 		Vector3	TransformWorldToView(const Vector3& InWorldLocation)const;
 		Vector3	TransformViewToWorld(const Vector3& InViewLocation)const;
 	public:

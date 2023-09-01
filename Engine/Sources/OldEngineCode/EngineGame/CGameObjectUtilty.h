@@ -9,7 +9,7 @@
 
 namespace GameObjectUtility
 {
-	BOOL GetObjectHasBoundingBoxInView(CScene* scene, const UINT& layout, std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>>& list)
+	BOOL32 GetObjectHasBoundingBoxInView(CScene* scene, const UINT32& layout, std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>>& list)
 	{
 		if (layout >= CScene::SceneLayout::LAYOUT_COUNT)
 		{
@@ -39,7 +39,7 @@ namespace GameObjectUtility
 	std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> GetGameObjectsHasBoundingBoxInView(CScene* scene)
 	{
 		std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObj;
-		for (UINT i = 0; i < CScene::LAYOUT_COUNT; i++)
+		for (UINT32 i = 0; i < CScene::LAYOUT_COUNT; i++)
 		{
 			std::vector<std::pair<CGameObject*, CGameBoundBaseComponent*>> listObjTemp;
 			if (GetObjectHasBoundingBoxInView(scene, i, listObjTemp))

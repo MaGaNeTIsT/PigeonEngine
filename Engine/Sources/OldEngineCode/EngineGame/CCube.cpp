@@ -16,7 +16,7 @@
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
-CCube::CCube(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
+CCube::CCube(const BOOL32& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 	{
@@ -44,7 +44,7 @@ CCube::CCube(const BOOL& active, const class CScene* scene) : CGameObject(active
 
 		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-			for (UINT i = 0u; i < 3u; i++)
+			for (UINT32 i = 0u; i < 3u; i++)
 			{
 				errorV[i] = (errorV[i] < error) ? error : 0.f;
 			}

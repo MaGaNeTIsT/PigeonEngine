@@ -3,7 +3,7 @@
 namespace PigeonEngine
 {
 
-	BOOL IKeyboard::IsKeyPressed(unsigned char keycode) const
+	BOOL32 IKeyboard::IsKeyPressed(unsigned char keycode) const
 	{
 		return KeyStates[keycode];;
 	}
@@ -17,7 +17,7 @@ namespace PigeonEngine
 		}
 		return {};
 	}
-	BOOL IKeyboard::IsKeyEmpty() const
+	BOOL32 IKeyboard::IsKeyEmpty() const
 	{
 		return KeyBuffer.empty();
 	}
@@ -35,7 +35,7 @@ namespace PigeonEngine
 		}
 		return {};
 	}
-	BOOL IKeyboard::IsCharEmpty() const
+	BOOL32 IKeyboard::IsCharEmpty() const
 	{
 		return CharBuffer.empty();
 	}
@@ -56,7 +56,7 @@ namespace PigeonEngine
 	{
 		bAutorepeatEnabled = false;
 	}
-	BOOL IKeyboard::IsAutorepeatEnabled() const
+	BOOL32 IKeyboard::IsAutorepeatEnabled() const
 	{
 		return bAutorepeatEnabled;
 	}

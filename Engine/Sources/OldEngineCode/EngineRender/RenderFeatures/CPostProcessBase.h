@@ -19,7 +19,7 @@ public:
 private:
 	const CRenderDevice::RenderTexture2DViewInfo*	m_SwapRenderTarget[2];
 	class CPixelShader*								m_PostShader[POST_PROCESS_COUNT];
-	INT												m_SwapIndex;
+	INT32												m_SwapIndex;
 public:
 	CPostProcessBase();
 	~CPostProcessBase();

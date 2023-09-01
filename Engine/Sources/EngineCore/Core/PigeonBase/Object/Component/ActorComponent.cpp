@@ -56,7 +56,7 @@ namespace PigeonEngine
 		PComponent::Uninit();
 	}
 
-	BOOL PActorComponent::ContainTransform()const
+	BOOL32 PActorComponent::ContainTransform()const
 	{
 		return FALSE;
 	}

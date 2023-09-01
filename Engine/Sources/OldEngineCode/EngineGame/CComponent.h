@@ -17,7 +17,7 @@ public:
 public:
 	class CGameObjectTransformBase*			GetGameObject()const;
 	CTransform*								GetParent()const;
-	UINT									GetChildrenNum()const;
+	UINT32									GetChildrenNum()const;
 	CTransform*								GetChildByUniqueID(const ULONGLONG& id)const;
 	std::vector<CTransform*>				GetChildrenList()const;
 	std::map<ULONGLONG, CTransform*>		GetChildrenMap()const;
@@ -30,17 +30,17 @@ public:
 	void	RemoveChildByUniqueID(const ULONGLONG& id);
 	void	RemoveAllChildren();
 public:
-	BOOL	IsBelongGameObject(const ULONGLONG& gameObjectID)const;
-	BOOL	HasGameObject()const;
-	BOOL	HasParent()const;
-	BOOL	HasChild()const;
-	BOOL	IsParent(const ULONGLONG& parentID)const;
-	BOOL	IsChild(const ULONGLONG& childID)const;
+	BOOL32	IsBelongGameObject(const ULONGLONG& gameObjectID)const;
+	BOOL32	HasGameObject()const;
+	BOOL32	HasParent()const;
+	BOOL32	HasChild()const;
+	BOOL32	IsParent(const ULONGLONG& parentID)const;
+	BOOL32	IsChild(const ULONGLONG& childID)const;
 protected:
 	void	BaseAddChild(CTransform* child);
 	void	BaseRemoveChildByUniqueID(const ULONGLONG& id);
-	BOOL	BaseFindChildByUniqueID(const ULONGLONG& id);
-	BOOL	BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output);
+	BOOL32	BaseFindChildByUniqueID(const ULONGLONG& id);
+	BOOL32	BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output);
 	void	ConnectParentAndChild(CTransform* parent, CTransform* child);
 	void	DisconnectParentAndChild(CTransform* parent, CTransform* child);
 	void	CalculateCurrentLocalTransform(CTransform* newParent);
@@ -86,7 +86,7 @@ public:
 public:
 	void	SelectedEditorUpdate();
 protected:
-	BOOL	m_RealTimeChangeValue;
+	BOOL32	m_RealTimeChangeValue;
 	FLOAT	m_EditorRotation[3];
 #endif
 public:
@@ -108,16 +108,16 @@ public:
 	virtual void	SelectedEditorUpdate() {}
 #endif
 public:
-	const BOOL&		NeedUpdate()const { return (this->m_NeedUpdate); }
-	const BOOL&		NeedFixedUpdate()const { return (this->m_NeedFixedUpdate); }
+	const BOOL32&		NeedUpdate()const { return (this->m_NeedUpdate); }
+	const BOOL32&		NeedFixedUpdate()const { return (this->m_NeedFixedUpdate); }
 public:
-	const BOOL&		IsActive()const { return (this->m_Active); }
+	const BOOL32&		IsActive()const { return (this->m_Active); }
 	void			Active() { this->m_Active = TRUE; }
 	void			Inactive() { this->m_Active = FALSE; }
 protected:
-	BOOL	m_NeedUpdate;
-	BOOL	m_NeedFixedUpdate;
-	BOOL	m_Active;
+	BOOL32	m_NeedUpdate;
+	BOOL32	m_NeedFixedUpdate;
+	BOOL32	m_Active;
 public:
 	const class CGameObject* GetGameObject()const { return (this->m_GameObject); }
 	void SetGameObject(const class CGameObject* gameObject)
@@ -130,7 +130,7 @@ public:
 protected:
 	const class CGameObject*	m_GameObject;
 public:
-	CBaseComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate)
+	CBaseComponent(const BOOL32& active, const BOOL32& needUpdate, const BOOL32& needFixedUpdate)
 	{
 		this->m_NeedUpdate		= needUpdate;
 		this->m_NeedFixedUpdate	= needFixedUpdate;
@@ -151,7 +151,7 @@ public:
 	virtual void	Draw()const			= 0;
 	virtual void	DrawExtra()const	= 0;
 public:
-	CRenderComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate) {}
+	CRenderComponent(const BOOL32& active, const BOOL32& needUpdate, const BOOL32& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate) {}
 	virtual ~CRenderComponent() {}
 };
 */

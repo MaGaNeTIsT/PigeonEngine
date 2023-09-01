@@ -18,11 +18,11 @@ namespace PigeonEngine
 	struct CPhysicsData
 	{
 		//Initialized Parameters
-		UINT PreAllocatedSize = 70 * 1024 * 1024;		//pre-allocated memory for simulation.
-		UINT MaxBodies = 65535;							//Max amount of rigid bodies.
-		UINT NumBodyMutexes = 0;						//Mutexes count,0 to default setting.
-		UINT MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
-		UINT MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
+		UINT32 PreAllocatedSize = 70 * 1024 * 1024;		//pre-allocated memory for simulation.
+		UINT32 MaxBodies = 65535;							//Max amount of rigid bodies.
+		UINT32 NumBodyMutexes = 0;						//Mutexes count,0 to default setting.
+		UINT32 MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
+		UINT32 MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
 
 		//Runtime Parameters
 		int CollisionSteps = 1;							// Do n collision step per cDeltaTime

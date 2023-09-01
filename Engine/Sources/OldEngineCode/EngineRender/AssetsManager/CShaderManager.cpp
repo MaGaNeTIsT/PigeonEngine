@@ -12,7 +12,7 @@ void CShaderManager::ShutDown()
 	CShaderManager::ClearComputeShaderData();
 	delete (CShaderManager::m_ShaderManager);
 }
-CVertexShader* CShaderManager::LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum)
+CVertexShader* CShaderManager::LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT32& layoutNum)
 {
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> shader = nullptr;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout = nullptr;

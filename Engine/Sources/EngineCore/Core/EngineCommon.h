@@ -11,8 +11,8 @@ namespace PigeonEngine
 	class EResourceInterface
 	{
 	public:
-		virtual BOOL IsResourceValid()const = 0;
-		virtual BOOL InitResource() = 0;
+		virtual BOOL32 IsResourceValid()const = 0;
+		virtual BOOL32 InitResource() = 0;
 		virtual void ReleaseResource() = 0;
 	public:
 		EResourceInterface() = default;
@@ -43,22 +43,22 @@ namespace PigeonEngine
 		TValueType	Value;
 	};
 	template<typename TValueType, typename TTimeType>
-	BOOL operator>(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	BOOL32 operator>(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
 	{
 		return (InKey0.Time > InKey1.Time);
 	}
 	template<typename TValueType, typename TTimeType>
-	BOOL operator<(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	BOOL32 operator<(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
 	{
 		return (InKey0.Time < InKey1.Time);
 	}
 	template<typename TValueType, typename TTimeType>
-	BOOL operator>=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	BOOL32 operator>=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
 	{
 		return (InKey0.Time >= InKey1.Time);
 	}
 	template<typename TValueType, typename TTimeType>
-	BOOL operator<=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
+	BOOL32 operator<=(const ETimeKey<TValueType, TTimeType>& InKey0, const ETimeKey<TValueType, TTimeType>& InKey1)
 	{
 		return (InKey0.Time <= InKey1.Time);
 	}
@@ -95,21 +95,21 @@ namespace PigeonEngine
 		{
 			if (Other.PositionKeys.Length() > 0u)
 			{
-				for (UINT i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = Other.PositionKeys.Length(); i < n; i++)
 				{
 					PositionKeys.Add(Other.PositionKeys[i]);
 				}
 			}
 			if (Other.RotationKeys.Length() > 0u)
 			{
-				for (UINT i = 0u, n = Other.RotationKeys.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = Other.RotationKeys.Length(); i < n; i++)
 				{
 					RotationKeys.Add(Other.RotationKeys[i]);
 				}
 			}
 			if (Other.ScalingKeys.Length() > 0u)
 			{
-				for (UINT i = 0u, n = Other.ScalingKeys.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = Other.ScalingKeys.Length(); i < n; i++)
 				{
 					ScalingKeys.Add(Other.ScalingKeys[i]);
 				}
@@ -124,11 +124,11 @@ namespace PigeonEngine
 	{
 		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
 		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
-		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
+		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL32& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
 		
 		Vector3	AABBMin;
 		Vector3	AABBMax;
-		BOOL IsValid;
+		BOOL32 IsValid;
 
 		EBoundAABB& operator+=(const EBoundAABB& Other)
 		{
@@ -207,11 +207,11 @@ namespace PigeonEngine
 			, NearPlaneBottomLeft(Other.NearPlaneBottomLeft), NearPlaneBottomRight(Other.NearPlaneBottomRight) {}
 		EFrustum& operator=(const EFrustum& Other)
 		{
-			for (UINT i = 0u; i < 4u; i++)
+			for (UINT32 i = 0u; i < 4u; i++)
 			{
 				Plane[i] = Other.Plane[i];
 			}
-			for (UINT i = 0u; i < 8u; i++)
+			for (UINT32 i = 0u; i < 8u; i++)
 			{
 				FarNearPlanePoint[i] = Other.FarNearPlanePoint[i];
 			}
@@ -222,7 +222,7 @@ namespace PigeonEngine
 			Vector3 TempPosVec[4] = { Vector3(0.f), Vector3(0.f), Vector3(0.f), Vector3(0.f) };
 			{
 				FLOAT SinHalfAngleY, CosHalfAngleY;
-				EMath::SinCos(SinHalfAngleY, CosHalfAngleY, (0.5f * InFovAngleY) * EMath::GetDegToRad());
+				EMath::SinCos(SinHalfAngleY, CosHalfAngleY, EMath::DegreesToRadians(0.5f * InFovAngleY));
 				FLOAT HalfHeight = (SinHalfAngleY / CosHalfAngleY) * InFarDist;
 				FLOAT HalfWidth = InAspectRatio * HalfHeight;
 				//
@@ -242,18 +242,18 @@ namespace PigeonEngine
 				TempPosVec[3] = Vector3(HalfWidth, -HalfHeight, InFarDist);
 			}
 			{
-				for (UINT i = 4u; i < 8u; i++)
+				for (UINT32 i = 4u; i < 8u; i++)
 				{
 					FarNearPlanePoint[i] = TempPosVec[i - 4];
 				}
 				FLOAT t = InNearDist / InFarDist;
-				for (UINT i = 0u; i < 4u; i++)
+				for (UINT32 i = 0u; i < 4u; i++)
 				{
 					FarNearPlanePoint[i] = Vector3::Lerp(0.f, TempPosVec[i], t);
 				}
 			}
 			{
-				for (UINT i = 0u; i < 4u; i++)
+				for (UINT32 i = 0u; i < 4u; i++)
 				{
 					TempPosVec[i].Normalize();
 				}
@@ -261,7 +261,7 @@ namespace PigeonEngine
 				Plane[1] = Vector3::Cross(TempPosVec[2], TempPosVec[3]);
 				Plane[2] = Vector3::Cross(TempPosVec[0], TempPosVec[2]);
 				Plane[3] = Vector3::Cross(TempPosVec[3], TempPosVec[1]);
-				for (UINT i = 0u; i < 4u; i++)
+				for (UINT32 i = 0u; i < 4u; i++)
 				{
 					Plane[i].Normalize();
 				}
@@ -376,7 +376,7 @@ namespace PigeonEngine
 		* Params InPosition[SpaceName] : specific space position of the point.
 		* Params output : [0.f, screen max] range of screen coord which has anchor(zero point) in left top of RECT.
 		*/
-		BOOL TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector2& OutPositionSS)const
+		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector2& OutPositionSS)const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -384,7 +384,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
 
-			BOOL bIfOutScreen =
+			BOOL32 bIfOutScreen =
 				(TempPoint.x < -1.f) ||
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
@@ -407,7 +407,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector3& OutPositionSS)const
+		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector3& OutPositionSS)const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -416,7 +416,7 @@ namespace PigeonEngine
 			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
 			TempPoint = TempPoint / TempPoint.w;
 
-			BOOL bIfOutScreen =
+			BOOL32 bIfOutScreen =
 				(TempPoint.x < -1.f) ||
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
@@ -435,7 +435,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector2& OutPositionSS)const
+		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector2& OutPositionSS)const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -443,7 +443,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(InPositionVS.x, InPositionVS.y, InPositionVS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ProjectionPart.ProjectionMatrix, TempPoint);
 
-			BOOL bIfOutScreen =
+			BOOL32 bIfOutScreen =
 				(TempPoint.x < -1.f) ||
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
@@ -466,7 +466,7 @@ namespace PigeonEngine
 
 			return (!bIfOutScreen);
 		}
-		BOOL TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector3& OutPositionSS)const
+		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector3& OutPositionSS)const
 		{
 			const Vector2 PointScl(0.5f, -0.5f);
 			const Vector2 PointAdd(0.5f, 0.5f);
@@ -475,7 +475,7 @@ namespace PigeonEngine
 			TempPoint = Matrix4x4TransformVector(ProjectionPart.ProjectionMatrix, TempPoint);
 			TempPoint = TempPoint / TempPoint.w;
 
-			BOOL bIfOutScreen =
+			BOOL32 bIfOutScreen =
 				(TempPoint.x < -1.f) ||
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||

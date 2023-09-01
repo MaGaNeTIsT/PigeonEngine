@@ -45,13 +45,13 @@ void CGTAOPass::Init(CCamera* mainCamera, const CustomType::Vector2Int& pipeline
 	this->m_MainCamera = mainCamera;
 	this->m_PipelineSize = pipelineSize;
 
-	INT widthBuffer = (pipelineSize.X() + 1) / 2;
-	INT heightBuffer = (pipelineSize.Y() + 1) / 2;
+	INT32 widthBuffer = (pipelineSize.X() + 1) / 2;
+	INT32 heightBuffer = (pipelineSize.Y() + 1) / 2;
 
 	this->m_BufferSize = CustomType::Vector2Int(widthBuffer, heightBuffer);
 
-	UINT bufferWidth = static_cast<UINT>(widthBuffer);
-	UINT bufferHeight = static_cast<UINT>(heightBuffer);
+	UINT32 bufferWidth = static_cast<UINT32>(widthBuffer);
+	UINT32 bufferHeight = static_cast<UINT32>(heightBuffer);
 
 	CRenderDevice::CreateBuffer(this->m_ConstantBuffer,
 		CustomStruct::CRenderBufferDesc(
@@ -135,9 +135,9 @@ void CGTAOPass::Update()
 }
 void CGTAOPass::ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& sceneDepth)
 {
-	UINT dispatchX = static_cast<UINT>((this->m_BufferSize.X() + 7) / 8);
-	UINT dispatchY = static_cast<UINT>((this->m_BufferSize.Y() + 7) / 8);
-	UINT dispatchZ = 1u;
+	UINT32 dispatchX = static_cast<UINT32>((this->m_BufferSize.X() + 7) / 8);
+	UINT32 dispatchY = static_cast<UINT32>((this->m_BufferSize.Y() + 7) / 8);
+	UINT32 dispatchZ = 1u;
 
 	CRenderDevice::UploadBuffer(this->m_ConstantBuffer, &(this->m_ConstantData));
 	CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 3u);
@@ -159,7 +159,7 @@ void CGTAOPass::ComputeGTAO(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceVie
 #ifdef _DEVELOPMENT_EDITOR
 void CGTAOPass::EditorUpdate()
 {
-	INT tempNumAngles = this->m_UserArguments.NumAngles;
+	INT32 tempNumAngles = this->m_UserArguments.NumAngles;
 
 	ImGui::Begin("GTAO parameters");
 	ImGui::SliderInt("Debug type", &(this->m_DebugType), 0, 3);
@@ -180,9 +180,9 @@ void CGTAOPass::DrawDebug()
 	if (this->m_DebugType != 0)
 	{
 		{
-			UINT dispatchX = static_cast<UINT>((this->m_BufferSize.X() + 7) / 8);
-			UINT dispatchY = static_cast<UINT>((this->m_BufferSize.Y() + 7) / 8);
-			UINT dispatchZ = 1u;
+			UINT32 dispatchX = static_cast<UINT32>((this->m_BufferSize.X() + 7) / 8);
+			UINT32 dispatchY = static_cast<UINT32>((this->m_BufferSize.Y() + 7) / 8);
+			UINT32 dispatchZ = 1u;
 			CRenderDevice::BindCSConstantBuffer(this->m_ConstantBuffer, 3u);
 			CRenderDevice::BindCSShaderResourceView(this->m_IntegralBuffer.ShaderResourceView, 5u);
 			CRenderDevice::BindCSShaderResourceView(this->m_FilterBuffer.ShaderResourceView, 6u);

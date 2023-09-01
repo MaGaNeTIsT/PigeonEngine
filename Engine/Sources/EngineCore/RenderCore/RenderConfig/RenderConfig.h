@@ -17,7 +17,7 @@ namespace PigeonEngine
 		constexpr static FLOAT		RENDER_CAMERA_NEAR				= 5.f;
 		constexpr static FLOAT		RENDER_CAMERA_FAR				= 200000.f;
 
-		constexpr static UINT		RENDER_SHADOW_MAP_SIZE			= 4096u;
+		constexpr static UINT32		RENDER_SHADOW_MAP_SIZE			= 4096u;
 
 		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
 		constexpr static USHORT		RENDER_MESH_BONE_NUM_MAX		= 256u;

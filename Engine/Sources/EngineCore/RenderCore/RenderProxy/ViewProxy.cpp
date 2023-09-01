@@ -19,11 +19,11 @@ namespace PigeonEngine
 			ViewFrustum	= InComponent->GetCameraFrustum();
 			{
 				Quaternion TempR(InComponent->GetComponentWorldRotation());
-				for (UINT i = 0u; i < 4u; i++)
+				for (UINT32 i = 0u; i < 4u; i++)
 				{
 					ViewFrustum.Plane[i] = QuaternionTransformVector(TempR, ViewFrustum.Plane[i]);
 				}
-				for (UINT i = 0u; i < 8u; i++)
+				for (UINT32 i = 0u; i < 8u; i++)
 				{
 					ViewFrustum.FarNearPlanePoint[i] = Matrix4x4TransformPosition(ViewMatrix.ViewPart.InverseViewMatrix, ViewFrustum.FarNearPlanePoint[i]);
 				}

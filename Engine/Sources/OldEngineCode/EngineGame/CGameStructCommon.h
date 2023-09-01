@@ -102,19 +102,19 @@ namespace CustomStruct
 		{
 			this->Time = static_cast<DOUBLE>(0);
 		}
-		BOOL operator>(const CGameAnimationKey<ValueType>& k)
+		BOOL32 operator>(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time > k.Time);
 		}
-		BOOL operator<(const CGameAnimationKey<ValueType>& k)
+		BOOL32 operator<(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time < k.Time);
 		}
-		BOOL operator>=(const CGameAnimationKey<ValueType>& k)
+		BOOL32 operator>=(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time >= k.Time);
 		}
-		BOOL operator<=(const CGameAnimationKey<ValueType>& k)
+		BOOL32 operator<=(const CGameAnimationKey<ValueType>& k)
 		{
 			return (this->Time <= k.Time);
 		}

@@ -23,12 +23,12 @@ public:
 	const std::vector<CustomStruct::CSubMeshInfo>&				GetSubMeshInfo() const { return (this->m_SubMeshInfo); }
 	const std::string&											GetName()const { return (this->m_MeshPath); }
 	const void*		GetVertexData() const { return (this->m_VertexData); }
-	UINT			GetVertexStride()const { return (this->m_VertexStride); }
-	UINT			GetVertexCount()const { return (this->m_VertexCount); }
-	UINT			GetIndexCount()const { return (this->m_IndexCount); }
-	BOOL			HasVertexData()const { return (this->m_VertexData != nullptr); }
+	UINT32			GetVertexStride()const { return (this->m_VertexStride); }
+	UINT32			GetVertexCount()const { return (this->m_VertexCount); }
+	UINT32			GetIndexCount()const { return (this->m_IndexCount); }
+	BOOL32			HasVertexData()const { return (this->m_VertexData != nullptr); }
 public:
-	CBaseMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT& inputLayoutNum, void* vdata, const UINT& vNum, const std::vector<IndexType>& idata, const std::vector<CustomStruct::CSubMeshInfo>& submeshInfo, Microsoft::WRL::ComPtr<ID3D11Buffer> vbuffer, Microsoft::WRL::ComPtr<ID3D11Buffer> ibuffer, const CustomType::Vector3& boundMin, const CustomType::Vector3& boundMax)
+	CBaseMesh(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* inputLayoutDesc, const UINT32& inputLayoutNum, void* vdata, const UINT32& vNum, const std::vector<IndexType>& idata, const std::vector<CustomStruct::CSubMeshInfo>& submeshInfo, Microsoft::WRL::ComPtr<ID3D11Buffer> vbuffer, Microsoft::WRL::ComPtr<ID3D11Buffer> ibuffer, const CustomType::Vector3& boundMin, const CustomType::Vector3& boundMax)
 	{
 		this->m_MeshPath		= name;
 		this->m_SubMeshInfo		= submeshInfo;
@@ -37,10 +37,10 @@ public:
 		this->m_VertexBuffer	= vbuffer;
 		this->m_IndexBuffer		= ibuffer;
 		this->m_VertexCount		= vNum;
-		this->m_IndexCount		= static_cast<UINT>(idata.size());
+		this->m_IndexCount		= static_cast<UINT32>(idata.size());
 		this->m_VertexStride	= 0u;
 		this->m_InputLayoutDesc.resize(inputLayoutNum);
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			this->m_InputLayoutDesc[i] = inputLayoutDesc[i];
 			this->m_VertexStride += inputLayoutDesc[i].GetSemanticSizeByByte();
@@ -64,9 +64,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>				m_IndexBuffer;
 	const void*											m_VertexData;
 	std::vector<IndexType>								m_IndexData;
-	UINT												m_VertexStride;
-	UINT												m_VertexCount;
-	UINT												m_IndexCount;
+	UINT32												m_VertexStride;
+	UINT32												m_VertexCount;
+	UINT32												m_IndexCount;
 	CustomType::Vector3									m_BoundMin;
 	CustomType::Vector3									m_BoundMax;
 };
@@ -128,7 +128,7 @@ public:
 		}
 		return nullptr;
 	}
-	UINT GetVertexStride()const
+	UINT32 GetVertexStride()const
 	{
 		if (this->HasMesh())
 		{
@@ -136,7 +136,7 @@ public:
 		}
 		return 0u;
 	}
-	UINT GetVertexCount()const
+	UINT32 GetVertexCount()const
 	{
 		if (this->HasMesh())
 		{
@@ -144,7 +144,7 @@ public:
 		}
 		return 0u;
 	}
-	UINT GetIndexCount()const
+	UINT32 GetIndexCount()const
 	{
 		if (this->HasMesh())
 		{
@@ -152,7 +152,7 @@ public:
 		}
 		return 0u;
 	}
-	BOOL HasVertexData()const
+	BOOL32 HasVertexData()const
 	{
 		if (this->HasMesh())
 		{
@@ -161,20 +161,20 @@ public:
 		return FALSE;
 	}
 public:
-	void SetMesh(const CBaseMesh<UINT>* mesh)
+	void SetMesh(const CBaseMesh<UINT32>* mesh)
 	{
 		if (mesh != nullptr)
 		{
 			this->m_Mesh = mesh;
 		}
 	}
-	BOOL HasMesh()const
+	BOOL32 HasMesh()const
 	{
 		return (this->m_Mesh != nullptr);
 	}
 	virtual void Init()override {}
 	virtual void Uninit()override {}
-	virtual void Bind(const BOOL& needVertex, const BOOL& needIndex)const
+	virtual void Bind(const BOOL32& needVertex, const BOOL32& needIndex)const
 	{
 		if (needVertex == TRUE)
 		{
@@ -241,13 +241,13 @@ public:
 	}
 #endif
 protected:
-	const CBaseMesh<UINT>* m_Mesh;
+	const CBaseMesh<UINT32>* m_Mesh;
 public:
 	CMeshComponent() : CBaseComponent(TRUE, FALSE, FALSE)
 	{
 		m_Mesh = nullptr;
 	}
-	CMeshComponent(const BOOL& active, const BOOL& needUpdate, const BOOL& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate)
+	CMeshComponent(const BOOL32& active, const BOOL32& needUpdate, const BOOL32& needFixedUpdate) : CBaseComponent(active, needUpdate, needFixedUpdate)
 	{
 		m_Mesh = nullptr;
 	}
@@ -257,7 +257,7 @@ public:
 class CSkeletonMeshComponent : public CMeshComponent
 {
 public:
-	BOOL	HasSkeleton()const { return (this->m_SkeletonComponent != nullptr); }
+	BOOL32	HasSkeleton()const { return (this->m_SkeletonComponent != nullptr); }
 public:
 	void						SetSkeletonComponent(const CSkeletonComponent* skeletonComponent) { this->m_SkeletonComponent = skeletonComponent; };
 	const CSkeletonComponent*	GetSkeletonComponent() { return (this->m_SkeletonComponent); };

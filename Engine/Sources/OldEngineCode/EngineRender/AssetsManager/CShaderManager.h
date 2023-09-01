@@ -10,7 +10,7 @@ public:
 	static const CShaderManager* const GetShaderManager() { return m_ShaderManager; }
 	static void ShutDown();
 public:
-	static class CVertexShader*		LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT& layoutNum);
+	static class CVertexShader*		LoadVertexShader(const std::string& name, const CustomStruct::CRenderInputLayoutDesc* layouts, const UINT32& layoutNum);
 	static class CPixelShader*		LoadPixelShader(const std::string& name);
 	static class CComputeShader*	LoadComputeShader(const std::string& name);
 public:

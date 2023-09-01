@@ -39,7 +39,7 @@ void CTextureManager::ClearTextureCubeData()
 		m_TextureManager->m_TextureCubeData.clear();
 	}
 }
-CTexture2D* CTextureManager::LoadTexture2D(const std::string& name, const BOOL& isSRGB)
+CTexture2D* CTextureManager::LoadTexture2D(const std::string& name, const BOOL32& isSRGB)
 {
 	const static std::string _tgaName = "tga";
 
@@ -72,7 +72,7 @@ CTexture2D* CTextureManager::LoadTexture2D(const std::string& name, const BOOL& 
 	}
 	return resultTexture;
 }
-CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::string>& name, const BOOL& isSRGB)
+CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::string>& name, const BOOL32& isSRGB)
 {
 	const static std::string _tgaName = "tga";
 
@@ -84,7 +84,7 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 	CTextureCube* resultTexture = NULL;
 	std::string combineName = name[0u];
 	{
-		for (UINT i = 1u; i < 6u; i++)
+		for (UINT32 i = 1u; i < 6u; i++)
 		{
 			combineName += name[i];
 		}
@@ -97,8 +97,8 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 
 	{
 		std::vector<TBYTE> cubeData;
-		UINT cubeWidth, cubeHeight; UINT offset = 0u;
-		for (UINT i = 0u; i < 6u; i++)
+		UINT32 cubeWidth, cubeHeight; UINT32 offset = 0u;
+		for (UINT32 i = 0u; i < 6u; i++)
 		{
 			size_t pos = name[i].find_last_of('.');
 			if (pos == std::string::npos)
@@ -109,7 +109,7 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 
 			if (typeName == _tgaName)
 			{
-				UINT tempCubeWidth, tempCubeHeight;
+				UINT32 tempCubeWidth, tempCubeHeight;
 				if (!CTextureManager::LoadTGAData(name[i], cubeData, tempCubeWidth, tempCubeHeight, offset))
 				{
 					return NULL;
@@ -138,7 +138,7 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 				}
 				TBYTE* ptrCubeData = cubeData.data();
 				CustomStruct::CRenderSubresourceData subResourceDatas[6u];
-				for (UINT i = 0u; i < 6u; i++)
+				for (UINT32 i = 0u; i < 6u; i++)
 				{
 					subResourceDatas[i].pSysMem = static_cast<const void*>(&(ptrCubeData[i * cubeWidth * cubeHeight * 4u]));
 					subResourceDatas[i].SysMemPitch = cubeWidth * 4u;
@@ -163,9 +163,9 @@ CTextureCube* CTextureManager::LoadTextureCubeCombine(const std::vector<std::str
 	}
 	return resultTexture;
 }
-CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOOL& isSRGB)
+CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOOL32& isSRGB)
 {
-	std::vector<TBYTE> textureData; UINT textureWidth, textureHeight;
+	std::vector<TBYTE> textureData; UINT32 textureWidth, textureHeight;
 	if (!LoadTGAData(name, textureData, textureWidth, textureHeight))
 	{
 		return NULL;
@@ -196,12 +196,12 @@ CTexture2D* CTextureManager::LoadTGATexture2D(const std::string& name, const BOO
 	CTexture2D* resultTexture2D = new CTexture2D(name, tempTexture2D);
 	return resultTexture2D;
 }
-BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& outputData, UINT& outputWidth, UINT& outputHeight, const UINT& offset)
+BOOL32 CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& outputData, UINT32& outputWidth, UINT32& outputHeight, const UINT32& offset)
 {
 	TBYTE	header[18];
 	TBYTE*	rawData;
 	TBYTE	depth;
-	UINT	width, height, bpp, size;
+	UINT32	width, height, bpp, size;
 	FILE*	file;
 	fopen_s(&file, name.c_str(), "rb");
 	if (file == NULL)
@@ -246,9 +246,9 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	// Copy from raw to output.
 	if (bpp == 1u)
 	{
-		for (UINT y = 0u; y < height; y++)
+		for (UINT32 y = 0u; y < height; y++)
 		{
-			for (UINT x = 0u; x < width; x++)
+			for (UINT32 x = 0u; x < width; x++)
 			{
 				TBYTE value = rawData[y * width + x];
 				outputData[offset + (y * width + x) * 4u + 0u] = value;
@@ -261,9 +261,9 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	else if (bpp == 3u)
 	{
 		// R<->B
-		for (UINT y = 0u; y < height; y++)
+		for (UINT32 y = 0u; y < height; y++)
 		{
-			for (UINT x = 0u; x < width; x++)
+			for (UINT32 x = 0u; x < width; x++)
 			{
 				outputData[offset + (y * width + x) * 4u + 0u] = rawData[(y * width + x) * 3u + 2u];
 				outputData[offset + (y * width + x) * 4u + 1u] = rawData[(y * width + x) * 3u + 1u];
@@ -275,9 +275,9 @@ BOOL CTextureManager::LoadTGAData(const std::string& name, std::vector<TBYTE>& o
 	else if (bpp == 4u)
 	{
 		// R<->B
-		for (UINT y = 0u; y < height; y++)
+		for (UINT32 y = 0u; y < height; y++)
 		{
-			for (UINT x = 0u; x < width; x++)
+			for (UINT32 x = 0u; x < width; x++)
 			{
 				outputData[offset + (y * width + x) * 4u + 0u] = rawData[(y * width + x) * 4u + 2u];
 				outputData[offset + (y * width + x) * 4u + 1u] = rawData[(y * width + x) * 4u + 1u];

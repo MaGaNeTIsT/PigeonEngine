@@ -28,7 +28,7 @@ namespace PigeonEngine
 		{
 			if (Other.Children.Length() > 0u)
 			{
-				for (UINT i = 0u, n = Other.Children.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = Other.Children.Length(); i < n; i++)
 				{
 					Children.Add(Other.Children[i]);
 				}
@@ -50,18 +50,18 @@ namespace PigeonEngine
 			Parent			= Other.Parent;
 			if (Other.Children.Length() > 0u)
 			{
-				for (UINT i = 0u, n = Other.Children.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = Other.Children.Length(); i < n; i++)
 				{
 					Children.Add(Other.Children[i]);
 				}
 			}
 			return (*this);
 		}
-		BOOL operator==(const EBoneData& Other)
+		BOOL32 operator==(const EBoneData& Other)
 		{
 			return (Name == Other.Name);
 		}
-		BOOL operator!=(const EBoneData& Other)
+		BOOL32 operator!=(const EBoneData& Other)
 		{
 			return (Name != Other.Name);
 		}
@@ -80,21 +80,21 @@ namespace PigeonEngine
 	public:
 		typedef TArray<EBoneData>	EBonePart;
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		ESkeletonType					GetSkeletonType()const;
 		const EString&					GetSkeletonName()const;
 		const EBonePart&				GetBonePart()const;
 		const TMap<EString, USHORT>&	GetBoneMapping()const;
-		UINT							GetBoneCount()const;
+		UINT32							GetBoneCount()const;
 	public:
-		BOOL	AddBoneElement(EBoneData* InIndexData);
-		BOOL	RemoveBoneElement(const EString& InBoneName);
-		BOOL	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
-		BOOL	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
-		BOOL	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
+		BOOL32	AddBoneElement(EBoneData* InIndexData);
+		BOOL32	RemoveBoneElement(const EString& InBoneName);
+		BOOL32	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
+		BOOL32	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
+		BOOL32	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
 	protected:
 		void			RemoveBoneInternal(USHORT InBoneIndex);
 	protected:
@@ -123,8 +123,8 @@ namespace PigeonEngine
 			SKELETON_RENDER_RESOURCE_COUNT
 		};
 	public:
-		virtual BOOL	IsRenderResourceValid()const override;
-		virtual BOOL	InitRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const override;
+		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
 	protected:
 		ESkeleton*			Skeleton;
@@ -151,7 +151,7 @@ namespace PigeonEngine
 		);
 		virtual ~ESkeletonAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	private:
 		friend class ESkeletonAssetManager;
 	public:
@@ -170,16 +170,16 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset);
+		BOOL32	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset);
 	private:
 		void	ClearSkeletons();
 	private:
 		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName);
-		BOOL SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
+		BOOL32 SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
 		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName);
-		BOOL SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
+		BOOL32 SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
 	private:
 		ESkeletonAssetDataManager SkeletonAssetDataManager;
 

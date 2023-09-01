@@ -33,7 +33,7 @@ public:
 	class CTexture2D*	GetAmbientOcclusionTexture()const;
 	class CTexture2D*	GetSubsurfaceTexture()const;
 public:
-	virtual void	SetIsGlossyRoughness(const BOOL& v);
+	virtual void	SetIsGlossyRoughness(const BOOL32& v);
 	virtual void	SetRoughness(const FLOAT& v);
 	virtual void	SetAmbientOcclusion(const FLOAT& v);
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr);
@@ -41,7 +41,7 @@ public:
 	virtual void	SetSheenColor(const CustomStruct::CColor& clr);
 	virtual void	SetSubsurfaceColor(const CustomStruct::CColor& clr);
 public:
-	virtual BOOL					GetIsGlossyRoughness()const;
+	virtual BOOL32					GetIsGlossyRoughness()const;
 	virtual FLOAT					GetRoughness()const;
 	virtual FLOAT					GetAmbientOcclusion()const;
 	virtual CustomStruct::CColor	GetBaseColor()const;
@@ -59,20 +59,20 @@ public:
 	virtual void			SelectedClothUpdate();
 	virtual void			SelectedEditorUpdate()override;
 protected:
-	BOOL				m_IsGlossy;
-	INT					m_AlbedoTextureSelect;
+	BOOL32				m_IsGlossy;
+	INT32					m_AlbedoTextureSelect;
 	CHAR				m_AlbedoTexturePath[512];
-	INT					m_EmissiveTextureSelect;
+	INT32					m_EmissiveTextureSelect;
 	CHAR				m_EmissiveTexturePath[512];
-	INT					m_SheenColorTextureSelect;
+	INT32					m_SheenColorTextureSelect;
 	CHAR				m_SheenColorTexturePath[512];
-	INT					m_NormalTextureSelect;
+	INT32					m_NormalTextureSelect;
 	CHAR				m_NormalTexturePath[512];
-	INT					m_RoughnessTextureSelect;
+	INT32					m_RoughnessTextureSelect;
 	CHAR				m_RoughnessTexturePath[512];
-	INT					m_AmbientOcclusionTextureSelect;
+	INT32					m_AmbientOcclusionTextureSelect;
 	CHAR				m_AmbientOcclusionTexturePath[512];
-	INT					m_SubsurfaceTextureSelect;
+	INT32					m_SubsurfaceTextureSelect;
 	CHAR				m_SubsurfaceTexturePath[512];
 #endif
 protected:
@@ -86,7 +86,7 @@ protected:
 	class CTexture2D*	m_SubsurfaceTexture;
 public:
 	CClothMaterial();
-	CClothMaterial(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName);
+	CClothMaterial(const std::string& name, MaterialType materialType, const UINT32& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT32& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName);
 	virtual ~CClothMaterial();
 };
 
@@ -111,7 +111,7 @@ public:
 public:
 	void			SetAnisotropyStrength(const FLOAT& v);
 	void			SetAnisotropyDirection(const FLOAT& v);
-	virtual void	SetIsGlossyRoughness(const BOOL& v)override;
+	virtual void	SetIsGlossyRoughness(const BOOL32& v)override;
 	virtual void	SetRoughness(const FLOAT& v)override;
 	virtual void	SetAmbientOcclusion(const FLOAT& v)override;
 	virtual void	SetBaseColor(const CustomStruct::CColor& clr)override;
@@ -121,7 +121,7 @@ public:
 public:
 	FLOAT							GetAnisotropyStrength()const;
 	FLOAT							GetAnisotropyDirection()const;
-	virtual BOOL					GetIsGlossyRoughness()const override;
+	virtual BOOL32					GetIsGlossyRoughness()const override;
 	virtual FLOAT					GetRoughness()const override;
 	virtual FLOAT					GetAmbientOcclusion()const override;
 	virtual CustomStruct::CColor	GetBaseColor()const override;
@@ -137,9 +137,9 @@ public:
 	virtual void	HookApplyTextureUpdate()override;
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	INT					m_AnisotropyStrengthSelect;
+	INT32					m_AnisotropyStrengthSelect;
 	CHAR				m_AnisotropyStrengthPath[512];
-	INT					m_AnisotropyDirectionSelect;
+	INT32					m_AnisotropyDirectionSelect;
 	CHAR				m_AnisotropyDirectionPath[512];
 #endif
 protected:

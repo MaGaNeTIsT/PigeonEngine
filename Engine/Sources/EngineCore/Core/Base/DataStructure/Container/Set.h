@@ -20,14 +20,14 @@ namespace PigeonEngine
         explicit TSet(const std::set<T>& Other);
         ~TSet();
         
-        T& operator[](const UINT& Index);
+        T& operator[](const UINT32& Index);
 
-        BOOL Add     (const T& Element);
-        T&   Get     (const UINT& Index) const;
+        BOOL32 Add     (const T& Element);
+        T&   Get     (const UINT32& Index) const;
         // Find the index of given Element, return set's Length if the Element doesn't exist.
-        UINT Find    (const T& Element) const;
-        BOOL Contains(const T& Element) const;
-        void RemoveAt(const UINT& Index);
+        UINT32 Find    (const T& Element) const;
+        BOOL32 Contains(const T& Element) const;
+        void RemoveAt(const UINT32& Index);
         void Remove  (const T& Element);
         void Clear   ();
 
@@ -57,11 +57,11 @@ namespace PigeonEngine
         typename TIterator      begin(){return Elements.begin();}
         typename TIterator      end(){return Elements.end();}
         
-        UINT Length()const
+        UINT32 Length()const
         {
-            return static_cast<UINT>(Elements.size());
+            return static_cast<UINT32>(Elements.size());
         }
-        UINT Last    ()const;
+        UINT32 Last    ()const;
 
         
     private:
@@ -94,28 +94,28 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    T& TSet<T>::operator[](const UINT& Index)
+    T& TSet<T>::operator[](const UINT32& Index)
     {
         return Get(Index);
     }
 
     template <typename T>
-    BOOL TSet<T>::Add(const T& Element)
+    BOOL32 TSet<T>::Add(const T& Element)
     {
         return Elements.insert(Element).second;
     }
 
     template <typename T>
-    T& TSet<T>::Get(const UINT& Index) const
+    T& TSet<T>::Get(const UINT32& Index) const
     {
         Check(ENGINE_SET_ERROR, "Set has no such index", Index > Length());
         return Elements[Index];
     }
 
     template <typename T>
-    UINT TSet<T>::Find(const T& Element) const
+    UINT32 TSet<T>::Find(const T& Element) const
     {
-        UINT iIndex = 0;
+        UINT32 iIndex = 0;
         auto it = Elements.begin();
         while(it!=Elements.end())
         {
@@ -129,7 +129,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    BOOL TSet<T>::Contains(const T& Element) const
+    BOOL32 TSet<T>::Contains(const T& Element) const
     {
         for(const auto& elem : Elements)
         {
@@ -142,13 +142,13 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void TSet<T>::RemoveAt(const UINT& Index)
+    void TSet<T>::RemoveAt(const UINT32& Index)
     {
         if(Index > Length())
         {
             return;
         }
-        UINT iIndex = 0;
+        UINT32 iIndex = 0;
         auto it = Elements.begin();
         while(iIndex < Index)
         {
@@ -160,7 +160,7 @@ namespace PigeonEngine
     template <typename T>
     void TSet<T>::Remove(const T& Element)
     {
-        const UINT& Index = Find(Element);
+        const UINT32& Index = Find(Element);
         RemoveAt(Index);
     }
 
@@ -171,7 +171,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    UINT TSet<T>::Last() const
+    UINT32 TSet<T>::Last() const
     {
         return Length() > 0 ? Length() - 1 : 0;
     }

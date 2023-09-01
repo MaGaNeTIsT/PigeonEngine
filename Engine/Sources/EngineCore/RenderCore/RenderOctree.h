@@ -18,7 +18,7 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		INT							NodeIndex;
+		INT32							NodeIndex;
 		TArray<RPrimitiveProxy*>	Primitives;
 	};
 
@@ -37,9 +37,9 @@ namespace PigeonEngine
 		}
 
 		Vector3		Origin;
-		INT			ElementIndex;
-		INT			ParentIndex;
-		TArray<INT>	ChildrenIndex;
+		INT32			ElementIndex;
+		INT32			ParentIndex;
+		TArray<INT32>	ChildrenIndex;
 	};
 
 	struct ROctreeLayerInfo
@@ -54,9 +54,9 @@ namespace PigeonEngine
 			return (*this);
 		}
 
-		INT		NodeNum;
+		INT32		NodeNum;
 		Vector3	Extent;
-		INT		StartIndex;
+		INT32		StartIndex;
 	};
 
 	class ROctree final : public EObjectBase
@@ -70,13 +70,15 @@ namespace PigeonEngine
 			OCTREE_AXIS_COUNT
 		};
 	public:
+		//static BOOL32		SplitOctreeInternal(const Vector3& InOrigin, const Vector3& InExtent, const Vector3& InMinExtent, Vector3& OutOctreeOrigin, Vector3& OutOctreeSize, Vector3& OutOctreeCellSize, TArray<UINT32>& OutOctreePerAxisCellNum, TArray<UINT32>& OutOctreeAxisDepth, UINT32& OutOctreeMaxDepth, TArray<ROctreeLayerInfo>& OutOctreeLayerInfos, TArray<ROctreeElement>& OutOctreeElements, TArray<ROctreeNode>& OutOctreeNodes);
+	public:
 		const Vector3&					GetOctreeTargetCellSize()const;
 		const Vector3&					GetOctreeOrigin()const;
 		const Vector3&					GetOctreeSize()const;
 		const Vector3&					GetOctreeUsedCellSize()const;
-		UINT							GetOctreeAxisCellNum(EOctreeAxisType InAxisType)const;
-		UINT							GetOctreeAxisDepth(EOctreeAxisType InAxisType)const;
-		UINT							GetOctreeMaxDepth()const;
+		UINT32							GetOctreeAxisCellNum(EOctreeAxisType InAxisType)const;
+		UINT32							GetOctreeAxisDepth(EOctreeAxisType InAxisType)const;
+		UINT32							GetOctreeMaxDepth()const;
 		const TArray<ROctreeNode>&		GetOctreeNodes()const;
 		const TArray<ROctreeElement>&	GetOctreeElements()const;
 		const TArray<ROctreeLayerInfo>&	GetOctreeLayerInfos()const;
@@ -87,9 +89,9 @@ namespace PigeonEngine
 		Vector3						OctreeOrigin;
 		Vector3						OctreeSize;
 		Vector3						OctreeUsedCellSize;
-		UINT						OctreePerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_COUNT];
-		UINT						OctreeAxisDepth[EOctreeAxisType::OCTREE_AXIS_COUNT];
-		UINT						OctreeMaxDepth;
+		UINT32						OctreePerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_COUNT];
+		UINT32						OctreeAxisDepth[EOctreeAxisType::OCTREE_AXIS_COUNT];
+		UINT32						OctreeMaxDepth;
 		TArray<ROctreeNode>			Nodes;
 		TArray<ROctreeElement>		Elements;
 		TArray<ROctreeLayerInfo>	LayerInfos;

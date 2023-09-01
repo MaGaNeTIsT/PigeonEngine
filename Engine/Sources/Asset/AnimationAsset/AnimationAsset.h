@@ -40,7 +40,7 @@ namespace PigeonEngine
 			PostState = Other.PostState;
 			return (*this);
 		}
-		BOOL IsValid()const
+		BOOL32 IsValid()const
 		{
 			return ((PositionKeys.Length() > 0u) || (RotationKeys.Length() > 0u) || (ScalingKeys.Length() > 0u));
 		}
@@ -56,9 +56,9 @@ namespace PigeonEngine
 		ESkeletonAnimationClip(const ESkeletonAnimationClip& Other)noexcept
 			: ClipName(Other.ClipName), Duration(Other.Duration), TicksPerSecond(Other.TicksPerSecond)
 		{
-			if (const UINT AnimationCurveNum = Other.AnimationCurves.Length(); AnimationCurveNum > 0u)
+			if (const UINT32 AnimationCurveNum = Other.AnimationCurves.Length(); AnimationCurveNum > 0u)
 			{
-				for (UINT i = 0u; i < AnimationCurveNum; i++)
+				for (UINT32 i = 0u; i < AnimationCurveNum; i++)
 				{
 					AnimationCurves.Add(Other.AnimationCurves[i]);
 				}
@@ -74,22 +74,22 @@ namespace PigeonEngine
 			ClipName = Other.ClipName;
 			Duration = Other.Duration;
 			TicksPerSecond = Other.TicksPerSecond;
-			if (const UINT AnimationCurveNum = Other.AnimationCurves.Length(); AnimationCurveNum > 0u)
+			if (const UINT32 AnimationCurveNum = Other.AnimationCurves.Length(); AnimationCurveNum > 0u)
 			{
-				for (UINT i = 0u; i < AnimationCurveNum; i++)
+				for (UINT32 i = 0u; i < AnimationCurveNum; i++)
 				{
 					AnimationCurves.Add(Other.AnimationCurves[i]);
 				}
 			}
 			return (*this);
 		}
-		BOOL IsValid()const
+		BOOL32 IsValid()const
 		{
-			const UINT AnimationCurveNum = AnimationCurves.Length();
-			BOOL Result = (Duration > 0.0f) && (TicksPerSecond > 0.0f) && (AnimationCurveNum > 0u);
+			const UINT32 AnimationCurveNum = AnimationCurves.Length();
+			BOOL32 Result = (Duration > 0.0f) && (TicksPerSecond > 0.0f) && (AnimationCurveNum > 0u);
 			if (Result)
 			{
-				for (UINT i = 0u; i < AnimationCurveNum; i++)
+				for (UINT32 i = 0u; i < AnimationCurveNum; i++)
 				{
 					Result = Result && (AnimationCurves[i].IsValid());
 				}
@@ -106,25 +106,25 @@ namespace PigeonEngine
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
 	{
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		const EString&							GetAnimationName()const;
-		UINT									GetAnimationClipNum()const;
-		const ESkeletonAnimationClip*			GetAnimationClip(UINT InIndex)const;
+		UINT32									GetAnimationClipNum()const;
+		const ESkeletonAnimationClip*			GetAnimationClip(UINT32 InIndex)const;
 		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName)const;
 		const TArray<ESkeletonAnimationClip>&	GetAnimationClips()const;
-		const TMap<EString, UINT>&				GetAnimationClipMapping()const;
+		const TMap<EString, UINT32>&				GetAnimationClipMapping()const;
 	public:
 		void	RebuildWholeMapping();
-		BOOL	AddAnimationClip(const ESkeletonAnimationClip& InClip);
-		BOOL	RemoveAnimationClip(UINT InIndex);
-		BOOL	RemoveAnimationClip(const EString& InClipName);
+		BOOL32	AddAnimationClip(const ESkeletonAnimationClip& InClip);
+		BOOL32	RemoveAnimationClip(UINT32 InIndex);
+		BOOL32	RemoveAnimationClip(const EString& InClipName);
 	protected:
 		EString							AnimationName;
 		TArray<ESkeletonAnimationClip>	AnimationClips;
-		TMap<EString, UINT>				AnimationClipMapping;
+		TMap<EString, UINT32>				AnimationClipMapping;
 	public:
 		ESkeletonAnimation(const EString& InName);
 		virtual ~ESkeletonAnimation();
@@ -147,7 +147,7 @@ namespace PigeonEngine
 		);
 		virtual ~ESkeletonAnimationAsset();
 	public:
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	InitResource()override;
 	private:
 		friend class EAnimationManager;
 	public:
@@ -165,16 +165,16 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset);
+		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset);
 	private:
 		void	ClearSkeletonAnimations();
 	private:
 		ESkeletonAnimationAsset* LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName);
-		BOOL SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
+		BOOL32 SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
 		ESkeletonAnimation* LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName);
-		BOOL SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource);
+		BOOL32 SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource);
 	private:
 		ESkeletonAnimationAssetManager	SkeletonAnimationAssetManager;
 
