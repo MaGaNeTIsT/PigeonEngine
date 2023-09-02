@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	typedef	char						BOOL8;
+	typedef	bool						BOOL8;
 	typedef	char						INT8;
 	typedef	char						CHAR;
 	typedef	wchar_t						WCHAR;
@@ -32,12 +32,12 @@ namespace PigeonEngine
 #ifdef TRUE
 #undef TRUE
 #endif
-#define TRUE							(0x1)
+#define TRUE							(true)
 
 #ifdef FALSE
 #undef FALSE
 #endif
-#define FALSE							(0x0)
+#define FALSE							(false)
 
 #ifdef NULL
 #undef NULL

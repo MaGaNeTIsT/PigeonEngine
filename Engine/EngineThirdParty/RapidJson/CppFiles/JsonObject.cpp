@@ -518,7 +518,7 @@ namespace PigeonEngine
 	{
 		std::string* newK = new std::string(FieldName);
 		rapidjson::Value Val(rapidjson::Type::kArrayType);
-		for (auto& elem : In)
+		for (const auto& elem : In)
 		{
 			Value Temp(elem);
 			Val.PushBack(Temp, Doc->GetAllocator());
