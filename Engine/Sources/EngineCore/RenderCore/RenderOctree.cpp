@@ -137,40 +137,40 @@ bool UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelBou
 		return false;
 	}
 
-	FVector LevelBoundsOrigin, LevelBoundsExtent;
+	Vector3 LevelBoundsOrigin, LevelBoundsExtent;
 	{
-		FVector TempVector[3] =
+		Vector3 TempVector[3] =
 		{
 			UsedBounds->BoxComponent->GetForwardVector(),
 			UsedBounds->BoxComponent->GetRightVector(),
 			UsedBounds->BoxComponent->GetUpVector()
 		};
-		FVector TempOrigin = UsedBounds->BoxComponent->GetComponentLocation();
-		FVector TempExtent = UsedBounds->BoxComponent->GetScaledBoxExtent();
-		FVector TempLocation[8] =
+		Vector3 TempOrigin = UsedBounds->BoxComponent->GetComponentLocation();
+		Vector3 TempExtent = UsedBounds->BoxComponent->GetScaledBoxExtent();
+		Vector3 TempLocation[8] =
 		{
-			FVector(-1, -1, -1) * TempExtent,
-			FVector(-1,  1, -1) * TempExtent,
-			FVector( 1, -1, -1) * TempExtent,
-			FVector( 1,  1, -1) * TempExtent,
-			FVector(-1, -1,  1) * TempExtent,
-			FVector(-1,  1,  1) * TempExtent,
-			FVector( 1, -1,  1) * TempExtent,
-			FVector( 1,  1,  1) * TempExtent
+			Vector3(-1, -1, -1) * TempExtent,
+			Vector3(-1,  1, -1) * TempExtent,
+			Vector3( 1, -1, -1) * TempExtent,
+			Vector3( 1,  1, -1) * TempExtent,
+			Vector3(-1, -1,  1) * TempExtent,
+			Vector3(-1,  1,  1) * TempExtent,
+			Vector3( 1, -1,  1) * TempExtent,
+			Vector3( 1,  1,  1) * TempExtent
 		};
-		FVector TempMin(UE_MAX_FLT, UE_MAX_FLT, UE_MAX_FLT), TempMax(-UE_MAX_FLT, -UE_MAX_FLT, -UE_MAX_FLT);
-		for (int32 Index = 0; Index < 8; Index++)
+		Vector3 TempMin(UE_MAX_FLT, UE_MAX_FLT, UE_MAX_FLT), TempMax(-UE_MAX_FLT, -UE_MAX_FLT, -UE_MAX_FLT);
+		for (INT32 Index = 0; Index < 8; Index++)
 		{
 			TempLocation[Index] = TempVector[0] * TempLocation[Index].X + TempVector[1] * TempLocation[Index].Y + TempVector[2] * TempLocation[Index].Z + TempOrigin;
-			TempMin.X = FMath::Min(TempLocation[Index].X, TempMin.X);
-			TempMin.Y = FMath::Min(TempLocation[Index].Y, TempMin.Y);
-			TempMin.Z = FMath::Min(TempLocation[Index].Z, TempMin.Z);
-			TempMax.X = FMath::Max(TempLocation[Index].X, TempMax.X);
-			TempMax.Y = FMath::Max(TempLocation[Index].Y, TempMax.Y);
-			TempMax.Z = FMath::Max(TempLocation[Index].Z, TempMax.Z);
+			TempMin.X = EMath::Min(TempLocation[Index].X, TempMin.X);
+			TempMin.Y = EMath::Min(TempLocation[Index].Y, TempMin.Y);
+			TempMin.Z = EMath::Min(TempLocation[Index].Z, TempMin.Z);
+			TempMax.X = EMath::Max(TempLocation[Index].X, TempMax.X);
+			TempMax.Y = EMath::Max(TempLocation[Index].Y, TempMax.Y);
+			TempMax.Z = EMath::Max(TempLocation[Index].Z, TempMax.Z);
 		}
-		LevelBoundsOrigin = (TempMin + TempMax) / ((double)2);
-		LevelBoundsExtent = (TempMax - TempMin) / ((double)2);
+		LevelBoundsOrigin = (TempMin + TempMax) / 2.f;
+		LevelBoundsExtent = (TempMax - TempMin) / 2.f;
 	}
 
 	if (OctreeLayerInfos.Num() > 0)
@@ -188,7 +188,7 @@ bool UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelBou
 
 	UE_LOG(LogTemp, Display, TEXT("Check ready. Prepare to spliting octree."));
 
-	if (SplitOctreeInternal(LevelBoundsOrigin, LevelBoundsExtent, (OctreeTargetCellSize / ((double)2)), OctreeOrigin, OctreeSize, OctreeUsedCellSize, OctreePerAxisCellNum, OctreeAxisDepth, OctreeMaxDepth, OctreeLayerInfos, OctreeElements, OctreeNodes))
+	if (SplitOctreeInternal(LevelBoundsOrigin, LevelBoundsExtent, (OctreeTargetCellSize / 2.f), OctreeOrigin, OctreeSize, OctreeUsedCellSize, OctreePerAxisCellNum, OctreeAxisDepth, OctreeMaxDepth, OctreeLayerInfos, OctreeElements, OctreeNodes))
 	{
 		UE_LOG(LogTemp, Display, TEXT("Rebuilding procedural bezier grass octree for whole level success."));
 		return true;
@@ -197,15 +197,15 @@ bool UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelBou
 	UE_LOG(LogTemp, Display, TEXT("Rebuilding procedural bezier grass octree for whole level failed."));
 	return false;
 }
-int32 UProceduralBezierGrassComponent::AddInstanceIntoElement(UBezierGrassAssetData* InAssetData, int32 InIndex, const FTransform& InTransform)
+INT32 UProceduralBezierGrassComponent::AddInstanceIntoElement(UBezierGrassAssetData* InAssetData, INT32 InIndex, const FTransform& InTransform)
 {
 	if ((!InAssetData) || (InIndex < 0) || (InIndex >= OctreeElements.Num()))
 	{
 		return -1;
 	}
 	FBezierGrassOctreeElement& Element = OctreeElements[InIndex];
-	int32 AddIntoGroupIndex = -1;
-	for (int32 GroupIndex = 0; GroupIndex < Element.BezierGrassGroups.Num(); GroupIndex++)
+	INT32 AddIntoGroupIndex = -1;
+	for (INT32 GroupIndex = 0; GroupIndex < Element.BezierGrassGroups.Num(); GroupIndex++)
 	{
 		FBezierGrassGroupData& TempGroup = Element.BezierGrassGroups[GroupIndex];
 		if (TempGroup.AssetData == InAssetData)
@@ -225,16 +225,16 @@ int32 UProceduralBezierGrassComponent::AddInstanceIntoElement(UBezierGrassAssetD
 	FBezierGrassGroupData& Group = Element.BezierGrassGroups[AddIntoGroupIndex];
 	{
 		FTransform TempInstanceTransform = InTransform;
-		FVector TempScale3D(TempInstanceTransform.GetScale3D());
+		Vector3 TempScale3D(TempInstanceTransform.GetScale3D());
 		FBezierGrassInstanceData TempInstance(
 			TempInstanceTransform.GetLocation() - Group.GroupTransform.GetLocation(),
-			InAssetData->GrassSize * FMath::Max(TempScale3D.X, TempScale3D.Y),
-			TempInstanceTransform.GetRotation().RotateVector(FVector::XAxisVector));
+			InAssetData->GrassSize * EMath::Max(TempScale3D.X, TempScale3D.Y),
+			TempInstanceTransform.GetRotation().RotateVector(Vector3::XAxisVector));
 		Group.InstanceData.Add(MoveTemp(TempInstance));
 	}
 	return AddIntoGroupIndex;
 }
-void UProceduralBezierGrassComponent::AddInstancesIntoOctreeElement(UBezierGrassAssetData* InAssetData, const TArray<FTransform>& InInstanceWorldTransforms, TArray<int32>& OutErrorTransforms)
+void UProceduralBezierGrassComponent::AddInstancesIntoOctreeElement(UBezierGrassAssetData* InAssetData, const TArray<FTransform>& InInstanceWorldTransforms, TArray<INT32>& OutErrorTransforms)
 {
 	if ((!InAssetData) || (InInstanceWorldTransforms.Num() < 1))
 	{
@@ -251,10 +251,10 @@ void UProceduralBezierGrassComponent::AddInstancesIntoOctreeElement(UBezierGrass
 		OutErrorTransforms.Empty();
 	}
 
-	for (int32 InstanceIndex = 0; InstanceIndex < InInstanceWorldTransforms.Num(); InstanceIndex++)
+	for (INT32 InstanceIndex = 0; InstanceIndex < InInstanceWorldTransforms.Num(); InstanceIndex++)
 	{
 		const FTransform& TempTransform = InInstanceWorldTransforms[InstanceIndex];
-		int32 TempElementIndex = FindOctreeIndexByTransform(TempTransform, OctreeOrigin, OctreeLayerInfos, OctreePerAxisCellNum);
+		INT32 TempElementIndex = FindOctreeIndexByTransform(TempTransform, OctreeOrigin, OctreeLayerInfos, OctreePerAxisCellNum);
 		if (TempElementIndex < 0)
 		{
 			OutErrorTransforms.Add(InstanceIndex);
@@ -276,43 +276,43 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 	check(OctreeNodes.Num() == OctreeElements.Num());
 	bool Result = false;
 	TArray<bool> VisibleNodeMaps;
-	TArray<int32> OldNewMaps;
+	TArray<INT32> OldNewMaps;
 	TArray<FBezierGrassOctreeNode> OldNodes;
 	TArray<FBezierGrassOctreeElement> OldElements;
 	TArray<FBezierGrassOctreeLayerInfo> OldLayerInfos;
-	const int32 LayerCount = OctreeLayerInfos.Num();
+	const INT32 LayerCount = OctreeLayerInfos.Num();
 	{
 		VisibleNodeMaps.Reserve(OctreeNodes.Num());
 		OldNewMaps.Reserve(OctreeNodes.Num());
 		OldNodes.Reserve(OctreeNodes.Num());
 		OldElements.Reserve(OctreeElements.Num());
 		OldLayerInfos.Reserve(OctreeLayerInfos.Num());
-		for (int32 NodeElementIndex = 0; NodeElementIndex < OctreeNodes.Num(); NodeElementIndex++)
+		for (INT32 NodeElementIndex = 0; NodeElementIndex < OctreeNodes.Num(); NodeElementIndex++)
 		{
 			VisibleNodeMaps.Add(false);
 			OldNewMaps.Add(-1);
 			OldNodes.Add(MoveTemp(OctreeNodes[NodeElementIndex]));
 			OldElements.Add(MoveTemp(OctreeElements[NodeElementIndex]));
 		}
-		for (int32 LayerIndex = 0; LayerIndex < OctreeLayerInfos.Num(); LayerIndex++)
+		for (INT32 LayerIndex = 0; LayerIndex < OctreeLayerInfos.Num(); LayerIndex++)
 		{
 			OldLayerInfos.Add(MoveTemp(OctreeLayerInfos[LayerIndex]));
 		}
 	}
-	for (int32 LayerIndex = (LayerCount - 1); LayerIndex >= 0; LayerIndex--)
+	for (INT32 LayerIndex = (LayerCount - 1); LayerIndex >= 0; LayerIndex--)
 	{
 		FBezierGrassOctreeLayerInfo& Layer = OldLayerInfos[LayerIndex];
-		const int32 TempStartIndex = Layer.StartIndex;
-		const int32 TempEndIndex = Layer.StartIndex + (Layer.NodeNum - 1);
-		for (int32 NodeElementIndex = TempEndIndex; NodeElementIndex >= TempStartIndex; NodeElementIndex--)
+		const INT32 TempStartIndex = Layer.StartIndex;
+		const INT32 TempEndIndex = Layer.StartIndex + (Layer.NodeNum - 1);
+		for (INT32 NodeElementIndex = TempEndIndex; NodeElementIndex >= TempStartIndex; NodeElementIndex--)
 		{
 			FBezierGrassOctreeElement& TempElement = OldElements[NodeElementIndex];
 			FBezierGrassOctreeNode& TempNode = OldNodes[NodeElementIndex];
 			bool& TempVisible = VisibleNodeMaps[NodeElementIndex];
 			if (LayerIndex == (LayerCount - 1))
 			{
-				int32 InstanceNum = 0;
-				for (int32 GroupIndex = 0; GroupIndex < TempElement.BezierGrassGroups.Num(); GroupIndex++)
+				INT32 InstanceNum = 0;
+				for (INT32 GroupIndex = 0; GroupIndex < TempElement.BezierGrassGroups.Num(); GroupIndex++)
 				{
 					if (CheckBezierGrassAssetDataValid(TempElement.BezierGrassGroups[GroupIndex].AssetData))
 					{
@@ -324,7 +324,7 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 			}
 			else
 			{
-				for (int32 ChildIndex = 0; ChildIndex < TempNode.ChildrenIndex.Num(); ChildIndex++)
+				for (INT32 ChildIndex = 0; ChildIndex < TempNode.ChildrenIndex.Num(); ChildIndex++)
 				{
 					TempVisible = VisibleNodeMaps[TempNode.ChildrenIndex[ChildIndex]] || TempVisible;
 				}
@@ -343,28 +343,28 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 	{
 		OctreeLayerInfos.Empty();
 	}
-	int32 NodeElementCount = 0;
-	for (int32 LayerIndex = 0; LayerIndex < LayerCount; LayerIndex++)
+	INT32 NodeElementCount = 0;
+	for (INT32 LayerIndex = 0; LayerIndex < LayerCount; LayerIndex++)
 	{
 		FBezierGrassOctreeLayerInfo& OldLayer = OldLayerInfos[LayerIndex];
-		const int32 OldStartIndex = OldLayer.StartIndex;
-		const int32 OldEndIndex = OldLayer.StartIndex + (OldLayer.NodeNum - 1);
-		int32 NodeElementNum = 0;
-		for (int32 OldNodeElementIndex = OldStartIndex; OldNodeElementIndex <= OldEndIndex; OldNodeElementIndex++)
+		const INT32 OldStartIndex = OldLayer.StartIndex;
+		const INT32 OldEndIndex = OldLayer.StartIndex + (OldLayer.NodeNum - 1);
+		INT32 NodeElementNum = 0;
+		for (INT32 OldNodeElementIndex = OldStartIndex; OldNodeElementIndex <= OldEndIndex; OldNodeElementIndex++)
 		{
 			FBezierGrassOctreeElement& OldElement = OldElements[OldNodeElementIndex];
 			FBezierGrassOctreeNode& OldNode = OldNodes[OldNodeElementIndex];
 			bool& OldVisible = VisibleNodeMaps[OldNodeElementIndex];
 			if (OldVisible)
 			{
-				const int32 AddElementIndex = OctreeElements.Num();
-				const int32 AddNodeIndex = OctreeNodes.Num();
+				const INT32 AddElementIndex = OctreeElements.Num();
+				const INT32 AddNodeIndex = OctreeNodes.Num();
 				check(AddElementIndex == AddNodeIndex);
 				FBezierGrassOctreeElement& AddElement = OctreeElements.AddDefaulted_GetRef();
 				FBezierGrassOctreeNode& AddNode = OctreeNodes.AddDefaulted_GetRef();
 				OldNewMaps[OldNodeElementIndex] = AddNodeIndex;
 				AddElement.OctreeNodeIndex = AddNodeIndex;
-				for (int32 GroupIndex = 0; GroupIndex < OldElement.BezierGrassGroups.Num(); GroupIndex++)
+				for (INT32 GroupIndex = 0; GroupIndex < OldElement.BezierGrassGroups.Num(); GroupIndex++)
 				{
 					AddElement.BezierGrassGroups.Add(CopyTemp(OldElement.BezierGrassGroups[GroupIndex]));
 				}
@@ -389,6 +389,7 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 	}
 	return Result;
 }
+*/
 	BOOL32 ROctree::SplitOctreeInternal(const Vector3& InOrigin, const Vector3& InExtent, const Vector3& InMinExtent, Vector3& OutOctreeOrigin, Vector3& OutOctreeSize, Vector3& OutOctreeCellSize, TArray<UINT32>& OutOctreePerAxisCellNum, TArray<UINT32>& OutOctreeAxisDepth, UINT32& OutOctreeMaxDepth, TArray<ROctreeLayerInfo>& OutOctreeLayerInfos, TArray<ROctreeElement>& OutOctreeElements, TArray<ROctreeNode>& OutOctreeNodes)
 	{
 		if ((InMinExtent.x < 1.f) || (InMinExtent.y < 1.f) || (InMinExtent.z < 1.f))
@@ -399,139 +400,131 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 		{
 			return FALSE;
 		}
-		auto GenerateDimension = [](const UINT32 InExp, const FLOAT InExtent, const FLOAT InMinExtent, UINT32& DimensionExp, UINT32& DimensionCellNum, FLOAT& UsedMinExtent)->void
+		auto GenerateDimension = [](const UINT32 InExp, const FLOAT InExtent, const FLOAT InMinExtent, INT32& DimensionExp, INT32& DimensionCellNum, FLOAT& UsedMinExtent)->void
 		{
 			FLOAT SplitCellNum = EMath::LogX(InExp, InExtent / InMinExtent);
-			DimensionExp = EMath::CeilToInt(SplitCellNum);
+			DimensionExp = EMath::CeilToInt32(SplitCellNum);
 			DimensionExp = EMath::Max(1, DimensionExp);
-			DimensionCellNum = (int32)(EMath::Pow((float)InExp, DimensionExp));
-			UsedMinExtent = (InExtent / ((double)(DimensionCellNum))) / ((double)2);
+			DimensionCellNum = (INT32)(EMath::Pow((FLOAT)InExp, DimensionExp));
+			UsedMinExtent = (InExtent / ((FLOAT)DimensionCellNum)) / 2.f;
 		};
 
-		const FVector TempAnchor = InOrigin - InExtent;
-		const double TempExtent[3] = { InExtent.X * ((double)2), InExtent.Y * ((double)2), InExtent.Z * ((double)2) };
-		const double TempMinExtent[3] = { InMinExtent.X * ((double)2), InMinExtent.Y * ((double)2), InMinExtent.Z * ((double)2) };
+		const Vector3 TempAnchor = InOrigin - InExtent;
+		const FLOAT TempExtent[3] = { InExtent.x * 2.f, InExtent.y * 2.f, InExtent.z * 2.f };
+		const FLOAT TempMinExtent[3] = { InMinExtent.x * 2.f, InMinExtent.y * 2.f, InMinExtent.z * 2.f };
 
-		UE_LOG(LogTemp, Display, TEXT("Used scene length is x : %f, y : %f, z : %f."), TempExtent[0], TempExtent[1], TempExtent[2]);
-		UE_LOG(LogTemp, Display, TEXT("Target cell length is x : %f, y : %f, z : %f."), TempMinExtent[0], TempMinExtent[1], TempMinExtent[2]);
-
-		int32 DimensionXYZExp[3]; int32 DimensionXYZ[3]; double UsedMinExtent[3];
-		int32 UsedDimensionExp = 1;
-		for (int32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
+		INT32 DimensionXYZExp[3]; INT32 DimensionXYZ[3]; FLOAT UsedMinExtent[3];
+		INT32 UsedDimensionExp = 1;
+		for (INT32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
 		{
-			GenerateDimension(2, TempExtent[DimensionIndex], TempMinExtent[DimensionIndex], DimensionXYZExp[DimensionIndex], DimensionXYZ[DimensionIndex], UsedMinExtent[DimensionIndex]);
-			UsedDimensionExp = FMath::Max(DimensionXYZExp[DimensionIndex], UsedDimensionExp);
+			GenerateDimension(2u, TempExtent[DimensionIndex], TempMinExtent[DimensionIndex], DimensionXYZExp[DimensionIndex], DimensionXYZ[DimensionIndex], UsedMinExtent[DimensionIndex]);
+			UsedDimensionExp = EMath::Max(DimensionXYZExp[DimensionIndex], UsedDimensionExp);
 		}
-
-		UE_LOG(LogTemp, Display, TEXT("Layers with axis is x : %d, y : %d, z : %d."), DimensionXYZExp[0], DimensionXYZExp[1], DimensionXYZExp[2]);
-		UE_LOG(LogTemp, Display, TEXT("Cell number is x : %d, y : %d, z : %d."), DimensionXYZ[0], DimensionXYZ[1], DimensionXYZ[2]);
-		UE_LOG(LogTemp, Display, TEXT("Cell length is x : %f, y : %f, z : %f."), (UsedMinExtent[0] * ((double)2)), (UsedMinExtent[1] * ((double)2)), (UsedMinExtent[2] * ((double)2)));
 
 		{
 			OutOctreeOrigin = InOrigin;
-			OutOctreeSize = FVector(TempExtent[0], TempExtent[1], TempExtent[2]);
-			OutOctreeCellSize = FVector(UsedMinExtent[0] * ((double)2), UsedMinExtent[1] * ((double)2), UsedMinExtent[2] * ((double)2));
-			OutOctreeMaxDepth = UsedDimensionExp;
-			for (int32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
+			OutOctreeSize = Vector3(TempExtent[0], TempExtent[1], TempExtent[2]);
+			OutOctreeCellSize = Vector3(UsedMinExtent[0] * 2.f, UsedMinExtent[1] * 2.f, UsedMinExtent[2] * 2.f);
+			OutOctreeMaxDepth = (UINT32)UsedDimensionExp;
+			for (INT32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
 			{
-				OutOctreePerAxisCellNum[DimensionIndex] = DimensionXYZ[DimensionIndex];
-				OutOctreeAxisDepth[DimensionIndex] = DimensionXYZExp[DimensionIndex] + 1;
+				OutOctreePerAxisCellNum[DimensionIndex] = (UINT32)(DimensionXYZ[DimensionIndex]);
+				OutOctreeAxisDepth[DimensionIndex] = (UINT32)(DimensionXYZExp[DimensionIndex] + 1);
 			}
-			if (OutOctreeLayerInfos.Num() > 0)
+			if (OutOctreeLayerInfos.Length() > 0u)
 			{
-				OutOctreeLayerInfos.Empty();
+				OutOctreeLayerInfos.Clear();
 			}
-			OutOctreeLayerInfos.Reserve((UsedDimensionExp + 1));
+			OutOctreeLayerInfos.Recapacity((UsedDimensionExp + 1));
 		}
 
 		{
-			int32 LayerCellNum = 0;
-			for (int32 LayerIndex = UsedDimensionExp; LayerIndex >= 0; LayerIndex--)
+			INT32 LayerCellNum = 0;
+			for (INT32 LayerIndex = UsedDimensionExp; LayerIndex >= 0; LayerIndex--)
 			{
-				int32 CurrentLayerCellNum = 1;
-				for (int32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
+				INT32 CurrentLayerCellNum = 1;
+				for (INT32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
 				{
-					CurrentLayerCellNum *= FMath::Max(1, DimensionXYZ[DimensionIndex] / ((int32)(FMath::Pow(2.0f, (float)LayerIndex))));
+					CurrentLayerCellNum *= EMath::Max(1, DimensionXYZ[DimensionIndex] / ((INT32)(EMath::Pow(2.0f, (FLOAT)LayerIndex))));
 				}
 				LayerCellNum += CurrentLayerCellNum;
 			}
-			UE_LOG(LogTemp, Display, TEXT("Nodes number is %d."), LayerCellNum);
-			if (OutOctreeElements.Num() > 0)
+			if (OutOctreeElements.Length() > 0u)
 			{
-				OutOctreeElements.Empty();
+				OutOctreeElements.Clear();
 			}
-			OutOctreeElements.Reserve(LayerCellNum);
-			if (OutOctreeNodes.Num() > 0)
+			OutOctreeElements.Recapacity(LayerCellNum);
+			if (OutOctreeNodes.Length() > 0u)
 			{
-				OutOctreeNodes.Empty();
+				OutOctreeNodes.Clear();
 			}
-			OutOctreeNodes.Reserve(LayerCellNum);
-			for (int32 LayerIndex = UsedDimensionExp; LayerIndex >= 0; LayerIndex--)
+			OutOctreeNodes.Recapacity(LayerCellNum);
+			for (INT32 LayerIndex = UsedDimensionExp; LayerIndex >= 0; LayerIndex--)
 			{
-				int32 CurrentLayerDimension[3]; double DimensionExtent[3];
-				int32 ParentLayerDimension[3] = { 1, 1, 1 }; double DimensionParentExtent[3] = { 0, 0, 0 };
-				for (int32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
+				INT32 CurrentLayerDimension[3]; FLOAT DimensionExtent[3];
+				INT32 ParentLayerDimension[3] = { 1, 1, 1 }; FLOAT DimensionParentExtent[3] = { 0, 0, 0 };
+				for (INT32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
 				{
-					CurrentLayerDimension[DimensionIndex] = FMath::Max(1, DimensionXYZ[DimensionIndex] / ((int32)(FMath::Pow(2.0f, (float)LayerIndex))));
-					DimensionExtent[DimensionIndex] = TempExtent[DimensionIndex] / ((double)(CurrentLayerDimension[DimensionIndex]));
+					CurrentLayerDimension[DimensionIndex] = EMath::Max(1, DimensionXYZ[DimensionIndex] / ((INT32)(EMath::Pow(2.0f, (FLOAT)LayerIndex))));
+					DimensionExtent[DimensionIndex] = TempExtent[DimensionIndex] / ((FLOAT)(CurrentLayerDimension[DimensionIndex]));
 					if (LayerIndex != UsedDimensionExp)
 					{
-						ParentLayerDimension[DimensionIndex] = FMath::Max(1, DimensionXYZ[DimensionIndex] / ((int32)(FMath::Pow(2.0f, (float)(LayerIndex + 1)))));
-						DimensionParentExtent[DimensionIndex] = TempExtent[DimensionIndex] / ((double)(ParentLayerDimension[DimensionIndex]));
+						ParentLayerDimension[DimensionIndex] = EMath::Max(1, DimensionXYZ[DimensionIndex] / ((INT32)(EMath::Pow(2.0f, (FLOAT)(LayerIndex + 1)))));
+						DimensionParentExtent[DimensionIndex] = TempExtent[DimensionIndex] / ((FLOAT)(ParentLayerDimension[DimensionIndex]));
 					}
 				}
-				FVector LayerExtentBase = FVector(DimensionExtent[0], DimensionExtent[1], DimensionExtent[2]);
-				FVector LayerOriginBase = TempAnchor + (LayerExtentBase / ((double)2));
-				FVector ParentLayerExtentBase = FVector(DimensionParentExtent[0], DimensionParentExtent[1], DimensionParentExtent[2]);
-				FBezierGrassOctreeLayerInfo& AddInfo = OutOctreeLayerInfos.AddDefaulted_GetRef();
+				Vector3 LayerExtentBase = Vector3(DimensionExtent[0], DimensionExtent[1], DimensionExtent[2]);
+				Vector3 LayerOriginBase = TempAnchor + (LayerExtentBase / 2.f);
+				Vector3 ParentLayerExtentBase = Vector3(DimensionParentExtent[0], DimensionParentExtent[1], DimensionParentExtent[2]);
+				ROctreeLayerInfo& AddInfo = OutOctreeLayerInfos.Add_Default_GetRef();
 				AddInfo.NodeNum = CurrentLayerDimension[0] * CurrentLayerDimension[1] * CurrentLayerDimension[2];
-				AddInfo.Extent = LayerExtentBase / ((double)2);
+				AddInfo.Extent = LayerExtentBase / 2.f;
 				AddInfo.StartIndex = 0;
-				for (int32 LayerInfoIndex = 0; LayerInfoIndex < (OutOctreeLayerInfos.Num() - 1); LayerInfoIndex++)
+				for (INT32 LayerInfoIndex = 0, LayerInfoNum = ((INT32)(OutOctreeLayerInfos.Length())) - 1; LayerInfoIndex < LayerInfoNum; LayerInfoIndex++)
 				{
 					AddInfo.StartIndex += OutOctreeLayerInfos[LayerInfoIndex].NodeNum;
 				}
-				for (int32 DimensionYIndex = 0; DimensionYIndex < CurrentLayerDimension[1]; DimensionYIndex++)
+				for (INT32 DimensionYIndex = 0; DimensionYIndex < CurrentLayerDimension[1]; DimensionYIndex++)
 				{
-					for (int32 DimensionXIndex = 0; DimensionXIndex < CurrentLayerDimension[0]; DimensionXIndex++)
+					for (INT32 DimensionXIndex = 0; DimensionXIndex < CurrentLayerDimension[0]; DimensionXIndex++)
 					{
-						for (int32 DimensionZIndex = 0; DimensionZIndex < CurrentLayerDimension[2]; DimensionZIndex++)
+						for (INT32 DimensionZIndex = 0; DimensionZIndex < CurrentLayerDimension[2]; DimensionZIndex++)
 						{
-							int32 ElementIndex = OutOctreeElements.Num();
-							FBezierGrassOctreeElement& AddElement = OutOctreeElements.AddDefaulted_GetRef();
-							int32 NodeIndex = OutOctreeNodes.Num();
-							FBezierGrassOctreeNode& AddNode = OutOctreeNodes.AddDefaulted_GetRef();
+							INT32 ElementIndex = (INT32)(OutOctreeElements.Length());
+							ROctreeElement& AddElement = OutOctreeElements.Add_Default_GetRef();
+							INT32 NodeIndex = (INT32)(OutOctreeNodes.Length());
+							ROctreeNode& AddNode = OutOctreeNodes.Add_Default_GetRef();
 							{
-								AddElement.OctreeNodeIndex = NodeIndex;
+								AddElement.NodeIndex = NodeIndex;
 							}
 							{
-								AddNode.Origin = LayerExtentBase * FVector(DimensionXIndex, DimensionYIndex, DimensionZIndex) + LayerOriginBase;
-								AddNode.OctreeElementIndex = ElementIndex;
+								AddNode.Origin = LayerExtentBase * Vector3(DimensionXIndex, DimensionYIndex, DimensionZIndex) + LayerOriginBase;
+								AddNode.ElementIndex = ElementIndex;
 								if (LayerIndex == UsedDimensionExp)
 								{
 									AddNode.ParentIndex = -1;
 								}
 								else
 								{
-									int32 TempParentIndex = 0;
+									INT32 TempParentIndex = 0;
 									{
-										int32 TempParentIndexX = FMath::Max(((double)0), AddNode.Origin.X - TempAnchor.X) / ParentLayerExtentBase.X;
-										int32 TempParentIndexY = FMath::Max(((double)0), AddNode.Origin.Y - TempAnchor.Y) / ParentLayerExtentBase.Y;
-										int32 TempParentIndexZ = FMath::Max(((double)0), AddNode.Origin.Z - TempAnchor.Z) / ParentLayerExtentBase.Z;
-										int32 TempParentParentCellNum = 0;
-										for (int32 ParentParentLayerIndex = UsedDimensionExp; ParentParentLayerIndex > (LayerIndex + 1); ParentParentLayerIndex--)
+										INT32 TempParentIndexX = (INT32)(EMath::Max(0.f, AddNode.Origin.x - TempAnchor.x) / ParentLayerExtentBase.x);
+										INT32 TempParentIndexY = (INT32)(EMath::Max(0.f, AddNode.Origin.y - TempAnchor.y) / ParentLayerExtentBase.y);
+										INT32 TempParentIndexZ = (INT32)(EMath::Max(0.f, AddNode.Origin.z - TempAnchor.z) / ParentLayerExtentBase.z);
+										INT32 TempParentParentCellNum = 0;
+										for (INT32 ParentParentLayerIndex = UsedDimensionExp, ParentParentLayerNum = LayerIndex + 1; ParentParentLayerIndex > ParentParentLayerNum; ParentParentLayerIndex--)
 										{
-											int32 TempLayerCellNum = 1;
-											for (int32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
+											INT32 TempLayerCellNum = 1;
+											for (INT32 DimensionIndex = 0; DimensionIndex < 3; DimensionIndex++)
 											{
-												TempLayerCellNum *= FMath::Max(1, DimensionXYZ[DimensionIndex] / ((int32)(FMath::Pow(2.0f, (float)ParentParentLayerIndex))));
+												TempLayerCellNum *= EMath::Max(1, DimensionXYZ[DimensionIndex] / ((INT32)(EMath::Pow(2.0f, (FLOAT)ParentParentLayerIndex))));
 											}
 											TempParentParentCellNum += TempLayerCellNum;
 										}
-										//TODO GetOctreeArrayIndex(OutOctreePerAxisCellNum, const FBezierGrassOctreeLayerInfo& InLayerInfo, int32 InX, int32 InY, int32 InZ);
+										//TODO GetOctreeArrayIndex(OutOctreePerAxisCellNum, const FBezierGrassOctreeLayerInfo& InLayerInfo, INT32 InX, INT32 InY, INT32 InZ);
 										TempParentIndex = TempParentParentCellNum + (ParentLayerDimension[0] * ParentLayerDimension[2]) * TempParentIndexY + ParentLayerDimension[2] * TempParentIndexX + TempParentIndexZ;
 									}
-									check(TempParentIndex < OutOctreeNodes.Num());
+									Check((ENGINE_RENDER_CORE_ERROR), ("Render octree's parent node index is over node array."), (TempParentIndex < ((INT32)(OutOctreeNodes.Length()))));
 									AddNode.ParentIndex = TempParentIndex;
 									OutOctreeNodes[TempParentIndex].ChildrenIndex.Add(NodeIndex);
 								}
@@ -544,6 +537,5 @@ bool UProceduralBezierGrassComponent::FinalizeOctree()
 
 		return TRUE;
 	}
-	*/
 
 };
