@@ -19,10 +19,10 @@ namespace PigeonEngine
 
 		return engineDefaultTexturePathMap[texType];
 	}
-	UINT GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
+	UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
 	{
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
-		UINT SemanticName = input.SemanticName;
+		UINT32 SemanticName = input.SemanticName;
 		if ((SemanticName >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return 8u; }
 		else if ((SemanticName >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return 16u; }
 		else if ((SemanticName >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return 16u; }
@@ -35,10 +35,10 @@ namespace PigeonEngine
 		else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 8u; }
 		return 0u;
 	}
-	UINT GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input)
+	UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input)
 	{
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
-		UINT SemanticName = input.SemanticName;
+		UINT32 SemanticName = input.SemanticName;
 		if ((SemanticName >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return 2u; }
 		else if ((SemanticName >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return 4u; }
 		else if ((SemanticName >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return 4u; }
@@ -54,7 +54,7 @@ namespace PigeonEngine
 	RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return RShaderSemanticType::SHADER_SEMANTIC_NONE; }
-		UINT SemanticType = input;
+		UINT32 SemanticType = input;
 		if ((SemanticType >> 15) & 0x1u) { /*SHADER_SEMANTIC_TEXCOORD[n]*/return RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD; }
 		else if ((SemanticType >> 14) & 0x1u) { /*SHADER_SEMANTIC_POSITION[n]*/return RShaderSemanticType::SHADER_SEMANTIC_POSITION; }
 		else if ((SemanticType >> 13) & 0x1u) { /*SHADER_SEMANTIC_NORMAL[n]*/return RShaderSemanticType::SHADER_SEMANTIC_NORMAL; }
@@ -67,13 +67,13 @@ namespace PigeonEngine
 		else if ((SemanticType >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return RShaderSemanticType::SHADER_SEMANTIC_PSIZE; }
 		return RShaderSemanticType::SHADER_SEMANTIC_NONE;
 	}
-	UINT GetShaderSemanticTypeSlot(RShaderSemanticType input)
+	UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
-		UINT SemanticType = input;
+		UINT32 SemanticType = input;
 		return (SemanticType & 0xffu);
 	}
-	void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum)
+	void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
 		const static RShaderSemanticType _EngineDefaultMeshInputLayout[7u] = {
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
@@ -87,7 +87,7 @@ namespace PigeonEngine
 		OutLayouts = _EngineDefaultMeshInputLayout;
 		OutLayoutNum = 7u;
 	}
-	void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum)
+	void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
 		const static RShaderSemanticType _EngineDefaultSkeletonMeshInputLayout[9u] = {
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,

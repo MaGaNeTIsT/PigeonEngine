@@ -20,12 +20,12 @@ namespace PigeonEngine
 		Destroy();
 	}
 
-	void PObject::SetIsTickable(const BOOL& bTickable)
+	void PObject::SetIsTickable(const BOOL32& bTickable)
 	{
 		this->bCanTick = bTickable;
 	}
 
-	BOOL PObject::IsTickable() const
+	BOOL32 PObject::IsTickable() const
 	{
 		return this->bCanTick;
 	}
@@ -47,7 +47,7 @@ namespace PigeonEngine
 		Destroy();
 	}
 
-	BOOL PObject::IsActive()const
+	BOOL32 PObject::IsActive()const
 	{
 		return m_Active;
 	}

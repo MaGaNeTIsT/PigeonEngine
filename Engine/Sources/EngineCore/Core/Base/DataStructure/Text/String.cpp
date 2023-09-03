@@ -88,37 +88,37 @@ namespace PigeonEngine
         return Str.c_str();
     }
 
-    CHAR EString::operator[](const UINT& Index) const
+    CHAR EString::operator[](const UINT32& Index) const
     {
         return Str[Index];
     }
 
-    BOOL EString::operator==(const EString& Other) const
+    BOOL32 EString::operator==(const EString& Other) const
     {
         return Str == Other.Str;
     }
 
-    BOOL EString::operator!=(const EString& Other) const
+    BOOL32 EString::operator!=(const EString& Other) const
     {
         return Str != Other.Str;
     }
 
-    BOOL EString::operator>(const EString& Other) const
+    BOOL32 EString::operator>(const EString& Other) const
     {
         return this->Str > Other.Str;
     }
 
-    BOOL EString::operator<(const EString& Other) const
+    BOOL32 EString::operator<(const EString& Other) const
     {
         return this->Str < Other.Str;
     }
 
-    BOOL EString::operator>=(const EString& Other) const
+    BOOL32 EString::operator>=(const EString& Other) const
     {
         return this->Str >= Other.Str;
     }
 
-    BOOL EString::operator<=(const EString& Other) const
+    BOOL32 EString::operator<=(const EString& Other) const
     {
         return this->Str <= Other.Str;
     }
@@ -129,31 +129,31 @@ namespace PigeonEngine
         return *this;
     }
 
-    UINT EString::Length() const
+    UINT32 EString::Length() const
     {
-        return static_cast<UINT>(Str.length());
+        return static_cast<UINT32>(Str.length());
     }
 
-    BOOL EString::StartWith(const EString& SubString) const
+    BOOL32 EString::StartWith(const EString& SubString) const
     {
         return Find(SubString) == 0;
     }
 
-    UINT EString::Find(const EString& SubString, UINT Offset) const
+    UINT32 EString::Find(const EString& SubString, UINT32 Offset) const
     {
-        return static_cast<UINT>(Str.find(*SubString, Offset));
+        return static_cast<UINT32>(Str.find(*SubString, Offset));
     }
 
-    UINT EString::RightFind(const EString& SubString, UINT Offset) const
+    UINT32 EString::RightFind(const EString& SubString, UINT32 Offset) const
     {
-        return static_cast<UINT>(Str.rfind(*SubString, Offset));
+        return static_cast<UINT32>(Str.rfind(*SubString, Offset));
     }
 
     EString EString::Replace(const EString& From, const EString& To) const
     {
-        const UINT FromLength = From.Length();
+        const UINT32 FromLength = From.Length();
         EString Temp = *this;
-        UINT FromStart  = Temp.Find(From);
+        UINT32 FromStart  = Temp.Find(From);
         while(FromStart < Temp.Length())
         {
             Temp.Str.replace(Temp.Str.begin() + FromStart, Temp.Str.begin() + FromStart + FromLength - 1, *To);
@@ -162,22 +162,22 @@ namespace PigeonEngine
         return Temp;
     }
 
-    EString EString::Left(const UINT& Count) const
+    EString EString::Left(const UINT32& Count) const
     {
         return EString(Str.substr(0, EMath::Min(Length(), Count)));
     }
 
-    EString EString::Right(const UINT& Count) const
+    EString EString::Right(const UINT32& Count) const
     {
         return EString(Str.substr(EMath::Max(Length() - Count, 0U), Count));
     }
 
-    EString EString::Substring(const UINT& Start, const UINT& Count) const
+    EString EString::Substring(const UINT32& Start, const UINT32& Count) const
     {
         return EString(Str.substr(EMath::Max(0u, Start), EMath::Min(Length() - Start, Count)));
     }
 
-    BOOL EString::IsNumeric() const
+    BOOL32 EString::IsNumeric() const
     {
         for(const auto& elem : Str)
         {
@@ -189,7 +189,7 @@ namespace PigeonEngine
         return true;
     }
 
-    INT EString::AtoI() const
+    INT32 EString::AtoI() const
     {
         if(!IsNumeric())
         {
@@ -207,14 +207,14 @@ namespace PigeonEngine
         return atof(Str.c_str());
     }
 
-    ENGINE_INLINE EString ToString(const UINT& InValue)
+    PE_INLINE EString ToString(const UINT32& InValue)
     {
         return EString(std::to_string(InValue).c_str());
     }
 
-    ENGINE_INLINE BOOL SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr)
+    PE_INLINE BOOL32 SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr)
     {
-        const UINT OriginStrLen = InOriginStr.Length();
+        const UINT32 OriginStrLen = InOriginStr.Length();
         if (OriginStrLen <= 3u)
         {
             OutDotForwardStr    = ENGINE_DEFAULT_NAME;
@@ -222,7 +222,7 @@ namespace PigeonEngine
             return FALSE;
         }
         const CHAR TempCharSign[1] = { InSplitSign };
-        const UINT LastDot = InOriginStr.RightFind(TempCharSign);
+        const UINT32 LastDot = InOriginStr.RightFind(TempCharSign);
         if (LastDot >= OriginStrLen)
         {
             OutDotForwardStr    = ENGINE_DEFAULT_NAME;

@@ -56,7 +56,7 @@ namespace PigeonEngine
 		Doc = InDoc;
 	}
 
-	BOOL CJsonObject::HasField(const std::string& FieldName)
+	BOOL32 CJsonObject::HasField(const std::string& FieldName)
 	{
 		return Doc->HasMember(FieldName.c_str());
 	}
@@ -68,7 +68,7 @@ namespace PigeonEngine
 		Doc->RemoveMember(FieldName.c_str());
 	}
 
-	BOOL CJsonObject::GetIntField(const std::string& FieldName, INT& Out)
+	BOOL32 CJsonObject::GetIntField(const std::string& FieldName, INT32& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsInt())
@@ -77,7 +77,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetInt64Field(const std::string& FieldName, INT64& Out)
+	BOOL32 CJsonObject::GetInt64Field(const std::string& FieldName, INT64& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsInt64())
@@ -86,7 +86,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetUIntField(const std::string& FieldName, UINT& Out)
+	BOOL32 CJsonObject::GetUIntField(const std::string& FieldName, UINT32& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsUint())
@@ -95,7 +95,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetUInt64Field(const std::string& FieldName, UINT64& Out)
+	BOOL32 CJsonObject::GetUInt64Field(const std::string& FieldName, UINT64& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsUint64())
@@ -104,7 +104,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetFloatField(const std::string& FieldName, FLOAT& Out)
+	BOOL32 CJsonObject::GetFloatField(const std::string& FieldName, FLOAT& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsFloat())
@@ -113,7 +113,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetDoubleField(const std::string& FieldName, DOUBLE& Out)
+	BOOL32 CJsonObject::GetDoubleField(const std::string& FieldName, DOUBLE& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsDouble())
@@ -122,7 +122,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetStringField(const std::string& FieldName, std::string& Out)
+	BOOL32 CJsonObject::GetStringField(const std::string& FieldName, std::string& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsString())
@@ -131,7 +131,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetBoolField(const std::string& FieldName, BOOL& Out)
+	BOOL32 CJsonObject::GetBoolField(const std::string& FieldName, BOOL32& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsBool())
@@ -140,7 +140,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetObjectField(const std::string& FieldName, CJsonObject& Out)
+	BOOL32 CJsonObject::GetObjectField(const std::string& FieldName, CJsonObject& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsObject())
@@ -151,7 +151,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetIntArrayField(const std::string& FieldName, std::vector<INT>& Out)
+	BOOL32 CJsonObject::GetIntArrayField(const std::string& FieldName, std::vector<INT32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -165,7 +165,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetInt64ArrayField(const std::string& FieldName, std::vector<INT64>& Out)
+	BOOL32 CJsonObject::GetInt64ArrayField(const std::string& FieldName, std::vector<INT64>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -179,7 +179,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetUIntArrayField(const std::string& FieldName, std::vector<UINT>& Out)
+	BOOL32 CJsonObject::GetUIntArrayField(const std::string& FieldName, std::vector<UINT32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -193,7 +193,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetUInt64ArrayField(const std::string& FieldName, std::vector<UINT64>& Out)
+	BOOL32 CJsonObject::GetUInt64ArrayField(const std::string& FieldName, std::vector<UINT64>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -207,7 +207,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetFloatArrayField(const std::string& FieldName, std::vector<FLOAT>& Out)
+	BOOL32 CJsonObject::GetFloatArrayField(const std::string& FieldName, std::vector<FLOAT>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -221,7 +221,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetDoubleArrayField(const std::string& FieldName, std::vector<DOUBLE>& Out)
+	BOOL32 CJsonObject::GetDoubleArrayField(const std::string& FieldName, std::vector<DOUBLE>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -235,7 +235,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetStringArrayField(const std::string& FieldName, std::vector<std::string>& Out)
+	BOOL32 CJsonObject::GetStringArrayField(const std::string& FieldName, std::vector<std::string>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -249,7 +249,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetBoolArrayField(const std::string& FieldName, std::vector<BOOL>& Out)
+	BOOL32 CJsonObject::GetBoolArrayField(const std::string& FieldName, std::vector<BOOL32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -263,7 +263,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	BOOL CJsonObject::GetObjectArrayField(const std::string& FieldName, std::vector<CJsonObject*>& Out)
+	BOOL32 CJsonObject::GetObjectArrayField(const std::string& FieldName, std::vector<CJsonObject*>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
@@ -280,7 +280,7 @@ namespace PigeonEngine
 		return true;
 	}
 
-	void CJsonObject::SetIntField(const std::string& FieldName, const INT& In)
+	void CJsonObject::SetIntField(const std::string& FieldName, const INT32& In)
 	{
 		if (HasField(FieldName))
 		{
@@ -302,7 +302,7 @@ namespace PigeonEngine
 		Doc->AddMember(StringRef(newK->c_str()), In, Doc->GetAllocator());
 	}
 
-	void CJsonObject::SetUIntField(const std::string& FieldName, const UINT& In)
+	void CJsonObject::SetUIntField(const std::string& FieldName, const UINT32& In)
 	{
 		if (HasField(FieldName))
 		{
@@ -359,7 +359,7 @@ namespace PigeonEngine
 		Doc->AddMember(StringRef(newK->c_str()), Val, Doc->GetAllocator());
 	}
 
-	void CJsonObject::SetBoolField(const std::string& FieldName, const BOOL& In)
+	void CJsonObject::SetBoolField(const std::string& FieldName, const BOOL32& In)
 	{
 		if (HasField(FieldName))
 		{
@@ -388,7 +388,7 @@ namespace PigeonEngine
 		Doc->AddMember(StringRef(newK->c_str()), Val, Doc->GetAllocator());
 	}
 
-	void CJsonObject::SetIntArrayField(const std::string& FieldName, const std::vector<INT>& In)
+	void CJsonObject::SetIntArrayField(const std::string& FieldName, const std::vector<INT32>& In)
 	{
 		std::string* newK = new std::string(FieldName);
 		rapidjson::Value Val(rapidjson::Type::kArrayType);
@@ -424,7 +424,7 @@ namespace PigeonEngine
 		Doc->AddMember(StringRef(newK->c_str()), Val, Doc->GetAllocator());
 	}
 
-	void CJsonObject::SetUIntArrayField(const std::string& FieldName, const std::vector<UINT>& In)
+	void CJsonObject::SetUIntArrayField(const std::string& FieldName, const std::vector<UINT32>& In)
 	{
 		std::string* newK = new std::string(FieldName);
 		rapidjson::Value Val(rapidjson::Type::kArrayType);
@@ -514,11 +514,11 @@ namespace PigeonEngine
 		Doc->AddMember(StringRef(newK->c_str()), Val, Doc->GetAllocator());
 	}
 
-	void CJsonObject::SetBoolArrayField(const std::string& FieldName, const std::vector<BOOL>& In)
+	void CJsonObject::SetBoolArrayField(const std::string& FieldName, const std::vector<BOOL32>& In)
 	{
 		std::string* newK = new std::string(FieldName);
 		rapidjson::Value Val(rapidjson::Type::kArrayType);
-		for (auto& elem : In)
+		for (const auto& elem : In)
 		{
 			Value Temp(elem);
 			Val.PushBack(Temp, Doc->GetAllocator());

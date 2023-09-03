@@ -28,19 +28,19 @@ CSkeletonSingleNode::~CSkeletonSingleNode()
 	this->m_Transform.RemoveParent();
 	this->m_Transform.RemoveAllChildren();
 }
-BOOL CSkeletonSingleNode::IsRootNode()const
+BOOL32 CSkeletonSingleNode::IsRootNode()const
 {
 	return (this->m_RootIndex == -1);
 }
-BOOL CSkeletonSingleNode::IsBoneNode()const
+BOOL32 CSkeletonSingleNode::IsBoneNode()const
 {
 	return (this->m_BoneIndex >= 0);
 }
-BOOL CSkeletonSingleNode::HasParentNode()const
+BOOL32 CSkeletonSingleNode::HasParentNode()const
 {
 	return (this->m_ParentIndex >= 0);
 }
-BOOL CSkeletonSingleNode::HasChildrenNode()const
+BOOL32 CSkeletonSingleNode::HasChildrenNode()const
 {
 	return (this->m_ChildrenIndex.size() > 0);
 }
@@ -212,7 +212,7 @@ void CSkeletonComponent::Update()
 	this->m_SkeletonPerFrameUpload = TRUE;
 	this->UpdateSkeletonTransformInfo();
 }
-BOOL CSkeletonComponent::IsValid()const
+BOOL32 CSkeletonComponent::IsValid()const
 {
 	return (
 		this->GetGameObject() != nullptr &&
@@ -346,15 +346,15 @@ void CSkeletonComponent::SetSkeleton(const std::vector<CustomStruct::CGameBoneNo
 
 	CRenderDevice::CreateBuffer(this->m_SkeletonGPUCBuffer, CustomStruct::CRenderBufferDesc(sizeof(CustomStruct::CShaderSkeletonMatrix), CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 }
-void CSkeletonComponent::BindVSSkeletonGPUConstantBuffer(const UINT& startSlot)const
+void CSkeletonComponent::BindVSSkeletonGPUConstantBuffer(const UINT32& startSlot)const
 {
 	CRenderDevice::BindVSConstantBuffer(this->m_SkeletonGPUCBuffer, startSlot);
 }
-void CSkeletonComponent::BindPSSkeletonGPUConstantBuffer(const UINT& startSlot)const
+void CSkeletonComponent::BindPSSkeletonGPUConstantBuffer(const UINT32& startSlot)const
 {
 	CRenderDevice::BindPSConstantBuffer(this->m_SkeletonGPUCBuffer, startSlot);
 }
-void CSkeletonComponent::BindCSSkeletonGPUConstantBuffer(const UINT& startSlot)const
+void CSkeletonComponent::BindCSSkeletonGPUConstantBuffer(const UINT32& startSlot)const
 {
 	CRenderDevice::BindCSConstantBuffer(this->m_SkeletonGPUCBuffer, startSlot);
 }

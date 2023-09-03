@@ -19,7 +19,7 @@ public:
 	struct GTAOUserArguments
 	{
 		GTAOUserArguments() { ::ZeroMemory(this, sizeof(*this)); }
-		UINT	NumAngles;
+		UINT32	NumAngles;
 		FLOAT	FallOffEnd;
 		//FLOAT	FallOffStartRatio;
 		FLOAT	ThicknessBlend;
@@ -46,7 +46,7 @@ public:
 private:
 #ifdef _DEVELOPMENT_EDITOR
 	class CScreenPolygon2D*						m_Polygon2D;
-	INT											m_DebugType;
+	INT32											m_DebugType;
 	CRenderDevice::RenderTexture2DViewInfo		m_DebugBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader> m_DebugComputeShader;
 #endif

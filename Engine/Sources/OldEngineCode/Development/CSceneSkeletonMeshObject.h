@@ -28,7 +28,7 @@ protected:
 	CHAR								m_LoadMaterialPath[512];
 #endif
 public:
-	CSceneSkeletonMeshObject(const BOOL& active, const class CScene* scene);
+	CSceneSkeletonMeshObject(const BOOL32& active, const class CScene* scene);
 	virtual ~CSceneSkeletonMeshObject();
 };
 */

@@ -5,14 +5,14 @@
 #include "../Headers/CSkeletonComponent.h"
 
 template<typename KeyValueType, typename KeyLerpFunc>
-BOOL LerpAnimationKey(const DOUBLE& keyTime, KeyValueType& output, const std::vector<CustomStruct::CGameAnimationKey<KeyValueType>>& keys, KeyLerpFunc func)
+BOOL32 LerpAnimationKey(const DOUBLE& keyTime, KeyValueType& output, const std::vector<CustomStruct::CGameAnimationKey<KeyValueType>>& keys, KeyLerpFunc func)
 {
 	if (keys.size() == 0u)
 	{
 		return FALSE;
 	}
-	UINT numKey = static_cast<UINT>(keys.size()) - 1u;
-	for (UINT indexKey = 0u; indexKey < numKey; indexKey++)
+	UINT32 numKey = static_cast<UINT32>(keys.size()) - 1u;
+	for (UINT32 indexKey = 0u; indexKey < numKey; indexKey++)
 	{
 		if (keyTime >= keys[indexKey].Time && keyTime < keys[indexKey + 1u].Time)
 		{
@@ -87,8 +87,8 @@ void CSkeletonAnimationComponent::Update()
 		auto vec3Lerp = [](const CustomType::Vector3& v1, const CustomType::Vector3& v2, const FLOAT& t)->CustomType::Vector3 { return CustomType::Vector3::Lerp(v1, v2, t); };
 		auto quatLerp = [](const CustomType::Quaternion& v1, const CustomType::Quaternion& v2, const FLOAT& t)->CustomType::Quaternion { return CustomType::Quaternion::SLerp(v1, v2, t); };
 
-		UINT numAnimationNode = static_cast<UINT>(this->m_CurrentPlayAnimation->AnimationNodes.size());
-		for (UINT indexAnimationNode = 0u; indexAnimationNode < numAnimationNode; indexAnimationNode++)
+		UINT32 numAnimationNode = static_cast<UINT32>(this->m_CurrentPlayAnimation->AnimationNodes.size());
+		for (UINT32 indexAnimationNode = 0u; indexAnimationNode < numAnimationNode; indexAnimationNode++)
 		{
 			const CustomStruct::CGameAnimationNodeInfo& tempNode = this->m_CurrentPlayAnimation->AnimationNodes[indexAnimationNode];
 			CSkeletonSingleNode& tempBone = this->m_SkeletonComponent->GetNodeByNameNoConst(tempNode.Name);
@@ -96,9 +96,9 @@ void CSkeletonAnimationComponent::Update()
 			CustomType::Vector3 tempPos, tempScl;
 			CustomType::Quaternion tempRot;
 
-			BOOL findKeyPos = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempPos, tempNode.PositionKeys, vec3Lerp);
-			BOOL findKeyRot = LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
-			BOOL findKeyScl = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
+			BOOL32 findKeyPos = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempPos, tempNode.PositionKeys, vec3Lerp);
+			BOOL32 findKeyRot = LerpAnimationKey<CustomType::Quaternion>(currentPlayTime, tempRot, tempNode.RotationKeys, quatLerp);
+			BOOL32 findKeyScl = LerpAnimationKey<CustomType::Vector3>(currentPlayTime, tempScl, tempNode.ScalingKeys, vec3Lerp);
 
 			if (findKeyPos) { tempBone.SetAnimationPosition(tempPos); }
 			if (findKeyRot) { tempBone.SetAnimationRotation(tempRot); }
@@ -137,7 +137,7 @@ void CSkeletonAnimationComponent::SelectedEditorUpdate()
 	this->m_PlayRepeat = playRepeat;
 }
 #endif
-void CSkeletonAnimationComponent::Play(const BOOL& repeat)
+void CSkeletonAnimationComponent::Play(const BOOL32& repeat)
 {
 	if (this->m_PlayState == SkeletonAnimationPlayState::SkeletonAnimationPlayState_Pause)
 	{
@@ -182,11 +182,11 @@ void CSkeletonAnimationComponent::SetCurrentAnimation(const std::string& name)
 	}
 #endif
 }
-void CSkeletonAnimationComponent::SetCurrentAnimation(const UINT& index)
+void CSkeletonAnimationComponent::SetCurrentAnimation(const UINT32& index)
 {
 	if (this->m_AnimationList.size() > 0)
 	{
-		UINT tempIndex = 0u;
+		UINT32 tempIndex = 0u;
 		for (auto indexFind = this->m_AnimationList.begin(); indexFind != this->m_AnimationList.end(); indexFind++)
 		{
 			if (tempIndex == index)
@@ -219,7 +219,7 @@ void CSkeletonAnimationComponent::AddAnimation(const std::string& name, const Cu
 {
 	if (animation != nullptr)
 	{
-		BOOL needAssign = FALSE;
+		BOOL32 needAssign = FALSE;
 		if (this->m_AnimationList.size() == 0)
 		{
 			needAssign = TRUE;

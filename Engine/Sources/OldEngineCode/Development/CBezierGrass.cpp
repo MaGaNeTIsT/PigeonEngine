@@ -13,7 +13,7 @@ CBezierGrass::CBezierGrass()
 	m_DebugWnd				= nullptr;
 	m_DebugBufferSizeX		= 800u;
 	m_DebugBufferSizeY		= 600u;
-	m_DebugCBufferData.Parameter		= DirectX::XMINT4(static_cast<INT>(m_DebugBufferSizeY), 0, 0, 0);
+	m_DebugCBufferData.Parameter		= DirectX::XMINT4(static_cast<INT32>(m_DebugBufferSizeY), 0, 0, 0);
 	m_DebugCBufferData.StartEndPoint	= DirectX::XMFLOAT4(0.f, 0.f, 1.f, 1.f);
 	m_DebugCBufferData.ControlPoint		= DirectX::XMFLOAT4(0.f, 0.5f, 0.5f, 1.f);
 #endif
@@ -185,7 +185,7 @@ void CBezierGrass::Update()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		INT	grassSplitNum			= static_cast<INT>(m_GrassPropertyData.SplitNum);
+		INT32	grassSplitNum			= static_cast<INT32>(m_GrassPropertyData.SplitNum);
 		FLOAT grassLeafWidth		= m_GrassPropertyData.LeafWidth;
 		FLOAT grassRootColor[3]		= { m_GrassPropertyData.RootColor.r, m_GrassPropertyData.RootColor.g, m_GrassPropertyData.RootColor.b };
 		FLOAT grassTipColor[3]		= { m_GrassPropertyData.TipColor.r, m_GrassPropertyData.TipColor.g, m_GrassPropertyData.TipColor.b };
@@ -198,7 +198,7 @@ void CBezierGrass::Update()
 		bool isShowGrassDebugRS		= m_IsShowGrassDebugRS;
 		bool isShowDebugWnd			= m_IsShowDebugWnd;
 		FLOAT grassAngle			= m_DebugGrassRot;
-		INT threadNum				= m_DebugCBufferData.Parameter.x;
+		INT32 threadNum				= m_DebugCBufferData.Parameter.x;
 		FLOAT endPoint[2]			= { m_DebugCBufferData.StartEndPoint.z, m_DebugCBufferData.StartEndPoint.w };
 		FLOAT controlStartPoint[2]	= { m_DebugCBufferData.ControlPoint.x, m_DebugCBufferData.ControlPoint.y };
 		FLOAT controlEndPoint[2]	= { m_DebugCBufferData.ControlPoint.z, m_DebugCBufferData.ControlPoint.w };
@@ -241,7 +241,7 @@ void CBezierGrass::Update()
 		//m_GrassInstanceData[0].Bend			= grassBend;
 
 
-		m_GrassPropertyData.SplitNum	= static_cast<UINT>(grassSplitNum);
+		m_GrassPropertyData.SplitNum	= static_cast<UINT32>(grassSplitNum);
 		m_GrassPropertyData.StepLength	= 1.f / static_cast<FLOAT>(m_GrassPropertyData.SplitNum);
 		m_GrassPropertyData.LeafWidth	= grassLeafWidth;
 		m_GrassPropertyData.RootColor	= CustomStruct::CColor(grassRootColor[0], grassRootColor[1], grassRootColor[2], 1.f);
@@ -255,7 +255,7 @@ void CBezierGrass::Update()
 		CRenderDevice::ClearUnorderedAccessViewUint(m_DebugTexBuffer.UnorderedAccessView);
 		CRenderDevice::ClearUnorderedAccessViewFloat(m_DebugScreenBuffer.UnorderedAccessView);
 
-		UINT threadSize = static_cast<UINT>(((m_DebugCBufferData.Parameter.x + 7) / 8) * 8);
+		UINT32 threadSize = static_cast<UINT32>(((m_DebugCBufferData.Parameter.x + 7) / 8) * 8);
 		CRenderDevice::BindCSConstantBuffer(m_DebugCBuffer, 2u);
 
 		CRenderDevice::SetCSShader(m_DebugCS);
@@ -272,7 +272,7 @@ void CBezierGrass::Update()
 #endif
 	{
 		UploadGrassPropertyConstantBuffer();
-		const UINT numInstance = static_cast<UINT>(m_GrassInstanceData.size());
+		const UINT32 numInstance = static_cast<UINT32>(m_GrassInstanceData.size());
 		if (m_GrassInstanceNumInBuffer != numInstance)
 		{
 			m_GrassInstanceNumInBuffer = numInstance;
@@ -294,7 +294,7 @@ void CBezierGrass::Render()
 		CRenderDevice::SetRasterizerState(m_GrassRS);
 	}
 
-	const UINT indexNum = (m_GrassPropertyData.SplitNum * 2u - 1u) * 3u;
+	const UINT32 indexNum = (m_GrassPropertyData.SplitNum * 2u - 1u) * 3u;
 	ReCreateGrassIndexBuffer(indexNum);
 
 	CRenderDevice::SetNoInputLayout();
@@ -338,7 +338,7 @@ void CBezierGrass::Uninit()
 	}
 #endif
 }
-void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, const FLOAT& BaseHeight, const FLOAT& offsetHeight, const FLOAT& lengthX, const FLOAT& lengthZ, const UINT& numX, const UINT& numZ)
+void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, const FLOAT& BaseHeight, const FLOAT& offsetHeight, const FLOAT& lengthX, const FLOAT& lengthZ, const UINT32& numX, const UINT32& numZ)
 {
 	if (numX == 0u || numZ == 0u || lengthX < 1e-3f || lengthZ < 1e-3f || BaseHeight < 1e-3f || offsetHeight < 0.f)
 	{
@@ -355,7 +355,7 @@ void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, 
 		ny = CustomType::CMath::Frac(CustomType::CMath::Sin(x * 269.5f + y * 183.3f) * 43758.5453123f);
 	};
 
-	UINT grassSize = CustomType::CMath::Min(CBezierGrass::_GrassInstancePerGroupMaxNum, numX * numZ);
+	UINT32 grassSize = CustomType::CMath::Min(CBezierGrass::_GrassInstancePerGroupMaxNum, numX * numZ);
 	if (m_GrassInstanceData.size() != static_cast<size_t>(grassSize))
 	{
 		m_GrassInstanceData.resize(static_cast<size_t>(grassSize));
@@ -366,11 +366,11 @@ void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, 
 		FLOAT deltaX = lengthX / static_cast<FLOAT>(numX), deltaZ = lengthZ / static_cast<FLOAT>(numZ);
 		FLOAT offsetXStart = -lengthX * 0.5f + deltaX * 0.5f, offsetXEnd = lengthX * 0.5f - deltaX * 0.5f;
 		FLOAT offsetZStart = -lengthZ * 0.5f + deltaZ * 0.5f, offsetZEnd = lengthZ * 0.5f - deltaZ * 0.5f;
-		for (UINT z = 0u; z < numZ; z++)
+		for (UINT32 z = 0u; z < numZ; z++)
 		{
-			for (UINT x = 0u; x < numX; x++)
+			for (UINT32 x = 0u; x < numX; x++)
 			{
-				UINT index = z * numX + x;
+				UINT32 index = z * numX + x;
 				if (index >= grassSize)
 				{
 					//TODO return the over size part.
@@ -395,7 +395,7 @@ void CBezierGrass::ReCreateGrassInstanceData(const CustomType::Vector3& origin, 
 		}
 	}
 }
-void CBezierGrass::ReCreateGrassIndexBuffer(const UINT& num)
+void CBezierGrass::ReCreateGrassIndexBuffer(const UINT32& num)
 {
 	if (m_GrassIndexNum != num || !m_GrassIndexBuffer)
 	{
@@ -407,7 +407,7 @@ void CBezierGrass::ReCreateGrassIndexBuffer(const UINT& num)
 		}
 		USHORT* tempIndices = new USHORT[num];
 		const USHORT tempNumIndices = static_cast<USHORT>(num);
-		for (UINT i = 0u; i < tempNumIndices; i++)
+		for (UINT32 i = 0u; i < tempNumIndices; i++)
 		{
 			tempIndices[i] = i;
 		}
@@ -420,15 +420,15 @@ void CBezierGrass::ReCreateGrassIndexBuffer(const UINT& num)
 void CBezierGrass::ReCreateGrassInstanceConstantBuffer()
 {
 	m_GrassInstanceBuffer.Release();
-	CRenderDevice::CreateStructuredBuffer(m_GrassInstanceBuffer, CustomStruct::CRenderStructuredBufferDesc(sizeof(GrassInstanceBuffer), CustomType::CMath::Min(_GrassInstancePerGroupMaxNum, static_cast<UINT>(m_GrassInstanceData.size()))));
+	CRenderDevice::CreateStructuredBuffer(m_GrassInstanceBuffer, CustomStruct::CRenderStructuredBufferDesc(sizeof(GrassInstanceBuffer), CustomType::CMath::Min(_GrassInstancePerGroupMaxNum, static_cast<UINT32>(m_GrassInstanceData.size()))));
 }
 void CBezierGrass::UploadGrassInstanceConstantBuffer()
 {
-	const UINT numGrassInstance = CustomType::CMath::Min(_GrassInstancePerGroupMaxNum, static_cast<UINT>(m_GrassInstanceData.size()));
+	const UINT32 numGrassInstance = CustomType::CMath::Min(_GrassInstancePerGroupMaxNum, static_cast<UINT32>(m_GrassInstanceData.size()));
 	if (numGrassInstance > 0u)
 	{
 		GrassInstanceBuffer* tempBufferData = new GrassInstanceBuffer[numGrassInstance];
-		for (UINT i = 0u; i < numGrassInstance; i++)
+		for (UINT32 i = 0u; i < numGrassInstance; i++)
 		{
 			TranslateGrassInstanceInfoToBuffer(tempBufferData[i], m_GrassInstanceData[i]);
 		}
@@ -471,7 +471,7 @@ void CBezierGrass::TranslateGrassPropertyInfoToBuffer(GrassPropertyBuffer& outpu
 }
 void CBezierGrass::TranslateGrassPropertyBufferToInfo(GrassPropertyInfo& output, const GrassPropertyBuffer& input)
 {
-	output.SplitNum		= static_cast<UINT>(input.Params0.x);
+	output.SplitNum		= static_cast<UINT32>(input.Params0.x);
 	output.StepLength	= input.Params0.y;
 	output.LeafWidth	= input.Params0.z;
 	output.RootColor	= CustomStruct::CColor(input.Params1.x, input.Params1.y, input.Params1.z, input.Params1.w);

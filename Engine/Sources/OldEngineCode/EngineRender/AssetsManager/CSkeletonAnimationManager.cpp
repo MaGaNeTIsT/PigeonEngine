@@ -15,7 +15,7 @@ void CSkeletonAnimationManager::ClearData()
 		m_SkeletonAnimationManager->m_Data.clear();
 	}
 }
-const CustomStruct::CGameAnimationInfo* CSkeletonAnimationManager::LoadSkeletonAnimationAsset(const std::string& path, const std::string* animationName, UINT* animationIndex)
+const CustomStruct::CGameAnimationInfo* CSkeletonAnimationManager::LoadSkeletonAnimationAsset(const std::string& path, const std::string* animationName, UINT32* animationIndex)
 {
 	const CustomStruct::CGameAnimationInfo* result = nullptr;
 	result = CSkeletonAnimationManager::FindData(path, animationName, animationIndex);
@@ -33,7 +33,7 @@ void CSkeletonAnimationManager::ImportAssetSkeletonAnimation(const std::string& 
 {
 	CassimpManager::CassimpReadFileState readState = CassimpManager::ReadSkeletonAnimationFile(path, m_SkeletonAnimationManager->m_Data);
 }
-const CustomStruct::CGameAnimationInfo* CSkeletonAnimationManager::FindData(const std::string& path, const std::string* name, const UINT* index)
+const CustomStruct::CGameAnimationInfo* CSkeletonAnimationManager::FindData(const std::string& path, const std::string* name, const UINT32* index)
 {
 	if (m_SkeletonAnimationManager->m_Data.size() > 0)
 	{
@@ -54,7 +54,7 @@ const CustomStruct::CGameAnimationInfo* CSkeletonAnimationManager::FindData(cons
 					}
 					else if (index != nullptr)
 					{
-						UINT tempIndex = 0u;
+						UINT32 tempIndex = 0u;
 						for (auto resultAnimation = element->second.begin(); resultAnimation != element->second.end(); resultAnimation++)
 						{
 							if (tempIndex == (*index))

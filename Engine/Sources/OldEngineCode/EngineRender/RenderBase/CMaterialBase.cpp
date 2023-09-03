@@ -7,7 +7,7 @@
 #include "../../RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../RenderMaterials/Headers/CClothMaterial.h"
 
-CMaterialBase::CMaterialBase(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName)
+CMaterialBase::CMaterialBase(const std::string& name, MaterialType materialType, const UINT32& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT32& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName)
 {
 	this->m_Name				= name;
 	this->m_MaterialType		= materialType;
@@ -15,7 +15,7 @@ CMaterialBase::CMaterialBase(const std::string& name, MaterialType materialType,
 	if (inputLayoutNum > 0)
 	{
 		this->m_InputLayout.resize(inputLayoutNum);
-		for (UINT i = 0u; i < inputLayoutNum; i++)
+		for (UINT32 i = 0u; i < inputLayoutNum; i++)
 		{
 			this->m_InputLayout[i] = inputLayout[i];
 		}
@@ -50,7 +50,7 @@ const CMaterialBase::MaterialType& CMaterialBase::GetMaterialType()const
 {
 	return (this->m_MaterialType);
 }
-const UINT& CMaterialBase::GetConstantSize()const
+const UINT32& CMaterialBase::GetConstantSize()const
 {
 	return (this->m_ConstantSize);
 }
@@ -66,19 +66,19 @@ const std::string& CMaterialBase::GetPixelShaderName()const
 {
 	return (this->m_PixelShaderName);
 }
-BOOL CMaterialBase::HasConstantData()const
+BOOL32 CMaterialBase::HasConstantData()const
 {
 	return (this->m_ConstantSize > 0u && this->GetConstantData() != nullptr);
 }
-BOOL CMaterialBase::HasInputLayout()const
+BOOL32 CMaterialBase::HasInputLayout()const
 {
 	return (this->m_InputLayout.size() > 0);
 }
-BOOL CMaterialBase::HasVertexShader()const
+BOOL32 CMaterialBase::HasVertexShader()const
 {
 	return (this->m_VertexShader != NULL);
 }
-BOOL CMaterialBase::HasPixelShader()const
+BOOL32 CMaterialBase::HasPixelShader()const
 {
 	return (this->m_ConstantSize != NULL);
 }
@@ -118,8 +118,8 @@ const static std::string _GStaticPropertyName[CReadWriteMaterialParamsFile::File
 	"ClearCoatRoughnessProperty" };
 const static std::string _GStaticNotExistString = ENGINE_NOT_EXIST_STRING;
 const static std::string _GStaticMaterialConfigTypeString = "mat_tex_cfg";
-constexpr UINT CReadWriteMaterialParamsFile::_PropertyStringLengthMax;
-constexpr UINT CReadWriteMaterialParamsFile::_PathStringLengthMax;
+constexpr UINT32 CReadWriteMaterialParamsFile::_PropertyStringLengthMax;
+constexpr UINT32 CReadWriteMaterialParamsFile::_PathStringLengthMax;
 CReadWriteMaterialParamsFile::CReadWriteMaterialParamsFile()
 {
 	this->m_TexturePath[FileMaterialTextureParamsType::FMTPT_NONE] = _GStaticNotExistString;
@@ -164,8 +164,8 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL matV = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+			BOOL32 matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
@@ -222,8 +222,8 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL matV = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+			BOOL32 matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
@@ -282,8 +282,8 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL matV = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+			BOOL32 matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
@@ -358,8 +358,8 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL matV = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+			BOOL32 matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
@@ -424,8 +424,8 @@ void CReadWriteMaterialParamsFile::SaveMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL matV = mat->GetIsGlossyRoughness();
-			this->SetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
+			BOOL32 matV = mat->GetIsGlossyRoughness();
+			this->SetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &matV, 1u);
 		}
 
 		{
@@ -457,7 +457,7 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 
 	{
 		{
-			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL32& sRGB = TRUE)->CTexture2D* {
 				std::string outputStr;
 				if (this->GetTexturePath(type, outputStr))
 				{
@@ -487,8 +487,8 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL v = FALSE;
-			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			BOOL32 v = FALSE;
+			this->GetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
 			mat->SetIsGlossyRoughness(v);
 		}
 
@@ -520,7 +520,7 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 
 	{
 		{
-			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL32& sRGB = TRUE)->CTexture2D* {
 				std::string outputStr;
 				if (this->GetTexturePath(type, outputStr))
 				{
@@ -550,8 +550,8 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL v = FALSE;
-			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			BOOL32 v = FALSE;
+			this->GetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
 			mat->SetIsGlossyRoughness(v);
 		}
 
@@ -583,7 +583,7 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 
 	{
 		{
-			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL32& sRGB = TRUE)->CTexture2D* {
 				std::string outputStr;
 				if (this->GetTexturePath(type, outputStr))
 				{
@@ -615,8 +615,8 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL v = FALSE;
-			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			BOOL32 v = FALSE;
+			this->GetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
 			mat->SetIsGlossyRoughness(v);
 		}
 
@@ -656,7 +656,7 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 
 	{
 		{
-			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL32& sRGB = TRUE)->CTexture2D* {
 				std::string outputStr;
 				if (this->GetTexturePath(type, outputStr))
 				{
@@ -698,8 +698,8 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL v = FALSE;
-			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			BOOL32 v = FALSE;
+			this->GetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
 			mat->SetIsGlossyRoughness(v);
 		}
 
@@ -723,7 +723,7 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 
 	{
 		{
-			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL& sRGB = TRUE)->CTexture2D* {
+			auto loadTexFromPath = [&](FileMaterialTextureParamsType type, const BOOL32& sRGB = TRUE)->CTexture2D* {
 				std::string outputStr;
 				if (this->GetTexturePath(type, outputStr))
 				{
@@ -767,8 +767,8 @@ void CReadWriteMaterialParamsFile::LoadMaterialParams(const std::string& path, c
 		}
 
 		{
-			BOOL v = FALSE;
-			this->GetPropertyValue<BOOL>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
+			BOOL32 v = FALSE;
+			this->GetPropertyValue<BOOL32>(FileMaterialPropertyParamsType::FMPPT_ISGLOSSY, &v, 1u);
 			mat->SetIsGlossyRoughness(v);
 		}
 
@@ -799,7 +799,7 @@ void CReadWriteMaterialParamsFile::SetTexturePath(FileMaterialTextureParamsType 
 	}
 	this->m_TexturePath[type] = str;
 }
-BOOL CReadWriteMaterialParamsFile::GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const
+BOOL32 CReadWriteMaterialParamsFile::GetTexturePath(FileMaterialTextureParamsType type, std::string& output)const
 {
 	if (type <= FileMaterialTextureParamsType::FMTPT_NONE || type >= FileMaterialTextureParamsType::FMTPT_COUNT || this->m_TexturePath[type] == _GStaticNotExistString)
 	{
@@ -817,7 +817,7 @@ void CReadWriteMaterialParamsFile::SetPropertyPath(FileMaterialPropertyParamsTyp
 	}
 	this->m_PropertyPath[type] = str;
 }
-BOOL CReadWriteMaterialParamsFile::GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const
+BOOL32 CReadWriteMaterialParamsFile::GetPropertyPath(FileMaterialPropertyParamsType type, std::string& output)const
 {
 	if (type <= FileMaterialPropertyParamsType::FMPPT_NONE || type >= FileMaterialPropertyParamsType::FMPPT_COUNT || this->m_PropertyPath[type] == _GStaticNotExistString)
 	{
@@ -831,9 +831,9 @@ void CReadWriteMaterialParamsFile::ReadFile(const std::string& fullPath)
 {
 	this->InitAllPath();
 
-	CTempFileReader reader(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileReader* const tempReader)->BOOL {
+	CTempFileReader reader(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileReader* const tempReader)->BOOL32 {
 		CHAR tempLine[CReadWriteMaterialParamsFile::_PropertyStringLengthMax + CReadWriteMaterialParamsFile::_PathStringLengthMax];
-		for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
+		for (INT32 i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 		{
 			if (!fileStream.getline(tempLine, CReadWriteMaterialParamsFile::_PropertyStringLengthMax + CReadWriteMaterialParamsFile::_PathStringLengthMax))
 			{
@@ -850,7 +850,7 @@ void CReadWriteMaterialParamsFile::ReadFile(const std::string& fullPath)
 			}
 			this->m_TexturePath[i] = tempPath;
 		}
-		for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+		for (INT32 i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
 		{
 			if (!fileStream.getline(tempLine, CReadWriteMaterialParamsFile::_PropertyStringLengthMax + CReadWriteMaterialParamsFile::_PathStringLengthMax))
 			{
@@ -871,8 +871,8 @@ void CReadWriteMaterialParamsFile::ReadFile(const std::string& fullPath)
 }
 void CReadWriteMaterialParamsFile::WriteFile(const std::string& fullPath)
 {
-	CTempFileWriter writer(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileWriter* const tempWrite)->BOOL {
-		for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
+	CTempFileWriter writer(FALSE, fullPath, [&](std::fstream& fileStream, const CTempFileWriter* const tempWrite)->BOOL32 {
+		for (INT32 i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 		{
 			std::string tempWriteStr = _GStaticTextureName[i] + '=';
 			if (this->m_TexturePath[i] != _GStaticNotExistString)
@@ -882,7 +882,7 @@ void CReadWriteMaterialParamsFile::WriteFile(const std::string& fullPath)
 			tempWriteStr += '\n';
 			fileStream << tempWriteStr;
 		}
-		for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+		for (INT32 i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
 		{
 			std::string tempWriteStr = _GStaticPropertyName[i] + '=';
 			if (this->m_PropertyPath[i] != _GStaticNotExistString)
@@ -896,11 +896,11 @@ void CReadWriteMaterialParamsFile::WriteFile(const std::string& fullPath)
 }
 void CReadWriteMaterialParamsFile::InitAllPath()
 {
-	for (INT i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
+	for (INT32 i = (FileMaterialTextureParamsType::FMTPT_NONE + 1); i < FileMaterialTextureParamsType::FMTPT_COUNT; i++)
 	{
 		this->m_TexturePath[i] = _GStaticNotExistString;
 	}
-	for (INT i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
+	for (INT32 i = (FileMaterialPropertyParamsType::FMPPT_NONE + 1); i < FileMaterialPropertyParamsType::FMPPT_COUNT; i++)
 	{
 		this->m_PropertyPath[i] = _GStaticNotExistString;
 	}

@@ -227,19 +227,19 @@ void CDynamicWind::RunCPUWind(const FLOAT& deltaTime)
 }
 void CDynamicWind::AddCPUWindSource(const FLOAT& deltaTime)
 {
-	INT i = 64, j = 64; FLOAT d = this->m_DSource, u = this->m_USource, v = this->m_VSource;
+	INT32 i = 64, j = 64; FLOAT d = this->m_DSource, u = this->m_USource, v = this->m_VSource;
 	FLOAT* tempDSource = new FLOAT[CDynamicWind::_StaticCellCount];
 	FLOAT* tempUSource = new FLOAT[CDynamicWind::_StaticCellCount];
 	FLOAT* tempVSource = new FLOAT[CDynamicWind::_StaticCellCount];
-	for (UINT index = 0u; index < CDynamicWind::_StaticCellCount; index++)
+	for (UINT32 index = 0u; index < CDynamicWind::_StaticCellCount; index++)
 	{
 		tempDSource[index] = 0.f;
 		tempUSource[index] = 0.f;
 		tempVSource[index] = 0.f;
 	}
-	for (INT x = -5; x <= 5; x++)
+	for (INT32 x = -5; x <= 5; x++)
 	{
-		for (INT y = -5; y <= 5; y++)
+		for (INT32 y = -5; y <= 5; y++)
 		{
 			tempDSource[CDynamicWind::TransformCellCoordToIndex(x + i, y + j, CDynamicWind::_StaticCellWidth)] = d;
 			tempUSource[CDynamicWind::TransformCellCoordToIndex(x + i, y + j, CDynamicWind::_StaticCellWidth)] = u;
@@ -253,23 +253,23 @@ void CDynamicWind::AddCPUWindSource(const FLOAT& deltaTime)
 	delete[]tempUSource;
 	delete[]tempVSource;
 }
-inline UINT CDynamicWind::TransformCellCoordToIndex(const UINT& i, const UINT& j, const UINT& w)
+inline UINT32 CDynamicWind::TransformCellCoordToIndex(const UINT32& i, const UINT32& j, const UINT32& w)
 {
 	return (i + (w + 2u) * j);
 }
-inline void CDynamicWind::TransformCellIndexToCoord(const UINT& index, const UINT& w, const UINT& h, UINT& i, UINT& j)
+inline void CDynamicWind::TransformCellIndexToCoord(const UINT32& index, const UINT32& w, const UINT32& h, UINT32& i, UINT32& j)
 {
 	i = index % (w + 2u);
 	j = index / (h + 2u);
 }
-inline INT CDynamicWind::TransformCellCoordToIndex(const INT& i, const INT& j, const UINT& w)
+inline INT32 CDynamicWind::TransformCellCoordToIndex(const INT32& i, const INT32& j, const UINT32& w)
 {
-	return (i + (static_cast<INT>(w + 2u)) * j);
+	return (i + (static_cast<INT32>(w + 2u)) * j);
 }
-inline void CDynamicWind::TransformCellIndexToCoord(const INT& index, const UINT& w, const UINT& h, INT& i, INT& j)
+inline void CDynamicWind::TransformCellIndexToCoord(const INT32& index, const UINT32& w, const UINT32& h, INT32& i, INT32& j)
 {
-	i = index % (static_cast<INT>(w + 2u));
-	j = index / (static_cast<INT>(h + 2u));
+	i = index % (static_cast<INT32>(w + 2u));
+	j = index / (static_cast<INT32>(h + 2u));
 }
 inline void CDynamicWind::Swap(FLOAT*& a, FLOAT*& b)
 {
@@ -277,17 +277,17 @@ inline void CDynamicWind::Swap(FLOAT*& a, FLOAT*& b)
 	a = b;
 	b = temp;
 }
-inline void CDynamicWind::InitPointer(FLOAT*& ptr, const UINT& num, const FLOAT& init)
+inline void CDynamicWind::InitPointer(FLOAT*& ptr, const UINT32& num, const FLOAT& init)
 {
 	if (ptr != nullptr)
 	{
-		for (UINT i = 0u; i < num; i++)
+		for (UINT32 i = 0u; i < num; i++)
 		{
 			ptr[i] = init;
 		}
 	}
 }
-inline void CDynamicWind::CreatePointer(FLOAT*& ptr, const UINT& num)
+inline void CDynamicWind::CreatePointer(FLOAT*& ptr, const UINT32& num)
 {
 	if (ptr == nullptr)
 	{
@@ -302,27 +302,27 @@ inline void CDynamicWind::DeletePointer(FLOAT*& ptr)
 		ptr = nullptr;
 	}
 }
-void CDynamicWind::AddSource(const UINT& w, const UINT& h, FLOAT* x, FLOAT* s, const FLOAT& dt)
+void CDynamicWind::AddSource(const UINT32& w, const UINT32& h, FLOAT* x, FLOAT* s, const FLOAT& dt)
 {
-	const UINT size = (w + 2u) * (h + 2u);
-	for (UINT i = 0u; i < size; i++)
+	const UINT32 size = (w + 2u) * (h + 2u);
+	for (UINT32 i = 0u; i < size; i++)
 	{
 		x[i] += dt * s[i];
 	}
 }
-void CDynamicWind::SetBoundary(const UINT& w, const UINT& h, const INT& b, FLOAT* x)
+void CDynamicWind::SetBoundary(const UINT32& w, const UINT32& h, const INT32& b, FLOAT* x)
 {
-	const INT iW = static_cast<INT>(w);
-	const INT iH = static_cast<INT>(h);
-	const BOOL clearBound = TRUE;
+	const INT32 iW = static_cast<INT32>(w);
+	const INT32 iH = static_cast<INT32>(h);
+	const BOOL32 clearBound = TRUE;
 	if (clearBound)
 	{
-		for (INT i = 1; i < iW; i++)
+		for (INT32 i = 1; i < iW; i++)
 		{
 			x[CDynamicWind::TransformCellCoordToIndex(i, 0, w)] = 0.f;
 			x[CDynamicWind::TransformCellCoordToIndex(i, iH + 1, w)] = 0.f;
 		}
-		for (INT j = 1; j < iH; j++)
+		for (INT32 j = 1; j < iH; j++)
 		{
 			x[CDynamicWind::TransformCellCoordToIndex(0, j, w)] = 0.f;
 			x[CDynamicWind::TransformCellCoordToIndex(iW + 1, j, w)] = 0.f;
@@ -334,14 +334,14 @@ void CDynamicWind::SetBoundary(const UINT& w, const UINT& h, const INT& b, FLOAT
 	}
 	else
 	{
-		for (INT i = 1; i < iW; i++)
+		for (INT32 i = 1; i < iW; i++)
 		{
 			FLOAT temp = x[CDynamicWind::TransformCellCoordToIndex(i, 1, w)];
 			x[CDynamicWind::TransformCellCoordToIndex(i, 0, w)] = b == 2 ? -temp : temp;
 			temp = x[CDynamicWind::TransformCellCoordToIndex(i, iH, w)];
 			x[CDynamicWind::TransformCellCoordToIndex(i, iH + 1, w)] = b == 2 ? -temp : temp;
 		}
-		for (INT j = 1; j < iH; j++)
+		for (INT32 j = 1; j < iH; j++)
 		{
 			FLOAT temp = x[CDynamicWind::TransformCellCoordToIndex(1, j, w)];
 			x[CDynamicWind::TransformCellCoordToIndex(0, j, w)] = b == 1 ? -temp : temp;
@@ -354,35 +354,35 @@ void CDynamicWind::SetBoundary(const UINT& w, const UINT& h, const INT& b, FLOAT
 		x[CDynamicWind::TransformCellCoordToIndex(iW + 1, iH + 1, w)] = 0.5f * (x[CDynamicWind::TransformCellCoordToIndex(iW, iH + 1, w)] + x[CDynamicWind::TransformCellCoordToIndex(iW + 1, iH, w)]);
 	}
 }
-void CDynamicWind::DiffusionSolver(const UINT& iter, const UINT& w, const UINT& h, const INT& b, FLOAT* x, FLOAT* x0, const FLOAT& diffuse, const FLOAT& dt)
+void CDynamicWind::DiffusionSolver(const UINT32& iter, const UINT32& w, const UINT32& h, const INT32& b, FLOAT* x, FLOAT* x0, const FLOAT& diffuse, const FLOAT& dt)
 {
-	const INT iW = static_cast<INT>(w);
-	const INT iH = static_cast<INT>(h);
+	const INT32 iW = static_cast<INT32>(w);
+	const INT32 iH = static_cast<INT32>(h);
 	FLOAT a = dt * diffuse * w * h;
-	for (UINT k = 0u; k < iter; k++)
+	for (UINT32 k = 0u; k < iter; k++)
 	{
-		for (INT i = 1; i <= iW; i++)
+		for (INT32 i = 1; i <= iW; i++)
 		{
-			for (INT j = 1; j <= iH; j++)
+			for (INT32 j = 1; j <= iH; j++)
 			{
-				INT targetCoord = CDynamicWind::TransformCellCoordToIndex(i, j, w);
+				INT32 targetCoord = CDynamicWind::TransformCellCoordToIndex(i, j, w);
 				x[targetCoord] = (x0[targetCoord] + a * (x[CDynamicWind::TransformCellCoordToIndex(i, j - 1, w)] + x[CDynamicWind::TransformCellCoordToIndex(i, j + 1, w)] + x[CDynamicWind::TransformCellCoordToIndex(i - 1, j, w)] + x[CDynamicWind::TransformCellCoordToIndex(i + 1, j, w)])) / (1.f + 4.f * a);
 			}
 		}
 		CDynamicWind::SetBoundary(w, h, b, x);
 	}
 }
-void CDynamicWind::AdvectionSolver(const UINT& w, const UINT& h, const INT& b, FLOAT* d, FLOAT* d0, FLOAT* u, FLOAT* v, const FLOAT& dt)
+void CDynamicWind::AdvectionSolver(const UINT32& w, const UINT32& h, const INT32& b, FLOAT* d, FLOAT* d0, FLOAT* u, FLOAT* v, const FLOAT& dt)
 {
-	const INT iW = static_cast<INT>(w);
-	const INT iH = static_cast<INT>(h);
+	const INT32 iW = static_cast<INT32>(w);
+	const INT32 iH = static_cast<INT32>(h);
 	const FLOAT fW = static_cast<FLOAT>(w);
 	const FLOAT fH = static_cast<FLOAT>(h);
 	FLOAT dtu0 = dt * w;
 	FLOAT dtv0 = dt * h;
-	for (INT i = 1; i <= iW; i++)
+	for (INT32 i = 1; i <= iW; i++)
 	{
-		for (INT j = 1; j <= iH; j++)
+		for (INT32 j = 1; j <= iH; j++)
 		{
 			FLOAT x = i - dtu0 * u[CDynamicWind::TransformCellCoordToIndex(i, j, w)];
 			FLOAT y = j - dtv0 * v[CDynamicWind::TransformCellCoordToIndex(i, j, w)];
@@ -390,8 +390,8 @@ void CDynamicWind::AdvectionSolver(const UINT& w, const UINT& h, const INT& b, F
 			if (x > (fW + 0.5f)) { x = fW + 0.5f; }
 			if (y < 0.5f) { y = 0.5f; }
 			if (y > (fH + 0.5f)) { y = fH + 0.5f; }
-			INT i0 = static_cast<INT>(x); INT i1 = i0 + 1;
-			INT j0 = static_cast<INT>(y); INT j1 = j0 + 1;
+			INT32 i0 = static_cast<INT32>(x); INT32 i1 = i0 + 1;
+			INT32 j0 = static_cast<INT32>(y); INT32 j1 = j0 + 1;
 			FLOAT s1 = x - static_cast<FLOAT>(i0); FLOAT s0 = 1.f - s1;
 			FLOAT t1 = y - static_cast<FLOAT>(j0); FLOAT t0 = 1.f - t1;
 			d[CDynamicWind::TransformCellCoordToIndex(i, j, w)] =
@@ -401,17 +401,17 @@ void CDynamicWind::AdvectionSolver(const UINT& w, const UINT& h, const INT& b, F
 	}
 	CDynamicWind::SetBoundary(w, h, b, d);
 }
-void CDynamicWind::ProjectionSolver(const UINT& iter, const UINT& w, const UINT& h, FLOAT* u, FLOAT* v, FLOAT* p, FLOAT* div)
+void CDynamicWind::ProjectionSolver(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* u, FLOAT* v, FLOAT* p, FLOAT* div)
 {
-	const INT iW = static_cast<INT>(w);
-	const INT iH = static_cast<INT>(h);
+	const INT32 iW = static_cast<INT32>(w);
+	const INT32 iH = static_cast<INT32>(h);
 	const FLOAT fW = static_cast<FLOAT>(w);
 	const FLOAT fH = static_cast<FLOAT>(h);
 	FLOAT hW = 1.f / fW;
 	FLOAT hH = 1.f / fH;
-	for (INT i = 1; i <= iW; i++)
+	for (INT32 i = 1; i <= iW; i++)
 	{
-		for (INT j = 1; j <= iH; j++)
+		for (INT32 j = 1; j <= iH; j++)
 		{
 			div[CDynamicWind::TransformCellCoordToIndex(i, j, w)] = -0.5f * (
 				hW * (u[CDynamicWind::TransformCellCoordToIndex(i + 1, j, w)] - v[CDynamicWind::TransformCellCoordToIndex(i - 1, j, w)]) +
@@ -421,11 +421,11 @@ void CDynamicWind::ProjectionSolver(const UINT& iter, const UINT& w, const UINT&
 	}
 	CDynamicWind::SetBoundary(w, h, 0, div);
 	CDynamicWind::SetBoundary(w, h, 0, p);
-	for (UINT k = 0u; k < iter; k++)
+	for (UINT32 k = 0u; k < iter; k++)
 	{
-		for (INT i = 1; i <= iW; i++)
+		for (INT32 i = 1; i <= iW; i++)
 		{
-			for (INT j = 1; j <= iH; j++)
+			for (INT32 j = 1; j <= iH; j++)
 			{
 				p[CDynamicWind::TransformCellCoordToIndex(i, j, w)] = (div[CDynamicWind::TransformCellCoordToIndex(i, j, w)] +
 					p[CDynamicWind::TransformCellCoordToIndex(i - 1, j, w)] + p[CDynamicWind::TransformCellCoordToIndex(i + 1, j, w)] +
@@ -435,9 +435,9 @@ void CDynamicWind::ProjectionSolver(const UINT& iter, const UINT& w, const UINT&
 		CDynamicWind::SetBoundary(w, h, 0, p);
 	}
 
-	for (INT i = 1; i <= iW; i++)
+	for (INT32 i = 1; i <= iW; i++)
 	{
-		for (INT j = 1; j <= iH; j++)
+		for (INT32 j = 1; j <= iH; j++)
 		{
 			u[CDynamicWind::TransformCellCoordToIndex(i, j, w)] -= 0.5f * (p[CDynamicWind::TransformCellCoordToIndex(i + 1, j, w)] - p[CDynamicWind::TransformCellCoordToIndex(i - 1, j, w)]) / hW;
 			v[CDynamicWind::TransformCellCoordToIndex(i, j, w)] -= 0.5f * (p[CDynamicWind::TransformCellCoordToIndex(i, j + 1, w)] - p[CDynamicWind::TransformCellCoordToIndex(i, j - 1, w)]) / hH;
@@ -446,7 +446,7 @@ void CDynamicWind::ProjectionSolver(const UINT& iter, const UINT& w, const UINT&
 	CDynamicWind::SetBoundary(w, h, 1, u);
 	CDynamicWind::SetBoundary(w, h, 2, v);
 }
-void CDynamicWind::DensityStep(const UINT& iter, const UINT& w, const UINT& h, FLOAT* x, FLOAT* x0, FLOAT* u, FLOAT* v, const FLOAT& diffuse, const FLOAT& dt)
+void CDynamicWind::DensityStep(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* x, FLOAT* x0, FLOAT* u, FLOAT* v, const FLOAT& diffuse, const FLOAT& dt)
 {
 	CDynamicWind::AddSource(w, h, x, x0, dt);
 	CDynamicWind::Swap(x0, x);
@@ -454,7 +454,7 @@ void CDynamicWind::DensityStep(const UINT& iter, const UINT& w, const UINT& h, F
 	CDynamicWind::Swap(x0, x);
 	CDynamicWind::AdvectionSolver(w, h, 0, x, x0, u, v, dt);
 }
-void CDynamicWind::VelocityStep(const UINT& iter, const UINT& w, const UINT& h, FLOAT* u, FLOAT* v, FLOAT* u0, FLOAT* v0, const FLOAT& viscosity, const FLOAT& dt)
+void CDynamicWind::VelocityStep(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* u, FLOAT* v, FLOAT* u0, FLOAT* v0, const FLOAT& viscosity, const FLOAT& dt)
 {
 	CDynamicWind::AddSource(w, h, u, u0, dt);
 	CDynamicWind::AddSource(w, h, v, v0, dt);

@@ -15,7 +15,7 @@
 #include "../../EngineGame/Headers/CCamera.h"
 #include "../../EngineGame/Headers/CScene.h"
 
-CPlane::CPlane(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
+CPlane::CPlane(const BOOL32& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 
@@ -29,7 +29,7 @@ CPlane::CPlane(const BOOL& active, const class CScene* scene) : CGameObject(acti
 	this->m_PlaneMeshInfo.UV			= 1.f;
 	this->m_PlaneMeshInfo.VertexCount	= 2;
 }
-CPlane::CPlane(const BOOL& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv) : CGameObject(active, scene)
+CPlane::CPlane(const BOOL32& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 
@@ -94,7 +94,7 @@ void CPlane::SetMeshInfo(const CustomType::Vector2& length, const CustomType::Ve
 	{
 		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-			for (UINT i = 0u; i < 3u; i++)
+			for (UINT32 i = 0u; i < 3u; i++)
 			{
 				errorV[i] = (errorV[i] < error) ? error : 0.f;
 			}

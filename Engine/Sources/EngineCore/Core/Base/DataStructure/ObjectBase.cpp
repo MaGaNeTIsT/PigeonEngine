@@ -30,11 +30,11 @@ namespace PigeonEngine
 	{
 		return UniqueID;
 	}
-	BOOL EObjectBase::operator==(const EObjectBase& obj)
+	BOOL32 EObjectBase::operator==(const EObjectBase& obj)
 	{
 		return (GetUniqueID() == obj.GetUniqueID());
 	}
-	BOOL EObjectBase::operator!=(const EObjectBase& obj)
+	BOOL32 EObjectBase::operator!=(const EObjectBase& obj)
 	{
 		return (GetUniqueID() != obj.GetUniqueID());
 	}

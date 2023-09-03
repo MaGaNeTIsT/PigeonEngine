@@ -10,11 +10,11 @@ class CTempFileHelper
 {
 public:
 	const static CHAR		_NameTypeSeparator		= '.';
-	const static UINT		_PathNameSeparatorNum	= 2u;
+	const static UINT32		_PathNameSeparatorNum	= 2u;
 	constexpr static CHAR	_PathNameSeparator[2u]	= { '/', '\\' };
 public:
-	template<BOOL InvOrder, BOOL RequireClip>
-	static BOOL FetchPosAndString(const std::string& src, std::string& dst, const CHAR& signChar, const std::string& failedStr, std::string* clippedSrc = nullptr)
+	template<BOOL32 InvOrder, BOOL32 RequireClip>
+	static BOOL32 FetchPosAndString(const std::string& src, std::string& dst, const CHAR& signChar, const std::string& failedStr, std::string* clippedSrc = nullptr)
 	{
 		if (InvOrder == TRUE)
 		{
@@ -52,13 +52,13 @@ public:
 		}
 		return TRUE;
 	}
-	template<BOOL InvOrder, BOOL RequireClip, BOOL RequireSignIndex>
-	static BOOL FetchPosAndString(const std::string& src, std::string& dst, const CHAR* signChar, const UINT& signNum, const std::string& failedStr, std::string* clippedSrc = nullptr, UINT* extraIndex = nullptr)
+	template<BOOL32 InvOrder, BOOL32 RequireClip, BOOL32 RequireSignIndex>
+	static BOOL32 FetchPosAndString(const std::string& src, std::string& dst, const CHAR* signChar, const UINT32& signNum, const std::string& failedStr, std::string* clippedSrc = nullptr, UINT32* extraIndex = nullptr)
 	{
 		if (InvOrder == TRUE)
 		{
 			size_t lastPos = std::string::npos;
-			for (UINT i = 0u; i < signNum; i++)
+			for (UINT32 i = 0u; i < signNum; i++)
 			{
 				size_t tempPos = src.find_last_of(signChar[i]);
 				if (tempPos == std::string::npos)
@@ -105,7 +105,7 @@ public:
 		else if (InvOrder == FALSE)
 		{
 			size_t firstPos = std::string::npos;
-			for (UINT i = 0u; i < signNum; i++)
+			for (UINT32 i = 0u; i < signNum; i++)
 			{
 				size_t tempPos = src.find_first_of(signChar[i]);
 				if (tempPos == std::string::npos)
@@ -152,34 +152,34 @@ public:
 		return TRUE;
 	}
 public:
-	static BOOL FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT& sign0Num, const CHAR* sign1Char, const UINT& sign1Num, const std::string& failedStr, UINT* extra0Index = nullptr, UINT* extra1Index = nullptr);
-	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR** signChar, const UINT* signNum, const std::string& failedStr, UINT* extraIndex = nullptr);
-	static BOOL FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT& numPart, const CHAR& signChar, const std::string& failedStr);
+	static BOOL32 FetchStringIntoThreePartInvOrder(const std::string& src, std::string* dst, const CHAR* sign0Char, const UINT32& sign0Num, const CHAR* sign1Char, const UINT32& sign1Num, const std::string& failedStr, UINT32* extra0Index = nullptr, UINT32* extra1Index = nullptr);
+	static BOOL32 FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT32& numPart, const CHAR** signChar, const UINT32* signNum, const std::string& failedStr, UINT32* extraIndex = nullptr);
+	static BOOL32 FetchStringIntoNPart(const std::string& src, std::string* dst, const UINT32& numPart, const CHAR& signChar, const std::string& failedStr);
 public:
 	/*
 	* Return value : If -1, invalid path. If 0, there is no file. If > 0, file's number.
 	*/
-	static INT CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames);
+	static INT32 CountFileNumberInFolder(const std::string& path, const std::string& fileType, std::vector<std::string>& fileNames);
 };
 
 class CTempFileReaderWriterBase
 {
 public:
-	CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& fullNamePath);
-	CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& path, const std::string& nameWithType);
-	CTempFileReaderWriterBase(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type);
+	CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& fullNamePath);
+	CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType);
+	CTempFileReaderWriterBase(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type);
 public:
-	BOOL	IsSuccessSeparate()const;
-	BOOL	IsSuccessRun()const;
-	BOOL	IsFileBinary()const;
+	BOOL32	IsSuccessSeparate()const;
+	BOOL32	IsSuccessRun()const;
+	BOOL32	IsFileBinary()const;
 protected:
-	void	SetSeparatorState(const BOOL& state);
-	void	SetRunState(const BOOL& state);
-	void	SetFileBinaryState(const BOOL& state);
+	void	SetSeparatorState(const BOOL32& state);
+	void	SetRunState(const BOOL32& state);
+	void	SetFileBinaryState(const BOOL32& state);
 protected:
-	BOOL	m_SeparatorState;
-	BOOL	m_RunState;
-	BOOL	m_IsBinary;
+	BOOL32	m_SeparatorState;
+	BOOL32	m_RunState;
+	BOOL32	m_IsBinary;
 public:
 	const std::string&	GetFilePath()const;
 	const std::string&	GetFileName()const;
@@ -203,9 +203,9 @@ public:
 class CTempFileReader : public CTempFileReaderWriterBase
 {
 public:
-	CTempFileReader(const BOOL& isBinary, const std::string& fullNamePath, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func);
-	CTempFileReader(const BOOL& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func);
-	CTempFileReader(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL(std::fstream&, const CTempFileReader* const)> const& func);
+	CTempFileReader(const BOOL32& isBinary, const std::string& fullNamePath, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func);
+	CTempFileReader(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func);
+	CTempFileReader(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL32(std::fstream&, const CTempFileReader* const)> const& func);
 public:
 	virtual ~CTempFileReader();
 };
@@ -213,9 +213,9 @@ public:
 class CTempFileWriter : public CTempFileReaderWriterBase
 {
 public:
-	CTempFileWriter(const BOOL& isBinary, const std::string& fullNamePath, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func);
-	CTempFileWriter(const BOOL& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func);
-	CTempFileWriter(const BOOL& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL(std::fstream&, const CTempFileWriter* const)> const& func);
+	CTempFileWriter(const BOOL32& isBinary, const std::string& fullNamePath, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func);
+	CTempFileWriter(const BOOL32& isBinary, const std::string& path, const std::string& nameWithType, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func);
+	CTempFileWriter(const BOOL32& isBinary, const std::string& path, const std::string& name, const std::string& type, std::function<BOOL32(std::fstream&, const CTempFileWriter* const)> const& func);
 public:
 	virtual ~CTempFileWriter();
 };

@@ -40,6 +40,6 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_ConstantBuffer;
 	SkyBoxConstantBuffer						m_ConstantData;
 protected:
-	static const CBaseMesh<UINT>*				m_FullScreenMesh;
+	static const CBaseMesh<UINT32>*				m_FullScreenMesh;
 };
 */

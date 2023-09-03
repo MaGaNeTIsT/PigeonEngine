@@ -7,10 +7,10 @@
 class CHZBPass
 {
 public:
-	UINT	GetHZBBufferNum() { return static_cast<UINT>(this->m_HZBBuffers.size()); }
-	void	GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT& idx);
+	UINT32	GetHZBBufferNum() { return static_cast<UINT32>(this->m_HZBBuffers.size()); }
+	void	GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT32& idx);
 	void	GetHZBBuffers(std::vector<CRenderDevice::RenderTexture2DViewInfo>& buffers);
-	void	GetHZBSizeByMipIndex(CustomType::Vector2Int& size, const UINT& idx);
+	void	GetHZBSizeByMipIndex(CustomType::Vector2Int& size, const UINT32& idx);
 	void	GetHZBSizes(std::vector<CustomType::Vector2Int>& sizes);
 public:
 	void	Init(const CustomType::Vector2Int& pipelineSize);
@@ -31,8 +31,8 @@ public:
 private:
 #ifdef _DEVELOPMENT_EDITOR
 	class CScreenPolygon2D*		m_Polygon2D;
-	BOOL						m_DebugType;
-	INT							m_DebugLevel;
+	BOOL32						m_DebugType;
+	INT32							m_DebugLevel;
 #endif
 
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_BuildHZBComputeShader;
@@ -41,6 +41,6 @@ private:
 
 	std::vector<CRenderDevice::RenderTexture2DViewInfo>		m_HZBBuffers;
 	std::vector<CustomType::Vector2Int>						m_HZBSizes;
-	INT														m_HZBMipLevels;
+	INT32														m_HZBMipLevels;
 };
 */

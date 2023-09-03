@@ -25,16 +25,16 @@ public:
 public:
 	virtual void	SelectedEditorUpdate()override;
 protected:
-	BOOL			m_PlayRepeat;
+	BOOL32			m_PlayRepeat;
 	std::string		m_EditorCurrentAnimationName;
 	DOUBLE			m_EditorCurrentPlayTime;
 #endif
 public:
-	void	Play(const BOOL& repeat = FALSE);
+	void	Play(const BOOL32& repeat = FALSE);
 	void	Pause();
 	void	Reset();
 	void	SetCurrentAnimation(const std::string& name);
-	void	SetCurrentAnimation(const UINT& index);
+	void	SetCurrentAnimation(const UINT32& index);
 protected:
 	const class CGameTimer*						m_GameTimer;
 	SkeletonAnimationPlayState					m_PlayState;

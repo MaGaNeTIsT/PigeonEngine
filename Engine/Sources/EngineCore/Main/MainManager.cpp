@@ -21,9 +21,9 @@ namespace PigeonEngine
 	EMainManager::EMainManager()
 	{
 		m_HWND			= nullptr;
-		m_WindowSize	= Vector2Int(static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT));
+		m_WindowSize	= Vector2Int(static_cast<INT32>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(ESettings::ENGINE_SCREEN_HEIGHT));
 		m_GraphicDepth	= 24u;
-		m_FrameRate		= static_cast<UINT>(ESettings::ENGINE_UPDATE_FRAME);
+		m_FrameRate		= static_cast<UINT32>(ESettings::ENGINE_UPDATE_FRAME);
 		m_Windowed		= ESettings::ENGINE_WINDOWED;
 
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
@@ -42,7 +42,7 @@ namespace PigeonEngine
 			m_GameTimer = nullptr;
 		}
 	}
-	LRESULT EMainManager::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	LRESULT EMainManager::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
 		return EInput::HandleMsg(hWnd, msg, wParam, lParam);
 	}

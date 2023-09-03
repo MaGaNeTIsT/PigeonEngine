@@ -23,24 +23,24 @@ public:
 	virtual void	SelectedEditorUpdate() = 0;
 #endif
 public:
-	BOOL					HasScene()const;
-	BOOL					IsBelongScene(const class CScene* scene)const;
+	BOOL32					HasScene()const;
+	BOOL32					IsBelongScene(const class CScene* scene)const;
 	const class CScene*		GetScene()const;
 protected:
 	const class CScene*		m_Scene;
 public:
-	const BOOL&		IsActive()const;
+	const BOOL32&		IsActive()const;
 	void			Active();
 	void			Inactive();
 protected:
-	BOOL			m_Active;
+	BOOL32			m_Active;
 public:
 	const std::string&	GetName()const;
 	void				SetName(const std::string& name);
 protected:
 	std::string		m_Name;
 public:
-	CGameObjectBase(const BOOL& active, const class CScene* scene);
+	CGameObjectBase(const BOOL32& active, const class CScene* scene);
 	virtual ~CGameObjectBase();
 };
 
@@ -81,22 +81,22 @@ public:
 	void	SetLocalRotation(const CustomType::Quaternion& localRotation);
 	void	SetLocalScale(const CustomType::Vector3& localScale);
 public:
-	BOOL			HasTransform()const;
-	BOOL			IsBelongTransform(const ULONGLONG& transformID)const;
+	BOOL32			HasTransform()const;
+	BOOL32			IsBelongTransform(const ULONGLONG& transformID)const;
 	CTransform*		GetTransform()const;
 	ULONGLONG		GetTransformID()const;
 	void			AddNewTransform(CGameObjectTransformBase* parent = nullptr);
 	void			AddNewTransformWithValue(const CustomType::Vector3& worldPosition, const CustomType::Quaternion& worldRotation, const CustomType::Vector3& worldScale, CGameObjectTransformBase* parent = nullptr);
 	void			RemoveTransform();
 protected:
-	void	BaseRemoveTransform(const BOOL& bDeleteTransform);
+	void	BaseRemoveTransform(const BOOL32& bDeleteTransform);
 	void	ConnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform);
 	void	DisconnectGameObjectAndTransform(CGameObjectTransformBase* gameObject, CTransform* transform);
 public:
-	BOOL	HasParent()const;
-	BOOL	HasChild()const;
-	BOOL	IsParent(const ULONGLONG& parentID)const;
-	BOOL	IsChild(const ULONGLONG& childID)const;
+	BOOL32	HasParent()const;
+	BOOL32	HasChild()const;
+	BOOL32	IsParent(const ULONGLONG& parentID)const;
+	BOOL32	IsChild(const ULONGLONG& childID)const;
 public:
 	void	SetParent(CGameObjectTransformBase* parent);
 	void	AddChild(CGameObjectTransformBase* child);
@@ -153,7 +153,7 @@ public:
 protected:
 	CTransform*		m_Transform;
 public:
-	CGameObjectTransformBase(const BOOL& active, const class CScene* scene);
+	CGameObjectTransformBase(const BOOL32& active, const class CScene* scene);
 	virtual ~CGameObjectTransformBase();
 };
 
@@ -161,8 +161,8 @@ class CGameObject : public CGameObjectTransformBase
 {
 	EClass(CGameObject, CGameObjectTransformBase)
 public:
-	BOOL	HasRenderBoundingBox()const;
-	BOOL	HasRenderBoundingSphere()const;
+	BOOL32	HasRenderBoundingBox()const;
+	BOOL32	HasRenderBoundingSphere()const;
 public:
 	const CustomStruct::CRenderBoundingBox*		GetRenderLocalBoundingBox()const;
 	const CustomStruct::CRenderBoundingSphere*	GetRenderLocalBoundingSphere()const;
@@ -343,14 +343,14 @@ protected:
 		return nullptr;
 	}
 public:
-	BOOL	IsBelongComponent(const CBaseComponent* component)const;
-	BOOL	IsBelongComponent(const ULONGLONG& componentID)const;
-	BOOL	HasComponent()const;
-	BOOL	HasMeshComponent()const;
-	BOOL	HasMeshRendererComponent()const;
-	BOOL	HasGameBoundComponent()const;
+	BOOL32	IsBelongComponent(const CBaseComponent* component)const;
+	BOOL32	IsBelongComponent(const ULONGLONG& componentID)const;
+	BOOL32	HasComponent()const;
+	BOOL32	HasMeshComponent()const;
+	BOOL32	HasMeshRendererComponent()const;
+	BOOL32	HasGameBoundComponent()const;
 protected:
-	BOOL	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const;
+	BOOL32	FindComponentByComponentID(const ULONGLONG& id, CBaseComponent*& component)const;
 protected:
 	ULONGLONG								m_MeshComponentID;
 	ULONGLONG								m_MeshRendererComponentID;
@@ -368,7 +368,7 @@ public:
 	virtual void	SelectedEditorUpdate()override;
 #endif
 public:
-	CGameObject(const BOOL& active, const class CScene* scene);
+	CGameObject(const BOOL32& active, const class CScene* scene);
 	virtual ~CGameObject();
 };
 */

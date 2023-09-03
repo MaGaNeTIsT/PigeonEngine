@@ -23,8 +23,8 @@ public:
 public:
 	void			SetMeshInfo(const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 public:
-	CPlane(const BOOL& active, const class CScene* scene);
-	CPlane(const BOOL& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
+	CPlane(const BOOL32& active, const class CScene* scene);
+	CPlane(const BOOL32& active, const class CScene* scene, const CustomType::Vector2& length, const CustomType::Vector2Int& vertexCount, const CustomType::Vector2& uv);
 	virtual ~CPlane();
 protected:
 	class CMeshComponent*		m_MeshComponent;

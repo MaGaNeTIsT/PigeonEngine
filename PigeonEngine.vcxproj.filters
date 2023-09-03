@@ -332,7 +332,6 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
-    <ClInclude Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsListener.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManagerInterface.h" />
@@ -343,6 +342,13 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RTTI\RTTIObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\Base\RegisterBase.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Delegate\Delegate.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\Delegate\Function.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.h" />
+    <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -489,7 +495,6 @@
     <ClCompile Include="Engine\Sources\Development\Alert\DevelopmentDefines.cpp" />
     <ClCompile Include="Engine\Sources\Asset\ShaderAsset\ShaderAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\IO\FileHelper.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Array.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />
@@ -498,11 +503,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Set.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Map.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\HashMap.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Pointer\SharedPtr.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
@@ -515,11 +516,15 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
-    <ClCompile Include="Engine\Sources\Asset\AnimationAsset\SkeletonAnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

@@ -25,7 +25,7 @@ namespace PigeonEngine
 	public:
 		void			EditorUpdate();
 	private:
-		BOOL			m_EditorOpen = FALSE;
+		BOOL32			m_EditorOpen = FALSE;
 #endif
 	public:
 		HWND						GetWindowHandle();
@@ -34,10 +34,10 @@ namespace PigeonEngine
 	private:
 		HWND						m_HWND;
 		Vector2Int					m_WindowSize;
-		UINT						m_GraphicDepth;
-		UINT						m_FrameRate;
+		UINT32						m_GraphicDepth;
+		UINT32						m_FrameRate;
 		EBaseTimer					m_WindowTimer;
-		BOOL						m_Windowed;
+		BOOL32						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
 		class CPhysicsManager*				m_PhysicsManager			= nullptr;
@@ -48,7 +48,7 @@ namespace PigeonEngine
 #endif
 		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager	= nullptr;
 	public:
-		static LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 
 		CLASS_MANAGER_SINGLETON_BODY(EMainManager)
 

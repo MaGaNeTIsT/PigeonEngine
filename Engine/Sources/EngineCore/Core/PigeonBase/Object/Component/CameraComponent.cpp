@@ -31,8 +31,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
 		CameraViewInfo.Viewport.Width = InWidth;
 		CameraViewInfo.Viewport.Height = InHeight;
-		CameraViewInfo.Viewport.MinDepth = RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
+		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
 		CameraViewInfo.FovAngleY = InFovAngleY;
 		CameraViewInfo.FarDist = InFarDist;
 		CameraViewInfo.NearDist = InNearDist;
@@ -46,8 +46,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
 		CameraViewInfo.Viewport.Width = InWidth;
 		CameraViewInfo.Viewport.Height = InHeight;
-		CameraViewInfo.Viewport.MinDepth = RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
+		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
 
 		CameraMatrix.GenerateProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
@@ -65,7 +65,7 @@ namespace PigeonEngine
 		CameraMatrix.TransformScreenPointToWorld(CameraViewInfo.Viewport, InScreenCoordWithZ, Result);
 		return Result;
 	}
-	BOOL PCameraComponent::TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const
+	BOOL32 PCameraComponent::TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const
 	{
 		return (CameraMatrix.TransformWorldPointToScreen(CameraViewInfo.Viewport, InWorldLocation, OutScreenCoordWithZ));
 	}

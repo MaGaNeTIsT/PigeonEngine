@@ -54,7 +54,7 @@ CClothMaterial::CClothMaterial() : CMaterialBase(typeid(CClothMaterial).name(), 
 	renderParams->SheenColorIsGlossy		= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
 	renderParams->SubsurfaceColor			= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 0.f);
 }
-CClothMaterial::CClothMaterial(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName) : CMaterialBase(name, materialType, constantSize, inputLayout, inputLayoutNum, vertexShaderName, pixelShaderName)
+CClothMaterial::CClothMaterial(const std::string& name, MaterialType materialType, const UINT32& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT32& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName) : CMaterialBase(name, materialType, constantSize, inputLayout, inputLayoutNum, vertexShaderName, pixelShaderName)
 {
 	this->m_VertexShader			= CShaderManager::LoadVertexShader(vertexShaderName, inputLayout, inputLayoutNum);
 	this->m_PixelShader				= CShaderManager::LoadPixelShader(pixelShaderName);
@@ -202,7 +202,7 @@ CTexture2D* CClothMaterial::GetSubsurfaceTexture()const
 {
 	return (this->m_SubsurfaceTexture);
 }
-void CClothMaterial::SetIsGlossyRoughness(const BOOL& v)
+void CClothMaterial::SetIsGlossyRoughness(const BOOL32& v)
 {
 	CClothMaterial::RenderParams* renderParams = static_cast<CClothMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->SheenColorIsGlossy.w = v ? 1.f : 0.f;
@@ -245,7 +245,7 @@ void CClothMaterial::SetSubsurfaceColor(const CustomStruct::CColor& clr)
 	renderParams->SubsurfaceColor.y = clr.g;
 	renderParams->SubsurfaceColor.z = clr.b;
 }
-BOOL CClothMaterial::GetIsGlossyRoughness()const
+BOOL32 CClothMaterial::GetIsGlossyRoughness()const
 {
 	return (this->m_IsGlossy);
 }
@@ -285,7 +285,7 @@ void CClothMaterial::Init()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		std::map<INT, std::string> baseEngineTextureItems = {
+		std::map<INT32, std::string> baseEngineTextureItems = {
 			{ -1, "None" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -296,7 +296,7 @@ void CClothMaterial::Init()
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 			{ -2, "Custom Path" } };
-		auto pathSelect = [&baseEngineTextureItems](const INT& select, CHAR* name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
+		auto pathSelect = [&baseEngineTextureItems](const INT32& select, CHAR* name, CTexture2D*& texture, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(name, 512, baseEngineTextureItems[select].c_str());
@@ -337,7 +337,7 @@ void CClothMaterial::Init()
 }
 void CClothMaterial::Bind()const
 {
-	auto bindTexture = [](const CTexture2D* tex, const UINT& slot) {
+	auto bindTexture = [](const CTexture2D* tex, const UINT32& slot) {
 		if (tex != NULL)
 		{
 			CRenderDevice::BindPSShaderResourceView(tex->GetShaderResourceView(), slot);
@@ -365,7 +365,7 @@ void CClothMaterial::HookApplyTextureUpdate()
 }
 void CClothMaterial::SelectedClothUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -378,12 +378,12 @@ void CClothMaterial::SelectedClothUpdate()
 		{ -2, "Custom Path" } };
 
 	{
-		auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT& select) {
+		auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT32& select) {
 			if (ImGui::BeginCombo(name.c_str(), baseEngineTextureItems[select].c_str()))
 			{
 				for (const auto& textureItem : baseEngineTextureItems)
 				{
-					BOOL selected = (select == textureItem.first);
+					BOOL32 selected = (select == textureItem.first);
 					if (ImGui::Selectable(textureItem.second.c_str(), &selected))
 					{
 						select = textureItem.first;
@@ -395,7 +395,7 @@ void CClothMaterial::SelectedClothUpdate()
 				}
 				ImGui::EndCombo();
 			}};
-		auto texturePathText = [](const std::string& name, const INT& select, CHAR* path) {
+		auto texturePathText = [](const std::string& name, const INT32& select, CHAR* path) {
 			if (select == -2)
 			{
 				ImGui::InputText(name.c_str(), path, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
@@ -418,7 +418,7 @@ void CClothMaterial::SelectedClothUpdate()
 	}
 
 	{
-		auto textureUpdate = [&baseEngineTextureItems](const INT& select, CHAR* path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
+		auto textureUpdate = [&baseEngineTextureItems](const INT32& select, CHAR* path, CTexture2D*& tex, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(path, 512, baseEngineTextureItems[select].c_str());
@@ -568,7 +568,7 @@ void CClothAnisotropicMaterial::SetAnisotropyDirection(const FLOAT& v)
 	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->AnisotropyStrengthDirection.y = v;
 }
-void CClothAnisotropicMaterial::SetIsGlossyRoughness(const BOOL& v)
+void CClothAnisotropicMaterial::SetIsGlossyRoughness(const BOOL32& v)
 {
 	CClothAnisotropicMaterial::RenderParams* renderParams = static_cast<CClothAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->SheenColorIsGlossy.w = v ? 1.f : 0.f;
@@ -623,7 +623,7 @@ FLOAT CClothAnisotropicMaterial::GetAnisotropyDirection()const
 	FLOAT v = renderParams->AnisotropyStrengthDirection.y;
 	return v;
 }
-BOOL CClothAnisotropicMaterial::GetIsGlossyRoughness()const
+BOOL32 CClothAnisotropicMaterial::GetIsGlossyRoughness()const
 {
 	return (this->m_IsGlossy);
 }
@@ -664,7 +664,7 @@ void CClothAnisotropicMaterial::Init()
 	CClothMaterial::Init();
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		std::map<INT, std::string> baseEngineTextureItems = {
+		std::map<INT32, std::string> baseEngineTextureItems = {
 			{ -1, "None" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -675,7 +675,7 @@ void CClothAnisotropicMaterial::Init()
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 			{ -2, "Custom Path" } };
-		auto pathSelect = [&baseEngineTextureItems](const INT& select, CHAR* name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
+		auto pathSelect = [&baseEngineTextureItems](const INT32& select, CHAR* name, CTexture2D*& texture, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(name, 512, baseEngineTextureItems[select].c_str());
@@ -707,7 +707,7 @@ void CClothAnisotropicMaterial::Init()
 void CClothAnisotropicMaterial::Bind()const
 {
 	CClothMaterial::Bind();
-	auto bindTexture = [](const CTexture2D* tex, const UINT& slot) {
+	auto bindTexture = [](const CTexture2D* tex, const UINT32& slot) {
 		if (tex != NULL)
 		{
 			CRenderDevice::BindPSShaderResourceView(tex->GetShaderResourceView(), slot);
@@ -718,7 +718,7 @@ void CClothAnisotropicMaterial::Bind()const
 #ifdef _DEVELOPMENT_EDITOR
 void CClothAnisotropicMaterial::HookSelectedTextureUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -729,12 +729,12 @@ void CClothAnisotropicMaterial::HookSelectedTextureUpdate()
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 		{ -2, "Custom Path" } };
-	auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT& select) {
+	auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT32& select) {
 		if (ImGui::BeginCombo(name.c_str(), baseEngineTextureItems[select].c_str()))
 		{
 			for (const auto& textureItem : baseEngineTextureItems)
 			{
-				BOOL selected = (select == textureItem.first);
+				BOOL32 selected = (select == textureItem.first);
 				if (ImGui::Selectable(textureItem.second.c_str(), &selected))
 				{
 					select = textureItem.first;
@@ -746,7 +746,7 @@ void CClothAnisotropicMaterial::HookSelectedTextureUpdate()
 			}
 			ImGui::EndCombo();
 		}};
-	auto texturePathText = [](const std::string& name, const INT& select, CHAR* path) {
+	auto texturePathText = [](const std::string& name, const INT32& select, CHAR* path) {
 		if (select == -2)
 		{
 			ImGui::InputText(name.c_str(), path, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
@@ -758,7 +758,7 @@ void CClothAnisotropicMaterial::HookSelectedTextureUpdate()
 }
 void CClothAnisotropicMaterial::HookApplyTextureUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -769,7 +769,7 @@ void CClothAnisotropicMaterial::HookApplyTextureUpdate()
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 		{ -2, "Custom Path" } };
-	auto textureUpdate = [&baseEngineTextureItems](const INT& select, CHAR* path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
+	auto textureUpdate = [&baseEngineTextureItems](const INT32& select, CHAR* path, CTexture2D*& tex, const BOOL32& sRGB = TRUE) {
 		if (select != -2)
 		{
 			strcpy_s(path, 512, baseEngineTextureItems[select].c_str());

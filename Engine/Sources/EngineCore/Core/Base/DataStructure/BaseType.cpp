@@ -105,41 +105,41 @@ namespace PigeonEngine
 	Vector4 operator/(const Vector4& lv, FLOAT rv) { return (Vector4(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
 	Vector4 operator/(FLOAT lv, const Vector4& rv) { return (Vector4(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
 	Vector2Int operator+(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x + rv.x, lv.y + rv.y)); }
-	Vector2Int operator+(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x + rv, lv.y + rv)); }
-	Vector2Int operator+(INT lv, const Vector2Int& rv) { return (Vector2Int(lv + rv.x, lv + rv.y)); }
+	Vector2Int operator+(const Vector2Int& lv, INT32 rv) { return (Vector2Int(lv.x + rv, lv.y + rv)); }
+	Vector2Int operator+(INT32 lv, const Vector2Int& rv) { return (Vector2Int(lv + rv.x, lv + rv.y)); }
 	Vector2Int operator-(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x - rv.x, lv.y - rv.y)); }
-	Vector2Int operator-(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x - rv, lv.y - rv)); }
-	Vector2Int operator-(INT lv, const Vector2Int& rv) { return (Vector2Int(lv - rv.x, lv - rv.y)); }
+	Vector2Int operator-(const Vector2Int& lv, INT32 rv) { return (Vector2Int(lv.x - rv, lv.y - rv)); }
+	Vector2Int operator-(INT32 lv, const Vector2Int& rv) { return (Vector2Int(lv - rv.x, lv - rv.y)); }
 	Vector2Int operator*(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x * rv.x, lv.y * rv.y)); }
-	Vector2Int operator*(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x * rv, lv.y * rv)); }
-	Vector2Int operator*(INT lv, const Vector2Int& rv) { return (Vector2Int(lv * rv.x, lv * rv.y)); }
+	Vector2Int operator*(const Vector2Int& lv, INT32 rv) { return (Vector2Int(lv.x * rv, lv.y * rv)); }
+	Vector2Int operator*(INT32 lv, const Vector2Int& rv) { return (Vector2Int(lv * rv.x, lv * rv.y)); }
 	Vector2Int operator/(const Vector2Int& lv, const Vector2Int& rv) { return (Vector2Int(lv.x / rv.x, lv.y / rv.y)); }
-	Vector2Int operator/(const Vector2Int& lv, INT rv) { return (Vector2Int(lv.x / rv, lv.y / rv)); }
-	Vector2Int operator/(INT lv, const Vector2Int& rv) { return (Vector2Int(lv / rv.x, lv / rv.y)); }
+	Vector2Int operator/(const Vector2Int& lv, INT32 rv) { return (Vector2Int(lv.x / rv, lv.y / rv)); }
+	Vector2Int operator/(INT32 lv, const Vector2Int& rv) { return (Vector2Int(lv / rv.x, lv / rv.y)); }
 	Vector3Int operator+(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }
-	Vector3Int operator+(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x + rv, lv.y + rv, lv.z + rv)); }
-	Vector3Int operator+(INT lv, const Vector3Int& rv) { return (Vector3Int(lv + rv.x, lv + rv.y, lv + rv.z)); }
+	Vector3Int operator+(const Vector3Int& lv, INT32 rv) { return (Vector3Int(lv.x + rv, lv.y + rv, lv.z + rv)); }
+	Vector3Int operator+(INT32 lv, const Vector3Int& rv) { return (Vector3Int(lv + rv.x, lv + rv.y, lv + rv.z)); }
 	Vector3Int operator-(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z)); }
-	Vector3Int operator-(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x - rv, lv.y - rv, lv.z - rv)); }
-	Vector3Int operator-(INT lv, const Vector3Int& rv) { return (Vector3Int(lv - rv.x, lv - rv.y, lv - rv.z)); }
+	Vector3Int operator-(const Vector3Int& lv, INT32 rv) { return (Vector3Int(lv.x - rv, lv.y - rv, lv.z - rv)); }
+	Vector3Int operator-(INT32 lv, const Vector3Int& rv) { return (Vector3Int(lv - rv.x, lv - rv.y, lv - rv.z)); }
 	Vector3Int operator*(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z)); }
-	Vector3Int operator*(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x * rv, lv.y * rv, lv.z * rv)); }
-	Vector3Int operator*(INT lv, const Vector3Int& rv) { return (Vector3Int(lv * rv.x, lv * rv.y, lv * rv.z)); }
+	Vector3Int operator*(const Vector3Int& lv, INT32 rv) { return (Vector3Int(lv.x * rv, lv.y * rv, lv.z * rv)); }
+	Vector3Int operator*(INT32 lv, const Vector3Int& rv) { return (Vector3Int(lv * rv.x, lv * rv.y, lv * rv.z)); }
 	Vector3Int operator/(const Vector3Int& lv, const Vector3Int& rv) { return (Vector3Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
-	Vector3Int operator/(const Vector3Int& lv, INT rv) { return (Vector3Int(lv.x / rv, lv.y / rv, lv.z / rv)); }
-	Vector3Int operator/(INT lv, const Vector3Int& rv) { return (Vector3Int(lv / rv.x, lv / rv.y, lv / rv.z)); }
+	Vector3Int operator/(const Vector3Int& lv, INT32 rv) { return (Vector3Int(lv.x / rv, lv.y / rv, lv.z / rv)); }
+	Vector3Int operator/(INT32 lv, const Vector3Int& rv) { return (Vector3Int(lv / rv.x, lv / rv.y, lv / rv.z)); }
 	Vector4Int operator+(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z, lv.w + rv.w)); }
-	Vector4Int operator+(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
-	Vector4Int operator+(INT lv, const Vector4Int& rv) { return (Vector4Int(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
+	Vector4Int operator+(const Vector4Int& lv, INT32 rv) { return (Vector4Int(lv.x + rv, lv.y + rv, lv.z + rv, lv.w + rv)); }
+	Vector4Int operator+(INT32 lv, const Vector4Int& rv) { return (Vector4Int(lv + rv.x, lv + rv.y, lv + rv.z, lv + rv.w)); }
 	Vector4Int operator-(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x - rv.x, lv.y - rv.y, lv.z - rv.z, lv.w - rv.w)); }
-	Vector4Int operator-(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
-	Vector4Int operator-(INT lv, const Vector4Int& rv) { return (Vector4Int(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
+	Vector4Int operator-(const Vector4Int& lv, INT32 rv) { return (Vector4Int(lv.x - rv, lv.y - rv, lv.z - rv, lv.w - rv)); }
+	Vector4Int operator-(INT32 lv, const Vector4Int& rv) { return (Vector4Int(lv - rv.x, lv - rv.y, lv - rv.z, lv - rv.w)); }
 	Vector4Int operator*(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x * rv.x, lv.y * rv.y, lv.z * rv.z, lv.w * rv.w)); }
-	Vector4Int operator*(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
-	Vector4Int operator*(INT lv, const Vector4Int& rv) { return (Vector4Int(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
+	Vector4Int operator*(const Vector4Int& lv, INT32 rv) { return (Vector4Int(lv.x * rv, lv.y * rv, lv.z * rv, lv.w * rv)); }
+	Vector4Int operator*(INT32 lv, const Vector4Int& rv) { return (Vector4Int(lv * rv.x, lv * rv.y, lv * rv.z, lv * rv.w)); }
 	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv) { return (Vector4Int(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z, lv.w / rv.w)); }
-	Vector4Int operator/(const Vector4Int& lv, INT rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
-	Vector4Int operator/(INT lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
+	Vector4Int operator/(const Vector4Int& lv, INT32 rv) { return (Vector4Int(lv.x / rv, lv.y / rv, lv.z / rv, lv.w / rv)); }
+	Vector4Int operator/(INT32 lv, const Vector4Int& rv) { return (Vector4Int(lv / rv.x, lv / rv.y, lv / rv.z, lv / rv.w)); }
 	Color3 operator+(const Color3& lv, FLOAT rv) { return (Color3(lv.x + rv, lv.y + rv, lv.z + rv)); }
 	Color3 operator+(FLOAT lv, const Color3& rv) { return (Color3(lv + rv.x, lv + rv.y, lv + rv.z)); }
 	Color3 operator+(const Color3& lv, const Color3& rv) { return (Color3(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z)); }

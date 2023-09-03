@@ -60,7 +60,7 @@ CDefaultLitMaterial::CDefaultLitMaterial() : CMaterialBase(typeid(CDefaultLitMat
 	renderParams->EmissiveAmbientOcclusion	= DirectX::XMFLOAT4(1.f, 1.f, 1.f, 1.f);
 	renderParams->MetallicnessReflectanceIsGlossy = DirectX::XMFLOAT4(0.f, 1.f, 0.f, 0.f);
 }
-CDefaultLitMaterial::CDefaultLitMaterial(const std::string& name, MaterialType materialType, const UINT& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName) : CMaterialBase(name, materialType, constantSize, inputLayout, inputLayoutNum, vertexShaderName, pixelShaderName)
+CDefaultLitMaterial::CDefaultLitMaterial(const std::string& name, MaterialType materialType, const UINT32& constantSize, const CustomStruct::CRenderInputLayoutDesc* inputLayout, const UINT32& inputLayoutNum, const std::string& vertexShaderName, const std::string& pixelShaderName) : CMaterialBase(name, materialType, constantSize, inputLayout, inputLayoutNum, vertexShaderName, pixelShaderName)
 {
 	this->m_VertexShader			= CShaderManager::LoadVertexShader(vertexShaderName, inputLayout, inputLayoutNum);
 	this->m_PixelShader				= CShaderManager::LoadPixelShader(pixelShaderName);
@@ -208,7 +208,7 @@ CTexture2D* CDefaultLitMaterial::GetReflectanceTexture()const
 {
 	return (this->m_ReflectanceTexture);
 }
-void CDefaultLitMaterial::SetIsGlossyRoughness(const BOOL& v)
+void CDefaultLitMaterial::SetIsGlossyRoughness(const BOOL32& v)
 {
 	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->MetallicnessReflectanceIsGlossy.z = v ? 1.f : 0.f;
@@ -247,7 +247,7 @@ void CDefaultLitMaterial::SetEmissiveColor(const CustomStruct::CColor& clr)
 	renderParams->EmissiveAmbientOcclusion.y = clr.g;
 	renderParams->EmissiveAmbientOcclusion.z = clr.b;
 }
-BOOL CDefaultLitMaterial::GetIsGlossyRoughness()const
+BOOL32 CDefaultLitMaterial::GetIsGlossyRoughness()const
 {
 	return (this->m_IsGlossy);
 }
@@ -289,7 +289,7 @@ void CDefaultLitMaterial::Init()
 {
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		std::map<INT, std::string> baseEngineTextureItems = {
+		std::map<INT32, std::string> baseEngineTextureItems = {
 			{ -1, "None" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -300,7 +300,7 @@ void CDefaultLitMaterial::Init()
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 			{ -2, "Custom Path" } };
-		auto pathSelect = [&baseEngineTextureItems](const INT& select, CHAR* name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
+		auto pathSelect = [&baseEngineTextureItems](const INT32& select, CHAR* name, CTexture2D*& texture, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(name, 512, baseEngineTextureItems[select].c_str());
@@ -341,7 +341,7 @@ void CDefaultLitMaterial::Init()
 }
 void CDefaultLitMaterial::Bind()const
 {
-	auto bindTexture = [](const CTexture2D* tex, const UINT& slot, CustomStruct::CEngineDefaultTexture2DType type) {
+	auto bindTexture = [](const CTexture2D* tex, const UINT32& slot, CustomStruct::CEngineDefaultTexture2DType type) {
 		if (tex != NULL)
 		{
 			CRenderDevice::BindPSShaderResourceView(tex->GetShaderResourceView(), slot);
@@ -373,7 +373,7 @@ void CDefaultLitMaterial::HookApplyTextureUpdate()
 }
 void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -386,12 +386,12 @@ void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 		{ -2, "Custom Path" } };
 
 	{
-		auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT& select) {
+		auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT32& select) {
 			if (ImGui::BeginCombo(name.c_str(), baseEngineTextureItems[select].c_str()))
 			{
 				for (const auto& textureItem : baseEngineTextureItems)
 				{
-					BOOL selected = (select == textureItem.first);
+					BOOL32 selected = (select == textureItem.first);
 					if (ImGui::Selectable(textureItem.second.c_str(), &selected))
 					{
 						select = textureItem.first;
@@ -403,7 +403,7 @@ void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 				}
 				ImGui::EndCombo();
 			}};
-		auto texturePathText = [](const std::string& name, const INT& select, CHAR* path) {
+		auto texturePathText = [](const std::string& name, const INT32& select, CHAR* path) {
 			if (select == -2)
 			{
 				ImGui::InputText(name.c_str(), path, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
@@ -426,7 +426,7 @@ void CDefaultLitMaterial::SelectedDefaultLitUpdate()
 	}
 
 	{
-		auto textureUpdate = [&baseEngineTextureItems](const INT& select, CHAR* path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
+		auto textureUpdate = [&baseEngineTextureItems](const INT32& select, CHAR* path, CTexture2D*& tex, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(path, 512, baseEngineTextureItems[select].c_str());
@@ -593,7 +593,7 @@ void CAnisotropicMaterial::SetAnisotropyDirection(const FLOAT& v)
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->AnisotropyStrengthDirection.y = v;
 }
-void CAnisotropicMaterial::SetIsGlossyRoughness(const BOOL& v)
+void CAnisotropicMaterial::SetIsGlossyRoughness(const BOOL32& v)
 {
 	CAnisotropicMaterial::RenderParams* renderParams = static_cast<CAnisotropicMaterial::RenderParams*>(this->m_RenderParams);
 	renderParams->MetallicnessReflectanceIsGlossy.z = v ? 1.f : 0.f;
@@ -644,7 +644,7 @@ FLOAT CAnisotropicMaterial::GetAnisotropyDirection()const
 	FLOAT v = renderParams->AnisotropyStrengthDirection.y;
 	return v;
 }
-BOOL CAnisotropicMaterial::GetIsGlossyRoughness()const
+BOOL32 CAnisotropicMaterial::GetIsGlossyRoughness()const
 {
 	return (this->m_IsGlossy);
 }
@@ -687,7 +687,7 @@ void CAnisotropicMaterial::Init()
 	CDefaultLitMaterial::Init();
 #ifdef _DEVELOPMENT_EDITOR
 	{
-		std::map<INT, std::string> baseEngineTextureItems = {
+		std::map<INT32, std::string> baseEngineTextureItems = {
 			{ -1, "None" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -698,7 +698,7 @@ void CAnisotropicMaterial::Init()
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 			{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 			{ -2, "Custom Path" } };
-		auto pathSelect = [&baseEngineTextureItems](const INT& select, CHAR* name, CTexture2D*& texture, const BOOL& sRGB = TRUE) {
+		auto pathSelect = [&baseEngineTextureItems](const INT32& select, CHAR* name, CTexture2D*& texture, const BOOL32& sRGB = TRUE) {
 			if (select != -2)
 			{
 				strcpy_s(name, 512, baseEngineTextureItems[select].c_str());
@@ -730,7 +730,7 @@ void CAnisotropicMaterial::Init()
 void CAnisotropicMaterial::Bind()const
 {
 	CDefaultLitMaterial::Bind();
-	auto bindTexture = [](const CTexture2D* tex, const UINT& slot, CustomStruct::CEngineDefaultTexture2DType type) {
+	auto bindTexture = [](const CTexture2D* tex, const UINT32& slot, CustomStruct::CEngineDefaultTexture2DType type) {
 		if (tex != NULL)
 		{
 			CRenderDevice::BindPSShaderResourceView(tex->GetShaderResourceView(), slot);
@@ -745,7 +745,7 @@ void CAnisotropicMaterial::Bind()const
 #ifdef _DEVELOPMENT_EDITOR
 void CAnisotropicMaterial::HookSelectedTextureUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -756,12 +756,12 @@ void CAnisotropicMaterial::HookSelectedTextureUpdate()
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 		{ -2, "Custom Path" } };
-	auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT& select) {
+	auto textureCombo = [&baseEngineTextureItems](const std::string& name, INT32& select) {
 		if (ImGui::BeginCombo(name.c_str(), baseEngineTextureItems[select].c_str()))
 		{
 			for (const auto& textureItem : baseEngineTextureItems)
 			{
-				BOOL selected = (select == textureItem.first);
+				BOOL32 selected = (select == textureItem.first);
 				if (ImGui::Selectable(textureItem.second.c_str(), &selected))
 				{
 					select = textureItem.first;
@@ -773,7 +773,7 @@ void CAnisotropicMaterial::HookSelectedTextureUpdate()
 			}
 			ImGui::EndCombo();
 		}};
-	auto texturePathText = [](const std::string& name, const INT& select, CHAR* path) {
+	auto texturePathText = [](const std::string& name, const INT32& select, CHAR* path) {
 		if (select == -2)
 		{
 			ImGui::InputText(name.c_str(), path, 512, ImGuiInputTextFlags_::ImGuiInputTextFlags_EnterReturnsTrue);
@@ -785,7 +785,7 @@ void CAnisotropicMaterial::HookSelectedTextureUpdate()
 }
 void CAnisotropicMaterial::HookApplyTextureUpdate()
 {
-	std::map<INT, std::string> baseEngineTextureItems = {
+	std::map<INT32, std::string> baseEngineTextureItems = {
 		{ -1, "None" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_WHITE, "Default White" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BLACK, "Default Black" },
@@ -796,7 +796,7 @@ void CAnisotropicMaterial::HookApplyTextureUpdate()
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_BUMP, "Default Bump" },
 		{ CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_PROPERTY, "Default Property" },
 		{ -2, "Custom Path" } };
-	auto textureUpdate = [&baseEngineTextureItems](const INT& select, CHAR* path, CTexture2D*& tex, const BOOL& sRGB = TRUE) {
+	auto textureUpdate = [&baseEngineTextureItems](const INT32& select, CHAR* path, CTexture2D*& tex, const BOOL32& sRGB = TRUE) {
 		if (select != -2)
 		{
 			strcpy_s(path, 512, baseEngineTextureItems[select].c_str());

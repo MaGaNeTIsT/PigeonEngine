@@ -16,7 +16,7 @@ namespace PigeonEngine
         /// <typeparam name="_Type"></typeparam>
         /// <returns></returns>
         template<typename _Type>
-        BOOL IsTypeOf()const
+        BOOL32 IsTypeOf()const
         {
             return (IsClass(this->GetTypeHash(), GetClassHashCode<_Type>()));
         }
@@ -27,7 +27,7 @@ namespace PigeonEngine
         /// <typeparam name="_Type"></typeparam>
         /// <returns></returns>
         template<typename _Type>
-        BOOL IsChildOf()const
+        BOOL32 IsChildOf()const
         {
             return (IsParentClass<_Type>(this->GetTypeHash()));
         }
@@ -38,7 +38,7 @@ namespace PigeonEngine
         /// <typeparam name="_Type"></typeparam>
         /// <returns></returns>
         template<typename _Type>
-        BOOL IsParentOf()const
+        BOOL32 IsParentOf()const
         {
             return (IsChildClass<_Type>(this->GetTypeHash()));
         }

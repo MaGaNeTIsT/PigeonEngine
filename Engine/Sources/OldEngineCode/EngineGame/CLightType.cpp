@@ -2,7 +2,7 @@
 #include "../Headers/CLightType.h"
 #include "../Headers/CCamera.h"
 
-CLightBase::CLightBase(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
+CLightBase::CLightBase(const BOOL32& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->m_LightType = LightType::LIGHT_TYPE_NONE;
 	this->m_Color = CustomStruct::CColor(1.f, 1.f, 1.f, 1.f);
@@ -18,7 +18,7 @@ void CLightBase::SetColor(const CustomStruct::CColor& color, const FLOAT& intens
 	this->m_Color = color;
 	this->m_Intensity = intensity;
 }
-BOOL CLightBase::CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth)
+BOOL32 CLightBase::CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& output, const CustomType::Vector2Int& shadowSize, const UINT32& shadowDepth)
 {
 	return (CRenderDevice::CreateRenderTexture2D(
 		output,
@@ -33,7 +33,7 @@ BOOL CLightBase::CreateShadowTexture(CRenderDevice::RenderTexture2DViewInfo& out
 
 
 
-CLightDirectional::CLightDirectional(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
+CLightDirectional::CLightDirectional(const BOOL32& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_DIRECTIONAL);
 	this->m_FrameCounter = 0;
@@ -77,10 +77,10 @@ void CLightDirectional::SelectedEditorUpdate()
 	this->m_Intensity	= lightIntensity;
 }
 #endif
-BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
+BOOL32 CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 {
-	BOOL result = TRUE;
-	for (UINT i = 0u; i < 2u; i++)
+	BOOL32 result = TRUE;
+	for (UINT32 i = 0u; i < 2u; i++)
 	{
 		std::shared_ptr<ShadowCascadeInfo> currentInfo = (light->m_CascadeInfo[i]);
 		std::vector<LightShadowInfo>& currentShadowMap = (currentInfo->ShadowMap);
@@ -88,7 +88,7 @@ BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 
 		CustomType::Vector2Int usedShadowSize(CustomType::CMath::Log2Ceil(shadowMap0.Size.X()), CustomType::CMath::Log2Ceil(shadowMap0.Size.X()));
 		usedShadowSize = CustomType::Vector2Int(CustomType::CMath::Max(CustomType::CMath::Exp2(usedShadowSize.X()), 2), CustomType::CMath::Max(CustomType::CMath::Exp2(usedShadowSize.Y()), 2));
-		UINT usedShadowDepth = (shadowMap0.Depth == 16u || shadowMap0.Depth == 24u || shadowMap0.Depth == 32u) ? shadowMap0.Depth : 24u;
+		UINT32 usedShadowDepth = (shadowMap0.Depth == 16u || shadowMap0.Depth == 24u || shadowMap0.Depth == 32u) ? shadowMap0.Depth : 24u;
 
 		currentInfo->Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, usedShadowSize.X(), usedShadowSize.Y()), CustomType::Vector2(0.f, 1.f));
 		shadowMap0.Size = usedShadowSize;
@@ -100,19 +100,19 @@ BOOL CLightDirectional::GenerateClosestShadowMap(CLightDirectional* light)
 	}
 	return result;
 }
-BOOL CLightDirectional::GenerateCascadeShadowMap(CLightDirectional* light, const INT& frameCounter)
+BOOL32 CLightDirectional::GenerateCascadeShadowMap(CLightDirectional* light, const INT32& frameCounter)
 {
-	BOOL result = TRUE;
+	BOOL32 result = TRUE;
 	std::shared_ptr<ShadowCascadeInfo> currentInfo = (light->m_CascadeInfo[frameCounter]);
 	std::vector<LightShadowInfo>& currentShadowMap = (currentInfo->ShadowMap);
-	const UINT& currentLayerNum = currentInfo->LayerInfo.LayerNum;
+	const UINT32& currentLayerNum = currentInfo->LayerInfo.LayerNum;
 	if (currentShadowMap.size() != currentLayerNum)
 	{
 		currentShadowMap.resize(currentLayerNum);
 	}
 	LightShadowInfo& shadowMap0 = currentShadowMap[0];
 	CustomType::Vector2Int usedShadowSize(shadowMap0.Size);
-	UINT usedShadowDepth = shadowMap0.Depth;
+	UINT32 usedShadowDepth = shadowMap0.Depth;
 	for (size_t i = 1u; i < currentShadowMap.size(); i++)
 	{
 		usedShadowSize = CustomType::Vector2Int(CustomType::CMath::Max(usedShadowSize.X() / 2, 2), CustomType::CMath::Max(usedShadowSize.Y() / 2, 2));
@@ -131,10 +131,10 @@ BOOL CLightDirectional::GenerateCascadeShadowMap(CLightDirectional* light, const
 }
 void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirectional* light)
 {
-	const INT& frameCounter = light->m_FrameCounter;
+	const INT32& frameCounter = light->m_FrameCounter;
 	std::shared_ptr<ShadowCascadeInfo> currentShadowCascadeInfo = light->m_CascadeInfo[frameCounter];
 
-	UINT& currentLayerNum = currentShadowCascadeInfo->LayerInfo.LayerNum;
+	UINT32& currentLayerNum = currentShadowCascadeInfo->LayerInfo.LayerNum;
 	std::vector<FLOAT>& currentDistances = currentShadowCascadeInfo->LayerInfo.Distances;
 	std::vector<FLOAT>& currentBorders = currentShadowCascadeInfo->LayerInfo.Borders;
 	std::vector<CustomType::Matrix4x4>& projectionMatrices = currentShadowCascadeInfo->ProjectionMatrices;
@@ -152,10 +152,10 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 		currentDistances.clear();
 		currentBorders.clear();
 		FLOAT totalDist = camera->GetFar() - camera->GetNear();
-		UINT cascadeLayerNum = CustomType::CMath::Clamp(currentShadowCascadeInfo->CascadeSettings.LayerNum, 1u, 4u);
+		UINT32 cascadeLayerNum = CustomType::CMath::Clamp(currentShadowCascadeInfo->CascadeSettings.LayerNum, 1u, 4u);
 		FLOAT* cascadeDistance = currentShadowCascadeInfo->CascadeSettings.Distance;
 		FLOAT* cascadeBorder = currentShadowCascadeInfo->CascadeSettings.Border;
-		for (UINT i = 0u; i < cascadeLayerNum; i++)
+		for (UINT32 i = 0u; i < cascadeLayerNum; i++)
 		{
 			FLOAT currentDist = cascadeDistance[i];
 			if (currentDist > 5.f)
@@ -182,7 +182,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 		{
 			tempDistances.resize(1u);
 		}
-		currentLayerNum = static_cast<UINT>(tempDistances.size());
+		currentLayerNum = static_cast<UINT32>(tempDistances.size());
 		if (totalDist > 0.f)
 		{
 			tempDistances[tempDistances.size() - 1u] += totalDist;
@@ -209,14 +209,14 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 			tempCenterT.resize(currentLayerNum);
 			std::vector<CustomType::Vector3> frustumPoints(camera->GetCullingPlanePoint());
 			FLOAT totalLayerDist = camera->GetFar() - camera->GetNear();
-			for (UINT i = 0u; i < currentLayerNum; i++)
+			for (UINT32 i = 0u; i < currentLayerNum; i++)
 			{
 				if (i > 0u)
 				{
 					FLOAT tNear, tFar;
 					{
 						FLOAT tempNearDist = 0.f, tempFarDist = 0.f;
-						for (UINT layerIndex = 0u; layerIndex <= i; layerIndex++)
+						for (UINT32 layerIndex = 0u; layerIndex <= i; layerIndex++)
 						{
 							if (layerIndex != i)
 							{
@@ -253,7 +253,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 				}
 			}
 			tempLayerDistances.resize(currentLayerNum);
-			for (UINT i = 0u; i < currentLayerNum; i++)
+			for (UINT32 i = 0u; i < currentLayerNum; i++)
 			{
 				tempLayerDistances[i] = currentDistances[i];
 				if (i > 0u)
@@ -275,7 +275,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 				result.MinX = result.MaxX = pos[0].X();
 				result.MinY = result.MaxY = pos[0].Y();
 				result.MinZ = result.MaxZ = pos[0].Z();
-				for (UINT i = 1u; i < 8u; i++)
+				for (UINT32 i = 1u; i < 8u; i++)
 				{
 					result.MinX = CustomType::CMath::Min(pos[i].X(), result.MinX);
 					result.MaxX = CustomType::CMath::Max(pos[i].X(), result.MaxX);
@@ -292,7 +292,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 			CustomType::Vector3 tempCameraDirection(camera->GetForwardVector());
 			CustomType::Vector3 tempCameraCenterNear(tempCameraDirection * (camera->GetNear()) + cameraWorldPosition);
 			CustomType::Vector3 tempCameraCenterFar(tempCameraDirection * (camera->GetFar()) + cameraWorldPosition);
-			for (UINT i = 0u; i < currentLayerNum; i++)
+			for (UINT32 i = 0u; i < currentLayerNum; i++)
 			{
 				CustomType::Vector3 layerPoints[] = {
 					tempPoints[i * 8u + 0u], tempPoints[i * 8u + 1u],
@@ -312,14 +312,14 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 #if 0
 				{
 					ImGui::Text("Shadow Layer %d", i);
-					for (UINT debugIndex = 0u; debugIndex < 8u; debugIndex++)
+					for (UINT32 debugIndex = 0u; debugIndex < 8u; debugIndex++)
 					{
 						ImGui::Text("Layer Points %d : x = %f, y = %f, z = %f", debugIndex, layerPoints[debugIndex].X(), layerPoints[debugIndex].Y(), layerPoints[debugIndex].Z());
 					}
 					ImGui::Text("Sphere Vector : x = %f, y = %f, z = %f, w = %f", projectionSphereBounds[i].X(), projectionSphereBounds[i].Y(), projectionSphereBounds[i].Z(), projectionSphereBounds[i].W());
 				}
 #endif
-				for (UINT pointIndex = 0u; pointIndex < 8u; pointIndex++)
+				for (UINT32 pointIndex = 0u; pointIndex < 8u; pointIndex++)
 				{
 					layerPoints[pointIndex] = currentShadowCascadeInfo->ViewMatrix.MultiplyPosition(layerPoints[pointIndex]);
 				}
@@ -335,13 +335,13 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 		}
 	}
 }
-BOOL CLightDirectional::IsTransmitShadow()
+BOOL32 CLightDirectional::IsTransmitShadow()
 {
 	return ((this->m_IsTransmitShadow) && (this->m_CascadeInfo[0] != nullptr) && (this->m_CascadeInfo[1] != nullptr));
 }
-BOOL CLightDirectional::SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT& shadowDepth)
+BOOL32 CLightDirectional::SetShadowInfo(const CustomType::Vector2Int& shadowSize, const UINT32& shadowDepth)
 {
-	for (UINT i = 0u; i < 2u; i++)
+	for (UINT32 i = 0u; i < 2u; i++)
 	{
 		if (this->m_CascadeInfo[i] == nullptr)
 		{
@@ -367,17 +367,17 @@ BOOL CLightDirectional::SetShadowInfo(const CustomType::Vector2Int& shadowSize, 
 }
 void CLightDirectional::PrepareCascadeShadowInfo(CCamera* camera, const ShadowCascadeSettings* settings)
 {
-	INT nextFrameIndex = 1 - this->m_FrameCounter;
+	INT32 nextFrameIndex = 1 - this->m_FrameCounter;
 	std::shared_ptr<ShadowCascadeInfo> nextCascadeInfo = this->m_CascadeInfo[nextFrameIndex];
 	nextCascadeInfo->CurrentCamera = camera;
 	if (settings)
 	{
 		nextCascadeInfo->CascadeSettings.LayerNum = settings->LayerNum;
-		for (UINT i = 0u; i < 4u; i++)
+		for (UINT32 i = 0u; i < 4u; i++)
 		{
 			nextCascadeInfo->CascadeSettings.Distance[i] = settings->Distance[i];
 		}
-		for (UINT i = 0u; i < 3u; i++)
+		for (UINT32 i = 0u; i < 3u; i++)
 		{
 			nextCascadeInfo->CascadeSettings.Border[i] = settings->Border[i];
 		}
@@ -399,28 +399,28 @@ void CLightDirectional::UpdateCascadeShadowInfo()
 
 	currentCascadeInfo->CurrentCamera = NULL;
 }
-const UINT& CLightDirectional::GetCurrentShadowMapLayerNum()
+const UINT32& CLightDirectional::GetCurrentShadowMapLayerNum()
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	return (this->m_CascadeInfo[currentFrame]->LayerInfo.LayerNum);
 }
-CustomStruct::CRenderViewport CLightDirectional::GetCurrentShadowMapViewport(const UINT& extraIndex)
+CustomStruct::CRenderViewport CLightDirectional::GetCurrentShadowMapViewport(const UINT32& extraIndex)
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	std::shared_ptr<ShadowCascadeInfo> currentCascadeInfo = this->m_CascadeInfo[currentFrame];
 	CustomStruct::CRenderViewport result = currentCascadeInfo->Viewport;
 	result.Width = static_cast<FLOAT>(currentCascadeInfo->ShadowMap[extraIndex].Size.X());
 	result.Height = static_cast<FLOAT>(currentCascadeInfo->ShadowMap[extraIndex].Size.Y());
 	return result;
 }
-const CLightBase::LightShadowInfo& CLightDirectional::GetCurrentShadowMap(const UINT& extraIndex)
+const CLightBase::LightShadowInfo& CLightDirectional::GetCurrentShadowMap(const UINT32& extraIndex)
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	return (this->m_CascadeInfo[currentFrame]->ShadowMap[extraIndex]);
 }
-CustomType::Vector4 CLightDirectional::GetCurrentProjectionSphereBounding(const UINT& extraIndex)
+CustomType::Vector4 CLightDirectional::GetCurrentProjectionSphereBounding(const UINT32& extraIndex)
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	const std::shared_ptr<ShadowCascadeInfo> currentCascadeInfo = this->m_CascadeInfo[currentFrame];
 	if (extraIndex >= currentCascadeInfo->ProjectionSphereBounds.size())
 	{
@@ -428,15 +428,15 @@ CustomType::Vector4 CLightDirectional::GetCurrentProjectionSphereBounding(const 
 	}
 	return (currentCascadeInfo->ProjectionSphereBounds[extraIndex]);
 }
-CustomType::Matrix4x4 CLightDirectional::GetCurrentViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightDirectional::GetCurrentViewMatrix(const UINT32& extraIndex)
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	const std::shared_ptr<ShadowCascadeInfo> currentCascadeInfo = this->m_CascadeInfo[currentFrame];
 	return (currentCascadeInfo->ViewMatrix);
 }
-CustomType::Matrix4x4 CLightDirectional::GetCurrentProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightDirectional::GetCurrentProjectionMatrix(const UINT32& extraIndex)
 {
-	const INT& currentFrame = this->m_FrameCounter;
+	const INT32& currentFrame = this->m_FrameCounter;
 	const std::shared_ptr<ShadowCascadeInfo> currentCascadeInfo = this->m_CascadeInfo[currentFrame];
 	if (extraIndex >= currentCascadeInfo->ProjectionMatrices.size())
 	{
@@ -444,15 +444,15 @@ CustomType::Matrix4x4 CLightDirectional::GetCurrentProjectionMatrix(const UINT& 
 	}
 	return (currentCascadeInfo->ProjectionMatrices[extraIndex]);
 }
-CustomType::Matrix4x4 CLightDirectional::GetPreviousViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightDirectional::GetPreviousViewMatrix(const UINT32& extraIndex)
 {
-	INT previousFrame = 1 - this->m_FrameCounter;
+	INT32 previousFrame = 1 - this->m_FrameCounter;
 	const std::shared_ptr<ShadowCascadeInfo> previousCascadeInfo = this->m_CascadeInfo[previousFrame];
 	return (previousCascadeInfo->ViewMatrix);
 }
-CustomType::Matrix4x4 CLightDirectional::GetPreviousProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightDirectional::GetPreviousProjectionMatrix(const UINT32& extraIndex)
 {
-	INT previousFrame = 1 - this->m_FrameCounter;
+	INT32 previousFrame = 1 - this->m_FrameCounter;
 	const std::shared_ptr<ShadowCascadeInfo> previousCascadeInfo = this->m_CascadeInfo[previousFrame];
 	if (extraIndex >= previousCascadeInfo->ProjectionMatrices.size())
 	{
@@ -463,25 +463,25 @@ CustomType::Matrix4x4 CLightDirectional::GetPreviousProjectionMatrix(const UINT&
 
 
 
-CLightPoint::CLightPoint(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
+CLightPoint::CLightPoint(const BOOL32& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_POINT);
 	this->m_AttenuationExponent = 1.5f;
 	this->m_Radius = 100.f;
 }
-CustomType::Matrix4x4 CLightPoint::GetCurrentViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightPoint::GetCurrentViewMatrix(const UINT32& extraIndex)
 {
 	return (CustomType::Matrix4x4::Identity());
 }
-CustomType::Matrix4x4 CLightPoint::GetCurrentProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightPoint::GetCurrentProjectionMatrix(const UINT32& extraIndex)
 {
 	return (CustomType::Matrix4x4::Identity());
 }
-CustomType::Matrix4x4 CLightPoint::GetPreviousViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightPoint::GetPreviousViewMatrix(const UINT32& extraIndex)
 {
 	return (CustomType::Matrix4x4::Identity());
 }
-CustomType::Matrix4x4 CLightPoint::GetPreviousProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightPoint::GetPreviousProjectionMatrix(const UINT32& extraIndex)
 {
 	return (CustomType::Matrix4x4::Identity());
 }
@@ -493,7 +493,7 @@ void CLightPoint::Init()
 
 
 
-CLightSpot::CLightSpot(const BOOL& active, const class CScene* scene) : CLightBase(active, scene)
+CLightSpot::CLightSpot(const BOOL32& active, const class CScene* scene) : CLightBase(active, scene)
 {
 	this->SetLightType(LightType::LIGHT_TYPE_SPOT);
 	this->m_Range = 100.f;
@@ -505,19 +505,19 @@ CLightSpot::CLightSpot(const BOOL& active, const class CScene* scene) : CLightBa
 	this->m_ProjectionMatrix[0] = CustomType::Matrix4x4::Identity();
 	this->m_ProjectionMatrix[1] = CustomType::Matrix4x4::Identity();
 }
-CustomType::Matrix4x4 CLightSpot::GetCurrentViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightSpot::GetCurrentViewMatrix(const UINT32& extraIndex)
 {
 	return (this->m_ViewMatrix[this->m_FrameCounter]);
 }
-CustomType::Matrix4x4 CLightSpot::GetCurrentProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightSpot::GetCurrentProjectionMatrix(const UINT32& extraIndex)
 {
 	return (this->m_ProjectionMatrix[this->m_FrameCounter]);
 }
-CustomType::Matrix4x4 CLightSpot::GetPreviousViewMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightSpot::GetPreviousViewMatrix(const UINT32& extraIndex)
 {
 	return (this->m_ViewMatrix[1 - this->m_FrameCounter]);
 }
-CustomType::Matrix4x4 CLightSpot::GetPreviousProjectionMatrix(const UINT& extraIndex)
+CustomType::Matrix4x4 CLightSpot::GetPreviousProjectionMatrix(const UINT32& extraIndex)
 {
 	return (this->m_ProjectionMatrix[1 - this->m_FrameCounter]);
 }

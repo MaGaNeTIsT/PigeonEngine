@@ -9,11 +9,11 @@ public:
 public:
 	static void					ClearTexture2DData();
 	static void					ClearTextureCubeData();
-	static class CTexture2D*	LoadTexture2D(const std::string& name, const BOOL& isSRGB = TRUE);
-	static class CTextureCube*	LoadTextureCubeCombine(const std::vector<std::string>& name, const BOOL& isSRGB = TRUE);
+	static class CTexture2D*	LoadTexture2D(const std::string& name, const BOOL32& isSRGB = TRUE);
+	static class CTextureCube*	LoadTextureCubeCombine(const std::vector<std::string>& name, const BOOL32& isSRGB = TRUE);
 private:
-	static class CTexture2D*	LoadTGATexture2D(const std::string& name, const BOOL& isSRGB);
-	static BOOL					LoadTGAData(const std::string& name, std::vector<TBYTE>& outputData, UINT& outputWidth, UINT& outputHeight, const UINT& offset = 0u);
+	static class CTexture2D*	LoadTGATexture2D(const std::string& name, const BOOL32& isSRGB);
+	static BOOL32					LoadTGAData(const std::string& name, std::vector<TBYTE>& outputData, UINT32& outputWidth, UINT32& outputHeight, const UINT32& offset = 0u);
 private:
 	static void					AddTexture2DData(const std::string& name, class CTexture2D* ptrData);
 	static class CTexture2D*	FindTexture2DData(const std::string& name);

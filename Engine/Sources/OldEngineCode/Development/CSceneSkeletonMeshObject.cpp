@@ -12,7 +12,7 @@
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
-CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CScene* scene) : CGameObject(active, scene)
+CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL32& active, const CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 	{
@@ -41,12 +41,12 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 		meshComponent->SetSkeletonComponent(skeletonComponent);
 		skeletonAnimationComponent->SetSkeletonComponent(skeletonComponent);
 
-		const CustomStruct::CRenderInputLayoutDesc* desc; UINT descNum;
+		const CustomStruct::CRenderInputLayoutDesc* desc; UINT32 descNum;
 		CustomStruct::CRenderInputLayoutDesc::GetEngineSkeletonMeshInputLayouts(desc, descNum);
 
-		BOOL isOutputSkeleton = FALSE;
+		BOOL32 isOutputSkeleton = FALSE;
 		std::vector<CustomStruct::CGameBoneNodeInfo> skeleton; std::map<std::string, SHORT> boneIndexMap; std::vector<USHORT> boneList;
-		const CBaseMesh<UINT>* tempMesh = CMeshManager::LoadSkeletonMeshAsset(skeletonMeshPath, isOutputSkeleton, skeleton, boneIndexMap, boneList, FALSE);
+		const CBaseMesh<UINT32>* tempMesh = CMeshManager::LoadSkeletonMeshAsset(skeletonMeshPath, isOutputSkeleton, skeleton, boneIndexMap, boneList, FALSE);
 		meshComponent->SetMesh(tempMesh);
 		skeletonComponent->SetSkeleton(skeleton, boneIndexMap, boneList);
 
@@ -60,7 +60,7 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL& active, const CSc
 
 		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-			for (UINT i = 0u; i < 3u; i++)
+			for (UINT32 i = 0u; i < 3u; i++)
 			{
 				errorV[i] = (errorV[i] < error) ? error : 0.f;
 			}

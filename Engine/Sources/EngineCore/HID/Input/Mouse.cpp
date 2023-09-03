@@ -3,7 +3,7 @@
 namespace PigeonEngine
 {
 
-	std::pair<INT, INT> IMouse::GetPos() const
+	std::pair<INT32, INT32> IMouse::GetPos() const
 	{
 		return { x,y };
 	}
@@ -17,23 +17,23 @@ namespace PigeonEngine
 		RawDeltaBuffer.pop();
 		return d;
 	}
-	INT IMouse::GetPosX() const
+	INT32 IMouse::GetPosX() const
 	{
 		return x;
 	}
-	INT IMouse::GetPosY() const
+	INT32 IMouse::GetPosY() const
 	{
 		return y;
 	}
-	BOOL IMouse::IsInWindow() const
+	BOOL32 IMouse::IsInWindow() const
 	{
 		return bIsInWindow;
 	}
-	BOOL IMouse::LeftIsPressed() const
+	BOOL32 IMouse::LeftIsPressed() const
 	{
 		return bLeftIsPressed;
 	}
-	BOOL IMouse::RightIsPressed() const
+	BOOL32 IMouse::RightIsPressed() const
 	{
 		return bRightIsPressed;
 	}
@@ -59,11 +59,11 @@ namespace PigeonEngine
 	{
 		RawEnabled = false;
 	}
-	BOOL IMouse::IsRawEnabled() const
+	BOOL32 IMouse::IsRawEnabled() const
 	{
 		return RawEnabled;
 	}
-	void IMouse::OnMouseMove(INT newx, INT newy)
+	void IMouse::OnMouseMove(INT32 newx, INT32 newy)
 	{
 		x = newx;
 		y = newy;
@@ -83,45 +83,45 @@ namespace PigeonEngine
 		Buffer.push(IMouse::Event(IMouse::Event::EType::Enter, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnRawDelta(INT dx, INT dy)
+	void IMouse::OnRawDelta(INT32 dx, INT32 dy)
 	{
 		RawDeltaBuffer.push({ dx,dy });
 		TrimBuffer();
 	}
-	void IMouse::OnLeftPressed(INT x, INT y)
+	void IMouse::OnLeftPressed(INT32 x, INT32 y)
 	{
 		bLeftIsPressed = true;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LPress, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnLeftReleased(INT x, INT y)
+	void IMouse::OnLeftReleased(INT32 x, INT32 y)
 	{
 		bLeftIsPressed = false;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LRelease, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnRightPressed(INT x, INT y)
+	void IMouse::OnRightPressed(INT32 x, INT32 y)
 	{
 		bRightIsPressed = true;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RPress, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnRightReleased(INT x, INT y)
+	void IMouse::OnRightReleased(INT32 x, INT32 y)
 	{
 		bRightIsPressed = false;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RRelease, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnWheelUp(INT x, INT y)
+	void IMouse::OnWheelUp(INT32 x, INT32 y)
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelUp, *this));
 		TrimBuffer();
 	}
-	void IMouse::OnWheelDown(INT x, INT y)
+	void IMouse::OnWheelDown(INT32 x, INT32 y)
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelDown, *this));
 		TrimBuffer();
@@ -140,7 +140,7 @@ namespace PigeonEngine
 			RawDeltaBuffer.pop();
 		}
 	}
-	void IMouse::OnWheelDelta(INT x, INT y, INT delta)
+	void IMouse::OnWheelDelta(INT32 x, INT32 y, INT32 delta)
 	{
 		WheelDeltaCarry += delta;
 		// generate events for every 120 

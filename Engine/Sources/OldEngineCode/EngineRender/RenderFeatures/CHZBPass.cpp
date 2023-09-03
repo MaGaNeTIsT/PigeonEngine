@@ -60,16 +60,16 @@ void CHZBPass::ComputeHZB(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>
 	CRenderDevice::SetCSShader(this->m_RawDownSamplingComputeShader);
 	CRenderDevice::BindCSShaderResourceView(sceneDepth, 5u);
 	CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffers[0].UnorderedAccessView, 0u);
-	CRenderDevice::Dispatch(static_cast<UINT>((this->m_HZBSizes[0].X() + 7) / 8), static_cast<UINT>((this->m_HZBSizes[0].Y() + 7) / 8), 1u);
+	CRenderDevice::Dispatch(static_cast<UINT32>((this->m_HZBSizes[0].X() + 7) / 8), static_cast<UINT32>((this->m_HZBSizes[0].Y() + 7) / 8), 1u);
 	CRenderDevice::BindNoCSUnorderedAccessView(0u);
 	CRenderDevice::SetNoCSShader();
 
 	CRenderDevice::SetCSShader(this->m_BuildHZBComputeShader);
-	for (UINT i = 1u; i < this->m_HZBBuffers.size(); i++)
+	for (UINT32 i = 1u; i < this->m_HZBBuffers.size(); i++)
 	{
 		CRenderDevice::BindCSShaderResourceView(this->m_HZBBuffers[i - 1u].ShaderResourceView, 5u);
 		CRenderDevice::BindCSUnorderedAccessView(this->m_HZBBuffers[i].UnorderedAccessView, 0u);
-		CRenderDevice::Dispatch(static_cast<UINT>((this->m_HZBSizes[i].X() + 7) / 8), static_cast<UINT>((this->m_HZBSizes[i].Y() + 7) / 8), 1u);
+		CRenderDevice::Dispatch(static_cast<UINT32>((this->m_HZBSizes[i].X() + 7) / 8), static_cast<UINT32>((this->m_HZBSizes[i].Y() + 7) / 8), 1u);
 		CRenderDevice::BindNoCSUnorderedAccessView(0u);
 	}
 	CRenderDevice::SetNoCSShader();
@@ -81,8 +81,8 @@ void CHZBPass::EditorUpdate()
 
 	ImGui::Begin("HZB parameters");
 	ImGui::Checkbox("Debug Enable", &tempDebugType);
-	ImGui::SliderInt("Debug Level", &(this->m_DebugLevel), 0, static_cast<INT>(this->m_HZBBuffers.size() - 1u));
-	for (UINT i = 0u; i < (this->m_HZBSizes.size()); i++)
+	ImGui::SliderInt("Debug Level", &(this->m_DebugLevel), 0, static_cast<INT32>(this->m_HZBBuffers.size() - 1u));
+	for (UINT32 i = 0u; i < (this->m_HZBSizes.size()); i++)
 	{
 		ImGui::Text("Resolution[%d] : x = %d, y = %d.", i, this->m_HZBSizes[i].X(), this->m_HZBSizes[i].Y());
 	}
@@ -105,7 +105,7 @@ void CHZBPass::DrawDebug()
 	}
 }
 #endif
-void CHZBPass::GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT& idx)
+void CHZBPass::GetHZBBufferByMipIndex(CRenderDevice::RenderTexture2DViewInfo& buffer, const UINT32& idx)
 {
 	if (idx < this->m_HZBBuffers.size())
 	{
@@ -116,7 +116,7 @@ void CHZBPass::GetHZBBuffers(std::vector<CRenderDevice::RenderTexture2DViewInfo>
 {
 	buffers = this->m_HZBBuffers;
 }
-void CHZBPass::GetHZBSizeByMipIndex(CustomType::Vector2Int& size, const UINT& idx)
+void CHZBPass::GetHZBSizeByMipIndex(CustomType::Vector2Int& size, const UINT32& idx)
 {
 	if (idx < this->m_HZBSizes.size())
 	{
@@ -129,14 +129,14 @@ void CHZBPass::GetHZBSizes(std::vector<CustomType::Vector2Int>& sizes)
 }
 void CHZBPass::CalculateHZBLevels()
 {
-	INT wCount = CustomType::CMath::Log2Floor(this->m_PipelineSize.X());
-	INT hCount = CustomType::CMath::Log2Floor(this->m_PipelineSize.Y());
+	INT32 wCount = CustomType::CMath::Log2Floor(this->m_PipelineSize.X());
+	INT32 hCount = CustomType::CMath::Log2Floor(this->m_PipelineSize.Y());
 	this->m_HZBMipLevels = CustomType::CMath::Min(wCount, hCount) + 1u;
 	this->m_HZBSizes.resize(static_cast<size_t>(this->m_HZBMipLevels));
-	INT w = CustomType::CMath::Exp2(wCount - (this->m_HZBMipLevels - 1));
-	INT h = CustomType::CMath::Exp2(hCount - (this->m_HZBMipLevels - 1));
+	INT32 w = CustomType::CMath::Exp2(wCount - (this->m_HZBMipLevels - 1));
+	INT32 h = CustomType::CMath::Exp2(hCount - (this->m_HZBMipLevels - 1));
 	this->m_HZBSizes[this->m_HZBMipLevels - 1] = CustomType::Vector2Int(w, h);
-	for (INT i = this->m_HZBMipLevels - 2; i >= 0; i--)
+	for (INT32 i = this->m_HZBMipLevels - 2; i >= 0; i--)
 	{
 		this->m_HZBSizes[i] = this->m_HZBSizes[i + 1] * 2;
 	}
@@ -144,13 +144,13 @@ void CHZBPass::CalculateHZBLevels()
 void CHZBPass::InitHZBBuffers()
 {
 	this->m_HZBBuffers.resize(this->m_HZBSizes.size());
-	for (UINT i = 0u; i < this->m_HZBSizes.size(); i++)
+	for (UINT32 i = 0u; i < this->m_HZBSizes.size(); i++)
 	{
 		CRenderDevice::CreateRenderTexture2D(
 			this->m_HZBBuffers[i],
 			CustomStruct::CRenderTextureDesc(
-				static_cast<UINT>(this->m_HZBSizes[i].X()),
-				static_cast<UINT>(this->m_HZBSizes[i].Y()),
+				static_cast<UINT32>(this->m_HZBSizes[i].X()),
+				static_cast<UINT32>(this->m_HZBSizes[i].Y()),
 				CustomStruct::CRenderBindFlag::BIND_SRV_UAV,
 				CustomStruct::CRenderFormat::FORMAT_R32_FLOAT));
 	}

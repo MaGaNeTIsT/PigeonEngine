@@ -49,7 +49,7 @@ std::shared_ptr<CDebugScreen>		CRenderPipeline::m_DebugScreen			= nullptr;
 
 CRenderPipeline::CRenderPipeline()
 {
-	for (INT i = 0; i < CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT; i++)
+	for (INT32 i = 0; i < CustomStruct::CEngineDefaultTexture2DType::ENGINE_DEFAULT_TEXTURE2D_TYPE_COUNT; i++)
 	{
 		if (CRenderPipeline::m_DefaultTexture[i] == NULL)
 		{
@@ -154,7 +154,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 		m_FullScreenPolygon = CMeshManager::LoadPolygon2D(fullScreenSize, desc, 2u);
 	}
 
-	for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+	for (INT32 i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 	{
 		if (m_ScenePrimitives[i].size() != 0)
 		{
@@ -169,7 +169,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 	{
 		m_CameraCullingResults.clear();
 	}
-	for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
+	for (INT32 i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
 	{
 		if (m_RenderingCullingResults[i].size() != 0)
 		{
@@ -197,9 +197,9 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 	}
 
 	{
-		UINT bufferWidth = static_cast<UINT>(bufferSize.X());
-		UINT bufferHeight = static_cast<UINT>(bufferSize.Y());
-		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+		UINT32 bufferWidth = static_cast<UINT32>(bufferSize.X());
+		UINT32 bufferHeight = static_cast<UINT32>(bufferSize.Y());
+		for (UINT32 i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 		{
 			CRenderDevice::CreateRenderTexture2D(
 				m_RTGBuffer[i],
@@ -225,7 +225,7 @@ void CRenderPipeline::Init(const CScene* scene, const CustomType::Vector2Int& bu
 				CustomStruct::CRenderBindFlag::BIND_NONE,
 				format, &format, &format, &format,
 				32u));
-		for (INT i = 0; i < 2; i++)
+		for (INT32 i = 0; i < 2; i++)
 		{
 			CRenderDevice::CreateRenderTexture2D(
 				m_RTPostProcess[i],
@@ -358,7 +358,7 @@ void CRenderPipeline::Uninit()
 {
 	m_Scene = NULL;
 	m_SceneCamera = NULL;
-	for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+	for (INT32 i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 	{
 		if (m_ScenePrimitives[i].size() != 0)
 		{
@@ -373,7 +373,7 @@ void CRenderPipeline::Uninit()
 	{
 		m_CameraCullingResults.clear();
 	}
-	for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
+	for (INT32 i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
 	{
 		if (m_RenderingCullingResults[i].size() != 0)
 		{
@@ -408,7 +408,7 @@ void CRenderPipeline::PostUpdate()
 	m_FrameIndex += 1u;
 
 	{
-		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		for (INT32 i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
 			if (m_ScenePrimitives[i].size() != 0)
 			{
@@ -423,7 +423,7 @@ void CRenderPipeline::PostUpdate()
 		{
 			m_CameraCullingResults.clear();
 		}
-		for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
+		for (INT32 i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; i++)
 		{
 			if (m_RenderingCullingResults[i].size() != 0)
 			{
@@ -552,11 +552,11 @@ void CRenderPipeline::Render()
 
 	{
 		CRenderDevice::ClearRenderTargetView(m_RTSceneColor.RenderTargetView);
-		for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+		for (UINT32 i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 		{
 			CRenderDevice::ClearRenderTargetView(m_RTGBuffer[i].RenderTargetView);
 		}
-		for (UINT i = 0u; i < 2u; i++)
+		for (UINT32 i = 0u; i < 2u; i++)
 		{
 			CRenderDevice::ClearRenderTargetView(m_RTPostProcess[i].RenderTargetView);
 		}
@@ -580,7 +580,7 @@ void CRenderPipeline::Render()
 	}
 
 	CLightDirectional* lightShadow = NULL;
-	BOOL needShadowPass = FALSE;
+	BOOL32 needShadowPass = FALSE;
 	{
 		for (auto& lightObj : m_SceneLightList)
 		{
@@ -603,8 +603,8 @@ void CRenderPipeline::Render()
 		//Shadow pass
 		if (needShadowPass)
 		{
-			UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
-			for (UINT layerIndex = 0u; layerIndex < layerNum; layerIndex++)
+			UINT32 layerNum = lightShadow->GetCurrentShadowMapLayerNum();
+			for (UINT32 layerIndex = 0u; layerIndex < layerNum; layerIndex++)
 			{
 				std::string passShadowName = "Shadow_Pass_";
 				passShadowName += std::to_string(layerIndex);
@@ -623,7 +623,7 @@ void CRenderPipeline::Render()
 					CRenderDevice::SetViewport(viewportShadow);
 					if (m_DirLightCullingResults[lightShadow].find(layerIndex) != m_DirLightCullingResults[lightShadow].end())
 					{
-						for (UINT i = 0u; i < (m_DirLightCullingResults[lightShadow])[layerIndex].size(); i++)
+						for (UINT32 i = 0u; i < (m_DirLightCullingResults[lightShadow])[layerIndex].size(); i++)
 						{
 							const CMeshRendererComponent* meshRenderer = ((m_DirLightCullingResults[lightShadow])[layerIndex])[i]->GetMeshRendererComponent<CMeshRendererComponent>();
 							if (meshRenderer)
@@ -655,7 +655,7 @@ void CRenderPipeline::Render()
 				CRenderDevice::SetBlendState(m_ShadowSkyForwardPrePassBS);
 			}
 			CRenderDevice::SetRenderTarget(m_RTSceneDepth.DepthStencilView);
-			for (INT i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; ++i)
+			for (INT32 i = 0; i < CullingResultsLayer::CULLINGRESULTS_COUNT; ++i)
 			{
 				for (auto& obj : m_RenderingCullingResults[i])
 				{
@@ -694,7 +694,7 @@ void CRenderPipeline::Render()
 			CRenderDevice::SetBlendState(m_GBufferPassBS);
 			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> tempGBuffersRTV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersRTV[0] = m_RTSceneColor.RenderTargetView;
-			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+			for (UINT32 i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 			{
 				tempGBuffersRTV[i + 1u] = m_RTGBuffer[i].RenderTargetView;
 			}
@@ -713,19 +713,19 @@ void CRenderPipeline::Render()
 
 	{
 		//Direct light pass
-		UINT layerNum = needShadowPass ? lightShadow->GetCurrentShadowMapLayerNum() : 0u;
+		UINT32 layerNum = needShadowPass ? lightShadow->GetCurrentShadowMapLayerNum() : 0u;
 		CGPUProfilerManager::AddPass("Direct_Light_Pass", m_FrameIndex, [&]() {
 			CRenderDevice::SetDepthStencilState(m_DirectLightPostPassDSS);
 			CRenderDevice::SetBlendState(m_DirectLightPostPassBS);
 			CRenderDevice::SetRenderTarget(m_RTSceneColor.RenderTargetView);
 			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tempGBuffersSRV[CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u];
 			tempGBuffersSRV[0] = m_RTSceneColor.ShaderResourceView;
-			for (UINT i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
+			for (UINT32 i = 0u; i < CRenderPipeline::GEOMETRY_BUFFER_COUNT; i++)
 			{
 				tempGBuffersSRV[i + 1u] = m_RTGBuffer[i].ShaderResourceView;
 			}
 			CRenderDevice::BindPSShaderResourceViews(tempGBuffersSRV, ENGINE_GBUFFER_FIRST_START_SLOT, CRenderPipeline::GEOMETRY_BUFFER_COUNT + 1u);
-			for (UINT i = 0u; i < 4u; i++)
+			for (UINT32 i = 0u; i < 4u; i++)
 			{
 				if (i < layerNum)
 				{
@@ -839,8 +839,8 @@ void CRenderPipeline::Render()
 		DOUBLE timeScale = static_cast<DOUBLE>(1000);
 		if (needShadowPass)
 		{
-			UINT layerNum = lightShadow->GetCurrentShadowMapLayerNum();
-			for (UINT i = 0u; i < layerNum; i++)
+			UINT32 layerNum = lightShadow->GetCurrentShadowMapLayerNum();
+			for (UINT32 i = 0u; i < layerNum; i++)
 			{
 				std::string passShadowName = "Shadow_Pass_";
 				passShadowName += std::to_string(i);
@@ -942,7 +942,7 @@ void CRenderPipeline::DrawFullScreenPolygon(const std::shared_ptr<CPixelShader>&
 	CRenderDevice::SetIndexBuffer(m_FullScreenPolygon->GetIndexBuffer());
 	CRenderDevice::DrawIndexed(m_FullScreenPolygon->GetIndexCount());
 }
-void CRenderPipeline::PreparePerFrameRender(CLightDirectional* light, const UINT& index)
+void CRenderPipeline::PreparePerFrameRender(CLightDirectional* light, const UINT32& index)
 {
 	CustomType::Vector2 cameraViewportMin = m_SceneCamera->GetViewportMinSize();
 	CustomStruct::CRenderViewport vp = m_SceneCamera->GetViewport();
@@ -1002,9 +1002,9 @@ void CRenderPipeline::PrepareLightDataRender()
 			}
 		}
 	}
-	m_RenderLightDataInfo.LightData.LightCount = DirectX::XMINT4(static_cast<INT>(lightDirectional.size()), static_cast<INT>(lightPoint.size()), static_cast<INT>(lightSpot.size()), 0);
-	UINT lightIndex = 0u;
-	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.x; i++)
+	m_RenderLightDataInfo.LightData.LightCount = DirectX::XMINT4(static_cast<INT32>(lightDirectional.size()), static_cast<INT32>(lightPoint.size()), static_cast<INT32>(lightSpot.size()), 0);
+	UINT32 lightIndex = 0u;
+	for (INT32 i = 0; i < m_RenderLightDataInfo.LightData.LightCount.x; i++)
 	{
 		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
 		{
@@ -1021,7 +1021,7 @@ void CRenderPipeline::PrepareLightDataRender()
 
 		lightIndex += 1u;
 	}
-	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.y; i++)
+	for (INT32 i = 0; i < m_RenderLightDataInfo.LightData.LightCount.y; i++)
 	{
 		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
 		{
@@ -1038,7 +1038,7 @@ void CRenderPipeline::PrepareLightDataRender()
 
 		lightIndex += 1u;
 	}
-	for (INT i = 0; i < m_RenderLightDataInfo.LightData.LightCount.z; i++)
+	for (INT32 i = 0; i < m_RenderLightDataInfo.LightData.LightCount.z; i++)
 	{
 		if (lightIndex >= CustomStruct::CShaderGlobalLightData::GetSupportLightMaxCount())
 		{
@@ -1057,7 +1057,7 @@ void CRenderPipeline::PrepareLightDataRender()
 		lightIndex += 1u;
 	}
 }
-void CRenderPipeline::PrepareDirectionalLightPerFrameRender(CLightBase* light, const UINT& index)
+void CRenderPipeline::PrepareDirectionalLightPerFrameRender(CLightBase* light, const UINT32& index)
 {
 	CustomType::Matrix4x4 viewMatrix(light->GetCurrentViewMatrix(index));
 	CustomType::Matrix4x4 projectionMatrix(light->GetCurrentProjectionMatrix(index));
@@ -1083,7 +1083,7 @@ void CRenderPipeline::PrepareCameraCullingInfo()
 	m_GlobalCullingInfo.ClipPlane[2] = -cameraPlane[1];
 	m_GlobalCullingInfo.ClipPlane[3] = -cameraPlane[2];
 	m_GlobalCullingInfo.ClipPlane[4] = -cameraPlane[3];
-	for (INT i = 0; i < 5; i++)
+	for (INT32 i = 0; i < 5; i++)
 	{
 		m_GlobalCullingInfo.ClipDot[i] = CustomType::Vector3::Dot(m_GlobalCullingInfo.ClipPlane[i], m_GlobalCullingInfo.OriginPosition) + m_GlobalCullingInfo.ClipOffset;
 	}
@@ -1093,7 +1093,7 @@ void CRenderPipeline::Culling()
 	//Camera distance culling & frustum culling
 	{
 		PrepareCameraCullingInfo();
-		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		for (INT32 i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
 			for (auto& obj : m_ScenePrimitives[i])
 			{
@@ -1109,9 +1109,9 @@ void CRenderPipeline::Culling()
 
 	//HZB occlusion culling
 	{
-		std::vector<BOOL> objectHZBCullingResults;
+		std::vector<BOOL32> objectHZBCullingResults;
 		m_GPUCulling->ReadBackAndPrepareCullingResult(m_FrameIndex, m_CameraCullingResults, objectHZBCullingResults);
-		for (UINT i = 0; i < m_CameraCullingResults.size(); i++)
+		for (UINT32 i = 0; i < m_CameraCullingResults.size(); i++)
 		{
 			if (objectHZBCullingResults[i] == TRUE)
 			{
@@ -1140,7 +1140,7 @@ void CRenderPipeline::Culling()
 			//This is function's ending.
 			return;
 		}
-		for (INT i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		for (INT32 i = 0; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
 			for (auto& obj : m_ScenePrimitives[i])
 			{
@@ -1149,12 +1149,12 @@ void CRenderPipeline::Culling()
 				for (auto& cullingList : m_DirLightCullingResults)
 				{
 					CLightDirectional* tempLight = cullingList.first;
-					std::vector<UINT> layerIndex;
+					std::vector<UINT32> layerIndex;
 					if (!PerObjectDirectionalCascadeShadowCulling(layerIndex, tempLight, boundAnchor, boundRadius))
 					{
 						continue;
 					}
-					for (UINT index = 0u; index < layerIndex.size(); index++)
+					for (UINT32 index = 0u; index < layerIndex.size(); index++)
 					{
 						DirectionalCascadeShadowPerLightPrimitives::iterator element = (cullingList.second).find(layerIndex[index]);
 						if (element == (cullingList.second).end())
@@ -1172,26 +1172,26 @@ void CRenderPipeline::Culling()
 #ifdef _DEVELOPMENT_EDITOR
 	if (m_ShowCPUCullingInfo)
 	{
-		INT tempPrimitivesCount = static_cast<INT>(m_ScenePrimitives[0].size());
-		for (INT i = 1; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
+		INT32 tempPrimitivesCount = static_cast<INT32>(m_ScenePrimitives[0].size());
+		for (INT32 i = 1; i < CScene::SceneLayout::LAYOUT_COUNT; i++)
 		{
-			tempPrimitivesCount += static_cast<INT>(m_ScenePrimitives[i].size());
+			tempPrimitivesCount += static_cast<INT32>(m_ScenePrimitives[i].size());
 		}
-		INT tempCascadeShadowCount = static_cast<INT>(m_DirLightCullingResults.size());
+		INT32 tempCascadeShadowCount = static_cast<INT32>(m_DirLightCullingResults.size());
 		ImGui::Begin("CPU culling information");
 		ImGui::Text("Render pipeline primitives = %d", tempPrimitivesCount);
-		ImGui::Text("Pass camera culling = %d", static_cast<INT>(m_CameraCullingResults.size()));
+		ImGui::Text("Pass camera culling = %d", static_cast<INT32>(m_CameraCullingResults.size()));
 		ImGui::Text("Cascade shadow count = %d", tempCascadeShadowCount);
-		INT tempCascadeShadowIndex = 0;
+		INT32 tempCascadeShadowIndex = 0;
 		for (auto& tempResult : m_DirLightCullingResults)
 		{
-			UINT tempLayerNum = tempResult.first->GetCurrentShadowMapLayerNum();
+			UINT32 tempLayerNum = tempResult.first->GetCurrentShadowMapLayerNum();
 			ImGui::Text("Cascade shadow index = %d", tempCascadeShadowIndex);
-			ImGui::Text("Layer count = %d", static_cast<INT>(tempLayerNum));
-			for (UINT layerIndex = 0u; layerIndex < tempLayerNum; layerIndex++)
+			ImGui::Text("Layer count = %d", static_cast<INT32>(tempLayerNum));
+			for (UINT32 layerIndex = 0u; layerIndex < tempLayerNum; layerIndex++)
 			{
-				INT tempLayerPassNum = static_cast<INT>((tempResult.second)[layerIndex].size());
-				ImGui::Text("Layer index = %d, Pass light culling = %d", static_cast<INT>(layerIndex), tempLayerPassNum);
+				INT32 tempLayerPassNum = static_cast<INT32>((tempResult.second)[layerIndex].size());
+				ImGui::Text("Layer index = %d, Pass light culling = %d", static_cast<INT32>(layerIndex), tempLayerPassNum);
 			}
 			tempCascadeShadowIndex++;
 		}
@@ -1199,10 +1199,10 @@ void CRenderPipeline::Culling()
 	}
 #endif
 }
-BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius)
+BOOL32 CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius)
 {
-	auto planeCulling = [](const CRenderCameraCullingInfo& cullingInfo, const CustomType::Vector3& pos, const FLOAT& radius)->BOOL {
-		for (UINT i = 0u; i < 5u; i++)
+	auto planeCulling = [](const CRenderCameraCullingInfo& cullingInfo, const CustomType::Vector3& pos, const FLOAT& radius)->BOOL32 {
+		for (UINT32 i = 0u; i < 5u; i++)
 		{
 			if ((CustomType::Vector3::Dot(pos, cullingInfo.ClipPlane[i]) + radius) < cullingInfo.ClipDot[i])
 			{
@@ -1217,7 +1217,7 @@ BOOL CRenderPipeline::PerObjectDistanceFrustumCulling(const CustomType::Vector3&
 	}
 	return FALSE;
 }
-BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>& layerIndex, CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius)
+BOOL32 CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT32>& layerIndex, CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius)
 {
 #if 0
 	static CustomType::Vector3 offset[8] = {
@@ -1226,16 +1226,16 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 		CustomType::Vector3(-1, 1, -1),CustomType::Vector3(1, 1, -1),
 		CustomType::Vector3(-1, 1, 1),CustomType::Vector3(1, 1, 1) };
 
-	BOOL result = FALSE;
-	UINT layerNum = light->GetCurrentShadowMapLayerNum();
+	BOOL32 result = FALSE;
+	UINT32 layerNum = light->GetCurrentShadowMapLayerNum();
 	if (layerNum < 1u)
 	{
 		return result;
 	}
 	CustomType::Vector3 boundAnchor((light->GetCurrentViewMatrix()).MultiplyPosition(pos));
-	for (UINT i = 0u; i < layerNum; i++)
+	for (UINT32 i = 0u; i < layerNum; i++)
 	{
-		BOOL currentDefinite = FALSE;
+		BOOL32 currentDefinite = FALSE;
 		CustomType::Matrix4x4 projMatrix(light->GetCurrentProjectionMatrix(i));
 		CustomType::Vector3 tempAnchor(boundAnchor); CustomType::Vector4 tempScreenPos;
 		//First calc
@@ -1245,7 +1245,7 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 			currentDefinite = (tempScreenPos.Z() > 0.f && tempScreenPos.Z() < 1.f) && (tempScreenPos.X() > -1.f && tempScreenPos.X() < 1.f) && (tempScreenPos.Y() > -1.f && tempScreenPos.Y() < 1.f);
 		}
 		//Conservative calc
-		for (UINT boundIndex = 0u; boundIndex < 8u; boundIndex++)
+		for (UINT32 boundIndex = 0u; boundIndex < 8u; boundIndex++)
 		{
 			if (currentDefinite)
 			{
@@ -1264,13 +1264,13 @@ BOOL CRenderPipeline::PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>
 	}
 	return result;
 #else
-	BOOL result = FALSE;
-	UINT layerNum = light->GetCurrentShadowMapLayerNum();
+	BOOL32 result = FALSE;
+	UINT32 layerNum = light->GetCurrentShadowMapLayerNum();
 	if (layerNum < 1u)
 	{
 		return result;
 	}
-	for (UINT i = 0u; i < layerNum; i++)
+	for (UINT32 i = 0u; i < layerNum; i++)
 	{
 		CustomType::Vector3 lightBoundAnchor; FLOAT lightBoundRadius;
 		{

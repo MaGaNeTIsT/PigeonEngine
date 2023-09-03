@@ -24,7 +24,7 @@ namespace PigeonEngine
     private:
     	EMobilityType Mobility = EMobilityType::EMT_DYNAMIC;
 	public:
-		virtual BOOL ContainTransform()const override;
+		virtual BOOL32 ContainTransform()const override;
 
     	Vector3    GetComponentLocalLocation() const;
     	Quaternion GetComponentLocalRotation() const;

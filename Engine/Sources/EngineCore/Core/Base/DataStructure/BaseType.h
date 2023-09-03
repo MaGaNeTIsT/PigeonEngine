@@ -67,7 +67,7 @@ namespace PigeonEngine
 		static Matrix4x4 TranslationMatrix(FLOAT offsetX, FLOAT offsetY, FLOAT offsetZ) { return (Matrix4x4(DirectX::XMMatrixTranslation(offsetX, offsetY, offsetZ))); }
 		static Matrix4x4 ScalingMatrixFrom(FLOAT sclX, FLOAT sclY, FLOAT sclZ) { return (Matrix4x4(DirectX::XMMatrixScaling(sclX, sclY, sclZ))); }
 		static Matrix4x4 RotationPitchYawRollMatrix(FLOAT pitch, FLOAT yaw, FLOAT roll) { return (Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll))); }
-		static Matrix4x4 PerspectiveMatrix(FLOAT fovYDeg, FLOAT aspectRatio, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(fovYDeg * EMath::GetDegToRad(), aspectRatio, nearPlane, farPlane))); }
+		static Matrix4x4 PerspectiveMatrix(FLOAT fovYDeg, FLOAT aspectRatio, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixPerspectiveFovLH(EMath::DegreesToRadians(fovYDeg), aspectRatio, nearPlane, farPlane))); }
 		static Matrix4x4 OrthographicMatrix(FLOAT left, FLOAT top, FLOAT right, FLOAT bottom, FLOAT nearPlane, FLOAT farPlane) { return (Matrix4x4(DirectX::XMMatrixOrthographicOffCenterLH(left, right, bottom, top, nearPlane, farPlane))); }
 		void SetDirectXQuaternion(DirectX::CXMVECTOR xq)
 		{
@@ -125,8 +125,8 @@ namespace PigeonEngine
 		void Reset() { (*this) = Matrix4x4::Identity(); }
 		Matrix4x4 Inverse()const { return (Matrix4x4(DirectX::XMMatrixInverse(nullptr, GetDirectXMatrix()))); }
 		Matrix4x4 Transpose()const { return (Matrix4x4(DirectX::XMMatrixTranspose(GetDirectXMatrix()))); }
-		FLOAT operator()(UINT row, UINT column)const noexcept { return m[row][column]; }
-		FLOAT& operator()(UINT row, UINT column)noexcept { return m[row][column]; }
+		FLOAT operator()(UINT32 row, UINT32 column)const noexcept { return m[row][column]; }
+		FLOAT& operator()(UINT32 row, UINT32 column)noexcept { return m[row][column]; }
 		Matrix4x4& operator=(const Matrix4x4& mm)
 		{
 			_11 = mm._11; _12 = mm._12; _13 = mm._13; _14 = mm._14;
@@ -292,8 +292,8 @@ namespace PigeonEngine
 		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
 		constexpr Vector2(FLOAT v)noexcept : x(v), y(v) {}
 		constexpr Vector2(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy) {}
-		constexpr Vector2(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		constexpr Vector2(INT vx, INT vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
+		constexpr Vector2(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
+		constexpr Vector2(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
 		constexpr Vector2(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
 		constexpr Vector2(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
 		Vector2()noexcept : x(0.f), y(0.f) {}
@@ -450,9 +450,9 @@ namespace PigeonEngine
 		constexpr Vector3(FLOAT v)noexcept : x(v), y(v), z(v) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
-		constexpr Vector3(INT vx, INT vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
-		constexpr Vector3(INT vx, INT vy, INT vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		constexpr Vector3(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
+		constexpr Vector3(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
+		constexpr Vector3(INT32 vx, INT32 vy, INT32 vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
 		constexpr Vector3(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
 		constexpr Vector3(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
 		constexpr Vector3(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
@@ -636,10 +636,10 @@ namespace PigeonEngine
 		constexpr Vector4(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4(INT v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
-		constexpr Vector4(INT vx, INT vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(INT vx, INT vy, INT vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
-		constexpr Vector4(INT vx, INT vy, INT vz, INT vw)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		constexpr Vector4(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
+		constexpr Vector4(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
 		constexpr Vector4(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
 		constexpr Vector4(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
 		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
@@ -791,27 +791,27 @@ namespace PigeonEngine
 
 	struct Vector2Int
 	{
-		constexpr Vector2Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
 		constexpr Vector2Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(FLOAT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(INT v)noexcept : x(v), y(v) {}
-		constexpr Vector2Int(INT vx, INT vy)noexcept : x(vx), y(vy) {}
-		constexpr Vector2Int(UINT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(UINT vx, UINT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(DOUBLE v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)) {}
-		constexpr Vector2Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)) {}
-		constexpr Vector2Int(const Vector2& vv)noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)) {}
+		constexpr Vector2Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
+		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
+		constexpr Vector2Int(INT32 v)noexcept : x(v), y(v) {}
+		constexpr Vector2Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy) {}
+		constexpr Vector2Int(UINT32 v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
+		constexpr Vector2Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
+		constexpr Vector2Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
+		constexpr Vector2Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
+		constexpr Vector2Int(const Vector2& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)) {}
 		Vector2Int()noexcept : x(0), y(0) {}
 		Vector2Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y);
 		}
 		Vector2Int(const Vector2Int& vv)noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2Int& Zero()
@@ -828,7 +828,7 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y);
 		}
 		void SetDirectXValue2(const DirectX::XMINT2& xv) { x = xv.x; y = xv.y; }
 		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), 0.f, 0.f)); }
@@ -838,22 +838,22 @@ namespace PigeonEngine
 		void Reset() { (*this) = Vector2Int::Zero(); }
 		Vector2Int& operator=(FLOAT v)
 		{
-			x = y = static_cast<INT>(v);
+			x = y = static_cast<INT32>(v);
 			return (*this);
 		}
-		Vector2Int& operator=(INT v)
+		Vector2Int& operator=(INT32 v)
 		{
 			x = y = v;
 			return (*this);
 		}
-		Vector2Int& operator=(UINT v)
+		Vector2Int& operator=(UINT32 v)
 		{
-			x = y = static_cast<INT>(v);
+			x = y = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector2Int& operator=(DOUBLE v)
 		{
-			x = y = static_cast<INT>(v);
+			x = y = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector2Int& operator=(const Vector2Int& vv)
@@ -861,95 +861,95 @@ namespace PigeonEngine
 			x = vv.x; y = vv.y;
 			return (*this);
 		}
-		Vector2Int& operator+=(INT v)
+		Vector2Int& operator+=(INT32 v)
 		{
 			x += v; y += v;
 			return (*this);
 		}
-		Vector2Int& operator-=(INT v)
+		Vector2Int& operator-=(INT32 v)
 		{
 			x -= v; y -= v;
 			return (*this);
 		}
-		Vector2Int& operator*=(INT v)
+		Vector2Int& operator*=(INT32 v)
 		{
 			x *= v; y *= v;
 			return (*this);
 		}
-		Vector2Int& operator/=(INT v)
+		Vector2Int& operator/=(INT32 v)
 		{
 			x /= v; y /= v;
 			return (*this);
 		}
 		Vector2Int& operator+=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv;
 			return (*this);
 		}
 		Vector2Int& operator-=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv;
 			return (*this);
 		}
 		Vector2Int& operator*=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv;
 			return (*this);
 		}
 		Vector2Int& operator/=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv;
 			return (*this);
 		}
 		Vector2Int& operator+=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv;
 			return (*this);
 		}
 		Vector2Int& operator-=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv;
 			return (*this);
 		}
 		Vector2Int& operator*=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv;
 			return (*this);
 		}
 		Vector2Int& operator/=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv;
 			return (*this);
 		}
-		Vector2Int& operator+=(UINT v)
+		Vector2Int& operator+=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv;
 			return (*this);
 		}
-		Vector2Int& operator-=(UINT v)
+		Vector2Int& operator-=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv;
 			return (*this);
 		}
-		Vector2Int& operator*=(UINT v)
+		Vector2Int& operator*=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv;
 			return (*this);
 		}
-		Vector2Int& operator/=(UINT v)
+		Vector2Int& operator/=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv;
 			return (*this);
 		}
@@ -978,39 +978,39 @@ namespace PigeonEngine
 		{
 			struct
 			{
-				INT x, y;
+				INT32 x, y;
 			};
-			INT v[2];
+			INT32 v[2];
 		};
 	};
 
 	struct Vector3Int
 	{
-		constexpr Vector3Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(0) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)) {}
 		constexpr Vector3Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0) {}
 		constexpr Vector3Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
 		constexpr Vector3Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(FLOAT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(INT v)noexcept : x(v), y(v), z(v) {}
-		constexpr Vector3Int(INT vx, INT vy)noexcept : x(vx), y(vy), z(0) {}
-		constexpr Vector3Int(INT vx, INT vy, INT vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3Int(UINT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(UINT vx, UINT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(UINT vx, UINT vy, UINT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(DOUBLE v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)) {}
-		constexpr Vector3Int(const Vector3& vv)noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)) {}
+		constexpr Vector3Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
+		constexpr Vector3Int(INT32 v)noexcept : x(v), y(v), z(v) {}
+		constexpr Vector3Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0) {}
+		constexpr Vector3Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz) {}
+		constexpr Vector3Int(UINT32 v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
+		constexpr Vector3Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
+		constexpr Vector3Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
+		constexpr Vector3Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
+		constexpr Vector3Int(const Vector3& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)), z(static_cast<INT32>(vv.z)) {}
 		Vector3Int()noexcept : x(0), y(0), z(0) {}
 		Vector3Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y); z = static_cast<INT>(tempV.z);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z);
 		}
 		Vector3Int(const Vector3Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3Int& Zero()
@@ -1027,7 +1027,7 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y); z = static_cast<INT>(tempV.z);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z);
 		}
 		void SetDirectXValue3(const DirectX::XMINT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
 		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(z), 0.f)); }
@@ -1037,22 +1037,22 @@ namespace PigeonEngine
 		void Reset() { (*this) = Vector3Int::Zero(); }
 		Vector3Int& operator=(FLOAT v)
 		{
-			x = y = z = static_cast<INT>(v);
+			x = y = z = static_cast<INT32>(v);
 			return (*this);
 		}
-		Vector3Int& operator=(INT v)
+		Vector3Int& operator=(INT32 v)
 		{
 			x = y = z = v;
 			return (*this);
 		}
-		Vector3Int& operator=(UINT v)
+		Vector3Int& operator=(UINT32 v)
 		{
-			x = y = z = static_cast<INT>(v);
+			x = y = z = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector3Int& operator=(DOUBLE v)
 		{
-			x = y = z = static_cast<INT>(v);
+			x = y = z = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector3Int& operator=(const Vector3Int& vv)
@@ -1060,95 +1060,95 @@ namespace PigeonEngine
 			x = vv.x; y = vv.y; z = vv.z;
 			return (*this);
 		}
-		Vector3Int& operator+=(INT v)
+		Vector3Int& operator+=(INT32 v)
 		{
 			x += v; y += v; z += v;
 			return (*this);
 		}
-		Vector3Int& operator-=(INT v)
+		Vector3Int& operator-=(INT32 v)
 		{
 			x -= v; y -= v; z -= v;
 			return (*this);
 		}
-		Vector3Int& operator*=(INT v)
+		Vector3Int& operator*=(INT32 v)
 		{
 			x *= v; y *= v; z *= v;
 			return (*this);
 		}
-		Vector3Int& operator/=(INT v)
+		Vector3Int& operator/=(INT32 v)
 		{
 			x /= v; y /= v; z /= v;
 			return (*this);
 		}
 		Vector3Int& operator+=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv;
 			return (*this);
 		}
 		Vector3Int& operator-=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv;
 			return (*this);
 		}
 		Vector3Int& operator*=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv;
 			return (*this);
 		}
 		Vector3Int& operator/=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv;
 			return (*this);
 		}
 		Vector3Int& operator+=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv;
 			return (*this);
 		}
 		Vector3Int& operator-=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv;
 			return (*this);
 		}
 		Vector3Int& operator*=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv;
 			return (*this);
 		}
 		Vector3Int& operator/=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv;
 			return (*this);
 		}
-		Vector3Int& operator+=(UINT v)
+		Vector3Int& operator+=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv;
 			return (*this);
 		}
-		Vector3Int& operator-=(UINT v)
+		Vector3Int& operator-=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv;
 			return (*this);
 		}
-		Vector3Int& operator*=(UINT v)
+		Vector3Int& operator*=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv;
 			return (*this);
 		}
-		Vector3Int& operator/=(UINT v)
+		Vector3Int& operator/=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv;
 			return (*this);
 		}
@@ -1177,43 +1177,43 @@ namespace PigeonEngine
 		{
 			struct
 			{
-				INT x, y, z;
+				INT32 x, y, z;
 			};
-			INT v[3];
+			INT32 v[3];
 		};
 	};
 
 	struct Vector4Int
 	{
-		constexpr Vector4Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT>(xv.x)), y(static_cast<INT>(xv.y)), z(static_cast<INT>(xv.z)), w(static_cast<INT>(xv.w)) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(0), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)), w(static_cast<INT32>(xv.w)) {}
 		constexpr Vector4Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
 		constexpr Vector4Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
 		constexpr Vector4Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4Int(FLOAT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(INT v)noexcept : x(v), y(v), z(v), w(v) {}
-		constexpr Vector4Int(INT vx, INT vy)noexcept : x(vx), y(vy), z(0), w(0) {}
-		constexpr Vector4Int(INT vx, INT vy, INT vz)noexcept : x(vx), y(vy), z(vz), w(0) {}
-		constexpr Vector4Int(INT vx, INT vy, INT vz, INT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4Int(UINT v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(UINT vx, UINT vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(UINT vx, UINT vy, UINT vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(UINT vx, UINT vy, UINT vz, UINT vw)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(DOUBLE v)noexcept : x(static_cast<INT>(v)), y(static_cast<INT>(v)), z(static_cast<INT>(v)), w(static_cast<INT>(v)) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(static_cast<INT>(vx)), y(static_cast<INT>(vy)), z(static_cast<INT>(vz)), w(static_cast<INT>(vw)) {}
-		constexpr Vector4Int(const Vector4& vv)noexcept : x(static_cast<INT>(vv.x)), y(static_cast<INT>(vv.y)), z(static_cast<INT>(vv.z)), w(static_cast<INT>(vv.w)) {}
+		constexpr Vector4Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)), w(static_cast<INT32>(v)) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
+		constexpr Vector4Int(INT32 v)noexcept : x(v), y(v), z(v), w(v) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0), w(0) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz), w(0) {}
+		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
+		constexpr Vector4Int(UINT32 v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)), w(static_cast<INT32>(v)) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
+		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz, UINT32 vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
+		constexpr Vector4Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)), w(static_cast<INT32>(v)) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
+		constexpr Vector4Int(const Vector4& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)), z(static_cast<INT32>(vv.z)), w(static_cast<INT32>(vv.w)) {}
 		Vector4Int()noexcept : x(0), y(0), z(0), w(0) {}
 		Vector4Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y); z = static_cast<INT>(tempV.z); w = static_cast<INT>(tempV.w);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z); w = static_cast<INT32>(tempV.w);
 		}
 		Vector4Int(const Vector4Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4Int& Zero()
@@ -1230,7 +1230,7 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
-			x = static_cast<INT>(tempV.x); y = static_cast<INT>(tempV.y); z = static_cast<INT>(tempV.z); w = static_cast<INT>(tempV.w);
+			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z); w = static_cast<INT32>(tempV.w);
 		}
 		void SetDirectXValue4(const DirectX::XMINT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
 		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(z), static_cast<FLOAT>(w))); }
@@ -1240,22 +1240,22 @@ namespace PigeonEngine
 		void Reset() { (*this) = Vector4Int::Zero(); }
 		Vector4Int& operator=(FLOAT v)
 		{
-			x = y = z = w = static_cast<INT>(v);
+			x = y = z = w = static_cast<INT32>(v);
 			return (*this);
 		}
-		Vector4Int& operator=(INT v)
+		Vector4Int& operator=(INT32 v)
 		{
 			x = y = z = w = v;
 			return (*this);
 		}
-		Vector4Int& operator=(UINT v)
+		Vector4Int& operator=(UINT32 v)
 		{
-			x = y = z = w = static_cast<INT>(v);
+			x = y = z = w = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector4Int& operator=(DOUBLE v)
 		{
-			x = y = z = w = static_cast<INT>(v);
+			x = y = z = w = static_cast<INT32>(v);
 			return (*this);
 		}
 		Vector4Int& operator=(const Vector4Int& vv)
@@ -1263,95 +1263,95 @@ namespace PigeonEngine
 			x = vv.x; y = vv.y; z = vv.z; w = vv.w;
 			return (*this);
 		}
-		Vector4Int& operator+=(INT v)
+		Vector4Int& operator+=(INT32 v)
 		{
 			x += v; y += v; z += v; w += v;
 			return (*this);
 		}
-		Vector4Int& operator-=(INT v)
+		Vector4Int& operator-=(INT32 v)
 		{
 			x -= v; y -= v; z -= v; w -= v;
 			return (*this);
 		}
-		Vector4Int& operator*=(INT v)
+		Vector4Int& operator*=(INT32 v)
 		{
 			x *= v; y *= v; z *= v; w *= v;
 			return (*this);
 		}
-		Vector4Int& operator/=(INT v)
+		Vector4Int& operator/=(INT32 v)
 		{
 			x /= v; y /= v; z /= v; w /= v;
 			return (*this);
 		}
 		Vector4Int& operator+=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv; w += iv;
 			return (*this);
 		}
 		Vector4Int& operator-=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv; w -= iv;
 			return (*this);
 		}
 		Vector4Int& operator*=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv; w *= iv;
 			return (*this);
 		}
 		Vector4Int& operator/=(FLOAT v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv; w /= iv;
 			return (*this);
 		}
 		Vector4Int& operator+=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv; w += iv;
 			return (*this);
 		}
 		Vector4Int& operator-=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv; w -= iv;
 			return (*this);
 		}
 		Vector4Int& operator*=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv; w *= iv;
 			return (*this);
 		}
 		Vector4Int& operator/=(DOUBLE v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv; w /= iv;
 			return (*this);
 		}
-		Vector4Int& operator+=(UINT v)
+		Vector4Int& operator+=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x += iv; y += iv; z += iv; w += iv;
 			return (*this);
 		}
-		Vector4Int& operator-=(UINT v)
+		Vector4Int& operator-=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x -= iv; y -= iv; z -= iv; w -= iv;
 			return (*this);
 		}
-		Vector4Int& operator*=(UINT v)
+		Vector4Int& operator*=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x *= iv; y *= iv; z *= iv; w *= iv;
 			return (*this);
 		}
-		Vector4Int& operator/=(UINT v)
+		Vector4Int& operator/=(UINT32 v)
 		{
-			INT iv = static_cast<INT>(v);
+			INT32 iv = static_cast<INT32>(v);
 			x /= iv; y /= iv; z /= iv; w /= iv;
 			return (*this);
 		}
@@ -1380,9 +1380,9 @@ namespace PigeonEngine
 		{
 			struct
 			{
-				INT x, y, z, w;
+				INT32 x, y, z, w;
 			};
-			INT v[4];
+			INT32 v[4];
 		};
 	};
 
@@ -1808,41 +1808,41 @@ namespace PigeonEngine
 	Vector4 operator/(const Vector4& lv, FLOAT rv);
 	Vector4 operator/(FLOAT lv, const Vector4& rv);
 	Vector2Int operator+(const Vector2Int& lv, const Vector2Int& rv);
-	Vector2Int operator+(const Vector2Int& lv, INT rv);
-	Vector2Int operator+(INT lv, const Vector2Int& rv);
+	Vector2Int operator+(const Vector2Int& lv, INT32 rv);
+	Vector2Int operator+(INT32 lv, const Vector2Int& rv);
 	Vector2Int operator-(const Vector2Int& lv, const Vector2Int& rv);
-	Vector2Int operator-(const Vector2Int& lv, INT rv);
-	Vector2Int operator-(INT lv, const Vector2Int& rv);
+	Vector2Int operator-(const Vector2Int& lv, INT32 rv);
+	Vector2Int operator-(INT32 lv, const Vector2Int& rv);
 	Vector2Int operator*(const Vector2Int& lv, const Vector2Int& rv);
-	Vector2Int operator*(const Vector2Int& lv, INT rv);
-	Vector2Int operator*(INT lv, const Vector2Int& rv);
+	Vector2Int operator*(const Vector2Int& lv, INT32 rv);
+	Vector2Int operator*(INT32 lv, const Vector2Int& rv);
 	Vector2Int operator/(const Vector2Int& lv, const Vector2Int& rv);
-	Vector2Int operator/(const Vector2Int& lv, INT rv);
-	Vector2Int operator/(INT lv, const Vector2Int& rv);
+	Vector2Int operator/(const Vector2Int& lv, INT32 rv);
+	Vector2Int operator/(INT32 lv, const Vector2Int& rv);
 	Vector3Int operator+(const Vector3Int& lv, const Vector3Int& rv);
-	Vector3Int operator+(const Vector3Int& lv, INT rv);
-	Vector3Int operator+(INT lv, const Vector3Int& rv);
+	Vector3Int operator+(const Vector3Int& lv, INT32 rv);
+	Vector3Int operator+(INT32 lv, const Vector3Int& rv);
 	Vector3Int operator-(const Vector3Int& lv, const Vector3Int& rv);
-	Vector3Int operator-(const Vector3Int& lv, INT rv);
-	Vector3Int operator-(INT lv, const Vector3Int& rv);
+	Vector3Int operator-(const Vector3Int& lv, INT32 rv);
+	Vector3Int operator-(INT32 lv, const Vector3Int& rv);
 	Vector3Int operator*(const Vector3Int& lv, const Vector3Int& rv);
-	Vector3Int operator*(const Vector3Int& lv, INT rv);
-	Vector3Int operator*(INT lv, const Vector3Int& rv);
+	Vector3Int operator*(const Vector3Int& lv, INT32 rv);
+	Vector3Int operator*(INT32 lv, const Vector3Int& rv);
 	Vector3Int operator/(const Vector3Int& lv, const Vector3Int& rv);
-	Vector3Int operator/(const Vector3Int& lv, INT rv);
-	Vector3Int operator/(INT lv, const Vector3Int& rv);
+	Vector3Int operator/(const Vector3Int& lv, INT32 rv);
+	Vector3Int operator/(INT32 lv, const Vector3Int& rv);
 	Vector4Int operator+(const Vector4Int& lv, const Vector4Int& rv);
-	Vector4Int operator+(const Vector4Int& lv, INT rv);
-	Vector4Int operator+(INT lv, const Vector4Int& rv);
+	Vector4Int operator+(const Vector4Int& lv, INT32 rv);
+	Vector4Int operator+(INT32 lv, const Vector4Int& rv);
 	Vector4Int operator-(const Vector4Int& lv, const Vector4Int& rv);
-	Vector4Int operator-(const Vector4Int& lv, INT rv);
-	Vector4Int operator-(INT lv, const Vector4Int& rv);
+	Vector4Int operator-(const Vector4Int& lv, INT32 rv);
+	Vector4Int operator-(INT32 lv, const Vector4Int& rv);
 	Vector4Int operator*(const Vector4Int& lv, const Vector4Int& rv);
-	Vector4Int operator*(const Vector4Int& lv, INT rv);
-	Vector4Int operator*(INT lv, const Vector4Int& rv);
+	Vector4Int operator*(const Vector4Int& lv, INT32 rv);
+	Vector4Int operator*(INT32 lv, const Vector4Int& rv);
 	Vector4Int operator/(const Vector4Int& lv, const Vector4Int& rv);
-	Vector4Int operator/(const Vector4Int& lv, INT rv);
-	Vector4Int operator/(INT lv, const Vector4Int& rv);
+	Vector4Int operator/(const Vector4Int& lv, INT32 rv);
+	Vector4Int operator/(INT32 lv, const Vector4Int& rv);
 	Color3 operator+(const Color3& lv, FLOAT rv);
 	Color3 operator+(FLOAT lv, const Color3& rv);
 	Color3 operator+(const Color3& lv, const Color3& rv);

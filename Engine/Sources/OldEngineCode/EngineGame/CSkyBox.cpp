@@ -7,7 +7,7 @@
 #include "../../EngineRender/AssetsManager/Headers/CMeshManager.h"
 #include "../../EngineRender/RenderBase/Headers/CMeshRendererComponent.h"
 
-const CBaseMesh<UINT>* CSkyBox::m_FullScreenMesh = NULL;
+const CBaseMesh<UINT32>* CSkyBox::m_FullScreenMesh = NULL;
 
 CSkyBox::CSkyBox()
 {

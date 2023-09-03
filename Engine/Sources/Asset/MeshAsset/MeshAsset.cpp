@@ -11,8 +11,7 @@ namespace PigeonEngine
 	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, EMeshType _MeshType, typename _MeshAssetType>
 	static void RegisterMeshClassTypes()
 	{
-		RegisterClassType<TBaseAsset<_TAssetResourceType>, EObjectBase>();
-		RegisterClassType<TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>, TBaseAsset<_TAssetResourceType>>();
+		RegisterRenderBaseAssetClassTypes<_TAssetResourceType, _TAssetRenderResourceType>();
 		RegisterClassType<TMeshBaseAsset<_MeshType, _TAssetResourceType, _TAssetRenderResourceType>, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
 		RegisterClassType<_MeshAssetType, TMeshBaseAsset<_MeshType, _TAssetResourceType, _TAssetRenderResourceType>>();
 	}
@@ -34,7 +33,7 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	UINT GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType)
+	UINT32 GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType)
 	{
 		switch (InType)
 		{
@@ -85,7 +84,7 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this shader semantic type for mesh layout."));
 		return (EVertexLayoutType::MESH_INDEX_FULL);	//TODO Not support type is fix output index type for now.
 	}
-	UINT TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType)
+	UINT32 TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType)
 	{
 		switch (InBaseType)
 		{
@@ -177,13 +176,13 @@ namespace PigeonEngine
 		, VertexLayout(Other.VertexLayout)
 		, Indices(Other.Indices)
 	{
-		for (UINT i = 0u, n = Other.Vertices.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Vertices.Length(); i < n; i++)
 		{
 			const EVertexData& OtherVertex = Other.Vertices[i];
 			Vertices.Add(EVertexData());
 			Vertices[Vertices.Length() - 1u] = OtherVertex;
 		}
-		for (UINT i = 0u, n = Other.Submeshes.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Submeshes.Length(); i < n; i++)
 		{
 			const ESubmeshData& OtherSubmesh = Other.Submeshes[i];
 			Submeshes.Add(ESubmeshData());
@@ -193,7 +192,7 @@ namespace PigeonEngine
 	EMesh::~EMesh()
 	{
 		Indices.Release();
-		for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+		for (UINT32 Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
 		{
 			Vertices[Index].Release();
 		}
@@ -203,12 +202,12 @@ namespace PigeonEngine
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
 	}
-	BOOL EMesh::IsResourceValid()const
+	BOOL32 EMesh::IsResourceValid()const
 	{
 		if (Vertices.Length() > 0u)
 		{
-			BOOL Result = FALSE;
-			for (UINT i = 0u, n = Vertices.Length(); i < n; i++)
+			BOOL32 Result = FALSE;
+			for (UINT32 i = 0u, n = Vertices.Length(); i < n; i++)
 			{
 				const EVertexData& TempVertexData = Vertices[i];
 				Result = Result || ((TempVertexData.ElementNum > 3u) && (TempVertexData.Stride > 0u) && (!!(TempVertexData.Datas)));
@@ -217,7 +216,7 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	BOOL EMesh::InitResource()
+	BOOL32 EMesh::InitResource()
 	{
 		// Mesh resource must init by mesh manager.
 		return TRUE;
@@ -225,7 +224,7 @@ namespace PigeonEngine
 	void EMesh::ReleaseResource()
 	{
 		Indices.Release();
-		for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+		for (UINT32 Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
 		{
 			Vertices[Index].Release();
 		}
@@ -233,7 +232,7 @@ namespace PigeonEngine
 		Submeshes.Clear();
 		VertexLayout = 0u;
 	}
-	BOOL EMesh::CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT InPartIndex)const
+	BOOL32 EMesh::CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex)const
 	{
 		const EVertexLayoutType TempLayout = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if ((TempLayout & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
@@ -265,15 +264,15 @@ namespace PigeonEngine
 	{
 		return VertexLayout;
 	}
-	const EMesh::EIndexPart& EMesh::GetIndices()const
+	const EMesh::EIndexPart& EMesh::GetIndexPart()const
 	{
 		return Indices;
 	}
-	const EMesh::EVertexPart& EMesh::GetVertices()const
+	const EMesh::EVertexPart& EMesh::GetVertexPart()const
 	{
 		return Vertices;
 	}
-	const EMesh::ESubmeshPart& EMesh::GetSubmeshes()const
+	const EMesh::ESubmeshPart& EMesh::GetSubmeshPart()const
 	{
 		return Submeshes;
 	}
@@ -291,7 +290,7 @@ namespace PigeonEngine
 		BoundAABB.AABBMin = InMin;
 		BoundAABB.AABBMax = InMax;
 	}
-	BOOL EMesh::AddIndexElement(EIndexData* InIndexData)
+	BOOL32 EMesh::AddIndexElement(EIndexData* InIndexData)
 	{
 		if ((!InIndexData) || (InIndexData->PartType == 0u) || (InIndexData->ElementNum < 3u) ||
 			(!(InIndexData->Indices)) || ((InIndexData->Stride != 2u) || (InIndexData->Stride != 4u)))
@@ -325,7 +324,7 @@ namespace PigeonEngine
 		SetVertexLayoutPartExistInternal(NewPartType, 0u, TRUE);
 		return TRUE;
 	}
-	BOOL EMesh::RemoveIndexElement()
+	BOOL32 EMesh::RemoveIndexElement()
 	{
 		if (Indices.PartType != 0u)
 		{
@@ -346,7 +345,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::GetIndexElement(const EIndexData*& OutIndexData)const
+	BOOL32 EMesh::GetIndexElement(const EIndexData*& OutIndexData)const
 	{
 		if ((Indices.PartType != 0u)
 #if _EDITOR_ONLY
@@ -370,7 +369,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::AddVertexElement(EVertexData* InVertexData, UINT* OutLayoutIndex)
+	BOOL32 EMesh::AddVertexElement(EVertexData* InVertexData, UINT32* OutLayoutIndex)
 	{
 		if ((!InVertexData) || (InVertexData->PartType == 0u) || (InVertexData->ElementNum < 3u) ||
 			(!(InVertexData->Datas)) || ((InVertexData->Stride % 4u) != 0u))
@@ -395,11 +394,11 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex layout type check failed(wrong type)."));
 			return FALSE;
 		}
-		UINT FindIndex = 0u;
+		UINT32 FindIndex = 0u;
 		if (Vertices.Length() > 0u)
 		{
 			FindIndex = EMesh::MeshVertexLayoutPartMaxNum;
-			for (UINT Index = 0u; Index < EMesh::MeshVertexLayoutPartMaxNum; Index++)
+			for (UINT32 Index = 0u; Index < EMesh::MeshVertexLayoutPartMaxNum; Index++)
 			{
 				if (!CheckVertexLayoutPartExist(InLayoutType, Index))
 				{
@@ -416,7 +415,7 @@ namespace PigeonEngine
 		if (!CheckVertexLayoutPartExist(InLayoutType, FindIndex))
 		{
 			SetVertexLayoutPartExistInternal(InLayoutType, FindIndex, TRUE);
-			const UINT NewElementIndex = Vertices.Length();
+			const UINT32 NewElementIndex = Vertices.Length();
 			Vertices.Add(EVertexData());
 			Vertices[NewElementIndex].PartType		= (InLayoutType << FindIndex);
 			Vertices[NewElementIndex].ElementNum	= InVertexData->ElementNum;
@@ -431,7 +430,7 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add vertex failed(fill in layout index is already exist)."));
 		return FALSE;
 	}
-	BOOL EMesh::RemoveVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex)
+	BOOL32 EMesh::RemoveVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex)
 	{
 		const EVertexLayoutType InLayoutType = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
@@ -462,8 +461,8 @@ namespace PigeonEngine
 				InB.Stride = TempData.Stride;
 				InB.Datas = TempData.Datas;
 			};
-			const UINT DeleteLayoutType = InLayoutType << InLayoutIndex;
-			for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+			const UINT32 DeleteLayoutType = InLayoutType << InLayoutIndex;
+			for (UINT32 Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
 			{
 				if (Vertices[Index].PartType == DeleteLayoutType)
 				{
@@ -483,7 +482,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::GetVertexElement(UINT32 InVertexLayoutType, UINT InLayoutIndex, const EVertexData*& OutVertexData)const
+	BOOL32 EMesh::GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData)const
 	{
 		const EVertexLayoutType InLayoutType = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
@@ -498,8 +497,8 @@ namespace PigeonEngine
 		}
 		if ((Vertices.Length() > 0u) && CheckVertexLayoutPartExist(InLayoutType, InLayoutIndex))
 		{
-			const UINT DeleteLayoutType = InLayoutType << InLayoutIndex;
-			for (UINT Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
+			const UINT32 DeleteLayoutType = InLayoutType << InLayoutIndex;
+			for (UINT32 Index = 0u, Length = Vertices.Length(); Index < Length; Index++)
 			{
 				if (Vertices[Index].PartType == DeleteLayoutType)
 				{
@@ -513,14 +512,14 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL EMesh::AddSubmesh(const ESubmeshData* InSubmeshData, UINT* OutSubmeshIndex)
+	BOOL32 EMesh::AddSubmesh(const ESubmeshData* InSubmeshData, UINT32* OutSubmeshIndex)
 	{
 		if ((!InSubmeshData) || (InSubmeshData->VertexNum < 3u) || (InSubmeshData->IndexNum < 3u))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to add invalid submesh."));
 			return FALSE;
 		}
-		const UINT NewIndex = Submeshes.Length();
+		const UINT32 NewIndex = Submeshes.Length();
 		Submeshes.Add(ESubmeshData());
 		Submeshes[NewIndex].StartVertex	= InSubmeshData->StartVertex;
 		Submeshes[NewIndex].VertexNum	= InSubmeshData->VertexNum;
@@ -532,9 +531,9 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL EMesh::RemoveSubmesh(UINT InSubmeshIndex)
+	BOOL32 EMesh::RemoveSubmesh(UINT32 InSubmeshIndex)
 	{
-		if (UINT TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
+		if (UINT32 TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to remove not exist submesh."));
 			return FALSE;
@@ -542,9 +541,9 @@ namespace PigeonEngine
 		Submeshes.RemoveAt(InSubmeshIndex);
 		return TRUE;
 	}
-	BOOL EMesh::GetSubmesh(UINT InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const
+	BOOL32 EMesh::GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const
 	{
-		if (UINT TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
+		if (UINT32 TempSubmeshNum = Submeshes.Length(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Length()))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist submesh."));
 			return FALSE;
@@ -563,13 +562,13 @@ namespace PigeonEngine
 
 		if (Vertices.Length() > 0u)
 		{
-			for (UINT i = 0u, n = Vertices.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = Vertices.Length(); i < n; i++)
 			{
 				Vertices[i].Release();
 			}
 			Vertices.Clear();
 		}
-		for (UINT i = 0u, n = Other.Vertices.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Vertices.Length(); i < n; i++)
 		{
 			const EVertexData& OtherVertex = Other.Vertices[i];
 			Vertices.Add(EVertexData());
@@ -580,14 +579,14 @@ namespace PigeonEngine
 		{
 			Submeshes.Clear();
 		}
-		for (UINT i = 0u, n = Other.Submeshes.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Submeshes.Length(); i < n; i++)
 		{
 			const ESubmeshData& OtherSubmesh = Other.Submeshes[i];
 			Submeshes.Add(ESubmeshData());
 			Submeshes[Submeshes.Length() - 1u] = OtherSubmesh;
 		}
 	}
-	void EMesh::SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT InPartIndex, BOOL InIsExist, BOOL* OutIsAlreadyExist)
+	void EMesh::SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT32 InPartIndex, BOOL32 InIsExist, BOOL32* OutIsAlreadyExist)
 	{
 		const EVertexLayoutType InLayoutType = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if ((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
@@ -639,11 +638,11 @@ namespace PigeonEngine
 	EStaticMesh::~EStaticMesh()
 	{
 	}
-	BOOL EStaticMesh::IsResourceValid()const
+	BOOL32 EStaticMesh::IsResourceValid()const
 	{
 		return (EMesh::IsResourceValid());
 	}
-	BOOL EStaticMesh::InitResource()
+	BOOL32 EStaticMesh::InitResource()
 	{
 		// Mesh resource must init by mesh manager.
 		return (EMesh::InitResource());
@@ -675,7 +674,7 @@ namespace PigeonEngine
 		{
 			BindPoseIndex.Add(It->first, It->second);
 		}
-		for (UINT i = 0u, n = Other.Skins.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Skins.Length(); i < n; i++)
 		{
 			const ESkinData& OtherSkin = Other.Skins[i];
 			Skins.Add(ESkinData());
@@ -688,24 +687,24 @@ namespace PigeonEngine
 	}
 	ESkinnedMesh::~ESkinnedMesh()
 	{
-		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+		for (UINT32 Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 		{
 			Skins[Index].Release();
 		}
 	}
-	BOOL ESkinnedMesh::IsResourceValid()const
+	BOOL32 ESkinnedMesh::IsResourceValid()const
 	{
 		if (Skins.Length() > 0u)
 		{
-			BOOL Result = FALSE;
-			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			BOOL32 Result = FALSE;
+			for (UINT32 Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 			{
 				Result = Result ||
 					(
 						(Skins[Index].ElementNum > 3u) &&
 						(Skins[Index].Stride > 0u) &&
 						(BindPoseIndex.Length() > 0u) &&
-						(BindPoseIndex.Length() <= RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX) &&
+						(BindPoseIndex.Length() <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX) &&
 						(BindPoseIndex.Length() == BindPoseValue.Length()) &&
 						(EffectBoneNum > 0u) &&
 						(EffectBoneNum <= ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)
@@ -715,14 +714,14 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	BOOL ESkinnedMesh::InitResource()
+	BOOL32 ESkinnedMesh::InitResource()
 	{
 		// Mesh resource must init by mesh manager.
 		return (EMesh::InitResource());
 	}
 	void ESkinnedMesh::ReleaseResource()
 	{
-		for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+		for (UINT32 Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 		{
 			Skins[Index].Release();
 		}
@@ -754,13 +753,13 @@ namespace PigeonEngine
 
 		if (Skins.Length() > 0u)
 		{
-			for (UINT i = 0u, n = Skins.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = Skins.Length(); i < n; i++)
 			{
 				Skins[i].Release();
 			}
 			Skins.Clear();
 		}
-		for (UINT i = 0u, n = Other.Skins.Length(); i < n; i++)
+		for (UINT32 i = 0u, n = Other.Skins.Length(); i < n; i++)
 		{
 			const ESkinData& OtherSkin = Other.Skins[i];
 			Skins.Add(ESkinData());
@@ -769,9 +768,9 @@ namespace PigeonEngine
 
 		return (*this);
 	}
-	BOOL ESkinnedMesh::AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose)
+	BOOL32 ESkinnedMesh::AddBindPose(const EString& InBoneName, const Matrix4x4& InBindPose)
 	{
-		BOOL Result = FALSE;
+		BOOL32 Result = FALSE;
 		if (!(BindPoseValue.ContainsKey(InBoneName)))
 		{
 			BindPoseValue.Add(InBoneName, InBindPose);
@@ -779,9 +778,9 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	BOOL ESkinnedMesh::RemoveBindPose(const EString& InBoneName)
+	BOOL32 ESkinnedMesh::RemoveBindPose(const EString& InBoneName)
 	{
-		BOOL Result = FALSE;
+		BOOL32 Result = FALSE;
 		if (BindPoseValue.ContainsKey(InBoneName))
 		{
 			BindPoseValue.Remove(InBoneName);
@@ -834,7 +833,7 @@ namespace PigeonEngine
 	{
 		return EffectBoneNum;
 	}
-	BOOL ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT* OutLayoutIndex)
+	BOOL32 ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT32* OutLayoutIndex)
 	{
 		if ((!InSkinData) || (InSkinData->ElementNum < 3u) || (InSkinData->PartType != EVertexLayoutType::MESH_SKIN) || ((InSkinData->Stride % 4u) != 0u) || (!(InSkinData->Indices)) || (!(InSkinData->Weights)))
 		{
@@ -846,12 +845,12 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
 			return FALSE;
 		}
-		for (UINT FindIndex = 0u; FindIndex < EMesh::MeshVertexLayoutPartMaxNum; FindIndex++)
+		for (UINT32 FindIndex = 0u; FindIndex < EMesh::MeshVertexLayoutPartMaxNum; FindIndex++)
 		{
 			if (!CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, FindIndex))
 			{
 				SetVertexLayoutPartExistInternal(EVertexLayoutType::MESH_SKIN, FindIndex, TRUE);
-				const UINT NewIndex = Skins.Length();
+				const UINT32 NewIndex = Skins.Length();
 				Skins.Add(ESkinData());
 				Skins[NewIndex].PartType = InSkinData->PartType << FindIndex;
 				Skins[NewIndex].ElementNum = InSkinData->ElementNum;
@@ -868,7 +867,7 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Skin mesh can not contains skin datas over EMesh::MeshVertexLayoutPartMaxNum."));
 		return FALSE;
 	}
-	BOOL ESkinnedMesh::RemoveSkinElement(UINT InLayoutIndex)
+	BOOL32 ESkinnedMesh::RemoveSkinElement(UINT32 InLayoutIndex)
 	{
 		if ((Skins.Length() > 0u) && CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, InLayoutIndex))
 		{
@@ -891,8 +890,8 @@ namespace PigeonEngine
 				InB.Indices = TempData.Indices;
 				InB.Weights = TempData.Weights;
 			};
-			const UINT DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
-			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			const UINT32 DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
+			for (UINT32 Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 			{
 				if (Skins[Index].PartType == DeleteLayoutType)
 				{
@@ -912,12 +911,12 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL ESkinnedMesh::GetSkinElement(UINT InLayoutIndex, const ESkinData*& OutSkinData)const
+	BOOL32 ESkinnedMesh::GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData)const
 	{
 		if ((Skins.Length() > 0u) && CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, InLayoutIndex))
 		{
-			const UINT DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
-			for (UINT Index = 0u, Length = Skins.Length(); Index < Length; Index++)
+			const UINT32 DeleteLayoutType = EVertexLayoutType::MESH_SKIN << InLayoutIndex;
+			for (UINT32 Index = 0u, Length = Skins.Length(); Index < Length; Index++)
 			{
 				if (Skins[Index].PartType == DeleteLayoutType)
 				{
@@ -931,7 +930,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	const ESkinnedMesh::ESkinPart& ESkinnedMesh::GetSkins()const
+	const ESkinnedMesh::ESkinPart& ESkinnedMesh::GetSkinPart()const
 	{
 		return Skins;
 	}
@@ -947,12 +946,12 @@ namespace PigeonEngine
 	{
 		ReleaseRenderResource();
 	}
-	BOOL EMeshRenderResource::IsRenderResourceValid()const
+	BOOL32 EMeshRenderResource::IsRenderResourceValid()const
 	{
 		if ((IndexRenderResource.IsRenderResourceValid()) && (VertexRenderResources.Length() > 0u))
 		{
-			BOOL Result = TRUE;
-			for (UINT Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
+			BOOL32 Result = TRUE;
+			for (UINT32 Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
 			{
 				Result = Result && (VertexRenderResources[Index].IsRenderResourceValid());
 			}
@@ -965,14 +964,14 @@ namespace PigeonEngine
 		IndexRenderResource.ReleaseRenderResource();
 		if (VertexRenderResources.Length() > 0u)
 		{
-			for (UINT Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
+			for (UINT32 Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
 			{
 				VertexRenderResources[Index].ReleaseRenderResource();
 			}
 			VertexRenderResources.Clear();
 		}
 	}
-	BOOL EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
+	BOOL32 EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
 	{
 		if (const EIndexData* OutIndexData = nullptr; InMesh->GetIndexElement(OutIndexData))
 		{
@@ -993,7 +992,7 @@ namespace PigeonEngine
 				{
 #if _EDITOR_ONLY
 					EString ErrorInfo("Create mesh [name = ");
-					ErrorInfo += InMesh->GetDebugName();
+					ErrorInfo += InMesh->GetMeshName();
 					ErrorInfo += "] index buffer [num = ";
 					ErrorInfo += ToString(OutIndexData->ElementNum);
 					ErrorInfo += "] [stride = 32bits] failed.";
@@ -1005,7 +1004,7 @@ namespace PigeonEngine
 			else if ((IndexType & EVertexLayoutType::MESH_INDEX_HALF) != 0u)
 			{
 				UINT16* TempIndices = new UINT16[OutIndexData->ElementNum];
-				for (UINT i = 0u, n = OutIndexData->ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = OutIndexData->ElementNum; i < n; i++)
 				{
 					Check((ENGINE_ASSET_ERROR), ("Mesh index type check failed, half index element num must lower than 65535u."), ((OutIndexData->Indices[i]) < 0xffffu));
 					TempIndices[i] = static_cast<UINT16>(OutIndexData->Indices[i]);
@@ -1019,7 +1018,7 @@ namespace PigeonEngine
 				{
 #if _EDITOR_ONLY
 					EString ErrorInfo("Create mesh [name = ");
-					ErrorInfo += InMesh->GetDebugName();
+					ErrorInfo += InMesh->GetMeshName();
 					ErrorInfo += "] index buffer [num = ";
 					ErrorInfo += ToString(OutIndexData->ElementNum);
 					ErrorInfo += "] [stride = 16bits] failed.";
@@ -1037,14 +1036,14 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL EMeshRenderResource::CreateVertexRenderResourceInternal(const EMesh* InMesh)
+	BOOL32 EMeshRenderResource::CreateVertexRenderResourceInternal(const EMesh* InMesh)
 	{
-		const EMesh::EVertexPart& MeshVertices = InMesh->GetVertices();
+		const EMesh::EVertexPart& MeshVertices = InMesh->GetVertexPart();
 		if (MeshVertices.Length() == 0u)
 		{
 #if _EDITOR_ONLY
 			EString ErrorInfo("Create vertex render resource but mesh [name = ");
-			ErrorInfo += InMesh->GetDebugName();
+			ErrorInfo += InMesh->GetMeshName();
 			ErrorInfo += "] does not contain vertex datas.";
 			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 #endif
@@ -1052,15 +1051,15 @@ namespace PigeonEngine
 		}
 		if (VertexRenderResources.Length() > 0u)
 		{
-			for (UINT i = 0u, n = VertexRenderResources.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = VertexRenderResources.Length(); i < n; i++)
 			{
 				VertexRenderResources[i].ReleaseRenderResource();
 			}
 			VertexRenderResources.Clear();
 		}
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		BOOL FullyCreated = TRUE;
-		for (UINT MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
+		BOOL32 FullyCreated = TRUE;
+		for (UINT32 MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
 		{
 			const EVertexData& MeshVertexData = MeshVertices[MeshVertexIndex];
 			RSubresourceDataDesc SubresourceDataDesc;
@@ -1073,7 +1072,7 @@ namespace PigeonEngine
 			{
 #if _EDITOR_ONLY
 				EString ErrorInfo("Create mesh [name = ");
-				ErrorInfo += InMesh->GetDebugName();
+				ErrorInfo += InMesh->GetMeshName();
 				ErrorInfo += "] vertex buffer [num = ";
 				ErrorInfo += ToString(MeshVertexData.ElementNum);
 				ErrorInfo += "] [stride = ";
@@ -1096,7 +1095,7 @@ namespace PigeonEngine
 		IndexRenderResource = Other->IndexRenderResource;
 		if (Other->VertexRenderResources.Length() > 0u)
 		{
-			for (UINT i = 0u, n = Other->VertexRenderResources.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = Other->VertexRenderResources.Length(); i < n; i++)
 			{
 				VertexRenderResources.Add(Other->VertexRenderResources[i]);
 			}
@@ -1125,11 +1124,11 @@ namespace PigeonEngine
 		CopyRenderResourcesInternal(&Other);
 		return (*this);
 	}
-	BOOL EStaticMeshRenderResource::IsRenderResourceValid()const
+	BOOL32 EStaticMeshRenderResource::IsRenderResourceValid()const
 	{
 		return ((!!StaticMesh) && (EMeshRenderResource::IsRenderResourceValid()));
 	}
-	BOOL EStaticMeshRenderResource::InitRenderResource()
+	BOOL32 EStaticMeshRenderResource::InitRenderResource()
 	{
 		if (EMeshRenderResource::IsRenderResourceValid())
 		{
@@ -1181,20 +1180,20 @@ namespace PigeonEngine
 		CopySkinRenderResourcesInternal(&Other);
 		return (*this);
 	}
-	BOOL ESkinnedMeshRenderResource::IsRenderResourceValid()const
+	BOOL32 ESkinnedMeshRenderResource::IsRenderResourceValid()const
 	{
 		if (SkinRenderResources.Length() > 0u)
 		{
-			BOOL Result = TRUE;
-			for (UINT i = 0u, n = SkinRenderResources.Length(); i < n; i++)
+			BOOL32 Result = TRUE;
+			for (UINT32 i = 0u, n = SkinRenderResources.Length(); i < n; i++)
 			{
 				Result = Result && SkinRenderResources[i].IsRenderResourceValid();
 			}
-			return (Result && (!!Skeleton) && (!!SkinnedMesh) && (SkeletonRenderResource.IsRenderResourceValid()) && (EMeshRenderResource::IsRenderResourceValid()));
+			return (Result && (!!Skeleton) && (!!SkinnedMesh) && (MeshSkeletonRenderResource.IsRenderResourceValid()) && (EMeshRenderResource::IsRenderResourceValid()));
 		}
 		return FALSE;
 	}
-	BOOL ESkinnedMeshRenderResource::InitRenderResource()
+	BOOL32 ESkinnedMeshRenderResource::InitRenderResource()
 	{
 		if (EMeshRenderResource::IsRenderResourceValid())
 		{
@@ -1214,7 +1213,7 @@ namespace PigeonEngine
 			{
 				return FALSE;
 			}
-			if (!(CreateSkeletonRenderResourceInternal()))
+			if (!(CreateMeshSkeletonRenderResourceInternal()))
 			{
 				return FALSE;
 			}
@@ -1226,80 +1225,80 @@ namespace PigeonEngine
 	{
 		Skeleton	= nullptr;
 		SkinnedMesh	= nullptr;
-		SkeletonRenderResource.ReleaseRenderResource();
-		for (UINT i = 0u, n = SkinRenderResources.Length(); i < n; i++)
+		MeshSkeletonRenderResource.ReleaseRenderResource();
+		for (UINT32 i = 0u, n = SkinRenderResources.Length(); i < n; i++)
 		{
 			SkinRenderResources[i].ReleaseRenderResource();
 		}
 		EMeshRenderResource::ReleaseRenderResource();
 	}
-	BOOL ESkinnedMeshRenderResource::CreateSkeletonRenderResourceInternal()
+	BOOL32 ESkinnedMeshRenderResource::CreateMeshSkeletonRenderResourceInternal()
 	{
-		const UINT SkeletonBoneNum = ((!!Skeleton) && Skeleton->IsResourceValid()) ? (Skeleton->GetBoneCount()) : 0u;
-		const UINT MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
+		const UINT32 SkeletonBoneNum = ((!!Skeleton) && Skeleton->IsResourceValid()) ? (Skeleton->GetBoneCount()) : 0u;
+		const UINT32 MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
 		if ((!Skeleton) || (!(Skeleton->IsResourceValid())) || (!SkinnedMesh) || (!(SkinnedMesh->IsResourceValid())) || (SkeletonBoneNum < MeshSkinnedBoneNum))
 		{
 #if _EDITOR_ONLY
 			if (!Skeleton)
 			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Create skeleton render resource but skeleton is null."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Create mesh skeleton render resource but skeleton is null."));
 			}
 			else if (SkeletonBoneNum == 0u)
 			{
-				EString ErrorInfo("Create skeleton render resource but skeleton [name = ");
-				ErrorInfo += Skeleton->GetDebugName();
+				EString ErrorInfo("Create mesh skeleton render resource but skeleton [name = ");
+				ErrorInfo += Skeleton->GetSkeletonName();
 				ErrorInfo += "] does not contain bone datas.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 			if (!SkinnedMesh)
 			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Create skeleton render resource but skinned mesh is null."));
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Create mesh skeleton render resource but skinned mesh is null."));
 			}
 			else if (MeshSkinnedBoneNum == 0u)
 			{
-				EString ErrorInfo("Create skeleton render resource but skinned mesh [name = ");
-				ErrorInfo += SkinnedMesh->GetDebugName();
+				EString ErrorInfo("Create mesh skeleton render resource but skinned mesh [name = ");
+				ErrorInfo += SkinnedMesh->GetMeshName();
 				ErrorInfo += "] does not contain bone datas.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 			if (SkeletonBoneNum < MeshSkinnedBoneNum)
 			{
-				EString ErrorInfo("Create skeleton render resource but skeleton [name = ");
-				ErrorInfo += Skeleton->GetDebugName();
+				EString ErrorInfo("Create mesh skeleton render resource but skeleton [name = ");
+				ErrorInfo += (!Skeleton) ? ("null") : (Skeleton->GetSkeletonName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(SkeletonBoneNum);
 				ErrorInfo += "] is lower than skinned mesh [name = ";
-				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += (!SkinnedMesh) ? ("null") : (SkinnedMesh->GetMeshName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "].";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
-			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX)
+			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX)
 			{
-				EString ErrorInfo("Create skeleton render resource but skinned mesh [name = ");
-				ErrorInfo += SkinnedMesh->GetDebugName();
+				EString ErrorInfo("Create mesh skeleton render resource but skinned mesh [name = ");
+				ErrorInfo += (!SkinnedMesh) ? ("null") : (SkinnedMesh->GetMeshName());
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] is greater than engine's bone max num [";
-				ErrorInfo += ToString(RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX);
+				ErrorInfo += ToString(RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 				ErrorInfo += "].";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
 			return FALSE;
 		}
-		if (SkeletonRenderResource.IsRenderResourceValid())
+		if (MeshSkeletonRenderResource.IsRenderResourceValid())
 		{
-			SkeletonRenderResource.ReleaseRenderResource();
+			MeshSkeletonRenderResource.ReleaseRenderResource();
 		}
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		{
-			DirectX::XMFLOAT4X4 SkeletonMatrices[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX];
+			DirectX::XMFLOAT4X4* SkeletonMatrices = new DirectX::XMFLOAT4X4[RCommonSettings::RENDER_MESH_BONE_NUM_MAX];
 			{
 				DirectX::XMFLOAT4X4 TempIdentity;
 				DirectX::XMStoreFloat4x4((&TempIdentity), DirectX::XMMatrixIdentity());
-				for (UINT i = 0u; (i < MeshSkinnedBoneNum) && (i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX); i++)
+				for (UINT32 i = 0u; (i < MeshSkinnedBoneNum) && (i < RCommonSettings::RENDER_MESH_BONE_NUM_MAX); i++)
 				{
 					SkeletonMatrices[i] = TempIdentity;
 				}
@@ -1307,26 +1306,28 @@ namespace PigeonEngine
 			RSubresourceDataDesc SubresourceDataDesc;
 			SubresourceDataDesc.pSysMem = SkeletonMatrices;
 			if (!(RenderDevice->CreateStructuredBuffer(
-				SkeletonRenderResource,
+				MeshSkeletonRenderResource,
 				RStructuredBufferDesc(sizeof(DirectX::XMFLOAT4X4), MeshSkinnedBoneNum),
 				(&SubresourceDataDesc))))
 			{
 #if _EDITOR_ONLY
-				EString ErrorInfo("Create skeleton resource [name = ");
-				ErrorInfo += Skeleton->GetDebugName();
+				EString ErrorInfo("Create mesh skeleton resource [name = ");
+				ErrorInfo += Skeleton->GetSkeletonName();
 				ErrorInfo += "] bones buffer [num = ";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 #endif
+				delete[]SkeletonMatrices;
 				return FALSE;
 			}
+			delete[]SkeletonMatrices;
 		}
 		return TRUE;
 	}
-	BOOL ESkinnedMeshRenderResource::CreateSkinRenderResourceInternal()
+	BOOL32 ESkinnedMeshRenderResource::CreateSkinRenderResourceInternal()
 	{
-		const UINT MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
+		const UINT32 MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
 		if ((!SkinnedMesh) || (!(SkinnedMesh->IsResourceValid())))
 		{
 #if _EDITOR_ONLY
@@ -1337,46 +1338,46 @@ namespace PigeonEngine
 			else if (MeshSkinnedBoneNum == 0u)
 			{
 				EString ErrorInfo("Create skin render resource but skinned mesh [name = ");
-				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += SkinnedMesh->GetMeshName();
 				ErrorInfo += "] does not contain bone datas.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
-			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX)
+			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX)
 			{
 				EString ErrorInfo("Create skin render resource but skinned mesh [name = ");
-				ErrorInfo += SkinnedMesh->GetDebugName();
+				ErrorInfo += SkinnedMesh->GetMeshName();
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] is greater than engine's bone max num [";
-				ErrorInfo += ToString(RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX);
+				ErrorInfo += ToString(RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 				ErrorInfo += "].";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
 			return FALSE;
 		}
-		if (const UINT SkinRenderResourceNum = SkinRenderResources.Length(); SkinRenderResourceNum > 0u)
+		if (const UINT32 SkinRenderResourceNum = SkinRenderResources.Length(); SkinRenderResourceNum > 0u)
 		{
-			for (UINT SkinRenderResourceIndex = 0u; SkinRenderResourceIndex < SkinRenderResourceNum; SkinRenderResourceIndex++)
+			for (UINT32 SkinRenderResourceIndex = 0u; SkinRenderResourceIndex < SkinRenderResourceNum; SkinRenderResourceIndex++)
 			{
 				SkinRenderResources[SkinRenderResourceIndex].ReleaseRenderResource();
 			}
 			SkinRenderResources.Clear();
 		}
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		BOOL FullyCreated = TRUE;
-		const ESkinnedMesh::ESkinPart& Skins = SkinnedMesh->GetSkins();
-		for (UINT SkinIndex = 0u, SkinNum = Skins.Length(); SkinIndex < SkinNum; SkinIndex++)
+		BOOL32 FullyCreated = TRUE;
+		const ESkinnedMesh::ESkinPart& Skins = SkinnedMesh->GetSkinPart();
+		for (UINT32 SkinIndex = 0u, SkinNum = Skins.Length(); SkinIndex < SkinNum; SkinIndex++)
 		{
 			const ESkinData& SkinData = Skins[SkinIndex];
-			const UINT EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
+			const UINT32 EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
 			Check((ENGINE_ASSET_ERROR), ("Check effect bone num failed when create skin render resource."), (EffectBoneNum == SkinnedMesh->GetEffectBoneNum()));
 			{
-				const UINT IndexNum = EffectBoneNum * SkinData.ElementNum;
+				const UINT32 IndexNum = EffectBoneNum * SkinData.ElementNum;
 				UINT16* TempSkinIndexMem = new UINT16[IndexNum];
-				for (UINT i = 0u, n = SkinData.ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = SkinData.ElementNum; i < n; i++)
 				{
-					for (UINT BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
+					for (UINT32 BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
 					{
 						if ((i * EffectBoneNum + BoneIndex) < IndexNum)
 						{
@@ -1385,7 +1386,7 @@ namespace PigeonEngine
 						}
 					}
 				}
-				const UINT IndexStride = EffectBoneNum * sizeof(UINT16);	//We assum the number of bone can not greater than 65535u.
+				const UINT32 IndexStride = EffectBoneNum * sizeof(UINT16);	//We assum the number of bone can not greater than 65535u.
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = TempSkinIndexMem;
 				RBufferResource TempSkinIndexBufferResource;
@@ -1396,7 +1397,7 @@ namespace PigeonEngine
 				{
 #if _EDITOR_ONLY
 					EString ErrorInfo("Create skin resource skinned mesh [name = ");
-					ErrorInfo += SkinnedMesh->GetDebugName();
+					ErrorInfo += SkinnedMesh->GetMeshName();
 					ErrorInfo += "] skin index buffer [num = ";
 					ErrorInfo += ToString(SkinData.ElementNum);
 					ErrorInfo += "] failed.";
@@ -1409,11 +1410,11 @@ namespace PigeonEngine
 			}
 
 			{
-				const UINT WeightNum = EffectBoneNum * SkinData.ElementNum;
+				const UINT32 WeightNum = EffectBoneNum * SkinData.ElementNum;
 				FLOAT* TempSkinWeightMem = new FLOAT[WeightNum];
-				for (UINT i = 0u, n = SkinData.ElementNum; i < n; i++)
+				for (UINT32 i = 0u, n = SkinData.ElementNum; i < n; i++)
 				{
-					for (UINT BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
+					for (UINT32 BoneIndex = 0u; BoneIndex < EffectBoneNum; BoneIndex++)
 					{
 						if ((i * EffectBoneNum + BoneIndex) < WeightNum)
 						{
@@ -1421,7 +1422,7 @@ namespace PigeonEngine
 						}
 					}
 				}
-				const UINT WeightStride = EffectBoneNum * sizeof(FLOAT);
+				const UINT32 WeightStride = EffectBoneNum * sizeof(FLOAT);
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = TempSkinWeightMem;
 				RBufferResource TempSkinWeightBufferResource;
@@ -1432,7 +1433,7 @@ namespace PigeonEngine
 				{
 #if _EDITOR_ONLY
 					EString ErrorInfo("Create skin resource skinned mesh [name = ");
-					ErrorInfo += SkinnedMesh->GetDebugName();
+					ErrorInfo += SkinnedMesh->GetMeshName();
 					ErrorInfo += "] skin weight buffer [num = ";
 					ErrorInfo += ToString(SkinData.ElementNum);
 					ErrorInfo += "] failed.";
@@ -1454,24 +1455,23 @@ namespace PigeonEngine
 		}
 		if (Other->SkinRenderResources.Length() > 0u)
 		{
-			for (UINT i = 0u, n = Other->SkinRenderResources.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = Other->SkinRenderResources.Length(); i < n; i++)
 			{
 				SkinRenderResources.Add(Other->SkinRenderResources[i]);
 			}
 		}
-		if (Other->SkeletonRenderResource.IsRenderResourceValid())
+		if (Other->MeshSkeletonRenderResource.IsRenderResourceValid())
 		{
-			SkeletonRenderResource = Other->SkeletonRenderResource;
+			MeshSkeletonRenderResource = Other->MeshSkeletonRenderResource;
 		}
 	}
 
-	EStaticMeshAsset::EStaticMeshAsset(
-		const EString& InMeshPath
+	EStaticMeshAsset::EStaticMeshAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
-		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>(InMeshPath
+		: TMeshBaseAsset<EMeshType::MESH_TYPE_STATIC, EStaticMesh, EStaticMeshRenderResource>(InMeshPath, InMeshName
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
@@ -1481,13 +1481,13 @@ namespace PigeonEngine
 	EStaticMeshAsset::~EStaticMeshAsset()
 	{
 	}
-	BOOL EStaticMeshAsset::InitResource()
+	BOOL32 EStaticMeshAsset::InitResource()
 	{
 		if (IsInitialized())
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Static mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
+				EString ErrorInfo = EString("Static mesh name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -1522,13 +1522,12 @@ namespace PigeonEngine
 		return Result;
 	}
 
-	ESkinnedMeshAsset::ESkinnedMeshAsset(
-		const EString& InMeshPath
+	ESkinnedMeshAsset::ESkinnedMeshAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
 	)
-		: TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>(InMeshPath
+		: TMeshBaseAsset<EMeshType::MESH_TYPE_SKIN, ESkinnedMesh, ESkinnedMeshRenderResource>(InMeshPath, InMeshName
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
@@ -1538,13 +1537,13 @@ namespace PigeonEngine
 	ESkinnedMeshAsset::~ESkinnedMeshAsset()
 	{
 	}
-	BOOL ESkinnedMeshAsset::InitResource()
+	BOOL32 ESkinnedMeshAsset::InitResource()
 	{
 		if (IsInitialized())
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Skinned mesh name=[") + DebugName + "] path = [" + MeshPath + "] has been Initialized.";
+				EString ErrorInfo = EString("Skinned mesh name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -1608,50 +1607,40 @@ namespace PigeonEngine
 		ClearSkinnedMeshes();
 	}
 #if _EDITOR_ONLY
-	BOOL EMeshAssetManager::ImportStaticMesh(const EString& InImportPath, const EString& InSaveAssetPath)
+	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
-		if ((InImportPath.Length() < 3u) || (InSaveAssetPath.Length() < 3u))
+		EString TempSaveFullPathName(InSavePath);
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
 		EString ImportPathName; EString ImportFileType;
-		if (!(SplitByLastSign('.', InImportPath, ImportPathName, ImportFileType)))
+		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EString SavePathName; EString SaveFileType;
-		if (!(SplitByLastSign('.', InSaveAssetPath, SavePathName, SaveFileType)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file path for mesh importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
 		//TODO Check import type(like fbx, obj, ab...).
-		if ((ImportPathName.Length() <= 3u) || (SavePathName.Length() <= 3u) || (SaveFileType != ENGINE_ASSET_NAME_TYPE))
+		if (ImportPathName.Length() <= 3u)
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
@@ -1659,41 +1648,117 @@ namespace PigeonEngine
 		}
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		TArray<EStaticMesh> AssimpMeshes;
-		if ((AssimpManager->ReadStaticMeshFile(InImportPath, AssimpMeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		if ((AssimpManager->ReadStaticMeshFile(InImportFullPathName, AssimpMeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Assimp importer can not load mesh file from path (import file path : ");
-				ErrorData = ErrorData + InImportPath + ", save assset path : " + InSaveAssetPath + ").";
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
 #endif
 			return FALSE;
 		}
-		for (UINT i = 0u, n = AssimpMeshes.Length(); i < n; i++)
+		UINT32 SavedMeshCount = 0u;
+		for (UINT32 i = 0u, n = AssimpMeshes.Length(); i < n; i++)
 		{
-			//ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
-			//NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
-			//BOOL Result = SaveTexture2DAsset(InSaveAssetPath, NeedSaveTexture2DResource);
-			//NeedSaveTexture2DResource->ReleaseResource();
-			//delete NeedSaveTexture2DResource;
+			EStaticMesh& AssimpMesh = AssimpMeshes[i];
+			EString OutputName(InAssetName);
+			if (i > 0u)
+			{
+				OutputName += "_";
+				OutputName += ToString(i);
+			}
+			if (!(SaveMeshResource<EStaticMesh>(InSavePath, OutputName, (&(AssimpMesh)))))
+			{
+				continue;
+			}
+			SavedMeshCount++;
 		}
-		return FALSE;
+		return (SavedMeshCount > 0u);
 	}
-	BOOL EMeshAssetManager::ImportSkinnedMesh(const EString& InImportPath, const EString& InSaveAssetPath)
+	BOOL32 EMeshAssetManager::ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
-		return FALSE;
+		EString TempSaveFullPathName(InSavePath);
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for mesh importer (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		EString ImportPathName; EString ImportFileType;
+		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for mesh importer (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		//TODO Check import type(like fbx, obj, ab...).
+		if (ImportPathName.Length() <= 3u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Error file path for mesh importer (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
+		TArray<ESkinnedMesh> AssimpMeshes;
+		if ((AssimpManager->ReadSkinnedMeshFile(InImportFullPathName, AssimpMeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Assimp importer can not load mesh file from path (import file path : ");
+				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+		UINT32 SavedMeshCount = 0u;
+		for (UINT32 i = 0u, n = AssimpMeshes.Length(); i < n; i++)
+		{
+			ESkinnedMesh& AssimpMesh = AssimpMeshes[i];
+			EString OutputName(InAssetName);
+			if (i > 0u)
+			{
+				OutputName += "_";
+				OutputName += ToString(i);
+			}
+			if (!(SaveMeshResource<ESkinnedMesh>(InSavePath, OutputName, (&(AssimpMesh)))))
+			{
+				continue;
+			}
+			SavedMeshCount++;
+		}
+		return (SavedMeshCount > 0u);
 	}
 #endif
-	BOOL EMeshAssetManager::LoadStaticMeshAsset(const EString& InLoadPath, const EStaticMeshAsset*& OutStaticMeshAsset)
+	BOOL32 EMeshAssetManager::LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset)
 	{
-		EStaticMeshAsset* ResultMeshAsset = StaticMeshManager.Find(InLoadPath);
+		EString TempLoadFullPathName(InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		EStaticMeshAsset* ResultMeshAsset = StaticMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
 			OutStaticMeshAsset = ResultMeshAsset;
 			return TRUE;
 		}
-		ResultMeshAsset = LoadMeshAsset<EStaticMeshAsset, EStaticMesh>(InLoadPath);
+		ResultMeshAsset = LoadMeshAsset<EStaticMeshAsset, EStaticMesh>(InLoadPath, InLoadName);
 		if (!ResultMeshAsset)
 		{
 			return FALSE;
@@ -1703,11 +1768,11 @@ namespace PigeonEngine
 			delete ResultMeshAsset;
 			return FALSE;
 		}
-		if (StaticMeshManager.Add(InLoadPath, ResultMeshAsset, TRUE) == 0u)
+		if (StaticMeshManager.Add(TempLoadFullPathName, ResultMeshAsset, TRUE) == 0u)
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Static mesh asset path = [") + InLoadPath + "] add into manager list failed.";
+				EString ErrorInfo = EString("Static mesh asset path = [") + TempLoadFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -1717,15 +1782,17 @@ namespace PigeonEngine
 		OutStaticMeshAsset = ResultMeshAsset;
 		return TRUE;
 	}
-	BOOL EMeshAssetManager::LoadSkinnedMeshAsset(const EString& InLoadPath, const ESkinnedMeshAsset*& OutSkinnedMeshAsset)
+	BOOL32 EMeshAssetManager::LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset)
 	{
-		ESkinnedMeshAsset* ResultMeshAsset = SkinnedMeshManager.Find(InLoadPath);
+		EString TempLoadFullPathName(InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		ESkinnedMeshAsset* ResultMeshAsset = SkinnedMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
 			OutSkinnedMeshAsset = ResultMeshAsset;
 			return TRUE;
 		}
-		ResultMeshAsset = LoadMeshAsset<ESkinnedMeshAsset, ESkinnedMesh>(InLoadPath);
+		ResultMeshAsset = LoadMeshAsset<ESkinnedMeshAsset, ESkinnedMesh>(InLoadPath, InLoadName);
 		if (!ResultMeshAsset)
 		{
 			return FALSE;
@@ -1735,11 +1802,11 @@ namespace PigeonEngine
 			delete ResultMeshAsset;
 			return FALSE;
 		}
-		if (SkinnedMeshManager.Add(InLoadPath, ResultMeshAsset, TRUE) == 0u)
+		if (SkinnedMeshManager.Add(TempLoadFullPathName, ResultMeshAsset, TRUE) == 0u)
 		{
 #if _EDITOR_ONLY
 			{
-				EString ErrorInfo = EString("Skinned mesh asset path = [") + InLoadPath + "] add into manager list failed.";
+				EString ErrorInfo = EString("Skinned mesh asset path = [") + TempLoadFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 			}
 #endif
@@ -1758,11 +1825,13 @@ namespace PigeonEngine
 		SkinnedMeshManager.Clear();
 	}
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
-	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath)
+	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
-		_TMeshAssetType* NewMeshAsset = new _TMeshAssetType(InLoadPath
+		EString TempLoadFullPathName(InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		_TMeshAssetType* NewMeshAsset = new _TMeshAssetType(InLoadPath, InLoadName
 #if _EDITOR_ONLY
-			, InLoadPath
+			, InLoadName
 #endif
 		);
 		EMeshType MeshType = NewMeshAsset->GetMeshType();
@@ -1775,7 +1844,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Load mesh asset failed (load file path : ");
-					ErrorData += InLoadPath;
+					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not match mesh asset type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1792,7 +1861,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Load mesh asset failed (load file path : ");
-					ErrorData += InLoadPath;
+					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not match mesh asset type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1807,7 +1876,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Load mesh asset failed (load file path : ");
-					ErrorData += InLoadPath;
+					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1818,7 +1887,7 @@ namespace PigeonEngine
 			}
 			break;
 		}
-		_TMeshResourceType* LoadedMeshResource = LoadMeshResource<_TMeshResourceType>(InLoadPath);
+		_TMeshResourceType* LoadedMeshResource = LoadMeshResource<_TMeshResourceType>(InLoadPath, InLoadName);
 		if (!LoadedMeshResource)
 		{
 			delete NewMeshAsset;
@@ -1831,11 +1900,7 @@ namespace PigeonEngine
 				return LoadedMeshResource;
 			})))
 		{
-			if (LoadedMeshResource)
-			{
-				LoadedMeshResource->ReleaseResource();
-				delete LoadedMeshResource;
-			}
+			//TODO
 			delete NewMeshAsset;
 			NewMeshAsset = nullptr;
 			return NewMeshAsset;
@@ -1843,14 +1908,15 @@ namespace PigeonEngine
 		return NewMeshAsset;
 	}
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
-	BOOL EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const _TMeshAssetType* InMeshAsset)
+	BOOL32 EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset)
 	{
+		EString TempSaveFullPathName = InSavePath + InSaveName + ENGINE_ASSET_NAME_TYPE;
 		if (!InMeshAsset)
 		{
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Save mesh asset failed (save file path : ");
-				ErrorData += InSavePath;
+				ErrorData += TempSaveFullPathName;
 				ErrorData += ") this asset is null.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
@@ -1864,9 +1930,9 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Save mesh asset failed (save file path : ");
-				ErrorData += InSavePath;
+				ErrorData += TempSaveFullPathName;
 				ErrorData += ", mesh asset name : ";
-				ErrorData += InMeshAsset->GetDebugName();
+				ErrorData += InMeshAsset->GetAssetName();
 				ErrorData += ") this asset is not contain valid mesh resource.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
@@ -1883,9 +1949,9 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Save mesh asset failed (save file path : ");
-					ErrorData += InSavePath;
+					ErrorData += TempSaveFullPathName;
 					ErrorData += ", mesh asset name : ";
-					ErrorData += InMeshAsset->GetDebugName();
+					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not match mesh asset type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1901,9 +1967,9 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Save mesh asset failed (save file path : ");
-					ErrorData += InSavePath;
+					ErrorData += TempSaveFullPathName;
 					ErrorData += ", mesh asset name : ";
-					ErrorData += InMeshAsset->GetDebugName();
+					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not match mesh asset type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1916,9 +1982,9 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Save mesh asset failed (save file path : ");
-					ErrorData += InSavePath;
+					ErrorData += TempSaveFullPathName;
 					ErrorData += ", mesh asset name : ";
-					ErrorData += InMeshAsset->GetDebugName();
+					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not mesh type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -1927,14 +1993,16 @@ namespace PigeonEngine
 			}
 			break;
 		}
-		return (SaveMeshResource<_TMeshResourceType>(InSavePath, SavedMeshResource));
+		return (SaveMeshResource<_TMeshResourceType>(InSavePath, InSaveName, SavedMeshResource));
 	}
 	template<typename _TMeshResourceType>
-	_TMeshResourceType* EMeshAssetManager::LoadMeshResource(const EString& InLoadPath)
+	_TMeshResourceType* EMeshAssetManager::LoadMeshResource(const EString& InLoadPath, const EString& InLoadName)
 	{
+		EString TempLoadFullPathName = (InLoadPath);
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
 		_TMeshResourceType* LoadedMeshResource = nullptr;
 		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
-		if (!EFileHelper::ReadFileAsBinary(InLoadPath, ReadFileMem, ReadFileSize))
+		if (!EFileHelper::ReadFileAsBinary(TempLoadFullPathName, ReadFileMem, ReadFileSize))
 		{
 			if (ReadFileMem)
 			{
@@ -1943,7 +2011,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorData("Load mesh asset failed (load file path : ");
-				ErrorData += InLoadPath;
+				ErrorData += TempLoadFullPathName;
 				ErrorData += ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 			}
@@ -1958,7 +2026,7 @@ namespace PigeonEngine
 		__MemType __OutputValue;\
 		{\
 			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
-			const __MemType* TempPtr = static_cast<const __MemType*>(RstMemPtr);\
+			const __MemType* TempPtr = (const __MemType*)RstMemPtr;\
 			(__OutputValue) = TempPtr[0];\
 			RstMemPtr = &(TempPtr[1]);\
 			RstMemSize -= (__MemSize);\
@@ -1967,9 +2035,9 @@ namespace PigeonEngine
 #define LOAD_ASSET_STRING_MEMORY(__LengthMax, __OutputEString) \
 		EString __OutputEString;\
 		{\
-			const UINT StrStride = sizeof(CHAR) * (__LengthMax);\
+			const UINT32 StrStride = sizeof(CHAR) * (__LengthMax);\
 			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= StrStride));\
-			const CHAR* TempPtr = static_cast<const CHAR*>(RstMemPtr);\
+			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
 			CHAR StrValues[(__LengthMax)];\
 			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
 			(__OutputEString) = StrValues;\
@@ -1980,10 +2048,10 @@ namespace PigeonEngine
 #define LOAD_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __PtrType, __Ptr) \
 		__PtrType* __Ptr = nullptr;\
 		{\
-			const UINT MemSize = (__ElementStride) * (__ElementNum);\
+			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
 			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
-			const BYTE* TempPtr = static_cast<const BYTE*>(RstMemPtr);\
+			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
 			(__Ptr) = (__PtrType*)NewPtr;\
 			RstMemPtr = &(TempPtr[MemSize]);\
@@ -2006,7 +2074,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Load mesh asset failed (load file path : ");
-					ErrorData += InLoadPath;
+					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -2036,7 +2104,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				{
 					EString ErrorData("Load mesh asset failed (load file path : ");
-					ErrorData += InLoadPath;
+					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
 					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
 				}
@@ -2069,7 +2137,7 @@ namespace PigeonEngine
 			LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSubmeshNum);
 			if (TempSubmeshNum > 0u)
 			{
-				MeshSubmeshPart.Resize(static_cast<UINT>(TempSubmeshNum));
+				MeshSubmeshPart.Resize(static_cast<UINT32>(TempSubmeshNum));
 				for (UINT32 i = 0u; i < TempSubmeshNum; i++)
 				{
 					ESubmeshData& MeshSubmeshData = MeshSubmeshPart[i];
@@ -2086,11 +2154,11 @@ namespace PigeonEngine
 			LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempIndexElementNum);
 			LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempIndexStride);
 			LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempIndexPartType);
-			LOAD_ASSET_PTR_MEMORY(sizeof(UINT), TempIndexElementNum, UINT, TempIndexDatas);
+			LOAD_ASSET_PTR_MEMORY(sizeof(UINT32), TempIndexElementNum, UINT32, TempIndexDatas);
 
-			MeshIndexPart.ElementNum	= static_cast<UINT>(TempIndexElementNum);
-			MeshIndexPart.Stride		= static_cast<UINT>(TempIndexStride);
-			MeshIndexPart.PartType		= static_cast<UINT>(TempIndexPartType);
+			MeshIndexPart.ElementNum	= static_cast<UINT32>(TempIndexElementNum);
+			MeshIndexPart.Stride		= static_cast<UINT32>(TempIndexStride);
+			MeshIndexPart.PartType		= static_cast<UINT32>(TempIndexPartType);
 			MeshIndexPart.Indices		= TempIndexDatas;
 		}
 		{
@@ -2099,7 +2167,7 @@ namespace PigeonEngine
 			LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempVertexPartNum);
 			if (TempVertexPartNum > 0u)
 			{
-				MeshVertexPart.Resize(static_cast<UINT>(TempVertexPartNum));
+				MeshVertexPart.Resize(static_cast<UINT32>(TempVertexPartNum));
 				for (UINT32 i = 0u; i < TempVertexPartNum; i++)
 				{
 					EVertexData& MeshVertexData = MeshVertexPart[i];
@@ -2109,9 +2177,9 @@ namespace PigeonEngine
 					LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempVertexPartType);
 					LOAD_ASSET_PTR_MEMORY(TempVertexStride, TempVertexElementNum, FLOAT, TempVertexDatas);
 
-					MeshVertexData.ElementNum	= static_cast<UINT>(TempVertexElementNum);
-					MeshVertexData.Stride		= static_cast<UINT>(TempVertexStride);
-					MeshVertexData.PartType		= static_cast<UINT>(TempVertexPartType);
+					MeshVertexData.ElementNum	= static_cast<UINT32>(TempVertexElementNum);
+					MeshVertexData.Stride		= static_cast<UINT32>(TempVertexStride);
+					MeshVertexData.PartType		= static_cast<UINT32>(TempVertexPartType);
 					MeshVertexData.Datas		= TempVertexDatas;
 				}
 			}
@@ -2119,6 +2187,10 @@ namespace PigeonEngine
 		if (MeshType == EMeshType::MESH_TYPE_SKIN)
 		{
 			ESkinnedMesh* TempMeshPtr = LoadedMeshResource->AsType<ESkinnedMesh>();
+			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+			if (TempMeshPtr)
+#endif
 			{
 				ESkinnedMesh::EBindPoseValue& MeshBindPoseValue = TempMeshPtr->BindPoseValue;
 				ESkinnedMesh::EBindPoseIndex& MeshBindPoseIndex = TempMeshPtr->BindPoseIndex;
@@ -2146,25 +2218,27 @@ namespace PigeonEngine
 				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSkinPartNum);
 				if (TempSkinPartNum > 0u)
 				{
-					MeshSkinPart.Resize(static_cast<UINT>(TempSkinPartNum));
+					MeshSkinPart.Resize(static_cast<UINT32>(TempSkinPartNum));
 					for (UINT32 i = 0u; i < TempSkinPartNum; i++)
 					{
 						ESkinData& MeshSkinData = MeshSkinPart[i];
 
 						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSkinElementNum);
 						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSkinPartType);
-						LOAD_ASSET_PTR_MEMORY(sizeof(UINT)* TempEffectBoneNum, TempSkinElementNum, UINT, TempSkinIndices);
+						LOAD_ASSET_PTR_MEMORY(sizeof(UINT32)* TempEffectBoneNum, TempSkinElementNum, UINT32, TempSkinIndices);
 						LOAD_ASSET_PTR_MEMORY(sizeof(FLOAT)* TempEffectBoneNum, TempSkinElementNum, FLOAT, TempSkinWeights);
 
-						MeshSkinData.ElementNum	= static_cast<UINT>(TempSkinElementNum);
-						MeshSkinData.Stride		= static_cast<UINT>(TempEffectBoneNum * sizeof(FLOAT));
-						MeshSkinData.PartType	= static_cast<UINT>(TempSkinPartType);
+						MeshSkinData.ElementNum	= static_cast<UINT32>(TempSkinElementNum);
+						MeshSkinData.Stride		= static_cast<UINT32>(TempEffectBoneNum * sizeof(FLOAT));
+						MeshSkinData.PartType	= static_cast<UINT32>(TempSkinPartType);
 						MeshSkinData.Indices	= TempSkinIndices;
 						MeshSkinData.Weights	= TempSkinWeights;
 					}
 				}
 			}
 		}
+
+		Check((ENGINE_ASSET_ERROR), ("Check read mesh resource rest memory already failed."), (RstMemSize == 0));
 
 #undef LOAD_ASSET_MEMORY
 #undef LOAD_ASSET_STRING_MEMORY
@@ -2179,7 +2253,7 @@ namespace PigeonEngine
 		return LoadedMeshResource;
 	}
 	template<typename _TMeshResourceType>
-	BOOL EMeshAssetManager::SaveMeshResource(const EString& InSavePath, const _TMeshResourceType* InMeshResource)
+	BOOL32 EMeshAssetManager::SaveMeshResource(const EString& InSavePath, const EString& InSaveName, const _TMeshResourceType* InMeshResource)
 	{
 		if ((!InMeshResource) || (!(InMeshResource->IsResourceValid())))
 		{
@@ -2195,18 +2269,18 @@ namespace PigeonEngine
 				Result += sizeof(EBoundAABB);		// AABB
 				Result += sizeof(UINT32);			// Vertex layout
 				Result += sizeof(UINT32);			// Submesh element num
-				Result += sizeof(ESubmeshData) * InMesh->GetSubmeshes().Length();	// Submesh datas
+				Result += sizeof(ESubmeshData) * InMesh->GetSubmeshPart().Length();	// Submesh datas
 			}
 			{
 				Result += sizeof(UINT32);	// Indices element num
 				Result += sizeof(UINT32);	// Indices stride
 				Result += sizeof(UINT32);	// Indices part type
-				Result += sizeof(UINT) * InMesh->GetIndices().ElementNum;	// Indices datas
+				Result += sizeof(UINT32) * InMesh->GetIndexPart().ElementNum;	// Indices datas
 			}
 			{
-				const EMesh::EVertexPart& VertexPart = InMesh->GetVertices();
+				const EMesh::EVertexPart& VertexPart = InMesh->GetVertexPart();
 				Result += sizeof(UINT32);	// Vertex part element num
-				for (UINT VertexIndex = 0u, VertexNum = VertexPart.Length(); VertexIndex < VertexNum; VertexIndex++)
+				for (UINT32 VertexIndex = 0u, VertexNum = VertexPart.Length(); VertexIndex < VertexNum; VertexIndex++)
 				{
 					const EVertexData& VertexData = VertexPart[VertexIndex];
 					Result += sizeof(UINT32);	// Vertices element num
@@ -2217,23 +2291,27 @@ namespace PigeonEngine
 			}
 			if (InMesh->IsTypeOf<ESkinnedMesh>())
 			{
-				const ESkinnedMesh* TempMeshPtr = InMesh;
+				const ESkinnedMesh* TempMeshPtr = InMesh->AsType<ESkinnedMesh>();
+				Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+				if (TempMeshPtr)
+#endif
 				{
 					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
 					Result += sizeof(UINT32);	// Bind pose num
 					Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(Matrix4x4)) * TempMeshPtr->GetBindPoseValue().Length();	// Bind pose value datas
 					Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * TempMeshPtr->GetBindPoseIndex().Length();		// Bind pose Index datas
 					Result += sizeof(UINT32);	// Effect bone num
-					const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkins();
+					const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkinPart();
 					Result += sizeof(UINT32);	// Skin part num
-					for (UINT SkinIndex = 0u, SkinNum = SkinPart.Length(); SkinIndex < SkinNum; SkinIndex++)
+					for (UINT32 SkinIndex = 0u, SkinNum = SkinPart.Length(); SkinIndex < SkinNum; SkinIndex++)
 					{
 						const ESkinData& SkinData = SkinPart[SkinIndex];
-						const UINT EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
+						const UINT32 EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
 						Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), (EffectBoneNum == (TempMeshPtr->GetEffectBoneNum())));
 						Result += sizeof(UINT32);	// Skin element num
 						Result += sizeof(UINT32);	// Skin part type
-						Result += sizeof(UINT) * EffectBoneNum * SkinData.ElementNum;	// Skin index datas
+						Result += sizeof(UINT32) * EffectBoneNum * SkinData.ElementNum;	// Skin index datas
 						Result += sizeof(FLOAT) * EffectBoneNum * SkinData.ElementNum;	// Skin weight datas
 					}
 				}
@@ -2264,21 +2342,20 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_MEMORY(__Type, __Value) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
-			__Type* __TempPtr = RstMemPtr;\
-			__TempPtr[0] = (__Value);\
-			RstMemPtr = &(__TempPtr[1]);\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			__Type* TempPtr = (__Type*)RstMemPtr;\
+			TempPtr[0] = (__Value);\
+			RstMemPtr = &(TempPtr[1]);\
 			RstMemSize -= (sizeof(__Type));\
 		}\
 
 #define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
-			CHAR* TempPtr = RstMemPtr;\
-			const UINT NameLengthMax = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > NameLengthMax));\
+			const UINT32 NameLengthMax = sizeof(CHAR) * (__LengthMax);\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
 			const EString& SavedName = (__EString);\
-			const UINT NameLength = EMath::Clamp(static_cast<UINT>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
+			CHAR* TempPtr = (CHAR*)RstMemPtr;\
 			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
 			RstMemPtr = &(TempPtr[(__LengthMax)]);\
 			RstMemSize -= NameLengthMax;\
@@ -2286,10 +2363,9 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > 0));\
-			BYTE* TempPtr = RstMemPtr;\
-			const UINT MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize > MemSize));\
+			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
+			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			BYTE* TempPtr = (BYTE*)RstMemPtr;\
 			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
 			RstMemPtr = &(TempPtr[MemSize]);\
 			RstMemSize -= MemSize;\
@@ -2301,11 +2377,11 @@ namespace PigeonEngine
 		SAVE_ASSET_MEMORY(EBoundAABB, InMeshResource->GetBoundAABB());
 		SAVE_ASSET_MEMORY(UINT32, InMeshResource->GetVertexLayout());
 		{
-			const EMesh::ESubmeshPart& SubmeshPart = InMeshResource->GetSubmeshes();
+			const EMesh::ESubmeshPart& SubmeshPart = InMeshResource->GetSubmeshPart();
 
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SubmeshPart.Length()));
 
-			for (UINT i = 0u, n = SubmeshPart.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = SubmeshPart.Length(); i < n; i++)
 			{
 				const ESubmeshData& SubmeshData = SubmeshPart[i];
 
@@ -2313,19 +2389,19 @@ namespace PigeonEngine
 			}
 		};
 		{
-			const EMesh::EIndexPart& IndexPart = InMeshResource->GetIndices();
+			const EMesh::EIndexPart& IndexPart = InMeshResource->GetIndexPart();
 
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.ElementNum));
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.Stride));
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(IndexPart.PartType));
-			SAVE_ASSET_PTR_MEMORY(sizeof(UINT), IndexPart.ElementNum, IndexPart.Indices);
+			SAVE_ASSET_PTR_MEMORY(sizeof(UINT32), IndexPart.ElementNum, IndexPart.Indices);
 		};
 		{
-			const EMesh::EVertexPart& VertexPart = InMeshResource->GetVertices();
+			const EMesh::EVertexPart& VertexPart = InMeshResource->GetVertexPart();
 
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(VertexPart.Length()));
 
-			for (UINT i = 0u, n = VertexPart.Length(); i < n; i++)
+			for (UINT32 i = 0u, n = VertexPart.Length(); i < n; i++)
 			{
 				const EVertexData& VertexData = VertexPart[i];
 
@@ -2337,12 +2413,16 @@ namespace PigeonEngine
 		};
 		if (InMeshResource->IsTypeOf<ESkinnedMesh>())
 		{
-			const ESkinnedMesh* TempMeshPtr = InMeshResource;
+			const ESkinnedMesh* TempMeshPtr = InMeshResource->AsType<ESkinnedMesh>();
+			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+#if _EDITOR_ONLY
+			if (TempMeshPtr)
+#endif
 			{
 				const ESkinnedMesh::EBindPoseValue& BindPoseValues = TempMeshPtr->GetBindPoseValue();
 				const ESkinnedMesh::EBindPoseIndex& BindPoseIndices = TempMeshPtr->GetBindPoseIndex();
 				Check((ENGINE_ASSET_ERROR), ("Check save skinned mesh asset bind pose num error."), (BindPoseValues.Length() == BindPoseIndices.Length()));
-				const UINT BindPoseNum = BindPoseValues.Length();
+				const UINT32 BindPoseNum = BindPoseValues.Length();
 
 				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(BindPoseNum));
 
@@ -2358,32 +2438,36 @@ namespace PigeonEngine
 				}
 			};
 			{
-				const UINT EffectBoneNum = static_cast<UINT>(TempMeshPtr->GetEffectBoneNum());
+				const UINT32 EffectBoneNum = static_cast<UINT32>(TempMeshPtr->GetEffectBoneNum());
 
 				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EffectBoneNum));
 
-				const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkins();
+				const ESkinnedMesh::ESkinPart& SkinPart = TempMeshPtr->GetSkinPart();
 
 				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinPart.Length()));
 
-				for (UINT i = 0u, n = SkinPart.Length(); i < n; i++)
+				for (UINT32 i = 0u, n = SkinPart.Length(); i < n; i++)
 				{
 					const ESkinData& SkinData = SkinPart[i];
 					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), ((SkinData.Stride / sizeof(FLOAT)) == EffectBoneNum));
 
 					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.ElementNum));
 					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.PartType));
-					SAVE_ASSET_PTR_MEMORY((EffectBoneNum * sizeof(UINT)), SkinData.ElementNum, SkinData.Indices);
+					SAVE_ASSET_PTR_MEMORY((EffectBoneNum * sizeof(UINT32)), SkinData.ElementNum, SkinData.Indices);
 					SAVE_ASSET_PTR_MEMORY((EffectBoneNum * sizeof(FLOAT)), SkinData.ElementNum, SkinData.Weights);
 				}
 			};
 		}
 
+		Check((ENGINE_ASSET_ERROR), ("Check write mesh resource rest memory already failed."), (RstMemSize == 0));
+
 #undef SAVE_ASSET_MEMORY
 #undef SAVE_ASSET_STRING_MEMORY
 #undef SAVE_ASSET_PTR_MEMORY
 
-		if (EFileHelper::SaveBytesToFile(InSavePath, OutputMem, OutputMemSize))
+		EString TempSaveFullPathName(InSavePath);
+		TempSaveFullPathName = TempSaveFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		if (EFileHelper::SaveBytesToFile(TempSaveFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;
 			return TRUE;

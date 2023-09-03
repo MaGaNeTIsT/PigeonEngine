@@ -9,7 +9,7 @@
 #include "../../EngineRender/RenderMaterials/Headers/CClearCoatMaterial.h"
 #include "../../EngineRender/RenderMaterials/Headers/CClothMaterial.h"
 
-CSceneGameObject::CSceneGameObject(const BOOL& active, const CScene* scene) : CGameObject(active, scene)
+CSceneGameObject::CSceneGameObject(const BOOL32& active, const CScene* scene) : CGameObject(active, scene)
 {
 	this->AddNewTransform();
 	{
@@ -36,7 +36,7 @@ CSceneGameObject::CSceneGameObject(const BOOL& active, const CScene* scene) : CG
 
 		auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 			FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-			for (UINT i = 0u; i < 3u; i++)
+			for (UINT32 i = 0u; i < 3u; i++)
 			{
 				errorV[i] = (errorV[i] < error) ? error : 0.f;
 			}
@@ -115,9 +115,9 @@ CMeshComponent* CSceneGameObject::GetMeshComponentNotConst()
 void CSceneGameObject::SelectedEditorUpdate()
 {
 	bool loadBaseModel = this->m_LoadBaseModel;
-	BOOL needLoadMesh = FALSE;
-	BOOL needLoadMaterial = FALSE;
-	BOOL needSaveMaterialFile = FALSE;
+	BOOL32 needLoadMesh = FALSE;
+	BOOL32 needLoadMaterial = FALSE;
+	BOOL32 needSaveMaterialFile = FALSE;
 
 	//Editor body
 	{
@@ -133,7 +133,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 				{
 					if (loadBaseModel)
 					{
-						std::map<INT, std::string> baseEngineMeshItems = {
+						std::map<INT32, std::string> baseEngineMeshItems = {
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_NORMAL_CUBE, "Normal cube" },
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_ROUNDED_CUBE, "Rounded cube" },
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_SMOOTH_SPHERE, "Smooth sphere" },
@@ -142,12 +142,12 @@ void CSceneGameObject::SelectedEditorUpdate()
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_PRISM, "Prism" },
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_MATERIAL_SPHERE, "Material sphere" },
 							{ CMeshManager::CEngineBaseModelType::ENGINE_BASE_MONKEY, "Monkey" } };
-						auto meshCombo = [&baseEngineMeshItems](const std::string& name, INT& select) {
+						auto meshCombo = [&baseEngineMeshItems](const std::string& name, INT32& select) {
 							if (ImGui::BeginCombo(name.c_str(), baseEngineMeshItems[select].c_str()))
 							{
 								for (const auto& textureItem : baseEngineMeshItems)
 								{
-									BOOL selected = (select == textureItem.first);
+									BOOL32 selected = (select == textureItem.first);
 									if (ImGui::Selectable(textureItem.second.c_str(), &selected))
 									{
 										select = textureItem.first;
@@ -187,19 +187,19 @@ void CSceneGameObject::SelectedEditorUpdate()
 						materialName = this->m_MeshRendererComponent->GetMaterial()->GetName();
 					}
 					ImGui::Text("CurrentMaterial : %s", materialName.c_str());
-					std::map<INT, std::string> baseEngineMaterialItems = {
+					std::map<INT32, std::string> baseEngineMaterialItems = {
 						{ DefaultMaterialType::DefaultMaterialType_DefaultLit, "DefaultLitMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_DefaultLit_SkeletonMesh, "DefaultLitSkeletonMeshMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Anisotropic, "AnisotropicMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_ClearCoat, "ClearCoatMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_Cloth, "ClothMaterial" },
 						{ DefaultMaterialType::DefaultMaterialType_ClothAnisotropic, "ClothAnisotropicMaterial" } };
-					auto materialCombo = [&baseEngineMaterialItems](const std::string& name, INT& select) {
+					auto materialCombo = [&baseEngineMaterialItems](const std::string& name, INT32& select) {
 						if (ImGui::BeginCombo(name.c_str(), baseEngineMaterialItems[select].c_str()))
 						{
 							for (const auto& materialItem : baseEngineMaterialItems)
 							{
-								BOOL selected = (select == materialItem.first);
+								BOOL32 selected = (select == materialItem.first);
 								if (ImGui::Selectable(materialItem.second.c_str(), &selected))
 								{
 									select = materialItem.first;
@@ -233,7 +233,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 		this->m_LoadBaseModel = loadBaseModel;
 		if (this->m_MeshComponent != NULL)
 		{
-			BOOL needResetBound = FALSE;
+			BOOL32 needResetBound = FALSE;
 			CustomStruct::CRenderInputLayoutDesc desc[4u] = {
 				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_POSITION),
 				CustomStruct::CRenderInputLayoutDesc(CustomStruct::CRenderShaderSemantic::SHADER_SEMANTIC_NORMAL),
@@ -262,7 +262,7 @@ void CSceneGameObject::SelectedEditorUpdate()
 			{
 				auto errorMinMax = [](CustomType::Vector3& v0, CustomType::Vector3& v1, const FLOAT& error) {
 					FLOAT errorV[3] = { v1.X() - v0.X(), v1.Y() - v0.Y(), v1.Z() - v0.Z() };
-					for (UINT i = 0u; i < 3u; i++)
+					for (UINT32 i = 0u; i < 3u; i++)
 					{
 						errorV[i] = (errorV[i] < error) ? error : 0.f;
 					}

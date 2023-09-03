@@ -24,7 +24,7 @@ CGPUProfilerManager::CGPUProfiler::CGPUProfiler(const std::string& name)
 	this->m_RecordFrameCount = 1u;
 	this->m_AverageTime = static_cast<DOUBLE>(0);
 }
-CGPUProfilerManager::CGPUProfiler::CGPUProfiler(const std::string& name, const UINT& recordFrameCount)
+CGPUProfilerManager::CGPUProfiler::CGPUProfiler(const std::string& name, const UINT32& recordFrameCount)
 {
 	this->m_Name = name;
 	this->m_AlreadyInit = FALSE;
@@ -43,7 +43,7 @@ CGPUProfilerManager::CGPUProfiler::CGPUProfiler(const CGPUProfiler& profiler)
 CGPUProfilerManager::CGPUProfiler::~CGPUProfiler()
 {
 }
-void CGPUProfilerManager::CGPUProfiler::ResetAll(const UINT* newRecordFrameCount, const std::string* newName)
+void CGPUProfilerManager::CGPUProfiler::ResetAll(const UINT32* newRecordFrameCount, const std::string* newName)
 {
 	if (this->m_AlreadyBegin == TRUE)
 	{
@@ -85,7 +85,7 @@ void CGPUProfilerManager::CGPUProfiler::ResetAll(const UINT* newRecordFrameCount
 	{
 		this->m_DisjointData.resize(this->m_RecordFrameCount);
 	}
-	for (UINT i = 0; i < m_RecordFrameCount; i++)
+	for (UINT32 i = 0; i < m_RecordFrameCount; i++)
 	{
 		std::string tempName = this->m_Name + "_Start_" + std::to_string(i);
 		this->m_QueryTimeStart[i] = CGPUQueryManager::CreateQuery(tempName, CustomStruct::CRenderQueryDesc(CustomStruct::CRenderQueryType::QUERY_TIMESTAMP));
@@ -103,7 +103,7 @@ void CGPUProfilerManager::CGPUProfiler::ResetAll(const UINT* newRecordFrameCount
 }
 void CGPUProfilerManager::CGPUProfiler::ResetData()
 {
-	for (UINT i = 0; i < m_RecordFrameCount; i++)
+	for (UINT32 i = 0; i < m_RecordFrameCount; i++)
 	{
 		this->m_ReadBackSucceed[i] = FALSE;
 		this->m_StartData[i] = 0u;
@@ -116,7 +116,7 @@ void CGPUProfilerManager::CGPUProfiler::Begin()
 {
 	this->m_AlreadyBegin = TRUE;
 	this->ResetData();
-	for (UINT i = 0; i < m_RecordFrameCount; i++)
+	for (UINT32 i = 0; i < m_RecordFrameCount; i++)
 	{
 		CRenderDevice::Begin(this->m_QueryTimeStart[i]->GetQuery().Get());
 		CRenderDevice::Begin(this->m_QueryTimeEnd[i]->GetQuery().Get());
@@ -137,17 +137,17 @@ void CGPUProfilerManager::CGPUProfiler::Counter(const ULONGLONG& currentFrameInd
 	}
 
 	{
-		for (UINT i = 0u; i < this->m_RecordFrameCount; i++)
+		for (UINT32 i = 0u; i < this->m_RecordFrameCount; i++)
 		{
 			this->m_ReadBackSucceed[i] = FALSE;
 		}
 
 		{
 			this->m_AverageTime = static_cast<DOUBLE>(0);
-			INT totalNum = 0;
+			INT32 totalNum = 0;
 			ULONGLONG deltaTimeStamp, tempData; DOUBLE currentFrequency;
 			CustomStruct::CRenderQueryTimestampDisjoint tempDisjoint;
-			for (UINT i = 0u; i < this->m_RecordFrameCount; i++)
+			for (UINT32 i = 0u; i < this->m_RecordFrameCount; i++)
 			{
 				if (CRenderDevice::GetData(this->m_QueryTimeDisjoint[i]->GetQuery().Get(), &(tempDisjoint), sizeof(CustomStruct::CRenderQueryTimestampDisjoint)))
 				{
@@ -181,7 +181,7 @@ void CGPUProfilerManager::CGPUProfiler::Counter(const ULONGLONG& currentFrameInd
 void CGPUProfilerManager::CGPUProfiler::End()
 {
 	this->m_AlreadyBegin = FALSE;
-	for (UINT i = 0; i < m_RecordFrameCount; i++)
+	for (UINT32 i = 0; i < m_RecordFrameCount; i++)
 	{
 		CRenderDevice::End(this->m_QueryTimeEnd[i]->GetQuery().Get());
 		CRenderDevice::End(this->m_QueryTimeStart[i]->GetQuery().Get());
@@ -194,7 +194,7 @@ void CGPUProfilerManager::ShutDown()
 {
 	delete (CGPUProfilerManager::m_GPUProfilerManager);
 }
-void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount)
+void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT32& recordFrameCount)
 {
 	std::shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
 	if (result == nullptr)
@@ -225,7 +225,7 @@ void CGPUProfilerManager::ClearProfilers()
 {
 	CGPUProfilerManager::m_GPUProfilerManager->m_Profilers.clear();
 }
-std::shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::NewProfiler(const std::string& name, const UINT& recordFrameCount)
+std::shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::NewProfiler(const std::string& name, const UINT32& recordFrameCount)
 {
 	std::shared_ptr<CGPUProfilerManager::CGPUProfiler> result = CGPUProfilerManager::FindProfiler(name);
 	if (result != nullptr)
@@ -259,7 +259,7 @@ std::shared_ptr<CGPUProfilerManager::CGPUProfiler> CGPUProfilerManager::FindProf
 
 #else
 
-void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT& recordFrameCount)
+void CGPUProfilerManager::AddPass(const std::string& name, const ULONGLONG& currentFrameIndex, std::function<void(void)> const& func, const UINT32& recordFrameCount)
 {
 	func();
 }

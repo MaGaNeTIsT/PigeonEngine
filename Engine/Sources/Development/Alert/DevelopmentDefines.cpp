@@ -6,16 +6,16 @@ namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
-	INT WindowsMessageBox(const EString& outText, const EString& outCaption, const UINT& type)
+	INT32 WindowsMessageBox(const EString& outText, const EString& outCaption, const UINT32& type)
 	{
 		return (::MessageBox(EMainManager::GetManagerSingleton()->GetWindowHandle(), *outText, *outCaption, type));
 	}
 
-	void DWindowsMessage::_Check_Default(const EString& inCaption, const EString& inText, const BOOL& condition)
+	void DWindowsMessage::_Check_Default(const EString& inCaption, const EString& inText, const BOOL32& condition)
 	{
 		if (!condition)
 		{
-			const UINT tempType = MB_OK;
+			const UINT32 tempType = MB_OK;
 			if (WindowsMessageBox(inText, inCaption, tempType) == IDOK)
 			{
 				//TODO
@@ -26,7 +26,7 @@ namespace PigeonEngine
 	template<typename TConditionLambdaType>
 	void DWindowsMessage::_Check_Default(const TConditionLambdaType& conditionFunc)
 	{
-		EString tempText, tempCaption; const UINT tempType = MB_OK;
+		EString tempText, tempCaption; const UINT32 tempType = MB_OK;
 		if (!(conditionFunc(tempText, tempCaption)))
 		{
 			if (WindowsMessageBox(tempText, tempCaption, tempType) == IDOK)
@@ -39,7 +39,7 @@ namespace PigeonEngine
 	template<typename TConditionLambdaType, typename TExecuteLambdaType>
 	void DWindowsMessage::_Check_Full(const TConditionLambdaType& conditionFunc, const TExecuteLambdaType& executeFunc)
 	{
-		EString tempText, tempCaption; UINT tempType = 0u;
+		EString tempText, tempCaption; UINT32 tempType = 0u;
 		if (!(conditionFunc(tempText, tempCaption, tempType)))
 		{
 			executeFunc(WindowsMessageBox(tempText, tempCaption, tempType));

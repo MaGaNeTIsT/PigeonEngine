@@ -2,109 +2,26 @@
 
 namespace PigeonEngine
 {
-	FLOAT EMath::m_PI			= 3.1415926535897932f;
-	FLOAT EMath::m_RadToDeg		= 57.295779513082321f;
-	FLOAT EMath::m_DegToRad		= 0.0174532925199433f;
-	const FLOAT& EMath::GetPI()
+
+	static INT32 _GSRandSeed;
+
+	void EMath::SRandInit(const INT32 InSeed)
 	{
-		return (EMath::m_PI);
+		_GSRandSeed = InSeed;
 	}
-	const FLOAT& EMath::GetDegToRad()
+	INT32 EMath::GetRandSeed()
 	{
-		return (EMath::m_DegToRad);
+		return _GSRandSeed;
 	}
-	const FLOAT& EMath::GetRadToDeg()
+	FLOAT EMath::SRand()
 	{
-		return (EMath::m_RadToDeg);
+		_GSRandSeed = (_GSRandSeed * 196314165) + 907633515;
+		union { FLOAT f; INT32 i; } Result;
+		union { FLOAT f; INT32 i; } Temp;
+		const FLOAT SRandTemp = 1.0f;
+		Temp.f = SRandTemp;
+		Result.i = (Temp.i & 0xff800000) | (_GSRandSeed & 0x007fffff);
+		return Fractional(Result.f);
 	}
-	BOOL EMath::Lerp(const INT& x0, const INT& y0, const INT& x1, const INT& y1, const INT& t, INT& phi)
-	{
-		if (t < x0 || t > x1)
-		{
-			return FALSE;
-		}
-		phi = (INT)(((FLOAT)(t - x1)) / ((FLOAT)(x0 - x1)) * (FLOAT)y0 + ((FLOAT)(t - x0)) / ((FLOAT)(x1 - x0)) * (FLOAT)y1);
-		return TRUE;
-	}
-	FLOAT EMath::Lerp(const FLOAT& v0, const FLOAT& v1, const FLOAT& t)
-	{
-		return (v0 * (1.f - t) + v1 * t);
-	}
-	FLOAT EMath::Abs(const FLOAT& v)
-	{
-		return fabsf(v);
-	}
-	FLOAT EMath::Mod(const FLOAT& numerator, const FLOAT& denominator)
-	{
-		return fmodf(numerator, denominator);
-	}
-	DOUBLE EMath::Mod(const DOUBLE& numerator, const DOUBLE& denominator)
-	{
-		return fmod(numerator, denominator);
-	}
-	FLOAT EMath::Frac(const FLOAT& v)
-	{
-		return (v - floorf(v));
-	}
-	FLOAT EMath::Sin(const FLOAT& v)
-	{
-		return sinf(v);
-	}
-	FLOAT EMath::Cos(const FLOAT& v)
-	{
-		return cosf(v);
-	}
-	void EMath::SinCos(FLOAT& sinValue, FLOAT& cosValue, const FLOAT& v)
-	{
-		sinValue = sinf(v);
-		cosValue = cosf(v);
-	}
-	FLOAT EMath::Exp2(const FLOAT& v)
-	{
-		return exp2f(v);
-	}
-	INT EMath::Exp2(const INT& v)
-	{
-		return static_cast<INT>(exp2f(static_cast<FLOAT>(v)));
-	}
-	INT EMath::Log2Floor(const INT& v)
-	{
-		FLOAT e = log2f(static_cast<FLOAT>(v));
-		e = floorf(e);
-		return static_cast<INT>(e);
-	}
-	INT EMath::Log2Floor(const FLOAT& v)
-	{
-		FLOAT e = log2f(v);
-		return static_cast<INT>(floorf(e));
-	}
-	INT EMath::Log2Ceil(const INT& v)
-	{
-		FLOAT e = log2f(static_cast<FLOAT>(v));
-		e = ceilf(e);
-		return static_cast<INT>(e);
-	}
-	INT EMath::Log2Ceil(const FLOAT& v)
-	{
-		FLOAT e = log2f(v);
-		return static_cast<INT>(ceilf(e));
-	}
-	INT EMath::PowerOfTwoFloor(FLOAT& output, const FLOAT& input)
-	{
-		FLOAT e = log2f(input);
-		e = floorf(e);
-		output = exp2f(e);
-		return static_cast<INT>(e);
-	}
-	INT EMath::PowerOfTwoFloor(INT& output, const INT& input)
-	{
-		FLOAT e = log2f(static_cast<FLOAT>(input));
-		e = floorf(e);
-		output = static_cast<INT>(exp2f(e));
-		return static_cast<INT>(e);
-	}
-	FLOAT EMath::Sqrt(const FLOAT& v)
-	{
-		return sqrtf(v);
-	}
+
 };

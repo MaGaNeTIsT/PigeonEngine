@@ -16,15 +16,15 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	PerDrawBuffer;
 	};
 public:
-	BOOL	HasMesh()const { return (this->m_MeshComponent != NULL); }
-	BOOL	HasMaterial()const { return (this->m_Material != NULL); }
-	BOOL	HasConstantBuffer()const { return (this->m_ConstantBuffer != nullptr); }
+	BOOL32	HasMesh()const { return (this->m_MeshComponent != NULL); }
+	BOOL32	HasMaterial()const { return (this->m_Material != NULL); }
+	BOOL32	HasConstantBuffer()const { return (this->m_ConstantBuffer != nullptr); }
 public:
 	CMaterialBase::MaterialType		GetMaterialType()const;
 	CMaterialBase*					GetMaterial()const;
 public:
 	template<class T>
-	T* AddMaterial(const BOOL& needInit = FALSE)
+	T* AddMaterial(const BOOL32& needInit = FALSE)
 	{
 		if (this->HasMaterial())
 		{
@@ -54,17 +54,17 @@ public:
 #endif
 protected:
 	void			UpdatePerDrawInfo(CustomType::Matrix4x4& worldMatrix, CustomType::Matrix4x4& worldInvMatrix, const CustomType::Vector4& customParameter);
-	BOOL			CreateConstantBuffer(const UINT& size);
+	BOOL32			CreateConstantBuffer(const UINT32& size);
 	void			UploadConstantBuffer(const void* data)const;
-	void			BindConstantBuffer(const UINT& startSlot)const;
+	void			BindConstantBuffer(const UINT32& startSlot)const;
 	void			UploadPerDrawConstantBuffer()const;
-	virtual void	Bind(const BOOL& needPixelShader = TRUE)const;
+	virtual void	Bind(const BOOL32& needPixelShader = TRUE)const;
 public:
 	CMeshRendererComponent();
 	virtual ~CMeshRendererComponent();
 protected:
-	mutable BOOL										m_CurrentFramePerDrawUpload;
-	mutable BOOL										m_CurrentFrameMaterialUpload;
+	mutable BOOL32										m_CurrentFramePerDrawUpload;
+	mutable BOOL32										m_CurrentFrameMaterialUpload;
 	const CMeshComponent*								m_MeshComponent;
 	CMaterialBase*										m_Material;
 	RenderPerDrawInfo									m_PerDrawInfo;

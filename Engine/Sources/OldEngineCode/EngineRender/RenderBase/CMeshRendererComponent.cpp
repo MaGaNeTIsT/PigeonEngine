@@ -84,7 +84,7 @@ void CMeshRendererComponent::Draw()const
 	}
 	else
 	{
-		for (UINT i = 0; i < static_cast<UINT>(subMesh.size()); i++)
+		for (UINT32 i = 0; i < static_cast<UINT32>(subMesh.size()); i++)
 		{
 			const CustomStruct::CSubMeshInfo& subInfo = subMesh[i];
 			CRenderDevice::DrawIndexed(subInfo.IndexCount, subInfo.IndexStart, subInfo.VertexStart);
@@ -105,7 +105,7 @@ void CMeshRendererComponent::DrawExtra()const
 	}
 	else
 	{
-		for (UINT i = 0; i < static_cast<UINT>(subMesh.size()); i++)
+		for (UINT32 i = 0; i < static_cast<UINT32>(subMesh.size()); i++)
 		{
 			const CustomStruct::CSubMeshInfo& subInfo = subMesh[i];
 			CRenderDevice::DrawIndexed(subInfo.IndexCount, subInfo.IndexStart, subInfo.VertexStart);
@@ -136,7 +136,7 @@ void CMeshRendererComponent::SelectedEditorUpdate()
 	}
 }
 #endif
-BOOL CMeshRendererComponent::CreateConstantBuffer(const UINT& size)
+BOOL32 CMeshRendererComponent::CreateConstantBuffer(const UINT32& size)
 {
 	this->m_ConstantBufferDesc = CustomStruct::CRenderBufferDesc(size, CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER, sizeof(FLOAT));
 	return (CRenderDevice::CreateBuffer(m_ConstantBuffer, this->m_ConstantBufferDesc));
@@ -145,7 +145,7 @@ void CMeshRendererComponent::UploadConstantBuffer(const void* ptrData)const
 {
 	CRenderDevice::UploadBuffer(this->m_ConstantBuffer, ptrData);
 }
-void CMeshRendererComponent::BindConstantBuffer(const UINT& startSlot)const
+void CMeshRendererComponent::BindConstantBuffer(const UINT32& startSlot)const
 {
 	CRenderDevice::BindVSConstantBuffer(this->m_ConstantBuffer, startSlot);
 	CRenderDevice::BindPSConstantBuffer(this->m_ConstantBuffer, startSlot);
@@ -154,7 +154,7 @@ void CMeshRendererComponent::UploadPerDrawConstantBuffer()const
 {
 	CRenderDevice::UploadBuffer(this->m_PerDrawInfo.PerDrawBuffer, static_cast<const void*>(&(this->m_PerDrawInfo.PerDrawData)));
 }
-void CMeshRendererComponent::Bind(const BOOL& needPixelShader)const
+void CMeshRendererComponent::Bind(const BOOL32& needPixelShader)const
 {
 	if (!this->HasMesh() || !this->HasMaterial())
 	{

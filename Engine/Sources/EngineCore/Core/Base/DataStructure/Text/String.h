@@ -9,7 +9,7 @@ namespace PigeonEngine
     class EString
     {
     public:
-        // This may not be useful. Because we return UINT replace size_t.
+        // This may not be useful. Because we return UINT32 replace size_t.
         static constexpr auto NonePos{ std::string::npos };
     public:
         EString();
@@ -29,37 +29,37 @@ namespace PigeonEngine
         EString&    operator+(const std::string& Other);
         EString&    operator+(const CHAR* Other);
         const CHAR* operator*()const;
-        CHAR        operator[](const UINT& Index) const;
+        CHAR        operator[](const UINT32& Index) const;
 
-        BOOL        operator==(const EString& Other)const;
-        BOOL        operator!=(const EString& Other)const;
-        BOOL        operator>(const EString& Other)const;
-        BOOL        operator<(const EString& Other)const;
-        BOOL        operator>=(const EString& Other)const;
-        BOOL        operator<=(const EString& Other)const;
+        BOOL32        operator==(const EString& Other)const;
+        BOOL32        operator!=(const EString& Other)const;
+        BOOL32        operator>(const EString& Other)const;
+        BOOL32        operator<(const EString& Other)const;
+        BOOL32        operator>=(const EString& Other)const;
+        BOOL32        operator<=(const EString& Other)const;
 
         EString&    operator+=(const EString& Other);
 
         
-        ENGINE_NODISCARD UINT    Length   ()const;
-        ENGINE_NODISCARD BOOL    StartWith(const EString& SubString)const;
-        ENGINE_NODISCARD UINT    Find     (const EString& SubString, UINT Offset = 0) const;
-        ENGINE_NODISCARD UINT    RightFind(const EString& SubString, UINT Offset = 0) const;
-        ENGINE_NODISCARD EString Replace  (const EString& From, const EString& To) const;
-        ENGINE_NODISCARD EString Left     (const UINT& Count) const;
-        ENGINE_NODISCARD EString Right    (const UINT& Count) const;
-        ENGINE_NODISCARD EString Substring(const UINT& Start, const UINT& Count) const;
+        PE_NODISCARD UINT32    Length   ()const;
+        PE_NODISCARD BOOL32    StartWith(const EString& SubString)const;
+        PE_NODISCARD UINT32    Find     (const EString& SubString, UINT32 Offset = 0) const;
+        PE_NODISCARD UINT32    RightFind(const EString& SubString, UINT32 Offset = 0) const;
+        PE_NODISCARD EString Replace  (const EString& From, const EString& To) const;
+        PE_NODISCARD EString Left     (const UINT32& Count) const;
+        PE_NODISCARD EString Right    (const UINT32& Count) const;
+        PE_NODISCARD EString Substring(const UINT32& Start, const UINT32& Count) const;
 
-        ENGINE_NODISCARD BOOL    IsNumeric()const;
-        ENGINE_NODISCARD INT     AtoI() const;
-        ENGINE_NODISCARD DOUBLE  AtoF() const;
+        PE_NODISCARD BOOL32    IsNumeric()const;
+        PE_NODISCARD INT32     AtoI() const;
+        PE_NODISCARD DOUBLE  AtoF() const;
     private:
         std::string Str;
     };
     
-    extern ENGINE_INLINE EString ToString(const UINT& InValue);
+    extern PE_INLINE EString ToString(const UINT32& InValue);
 
-    extern ENGINE_INLINE BOOL SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr);
+    extern PE_INLINE BOOL32 SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr);
 
 };
 

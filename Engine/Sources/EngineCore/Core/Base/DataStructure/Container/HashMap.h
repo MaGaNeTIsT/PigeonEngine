@@ -37,18 +37,18 @@ namespace PigeonEngine
 
         V&                                 operator[](const K& Key);
 
-        ENGINE_NODISCARD UINT Length() const
+        PE_NODISCARD UINT32 Length() const
         {
-            return static_cast<UINT>(HashMap.size());
+            return static_cast<UINT32>(HashMap.size());
         }
         
         void Add   (const K& Key, const V& Value);
         void Remove(const K& Key);
         
-        BOOL ContainsKey(const K& Key) const;
+        BOOL32 ContainsKey(const K& Key) const;
         
-        BOOL FindKey  (const V& Value, K& OutKey) const;
-        BOOL FindValue(const K& Key,   V& OutValue) const;
+        BOOL32 FindKey  (const V& Value, K& OutKey) const;
+        BOOL32 FindValue(const K& Key,   V& OutValue) const;
 
         void GenerateKeyArray  (TArray<K>& OutKeys);
         void GenerateValueArray(TArray<V>& OutValues);
@@ -169,13 +169,13 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    BOOL THashMap<K, V, Hash, Pred, Alloc>::ContainsKey(const K& Key) const
+    BOOL32 THashMap<K, V, Hash, Pred, Alloc>::ContainsKey(const K& Key) const
     {
         return HashMap.find(Key) < HashMap.end();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    BOOL THashMap<K, V, Hash, Pred, Alloc>::FindKey(const V& Value, K& OutKey) const
+    BOOL32 THashMap<K, V, Hash, Pred, Alloc>::FindKey(const V& Value, K& OutKey) const
     {
         for(const auto& elem : HashMap)
         {
@@ -189,7 +189,7 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
-    BOOL THashMap<K, V, Hash, Pred, Alloc>::FindValue(const K& Key, V& OutValue) const
+    BOOL32 THashMap<K, V, Hash, Pred, Alloc>::FindValue(const K& Key, V& OutValue) const
     {
         const auto it = HashMap.find(Key);
         if(!(it < HashMap.end()))

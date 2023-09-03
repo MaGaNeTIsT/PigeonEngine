@@ -123,7 +123,7 @@ namespace PigeonEngine
 		this->Mobility = NewMobility;
 	}
 
-	BOOL PSceneComponent::ContainTransform()const
+	BOOL32 PSceneComponent::ContainTransform()const
 	{
 		return TRUE;
 	}

@@ -2,15 +2,15 @@
 
 namespace PigeonEngine
 {
-	void RDeviceD3D11::SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT bufferDepth, UINT frameNum, BOOL windowed)
+	void RDeviceD3D11::SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT32 bufferDepth, UINT32 frameNum, BOOL32 windowed)
 	{
 		if (bufferSize.x < 1 || bufferSize.y < 1 || !(bufferDepth == 24u || bufferDepth == 32u) || frameNum < 2u)
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Render device init failed. Invalid arguments"));
 			return;
 		}
-		UINT bufferWidth = static_cast<UINT>(bufferSize.x);
-		UINT bufferHeight = static_cast<UINT>(bufferSize.y);
+		UINT32 bufferWidth = static_cast<UINT32>(bufferSize.x);
+		UINT32 bufferHeight = static_cast<UINT32>(bufferSize.y);
 		HRESULT hr = S_FALSE;
 		DXGI_SWAP_CHAIN_DESC sd;
 		{
@@ -147,7 +147,7 @@ namespace PigeonEngine
 		//	m_Device = nullptr;
 		//}
 	}
-	BOOL RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
+	BOOL32 RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT32& inLayoutNum)
 	{
 		{
 			HRESULT hr = m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
@@ -165,7 +165,7 @@ namespace PigeonEngine
 			}
 			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
 			tempLayouts.Resize(inLayoutNum);
-			for (UINT i = 0u; i < inLayoutNum; i++)
+			for (UINT32 i = 0u; i < inLayoutNum; i++)
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
@@ -178,7 +178,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource)
+	BOOL32 RDeviceD3D11::CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource)
 	{
 		{
 			HRESULT hr = m_Device->CreatePixelShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
@@ -191,7 +191,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource)
+	BOOL32 RDeviceD3D11::CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource)
 	{
 		{
 			HRESULT hr = m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
@@ -203,11 +203,11 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
+	BOOL32 RDeviceD3D11::CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
 	{
 		return CreateBuffer(buffer.Buffer, bufferDesc, subData);
 	}
-	BOOL RDeviceD3D11::CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData)
+	BOOL32 RDeviceD3D11::CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData)
 	{
 		if (structuredBufferDesc.NumElements < 1u || structuredBufferDesc.FirstElement >= structuredBufferDesc.NumElements || structuredBufferDesc.StructureSize < 4u)
 		{
@@ -304,9 +304,9 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc)
+	BOOL32 RDeviceD3D11::CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc)
 	{
-		BOOL isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
+		BOOL32 isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
 		if (!isDepthFormat && textureDesc.Depth != 0u)
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D depth check failed (wrong depth format used)."));
@@ -315,7 +315,7 @@ namespace PigeonEngine
 		output.ReleaseRenderResource();
 		D3D11_TEXTURE2D_DESC td;
 		{
-			UINT tBindFlags = 0u;
+			UINT32 tBindFlags = 0u;
 			DXGI_FORMAT tFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
 			if (isDepthFormat)
 			{
@@ -358,7 +358,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		{
-			BOOL needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
+			BOOL32 needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
 			if (needSRV || isDepthFormat)
 			{
 				D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -396,7 +396,7 @@ namespace PigeonEngine
 			}
 		}
 		{
-			BOOL needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
+			BOOL32 needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
 			if (needUAV && !isDepthFormat)
 			{
 				D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
@@ -413,7 +413,7 @@ namespace PigeonEngine
 			}
 		}
 		{
-			BOOL needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
+			BOOL32 needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
 			if (needRTV && !isDepthFormat)
 			{
 				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
@@ -461,7 +461,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc)
+	BOOL32 RDeviceD3D11::CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc)
 	{
 		if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
 		{
@@ -489,7 +489,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		{
-			BOOL needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
+			BOOL32 needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
 			if (needSRV)
 			{
 				D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
@@ -509,7 +509,7 @@ namespace PigeonEngine
 			}
 		}
 		{
-			BOOL needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
+			BOOL32 needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
 			if (needUAV)
 			{
 				D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
@@ -528,7 +528,7 @@ namespace PigeonEngine
 			}
 		}
 		{
-			BOOL needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
+			BOOL32 needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
 			if (needRTV)
 			{
 				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
@@ -550,7 +550,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
+	BOOL32 RDeviceD3D11::CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
 	{
 		output.ReleaseRenderResource();
 		D3D11_TEXTURE2D_DESC td;
@@ -603,7 +603,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateTextureCube(RTextureCubeResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
+	BOOL32 RDeviceD3D11::CreateTextureCube(RTextureCubeResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
 	{
 		if (textureDesc.Width != textureDesc.Height)
 		{
@@ -635,7 +635,7 @@ namespace PigeonEngine
 			if (subData != nullptr)
 			{
 				D3D11_SUBRESOURCE_DATA sd[6u];
-				for (UINT i = 0u; i < 6u; i++)
+				for (UINT32 i = 0u; i < 6u; i++)
 				{
 					::ZeroMemory(&(sd[i]), sizeof(sd[i]));
 					sd[i].pSysMem = subData[i].pSysMem;
@@ -672,7 +672,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT& inLayoutNum)
+	BOOL32 RDeviceD3D11::LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT32& inLayoutNum)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -719,7 +719,7 @@ namespace PigeonEngine
 			}
 			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
 			tempLayouts.Resize(inLayoutNum);
-			for (UINT i = 0u; i < inLayoutNum; i++)
+			for (UINT32 i = 0u; i < inLayoutNum; i++)
 			{
 				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
 			}
@@ -740,7 +740,7 @@ namespace PigeonEngine
 		delete[]buffer;
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::LoadPixelShader(const EString& name, RPixelShaderResource& outShaderResource)
+	BOOL32 RDeviceD3D11::LoadPixelShader(const EString& name, RPixelShaderResource& outShaderResource)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -781,7 +781,7 @@ namespace PigeonEngine
 		delete[]buffer;
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::LoadComputeShader(const EString& name, RComputeShaderResource& outShaderResource)
+	BOOL32 RDeviceD3D11::LoadComputeShader(const EString& name, RComputeShaderResource& outShaderResource)
 	{
 		LONG fsize;
 		BYTE* buffer;
@@ -822,7 +822,7 @@ namespace PigeonEngine
 		delete[]buffer;
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
+	BOOL32 RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
 	{
 		D3D11_BUFFER_DESC bd;
 		{
@@ -857,15 +857,15 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	void RDeviceD3D11::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
+	void RDeviceD3D11::UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT32 srcRowPitch, UINT32 srcDepthPitch, UINT32 dstSubresource, const D3D11_BOX* dstBox)
 	{
 		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
-	void RDeviceD3D11::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT srcRowPitch, UINT srcDepthPitch, UINT dstSubresource, const D3D11_BOX* dstBox)
+	void RDeviceD3D11::UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT32 srcRowPitch, UINT32 srcDepthPitch, UINT32 dstSubresource, const D3D11_BOX* dstBox)
 	{
 		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
-	void RDeviceD3D11::Present(const UINT& syncInterval)
+	void RDeviceD3D11::Present(const UINT32& syncInterval)
 	{
 		HRESULT hr = m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
 	}
@@ -873,7 +873,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->OMSetDepthStencilState(nullptr, 0x0u);
 	}
-	void RDeviceD3D11::SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT& stencilRef)
+	void RDeviceD3D11::SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT32& stencilRef)
 	{
 		m_ImmediateContext->OMSetDepthStencilState(dss.Get(), stencilRef);
 	}
@@ -881,7 +881,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->OMSetBlendState(nullptr, nullptr, 0xffffffffu);
 	}
-	void RDeviceD3D11::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor, const UINT& sampleMask)
+	void RDeviceD3D11::SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor, const UINT32& sampleMask)
 	{
 		m_ImmediateContext->OMSetBlendState(bs.Get(), blendFactor.rgba, sampleMask);
 	}
@@ -903,21 +903,21 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), dsv.Get());
 	}
-	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum)
+	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum)
 	{
 		TArray<ID3D11RenderTargetView*> rtvs;
 		rtvs.Resize(rtvNum);
-		for (UINT i = 0u; i < rtvNum; i++)
+		for (UINT32 i = 0u; i < rtvNum; i++)
 		{
 			rtvs[i] = rtv[i].Get();
 		}
 		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.RawData(), nullptr);
 	}
-	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
+	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
 	{
 		TArray<ID3D11RenderTargetView*> rtvs;
 		rtvs.Resize(rtvNum);
-		for (UINT i = 0u; i < rtvNum; i++)
+		for (UINT32 i = 0u; i < rtvNum; i++)
 		{
 			rtvs[i] = rtv[i].Get();
 		}
@@ -935,11 +935,11 @@ namespace PigeonEngine
 			viewport.MinDepth, viewport.MaxDepth };
 		m_ImmediateContext->RSSetViewports(1u, &vp);
 	}
-	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT& viewportNum)
+	void RDeviceD3D11::SetViewports(const EViewport* viewports, const UINT32& viewportNum)
 	{
 		TArray<D3D11_VIEWPORT> vps;
 		vps.Resize(viewportNum);
-		for (UINT i = 0u; i < viewportNum; i++)
+		for (UINT32 i = 0u; i < viewportNum; i++)
 		{
 			vps[i].TopLeftX = viewports[i].TopLeftX;
 			vps[i].TopLeftY = viewports[i].TopLeftY;
@@ -974,146 +974,146 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->CSSetShader(cs.Get(), nullptr, 0u);
 	}
-	void RDeviceD3D11::BindVSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
+	void RDeviceD3D11::BindVSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
 		m_ImmediateContext->VSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
-	void RDeviceD3D11::BindVSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
+	void RDeviceD3D11::BindVSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
 		TArray<ID3D11SamplerState*> sampler;
 		sampler.Resize(ssNum);
-		for (UINT i = 0u; i < ssNum; i++)
+		for (UINT32 i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
 		m_ImmediateContext->VSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
-	void RDeviceD3D11::BindPSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
+	void RDeviceD3D11::BindPSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
 		m_ImmediateContext->PSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
-	void RDeviceD3D11::BindPSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
+	void RDeviceD3D11::BindPSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
 		TArray<ID3D11SamplerState*> sampler;
 		sampler.Resize(ssNum);
-		for (UINT i = 0u; i < ssNum; i++)
+		for (UINT32 i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
 		m_ImmediateContext->PSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
-	void RDeviceD3D11::BindCSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT& startSlot)
+	void RDeviceD3D11::BindCSSamplerState(const Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const UINT32& startSlot)
 	{
 		m_ImmediateContext->CSSetSamplers(startSlot, 1u, ss.GetAddressOf());
 	}
-	void RDeviceD3D11::BindCSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT& startSlot, const UINT& ssNum)
+	void RDeviceD3D11::BindCSSamplerStates(const Microsoft::WRL::ComPtr<ID3D11SamplerState>* ss, const UINT32& startSlot, const UINT32& ssNum)
 	{
 		TArray<ID3D11SamplerState*> sampler;
 		sampler.Resize(ssNum);
-		for (UINT i = 0u; i < ssNum; i++)
+		for (UINT32 i = 0u; i < ssNum; i++)
 		{
 			sampler[i] = ss[i].Get();
 		}
 		m_ImmediateContext->CSSetSamplers(startSlot, ssNum, sampler.RawData());
 	}
-	void RDeviceD3D11::BindVSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
+	void RDeviceD3D11::BindVSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
 		m_ImmediateContext->VSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
-	void RDeviceD3D11::BindVSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
+	void RDeviceD3D11::BindVSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
 		TArray<ID3D11Buffer*> buffers;
 		buffers.Resize(bufferNum);
-		for (UINT i = 0u; i < bufferNum; i++)
+		for (UINT32 i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
 		m_ImmediateContext->VSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
-	void RDeviceD3D11::BindPSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
+	void RDeviceD3D11::BindPSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
 		m_ImmediateContext->PSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
-	void RDeviceD3D11::BindPSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
+	void RDeviceD3D11::BindPSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
 		TArray<ID3D11Buffer*> buffers;
 		buffers.Resize(bufferNum);
-		for (UINT i = 0u; i < bufferNum; i++)
+		for (UINT32 i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
 		m_ImmediateContext->PSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
-	void RDeviceD3D11::BindCSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT& startSlot)
+	void RDeviceD3D11::BindCSConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const UINT32& startSlot)
 	{
 		m_ImmediateContext->CSSetConstantBuffers(startSlot, 1u, buffer.GetAddressOf());
 	}
-	void RDeviceD3D11::BindCSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT& startSlot, const UINT& bufferNum)
+	void RDeviceD3D11::BindCSConstantBuffers(const Microsoft::WRL::ComPtr<ID3D11Buffer>* buffer, const UINT32& startSlot, const UINT32& bufferNum)
 	{
 		TArray<ID3D11Buffer*> buffers;
 		buffers.Resize(bufferNum);
-		for (UINT i = 0u; i < bufferNum; i++)
+		for (UINT32 i = 0u; i < bufferNum; i++)
 		{
 			buffers[i] = buffer[i].Get();
 		}
 		m_ImmediateContext->CSSetConstantBuffers(startSlot, bufferNum, buffers.RawData());
 	}
-	void RDeviceD3D11::BindVSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
+	void RDeviceD3D11::BindVSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
 		m_ImmediateContext->VSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
-	void RDeviceD3D11::BindVSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
+	void RDeviceD3D11::BindVSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
 		TArray<ID3D11ShaderResourceView*> srvs;
 		srvs.Resize(srvNum);
-		for (UINT i = 0u; i < srvNum; i++)
+		for (UINT32 i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
 		m_ImmediateContext->VSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
-	void RDeviceD3D11::BindPSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
+	void RDeviceD3D11::BindPSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
 		m_ImmediateContext->PSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
-	void RDeviceD3D11::BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
+	void RDeviceD3D11::BindPSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
 		TArray<ID3D11ShaderResourceView*> srvs;
 		srvs.Resize(srvNum);
-		for (UINT i = 0u; i < srvNum; i++)
+		for (UINT32 i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
 		m_ImmediateContext->PSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
-	void RDeviceD3D11::BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT& startSlot)
+	void RDeviceD3D11::BindCSShaderResourceView(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& srv, const UINT32& startSlot)
 	{
 		m_ImmediateContext->CSSetShaderResources(startSlot, 1u, srv.GetAddressOf());
 	}
-	void RDeviceD3D11::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT& startSlot, const UINT& srvNum)
+	void RDeviceD3D11::BindCSShaderResourceViews(const Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>* srv, const UINT32& startSlot, const UINT32& srvNum)
 	{
 		TArray<ID3D11ShaderResourceView*> srvs;
 		srvs.Resize(srvNum);
-		for (UINT i = 0u; i < srvNum; i++)
+		for (UINT32 i = 0u; i < srvNum; i++)
 		{
 			srvs[i] = srv[i].Get();
 		}
 		m_ImmediateContext->CSSetShaderResources(startSlot, srvNum, srvs.RawData());
 	}
-	void RDeviceD3D11::BindNoCSUnorderedAccessView(const UINT& startSlot)
+	void RDeviceD3D11::BindNoCSUnorderedAccessView(const UINT32& startSlot)
 	{
 		ID3D11UnorderedAccessView* uavs[] = { nullptr };
 		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uavs, nullptr);
 	}
-	void RDeviceD3D11::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT& startSlot)
+	void RDeviceD3D11::BindCSUnorderedAccessView(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const UINT32& startSlot)
 	{
 		m_ImmediateContext->CSSetUnorderedAccessViews(startSlot, 1u, uav.GetAddressOf(), nullptr);
 	}
-	void RDeviceD3D11::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT& startSlot, const UINT& uavNum)
+	void RDeviceD3D11::BindCSUnorderedAccessViews(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>* uav, const UINT32& startSlot, const UINT32& uavNum)
 	{
 		TArray<ID3D11UnorderedAccessView*> uavs;
 		uavs.Resize(uavNum);
-		for (UINT i = 0u; i < uavNum; i++)
+		for (UINT32 i = 0u; i < uavNum; i++)
 		{
 			uavs[i] = uav[i].Get();
 		}
@@ -1127,9 +1127,9 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->ClearRenderTargetView(rtv.Get(), clearColor.rgba);
 	}
-	void RDeviceD3D11::ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT flags, const FLOAT& depth, const UINT& stencil)
+	void RDeviceD3D11::ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT32 flags, const FLOAT& depth, const UINT32& stencil)
 	{
-		UINT clearFlags = 0u;
+		UINT32 clearFlags = 0u;
 		RDeviceD3D11::TranslateClearDepthStencilFlag(clearFlags, flags);
 		UINT8 clearStencil = static_cast<UINT8>(EMath::Min(stencil, 0xffu));
 		FLOAT clearDepth = EMath::Clamp(depth, 0.f, 1.f);
@@ -1141,10 +1141,10 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewUint(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Vector4Int& clearValue)
 	{
-		UINT values[4] = { static_cast<UINT>(clearValue.x), static_cast<UINT>(clearValue.y), static_cast<UINT>(clearValue.z), static_cast<UINT>(clearValue.w) };
+		UINT32 values[4] = { static_cast<UINT32>(clearValue.x), static_cast<UINT32>(clearValue.y), static_cast<UINT32>(clearValue.z), static_cast<UINT32>(clearValue.w) };
 		m_ImmediateContext->ClearUnorderedAccessViewUint(uav.Get(), values);
 	}
-	void RDeviceD3D11::SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset)
+	void RDeviceD3D11::SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride, const UINT32& offset)
 	{
 		m_ImmediateContext->IASetInputLayout(layout.Get());
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
@@ -1158,7 +1158,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->IASetInputLayout(nullptr);
 	}
-	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT& stride, const UINT& offset)
+	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride, const UINT32& offset)
 	{
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
 		m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
@@ -1166,11 +1166,11 @@ namespace PigeonEngine
 	void RDeviceD3D11::SetNoVertexBuffer()
 	{
 		ID3D11Buffer* buffers[] = { nullptr };
-		UINT stride = 0u, offset = 0u;
+		UINT32 stride = 0u, offset = 0u;
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
 		m_ImmediateContext->IASetVertexBuffers(0u, 1u, buffers, &stride, &offset);
 	}
-	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT& offset, RFormatType format)
+	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT32& offset, RFormatType format)
 	{
 		DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
 		RDeviceD3D11::TranslateResourceFormat(indexFormat, format);
@@ -1187,27 +1187,27 @@ namespace PigeonEngine
 		TranslatePrimitiveTopology(output, topology);
 		m_ImmediateContext->IASetPrimitiveTopology(output);
 	}
-	void RDeviceD3D11::Draw(const UINT& vertexCount, const UINT& startVertexLocation)
+	void RDeviceD3D11::Draw(const UINT32& vertexCount, const UINT32& startVertexLocation)
 	{
 		m_ImmediateContext->Draw(vertexCount, startVertexLocation);
 	}
-	void RDeviceD3D11::DrawIndexed(const UINT& indexCount, const UINT& startIndexLocation, const INT& baseVertexLocation)
+	void RDeviceD3D11::DrawIndexed(const UINT32& indexCount, const UINT32& startIndexLocation, const INT32& baseVertexLocation)
 	{
 		m_ImmediateContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 	}
-	void RDeviceD3D11::DrawIndexedInstance(const UINT& instanceCount, const UINT& indexCountPerInstance, const UINT& startInstanceLocation, const UINT& startIndexLocation, const INT& BaseVertexLocation)
+	void RDeviceD3D11::DrawIndexedInstance(const UINT32& instanceCount, const UINT32& indexCountPerInstance, const UINT32& startInstanceLocation, const UINT32& startIndexLocation, const INT32& BaseVertexLocation)
 	{
 		m_ImmediateContext->DrawIndexedInstanced(indexCountPerInstance, instanceCount, startIndexLocation, BaseVertexLocation, startInstanceLocation);
 	}
-	void RDeviceD3D11::Dispatch(const UINT& x, const UINT& y, const UINT& z)
+	void RDeviceD3D11::Dispatch(const UINT32& x, const UINT32& y, const UINT32& z)
 	{
 		m_ImmediateContext->Dispatch(x, y, z);
 	}
-	void RDeviceD3D11::DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT& alignedByteOffsetForArgs)
+	void RDeviceD3D11::DispatchIndirect(const Microsoft::WRL::ComPtr<ID3D11Buffer>& arg, const UINT32& alignedByteOffsetForArgs)
 	{
 		m_ImmediateContext->DispatchIndirect(arg.Get(), alignedByteOffsetForArgs);
 	}
-	BOOL RDeviceD3D11::CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const RDepthState& depthState, const RStencilState* stencilState)
+	BOOL32 RDeviceD3D11::CreateDepthStencilState(Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const RDepthState& depthState, const RStencilState* stencilState)
 	{
 		D3D11_DEPTH_STENCIL_DESC dsd;
 		{
@@ -1222,7 +1222,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const RBlendState* blendStates, const UINT& blendStateNum)
+	BOOL32 RDeviceD3D11::CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const RBlendState* blendStates, const UINT32& blendStateNum)
 	{
 		if (!blendStates || blendStateNum == 0u)
 		{
@@ -1238,7 +1238,7 @@ namespace PigeonEngine
 			{
 				bd.IndependentBlendEnable = TRUE;
 			}
-			for (UINT i = 0u; i < blendStateNum && i < 8u; i++)
+			for (UINT32 i = 0u; i < blendStateNum && i < 8u; i++)
 			{
 				RDeviceD3D11::TranslateBlendState(bd.RenderTarget[i], blendStates[i]);
 			}
@@ -1251,7 +1251,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, const RRasterizerState& rasterizerState)
+	BOOL32 RDeviceD3D11::CreateRasterizerState(Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs, const RRasterizerState& rasterizerState)
 	{
 		D3D11_RASTERIZER_DESC rd;
 		{
@@ -1274,7 +1274,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const RSamplerState& samplerState)
+	BOOL32 RDeviceD3D11::CreateSamplerState(Microsoft::WRL::ComPtr<ID3D11SamplerState>& ss, const RSamplerState& samplerState)
 	{
 		D3D11_SAMPLER_DESC sd;
 		{
@@ -1289,7 +1289,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::CreateQuery(Microsoft::WRL::ComPtr<ID3D11Query>& q, const RQueryDesc& queryDesc)
+	BOOL32 RDeviceD3D11::CreateQuery(Microsoft::WRL::ComPtr<ID3D11Query>& q, const RQueryDesc& queryDesc)
 	{
 		D3D11_QUERY_DESC qd;
 		{
@@ -1304,9 +1304,9 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL RDeviceD3D11::GetData(ID3D11Asynchronous* pAsync, void* output, const UINT& size, RAsyncGetDataFlagType flag)
+	BOOL32 RDeviceD3D11::GetData(ID3D11Asynchronous* pAsync, void* output, const UINT32& size, RAsyncGetDataFlagType flag)
 	{
-		UINT getDataFlag = 0u;
+		UINT32 getDataFlag = 0u;
 		RDeviceD3D11::TranslateGetDataFlag(getDataFlag, flag);
 		HRESULT hr = m_ImmediateContext->GetData(pAsync, output, size, getDataFlag);
 		return (!(FAILED(hr)));
@@ -1319,7 +1319,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->End(pAsync);
 	}
-	BOOL RDeviceD3D11::Map(const RStructuredBuffer& input, const UINT& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output)
+	BOOL32 RDeviceD3D11::Map(const RStructuredBuffer& input, const UINT32& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output)
 	{
 		{
 			if (!(input.AccessMapRead || input.AccessMapWrite))
@@ -1327,8 +1327,8 @@ namespace PigeonEngine
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mapping resource buffer check failed (error input access flag)."));
 				return FALSE;
 			}
-			BOOL needRead = mapType == RResourceMapType::RESOURCE_MAP_READ || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE;
-			BOOL needWrite = mapType == RResourceMapType::RESOURCE_MAP_WRITE || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE || mapType == RResourceMapType::RESOURCE_MAP_WRITE_DISCARD || mapType == RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE;
+			BOOL32 needRead = mapType == RResourceMapType::RESOURCE_MAP_READ || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE;
+			BOOL32 needWrite = mapType == RResourceMapType::RESOURCE_MAP_WRITE || mapType == RResourceMapType::RESOURCE_MAP_READ_WRITE || mapType == RResourceMapType::RESOURCE_MAP_WRITE_DISCARD || mapType == RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE;
 			if (input.AccessMapRead != needRead || input.AccessMapWrite != needWrite)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mapping resource buffer check failed (error access flag)."));
@@ -1337,7 +1337,7 @@ namespace PigeonEngine
 		}
 		D3D11_MAPPED_SUBRESOURCE ms;
 		{
-			UINT d3dMapFlag; D3D11_MAP d3dMapType;
+			UINT32 d3dMapFlag; D3D11_MAP d3dMapType;
 			::ZeroMemory(&ms, sizeof(ms));
 			RDeviceD3D11::TranslateResourceMapType(d3dMapType, mapType);
 			RDeviceD3D11::TranslateResourceMapFlag(d3dMapFlag, mapFlag);
@@ -1358,11 +1358,11 @@ namespace PigeonEngine
 		output.DepthPitch = ms.DepthPitch;
 		return TRUE;
 	}
-	void RDeviceD3D11::Unmap(const RStructuredBuffer& input, const UINT& indexSubResource)
+	void RDeviceD3D11::Unmap(const RStructuredBuffer& input, const UINT32& indexSubResource)
 	{
 		m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
 	}
-	void RDeviceD3D11::TranslateBindFlag(UINT& output, RBindFlagType input)
+	void RDeviceD3D11::TranslateBindFlag(UINT32& output, RBindFlagType input)
 	{
 		static RBindFlagType bindFlagTypes[] =
 		{
@@ -1375,7 +1375,7 @@ namespace PigeonEngine
 			RBindFlagType::BIND_DEPTH_STENCIL,
 			RBindFlagType::BIND_UNORDERED_ACCESS
 		};
-		static UINT d3dBindFlagTypes[] =
+		static UINT32 d3dBindFlagTypes[] =
 		{
 			D3D11_BIND_FLAG::D3D11_BIND_VERTEX_BUFFER,
 			D3D11_BIND_FLAG::D3D11_BIND_INDEX_BUFFER,
@@ -1391,7 +1391,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 8u; i++)
+		for (UINT32 i = 0u; i < 8u; i++)
 		{
 			if ((input & bindFlagTypes[i]) != 0)
 			{
@@ -1408,14 +1408,14 @@ namespace PigeonEngine
 			{ RUsageFlagType::USAGE_STAGING, D3D11_USAGE::D3D11_USAGE_STAGING } };
 		output = usageFlagMap[input];
 	}
-	void RDeviceD3D11::TranslateCPUAccessFlag(UINT& output, RCPUAccessFlagType input)
+	void RDeviceD3D11::TranslateCPUAccessFlag(UINT32& output, RCPUAccessFlagType input)
 	{
 		static RCPUAccessFlagType CPUAccessFlagTypes[] =
 		{
 			RCPUAccessFlagType::CPU_ACCESS_READ,
 			RCPUAccessFlagType::CPU_ACCESS_WRITE
 		};
-		static UINT d3dCPUAccessFlagTypes[] =
+		static UINT32 d3dCPUAccessFlagTypes[] =
 		{
 			D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_READ,
 			D3D11_CPU_ACCESS_FLAG::D3D11_CPU_ACCESS_WRITE
@@ -1425,7 +1425,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 2u; i++)
+		for (UINT32 i = 0u; i < 2u; i++)
 		{
 			if ((input & CPUAccessFlagTypes[i]) != 0)
 			{
@@ -1433,7 +1433,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void RDeviceD3D11::TranslateResourceMiscFlag(UINT& output, RResourceMiscFlagType input)
+	void RDeviceD3D11::TranslateResourceMiscFlag(UINT32& output, RResourceMiscFlagType input)
 	{
 		static RResourceMiscFlagType miscFlagTypes[] =
 		{
@@ -1443,7 +1443,7 @@ namespace PigeonEngine
 			RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED,
 			RResourceMiscFlagType::RESOURCE_MISC_RESOURCE_CLAMP
 		};
-		static UINT d3dMiscFlagTypes[] =
+		static UINT32 d3dMiscFlagTypes[] =
 		{
 			D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_GENERATE_MIPS,
 			D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_TEXTURECUBE,
@@ -1456,7 +1456,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 5u; i++)
+		for (UINT32 i = 0u; i < 5u; i++)
 		{
 			if ((input & miscFlagTypes[i]) != 0)
 			{
@@ -1582,7 +1582,7 @@ namespace PigeonEngine
 		};
 		output = formatMap[input];
 	}
-	void RDeviceD3D11::TranslateUAVFlag(UINT& output, RUAVFlagType input)
+	void RDeviceD3D11::TranslateUAVFlag(UINT32& output, RUAVFlagType input)
 	{
 		static RUAVFlagType UAVFlagTypes[] =
 		{
@@ -1590,7 +1590,7 @@ namespace PigeonEngine
 			RUAVFlagType::UAV_FLAG_APPEND,
 			RUAVFlagType::UAV_FLAG_COUNTER
 		};
-		static UINT d3dUAVFlagTypes[] =
+		static UINT32 d3dUAVFlagTypes[] =
 		{
 			D3D11_BUFFER_UAV_FLAG::D3D11_BUFFER_UAV_FLAG_RAW,
 			D3D11_BUFFER_UAV_FLAG::D3D11_BUFFER_UAV_FLAG_APPEND,
@@ -1601,7 +1601,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 2u; i++)
+		for (UINT32 i = 0u; i < 2u; i++)
 		{
 			if ((input & UAVFlagTypes[i]) != 0)
 			{
@@ -1706,7 +1706,7 @@ namespace PigeonEngine
 		else
 		{
 			output.RenderTargetWriteMask = 0u;
-			for (UINT i = 0u; i < 4u; i++)
+			for (UINT32 i = 0u; i < 4u; i++)
 			{
 				if ((input.RenderTargetWriteMask & colorWriteMaskTypes[i]) != 0)
 				{
@@ -1753,14 +1753,14 @@ namespace PigeonEngine
 		output.MinLOD = input.MinLOD;
 		output.MaxLOD = input.MaxLOD;
 	}
-	void RDeviceD3D11::TranslateClearDepthStencilFlag(UINT& output, const UINT& input)
+	void RDeviceD3D11::TranslateClearDepthStencilFlag(UINT32& output, const UINT32& input)
 	{
 		static RClearDepthStencilFlagType clearDepthStencilFlagTypes[] =
 		{
 			RClearDepthStencilFlagType::CLEAR_DEPTH,
 			RClearDepthStencilFlagType::CLEAR_STENCIL
 		};
-		static UINT d3dClearDepthStencilFlagTypes[] =
+		static UINT32 d3dClearDepthStencilFlagTypes[] =
 		{
 			D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH,
 			D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL,
@@ -1770,7 +1770,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 2u; i++)
+		for (UINT32 i = 0u; i < 2u; i++)
 		{
 			if ((input & clearDepthStencilFlagTypes[i]) != 0)
 			{
@@ -1812,7 +1812,7 @@ namespace PigeonEngine
 		{
 			RQueryMiscFlagType::QUERY_MISC_PREDICATEHINT
 		};
-		static UINT d3dQueryMiscFlagTypes[] =
+		static UINT32 d3dQueryMiscFlagTypes[] =
 		{
 			D3D11_QUERY_MISC_FLAG::D3D11_QUERY_MISC_PREDICATEHINT
 		};
@@ -1822,7 +1822,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 1u; i++)
+		for (UINT32 i = 0u; i < 1u; i++)
 		{
 			if ((input.MiscFlags & queryMiscFlagTypes[i]) != 0)
 			{
@@ -1830,13 +1830,13 @@ namespace PigeonEngine
 			}
 		}
 	}
-	void RDeviceD3D11::TranslateGetDataFlag(UINT& output, RAsyncGetDataFlagType input)
+	void RDeviceD3D11::TranslateGetDataFlag(UINT32& output, RAsyncGetDataFlagType input)
 	{
 		static RAsyncGetDataFlagType asyncGetDataFlagTypes[] =
 		{
 			RAsyncGetDataFlagType::ASYNC_GETDATA_DONOTFLUSH
 		};
-		static UINT d3dAsyncGetDataFlagTypes[] =
+		static UINT32 d3dAsyncGetDataFlagTypes[] =
 		{
 			D3D11_ASYNC_GETDATA_FLAG::D3D11_ASYNC_GETDATA_DONOTFLUSH
 		};
@@ -1845,7 +1845,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		for (UINT i = 0u; i < 1u; i++)
+		for (UINT32 i = 0u; i < 1u; i++)
 		{
 			if ((input & asyncGetDataFlagTypes[i]) != 0)
 			{
@@ -1863,9 +1863,9 @@ namespace PigeonEngine
 			{ RResourceMapType::RESOURCE_MAP_WRITE_NO_OVERWRITE, D3D11_MAP::D3D11_MAP_WRITE_NO_OVERWRITE } };
 		output = resourceMapTypes[input];
 	}
-	void RDeviceD3D11::TranslateResourceMapFlag(UINT& output, RResourceMapFlagType input)
+	void RDeviceD3D11::TranslateResourceMapFlag(UINT32& output, RResourceMapFlagType input)
 	{
-		static TMap<RResourceMapFlagType, UINT> resourceMapFlagTypes = {
+		static TMap<RResourceMapFlagType, UINT32> resourceMapFlagTypes = {
 			{ RResourceMapFlagType::RESOURCE_MAP_FLAG_NONE, 0u },
 			{ RResourceMapFlagType::RESOURCE_MAP_FLAG_DO_NOT_WAIT, D3D11_MAP_FLAG::D3D11_MAP_FLAG_DO_NOT_WAIT } };
 		output = resourceMapFlagTypes[input];
@@ -1878,7 +1878,7 @@ namespace PigeonEngine
 		::ZeroMemory(&output, sizeof(output));
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return; }
 		{
-			EString strSemanticName; UINT semanticName = input.SemanticName;
+			EString strSemanticName; UINT32 semanticName = input.SemanticName;
 			if ((semanticName >> 15) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TEXCOORD[n]

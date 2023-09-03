@@ -14,8 +14,8 @@ namespace PigeonEngine
 		virtual ~RRenderResourceInterface() = default;
 		RRenderResourceInterface& operator=(const RRenderResourceInterface&) = default;
 	public:
-		virtual BOOL IsRenderResourceValid()const = 0;
-		virtual BOOL InitRenderResource() = 0;
+		virtual BOOL32 IsRenderResourceValid()const = 0;
+		virtual BOOL32 InitRenderResource() = 0;
 		virtual void ReleaseRenderResource() = 0;
 	};
 	struct RBoundingBox
@@ -92,9 +92,9 @@ namespace PigeonEngine
 	struct RPerSkeletonConstantBuffer
 	{
 		RPerSkeletonConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
-		RPerSkeletonConstantBuffer(const RPerSkeletonConstantBuffer& other) : SkeletonBoneNum(other.SkeletonBoneNum) { for (USHORT i = 0u; i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX * 2u; i++) { SkeletonMatrix[i] = other.SkeletonMatrix[i]; } }
+		RPerSkeletonConstantBuffer(const RPerSkeletonConstantBuffer& other) : SkeletonBoneNum(other.SkeletonBoneNum) { for (USHORT i = 0u; i < RCommonSettings::RENDER_MESH_BONE_NUM_MAX * 2u; i++) { SkeletonMatrix[i] = other.SkeletonMatrix[i]; } }
 		DirectX::XMFLOAT4		SkeletonBoneNum;
-		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX * 2u];
+		DirectX::XMFLOAT4X4		SkeletonMatrix[RCommonSettings::RENDER_MESH_BONE_NUM_MAX * 2u];
 	};
 	enum RShaderFrequencyType : UINT8
 	{
@@ -161,7 +161,7 @@ namespace PigeonEngine
 		RDepthState() noexcept : DepthEnable(FALSE), DepthWriteMask(RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO), DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		RDepthState(const RDepthState& other) noexcept : DepthEnable(other.DepthEnable), DepthWriteMask(other.DepthWriteMask), DepthFunc(other.DepthFunc) {}
 		constexpr RDepthState(RComparisonFunctionType func, RDepthWriteMaskType writeMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL) noexcept : DepthEnable(TRUE), DepthWriteMask(writeMask), DepthFunc(func) {}
-		BOOL						DepthEnable;
+		BOOL32						DepthEnable;
 		RDepthWriteMaskType			DepthWriteMask;
 		RComparisonFunctionType		DepthFunc;
 	};
@@ -189,12 +189,12 @@ namespace PigeonEngine
 	struct RStencilState
 	{
 		RStencilState() : StencilEnable(FALSE), StencilReadMask(ENGINE_DEFAULT_STENCIL_READ_MASK), StencilWriteMask(ENGINE_DEFAULT_STENCIL_WRITE_MASK), FrontFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)), BackFace(RStencilStateType(RComparisonFunctionType::COMPARISON_NEVER, RStencilOperationType::STENCIL_OP_KEEP)) {}
-		RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(static_cast<UINT>(readMask)), StencilWriteMask(static_cast<UINT>(writeMask)), FrontFace(frontFace), BackFace(backFace) {}
-		RStencilState(const UINT& readMask, const UINT& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(EMath::Min(readMask, 0xffu)), StencilWriteMask(EMath::Min(writeMask, 0xffu)), FrontFace(frontFace), BackFace(backFace) {}
+		RStencilState(RStencilMaskType readMask, RStencilMaskType writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(static_cast<UINT32>(readMask)), StencilWriteMask(static_cast<UINT32>(writeMask)), FrontFace(frontFace), BackFace(backFace) {}
+		RStencilState(const UINT32& readMask, const UINT32& writeMask, const RStencilStateType& frontFace, const RStencilStateType& backFace) noexcept : StencilEnable(TRUE), StencilReadMask(EMath::Min(readMask, 0xffu)), StencilWriteMask(EMath::Min(writeMask, 0xffu)), FrontFace(frontFace), BackFace(backFace) {}
 		RStencilState(const RStencilState& other) noexcept : StencilEnable(other.StencilEnable), StencilReadMask(other.StencilReadMask), StencilWriteMask(other.StencilWriteMask), FrontFace(other.FrontFace), BackFace(other.BackFace) {}
-		BOOL				StencilEnable;
-		UINT				StencilReadMask;
-		UINT				StencilWriteMask;
+		BOOL32				StencilEnable;
+		UINT32				StencilReadMask;
+		UINT32				StencilWriteMask;
 		RStencilStateType	FrontFace;
 		RStencilStateType	BackFace;
 	};
@@ -235,7 +235,7 @@ namespace PigeonEngine
 		RBlendState() noexcept : BlendEnable(FALSE), SrcBlend(RBlendOptionType::BLEND_ONE), DstBlend(RBlendOptionType::BLEND_ZERO), BlendOp(RBlendOperationType::BLEND_OP_ADD), SrcBlendAlpha(RBlendOptionType::BLEND_ONE), DstBlendAlpha(RBlendOptionType::BLEND_ZERO), BlendOpAlpha(RBlendOperationType::BLEND_OP_ADD), RenderTargetWriteMask(RColorWriteMaskType::COLOR_WRITE_MASK_ALL) {}
 		RBlendState(const RBlendState& other) noexcept : BlendEnable(other.BlendEnable), SrcBlend(other.SrcBlend), DstBlend(other.DstBlend), BlendOp(other.BlendOp), SrcBlendAlpha(other.SrcBlendAlpha), DstBlendAlpha(other.DstBlendAlpha), BlendOpAlpha(other.BlendOpAlpha), RenderTargetWriteMask(other.RenderTargetWriteMask) {}
 		constexpr RBlendState(RBlendOptionType src, RBlendOptionType dst, RBlendOperationType op, RBlendOptionType srcA, RBlendOptionType dstA, RBlendOperationType opA, RColorWriteMaskType writeMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL) noexcept : BlendEnable(TRUE), SrcBlend(src), DstBlend(dst), BlendOp(op), SrcBlendAlpha(srcA), DstBlendAlpha(dstA), BlendOpAlpha(opA), RenderTargetWriteMask(writeMask) {}
-		BOOL					BlendEnable;
+		BOOL32					BlendEnable;
 		RBlendOptionType		SrcBlend;
 		RBlendOptionType		DstBlend;
 		RBlendOperationType		BlendOp;
@@ -260,15 +260,15 @@ namespace PigeonEngine
 	};
 	struct RSamplerState
 	{
-		RSamplerState() noexcept : Filter(RFilterType::FILTER_LINEAR), AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS), BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(ENGINE_FLOAT32_MAX) {}
-		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = ENGINE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS) noexcept : Filter(filter), AddressU(u), AddressV(v), AddressW(w), MipLODBias(mipLODBias), MaxAnisotropy(maxAnisotropy), ComparisonFunc(func), BorderColor(borderColor), MinLOD(minLOD), MaxLOD(maxLOD) {}
+		RSamplerState() noexcept : Filter(RFilterType::FILTER_LINEAR), AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP), MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS), BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(PE_FLOAT32_MAX) {}
+		RSamplerState(RFilterType filter, RTextureAddressModeType u, RTextureAddressModeType v, RTextureAddressModeType w, const FLOAT& maxLOD = PE_FLOAT32_MAX, const FLOAT& minLOD = 0.f, const UINT32& maxAnisotropy = 1u, const FLOAT& mipLODBias = 0.f, const Color4& borderColor = Color4(0.f, 0.f, 0.f, 0.f), RComparisonFunctionType func = RComparisonFunctionType::COMPARISON_ALWAYS) noexcept : Filter(filter), AddressU(u), AddressV(v), AddressW(w), MipLODBias(mipLODBias), MaxAnisotropy(maxAnisotropy), ComparisonFunc(func), BorderColor(borderColor), MinLOD(minLOD), MaxLOD(maxLOD) {}
 		RSamplerState(const RSamplerState& other) noexcept : Filter(other.Filter), AddressU(other.AddressU), AddressV(other.AddressV), AddressW(other.AddressW), MipLODBias(other.MipLODBias), MaxAnisotropy(other.MaxAnisotropy), ComparisonFunc(other.ComparisonFunc), BorderColor(other.BorderColor), MinLOD(other.MinLOD), MaxLOD(other.MaxLOD) {}
 		RFilterType					Filter;
 		RTextureAddressModeType		AddressU;
 		RTextureAddressModeType		AddressV;
 		RTextureAddressModeType		AddressW;
 		FLOAT						MipLODBias;
-		UINT						MaxAnisotropy;
+		UINT32						MaxAnisotropy;
 		RComparisonFunctionType		ComparisonFunc;
 		Color4						BorderColor;
 		FLOAT						MinLOD;
@@ -319,22 +319,22 @@ namespace PigeonEngine
 	{
 		RBufferDesc()noexcept : ByteWidth(0u), Usage(RUsageFlagType::USAGE_DEFAULT), BindFlags(RBindFlagType::BIND_NONE), CPUAccessFlags(RCPUAccessFlagType::CPU_ACCESS_DEFAULT), MiscFlags(RResourceMiscFlagType::RESOURCE_MISC_NONE), StructureByteStride(0u) {}
 		RBufferDesc(const RBufferDesc& other) noexcept : ByteWidth(other.ByteWidth), Usage(other.Usage), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags), MiscFlags(other.MiscFlags), StructureByteStride(other.StructureByteStride) {}
-		constexpr RBufferDesc(const UINT& byteWidth, RBindFlagType bindFlag, const UINT& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
-		UINT					ByteWidth;
+		constexpr RBufferDesc(const UINT32& byteWidth, RBindFlagType bindFlag, const UINT32& structureByteStride, RResourceMiscFlagType miscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE, RUsageFlagType usage = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT) noexcept : ByteWidth(byteWidth), Usage(usage), BindFlags(bindFlag), CPUAccessFlags(cpuAccessFlag), MiscFlags(miscFlag), StructureByteStride(structureByteStride) {}
+		UINT32					ByteWidth;
 		RUsageFlagType			Usage;
 		RBindFlagType			BindFlags;
 		RCPUAccessFlagType		CPUAccessFlags;
 		RResourceMiscFlagType	MiscFlags;
-		UINT					StructureByteStride;
+		UINT32					StructureByteStride;
 	};
 	struct RSubresourceDataDesc
 	{
 		RSubresourceDataDesc() noexcept : pSysMem(nullptr), SysMemPitch(0u), SysMemSlicePitch(0u) {}
 		RSubresourceDataDesc(const RSubresourceDataDesc& other) noexcept : pSysMem(other.pSysMem), SysMemPitch(other.SysMemPitch), SysMemSlicePitch(other.SysMemSlicePitch) {}
-		constexpr RSubresourceDataDesc(const void* mem, const UINT& sysMemPitch, const UINT& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
+		constexpr RSubresourceDataDesc(const void* mem, const UINT32& sysMemPitch, const UINT32& sysMemSlicePitch) noexcept : pSysMem(mem), SysMemPitch(sysMemPitch), SysMemSlicePitch(sysMemSlicePitch) {}
 		const void*		pSysMem;
-		UINT			SysMemPitch;
-		UINT			SysMemSlicePitch;
+		UINT32			SysMemPitch;
+		UINT32			SysMemSlicePitch;
 	};
 	enum RFormatType : UINT32
 	{
@@ -454,16 +454,16 @@ namespace PigeonEngine
 	{
 		RTextureSampleDesc() noexcept : Count(1u), Quality(0u) {}
 		RTextureSampleDesc(const RTextureSampleDesc& other) noexcept : Count(other.Count), Quality(other.Quality) {}
-		constexpr RTextureSampleDesc(const UINT& count, const UINT& quality) noexcept : Count(count), Quality(quality) {}
-		UINT	Count;
-		UINT	Quality;
+		constexpr RTextureSampleDesc(const UINT32& count, const UINT32& quality) noexcept : Count(count), Quality(quality) {}
+		UINT32	Count;
+		UINT32	Quality;
 	};
 	struct RTextureDesc
 	{
 		RTextureDesc(
-			const UINT& width, const UINT& height, RBindFlagType bindFlags, RFormatType bufferFormat, const RFormatType* srvFormat = nullptr
-			, const RFormatType* rtvFormat = nullptr, const RFormatType* uavFormat = nullptr, const UINT& depth = 0u, const UINT& mipLevels = 1u
-			, const UINT& arraySize = 1u, RUsageFlagType usageFlag = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT
+			const UINT32& width, const UINT32& height, RBindFlagType bindFlags, RFormatType bufferFormat, const RFormatType* srvFormat = nullptr
+			, const RFormatType* rtvFormat = nullptr, const RFormatType* uavFormat = nullptr, const UINT32& depth = 0u, const UINT32& mipLevels = 1u
+			, const UINT32& arraySize = 1u, RUsageFlagType usageFlag = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT
 			, RResourceMiscFlagType miscFlags = RResourceMiscFlagType::RESOURCE_MISC_NONE, RTextureSampleDesc sampleDesc = RTextureSampleDesc(1u, 0u)) noexcept
 			: Width(width), Height(height), Depth(depth), MipLevels(mipLevels), ArraySize(arraySize), BufferFormat(bufferFormat), SampleDesc(sampleDesc)
 			, UsageFlag(usageFlag), BindFlags(bindFlags), CPUAccessFlags(cpuAccessFlags), MiscFlags(miscFlags)
@@ -478,11 +478,11 @@ namespace PigeonEngine
 			, RTVFormat(other.RTVFormat), UAVFormat(other.UAVFormat), SampleDesc(other.SampleDesc)
 			, UsageFlag(other.UsageFlag), BindFlags(other.BindFlags), CPUAccessFlags(other.CPUAccessFlags)
 			, MiscFlags(other.MiscFlags) {}
-		UINT					Width;
-		UINT					Height;
-		UINT					Depth;
-		UINT					MipLevels;
-		UINT					ArraySize;
+		UINT32					Width;
+		UINT32					Height;
+		UINT32					Depth;
+		UINT32					MipLevels;
+		UINT32					ArraySize;
 		RFormatType				BufferFormat;
 		RFormatType				SRVFormat;
 		RFormatType				RTVFormat;
@@ -497,12 +497,12 @@ namespace PigeonEngine
 	{
 		RStructuredBufferDesc() noexcept : GPUWritable(FALSE), AccessFlags(RCPUAccessFlagType::CPU_ACCESS_DEFAULT), StructureSize(0u), FirstElement(0u), NumElements(0u), UAVFlags(RUAVFlagType::UAV_FLAG_NONE) {}
 		RStructuredBufferDesc(const RStructuredBufferDesc& other) noexcept : GPUWritable(other.GPUWritable), AccessFlags(other.AccessFlags), StructureSize(other.StructureSize), FirstElement(other.FirstElement), NumElements(other.NumElements), UAVFlags(other.UAVFlags) {}
-		constexpr RStructuredBufferDesc(const UINT& structureSize, const UINT& numElements, const BOOL& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
-		BOOL					GPUWritable;
+		constexpr RStructuredBufferDesc(const UINT32& structureSize, const UINT32& numElements, const BOOL32& writableGPU = FALSE, RCPUAccessFlagType accessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT32& firstElement = 0u, RUAVFlagType uavFlags = RUAVFlagType::UAV_FLAG_NONE) noexcept : GPUWritable(writableGPU), AccessFlags(accessFlags), StructureSize(structureSize), FirstElement(firstElement), NumElements(numElements), UAVFlags(uavFlags) {}
+		BOOL32					GPUWritable;
 		RCPUAccessFlagType		AccessFlags;
-		UINT					StructureSize;
-		UINT					FirstElement;
-		UINT					NumElements;
+		UINT32					StructureSize;
+		UINT32					FirstElement;
+		UINT32					NumElements;
 		RUAVFlagType			UAVFlags;
 	};
 	enum RInputClassificationType : UINT8
@@ -564,12 +564,12 @@ namespace PigeonEngine
 	{
 		RInputLayoutDesc() noexcept : SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE), SemanticIndex(0u), InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA), InstanceDataStepRate(0u) {}
 		RInputLayoutDesc(const RInputLayoutDesc& other) noexcept : SemanticName(other.SemanticName), SemanticIndex(other.SemanticIndex), InputSlot(other.InputSlot), InputSlotClass(other.InputSlotClass), InstanceDataStepRate(other.InstanceDataStepRate) {}
-		constexpr RInputLayoutDesc(RShaderSemanticType name, const UINT& semanticIndex = 0u, const UINT& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
+		constexpr RInputLayoutDesc(RShaderSemanticType name, const UINT32& semanticIndex = 0u, const UINT32& inputSlot = 0u, RInputClassificationType inputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA, const UINT32& instanceDataStepRate = 0u) noexcept : SemanticName(name), SemanticIndex(semanticIndex), InputSlot(inputSlot), InputSlotClass(inputSlotClass), InstanceDataStepRate(instanceDataStepRate) {}
 		RShaderSemanticType			SemanticName;
-		UINT						SemanticIndex;
-		UINT						InputSlot;
+		UINT32						SemanticIndex;
+		UINT32						InputSlot;
 		RInputClassificationType	InputSlotClass;
-		UINT						InstanceDataStepRate;
+		UINT32						InstanceDataStepRate;
 	};
 	enum RResourceMapType : UINT8
 	{
@@ -588,10 +588,10 @@ namespace PigeonEngine
 	{
 		RMappedResource() noexcept : pData(nullptr), RowPitch(0u), DepthPitch(0u) {}
 		RMappedResource(const RMappedResource& other) noexcept : pData(other.pData), RowPitch(other.RowPitch), DepthPitch(other.DepthPitch) {}
-		constexpr RMappedResource(void* InData, UINT InRowPitch, UINT InDepthPitch) noexcept : pData(InData), RowPitch(InRowPitch), DepthPitch(InDepthPitch) {}
+		constexpr RMappedResource(void* InData, UINT32 InRowPitch, UINT32 InDepthPitch) noexcept : pData(InData), RowPitch(InRowPitch), DepthPitch(InDepthPitch) {}
 		void*	pData;
-		UINT	RowPitch;
-		UINT	DepthPitch;
+		UINT32	RowPitch;
+		UINT32	DepthPitch;
 	};
 	enum RQueryType : UINT8
 	{
@@ -634,10 +634,10 @@ namespace PigeonEngine
 	{
 		RQueryTimestampDisjoint() noexcept : Frequency(1u), Disjoint(TRUE) {}
 		RQueryTimestampDisjoint(const RQueryTimestampDisjoint& other) noexcept : Frequency(other.Frequency), Disjoint(other.Disjoint) {}
-		constexpr RQueryTimestampDisjoint(ULONGLONG	InFrequency, BOOL InDisjoint) noexcept : Frequency(InFrequency), Disjoint(InDisjoint) {}
+		constexpr RQueryTimestampDisjoint(ULONGLONG	InFrequency, BOOL32 InDisjoint) noexcept : Frequency(InFrequency), Disjoint(InDisjoint) {}
 		void Reset() { Frequency = 1u; Disjoint = TRUE; }
 		ULONGLONG	Frequency;
-		BOOL		Disjoint;
+		BOOL32		Disjoint;
 	};
 	enum RClearDepthStencilFlagType : UINT8
 	{
@@ -656,11 +656,11 @@ namespace PigeonEngine
 	};
 
 	extern EString GetEngineDefaultTexturePath(RDefaultTextureType texType);
-	extern UINT GetShaderSemanticSizeByByte(const RInputLayoutDesc& input);
-	extern UINT GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);
+	extern UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input);
+	extern UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);
 	extern RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input);
-	extern UINT GetShaderSemanticTypeSlot(RShaderSemanticType input);
-	extern void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum);
-	extern void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT& OutLayoutNum);
+	extern UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input);
+	extern void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
+	extern void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 
 };

@@ -6,28 +6,29 @@
 #include <Config/EngineConfig.h>
 #include "Mouse.h"
 #include "Keyboard.h"
-
+#include "Base/Delegate/Delegate.h"
+MAKE_DELEGATE_MULTI_ONE_PARAM(EOnKeyDown, UINT32);
 namespace PigeonEngine
 {
 
 	class IController
 	{
 	public:
-		void Initialize(HWND InhWnd, INT WindowSizeX, INT WindowSizeY);
+		void Initialize(HWND InhWnd, INT32 WindowSizeX, INT32 WindowSizeY);
 
 	private:
-		INT WindowSizeX = static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH);
-		INT WindowSizeY = static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT);
+		INT32 WindowSizeX = static_cast<INT32>(ESettings::ENGINE_SCREEN_WIDTH);
+		INT32 WindowSizeY = static_cast<INT32>(ESettings::ENGINE_SCREEN_HEIGHT);
 		HWND hWnd = NULL;
 
+		EOnKeyDown OnKeyDown;
 		/*Mouse part start*/
-
 	public:
-		std::pair<INT, INT> GetMousePosition() const;
+		std::pair<INT32, INT32> GetMousePosition() const;
 
 		void EnableCursor();
 		void DisableCursor();
-		BOOL IsCursorEnabled() const;
+		BOOL32 IsCursorEnabled() const;
 
 		void ConfineCursor();
 		void FreeCursor();
@@ -36,15 +37,15 @@ namespace PigeonEngine
 
 		void EnableMouseRaw();
 		void DisableMouseRaw();
-		BOOL IsMouseRawEnabled() const;
+		BOOL32 IsMouseRawEnabled() const;
 
-		BOOL IsLeftMouseButtonDown()const;
-		BOOL IsRightMouseButtonDown()const;
+		BOOL32 IsLeftMouseButtonDown()const;
+		BOOL32 IsRightMouseButtonDown()const;
 		std::optional<IMouse::RawDelta> ReadRawDelta();
 
 	private:
 		IMouse Mouse;
-		BOOL bCursorEnabled = false;
+		BOOL32 bCursorEnabled = false;
 		std::vector<BYTE> rawBuffer;
 
 		/*Mouse part end*/
@@ -52,19 +53,19 @@ namespace PigeonEngine
 		/*Keyboard Part Start*/
 	public:
 		// key event stuff
-		BOOL IsKeyPressed(unsigned char keycode) const;
+		BOOL32 IsKeyPressed(unsigned char keycode) const;
 		std::optional<IKeyboard::Event> ReadKey();
-		BOOL IsKeyEmpty() const;
+		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
 		// char event stuff
 		std::optional<char> ReadChar();
-		BOOL IsCharEmpty() const;
+		BOOL32 IsCharEmpty() const;
 		void FlushChar();
 		void Flush();
 		// autorepeat control
 		void EnableAutorepeat();
 		void DisableAutorepeat();
-		BOOL IsAutorepeatEnabled() const;
+		BOOL32 IsAutorepeatEnabled() const;
 	private:
 		IKeyboard Keyboard;
 
@@ -72,7 +73,7 @@ namespace PigeonEngine
 
 	public:
 		// WIndow message handler
-		LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 	};
 
 	class EInput
@@ -82,8 +83,8 @@ namespace PigeonEngine
 		static void		ShutDown();
 		static void		Update();
 		//public:
-		//	static BOOL		GetKeyPress(BYTE KeyCode);
-		//	static BOOL		GetKeyTrigger(BYTE KeyCode);
+		//	static BOOL32		GetKeyPress(BYTE KeyCode);
+		//	static BOOL32		GetKeyTrigger(BYTE KeyCode);
 		//private:
 		//	static BYTE		m_OldKeyState[256];
 		//	static BYTE		m_KeyState[256];
@@ -91,7 +92,7 @@ namespace PigeonEngine
 		static std::optional<IMouse::RawDelta>	ReadRawDelta();
 	public:
 		// WIndow message handler
-		static LRESULT	HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static LRESULT	HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 	public:
 		static IController	Controller;
 	};

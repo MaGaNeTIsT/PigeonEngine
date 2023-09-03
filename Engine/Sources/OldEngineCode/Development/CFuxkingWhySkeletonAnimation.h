@@ -19,13 +19,13 @@ public:
 	};
 	struct CFuxkingWhyMesh
 	{
-		UINT									IndexCount;
+		UINT32									IndexCount;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	VertexBuffer;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	IndexBuffer;
 	};
 	struct CFuxkingWhyBone
 	{
-		UINT					Index;
+		UINT32					Index;
 		std::string				Name;
 		DirectX::XMFLOAT4X4		BindPoseMatrix;
 		DirectX::XMFLOAT4X4		BoneMatrix;
@@ -56,7 +56,7 @@ public:
 	CFuxkingWhyBoneCBuffer						m_BoneCBufferData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>		m_BoneCBuffer;
 public:
-	std::map<std::string, UINT>					m_BoneMap;
+	std::map<std::string, UINT32>					m_BoneMap;
 	std::vector<CFuxkingWhyBone>				m_BoneList;
 	std::vector<CFuxkingWhyMesh>				m_Meshes;
 	FLOAT										m_AnimationT;

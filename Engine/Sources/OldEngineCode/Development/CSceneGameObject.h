@@ -31,17 +31,17 @@ protected:
 protected:
 	class CMeshRendererComponent*	m_MeshRendererComponent;
 	class CMeshComponent*			m_MeshComponent;
-	INT								m_CurrentMaterialType;
-	INT								m_PreviousMaterialType;
-	BOOL							m_LoadBaseModel;
+	INT32								m_CurrentMaterialType;
+	INT32								m_PreviousMaterialType;
+	BOOL32							m_LoadBaseModel;
 	CHAR							m_LoadCustomModelPath[512];
-	INT								m_CurrentMeshType;
-	INT								m_PreviousMeshType;
+	INT32								m_CurrentMeshType;
+	INT32								m_PreviousMeshType;
 	CHAR							m_SaveMaterialPath[512];
 	CHAR							m_LoadMaterialPath[512];
 #endif
 public:
-	CSceneGameObject(const BOOL& active, const class CScene* scene);
+	CSceneGameObject(const BOOL32& active, const class CScene* scene);
 	virtual ~CSceneGameObject();
 };
 */

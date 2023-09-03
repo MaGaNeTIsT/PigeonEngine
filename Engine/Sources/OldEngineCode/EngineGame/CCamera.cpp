@@ -7,7 +7,7 @@
 const static CustomType::Vector2 _GStaticPointScale(0.5f, -0.5f);
 const static CustomType::Vector2 _GStaticPointAdd(0.5f, 0.5f);
 
-CCamera::CCamera(const BOOL& active, const class CScene* scene) : CGameObject(active, scene)
+CCamera::CCamera(const BOOL32& active, const class CScene* scene) : CGameObject(active, scene)
 {
 	this->m_CameraInfo.Viewport = CustomStruct::CRenderViewport(CustomType::Vector4(0, 0, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT), CustomType::Vector2(0.f, 1.f));
 	this->m_CameraInfo.Fov		= ENGINE_CAMERA_FOV;
@@ -29,7 +29,7 @@ CustomStruct::CCullingFrustumInfo CCamera::PrepareTempFrustumInfo()const
 
 	{
 		std::vector<CustomType::Vector3> tempPlane(this->GetCullingPlane());
-		for (UINT i = 0u; i < 4u; i++)
+		for (UINT32 i = 0u; i < 4u; i++)
 		{
 			result.CameraFrustumPlane[i] = tempPlane[i];
 			result.CameraProjectPlane[i] = CustomType::Vector3::Dot(tempWorldPosition, -tempPlane[i]);
@@ -70,7 +70,7 @@ void CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input,
 	}
 	output = (result * _GStaticPointScale + _GStaticPointAdd) * viewPortPointMul + viewPortPointAdd;
 }
-BOOL CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
+BOOL32 CCamera::TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
 {
 	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
 	point = this->GetViewProjectionMatrix().MultiplyVector(point);
@@ -110,7 +110,7 @@ void CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, 
 	}
 	output = (result * _GStaticPointScale + _GStaticPointAdd) * viewPortPointMul + viewPortPointAdd;
 }
-BOOL CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
+BOOL32 CCamera::TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const
 {
 	CustomType::Vector4 point(input.X(), input.Y(), input.Z(), 1.f);
 	point = this->GetProjectionMatrix().MultiplyVector(point);
@@ -176,7 +176,7 @@ std::vector<CustomType::Vector3> CCamera::GetCullingPlanePoint()const
 		wR.MultiplyVector(this->m_FrustumInfo.Point[5]),
 		wR.MultiplyVector(this->m_FrustumInfo.Point[6]),
 		wR.MultiplyVector(this->m_FrustumInfo.Point[7]) };
-	for (INT i = 0; i < 8; i++)
+	for (INT32 i = 0; i < 8; i++)
 	{
 		points[i] += wP;
 	}
@@ -222,19 +222,19 @@ void CCamera::ReCalculateFrustumPlane(CFrustumPlane& plane, const FLOAT& fovAngl
 	}
 
 	{
-		for (INT i = 4; i < 8; i++)
+		for (INT32 i = 4; i < 8; i++)
 		{
 			plane.Point[i] = tempPosVec[i - 4];
 		}
 		FLOAT t = nearPlane / farPlane;
-		for (INT i = 0; i < 4; i++)
+		for (INT32 i = 0; i < 4; i++)
 		{
 			plane.Point[i] = CustomType::Vector3::Lerp(0.f, tempPosVec[i], t);
 		}
 	}
 
 	{
-		for (INT i = 0; i < 4; i++)
+		for (INT32 i = 0; i < 4; i++)
 		{
 			tempPosVec[i].Normalize();
 		}
@@ -242,7 +242,7 @@ void CCamera::ReCalculateFrustumPlane(CFrustumPlane& plane, const FLOAT& fovAngl
 		plane.Plane[1] = CustomType::Vector3::Cross(tempPosVec[3], tempPosVec[2]);
 		plane.Plane[2] = CustomType::Vector3::Cross(tempPosVec[2], tempPosVec[0]);
 		plane.Plane[3] = CustomType::Vector3::Cross(tempPosVec[1], tempPosVec[3]);
-		for (INT i = 0; i < 4; i++)
+		for (INT32 i = 0; i < 4; i++)
 		{
 			plane.Plane[i].Normalize();
 		}
@@ -322,16 +322,16 @@ void CCamera::Update()
 	}
 	FLOAT deltaTime = static_cast<FLOAT>(CManager::GetGameTimer()->GetDeltaTime());
 	{
-		BOOL moveForward	= CInput::Controller.IsKeyPressed('W');
-		BOOL moveBack		= CInput::Controller.IsKeyPressed('S');
-		BOOL moveRight		= CInput::Controller.IsKeyPressed('D');
-		BOOL moveLeft		= CInput::Controller.IsKeyPressed('A');
-		BOOL moveUp			= CInput::Controller.IsKeyPressed('Q');
-		BOOL moveDown		= CInput::Controller.IsKeyPressed('E');
-		BOOL lookUp			= CInput::Controller.IsKeyPressed('I');
-		BOOL lookDown		= CInput::Controller.IsKeyPressed('K');
-		BOOL lookLeft		= CInput::Controller.IsKeyPressed('J');
-		BOOL lookRight		= CInput::Controller.IsKeyPressed('L');
+		BOOL32 moveForward	= CInput::Controller.IsKeyPressed('W');
+		BOOL32 moveBack		= CInput::Controller.IsKeyPressed('S');
+		BOOL32 moveRight		= CInput::Controller.IsKeyPressed('D');
+		BOOL32 moveLeft		= CInput::Controller.IsKeyPressed('A');
+		BOOL32 moveUp			= CInput::Controller.IsKeyPressed('Q');
+		BOOL32 moveDown		= CInput::Controller.IsKeyPressed('E');
+		BOOL32 lookUp			= CInput::Controller.IsKeyPressed('I');
+		BOOL32 lookDown		= CInput::Controller.IsKeyPressed('K');
+		BOOL32 lookLeft		= CInput::Controller.IsKeyPressed('J');
+		BOOL32 lookRight		= CInput::Controller.IsKeyPressed('L');
 		CustomType::Vector3 worldPosition(this->GetWorldPosition());
 		CustomType::Quaternion worldRotation(this->GetWorldRotation());
 		if (moveForward || moveBack)
@@ -406,7 +406,7 @@ void CCamera::Update()
 		this->SetWorldRotation(worldRotation);
 	}
 
-	BOOL bRightMouseButtonDown = CInput::Controller.IsRightMouseButtonDown();
+	BOOL32 bRightMouseButtonDown = CInput::Controller.IsRightMouseButtonDown();
 	// Rotate camera while right mouse button down
 	if (bRightMouseButtonDown)
 	{

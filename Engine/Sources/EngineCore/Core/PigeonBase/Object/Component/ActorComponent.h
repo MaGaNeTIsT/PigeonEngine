@@ -14,7 +14,7 @@ namespace PigeonEngine
 		virtual void Init() override;
 		virtual void Uninit() override;
 	public:
-		virtual BOOL ContainTransform()const;
+		virtual BOOL32 ContainTransform()const;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActorComponent)
 

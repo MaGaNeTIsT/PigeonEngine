@@ -82,7 +82,7 @@ void CGameBoundSphereComponent::SetRadius(const FLOAT& v)
 {
 	this->m_Radius = v;
 }
-BOOL CGameBoundSphereComponent::InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const
+BOOL32 CGameBoundSphereComponent::InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const
 {
 	CustomType::Vector3 sphereAnchor(this->GetWorldAnchor());
 	FLOAT sphereRadius = this->GetRadius();
@@ -100,7 +100,7 @@ BOOL CGameBoundSphereComponent::InsertCameraFrustum(const CustomStruct::CCulling
 		return FALSE;
 	}
 
-	for (UINT i = 0u; i < 4u; i++)
+	for (UINT32 i = 0u; i < 4u; i++)
 	{
 		dotTerm = CustomType::Vector3::Dot(sphereAnchor, cullingFrustum.CameraFrustumPlane[i]);
 		if ((dotTerm + sphereRadius) < cullingFrustum.CameraProjectPlane[i])
@@ -127,13 +127,13 @@ CustomStruct::CRect CGameBoundSphereComponent::GetScreenCoordRect(const CCamera*
 		sphereS = gameObject->GetWorldScale();
 	}
 
-	FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
+	FLOAT screenMin[2] = { PE_FLOAT32_MAX, PE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
 	auto checkMinMax = [&screenMin, &screenMax](const CustomType::Vector2& input) {
 		screenMin[0] = CustomType::CMath::Min(input.X(), screenMin[0]);
 		screenMin[1] = CustomType::CMath::Min(input.Y(), screenMin[1]);
 		screenMax[0] = CustomType::CMath::Max(input.X(), screenMax[0]);
 		screenMax[1] = CustomType::CMath::Max(input.Y(), screenMax[1]); };
-	auto checkScreenCoordMinMax = [&](const UINT& index, CustomType::Vector2& output) {
+	auto checkScreenCoordMinMax = [&](const UINT32& index, CustomType::Vector2& output) {
 		CustomType::Vector3 tempPoint(sphereLocalAnchor + sphereRadius * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
@@ -143,7 +143,7 @@ CustomStruct::CRect CGameBoundSphereComponent::GetScreenCoordRect(const CCamera*
 		camera->TransformWorldPointToScreenCoord(tempPoint, output); };
 	{
 		CustomType::Vector2 tempSphereBoundPoint;
-		for (UINT i = 0u; i < 8u; i++)
+		for (UINT32 i = 0u; i < 8u; i++)
 		{
 			checkScreenCoordMinMax(i, tempSphereBoundPoint);
 			checkMinMax(tempSphereBoundPoint);
@@ -153,7 +153,7 @@ CustomStruct::CRect CGameBoundSphereComponent::GetScreenCoordRect(const CCamera*
 	return (CustomStruct::CRect(screenMin[0], screenMin[1], screenMax[0], screenMax[1]));
 }
 #ifdef _DEVELOPMENT_EDITOR
-BOOL CGameBoundSphereComponent::SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const
+BOOL32 CGameBoundSphereComponent::SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const
 {
 	if (!InsertCameraFrustum(cullingFrustum))
 	{
@@ -178,7 +178,7 @@ BOOL CGameBoundSphereComponent::SelectedInEditorScreen(const CustomType::Vector2
 	return FALSE;
 }
 #endif
-BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const
+BOOL32 CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const
 {
 	CustomType::Vector3 sphereLocalAnchor(this->GetLocalAnchor());
 	FLOAT sphereRadius = this->GetRadius();
@@ -231,7 +231,7 @@ BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, con
 	}
 	return FALSE;
 }
-BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const
+BOOL32 CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const
 {
 	CustomType::Vector3 sphereLocalAnchor(this->GetLocalAnchor());
 	FLOAT sphereRadius = this->GetRadius();
@@ -280,7 +280,7 @@ BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, con
 	}
 	return FALSE;
 }
-BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const
+BOOL32 CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const
 {
 	if (intersectPoints.size() > 0)
 	{
@@ -344,7 +344,7 @@ BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, con
 		FLOAT inSphereLenSq = sphereRadiusSq - verticalLenSq;
 		FLOAT inSphereLen = CustomType::CMath::Sqrt(inSphereLenSq);
 
-		BOOL result = FALSE;
+		BOOL32 result = FALSE;
 		FLOAT t = projectLen - inSphereLen;
 		if (t <= rayDirLen)
 		{
@@ -362,7 +362,7 @@ BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, con
 	}
 	return FALSE;
 }
-BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const
+BOOL32 CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const
 {
 	if (intersectPoints.size() > 0)
 	{
@@ -422,7 +422,7 @@ BOOL CGameBoundSphereComponent::RayCast(const CustomType::Vector3& rayStart, con
 		FLOAT inSphereLenSq = sphereRadiusSq - verticalLenSq;
 		FLOAT inSphereLen = CustomType::CMath::Sqrt(inSphereLenSq);
 
-		BOOL result = FALSE;
+		BOOL32 result = FALSE;
 		FLOAT t = projectLen - inSphereLen;
 		if (t <= rayLen)
 		{
@@ -533,7 +533,7 @@ void CGameBoundBoxComponent::SetExtent(const FLOAT& x, const FLOAT& y, const FLO
 	this->m_Extent[1] = y;
 	this->m_Extent[2] = z;
 }
-BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const
+BOOL32 CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFrustumInfo& cullingFrustum)const
 {
 	CustomType::Vector3 boxLocalAnchor(this->GetLocalAnchor());
 	CustomType::Vector3 boxExtent(this->GetExtent());
@@ -550,7 +550,7 @@ BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFru
 	}
 
 	// Use diagonal line to early exit this function.
-	auto checkPointInsertCameraFrustum = [&](const UINT& index)->BOOL {
+	auto checkPointInsertCameraFrustum = [&](const UINT32& index)->BOOL32 {
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
@@ -562,7 +562,7 @@ BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFru
 		{
 			return FALSE;
 		}
-		for (UINT i = 0u; i < 4u; i++)
+		for (UINT32 i = 0u; i < 4u; i++)
 		{
 			dotTerm = CustomType::Vector3::Dot(tempPoint, cullingFrustum.CameraFrustumPlane[i]);
 			if (dotTerm < cullingFrustum.CameraProjectPlane[i])
@@ -573,7 +573,7 @@ BOOL CGameBoundBoxComponent::InsertCameraFrustum(const CustomStruct::CCullingFru
 		return TRUE;
 	};
 
-	for (UINT i = 0u; i < 8u; i++)
+	for (UINT32 i = 0u; i < 8u; i++)
 	{
 		if (checkPointInsertCameraFrustum(i))
 		{
@@ -599,13 +599,13 @@ CustomStruct::CRect CGameBoundBoxComponent::GetScreenCoordRect(const CCamera* ca
 		boxS = gameObject->GetWorldScale();
 	}
 
-	FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
+	FLOAT screenMin[2] = { PE_FLOAT32_MAX, PE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
 	auto checkMinMax = [&screenMin, &screenMax](const CustomType::Vector2& input) {
 		screenMin[0] = CustomType::CMath::Min(input.X(), screenMin[0]);
 		screenMin[1] = CustomType::CMath::Min(input.Y(), screenMin[1]);
 		screenMax[0] = CustomType::CMath::Max(input.X(), screenMax[0]);
 		screenMax[1] = CustomType::CMath::Max(input.Y(), screenMax[1]); };
-	auto checkScreenCoordMinMax = [&](const UINT& index, CustomType::Vector2& output) {
+	auto checkScreenCoordMinMax = [&](const UINT32& index, CustomType::Vector2& output) {
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
@@ -615,7 +615,7 @@ CustomStruct::CRect CGameBoundBoxComponent::GetScreenCoordRect(const CCamera* ca
 		camera->TransformWorldPointToScreenCoord(tempPoint, output); };
 	{
 		CustomType::Vector2 tempBoxBoundPoint;
-		for (UINT i = 0u; i < 8u; i++)
+		for (UINT32 i = 0u; i < 8u; i++)
 		{
 			checkScreenCoordMinMax(i, tempBoxBoundPoint);
 			checkMinMax(tempBoxBoundPoint);
@@ -625,7 +625,7 @@ CustomStruct::CRect CGameBoundBoxComponent::GetScreenCoordRect(const CCamera* ca
 	return (CustomStruct::CRect(screenMin[0], screenMin[1], screenMax[0], screenMax[1]));
 }
 #ifdef _DEVELOPMENT_EDITOR
-BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const
+BOOL32 CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& mousePos, const CCamera* camera, const CustomStruct::CCullingFrustumInfo& cullingFrustum, CustomType::Vector2& screenAnchor, FLOAT& viewDepth)const
 {
 	CustomType::Vector3 boxLocalAnchor(this->GetLocalAnchor());
 	CustomType::Vector3 boxExtent(this->GetExtent());
@@ -644,7 +644,7 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 	CustomType::Vector3 newPoints[8];
 
 	// Use diagonal line to early exit this function.
-	auto transformBoxPoints = [&](const UINT& index) {
+	auto transformBoxPoints = [&](const UINT32& index) {
 		CustomType::Vector3 tempPoint(boxLocalAnchor + boxExtent * _GStaticBoxVector[index]);
 		if (gameObject != NULL)
 		{
@@ -656,14 +656,14 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 
 
 #if 0
-	auto checkPointInsertCameraFrustum = [&](const UINT& index)->BOOL {
+	auto checkPointInsertCameraFrustum = [&](const UINT32& index)->BOOL32 {
 		CustomType::Vector3& tempPoint = newPoints[index];
 		FLOAT dotTerm = CustomType::Vector3::Dot(tempPoint, cullingFrustum.CameraForwardVec);
 		if (dotTerm < cullingFrustum.CameraProjectNear || -dotTerm < cullingFrustum.CameraProjectFar)
 		{
 			return FALSE;
 		}
-		for (UINT i = 0u; i < 4u; i++)
+		for (UINT32 i = 0u; i < 4u; i++)
 		{
 			dotTerm = CustomType::Vector3::Dot(tempPoint, cullingFrustum.CameraFrustumPlane[i]);
 			if (dotTerm < cullingFrustum.CameraProjectPlane[i])
@@ -672,8 +672,8 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 			}
 		}
 		return TRUE; };
-	auto checkBoxInsertCameraFrustum = [&]()->BOOL {
-		for (UINT i = 0u; i < 8u; i++)
+	auto checkBoxInsertCameraFrustum = [&]()->BOOL32 {
+		for (UINT32 i = 0u; i < 8u; i++)
 		{
 			if (checkPointInsertCameraFrustum(i))
 			{
@@ -684,13 +684,13 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 
 	if (checkBoxInsertCameraFrustum())
 #else
-	for (UINT i = 0u; i < 8u; i++)
+	for (UINT32 i = 0u; i < 8u; i++)
 	{
 		transformBoxPoints(i);
 	}
 #endif
 	{
-		FLOAT screenMin[2] = { ENGINE_FLOAT32_MAX, ENGINE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
+		FLOAT screenMin[2] = { PE_FLOAT32_MAX, PE_FLOAT32_MAX }, screenMax[2] = { 0.f, 0.f };
 
 		{
 			auto checkMinMax = [&screenMin, &screenMax](const CustomType::Vector2& input) {
@@ -699,18 +699,18 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 				screenMax[0] = CustomType::CMath::Max(input.X(), screenMax[0]);
 				screenMax[1] = CustomType::CMath::Max(input.Y(), screenMax[1]); };
 			CustomType::Vector2 tempScreenCoord;
-			auto boxMinMaxInScreenCoord = [&](const UINT& index) {
+			auto boxMinMaxInScreenCoord = [&](const UINT32& index) {
 				camera->TransformWorldPointToScreenCoord(newPoints[index], tempScreenCoord);
 				checkMinMax(tempScreenCoord);
 			};
-			for (UINT i = 0u; i < 8u; i++)
+			for (UINT32 i = 0u; i < 8u; i++)
 			{
 				boxMinMaxInScreenCoord(i);
 			}
 		}
 
 		{
-			auto checkMouseInBox = [&screenMin, &screenMax](const CustomType::Vector2& input)->BOOL {
+			auto checkMouseInBox = [&screenMin, &screenMax](const CustomType::Vector2& input)->BOOL32 {
 				if (input.X() > screenMin[0] && input.X() < screenMax[0] &&
 					input.Y() > screenMin[1] && input.Y() < screenMax[1])
 				{
@@ -733,22 +733,22 @@ BOOL CGameBoundBoxComponent::SelectedInEditorScreen(const CustomType::Vector2& m
 	return FALSE;
 }
 #endif
-BOOL CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const
+BOOL32 CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd)const
 {
 	//TODO
 	return FALSE;
 }
-BOOL CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const
+BOOL32 CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen)const
 {
 	//TODO
 	return FALSE;
 }
-BOOL CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const
+BOOL32 CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayEnd, std::vector<FLOAT>& intersectPoints)const
 {
 	//TODO
 	return FALSE;
 }
-BOOL CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const
+BOOL32 CGameBoundBoxComponent::RayCast(const CustomType::Vector3& rayStart, const CustomType::Vector3& rayDir, const FLOAT& rayLen, std::vector<FLOAT>& intersectPoints)const
 {
 	//TODO
 	return FALSE;

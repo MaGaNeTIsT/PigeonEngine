@@ -18,7 +18,7 @@ public:
 			Distance		= 0.f;
 			OriginPosition	= CustomType::Vector3::Zero();
 			ClipOffset		= 0.f;
-			for (INT i = 0; i < 5; i++)
+			for (INT32 i = 0; i < 5; i++)
 			{
 				ClipDot[i]		= 0.f;
 				ClipPlane[i]	= CustomType::Vector3::Zero();
@@ -44,7 +44,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D11Buffer>	LightDataBuffer;
 	};
 public:
-	const static UINT GEOMETRY_BUFFER_COUNT = 3;
+	const static UINT32 GEOMETRY_BUFFER_COUNT = 3;
 public:
 	virtual void	Init(const CScene* scene, const CustomType::Vector2Int& bufferSize);
 	virtual void	PostInit();
@@ -56,26 +56,26 @@ public:
 	virtual void	EditorUpdate();
 protected:
 	DOUBLE	m_ShadowPassGPUAverageTime;
-	BOOL	m_ShowGPUProfiler;
-	BOOL	m_ShowCPUCullingInfo;
-	BOOL	m_ShowGPUCullingInfo;
-	BOOL	m_ShowDebugScreen;
-	BOOL	m_ShowGTAOEditor;
-	BOOL	m_ShowHZBEditor;
-	BOOL	m_ShowDynamicWindEditor;
+	BOOL32	m_ShowGPUProfiler;
+	BOOL32	m_ShowCPUCullingInfo;
+	BOOL32	m_ShowGPUCullingInfo;
+	BOOL32	m_ShowDebugScreen;
+	BOOL32	m_ShowGTAOEditor;
+	BOOL32	m_ShowHZBEditor;
+	BOOL32	m_ShowDynamicWindEditor;
 #endif
 protected:
 	void			DrawFullScreenPolygon(const std::shared_ptr<class CPixelShader>& shader);
-	virtual void	PreparePerFrameRender(class CLightDirectional* light, const UINT& index);
+	virtual void	PreparePerFrameRender(class CLightDirectional* light, const UINT32& index);
 	virtual void	PrepareLightDataRender();
-	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT& index);
+	virtual void	PrepareDirectionalLightPerFrameRender(class CLightBase* light, const UINT32& index);
 protected:
 	void			PrepareCameraCullingInfo();
 	void			Culling();
-	BOOL			PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius);
-	BOOL			PerObjectDirectionalCascadeShadowCulling(std::vector<UINT>& layerIndex, class CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius);
+	BOOL32			PerObjectDistanceFrustumCulling(const CustomType::Vector3& pos, const FLOAT& radius);
+	BOOL32			PerObjectDirectionalCascadeShadowCulling(std::vector<UINT32>& layerIndex, class CLightDirectional* light, const CustomType::Vector3& pos, const FLOAT& radius);
 protected:
-	using DirectionalCascadeShadowPerLightPrimitives	= std::map<UINT, std::vector<class CGameObject*>>;
+	using DirectionalCascadeShadowPerLightPrimitives	= std::map<UINT32, std::vector<class CGameObject*>>;
 	using DirectionalCascadeShadowCullingResults		= std::map<class CLightDirectional*, DirectionalCascadeShadowPerLightPrimitives>;
 	enum CullingResultsLayer
 	{
@@ -101,7 +101,7 @@ protected:
 	CustomType::Vector2Int					m_GlobalBufferSize;
 	CustomType::Vector2Int					m_ShadowBufferSize;
 protected:
-	const CBaseMesh<UINT>*					m_FullScreenPolygon;
+	const CBaseMesh<UINT32>*					m_FullScreenPolygon;
 protected:
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneColor;
 	CRenderDevice::RenderTexture2DViewInfo	m_RTSceneDepth;

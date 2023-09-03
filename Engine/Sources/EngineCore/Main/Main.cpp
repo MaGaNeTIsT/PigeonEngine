@@ -6,9 +6,9 @@
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #endif
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
-INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow)
+INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
 	const CHAR* CLASS_NAME	= "PigeonEngine";
 	const CHAR* WINDOW_NAME	= "PigeonEngineWindow";
@@ -109,14 +109,14 @@ INT APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
 	MainManager->ShutDown();
 
-	return (INT)msg.wParam;
+	return (INT32)msg.wParam;
 }
 
 #if _EDITOR_ONLY
 static PigeonEngine::CImGUIManager* GImGUIManager = PigeonEngine::CImGUIManager::GetManagerSingleton();
 #endif
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 {
 #if _EDITOR_ONLY
 	if (GImGUIManager)

@@ -44,9 +44,9 @@ CTransform* CTransform::GetParent()const
 {
 	return (this->m_Parent);
 }
-UINT CTransform::GetChildrenNum()const
+UINT32 CTransform::GetChildrenNum()const
 {
-	return (static_cast<UINT>(this->m_Children.size()));
+	return (static_cast<UINT32>(this->m_Children.size()));
 }
 CTransform* CTransform::GetChildByUniqueID(const ULONGLONG& id)const
 {
@@ -141,7 +141,7 @@ void CTransform::RemoveAllChildren()
 		this->m_Children.clear();
 	}
 }
-BOOL CTransform::IsBelongGameObject(const ULONGLONG& gameObjectID)const
+BOOL32 CTransform::IsBelongGameObject(const ULONGLONG& gameObjectID)const
 {
 	if (this->HasGameObject())
 	{
@@ -149,19 +149,19 @@ BOOL CTransform::IsBelongGameObject(const ULONGLONG& gameObjectID)const
 	}
 	return FALSE;
 }
-BOOL CTransform::HasGameObject()const
+BOOL32 CTransform::HasGameObject()const
 {
 	return (this->m_GameObject != nullptr);
 }
-BOOL CTransform::HasParent()const
+BOOL32 CTransform::HasParent()const
 {
 	return (this->m_Parent != nullptr);
 }
-BOOL CTransform::HasChild()const
+BOOL32 CTransform::HasChild()const
 {
 	return (this->m_Children.size() > 0);
 }
-BOOL CTransform::IsParent(const ULONGLONG& parentID)const
+BOOL32 CTransform::IsParent(const ULONGLONG& parentID)const
 {
 	if (this->HasParent())
 	{
@@ -169,7 +169,7 @@ BOOL CTransform::IsParent(const ULONGLONG& parentID)const
 	}
 	return FALSE;
 }
-BOOL CTransform::IsChild(const ULONGLONG& childID)const
+BOOL32 CTransform::IsChild(const ULONGLONG& childID)const
 {
 	if (this->HasChild())
 	{
@@ -202,7 +202,7 @@ void CTransform::BaseRemoveChildByUniqueID(const ULONGLONG& id)
 		}
 	}
 }
-BOOL CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)
+BOOL32 CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)
 {
 	if (this->HasChild())
 	{
@@ -215,7 +215,7 @@ BOOL CTransform::BaseFindChildByUniqueID(const ULONGLONG& id)
 	}
 	return FALSE;
 }
-BOOL CTransform::BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output)
+BOOL32 CTransform::BaseModifyChildByUniqueID(const ULONGLONG& id, CTransform*& output)
 {
 	if (this->HasChild())
 	{
@@ -416,7 +416,7 @@ void CTransform::SetEditorRotation(const CustomType::Vector3& v)
 void CTransform::SelectedEditorUpdate()
 {
 	bool realTimeChange = this->m_RealTimeChangeValue;
-	BOOL needChangeTransform = FALSE;
+	BOOL32 needChangeTransform = FALSE;
 	FLOAT localPosition[3], localScale[3];
 	{
 		CustomType::Vector3 localPositionVector(this->GetLocalPosition());

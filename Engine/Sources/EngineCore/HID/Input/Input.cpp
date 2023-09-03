@@ -10,7 +10,7 @@ namespace PigeonEngine
 	void EInput::Initialize(HWND hWnd)
 	{
 		// Controller Initialization
-		Controller.Initialize(hWnd, static_cast<INT>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT>(ESettings::ENGINE_SCREEN_HEIGHT));
+		Controller.Initialize(hWnd, static_cast<INT32>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(ESettings::ENGINE_SCREEN_HEIGHT));
 
 		//memset(m_OldKeyState, 0, 256);
 		//memset(m_KeyState, 0, 256);
@@ -25,35 +25,35 @@ namespace PigeonEngine
 		//}
 
 		//{
-		//	BOOL keyResult = GetKeyboardState(m_KeyState);
+		//	BOOL32 keyResult = GetKeyboardState(m_KeyState);
 		//}
 	}
-	//BOOL EInput::GetKeyPress(BYTE KeyCode)
+	//BOOL32 EInput::GetKeyPress(BYTE KeyCode)
 	//{
-	//	INT curr = (m_KeyState[KeyCode] & 0x80);
+	//	INT32 curr = (m_KeyState[KeyCode] & 0x80);
 	//	return (curr > 0);
 	//}
-	//BOOL EInput::GetKeyTrigger(BYTE KeyCode)
+	//BOOL32 EInput::GetKeyTrigger(BYTE KeyCode)
 	//{
-	//	INT curr = (m_KeyState[KeyCode] & 0x80);
-	//	INT prev = (m_OldKeyState[KeyCode] & 0x80);
+	//	INT32 curr = (m_KeyState[KeyCode] & 0x80);
+	//	INT32 prev = (m_OldKeyState[KeyCode] & 0x80);
 	//	return ((curr > 0) && (prev == 0));
 	//}
 	std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
 	{
 		return Controller.ReadRawDelta();
 	}
-	LRESULT EInput::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	LRESULT EInput::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
 		return Controller.HandleMsg(hWnd, msg, wParam, lParam);
 	}
-	void IController::Initialize(HWND InhWnd, INT InWindowSizeX, INT InWindowSizeY)
+	void IController::Initialize(HWND InhWnd, INT32 InWindowSizeX, INT32 InWindowSizeY)
 	{
 		hWnd = InhWnd;
 		WindowSizeX = InWindowSizeX;
 		WindowSizeY = InWindowSizeY;
 	}
-	std::pair<INT, INT> IController::GetMousePosition() const
+	std::pair<INT32, INT32> IController::GetMousePosition() const
 	{
 		return Mouse.GetPos();
 	}
@@ -71,7 +71,7 @@ namespace PigeonEngine
 		//DisableImGuiMouse();
 		ConfineCursor();
 	}
-	BOOL IController::IsCursorEnabled() const
+	BOOL32 IController::IsCursorEnabled() const
 	{
 		return bCursorEnabled;
 	}
@@ -102,15 +102,15 @@ namespace PigeonEngine
 	{
 		Mouse.DisableRaw();
 	}
-	BOOL IController::IsMouseRawEnabled() const
+	BOOL32 IController::IsMouseRawEnabled() const
 	{
 		return Mouse.IsRawEnabled();
 	}
-	BOOL IController::IsLeftMouseButtonDown() const
+	BOOL32 IController::IsLeftMouseButtonDown() const
 	{
 		return Mouse.LeftIsPressed();
 	}
-	BOOL IController::IsRightMouseButtonDown() const
+	BOOL32 IController::IsRightMouseButtonDown() const
 	{
 		return Mouse.RightIsPressed();
 	}
@@ -118,7 +118,7 @@ namespace PigeonEngine
 	{
 		return Mouse.ReadRawDelta();
 	}
-	LRESULT IController::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	LRESULT IController::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (msg)
 		{
@@ -295,7 +295,7 @@ namespace PigeonEngine
 			{
 				break;
 			}
-			UINT size = 0u;
+			UINT32 size = 0u;
 			// first get the size of the input data
 			if (GetRawInputData(
 				reinterpret_cast<HRAWINPUT>(lParam),
@@ -333,7 +333,7 @@ namespace PigeonEngine
 
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
-	BOOL IController::IsKeyPressed(unsigned char keycode) const
+	BOOL32 IController::IsKeyPressed(unsigned char keycode) const
 	{
 		return Keyboard.IsKeyPressed(keycode);
 	}
@@ -341,7 +341,7 @@ namespace PigeonEngine
 	{
 		return Keyboard.ReadKey();
 	}
-	BOOL IController::IsKeyEmpty() const
+	BOOL32 IController::IsKeyEmpty() const
 	{
 		return Keyboard.IsKeyEmpty();
 	}
@@ -353,7 +353,7 @@ namespace PigeonEngine
 	{
 		return Keyboard.ReadChar();
 	}
-	BOOL IController::IsCharEmpty() const
+	BOOL32 IController::IsCharEmpty() const
 	{
 		return Keyboard.IsCharEmpty();
 	}
@@ -373,7 +373,7 @@ namespace PigeonEngine
 	{
 		Keyboard.DisableAutorepeat();
 	}
-	BOOL IController::IsAutorepeatEnabled() const
+	BOOL32 IController::IsAutorepeatEnabled() const
 	{
 		return Keyboard.IsAutorepeatEnabled();
 	}

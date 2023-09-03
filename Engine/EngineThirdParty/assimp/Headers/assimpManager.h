@@ -9,7 +9,7 @@
 #include <RenderCommon.h>
 #include <MeshAsset/MeshAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
-#include <AnimationAsset/SkeletonAnimationAsset.h>
+#include <AnimationAsset/AnimationAsset.h>
 
 namespace PigeonEngine
 {

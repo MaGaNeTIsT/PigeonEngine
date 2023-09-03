@@ -12,7 +12,7 @@ class CCube : public CGameObject
 public:
 	virtual void	Update()override;
 public:
-	CCube(const BOOL& active, const class CScene* scene);
+	CCube(const BOOL32& active, const class CScene* scene);
 	virtual ~CCube();
 };
 */

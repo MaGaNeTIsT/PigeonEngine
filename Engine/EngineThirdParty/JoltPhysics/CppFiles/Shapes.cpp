@@ -34,7 +34,7 @@ namespace PigeonEngine
 		}
 	}
 
-	Shape* FShape::CreateShape(BOOL bCreateNew)
+	Shape* FShape::CreateShape(BOOL32 bCreateNew)
 	{
 		if (m_Shape && !bCreateNew)
 			return m_Shape;
@@ -44,7 +44,7 @@ namespace PigeonEngine
 		return m_Shape;
 	}
 
-	ShapeSettings* FShape::CreateShapeSettings(BOOL bCreateNew)
+	ShapeSettings* FShape::CreateShapeSettings(BOOL32 bCreateNew)
 	{
 		if (m_ShapeSettings && !bCreateNew)
 			return m_ShapeSettings;

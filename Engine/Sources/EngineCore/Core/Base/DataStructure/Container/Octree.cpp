@@ -30,7 +30,7 @@ namespace PigeonEngine
         return this->Center - this->Extends;
     }
 
-    BOOL EOctreeBounds::IsPointInBounds(const Vector3& Point) const
+    BOOL32 EOctreeBounds::IsPointInBounds(const Vector3& Point) const
     {
         const Vector3 Min = GetMin();
         const Vector3 Max = GetMax();
@@ -40,7 +40,7 @@ namespace PigeonEngine
                Point.z >= Min.z && Point.z <= Max.z;
     }
 
-    BOOL EOctreeBounds::IsIntercectingWith(const EOctreeBounds& OtherBounds) const
+    BOOL32 EOctreeBounds::IsIntercectingWith(const EOctreeBounds& OtherBounds) const
     {
         const Vector3 Min = GetMin();
         const Vector3 Max = GetMax();

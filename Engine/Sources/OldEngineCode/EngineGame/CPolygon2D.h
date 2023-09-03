@@ -7,7 +7,7 @@
 class CPolygon2D : public CPolygon2DBase
 {
 public:
-	CPolygon2D(const BOOL& active, const class CScene* scene);
+	CPolygon2D(const BOOL32& active, const class CScene* scene);
 	virtual ~CPolygon2D();
 };
 */

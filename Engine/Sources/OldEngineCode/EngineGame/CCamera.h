@@ -44,9 +44,9 @@ public:
 	* Params output : [0.f, screen max] range of screen coord which has anchor(zero point) in left top of RECT.
 	*/
 	void	TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const;
-	BOOL	TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+	BOOL32	TransformWorldPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
 	void	TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector2& output)const;
-	BOOL	TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
+	BOOL32	TransformViewPointToScreenCoord(const CustomType::Vector3& input, CustomType::Vector3& output)const;
 
 	/*
 	* Params input X Y : screen space position of the point (range : [0.f, screen max]).
@@ -86,7 +86,7 @@ public:
 	virtual void	SelectedEditorUpdate()override;
 #endif
 public:
-	CCamera(const BOOL& active, const class CScene* scene);
+	CCamera(const BOOL32& active, const class CScene* scene);
 	virtual ~CCamera();
 protected:
 	CCameraInfo							m_CameraInfo;

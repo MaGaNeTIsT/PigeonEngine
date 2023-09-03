@@ -27,7 +27,7 @@ protected:
 		DirectX::XMINT4	DebugType;
 	};
 protected:
-	INT												m_DebugWindCPUType;
+	INT32												m_DebugWindCPUType;
 	DynamicWindCPUDebugData							m_ComputeDynamicWindCPUDebugData;
 	Microsoft::WRL::ComPtr<ID3D11Buffer>			m_ComputeDynamicWindCPUDebugCBuffer;
 	Microsoft::WRL::ComPtr<ID3D11ComputeShader>		m_ComputeDynamicWindCPUDebugShader;
@@ -48,31 +48,31 @@ protected:
 	FLOAT		m_DSource;
 	FLOAT		m_USource;
 	FLOAT		m_VSource;
-	BOOL		m_DrawDebugWindCPU;
-	BOOL		m_AddSource;
-	BOOL		m_ResetSource;
+	BOOL32		m_DrawDebugWindCPU;
+	BOOL32		m_AddSource;
+	BOOL32		m_ResetSource;
 protected:
-	inline static UINT		TransformCellCoordToIndex(const UINT& i, const UINT& j, const UINT& w);
-	inline static void		TransformCellIndexToCoord(const UINT& index, const UINT& w, const UINT& h, UINT& i, UINT& j);
-	inline static INT		TransformCellCoordToIndex(const INT& i, const INT& j, const UINT& w);
-	inline static void		TransformCellIndexToCoord(const INT& index, const UINT& w, const UINT& h, INT& i, INT& j);
+	inline static UINT32		TransformCellCoordToIndex(const UINT32& i, const UINT32& j, const UINT32& w);
+	inline static void		TransformCellIndexToCoord(const UINT32& index, const UINT32& w, const UINT32& h, UINT32& i, UINT32& j);
+	inline static INT32		TransformCellCoordToIndex(const INT32& i, const INT32& j, const UINT32& w);
+	inline static void		TransformCellIndexToCoord(const INT32& index, const UINT32& w, const UINT32& h, INT32& i, INT32& j);
 	inline static void		Swap(FLOAT*& a, FLOAT*& b);
-	inline static void		InitPointer(FLOAT*& ptr, const UINT& num, const FLOAT& init = 0.f);
-	inline static void		CreatePointer(FLOAT*& ptr, const UINT& num);
+	inline static void		InitPointer(FLOAT*& ptr, const UINT32& num, const FLOAT& init = 0.f);
+	inline static void		CreatePointer(FLOAT*& ptr, const UINT32& num);
 	inline static void		DeletePointer(FLOAT*& ptr);
 protected:
-	static void		AddSource(const UINT& w, const UINT& h, FLOAT* x, FLOAT* s, const FLOAT& dt);
-	static void		SetBoundary(const UINT& w, const UINT& h, const INT& b, FLOAT* x);
-	static void		DiffusionSolver(const UINT& iter, const UINT& w, const UINT& h, const INT& b, FLOAT* x, FLOAT* x0, const FLOAT& diffuse, const FLOAT& dt);
-	static void		AdvectionSolver(const UINT& w, const UINT& h, const INT& b, FLOAT* d, FLOAT* d0, FLOAT* u, FLOAT* v, const FLOAT& dt);
-	static void		ProjectionSolver(const UINT& iter, const UINT& w, const UINT& h, FLOAT* u, FLOAT* v, FLOAT* p, FLOAT* div);
-	static void		DensityStep(const UINT& iter, const UINT& w, const UINT& h, FLOAT* x, FLOAT* x0, FLOAT* u, FLOAT* v, const FLOAT& diffuse, const FLOAT& dt);
-	static void		VelocityStep(const UINT& iter, const UINT& w, const UINT& h, FLOAT* u, FLOAT* v, FLOAT* u0, FLOAT* v0, const FLOAT& viscosity, const FLOAT& dt);
+	static void		AddSource(const UINT32& w, const UINT32& h, FLOAT* x, FLOAT* s, const FLOAT& dt);
+	static void		SetBoundary(const UINT32& w, const UINT32& h, const INT32& b, FLOAT* x);
+	static void		DiffusionSolver(const UINT32& iter, const UINT32& w, const UINT32& h, const INT32& b, FLOAT* x, FLOAT* x0, const FLOAT& diffuse, const FLOAT& dt);
+	static void		AdvectionSolver(const UINT32& w, const UINT32& h, const INT32& b, FLOAT* d, FLOAT* d0, FLOAT* u, FLOAT* v, const FLOAT& dt);
+	static void		ProjectionSolver(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* u, FLOAT* v, FLOAT* p, FLOAT* div);
+	static void		DensityStep(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* x, FLOAT* x0, FLOAT* u, FLOAT* v, const FLOAT& diffuse, const FLOAT& dt);
+	static void		VelocityStep(const UINT32& iter, const UINT32& w, const UINT32& h, FLOAT* u, FLOAT* v, FLOAT* u0, FLOAT* v0, const FLOAT& viscosity, const FLOAT& dt);
 protected:
-	const static UINT		_StaticIterationCount	= 20u;
-	const static UINT		_StaticCellWidth		= 126u;
-	const static UINT		_StaticCellHeight		= 126u;
-	constexpr static UINT	_StaticCellCount		= (_StaticCellWidth + 2u) * (_StaticCellHeight + 2u);
+	const static UINT32		_StaticIterationCount	= 20u;
+	const static UINT32		_StaticCellWidth		= 126u;
+	const static UINT32		_StaticCellHeight		= 126u;
+	constexpr static UINT32	_StaticCellCount		= (_StaticCellWidth + 2u) * (_StaticCellHeight + 2u);
 #endif
 public:
 	CDynamicWind();

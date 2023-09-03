@@ -8,6 +8,13 @@
 namespace PigeonEngine
 {
 
+	enum ESkeletonType : UINT8
+	{
+		SKELETON_TYPE_UNKNOWN = 0,
+		SKELETON_TYPE_NORMAL,
+		SKELETON_TYPE_COUNT
+	};
+
 	struct EBoneData
 	{
 		EBoneData()noexcept
@@ -15,16 +22,46 @@ namespace PigeonEngine
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}
+		EBoneData(const EBoneData& Other)noexcept
+			: Index(Other.Index), Name(Other.Name), DefaultPosition(Other.DefaultPosition)
+			, DefaultRotation(Other.DefaultRotation), DefaultScaling(Other.DefaultScaling), Parent(Other.Parent)
+		{
+			if (Other.Children.Length() > 0u)
+			{
+				for (UINT32 i = 0u, n = Other.Children.Length(); i < n; i++)
+				{
+					Children.Add(Other.Children[i]);
+				}
+			}
+		}
 		EBoneData(const EString& InName)noexcept
 			: Index(-2), Name(InName), DefaultPosition(Vector3::Zero())
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}
-		BOOL operator==(const EBoneData& Other)
+		EBoneData& operator=(const EBoneData& Other)
+		{
+			Children.Clear();
+			Index			= Other.Index;
+			Name			= Other.Name;
+			DefaultPosition	= Other.DefaultPosition;
+			DefaultRotation	= Other.DefaultRotation;
+			DefaultScaling	= Other.DefaultScaling;
+			Parent			= Other.Parent;
+			if (Other.Children.Length() > 0u)
+			{
+				for (UINT32 i = 0u, n = Other.Children.Length(); i < n; i++)
+				{
+					Children.Add(Other.Children[i]);
+				}
+			}
+			return (*this);
+		}
+		BOOL32 operator==(const EBoneData& Other)
 		{
 			return (Name == Other.Name);
 		}
-		BOOL operator!=(const EBoneData& Other)
+		BOOL32 operator!=(const EBoneData& Other)
 		{
 			return (Name != Other.Name);
 		}
@@ -43,25 +80,33 @@ namespace PigeonEngine
 	public:
 		typedef TArray<EBoneData>	EBonePart;
 	public:
-		virtual BOOL	IsResourceValid()const override;
-		virtual BOOL	InitResource()override;
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
-		UINT	GetBoneCount()const;
-		BOOL	AddBoneElement(EBoneData* InIndexData);
-		BOOL	RemoveBoneElement(const EString& InBoneName);
-		BOOL	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
-		BOOL	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
-		BOOL	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
+		ESkeletonType					GetSkeletonType()const;
+		const EString&					GetSkeletonName()const;
+		const EBonePart&				GetBonePart()const;
+		const TMap<EString, USHORT>&	GetBoneMapping()const;
+		UINT32							GetBoneCount()const;
+	public:
+		BOOL32	AddBoneElement(EBoneData* InIndexData);
+		BOOL32	RemoveBoneElement(const EString& InBoneName);
+		BOOL32	RemoveBoneElement(USHORT InBoneIndex, EString* OutBoneName = nullptr);
+		BOOL32	GetBoneElement(const EString& InBoneName, const EBoneData*& OutBoneData)const;
+		BOOL32	GetBoneElement(USHORT InBoneIndex, const EBoneData*& OutBoneData)const;
 	protected:
-		void	RemoveBoneInternal(USHORT InBoneIndex);
+		void			RemoveBoneInternal(USHORT InBoneIndex);
 	protected:
+		ESkeletonType			SkeletonType;
 		EString					SkeletonName;
 		EBonePart				Bones;
 		TMap<EString, USHORT>	BoneMapping;
 	public:
 		ESkeleton(const EString& InSkeletonName);
 		virtual ~ESkeleton();
+	private:
+		friend class ESkeletonAssetManager;
 	public:
 		ESkeleton() = delete;
 
@@ -71,15 +116,24 @@ namespace PigeonEngine
 	class ESkeletonRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		virtual BOOL	IsRenderResourceValid()const override;
-		virtual BOOL	InitRenderResource()override;
+		enum ESkeletonRenderResourceType : UINT8
+		{
+			SKELETON_RENDER_RESOURCE_MATRIX						= 0,
+			SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX,
+			SKELETON_RENDER_RESOURCE_COUNT
+		};
+	public:
+		virtual BOOL32	IsRenderResourceValid()const override;
+		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
 	protected:
-		ESkeleton*				Skeleton;
-		TArray<RBufferResource>	RenderResources;
+		ESkeleton*			Skeleton;
+		RStructuredBuffer	RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
 	public:
 		ESkeletonRenderResource(ESkeleton* InSkeleton);
 		virtual ~ESkeletonRenderResource();
+	private:
+		friend class ESkeletonAssetManager;
 	public:
 		ESkeletonRenderResource() = delete;
 
@@ -90,22 +144,46 @@ namespace PigeonEngine
 	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
 	{
 	public:
-		ESkeletonAsset(const EString& InSkeletonPath
+		ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
 		);
 		virtual ~ESkeletonAsset();
 	public:
-		const EString&	GetSkeletonPath()const;
-	public:
-		virtual BOOL	InitResource()override;
-	protected:
-		EString			SkeletonPath;
+		virtual BOOL32	InitResource()override;
+	private:
+		friend class ESkeletonAssetManager;
 	public:
 		ESkeletonAsset() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkeletonAsset)
+
+	};
+
+	class ESkeletonAssetManager : public EManagerBase
+	{
+	public:
+		typedef TAssetManager<EString, ESkeletonAsset>	ESkeletonAssetDataManager;
+	public:
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
+	public:
+#if _EDITOR_ONLY
+		BOOL32	ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+#endif
+		BOOL32	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset);
+	private:
+		void	ClearSkeletons();
+	private:
+		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName);
+		BOOL32 SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
+		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName);
+		BOOL32 SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
+	private:
+		ESkeletonAssetDataManager SkeletonAssetDataManager;
+
+		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ESkeletonAssetManager)
 
 	};
 
