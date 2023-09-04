@@ -10,6 +10,11 @@ namespace PigeonEngine
 
 	class RScene : public EObjectBase
 	{
+	public:
+		BOOL32	AddStaticPrimitive(RPrimitiveProxy* InPrimitiveProxy);
+		BOOL32	RemoveStaticPrimitive(RPrimitiveProxy* InPrimitiveProxy);
+		BOOL32	AddDynamicPrimitive(RPrimitiveProxy* InPrimitiveProxy);
+		BOOL32	RemoveDynamicPrimitive(RPrimitiveProxy* InPrimitiveProxy);
 	protected:
 		ROctree		ScenePrimitiveOctree;
 	protected:
