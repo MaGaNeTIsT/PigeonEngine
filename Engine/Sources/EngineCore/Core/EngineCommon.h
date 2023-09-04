@@ -217,7 +217,7 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
-		void GenerateFrustumInfo(FLOAT InFovAngleY, FLOAT InAspectRatio, FLOAT InNearDist, FLOAT InFarDist)
+		void GeneratePerspectiveFrustumInfo(FLOAT InFovAngleY, FLOAT InAspectRatio, FLOAT InNearDist, FLOAT InFarDist)
 		{
 			Vector3 TempPosVec[4] = { Vector3(0.f), Vector3(0.f), Vector3(0.f), Vector3(0.f) };
 			{
@@ -267,6 +267,42 @@ namespace PigeonEngine
 				}
 			}
 		}
+		void GenerateOrthographicFrustumInfo(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom, FLOAT InMinDepth, FLOAT InMaxDepth)
+		{
+			{
+				//
+				//          Y
+				//          ^
+				//          |
+				//          |
+				//  0---------------1
+				//  |               |
+				//  |               |----->X
+				//  |               |
+				//  2---------------3
+				//
+
+				NearPlaneTopLeft = Vector3(InLeft, InTop, InMinDepth);
+				NearPlaneTopRight = Vector3(InRight, InTop, InMinDepth);
+				NearPlaneBottomLeft = Vector3(InLeft, InBottom, InMinDepth);
+				NearPlaneBottomRight = Vector3(InRight, InBottom, InMinDepth);
+
+				FarPlaneTopLeft = Vector3(InLeft, InTop, InMaxDepth);
+				FarPlaneTopRight = Vector3(InRight, InTop, InMaxDepth);
+				FarPlaneBottomLeft = Vector3(InLeft, InBottom, InMaxDepth);
+				FarPlaneBottomRight = Vector3(InRight, InBottom, InMaxDepth);
+			}
+			{
+				PlaneTop = Vector3::Cross(NearPlaneTopRight - NearPlaneTopLeft, FarPlaneTopLeft - NearPlaneTopLeft);
+				PlaneBottom = Vector3::Cross(FarPlaneBottomLeft - NearPlaneBottomLeft, NearPlaneBottomRight - NearPlaneBottomLeft);
+				PlaneLeft = Vector3::Cross(FarPlaneTopLeft - NearPlaneTopLeft, NearPlaneBottomLeft - NearPlaneTopLeft);
+				PlaneRight = Vector3::Cross(FarPlaneBottomRight - NearPlaneBottomRight, NearPlaneTopRight - NearPlaneBottomRight);
+				for (UINT32 i = 0u; i < 4u; i++)
+				{
+					Plane[i].Normalize();
+				}
+			}
+		}
 
 		union
 		{
@@ -283,14 +319,14 @@ namespace PigeonEngine
 		{
 			struct
 			{
-				Vector3		FarPlaneTopLeft;
-				Vector3		FarPlaneTopRight;
-				Vector3		FarPlaneBottomLeft;
-				Vector3		FarPlaneBottomRight;
 				Vector3		NearPlaneTopLeft;
 				Vector3		NearPlaneTopRight;
 				Vector3		NearPlaneBottomLeft;
 				Vector3		NearPlaneBottomRight;
+				Vector3		FarPlaneTopLeft;
+				Vector3		FarPlaneTopRight;
+				Vector3		FarPlaneBottomLeft;
+				Vector3		FarPlaneBottomRight;
 			};
 			Vector3		FarNearPlanePoint[8];
 		};
@@ -321,7 +357,7 @@ namespace PigeonEngine
 		FLOAT	MinDepth;
 		FLOAT	MaxDepth;
 	};
-	struct ECameraMatrix
+	struct EViewMatrix
 	{
 		struct EViewPart
 		{
@@ -353,9 +389,9 @@ namespace PigeonEngine
 			Matrix4x4	InverseProjectionMatrix;
 			Vector2		DeviceZToViewZMulAdd;
 		};
-		ECameraMatrix()noexcept : ViewProjectionMatrix(Matrix4x4::Identity()), InverseViewProjectionMatrix(Matrix4x4::Identity()) {}
-		ECameraMatrix(const ECameraMatrix& Other)noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
-		ECameraMatrix& operator=(const ECameraMatrix& Other)
+		EViewMatrix()noexcept : ViewProjectionMatrix(Matrix4x4::Identity()), InverseViewProjectionMatrix(Matrix4x4::Identity()) {}
+		EViewMatrix(const EViewMatrix& Other)noexcept : ViewPart(Other.ViewPart), ProjectionPart(Other.ProjectionPart), ViewProjectionMatrix(Other.ViewProjectionMatrix), InverseViewProjectionMatrix(Other.InverseViewProjectionMatrix) {}
+		EViewMatrix& operator=(const EViewMatrix& Other)
 		{
 			ViewPart					= Other.ViewPart;
 			ProjectionPart				= Other.ProjectionPart;
@@ -496,7 +532,7 @@ namespace PigeonEngine
 		}
 		/*
 		* Params input X Y : screen space position of the point (range : [0.f, screen max]).
-		* Params output : output space direction from camera to point. WARNING! output direction is NOT normalized.
+		* Params output : output space direction from view to point. WARNING! output direction is NOT normalized.
 		*/
 		void TransformScreenPointToWorld(const EViewport& InViewport, const Vector2& InPositionSS, Vector3& OutPositionWS)const
 		{
@@ -538,12 +574,12 @@ namespace PigeonEngine
 			TempPoint /= TempPoint.w;
 			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
 		}
-		void GenerateViewPart(const Vector3& InCameraWorldLocation, const Quaternion& InCameraWorldRotation)
+		void GenerateViewPart(const Vector3& InViewWorldLocation, const Quaternion& InViewWorldRotation)
 		{
-			ViewPart.InverseViewMatrix = MakeMatrix4x4(InCameraWorldLocation, InCameraWorldRotation);
+			ViewPart.InverseViewMatrix = MakeMatrix4x4(InViewWorldLocation, InViewWorldRotation);
 			ViewPart.ViewMatrix = ViewPart.InverseViewMatrix.Inverse();
 		}
-		void GenerateProjectPart(const EViewport& InViewport, FLOAT InFovAngleY, FLOAT InNearDist, FLOAT InFarDist)
+		void GeneratePerspectiveProjectPart(const EViewport& InViewport, FLOAT InFovAngleY, FLOAT InNearDist, FLOAT InFarDist)
 		{
 			FLOAT ViewportW = InViewport.Width;
 			FLOAT ViewportH = InViewport.Height;
@@ -565,6 +601,14 @@ namespace PigeonEngine
 			//TODO
 			//Vector4 ViewportSizeAndInvSize(ViewportW, ViewportH, 1.f / ViewportW, 1.f / ViewportH);
 			//Vector2 ViewportMinSize(InViewport.TopLeftX, InViewport.TopLeftY);
+		}
+		void GenerateOrthographicProjectPart(const EViewport& InViewport, FLOAT InMinDepth, FLOAT InMaxDepth)
+		{
+			ProjectionPart.ProjectionMatrix = Matrix4x4::OrthographicMatrix(InViewport.TopLeftX, InViewport.TopLeftY, InViewport.TopLeftX + InViewport.Width, InViewport.TopLeftY + InViewport.Height, InMinDepth, InMaxDepth);
+			ProjectionPart.InverseProjectionMatrix = ProjectionPart.ProjectionMatrix.Inverse();
+
+			//TODO Orthographic projection can not use far or near directly.
+			ProjectionPart.DeviceZToViewZMulAdd = Vector2(0.0f, 0.0f);
 		}
 		void GenerateFinalMatrix()
 		{

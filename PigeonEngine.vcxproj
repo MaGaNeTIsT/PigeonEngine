@@ -55,12 +55,12 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\DirectionalLightComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
@@ -69,6 +69,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
@@ -235,12 +236,12 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.cpp">
@@ -322,6 +323,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />

@@ -349,8 +349,9 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\DirectionalLightComponent.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -527,8 +528,9 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include <PigeonBase/Object/Component/SceneComponent.h>
 #include <EngineCommon.h>
 #include <RenderConfig/RenderConfig.h>
+#include <PigeonBase/Object/Component/SceneComponent.h>
 
 namespace PigeonEngine
 {
@@ -50,7 +50,7 @@ namespace PigeonEngine
 	public:
 		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = RCommonSettings::RENDER_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		const PCameraViewInfo&	GetCameraViewInfo()const { return CameraViewInfo; }
-		const ECameraMatrix&	GetCameraMatrix()const { return CameraMatrix; }
+		const EViewMatrix&		GetCameraMatrix()const { return CameraMatrix; }
 		const EFrustum&			GetCameraFrustum()const { return CameraFrustum; }
 	public:
 		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = RCommonSettings::RENDER_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
@@ -65,7 +65,7 @@ namespace PigeonEngine
 		void	UpdateCameraMatrix();
 	protected:
 		PCameraViewInfo		CameraViewInfo;
-		ECameraMatrix		CameraMatrix;
+		EViewMatrix			CameraMatrix;
 		EFrustum			CameraFrustum;
 	};
 

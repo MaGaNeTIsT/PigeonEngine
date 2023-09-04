@@ -1,4 +1,4 @@
-#include "Light.h"
+#include "LightProxy.h"
 
 namespace PigeonEngine
 {
