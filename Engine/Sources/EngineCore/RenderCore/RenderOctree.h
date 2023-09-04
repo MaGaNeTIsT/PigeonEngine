@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <EngineCommon.h>
 
 namespace PigeonEngine
 {
@@ -21,7 +22,7 @@ namespace PigeonEngine
 
 		INT32								NodeIndex;
 		TArray<const RPrimitiveProxy*>		Primitives;
-		TMap<ULONGLONG, INT32>				PrimitiveMapping;
+		TMap<ObjectIdentityType, INT32>		PrimitiveMapping;
 	};
 
 	struct ROctreeNode
@@ -74,9 +75,48 @@ namespace PigeonEngine
 	public:
 		static BOOL32	SplitOctreeInternal(const Vector3& InOrigin, const Vector3& InExtent, const Vector3& InMinExtent, Vector3& OutOctreeOrigin, Vector3& OutOctreeSize, Vector3& OutOctreeCellSize, TArray<UINT32>& OutOctreePerAxisCellNum, TArray<UINT32>& OutOctreeAxisDepth, UINT32& OutOctreeMaxDepth, TArray<ROctreeLayerInfo>& OutOctreeLayerInfos, TArray<ROctreeElement>& OutOctreeElements, TArray<ROctreeNode>& OutOctreeNodes);
 	public:
-		BOOL32	AddPrimitiveIntoOctreeElement(const RPrimitiveProxy* InPrimitiveProxy);
-		void	AddPrimitivesIntoOctreeElement(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		BOOL32	AddPrimitive(const RPrimitiveProxy* InPrimitiveProxy);
+		BOOL32	AddPrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		BOOL32	RemovePrimitive(const RPrimitiveProxy* InPrimitiveProxy);
+		BOOL32	RemovePrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		void	ClearPrimitives();
+		BOOL32	RebuildOctreeForWholeLevel(const EBoundAABB* InBounds);
 		BOOL32	FinalizeOctree();
+	public:
+		template<typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode))
+			{
+				InFunc(TempNode);
+				if (TempNode.ChildrenIndex.Num() > 0)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionNode<_TLambdaType, _TConditionType>(TempNode.ChildrenIndex[ChildIndex], InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode))
+			{
+				InFunc(TempNode);
+				ForwardRecursionNode<_TLambdaType, _TConditionType>(TempNode.ParentIndex, InFunc, InCond);
+			}
+		}
 	public:
 		const Vector3&					GetTargetCellSize()const;
 		const Vector3&					GetBoundOrigin()const;

@@ -117,13 +117,13 @@ namespace PigeonEngine
 		return false;
 	}
 
-	void CPhysics_Jolt::AddBody(const ULONGLONG& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode)
+	void CPhysics_Jolt::AddBody(const ObjectIdentityType& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode)
 	{
 		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActive::Active ? EActivation::Activate : EActivation::DontActivate);
 		m_Bodys.Add(GameObjectId, inBodyID);
 	}
 
-	void CPhysics_Jolt::RemoveBody(const ULONGLONG& GameObjectId, bool bDeleteShape/* = true*/)
+	void CPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, bool bDeleteShape/* = true*/)
 	{
 		PhysicsBodyId ID;
 		if (m_Bodys.FindValue(GameObjectId, ID))

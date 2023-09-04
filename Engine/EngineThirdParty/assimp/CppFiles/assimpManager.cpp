@@ -1385,7 +1385,7 @@ namespace PigeonEngine
 			return Result;
 		}
 
-		Result = GatherAllAnimationChannelDatas(SceneAnimations, OutSkeletonAnimationClips) == TRUE ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
+		Result = (GatherAllAnimationChannelDatas(SceneAnimations, OutSkeletonAnimationClips) == TRUE) ? CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED : CReadFileStateType::ASSIMP_READ_FILE_STATE_ERROR;
 
 		// We're done. Everything will be cleaned up by the importer destructor
 		AssImporter->FreeScene();

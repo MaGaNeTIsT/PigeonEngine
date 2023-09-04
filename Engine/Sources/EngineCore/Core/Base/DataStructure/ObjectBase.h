@@ -10,15 +10,17 @@
 namespace PigeonEngine
 {
 
+	typedef ULONGLONG	ObjectIdentityType;
+
 	class EObjectBase : public ERTTIObject
 	{
 	public:
-		const ULONGLONG& GetUniqueID()const;
+		const ObjectIdentityType& GetUniqueID()const;
 	public:
 		BOOL32 operator==(const EObjectBase& obj);
 		BOOL32 operator!=(const EObjectBase& obj);
 	private:
-		ULONGLONG UniqueID;
+		ObjectIdentityType UniqueID;
 #if _EDITOR_ONLY
 	public:
 		const EString& GetDebugName()const;
@@ -43,14 +45,14 @@ namespace PigeonEngine
 	class EUniqueIDManager : public ERTTIObject
 	{
 	public:
-		ULONGLONG AllocUniqueID();
+		ObjectIdentityType AllocUniqueID();
 	private:
-		ULONGLONG UsedAllocUniqueID;
+		ObjectIdentityType UsedAllocUniqueID;
 
 		CLASS_MANAGER_SINGLETON_BODY(EUniqueIDManager)
 
 	};
 
-	extern ULONGLONG _AllocUniqueID();
+	extern ObjectIdentityType _AllocUniqueID();
 
 };

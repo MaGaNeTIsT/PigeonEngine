@@ -32,12 +32,12 @@ namespace PigeonEngine
 #ifdef TRUE
 #undef TRUE
 #endif
-#define TRUE							(true)
+#define TRUE							(0x1)
 
 #ifdef FALSE
 #undef FALSE
 #endif
-#define FALSE							(false)
+#define FALSE							(0x0)
 
 #ifdef NULL
 #undef NULL

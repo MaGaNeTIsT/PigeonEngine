@@ -105,10 +105,10 @@ namespace PigeonEngine
 		}
 		auto GenerateDimension = [](const UINT32 InExp, const FLOAT InExtent, const FLOAT InMinExtent, INT32& DimensionExp, INT32& DimensionCellNum, FLOAT& UsedMinExtent)->void
 		{
-			FLOAT SplitCellNum = EMath::LogX(InExp, InExtent / InMinExtent);
+			FLOAT SplitCellNum = EMath::LogX(EMath::TruncToFloat(InExp), InExtent / InMinExtent);
 			DimensionExp = EMath::CeilToInt32(SplitCellNum);
 			DimensionExp = EMath::Max(1, DimensionExp);
-			DimensionCellNum = (INT32)(EMath::Pow((FLOAT)InExp, DimensionExp));
+			DimensionCellNum = (INT32)(EMath::Pow(EMath::TruncToFloat(InExp), EMath::TruncToFloat(DimensionExp)));
 			UsedMinExtent = (InExtent / ((FLOAT)DimensionCellNum)) / 2.f;
 		};
 		const Vector3 TempAnchor = InOrigin - InExtent;
@@ -236,87 +236,14 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	/*
-BOOL32 UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelBounds* InBounds)
-{
-	UE_LOG(LogTemp, Display, TEXT("Try to rebuilding procedural bezier grass octree for whole level."));
-	if (OctreeTargetCellSize.X < 1.0f || OctreeTargetCellSize.Y < 1.0f || OctreeTargetCellSize.Z < 1.0f)
-	{
-		UE_LOG(LogTemp, Display, TEXT("Check target cell size info error. Size values are invalid."));
-		return FALSE;
-	}
-	const ALevelBounds* UsedBounds = InBounds;
-	if ((!UsedBounds) || (!UsedBounds->BoxComponent) || UsedBounds->BoxComponent->IsZeroExtent())
-	{
-		UE_LOG(LogTemp, Display, TEXT("Check current level bounds info error. Can not find current level bounds."));
-		UE_LOG(LogTemp, Display, TEXT("Failed to rebuilding procedural bezier grass."));
-		return FALSE;
-	}
-
-	Vector3 LevelBoundsOrigin, LevelBoundsExtent;
-	{
-		Vector3 TempVector[3] =
-		{
-			UsedBounds->BoxComponent->GetForwardVector(),
-			UsedBounds->BoxComponent->GetRightVector(),
-			UsedBounds->BoxComponent->GetUpVector()
-		};
-		Vector3 TempOrigin = UsedBounds->BoxComponent->GetComponentLocation();
-		Vector3 TempExtent = UsedBounds->BoxComponent->GetScaledBoxExtent();
-		Vector3 TempLocation[8] =
-		{
-			Vector3(-1, -1, -1) * TempExtent,
-			Vector3(-1,  1, -1) * TempExtent,
-			Vector3( 1, -1, -1) * TempExtent,
-			Vector3( 1,  1, -1) * TempExtent,
-			Vector3(-1, -1,  1) * TempExtent,
-			Vector3(-1,  1,  1) * TempExtent,
-			Vector3( 1, -1,  1) * TempExtent,
-			Vector3( 1,  1,  1) * TempExtent
-		};
-		Vector3 TempMin(UE_MAX_FLT, UE_MAX_FLT, UE_MAX_FLT), TempMax(-UE_MAX_FLT, -UE_MAX_FLT, -UE_MAX_FLT);
-		for (INT32 Index = 0; Index < 8; Index++)
-		{
-			TempLocation[Index] = TempVector[0] * TempLocation[Index].X + TempVector[1] * TempLocation[Index].Y + TempVector[2] * TempLocation[Index].Z + TempOrigin;
-			TempMin.X = EMath::Min(TempLocation[Index].X, TempMin.X);
-			TempMin.Y = EMath::Min(TempLocation[Index].Y, TempMin.Y);
-			TempMin.Z = EMath::Min(TempLocation[Index].Z, TempMin.Z);
-			TempMax.X = EMath::Max(TempLocation[Index].X, TempMax.X);
-			TempMax.Y = EMath::Max(TempLocation[Index].Y, TempMax.Y);
-			TempMax.Z = EMath::Max(TempLocation[Index].Z, TempMax.Z);
-		}
-		LevelBoundsOrigin = (TempMin + TempMax) / 2.f;
-		LevelBoundsExtent = (TempMax - TempMin) / 2.f;
-	}
-
-	if (OctreeLayerInfos.Length() > 0)
-	{
-		OctreeLayerInfos.Clear();
-	}
-	if (OctreeElements.Length() > 0)
-	{
-		OctreeElements.Clear();
-	}
-	if (OctreeNodes.Length() > 0)
-	{
-		OctreeNodes.Clear();
-	}
-
-	UE_LOG(LogTemp, Display, TEXT("Check ready. Prepare to spliting octree."));
-
-	if (SplitOctreeInternal(LevelBoundsOrigin, LevelBoundsExtent, (OctreeTargetCellSize / 2.f), OctreeOrigin, OctreeSize, OctreeUsedCellSize, OctreePerAxisCellNum, OctreeAxisDepth, OctreeMaxDepth, OctreeLayerInfos, OctreeElements, OctreeNodes))
-	{
-		UE_LOG(LogTemp, Display, TEXT("Rebuilding procedural bezier grass octree for whole level success."));
-		return TRUE;
-	}
-
-	UE_LOG(LogTemp, Display, TEXT("Rebuilding procedural bezier grass octree for whole level failed."));
-	return FALSE;
-}
-*/
-	BOOL32 ROctree::AddPrimitiveIntoOctreeElement(const RPrimitiveProxy* InPrimitiveProxy)
+	BOOL32 ROctree::AddPrimitive(const RPrimitiveProxy* InPrimitiveProxy)
 	{
 		BOOL32 Result = FALSE;
+		if (Nodes.Length() < 2u)
+		{
+			return Result;
+		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if ((!InPrimitiveProxy) || (!(InPrimitiveProxy->IsRenderValid())))
 		{
 			return Result;
@@ -335,14 +262,16 @@ BOOL32 UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelB
 		}
 		Element.PrimitiveMapping.Add(InPrimitiveProxy->GetUniqueID(), (INT32)(Element.Primitives.Length()));
 		Element.Primitives.Add(InPrimitiveProxy);
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		Result = TRUE;
 		return Result;
 	}
-	void ROctree::AddPrimitivesIntoOctreeElement(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
+	BOOL32 ROctree::AddPrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
 	{
+		BOOL32 Result = FALSE;
 		if ((Nodes.Length() < 2u) || (InPrimitives.Length() == 0u))
 		{
-			return;
+			return Result;
 		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if (OutErrorPrimitives.Length() > 0u)
@@ -352,23 +281,138 @@ BOOL32 UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelB
 		for (INT32 PrimitiveIndex = 0, PrimitiveNum = (INT32)(InPrimitives.Length()); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 		{
 			const RPrimitiveProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
-			if ((!TempPrimitive) || (!(TempPrimitive->IsRenderValid())))
-			{
-				continue;
-			}
-			const Vector3& TempLocation = TempPrimitive->GetWorldLocation();
-			INT32 TempElementIndex = FindOctreeIndexByWorldLocation(TempLocation, BoundOrigin, LayerInfos, PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_X], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Y], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Z]);
-			if (TempElementIndex < 0)
+			if (!(AddPrimitive(TempPrimitive)))
 			{
 				OutErrorPrimitives.Add(PrimitiveIndex);
 				continue;
 			}
-			if (AddPrimitiveIntoOctreeElementInternal(TempElementIndex, TempPrimitive) < 0)
-			{
-				OutErrorPrimitives.Add(PrimitiveIndex);
-				continue;
-			}
+			Result = TRUE;
 		}
+		return Result;
+	}
+	BOOL32 ROctree::RemovePrimitive(const RPrimitiveProxy* InPrimitiveProxy)
+	{
+		BOOL32 Result = FALSE;
+		if (Nodes.Length() < 2u)
+		{
+			return Result;
+		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		if (!InPrimitiveProxy)
+		{
+			return Result;
+		}
+		const INT32 OctreeElementNum = (INT32)(Elements.Length());
+		const Vector3& TempLocation = InPrimitiveProxy->GetWorldLocation();
+		INT32 TempElementIndex = FindOctreeIndexByWorldLocation(TempLocation, BoundOrigin, LayerInfos, PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_X], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Y], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Z]);
+		if ((TempElementIndex < 0) || (TempElementIndex >= OctreeElementNum))
+		{
+			return Result;
+		}
+		ROctreeElement& Element = Elements[TempElementIndex];
+		const UINT32 PrimitiveNum = Element.Primitives.Length();
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
+		if (PrimitiveNum == 0u)
+		{
+			return Result;
+		}
+		if (INT32 PrimitiveMappingValue = -1; Element.PrimitiveMapping.FindValue(InPrimitiveProxy->GetUniqueID(), PrimitiveMappingValue))
+		{
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive index in render octree element failed."), ((PrimitiveMappingValue >= 0) && (PrimitiveMappingValue < ((INT32)PrimitiveNum))));
+			const UINT32 PrimitiveIndex = (UINT32)PrimitiveMappingValue;
+			const ObjectIdentityType& PrimitiveID = InPrimitiveProxy->GetUniqueID();
+			Element.PrimitiveMapping.Remove(PrimitiveID);
+			if (PrimitiveIndex != (PrimitiveNum - 1u))
+			{
+				const RPrimitiveProxy* TempPrimitiveProxy = Element.Primitives[PrimitiveNum - 1u];
+				Element.Primitives[PrimitiveNum - 1u] = Element.Primitives[PrimitiveIndex];
+				Element.Primitives[PrimitiveIndex] = TempPrimitiveProxy;
+				Element.PrimitiveMapping[TempPrimitiveProxy->GetUniqueID()] = (INT32)PrimitiveIndex;
+			}
+			Element.Primitives.Pop();
+			Result = TRUE;
+		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
+		return Result;
+	}
+	BOOL32 ROctree::RemovePrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
+	{
+		BOOL32 Result = FALSE;
+		if ((Nodes.Length() < 2u) || (InPrimitives.Length() == 0u))
+		{
+			return Result;
+		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		if (OutErrorPrimitives.Length() > 0u)
+		{
+			OutErrorPrimitives.Clear();
+		}
+		for (INT32 PrimitiveIndex = 0, PrimitiveNum = (INT32)(InPrimitives.Length()); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+		{
+			const RPrimitiveProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
+			if (!(RemovePrimitive(TempPrimitive)))
+			{
+				OutErrorPrimitives.Add(PrimitiveIndex);
+				continue;
+			}
+			Result = TRUE;
+		}
+		return Result;
+	}
+	void ROctree::ClearPrimitives()
+	{
+		for (UINT32 i = 0u, n = Elements.Length(); i < n; i++)
+		{
+			Elements[i].PrimitiveMapping.Clear();
+			Elements[i].Primitives.Clear();
+		}
+	}
+	BOOL32 ROctree::RebuildOctreeForWholeLevel(const EBoundAABB* InBounds)
+	{
+		if (TargetCellSize.x < 0.5f || TargetCellSize.y < 0.5f || TargetCellSize.z < 0.5f)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check render octree target cell size info error. Size values are invalid."));
+			return FALSE;
+		}
+		const EBoundAABB* UsedBounds = InBounds;
+		if ((!UsedBounds) || (((UsedBounds->AABBMax.x - UsedBounds->AABBMin.x) < 1.0f) || ((UsedBounds->AABBMax.y - UsedBounds->AABBMin.y) < 1.0f) || ((UsedBounds->AABBMax.z - UsedBounds->AABBMin.z) < 1.0f)))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check current level bounds info error. Can not find current level bounds."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Failed to rebuilding procedural bezier grass."));
+			return FALSE;
+		}
+		Vector3 LevelBoundsOrigin, LevelBoundsExtent;
+		{
+			LevelBoundsOrigin = (UsedBounds->AABBMin + UsedBounds->AABBMax) / 2.f;
+			LevelBoundsExtent = (UsedBounds->AABBMax - UsedBounds->AABBMin) / 2.f;
+		}
+		if (LayerInfos.Length() > 0)
+		{
+			LayerInfos.Clear();
+		}
+		if (Elements.Length() > 0)
+		{
+			Elements.Clear();
+		}
+		if (Nodes.Length() > 0)
+		{
+			Nodes.Clear();
+		}
+		TArray<UINT32> TempPerAxisCellNum, TempPerAxisDepth;
+		if (SplitOctreeInternal(LevelBoundsOrigin, LevelBoundsExtent, (TargetCellSize / 2.f), BoundOrigin, BoundSize,
+			UsedCellSize, TempPerAxisCellNum, TempPerAxisDepth, MaxDepth, LayerInfos, Elements, Nodes))
+		{
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis cell num array failed."), (TempPerAxisCellNum.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis depth array failed."), (TempPerAxisDepth.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
+			for (UINT32 i = 0u; i < EOctreeAxisType::OCTREE_AXIS_COUNT; i++)
+			{
+				PerAxisCellNum[i] = TempPerAxisCellNum[i];
+				PerAxisDepth[i] = TempPerAxisDepth[i];
+			}
+			return TRUE;
+		}
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Rebuilding procedural bezier grass octree for whole level failed."));
+		return FALSE;
 	}
 	BOOL32 ROctree::FinalizeOctree()
 	{
@@ -429,7 +473,7 @@ BOOL32 UProceduralBezierGrassComponent::RebuildOctreeForWholeLevel(const ALevelB
 				}
 				else
 				{
-					for (INT32 ChildIndex = 0; ChildIndex < TempNode.ChildrenIndex.Length(); ChildIndex++)
+					for (INT32 ChildIndex = 0, ChildNum = (INT32)(TempNode.ChildrenIndex.Length()); ChildIndex < ChildNum; ChildIndex++)
 					{
 						TempVisible = VisibleNodeMaps[TempNode.ChildrenIndex[ChildIndex]] || TempVisible;
 					}

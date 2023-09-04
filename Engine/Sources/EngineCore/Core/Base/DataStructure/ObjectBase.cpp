@@ -26,7 +26,7 @@ namespace PigeonEngine
 	EObjectBase::~EObjectBase()
 	{
 	}
-	const ULONGLONG& EObjectBase::GetUniqueID()const
+	const ObjectIdentityType& EObjectBase::GetUniqueID()const
 	{
 		return UniqueID;
 	}
@@ -58,13 +58,13 @@ namespace PigeonEngine
 	EUniqueIDManager::~EUniqueIDManager()
 	{
 	}
-	ULONGLONG EUniqueIDManager::AllocUniqueID()
+	ObjectIdentityType EUniqueIDManager::AllocUniqueID()
 	{
 		UsedAllocUniqueID += 1u;
 		return UsedAllocUniqueID;
 	}
 
-	ULONGLONG _AllocUniqueID()
+	ObjectIdentityType _AllocUniqueID()
 	{
 		EUniqueIDManager* UniqueIDManager = EUniqueIDManager::GetManagerSingleton();
 		return (UniqueIDManager->AllocUniqueID());

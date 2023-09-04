@@ -1,4 +1,5 @@
 #include "ViewProxy.h"
+#include <Renderer/RenderScene.h>
 
 namespace PigeonEngine
 {
@@ -44,13 +45,14 @@ namespace PigeonEngine
 	{
 	}
 	RViewProxy::RViewProxy(const RViewProxy& Other)
-		: Scene(Other.Scene), Component(Other.Component)
+		: VisibilityMap(Other.VisibilityMap)
+		, CameraViewInfo(Other.CameraViewInfo)
+		, RenderViewport(Other.RenderViewport)
+		, ViewMatrix(Other.ViewMatrix)
+		, ViewFrustum(Other.ViewFrustum)
+		, Scene(Other.Scene)
+		, Component(Other.Component)
 	{
-		VisibilityMap	= Other.VisibilityMap;
-		CameraViewInfo	= Other.CameraViewInfo;
-		RenderViewport	= Other.RenderViewport;
-		ViewMatrix		= Other.ViewMatrix;
-		ViewFrustum		= Other.ViewFrustum;
 	}
 	RViewProxy::~RViewProxy()
 	{
