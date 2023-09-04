@@ -5,8 +5,8 @@
 namespace PigeonEngine
 {
 
-	class RScene;
 	class PPrimitiveComponent;
+	class RScene;
 
 	class RPrimitiveProxy : public EObjectBase
 	{

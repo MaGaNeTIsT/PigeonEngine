@@ -2,15 +2,15 @@
 
 namespace PigeonEngine
 {
-	Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation) { return Matrix4x4(DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
-	Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
-	Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z)); }
-	Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
-	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
-	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
-	Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix()); }
-	Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
-	Matrix4x4 InverseMatrix4x4(const Matrix4x4& InMatrix, Vector4* OutDeterminant)
+	PE_INLINE Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation) { return Matrix4x4(DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	PE_INLINE Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
+	PE_INLINE Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix()); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	PE_INLINE Matrix4x4 InverseMatrix4x4(const Matrix4x4& InMatrix, Vector4* OutDeterminant)
 	{
 		if (OutDeterminant != nullptr)
 		{
@@ -21,16 +21,99 @@ namespace PigeonEngine
 		}
 		return Matrix4x4(DirectX::XMMatrixInverse(nullptr, InMatrix.GetDirectXMatrix()));
 	}
-	Vector4 Matrix4x4TransformVector(const Matrix4x4& m, const Vector4& v) { return Vector4(DirectX::XMVector4Transform(DirectX::XMVectorSet(v.x, v.y, v.z, v.w), m.GetDirectXMatrix())); }
-	Vector3 Matrix4x4TransformPosition(const Matrix4x4& m, const Vector3& v) { return Vector3(DirectX::XMVector3TransformCoord(DirectX::XMVectorSet(v.x, v.y, v.z, 1.f), m.GetDirectXMatrix())); }
-	Vector3 Matrix4x4TransformDirection(const Matrix4x4& m, const Vector3& v) { return Vector3(DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), m.GetDirectXMatrix())); }
-	Quaternion MakeQuaternion(const Matrix4x4& m) { return Quaternion(m.GetDirectXMatrix()); }
-	Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
-	Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
-	Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
-	Color3 MakeColor3(const Color4& c) { return Color3(c.x, c.y, c.z); }
-	Color4 MakeColor4(const Color3& c) { return Color4(c.x, c.y, c.z, 1.f); }
-
+	PE_INLINE Vector4 Matrix4x4TransformVector(const Matrix4x4& m, const Vector4& v) { return Vector4(DirectX::XMVector4Transform(DirectX::XMVectorSet(v.x, v.y, v.z, v.w), m.GetDirectXMatrix())); }
+	PE_INLINE Vector3 Matrix4x4TransformPosition(const Matrix4x4& m, const Vector3& v) { return Vector3(DirectX::XMVector3TransformCoord(DirectX::XMVectorSet(v.x, v.y, v.z, 1.f), m.GetDirectXMatrix())); }
+	PE_INLINE Vector3 Matrix4x4TransformDirection(const Matrix4x4& m, const Vector3& v) { return Vector3(DirectX::XMVector3TransformNormal(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), m.GetDirectXMatrix())); }
+	PE_INLINE Quaternion MakeQuaternion(const Matrix4x4& m) { return Quaternion(m.GetDirectXMatrix()); }
+	PE_INLINE Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
+	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
+	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
+	PE_INLINE Color3 MakeColor3(const Color4& c) { return Color3(c.x, c.y, c.z); }
+	PE_INLINE Color4 MakeColor4(const Color3& c) { return Color4(c.x, c.y, c.z, 1.f); }
+	PE_INLINE Vector2 MinVector2(const Vector2& A, const Vector2& B)
+	{
+		return Vector2(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y));
+	}
+	PE_INLINE Vector3 MinVector3(const Vector3& A, const Vector3& B)
+	{
+		return Vector3(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y),
+			EMath::Min(A.z, B.z));
+	}
+	PE_INLINE Vector4 MinVector4(const Vector4& A, const Vector4& B)
+	{
+		return Vector4(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y),
+			EMath::Min(A.z, B.z),
+			EMath::Min(A.w, B.w));
+	}
+	PE_INLINE Vector2Int MinVector2Int(const Vector2Int& A, const Vector2Int& B)
+	{
+		return Vector2Int(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y));
+	}
+	PE_INLINE Vector3Int MinVector3Int(const Vector3Int& A, const Vector3Int& B)
+	{
+		return Vector3Int(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y),
+			EMath::Min(A.z, B.z));
+	}
+	PE_INLINE Vector4Int MinVector4Int(const Vector4Int& A, const Vector4Int& B)
+	{
+		return Vector4Int(
+			EMath::Min(A.x, B.x),
+			EMath::Min(A.y, B.y),
+			EMath::Min(A.z, B.z),
+			EMath::Min(A.w, B.w));
+	}
+	PE_INLINE Vector2 MaxVector2(const Vector2& A, const Vector2& B)
+	{
+		return Vector2(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y));
+	}
+	PE_INLINE Vector3 MaxVector3(const Vector3& A, const Vector3& B)
+	{
+		return Vector3(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y),
+			EMath::Max(A.z, B.z));
+	}
+	PE_INLINE Vector4 MaxVector4(const Vector4& A, const Vector4& B)
+	{
+		return Vector4(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y),
+			EMath::Max(A.z, B.z),
+			EMath::Max(A.w, B.w));
+	}
+	PE_INLINE Vector2Int MaxVector2Int(const Vector2Int& A, const Vector2Int& B)
+	{
+		return Vector2Int(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y));
+	}
+	PE_INLINE Vector3Int MaxVector3Int(const Vector3Int& A, const Vector3Int& B)
+	{
+		return Vector3Int(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y),
+			EMath::Max(A.z, B.z));
+	}
+	PE_INLINE Vector4Int MaxVector4Int(const Vector4Int& A, const Vector4Int& B)
+	{
+		return Vector4Int(
+			EMath::Max(A.x, B.x),
+			EMath::Max(A.y, B.y),
+			EMath::Max(A.z, B.z),
+			EMath::Max(A.w, B.w));
+	}
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)
 	{

@@ -57,5 +57,21 @@ namespace PigeonEngine
 	RViewProxy::~RViewProxy()
 	{
 	}
+	const PCameraViewInfo& RViewProxy::GetViewInfo()const
+	{
+		return CameraViewInfo;
+	}
+	const EViewport& RViewProxy::GetRenderViewport()const
+	{
+		return RenderViewport;
+	}
+	const EViewMatrix& RViewProxy::GetViewMatrix()const
+	{
+		return ViewMatrix;
+	}
+	const EFrustum& RViewProxy::GetViewFrustum()const
+	{
+		return ViewFrustum;
+	}
 
 };

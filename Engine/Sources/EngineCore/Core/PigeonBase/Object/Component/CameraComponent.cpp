@@ -23,7 +23,7 @@ namespace PigeonEngine
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
 		CameraMatrix.GenerateFinalMatrix();
 
-		CameraFrustum.GenerateFrustumInfo(CameraViewInfo.FovAngleY, CameraViewInfo.Viewport.Width / CameraViewInfo.Viewport.Height, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
+		CameraFrustum.GeneratePerspectiveFrustumInfo(CameraViewInfo.FovAngleY, CameraViewInfo.Viewport.Width / CameraViewInfo.Viewport.Height, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 	}
 	void PCameraComponent::SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
 	{

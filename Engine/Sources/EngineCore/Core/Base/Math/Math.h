@@ -553,18 +553,21 @@ namespace PigeonEngine
 		/** Returns a seeded random float in the range [0,1), using the seed from SRandInit(). */
 		static FLOAT					SRand();
 	public:
-		static PE_FORCEINLINE BOOL32 Lerp(const INT32& x0, const INT32& y0, const INT32& x1, const INT32& y1, const INT32& t, INT32& phi)
+		template<typename _TValueTypeX, typename _TValueTypeY>
+		static PE_FORCEINLINE BOOL32 Lerp(const _TValueTypeX& X0, const _TValueTypeY& Y0, const _TValueTypeX& X1, const _TValueTypeY& Y1, const _TValueTypeX& T, _TValueTypeY& OutY)
 		{
-			if (t < x0 || t > x1)
+			if ((X0 > X1) || (T < X0) || (T > X1))
 			{
 				return FALSE;
 			}
-			phi = (INT32)(((FLOAT)(t - x1)) / ((FLOAT)(x0 - x1)) * (FLOAT)y0 + ((FLOAT)(t - x0)) / ((FLOAT)(x1 - x0)) * (FLOAT)y1);
+			FLOAT TempT = (EMath::TruncToFloat(T) - EMath::TruncToFloat(X0)) / (EMath::TruncToFloat(X1) - EMath::TruncToFloat(X0));
+			OutY = (_TValueTypeY)(EMath::TruncToFloat(Y0) + (TempT * (EMath::TruncToFloat(Y1) - EMath::TruncToFloat(Y0))));
 			return TRUE;
 		}
-		static PE_FORCEINLINE FLOAT Lerp(const FLOAT& v0, const FLOAT& v1, const FLOAT& t)
+		template<typename _TValueType, typename _TType>
+		static PE_FORCEINLINE _TValueType Lerp(const _TValueType& A, const _TValueType& B, const _TType& T)
 		{
-			return (v0 * (1.f - t) + v1 * t);
+			return (A * (((_TType)1) - T) + B * T);
 		}
 
 	public:
