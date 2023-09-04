@@ -10,16 +10,18 @@ namespace PigeonEngine
 	struct ROctreeElement
 	{
 		ROctreeElement()noexcept : NodeIndex(-1) {}
-		ROctreeElement(const ROctreeElement& Other)noexcept : NodeIndex(Other.NodeIndex), Primitives(Other.Primitives) {}
+		ROctreeElement(const ROctreeElement& Other)noexcept : NodeIndex(Other.NodeIndex), Primitives(Other.Primitives), PrimitiveMapping(Other.PrimitiveMapping) {}
 		ROctreeElement& operator=(const ROctreeElement& Other)
 		{
-			NodeIndex	= Other.NodeIndex;
-			Primitives	= Other.Primitives;
+			NodeIndex			= Other.NodeIndex;
+			Primitives			= Other.Primitives;
+			PrimitiveMapping	= Other.PrimitiveMapping;
 			return (*this);
 		}
 
-		INT32						NodeIndex;
-		TArray<RPrimitiveProxy*>	Primitives;
+		INT32								NodeIndex;
+		TArray<const RPrimitiveProxy*>		Primitives;
+		TMap<ULONGLONG, INT32>				PrimitiveMapping;
 	};
 
 	struct ROctreeNode
@@ -72,26 +74,32 @@ namespace PigeonEngine
 	public:
 		static BOOL32	SplitOctreeInternal(const Vector3& InOrigin, const Vector3& InExtent, const Vector3& InMinExtent, Vector3& OutOctreeOrigin, Vector3& OutOctreeSize, Vector3& OutOctreeCellSize, TArray<UINT32>& OutOctreePerAxisCellNum, TArray<UINT32>& OutOctreeAxisDepth, UINT32& OutOctreeMaxDepth, TArray<ROctreeLayerInfo>& OutOctreeLayerInfos, TArray<ROctreeElement>& OutOctreeElements, TArray<ROctreeNode>& OutOctreeNodes);
 	public:
-		const Vector3&					GetOctreeTargetCellSize()const;
-		const Vector3&					GetOctreeOrigin()const;
-		const Vector3&					GetOctreeSize()const;
-		const Vector3&					GetOctreeUsedCellSize()const;
-		UINT32							GetOctreeAxisCellNum(EOctreeAxisType InAxisType)const;
-		UINT32							GetOctreeAxisDepth(EOctreeAxisType InAxisType)const;
-		UINT32							GetOctreeMaxDepth()const;
-		const TArray<ROctreeNode>&		GetOctreeNodes()const;
-		const TArray<ROctreeElement>&	GetOctreeElements()const;
-		const TArray<ROctreeLayerInfo>&	GetOctreeLayerInfos()const;
+		BOOL32	AddPrimitiveIntoOctreeElement(const RPrimitiveProxy* InPrimitiveProxy);
+		void	AddPrimitivesIntoOctreeElement(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		BOOL32	FinalizeOctree();
 	public:
-		void SetTargetCellSize(const Vector3& InTargetCellSize);
+		const Vector3&					GetTargetCellSize()const;
+		const Vector3&					GetBoundOrigin()const;
+		const Vector3&					GetBoundSize()const;
+		const Vector3&					GetUsedCellSize()const;
+		UINT32							GetAxisCellNum(EOctreeAxisType InAxisType)const;
+		UINT32							GetAxisDepth(EOctreeAxisType InAxisType)const;
+		UINT32							GetMaxDepth()const;
+		const TArray<ROctreeNode>&		GetNodes()const;
+		const TArray<ROctreeElement>&	GetElements()const;
+		const TArray<ROctreeLayerInfo>&	GetLayerInfos()const;
+	public:
+		void	SetTargetCellSize(const Vector3& InTargetCellSize);
 	protected:
-		Vector3						OctreeTargetCellSize;
-		Vector3						OctreeOrigin;
-		Vector3						OctreeSize;
-		Vector3						OctreeUsedCellSize;
-		UINT32						OctreePerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_COUNT];
-		UINT32						OctreeAxisDepth[EOctreeAxisType::OCTREE_AXIS_COUNT];
-		UINT32						OctreeMaxDepth;
+
+	protected:
+		Vector3						TargetCellSize;
+		Vector3						BoundOrigin;
+		Vector3						BoundSize;
+		Vector3						UsedCellSize;
+		UINT32						PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_COUNT];
+		UINT32						PerAxisDepth[EOctreeAxisType::OCTREE_AXIS_COUNT];
+		UINT32						MaxDepth;
 		TArray<ROctreeNode>			Nodes;
 		TArray<ROctreeElement>		Elements;
 		TArray<ROctreeLayerInfo>	LayerInfos;

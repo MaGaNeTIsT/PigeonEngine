@@ -11,13 +11,13 @@ namespace PigeonEngine
 	typedef	wchar_t						WCHAR;
 	typedef	unsigned char				UINT8;
 	typedef	unsigned char				BYTE;
-	typedef	short						BOOL16;
 	typedef	short						SHORT;
 	typedef	unsigned short				USHORT;
 	typedef	unsigned short				WORD;
-	typedef	int							BOOL32;
+	typedef	short						BOOL16;
 	typedef	int							INT32;
 	typedef	unsigned int				UINT32;
+	typedef	int							BOOL32;
 	typedef	long long					BOOL64;
 	typedef	long						LONG;
 	typedef	long long					INT64;
