@@ -15,17 +15,17 @@ namespace PigeonEngine
 	public:
 		using TVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
 	public:
-		RDirectionalLightProxy(const RScene* InScene, const PDirectionalLightComponent* InComponent);
+		RDirectionalLightProxy(const RScene* InScene, const PDirectionalLightComponent* InComponent, BOOL32 InIsCascade = FALSE);
 	public:
-		void	GenerateViewInfo(const RViewProxy* InViewProxy, BOOL InIsCascade = FALSE);
+		void	GenerateViewInfo(const RViewProxy* InViewProxy);
 	protected:
 		TVisibilityMapType					VisibilityMap;
 	protected:
 		ELightData							LightData;
-		EViewport							RenderViewport;
-		EViewMatrix							ViewMatrix;
-		EFrustum							ViewFrustum;
+		TArray<EViewDomainInfo>				ViewDomainInfos;
 	protected:
+		BOOL32								IsCascadeShadow;
+		Quaternion							WorldRotation;
 		const RScene*						Scene;
 		const RViewProxy*					View;
 		const PDirectionalLightComponent*	Component;

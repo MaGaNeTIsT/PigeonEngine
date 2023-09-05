@@ -24,9 +24,7 @@ namespace PigeonEngine
 		TMap<ObjectIdentityType, BOOL32>	VisibilityMap;
 	protected:
 		PCameraViewInfo						CameraViewInfo;
-		EViewport							RenderViewport;
-		EViewMatrix							ViewMatrix;
-		EFrustum							ViewFrustum;
+		EViewDomainInfo						ViewDomainInfo;
 	protected:
 		const RScene*						Scene;
 		const PCameraComponent*				Component;

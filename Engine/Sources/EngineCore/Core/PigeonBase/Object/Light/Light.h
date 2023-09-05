@@ -35,4 +35,10 @@ namespace PigeonEngine
 		Vector2Int	ShadowMapSize;
 	};
 
+	struct CascadeShadowData
+	{
+
+
+	};
+
 };

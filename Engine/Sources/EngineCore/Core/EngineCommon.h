@@ -621,5 +621,21 @@ namespace PigeonEngine
 		Matrix4x4		ViewProjectionMatrix;
 		Matrix4x4		InverseViewProjectionMatrix;
 	};
+	struct EViewDomainInfo
+	{
+		EViewDomainInfo() = default;
+		EViewDomainInfo(const EViewDomainInfo& Other) : RenderViewport(Other.RenderViewport), ViewMatrix(Other.ViewMatrix), ViewFrustum(Other.ViewFrustum) {}
+		EViewDomainInfo& operator=(const EViewDomainInfo& Other)
+		{
+			RenderViewport	= Other.RenderViewport;
+			ViewMatrix		= Other.ViewMatrix;
+			ViewFrustum		= Other.ViewFrustum;
+			return (*this);
+		}
+
+		EViewport		RenderViewport;
+		EViewMatrix		ViewMatrix;
+		EFrustum		ViewFrustum;
+	};
 
 };

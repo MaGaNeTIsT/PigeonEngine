@@ -16,27 +16,27 @@ namespace PigeonEngine
 	{
 		if (InComponent)
 		{
-			ViewMatrix	= InComponent->GetCameraMatrix();
-			ViewFrustum	= InComponent->GetCameraFrustum();
+			ViewDomainInfo.ViewMatrix	= InComponent->GetCameraMatrix();
+			ViewDomainInfo.ViewFrustum	= InComponent->GetCameraFrustum();
 			{
 				Quaternion TempR(InComponent->GetComponentWorldRotation());
 				for (UINT32 i = 0u; i < 4u; i++)
 				{
-					ViewFrustum.Plane[i] = QuaternionTransformVector(TempR, ViewFrustum.Plane[i]);
+					ViewDomainInfo.ViewFrustum.Plane[i] = QuaternionTransformVector(TempR, ViewDomainInfo.ViewFrustum.Plane[i]);
 				}
 				for (UINT32 i = 0u; i < 8u; i++)
 				{
-					ViewFrustum.FarNearPlanePoint[i] = Matrix4x4TransformPosition(ViewMatrix.ViewPart.InverseViewMatrix, ViewFrustum.FarNearPlanePoint[i]);
+					ViewDomainInfo.ViewFrustum.FarNearPlanePoint[i] = Matrix4x4TransformPosition(ViewDomainInfo.ViewMatrix.ViewPart.InverseViewMatrix, ViewDomainInfo.ViewFrustum.FarNearPlanePoint[i]);
 				}
 			}
 			CameraViewInfo = InComponent->GetCameraViewInfo();
 			{
-				RenderViewport.TopLeftX	= 0.f;
-				RenderViewport.TopLeftY	= 0.f;
-				RenderViewport.Width	= CameraViewInfo.Viewport.Width;
-				RenderViewport.Height	= CameraViewInfo.Viewport.Height;
-				RenderViewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
-				RenderViewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
+				ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
+				ViewDomainInfo.RenderViewport.TopLeftY	= 0.f;
+				ViewDomainInfo.RenderViewport.Width		= CameraViewInfo.Viewport.Width;
+				ViewDomainInfo.RenderViewport.Height	= CameraViewInfo.Viewport.Height;
+				ViewDomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
+				ViewDomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
 			}
 		}
 	}
@@ -47,9 +47,7 @@ namespace PigeonEngine
 	RViewProxy::RViewProxy(const RViewProxy& Other)
 		: VisibilityMap(Other.VisibilityMap)
 		, CameraViewInfo(Other.CameraViewInfo)
-		, RenderViewport(Other.RenderViewport)
-		, ViewMatrix(Other.ViewMatrix)
-		, ViewFrustum(Other.ViewFrustum)
+		, ViewDomainInfo(Other.ViewDomainInfo)
 		, Scene(Other.Scene)
 		, Component(Other.Component)
 	{
@@ -63,15 +61,15 @@ namespace PigeonEngine
 	}
 	const EViewport& RViewProxy::GetRenderViewport()const
 	{
-		return RenderViewport;
+		return (ViewDomainInfo.RenderViewport);
 	}
 	const EViewMatrix& RViewProxy::GetViewMatrix()const
 	{
-		return ViewMatrix;
+		return (ViewDomainInfo.ViewMatrix);
 	}
 	const EFrustum& RViewProxy::GetViewFrustum()const
 	{
-		return ViewFrustum;
+		return (ViewDomainInfo.ViewFrustum);
 	}
 
 };

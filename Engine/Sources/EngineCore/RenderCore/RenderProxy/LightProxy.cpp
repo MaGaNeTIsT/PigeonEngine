@@ -5,32 +5,36 @@
 namespace PigeonEngine
 {
 
-	RDirectionalLightProxy::RDirectionalLightProxy(const RScene* InScene, const PDirectionalLightComponent* InComponent)
-		: Scene(InScene), View(nullptr), Component(InComponent)
+	RDirectionalLightProxy::RDirectionalLightProxy(const RScene* InScene, const PDirectionalLightComponent* InComponent, BOOL32 InIsCascade)
+		: IsCascadeShadow(InIsCascade), WorldRotation(InComponent->GetComponentWorldRotation()), Scene(InScene), View(nullptr), Component(InComponent)
 	{
 		const Color3&		LightColor		= InComponent->GetLightColor();
 		const Vector2Int&	ShadowMapSize	= InComponent->GetShadowMapSize();
 		LightData = ELightData(InComponent->GetLightType(), LightColor.r, LightColor.g, LightColor.b, InComponent->GetLightIntensity(), InComponent->IsLightCastShadow(), ShadowMapSize.x, ShadowMapSize.y);
-		RenderViewport.TopLeftX	= 0.f;
-		RenderViewport.TopLeftY	= 0.f;
-		RenderViewport.Width	= EMath::TruncToFloat(ShadowMapSize.x);
-		RenderViewport.Height	= EMath::TruncToFloat(ShadowMapSize.y);
-		RenderViewport.MinDepth	= 0.f;
-		RenderViewport.MaxDepth	= 1.f;
-		ViewMatrix.GenerateViewPart(Vector3::Zero(), InComponent->GetComponentWorldRotation());
+		if (!InIsCascade)
+		{
+			EViewDomainInfo& ViewDomainInfo = ViewDomainInfos.Add_Default_GetRef();
+			ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
+			ViewDomainInfo.RenderViewport.TopLeftY	= 0.f;
+			ViewDomainInfo.RenderViewport.Width		= EMath::TruncToFloat(ShadowMapSize.x);
+			ViewDomainInfo.RenderViewport.Height	= EMath::TruncToFloat(ShadowMapSize.y);
+			ViewDomainInfo.RenderViewport.MinDepth	= 0.f;
+			ViewDomainInfo.RenderViewport.MaxDepth	= 1.f;
+			ViewDomainInfo.ViewMatrix.GenerateViewPart(Vector3::Zero(), WorldRotation);
+		}
 	}
 	RDirectionalLightProxy::RDirectionalLightProxy()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), Scene(nullptr), View(nullptr), Component(nullptr)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), IsCascadeShadow(FALSE), WorldRotation(Quaternion::Identity()), Scene(nullptr), View(nullptr), Component(nullptr)
 	{
 	}
 	RDirectionalLightProxy::RDirectionalLightProxy(const RDirectionalLightProxy& Other)
-		: VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), RenderViewport(Other.RenderViewport), ViewMatrix(Other.ViewMatrix), ViewFrustum(Other.ViewFrustum), Scene(Other.Scene), View(Other.View), Component(Other.Component)
+		: VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), IsCascadeShadow(Other.IsCascadeShadow), WorldRotation(Other.WorldRotation), Scene(Other.Scene), View(Other.View), Component(Other.Component)
 	{
 	}
 	RDirectionalLightProxy::~RDirectionalLightProxy()
 	{
 	}
-	void RDirectionalLightProxy::GenerateViewInfo(const RViewProxy* InViewProxy, BOOL InIsCascade)
+	void RDirectionalLightProxy::GenerateViewInfo(const RViewProxy* InViewProxy)
 	{
 		if (!InViewProxy)
 		{
@@ -49,6 +53,7 @@ namespace PigeonEngine
 			ViewProxyFrustum.FarNearPlanePoint[6],
 			ViewProxyFrustum.FarNearPlanePoint[7]
 		};
+		for(UINT CascadeIndex = 0u, CascadeNum= )
 		Vector3 TempViewMin(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX), TempViewMax(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
 		for (UINT i = 0u; i < 8u; i++)
 		{
