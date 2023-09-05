@@ -65,6 +65,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\HID\Input\InputType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
@@ -319,6 +320,7 @@
       <LinkCompiled>true</LinkCompiled>
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\HID\Input\InputType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />

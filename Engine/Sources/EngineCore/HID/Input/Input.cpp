@@ -20,25 +20,9 @@ namespace PigeonEngine
 	}
 	void EInput::Update()
 	{
-		//{
-		//	memcpy(m_OldKeyState, m_KeyState, 256);
-		//}
-
-		//{
-		//	BOOL32 keyResult = GetKeyboardState(m_KeyState);
-		//}
+		
 	}
-	//BOOL32 EInput::GetKeyPress(BYTE KeyCode)
-	//{
-	//	INT32 curr = (m_KeyState[KeyCode] & 0x80);
-	//	return (curr > 0);
-	//}
-	//BOOL32 EInput::GetKeyTrigger(BYTE KeyCode)
-	//{
-	//	INT32 curr = (m_KeyState[KeyCode] & 0x80);
-	//	INT32 prev = (m_OldKeyState[KeyCode] & 0x80);
-	//	return ((curr > 0) && (prev == 0));
-	//}
+	
 	std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
 	{
 		return Controller.ReadRawDelta();
@@ -61,14 +45,12 @@ namespace PigeonEngine
 	{
 		bCursorEnabled = true;
 		ShowCursor();
-		//EnableImGuiMouse();
 		FreeCursor();
 	}
 	void IController::DisableCursor()
 	{
 		bCursorEnabled = false;
 		HideCursor();
-		//DisableImGuiMouse();
 		ConfineCursor();
 	}
 	BOOL32 IController::IsCursorEnabled() const
@@ -191,11 +173,6 @@ namespace PigeonEngine
 				}
 				break;
 			}
-			//// stifle this mouse message if imgui wants to capture
-			//if (imio.WantCaptureMouse)
-			//{
-			//	break;
-			//}
 
 			// in client region -> log move, and log enter + capture mouse (if not previously in window)
 			if (pt.x >= 0 && pt.x < WindowSizeX && pt.y >= 0 && pt.y < WindowSizeY)
