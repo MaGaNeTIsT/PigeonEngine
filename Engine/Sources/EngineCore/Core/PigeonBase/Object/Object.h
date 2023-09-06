@@ -36,8 +36,8 @@ namespace PigeonEngine
 	public:
 		virtual void Destroy();
 
-	// public:
-	// 	virtual TSharedPtr<CJsonObject> Serialize();
+	public:
+		virtual TSharedPtr<CJsonObject> Serialize();
 		
 
 	};

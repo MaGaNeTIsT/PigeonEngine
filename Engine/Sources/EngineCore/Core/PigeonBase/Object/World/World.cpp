@@ -54,18 +54,13 @@ namespace PigeonEngine
             this->RootActors.Add(NewActor);
             this->AllActors.Add(NewActor);
             NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
-            CheckRenderInfoWhenAddingActor(NewActor);
             return;
         }
 
         NewActor->AttachToActor(Parent, Trans);
-        CheckRenderInfoWhenAddingActor(NewActor);
     }
 
-    void PWorld::CheckRenderInfoWhenAddingActor(PActor* NewActor)
-    {
-        // to be done
-    }
+  
 #if _EDITOR_ONLY
     void PWorld::AddSceneToWorld(PScene* NewScene)
     {

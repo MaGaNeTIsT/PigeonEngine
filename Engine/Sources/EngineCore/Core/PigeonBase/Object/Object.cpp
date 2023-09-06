@@ -37,11 +37,11 @@ namespace PigeonEngine
 		delete this;
 	}
 
-	// TSharedPtr<CJsonObject> PObject::Serialize()
-	// {
-	// 	
-	// 	return TSharedPtr<CJsonObject>::MakeShared();
-	// }
+	TSharedPtr<CJsonObject> PObject::Serialize()
+	{
+		
+		return TSharedPtr<CJsonObject>::MakeShared();
+	}
 
 
 #if _EDITOR_ONLY
