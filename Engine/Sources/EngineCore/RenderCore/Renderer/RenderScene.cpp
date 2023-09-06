@@ -117,7 +117,13 @@ namespace PigeonEngine
 	}
 	void RScene::UpdateDynamicPrimitive(PPrimitiveComponent* InComponent)
 	{
-		//TODO
+		RScene* Scene = this;
+		RPrimitiveSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->UpdateDynamicPrimitive_RenderThread(SceneProxy);
+			});
 	}
 	void RScene::AddOrRemoveStaticPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
@@ -140,6 +146,10 @@ namespace PigeonEngine
 		{
 			RemovePrimitiveInternal(InSceneProxy, DynamicPrimitiveMapping, DynamicPrimitives);
 		}
+	}
+	void RScene::UpdateDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy)
+	{
+
 	}
 
 };

@@ -135,7 +135,13 @@ namespace PigeonEngine
     }
     void PWorld::UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
     {
-
+        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
+#if _EDITOR_ONLY
+        if (RenderScene)
+#endif
+        {
+            RenderScene->UpdateDynamicPrimitive(InPrimitiveComponent);
+        }
     }
     //Render scene state END
 

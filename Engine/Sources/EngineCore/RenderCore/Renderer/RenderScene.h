@@ -9,26 +9,28 @@ namespace PigeonEngine
 
 	class PPrimitiveComponent;
 
-	class RCommand final : public ERegisterBase
+	class RCommand final
 	{
 	public:
 		template<typename _TFunctionType>
 		void EnqueueCommand(_TFunctionType InFunction)
 		{
-			AddRegisterFunction<_TFunctionType>(InFunction);
+			RawCommands.AddRegisterFunction<_TFunctionType>(InFunction);
 		}
 		void DoCommands()
 		{
-			DoRegister();
+			RawCommands.DoRegister();
 		}
 		void EmptyQueue()
 		{
-			ClearRegister();
+			RawCommands.ClearRegister();
 		}
+	private:
+		ERegisterBase	RawCommands;
 	public:
 		RCommand() {}
 		RCommand(const RCommand&) = delete;
-		virtual ~RCommand() {}
+		~RCommand() {}
 		RCommand& operator=(const RCommand&) = delete;
 	};
 
@@ -46,6 +48,7 @@ namespace PigeonEngine
 	protected:
 		void	AddOrRemoveStaticPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd);
+		void	UpdateDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy);
 	protected:
 		ROctree		ScenePrimitiveOctree;
 	protected:
