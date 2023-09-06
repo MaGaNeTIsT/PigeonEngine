@@ -14,12 +14,15 @@ namespace PigeonEngine
 	class RViewProxy : public EObjectBase
 	{
 	public:
-		RViewProxy(const RScene* InScene, const PCameraComponent* InComponent);
+		RViewProxy(const PCameraComponent* InComponent);
 	public:
 		const PCameraViewInfo&	GetViewInfo()const;
 		const EViewport&		GetRenderViewport()const;
 		const EViewMatrix&		GetViewMatrix()const;
 		const EFrustum&			GetViewFrustum()const;
+	public:
+		const RScene*			GetRenderScene()const;
+		PE_INLINE void			SetRenderScene(const RScene* InScene);
 	public:
 		TMap<ObjectIdentityType, BOOL32>	VisibilityMap;
 	protected:
@@ -28,11 +31,9 @@ namespace PigeonEngine
 	protected:
 		const RScene*						Scene;
 		const PCameraComponent*				Component;
-	public:
-		RViewProxy();
-		RViewProxy(const RViewProxy& Other);
-		virtual ~RViewProxy();
-		RViewProxy& operator=(const RViewProxy&) = delete;
+
+		RENDER_PROXY_CLASS_BODY(RViewProxy)
+
 	};
 
 };

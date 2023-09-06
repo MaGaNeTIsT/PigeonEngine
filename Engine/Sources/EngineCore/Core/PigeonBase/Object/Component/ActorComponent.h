@@ -28,6 +28,12 @@ namespace PigeonEngine
 
 	public:
 		virtual void Destroy() override;
+	public:
+		// Render proxy functions START
+		virtual void CreateRenderState() {}
+		virtual void DestroyRenderState() {}
+		virtual void SendUpdateRenderState() {}
+		// Render proxy functions END
 	};
 
 };

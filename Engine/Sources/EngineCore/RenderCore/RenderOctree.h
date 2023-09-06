@@ -6,7 +6,7 @@
 namespace PigeonEngine
 {
 
-	class RPrimitiveProxy;
+	class RPrimitiveSceneProxy;
 
 	struct ROctreeElement
 	{
@@ -21,7 +21,7 @@ namespace PigeonEngine
 		}
 
 		INT32								NodeIndex;
-		TArray<const RPrimitiveProxy*>		Primitives;
+		TArray<const RPrimitiveSceneProxy*>	Primitives;
 		TMap<ObjectIdentityType, INT32>		PrimitiveMapping;
 	};
 
@@ -75,10 +75,10 @@ namespace PigeonEngine
 	public:
 		static BOOL32	SplitOctreeInternal(const Vector3& InOrigin, const Vector3& InExtent, const Vector3& InMinExtent, Vector3& OutOctreeOrigin, Vector3& OutOctreeSize, Vector3& OutOctreeCellSize, TArray<UINT32>& OutOctreePerAxisCellNum, TArray<UINT32>& OutOctreeAxisDepth, UINT32& OutOctreeMaxDepth, TArray<ROctreeLayerInfo>& OutOctreeLayerInfos, TArray<ROctreeElement>& OutOctreeElements, TArray<ROctreeNode>& OutOctreeNodes);
 	public:
-		BOOL32	AddPrimitive(const RPrimitiveProxy* InPrimitiveProxy);
-		BOOL32	AddPrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
-		BOOL32	RemovePrimitive(const RPrimitiveProxy* InPrimitiveProxy);
-		BOOL32	RemovePrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		BOOL32	AddPrimitive(const RPrimitiveSceneProxy* InSceneProxy);
+		BOOL32	AddPrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		BOOL32	RemovePrimitive(const RPrimitiveSceneProxy* InSceneProxy);
+		BOOL32	RemovePrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
 		void	ClearPrimitives();
 		BOOL32	RebuildOctreeForWholeLevel(const EBoundAABB* InBounds);
 		BOOL32	FinalizeOctree();

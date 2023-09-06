@@ -15,14 +15,14 @@ namespace PigeonEngine
         Bounds = EBoundAABB(Vector3(0), Vector3(0), false);
     }
 
-	PPrimitiveComponent::~PPrimitiveComponent()
-	{
+    PPrimitiveComponent::~PPrimitiveComponent()
+    {
 
-	}
+    }
 
     EBoundAABB PPrimitiveComponent::GetBounds() const
     {
         return Bounds;
     }
 
-}
+};

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include "BaseSceneProxy.h"
 
 namespace PigeonEngine
 {
@@ -8,10 +9,10 @@ namespace PigeonEngine
 	class PPrimitiveComponent;
 	class RScene;
 
-	class RPrimitiveProxy : public EObjectBase
+	class RPrimitiveSceneProxy : public RBaseSceneProxy
 	{
 	public:
-		RPrimitiveProxy(const RScene* InScene, const PPrimitiveComponent* InComponent);
+		RPrimitiveSceneProxy(const PPrimitiveComponent* InComponent);
 	public:
 		virtual BOOL32		IsRenderValid()const;
 		const Vector3&		GetWorldLocation()const;
@@ -24,13 +25,10 @@ namespace PigeonEngine
 		Vector3			WorldScaling;
 		Matrix4x4		LocalToWorldMatrix;
 	protected:
-		const RScene*				Scene;
 		const PPrimitiveComponent*	Component;
-	public:
-		RPrimitiveProxy();
-		RPrimitiveProxy(const RPrimitiveProxy& Other);
-		virtual ~RPrimitiveProxy();
-		RPrimitiveProxy& operator=(const RPrimitiveProxy&) = delete;
+
+		RENDER_PROXY_CLASS_BODY(RPrimitiveSceneProxy)
+
 	};
 
 };

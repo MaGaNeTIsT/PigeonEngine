@@ -55,6 +55,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\MeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
@@ -67,11 +68,14 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\World.h" />
     <ClInclude Include="Engine\Sources\EngineCore\HID\Input\InputType.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderInterface.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightSceneProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\MeshSceneProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderResource.h" />
     <ClInclude Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.h" />
@@ -237,6 +241,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\MeshComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
@@ -325,8 +330,10 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightSceneProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\MeshSceneProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderResource.cpp" />
     <ClCompile Include="Engine\Sources\OldEngineCode\Development\CBezierGrass.cpp" />

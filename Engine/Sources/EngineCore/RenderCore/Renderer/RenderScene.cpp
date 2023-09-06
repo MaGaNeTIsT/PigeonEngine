@@ -1,40 +1,43 @@
 #include "RenderScene.h"
-#include "RenderProxy/PrimitiveProxy.h"
+#include "RenderProxy/PrimitiveSceneProxy.h"
+#include <PigeonBase/Object/Component/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
 
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<RScene, EObjectBase>();
+		RegisterClassType<RCommand, ERegisterBase>();
+		RegisterClassType<RScene, EObjectBase, RSceneInterface>();
+		RegisterClassType<RSceneNULL, EObjectBase, RSceneInterface>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	static BOOL32 AddPrimitiveInternal(RPrimitiveProxy* InPrimitiveProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveProxy*>& OutPrimitiveArray)
+	static BOOL32 AddPrimitiveInternal(RPrimitiveSceneProxy* InSceneProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveSceneProxy*>& OutPrimitiveArray)
 	{
-		if (!InPrimitiveProxy)
+		if (!InSceneProxy)
 		{
 			return FALSE;
 		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (OutPrimitiveMapping.Length() == OutPrimitiveArray.Length()));
-		const ObjectIdentityType& PrimitiveID = InPrimitiveProxy->GetUniqueID();
+		const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
 		if (OutPrimitiveMapping.ContainsKey(PrimitiveID))
 		{
 			return FALSE;
 		}
 		OutPrimitiveMapping.Add(PrimitiveID, OutPrimitiveArray.Length());
-		OutPrimitiveArray.Add(InPrimitiveProxy);
+		OutPrimitiveArray.Add(InSceneProxy);
 		return TRUE;
 	}
-	static BOOL32 RemovePrimitiveInternal(RPrimitiveProxy* InPrimitiveProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveProxy*>& OutPrimitiveArray)
+	static BOOL32 RemovePrimitiveInternal(RPrimitiveSceneProxy* InSceneProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveSceneProxy*>& OutPrimitiveArray)
 	{
-		if ((!InPrimitiveProxy) || (OutPrimitiveArray.Length() == 0u))
+		if ((!InSceneProxy) || (OutPrimitiveArray.Length() == 0u))
 		{
 			return FALSE;
 		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (OutPrimitiveMapping.Length() == OutPrimitiveArray.Length()));
-		const ObjectIdentityType& PrimitiveID = InPrimitiveProxy->GetUniqueID();
+		const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
 		UINT32 PrimitiveIndex = (UINT32)(-1);
 		if (!(OutPrimitiveMapping.FindValue(PrimitiveID, PrimitiveIndex)))
 		{
@@ -43,7 +46,7 @@ namespace PigeonEngine
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive index failed."), (PrimitiveIndex < OutPrimitiveArray.Length()));
 		if (const UINT32 LastIndex = OutPrimitiveArray.Length() - 1u; PrimitiveIndex != LastIndex)
 		{
-			RPrimitiveProxy* TempPrimitiveProxy = OutPrimitiveArray[LastIndex];
+			RPrimitiveSceneProxy* TempPrimitiveProxy = OutPrimitiveArray[LastIndex];
 			OutPrimitiveArray[LastIndex] = OutPrimitiveArray[PrimitiveIndex];
 			OutPrimitiveArray[PrimitiveIndex] = TempPrimitiveProxy;
 			OutPrimitiveMapping[TempPrimitiveProxy->GetUniqueID()] = PrimitiveIndex;
@@ -58,22 +61,85 @@ namespace PigeonEngine
 	}
 	RScene::~RScene()
 	{
+		UnbindErrorCheck();
 	}
-	BOOL32 RScene::AddStaticPrimitive(RPrimitiveProxy* InPrimitiveProxy)
+	void RScene::ClearAll()
 	{
-		return AddPrimitiveInternal(InPrimitiveProxy, StaticPrimitiveMapping, StaticPrimitives);
+		UnbindErrorCheck();
+		ScenePrimitiveOctree.ClearPrimitives();
 	}
-	BOOL32 RScene::RemoveStaticPrimitive(RPrimitiveProxy* InPrimitiveProxy)
+	void RScene::UnbindErrorCheck()
 	{
-		return RemovePrimitiveInternal(InPrimitiveProxy, StaticPrimitiveMapping, StaticPrimitives);
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static primitives' mapping failed"), (StaticPrimitiveMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static primitives failed"), (StaticPrimitives.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all dynamic primitives' mapping failed"), (DynamicPrimitiveMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all dynamic primitives failed"), (DynamicPrimitives.Length() == 0u));
 	}
-	BOOL32 RScene::AddDynamicPrimitive(RPrimitiveProxy* InPrimitiveProxy)
+	void RScene::AddStaticPrimitive(PPrimitiveComponent* InComponent)
 	{
-		return AddPrimitiveInternal(InPrimitiveProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+		RScene* Scene = this;
+		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveStaticPrimitive_RenderThread(SceneProxy, TRUE);
+			});
 	}
-	BOOL32 RScene::RemoveDynamicPrimitive(RPrimitiveProxy* InPrimitiveProxy)
+	void RScene::RemoveStaticPrimitive(PPrimitiveComponent* InComponent)
 	{
-		return RemovePrimitiveInternal(InPrimitiveProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+		RScene* Scene = this;
+		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveStaticPrimitive_RenderThread(SceneProxy, FALSE);
+			});
+	}
+	void RScene::AddDynamicPrimitive(PPrimitiveComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveDynamicPrimitive_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::RemoveDynamicPrimitive(PPrimitiveComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveDynamicPrimitive_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::UpdateDynamicPrimitive(PPrimitiveComponent* InComponent)
+	{
+		//TODO
+	}
+	void RScene::AddOrRemoveStaticPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			AddPrimitiveInternal(InSceneProxy, StaticPrimitiveMapping, StaticPrimitives);
+		}
+		else
+		{
+			RemovePrimitiveInternal(InSceneProxy, StaticPrimitiveMapping, StaticPrimitives);
+		}
+	}
+	void RScene::AddOrRemoveDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			AddPrimitiveInternal(InSceneProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+		}
+		else
+		{
+			RemovePrimitiveInternal(InSceneProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+		}
 	}
 
 };

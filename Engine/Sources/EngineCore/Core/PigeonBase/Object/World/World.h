@@ -8,9 +8,13 @@
 
 namespace PigeonEngine
 {
+
     class PScene;
     class PActor;
     class EGameTimer;
+    class PPrimitiveComponent;
+    class RSceneInterface;
+
     enum EWorldType : UINT8
     {
         EWT_GAME,
@@ -63,6 +67,19 @@ namespace PigeonEngine
     private:
         // Timer
         const EGameTimer* GameTimer = nullptr;
+
+        //Render scene state START
+    public:
+        void    BindRenderScene(RSceneInterface* InScene);
+    public:
+        void    AddStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+        void    RemoveStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+        void    AddDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+        void    RemoveDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+        void    UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+    private:
+        RSceneInterface*    RenderScene = nullptr;
+        //Render scene state END
     };
 
 };

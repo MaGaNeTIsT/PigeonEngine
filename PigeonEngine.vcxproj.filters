@@ -348,10 +348,15 @@
     <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.h" />
-    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightSceneProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\HID\Input\InputType.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\MeshComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderInterface.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\MeshSceneProxy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -527,10 +532,14 @@
     <ClCompile Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\ViewProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\Light.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Light\DirectionalLightComponent.cpp" />
-    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\LightSceneProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\HID\Input\InputType.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\MeshComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\MeshSceneProxy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">

@@ -40,6 +40,13 @@ namespace PigeonEngine
 		_ClassName(const _ClassName& Other);\
 		_ClassName& operator=(const _ClassName& Other);\
 
+#define RENDER_PROXY_CLASS_BODY(_ClassName) \
+	public:\
+		_ClassName();\
+		_ClassName(const _ClassName& Other);\
+		virtual ~_ClassName();\
+		_ClassName& operator=(const _ClassName&) = delete;\
+
 #define CLASS_SINGLETON_BODY(_ClassName) \
 	private:\
 		_ClassName();\

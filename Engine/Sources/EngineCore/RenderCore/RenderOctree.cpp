@@ -1,6 +1,6 @@
 #include "RenderOctree.h"
 #include <Base/DataStructure/Transform.h>
-#include "RenderProxy/PrimitiveProxy.h"
+#include "RenderProxy/PrimitiveSceneProxy.h"
 
 namespace PigeonEngine
 {
@@ -236,7 +236,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL32 ROctree::AddPrimitive(const RPrimitiveProxy* InPrimitiveProxy)
+	BOOL32 ROctree::AddPrimitive(const RPrimitiveSceneProxy* InSceneProxy)
 	{
 		BOOL32 Result = FALSE;
 		if (Nodes.Length() < 2u)
@@ -244,29 +244,29 @@ namespace PigeonEngine
 			return Result;
 		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
-		if ((!InPrimitiveProxy) || (!(InPrimitiveProxy->IsRenderValid())))
+		if ((!InSceneProxy) || (!(InSceneProxy->IsRenderValid())))
 		{
 			return Result;
 		}
 		const INT32 OctreeElementNum = (INT32)(Elements.Length());
-		const Vector3& TempLocation = InPrimitiveProxy->GetWorldLocation();
+		const Vector3& TempLocation = InSceneProxy->GetWorldLocation();
 		INT32 TempElementIndex = FindOctreeIndexByWorldLocation(TempLocation, BoundOrigin, LayerInfos, PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_X], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Y], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Z]);
 		if ((TempElementIndex < 0) || (TempElementIndex >= OctreeElementNum))
 		{
 			return Result;
 		}
 		ROctreeElement& Element = Elements[TempElementIndex];
-		if (Element.PrimitiveMapping.ContainsKey(InPrimitiveProxy->GetUniqueID()))
+		if (Element.PrimitiveMapping.ContainsKey(InSceneProxy->GetUniqueID()))
 		{
 			return Result;
 		}
-		Element.PrimitiveMapping.Add(InPrimitiveProxy->GetUniqueID(), (INT32)(Element.Primitives.Length()));
-		Element.Primitives.Add(InPrimitiveProxy);
+		Element.PrimitiveMapping.Add(InSceneProxy->GetUniqueID(), (INT32)(Element.Primitives.Length()));
+		Element.Primitives.Add(InSceneProxy);
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		Result = TRUE;
 		return Result;
 	}
-	BOOL32 ROctree::AddPrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
+	BOOL32 ROctree::AddPrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
 	{
 		BOOL32 Result = FALSE;
 		if ((Nodes.Length() < 2u) || (InPrimitives.Length() == 0u))
@@ -280,7 +280,7 @@ namespace PigeonEngine
 		}
 		for (INT32 PrimitiveIndex = 0, PrimitiveNum = (INT32)(InPrimitives.Length()); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 		{
-			const RPrimitiveProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
+			const RPrimitiveSceneProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
 			if (!(AddPrimitive(TempPrimitive)))
 			{
 				OutErrorPrimitives.Add(PrimitiveIndex);
@@ -290,7 +290,7 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	BOOL32 ROctree::RemovePrimitive(const RPrimitiveProxy* InPrimitiveProxy)
+	BOOL32 ROctree::RemovePrimitive(const RPrimitiveSceneProxy* InSceneProxy)
 	{
 		BOOL32 Result = FALSE;
 		if (Nodes.Length() < 2u)
@@ -298,12 +298,12 @@ namespace PigeonEngine
 			return Result;
 		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
-		if (!InPrimitiveProxy)
+		if (!InSceneProxy)
 		{
 			return Result;
 		}
 		const INT32 OctreeElementNum = (INT32)(Elements.Length());
-		const Vector3& TempLocation = InPrimitiveProxy->GetWorldLocation();
+		const Vector3& TempLocation = InSceneProxy->GetWorldLocation();
 		INT32 TempElementIndex = FindOctreeIndexByWorldLocation(TempLocation, BoundOrigin, LayerInfos, PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_X], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Y], PerAxisCellNum[EOctreeAxisType::OCTREE_AXIS_Z]);
 		if ((TempElementIndex < 0) || (TempElementIndex >= OctreeElementNum))
 		{
@@ -316,15 +316,15 @@ namespace PigeonEngine
 		{
 			return Result;
 		}
-		if (INT32 PrimitiveMappingValue = -1; Element.PrimitiveMapping.FindValue(InPrimitiveProxy->GetUniqueID(), PrimitiveMappingValue))
+		if (INT32 PrimitiveMappingValue = -1; Element.PrimitiveMapping.FindValue(InSceneProxy->GetUniqueID(), PrimitiveMappingValue))
 		{
 			Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive index in render octree element failed."), ((PrimitiveMappingValue >= 0) && (PrimitiveMappingValue < ((INT32)PrimitiveNum))));
 			const UINT32 PrimitiveIndex = (UINT32)PrimitiveMappingValue;
-			const ObjectIdentityType& PrimitiveID = InPrimitiveProxy->GetUniqueID();
+			const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
 			Element.PrimitiveMapping.Remove(PrimitiveID);
 			if (PrimitiveIndex != (PrimitiveNum - 1u))
 			{
-				const RPrimitiveProxy* TempPrimitiveProxy = Element.Primitives[PrimitiveNum - 1u];
+				const RPrimitiveSceneProxy* TempPrimitiveProxy = Element.Primitives[PrimitiveNum - 1u];
 				Element.Primitives[PrimitiveNum - 1u] = Element.Primitives[PrimitiveIndex];
 				Element.Primitives[PrimitiveIndex] = TempPrimitiveProxy;
 				Element.PrimitiveMapping[TempPrimitiveProxy->GetUniqueID()] = (INT32)PrimitiveIndex;
@@ -335,7 +335,7 @@ namespace PigeonEngine
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		return Result;
 	}
-	BOOL32 ROctree::RemovePrimitives(const TArray<RPrimitiveProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
+	BOOL32 ROctree::RemovePrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
 	{
 		BOOL32 Result = FALSE;
 		if ((Nodes.Length() < 2u) || (InPrimitives.Length() == 0u))
@@ -349,7 +349,7 @@ namespace PigeonEngine
 		}
 		for (INT32 PrimitiveIndex = 0, PrimitiveNum = (INT32)(InPrimitives.Length()); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 		{
-			const RPrimitiveProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
+			const RPrimitiveSceneProxy* TempPrimitive = InPrimitives[PrimitiveIndex];
 			if (!(RemovePrimitive(TempPrimitive)))
 			{
 				OutErrorPrimitives.Add(PrimitiveIndex);

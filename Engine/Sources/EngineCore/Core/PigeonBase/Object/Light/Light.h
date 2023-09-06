@@ -35,10 +35,18 @@ namespace PigeonEngine
 		Vector2Int	ShadowMapSize;
 	};
 
-	struct CascadeShadowData
+	struct ECascadeShadowData
 	{
+		ECascadeShadowData()noexcept : CascadeLayerNum(1u) {}
+		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : CascadeLayerNum(Other.CascadeLayerNum) {}
+		constexpr ECascadeShadowData(UINT32 InCascadeLayerNum)noexcept : CascadeLayerNum(InCascadeLayerNum) {}
+		ECascadeShadowData& operator=(const ECascadeShadowData& Other)
+		{
+			CascadeLayerNum = Other.CascadeLayerNum;
+			return (*this);
+		}
 
-
+		UINT32 CascadeLayerNum;
 	};
 
 };

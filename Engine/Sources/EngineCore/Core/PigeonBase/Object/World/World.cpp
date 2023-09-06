@@ -1,10 +1,13 @@
 ﻿#include "World.h"
 
 #include "../../../../Main/MainManager.h"
-#include "PigeonBase/Object/Component/SceneComponent.h"
+#include <Renderer/RenderInterface.h>
+#include <PigeonBase/Object/Component/SceneComponent.h>
+#include <PigeonBase/Object/Component/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
+
     static void RegisterClassTypes()
     {
         RegisterClassType<PWorld, PObject>();
@@ -79,4 +82,43 @@ namespace PigeonEngine
         CurrentScene = Scene;
     }
 #endif
+
+    //Render scene state START
+    void PWorld::BindRenderScene(RSceneInterface* InScene)
+    {
+        if (RenderScene)
+        {
+            RenderScene->ClearAll();
+            RenderScene = nullptr;
+        }
+        RenderScene = InScene;
+    }
+    void PWorld::AddStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    {
+        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
+#if _EDITOR_ONLY
+        if (RenderScene)
+#endif
+        {
+            RenderScene->AddDynamicPrimitive();
+        }
+    }
+    void PWorld::RemoveStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    {
+
+    }
+    void PWorld::AddDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    {
+
+    }
+    void PWorld::RemoveDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    {
+
+    }
+    void PWorld::UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    {
+
+    }
+    //Render scene state END
+
 };
