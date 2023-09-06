@@ -2,9 +2,12 @@
 
 #include <CoreMinimal.h>
 
+
+#include "Base/DataStructure/Pointer/SharedPtr.h"
+
 namespace PigeonEngine
 {
-
+	class CJsonObject;
 	class PObject : public EObjectBase
 	{
 	public:
@@ -33,6 +36,9 @@ namespace PigeonEngine
 	public:
 		virtual void Destroy();
 
+	// public:
+	// 	virtual TSharedPtr<CJsonObject> Serialize();
+		
 
 	};
 

@@ -81,6 +81,15 @@ namespace PigeonEngine
     {
         CurrentScene = Scene;
     }
+
+    // TSharedPtr<PWorld> WorldManager::GetWorld()
+    // {
+    //     if(!WorldManager::World)
+    //     {
+    //         WorldManager::World = TSharedPtr<PWorld>::MakeShared();
+    //     }
+    //     return WorldManager::World;
+    // }
 #endif
 
     //Render scene state START
