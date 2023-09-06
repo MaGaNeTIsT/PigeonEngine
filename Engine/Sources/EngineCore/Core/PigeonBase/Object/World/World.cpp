@@ -109,20 +109,38 @@ namespace PigeonEngine
         if (RenderScene)
 #endif
         {
-            RenderScene->AddDynamicPrimitive();
+            RenderScene->AddStaticPrimitive(InPrimitiveComponent);
         }
     }
     void PWorld::RemoveStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent)
     {
-
+        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
+#if _EDITOR_ONLY
+        if (RenderScene)
+#endif
+        {
+            RenderScene->RemoveStaticPrimitive(InPrimitiveComponent);
+        }
     }
     void PWorld::AddDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
     {
-
+        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
+#if _EDITOR_ONLY
+        if (RenderScene)
+#endif
+        {
+            RenderScene->AddDynamicPrimitive(InPrimitiveComponent);
+        }
     }
     void PWorld::RemoveDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
     {
-
+        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
+#if _EDITOR_ONLY
+        if (RenderScene)
+#endif
+        {
+            RenderScene->RemoveDynamicPrimitive(InPrimitiveComponent);
+        }
     }
     void PWorld::UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
     {

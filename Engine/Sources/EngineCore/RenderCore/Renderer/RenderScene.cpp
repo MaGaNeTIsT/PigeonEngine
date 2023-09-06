@@ -9,7 +9,7 @@ namespace PigeonEngine
 	{
 		RegisterClassType<RCommand, ERegisterBase>();
 		RegisterClassType<RScene, EObjectBase, RSceneInterface>();
-		RegisterClassType<RSceneNULL, EObjectBase, RSceneInterface>();
+		RegisterClassType<RSceneNull, EObjectBase, RSceneInterface>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

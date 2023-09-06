@@ -12,7 +12,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
-		: Component(InComponent)
+		: Scene(nullptr), Component(InComponent)
 	{
 		if (InComponent)
 		{
@@ -41,11 +41,11 @@ namespace PigeonEngine
 		}
 	}
 	RViewProxy::RViewProxy()
-		: Component(nullptr)
+		: Scene(nullptr), Component(nullptr)
 	{
 	}
 	RViewProxy::RViewProxy(const RViewProxy& Other)
-		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), CameraViewInfo(Other.CameraViewInfo), ViewDomainInfo(Other.ViewDomainInfo), Component(Other.Component)
+		: VisibilityMap(Other.VisibilityMap), CameraViewInfo(Other.CameraViewInfo), ViewDomainInfo(Other.ViewDomainInfo), Scene(nullptr), Component(Other.Component)
 	{
 	}
 	RViewProxy::~RViewProxy()
