@@ -2,7 +2,7 @@
 
 #include "Object.h"
 
-// #include "../../../../../EngineThirdParty/RapidJson/Headers/JsonObject.h"
+#include "../../../../../EngineThirdParty/RapidJson/Headers/JsonObject.h"
 
 namespace PigeonEngine
 {
