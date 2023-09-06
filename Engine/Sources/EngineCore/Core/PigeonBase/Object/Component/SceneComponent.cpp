@@ -2,6 +2,8 @@
 
 #include <PigeonBase/Object/Actor.h>
 
+#include "../../../../IO/SerializationHelper.h"
+
 namespace PigeonEngine
 {
 
@@ -69,6 +71,15 @@ namespace PigeonEngine
 			(*elem)->Destroy();
 		}
 		ChildrenComponents.Clear();
+	}
+
+	TSharedPtr<CJsonObject> PSceneComponent::Serialize()
+	{
+		TSharedPtr<CJsonObject> JsonObj =  PActorComponent::Serialize();
+		
+		TSharedPtr<CJsonObject> TransFormJson = ESerializationHelper::SerializeTransform(Transform);
+		JsonObj->SetObjectField("Transform", TransFormJson.Get());
+		return JsonObj;
 	}
 
 	void PSceneComponent::AddChildComponent(PSceneComponent* NewChild)

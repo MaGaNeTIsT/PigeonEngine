@@ -54,18 +54,13 @@ namespace PigeonEngine
             this->RootActors.Add(NewActor);
             this->AllActors.Add(NewActor);
             NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
-            CheckRenderInfoWhenAddingActor(NewActor);
             return;
         }
 
         NewActor->AttachToActor(Parent, Trans);
-        CheckRenderInfoWhenAddingActor(NewActor);
     }
 
-    void PWorld::CheckRenderInfoWhenAddingActor(PActor* NewActor)
-    {
-        // to be done
-    }
+  
 #if _EDITOR_ONLY
     void PWorld::AddSceneToWorld(PScene* NewScene)
     {
@@ -81,6 +76,15 @@ namespace PigeonEngine
     {
         CurrentScene = Scene;
     }
+
+    // TSharedPtr<PWorld> WorldManager::GetWorld()
+    // {
+    //     if(!WorldManager::World)
+    //     {
+    //         WorldManager::World = TSharedPtr<PWorld>::MakeShared();
+    //     }
+    //     return WorldManager::World;
+    // }
 #endif
 
     //Render scene state START

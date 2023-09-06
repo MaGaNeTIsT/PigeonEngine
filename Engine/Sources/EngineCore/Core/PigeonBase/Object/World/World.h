@@ -3,6 +3,7 @@
 
 #include "EngineCommon.h"
 #include "Base/DataStructure/Container/Array.h"
+#include "Base/DataStructure/Pointer/SharedPtr.h"
 #include "PigeonBase/Object/Actor.h"
 #include "PigeonBase/Object/Object.h"
 
@@ -45,8 +46,7 @@ namespace PigeonEngine
     // Actors in world management
     public:
         void AddActor(PActor* NewActor, PActor* Parent = nullptr, const ETransform& Trans = ETransform());
-    protected:
-        void CheckRenderInfoWhenAddingActor(PActor* NewActor);
+  
     private:
         TSet<PActor*> RootActors;
         TSet<PActor*> AllActors;
@@ -68,6 +68,7 @@ namespace PigeonEngine
         // Timer
         const EGameTimer* GameTimer = nullptr;
 
+
         //Render scene state START
     public:
         void    BindRenderScene(RSceneInterface* InScene);
@@ -80,6 +81,17 @@ namespace PigeonEngine
     private:
         RSceneInterface*    RenderScene = nullptr;
         //Render scene state END
+
     };
 
+
+    // class WorldManager
+    // {
+    // public:
+    //     WorldManager() = default;
+    //     ~WorldManager(){World = nullptr;}
+    // public:
+    //     static TSharedPtr<PWorld> GetWorld();
+    //     static TSharedPtr<PWorld> World;
+    // };
 };

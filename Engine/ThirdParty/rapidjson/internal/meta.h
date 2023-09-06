@@ -111,15 +111,15 @@ template<typename B, typename D> struct IsBaseOfImpl {
     typedef char (&No) [2];
 
     template <typename T>
-    static Yes Check(const D*, T);
-    static No  Check(const B*, int);
+    static Yes CheckRapidJson(const D*, T);
+    static No  CheckRapidJson(const B*, int);
 
     struct Host {
         operator const B*() const;
         operator const D*();
     };
 
-    enum { Value = (sizeof(Check(Host(), 0)) == sizeof(Yes)) };
+    enum { Value = (sizeof(CheckRapidJson(Host(), 0)) == sizeof(Yes)) };
 };
 
 template <typename B, typename D> struct IsBaseOf

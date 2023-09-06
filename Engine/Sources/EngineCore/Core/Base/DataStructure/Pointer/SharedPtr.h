@@ -118,7 +118,7 @@ namespace PigeonEngine
     template <class ... Types>
     TSharedPtr<T> TSharedPtr<T>::MakeShared(Types&&... Args)
     {
-        return TSharedPtr<T>(std::make_shared<T>(Args));
+        return TSharedPtr<T>(std::make_shared<T>(Args...));
     }
 };
 

@@ -80,9 +80,9 @@ namespace PigeonEngine
     private:
     	TSet<PSceneComponent*> ChildrenComponents;
 
+    
     public:
-
-    	
+        TSharedPtr<CJsonObject> Serialize() override;
     	
     };
 

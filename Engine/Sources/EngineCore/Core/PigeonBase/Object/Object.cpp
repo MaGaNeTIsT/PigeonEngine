@@ -2,6 +2,8 @@
 
 #include "Object.h"
 
+#include "../../../../../EngineThirdParty/RapidJson/Headers/JsonObject.h"
+
 namespace PigeonEngine
 {
 
@@ -33,6 +35,12 @@ namespace PigeonEngine
 	void PObject::Destroy()
 	{
 		delete this;
+	}
+
+	TSharedPtr<CJsonObject> PObject::Serialize()
+	{
+		
+		return TSharedPtr<CJsonObject>::MakeShared();
 	}
 
 
