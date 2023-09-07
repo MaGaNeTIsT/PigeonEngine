@@ -1,6 +1,6 @@
 #include "PrimitiveSceneProxy.h"
 #include <Renderer/RenderScene.h>
-#include <PigeonBase/Object/Component/PrimitiveComponent.h>
+#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
@@ -52,10 +52,10 @@ namespace PigeonEngine
 	}
 	void RPrimitiveSceneProxy::SetupProxy(PPrimitiveComponent* InComponent)
 	{
-		//WorldLocation(Vector3::Zero())
-		//	, WorldRotation(Quaternion::Identity())
-		//	, WorldScaling(Vector3::One())
-		//	, LocalToWorldMatrix(Matrix4x4::Identity())
+		WorldLocation = InComponent->GetComponentWorldLocation();
+		WorldRotation = InComponent->GetComponentWorldRotation();
+		WorldScaling = InComponent->GetComponentWorldScale();
+		LocalToWorldMatrix = MakeMatrix4x4(WorldLocation, WorldRotation, WorldScaling);
 	}
 
 };

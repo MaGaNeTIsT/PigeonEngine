@@ -1,4 +1,5 @@
 #include "CameraComponent.h"
+#include <RenderProxy/ViewProxy.h>
 
 namespace PigeonEngine
 {
@@ -11,13 +12,14 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PCameraComponent::PCameraComponent()
+		: ViewProxy(nullptr)
 	{
 	}
 	PCameraComponent::~PCameraComponent()
 	{
 	}
 	PCameraComponent::PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
-		: CameraViewInfo(PCameraViewInfo(InViewportLeftTopX, InViewportLeftTopY, InViewportWidth, InViewportHeight, InFovAngleY, InFarDist, InNearDist))
+		: CameraViewInfo(PCameraViewInfo(InViewportLeftTopX, InViewportLeftTopY, InViewportWidth, InViewportHeight, InFovAngleY, InFarDist, InNearDist)), ViewProxy(nullptr)
 	{
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
@@ -85,6 +87,35 @@ namespace PigeonEngine
 	{
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
 		CameraMatrix.GenerateFinalMatrix();
+	}
+	RViewProxy* PCameraComponent::GetSceneProxy()
+	{
+		return ViewProxy;
+	}
+	const RViewProxy* PCameraComponent::GetSceneProxy()const
+	{
+		return ViewProxy;
+	}
+	RViewProxy* PCameraComponent::CreateSceneProxy()
+	{
+		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!ViewProxy));
+		ViewProxy = new RViewProxy(this);
+		return ViewProxy;
+	}
+	void PCameraComponent::CreateRenderState()
+	{
+		PSceneComponent::CreateRenderState();
+		//TODO
+	}
+	void PCameraComponent::DestroyRenderState()
+	{
+		//TODO
+		PSceneComponent::DestroyRenderState();
+	}
+	void PCameraComponent::SendUpdateRenderState()
+	{
+		PSceneComponent::SendUpdateRenderState();
+		//TODO
 	}
 
 };

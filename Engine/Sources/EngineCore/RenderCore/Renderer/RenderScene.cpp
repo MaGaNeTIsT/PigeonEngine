@@ -1,6 +1,10 @@
 #include "RenderScene.h"
-#include "RenderProxy/PrimitiveSceneProxy.h"
-#include <PigeonBase/Object/Component/PrimitiveComponent.h>
+#include <RenderProxy/PrimitiveSceneProxy.h>
+#include <RenderProxy/MeshSceneProxy.h>
+#include <RenderProxy/StaticMeshSceneProxy.h>
+#include <RenderProxy/SkeletalMeshSceneProxy.h>
+#include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
+#include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -13,48 +17,6 @@ namespace PigeonEngine
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-
-	static BOOL32 AddPrimitiveInternal(RPrimitiveSceneProxy* InSceneProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveSceneProxy*>& OutPrimitiveArray)
-	{
-		if (!InSceneProxy)
-		{
-			return FALSE;
-		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (OutPrimitiveMapping.Length() == OutPrimitiveArray.Length()));
-		const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
-		if (OutPrimitiveMapping.ContainsKey(PrimitiveID))
-		{
-			return FALSE;
-		}
-		OutPrimitiveMapping.Add(PrimitiveID, OutPrimitiveArray.Length());
-		OutPrimitiveArray.Add(InSceneProxy);
-		return TRUE;
-	}
-	static BOOL32 RemovePrimitiveInternal(RPrimitiveSceneProxy* InSceneProxy, TMap<ObjectIdentityType, UINT32>& OutPrimitiveMapping, TArray<RPrimitiveSceneProxy*>& OutPrimitiveArray)
-	{
-		if ((!InSceneProxy) || (OutPrimitiveArray.Length() == 0u))
-		{
-			return FALSE;
-		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (OutPrimitiveMapping.Length() == OutPrimitiveArray.Length()));
-		const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
-		UINT32 PrimitiveIndex = (UINT32)(-1);
-		if (!(OutPrimitiveMapping.FindValue(PrimitiveID, PrimitiveIndex)))
-		{
-			return FALSE;
-		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive index failed."), (PrimitiveIndex < OutPrimitiveArray.Length()));
-		if (const UINT32 LastIndex = OutPrimitiveArray.Length() - 1u; PrimitiveIndex != LastIndex)
-		{
-			RPrimitiveSceneProxy* TempPrimitiveProxy = OutPrimitiveArray[LastIndex];
-			OutPrimitiveArray[LastIndex] = OutPrimitiveArray[PrimitiveIndex];
-			OutPrimitiveArray[PrimitiveIndex] = TempPrimitiveProxy;
-			OutPrimitiveMapping[TempPrimitiveProxy->GetUniqueID()] = PrimitiveIndex;
-		}
-		OutPrimitiveMapping.Remove(PrimitiveID);
-		OutPrimitiveArray.Pop();
-		return TRUE;
-	}
 
 	RScene::RScene()
 	{
@@ -70,86 +32,102 @@ namespace PigeonEngine
 	}
 	void RScene::UnbindErrorCheck()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static primitives' mapping failed"), (StaticPrimitiveMapping.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static primitives failed"), (StaticPrimitives.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all dynamic primitives' mapping failed"), (DynamicPrimitiveMapping.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all dynamic primitives failed"), (DynamicPrimitives.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProies.SceneProxyMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes failed"), (StaticMeshSceneProies.SceneProxies.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProies.SceneProxyMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes failed"), (SkeletalMeshSceneProies.SceneProxies.Length() == 0u));
 	}
-	void RScene::AddStaticPrimitive(PPrimitiveComponent* InComponent)
+	void RScene::AddStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
-				Scene->AddOrRemoveStaticPrimitive_RenderThread(SceneProxy, TRUE);
+				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, TRUE);
 			});
 	}
-	void RScene::RemoveStaticPrimitive(PPrimitiveComponent* InComponent)
+	void RScene::RemoveStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
-				Scene->AddOrRemoveStaticPrimitive_RenderThread(SceneProxy, FALSE);
+				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, FALSE);
 			});
 	}
-	void RScene::AddDynamicPrimitive(PPrimitiveComponent* InComponent)
+	void RScene::UpdateStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-		RenderAddRemoveCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveDynamicPrimitive_RenderThread(SceneProxy, TRUE);
-			});
-	}
-	void RScene::RemoveDynamicPrimitive(PPrimitiveComponent* InComponent)
-	{
-		RScene* Scene = this;
-		RPrimitiveSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-		RenderAddRemoveCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveDynamicPrimitive_RenderThread(SceneProxy, TRUE);
-			});
-	}
-	void RScene::UpdateDynamicPrimitive(PPrimitiveComponent* InComponent)
-	{
-		RScene* Scene = this;
-		RPrimitiveSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		RStaticMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		//TODO
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
-				Scene->UpdateDynamicPrimitive_RenderThread(SceneProxy);
+				Scene->UpdateStaticMesh_RenderThread(SceneProxy);
 			});
 	}
-	void RScene::AddOrRemoveStaticPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	void RScene::AddSkeletalMesh(PSkeletalMeshComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		//TODO
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->UpdateSkeletalMesh_RenderThread(SceneProxy);
+			});
+	}
+	void RScene::AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
 		if (InIsAdd)
 		{
-			AddPrimitiveInternal(InSceneProxy, StaticPrimitiveMapping, StaticPrimitives);
+			StaticMeshSceneProies.AddSceneProxy(InSceneProxy);
 		}
 		else
 		{
-			RemovePrimitiveInternal(InSceneProxy, StaticPrimitiveMapping, StaticPrimitives);
+			StaticMeshSceneProies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
-	void RScene::AddOrRemoveDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	void RScene::UpdateStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy)
+	{
+		//TODO
+	}
+	void RScene::AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
 		if (InIsAdd)
 		{
-			AddPrimitiveInternal(InSceneProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+			SkeletalMeshSceneProies.AddSceneProxy(InSceneProxy);
 		}
 		else
 		{
-			RemovePrimitiveInternal(InSceneProxy, DynamicPrimitiveMapping, DynamicPrimitives);
+			SkeletalMeshSceneProies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
-	void RScene::UpdateDynamicPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy)
+	void RScene::UpdateSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy)
 	{
-
+		//TODO
 	}
 
 };

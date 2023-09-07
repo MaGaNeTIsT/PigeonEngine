@@ -3,7 +3,7 @@
 #include "../../../../Main/MainManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
-#include <PigeonBase/Object/Component/PrimitiveComponent.h>
+#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
@@ -76,15 +76,6 @@ namespace PigeonEngine
     {
         CurrentScene = Scene;
     }
-
-    // TSharedPtr<PWorld> WorldManager::GetWorld()
-    // {
-    //     if(!WorldManager::World)
-    //     {
-    //         WorldManager::World = TSharedPtr<PWorld>::MakeShared();
-    //     }
-    //     return WorldManager::World;
-    // }
 #endif
 
     //Render scene state START
@@ -97,56 +88,23 @@ namespace PigeonEngine
         }
         RenderScene = InScene;
     }
-    void PWorld::AddStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    RSceneInterface* PWorld::GetRenderScene()
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
-#if _EDITOR_ONLY
-        if (RenderScene)
-#endif
-        {
-            RenderScene->AddStaticPrimitive(InPrimitiveComponent);
-        }
+        return RenderScene;
     }
-    void PWorld::RemoveStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent)
+    const RSceneInterface* PWorld::GetRenderScene()const
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
-#if _EDITOR_ONLY
-        if (RenderScene)
-#endif
-        {
-            RenderScene->RemoveStaticPrimitive(InPrimitiveComponent);
-        }
-    }
-    void PWorld::AddDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
-    {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
-#if _EDITOR_ONLY
-        if (RenderScene)
-#endif
-        {
-            RenderScene->AddDynamicPrimitive(InPrimitiveComponent);
-        }
-    }
-    void PWorld::RemoveDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
-    {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
-#if _EDITOR_ONLY
-        if (RenderScene)
-#endif
-        {
-            RenderScene->RemoveDynamicPrimitive(InPrimitiveComponent);
-        }
-    }
-    void PWorld::UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent)
-    {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try adding static primitive to scene, but render scene is null."), (!!RenderScene));
-#if _EDITOR_ONLY
-        if (RenderScene)
-#endif
-        {
-            RenderScene->UpdateDynamicPrimitive(InPrimitiveComponent);
-        }
+        return RenderScene;
     }
     //Render scene state END
+
+    TSharedPtr<PWorld> PWorldManager::GetWorld()
+    {
+        if (!PWorldManager::World)
+        {
+            PWorldManager::World = TSharedPtr<PWorld>::MakeShared();
+        }
+        return PWorldManager::World;
+    }
 
 };

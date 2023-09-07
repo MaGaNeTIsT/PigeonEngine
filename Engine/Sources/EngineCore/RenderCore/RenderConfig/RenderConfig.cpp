@@ -87,9 +87,9 @@ namespace PigeonEngine
 		OutLayouts = _EngineDefaultMeshInputLayout;
 		OutLayoutNum = 7u;
 	}
-	void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
+	void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
-		const static RShaderSemanticType _EngineDefaultSkeletonMeshInputLayout[9u] = {
+		const static RShaderSemanticType _EngineDefaultSkeletalMeshInputLayout[9u] = {
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0,
 			RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0,
@@ -100,7 +100,7 @@ namespace PigeonEngine
 			RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2 };
 
-		OutLayouts = _EngineDefaultSkeletonMeshInputLayout;
+		OutLayouts = _EngineDefaultSkeletalMeshInputLayout;
 		OutLayoutNum = 9u;
 	}
 

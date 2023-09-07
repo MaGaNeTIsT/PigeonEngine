@@ -319,7 +319,7 @@ namespace PigeonEngine
 	CAssimpManager::~CAssimpManager()
 	{
 	}
-	static BOOL32 FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL32>& OutIsSkeletonMesh)
+	static BOOL32 FindMeshesAndVertexLayouts(const aiScene* InScene, TArray<const aiMesh*>& OutMeshes, TArray<TArray<RShaderSemanticType>>& OutLayouts, TArray<BOOL32>& OutIsSkeletalMesh)
 	{
 		if (!(InScene->HasMeshes()))
 		{
@@ -333,9 +333,9 @@ namespace PigeonEngine
 		{
 			OutMeshes.Clear();
 		}
-		if (OutIsSkeletonMesh.Length() > 0u)
+		if (OutIsSkeletalMesh.Length() > 0u)
 		{
-			OutIsSkeletonMesh.Clear();
+			OutIsSkeletalMesh.Clear();
 		}
 		for (UINT32 i = 0u, n = InScene->mNumMeshes; i < n; i++)
 		{
@@ -352,7 +352,7 @@ namespace PigeonEngine
 		for (UINT32 i = 0u, n = OutMeshes.Length(); i < n; i++)
 		{
 			OutLayouts.Add(TArray<RShaderSemanticType>());
-			OutIsSkeletonMesh.Add(FALSE);
+			OutIsSkeletalMesh.Add(FALSE);
 			const aiMesh* PerMesh = OutMeshes[i];
 			TArray<RShaderSemanticType>& PerMeshLayout = OutLayouts[OutLayouts.Length() - 1u];
 			if (PerMesh->HasPositions())
@@ -396,7 +396,7 @@ namespace PigeonEngine
 			}
 			if (PerMesh->HasBones())
 			{
-				OutIsSkeletonMesh[OutIsSkeletonMesh.Length() - 1u] = TRUE;
+				OutIsSkeletalMesh[OutIsSkeletalMesh.Length() - 1u] = TRUE;
 				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES);
 				PerMeshLayout.Add(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT);
 			}
@@ -1082,12 +1082,12 @@ namespace PigeonEngine
 		// Only access first mesh in scene.
 		TArray<const aiMesh*> Meshes;
 		{
-			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletonMesh;
-			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletonMesh);
-			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletonMesh.Length()));
+			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletalMesh;
+			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletalMesh);
+			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
 			for (UINT32 i = 0u, n = TempMeshes.Length(); i < n; i++)
 			{
-				if (TempIsSkeletonMesh[i])
+				if (TempIsSkeletalMesh[i])
 				{
 					continue;
 				}
@@ -1261,12 +1261,12 @@ namespace PigeonEngine
 		// Read data structures of all nodes.
 		TArray<const aiMesh*> Meshes;
 		{
-			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletonMesh;
-			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletonMesh);
-			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletonMesh.Length()));
+			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletalMesh;
+			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletalMesh);
+			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
 			for (UINT32 i = 0u, n = TempMeshes.Length(); i < n; i++)
 			{
-				if (!(TempIsSkeletonMesh[i]))
+				if (!(TempIsSkeletalMesh[i]))
 				{
 					continue;
 				}
@@ -1283,7 +1283,7 @@ namespace PigeonEngine
 		}
 
 		const RShaderSemanticType* EngineLayouts; UINT32 EngineLayoutNum;
-		GetEngineDefaultSkeletonMeshInputLayouts(EngineLayouts, EngineLayoutNum);
+		GetEngineDefaultSkeletalMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
 		TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
 

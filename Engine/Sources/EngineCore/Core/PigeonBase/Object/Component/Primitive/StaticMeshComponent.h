@@ -6,7 +6,6 @@
 namespace PigeonEngine
 {
 
-    class RPrimitiveSceneProxy;
     class RStaticMeshSceneProxy;
 
     class PStaticMeshComponent : public PMeshComponent
@@ -14,17 +13,16 @@ namespace PigeonEngine
 
         CLASS_VIRTUAL_NOCOPY_BODY(PStaticMeshComponent)
 
-
         // Render proxy functions START
+    protected:
+        RStaticMeshSceneProxy* SceneProxy;
     public:
-        virtual RPrimitiveSceneProxy* GetSceneProxy()override;
-        virtual const RPrimitiveSceneProxy* GetSceneProxy()const override;
-        virtual RPrimitiveSceneProxy* CreateSceneProxy()override;
+        RStaticMeshSceneProxy*          GetSceneProxy();
+        const RStaticMeshSceneProxy*    GetSceneProxy()const;
+        RStaticMeshSceneProxy*          CreateSceneProxy();
         virtual void    CreateRenderState()override;
         virtual void    DestroyRenderState()override;
         virtual void    SendUpdateRenderState()override;
-    protected:
-        RStaticMeshSceneProxy* SceneProxy;
         // Render proxy functions END
     };
 

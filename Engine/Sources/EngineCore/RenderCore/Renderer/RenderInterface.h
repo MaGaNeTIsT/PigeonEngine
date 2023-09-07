@@ -5,7 +5,8 @@
 namespace PigeonEngine
 {
 
-	class PPrimitiveComponent;
+	class PStaticMeshComponent;
+	class PSkeletalMeshComponent;
 
 	class RSceneInterface
 	{
@@ -13,11 +14,12 @@ namespace PigeonEngine
 		virtual void	ClearAll()			= 0;
 		virtual void	UnbindErrorCheck()	= 0;
 	public:
-		virtual void	AddStaticPrimitive(PPrimitiveComponent* InComponent)		= 0;
-		virtual void	RemoveStaticPrimitive(PPrimitiveComponent* InComponent)		= 0;
-		virtual void	AddDynamicPrimitive(PPrimitiveComponent* InComponent)		= 0;
-		virtual void	RemoveDynamicPrimitive(PPrimitiveComponent* InComponent)	= 0;
-		virtual void	UpdateDynamicPrimitive(PPrimitiveComponent* InComponent)	= 0;
+		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)		= 0;
+		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)		= 0;
+		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)		= 0;
+		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)	= 0;
+		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)	= 0;
+		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)	= 0;
 	public:
 		RSceneInterface() {}
 		RSceneInterface(const RSceneInterface& Other) {}

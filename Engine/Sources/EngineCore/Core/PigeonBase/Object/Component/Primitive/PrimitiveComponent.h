@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "EngineCommon.h"
-#include "SceneComponent.h"
+#include <PigeonBase/Object/Component/SceneComponent.h>
 
 
 namespace PigeonEngine
@@ -15,11 +15,12 @@ namespace PigeonEngine
         PE_NODISCARD EBoundAABB GetBounds() const;
     private:
         EBoundAABB Bounds;
-    public:
+
         // Render proxy functions START
-        virtual class RPrimitiveSceneProxy* GetSceneProxy() { return nullptr; }
-        virtual const class RPrimitiveSceneProxy* GetSceneProxy()const { return nullptr; }
-        virtual class RPrimitiveSceneProxy* CreateSceneProxy() { return nullptr; }
+    public:
+        virtual void	CreateRenderState()override;
+        virtual void	DestroyRenderState()override;
+        virtual void	SendUpdateRenderState()override;
         // Render proxy functions END
     };
 

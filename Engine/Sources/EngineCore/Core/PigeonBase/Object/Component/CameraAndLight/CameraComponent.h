@@ -8,6 +8,8 @@
 namespace PigeonEngine
 {
 
+	class RViewProxy;
+
 	struct PCameraViewInfo
 	{
 		PCameraViewInfo()noexcept : Viewport(EViewport(Vector2::Zero(), Vector2::One(), Vector2(RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX)))
@@ -67,6 +69,18 @@ namespace PigeonEngine
 		PCameraViewInfo		CameraViewInfo;
 		EViewMatrix			CameraMatrix;
 		EFrustum			CameraFrustum;
+
+		// Render proxy functions START
+	protected:
+		RViewProxy*	ViewProxy;
+	public:
+		RViewProxy*			GetSceneProxy();
+		const RViewProxy*	GetSceneProxy()const;
+		RViewProxy*			CreateSceneProxy();
+		virtual void		CreateRenderState()override;
+		virtual void		DestroyRenderState()override;
+		virtual void		SendUpdateRenderState()override;
+		// Render proxy functions END
 	};
 
 };

@@ -3,7 +3,6 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include "BaseSceneProxy.h"
-#include <PigeonBase/Object/Light/Light.h>
 
 namespace PigeonEngine
 {

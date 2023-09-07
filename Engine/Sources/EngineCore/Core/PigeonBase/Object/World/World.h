@@ -13,7 +13,8 @@ namespace PigeonEngine
     class PScene;
     class PActor;
     class EGameTimer;
-    class PPrimitiveComponent;
+    class PStaticMeshComponent;
+    class PSkeletalMeshComponent;
     class RSceneInterface;
 
     enum EWorldType : UINT8
@@ -71,27 +72,22 @@ namespace PigeonEngine
 
         //Render scene state START
     public:
-        void    BindRenderScene(RSceneInterface* InScene);
-    public:
-        void    AddStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent);
-        void    RemoveStaticPrimitive(PPrimitiveComponent* InPrimitiveComponent);
-        void    AddDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
-        void    RemoveDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
-        void    UpdateDynamicPrimitive(PPrimitiveComponent* InPrimitiveComponent);
+        void                    BindRenderScene(RSceneInterface* InScene);
+        RSceneInterface*        GetRenderScene();
+        const RSceneInterface*  GetRenderScene()const;
     private:
         RSceneInterface*    RenderScene = nullptr;
         //Render scene state END
 
     };
 
-
-    // class WorldManager
-    // {
-    // public:
-    //     WorldManager() = default;
-    //     ~WorldManager(){World = nullptr;}
-    // public:
-    //     static TSharedPtr<PWorld> GetWorld();
-    //     static TSharedPtr<PWorld> World;
-    // };
+    class PWorldManager
+    {
+    public:
+        PWorldManager() = default;
+        ~PWorldManager() { World = nullptr; }
+    public:
+        static TSharedPtr<PWorld> GetWorld();
+        static TSharedPtr<PWorld> World;
+    };
 };

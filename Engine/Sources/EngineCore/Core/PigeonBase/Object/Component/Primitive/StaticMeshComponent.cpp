@@ -1,5 +1,7 @@
 #include "StaticMeshComponent.h"
 #include <RenderProxy/StaticMeshSceneProxy.h>
+#include <PigeonBase/Object/World/World.h>
+#include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
@@ -19,15 +21,15 @@ namespace PigeonEngine
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
     }
-    RPrimitiveSceneProxy* PStaticMeshComponent::GetSceneProxy()
+    RStaticMeshSceneProxy* PStaticMeshComponent::GetSceneProxy()
     {
         return SceneProxy;
     }
-    const RPrimitiveSceneProxy* PStaticMeshComponent::GetSceneProxy()const
+    const RStaticMeshSceneProxy* PStaticMeshComponent::GetSceneProxy()const
     {
         return SceneProxy;
     }
-    RPrimitiveSceneProxy* PStaticMeshComponent::CreateSceneProxy()
+    RStaticMeshSceneProxy* PStaticMeshComponent::CreateSceneProxy()
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
         SceneProxy = new RStaticMeshSceneProxy(this);
@@ -35,15 +37,24 @@ namespace PigeonEngine
     }
     void PStaticMeshComponent::CreateRenderState()
     {
-
+        PMeshComponent::CreateRenderState();
+        if (ShouldRender())
+        {
+            PWorldManager::GetWorld()->GetRenderScene()->AddStaticMesh(this);
+        }
     }
     void PStaticMeshComponent::DestroyRenderState()
     {
-
+        PWorldManager::GetWorld()->GetRenderScene()->RemoveStaticMesh(this);
+        PMeshComponent::DestroyRenderState();
     }
     void PStaticMeshComponent::SendUpdateRenderState()
     {
-
+        if (ShouldRender())
+        {
+            PMeshComponent::SendUpdateRenderState();
+        }
+        PWorldManager::GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
     }
 
 }

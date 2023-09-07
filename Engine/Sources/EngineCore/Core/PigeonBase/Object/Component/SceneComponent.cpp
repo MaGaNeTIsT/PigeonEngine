@@ -231,4 +231,29 @@ namespace PigeonEngine
 	{
 		return this->Transform.GetUpVector_World(this->AttachedParentComponent, this->GetOwnerActor());
 	}
+
+	// Render proxy functions START
+	void PSceneComponent::CreateRenderState()
+	{
+		PActorComponent::CreateRenderState();
+		if (ShouldRender())
+		{
+			//TODO
+		}
+	}
+	void PSceneComponent::DestroyRenderState()
+	{
+		//TODO
+		PActorComponent::DestroyRenderState();
+	}
+	void PSceneComponent::SendUpdateRenderState()
+	{
+		PActorComponent::SendUpdateRenderState();
+		if (ShouldRender())
+		{
+			//TODO
+		}
+	}
+	// Render proxy functions END
+
 };

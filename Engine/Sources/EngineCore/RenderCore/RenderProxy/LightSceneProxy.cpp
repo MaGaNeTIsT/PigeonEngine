@@ -1,5 +1,5 @@
 #include "LightSceneProxy.h"
-#include <PigeonBase/Object/Light/DirectionalLightComponent.h>
+#include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include "ViewProxy.h"
 
 namespace PigeonEngine

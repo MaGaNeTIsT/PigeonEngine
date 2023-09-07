@@ -11,6 +11,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RSceneRenderer::RSceneRenderer()
+		: Scene(nullptr)
 	{
 	}
 	RSceneRenderer::~RSceneRenderer()

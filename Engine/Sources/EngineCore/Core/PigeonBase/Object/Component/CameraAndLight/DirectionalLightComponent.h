@@ -2,11 +2,12 @@
 
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
-#include <PigeonBase/Object/Light/Light.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 
 namespace PigeonEngine
 {
+
+	class RDirectionalLightSceneProxy;
 
 	class PDirectionalLightComponent : public PSceneComponent
 	{
@@ -23,6 +24,18 @@ namespace PigeonEngine
 		void	SetShadowMapSize(const Vector2Int& InShadowMapSize);
 	protected:
 		ELightData		LightData;
+
+		// Render proxy functions START
+	protected:
+		RDirectionalLightSceneProxy* SceneProxy;
+	public:
+		RDirectionalLightSceneProxy*		GetSceneProxy();
+		const RDirectionalLightSceneProxy*	GetSceneProxy()const;
+		RDirectionalLightSceneProxy*		CreateSceneProxy();
+		virtual void	CreateRenderState()override;
+		virtual void	DestroyRenderState()override;
+		virtual void	SendUpdateRenderState()override;
+		// Render proxy functions END
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PDirectionalLightComponent)
 	};

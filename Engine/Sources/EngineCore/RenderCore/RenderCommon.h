@@ -661,6 +661,6 @@ namespace PigeonEngine
 	extern RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input);
 	extern UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input);
 	extern void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
-	extern void GetEngineDefaultSkeletonMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
+	extern void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 
 };

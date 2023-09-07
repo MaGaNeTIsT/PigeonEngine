@@ -1,5 +1,4 @@
 #include "MeshSceneProxy.h"
-#include <PigeonBase/Object/Component/MeshComponent.h>
 
 namespace PigeonEngine
 {

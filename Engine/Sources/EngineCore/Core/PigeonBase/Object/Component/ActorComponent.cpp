@@ -61,5 +61,24 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
+	// Render proxy functions START
+	BOOL32 PActorComponent::ShouldRender()const
+	{
+		//TODO
+		return TRUE;
+	}
+	void PActorComponent::CreateRenderState()
+	{
+		//TODO
+	}
+	void PActorComponent::DestroyRenderState()
+	{
+		//TODO
+	}
+	void PActorComponent::SendUpdateRenderState()
+	{
+		//TODO
+	}
+	// Render proxy functions END
 
 };

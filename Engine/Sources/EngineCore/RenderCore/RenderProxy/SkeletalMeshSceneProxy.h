@@ -8,10 +8,15 @@ namespace PigeonEngine
 
 	class PSkeletalMeshComponent;
 
-	class RSkeletonMeshSceneProxy : public RMeshSceneProxy
+	class RSkeletalMeshSceneProxy : public RMeshSceneProxy
 	{
 	public:
-		RSkeletonMeshSceneProxy(PSkeletalMeshComponent* InComponent);
+		RSkeletalMeshSceneProxy(PSkeletalMeshComponent* InComponent);
+	protected:
+		const PSkeletalMeshComponent* Component;
+
+		RENDER_PROXY_CLASS_BODY(RSkeletalMeshSceneProxy)
+
 	};
 
 };

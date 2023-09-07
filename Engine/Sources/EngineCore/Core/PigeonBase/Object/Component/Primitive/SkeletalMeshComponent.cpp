@@ -1,5 +1,7 @@
 #include "SkeletalMeshComponent.h"
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
+#include <PigeonBase/Object/World/World.h>
+#include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
@@ -19,31 +21,40 @@ namespace PigeonEngine
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
     }
-    RPrimitiveSceneProxy* PSkeletalMeshComponent::GetSceneProxy()
+    RSkeletalMeshSceneProxy* PSkeletalMeshComponent::GetSceneProxy()
     {
         return SceneProxy;
     }
-    const RPrimitiveSceneProxy* PSkeletalMeshComponent::GetSceneProxy()const
+    const RSkeletalMeshSceneProxy* PSkeletalMeshComponent::GetSceneProxy()const
     {
         return SceneProxy;
     }
-    RPrimitiveSceneProxy* PSkeletalMeshComponent::CreateSceneProxy()
+    RSkeletalMeshSceneProxy* PSkeletalMeshComponent::CreateSceneProxy()
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
-        SceneProxy = new RSkeletonMeshSceneProxy(this);
+        SceneProxy = new RSkeletalMeshSceneProxy(this);
         return SceneProxy;
     }
     void PSkeletalMeshComponent::CreateRenderState()
     {
-
+        PMeshComponent::CreateRenderState();
+        if (ShouldRender())
+        {
+            PWorldManager::GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
+        }
     }
     void PSkeletalMeshComponent::DestroyRenderState()
     {
-
+        PWorldManager::GetWorld()->GetRenderScene()->RemoveSkeletalMesh(this);
+        PMeshComponent::DestroyRenderState();
     }
     void PSkeletalMeshComponent::SendUpdateRenderState()
     {
-
+        PMeshComponent::SendUpdateRenderState();
+        if (ShouldRender())
+        {
+            PWorldManager::GetWorld()->GetRenderScene()->UpdateSkeletalMesh(this);
+        }
     }
 
 }

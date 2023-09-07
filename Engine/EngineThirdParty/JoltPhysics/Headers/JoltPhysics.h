@@ -1,7 +1,7 @@
 #pragma once
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Map.h>
-#include <PigeonBase/Object/Component/PrimitiveComponent.h>
+#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 #include "JoltIncludes.h"
 #include "JoltPhysicsLayer.h"
 #include "JoltPhysicsListener.h"

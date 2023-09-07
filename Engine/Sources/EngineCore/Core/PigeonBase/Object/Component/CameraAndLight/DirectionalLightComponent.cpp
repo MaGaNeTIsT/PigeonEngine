@@ -1,4 +1,5 @@
 #include "DirectionalLightComponent.h"
+#include <RenderProxy/LightSceneProxy.h>
 
 namespace PigeonEngine
 {
@@ -11,7 +12,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PDirectionalLightComponent::PDirectionalLightComponent()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2))
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), SceneProxy(nullptr)
 	{
 	}
 	PDirectionalLightComponent::~PDirectionalLightComponent()
@@ -52,6 +53,35 @@ namespace PigeonEngine
 	void PDirectionalLightComponent::SetShadowMapSize(const Vector2Int& InShadowMapSize)
 	{
 		LightData.ShadowMapSize = InShadowMapSize;
+	}
+	RDirectionalLightSceneProxy* PDirectionalLightComponent::GetSceneProxy()
+	{
+		return SceneProxy;
+	}
+	const RDirectionalLightSceneProxy* PDirectionalLightComponent::GetSceneProxy()const
+	{
+		return SceneProxy;
+	}
+	RDirectionalLightSceneProxy* PDirectionalLightComponent::CreateSceneProxy()
+	{
+		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+		SceneProxy = new RDirectionalLightSceneProxy(this);
+		return SceneProxy;
+	}
+	void PDirectionalLightComponent::CreateRenderState()
+	{
+		PSceneComponent::CreateRenderState();
+		//TODO
+	}
+	void PDirectionalLightComponent::DestroyRenderState()
+	{
+		//TODO
+		PSceneComponent::DestroyRenderState();
+	}
+	void PDirectionalLightComponent::SendUpdateRenderState()
+	{
+		PSceneComponent::SendUpdateRenderState();
+		//TODO
 	}
 
 };

@@ -83,6 +83,13 @@ namespace PigeonEngine
     
     public:
         TSharedPtr<CJsonObject> Serialize() override;
+
+        // Render proxy functions START
+    public:
+        virtual void	CreateRenderState()override;
+        virtual void	DestroyRenderState()override;
+        virtual void	SendUpdateRenderState()override;
+        // Render proxy functions END
     	
     };
 
