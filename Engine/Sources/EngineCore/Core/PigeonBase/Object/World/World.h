@@ -1,17 +1,15 @@
 ﻿#pragma once
-#include <CoreMinimal.h>
 
-#include "EngineCommon.h"
-#include "Base/DataStructure/Container/Array.h"
-#include "Base/DataStructure/Pointer/SharedPtr.h"
-#include "PigeonBase/Object/Actor.h"
-#include "PigeonBase/Object/Object.h"
+#include <CoreMinimal.h>
+#include <Base/DataStructure/Pointer/SharedPtr.h>
+#include <EngineCommon.h>
+#include <PigeonBase/Object/Object.h>
+#include <PigeonBase/Object/Actor.h>
 
 namespace PigeonEngine
 {
 
     class PScene;
-    class PActor;
     class EGameTimer;
     class PStaticMeshComponent;
     class PSkeletalMeshComponent;
@@ -81,13 +79,17 @@ namespace PigeonEngine
 
     };
 
-    class PWorldManager
+    class PWorldManager final
     {
     public:
-        PWorldManager() = default;
-        ~PWorldManager() { World = nullptr; }
-    public:
-        static TSharedPtr<PWorld> GetWorld();
-        static TSharedPtr<PWorld> World;
+        static PE_INLINE PWorld* GetWorld()
+        {
+            static PWorld* PE_RESTRICT StaticGlobalWorld = &(PWorldManager::GetSingleton()->World);
+            return StaticGlobalWorld;
+        }
+    private:
+        PWorld  World;
+
+        CLASS_SINGLETON_BODY(PWorldManager)
     };
 };

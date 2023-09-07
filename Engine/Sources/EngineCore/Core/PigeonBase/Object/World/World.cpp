@@ -1,5 +1,4 @@
 ﻿#include "World.h"
-
 #include "../../../../Main/MainManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
@@ -15,6 +14,13 @@ namespace PigeonEngine
     }
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+    PWorld::PWorld()
+    {
+    }
+    PWorld::~PWorld()
+    {
+    }
 
     void PWorld::Init()
     {
@@ -98,13 +104,11 @@ namespace PigeonEngine
     }
     //Render scene state END
 
-    TSharedPtr<PWorld> PWorldManager::GetWorld()
+    PWorldManager::PWorldManager()
     {
-        if (!PWorldManager::World)
-        {
-            PWorldManager::World = TSharedPtr<PWorld>::MakeShared();
-        }
-        return PWorldManager::World;
+    }
+    PWorldManager::~PWorldManager()
+    {
     }
 
 };

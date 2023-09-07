@@ -3,9 +3,9 @@
 #include <set>
 
 #include <CoreMinimal.h>
-#include "./Object.h"
-#include "EngineCommon.h"
 #include "Base/DataStructure/Container/Set.h"
+#include "Object.h"
+#include "EngineCommon.h"
 
 
 namespace PigeonEngine
