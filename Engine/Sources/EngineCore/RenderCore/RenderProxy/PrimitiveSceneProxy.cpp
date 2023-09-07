@@ -12,20 +12,11 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const PPrimitiveComponent* InComponent)
-		: WorldLocation(InComponent->GetComponentWorldLocation())
-		, WorldRotation(InComponent->GetComponentWorldRotation())
-		, WorldScaling(InComponent->GetComponentWorldScale())
-		, Component(InComponent)
-	{
-		LocalToWorldMatrix = MakeMatrix4x4(WorldLocation, WorldRotation, WorldScaling);
-	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
 		: WorldLocation(Vector3::Zero())
 		, WorldRotation(Quaternion::Identity())
 		, WorldScaling(Vector3::One())
 		, LocalToWorldMatrix(Matrix4x4::Identity())
-		, Component(nullptr)
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
@@ -34,7 +25,6 @@ namespace PigeonEngine
 		, WorldRotation(Other.WorldRotation)
 		, WorldScaling(Other.WorldScaling)
 		, LocalToWorldMatrix(Other.LocalToWorldMatrix)
-		, Component(Other.Component)
 	{
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
@@ -59,6 +49,13 @@ namespace PigeonEngine
 	const Matrix4x4& RPrimitiveSceneProxy::GetLocalToWorldMatrix()const
 	{
 		return LocalToWorldMatrix;
+	}
+	void RPrimitiveSceneProxy::SetupProxy(PPrimitiveComponent* InComponent)
+	{
+		//WorldLocation(Vector3::Zero())
+		//	, WorldRotation(Quaternion::Identity())
+		//	, WorldScaling(Vector3::One())
+		//	, LocalToWorldMatrix(Matrix4x4::Identity())
 	}
 
 };
