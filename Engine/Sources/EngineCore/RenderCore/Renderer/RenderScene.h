@@ -104,6 +104,8 @@ namespace PigeonEngine
 	class RScene : public EObjectBase, public RSceneInterface
 	{
 	public:
+		void			Init();
+		void			Uninit();
 		virtual void	ClearAll()override;
 		virtual void	UnbindErrorCheck()override;
 	public:

@@ -25,6 +25,14 @@ namespace PigeonEngine
 	{
 		UnbindErrorCheck();
 	}
+	void RScene::Init()
+	{
+
+	}
+	void RScene::Uninit()
+	{
+
+	}
 	void RScene::ClearAll()
 	{
 		UnbindErrorCheck();
