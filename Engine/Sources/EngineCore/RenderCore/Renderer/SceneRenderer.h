@@ -1,11 +1,11 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include "RenderScene.h"
 
 namespace PigeonEngine
 {
 
-	class RScene;
 	class RViewProxy;
 
 	class RSceneTextures
@@ -17,11 +17,16 @@ namespace PigeonEngine
 	class RSceneRenderer : public EManagerBase
 	{
 	public:
-		virtual void Initialize()override;
-		virtual void ShutDown()override;
+		virtual void	Initialize()override;
+		virtual void	ShutDown()override;
+	public:
+		void	InitNewFrame();
+		void	Render();
 	protected:
-		RScene*				Scene;
-		TArray<RViewProxy*>	ViewProxies;
+		void	InitViews();
+	protected:
+		RScene*					Scene;
+		TArray<RViewProxy*>		ViewProxies;
 
 		CLASS_MANAGER_SINGLETON_BODY(RSceneRenderer)
 

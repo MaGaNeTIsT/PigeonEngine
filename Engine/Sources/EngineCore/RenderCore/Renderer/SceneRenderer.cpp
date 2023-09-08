@@ -23,5 +23,17 @@ namespace PigeonEngine
 	void RSceneRenderer::ShutDown()
 	{
 	}
+	void RSceneRenderer::InitNewFrame()
+	{
+
+	}
+	void RSceneRenderer::Render()
+	{
+
+	}
+	void RSceneRenderer::InitViews()
+	{
+
+	}
 
 };

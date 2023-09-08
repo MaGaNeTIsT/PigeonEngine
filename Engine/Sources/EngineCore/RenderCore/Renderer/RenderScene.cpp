@@ -36,7 +36,7 @@ namespace PigeonEngine
 	void RScene::ClearAll()
 	{
 		UnbindErrorCheck();
-		ScenePrimitiveOctree.ClearPrimitives();
+		RenderSceneOctree.ClearPrimitives();
 	}
 	void RScene::UnbindErrorCheck()
 	{
@@ -106,6 +106,30 @@ namespace PigeonEngine
 			{
 				Scene->UpdateSkeletalMesh_RenderThread(SceneProxy);
 			});
+	}
+	RCommand& RScene::GetAddOrRemoveCommands()
+	{
+		return RenderAddRemoveCommands;
+	}
+	const RCommand& RScene::GetAddOrRemoveCommands()const
+	{
+		return RenderAddRemoveCommands;
+	}
+	RCommand& RScene::GetUpdateCommands()
+	{
+		return RenderUpdateCommands;
+	}
+	const RCommand& RScene::GetUpdateCommands()const
+	{
+		return RenderUpdateCommands;
+	}
+	ROctree& RScene::GetSceneOctree()
+	{
+		return RenderSceneOctree;
+	}
+	const ROctree& RScene::GetSceneOctree()const
+	{
+		return RenderSceneOctree;
 	}
 	void RScene::AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
