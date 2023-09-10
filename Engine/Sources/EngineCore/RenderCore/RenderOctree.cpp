@@ -359,6 +359,15 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
+	UINT32 ROctree::GetPrimitiveNum()const
+	{
+		UINT32 Result = 0u;
+		for (UINT32 i = 0u, n = Elements.Length(); i < n; i++)
+		{
+			Result += Elements[i].Primitives.Length();
+		}
+		return Result;
+	}
 	void ROctree::ClearPrimitives()
 	{
 		for (UINT32 i = 0u, n = Elements.Length(); i < n; i++)

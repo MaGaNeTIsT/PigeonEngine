@@ -79,10 +79,51 @@ namespace PigeonEngine
 		BOOL32	AddPrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
 		BOOL32	RemovePrimitive(const RPrimitiveSceneProxy* InSceneProxy);
 		BOOL32	RemovePrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives);
+		UINT32	GetPrimitiveNum()const;
 		void	ClearPrimitives();
 		BOOL32	RebuildOctreeForWholeLevel(const EBoundAABB* InBounds);
 		BOOL32	FinalizeOctree();
 	public:
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode, InCustomValue))
+			{
+				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
+				if (TempNode.ChildrenIndex.Num() > 0)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionNode<_TCustomType, _TLambdaType, _TConditionType>(TempNode.ChildrenIndex[ChildIndex], NewCustomValue, InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			const ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode, InCustomValue))
+			{
+				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
+				if (TempNode.ChildrenIndex.Num() > 0)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionNode<_TCustomType, _TLambdaType, _TConditionType>(TempNode.ChildrenIndex[ChildIndex], NewCustomValue, InFunc, InCond);
+					}
+				}
+			}
+		}
 		template<typename _TLambdaType, typename _TConditionType>
 		void BackwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
 		{
@@ -104,6 +145,54 @@ namespace PigeonEngine
 			}
 		}
 		template<typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			const ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode))
+			{
+				InFunc(TempNode);
+				if (TempNode.ChildrenIndex.Num() > 0)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionNode<_TLambdaType, _TConditionType>(TempNode.ChildrenIndex[ChildIndex], InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode, InCustomValue))
+			{
+				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
+				ForwardRecursionNode<_TCustomType, _TLambdaType, _TConditionType>(TempNode.ParentIndex, NewCustomValue, InFunc, InCond);
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionNode(INT32 InNodeIndex, _TCustomType InCustomValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			const ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode, InCustomValue))
+			{
+				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
+				ForwardRecursionNode<_TCustomType, _TLambdaType, _TConditionType>(TempNode.ParentIndex, NewCustomValue, InFunc, InCond);
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
 		void ForwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
 		{
 			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
@@ -111,6 +200,20 @@ namespace PigeonEngine
 				return;
 			}
 			ROctreeNode& TempNode = Nodes[InNodeIndex];
+			if (InCond(TempNode))
+			{
+				InFunc(TempNode);
+				ForwardRecursionNode<_TLambdaType, _TConditionType>(TempNode.ParentIndex, InFunc, InCond);
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionNode(INT32 InNodeIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InNodeIndex < 0) || (InNodeIndex >= ((INT32)(Nodes.Length()))))
+			{
+				return;
+			}
+			const ROctreeNode& TempNode = Nodes[InNodeIndex];
 			if (InCond(TempNode))
 			{
 				InFunc(TempNode);

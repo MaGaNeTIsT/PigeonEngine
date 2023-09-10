@@ -20,10 +20,12 @@ namespace PigeonEngine
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
 	public:
-		void	InitNewFrame();
-		void	Render();
+		void			InitNewFrame();
+		void			Render();
 	protected:
-		void	InitViews();
+		void			InitViews();
+		void			OctreeCull();
+		void			PrimitiveCull();
 	protected:
 		RScene*					Scene;
 		TArray<RViewProxy*>		ViewProxies;
