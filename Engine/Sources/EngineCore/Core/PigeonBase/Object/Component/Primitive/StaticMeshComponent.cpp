@@ -32,7 +32,7 @@ namespace PigeonEngine
     RStaticMeshSceneProxy* PStaticMeshComponent::CreateSceneProxy()
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
-        SceneProxy = new RStaticMeshSceneProxy(this);
+        SceneProxy = new RStaticMeshSceneProxy(this, GetMobility() != EMobilityType::EMT_STATIC, IsPrimitiveCastShadow(), IsPrimitiveReceiveShadow());
         return SceneProxy;
     }
     void PStaticMeshComponent::CreateRenderState()

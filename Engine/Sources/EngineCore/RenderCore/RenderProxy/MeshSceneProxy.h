@@ -6,10 +6,12 @@
 namespace PigeonEngine
 {
 
+	class PMeshComponent;
+
 	class RMeshSceneProxy : public RPrimitiveSceneProxy
 	{
-	public:
-
+	protected:
+		void	SetupSceneProxy(PMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
 
 		RENDER_PROXY_CLASS_BODY(RMeshSceneProxy)
 

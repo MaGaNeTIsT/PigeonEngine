@@ -8,16 +8,11 @@ namespace PigeonEngine
 	class RCommonSettings
 	{
 	public:
-		constexpr static FLOAT		RENDER_CULLING_DISTANCE			= 200000.f;
-		constexpr static FLOAT		RENDER_CULLING_OFFSET			= -5.f;
 		constexpr static FLOAT		RENDER_DEPTH_MIN				= 0.f;
 		constexpr static FLOAT		RENDER_DEPTH_MAX				= 1.f;
 
-		constexpr static FLOAT		RENDER_CAMERA_FOV				= 60.f;
 		constexpr static FLOAT		RENDER_CAMERA_NEAR				= 5.f;
 		constexpr static FLOAT		RENDER_CAMERA_FAR				= 200000.f;
-
-		constexpr static UINT32		RENDER_SHADOW_MAP_SIZE			= 4096u;
 
 		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
 		constexpr static USHORT		RENDER_MESH_BONE_NUM_MAX		= 256u;

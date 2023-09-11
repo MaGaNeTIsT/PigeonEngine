@@ -1,8 +1,10 @@
 #include "RenderScene.h"
+#include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
+#include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 
@@ -40,10 +42,41 @@ namespace PigeonEngine
 	}
 	void RScene::UnbindErrorCheck()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProies.SceneProxyMapping.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes failed"), (StaticMeshSceneProies.SceneProxies.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProies.SceneProxyMapping.Length() == 0u));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes failed"), (SkeletalMeshSceneProies.SceneProxies.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProxies.SceneProxyMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes failed"), (StaticMeshSceneProxies.SceneProxies.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProxies.SceneProxyMapping.Length() == 0u));
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes failed"), (SkeletalMeshSceneProxies.SceneProxies.Length() == 0u));
+	}
+	void RScene::AddDirectionalLight(PDirectionalLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RDirectionalLightSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::RemoveDirectionalLight(PDirectionalLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RDirectionalLightSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, FALSE);
+			});
+	}
+	void RScene::UpdateDirectionalLight(PDirectionalLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RDirectionalLightSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		//TODO
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->UpdateDirectionalLight_RenderThread(SceneProxy);
+			});
 	}
 	void RScene::AddStaticMesh(PStaticMeshComponent* InComponent)
 	{
@@ -58,7 +91,7 @@ namespace PigeonEngine
 	void RScene::RemoveStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RStaticMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
@@ -89,7 +122,7 @@ namespace PigeonEngine
 	void RScene::RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
@@ -131,15 +164,54 @@ namespace PigeonEngine
 	{
 		return RenderSceneOctree;
 	}
+	RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies()
+	{
+		return DirectionalLightSceneProxies;
+	}
+	const RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies()const
+	{
+		return DirectionalLightSceneProxies;
+	}
+	RSceneProxyMapping<RStaticMeshSceneProxy>& RScene::GetStaticMeshSceneProxies()
+	{
+		return StaticMeshSceneProxies;
+	}
+	const RSceneProxyMapping<RStaticMeshSceneProxy>& RScene::GetStaticMeshSceneProxies()const
+	{
+		return StaticMeshSceneProxies;
+	}
+	RSceneProxyMapping<RSkeletalMeshSceneProxy>& RScene::GetSkeletalMeshSceneProxies()
+	{
+		return SkeletalMeshSceneProxies;
+	}
+	const RSceneProxyMapping<RSkeletalMeshSceneProxy>& RScene::GetSkeletalMeshSceneProxies()const
+	{
+		return SkeletalMeshSceneProxies;
+	}
+	void RScene::AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			DirectionalLightSceneProxies.AddSceneProxy(InSceneProxy);
+		}
+		else
+		{
+			DirectionalLightSceneProxies.RemoveSceneProxy(InSceneProxy);
+		}
+	}
+	void RScene::UpdateDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy)
+	{
+		//TODO
+	}
 	void RScene::AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
 		if (InIsAdd)
 		{
-			StaticMeshSceneProies.AddSceneProxy(InSceneProxy);
+			StaticMeshSceneProxies.AddSceneProxy(InSceneProxy);
 		}
 		else
 		{
-			StaticMeshSceneProies.RemoveSceneProxy(InSceneProxy);
+			StaticMeshSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
 	void RScene::UpdateStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy)
@@ -150,11 +222,11 @@ namespace PigeonEngine
 	{
 		if (InIsAdd)
 		{
-			SkeletalMeshSceneProies.AddSceneProxy(InSceneProxy);
+			SkeletalMeshSceneProxies.AddSceneProxy(InSceneProxy);
 		}
 		else
 		{
-			SkeletalMeshSceneProies.RemoveSceneProxy(InSceneProxy);
+			SkeletalMeshSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
 	void RScene::UpdateSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy)

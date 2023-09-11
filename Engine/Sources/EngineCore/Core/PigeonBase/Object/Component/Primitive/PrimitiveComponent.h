@@ -13,8 +13,15 @@ namespace PigeonEngine
 
     public:
         PE_NODISCARD EBoundAABB GetBounds() const;
+        PE_NODISCARD BOOL32 IsPrimitiveCastShadow() const;
+        PE_NODISCARD BOOL32 IsPrimitiveReceiveShadow() const;
+    public:
+        void SetPrimitiveCastShadow(BOOL32 InIsCastShadow);
+        void SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow);
     private:
-        EBoundAABB Bounds;
+        EBoundAABB  Bounds;
+        BOOL32      IsCastShadow;
+        BOOL32      IsReceiveShadow;
 
         // Render proxy functions START
     public:

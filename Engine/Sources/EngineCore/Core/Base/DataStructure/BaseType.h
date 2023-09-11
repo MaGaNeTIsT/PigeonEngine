@@ -1916,6 +1916,7 @@ namespace PigeonEngine
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector4& v);
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian);
 	extern PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v);
+	extern PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w);
 	extern PE_INLINE Color3 MakeColor3(const Color4& c);
 	extern PE_INLINE Color4 MakeColor4(const Color3& c);
 	extern PE_INLINE Vector2 MinVector2(const Vector2& A, const Vector2& B);

@@ -13,18 +13,10 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
-		: WorldLocation(Vector3::Zero())
-		, WorldRotation(Quaternion::Identity())
-		, WorldScaling(Vector3::One())
-		, LocalToWorldMatrix(Matrix4x4::Identity())
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
 		: RBaseSceneProxy(Other)
-		, WorldLocation(Other.WorldLocation)
-		, WorldRotation(Other.WorldRotation)
-		, WorldScaling(Other.WorldScaling)
-		, LocalToWorldMatrix(Other.LocalToWorldMatrix)
 	{
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
@@ -34,28 +26,25 @@ namespace PigeonEngine
 	{
 		return FALSE;
 	}
-	const Vector3& RPrimitiveSceneProxy::GetWorldLocation()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyMovable()const
 	{
-		return WorldLocation;
+		return IsMovable;
 	}
-	const Quaternion& RPrimitiveSceneProxy::GetWorldRotation()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyCastShadow()const
 	{
-		return WorldRotation;
+		return IsCastShadow;
 	}
-	const Vector3& RPrimitiveSceneProxy::GetWorldScaling()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyReceiveShadow()const
 	{
-		return WorldScaling;
+		return IsReceiveShadow;
 	}
-	const Matrix4x4& RPrimitiveSceneProxy::GetLocalToWorldMatrix()const
+	void RPrimitiveSceneProxy::SetupSceneProxy(PPrimitiveComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
 	{
-		return LocalToWorldMatrix;
-	}
-	void RPrimitiveSceneProxy::SetupProxy(PPrimitiveComponent* InComponent)
-	{
-		WorldLocation = InComponent->GetComponentWorldLocation();
-		WorldRotation = InComponent->GetComponentWorldRotation();
-		WorldScaling = InComponent->GetComponentWorldScale();
-		LocalToWorldMatrix = MakeMatrix4x4(WorldLocation, WorldRotation, WorldScaling);
+		IsMovable = InIsMovable;
+		IsCastShadow = InIsCastShadow;
+		IsReceiveShadow = InIsReceiveShadow;
+		SetupProxyWorldTransform(InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), InComponent->GetComponentWorldScale());
+		//TODO
 	}
 
 };

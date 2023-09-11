@@ -12,18 +12,16 @@ namespace PigeonEngine
 	class RPrimitiveSceneProxy : public RBaseSceneProxy
 	{
 	public:
-		virtual BOOL32		IsRenderValid()const;
-		const Vector3&		GetWorldLocation()const;
-		const Quaternion&	GetWorldRotation()const;
-		const Vector3&		GetWorldScaling()const;
-		const Matrix4x4&	GetLocalToWorldMatrix()const;
+		virtual BOOL32	IsRenderValid()const;
+		BOOL32			IsSceneProxyMovable()const;
+		BOOL32			IsSceneProxyCastShadow()const;
+		BOOL32			IsSceneProxyReceiveShadow()const;
 	protected:
-		virtual void		SetupProxy(PPrimitiveComponent* InComponent);
+		void	SetupSceneProxy(PPrimitiveComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
 	protected:
-		Vector3			WorldLocation;
-		Quaternion		WorldRotation;
-		Vector3			WorldScaling;
-		Matrix4x4		LocalToWorldMatrix;
+		BOOL32	IsMovable;
+		BOOL32	IsCastShadow;
+		BOOL32	IsReceiveShadow;
 
 		RENDER_PROXY_CLASS_BODY(RPrimitiveSceneProxy)
 

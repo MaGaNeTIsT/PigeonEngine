@@ -194,7 +194,7 @@ namespace PigeonEngine
 	struct EFrustum
 	{
 		EFrustum()noexcept
-			: PlaneTop(Vector3::Zero()), PlaneBottom(Vector3::Zero()), PlaneLeft(Vector3::Zero()), PlaneRight(Vector3::Zero())
+			: PlaneTop(Vector4::Zero()), PlaneBottom(Vector4::Zero()), PlaneLeft(Vector4::Zero()), PlaneRight(Vector4::Zero())
 			, FarPlaneTopLeft(Vector3::Zero()), FarPlaneTopRight(Vector3::Zero())
 			, FarPlaneBottomLeft(Vector3::Zero()), FarPlaneBottomRight(Vector3::Zero())
 			, NearPlaneTopLeft(Vector3::Zero()), NearPlaneTopRight(Vector3::Zero())
@@ -253,17 +253,19 @@ namespace PigeonEngine
 				}
 			}
 			{
+				Vector3 TempPlaneNormal[4];
 				for (UINT32 i = 0u; i < 4u; i++)
 				{
 					TempPosVec[i].Normalize();
 				}
-				Plane[0] = Vector3::Cross(TempPosVec[1], TempPosVec[0]);
-				Plane[1] = Vector3::Cross(TempPosVec[2], TempPosVec[3]);
-				Plane[2] = Vector3::Cross(TempPosVec[0], TempPosVec[2]);
-				Plane[3] = Vector3::Cross(TempPosVec[3], TempPosVec[1]);
+				TempPlaneNormal[0] = Vector3::Cross(TempPosVec[1], TempPosVec[0]);
+				TempPlaneNormal[1] = Vector3::Cross(TempPosVec[2], TempPosVec[3]);
+				TempPlaneNormal[2] = Vector3::Cross(TempPosVec[0], TempPosVec[2]);
+				TempPlaneNormal[3] = Vector3::Cross(TempPosVec[3], TempPosVec[1]);
 				for (UINT32 i = 0u; i < 4u; i++)
 				{
-					Plane[i].Normalize();
+					TempPlaneNormal[i].Normalize();
+					Plane[i] = MakeVector4(TempPlaneNormal[i], 0.f);
 				}
 			}
 		}
@@ -293,13 +295,58 @@ namespace PigeonEngine
 				FarPlaneBottomRight = Vector3(InRight, InBottom, InMaxDepth);
 			}
 			{
-				PlaneTop = Vector3::Cross(NearPlaneTopRight - NearPlaneTopLeft, FarPlaneTopLeft - NearPlaneTopLeft);
-				PlaneBottom = Vector3::Cross(FarPlaneBottomLeft - NearPlaneBottomLeft, NearPlaneBottomRight - NearPlaneBottomLeft);
-				PlaneLeft = Vector3::Cross(FarPlaneTopLeft - NearPlaneTopLeft, NearPlaneBottomLeft - NearPlaneTopLeft);
-				PlaneRight = Vector3::Cross(FarPlaneBottomRight - NearPlaneBottomRight, NearPlaneTopRight - NearPlaneBottomRight);
+				Vector3 TempPlaneNormal[4];
+				TempPlaneNormal[0] = Vector3::Cross(NearPlaneTopRight - NearPlaneTopLeft, FarPlaneTopLeft - NearPlaneTopLeft);
+				TempPlaneNormal[1] = Vector3::Cross(FarPlaneBottomLeft - NearPlaneBottomLeft, NearPlaneBottomRight - NearPlaneBottomLeft);
+				TempPlaneNormal[2] = Vector3::Cross(FarPlaneTopLeft - NearPlaneTopLeft, NearPlaneBottomLeft - NearPlaneTopLeft);
+				TempPlaneNormal[3] = Vector3::Cross(FarPlaneBottomRight - NearPlaneBottomRight, NearPlaneTopRight - NearPlaneBottomRight);
 				for (UINT32 i = 0u; i < 4u; i++)
 				{
-					Plane[i].Normalize();
+					TempPlaneNormal[i].Normalize();
+					Plane[i] = MakeVector4(TempPlaneNormal[i], 0.f);
+				}
+			}
+		}
+		void GeneratePlaneWorldSpace(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling = Vector3::One())
+		{
+			{
+				Matrix4x4 TempLocalToWorld(MakeMatrix4x4(InLocation, InRotation, InScaling));
+				for (UINT32 i = 0u; i < 8u; i++)
+				{
+					FarNearPlanePoint[i] = Matrix4x4TransformPosition(TempLocalToWorld, FarNearPlanePoint[i]);
+				}
+			}
+			{
+				Vector3 TempPlaneNormal[4] =
+				{
+					Vector3(Plane[0].x, Plane[0].y, Plane[0].z),
+					Vector3(Plane[1].x, Plane[1].y, Plane[1].z),
+					Vector3(Plane[2].x, Plane[2].y, Plane[2].z),
+					Vector3(Plane[3].x, Plane[3].y, Plane[3].z)
+				};
+				for (UINT32 i = 0u; i < 4u; i++)
+				{
+					TempPlaneNormal[i] = QuaternionTransformVector(InRotation, TempPlaneNormal[i]);
+					TempPlaneNormal[i].Normalize();
+				}
+				Plane[0] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneTopLeft, TempPlaneNormal[0]));
+				Plane[1] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneBottomRight, TempPlaneNormal[0]));
+				Plane[2] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneTopLeft, TempPlaneNormal[0]));
+				Plane[3] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneBottomRight, TempPlaneNormal[0]));
+			}
+		}
+		void GenerateSeparatingProjectionWorldSpace()
+		{
+			Vector3 SeparateAxis[3] = { Vector3::XVector(), Vector3::YVector(), Vector3::ZVector() };
+			for (UINT32 AxisIndex = 0u; AxisIndex < 3u; AxisIndex++)
+			{
+				SeparateProjection[AxisIndex].x = PE_FLOAT32_MAX;
+				SeparateProjection[AxisIndex].y = -PE_FLOAT32_MAX;
+				for (UINT32 i = 0u; i < 8u; i++)
+				{
+					const FLOAT TempProjection = Vector3::Dot(FarNearPlanePoint[i], SeparateAxis[AxisIndex]);
+					SeparateProjection[AxisIndex].x = EMath::Min(TempProjection, SeparateProjection[AxisIndex].x);
+					SeparateProjection[AxisIndex].y = EMath::Max(TempProjection, SeparateProjection[AxisIndex].y);
 				}
 			}
 		}
@@ -308,27 +355,37 @@ namespace PigeonEngine
 		{
 			struct
 			{
-				Vector3		PlaneTop;
-				Vector3		PlaneBottom;
-				Vector3		PlaneLeft;
-				Vector3		PlaneRight;
+				Vector4	PlaneTop;
+				Vector4	PlaneBottom;
+				Vector4	PlaneLeft;
+				Vector4	PlaneRight;
 			};
-			Vector3		Plane[4];
+			Vector4	Plane[4];
 		};
 		union
 		{
 			struct
 			{
-				Vector3		NearPlaneTopLeft;
-				Vector3		NearPlaneTopRight;
-				Vector3		NearPlaneBottomLeft;
-				Vector3		NearPlaneBottomRight;
-				Vector3		FarPlaneTopLeft;
-				Vector3		FarPlaneTopRight;
-				Vector3		FarPlaneBottomLeft;
-				Vector3		FarPlaneBottomRight;
+				Vector3	NearPlaneTopLeft;
+				Vector3	NearPlaneTopRight;
+				Vector3	NearPlaneBottomLeft;
+				Vector3	NearPlaneBottomRight;
+				Vector3	FarPlaneTopLeft;
+				Vector3	FarPlaneTopRight;
+				Vector3	FarPlaneBottomLeft;
+				Vector3	FarPlaneBottomRight;
 			};
-			Vector3		FarNearPlanePoint[8];
+			Vector3	FarNearPlanePoint[8];
+		};
+		union
+		{
+			struct
+			{
+				Vector2	SeparateProjectionX;
+				Vector2	SeparateProjectionY;
+				Vector2	SeparateProjectionZ;
+			};
+			Vector2	SeparateProjection[3];
 		};
 	};
 
@@ -667,16 +724,37 @@ namespace PigeonEngine
 	};
 	struct ECascadeShadowData
 	{
-		ECascadeShadowData()noexcept : CascadeLayerNum(1u) {}
-		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : CascadeLayerNum(Other.CascadeLayerNum) {}
-		constexpr ECascadeShadowData(UINT32 InCascadeLayerNum)noexcept : CascadeLayerNum(InCascadeLayerNum) {}
+		ECascadeShadowData() = default;
+		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : Layers(Other.Layers), Borders(Other.Borders) {}
+		constexpr ECascadeShadowData(const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)noexcept
+		{
+			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
+			for (UINT32 i = 0u; i < InCascadeNum; i++)
+			{
+				Layers.Add(InLayers[i]);
+				if (i < (InCascadeNum - 1u))
+				{
+					Borders.Add(InBorders[i]);
+				}
+			}
+		}
 		ECascadeShadowData& operator=(const ECascadeShadowData& Other)
 		{
-			CascadeLayerNum = Other.CascadeLayerNum;
+			if (Layers.Length() > 0u)
+			{
+				Layers.Clear();
+			}
+			if (Borders.Length() > 0u)
+			{
+				Borders.Clear();
+			}
+			Layers = Other.Layers;
+			Borders = Other.Borders;
 			return (*this);
 		}
 
-		UINT32 CascadeLayerNum;
+		TArray<FLOAT>	Layers;
+		TArray<FLOAT>	Borders;
 	};
 
 };

@@ -42,7 +42,7 @@ namespace PigeonEngine
 		virtual BroadPhaseLayer			GetBroadPhaseLayer(ObjectLayer inLayer) const override
 		{
 			JPH_ASSERT(inLayer < Layers::NUM_LAYERS);
-			return mObjectToBroadPhase[(int)inLayer];
+			return mObjectToBroadPhase[(INT32)inLayer];
 		}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)

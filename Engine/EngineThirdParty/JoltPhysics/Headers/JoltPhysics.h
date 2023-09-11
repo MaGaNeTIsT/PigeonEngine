@@ -18,14 +18,14 @@ namespace PigeonEngine
 	struct CPhysicsData
 	{
 		//Initialized Parameters
-		UINT32 PreAllocatedSize = 70 * 1024 * 1024;		//pre-allocated memory for simulation.
+		UINT32 PreAllocatedSize = 70 * 1024 * 1024;			//pre-allocated memory for simulation.
 		UINT32 MaxBodies = 65535;							//Max amount of rigid bodies.
-		UINT32 NumBodyMutexes = 0;						//Mutexes count,0 to default setting.
+		UINT32 NumBodyMutexes = 0;							//Mutexes count,0 to default setting.
 		UINT32 MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
 		UINT32 MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
 
 		//Runtime Parameters
-		int CollisionSteps = 1;							// Do n collision step per cDeltaTime
+		INT32 CollisionSteps = 1;							// Do n collision step per cDeltaTime
 
 		//Physics Parameters
 		PhysicsSystem*										PhysicsSystem;
@@ -44,25 +44,25 @@ namespace PigeonEngine
 		BodyID ID;
 
 		/// Equals check
-		inline bool				operator == (const PhysicsBodyId& inRHS) const
+		inline BOOL32				operator == (const PhysicsBodyId& inRHS) const
 		{
 			return ID == inRHS.ID;
 		}
 
 		/// Not equals check
-		inline bool				operator != (const PhysicsBodyId& inRHS) const
+		inline BOOL32				operator != (const PhysicsBodyId& inRHS) const
 		{
 			return ID != inRHS.ID;
 		}
 
 		/// Smaller than operator, can be used for sorting bodies
-		inline bool				operator < (const PhysicsBodyId& inRHS) const
+		inline BOOL32				operator < (const PhysicsBodyId& inRHS) const
 		{
 			return ID < inRHS.ID;
 		}
 
 		/// Greater than operator, can be used for sorting bodies
-		inline bool				operator > (const PhysicsBodyId& inRHS) const
+		inline BOOL32				operator > (const PhysicsBodyId& inRHS) const
 		{
 			return ID > inRHS.ID;
 		}
@@ -89,7 +89,7 @@ namespace PigeonEngine
 		}
 
 		/// Check if the ID is valid
-		inline bool				IsInvalid() const
+		inline BOOL32				IsInvalid() const
 		{
 			return ID.IsInvalid();
 		}
@@ -121,14 +121,14 @@ namespace PigeonEngine
 		virtual void PostPhysicsUpdate();
 
 	public:
-		bool TryCreateBody(FShape* inShape, bool CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID);
+		BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID);
 		void AddBody(const ObjectIdentityType& GameObjectId, const PhysicsBodyId& inBodyID, EActive inActivationMode = EActive::DontActive);
 		/// <summary>
 		/// remove a rigid body by a GameObjectId.
 		/// </summary>
 		/// <param name="GameObjectId">Id</param>
 		/// <param name="bDeleteShape">true to delete shape at sametime,if your shape is shared to other bodys, set false.</param>
-		void RemoveBody(const ObjectIdentityType& GameObjectId, bool bDeleteShape = true);
+		void RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape = true);
 
 		Vector3 GetPosition(const PhysicsBodyId& PhysicsBodyId);
 		Quaternion GetRotation(const PhysicsBodyId& PhysicsBodyId);

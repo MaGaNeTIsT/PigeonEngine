@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
+#include <Config/EngineConfig.h>
 #include <RenderConfig/RenderConfig.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 
@@ -13,7 +14,7 @@ namespace PigeonEngine
 	struct PCameraViewInfo
 	{
 		PCameraViewInfo()noexcept : Viewport(EViewport(Vector2::Zero(), Vector2::One(), Vector2(RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX)))
-			, FovAngleY(RCommonSettings::RENDER_CAMERA_FOV), FarDist(RCommonSettings::RENDER_CAMERA_FAR), NearDist(RCommonSettings::RENDER_CAMERA_NEAR)
+			, FovAngleY(ESettings::ENGINE_CAMERA_FOV), FarDist(RCommonSettings::RENDER_CAMERA_FAR), NearDist(RCommonSettings::RENDER_CAMERA_NEAR)
 		{
 		}
 		PCameraViewInfo(const PCameraViewInfo& Other)noexcept
@@ -21,7 +22,7 @@ namespace PigeonEngine
 			, FovAngleY(Other.FovAngleY), FarDist(Other.FarDist), NearDist(Other.NearDist)
 		{
 		}
-		PCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = RCommonSettings::RENDER_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR)noexcept
+		PCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = ESettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR)noexcept
 			: Viewport(EViewport(Vector2(InTopLeftX, InTopLeftY), Vector2(InWidth, InHeight), Vector2(RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX)))
 			, FovAngleY(InFovAngleY), FarDist(InFarDist), NearDist(InNearDist)
 		{
@@ -50,12 +51,12 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_NOCOPY_BODY(PCameraComponent)
 
 	public:
-		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = RCommonSettings::RENDER_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
+		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = ESettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		const PCameraViewInfo&	GetCameraViewInfo()const { return CameraViewInfo; }
 		const EViewMatrix&		GetCameraMatrix()const { return CameraMatrix; }
 		const EFrustum&			GetCameraFrustum()const { return CameraFrustum; }
 	public:
-		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = RCommonSettings::RENDER_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
+		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = ESettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		void	SetViewport(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight);
 		void	SetFov(FLOAT InFovAngleY);
 	public:

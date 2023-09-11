@@ -25,6 +25,26 @@ namespace PigeonEngine
         return Bounds;
     }
 
+    BOOL32 PPrimitiveComponent::IsPrimitiveCastShadow() const
+    {
+        return IsCastShadow;
+    }
+
+    BOOL32 PPrimitiveComponent::IsPrimitiveReceiveShadow() const
+    {
+        return IsReceiveShadow;
+    }
+
+    void PPrimitiveComponent::SetPrimitiveCastShadow(BOOL32 InIsCastShadow)
+    {
+        IsCastShadow = InIsCastShadow;
+    }
+
+    void PPrimitiveComponent::SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow)
+    {
+        IsReceiveShadow = InIsReceiveShadow;
+    }
+
     // Render proxy functions START
     void PPrimitiveComponent::CreateRenderState()
     {

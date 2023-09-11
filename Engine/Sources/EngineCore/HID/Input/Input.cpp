@@ -260,7 +260,7 @@ namespace PigeonEngine
 				break;
 			}*/
 			const POINTS pt = MAKEPOINTS(lParam);
-			const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+			const INT32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
 			Mouse.OnWheelDelta(pt.x, pt.y, delta);
 			break;
 		}

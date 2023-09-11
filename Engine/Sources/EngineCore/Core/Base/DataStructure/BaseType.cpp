@@ -28,6 +28,7 @@ namespace PigeonEngine
 	PE_INLINE Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
 	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
+	PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w) { return Vector4(v.x, v.y, v.z, w); }
 	PE_INLINE Color3 MakeColor3(const Color4& c) { return Color3(c.x, c.y, c.z); }
 	PE_INLINE Color4 MakeColor4(const Color3& c) { return Color4(c.x, c.y, c.z, 1.f); }
 	PE_INLINE Vector2 MinVector2(const Vector2& A, const Vector2& B)

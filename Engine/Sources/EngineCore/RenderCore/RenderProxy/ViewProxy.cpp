@@ -16,19 +16,11 @@ namespace PigeonEngine
 	{
 		if (InComponent)
 		{
-			ViewDomainInfo.ViewMatrix	= InComponent->GetCameraMatrix();
-			ViewDomainInfo.ViewFrustum	= InComponent->GetCameraFrustum();
-			{
-				Quaternion TempR(InComponent->GetComponentWorldRotation());
-				for (UINT32 i = 0u; i < 4u; i++)
-				{
-					ViewDomainInfo.ViewFrustum.Plane[i] = QuaternionTransformVector(TempR, ViewDomainInfo.ViewFrustum.Plane[i]);
-				}
-				for (UINT32 i = 0u; i < 8u; i++)
-				{
-					ViewDomainInfo.ViewFrustum.FarNearPlanePoint[i] = Matrix4x4TransformPosition(ViewDomainInfo.ViewMatrix.ViewPart.InverseViewMatrix, ViewDomainInfo.ViewFrustum.FarNearPlanePoint[i]);
-				}
-			}
+			SetupProxyWorldTransform(InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), Vector3::One());
+			ViewDomainInfo.ViewMatrix = InComponent->GetCameraMatrix();
+			ViewDomainInfo.ViewFrustum = InComponent->GetCameraFrustum();
+			ViewDomainInfo.ViewFrustum.GeneratePlaneWorldSpace(WorldLocation, WorldRotation);
+			ViewDomainInfo.ViewFrustum.GenerateSeparatingProjectionWorldSpace();
 			CameraViewInfo = InComponent->GetCameraViewInfo();
 			{
 				ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
@@ -51,17 +43,41 @@ namespace PigeonEngine
 	RViewProxy::~RViewProxy()
 	{
 	}
+	RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()
+	{
+		return VisibilityMap;
+	}
+	const RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()const
+	{
+		return VisibilityMap;
+	}
+	PCameraViewInfo& RViewProxy::GetViewInfo()
+	{
+		return CameraViewInfo;
+	}
 	const PCameraViewInfo& RViewProxy::GetViewInfo()const
 	{
 		return CameraViewInfo;
+	}
+	EViewport& RViewProxy::GetRenderViewport()
+	{
+		return (ViewDomainInfo.RenderViewport);
 	}
 	const EViewport& RViewProxy::GetRenderViewport()const
 	{
 		return (ViewDomainInfo.RenderViewport);
 	}
+	EViewMatrix& RViewProxy::GetViewMatrix()
+	{
+		return (ViewDomainInfo.ViewMatrix);
+	}
 	const EViewMatrix& RViewProxy::GetViewMatrix()const
 	{
 		return (ViewDomainInfo.ViewMatrix);
+	}
+	EFrustum& RViewProxy::GetViewFrustum()
+	{
+		return (ViewDomainInfo.ViewFrustum);
 	}
 	const EFrustum& RViewProxy::GetViewFrustum()const
 	{

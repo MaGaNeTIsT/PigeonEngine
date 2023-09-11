@@ -14,29 +14,33 @@ namespace PigeonEngine
 	class RDirectionalLightSceneProxy : public RBaseSceneProxy
 	{
 	public:
-		using TVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
+		using RViewSetType				= TSet<const RViewProxy*>;
+		using RPerViewDomainInfoType	= TMap<ObjectIdentityType, TArray<EViewDomainInfo>>;
+		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
+		using RPerViewVisibilityMapType	= TMap<ObjectIdentityType, TArray<RVisibilityMapType>>;
 	public:
-		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, BOOL32 InIsCascade = FALSE);
+		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, const BOOL32 InIsCascade = FALSE, const FLOAT* InCascadeLayers = nullptr, const FLOAT* InCascadeBorders = nullptr, const UINT32* InCascadeLayerNum = nullptr);
 	public:
 		void	GenerateViewInfo(const RViewProxy* InViewProxy);
 	public:
-		const TVisibilityMapType&	GetVisibilityMap()const;
-		TVisibilityMapType&			GetVisibilityMap();
-		const ELightData&			GetLightData()const;
-		const EViewDomainInfo*		GetViewDomainInfo(UINT32 InIndex)const;
-		const ECascadeShadowData*	GetCascadeShadowData()const;
-		BOOL32						IsLightUseCascadeShadow()const;
-		const Quaternion&			GetLightWorldRotation()const;
+		const RPerViewVisibilityMapType&	GetVisibilityMap()const;
+		RPerViewVisibilityMapType&			GetVisibilityMap();
+		const ELightData&					GetLightData()const;
+		RPerViewDomainInfoType&				GetViewDomainInfos();
+		const RPerViewDomainInfoType&		GetViewDomainInfos()const;
+		const ECascadeShadowData*			GetCascadeShadowData()const;
+		BOOL32								IsLightUseCascadeShadow()const;
+		RViewSetType&						GetViews();
+		const RViewSetType&					GetViews()const;
 	protected:
-		TVisibilityMapType					VisibilityMap;
+		RPerViewVisibilityMapType			VisibilityMap;
 	protected:
 		ELightData							LightData;
-		TArray<EViewDomainInfo>				ViewDomainInfos;
+		RPerViewDomainInfoType				ViewDomainInfos;
 		ECascadeShadowData*					CascadeShadowData;
 	protected:
 		BOOL32								IsCascadeShadow;
-		Quaternion							WorldRotation;
-		const RViewProxy*					View;
+		RViewSetType						Views;
 		const PDirectionalLightComponent*	Component;
 
 		RENDER_PROXY_CLASS_BODY(RDirectionalLightSceneProxy)

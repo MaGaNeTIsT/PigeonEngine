@@ -66,7 +66,7 @@ namespace PigeonEngine
         void Append(const TArray<T>& Other);
 
         void       Sort   ();
-        void       Sort   (bool Predicate(const T&, const T&));
+        void       Sort   (BOOL32 Predicate(const T&, const T&));
         void       Shuffle();
         TArray<T>  Reverse() const;
         
@@ -304,7 +304,7 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    void TArray<T>::Sort(bool Predicate(const T&, const T&))
+    void TArray<T>::Sort(BOOL32 Predicate(const T&, const T&))
     {
         std::sort(Elements.begin(), Elements.end(),Predicate);
     }

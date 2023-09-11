@@ -97,7 +97,7 @@ namespace PigeonEngine
     {
         Vector3 Center = Whitch->GetBounds().Center ;
 
-        for (int i = 0; i < 8; ++i) {
+        for (INT32 i = 0; i < 8; ++i) {
             Vector3 ChildMin = {i & 1 ? Center.x : Whitch->GetBounds().GetMin().x,
                                 i & 2 ? Center.y : Whitch->GetBounds().GetMin().y,
                                 i & 4 ? Center.z : Whitch->GetBounds().GetMin().z};

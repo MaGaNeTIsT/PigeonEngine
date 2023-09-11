@@ -10,23 +10,30 @@ namespace PigeonEngine
 	class ESettings
 	{
 	public:
-		constexpr static FLOAT	ENGINE_SCREEN_WIDTH						= 1600.f;
-		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT					= 900.f;
-		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME				= 60.f;
-		constexpr static FLOAT	ENGINE_UPDATE_FRAME						= 90.f;
-		constexpr static BOOL32	ENGINE_WINDOWED							= TRUE;
+		constexpr static FLOAT	ENGINE_SCREEN_WIDTH													= 1600.f;
+		constexpr static FLOAT	ENGINE_SCREEN_HEIGHT												= 900.f;
+		constexpr static FLOAT	ENGINE_FIXED_UPDATE_FRAME											= 60.f;
+		constexpr static FLOAT	ENGINE_UPDATE_FRAME													= 90.f;
+		constexpr static BOOL32	ENGINE_WINDOWED														= TRUE;
 
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM					= 0.1f;
-		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF				= 0.05f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM												= 0.1f;
+		constexpr static FLOAT	ENGINE_BOUND_MINIMUM_HALF											= 0.05f;
 
-		constexpr static UINT32	ENGINE_BONE_WEIGHT_NUM_MAXIMUM			= 16u;
+		constexpr static UINT32	ENGINE_BONE_WEIGHT_NUM_MAXIMUM										= 16u;
 
-		constexpr static UINT32	ENGINE_MESH_NAME_LENGTH_MAX				= 1024u;
-		constexpr static UINT32	ENGINE_SKELETON_NAME_LENGTH_MAX			= 1024u;
-		constexpr static UINT32	ENGINE_ANIMATION_NAME_LENGTH_MAX		= 1024u;
-		constexpr static UINT32	ENGINE_BONE_NAME_LENGTH_MAX				= 512u;
-		constexpr static UINT32	ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX	= 512u;
+		constexpr static UINT32	ENGINE_MESH_NAME_LENGTH_MAX											= 1024u;
+		constexpr static UINT32	ENGINE_SKELETON_NAME_LENGTH_MAX										= 1024u;
+		constexpr static UINT32	ENGINE_ANIMATION_NAME_LENGTH_MAX									= 1024u;
+		constexpr static UINT32	ENGINE_BONE_NAME_LENGTH_MAX											= 512u;
+		constexpr static UINT32	ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX								= 512u;
 
+		constexpr static FLOAT	ENGINE_VISIBLE_CULLING_DISTANCE										= 200000.f;
+		constexpr static FLOAT	ENGINE_CAMERA_FOV													= 60.f;
+
+		constexpr static UINT32	ENGINE_SHADOW_MAP_SIZE												= 2048u;
+		constexpr static UINT32	ENGINE_CASCADE_SHADOW_LAYER_NUM										= 3u;
+		constexpr static FLOAT	ENGINE_CASCADE_SHADOW_LAYER[ENGINE_CASCADE_SHADOW_LAYER_NUM]		= { 1000.f, 3000.f, 5000.f };
+		constexpr static FLOAT	ENGINE_CASCADE_SHADOW_BORDER[ENGINE_CASCADE_SHADOW_LAYER_NUM - 1u]	= { 100.f, 200.f };
 	public:
 		static ESettings* GetSingleton()
 		{

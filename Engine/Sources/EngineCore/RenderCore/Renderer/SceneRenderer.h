@@ -17,6 +17,8 @@ namespace PigeonEngine
 	class RSceneRenderer : public EManagerBase
 	{
 	public:
+		using RVisibilityMapType = TMap<ObjectIdentityType, BOOL32>;
+	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
 	public:
@@ -24,8 +26,8 @@ namespace PigeonEngine
 		void			Render();
 	protected:
 		void			InitViews();
-		void			OctreeCull();
-		void			PrimitiveCull();
+		void			OctreeCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
+		void			PrimitiveCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
 	protected:
 		RScene*					Scene;
 		TArray<RViewProxy*>		ViewProxies;

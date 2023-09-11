@@ -1,4 +1,5 @@
 #include "MeshSceneProxy.h"
+#include <PigeonBase/Object/Component/Primitive/MeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -19,6 +20,11 @@ namespace PigeonEngine
 	}
 	RMeshSceneProxy::~RMeshSceneProxy()
 	{
+	}
+	void RMeshSceneProxy::SetupSceneProxy(PMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
+	{
+		RPrimitiveSceneProxy::SetupSceneProxy(InComponent, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		//TODO
 	}
 
 };

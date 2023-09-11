@@ -11,10 +11,11 @@ namespace PigeonEngine
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent)
+	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
 		: Component(InComponent)
-    {
-    }
+	{
+		SetupSceneProxy(InComponent, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy()
 		: Component(nullptr)
 	{
@@ -25,6 +26,11 @@ namespace PigeonEngine
 	}
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
+	}
+	void RStaticMeshSceneProxy::SetupSceneProxy(PStaticMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
+	{
+		RMeshSceneProxy::SetupSceneProxy(InComponent, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		//TODO
 	}
 
 };

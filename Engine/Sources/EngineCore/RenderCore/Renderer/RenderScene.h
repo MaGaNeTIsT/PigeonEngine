@@ -7,8 +7,10 @@
 namespace PigeonEngine
 {
 
+	class PDirectionalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
+	class RDirectionalLightSceneProxy;
 	class RStaticMeshSceneProxy;
 	class RSkeletalMeshSceneProxy;
 
@@ -96,6 +98,11 @@ namespace PigeonEngine
 			SceneProxies.Pop();
 			return TRUE;
 		}
+		UINT32 GetSceneProxyCount()const
+		{
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive mapping and array length failed."), (SceneProxyMapping.Length() == SceneProxies.Length()));
+			return (SceneProxies.Length());
+		}
 
 		TMap<ObjectIdentityType, UINT32>	SceneProxyMapping;
 		TArray<_TProxyType*>				SceneProxies;
@@ -109,6 +116,10 @@ namespace PigeonEngine
 		virtual void	ClearAll()override;
 		virtual void	UnbindErrorCheck()override;
 	public:
+		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override;
+		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override;
+		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override;
+
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override;
@@ -122,7 +133,17 @@ namespace PigeonEngine
 		const RCommand&	GetUpdateCommands()const;
 		ROctree&		GetSceneOctree();
 		const ROctree&	GetSceneOctree()const;
+
+		RSceneProxyMapping<RDirectionalLightSceneProxy>&		GetDirectionalLightSceneProxies();
+		const RSceneProxyMapping<RDirectionalLightSceneProxy>&	GetDirectionalLightSceneProxies()const;
+		RSceneProxyMapping<RStaticMeshSceneProxy>&				GetStaticMeshSceneProxies();
+		const RSceneProxyMapping<RStaticMeshSceneProxy>&		GetStaticMeshSceneProxies()const;
+		RSceneProxyMapping<RSkeletalMeshSceneProxy>&			GetSkeletalMeshSceneProxies();
+		const RSceneProxyMapping<RSkeletalMeshSceneProxy>&		GetSkeletalMeshSceneProxies()const;
 	protected:
+		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
+		void	UpdateDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy);
+
 		void	AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	UpdateStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy);
 		void	AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
@@ -130,8 +151,9 @@ namespace PigeonEngine
 	protected:
 		ROctree		RenderSceneOctree;
 	protected:
-		RSceneProxyMapping<RStaticMeshSceneProxy>	StaticMeshSceneProies;
-		RSceneProxyMapping<RSkeletalMeshSceneProxy>	SkeletalMeshSceneProies;
+		RSceneProxyMapping<RDirectionalLightSceneProxy>	DirectionalLightSceneProxies;
+		RSceneProxyMapping<RStaticMeshSceneProxy>		StaticMeshSceneProxies;
+		RSceneProxyMapping<RSkeletalMeshSceneProxy>		SkeletalMeshSceneProxies;
 	protected:
 		RCommand	RenderAddRemoveCommands;
 		RCommand	RenderUpdateCommands;
@@ -148,6 +170,10 @@ namespace PigeonEngine
 		virtual void	ClearAll()override {}
 		virtual void	UnbindErrorCheck()override {}
 	public:
+		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override {}
+		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override {}
+		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override {}
+
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override {}

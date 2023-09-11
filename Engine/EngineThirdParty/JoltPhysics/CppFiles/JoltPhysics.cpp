@@ -105,7 +105,7 @@ namespace PigeonEngine
 		//}
 	}
 
-	bool CPhysics_Jolt::TryCreateBody(FShape* inShape, bool CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID)
+	BOOL32 CPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID)
 	{
 		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer));
 		if (body)
@@ -123,7 +123,7 @@ namespace PigeonEngine
 		m_Bodys.Add(GameObjectId, inBodyID);
 	}
 
-	void CPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, bool bDeleteShape/* = true*/)
+	void CPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = true*/)
 	{
 		PhysicsBodyId ID;
 		if (m_Bodys.FindValue(GameObjectId, ID))
