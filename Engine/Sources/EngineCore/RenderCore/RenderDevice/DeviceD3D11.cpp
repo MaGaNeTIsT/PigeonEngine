@@ -1158,28 +1158,28 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->IASetInputLayout(nullptr);
 	}
-	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride, const UINT32& offset)
+	void RDeviceD3D11::SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InStride, UINT32 InOffset, UINT32 InStartSlot, UINT32 InBufferNum)
 	{
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
-		m_ImmediateContext->IASetVertexBuffers(0u, 1u, vb.GetAddressOf(), &stride, &offset);
+		m_ImmediateContext->IASetVertexBuffers(InStartSlot, InBufferNum, InBuffer.GetAddressOf(), &InStride, &InOffset);
 	}
 	void RDeviceD3D11::SetNoVertexBuffer()
 	{
-		ID3D11Buffer* buffers[] = { nullptr };
-		UINT32 stride = 0u, offset = 0u;
+		ID3D11Buffer* Buffers[] = { nullptr };
+		UINT32 Stride = 0u, Offset = 0u;
 		//D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT 
-		m_ImmediateContext->IASetVertexBuffers(0u, 1u, buffers, &stride, &offset);
+		m_ImmediateContext->IASetVertexBuffers(0u, 1u, Buffers, &Stride, &Offset);
 	}
-	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT32& offset, RFormatType format)
+	void RDeviceD3D11::SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InOffset, RFormatType InFormat)
 	{
-		DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
-		RDeviceD3D11::TranslateResourceFormat(indexFormat, format);
-		m_ImmediateContext->IASetIndexBuffer(ib.Get(), indexFormat, offset);
+		DXGI_FORMAT IndexFormat = DXGI_FORMAT_UNKNOWN;
+		RDeviceD3D11::TranslateResourceFormat(IndexFormat, InFormat);
+		m_ImmediateContext->IASetIndexBuffer(InBuffer.Get(), IndexFormat, InOffset);
 	}
 	void RDeviceD3D11::SetNoIndexBuffer()
 	{
-		DXGI_FORMAT indexFormat = DXGI_FORMAT_R32_UINT;
-		m_ImmediateContext->IASetIndexBuffer(nullptr, indexFormat, 0u);
+		DXGI_FORMAT IndexFormat = DXGI_FORMAT_R32_UINT;
+		m_ImmediateContext->IASetIndexBuffer(nullptr, IndexFormat, 0u);
 	}
 	void RDeviceD3D11::SetPrimitiveTopology(RPrimitiveTopologyType topology)
 	{
@@ -1362,7 +1362,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->Unmap(input.Buffer.Get(), indexSubResource);
 	}
-	void RDeviceD3D11::TranslateBindFlag(UINT32& output, RBindFlagType input)
+	void RDeviceD3D11::TranslateBindFlag(UINT32& output, UINT8 input)
 	{
 		static RBindFlagType bindFlagTypes[] =
 		{

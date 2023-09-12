@@ -1,9 +1,8 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Config/EngineConfig.h>
 #include <RenderConfig/RenderConfig.h>
-#include <Base/DataStructure/Text/String.h>
-#include <Base/DataStructure/Container/Array.h>
 
 namespace PigeonEngine
 {
@@ -726,15 +725,25 @@ namespace PigeonEngine
 	{
 		ECascadeShadowData() = default;
 		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : Layers(Other.Layers), Borders(Other.Borders) {}
-		constexpr ECascadeShadowData(const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)noexcept
+		ECascadeShadowData(const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)
 		{
 			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
 			for (UINT32 i = 0u; i < InCascadeNum; i++)
 			{
-				Layers.Add(InLayers[i]);
+#if _EDITOR_ONLY
+				if (InLayers)
+#endif
+				{
+					Layers.Add(InLayers[i]);
+				}
 				if (i < (InCascadeNum - 1u))
 				{
-					Borders.Add(InBorders[i]);
+#if _EDITOR_ONLY
+					if (InBorders)
+#endif
+					{
+						Borders.Add(InBorders[i]);
+					}
 				}
 			}
 		}

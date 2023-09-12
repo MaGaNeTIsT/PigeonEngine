@@ -90,9 +90,9 @@ namespace PigeonEngine
 		void	SetInputLayoutAndVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout, const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride = 0u, const UINT32& offset = 0u);
 		void	SetInputLayout(const Microsoft::WRL::ComPtr<ID3D11InputLayout>& layout);
 		void	SetNoInputLayout();
-		void	SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& vb, const UINT32& stride, const UINT32& offset = 0u);
+		void	SetVertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InStride, UINT32 InOffset = 0u, UINT32 InStartSlot = 0u, UINT32 InBufferNum = 1u);
 		void	SetNoVertexBuffer();
-		void	SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& ib, const UINT32& offset = 0u, RFormatType format = RFormatType::FORMAT_R32_UINT);
+		void	SetIndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& InBuffer, UINT32 InOffset = 0u, RFormatType InFormat = RFormatType::FORMAT_R32_UINT);
 		void	SetNoIndexBuffer();
 		void	SetPrimitiveTopology(RPrimitiveTopologyType topology = RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		void	Draw(const UINT32& vertexCount, const UINT32& startVertexLocation = 0u);
@@ -113,7 +113,7 @@ namespace PigeonEngine
 		BOOL32	Map(const RStructuredBuffer& input, const UINT32& indexSubResource, RResourceMapType mapType, RResourceMapFlagType mapFlag, RMappedResource& output);
 		void	Unmap(const RStructuredBuffer& input, const UINT32& indexSubResource);
 	private:
-		static void		TranslateBindFlag(UINT32& output, RBindFlagType input);
+		static void		TranslateBindFlag(UINT32& output, UINT8 input);
 		static void		TranslateUsageFlag(D3D11_USAGE& output, RUsageFlagType input);
 		static void		TranslateCPUAccessFlag(UINT32& output, RCPUAccessFlagType input);
 		static void		TranslateResourceMiscFlag(UINT32& output, RResourceMiscFlagType input);

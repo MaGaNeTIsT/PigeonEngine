@@ -461,7 +461,7 @@ namespace PigeonEngine
 	struct RTextureDesc
 	{
 		RTextureDesc(
-			const UINT32& width, const UINT32& height, RBindFlagType bindFlags, RFormatType bufferFormat, const RFormatType* srvFormat = nullptr
+			const UINT32& width, const UINT32& height, UINT8 bindFlags, RFormatType bufferFormat, const RFormatType* srvFormat = nullptr
 			, const RFormatType* rtvFormat = nullptr, const RFormatType* uavFormat = nullptr, const UINT32& depth = 0u, const UINT32& mipLevels = 1u
 			, const UINT32& arraySize = 1u, RUsageFlagType usageFlag = RUsageFlagType::USAGE_DEFAULT, RCPUAccessFlagType cpuAccessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT
 			, RResourceMiscFlagType miscFlags = RResourceMiscFlagType::RESOURCE_MISC_NONE, RTextureSampleDesc sampleDesc = RTextureSampleDesc(1u, 0u)) noexcept
@@ -489,7 +489,7 @@ namespace PigeonEngine
 		RFormatType				UAVFormat;
 		RTextureSampleDesc		SampleDesc;
 		RUsageFlagType			UsageFlag;
-		RBindFlagType			BindFlags;
+		UINT8					BindFlags;
 		RCPUAccessFlagType		CPUAccessFlags;
 		RResourceMiscFlagType	MiscFlags;
 	};

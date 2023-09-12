@@ -72,6 +72,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderInterface.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.h" />
@@ -369,6 +370,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\IO\SerializationHelper.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderConfig\RenderConfig.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderOctree.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\BaseSceneProxy.cpp" />

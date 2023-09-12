@@ -25,11 +25,11 @@ namespace PigeonEngine
         explicit TMap(std::map<K,V>&& Other);
         ~TMap();
 
-        V& operator[](const K& Key);
+        V&          operator[](const K& Key)const;
         
         TMap<K, V>& operator=(TInitList InInitList);
-        TMap<K,V>& operator=(const TMap<K,V>& Other);
-        TMap<K,V>& operator=(TMap<K,V>&& Other) noexcept;
+        TMap<K,V>&  operator=(const TMap<K,V>& Other);
+        TMap<K,V>&  operator=(TMap<K,V>&& Other) noexcept;
 
         typename TIterator Begin()
         {
@@ -137,7 +137,7 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
-    V& TMap<K, V>::operator[](const K& Key)
+    V& TMap<K, V>::operator[](const K& Key)const
     {
         return Map[Key];
     }

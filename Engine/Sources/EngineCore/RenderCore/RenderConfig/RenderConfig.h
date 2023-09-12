@@ -17,6 +17,9 @@ namespace PigeonEngine
 		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
 		constexpr static USHORT		RENDER_MESH_BONE_NUM_MAX		= 256u;
 		constexpr static USHORT		RENDER_SKELETON_BONE_NUM_MAX	= 512u;
+
+		constexpr static UINT32		RENDER_TARGET_WIDTH				= 1600u;
+		constexpr static UINT32		RENDER_TARGET_HEIGHT			= 900u;
 	public:
 		static RCommonSettings* GetSingleton()
 		{

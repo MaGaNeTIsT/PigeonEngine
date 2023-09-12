@@ -396,6 +396,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\StaticMeshSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -583,6 +584,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\StaticMeshSceneProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
