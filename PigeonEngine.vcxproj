@@ -471,31 +471,31 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <FileType>Document</FileType>
     </FxCompile>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderDefCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderDefCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFastMath.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFastMath.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderShadingFunctions.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderNoises.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderSpaceTransform.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderSpaceTransform.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderVariables.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderVariables.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderBxDF.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Development\BezierGrassCommon.hlsl">

@@ -9,9 +9,9 @@
 */
 
 #ifdef ENABLE_CONSOLE_SHADING
-float D_GGX(float NdotH, float roughness)
+float D_GGX(float NdotH, float Roughness)
 #else
-float D_GGX(float NdotH, float roughness, const float3 normal, const float3 halfVector)
+float D_GGX(float NdotH, float Roughness, const float3 Normal, const float3 HalfVector)
 #endif
 {
 	// Walter et al. 2007, "Microfacet Models for Refraction through Rough Surfaces"
@@ -28,14 +28,14 @@ float D_GGX(float NdotH, float roughness, const float3 normal, const float3 half
     // enough precision).
     // Overall this yields better performance, keeping all computations in mediump
 #ifdef ENABLE_CONSOLE_SHADING
-    float oneMinusNoHSquared = 1.0 - NdotH * NdotH;
+    float OneMinusNoHSquared = 1.0 - NdotH * NdotH;
 #else
-	float3 NxH = cross(normal, halfVector);
-    float oneMinusNoHSquared = dot(NxH, NxH);
+	float3 NxH = cross(Normal, HalfVector);
+    float OneMinusNoHSquared = dot(NxH, NxH);
 #endif
 
-    float a = NdotH * roughness;
-    float k = roughness / (oneMinusNoHSquared + a * a);
+    float a = NdotH * Roughness;
+    float k = Roughness / (OneMinusNoHSquared + a * a);
     float d = k * k * CUSTOM_SHADER_PI_DERIVATIVE;
     return (SaturateMediumPrecision(d));
 }
@@ -54,10 +54,10 @@ float D_GGX_Anisotropic(float NdotH, float TdotH, float BdotH, float at, float a
     return (a2 * w2 * w2 * CUSTOM_SHADER_PI_DERIVATIVE);
 }
 
-float D_Ashikhmin(float NdotH, float roughness)
+float D_Ashikhmin(float NdotH, float Roughness)
 {
 	// Ashikhmin 2007, "Distribution-based BRDFs" Ashikhmin's velvet NDF
-	float a2 = roughness * roughness;
+	float a2 = Roughness * Roughness;
 	float cos2h = NdotH * NdotH;
 	float sin2h = max(1.0 - cos2h, 0.0078125);	// 2^(-14/2), so sin2h^2 > 0 in fp16
 	float sin4h = sin2h * sin2h;
@@ -65,19 +65,19 @@ float D_Ashikhmin(float NdotH, float roughness)
 	return 1.0 / (CUSTOM_SHADER_PI * (4.0 * a2 + 1.0) * sin4h) * (4.0 * exp(cot2) + sin4h);
 }
 
-float D_Charlie(float NdotH, float roughness)
+float D_Charlie(float NdotH, float Roughness)
 {
 	// Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
-	float invAlpha  = 1.0 / roughness;
+	float invAlpha  = 1.0 / Roughness;
     float cos2h = NdotH * NdotH;
     float sin2h = max(1.0 - cos2h, 0.0078125);	// 2^(-14/2), so sin2h^2 > 0 in fp16
     return (2.0 + invAlpha) * pow(sin2h, invAlpha * 0.5) / (2.0 * CUSTOM_SHADER_PI);
 }
 
-float V_SmithGGXCorrelated(float NdotV, float NdotL, float roughness)
+float V_SmithGGXCorrelated(float NdotV, float NdotL, float Roughness)
 {
 	// Heitz 2014, "Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs"
-    float a2 = roughness * roughness;
+    float a2 = Roughness * Roughness;
 	// TODO: lambdaV can be pre-computed for all the lights, it should be moved out of this function
     float GGXV = NdotL * sqrt((NdotV - a2 * NdotV) * NdotV + a2);
     float GGXL = NdotV * sqrt((NdotL - a2 * NdotL) * NdotL + a2);
@@ -88,7 +88,7 @@ float V_SmithGGXCorrelated(float NdotV, float NdotL, float roughness)
 	return (SaturateMediumPrecision(v));
 }
 
-float V_SmithGGXCorrelated_Fast(float NdotV, float NdotL, float roughness)
+float V_SmithGGXCorrelated_Fast(float NdotV, float NdotL, float Roughness)
 {
     // Hammon 2017, "PBR Diffuse Lighting for GGX+Smith Microsurfaces"
 	
@@ -97,7 +97,7 @@ float V_SmithGGXCorrelated_Fast(float NdotV, float NdotL, float roughness)
 	//Proposes the same approximation based on the same observation that the square root can be removed.
 	//It does so by rewriting the expressions as lerps [Earl Hammon. 217. PBR Diffuse Lighting for GGX+Smith Microsurfaces. GDC 2017.]
 	//V(v, l, a) = 0.5 / lerp(2(n . l)(n . v), (n . l) + (n . v), a)
-    float v = 0.5 / lerp(2.0 * NdotL * NdotV, NdotL + NdotV, roughness);
+    float v = 0.5 / lerp(2.0 * NdotL * NdotV, NdotL + NdotV, Roughness);
     return (SaturateMediumPrecision(v));
 }
 
@@ -150,10 +150,10 @@ float Diffuse_Lambert()
     return (CUSTOM_SHADER_PI_DERIVATIVE);
 }
 
-float Diffuse_Burley(float NdotV, float NdotL, float LdotH, float roughness)
+float Diffuse_Burley(float NdotV, float NdotL, float LdotH, float Roughness)
 {
 	// Burley 2012, "Physically-Based Shading at Disney"
-    float f90 = 0.5 + 2.0 * roughness * LdotH * LdotH;
+    float f90 = 0.5 + 2.0 * Roughness * LdotH * LdotH;
     float lightScatter = F_Schlick(NdotL, 1.0, f90);
     float viewScatter = F_Schlick(NdotV, 1.0, f90);
     return (lightScatter * viewScatter * CUSTOM_SHADER_PI_DERIVATIVE);

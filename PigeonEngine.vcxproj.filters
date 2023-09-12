@@ -587,34 +587,34 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderDefCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderDefCommon.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFastMath.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFastMath.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderFunctions.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderShadingFunctions.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderShadingFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderNoises.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderNoises.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderSpaceTransform.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderSpaceTransform.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderVariables.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderVariables.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling\HZBDownSamplingFunctions.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderFeatures\HZBDownSampling</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\Common\ShaderBxDF.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderBxDF.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderFeatures\DynamicWind\DynamicWindCommon.hlsl" />

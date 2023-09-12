@@ -36,6 +36,7 @@ namespace PigeonEngine
         THashMap<K, V, Hash, Pred, Alloc>& operator= (std::unordered_map<K, V, Pred, Alloc>&& Other);
 
         V&                                 operator[](const K& Key);
+        const V&                           operator[](const K& Key)const;
 
         PE_NODISCARD UINT32 Length() const
         {
@@ -152,6 +153,12 @@ namespace PigeonEngine
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     V& THashMap<K, V, Hash, Pred, Alloc>::operator[](const K& Key)
+    {
+        return HashMap[Key];
+    }
+
+    template <typename K, typename V, class Hash, class Pred, class Alloc>
+    const V& THashMap<K, V, Hash, Pred, Alloc>::operator[](const K& Key)const
     {
         return HashMap[Key];
     }

@@ -25,7 +25,7 @@ namespace PigeonEngine
         explicit TMap(std::map<K,V>&& Other);
         ~TMap();
 
-        V&          operator[](const K& Key)const;
+        V&          operator[](const K& Key);
         
         TMap<K, V>& operator=(TInitList InInitList);
         TMap<K,V>&  operator=(const TMap<K,V>& Other);
@@ -137,7 +137,7 @@ namespace PigeonEngine
     }
 
     template <typename K, typename V>
-    V& TMap<K, V>::operator[](const K& Key)const
+    V& TMap<K, V>::operator[](const K& Key)
     {
         return Map[Key];
     }

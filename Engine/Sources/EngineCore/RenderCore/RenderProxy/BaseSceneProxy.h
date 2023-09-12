@@ -10,6 +10,11 @@ namespace PigeonEngine
 	class RBaseSceneProxy : public EObjectBase
 	{
 	public:
+		const Vector3&		GetWorldLocation()const;
+		const Quaternion&	GetWorldRotation()const;
+		const Vector3&		GetWorldScaling()const;
+		const Matrix4x4&	GetLocalToWorldMatrix()const;
+	public:
 		void	SetupProxyWorldTransform(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling);
 	protected:
 		Vector3		WorldLocation;

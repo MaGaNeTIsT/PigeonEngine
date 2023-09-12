@@ -29,6 +29,22 @@ namespace PigeonEngine
 	RBaseSceneProxy::~RBaseSceneProxy()
 	{
 	}
+	const Vector3& RBaseSceneProxy::GetWorldLocation()const
+	{
+		return WorldLocation;
+	}
+	const Quaternion& RBaseSceneProxy::GetWorldRotation()const
+	{
+		return WorldRotation;
+	}
+	const Vector3& RBaseSceneProxy::GetWorldScaling()const
+	{
+		return WorldScaling;
+	}
+	const Matrix4x4& RBaseSceneProxy::GetLocalToWorldMatrix()const
+	{
+		return LocalToWorldMatrix;
+	}
 	void RBaseSceneProxy::SetupProxyWorldTransform(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling)
 	{
 		WorldLocation		= InWorldLocation;

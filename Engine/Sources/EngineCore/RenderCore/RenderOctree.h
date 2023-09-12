@@ -95,7 +95,7 @@ namespace PigeonEngine
 			if (InCond(TempNode, InCustomValue))
 			{
 				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
-				if (TempNode.ChildrenIndex.Num() > 0)
+				if (TempNode.ChildrenIndex.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{
@@ -115,7 +115,7 @@ namespace PigeonEngine
 			if (InCond(TempNode, InCustomValue))
 			{
 				_TCustomType NewCustomValue = InFunc(TempNode, InCustomValue);
-				if (TempNode.ChildrenIndex.Num() > 0)
+				if (TempNode.ChildrenIndex.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{
@@ -135,7 +135,7 @@ namespace PigeonEngine
 			if (InCond(TempNode))
 			{
 				InFunc(TempNode);
-				if (TempNode.ChildrenIndex.Num() > 0)
+				if (TempNode.ChildrenIndex.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{
@@ -155,7 +155,7 @@ namespace PigeonEngine
 			if (InCond(TempNode))
 			{
 				InFunc(TempNode);
-				if (TempNode.ChildrenIndex.Num() > 0)
+				if (TempNode.ChildrenIndex.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = TempNode.ChildrenIndex.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{

@@ -194,7 +194,7 @@ namespace PigeonEngine
 #endif
 			LightProxy->GenerateViewInfo(InViewProxy);
 
-			const RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
+			RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
 			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
 			RDirectionalLightSceneProxy::RPerViewVisibilityMapType& VisibilityMaps = LightProxy->GetVisibilityMap();
 			if (!(VisibilityMaps.ContainsKey(InViewProxy->GetUniqueID())))
@@ -229,12 +229,13 @@ namespace PigeonEngine
 		const Vector3						TempAxis[3]			= { Vector3::XVector(), Vector3::YVector(), Vector3::ZVector() };
 		const TArray<ROctreeElement>&		OctreeElements		= SceneOctree.GetElements();
 		const TArray<ROctreeLayerInfo>&		OctreeLayerInfos	= SceneOctree.GetLayerInfos();
+		const INT32							OctreeLayerNum		= (INT32)(OctreeLayerInfos.Length());
 
 		INT32 TempDeep = 0;
 		SceneOctree.BackwardRecursionNode(0, TempDeep,
 			[&InOutVisibilityMap, &OctreeElements](ROctreeNode& InNode, INT32 InDeep)->INT32
 			{
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check element index of octree node is valid failed."), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < OctreeElements.Length())));
+				Check((ENGINE_RENDER_CORE_ERROR), ("Check element index of octree node is valid failed."), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < ((INT32)(OctreeElements.Length())))));
 				const ROctreeElement& OctreeElement = OctreeElements[InNode.ElementIndex];
 				for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = OctreeElement.Primitives.Length(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 				{
@@ -252,9 +253,9 @@ namespace PigeonEngine
 				}
 				return (InDeep + 1);
 			},
-			[&TempAxis, &InViewFrustum, &OctreeLayerInfos](ROctreeNode& InNode, INT32 InDeep)->BOOL32
+			[&TempAxis, &InViewFrustum, &OctreeLayerInfos, &OctreeLayerNum](ROctreeNode& InNode, INT32 InDeep)->BOOL32
 			{
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene octree deep with layer infos failed."), (InDeep < OctreeLayerInfos.Length()));
+				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene octree deep with layer infos failed."), (InDeep < OctreeLayerNum));
 				const Vector3 NodeOrigin = InNode.Origin;
 				const Vector3 NodeExtent = OctreeLayerInfos[InDeep].Extent;
 				const FLOAT AxisExtent[3] = { NodeExtent.x, NodeExtent.x, NodeExtent.z };

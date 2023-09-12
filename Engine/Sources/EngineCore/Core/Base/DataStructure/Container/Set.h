@@ -20,7 +20,8 @@ namespace PigeonEngine
         explicit TSet(const std::set<T>& Other);
         ~TSet();
         
-        T&          operator[](const UINT32& Index)const;
+        T&          operator[](const UINT32& Index);
+        const T&    operator[](const UINT32& Index)const;
 
         BOOL32 Add     (const T& Element);
         T&   Get     (const UINT32& Index) const;
@@ -94,7 +95,13 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    T& TSet<T>::operator[](const UINT32& Index)const
+    T& TSet<T>::operator[](const UINT32& Index)
+    {
+        return Get(Index);
+    }
+
+    template <typename T>
+    const T& TSet<T>::operator[](const UINT32& Index)const
     {
         return Get(Index);
     }
