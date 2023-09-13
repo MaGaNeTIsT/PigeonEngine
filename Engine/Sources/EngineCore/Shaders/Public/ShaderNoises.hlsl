@@ -1,226 +1,244 @@
 #ifndef _SHADER_NOISES_HLSL
 #define _SHADER_NOISES_HLSL
 
-float random2(in float2 vec)
+float SimpleRandom2(in float2 InValue2)
 {
-	return frac(sin(dot(vec.xy, float2(12.9898, 78.233))) * 43758.5453123);
+	return frac(sin(dot(InValue2.xy, float2(12.9898, 78.233))) * 43758.5453123);
 }
 
-float2 random22(in float2 vec)
+float2 SimpleRandom22(in float2 InValue2)
 {
-	vec = float2(dot(vec, float2(127.1, 311.7)), dot(vec, float2(269.5, 183.3)));
-	return frac(sin(vec) * 43758.5453123);
+	InValue2 = float2(dot(InValue2, float2(127.1, 311.7)), dot(InValue2, float2(269.5, 183.3)));
+	return frac(sin(InValue2) * 43758.5453123);
 }
 
-float voronoi2(in float2 vec)
+float Voronoi2(in float2 InValue2)
 {
-	float2 ivec = floor(vec);
-	float2 fvec = frac(vec);
+	float2 i = floor(InValue2);
+	float2 f = frac(InValue2);
 
-	float value = 1.0;
+	float Result = 1.0;
 
+	[unroll]
 	for (int y = -1; y <= 1; y++)
 	{
+		[unroll]
 		for (int x = -1; x <= 1; x++)
 		{
-			float2 offset = float2(x, y);
+			float2 Offset = float2(x, y);
 
-			float2 position;
-			position = random22(ivec + offset);
+			float2 Position;
+			Position = SimpleRandom22(i + Offset);
 
-			float dist = distance(position + offset, fvec);
+			float Dist = distance(Position + Offset, f);
 
-			value = min(value, dist);
+			Result = min(Result, Dist);
 		}
 	}
-	return value;
+	return Result;
 }
 
-float valueNoise2(in float2 vec)
+float ValueNoise2(in float2 InValue2)
 {
-	float2 ivec = floor(vec);
-	float2 fvec = frac(vec);
+	float2 i = floor(InValue2);
+	float2 f = frac(InValue2);
 
-	float a = random2(ivec + float2(0.0, 0.0));
-	float b = random2(ivec + float2(1.0, 0.0));
-	float c = random2(ivec + float2(0.0, 1.0));
-	float d = random2(ivec + float2(1.0, 1.0));
+	float a = SimpleRandom2(i + float2(0.0, 0.0));
+	float b = SimpleRandom2(i + float2(1.0, 0.0));
+	float c = SimpleRandom2(i + float2(0.0, 1.0));
+	float d = SimpleRandom2(i + float2(1.0, 1.0));
 
-	fvec = smoothstep(0.0, 1.0, fvec);
+	f = smoothstep(0.0, 1.0, f);
 
-	return lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
+	return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
 }
 
-float perlinNoise2(in float2 vec)
+float PerlinNoise2(in float2 InValue2)
 {
-	float2 ivec = floor(vec);
-	float2 fvec = frac(vec);
+	float2 i = floor(InValue2);
+	float2 f = frac(InValue2);
 
-	float a = dot(random22(ivec + float2(0.0, 0.0)) * 2.0 - 1.0, fvec - float2(0.0, 0.0));
-	float b = dot(random22(ivec + float2(1.0, 0.0)) * 2.0 - 1.0, fvec - float2(1.0, 0.0));
-	float c = dot(random22(ivec + float2(0.0, 1.0)) * 2.0 - 1.0, fvec - float2(0.0, 1.0));
-	float d = dot(random22(ivec + float2(1.0, 1.0)) * 2.0 - 1.0, fvec - float2(1.0, 1.0));
+	float a = dot(SimpleRandom22(i + float2(0.0, 0.0)) * 2.0 - 1.0, f - float2(0.0, 0.0));
+	float b = dot(SimpleRandom22(i + float2(1.0, 0.0)) * 2.0 - 1.0, f - float2(1.0, 0.0));
+	float c = dot(SimpleRandom22(i + float2(0.0, 1.0)) * 2.0 - 1.0, f - float2(0.0, 1.0));
+	float d = dot(SimpleRandom22(i + float2(1.0, 1.0)) * 2.0 - 1.0, f - float2(1.0, 1.0));
 
-	fvec = smoothstep(0.0, 1.0, fvec);
+	f = smoothstep(0.0, 1.0, f);
 
-	return lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
+	return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
 }
 
-float fbm2(in float2 vec, int octave, float offset = 0.0)
+float FractionalBrownianMotion_PerlinNoise2(in float2 InValue2, float InOffset, uniform uint InOctave)
 {
-	float value = 0.0;
-	float amplitude = 1.0;
-	//float frequency = 0.0;
+	const float Frequency = 2.0;
+	float Result = 0.0;
+	float Amplitude = 1.0;
 
-	for (int i = 0; i < octave; i++)
+	[unroll]
+	for (uint i = 0; i < InOctave; i++)
 	{
-		value += amplitude * perlinNoise2(vec + offset);
-		vec *= 2.0;
-		amplitude *= 0.5;
+		Result += Amplitude * PerlinNoise2(InValue2 + InOffset);
+		InValue2 *= Frequency;
+		Amplitude *= 0.5;
 	}
 
-	return value;
+	return Result;
 }
 
-float random3(in float3 vec)
+float SimpleRandom3(in float3 InValue3)
 {
-	return frac(sin(dot(vec.xyz, float3(12.9898, 78.233, 47.2311))) * 43758.5453123);
+	return frac(sin(dot(InValue3.xyz, float3(12.9898, 78.233, 47.2311))) * 43758.5453123);
 }
 
-float valueNoise3(in float3 vec)
+float3 SimpleRandom33(in float3 InValue3)
 {
-	float3 ivec = floor(vec);
-	float3 fvec = frac(vec);
+	InValue3 = float3(dot(InValue3, float3(127.1, 311.7, 245.4)), dot(InValue3, float3(269.5, 183.3, 131.2)), dot(InValue3, float3(522.3, 243.1, 532.4)));
+	return frac(sin(InValue3) * 43758.5453123);
+}
 
-	float a = random3(ivec + float3(0.0, 0.0, 0.0));
-	float b = random3(ivec + float3(1.0, 0.0, 0.0));
-	float c = random3(ivec + float3(0.0, 1.0, 0.0));
-	float d = random3(ivec + float3(1.0, 1.0, 0.0));
-	float e = random3(ivec + float3(0.0, 0.0, 1.0));
-	float f = random3(ivec + float3(1.0, 0.0, 1.0));
-	float g = random3(ivec + float3(0.0, 1.0, 1.0));
-	float h = random3(ivec + float3(1.0, 1.0, 1.0));
+float ValueNoise3(in float3 InValue3)
+{
+	float3 i = floor(InValue3);
+	float3 f = frac(InValue3);
 
-	fvec = smoothstep(0.0, 1.0, fvec);
-	float v1 = lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
-	float v2 = lerp(lerp(e, f, fvec.x), lerp(g, h, fvec.x), fvec.y);
-	float v3 = lerp(v1, v2, fvec.z);
+	float a = SimpleRandom3(i + float3(0.0, 0.0, 0.0));
+	float b = SimpleRandom3(i + float3(1.0, 0.0, 0.0));
+	float c = SimpleRandom3(i + float3(0.0, 1.0, 0.0));
+	float d = SimpleRandom3(i + float3(1.0, 1.0, 0.0));
+	float e = SimpleRandom3(i + float3(0.0, 0.0, 1.0));
+	float f = SimpleRandom3(i + float3(1.0, 0.0, 1.0));
+	float g = SimpleRandom3(i + float3(0.0, 1.0, 1.0));
+	float h = SimpleRandom3(i + float3(1.0, 1.0, 1.0));
+
+	f = smoothstep(0.0, 1.0, f);
+	float v1 = lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+	float v2 = lerp(lerp(e, f, f.x), lerp(g, h, f.x), f.y);
+	float v3 = lerp(v1, v2, f.z);
 
 	return v3;
 }
 
-float3 random33(in float3 vec)
+float PerlinNoise3(in float3 InValue3)
 {
-	vec = float3(dot(vec, float3(127.1, 311.7, 245.4)), dot(vec, float3(269.5, 183.3, 131.2)), dot(vec, float3(522.3, 243.1, 532.4)));
-	return frac(sin(vec) * 43758.5453123);
-}
+	float3 i = floor(InValue3);
+	float3 f = frac(InValue3);
 
-float perlinNoise3(in float3 vec)
-{
-	float3 ivec = floor(vec);
-	float3 fvec = frac(vec);
+	float a = dot(SimpleRandom3(i + float3(0.0, 0.0, 0.0)) * 2.0 - 1.0, f - float3(0.0, 0.0, 0.0));
+	float b = dot(SimpleRandom3(i + float3(1.0, 0.0, 0.0)) * 2.0 - 1.0, f - float3(1.0, 0.0, 0.0));
+	float c = dot(SimpleRandom3(i + float3(0.0, 1.0, 0.0)) * 2.0 - 1.0, f - float3(0.0, 1.0, 0.0));
+	float d = dot(SimpleRandom3(i + float3(1.0, 1.0, 0.0)) * 2.0 - 1.0, f - float3(1.0, 1.0, 0.0));
+	float e = dot(SimpleRandom3(i + float3(0.0, 0.0, 1.0)) * 2.0 - 1.0, f - float3(0.0, 0.0, 1.0));
+	float f = dot(SimpleRandom3(i + float3(1.0, 0.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 0.0, 1.0));
+	float g = dot(SimpleRandom3(i + float3(0.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(0.0, 1.0, 1.0));
+	float h = dot(SimpleRandom3(i + float3(1.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 1.0, 1.0));
 
-	float a = dot(random3(ivec + float3(0.0, 0.0, 0.0)) * 2.0 - 1.0, fvec - float3(0.0, 0.0, 0.0));
-	float b = dot(random3(ivec + float3(1.0, 0.0, 0.0)) * 2.0 - 1.0, fvec - float3(1.0, 0.0, 0.0));
-	float c = dot(random3(ivec + float3(0.0, 1.0, 0.0)) * 2.0 - 1.0, fvec - float3(0.0, 1.0, 0.0));
-	float d = dot(random3(ivec + float3(1.0, 1.0, 0.0)) * 2.0 - 1.0, fvec - float3(1.0, 1.0, 0.0));
-	float e = dot(random3(ivec + float3(0.0, 0.0, 1.0)) * 2.0 - 1.0, fvec - float3(0.0, 0.0, 1.0));
-	float f = dot(random3(ivec + float3(1.0, 0.0, 1.0)) * 2.0 - 1.0, fvec - float3(1.0, 0.0, 1.0));
-	float g = dot(random3(ivec + float3(0.0, 1.0, 1.0)) * 2.0 - 1.0, fvec - float3(0.0, 1.0, 1.0));
-	float h = dot(random3(ivec + float3(1.0, 1.0, 1.0)) * 2.0 - 1.0, fvec - float3(1.0, 1.0, 1.0));
-
-	fvec = smoothstep(0.0, 1.0, fvec);
-	float v1 = lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
-	float v2 = lerp(lerp(e, f, fvec.x), lerp(g, h, fvec.x), fvec.y);
-	float v3 = lerp(v1, v2, fvec.z);
+	f = smoothstep(0.0, 1.0, f);
+	float v1 = lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
+	float v2 = lerp(lerp(e, f, f.x), lerp(g, h, f.x), f.y);
+	float v3 = lerp(v1, v2, f.z);
 
 	return v3;
 }
 
-float fbm3(in float3 vec, int octave, float offset = 0.0)
+float FractionalBrownianMotion_PerlinNoise3(in float3 InValue3, float InOffset, uniform uint InOctave)
 {
-	float value = 0.0;
-	float amplitude = 1.0;
-	//float frequency = 0.0;
+	const float Frequency = 2.0;
+	float Result = 0.0;
+	float Amplitude = 1.0;
 
-	for (int i = 0; i < octave; i++)
+	[unroll]
+	for (uint i = 0u; i < InOctave; i++)
 	{
-		value += amplitude * perlinNoise3(vec + offset);
-		vec *= 2.0;
-		amplitude *= 0.5;
+		Result += Amplitude * PerlinNoise3(InValue3 + InOffset);
+		InValue3 *= Frequency;
+		Amplitude *= 0.5;
 	}
 
-	return value;
+	return Result;
 }
 
-float stripes(float x, float f)
+float StripesNoise(float x, float f)
 {
-	float t = 0.5 + 0.5 * sin(f * 2 * (CUSTOM_SHADER_PI) * x);
-	return t * t - 0.5;
+	float Result = 0.5 + 0.5 * sin(f * x * (2.0 * (CUSTOM_SHADER_PI)));
+	return (Result * Result - 0.5);
 }
 
-float turbulence2(float2 xy, float f, float w)//w = Image width in pixels
+float TurbulenceNoise2(float2 InValue2, float InStartValue, float InTargetWidth, float InSourceWidth)
 {
-	float t = -0.5;
-	for (; f <= w / 12; f *= 2)
-		t += abs(fbm2(xy, f) / f);
-	return t;
+	const float TestValue = InSourceWidth / InTargetWidth;
+
+	float Result = -0.5;
+
+	[loop]
+	for (; InStartValue <= TestValue; InStartValue *= 2.0)
+	{
+		Result += abs(FractionalBrownianMotion_PerlinNoise2(InValue2, 0.0, (uint)InStartValue) / InStartValue);
+	}
+
+	return Result;
 }
 
-float turbulence3(float3 xyz, float f, float w)//w = Image width in pixels
+float TurbulenceNoise3(float3 InValue3, float InStartValue, float InTargetWidth, float InSourceWidth)
 {
-	float t = -0.5;
-	for (; f <= w / 12; f *= 2)
-		t += abs(fbm3(xyz, f) / f);
-	return t;
+	const float TestValue = InSourceWidth / InTargetWidth;
+
+	float Result = -0.5;
+
+	[loop]
+	for (; InStartValue <= TestValue; InStartValue *= 2.0)
+	{
+		Result += abs(FractionalBrownianMotion_PerlinNoise3(InValue3, 0.0, (uint)InStartValue) / InStartValue);
+	}
+
+	return Result;
 }
 
 
 // fbm(p + fbm(p + fbm(p)))
 
 
-float noise(in float3 x)
+float UnnamedNoise3(in float3 InValue3)
 {
-	float3 p = floor(x);
-	float3 f = frac(x);
+	float3 i = floor(InValue3);
+	float3 f = frac(InValue3);
+
 	f = f * f * (3.0 - 2.0 * f);
 
-	float2 uv = (p.xy + float2(37.0, 239.0) * p.z) + f.xy;
+	float2 uv = (i.xy + float2(37.0, 239.0) * i.z) + f.xy;
 
-	float2 rg = random22(uv);
+	float2 r = SimpleRandom22(uv);
 
-	return -1.0 + 2.0 * lerp(rg.x, rg.y, f.z);
+	return (-1.0 + 2.0 * lerp(r.x, r.y, f.z));
 }
 
-float InterleavedGradientNoise(int2 coord)
+float InterleavedGradientNoise(float2 InValue2)
 {
-	return frac(52.9829189f * frac((coord.x * 0.06711056f) + (coord.y * 0.00583715f)));
+	return frac(52.9829189 * frac((InValue2.x * 0.06711056) + (InValue2.y * 0.00583715)));
 }
 
-float3 GetRandomVectorFromCoord(int2 coord)
+float3 GetRandomVectorFromCoord(int2 InCoord)
 {
-	coord.y = 16384 - coord.y;
+	InCoord.y = 16384 - InCoord.y;
 
-	float3 randomVec = 0.0;
-	float3 randomTexVec = 0.0;
-	float scaleOffset;
+	float3 RandomVec = 0.0, RandomTexVec = 0.0;
+	float ScaleOffset = 0.0;
 
-	const float temporalCos = 0.8660253882f;
-	const float temporalSin = 0.5;
+	const float TemporalCos = 0.8660253882f;
+	const float TemporalSin = 0.5;
 
-	float GradientNoise = InterleavedGradientNoise(coord);
+	float GradientNoise = InterleavedGradientNoise((float2)InCoord);
 
-	randomTexVec.x = cos((GradientNoise * (CUSTOM_SHADER_PI)));
-	randomTexVec.y = sin((GradientNoise * (CUSTOM_SHADER_PI)));
+	RandomTexVec.x = cos((GradientNoise * (CUSTOM_SHADER_PI)));
+	RandomTexVec.y = sin((GradientNoise * (CUSTOM_SHADER_PI)));
 
-	scaleOffset = (1.0 / 4.0) * ((coord.y - coord.x) & 3);
-	//	scaleOffset = (1.0/5.0)  *  (( coord.y - coord.x) % 5);
+	ScaleOffset = (1.0 / 4.0) * ((InCoord.y - InCoord.x) & 3);
+	//ScaleOffset = (1.0 / 5.0) * ((InCoord.y - InCoord.x) % 5);
 
-	randomVec.x = dot(randomTexVec.xy, float2(temporalCos, -temporalSin));
-	randomVec.y = dot(randomTexVec.xy, float2(temporalSin, temporalCos));
-	randomVec.z = frac(scaleOffset + 0.025);
+	RandomVec.x = dot(RandomTexVec.xy, float2(TemporalCos, -TemporalSin));
+	RandomVec.y = dot(RandomTexVec.xy, float2(TemporalSin, TemporalCos));
+	RandomVec.z = frac(ScaleOffset + 0.025);
 
-	return randomVec;
+	return RandomVec;
 }
 
 #endif

@@ -19,25 +19,27 @@ float3 GetCameraWorldPosition()
 {
 	return ENGINE_CAMERA_POSITION.xyz;
 }
-float4 TransformPositionToSpecificSpace(const float4 position, const float4x4 mat)
+float4 TransformPositionToSpecificSpace(const float4 InPosition, const float4x4 InMatrix)
 {
-	return mul(position, mat).xyzw;
+	return mul(InPosition, InMatrix).xyzw;
 }
-float3 TransformDirectionToSpecificSpace(const float3 dir, const float3x3 mat, uniform bool bNormalize = true)
+float3 TransformDirectionToSpecificSpace(const float3 InDirection, const float3x3 InMatrix, uniform bool bNormalize = true)
 {
-	float3 d = mul(dir, mat);
+	float3 Result = mul(InDirection, InMatrix);
 	if (bNormalize == true)
-		d = SafeNormalize(d);
-	return d;
+	{
+		Result = SafeNormalize(Result);
+	}
+	return Result;
 }
-float3 TransformObjectToWorld(const float3 position)
+float3 TransformObjectToWorld(const float3 InPosition)
 {
-	return mul(float4(position, 1), ENGINE_MATRIX_W).xyz;
+	return mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
 }
-float4 TransformObjectToClip(const float3 position)
+float4 TransformObjectToClip(const float3 InPosition)
 {
-	float3 positionWS = mul(float4(position, 1), ENGINE_MATRIX_W).xyz;
-	return mul(float4(positionWS, 1), ENGINE_MATRIX_VP);
+	float3 PositionWS = mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
+	return mul(float4(PositionWS, 1.0), ENGINE_MATRIX_VP);
 }
 float3 TransformWorldToObject(const float3 position)
 {

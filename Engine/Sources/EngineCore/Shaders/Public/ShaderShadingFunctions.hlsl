@@ -11,227 +11,227 @@ float ClampNdotV(float NdotV)
 	return max(NdotV, MIN_N_DOT_V);
 }
 
-float3 ClampDiffuseColor(const float3 diffuseColor)
+float3 ClampDiffuseColor(const float3 InDiffuseColor)
 {
-	return (clamp(diffuseColor, 1.0 / 25.5, 24.0 / 25.5));
+	return (clamp(InDiffuseColor, 1.0 / 25.5, 24.0 / 25.5));
 }
 
-float3 ClampSpecularColor(const float3 specularColor)
+float3 ClampSpecularColor(const float3 InSpecularColor)
 {
-	return (clamp(specularColor, 17 / 25.5, 1.0));
+	return (clamp(InSpecularColor, 17.0 / 25.5, 1.0));
 }
 
-float3 ComputeDiffuseColor(const float3 baseColor, float metallicness)
+float3 ComputeDiffuseColor(const float3 InBaseColor, float InMetallicness)
 {
-	return (baseColor * (1.0 - metallicness));
+	return (InBaseColor * (1.0 - InMetallicness));
 }
 
-float ComputeFresnelF0Dielectric(float reflectance)
+float ComputeFresnelF0Dielectric(float InReflectance)
 {
-	return (0.16 * reflectance * reflectance);
+	return (0.16 * InReflectance * InReflectance);
 }
 
-float3 ComputeFresnelF0Conductor(const float3 baseColor, float metallicness)
+float3 ComputeFresnelF0Conductor(const float3 InBaseColor, float InMetallicness)
 {
-	return (baseColor * metallicness);
+	return (InBaseColor * InMetallicness);
 }
 
-float3 ComputeFresnelF0(float reflectance, const float3 baseColor, float metallicness)
+float3 ComputeFresnelF0(float InReflectance, const float3 InBaseColor, float InMetallicness)
 {
-	return (reflectance * (1.0 - metallicness) + baseColor * metallicness);
+	return (InReflectance * (1.0 - InMetallicness) + InBaseColor * InMetallicness);
 }
 
-float ComputeMetallicFromSpecularColor(const float3 specularColor)
+float ComputeMetallicFromSpecularColor(const float3 InSpecularColor)
 {
-	return (Max3(specularColor));
+	return (Max3(InSpecularColor));
 }
 
-float RemappingRoughnessFromSmoothness(float smoothness)
+float RemappingRoughnessFromSmoothness(float InSmoothness)
 {
-	return (1.0 - smoothness);
+	return (1.0 - InSmoothness);
 }
 
-float ComputePerceptualRoughnessToRoughness(float perceptualRoughness)
+float ComputePerceptualRoughnessToRoughness(float InPerceptualRoughness)
 {
-	return (perceptualRoughness * perceptualRoughness);
+	return (InPerceptualRoughness * InPerceptualRoughness);
 }
 
-float ComputeRoughnessToPerceptualRoughness(float roughness)
+float ComputeRoughnessToPerceptualRoughness(float InRoughness)
 {
-	return (sqrt(roughness));
+	return (sqrt(InRoughness));
 }
 
-float ComputeIORToF0(float transmittedIOR, float incidentIOR)
+float ComputeIORToF0(float InTransmittedIOR, float InIncidentIOR)
 {
-	return (Power2((transmittedIOR - incidentIOR) / (transmittedIOR + incidentIOR)));
+	return (Power2((InTransmittedIOR - InIncidentIOR) / (InTransmittedIOR + InIncidentIOR)));
 }
 
-float ComputeF0ToIOR(float f0)
+float ComputeF0ToIOR(float InF0)
 {
-	float r = sqrt(f0);
+	float r = sqrt(InF0);
 	return ((1.0 + r) / (1.0 - r));
 }
 
-float3 ComputeF0ClearCoatToSurface(const float3 f0)
+float3 ComputeF0ClearCoatToSurface(const float3 InF0)
 {
 	// Approximation of ComputeIORToF0(ComputeF0ToIOR(F0), 1.5)
 	// This assumes that the clear coat layer has an IOR of 1.5
 #ifdef ENABLE_CONSOLE_SHADING
-	return saturate(f0 * (f0 * (0.941892 - 0.263008 * f0) + 0.346479) - 0.0285998);
+	return saturate(InF0 * (InF0 * (0.941892 - 0.263008 * InF0) + 0.346479) - 0.0285998);
 #else
-	return saturate(f0 * (f0 * 0.526868 + 0.529324) - 0.0482256);
+	return saturate(InF0 * (InF0 * 0.526868 + 0.529324) - 0.0482256);
 #endif
 }
 
-NormalViewLightDotParams InitNormalViewLightDotParams(const float3 normal, const float3 lightDir, const float3 viewDir, const float3 halfVector)
+NormalViewLightDotParams InitNormalViewLightDotParams(const float3 InNormal, const float3 InLightDirection, const float3 InViewDirection, const float3 InHalfVector)
 {
-	NormalViewLightDotParams output;
+	NormalViewLightDotParams Result;
 
-	output.LdotH		= dot(lightDir, halfVector);
-	output.LdotHClamped	= saturate(output.LdotH);
-	output.NdotV		= dot(normal, viewDir);
-	output.NdotVClamped = ClampNdotV(output.NdotV);
-	output.NdotL		= dot(normal, lightDir);
-	output.NdotLClamped	= saturate(output.NdotL);
-	output.NdotH		= dot(normal, halfVector);
-	output.NdotHClamped	= saturate(output.NdotH);
+	Result.LdotH		= dot(InLightDirection, InHalfVector);
+	Result.LdotHClamped	= saturate(Result.LdotH);
+	Result.NdotV		= dot(InNormal, InViewDirection);
+	Result.NdotVClamped = ClampNdotV(Result.NdotV);
+	Result.NdotL		= dot(InNormal, InLightDirection);
+	Result.NdotLClamped	= saturate(Result.NdotL);
+	Result.NdotH		= dot(InNormal, InHalfVector);
+	Result.NdotHClamped	= saturate(Result.NdotH);
 
-	return output;
+	return Result;
 }
 
 float3 SurfaceShading_Standard(
-	const PixelParams pixel,
-	const NormalViewLightDotParams content,
-	const ShadingLightParams light,
-	const float3 viewDir,
-	const float3 halfVector,
+	const PixelParams InPixelParams,
+	const NormalViewLightDotParams InSVLContent,
+	const ShadingLightParams InLightParams,
+	const float3 InViewDirection,
+	const float3 InHalfVector,
 #ifdef MATERIAL_HAS_ANISOTROPY
-	float3 anisotropicT,
-	float3 anisotropicB,
-	float anisotropy,
+	float3 InAnisotropicT,
+	float3 InAnisotropicB,
+	float InAnisotropy,
 #endif
 #ifdef MATERIAL_HAS_CLEAR_COAT
-	float clearCoatStrength,
-	float clearCoatRoughness,
+	float InClearCoatStrength,
+	float InClearCoatRoughness,
 #ifdef MATERIAL_HAS_CLEAR_COAT_NORMAL
-	float3 clearCoatNormal,
+	float3 InClearCoatNormal,
 #endif
 #endif
-	float shadowOcclusion)
+	float InShadowOcclusion)
 {
 #ifdef MATERIAL_HAS_ANISOTROPY
-	float3 Fr = AnisotropicBRDF(content, pixel, viewDir, light.Direction, halfVector, anisotropicT, anisotropicB, anisotropy);
+	float3 Fr = AnisotropicBRDF(InSVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
 #else
-	float3 Fr = IsotropicBRDF(content, pixel, pixel.ShadingNormalWS, halfVector);
+	float3 Fr = IsotropicBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector);
 #endif
-	float3 Fd = DiffuseBRDF(content, pixel) * pixel.DiffuseColor;
+	float3 Fd = DiffuseBRDF(InSVLContent, InPixelParams) * InPixelParams.DiffuseColor;
 
-	float energyCompensation = 1.0;
-	float3 color = Fd + Fr * energyCompensation;
+	float EnergyCompensation = 1.0;
+	float3 Color = Fd + Fr * EnergyCompensation;
 
 #ifdef MATERIAL_HAS_CLEAR_COAT
 	float Fcc;
 #ifdef MATERIAL_HAS_CLEAR_COAT_NORMAL
-	float clearCoat = ClearCoatBRDF(content, pixel, pixel.ShadingNormalWS, halfVector, clearCoatNormal, clearCoatRoughness, clearCoatStrength, Fcc);
+	float ClearCoat = ClearCoatBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector, InClearCoatNormal, InClearCoatRoughness, InClearCoatStrength, Fcc);
 #else
-	float clearCoat = ClearCoatBRDF(content, pixel, pixel.ShadingNormalWS, halfVector, float3(1.0, 0.0, 0.0), clearCoatRoughness, clearCoatStrength, Fcc);
+	float ClearCoat = ClearCoatBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector, float3(1.0, 0.0, 0.0), InClearCoatRoughness, InClearCoatStrength, Fcc);
 #endif
-	float attenuation = 1.0 - Fcc;
+	float Attenuation = 1.0 - Fcc;
 
 #if defined(MATERIAL_HAS_NORMALMAP) || defined(MATERIAL_HAS_CLEAR_COAT_NORMAL)
-	color *= attenuation * content.NdotLClamped;
+	Color *= Attenuation * InSVLContent.NdotLClamped;
 
 	// If the material has a normal map, we want to use the geometric normal
 	// Instead to avoid applying the normal map details to the clear coat layer
-	float clearCoatNdotL = saturate(dot(clearCoatNormal, light.Direction));
-	color += clearCoat * clearCoatNdotL;
+	float ClearCoatNdotL = saturate(dot(InClearCoatNormal, InLightParams.Direction));
+	Color += ClearCoat * ClearCoatNdotL;
 
 	// Early exit to avoid the extra multiplication by NdotL
-	return ((color * light.ColorIntensity.rgb) * (light.ColorIntensity.w * light.Attenuation * shadowOcclusion));
+	return ((Color * InLightParams.ColorIntensity.rgb) * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion));
 #else
-	color *= attenuation;
-	color += clearCoat;
+	Color *= Attenuation;
+	Color += ClearCoat;
 #endif
 #endif
 
-	return ((color * light.ColorIntensity.rgb) * (light.ColorIntensity.w * light.Attenuation * content.NdotLClamped * shadowOcclusion));
+	return ((Color * InLightParams.ColorIntensity.rgb) * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion));
 }
 
-float3 SurfaceShading_Cloth(const PixelParams pixel, const NormalViewLightDotParams content, const ShadingLightParams light, float shadowOcclusion)
+float3 SurfaceShading_Cloth(const PixelParams InPixelParams, const NormalViewLightDotParams InSVLContent, const ShadingLightParams InLightParams, float InShadowOcclusion)
 {
-	float3 Fr = ClothSheenBRDF(content, pixel);
+	float3 Fr = ClothSheenBRDF(InSVLContent, InPixelParams);
 
 	// Diffuse BRDF
-	float diffuse = DiffuseBRDF(content, pixel);
+	float Diffuse = DiffuseBRDF(InSVLContent, InPixelParams);
 #ifdef MATERIAL_HAS_SUBSURFACE_COLOR
 	// Energy conservative wrap diffuse to simulate subsurface scattering
-	diffuse *= Diffuse_Wrap(content.NdotL, 0.5);
+	Diffuse *= Diffuse_Wrap(InSVLContent.NdotL, 0.5);
 #endif
 
 	// We do not multiply the diffuse term by the Fresnel term as discussed in
 	// Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
 	// The effect is fairly subtle and not deemed worth the cost for mobile
-	float3 Fd = diffuse * pixel.DiffuseColor;
+	float3 Fd = Diffuse * InPixelParams.DiffuseColor;
 
 #ifdef MATERIAL_HAS_SUBSURFACE_COLOR
 	// Cheap subsurface scatter
-	Fd *= saturate(pixel.SubsurfaceColor + content.NdotLClamped);
+	Fd *= saturate(InPixelParams.SubsurfaceColor + InSVLContent.NdotLClamped);
 	// We need to apply NoL separately to the specular lobe since we already took
 	// it into account in the diffuse lobe
-	float3 color = Fd + Fr * content.NdotLClamped;
-	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * shadowOcclusion);
+	float3 Color = Fd + Fr * InSVLContent.NdotLClamped;
+	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion);
 #else
-	float3 color = Fd + Fr;
-	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * content.NdotLClamped * shadowOcclusion);
+	float3 Color = Fd + Fr;
+	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion);
 #endif
 
-	return color;
+	return Color;
 }
 
 float3 SurfaceShading_ClothAnisotropic(
-	const PixelParams pixel,
-	const NormalViewLightDotParams content,
-	const ShadingLightParams light,
-	const float3 viewDir,
-	const float3 halfVector,
+	const PixelParams InPixelParams,
+	const NormalViewLightDotParams InSVLContent,
+	const ShadingLightParams InLightParams,
+	const float3 InViewDirection,
+	const float3 InHalfVector,
 #ifdef MATERIAL_HAS_ANISOTROPY
-	float3 anisotropicT,
-	float3 anisotropicB,
-	float anisotropy,
+	float3 InAnisotropicT,
+	float3 InAnisotropicB,
+	float InAnisotropy,
 #endif
-	float shadowOcclusion)
+	float InShadowOcclusion)
 {
-	float3 Fr = ClothSheenBRDF(content, pixel);
+	float3 Fr = ClothSheenBRDF(InSVLContent, InPixelParams);
 
 #ifdef MATERIAL_HAS_ANISOTROPY
-	Fr += AnisotropicBRDF(content, pixel, viewDir, light.Direction, halfVector, anisotropicT, anisotropicB, anisotropy);
+	Fr += AnisotropicBRDF(InSVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
 #endif
 
 	// Diffuse BRDF
-	float diffuse = DiffuseBRDF(content, pixel);
+	float Diffuse = DiffuseBRDF(InSVLContent, InPixelParams);
 #ifdef MATERIAL_HAS_SUBSURFACE_COLOR
 	// Energy conservative wrap diffuse to simulate subsurface scattering
-	diffuse *= Diffuse_Wrap(content.NdotL, 0.5);
+	Diffuse *= Diffuse_Wrap(InSVLContent.NdotL, 0.5);
 #endif
 
 	// We do not multiply the diffuse term by the Fresnel term as discussed in
 	// Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
 	// The effect is fairly subtle and not deemed worth the cost for mobile
-	float3 Fd = diffuse * pixel.DiffuseColor;
+	float3 Fd = Diffuse * InPixelParams.DiffuseColor;
 
 #ifdef MATERIAL_HAS_SUBSURFACE_COLOR
 	// Cheap subsurface scatter
-	Fd *= saturate(pixel.SubsurfaceColor + content.NdotLClamped);
+	Fd *= saturate(InPixelParams.SubsurfaceColor + InSVLContent.NdotLClamped);
 	// We need to apply NoL separately to the specular lobe since we already took
 	// it into account in the diffuse lobe
-	float3 color = Fd + Fr * content.NdotLClamped;
-	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * shadowOcclusion);
+	float3 Color = Fd + Fr * InSVLContent.NdotLClamped;
+	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion);
 #else
-	float3 color = Fd + Fr;
-	color *= light.ColorIntensity.rgb * (light.ColorIntensity.w * light.Attenuation * content.NdotLClamped * shadowOcclusion);
+	float3 Color = Fd + Fr;
+	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion);
 #endif
 
-	return color;
+	return Color;
 }
 
 #endif

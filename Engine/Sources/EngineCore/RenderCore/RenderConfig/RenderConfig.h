@@ -20,6 +20,9 @@ namespace PigeonEngine
 
 		constexpr static UINT32		RENDER_TARGET_WIDTH				= 1600u;
 		constexpr static UINT32		RENDER_TARGET_HEIGHT			= 900u;
+
+		constexpr static UINT8		RENDER_STENCIL_READ_MASK		= 0xffu;
+		constexpr static UINT8		RENDER_STENCIL_WRITE_MASK		= 0xffu;
 	public:
 		static RCommonSettings* GetSingleton()
 		{
@@ -39,9 +42,6 @@ namespace PigeonEngine
 #endif
 
 #define RENDER_GPU_QUERY_NONE								("Render_GPUQuery_None")
-
-#define	ENGINE_DEFAULT_STENCIL_READ_MASK					(0xff)
-#define	ENGINE_DEFAULT_STENCIL_WRITE_MASK					(0xff)
 
 #define ENGINE_CBUFFER_VS_PS_CS_PER_FRAME_START_SLOT		(0u)
 #define ENGINE_CBUFFER_VS_PS_CS_LIGHT_DATA_START_SLOT		(1u)

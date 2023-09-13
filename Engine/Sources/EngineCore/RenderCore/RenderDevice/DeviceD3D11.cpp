@@ -321,6 +321,7 @@ namespace PigeonEngine
 			{
 				if (textureDesc.Depth == 16u)
 				{
+					Check((ENGINE_RENDER_CORE_ERROR), ("Depth texture with 16 bits can not hold stencil buffer."), (!(textureDesc.HasStencil)));
 					tFormat = DXGI_FORMAT::DXGI_FORMAT_R16_TYPELESS;
 				}
 				else if (textureDesc.Depth == 24u)
@@ -329,7 +330,14 @@ namespace PigeonEngine
 				}
 				else if (textureDesc.Depth == 32u)
 				{
-					tFormat = DXGI_FORMAT::DXGI_FORMAT_R32G8X24_TYPELESS;
+					if (textureDesc.HasStencil)
+					{
+						tFormat = DXGI_FORMAT::DXGI_FORMAT_R32G8X24_TYPELESS;
+					}
+					else
+					{
+						tFormat = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
+					}
 				}
 				tBindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
 			}
@@ -376,7 +384,14 @@ namespace PigeonEngine
 						}
 						else if (textureDesc.Depth == 32u)
 						{
-							srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+							if (textureDesc.HasStencil)
+							{
+								srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
+							}
+							else
+							{
+								srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
+							}
 						}
 					}
 					else
@@ -446,7 +461,14 @@ namespace PigeonEngine
 				}
 				else if (textureDesc.Depth == 32u)
 				{
-					dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+					if (textureDesc.HasStencil)
+					{
+						dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+					}
+					else
+					{
+						dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+					}
 				}
 				dsvd.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
