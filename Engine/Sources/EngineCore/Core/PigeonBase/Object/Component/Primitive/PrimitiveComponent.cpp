@@ -61,11 +61,11 @@ namespace PigeonEngine
     }
     void PPrimitiveComponent::SendUpdateRenderState()
     {
-        PSceneComponent::SendUpdateRenderState();
-        if (ShouldRender())
+        if (ShouldRender() && IsRenderStateDirty())
         {
             //TODO
         }
+        PSceneComponent::SendUpdateRenderState();
     }
     // Render proxy functions END
 

@@ -1,5 +1,7 @@
 #include "CameraComponent.h"
 #include <RenderProxy/ViewProxy.h>
+#include <PigeonBase/Object/World/World.h>
+#include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
@@ -11,15 +13,8 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	PCameraComponent::PCameraComponent()
-		: ViewProxy(nullptr)
-	{
-	}
-	PCameraComponent::~PCameraComponent()
-	{
-	}
 	PCameraComponent::PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
-		: CameraViewInfo(PCameraViewInfo(InViewportLeftTopX, InViewportLeftTopY, InViewportWidth, InViewportHeight, InFovAngleY, InFarDist, InNearDist)), ViewProxy(nullptr)
+		: CameraViewInfo(ECameraViewInfo(InViewportLeftTopX, InViewportLeftTopY, InViewportWidth, InViewportHeight, InFovAngleY, InFarDist, InNearDist)), ViewProxy(nullptr), UpdateState(PCameraUpdateState::CAMERA_UPDATE_STATE_NONE)
 	{
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
@@ -27,32 +22,45 @@ namespace PigeonEngine
 
 		CameraFrustum.GeneratePerspectiveFrustumInfo(CameraViewInfo.FovAngleY, CameraViewInfo.Viewport.Width / CameraViewInfo.Viewport.Height, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 	}
+	PCameraComponent::PCameraComponent()
+		: ViewProxy(nullptr), UpdateState(PCameraUpdateState::CAMERA_UPDATE_STATE_NONE)
+	{
+	}
+	PCameraComponent::~PCameraComponent()
+	{
+	}
 	void PCameraComponent::SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
 	{
-		CameraViewInfo.Viewport.TopLeftX = InTopLeftX;
-		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
-		CameraViewInfo.Viewport.Width = InWidth;
-		CameraViewInfo.Viewport.Height = InHeight;
-		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
-		CameraViewInfo.FovAngleY = InFovAngleY;
-		CameraViewInfo.FarDist = InFarDist;
-		CameraViewInfo.NearDist = InNearDist;
+		CameraViewInfo.Viewport.TopLeftX	= InTopLeftX;
+		CameraViewInfo.Viewport.TopLeftY	= InTopLeftY;
+		CameraViewInfo.Viewport.Width		= InWidth;
+		CameraViewInfo.Viewport.Height		= InHeight;
+		CameraViewInfo.Viewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
+		CameraViewInfo.Viewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
+		CameraViewInfo.FovAngleY	= InFovAngleY;
+		CameraViewInfo.FarDist		= InFarDist;
+		CameraViewInfo.NearDist		= InNearDist;
 
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
 	}
 	void PCameraComponent::SetViewport(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight)
 	{
-		CameraViewInfo.Viewport.TopLeftX = InTopLeftX;
-		CameraViewInfo.Viewport.TopLeftY = InTopLeftY;
-		CameraViewInfo.Viewport.Width = InWidth;
-		CameraViewInfo.Viewport.Height = InHeight;
+		CameraViewInfo.Viewport.TopLeftX	= InTopLeftX;
+		CameraViewInfo.Viewport.TopLeftY	= InTopLeftY;
+		CameraViewInfo.Viewport.Width		= InWidth;
+		CameraViewInfo.Viewport.Height		= InHeight;
 		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
 		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
 
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
 	}
 	void PCameraComponent::SetFov(FLOAT InFovAngleY)
 	{
@@ -60,6 +68,9 @@ namespace PigeonEngine
 
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
 	}
 	Vector3 PCameraComponent::TransformScreenToWorld(const Vector3& InScreenCoordWithZ)const
 	{
@@ -87,6 +98,19 @@ namespace PigeonEngine
 	{
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
 		CameraMatrix.GenerateFinalMatrix();
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
+	}
+
+	// Render proxy functions START
+	UINT8 PCameraComponent::GetUpdateRenderState()const
+	{
+		return UpdateState;
+	}
+	void PCameraComponent::MarkAsDirty(PCameraUpdateState InState)
+	{
+		UpdateState |= InState;
+		MarkRenderStateAsDirty();
 	}
 	RViewProxy* PCameraComponent::GetSceneProxy()
 	{
@@ -102,20 +126,36 @@ namespace PigeonEngine
 		ViewProxy = new RViewProxy(this);
 		return ViewProxy;
 	}
+	void PCameraComponent::MarkRenderStateAsDirty()
+	{
+		PSceneComponent::MarkRenderStateAsDirty();
+	}
 	void PCameraComponent::CreateRenderState()
 	{
 		PSceneComponent::CreateRenderState();
-		//TODO
+		if (ShouldRender())
+		{
+			PWorldManager::GetWorld()->GetRenderScene()->AddCamera(this);
+		}
 	}
 	void PCameraComponent::DestroyRenderState()
 	{
-		//TODO
+		PWorldManager::GetWorld()->GetRenderScene()->RemoveCamera(this);
 		PSceneComponent::DestroyRenderState();
 	}
 	void PCameraComponent::SendUpdateRenderState()
 	{
+		if (ShouldRender() && IsRenderStateDirty())
+		{
+			PWorldManager::GetWorld()->GetRenderScene()->UpdateCamera(this);
+		}
 		PSceneComponent::SendUpdateRenderState();
-		//TODO
 	}
+	void PCameraComponent::CleanMarkRenderStateDirty()
+	{
+		UpdateState = PCameraUpdateState::CAMERA_UPDATE_STATE_NONE;
+		PSceneComponent::CleanMarkRenderStateDirty();
+	}
+	// Render proxy functions END
 
 };

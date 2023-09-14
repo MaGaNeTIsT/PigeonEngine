@@ -1,9 +1,11 @@
 #include "RenderScene.h"
+#include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
+#include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
@@ -47,6 +49,85 @@ namespace PigeonEngine
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProxies.SceneProxyMapping.Length() == 0u));
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes failed"), (SkeletalMeshSceneProxies.SceneProxies.Length() == 0u));
 	}
+	void RScene::AddCamera(PCameraComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RViewProxy* SceneProxy = InComponent->CreateSceneProxy();
+
+		ERenderViewMatrices* TempMatrices = new ERenderViewMatrices();
+		TempMatrices->WorldLocation	= InComponent->GetComponentWorldLocation();
+		TempMatrices->WorldRotation	= InComponent->GetComponentWorldRotation();
+		TempMatrices->WorldScaling	= InComponent->GetComponentWorldScale();
+		TempMatrices->ViewMatrix	= InComponent->GetCameraMatrix();
+
+		ERenderViewParams* TempParams = new ERenderViewParams();
+		TempParams->ViewFrustum		= InComponent->GetCameraFrustum();
+		TempParams->CameraViewInfo	= InComponent->GetCameraViewInfo();
+
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy, TempMatrices, TempParams]()->void
+			{
+				SceneProxy->SetupProxy(*TempMatrices, *TempParams);
+				delete TempMatrices;
+				delete TempParams;
+				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::RemoveCamera(PCameraComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RViewProxy* SceneProxy = InComponent->GetSceneProxy();
+		RenderAddRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, FALSE);
+			});
+	}
+	void RScene::UpdateCamera(PCameraComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RViewProxy* SceneProxy = InComponent->GetSceneProxy();
+
+		UINT8 UpdateState = InComponent->GetUpdateRenderState();
+
+		ERenderViewParams* TempParams = nullptr; ERenderViewMatrices* TempMatrices = nullptr;
+		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW) != 0u)
+		{
+			TempParams = new ERenderViewParams();
+			TempParams->ViewFrustum		= InComponent->GetCameraFrustum();
+			TempParams->CameraViewInfo	= InComponent->GetCameraViewInfo();
+		}
+		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX) != 0u)
+		{
+			TempMatrices = new ERenderViewMatrices();
+			TempMatrices->WorldLocation	= InComponent->GetComponentWorldLocation();
+			TempMatrices->WorldRotation	= InComponent->GetComponentWorldRotation();
+			TempMatrices->WorldScaling	= InComponent->GetComponentWorldScale();
+			TempMatrices->ViewMatrix	= InComponent->GetCameraMatrix();
+		}
+#if _EDITOR_ONLY
+		if ((!!TempParams) && (!TempMatrices))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check update camera render state failed"));
+		}
+#endif
+
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy, TempMatrices, TempParams]()->void
+			{
+				// View params MUST be updating before matrices.
+				if (TempParams)
+				{
+					SceneProxy->UpdateViewParams(*TempParams);
+					delete TempParams;
+				}
+				if (TempMatrices)
+				{
+					SceneProxy->UpdateMatrices(*TempMatrices);
+					delete TempMatrices;
+				}
+			});
+	}
 	void RScene::AddDirectionalLight(PDirectionalLightComponent* InComponent)
 	{
 		RScene* Scene = this;
@@ -72,7 +153,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->GetSceneProxy();
 		//TODO
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->UpdateDirectionalLight_RenderThread(SceneProxy);
@@ -102,6 +183,7 @@ namespace PigeonEngine
 	{
 		RScene* Scene = this;
 		RStaticMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+
 		//TODO
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
@@ -187,6 +269,17 @@ namespace PigeonEngine
 	const RSceneProxyMapping<RSkeletalMeshSceneProxy>& RScene::GetSkeletalMeshSceneProxies()const
 	{
 		return SkeletalMeshSceneProxies;
+	}
+	void RScene::AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			ViewProxies.AddSceneProxy(InSceneProxy);
+		}
+		else
+		{
+			ViewProxies.RemoveSceneProxy(InSceneProxy);
+		}
 	}
 	void RScene::AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{

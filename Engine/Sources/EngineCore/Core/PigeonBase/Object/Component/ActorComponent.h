@@ -32,9 +32,15 @@ namespace PigeonEngine
 		// Render proxy functions START
 	public:
 		BOOL32			ShouldRender()const;
+		BOOL32			IsRenderStateDirty()const;
+		virtual void	MarkRenderStateAsDirty();
 		virtual void	CreateRenderState();
 		virtual void	DestroyRenderState();
 		virtual void	SendUpdateRenderState();
+	protected:
+		virtual void	CleanMarkRenderStateDirty();
+	protected:
+		BOOL32	RenderStateDirty = FALSE;
 		// Render proxy functions END
 	};
 

@@ -233,6 +233,10 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
+	void PSceneComponent::MarkRenderStateAsDirty()
+	{
+		PActorComponent::MarkRenderStateAsDirty();
+	}
 	void PSceneComponent::CreateRenderState()
 	{
 		PActorComponent::CreateRenderState();
@@ -248,11 +252,15 @@ namespace PigeonEngine
 	}
 	void PSceneComponent::SendUpdateRenderState()
 	{
-		PActorComponent::SendUpdateRenderState();
-		if (ShouldRender())
+		if (ShouldRender() && IsRenderStateDirty())
 		{
 			//TODO
 		}
+		PActorComponent::SendUpdateRenderState();
+	}
+	void PSceneComponent::CleanMarkRenderStateDirty()
+	{
+		PActorComponent::CleanMarkRenderStateDirty();
 	}
 	// Render proxy functions END
 

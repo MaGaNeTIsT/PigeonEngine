@@ -50,11 +50,11 @@ namespace PigeonEngine
     }
     void PStaticMeshComponent::SendUpdateRenderState()
     {
-        if (ShouldRender())
+        if (ShouldRender() && IsRenderStateDirty())
         {
-            PMeshComponent::SendUpdateRenderState();
+            PWorldManager::GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
         }
-        PWorldManager::GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
+        PMeshComponent::SendUpdateRenderState();
     }
 
 }

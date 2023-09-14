@@ -34,11 +34,11 @@ namespace PigeonEngine
     }
     void PMeshComponent::SendUpdateRenderState()
     {
-        PPrimitiveComponent::SendUpdateRenderState();
-        if (ShouldRender())
+        if (ShouldRender() && IsRenderStateDirty())
         {
             //TODO
         }
+        PPrimitiveComponent::SendUpdateRenderState();
     }
     // Render proxy functions END
 

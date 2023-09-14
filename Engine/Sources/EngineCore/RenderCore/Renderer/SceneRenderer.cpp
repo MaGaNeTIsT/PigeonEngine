@@ -67,6 +67,7 @@ namespace PigeonEngine
 	void RSceneRenderer::InitNewFrame()
 	{
 		InitRendererSettings();
+
 		InitViews();
 	}
 	void RSceneRenderer::Render()
@@ -87,6 +88,20 @@ namespace PigeonEngine
 			RCommand& AddOrRemoveCommands = Scene->GetAddOrRemoveCommands();
 			AddOrRemoveCommands.DoCommands();
 			AddOrRemoveCommands.EmptyQueue();
+		}
+
+		// Reset view proxies per frame datas
+		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+#if _EDITOR_ONLY
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			if (!ViewProxy)
+			{
+				continue;
+			}
+#endif
+			ViewProxy->ResetVisibilityMap();
 		}
 
 		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)

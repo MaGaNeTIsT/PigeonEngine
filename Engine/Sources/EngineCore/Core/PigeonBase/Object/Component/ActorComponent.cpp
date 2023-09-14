@@ -67,6 +67,14 @@ namespace PigeonEngine
 		//TODO
 		return TRUE;
 	}
+	BOOL32 PActorComponent::IsRenderStateDirty()const
+	{
+		return RenderStateDirty;
+	}
+	void PActorComponent::MarkRenderStateAsDirty()
+	{
+		RenderStateDirty = TRUE;
+	}
 	void PActorComponent::CreateRenderState()
 	{
 		//TODO
@@ -78,6 +86,11 @@ namespace PigeonEngine
 	void PActorComponent::SendUpdateRenderState()
 	{
 		//TODO
+		CleanMarkRenderStateDirty();
+	}
+	void PActorComponent::CleanMarkRenderStateDirty()
+	{
+		RenderStateDirty = FALSE;
 	}
 	// Render proxy functions END
 

@@ -50,11 +50,11 @@ namespace PigeonEngine
     }
     void PSkeletalMeshComponent::SendUpdateRenderState()
     {
-        PMeshComponent::SendUpdateRenderState();
-        if (ShouldRender())
+        if (ShouldRender() && IsRenderStateDirty())
         {
             PWorldManager::GetWorld()->GetRenderScene()->UpdateSkeletalMesh(this);
         }
+        PMeshComponent::SendUpdateRenderState();
     }
 
 }

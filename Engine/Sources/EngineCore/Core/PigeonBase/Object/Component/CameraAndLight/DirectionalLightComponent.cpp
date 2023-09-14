@@ -1,5 +1,7 @@
 #include "DirectionalLightComponent.h"
 #include <RenderProxy/LightSceneProxy.h>
+#include <PigeonBase/Object/World/World.h>
+#include <Renderer/RenderInterface.h>
 
 namespace PigeonEngine
 {
@@ -71,17 +73,23 @@ namespace PigeonEngine
 	void PDirectionalLightComponent::CreateRenderState()
 	{
 		PSceneComponent::CreateRenderState();
-		//TODO
+		if (ShouldRender())
+		{
+			PWorldManager::GetWorld()->GetRenderScene()->AddDirectionalLight(this);
+		}
 	}
 	void PDirectionalLightComponent::DestroyRenderState()
 	{
-		//TODO
+		PWorldManager::GetWorld()->GetRenderScene()->RemoveDirectionalLight(this);
 		PSceneComponent::DestroyRenderState();
 	}
 	void PDirectionalLightComponent::SendUpdateRenderState()
 	{
+		if (ShouldRender() && IsRenderStateDirty())
+		{
+			PWorldManager::GetWorld()->GetRenderScene()->UpdateDirectionalLight(this);
+		}
 		PSceneComponent::SendUpdateRenderState();
-		//TODO
 	}
 
 };

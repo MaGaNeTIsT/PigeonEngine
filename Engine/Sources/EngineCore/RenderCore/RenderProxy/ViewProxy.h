@@ -10,7 +10,6 @@
 namespace PigeonEngine
 {
 
-	class PCameraComponent;
 	class RScene;
 
 	class RViewProxy : public RBaseSceneProxy
@@ -19,21 +18,26 @@ namespace PigeonEngine
 		using RVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
 	public:
 		RViewProxy(const PCameraComponent* InComponent);
+		void SetupProxy(const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams);
 	public:
 		RVisibilityMapType&			GetVisibilityMap();
 		const RVisibilityMapType&	GetVisibilityMap()const;
-		PCameraViewInfo&			GetViewInfo();
-		const PCameraViewInfo&		GetViewInfo()const;
+		ECameraViewInfo&			GetViewInfo();
+		const ECameraViewInfo&		GetViewInfo()const;
 		EViewport&					GetRenderViewport();
 		const EViewport&			GetRenderViewport()const;
 		EViewMatrix&				GetViewMatrix();
 		const EViewMatrix&			GetViewMatrix()const;
 		EFrustum&					GetViewFrustum();
 		const EFrustum&				GetViewFrustum()const;
+	public:
+		void	UpdateMatrices(const ERenderViewMatrices& InMatrices);
+		void	UpdateViewParams(const ERenderViewParams& InParams);
+		void	ResetVisibilityMap();
 	protected:
 		RVisibilityMapType			VisibilityMap;
 	protected:
-		PCameraViewInfo				CameraViewInfo;
+		ECameraViewInfo				CameraViewInfo;
 		EViewDomainInfo				ViewDomainInfo;
 	protected:
 		const PCameraComponent*		Component;

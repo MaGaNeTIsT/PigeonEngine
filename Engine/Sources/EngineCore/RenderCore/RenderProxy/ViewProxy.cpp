@@ -14,23 +14,7 @@ namespace PigeonEngine
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
 		: Component(InComponent)
 	{
-		if (InComponent)
-		{
-			SetupProxyWorldTransform(InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), Vector3::One());
-			ViewDomainInfo.ViewMatrix = InComponent->GetCameraMatrix();
-			ViewDomainInfo.ViewFrustum = InComponent->GetCameraFrustum();
-			ViewDomainInfo.ViewFrustum.GeneratePlaneWorldSpace(WorldLocation, WorldRotation);
-			ViewDomainInfo.ViewFrustum.GenerateSeparatingProjectionWorldSpace();
-			CameraViewInfo = InComponent->GetCameraViewInfo();
-			{
-				ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
-				ViewDomainInfo.RenderViewport.TopLeftY	= 0.f;
-				ViewDomainInfo.RenderViewport.Width		= CameraViewInfo.Viewport.Width;
-				ViewDomainInfo.RenderViewport.Height	= CameraViewInfo.Viewport.Height;
-				ViewDomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
-				ViewDomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
-			}
-		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Create view proxy failed"), (!!Component));
 	}
 	RViewProxy::RViewProxy()
 		: Component(nullptr)
@@ -43,6 +27,12 @@ namespace PigeonEngine
 	RViewProxy::~RViewProxy()
 	{
 	}
+	void RViewProxy::SetupProxy(const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams)
+	{
+		UpdateViewParams(InParams);
+
+		UpdateMatrices(InMatrices);
+	}
 	RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()
 	{
 		return VisibilityMap;
@@ -51,11 +41,11 @@ namespace PigeonEngine
 	{
 		return VisibilityMap;
 	}
-	PCameraViewInfo& RViewProxy::GetViewInfo()
+	ECameraViewInfo& RViewProxy::GetViewInfo()
 	{
 		return CameraViewInfo;
 	}
-	const PCameraViewInfo& RViewProxy::GetViewInfo()const
+	const ECameraViewInfo& RViewProxy::GetViewInfo()const
 	{
 		return CameraViewInfo;
 	}
@@ -82,6 +72,32 @@ namespace PigeonEngine
 	const EFrustum& RViewProxy::GetViewFrustum()const
 	{
 		return (ViewDomainInfo.ViewFrustum);
+	}
+	void RViewProxy::UpdateMatrices(const ERenderViewMatrices& InMatrices)
+	{
+		SetupProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, Vector3::One());
+		ViewDomainInfo.ViewMatrix = InMatrices.ViewMatrix;
+
+		// Params need update by transform changed
+		ViewDomainInfo.ViewFrustum.GeneratePlaneWorldSpace(WorldLocation, WorldRotation);
+		ViewDomainInfo.ViewFrustum.GenerateSeparatingProjectionWorldSpace();
+	}
+	void RViewProxy::UpdateViewParams(const ERenderViewParams& InParams)
+	{
+		ViewDomainInfo.ViewFrustum	= InParams.ViewFrustum;
+		CameraViewInfo				= InParams.CameraViewInfo;
+		{
+			ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
+			ViewDomainInfo.RenderViewport.TopLeftY	= 0.f;
+			ViewDomainInfo.RenderViewport.Width		= CameraViewInfo.Viewport.Width;
+			ViewDomainInfo.RenderViewport.Height	= CameraViewInfo.Viewport.Height;
+			ViewDomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
+			ViewDomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
+		}
+	}
+	void RViewProxy::ResetVisibilityMap()
+	{
+		VisibilityMap.Clear();
 	}
 
 };

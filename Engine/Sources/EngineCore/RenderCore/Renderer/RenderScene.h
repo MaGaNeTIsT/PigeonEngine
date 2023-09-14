@@ -7,9 +7,11 @@
 namespace PigeonEngine
 {
 
+	class PCameraComponent;
 	class PDirectionalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
+	class RViewProxy;
 	class RDirectionalLightSceneProxy;
 	class RStaticMeshSceneProxy;
 	class RSkeletalMeshSceneProxy;
@@ -116,6 +118,10 @@ namespace PigeonEngine
 		virtual void	ClearAll()override;
 		virtual void	UnbindErrorCheck()override;
 	public:
+		virtual void	AddCamera(PCameraComponent* InComponent)override;
+		virtual void	RemoveCamera(PCameraComponent* InComponent)override;
+		virtual void	UpdateCamera(PCameraComponent* InComponent)override;
+
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override;
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override;
 		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override;
@@ -141,6 +147,8 @@ namespace PigeonEngine
 		RSceneProxyMapping<RSkeletalMeshSceneProxy>&			GetSkeletalMeshSceneProxies();
 		const RSceneProxyMapping<RSkeletalMeshSceneProxy>&		GetSkeletalMeshSceneProxies()const;
 	protected:
+		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
+
 		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	UpdateDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy);
 
@@ -151,6 +159,7 @@ namespace PigeonEngine
 	protected:
 		ROctree		RenderSceneOctree;
 	protected:
+		RSceneProxyMapping<RViewProxy>					ViewProxies;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>	DirectionalLightSceneProxies;
 		RSceneProxyMapping<RStaticMeshSceneProxy>		StaticMeshSceneProxies;
 		RSceneProxyMapping<RSkeletalMeshSceneProxy>		SkeletalMeshSceneProxies;
@@ -170,6 +179,10 @@ namespace PigeonEngine
 		virtual void	ClearAll()override {}
 		virtual void	UnbindErrorCheck()override {}
 	public:
+		virtual void	AddCamera(PCameraComponent* InComponent)override {}
+		virtual void	RemoveCamera(PCameraComponent* InComponent)override {}
+		virtual void	UpdateCamera(PCameraComponent* InComponent)override {}
+
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override {}
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override {}
 		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override {}

@@ -8,6 +8,33 @@
 namespace PigeonEngine
 {
 
+    // Render proxy functions START
+    struct ERenderTransformInfo
+    {
+    public:
+        Vector3     WorldLocation;
+        Quaternion  WorldRotation;
+        Vector3     WorldScaling;
+    public:
+        ERenderTransformInfo() = default;
+        ERenderTransformInfo(const ERenderTransformInfo& Other)
+            : WorldLocation(Other.WorldLocation), WorldRotation(Other.WorldRotation), WorldScaling(Other.WorldScaling)
+        {
+        }
+        void CopyFromOther(const ERenderTransformInfo& Other)
+        {
+            WorldLocation   = Other.WorldLocation;
+            WorldRotation   = Other.WorldRotation;
+            WorldScaling    = Other.WorldScaling;
+        }
+        ERenderTransformInfo& operator=(const ERenderTransformInfo& Other)
+        {
+            CopyFromOther(Other);
+            return (*this);
+        }
+    };
+    // Render proxy functions END
+
     class PSceneComponent : public PActorComponent
     {
 
@@ -86,9 +113,12 @@ namespace PigeonEngine
 
         // Render proxy functions START
     public:
+        virtual void	MarkRenderStateAsDirty()override;
         virtual void	CreateRenderState()override;
         virtual void	DestroyRenderState()override;
         virtual void	SendUpdateRenderState()override;
+    protected:
+        virtual void	CleanMarkRenderStateDirty()override;
         // Render proxy functions END
     	
     };
