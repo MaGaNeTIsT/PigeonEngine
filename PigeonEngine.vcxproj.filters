@@ -706,16 +706,16 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEVS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEVS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEPS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEPS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEPS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTriangle_PEPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEVS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTriangle_PEVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>

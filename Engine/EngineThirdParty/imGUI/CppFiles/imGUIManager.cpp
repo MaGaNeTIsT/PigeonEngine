@@ -17,8 +17,8 @@ namespace PigeonEngine
 #define DBT_DEVNODES_CHANGED        0x0007
 #endif
 
-#define IMGUI_VS_FILE_NAME_PATH     ("imGUIPEVS.cso")
-#define IMGUI_PS_FILE_NAME_PATH     ("imGUIPEPS.cso")
+#define IMGUI_VS_FILE_NAME_PATH     ("imGUI_PEVS.cso")
+#define IMGUI_PS_FILE_NAME_PATH     ("imGUI_PEPS.cso")
 
     static void RegisterClassTypes()
     {

@@ -441,7 +441,7 @@
     <ClCompile Include="Engine\ThirdParty\imgui\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEPS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
@@ -456,7 +456,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
       <FileType>Document</FileType>
     </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEVS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -816,7 +816,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Test|x64'">5.0</ShaderModel>
       <FileType>Document</FileType>
     </None>
-    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEVS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTriangle_PEVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
@@ -831,7 +831,7 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <FileType>Document</FileType>
     </FxCompile>
-    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEPS.hlsl">
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTriangle_PEPS.hlsl">
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Shipping|x64'">$(ProjectDir)Engine\Temp\OutputShaders\%(Filename).cso</ObjectFileOutput>
