@@ -240,7 +240,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempFullSavePathName = TempFullSavePathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -265,8 +265,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
-			((EString(".") + ImportFileType) != EString(ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE)))
+			((EString(".") + ImportFileType) != EString(ESettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
+			(TempShaderNameType != EString(ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE)))
 		{
 #if _EDITOR_ONLY
 			{
@@ -294,7 +294,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempFullSavePathName = TempFullSavePathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -319,8 +319,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
-			((EString(".") + ImportFileType) != EString(ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE)))
+			((EString(".") + ImportFileType) != EString(ESettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
+			(TempShaderNameType != EString(ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE)))
 		{
 #if _EDITOR_ONLY
 			{
@@ -348,7 +348,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempFullSavePathName = TempFullSavePathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -373,8 +373,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
-			((EString(".") + ImportFileType) != EString(ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE)))
+			((EString(".") + ImportFileType) != EString(ESettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
+			(TempShaderNameType != EString(ESettings::ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE)))
 		{
 #if _EDITOR_ONLY
 			{
@@ -403,7 +403,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		EVertexShaderAsset* ResultShaderAsset = VertexShaderManager.Find(TempFullLoadPathName);
 		if (ResultShaderAsset)
 		{
@@ -437,7 +437,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		EPixelShaderAsset* ResultShaderAsset = PixelShaderManager.Find(TempFullLoadPathName);
 		if (ResultShaderAsset)
 		{
@@ -471,7 +471,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset)
 	{
 		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		EComputeShaderAsset* ResultShaderAsset = ComputeShaderManager.Find(TempFullLoadPathName);
 		if (ResultShaderAsset)
 		{
@@ -518,7 +518,7 @@ namespace PigeonEngine
 	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullLoadPathName = TempFullLoadPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullLoadPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -639,7 +639,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
 	{
 		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		TempFullSavePathName = TempFullSavePathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullSavePathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -744,7 +744,7 @@ namespace PigeonEngine
 	BOOL32 EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset)
 	{
 		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		TempFullSavePathName = TempFullSavePathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullSavePathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY

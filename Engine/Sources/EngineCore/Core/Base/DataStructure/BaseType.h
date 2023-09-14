@@ -287,13 +287,13 @@ namespace PigeonEngine
 		constexpr Vector2(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
-		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
+		constexpr Vector2(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)) {}
 		constexpr Vector2(FLOAT v)noexcept : x(v), y(v) {}
 		constexpr Vector2(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy) {}
-		constexpr Vector2(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
-		constexpr Vector2(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
+		constexpr Vector2(INT32 v)noexcept : x(EMath::TruncToFloat(v)), y(EMath::TruncToFloat(v)) {}
+		constexpr Vector2(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)) {}
 		constexpr Vector2(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)) {}
 		constexpr Vector2(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)) {}
 		Vector2()noexcept : x(0.f), y(0.f) {}
@@ -444,15 +444,15 @@ namespace PigeonEngine
 		constexpr Vector3(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y), z(0.f) {}
 		constexpr Vector3(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
 		constexpr Vector3(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f) {}
-		constexpr Vector3(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
-		constexpr Vector3(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)) {}
+		constexpr Vector3(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f) {}
+		constexpr Vector3(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
+		constexpr Vector3(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)) {}
 		constexpr Vector3(FLOAT v)noexcept : x(v), y(v), z(v) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f) {}
 		constexpr Vector3(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz) {}
-		constexpr Vector3(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
-		constexpr Vector3(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
-		constexpr Vector3(INT32 vx, INT32 vy, INT32 vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
+		constexpr Vector3(INT32 v)noexcept : x(EMath::TruncToFloat(v)), y(EMath::TruncToFloat(v)), z(EMath::TruncToFloat(v)) {}
+		constexpr Vector3(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f) {}
+		constexpr Vector3(INT32 vx, INT32 vy, INT32 vz)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)) {}
 		constexpr Vector3(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)) {}
 		constexpr Vector3(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f) {}
 		constexpr Vector3(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)) {}
@@ -629,17 +629,17 @@ namespace PigeonEngine
 		constexpr Vector4(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y), z(0.f), w(0.f) {}
 		constexpr Vector4(const DirectX::XMFLOAT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(0.f) {}
 		constexpr Vector4(const DirectX::XMFLOAT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4(const DirectX::XMINT2& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(0.f), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT3& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(0.f) {}
-		constexpr Vector4(const DirectX::XMINT4& xv)noexcept : x(static_cast<FLOAT>(xv.x)), y(static_cast<FLOAT>(xv.y)), z(static_cast<FLOAT>(xv.z)), w(static_cast<FLOAT>(xv.w)) {}
+		constexpr Vector4(const DirectX::XMINT2& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(0.f), w(0.f) {}
+		constexpr Vector4(const DirectX::XMINT3& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(0.f) {}
+		constexpr Vector4(const DirectX::XMINT4& xv)noexcept : x(EMath::TruncToFloat(xv.x)), y(EMath::TruncToFloat(xv.y)), z(EMath::TruncToFloat(xv.z)), w(EMath::TruncToFloat(xv.w)) {}
 		constexpr Vector4(FLOAT v)noexcept : x(v), y(v), z(v), w(v) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy)noexcept : x(vx), y(vy), z(0.f), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(vx), y(vy), z(vz), w(0.f) {}
 		constexpr Vector4(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(vx), y(vy), z(vz), w(vw) {}
-		constexpr Vector4(INT32 v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
-		constexpr Vector4(INT32 vx, INT32 vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
-		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
-		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(static_cast<FLOAT>(vw)) {}
+		constexpr Vector4(INT32 v)noexcept : x(EMath::TruncToFloat(v)), y(EMath::TruncToFloat(v)), z(EMath::TruncToFloat(v)), w(EMath::TruncToFloat(v)) {}
+		constexpr Vector4(INT32 vx, INT32 vy)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(0.f), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(0.f) {}
+		constexpr Vector4(INT32 vx, INT32 vy, INT32 vz, INT32 vw)noexcept : x(EMath::TruncToFloat(vx)), y(EMath::TruncToFloat(vy)), z(EMath::TruncToFloat(vz)), w(EMath::TruncToFloat(vw)) {}
 		constexpr Vector4(DOUBLE v)noexcept : x(static_cast<FLOAT>(v)), y(static_cast<FLOAT>(v)), z(static_cast<FLOAT>(v)), w(static_cast<FLOAT>(v)) {}
 		constexpr Vector4(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(0.f), w(0.f) {}
 		constexpr Vector4(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<FLOAT>(vx)), y(static_cast<FLOAT>(vy)), z(static_cast<FLOAT>(vz)), w(0.f) {}
@@ -791,27 +791,27 @@ namespace PigeonEngine
 
 	struct Vector2Int
 	{
-		constexpr Vector2Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
-		constexpr Vector2Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
+		constexpr Vector2Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)) {}
 		constexpr Vector2Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y) {}
 		constexpr Vector2Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y) {}
-		constexpr Vector2Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
-		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
+		constexpr Vector2Int(FLOAT v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)) {}
+		constexpr Vector2Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
 		constexpr Vector2Int(INT32 v)noexcept : x(v), y(v) {}
 		constexpr Vector2Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy) {}
 		constexpr Vector2Int(UINT32 v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
 		constexpr Vector2Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
-		constexpr Vector2Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)) {}
-		constexpr Vector2Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)) {}
-		constexpr Vector2Int(const Vector2& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)) {}
+		constexpr Vector2Int(DOUBLE v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)) {}
+		constexpr Vector2Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)) {}
+		constexpr Vector2Int(const Vector2& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)) {}
 		Vector2Int()noexcept : x(0), y(0) {}
 		Vector2Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y);
 		}
 		Vector2Int(const Vector2Int& vv)noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2Int& Zero()
@@ -828,17 +828,17 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT2 tempV;
 			DirectX::XMStoreFloat2(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y);
 		}
 		void SetDirectXValue2(const DirectX::XMINT2& xv) { x = xv.x; y = xv.y; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), 0.f, 0.f)); }
+		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), 0.f, 0.f)); }
 		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, 0)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, 0, 0)); }
 		void Reset() { (*this) = Vector2Int::Zero(); }
 		Vector2Int& operator=(FLOAT v)
 		{
-			x = y = static_cast<INT32>(v);
+			x = y = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector2Int& operator=(INT32 v)
@@ -853,7 +853,7 @@ namespace PigeonEngine
 		}
 		Vector2Int& operator=(DOUBLE v)
 		{
-			x = y = static_cast<INT32>(v);
+			x = y = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector2Int& operator=(const Vector2Int& vv)
@@ -883,49 +883,49 @@ namespace PigeonEngine
 		}
 		Vector2Int& operator+=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv;
 			return (*this);
 		}
 		Vector2Int& operator-=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv;
 			return (*this);
 		}
 		Vector2Int& operator*=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv;
 			return (*this);
 		}
 		Vector2Int& operator/=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv;
 			return (*this);
 		}
 		Vector2Int& operator+=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv;
 			return (*this);
 		}
 		Vector2Int& operator-=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv;
 			return (*this);
 		}
 		Vector2Int& operator*=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv;
 			return (*this);
 		}
 		Vector2Int& operator/=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv;
 			return (*this);
 		}
@@ -986,31 +986,31 @@ namespace PigeonEngine
 
 	struct Vector3Int
 	{
-		constexpr Vector3Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(0) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)) {}
-		constexpr Vector3Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
+		constexpr Vector3Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)) {}
 		constexpr Vector3Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0) {}
 		constexpr Vector3Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
 		constexpr Vector3Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z) {}
-		constexpr Vector3Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
-		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
+		constexpr Vector3Int(FLOAT v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)), z(EMath::TruncToInt32(v)) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
+		constexpr Vector3Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
 		constexpr Vector3Int(INT32 v)noexcept : x(v), y(v), z(v) {}
 		constexpr Vector3Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0) {}
 		constexpr Vector3Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz) {}
 		constexpr Vector3Int(UINT32 v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
 		constexpr Vector3Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
 		constexpr Vector3Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
-		constexpr Vector3Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0) {}
-		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)) {}
-		constexpr Vector3Int(const Vector3& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)), z(static_cast<INT32>(vv.z)) {}
+		constexpr Vector3Int(DOUBLE v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)), z(EMath::TruncToInt32(v)) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0) {}
+		constexpr Vector3Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)) {}
+		constexpr Vector3Int(const Vector3& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)) {}
 		Vector3Int()noexcept : x(0), y(0), z(0) {}
 		Vector3Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z);
 		}
 		Vector3Int(const Vector3Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3Int& Zero()
@@ -1027,17 +1027,17 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT3 tempV;
 			DirectX::XMStoreFloat3(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z);
 		}
 		void SetDirectXValue3(const DirectX::XMINT3& xv) { x = xv.x; y = xv.y; z = xv.z; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(z), 0.f)); }
+		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), 0.f)); }
 		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, 0)); }
 		void Reset() { (*this) = Vector3Int::Zero(); }
 		Vector3Int& operator=(FLOAT v)
 		{
-			x = y = z = static_cast<INT32>(v);
+			x = y = z = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector3Int& operator=(INT32 v)
@@ -1052,7 +1052,7 @@ namespace PigeonEngine
 		}
 		Vector3Int& operator=(DOUBLE v)
 		{
-			x = y = z = static_cast<INT32>(v);
+			x = y = z = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector3Int& operator=(const Vector3Int& vv)
@@ -1082,49 +1082,49 @@ namespace PigeonEngine
 		}
 		Vector3Int& operator+=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv; z += iv;
 			return (*this);
 		}
 		Vector3Int& operator-=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv; z -= iv;
 			return (*this);
 		}
 		Vector3Int& operator*=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv; z *= iv;
 			return (*this);
 		}
 		Vector3Int& operator/=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv; z /= iv;
 			return (*this);
 		}
 		Vector3Int& operator+=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv; z += iv;
 			return (*this);
 		}
 		Vector3Int& operator-=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv; z -= iv;
 			return (*this);
 		}
 		Vector3Int& operator*=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv; z *= iv;
 			return (*this);
 		}
 		Vector3Int& operator/=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv; z /= iv;
 			return (*this);
 		}
@@ -1185,16 +1185,16 @@ namespace PigeonEngine
 
 	struct Vector4Int
 	{
-		constexpr Vector4Int(const DirectX::XMFLOAT2& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(0), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT3& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)), w(0) {}
-		constexpr Vector4Int(const DirectX::XMFLOAT4& xv)noexcept : x(static_cast<INT32>(xv.x)), y(static_cast<INT32>(xv.y)), z(static_cast<INT32>(xv.z)), w(static_cast<INT32>(xv.w)) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT2& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(0), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT3& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(0) {}
+		constexpr Vector4Int(const DirectX::XMFLOAT4& xv)noexcept : x(EMath::TruncToInt32(xv.x)), y(EMath::TruncToInt32(xv.y)), z(EMath::TruncToInt32(xv.z)), w(EMath::TruncToInt32(xv.w)) {}
 		constexpr Vector4Int(const DirectX::XMINT2& xv)noexcept : x(xv.x), y(xv.y), z(0), w(0) {}
 		constexpr Vector4Int(const DirectX::XMINT3& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(0) {}
 		constexpr Vector4Int(const DirectX::XMINT4& xv)noexcept : x(xv.x), y(xv.y), z(xv.z), w(xv.w) {}
-		constexpr Vector4Int(FLOAT v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)), w(static_cast<INT32>(v)) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
-		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
+		constexpr Vector4Int(FLOAT v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)), z(EMath::TruncToInt32(v)), w(EMath::TruncToInt32(v)) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
+		constexpr Vector4Int(FLOAT vx, FLOAT vy, FLOAT vz, FLOAT vw)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
 		constexpr Vector4Int(INT32 v)noexcept : x(v), y(v), z(v), w(v) {}
 		constexpr Vector4Int(INT32 vx, INT32 vy)noexcept : x(vx), y(vy), z(0), w(0) {}
 		constexpr Vector4Int(INT32 vx, INT32 vy, INT32 vz)noexcept : x(vx), y(vy), z(vz), w(0) {}
@@ -1203,17 +1203,17 @@ namespace PigeonEngine
 		constexpr Vector4Int(UINT32 vx, UINT32 vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
 		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
 		constexpr Vector4Int(UINT32 vx, UINT32 vy, UINT32 vz, UINT32 vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
-		constexpr Vector4Int(DOUBLE v)noexcept : x(static_cast<INT32>(v)), y(static_cast<INT32>(v)), z(static_cast<INT32>(v)), w(static_cast<INT32>(v)) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(0), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(0) {}
-		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(static_cast<INT32>(vx)), y(static_cast<INT32>(vy)), z(static_cast<INT32>(vz)), w(static_cast<INT32>(vw)) {}
-		constexpr Vector4Int(const Vector4& vv)noexcept : x(static_cast<INT32>(vv.x)), y(static_cast<INT32>(vv.y)), z(static_cast<INT32>(vv.z)), w(static_cast<INT32>(vv.w)) {}
+		constexpr Vector4Int(DOUBLE v)noexcept : x(EMath::TruncToInt32(v)), y(EMath::TruncToInt32(v)), z(EMath::TruncToInt32(v)), w(EMath::TruncToInt32(v)) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(0), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(0) {}
+		constexpr Vector4Int(DOUBLE vx, DOUBLE vy, DOUBLE vz, DOUBLE vw)noexcept : x(EMath::TruncToInt32(vx)), y(EMath::TruncToInt32(vy)), z(EMath::TruncToInt32(vz)), w(EMath::TruncToInt32(vw)) {}
+		constexpr Vector4Int(const Vector4& vv)noexcept : x(EMath::TruncToInt32(vv.x)), y(EMath::TruncToInt32(vv.y)), z(EMath::TruncToInt32(vv.z)), w(EMath::TruncToInt32(vv.w)) {}
 		Vector4Int()noexcept : x(0), y(0), z(0), w(0) {}
 		Vector4Int(DirectX::CXMVECTOR xv)
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z); w = static_cast<INT32>(tempV.w);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z); w = EMath::TruncToInt32(tempV.w);
 		}
 		Vector4Int(const Vector4Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4Int& Zero()
@@ -1230,17 +1230,17 @@ namespace PigeonEngine
 		{
 			DirectX::XMFLOAT4 tempV;
 			DirectX::XMStoreFloat4(&tempV, xv);
-			x = static_cast<INT32>(tempV.x); y = static_cast<INT32>(tempV.y); z = static_cast<INT32>(tempV.z); w = static_cast<INT32>(tempV.w);
+			x = EMath::TruncToInt32(tempV.x); y = EMath::TruncToInt32(tempV.y); z = EMath::TruncToInt32(tempV.z); w = EMath::TruncToInt32(tempV.w);
 		}
 		void SetDirectXValue4(const DirectX::XMINT4& xv) { x = xv.x; y = xv.y; z = xv.z; w = xv.w; }
-		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(static_cast<FLOAT>(x), static_cast<FLOAT>(y), static_cast<FLOAT>(z), static_cast<FLOAT>(w))); }
+		DirectX::XMVECTOR GetDirectXVector()const { return (DirectX::XMVectorSet(EMath::TruncToFloat(x), EMath::TruncToFloat(y), EMath::TruncToFloat(z), EMath::TruncToFloat(w))); }
 		DirectX::XMINT2 GetDirectXValue2()const { return (DirectX::XMINT2(x, y)); }
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, w)); }
 		void Reset() { (*this) = Vector4Int::Zero(); }
 		Vector4Int& operator=(FLOAT v)
 		{
-			x = y = z = w = static_cast<INT32>(v);
+			x = y = z = w = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector4Int& operator=(INT32 v)
@@ -1255,7 +1255,7 @@ namespace PigeonEngine
 		}
 		Vector4Int& operator=(DOUBLE v)
 		{
-			x = y = z = w = static_cast<INT32>(v);
+			x = y = z = w = EMath::TruncToInt32(v);
 			return (*this);
 		}
 		Vector4Int& operator=(const Vector4Int& vv)
@@ -1285,49 +1285,49 @@ namespace PigeonEngine
 		}
 		Vector4Int& operator+=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv; z += iv; w += iv;
 			return (*this);
 		}
 		Vector4Int& operator-=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv; z -= iv; w -= iv;
 			return (*this);
 		}
 		Vector4Int& operator*=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv; z *= iv; w *= iv;
 			return (*this);
 		}
 		Vector4Int& operator/=(FLOAT v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv; z /= iv; w /= iv;
 			return (*this);
 		}
 		Vector4Int& operator+=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x += iv; y += iv; z += iv; w += iv;
 			return (*this);
 		}
 		Vector4Int& operator-=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x -= iv; y -= iv; z -= iv; w -= iv;
 			return (*this);
 		}
 		Vector4Int& operator*=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x *= iv; y *= iv; z *= iv; w *= iv;
 			return (*this);
 		}
 		Vector4Int& operator/=(DOUBLE v)
 		{
-			INT32 iv = static_cast<INT32>(v);
+			INT32 iv = EMath::TruncToInt32(v);
 			x /= iv; y /= iv; z /= iv; w /= iv;
 			return (*this);
 		}

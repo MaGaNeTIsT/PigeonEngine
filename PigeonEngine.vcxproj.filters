@@ -668,12 +668,6 @@
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineEmptyPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DPS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </None>
-    <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineScreenPolygon2DVS.hlsl">
-      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
-    </None>
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\MeshRenderer\EngineSkyBoxPS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </None>
@@ -712,11 +706,17 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIVS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEVS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
     </FxCompile>
-    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPS.hlsl">
+    <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUIPEPS.hlsl">
       <Filter>Engine\EngineThirdParty\CimGUI\HLSLResources</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEPS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
+    </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTrianglePEVS.hlsl">
+      <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
   </ItemGroup>
 </Project>

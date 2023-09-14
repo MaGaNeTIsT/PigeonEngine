@@ -15,77 +15,8 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RSceneTextures::RSceneTextures()
-		: TextureSize(Vector2Int::Zero())
-	{
-	}
-	RSceneTextures::~RSceneTextures()
-	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneDepthStencil.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneColor.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferA.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferB.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferC.IsRenderResourceValid())));
-	}
-	void RSceneTextures::InitResources(const Vector2Int& InTextureSize)
-	{
-		Vector2Int UsedTextureSize(EMath::Max(2, InTextureSize.x), EMath::Max(2, InTextureSize.y));
-		if ((TextureSize.x == UsedTextureSize.x) && (TextureSize.y == UsedTextureSize.y))
-		{
-			return;
-		}
-		TextureSize = UsedTextureSize;
-		UINT32	TextureWidth	= static_cast<UINT32>(TextureSize.x);
-		UINT32	TextureHeight	= static_cast<UINT32>(TextureSize.y);
-
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		{
-			RFormatType SRVFormat = RFormatType::FORMAT_R32_FLOAT;
-			RenderDevice->CreateRenderTexture2D(SceneDepthStencil,
-				RTextureDesc(TextureWidth, TextureHeight,
-					RBindFlagType::BIND_DEPTH_STENCIL | RBindFlagType::BIND_SHADER_RESOURCE,
-					RFormatType::FORMAT_UNKNOWN, &SRVFormat, nullptr, nullptr, 32u));
-		}
-
-		RenderDevice->CreateRenderTexture2D(SceneColor,
-			RTextureDesc(TextureWidth, TextureHeight,
-				RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-				RFormatType::FORMAT_R11G11B10_FLOAT));
-
-		RenderDevice->CreateRenderTexture2D(GBufferA,
-			RTextureDesc(TextureWidth, TextureHeight,
-				RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-				RFormatType::FORMAT_R8G8B8A8_UNORM));
-
-		RenderDevice->CreateRenderTexture2D(GBufferB,
-			RTextureDesc(TextureWidth, TextureHeight,
-				RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-				RFormatType::FORMAT_R10G10B10A2_UNORM));
-		RenderDevice->CreateRenderTexture2D(GBufferC,
-			RTextureDesc(TextureWidth, TextureHeight,
-				RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-				RFormatType::FORMAT_R8G8B8A8_UNORM));
-	}
-	void RSceneTextures::ClearResources()
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->ClearDepthStencilView(SceneDepthStencil.DepthStencilView);
-		RenderDevice->ClearRenderTargetView(SceneColor.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferA.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferB.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferC.RenderTargetView);
-	}
-	void RSceneTextures::ReleaseResources()
-	{
-		SceneDepthStencil.ReleaseRenderResource();
-		SceneColor.ReleaseRenderResource();
-		GBufferA.ReleaseRenderResource();
-		GBufferB.ReleaseRenderResource();
-		GBufferC.ReleaseRenderResource();
-	}
-
 	RSceneRenderer::RSceneRenderer()
-		: Scene(nullptr)
+		: Scene(nullptr), NeedStencil(FALSE)
 	{
 	}
 	RSceneRenderer::~RSceneRenderer()
@@ -93,14 +24,49 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Initialize()
 	{
-		SceneTextures.InitResources(Vector2Int(RCommonSettings::RENDER_TARGET_WIDTH, RCommonSettings::RENDER_TARGET_HEIGHT));
 	}
 	void RSceneRenderer::ShutDown()
 	{
-		SceneTextures.ReleaseResources();
+		if (ViewSceneTextures.Length() > 0u)
+		{
+			for (auto It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
+			{
+				RSceneTextures*& TempPtr = It->second;
+				if (TempPtr)
+				{
+					TempPtr->ReleaseResources();
+				}
+				delete (TempPtr);
+				TempPtr = nullptr;
+			}
+			ViewSceneTextures.Clear();
+		}
+		if (ViewShadowMaps.Length() > 0u)
+		{
+			for (auto It = ViewShadowMaps.Begin(); It != ViewShadowMaps.End(); It++)
+			{
+				RShadowMapType& TempShadowMaps = It->second;
+				if (TempShadowMaps.Length() > 0u)
+				{
+					for (auto ItSM = TempShadowMaps.Begin(); ItSM != TempShadowMaps.End(); ItSM++)
+					{
+						RShadowTexture*& TempPtr = ItSM->second;
+						if (TempPtr)
+						{
+							TempPtr->ReleaseResources();
+						}
+						delete (TempPtr);
+						TempPtr = nullptr;
+					}
+					TempShadowMaps.Clear();
+				}
+			}
+			ViewSceneTextures.Clear();
+		}
 	}
 	void RSceneRenderer::InitNewFrame()
 	{
+		InitRendererSettings();
 		InitViews();
 	}
 	void RSceneRenderer::Render()
@@ -168,6 +134,9 @@ namespace PigeonEngine
 	{
 		// Directional lights
 		InitDirectionalLights(InViewProxy);
+
+		// Shadow maps
+		InitShadowTextures(InViewProxy);
 	}
 	void RSceneRenderer::ProcessOcclusionCull(RViewProxy* InViewProxy)
 	{
@@ -175,9 +144,20 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitRenderPasses(RViewProxy* InViewProxy)
 	{
-		//TODO
-		SceneTextures.ClearResources();
-		RDeviceD3D11::GetDeviceSingleton()->ClearFinalOutput();
+		{
+			if (!(ViewSceneTextures.ContainsKey(InViewProxy->GetUniqueID())))
+			{
+				ViewSceneTextures.Add(InViewProxy->GetUniqueID(), nullptr);
+			}
+			RSceneTextures* SceneTextures = ViewSceneTextures[InViewProxy->GetUniqueID()];
+			if (!SceneTextures)
+			{
+				SceneTextures = new RSceneTextures();
+				ViewSceneTextures[InViewProxy->GetUniqueID()] = SceneTextures;
+			}
+			const EViewport& RenderViewport = InViewProxy->GetRenderViewport();
+			SceneTextures->InitResources(Vector2Int(RenderViewport.Width, RenderViewport.Height), NeedStencil);
+		}
 	}
 	void RSceneRenderer::InitDirectionalLights(RViewProxy* InViewProxy)
 	{
@@ -216,6 +196,60 @@ namespace PigeonEngine
 				OctreeCull(DomainInfo.ViewFrustum, VisibilityMap);
 				PrimitiveCull(DomainInfo.ViewFrustum, VisibilityMap);
 			}
+		}
+	}
+	void RSceneRenderer::InitShadowTextures(RViewProxy* InViewProxy)
+	{
+		if (!(ViewShadowMaps.ContainsKey(InViewProxy->GetUniqueID())))
+		{
+			ViewShadowMaps.Add(InViewProxy->GetUniqueID(), RShadowMapType());
+		}
+		RShadowMapType& ShadowMaps = ViewShadowMaps[InViewProxy->GetUniqueID()];
+		TMap<ObjectIdentityType, TArray<Vector2Int>>  LightProxyInfos;
+
+		// Directional lights' shadow maps
+		{
+			RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
+			for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
+			{
+				RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
+#if _EDITOR_ONLY
+				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+				if (!LightProxy)
+				{
+					continue;
+				}
+#endif
+				TArray<Vector2Int> ShadowTextureSizes;
+				RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
+				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
+				const TArray<EViewDomainInfo>& DomainInfos = ViewDomainInfos[InViewProxy->GetUniqueID()];
+				for (UINT32 DomainIndex = 0u, DomainNum = DomainInfos.Length(); DomainIndex < DomainNum; DomainIndex++)
+				{
+					const EViewDomainInfo& DomainInfo = DomainInfos[DomainIndex];
+					ShadowTextureSizes.Add(Vector2Int(DomainInfo.RenderViewport.Width, DomainInfo.RenderViewport.Height));
+				}
+				LightProxyInfos.Add(LightProxy->GetUniqueID(), ShadowTextureSizes);
+			}
+		}
+
+		// Init shadow maps
+		for (auto It = LightProxyInfos.Begin(); It != LightProxyInfos.End(); It++)
+		{
+			const ObjectIdentityType& LightProxyID				= It->first;
+			const TArray<Vector2Int>& LightProxyShadowMapSizes	= It->second;
+
+			if (!(ShadowMaps.ContainsKey(LightProxyID)))
+			{
+				ShadowMaps.Add(LightProxyID, nullptr);
+			}
+			RShadowTexture* ShadowTexture = ShadowMaps[LightProxyID];
+			if (!ShadowTexture)
+			{
+				ShadowTexture = new RShadowTexture();
+				ShadowMaps[LightProxyID] = ShadowTexture;
+			}
+			ShadowTexture->InitResources(LightProxyShadowMapSizes);
 		}
 	}
 	void RSceneRenderer::OctreeCull(const EFrustum& InViewFrustum, RSceneRenderer::RVisibilityMapType& InOutVisibilityMap)
@@ -273,6 +307,15 @@ namespace PigeonEngine
 	void RSceneRenderer::PrimitiveCull(const EFrustum& InViewFrustum, RSceneRenderer::RVisibilityMapType& InOutVisibilityMap)
 	{
 		//Scene->GetSkeletalMeshSceneProxies;
+	}
+	void RSceneRenderer::InitRendererSettings()
+	{
+		NeedStencil = IsNeedStencil();
+	}
+	BOOL32 RSceneRenderer::IsNeedStencil()const
+	{
+		//TODO
+		return FALSE;
 	}
 
 };

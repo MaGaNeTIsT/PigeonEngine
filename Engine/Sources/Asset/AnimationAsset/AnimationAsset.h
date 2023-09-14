@@ -17,7 +17,7 @@ namespace PigeonEngine
 
 	struct EBoneAnimationCurve : public ETransformTimeCurve<FLOAT>
 	{
-		EBoneAnimationCurve()noexcept : BoneName(ENGINE_DEFAULT_NAME), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
+		EBoneAnimationCurve()noexcept : BoneName(ESettings::ENGINE_DEFAULT_NAME), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
 		EBoneAnimationCurve(const EBoneAnimationCurve& Other)noexcept : ETransformTimeCurve<FLOAT>(Other), BoneName(Other.BoneName), PreState(Other.PreState), PostState(Other.PostState) {}
 		EBoneAnimationCurve(const EString& InBoneName)noexcept : BoneName(InBoneName), PreState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT), PostState(EAnimationBehaviourType::ANIMATION_BEHAVIOUR_DEFAULT) {}
 		EBoneAnimationCurve& operator=(const EBoneAnimationCurve& Other)
@@ -52,7 +52,7 @@ namespace PigeonEngine
 
 	struct ESkeletonAnimationClip
 	{
-		ESkeletonAnimationClip()noexcept : ClipName(ENGINE_DEFAULT_NAME), Duration(0.f), TicksPerSecond(0.f) {}
+		ESkeletonAnimationClip()noexcept : ClipName(ESettings::ENGINE_DEFAULT_NAME), Duration(0.f), TicksPerSecond(0.f) {}
 		ESkeletonAnimationClip(const ESkeletonAnimationClip& Other)noexcept
 			: ClipName(Other.ClipName), Duration(Other.Duration), TicksPerSecond(Other.TicksPerSecond)
 		{

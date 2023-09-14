@@ -2,22 +2,23 @@
 #include "../../../Sources/EngineCore/Main/MainManager.h"
 #include <Base/Timer/Timer.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include <Config/EngineConfig.h>
 
 namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
-#define IM_VK_KEYPAD_ENTER      (VK_RETURN + 256)
+#define IM_VK_KEYPAD_ENTER          (VK_RETURN + 256)
 
 #ifndef WM_MOUSEHWHEEL
-#define WM_MOUSEHWHEEL          0x020E
+#define WM_MOUSEHWHEEL              0x020E
 #endif
 #ifndef DBT_DEVNODES_CHANGED
-#define DBT_DEVNODES_CHANGED    0x0007
+#define DBT_DEVNODES_CHANGED        0x0007
 #endif
 
-#define IMGUI_VS_PATH           ("./Engine/Temp/OutputShaders/imGUIVS.cso")
-#define IMGUI_PS_PATH           ("./Engine/Temp/OutputShaders/imGUIPS.cso")
+#define IMGUI_VS_FILE_NAME_PATH     ("imGUIPEVS.cso")
+#define IMGUI_PS_FILE_NAME_PATH     ("imGUIPEPS.cso")
 
     static void RegisterClassTypes()
     {
@@ -765,7 +766,8 @@ namespace PigeonEngine
         }
 
         {
-            EString vsName(IMGUI_VS_PATH);
+            EString vsName(ESettings::ENGINE_SHADER_OUTPUT_PATH);
+            vsName += IMGUI_VS_FILE_NAME_PATH;
             FILE* file;
             LONG fsize;
             BYTE* buffer;
@@ -822,7 +824,8 @@ namespace PigeonEngine
         }
 
         {
-            EString psName(IMGUI_PS_PATH);
+            EString psName(ESettings::ENGINE_SHADER_OUTPUT_PATH);
+            psName += IMGUI_PS_FILE_NAME_PATH;
             FILE* file;
             LONG fsize;
             BYTE* buffer;

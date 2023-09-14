@@ -8,21 +8,23 @@ namespace PigeonEngine
 	class RCommonSettings
 	{
 	public:
-		constexpr static FLOAT		RENDER_DEPTH_MIN				= 0.f;
-		constexpr static FLOAT		RENDER_DEPTH_MAX				= 1.f;
+		constexpr static FLOAT			RENDER_DEPTH_MIN				= 0.f;
+		constexpr static FLOAT			RENDER_DEPTH_MAX				= 1.f;
 
-		constexpr static FLOAT		RENDER_CAMERA_NEAR				= 5.f;
-		constexpr static FLOAT		RENDER_CAMERA_FAR				= 200000.f;
+		constexpr static FLOAT			RENDER_CAMERA_NEAR				= 5.f;
+		constexpr static FLOAT			RENDER_CAMERA_FAR				= 200000.f;
 
-		constexpr static USHORT		RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
-		constexpr static USHORT		RENDER_MESH_BONE_NUM_MAX		= 256u;
-		constexpr static USHORT		RENDER_SKELETON_BONE_NUM_MAX	= 512u;
+		constexpr static USHORT			RENDER_SUPPORT_LIGHT_NUM_MAX	= 16u;
+		constexpr static USHORT			RENDER_MESH_BONE_NUM_MAX		= 256u;
+		constexpr static USHORT			RENDER_SKELETON_BONE_NUM_MAX	= 512u;
 
-		constexpr static UINT32		RENDER_TARGET_WIDTH				= 1600u;
-		constexpr static UINT32		RENDER_TARGET_HEIGHT			= 900u;
+		constexpr static UINT32			RENDER_TARGET_WIDTH				= 1600u;
+		constexpr static UINT32			RENDER_TARGET_HEIGHT			= 900u;
 
-		constexpr static UINT8		RENDER_STENCIL_READ_MASK		= 0xffu;
-		constexpr static UINT8		RENDER_STENCIL_WRITE_MASK		= 0xffu;
+		constexpr static UINT8			RENDER_STENCIL_READ_MASK		= 0xffu;
+		constexpr static UINT8			RENDER_STENCIL_WRITE_MASK		= 0xffu;
+
+		constexpr static UINT32			RENDER_SHADOW_MAP_DEPTH_BIT		= 16u;
 	public:
 		static RCommonSettings* GetSingleton()
 		{

@@ -155,11 +155,11 @@ namespace PigeonEngine
 	}
 
 	EMesh::EMesh()
-		: MeshName(ENGINE_DEFAULT_NAME)
+		: MeshName(ESettings::ENGINE_DEFAULT_NAME)
 		, VertexLayout(0u)
 	{
 #if _EDITOR_ONLY
-		DebugName = ENGINE_DEFAULT_NAME;
+		DebugName = ESettings::ENGINE_DEFAULT_NAME;
 #endif
 	}
 	EMesh::EMesh(const EString& InMeshName)
@@ -624,7 +624,7 @@ namespace PigeonEngine
 	}
 
 	EStaticMesh::EStaticMesh()
-		: EMesh(ENGINE_DEFAULT_NAME)
+		: EMesh(ESettings::ENGINE_DEFAULT_NAME)
 	{
 	}
 	EStaticMesh::EStaticMesh(const EStaticMesh& Other)
@@ -658,7 +658,7 @@ namespace PigeonEngine
 	}
 
 	ESkinnedMesh::ESkinnedMesh()
-		: EMesh(ENGINE_DEFAULT_NAME)
+		: EMesh(ESettings::ENGINE_DEFAULT_NAME)
 		, EffectBoneNum(0u)
 	{
 	}
@@ -1610,7 +1610,7 @@ namespace PigeonEngine
 	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempSaveFullPathName(InSavePath);
-		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -1680,7 +1680,7 @@ namespace PigeonEngine
 	BOOL32 EMeshAssetManager::ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempSaveFullPathName(InSavePath);
-		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempSaveFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -1751,7 +1751,7 @@ namespace PigeonEngine
 	BOOL32 EMeshAssetManager::LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset)
 	{
 		EString TempLoadFullPathName(InLoadPath);
-		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		EStaticMeshAsset* ResultMeshAsset = StaticMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
@@ -1785,7 +1785,7 @@ namespace PigeonEngine
 	BOOL32 EMeshAssetManager::LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset)
 	{
 		EString TempLoadFullPathName(InLoadPath);
-		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		ESkinnedMeshAsset* ResultMeshAsset = SkinnedMeshManager.Find(TempLoadFullPathName);
 		if (ResultMeshAsset)
 		{
@@ -1828,7 +1828,7 @@ namespace PigeonEngine
 	_TMeshAssetType* EMeshAssetManager::LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempLoadFullPathName(InLoadPath);
-		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		_TMeshAssetType* NewMeshAsset = new _TMeshAssetType(InLoadPath, InLoadName
 #if _EDITOR_ONLY
 			, InLoadName
@@ -1910,7 +1910,7 @@ namespace PigeonEngine
 	template<typename _TMeshAssetType, typename _TMeshResourceType>
 	BOOL32 EMeshAssetManager::SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset)
 	{
-		EString TempSaveFullPathName = InSavePath + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		EString TempSaveFullPathName = InSavePath + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (!InMeshAsset)
 		{
 #if _EDITOR_ONLY
@@ -1999,7 +1999,7 @@ namespace PigeonEngine
 	_TMeshResourceType* EMeshAssetManager::LoadMeshResource(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempLoadFullPathName = (InLoadPath);
-		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempLoadFullPathName = TempLoadFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		_TMeshResourceType* LoadedMeshResource = nullptr;
 		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
 		if (!EFileHelper::ReadFileAsBinary(TempLoadFullPathName, ReadFileMem, ReadFileSize))
@@ -2466,7 +2466,7 @@ namespace PigeonEngine
 #undef SAVE_ASSET_PTR_MEMORY
 
 		EString TempSaveFullPathName(InSavePath);
-		TempSaveFullPathName = TempSaveFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		TempSaveFullPathName = TempSaveFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (EFileHelper::SaveBytesToFile(TempSaveFullPathName, OutputMem, OutputMemSize))
 		{
 			delete[]OutputMem;

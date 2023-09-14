@@ -4,6 +4,7 @@
 #include <EngineCommon.h>
 #include <RenderConfig/RenderConfig.h>
 #include "BaseSceneProxy.h"
+#include <RenderResource.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 
 namespace PigeonEngine
@@ -15,11 +16,11 @@ namespace PigeonEngine
 	class RViewProxy : public RBaseSceneProxy
 	{
 	public:
-		using RVisibilityMapType = TMap<ObjectIdentityType, BOOL32>;
+		using RVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
 	public:
 		RViewProxy(const PCameraComponent* InComponent);
 	public:
-		RVisibilityMapType&		GetVisibilityMap();
+		RVisibilityMapType&			GetVisibilityMap();
 		const RVisibilityMapType&	GetVisibilityMap()const;
 		PCameraViewInfo&			GetViewInfo();
 		const PCameraViewInfo&		GetViewInfo()const;

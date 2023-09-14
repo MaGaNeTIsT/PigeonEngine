@@ -201,7 +201,7 @@ namespace PigeonEngine
 	}
 	void ESkeleton::ReleaseResource()
 	{
-		SkeletonName = ENGINE_DEFAULT_NAME;
+		SkeletonName = ESettings::ENGINE_DEFAULT_NAME;
 		Bones.Clear();
 		BoneMapping.Clear();
 	}
@@ -482,7 +482,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InAssetName + ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -521,7 +521,7 @@ namespace PigeonEngine
 		EString UsedSkeletonName;
 		if (InAssetName.Length() < 2u)
 		{
-			UsedSkeletonName = ENGINE_DEFAULT_NAME;
+			UsedSkeletonName = ESettings::ENGINE_DEFAULT_NAME;
 		}
 		else
 		{
@@ -550,7 +550,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(TempFullPathName);
 		if (ResultSkeletonAsset)
 		{
@@ -615,7 +615,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -662,7 +662,7 @@ namespace PigeonEngine
 	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -840,7 +840,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY

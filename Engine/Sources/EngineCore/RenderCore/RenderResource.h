@@ -332,5 +332,45 @@ namespace PigeonEngine
 		}
 		Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	};
+	class RSceneTextures final
+	{
+	public:
+		void	InitResources(const Vector2Int& InTextureSize, const BOOL32 IsNeedStencil);
+		void	ClearResources();
+		void	ReleaseResources();
+	public:
+		RRenderTexture2D	SceneDepthStencil;
+		RRenderTexture2D	SceneColor;
+		RRenderTexture2D	GBufferA;
+		RRenderTexture2D	GBufferB;
+		RRenderTexture2D	GBufferC;
+	public:
+		const Vector2Int&	GetTextureSize()const;
+		BOOL32				IsNeedStencil()const;
+	private:
+		Vector2Int	TextureSize;
+		BOOL32		NeedStencil;
+	public:
+		RSceneTextures();
+		~RSceneTextures();
+		RSceneTextures(const RSceneTextures&) = delete;
+		RSceneTextures& operator=(const RSceneTextures&) = delete;
+	};
+	class RShadowTexture final
+	{
+	public:
+		void	InitResources(const TArray<Vector2Int>& InTextureSizes);
+		void	ClearResources();
+		void	ReleaseResources();
+	public:
+		TArray<RRenderTexture2D>	ShadowMaps;
+	private:
+		TArray<Vector2Int>	TextureSizes;
+	public:
+		RShadowTexture();
+		~RShadowTexture();
+		RShadowTexture(const RShadowTexture&) = delete;
+		RShadowTexture& operator=(const RShadowTexture&) = delete;
+	};
 
 };

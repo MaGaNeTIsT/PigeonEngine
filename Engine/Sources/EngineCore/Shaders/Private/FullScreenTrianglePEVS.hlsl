@@ -1,0 +1,10 @@
+#ifndef _FULL_SCREEN_TRIANGLE_PE_VS_HLSL
+#define _FULL_SCREEN_TRIANGLE_PE_VS_HLSL
+
+void main(in float2 InPosition : POSITION0, out float4 OutPosition : SV_Position, out float2 OutTexcoord : TEXCOORD0)
+{
+	OutPosition = float4(InPosition * 2.0 - 1.0, 0.0, 1.0);
+	OutTexcoord = InPosition;
+}
+
+#endif

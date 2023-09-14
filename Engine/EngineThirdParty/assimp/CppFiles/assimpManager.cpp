@@ -206,7 +206,7 @@ namespace PigeonEngine
 			}
 			else
 			{
-				TempNodeName = ENGINE_DEFAULT_NAME;
+				TempNodeName = ESettings::ENGINE_DEFAULT_NAME;
 			}
 			EString TempOldName = TempNodeName + "_";
 			EString TempNewName = TempNodeName;

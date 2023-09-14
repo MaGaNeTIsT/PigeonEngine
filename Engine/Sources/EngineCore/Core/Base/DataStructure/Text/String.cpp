@@ -217,16 +217,16 @@ namespace PigeonEngine
         const UINT32 OriginStrLen = InOriginStr.Length();
         if (OriginStrLen <= 3u)
         {
-            OutDotForwardStr    = ENGINE_DEFAULT_NAME;
-            OutDotBackwardStr   = ENGINE_DEFAULT_NAME;
+            OutDotForwardStr    = ESettings::ENGINE_DEFAULT_NAME;
+            OutDotBackwardStr   = ESettings::ENGINE_DEFAULT_NAME;
             return FALSE;
         }
         const CHAR TempCharSign[1] = { InSplitSign };
         const UINT32 LastDot = InOriginStr.RightFind(TempCharSign);
         if (LastDot >= OriginStrLen)
         {
-            OutDotForwardStr    = ENGINE_DEFAULT_NAME;
-            OutDotBackwardStr   = ENGINE_DEFAULT_NAME;
+            OutDotForwardStr    = ESettings::ENGINE_DEFAULT_NAME;
+            OutDotBackwardStr   = ESettings::ENGINE_DEFAULT_NAME;
             return FALSE;
         }
         Check((ENGINE_STRING_ERROR), ("Check string rest length error."), (OriginStrLen >= (LastDot + 1u)));
