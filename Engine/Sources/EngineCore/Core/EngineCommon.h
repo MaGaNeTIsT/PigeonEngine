@@ -723,10 +723,15 @@ namespace PigeonEngine
 	};
 	struct ECascadeShadowData
 	{
-		ECascadeShadowData() = default;
-		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : Layers(Other.Layers), Borders(Other.Borders) {}
-		ECascadeShadowData(const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)
+		ECascadeShadowData() : IsUseShadow(FALSE) {}
+		ECascadeShadowData(const ECascadeShadowData& Other)noexcept : IsUseShadow(Other.IsUseShadow), Layers(Other.Layers), Borders(Other.Borders) {}
+		ECascadeShadowData(const BOOL32 InIsUseShadow, const FLOAT* InLayers, const FLOAT* InBorders, const UINT32 InCascadeNum)
+			: IsUseShadow(InIsUseShadow)
 		{
+			if (!InIsUseShadow)
+			{
+				return;
+			}
 			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
 			for (UINT32 i = 0u; i < InCascadeNum; i++)
 			{
@@ -757,11 +762,32 @@ namespace PigeonEngine
 			{
 				Borders.Clear();
 			}
-			Layers = Other.Layers;
-			Borders = Other.Borders;
+			IsUseShadow	= Other.IsUseShadow;
+			Layers		= Other.Layers;
+			Borders		= Other.Borders;
 			return (*this);
 		}
+		void Setup(const BOOL32 InIsUseShadow, const TArray<FLOAT>& InLayers, const TArray<FLOAT>& InBorders)
+		{
+			if (Layers.Length() > 0u)
+			{
+				Layers.Clear();
+			}
+			if (Borders.Length() > 0u)
+			{
+				Borders.Clear();
+			}
+			IsUseShadow = InIsUseShadow;
+			if (!InIsUseShadow)
+			{
+				return;
+			}
+			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((InLayers.Length() > 0u) && (InLayers.Length() == (InLayers.Length() + 1u))));
+			Layers	= InLayers;
+			Borders	= InBorders;
+		}
 
+		BOOL32			IsUseShadow;
 		TArray<FLOAT>	Layers;
 		TArray<FLOAT>	Borders;
 	};

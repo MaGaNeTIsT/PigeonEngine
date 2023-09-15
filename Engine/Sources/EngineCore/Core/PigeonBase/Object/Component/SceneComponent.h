@@ -122,7 +122,7 @@ namespace PigeonEngine
         virtual void	DestroyRenderState()override;
         virtual void	SendUpdateRenderState()override;
     protected:
-        void            MarkRenderTransformAsDirty();
+        virtual void    MarkRenderTransformAsDirty();
         virtual void	MarkRenderStateAsDirty()override;
         virtual void	CleanMarkRenderStateDirty()override;
     protected:

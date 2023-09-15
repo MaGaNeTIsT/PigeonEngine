@@ -99,27 +99,19 @@ namespace PigeonEngine
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
 		CameraMatrix.GenerateFinalMatrix();
 
-		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
+		MarkRenderTransformAsDirty();
 	}
 
 	// Render proxy functions START
-	RViewProxy* PCameraComponent::GetSceneProxy()
+	UINT8 PCameraComponent::GetUpdateRenderState()const
 	{
-		return ViewProxy;
-	}
-	const RViewProxy* PCameraComponent::GetSceneProxy()const
-	{
-		return ViewProxy;
+		return UpdateState;
 	}
 	RViewProxy* PCameraComponent::CreateSceneProxy()
 	{
 		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!ViewProxy));
 		ViewProxy = new RViewProxy(this);
 		return ViewProxy;
-	}
-	UINT8 PCameraComponent::GetUpdateRenderState()const
-	{
-		return UpdateState;
 	}
 	void PCameraComponent::CreateRenderState()
 	{
@@ -144,8 +136,20 @@ namespace PigeonEngine
 	}
 	void PCameraComponent::MarkAsDirty(PCameraUpdateState InState)
 	{
-		UpdateState |= InState;
-		MarkRenderStateAsDirty();
+		if (InState == PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX)
+		{
+			MarkRenderTransformAsDirty();
+		}
+		else
+		{
+			UpdateState |= InState;
+			MarkRenderStateAsDirty();
+		}
+	}
+	void PCameraComponent::MarkRenderTransformAsDirty()
+	{
+		UpdateState |= PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX;
+		PSceneComponent::MarkRenderTransformAsDirty();
 	}
 	void PCameraComponent::MarkRenderStateAsDirty()
 	{

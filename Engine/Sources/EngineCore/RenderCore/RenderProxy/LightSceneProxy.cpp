@@ -1,6 +1,5 @@
 #include "LightSceneProxy.h"
 #include <RenderConfig/RenderConfig.h>
-#include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include "ViewProxy.h"
 
 namespace PigeonEngine
@@ -13,35 +12,17 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent
-		, const BOOL32 InIsCastShadow, const BOOL32 InIsCascade, const FLOAT* InCascadeLayers
-		, const FLOAT* InCascadeBorders, const UINT32* InCascadeLayerNum)
-		: CascadeShadowData(nullptr), IsCastShadow(InIsCastShadow), IsCascadeShadow(InIsCascade), Component(InComponent)
+	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent)
+		: CascadeShadowData(nullptr), IsCascadeShadow(FALSE), Component(InComponent)
 	{
-		if (InComponent)
-		{
-			SetupProxyWorldTransform(Vector3::Zero(), InComponent->GetComponentWorldRotation(), Vector3::One());
-			const Color3& LightColor = InComponent->GetLightColor();
-			const Vector2Int& ShadowMapSize = InComponent->GetShadowMapSize();
-			LightData = ELightData(InComponent->GetLightType(), LightColor.r, LightColor.g, LightColor.b, InComponent->GetLightIntensity(), InComponent->IsLightCastShadow(), ShadowMapSize.x, ShadowMapSize.y);
-			if (InIsCascade)
-			{
-#if _EDITOR_ONLY
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), ((!!InCascadeLayers) && (!!InCascadeBorders) && (!!InCascadeLayerNum) && ((*InCascadeLayerNum) > 0u)));
-				if ((!!InCascadeLayers) && (!!InCascadeBorders) && (!!InCascadeLayerNum))
-#endif
-				{
-					CascadeShadowData = new ECascadeShadowData(InCascadeLayers, InCascadeBorders, *InCascadeLayerNum);
-				}
-			}
-		}
+		Check((ENGINE_RENDER_CORE_ERROR), ("Create directional light scene proxy failed"), (!!Component));
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), IsCastShadow(FALSE), IsCascadeShadow(FALSE), Component(nullptr)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), IsCascadeShadow(FALSE), Component(nullptr)
 	{
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const RDirectionalLightSceneProxy& Other)
-		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), CascadeShadowData(nullptr), IsCastShadow(Other.IsCastShadow), IsCascadeShadow(Other.IsCascadeShadow), Views(Other.Views), Component(Other.Component)
+		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), CascadeShadowData(nullptr), IsCascadeShadow(Other.IsCascadeShadow), Views(Other.Views), Component(Other.Component)
 	{
 		if (Other.IsCascadeShadow && (!!(Other.CascadeShadowData)))
 		{
@@ -55,6 +36,10 @@ namespace PigeonEngine
 			delete CascadeShadowData;
 			CascadeShadowData = nullptr;
 		}
+	}
+	void RDirectionalLightSceneProxy::SetupProxy(const ERenderDirectionalLightMatrices& InMatrices, const ERenderLightParams& InParams, const ECascadeShadowData* InCascadeShadowData)
+	{
+
 	}
 	void RDirectionalLightSceneProxy::GenerateViewInfo(const RViewProxy* InViewProxy)
 	{
@@ -182,7 +167,7 @@ namespace PigeonEngine
 	}
 	BOOL32 RDirectionalLightSceneProxy::IsLightCastShadow()const
 	{
-		return IsCastShadow;
+		return (LightData.CastShadow);
 	}
 	BOOL32 RDirectionalLightSceneProxy::IsLightUseCascadeShadow()const
 	{
@@ -195,6 +180,38 @@ namespace PigeonEngine
 	const RDirectionalLightSceneProxy::RViewSetType& RDirectionalLightSceneProxy::GetViews()const
 	{
 		return Views;
+	}
+	void RDirectionalLightSceneProxy::UpdateMatrices(const ERenderDirectionalLightMatrices& InMatrices)
+	{
+		SetupProxyWorldTransform(Vector3::Zero(), InMatrices.WorldRotation, Vector3::One());
+	}
+	void RDirectionalLightSceneProxy::UpdateLightParams(const ERenderLightParams& InParams)
+	{
+		const Color3&		LightColor		= InParams.LightColor;
+		const Vector2Int&	ShadowMapSize	= InParams.ShadowMapSize;
+		LightData = ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL
+			, LightColor.r, LightColor.g, LightColor.b
+			, InParams.LightIntensity, InParams.CastShadow
+			, ShadowMapSize.x, ShadowMapSize.y);
+	}
+	void RDirectionalLightSceneProxy::UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData)
+	{
+		IsCascadeShadow = !!InCascadeShadowData;
+		if (IsCascadeShadow)
+		{
+			if (!CascadeShadowData)
+			{
+
+			}
+			const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
+#if _EDITOR_ONLY
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), (CascadeLayerNum > 0u));
+			if (CascadeLayerNum > 0u)
+#endif
+			{
+				CascadeShadowData = new ECascadeShadowData(InCascadeShadowData->Layers.RawData(), InCascadeShadowData->Borders.RawData(), CascadeLayerNum);
+			}
+		}
 	}
 
 };

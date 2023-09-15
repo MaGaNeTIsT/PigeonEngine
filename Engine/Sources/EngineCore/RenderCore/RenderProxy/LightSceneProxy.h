@@ -3,11 +3,11 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include "BaseSceneProxy.h"
+#include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 
 namespace PigeonEngine
 {
 
-	class PDirectionalLightComponent;
 	class RScene;
 	class RViewProxy;
 
@@ -19,8 +19,8 @@ namespace PigeonEngine
 		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
 		using RPerViewVisibilityMapType	= TMap<ObjectIdentityType, TArray<RVisibilityMapType>>;
 	public:
-		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, const BOOL32 InIsCastShadow = FALSE, const BOOL32 InIsCascade = FALSE, const FLOAT* InCascadeLayers = nullptr, const FLOAT* InCascadeBorders = nullptr, const UINT32* InCascadeLayerNum = nullptr);
-		void SetupProxy();
+		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent);
+		void	SetupProxy(const ERenderDirectionalLightMatrices& InMatrices, const ERenderLightParams& InParams, const ECascadeShadowData* InCascadeShadowData);
 	public:
 		void	GenerateViewInfo(const RViewProxy* InViewProxy);
 	public:
@@ -34,6 +34,10 @@ namespace PigeonEngine
 		BOOL32								IsLightUseCascadeShadow()const;
 		RViewSetType&						GetViews();
 		const RViewSetType&					GetViews()const;
+	public:
+		void	UpdateMatrices(const ERenderDirectionalLightMatrices& InMatrices);
+		void	UpdateLightParams(const ERenderLightParams& InParams);
+		void	UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData);
 	protected:
 		RPerViewVisibilityMapType			VisibilityMap;
 	protected:
@@ -41,7 +45,6 @@ namespace PigeonEngine
 		RPerViewDomainInfoType				ViewDomainInfos;
 		ECascadeShadowData*					CascadeShadowData;
 	protected:
-		BOOL32								IsCastShadow;
 		BOOL32								IsCascadeShadow;
 		RViewSetType						Views;
 		const PDirectionalLightComponent*	Component;

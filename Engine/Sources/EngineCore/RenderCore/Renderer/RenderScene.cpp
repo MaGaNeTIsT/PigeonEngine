@@ -74,17 +74,19 @@ namespace PigeonEngine
 	void RScene::RemoveCamera(PCameraComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RViewProxy* SceneProxy = InComponent->GetSceneProxy();
+		RViewProxy* SceneProxy = InComponent->ViewProxy;
+		InComponent->ViewProxy = nullptr;
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
 			});
 	}
 	void RScene::UpdateCamera(PCameraComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RViewProxy* SceneProxy = InComponent->GetSceneProxy();
+		RViewProxy* SceneProxy = InComponent->ViewProxy;
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
@@ -128,6 +130,9 @@ namespace PigeonEngine
 	{
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+
+		const ECascadeShadowData* CascadeShadowData = InComponent->GetCascadeShadowData();
+
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
@@ -137,17 +142,19 @@ namespace PigeonEngine
 	void RScene::RemoveDirectionalLight(PDirectionalLightComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RDirectionalLightSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		RDirectionalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
+		InComponent->SceneProxy = nullptr;
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
 			});
 	}
 	void RScene::UpdateDirectionalLight(PDirectionalLightComponent* InComponent)
 	{
 		RScene* Scene = this;
-		RDirectionalLightSceneProxy* SceneProxy = InComponent->GetSceneProxy();
+		RDirectionalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
 		//TODO
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void

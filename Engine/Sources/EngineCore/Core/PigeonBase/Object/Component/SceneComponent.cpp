@@ -269,8 +269,8 @@ namespace PigeonEngine
 	}
 	void PSceneComponent::CleanMarkRenderStateDirty()
 	{
-		PActorComponent::CleanMarkRenderStateDirty();
 		RenderTransformDirty = FALSE;
+		PActorComponent::CleanMarkRenderStateDirty();
 	}
 	// Render proxy functions END
 

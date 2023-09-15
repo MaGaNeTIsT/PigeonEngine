@@ -126,19 +126,19 @@ namespace PigeonEngine
 			CAMERA_UPDATE_STATE_VIEW	= (1 << 1)
 		};
 	public:
-		RViewProxy*			GetSceneProxy();
-		const RViewProxy*	GetSceneProxy()const;
-		RViewProxy*			CreateSceneProxy();
+		RViewProxy*			ViewProxy;	// ONLY render thread could use this proxy pointer.
+	public:
 		UINT8				GetUpdateRenderState()const;
+		RViewProxy*			CreateSceneProxy();
 		virtual void		CreateRenderState()override;
 		virtual void		DestroyRenderState()override;
 		virtual void		SendUpdateRenderState()override;
 	protected:
 		void				MarkAsDirty(PCameraUpdateState InState);
+		virtual void		MarkRenderTransformAsDirty()override;
 		virtual void		MarkRenderStateAsDirty()override;
 		virtual void		CleanMarkRenderStateDirty()override;
 	protected:
-		RViewProxy*			ViewProxy;
 		UINT8				UpdateState;
 		// Render proxy functions END
 	};

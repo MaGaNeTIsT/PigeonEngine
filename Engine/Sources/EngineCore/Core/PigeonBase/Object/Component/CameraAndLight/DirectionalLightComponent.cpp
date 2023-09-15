@@ -14,11 +14,16 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PDirectionalLightComponent::PDirectionalLightComponent()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), SceneProxy(nullptr), UpdateState(PLightUpdateState::LIGHT_UPDATE_STATE_NONE)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), SceneProxy(nullptr), UpdateState(PLightUpdateState::LIGHT_UPDATE_STATE_NONE)
 	{
 	}
 	PDirectionalLightComponent::~PDirectionalLightComponent()
 	{
+		if (CascadeShadowData)
+		{
+			delete CascadeShadowData;
+			CascadeShadowData = nullptr;
+		}
 	}
 	ELightType PDirectionalLightComponent::GetLightType()const
 	{
@@ -40,21 +45,29 @@ namespace PigeonEngine
 	{
 		return (LightData.ShadowMapSize);
 	}
+	ECascadeShadowData* PDirectionalLightComponent::GetCascadeShadowData()
+	{
+		return CascadeShadowData;
+	}
+	const ECascadeShadowData* PDirectionalLightComponent::GetCascadeShadowData()const
+	{
+		return CascadeShadowData;
+	}
 	void PDirectionalLightComponent::SetLightColor(const Color3& InColor)
 	{
 		LightData.LightColor = InColor;
+		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_DATA);
 	}
-	void PDirectionalLightComponent::SetLightIntensity(FLOAT InIntensity)
+	void PDirectionalLightComponent::SetLightIntensity(const FLOAT InIntensity)
 	{
 		LightData.LightIntensity = EMath::Max(0.001f, InIntensity);
+		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_DATA);
 	}
-	void PDirectionalLightComponent::SetLightCastShadow(BOOL32 InIsCastShadow)
+	void PDirectionalLightComponent::SetShadowMapSize(const BOOL32 InIsCastShadow, const Vector2Int& InShadowMapSize)
 	{
 		LightData.CastShadow = InIsCastShadow;
-	}
-	void PDirectionalLightComponent::SetShadowMapSize(const Vector2Int& InShadowMapSize)
-	{
 		LightData.ShadowMapSize = InShadowMapSize;
+		MarkAsDirty(PLightUpdateState::LIGHT_UPDATE_STATE_DATA);
 	}
 
 	// Render proxy functions START
@@ -62,28 +75,11 @@ namespace PigeonEngine
 	{
 		return UpdateState;
 	}
-	void PDirectionalLightComponent::MarkAsDirty(PLightUpdateState InState)
-	{
-		UpdateState |= InState;
-		MarkRenderStateAsDirty();
-	}
-	RDirectionalLightSceneProxy* PDirectionalLightComponent::GetSceneProxy()
-	{
-		return SceneProxy;
-	}
-	const RDirectionalLightSceneProxy* PDirectionalLightComponent::GetSceneProxy()const
-	{
-		return SceneProxy;
-	}
 	RDirectionalLightSceneProxy* PDirectionalLightComponent::CreateSceneProxy()
 	{
 		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
 		SceneProxy = new RDirectionalLightSceneProxy(this);
 		return SceneProxy;
-	}
-	void PDirectionalLightComponent::MarkRenderStateAsDirty()
-	{
-		PSceneComponent::MarkRenderStateAsDirty();
 	}
 	void PDirectionalLightComponent::CreateRenderState()
 	{
@@ -105,6 +101,27 @@ namespace PigeonEngine
 			PWorldManager::GetWorld()->GetRenderScene()->UpdateDirectionalLight(this);
 		}
 		PSceneComponent::SendUpdateRenderState();
+	}
+	void PDirectionalLightComponent::MarkAsDirty(PLightUpdateState InState)
+	{
+		if (InState == PLightUpdateState::LIGHT_UPDATE_STATE_MATRIX)
+		{
+			MarkRenderTransformAsDirty();
+		}
+		else
+		{
+			UpdateState |= InState;
+			MarkRenderStateAsDirty();
+		}
+	}
+	void PDirectionalLightComponent::MarkRenderTransformAsDirty()
+	{
+		UpdateState |= PLightUpdateState::LIGHT_UPDATE_STATE_MATRIX;
+		PSceneComponent::MarkRenderTransformAsDirty();
+	}
+	void PDirectionalLightComponent::MarkRenderStateAsDirty()
+	{
+		PSceneComponent::MarkRenderStateAsDirty();
 	}
 	void PDirectionalLightComponent::CleanMarkRenderStateDirty()
 	{

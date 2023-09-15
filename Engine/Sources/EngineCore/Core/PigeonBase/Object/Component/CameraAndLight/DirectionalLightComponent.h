@@ -63,18 +63,20 @@ namespace PigeonEngine
 	class PDirectionalLightComponent : public PSceneComponent
 	{
 	public:
-		ELightType			GetLightType()const;
-		const Color3&		GetLightColor()const;
-		FLOAT				GetLightIntensity()const;
-		BOOL32				IsLightCastShadow()const;
-		const Vector2Int&	GetShadowMapSize()const;
+		ELightType					GetLightType()const;
+		const Color3&				GetLightColor()const;
+		FLOAT						GetLightIntensity()const;
+		BOOL32						IsLightCastShadow()const;
+		const Vector2Int&			GetShadowMapSize()const;
+		ECascadeShadowData*			GetCascadeShadowData();
+		const ECascadeShadowData*	GetCascadeShadowData()const;
 	public:
 		void	SetLightColor(const Color3& InColor);
-		void	SetLightIntensity(FLOAT InIntensity);
-		void	SetLightCastShadow(BOOL32 InIsCastShadow);
-		void	SetShadowMapSize(const Vector2Int& InShadowMapSize);
+		void	SetLightIntensity(const FLOAT InIntensity);
+		void	SetShadowMapSize(const BOOL32 InIsCastShadow,const Vector2Int& InShadowMapSize);
 	protected:
-		ELightData		LightData;
+		ELightData			LightData;
+		ECascadeShadowData*	CascadeShadowData;
 
 		// Render proxy functions START
 	public:
@@ -82,24 +84,24 @@ namespace PigeonEngine
 		{
 			LIGHT_UPDATE_STATE_NONE		= 0,
 			LIGHT_UPDATE_STATE_MATRIX	= (1 << 0),
-			LIGHT_UPDATE_STATE_DATA		= (1 << 1)
+			LIGHT_UPDATE_STATE_DATA		= (1 << 1),
+			LIGHT_UPDATE_STATE_CASCADE	= (1 << 2)
 		};
 	public:
-		UINT8	GetUpdateRenderState()const;
-		void	MarkAsDirty(PLightUpdateState InState);
-	protected:
-		RDirectionalLightSceneProxy*	SceneProxy;
-		UINT8							UpdateState;
+		RDirectionalLightSceneProxy*	SceneProxy;	// ONLY render thread could use this proxy pointer.
 	public:
-		RDirectionalLightSceneProxy*		GetSceneProxy();
-		const RDirectionalLightSceneProxy*	GetSceneProxy()const;
-		RDirectionalLightSceneProxy*		CreateSceneProxy();
-		virtual void	MarkRenderStateAsDirty()override;
-		virtual void	CreateRenderState()override;
-		virtual void	DestroyRenderState()override;
-		virtual void	SendUpdateRenderState()override;
+		UINT8							GetUpdateRenderState()const;
+		RDirectionalLightSceneProxy*	CreateSceneProxy();
+		virtual void					CreateRenderState()override;
+		virtual void					DestroyRenderState()override;
+		virtual void					SendUpdateRenderState()override;
 	protected:
+		void			MarkAsDirty(PLightUpdateState InState);
+		virtual void	MarkRenderTransformAsDirty()override;
+		virtual void	MarkRenderStateAsDirty()override;
 		virtual void	CleanMarkRenderStateDirty()override;
+	protected:
+		UINT8							UpdateState;
 		// Render proxy functions END
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PDirectionalLightComponent)
