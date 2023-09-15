@@ -50,6 +50,11 @@ namespace PigeonEngine
 	public:
 		EViewMatrix		ViewMatrix;
 	public:
+		ERenderViewMatrices(const Vector3& InWorldLocation, const Quaternion& InWorldRotation
+			, const Vector3& InWorldScaling, const EViewMatrix& InViewMatrix)
+			: ERenderTransformInfo(InWorldLocation, InWorldRotation, InWorldScaling), ViewMatrix(InViewMatrix)
+		{
+		}
 		ERenderViewMatrices() = default;
 		ERenderViewMatrices(const ERenderViewMatrices& Other)
 			: ERenderTransformInfo(Other), ViewMatrix(Other.ViewMatrix)
@@ -69,6 +74,10 @@ namespace PigeonEngine
 		EFrustum		ViewFrustum;
 		ECameraViewInfo	CameraViewInfo;
 	public:
+		ERenderViewParams(const EFrustum& InViewFrustum, const ECameraViewInfo& InCameraViewInfo)
+			: ViewFrustum(InViewFrustum), CameraViewInfo(InCameraViewInfo)
+		{
+		}
 		ERenderViewParams() = default;
 		ERenderViewParams(const ERenderViewParams& Other)
 			: ViewFrustum(Other.ViewFrustum), CameraViewInfo(Other.CameraViewInfo)
@@ -117,21 +126,20 @@ namespace PigeonEngine
 			CAMERA_UPDATE_STATE_VIEW	= (1 << 1)
 		};
 	public:
-		UINT8	GetUpdateRenderState()const;
-		void	MarkAsDirty(PCameraUpdateState InState);
-	protected:
-		RViewProxy*		ViewProxy;
-		UINT8			UpdateState;
-	public:
 		RViewProxy*			GetSceneProxy();
 		const RViewProxy*	GetSceneProxy()const;
 		RViewProxy*			CreateSceneProxy();
-		virtual void		MarkRenderStateAsDirty()override;
+		UINT8				GetUpdateRenderState()const;
 		virtual void		CreateRenderState()override;
 		virtual void		DestroyRenderState()override;
 		virtual void		SendUpdateRenderState()override;
 	protected:
+		void				MarkAsDirty(PCameraUpdateState InState);
+		virtual void		MarkRenderStateAsDirty()override;
 		virtual void		CleanMarkRenderStateDirty()override;
+	protected:
+		RViewProxy*			ViewProxy;
+		UINT8				UpdateState;
 		// Render proxy functions END
 	};
 

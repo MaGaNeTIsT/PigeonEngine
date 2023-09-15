@@ -233,9 +233,9 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
-	void PSceneComponent::MarkRenderStateAsDirty()
+	BOOL32 PSceneComponent::IsRenderTransformDirty()const
 	{
-		PActorComponent::MarkRenderStateAsDirty();
+		return RenderTransformDirty;
 	}
 	void PSceneComponent::CreateRenderState()
 	{
@@ -258,9 +258,19 @@ namespace PigeonEngine
 		}
 		PActorComponent::SendUpdateRenderState();
 	}
+	void PSceneComponent::MarkRenderTransformAsDirty()
+	{
+		RenderTransformDirty = TRUE;
+		MarkRenderStateAsDirty();
+	}
+	void PSceneComponent::MarkRenderStateAsDirty()
+	{
+		PActorComponent::MarkRenderStateAsDirty();
+	}
 	void PSceneComponent::CleanMarkRenderStateDirty()
 	{
 		PActorComponent::CleanMarkRenderStateDirty();
+		RenderTransformDirty = FALSE;
 	}
 	// Render proxy functions END
 

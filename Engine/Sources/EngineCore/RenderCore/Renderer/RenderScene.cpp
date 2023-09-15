@@ -54,15 +54,13 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RViewProxy* SceneProxy = InComponent->CreateSceneProxy();
 
-		ERenderViewMatrices* TempMatrices = new ERenderViewMatrices();
-		TempMatrices->WorldLocation	= InComponent->GetComponentWorldLocation();
-		TempMatrices->WorldRotation	= InComponent->GetComponentWorldRotation();
-		TempMatrices->WorldScaling	= InComponent->GetComponentWorldScale();
-		TempMatrices->ViewMatrix	= InComponent->GetCameraMatrix();
+		ERenderViewMatrices* TempMatrices = new ERenderViewMatrices(
+			InComponent->GetComponentWorldLocation(),
+			InComponent->GetComponentWorldRotation(),
+			InComponent->GetComponentWorldScale(),
+			InComponent->GetCameraMatrix());
 
-		ERenderViewParams* TempParams = new ERenderViewParams();
-		TempParams->ViewFrustum		= InComponent->GetCameraFrustum();
-		TempParams->CameraViewInfo	= InComponent->GetCameraViewInfo();
+		ERenderViewParams* TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 
 		RenderAddRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams]()->void
@@ -93,17 +91,15 @@ namespace PigeonEngine
 		ERenderViewParams* TempParams = nullptr; ERenderViewMatrices* TempMatrices = nullptr;
 		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW) != 0u)
 		{
-			TempParams = new ERenderViewParams();
-			TempParams->ViewFrustum		= InComponent->GetCameraFrustum();
-			TempParams->CameraViewInfo	= InComponent->GetCameraViewInfo();
+			TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 		}
 		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX) != 0u)
 		{
-			TempMatrices = new ERenderViewMatrices();
-			TempMatrices->WorldLocation	= InComponent->GetComponentWorldLocation();
-			TempMatrices->WorldRotation	= InComponent->GetComponentWorldRotation();
-			TempMatrices->WorldScaling	= InComponent->GetComponentWorldScale();
-			TempMatrices->ViewMatrix	= InComponent->GetCameraMatrix();
+			TempMatrices = new ERenderViewMatrices(
+				InComponent->GetComponentWorldLocation(),
+				InComponent->GetComponentWorldRotation(),
+				InComponent->GetComponentWorldScale(),
+				InComponent->GetCameraMatrix());
 		}
 #if _EDITOR_ONLY
 		if ((!!TempParams) && (!TempMatrices))

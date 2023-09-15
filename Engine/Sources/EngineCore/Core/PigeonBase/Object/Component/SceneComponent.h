@@ -16,6 +16,10 @@ namespace PigeonEngine
         Quaternion  WorldRotation;
         Vector3     WorldScaling;
     public:
+        ERenderTransformInfo(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling)
+            : WorldLocation(InWorldLocation), WorldRotation(InWorldRotation), WorldScaling(InWorldScaling)
+        {
+        }
         ERenderTransformInfo() = default;
         ERenderTransformInfo(const ERenderTransformInfo& Other)
             : WorldLocation(Other.WorldLocation), WorldRotation(Other.WorldRotation), WorldScaling(Other.WorldScaling)
@@ -113,12 +117,16 @@ namespace PigeonEngine
 
         // Render proxy functions START
     public:
-        virtual void	MarkRenderStateAsDirty()override;
+        BOOL32          IsRenderTransformDirty()const;
         virtual void	CreateRenderState()override;
         virtual void	DestroyRenderState()override;
         virtual void	SendUpdateRenderState()override;
     protected:
+        void            MarkRenderTransformAsDirty();
+        virtual void	MarkRenderStateAsDirty()override;
         virtual void	CleanMarkRenderStateDirty()override;
+    protected:
+        BOOL32          RenderTransformDirty = FALSE;
         // Render proxy functions END
     	
     };

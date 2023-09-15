@@ -14,7 +14,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PDirectionalLightComponent::PDirectionalLightComponent()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), SceneProxy(nullptr)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), SceneProxy(nullptr), UpdateState(PLightUpdateState::LIGHT_UPDATE_STATE_NONE)
 	{
 	}
 	PDirectionalLightComponent::~PDirectionalLightComponent()
@@ -56,6 +56,17 @@ namespace PigeonEngine
 	{
 		LightData.ShadowMapSize = InShadowMapSize;
 	}
+
+	// Render proxy functions START
+	UINT8 PDirectionalLightComponent::GetUpdateRenderState()const
+	{
+		return UpdateState;
+	}
+	void PDirectionalLightComponent::MarkAsDirty(PLightUpdateState InState)
+	{
+		UpdateState |= InState;
+		MarkRenderStateAsDirty();
+	}
 	RDirectionalLightSceneProxy* PDirectionalLightComponent::GetSceneProxy()
 	{
 		return SceneProxy;
@@ -69,6 +80,10 @@ namespace PigeonEngine
 		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
 		SceneProxy = new RDirectionalLightSceneProxy(this);
 		return SceneProxy;
+	}
+	void PDirectionalLightComponent::MarkRenderStateAsDirty()
+	{
+		PSceneComponent::MarkRenderStateAsDirty();
 	}
 	void PDirectionalLightComponent::CreateRenderState()
 	{
@@ -91,5 +106,11 @@ namespace PigeonEngine
 		}
 		PSceneComponent::SendUpdateRenderState();
 	}
+	void PDirectionalLightComponent::CleanMarkRenderStateDirty()
+	{
+		UpdateState = PLightUpdateState::LIGHT_UPDATE_STATE_NONE;
+		PSceneComponent::CleanMarkRenderStateDirty();
+	}
+	// Render proxy functions END
 
 };

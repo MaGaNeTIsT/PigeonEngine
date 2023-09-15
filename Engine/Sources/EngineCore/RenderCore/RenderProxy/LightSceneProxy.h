@@ -19,7 +19,8 @@ namespace PigeonEngine
 		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
 		using RPerViewVisibilityMapType	= TMap<ObjectIdentityType, TArray<RVisibilityMapType>>;
 	public:
-		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, const BOOL32 InIsCascade = FALSE, const FLOAT* InCascadeLayers = nullptr, const FLOAT* InCascadeBorders = nullptr, const UINT32* InCascadeLayerNum = nullptr);
+		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, const BOOL32 InIsCastShadow = FALSE, const BOOL32 InIsCascade = FALSE, const FLOAT* InCascadeLayers = nullptr, const FLOAT* InCascadeBorders = nullptr, const UINT32* InCascadeLayerNum = nullptr);
+		void SetupProxy();
 	public:
 		void	GenerateViewInfo(const RViewProxy* InViewProxy);
 	public:
@@ -29,6 +30,7 @@ namespace PigeonEngine
 		RPerViewDomainInfoType&				GetViewDomainInfos();
 		const RPerViewDomainInfoType&		GetViewDomainInfos()const;
 		const ECascadeShadowData*			GetCascadeShadowData()const;
+		BOOL32								IsLightCastShadow()const;
 		BOOL32								IsLightUseCascadeShadow()const;
 		RViewSetType&						GetViews();
 		const RViewSetType&					GetViews()const;
@@ -39,6 +41,7 @@ namespace PigeonEngine
 		RPerViewDomainInfoType				ViewDomainInfos;
 		ECascadeShadowData*					CascadeShadowData;
 	protected:
+		BOOL32								IsCastShadow;
 		BOOL32								IsCascadeShadow;
 		RViewSetType						Views;
 		const PDirectionalLightComponent*	Component;

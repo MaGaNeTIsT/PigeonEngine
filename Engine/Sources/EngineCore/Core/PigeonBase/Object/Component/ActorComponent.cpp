@@ -71,10 +71,6 @@ namespace PigeonEngine
 	{
 		return RenderStateDirty;
 	}
-	void PActorComponent::MarkRenderStateAsDirty()
-	{
-		RenderStateDirty = TRUE;
-	}
 	void PActorComponent::CreateRenderState()
 	{
 		//TODO
@@ -87,6 +83,10 @@ namespace PigeonEngine
 	{
 		//TODO
 		CleanMarkRenderStateDirty();
+	}
+	void PActorComponent::MarkRenderStateAsDirty()
+	{
+		RenderStateDirty = TRUE;
 	}
 	void PActorComponent::CleanMarkRenderStateDirty()
 	{

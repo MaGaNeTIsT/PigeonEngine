@@ -103,15 +103,6 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
-	UINT8 PCameraComponent::GetUpdateRenderState()const
-	{
-		return UpdateState;
-	}
-	void PCameraComponent::MarkAsDirty(PCameraUpdateState InState)
-	{
-		UpdateState |= InState;
-		MarkRenderStateAsDirty();
-	}
 	RViewProxy* PCameraComponent::GetSceneProxy()
 	{
 		return ViewProxy;
@@ -126,9 +117,9 @@ namespace PigeonEngine
 		ViewProxy = new RViewProxy(this);
 		return ViewProxy;
 	}
-	void PCameraComponent::MarkRenderStateAsDirty()
+	UINT8 PCameraComponent::GetUpdateRenderState()const
 	{
-		PSceneComponent::MarkRenderStateAsDirty();
+		return UpdateState;
 	}
 	void PCameraComponent::CreateRenderState()
 	{
@@ -150,6 +141,15 @@ namespace PigeonEngine
 			PWorldManager::GetWorld()->GetRenderScene()->UpdateCamera(this);
 		}
 		PSceneComponent::SendUpdateRenderState();
+	}
+	void PCameraComponent::MarkAsDirty(PCameraUpdateState InState)
+	{
+		UpdateState |= InState;
+		MarkRenderStateAsDirty();
+	}
+	void PCameraComponent::MarkRenderStateAsDirty()
+	{
+		PSceneComponent::MarkRenderStateAsDirty();
 	}
 	void PCameraComponent::CleanMarkRenderStateDirty()
 	{

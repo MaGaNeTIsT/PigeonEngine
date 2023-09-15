@@ -13,8 +13,10 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent, const BOOL32 InIsCascade, const FLOAT* InCascadeLayers, const FLOAT* InCascadeBorders, const UINT32* InCascadeLayerNum)
-		: CascadeShadowData(nullptr), IsCascadeShadow(InIsCascade), Component(InComponent)
+	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent
+		, const BOOL32 InIsCastShadow, const BOOL32 InIsCascade, const FLOAT* InCascadeLayers
+		, const FLOAT* InCascadeBorders, const UINT32* InCascadeLayerNum)
+		: CascadeShadowData(nullptr), IsCastShadow(InIsCastShadow), IsCascadeShadow(InIsCascade), Component(InComponent)
 	{
 		if (InComponent)
 		{
@@ -35,11 +37,11 @@ namespace PigeonEngine
 		}
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), IsCascadeShadow(FALSE), Component(nullptr)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), IsCastShadow(FALSE), IsCascadeShadow(FALSE), Component(nullptr)
 	{
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const RDirectionalLightSceneProxy& Other)
-		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), CascadeShadowData(nullptr), IsCascadeShadow(Other.IsCascadeShadow), Views(Other.Views), Component(Other.Component)
+		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), CascadeShadowData(nullptr), IsCastShadow(Other.IsCastShadow), IsCascadeShadow(Other.IsCascadeShadow), Views(Other.Views), Component(Other.Component)
 	{
 		if (Other.IsCascadeShadow && (!!(Other.CascadeShadowData)))
 		{
@@ -177,6 +179,10 @@ namespace PigeonEngine
 	const ECascadeShadowData* RDirectionalLightSceneProxy::GetCascadeShadowData()const
 	{
 		return CascadeShadowData;
+	}
+	BOOL32 RDirectionalLightSceneProxy::IsLightCastShadow()const
+	{
+		return IsCastShadow;
 	}
 	BOOL32 RDirectionalLightSceneProxy::IsLightUseCascadeShadow()const
 	{
