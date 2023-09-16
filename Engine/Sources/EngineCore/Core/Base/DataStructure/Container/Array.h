@@ -158,7 +158,7 @@ namespace PigeonEngine
     {
 #if _EDITOR_ONLY
         UINT32 NumElements = Length();
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
         return Elements[Index];
     }
@@ -168,7 +168,7 @@ namespace PigeonEngine
     {
 #if _EDITOR_ONLY
         UINT32 NumElements = Length();
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
         return Elements[Index];
     }
@@ -221,7 +221,7 @@ namespace PigeonEngine
     {
 #if _EDITOR_ONLY
         UINT32 NumElements = Length();
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
         return this->Elements[Index];
     }
@@ -231,7 +231,7 @@ namespace PigeonEngine
     {
 #if _EDITOR_ONLY
         UINT32 NumElements = Length();
-        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index > NumElements));
+        Check(ENGINE_ARRAY_ERROR, "Array has no this index", (Index < NumElements));
 #endif
         return this->Elements[Index];
     }
