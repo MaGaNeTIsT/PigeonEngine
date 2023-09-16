@@ -90,11 +90,7 @@ namespace PigeonEngine
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
-		ERenderViewParams* TempParams = nullptr; ERenderViewMatrices* TempMatrices = nullptr;
-		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW) != 0u)
-		{
-			TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
-		}
+		ERenderViewMatrices* TempMatrices = nullptr; ERenderViewParams* TempParams = nullptr;
 		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX) != 0u)
 		{
 			TempMatrices = new ERenderViewMatrices(
@@ -102,6 +98,10 @@ namespace PigeonEngine
 				InComponent->GetComponentWorldRotation(),
 				InComponent->GetComponentWorldScale(),
 				InComponent->GetCameraMatrix());
+		}
+		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW) != 0u)
+		{
+			TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 		}
 #if _EDITOR_ONLY
 		if ((!!TempParams) && (!TempMatrices))
@@ -167,11 +167,48 @@ namespace PigeonEngine
 	{
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
-		//TODO
-		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
+
+		UINT8 UpdateState = InComponent->GetUpdateRenderState();
+
+		ERenderDirectionalLightMatrices* TempMatrices = nullptr; ERenderLightParams* TempParams = nullptr;
+		ECascadeShadowData* TempCascadeData = nullptr;
+
+		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX) != 0u)
+		{
+			TempMatrices = new ERenderDirectionalLightMatrices(
+				InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), InComponent->GetComponentWorldScale());
+		}
+		if ((UpdateState & PDirectionalLightComponent::PLightUpdateState::LIGHT_UPDATE_STATE_DATA) != 0u)
+		{
+			TempParams = new ERenderLightParams(InComponent->GetLightColor(),
+				InComponent->GetLightIntensity(), InComponent->IsLightCastShadow(), InComponent->GetShadowMapSize());
+		}
+		if ((UpdateState & PDirectionalLightComponent::PLightUpdateState::LIGHT_UPDATE_STATE_CASCADE) != 0u)
+		{
+			if (const ECascadeShadowData* TempCascadeShadowData = InComponent->GetCascadeShadowData(); !!TempCascadeShadowData)
 			{
-				Scene->UpdateDirectionalLight_RenderThread(SceneProxy);
+				TempCascadeData = new ECascadeShadowData(*TempCascadeShadowData);
+			}
+		}
+
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy, TempMatrices, TempParams, TempCascadeData]()->void
+			{
+				if (TempMatrices)
+				{
+					SceneProxy->UpdateMatrices(*TempMatrices);
+					delete TempMatrices;
+				}
+				if (TempParams)
+				{
+					SceneProxy->UpdateLightParams(*TempParams);
+					delete TempParams;
+				}
+				if (TempCascadeData)
+				{
+					SceneProxy->UpdateCascadeData(TempCascadeData);
+					delete TempCascadeData;
+				}
 			});
 	}
 	void RScene::AddStaticMesh(PStaticMeshComponent* InComponent)
@@ -307,10 +344,6 @@ namespace PigeonEngine
 		{
 			DirectionalLightSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
-	}
-	void RScene::UpdateDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy)
-	{
-		//TODO
 	}
 	void RScene::AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{

@@ -150,7 +150,6 @@ namespace PigeonEngine
 		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
 
 		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
-		void	UpdateDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy);
 
 		void	AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	UpdateStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy);
