@@ -129,7 +129,7 @@ namespace PigeonEngine
 		m_GameTimer->Update();
 #if _EDITOR_ONLY
 		m_ImGUIManager->Update();
-		EMainManager::EditorUpdate();
+		EditorUpdate();
 #endif
 
 		PWorldManager::GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));

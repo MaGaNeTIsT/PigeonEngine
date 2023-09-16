@@ -22,9 +22,9 @@ cbuffer ConstantBuffer : register(b0)
 
 void main(in Attribute Input, out Varying Output)
 {
-	Output.Position = mul(_ProjectionMatrix, float4(Input.Position.xy, 0.0, 1.0));
-	Output.Color = Input.Color;
-	Output.Texcoord = Input.Texcoord;
+	Output.Position	= mul(_ProjectionMatrix, float4(Input.Position.xy, 0.0, 1.0));
+	Output.Texcoord	= Input.Texcoord;
+	Output.Color	= Input.Color;
 }
 
 #endif
