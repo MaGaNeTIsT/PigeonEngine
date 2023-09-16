@@ -148,20 +148,22 @@ namespace PigeonEngine
 		return RootComponent->GetMobility();
 	}
 
-	void PActor::AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform)
-	{
-		AttachComponentToActor(Component, this, RelativeTransform);
-	}
-
+	
 	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform )
 	{
 		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !Component || !Actor || !Actor->GetRootComponent());
 		PSceneComponent::AttachComponentToComponent(Component, Actor->GetRootComponent(), RelativeTransform);
 	}
 
-	void PActor::AddComponent(PActorComponent* NewComponent)
+	void PActor::AddComponent(PActorComponent* NewComponent, const ETransform& RelativeTransform)
 	{
 		Check(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent == nullptr );
+		
+		PSceneComponent* SceneComp = static_cast<PSceneComponent*>(NewComponent);
+		if(SceneComp)
+		{
+			AttachComponentToActor(SceneComp, this, RelativeTransform);
+		}
 		this->Components.Add(NewComponent);
 	}
 
@@ -196,12 +198,12 @@ namespace PigeonEngine
 	void PActor::BeginAddedToScene(PWorld* World)
 	{
 		this->MyWorld = World;
-		this->RootComponent->BeginAddedToScene();
+		this->RootComponent->BeginAddedToScene(MyWorld);
 	}
 
 	void PActor::RemovedFromScene()
 	{
-		
+		this->RootComponent->RemovedFromScene();
 	}
 
 	PSceneComponent* PActor::GetRootComponent() const

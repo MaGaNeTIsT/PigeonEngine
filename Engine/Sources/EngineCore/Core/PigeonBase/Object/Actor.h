@@ -70,16 +70,14 @@ namespace PigeonEngine
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
-
+	
 	public:
-		
-		void        AttachComponent(PSceneComponent* Component, const ETransform& RelativeTransform = ETransform());
-		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
-
 		// Add a component, will not care about the transform
-		void AddComponent     (PActorComponent* NewComponent);
+		void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		void DestoyComponent  (PActorComponent* Component);
 		void ClearComponents  ();
+	protected:
+		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
 		TSet<PActorComponent*> Components;
 
