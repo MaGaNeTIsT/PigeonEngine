@@ -58,7 +58,7 @@ namespace PigeonEngine
         this->RootActors.Add(NewActor);
         this->AllActors.Add(NewActor);
         NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
-        NewActor->BeginAddedToScene();
+        NewActor->BeginAddedToScene(this);
     }
 
   
