@@ -64,7 +64,7 @@ namespace PigeonEngine
 			SceneRenderer->Initialize();
 			RenderScene = SceneRenderer->GetRenderScene();
 		}
-
+		PWorldManager::GetWorld()->BindRenderScene(RenderScene);
 #if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
