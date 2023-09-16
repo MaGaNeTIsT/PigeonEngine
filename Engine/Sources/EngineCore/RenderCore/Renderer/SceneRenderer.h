@@ -21,6 +21,7 @@ namespace PigeonEngine
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
 	public:
+		RScene*			GetRenderScene();
 		void			InitNewFrame();
 		void			Render();
 	protected:

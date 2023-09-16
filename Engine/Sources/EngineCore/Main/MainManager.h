@@ -41,7 +41,13 @@ namespace PigeonEngine
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
 		class CPhysicsManager*				m_PhysicsManager			= nullptr;
+
+		// Render region START
 		class RDeviceD3D11*					m_RenderDeviceD3D11			= nullptr;
+		class RScene*						RenderScene					= nullptr;
+		class RSceneRenderer*				SceneRenderer				= nullptr;
+		// Render region END
+
 #if _EDITOR_ONLY
 		class CImGUIManager*				m_ImGUIManager				= nullptr;
 		class CAssimpManager*				m_AssimpManager				= nullptr;

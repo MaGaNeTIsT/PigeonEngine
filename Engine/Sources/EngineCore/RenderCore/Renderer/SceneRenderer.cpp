@@ -24,6 +24,8 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Initialize()
 	{
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
+		Scene = new RScene();
 	}
 	void RSceneRenderer::ShutDown()
 	{
@@ -63,6 +65,15 @@ namespace PigeonEngine
 			}
 			ViewSceneTextures.Clear();
 		}
+
+		{
+			delete Scene;
+			Scene = nullptr;
+		}
+	}
+	RScene* RSceneRenderer::GetRenderScene()
+	{
+		return Scene;
 	}
 	void RSceneRenderer::InitNewFrame()
 	{
