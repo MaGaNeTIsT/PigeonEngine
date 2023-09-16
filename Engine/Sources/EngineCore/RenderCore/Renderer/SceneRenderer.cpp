@@ -59,7 +59,7 @@ namespace PigeonEngine
 			const EString ImportVSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 			const RInputLayoutDesc TempShaderInputLayouts[] =
 			{
-				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0)
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0)
 			};
 			const UINT32 TempShaderInputLayoutNum = 1u;
 			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,

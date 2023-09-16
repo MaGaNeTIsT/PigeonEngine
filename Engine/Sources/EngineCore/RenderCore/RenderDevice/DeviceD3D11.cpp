@@ -1898,75 +1898,112 @@ namespace PigeonEngine
 			{ RInputClassificationType::INPUT_PER_VERTEX_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA },
 			{ RInputClassificationType::INPUT_PER_INSTANCE_DATA, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_INSTANCE_DATA } };
 		::ZeroMemory(&output, sizeof(output));
+
+		enum ESemanticIndexType : UINT8
+		{
+			SEMANTIC_INDEX_PSIZE		= 0,
+			SEMANTIC_INDEX_POSITIONT,
+			SEMANTIC_INDEX_BINORMAL,
+			SEMANTIC_INDEX_BLENDWEIGHT,
+			SEMANTIC_INDEX_BLENDINDICES,
+			SEMANTIC_INDEX_COLOR,
+			SEMANTIC_INDEX_TANGENT,
+			SEMANTIC_INDEX_NORMAL,
+			SEMANTIC_INDEX_POSITION,
+			SEMANTIC_INDEX_TEXCOORD,
+			SEMANTIC_INDEX_COUNT
+		};
+		static const CHAR* StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_COUNT] =
+		{
+			"PSIZE",
+			"POSITIONT",
+			"BINORMAL",
+			"BLENDWEIGHT",
+			"BLENDINDICES",
+			"COLOR",
+			"TANGENT",
+			"NORMAL",
+			"POSITION",
+			"TEXCOORD"
+		};
+
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return; }
 		{
 			EString strSemanticName; UINT32 semanticName = input.SemanticName;
+			output.SemanticIndex = semanticName & 0xfu;
 			if ((semanticName >> 15) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TEXCOORD[n]
-				strSemanticName = "TEXCOORD";
+				//strSemanticName = "TEXCOORD";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_TEXCOORD];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
 			}
 			else if ((semanticName >> 14) & 0x1u)
 			{
 				//SHADER_SEMANTIC_POSITION[n]
-				strSemanticName = "POSITION";
+				//strSemanticName = "POSITION";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_POSITION];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 13) & 0x1u)
 			{
 				//SHADER_SEMANTIC_NORMAL[n]
-				strSemanticName = "NORMAL";
+				//strSemanticName = "NORMAL";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_NORMAL];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 12) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TANGENT[n]
-				strSemanticName = "TANGENT";
+				//strSemanticName = "TANGENT";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_TANGENT];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 11) & 0x1u)
 			{
 				//SHADER_SEMANTIC_COLOR[n]
-				strSemanticName = "COLOR";
+				//strSemanticName = "COLOR";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_COLOR];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 10) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BLENDINDICES[n]
-				strSemanticName = "BLENDINDICES";
+				//strSemanticName = "BLENDINDICES";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BLENDINDICES];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
 			}
 			else if ((semanticName >> 9) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BLENDWEIGHT[n]
-				strSemanticName = "BLENDWEIGHT";
+				//strSemanticName = "BLENDWEIGHT";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BLENDWEIGHT];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 8) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BINORMAL[n]
-				strSemanticName = "BINORMAL";
+				//strSemanticName = "BINORMAL";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BINORMAL];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 7) & 0x1u)
 			{
 				//SHADER_SEMANTIC_POSITIONT[n]
-				strSemanticName = "POSITIONT";
+				//strSemanticName = "POSITIONT";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_POSITIONT];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 6) & 0x1u)
 			{
 				//SHADER_SEMANTIC_PSIZE[n]
-				strSemanticName = "PSIZE";
+				//strSemanticName = "PSIZE";
+				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_PSIZE];
 				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
-			output.SemanticIndex = semanticName & 0xfu;
-			if (output.SemanticIndex == 0u) { output.SemanticName = *strSemanticName; }
-			else { output.SemanticName = *(strSemanticName + ToString(semanticName & 0xfu)); }
 		}
 		output.InputSlot = input.InputSlot;
-		output.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+		output.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	//0u
 		output.InputSlotClass = classificationMap[input.InputSlotClass];
 		output.InstanceDataStepRate = input.InstanceDataStepRate;
 	}
