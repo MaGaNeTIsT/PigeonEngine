@@ -231,15 +231,15 @@ namespace PigeonEngine
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		RenderDevice->ClearFinalOutput();
 		RenderDevice->SetFinalOutput();
-		//FullScreenTriangle.BindPrimitiveBuffers();
-		//RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
-		//RenderDevice->SetPSShader(SimpleFullScreenPixelShader->GetRenderResource()->Shader);
-		//if (FinalOutputView != 0u)
-		//{
-		//	RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
-		//	RenderDevice->BindPSSamplerState(DefaultSamplers[SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 0u);
-		//}
-		//RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
+		FullScreenTriangle.BindPrimitiveBuffers();
+		RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
+		RenderDevice->SetPSShader(SimpleFullScreenPixelShader->GetRenderResource()->Shader);
+		if (FinalOutputView != 0u)
+		{
+			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
+			RenderDevice->BindPSSamplerState(DefaultSamplers[SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 0u);
+		}
+		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{

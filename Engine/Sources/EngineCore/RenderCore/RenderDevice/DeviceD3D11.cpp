@@ -2009,7 +2009,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ClearFinalOutput()
 	{
-		RDeviceD3D11::ClearRenderTargetView(m_RenderTargetView);
+		RDeviceD3D11::ClearRenderTargetView(m_RenderTargetView, Color4(0.5f, 0.5f, 0.5f, 0.f));
 		RDeviceD3D11::ClearDepthStencilView(m_DepthStencilView);
 	}
 	void RDeviceD3D11::SetFinalOutput()
