@@ -131,11 +131,23 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
-		const ECascadeShadowData* CascadeShadowData = InComponent->GetCascadeShadowData();
+		ERenderDirectionalLightMatrices* TempMatrices = new ERenderDirectionalLightMatrices(
+			InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), InComponent->GetComponentWorldScale());
+		ERenderLightParams* TempParams = new ERenderLightParams(InComponent->GetLightColor(),
+			InComponent->GetLightIntensity(), InComponent->IsLightCastShadow(), InComponent->GetShadowMapSize());
+		ECascadeShadowData* CascadeShadowData = nullptr;
+		if (const ECascadeShadowData* TempCascadeShadowData = InComponent->GetCascadeShadowData(); !!TempCascadeShadowData)
+		{
+			CascadeShadowData = new ECascadeShadowData(*TempCascadeShadowData);
+		}
 
 		RenderAddRemoveCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
+			[Scene, SceneProxy, TempMatrices, TempParams, CascadeShadowData]()->void
 			{
+				SceneProxy->SetupProxy(*TempMatrices, *TempParams, CascadeShadowData);
+				delete TempMatrices;
+				delete TempParams;
+				if (CascadeShadowData) { delete CascadeShadowData; }
 				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, TRUE);
 			});
 	}
@@ -180,6 +192,7 @@ namespace PigeonEngine
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
 			});
 	}
 	void RScene::UpdateStaticMesh(PStaticMeshComponent* InComponent)

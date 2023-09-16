@@ -39,7 +39,9 @@ namespace PigeonEngine
 	}
 	void RDirectionalLightSceneProxy::SetupProxy(const ERenderDirectionalLightMatrices& InMatrices, const ERenderLightParams& InParams, const ECascadeShadowData* InCascadeShadowData)
 	{
-
+		UpdateMatrices(InMatrices);
+		UpdateLightParams(InParams);
+		UpdateCascadeData(InCascadeShadowData);
 	}
 	void RDirectionalLightSceneProxy::GenerateViewInfo(const RViewProxy* InViewProxy)
 	{
@@ -196,12 +198,12 @@ namespace PigeonEngine
 	}
 	void RDirectionalLightSceneProxy::UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData)
 	{
-		IsCascadeShadow = !!InCascadeShadowData;
+		IsCascadeShadow = (InCascadeShadowData) ? (InCascadeShadowData->IsUseShadow) : FALSE;
 		if (IsCascadeShadow)
 		{
 			if (!CascadeShadowData)
 			{
-
+				CascadeShadowData = new ECascadeShadowData();
 			}
 			const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
 #if _EDITOR_ONLY
@@ -209,7 +211,14 @@ namespace PigeonEngine
 			if (CascadeLayerNum > 0u)
 #endif
 			{
-				CascadeShadowData = new ECascadeShadowData(InCascadeShadowData->Layers.RawData(), InCascadeShadowData->Borders.RawData(), CascadeLayerNum);
+				CascadeShadowData->Setup(InCascadeShadowData->IsUseShadow, InCascadeShadowData->Layers, InCascadeShadowData->Borders);
+			}
+		}
+		else
+		{
+			if (CascadeShadowData)
+			{
+				CascadeShadowData->IsUseShadow = FALSE;
 			}
 		}
 	}
