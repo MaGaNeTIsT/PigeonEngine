@@ -88,11 +88,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		if (const ETransform* ParentTransform = InParentComponent->GetTransform(); ParentTransform)
-		{
-			InOutLocation = ParentTransform->LocalLocation + InOutLocation;
-		}
-		GetLocalToActorLocationInternal(InOutLocation, InParentComponent->GetAttachedParentComponent());
+		InOutLocation = InParentComponent->GetTransform().LocalLocation + InOutLocation;
+		// if (const ETransform& ParentTransform = InParentComponent->GetTransform(); ParentTransform)
+		// {
+		// 	InOutLocation = ParentTransform.LocalLocation + InOutLocation;
+		// }
+		GetLocalToActorLocationInternal(InOutLocation, InParentComponent->GetParentComponent());
 	}
 	void ETransform::GetLocalToActorRotationInternal(Quaternion& InOutRotation, const PSceneComponent* InParentComponent)const
 	{
@@ -100,11 +101,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		if (const ETransform* ParentTransform = InParentComponent->GetTransform(); ParentTransform)
-		{
-			InOutRotation = ParentTransform->LocalRotation * InOutRotation;
-		}
-		GetLocalToActorRotationInternal(InOutRotation, InParentComponent->GetAttachedParentComponent());
+		InOutRotation = InParentComponent->GetTransform().LocalRotation * InOutRotation;
+		// if (const ETransform* ParentTransform = InParentComponent->GetTransform(); ParentTransform)
+		// {
+		// 	InOutRotation = ParentTransform->LocalRotation * InOutRotation;
+		// }
+		GetLocalToActorRotationInternal(InOutRotation, InParentComponent->GetParentComponent());
 	}
 	void ETransform::GetLocalToActorScalingInternal(Vector3& InOutScaling, const PSceneComponent* InParentComponent)const
 	{
@@ -112,11 +114,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		if (const ETransform* ParentTransform = InParentComponent->GetTransform(); ParentTransform)
-		{
-			InOutScaling = ParentTransform->LocalScaling * InOutScaling;
-		}
-		GetLocalToActorScalingInternal(InOutScaling, InParentComponent->GetAttachedParentComponent());
+		InOutScaling = InParentComponent->GetTransform().LocalScaling * InOutScaling;
+		// if (const ETransform* ParentTransform = InParentComponent->GetTransform(); ParentTransform)
+		// {
+		// 	InOutScaling = ParentTransform->LocalScaling * InOutScaling;
+		// }
+		GetLocalToActorScalingInternal(InOutScaling, InParentComponent->GetParentComponent());
 	}
 	void ETransform::GetRootToWorldLocationInternal(Vector3& InOutLocation, const PActor* InParentActor)const
 	{
@@ -126,10 +129,11 @@ namespace PigeonEngine
 		}
 		if (const PSceneComponent* ParentRootComponent = InParentActor->GetRootComponent(); ParentRootComponent)
 		{
-			if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
-			{
-				InOutLocation = TempTransform->LocalLocation + InOutLocation;
-			}
+			InOutLocation = ParentRootComponent->GetTransform().LocalLocation + InOutLocation;
+			// if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
+			// {
+			// 	InOutLocation = TempTransform->LocalLocation + InOutLocation;
+			// }
 		}
 		GetRootToWorldLocationInternal(InOutLocation, InParentActor->GetAttachedParentActor());
 	}
@@ -141,10 +145,11 @@ namespace PigeonEngine
 		}
 		if (const PSceneComponent* ParentRootComponent = InParentActor->GetRootComponent(); ParentRootComponent)
 		{
-			if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
-			{
-				InOutRotation = TempTransform->LocalRotation * InOutRotation;
-			}
+			InOutRotation = ParentRootComponent->GetTransform().LocalRotation * InOutRotation;
+			// if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
+			// {
+			// 	InOutRotation = TempTransform->LocalRotation * InOutRotation;
+			// }
 		}
 		GetRootToWorldRotationInternal(InOutRotation, InParentActor->GetAttachedParentActor());
 	}
@@ -156,10 +161,11 @@ namespace PigeonEngine
 		}
 		if (const PSceneComponent* ParentRootComponent = InParentActor->GetRootComponent(); ParentRootComponent)
 		{
-			if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
-			{
-				InOutScaling = TempTransform->LocalScaling * InOutScaling;
-			}
+			InOutScaling = ParentRootComponent->GetTransform().LocalScaling * InOutScaling;
+			// if (const ETransform* TempTransform = ParentRootComponent->GetTransform(); TempTransform)
+			// {
+			// 	InOutScaling = TempTransform->LocalScaling * InOutScaling;
+			// }
 		}
 		GetRootToWorldScalingInternal(InOutScaling, InParentActor->GetAttachedParentActor());
 	}
@@ -232,6 +238,15 @@ namespace PigeonEngine
 	{
 		return QuaternionTransformVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor), Vector3::XVector());
 	}
+
+	ETransform::ETransform(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScale)
+		:
+	LocalLocation(InLocation),
+	LocalRotation(InRotation),
+	LocalScaling(InScale)
+	{
+	}
+
 	Matrix4x4 ETransform::ToMatrix4x4WithScaling_Local()const
 	{
 		return (MakeMatrix4x4(LocalLocation, LocalRotation, LocalScaling));

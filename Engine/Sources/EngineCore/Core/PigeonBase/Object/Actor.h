@@ -34,55 +34,64 @@ namespace PigeonEngine
 		virtual void RemovedFromScene();
 	private:
 		PWorld* MyWorld = nullptr;
-	public:
-		 
-		PActor* GetAttachedParentActor() const;
 
-		// Attach this actor to another;
-		void AttachToActor(PActor* Another, const ETransform& RelativeTransform = ETransform());
-		// Attach another actor to this;
-		void AttachActorTo(PActor* Another, const ETransform& RelativeTransform = ETransform());
-		static void AttachActorToActor(PActor* Actor, PActor* AttachTo, const ETransform& RelativeTransform = ETransform());
-		
-	private:
-
-		PActor* AttachedParentActor = nullptr;
 		
 	public:
-		PSceneComponent* GetRootComponent() const;
-		void             SetRootComponent(PSceneComponent* NewRoot);
+		PE_NODISCARD PSceneComponent* GetRootComponent() const;
+		void                          SetRootComponent(PSceneComponent* NewRoot);
 
-		Vector3    GetActorLocation() const;
-		Quaternion GetActorRotation() const;
-		Vector3    GetActorScale() const;
+		PE_NODISCARD Vector3    GetActorLocation() const;
+		PE_NODISCARD Quaternion GetActorRotation() const;
+		PE_NODISCARD Vector3    GetActorScale() const;
 		
+		PE_NODISCARD const ETransform& GetActorTransform() const;
+
+		PE_NODISCARD ETransform GetActorWorldTransform() const;
+
 		void SetActorLocation (const Vector3& Location);
 		void SetActorRotation (const Quaternion& Rotation);
 		void SetActorScale    (const Vector3& Scale);
 		
-		Vector3 GetActorForwardVector()const;
-		Vector3 GetActorRightVector()const;
-		Vector3 GetActorUpVector()const;
+		PE_NODISCARD Vector3 GetActorForwardVector()const;
+		PE_NODISCARD Vector3 GetActorRightVector()const;
+		PE_NODISCARD Vector3 GetActorUpVector()const;
 
-		EMobilityType GetMobility() const;
+		PE_NODISCARD EMobilityType GetMobility() const;
 
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
 	
 	public:
-		// Add a component, will not care about the transform
+		
 		void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		void DestoyComponent  (PActorComponent* Component);
 		void ClearComponents  ();
 	protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
+		// contains components not scene component
 		TSet<PActorComponent*> Components;
 
 	public:
 
 		EBoundAABB GetComponentsBoundingBox();
+		
+	public:
+		 
+		PE_NODISCARD PActor* GetAttachedParentActor() const;
+
+		void DetachFromParentActor();
+		// Attach this actor to another;
+		void AttachToActor(PActor* Another, const ETransform& RelativeTransform = ETransform());
+		// Attach another actor to this;
+		void AttachActorTo(PActor* Another, const ETransform& RelativeTransform = ETransform());
+		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
+		
+	private:
+
+		PActor* AttachedParentActor = nullptr;
+		TSet<PActor*> ChildrenActors;
 		
 	};
 

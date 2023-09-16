@@ -76,7 +76,10 @@ namespace PigeonEngine
     	PE_NODISCARD Vector3 GetComponentForwardVector()const;
     	PE_NODISCARD Vector3 GetComponentRightVector()const;
     	PE_NODISCARD Vector3 GetComponentUpVector()const;
-    	PE_NODISCARD const ETransform* GetTransform()const ;
+    	
+    	PE_NODISCARD const ETransform& GetTransform()const ;
+    	PE_NODISCARD ETransform        GetWorldTransform()const ;
+
 
     	void SetComponentLocation (const Vector3& Location);
     	void SetComponentRotation (const Quaternion& Rotation);
@@ -93,22 +96,20 @@ namespace PigeonEngine
         ETransform	Transform;
     	
     public:
+    	
     	// Attach this component to another component
     	void AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
-    
     	// static function to attach
     	static void AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
-
     	// Get this component's attached parent component.
-    	PE_NODISCARD PSceneComponent* GetAttachedParentComponent()const;
-
+    	PE_NODISCARD PSceneComponent* GetParentComponent()const;
+    	
     protected:
-    	// Set this component's attached parent component, will keep the relative transform.
-    	void SetAttachedParentComponent(PSceneComponent* NewParent);
-    	void RemoveFromAttachedParent();
-    	void ReparentChildren(PSceneComponent* Another);
+    	// 
+    	void DetachFromParentComponent();
+    	
     private:
-    	PSceneComponent* AttachedParentComponent = nullptr;
+    	PSceneComponent* ParentComponent = nullptr;
 
     public:
     	
@@ -116,9 +117,9 @@ namespace PigeonEngine
     	void ClearChildren       ();
     	
     private:
+    	
     	TSet<PSceneComponent*> ChildrenComponents;
-
-    
+    	
     public:
         TSharedPtr<CJsonObject> Serialize() override;
 

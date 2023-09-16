@@ -17,6 +17,7 @@ namespace PigeonEngine
 	PSceneComponent::PSceneComponent()
 	{
 	}
+	
 	PSceneComponent::~PSceneComponent()
 	{
 	}
@@ -27,49 +28,41 @@ namespace PigeonEngine
 		AttachComponentToComponent(this, Parent, RelativeTransform);
 	}
 
+	void PSceneComponent::DetachFromParentComponent()
+	{
+		if(this->ParentComponent)
+		{
+			this->ParentComponent->ChildrenComponents.Remove(this);
+		}
+		this->ParentComponent = nullptr;
+	}
+
 
 	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
 		Check(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child == Parent);
 		Check(ENGINE_COMPONENT_ERROR, "Something is nullptr when attaching", !Child || !Parent || !Parent->GetOwnerActor());
 
+		// Remove from current parent
+		Child->DetachFromParentComponent();
+		Child->ParentComponent = Parent;
 		
-		Child->SetAttachedParentComponent(Parent);
-		Child->SetOwnerActor(Parent->GetOwnerActor());
 		Parent->ChildrenComponents.Add(Child);
+
+		if(!Child->GetOwnerActor())
+		{
+			Child->SetOwnerActor(Parent->GetOwnerActor());
+		}
+		
 		Child->SetComponentTransform(RelativeTransform);
+		
 	}
 
-	PSceneComponent* PSceneComponent::GetAttachedParentComponent() const
+	PSceneComponent* PSceneComponent::GetParentComponent() const
 	{
-		return this->AttachedParentComponent;
+		return this->ParentComponent;
 	}
-
-	void PSceneComponent::SetAttachedParentComponent(PSceneComponent* NewParent)
-	{
-		Check(ENGINE_COMPONENT_ERROR, "You are setting this component's attached parent to a nullptr. ", NewParent == nullptr);
-		this->RemoveFromAttachedParent();
-		this->AttachedParentComponent = NewParent;
-		this->SetOwnerActor(NewParent->GetOwnerActor());
-	}
-
-	void PSceneComponent::RemoveFromAttachedParent()
-	{
-		if(AttachedParentComponent)
-		{
-			AttachedParentComponent->RemoveChildComponent(this);
-		}
-		AttachedParentComponent = nullptr;
-	}
-
-	void PSceneComponent::ReparentChildren(PSceneComponent* Another)
-	{
-		for(auto& child : this->ChildrenComponents)
-		{
-			child->AttachToComponent(Another);
-		}
-	}
-
+	
 	void PSceneComponent::ClearChildren()
 	{
 		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
@@ -106,8 +99,8 @@ namespace PigeonEngine
 
 	void PSceneComponent::Destroy()
 	{
+		DetachFromParentComponent();
 		ClearChildren();
-		RemoveFromAttachedParent();
 		RemovedFromScene();
 		PActorComponent::Destroy();
 	}
@@ -145,9 +138,14 @@ namespace PigeonEngine
 	{
 		return TRUE;
 	}
-	const ETransform* PSceneComponent::GetTransform()const
+	const ETransform& PSceneComponent::GetTransform()const
 	{
-		return (&Transform);
+		return Transform;
+	}
+
+	ETransform PSceneComponent::GetWorldTransform() const
+	{
+		return ETransform(GetComponentWorldLocation(), GetComponentWorldRotation(), GetComponentWorldScale());
 	}
 
 	void PSceneComponent::SetComponentLocation(const Vector3& Location)
@@ -182,27 +180,27 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
 	{
-		Transform.SetLocation_World(Location, this->AttachedParentComponent, this->GetOwnerActor());
+		Transform.SetLocation_World(Location, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
 	{
-		Transform.SetRotation_World(Rotation, this->AttachedParentComponent, this->GetOwnerActor());
+		Transform.SetRotation_World(Rotation, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
 	{
-		Transform.SetScaling_World(Scale, this->AttachedParentComponent, this->GetOwnerActor());
+		Transform.SetScaling_World(Scale, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
 	{
-		SetComponentWorldLocation(Trans.GetLocation_World(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentWorldRotation(Trans.GetRotation_World(this->AttachedParentComponent, this->GetOwnerActor()));
-		SetComponentWorldScale(Trans.GetScaling_World(this->AttachedParentComponent, this->GetOwnerActor()));
+		SetComponentWorldLocation(Trans.GetLocation_World(this->ParentComponent, this->GetOwnerActor()));
+		SetComponentWorldRotation(Trans.GetRotation_World(this->ParentComponent, this->GetOwnerActor()));
+		SetComponentWorldScale(Trans.GetScaling_World(this->ParentComponent, this->GetOwnerActor()));
 		MarkRenderTransformAsDirty();
 	}
 
@@ -223,32 +221,32 @@ namespace PigeonEngine
 
 	Vector3 PSceneComponent::GetComponentWorldLocation() const
 	{
-		return this->Transform.GetLocation_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetLocation_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	Quaternion PSceneComponent::GetComponentWorldRotation() const
 	{
-		return this->Transform.GetRotation_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRotation_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentWorldScale() const
 	{
-		return this->Transform.GetScaling_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetScaling_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentForwardVector() const
 	{
-		return this->Transform.GetForwardVector_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetForwardVector_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentRightVector() const
 	{
-		return this->Transform.GetRightVector_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRightVector_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentUpVector() const
 	{
-		return this->Transform.GetUpVector_World(this->AttachedParentComponent, this->GetOwnerActor());
+		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor());
 	}
 
 	// Render proxy functions START
