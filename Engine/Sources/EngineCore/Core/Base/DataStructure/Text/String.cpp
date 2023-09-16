@@ -221,7 +221,7 @@ namespace PigeonEngine
             OutDotBackwardStr   = ESettings::ENGINE_DEFAULT_NAME;
             return FALSE;
         }
-        const CHAR TempCharSign[1] = { InSplitSign };
+        const CHAR TempCharSign[] = { InSplitSign, '\0' };
         const UINT32 LastDot = InOriginStr.RightFind(TempCharSign);
         if (LastDot >= OriginStrLen)
         {

@@ -791,10 +791,11 @@ namespace PigeonEngine
 	{
 		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
 		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
-		if (!(ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+		if (ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
 		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+			return;
 		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
 #if _EDITOR_ONLY
 		if ((!!InImportPath) && (!!InImportName) && (!!InShaderInputLayouts) && (!!InShaderInputLayoutNum) && ((*InShaderInputLayoutNum) > 0u))
 		{
@@ -830,10 +831,11 @@ namespace PigeonEngine
 	{
 		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
 		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
-		if (!(ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+		if (ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
 		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+			return;
 		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
 #if _EDITOR_ONLY
 		if ((!!InImportPath) && (!!InImportName))
 		{

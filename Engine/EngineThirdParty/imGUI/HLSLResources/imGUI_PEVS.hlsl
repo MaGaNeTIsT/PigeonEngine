@@ -4,15 +4,15 @@
 struct Attribute
 {
 	float2	Position	: POSITION;
-	float4	Color		: COLOR0;
 	float2	Texcoord	: TEXCOORD0;
+	float4	Color		: COLOR0;
 };
 
 struct Varying
 {
 	float4	Position	: SV_POSITION;
-	float4	Color		: COLOR0;
 	float2	Texcoord	: TEXCOORD0;
+	float4	Color		: COLOR0;
 };
 
 cbuffer ConstantBuffer : register(b0)
