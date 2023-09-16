@@ -332,6 +332,34 @@ namespace PigeonEngine
 		}
 		Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	};
+	class RSamplerResource : public RRenderResourceInterface
+	{
+	public:
+		RSamplerResource() : SamplerState(nullptr) {}
+		RSamplerResource(const RSamplerResource& Other) : SamplerState(Other.SamplerState) {}
+		virtual ~RSamplerResource() { ReleaseRenderResource(); }
+		RSamplerResource& operator=(const RSamplerResource& Other)
+		{
+			SamplerState = Other.SamplerState;
+			return (*this);
+		}
+		// SamplerResource validation only determines by SamplerState valid.
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			return (!!SamplerState);
+		}
+		virtual BOOL32 InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			SamplerState = nullptr;
+		}
+		Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState;
+	};
 	class RSceneTextures final
 	{
 	public:

@@ -652,6 +652,15 @@ namespace PigeonEngine
 			, const UINT32 InInstanceDataStepRate = 0u)noexcept
 			: SemanticName(InSemanticName), SemanticIndex(InSemanticIndex), InputSlot(InInputSlot)
 			, InputSlotClass(InInputSlotClass), InstanceDataStepRate(InInstanceDataStepRate) {}
+		RInputLayoutDesc& operator=(const RInputLayoutDesc& Other)
+		{
+			SemanticName			= Other.SemanticName;
+			SemanticIndex			= Other.SemanticIndex;
+			InputSlot				= Other.InputSlot;
+			InputSlotClass			= Other.InputSlotClass;
+			InstanceDataStepRate	= Other.InstanceDataStepRate;
+			return (*this);
+		}
 
 		RShaderSemanticType			SemanticName;
 		UINT32						SemanticIndex;

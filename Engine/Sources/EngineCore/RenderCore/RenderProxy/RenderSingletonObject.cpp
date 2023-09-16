@@ -80,6 +80,10 @@ namespace PigeonEngine
 		CreateFullScreenTriangleIndexBuffer();
 		return (*this);
 	}
+	UINT32 RFullScreenTriangle::GetIndexCount()const
+	{
+		return 6u;	//TODO
+	}
 	void RFullScreenTriangle::BindPrimitiveBuffers()
 	{
 #if _DEBUG_MODE

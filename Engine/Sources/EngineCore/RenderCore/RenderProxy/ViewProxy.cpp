@@ -12,26 +12,32 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
-		: Component(InComponent)
+		: IsMainView(FALSE), Component(InComponent)
 	{
 		Check((ENGINE_RENDER_CORE_ERROR), ("Create view proxy failed"), (!!Component));
 	}
 	RViewProxy::RViewProxy()
-		: Component(nullptr)
+		: IsMainView(FALSE), Component(nullptr)
 	{
 	}
 	RViewProxy::RViewProxy(const RViewProxy& Other)
-		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), CameraViewInfo(Other.CameraViewInfo), ViewDomainInfo(Other.ViewDomainInfo), Component(Other.Component)
+		: RBaseSceneProxy(Other), IsMainView(FALSE), VisibilityMap(Other.VisibilityMap), CameraViewInfo(Other.CameraViewInfo), ViewDomainInfo(Other.ViewDomainInfo), Component(Other.Component)
 	{
 	}
 	RViewProxy::~RViewProxy()
 	{
 	}
-	void RViewProxy::SetupProxy(const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams)
+	void RViewProxy::SetupProxy(const BOOL32 InIsMainView, const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams)
 	{
+		UpdateViewSettings(InIsMainView);
+
 		UpdateViewParams(InParams);
 
 		UpdateMatrices(InMatrices);
+	}
+	BOOL32 RViewProxy::IsMainRenderView()const
+	{
+		return IsMainView;
 	}
 	RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()
 	{
@@ -72,6 +78,10 @@ namespace PigeonEngine
 	const EFrustum& RViewProxy::GetViewFrustum()const
 	{
 		return (ViewDomainInfo.ViewFrustum);
+	}
+	void RViewProxy::UpdateViewSettings(const BOOL32 InIsMainView)
+	{
+		IsMainView = InIsMainView;
 	}
 	void RViewProxy::UpdateMatrices(const ERenderViewMatrices& InMatrices)
 	{

@@ -8,6 +8,8 @@
 namespace PigeonEngine
 {
 
+	class EVertexShaderAsset;
+	class EPixelShaderAsset;
 	class RViewProxy;
 
 	class RSceneRenderer : public EManagerBase
@@ -26,6 +28,7 @@ namespace PigeonEngine
 		void			Render();
 	protected:
 		void			InitViews();
+		void			BasePass();
 		void			FinalOutputPass();
 	protected:
 		void			InitLights(RViewProxy* InViewProxy);
@@ -39,13 +42,27 @@ namespace PigeonEngine
 	protected:
 		void			InitRendererSettings();
 		BOOL32			IsNeedStencil()const;
+	public:
+		enum RDefaultSamplerType : UINT8
+		{
+			SAMPLER_TYPE_POINT_CLAMP	= 0,
+			SAMPLER_TYPE_POINT_WRAP,
+			SAMPLER_TYPE_LINEAR_CLAMP,
+			SAMPLER_TYPE_LINEAR_WRAP,
+			SAMPLER_TYPE_COUNT
+		};
 	protected:
-		RScene*					Scene;
-		RFullScreenTriangle		FullScreenTriangle;
+		RScene*						Scene;
+		RFullScreenTriangle			FullScreenTriangle;
 	protected:
-		BOOL32					NeedStencil;
-		RViewSceneTextureType	ViewSceneTextures;
-		RViewShadowMapType		ViewShadowMaps;
+		RSamplerResource			DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_COUNT];
+		const EVertexShaderAsset*	SimpleFullScreenVertexShader;
+		const EPixelShaderAsset*	SimpleFullScreenPixelShader;
+	protected:
+		ObjectIdentityType			FinalOutputView;
+		BOOL32						NeedStencil;
+		RViewSceneTextureType		ViewSceneTextures;
+		RViewShadowMapType			ViewShadowMaps;
 	public:
 		RSceneRenderer();
 		virtual ~RSceneRenderer();

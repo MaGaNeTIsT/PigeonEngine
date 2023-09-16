@@ -787,4 +787,75 @@ namespace PigeonEngine
 		return (SaveShaderAsset(InSavePath, InSaveName, SaveShaderResource, SaveShaderFrequency, SaveShaderInputLayouts, &SaveShaderInputLayoutNum));
 	}
 
+	void TryLoadVertexShader(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
+	{
+		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
+		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
+		if (!(ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+		}
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InShaderInputLayouts) && (!!InShaderInputLayoutNum) && ((*InShaderInputLayoutNum) > 0u))
+		{
+			TArray<RInputLayoutDesc> UsedShaderInputLayouts;
+			for (UINT32 i = 0u, n = (*InShaderInputLayoutNum); i < n; i++)
+			{
+				RInputLayoutDesc& TempDesc = UsedShaderInputLayouts.Add_Default_GetRef();
+				TempDesc = InShaderInputLayouts[i];
+			}
+			const UINT32 UsedShaderInputLayoutNum = UsedShaderInputLayouts.Length();
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + ESettings::ENGINE_IMPORT_SHADER_NAME_TYPE;
+			BOOL32 Result = ShaderAssetManager->ImportVertexShader(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath,
+				UsedShaderInputLayouts.RawData(), &UsedShaderInputLayoutNum);
+			if (Result)
+			{
+				if (!(ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import vertex shader asset failed."));
+			}
+		}
+#endif
+	}
+	void TryLoadPixelShader(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName)
+	{
+		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
+		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
+		if (!(ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+		}
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName))
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + ESettings::ENGINE_IMPORT_SHADER_NAME_TYPE;
+			BOOL32 Result = ShaderAssetManager->ImportPixelShader(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath);
+			if (Result)
+			{
+				if (!(ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import vertex shader asset failed."));
+			}
+		}
+#endif
+	}
+
 };

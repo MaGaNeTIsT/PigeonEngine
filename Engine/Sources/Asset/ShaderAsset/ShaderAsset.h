@@ -199,4 +199,12 @@ namespace PigeonEngine
 
 	};
 
+	extern void TryLoadVertexShader(const EString& InLoadPath, const EString& InLoadName,
+		const EVertexShaderAsset*& OutShaderAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr,
+		const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT32* InShaderInputLayoutNum = nullptr);
+	extern void TryLoadPixelShader(const EString& InLoadPath, const EString& InLoadName,
+		const EPixelShaderAsset*& OutShaderAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr);
+
 };

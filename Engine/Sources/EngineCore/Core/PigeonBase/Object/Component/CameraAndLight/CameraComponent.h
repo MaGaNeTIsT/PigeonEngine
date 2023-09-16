@@ -111,6 +111,7 @@ namespace PigeonEngine
 		Vector3	TransformWorldToView(const Vector3& InWorldLocation)const;
 		Vector3	TransformViewToWorld(const Vector3& InViewLocation)const;
 	public:
+		BOOL32	IsMainCamera()const;
 		void	UpdateCameraMatrix();
 	protected:
 		ECameraViewInfo		CameraViewInfo;

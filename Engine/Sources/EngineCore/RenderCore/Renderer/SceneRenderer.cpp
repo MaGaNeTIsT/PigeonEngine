@@ -1,6 +1,7 @@
 #include "SceneRenderer.h"
 #include <RenderCommon.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include <ShaderAsset/ShaderAsset.h>
 #include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
@@ -16,7 +17,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RSceneRenderer::RSceneRenderer()
-		: Scene(nullptr), NeedStencil(FALSE)
+		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
 	{
 	}
 	RSceneRenderer::~RSceneRenderer()
@@ -25,6 +26,52 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Initialize()
 	{
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
+				RSamplerState(
+					RFilterType::FILTER_POINT,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
+			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState,
+				RSamplerState(
+					RFilterType::FILTER_POINT,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
+			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState,
+				RSamplerState(
+					RFilterType::FILTER_LINEAR,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
+			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState,
+				RSamplerState(
+					RFilterType::FILTER_LINEAR,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
+					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
+		}
+
+		{
+			const EString ImportPath(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+			const EString ImportVSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+			const RInputLayoutDesc TempShaderInputLayouts[] =
+			{
+				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0)
+			};
+			const UINT32 TempShaderInputLayoutNum = 1u;
+			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
+				SimpleFullScreenVertexShader,
+				&ImportPath, &ImportVSName,
+				TempShaderInputLayouts, &TempShaderInputLayoutNum);
+
+			const EString ImportPSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportPSName,
+				SimpleFullScreenPixelShader,
+				&ImportPath, &ImportPSName);
+		}
 		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
 		Scene = new RScene();
 	}
@@ -84,10 +131,9 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Render()
 	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 
+		BasePass();
 
-		
 		FinalOutputPass();
 	}
 	void RSceneRenderer::InitViews()
@@ -107,6 +153,7 @@ namespace PigeonEngine
 		}
 
 		// Reset view proxies per frame datas
+		FinalOutputView = 0u;
 		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		{
 			for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
@@ -120,6 +167,10 @@ namespace PigeonEngine
 				}
 #endif
 				ViewProxy->ResetVisibilityMap();
+				if (ViewProxy->IsMainRenderView())
+				{
+					FinalOutputView = ViewProxy->GetUniqueID();
+				}
 			}
 		}
 
@@ -158,11 +209,37 @@ namespace PigeonEngine
 			}
 		}
 	}
+	void RSceneRenderer::BasePass()
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		const TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
+		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			const RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+#if _EDITOR_ONLY
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			if (!ViewProxy)
+			{
+				continue;
+			}
+#endif
+
+		}
+	}
 	void RSceneRenderer::FinalOutputPass()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		RenderDevice->ClearFinalOutput();
 		RenderDevice->SetFinalOutput();
+		FullScreenTriangle.BindPrimitiveBuffers();
+		RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
+		RenderDevice->SetPSShader(SimpleFullScreenPixelShader->GetRenderResource()->Shader);
+		if (FinalOutputView != 0u)
+		{
+			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
+			RenderDevice->BindPSSamplerState(DefaultSamplers[SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 0u);
+		}
+		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{

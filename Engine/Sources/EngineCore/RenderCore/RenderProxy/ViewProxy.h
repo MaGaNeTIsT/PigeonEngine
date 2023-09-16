@@ -18,8 +18,9 @@ namespace PigeonEngine
 		using RVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
 	public:
 		RViewProxy(const PCameraComponent* InComponent);
-		void SetupProxy(const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams);
+		void	SetupProxy(const BOOL32 InIsMainView, const ERenderViewMatrices& InMatrices, const ERenderViewParams& InParams);
 	public:
+		BOOL32						IsMainRenderView()const;
 		RVisibilityMapType&			GetVisibilityMap();
 		const RVisibilityMapType&	GetVisibilityMap()const;
 		ECameraViewInfo&			GetViewInfo();
@@ -31,10 +32,12 @@ namespace PigeonEngine
 		EFrustum&					GetViewFrustum();
 		const EFrustum&				GetViewFrustum()const;
 	public:
+		void	UpdateViewSettings(const BOOL32 InIsMainView);
 		void	UpdateMatrices(const ERenderViewMatrices& InMatrices);
 		void	UpdateViewParams(const ERenderViewParams& InParams);
 		void	ResetVisibilityMap();
 	protected:
+		BOOL32						IsMainView;
 		RVisibilityMapType			VisibilityMap;
 	protected:
 		ECameraViewInfo				CameraViewInfo;

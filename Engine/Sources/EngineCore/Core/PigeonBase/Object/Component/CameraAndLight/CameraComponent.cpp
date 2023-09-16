@@ -94,6 +94,10 @@ namespace PigeonEngine
 		CameraMatrix.TransformViewPointToWorld(InViewLocation, Result);
 		return Result;
 	}
+	BOOL32 PCameraComponent::IsMainCamera()const
+	{
+		return TRUE;	//TODO
+	}
 	void PCameraComponent::UpdateCameraMatrix()
 	{
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());

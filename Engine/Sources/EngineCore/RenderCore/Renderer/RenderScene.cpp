@@ -55,6 +55,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RViewProxy* SceneProxy = InComponent->CreateSceneProxy();
 
+		const BOOL32 TempIsMainCamera = InComponent->IsMainCamera();
 		ERenderViewMatrices* TempMatrices = new ERenderViewMatrices(
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
@@ -63,9 +64,9 @@ namespace PigeonEngine
 		ERenderViewParams* TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 
 		RenderAddRemoveCommands.EnqueueCommand(
-			[Scene, SceneProxy, TempMatrices, TempParams]()->void
+			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
-				SceneProxy->SetupProxy(*TempMatrices, *TempParams);
+				SceneProxy->SetupProxy(TempIsMainCamera, *TempMatrices, *TempParams);
 				delete TempMatrices;
 				delete TempParams;
 				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, TRUE);
@@ -90,6 +91,7 @@ namespace PigeonEngine
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
+		const BOOL32 TempIsMainCamera = InComponent->IsMainCamera();
 		ERenderViewMatrices* TempMatrices = nullptr;
 		if ((UpdateState & PCameraComponent::PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX) != 0u)
 		{
@@ -112,9 +114,10 @@ namespace PigeonEngine
 #endif
 
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, TempMatrices, TempParams]()->void
+			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
 				// View params MUST be updating before matrices.
+				SceneProxy->UpdateViewSettings(TempIsMainCamera);
 				if (TempParams)
 				{
 					SceneProxy->UpdateViewParams(*TempParams);

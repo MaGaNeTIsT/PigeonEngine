@@ -8,6 +8,7 @@ namespace PigeonEngine
 	class RFullScreenTriangle final
 	{
 	public:
+		UINT32	GetIndexCount()const;
 		void	BindPrimitiveBuffers();
 	public:
 		RFullScreenTriangle();
