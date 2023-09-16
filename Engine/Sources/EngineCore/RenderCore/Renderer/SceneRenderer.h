@@ -41,15 +41,17 @@ namespace PigeonEngine
 		BOOL32			IsNeedStencil()const;
 	protected:
 		RScene*					Scene;
-		TArray<RViewProxy*>		ViewProxies;
 		RFullScreenTriangle		FullScreenTriangle;
 	protected:
 		BOOL32					NeedStencil;
 		RViewSceneTextureType	ViewSceneTextures;
 		RViewShadowMapType		ViewShadowMaps;
-
-		CLASS_MANAGER_SINGLETON_BODY(RSceneRenderer)
-
+	public:
+		RSceneRenderer();
+		virtual ~RSceneRenderer();
+	public:
+		RSceneRenderer(const RSceneRenderer&) = delete;
+		RSceneRenderer& operator=(const RSceneRenderer&) = delete;
 	};
 
 };

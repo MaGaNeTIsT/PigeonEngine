@@ -351,6 +351,14 @@ namespace PigeonEngine
 	{
 		return RenderSceneOctree;
 	}
+	RSceneProxyMapping<RViewProxy>& RScene::GetViewProxies()
+	{
+		return ViewProxies;
+	}
+	const RSceneProxyMapping<RViewProxy>& RScene::GetViewProxies()const
+	{
+		return ViewProxies;
+	}
 	RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies()
 	{
 		return DirectionalLightSceneProxies;

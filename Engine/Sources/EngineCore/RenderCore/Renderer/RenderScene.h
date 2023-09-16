@@ -140,6 +140,8 @@ namespace PigeonEngine
 		ROctree&		GetSceneOctree();
 		const ROctree&	GetSceneOctree()const;
 
+		RSceneProxyMapping<RViewProxy>&							GetViewProxies();
+		const RSceneProxyMapping<RViewProxy>&					GetViewProxies()const;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>&		GetDirectionalLightSceneProxies();
 		const RSceneProxyMapping<RDirectionalLightSceneProxy>&	GetDirectionalLightSceneProxies()const;
 		RSceneProxyMapping<RStaticMeshSceneProxy>&				GetStaticMeshSceneProxies();

@@ -29,10 +29,7 @@ namespace PigeonEngine
 		m_FrameRate		= static_cast<UINT32>(ESettings::ENGINE_UPDATE_FRAME);
 		m_Windowed		= ESettings::ENGINE_WINDOWED;
 
-		// Render region START
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
-		SceneRenderer		= RSceneRenderer::GetManagerSingleton();
-		// Render region END
 
 		m_PhysicsManager	= CPhysicsManager::GetSingleton();
 #if _EDITOR_ONLY
@@ -60,8 +57,13 @@ namespace PigeonEngine
 
 		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
 		m_RenderDeviceD3D11->Initialize();
-		SceneRenderer->Initialize();
-		RenderScene = SceneRenderer->GetRenderScene();
+
+		{
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check scene renderer is not null."), (!SceneRenderer));
+			SceneRenderer = new RSceneRenderer();
+			SceneRenderer->Initialize();
+			RenderScene = SceneRenderer->GetRenderScene();
+		}
 
 #if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
@@ -77,8 +79,13 @@ namespace PigeonEngine
 		m_ImGUIManager->ShutDown();
 #endif
 
-		RenderScene = nullptr;
-		SceneRenderer->ShutDown();
+		{
+			RenderScene = nullptr;
+			SceneRenderer->ShutDown();
+			delete SceneRenderer;
+			SceneRenderer = nullptr;
+		}
+
 		m_RenderDeviceD3D11->ShutDown();
 		EInput::ShutDown();
 	}

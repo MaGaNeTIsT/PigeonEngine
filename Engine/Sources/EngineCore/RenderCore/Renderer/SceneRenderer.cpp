@@ -21,6 +21,7 @@ namespace PigeonEngine
 	}
 	RSceneRenderer::~RSceneRenderer()
 	{
+		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!!Scene));
 	}
 	void RSceneRenderer::Initialize()
 	{
@@ -102,17 +103,20 @@ namespace PigeonEngine
 		}
 
 		// Reset view proxies per frame datas
-		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
+		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		{
-			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
-#if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
-			if (!ViewProxy)
+			for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
 			{
-				continue;
-			}
+				RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+#if _EDITOR_ONLY
+				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+				if (!ViewProxy)
+				{
+					continue;
+				}
 #endif
-			ViewProxy->ResetVisibilityMap();
+				ViewProxy->ResetVisibilityMap();
+			}
 		}
 
 		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
