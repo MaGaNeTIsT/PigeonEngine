@@ -44,7 +44,7 @@ namespace PigeonEngine
 
     // Actors in world management
     public:
-        void AddActor(PActor* NewActor, PActor* Parent = nullptr, const ETransform& Trans = ETransform());
+        void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
   
     private:
         TSet<PActor*> RootActors;

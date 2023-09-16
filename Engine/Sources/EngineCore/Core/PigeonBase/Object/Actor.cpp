@@ -113,6 +113,21 @@ namespace PigeonEngine
 		return this->RootComponent->GetComponentLocalScale();
 	}
 
+	void PActor::SetActorLocation(const Vector3& Location)
+	{
+		this->RootComponent->SetComponentLocation(Location);
+	}
+
+	void PActor::SetActorRotation(const Quaternion& Rotation)
+	{
+		this->RootComponent->SetComponentRotation(Rotation);
+	}
+
+	void PActor::SetActorScale(const Vector3& Scale)
+	{
+		this->RootComponent->SetComponentScale(Scale);
+	}
+
 	Vector3 PActor::GetActorForwardVector() const
 	{
 		return this->RootComponent->GetComponentForwardVector();
@@ -176,6 +191,17 @@ namespace PigeonEngine
 		// RemoveFromScene
 		ClearComponents();
 		PObject::Destroy();
+	}
+
+	void PActor::BeginAddedToScene(PWorld* World)
+	{
+		this->MyWorld = World;
+		this->RootComponent->BeginAddedToScene();
+	}
+
+	void PActor::RemovedFromScene()
+	{
+		
 	}
 
 	PSceneComponent* PActor::GetRootComponent() const

@@ -51,19 +51,14 @@ namespace PigeonEngine
         PObject::Destroy();
     }
 
-    void PWorld::AddActor(PActor* NewActor, PActor* Parent, const ETransform& Trans)
+    void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
     {
         Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor == nullptr);
-
-        if(!Parent)
-        {
-            this->RootActors.Add(NewActor);
-            this->AllActors.Add(NewActor);
-            NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
-            return;
-        }
-
-        NewActor->AttachToActor(Parent, Trans);
+        
+        this->RootActors.Add(NewActor);
+        this->AllActors.Add(NewActor);
+        NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
+        NewActor->BeginAddedToScene();
     }
 
   

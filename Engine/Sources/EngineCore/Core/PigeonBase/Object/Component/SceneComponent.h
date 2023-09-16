@@ -8,6 +8,8 @@
 namespace PigeonEngine
 {
 
+	class PWorld;
+	class PActor;
     // Render proxy functions START
     struct ERenderTransformInfo
     {
@@ -41,34 +43,40 @@ namespace PigeonEngine
 
     class PSceneComponent : public PActorComponent
     {
-
     	CLASS_VIRTUAL_NOCOPY_BODY(PSceneComponent)
-
+		friend class PWorld;
+		friend class PActor;
     public:
     	virtual void Init() override;
     	virtual void Uninit() override;
     	virtual void Destroy() override;
 
+    protected:
+    	
+    	virtual void BeginAddedToScene(PWorld* World);
+    	virtual void RemovedFromScene();
+    private:
+    	PWorld* MyWolrd;
     public:
-    	EMobilityType GetMobility() const;
-    	void          SetMobility(const EMobilityType& NewMobility);
+    	PE_NODISCARD  EMobilityType GetMobility() const;
+    	void                        SetMobility(const EMobilityType& NewMobility);
     private:
     	EMobilityType Mobility = EMobilityType::EMT_DYNAMIC;
 	public:
-		virtual BOOL32 ContainTransform()const override;
+		PE_NODISCARD BOOL32 ContainTransform()const override;
 
-    	Vector3    GetComponentLocalLocation() const;
-    	Quaternion GetComponentLocalRotation() const;
-    	Vector3    GetComponentLocalScale() const;
+    	PE_NODISCARD Vector3    GetComponentLocalLocation() const;
+    	PE_NODISCARD Quaternion GetComponentLocalRotation() const;
+    	PE_NODISCARD Vector3    GetComponentLocalScale() const;
 
-    	Vector3    GetComponentWorldLocation() const;
-    	Quaternion GetComponentWorldRotation() const;
-    	Vector3    GetComponentWorldScale() const;
+    	PE_NODISCARD Vector3    GetComponentWorldLocation() const;
+    	PE_NODISCARD Quaternion GetComponentWorldRotation() const;
+    	PE_NODISCARD Vector3    GetComponentWorldScale() const;
 
-    	Vector3 GetComponentForwardVector()const;
-    	Vector3 GetComponentRightVector()const;
-    	Vector3 GetComponentUpVector()const;
-    	const ETransform* GetTransform()const ;
+    	PE_NODISCARD Vector3 GetComponentForwardVector()const;
+    	PE_NODISCARD Vector3 GetComponentRightVector()const;
+    	PE_NODISCARD Vector3 GetComponentUpVector()const;
+    	PE_NODISCARD const ETransform* GetTransform()const ;
 
     	void SetComponentLocation (const Vector3& Location);
     	void SetComponentRotation (const Quaternion& Rotation);
@@ -81,20 +89,20 @@ namespace PigeonEngine
     	void SetComponentWorldTransform(const ETransform& Trans);
 
 	protected:
+    	
         ETransform	Transform;
     	
     public:
-    	
     	// Attach this component to another component
-    	void AttachToComponent(PSceneComponent* AttachTo, const ETransform& RelativeTransform = ETransform());
-    	// Attach another component to this
-    	void AttachComponentTo(PSceneComponent* Component, const ETransform& RelativeTransform = ETransform());
-
+    	void AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
+    
     	// static function to attach
-    	static void AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo, const ETransform& RelativeTransform = ETransform());
+    	static void AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform = ETransform());
 
     	// Get this component's attached parent component.
-    	PSceneComponent* GetAttachedParentComponent()const;
+    	PE_NODISCARD PSceneComponent* GetAttachedParentComponent()const;
+
+    protected:
     	// Set this component's attached parent component, will keep the relative transform.
     	void             SetAttachedParentComponent(PSceneComponent* NewParent);
     	void             RemoveFromAttachedParent();
@@ -103,10 +111,8 @@ namespace PigeonEngine
 
     public:
     	
-		void AddChildComponent         (PSceneComponent* NewChild);
-    	void RemoveChildComponent      (PSceneComponent* NewChild);
-    	void ReparentChildrenComponents(PSceneComponent* NewParent);
-    	void ClearChildren             ();
+    	void RemoveChildComponent(PSceneComponent* NewChild);
+    	void ClearChildren       ();
     	
     private:
     	TSet<PSceneComponent*> ChildrenComponents;

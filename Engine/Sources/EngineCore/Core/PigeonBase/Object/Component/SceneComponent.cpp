@@ -22,25 +22,22 @@ namespace PigeonEngine
 	}
 	
 
-	void PSceneComponent::AttachToComponent(PSceneComponent* AttachTo, const ETransform& RelativeTransform)
+	void PSceneComponent::AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
-		AttachComponentToComponent(this, AttachTo, RelativeTransform);
+		AttachComponentToComponent(this, Parent, RelativeTransform);
 	}
 
-	void PSceneComponent::AttachComponentTo(PSceneComponent* Component, const ETransform& RelativeTransform)
-	{
-		AttachComponentToComponent(Component, this, RelativeTransform);
-	}
 
-	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Component, PSceneComponent* AttachTo, const ETransform& RelativeTransform)
+	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Component == AttachTo);
-		Check(ENGINE_COMPONENT_ERROR, "Something is nullptr when attaching", !Component || !AttachTo || !AttachTo->GetOwnerActor());
+		Check(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child == Parent);
+		Check(ENGINE_COMPONENT_ERROR, "Something is nullptr when attaching", !Child || !Parent || !Parent->GetOwnerActor());
 
-		AttachTo->SetAttachedParentComponent(AttachTo);
-		AttachTo->SetOwnerActor(AttachTo->GetOwnerActor());
-		AttachTo->AddChildComponent(Component);
-		Component->SetComponentTransform(RelativeTransform);
+		
+		Child->SetAttachedParentComponent(Parent);
+		Child->SetOwnerActor(Parent->GetOwnerActor());
+		Parent->ChildrenComponents.Add(Child);
+		Child->SetComponentTransform(RelativeTransform);
 	}
 
 	PSceneComponent* PSceneComponent::GetAttachedParentComponent() const
@@ -51,6 +48,7 @@ namespace PigeonEngine
 	void PSceneComponent::SetAttachedParentComponent(PSceneComponent* NewParent)
 	{
 		Check(ENGINE_COMPONENT_ERROR, "You are setting this component's attached parent to a nullptr. ", NewParent == nullptr);
+		this->RemoveFromAttachedParent();
 		this->AttachedParentComponent = NewParent;
 		this->SetOwnerActor(NewParent->GetOwnerActor());
 	}
@@ -82,29 +80,12 @@ namespace PigeonEngine
 		return JsonObj;
 	}
 
-	void PSceneComponent::AddChildComponent(PSceneComponent* NewChild)
-	{
-		Check(ENGINE_COMPONENT_ERROR, "You are adding a nullptr to this component as a child. ", NewChild == nullptr);
-		this->ChildrenComponents.Add(NewChild);
-	}
-
 	void PSceneComponent::RemoveChildComponent(PSceneComponent* NewChild)
 	{
 		ChildrenComponents.Remove(NewChild);
 	}
 
-	void PSceneComponent::ReparentChildrenComponents(PSceneComponent* NewParent)
-	{
-		Check(ENGINE_COMPONENT_ERROR, "You are reparent childrents to a nullptr. ", NewParent == nullptr);
-		for (auto Child = ChildrenComponents.Begin(); Child != ChildrenComponents.End(); Child++)
-		{
-			(*Child)->SetAttachedParentComponent(NewParent);
-			//(*Child)->SetOwnerActor(NewParent->GetOwnerActor());
-		}
-		ChildrenComponents.Clear();
-	}
-
-
+	
 	void PSceneComponent::Init()
 	{
 		PActorComponent::Init();
@@ -121,7 +102,26 @@ namespace PigeonEngine
 		RemoveFromAttachedParent();
 		RemoveFromOwnerActor();
 		PActorComponent::Destroy();
-		
+		RemovedFromScene();
+	}
+
+	void PSceneComponent::BeginAddedToScene(PWorld* World)
+	{
+		this->CreateRenderState();
+		this->MyWolrd = World;
+		for(const auto& child : this->ChildrenComponents)
+		{
+			child->BeginAddedToScene(MyWolrd);
+		}
+	}
+
+	void PSceneComponent::RemovedFromScene()
+	{
+		for(const auto& child : this->ChildrenComponents)
+		{
+			child->DestroyRenderState();
+		}
+		this->DestroyRenderState();
 	}
 
 	EMobilityType PSceneComponent::GetMobility() const
@@ -145,39 +145,50 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentLocation(const Vector3& Location)
 	{
+		Check(ENGINE_WORLD_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetLocation_Local(Location);
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
 	{
+		Check(ENGINE_WORLD_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_Local(Rotation);
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentScale(const Vector3& Scale)
 	{
+		Check(ENGINE_WORLD_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_Local(Scale);
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
 	{
+		Check(ENGINE_WORLD_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		SetComponentLocation(Trans.GetLocation_Local());
 		SetComponentRotation(Trans.GetRotation_Local());
 		SetComponentScale(Trans.GetScaling_Local());
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
 	{
 		Transform.SetLocation_World(Location, this->AttachedParentComponent, this->GetOwnerActor());
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
 	{
 		Transform.SetRotation_World(Rotation, this->AttachedParentComponent, this->GetOwnerActor());
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
 	{
 		Transform.SetScaling_World(Scale, this->AttachedParentComponent, this->GetOwnerActor());
+		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
@@ -185,6 +196,7 @@ namespace PigeonEngine
 		SetComponentWorldLocation(Trans.GetLocation_World(this->AttachedParentComponent, this->GetOwnerActor()));
 		SetComponentWorldRotation(Trans.GetRotation_World(this->AttachedParentComponent, this->GetOwnerActor()));
 		SetComponentWorldScale(Trans.GetScaling_World(this->AttachedParentComponent, this->GetOwnerActor()));
+		MarkRenderTransformAsDirty();
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const

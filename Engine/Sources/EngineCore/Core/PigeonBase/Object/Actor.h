@@ -12,9 +12,10 @@ namespace PigeonEngine
 {
 	class PSceneComponent;
 	class PActorComponent;
+	class PWorld;
 	class PActor : public PObject
 	{
-	
+		friend class PWorld;
 	private:
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
@@ -28,6 +29,12 @@ namespace PigeonEngine
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 		void    Destroy() override;
+	
+	protected:
+		virtual void BeginAddedToScene(PWorld* World);
+		virtual void RemovedFromScene();
+	private:
+		PWorld* MyWorld = nullptr;
 	public:
 		 
 		PActor* GetAttachedParentActor() const;
@@ -49,7 +56,11 @@ namespace PigeonEngine
 		Vector3    GetActorLocation() const;
 		Quaternion GetActorRotation() const;
 		Vector3    GetActorScale() const;
-
+		
+		void SetActorLocation (const Vector3& Location);
+		void SetActorRotation (const Quaternion& Rotation);
+		void SetActorScale    (const Vector3& Scale);
+		
 		Vector3 GetActorForwardVector()const;
 		Vector3 GetActorRightVector()const;
 		Vector3 GetActorUpVector()const;

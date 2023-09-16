@@ -3,6 +3,7 @@
 #include <Config/EngineConfig.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
+#include "PigeonBase/Object/World/World.h"
 
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
@@ -107,6 +108,8 @@ namespace PigeonEngine
 		m_ImGUIManager->Update();
 		EMainManager::EditorUpdate();
 #endif
+
+		PWorldManager::GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 	}
 	void EMainManager::FixedUpdate()
 	{
