@@ -139,14 +139,14 @@ namespace PigeonEngine
         return Find(SubString) == 0;
     }
 
-    UINT32 EString::Find(const EString& SubString, UINT32 Offset) const
+    UINT32 EString::Find(const EString& SubString) const
     {
-        return static_cast<UINT32>(Str.find(*SubString, Offset));
+        return static_cast<UINT32>(Str.find(*SubString));
     }
 
-    UINT32 EString::RightFind(const EString& SubString, UINT32 Offset) const
+    UINT32 EString::RightFind(const EString& SubString) const
     {
-        return static_cast<UINT32>(Str.rfind(*SubString, Offset));
+        return static_cast<UINT32>(Str.rfind(*SubString));
     }
 
     EString EString::Replace(const EString& From, const EString& To) const

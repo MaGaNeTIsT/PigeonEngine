@@ -31,27 +31,27 @@ namespace PigeonEngine
         const CHAR* operator*()const;
         CHAR        operator[](const UINT32& Index) const;
 
-        BOOL32        operator==(const EString& Other)const;
-        BOOL32        operator!=(const EString& Other)const;
-        BOOL32        operator>(const EString& Other)const;
-        BOOL32        operator<(const EString& Other)const;
-        BOOL32        operator>=(const EString& Other)const;
-        BOOL32        operator<=(const EString& Other)const;
+        BOOL32      operator==(const EString& Other)const;
+        BOOL32      operator!=(const EString& Other)const;
+        BOOL32      operator>(const EString& Other)const;
+        BOOL32      operator<(const EString& Other)const;
+        BOOL32      operator>=(const EString& Other)const;
+        BOOL32      operator<=(const EString& Other)const;
 
         EString&    operator+=(const EString& Other);
 
         
-        PE_NODISCARD UINT32    Length   ()const;
-        PE_NODISCARD BOOL32    StartWith(const EString& SubString)const;
-        PE_NODISCARD UINT32    Find     (const EString& SubString, UINT32 Offset = 0) const;
-        PE_NODISCARD UINT32    RightFind(const EString& SubString, UINT32 Offset = 0) const;
+        PE_NODISCARD UINT32  Length   ()const;
+        PE_NODISCARD BOOL32  StartWith(const EString& SubString)const;
+        PE_NODISCARD UINT32  Find     (const EString& SubString) const;
+        PE_NODISCARD UINT32  RightFind(const EString& SubString) const;
         PE_NODISCARD EString Replace  (const EString& From, const EString& To) const;
         PE_NODISCARD EString Left     (const UINT32& Count) const;
         PE_NODISCARD EString Right    (const UINT32& Count) const;
         PE_NODISCARD EString Substring(const UINT32& Start, const UINT32& Count) const;
 
-        PE_NODISCARD BOOL32    IsNumeric()const;
-        PE_NODISCARD INT32     AtoI() const;
+        PE_NODISCARD BOOL32  IsNumeric()const;
+        PE_NODISCARD INT32   AtoI() const;
         PE_NODISCARD DOUBLE  AtoF() const;
     private:
         std::string Str;
