@@ -77,7 +77,7 @@ namespace PigeonEngine
     }
     void PStaticMeshComponent::MarkRenderTransformAsDirty()
     {
-        UpdateState != PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX;
+        UpdateState |= PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX;
         PMeshComponent::MarkRenderTransformAsDirty();
     }
     void PStaticMeshComponent::MarkRenderStateAsDirty()
