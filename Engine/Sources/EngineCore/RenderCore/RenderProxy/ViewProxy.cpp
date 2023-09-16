@@ -75,7 +75,7 @@ namespace PigeonEngine
 	}
 	void RViewProxy::UpdateMatrices(const ERenderViewMatrices& InMatrices)
 	{
-		SetupProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, Vector3::One());
+		SetProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, Vector3::One());
 		ViewDomainInfo.ViewMatrix = InMatrices.ViewMatrix;
 
 		// Params need update by transform changed

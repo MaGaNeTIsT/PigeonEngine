@@ -14,25 +14,32 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PStaticMeshComponent::PStaticMeshComponent()
-        : SceneProxy(nullptr)
+        : MeshAsset(nullptr), SceneProxy(nullptr), UpdateState(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_NONE)
     {
     }
     PStaticMeshComponent::~PStaticMeshComponent()
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
     }
-    RStaticMeshSceneProxy* PStaticMeshComponent::GetSceneProxy()
+    const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset()const
     {
-        return SceneProxy;
+        return MeshAsset;
     }
-    const RStaticMeshSceneProxy* PStaticMeshComponent::GetSceneProxy()const
+    void PStaticMeshComponent::SetMeshAsset(EStaticMeshAsset* InMeshAsset)
     {
-        return SceneProxy;
+        MeshAsset = InMeshAsset;
+        MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET);
+    }
+
+    // Render proxy functions START
+    UINT8 PStaticMeshComponent::GetUpdateRenderState()const
+    {
+        return UpdateState;
     }
     RStaticMeshSceneProxy* PStaticMeshComponent::CreateSceneProxy()
     {
         Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
-        SceneProxy = new RStaticMeshSceneProxy(this, GetMobility() != EMobilityType::EMT_STATIC, IsPrimitiveCastShadow(), IsPrimitiveReceiveShadow());
+        SceneProxy = new RStaticMeshSceneProxy(this);
         return SceneProxy;
     }
     void PStaticMeshComponent::CreateRenderState()
@@ -56,5 +63,32 @@ namespace PigeonEngine
         }
         PMeshComponent::SendUpdateRenderState();
     }
+    void PStaticMeshComponent::MarkAsDirty(PStaticMeshUpdateState InState)
+    {
+        if (InState == PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX)
+        {
+            MarkRenderTransformAsDirty();
+        }
+        else
+        {
+            UpdateState |= InState;
+            MarkRenderStateAsDirty();
+        }
+    }
+    void PStaticMeshComponent::MarkRenderTransformAsDirty()
+    {
+        UpdateState != PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX;
+        PMeshComponent::MarkRenderTransformAsDirty();
+    }
+    void PStaticMeshComponent::MarkRenderStateAsDirty()
+    {
+        PMeshComponent::MarkRenderStateAsDirty();
+    }
+    void PStaticMeshComponent::CleanMarkRenderStateDirty()
+    {
+        UpdateState = PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_NONE;
+        PMeshComponent::CleanMarkRenderStateDirty();
+    }
+    // Render proxy functions END
 
 }

@@ -6,8 +6,6 @@
 namespace PigeonEngine
 {
 
-    class RPrimitiveSceneProxy;
-
     class PMeshComponent : public PPrimitiveComponent
     {
 
@@ -18,6 +16,10 @@ namespace PigeonEngine
         virtual void	CreateRenderState()override;
         virtual void	DestroyRenderState()override;
         virtual void	SendUpdateRenderState()override;
+    protected:
+        virtual void    MarkRenderTransformAsDirty()override;
+        virtual void    MarkRenderStateAsDirty()override;
+        virtual void    CleanMarkRenderStateDirty()override;
         // Render proxy functions END
     };
 

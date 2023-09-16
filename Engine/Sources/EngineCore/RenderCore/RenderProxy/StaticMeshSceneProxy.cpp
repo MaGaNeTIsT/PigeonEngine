@@ -1,5 +1,4 @@
 #include "StaticMeshSceneProxy.h"
-#include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -11,26 +10,31 @@ namespace PigeonEngine
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
-		: Component(InComponent)
+	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent)
+		: MeshAsset(nullptr), Component(InComponent)
 	{
-		SetupSceneProxy(InComponent, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		Check((ENGINE_RENDER_CORE_ERROR), ("Create static mesh scene proxy failed"), (!!Component));
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy()
-		: Component(nullptr)
+		: MeshAsset(nullptr), Component(nullptr)
 	{
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(const RStaticMeshSceneProxy& Other)
-		: RMeshSceneProxy(Other), Component(Other.Component)
+		: RMeshSceneProxy(Other), MeshAsset(Other.MeshAsset), Component(Other.Component)
 	{
 	}
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
 	}
-	void RStaticMeshSceneProxy::SetupSceneProxy(PStaticMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
+	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset)
 	{
-		RMeshSceneProxy::SetupSceneProxy(InComponent, InIsMovable, InIsCastShadow, InIsReceiveShadow);
-		//TODO
+		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		UpdatePrimitiveMatrices(InMatrices);
+		UpdateMeshAsset(InMeshAsset);
+	}
+	void RStaticMeshSceneProxy::UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset)
+	{
+		MeshAsset = InMeshAsset;
 	}
 
 };

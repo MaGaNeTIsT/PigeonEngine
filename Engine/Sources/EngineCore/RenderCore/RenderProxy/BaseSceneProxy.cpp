@@ -45,7 +45,7 @@ namespace PigeonEngine
 	{
 		return LocalToWorldMatrix;
 	}
-	void RBaseSceneProxy::SetupProxyWorldTransform(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling)
+	void RBaseSceneProxy::SetProxyWorldTransform(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling)
 	{
 		WorldLocation		= InWorldLocation;
 		WorldRotation		= InWorldRotation;

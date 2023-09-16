@@ -2,12 +2,10 @@
 
 #include <CoreMinimal.h>
 #include "BaseSceneProxy.h"
+#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
-
-	class PPrimitiveComponent;
-	class RScene;
 
 	class RPrimitiveSceneProxy : public RBaseSceneProxy
 	{
@@ -16,8 +14,9 @@ namespace PigeonEngine
 		BOOL32			IsSceneProxyMovable()const;
 		BOOL32			IsSceneProxyCastShadow()const;
 		BOOL32			IsSceneProxyReceiveShadow()const;
-	protected:
-		void	SetupSceneProxy(PPrimitiveComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
+	public:
+		void	SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
+		void	UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);
 	protected:
 		BOOL32	IsMovable;
 		BOOL32	IsCastShadow;

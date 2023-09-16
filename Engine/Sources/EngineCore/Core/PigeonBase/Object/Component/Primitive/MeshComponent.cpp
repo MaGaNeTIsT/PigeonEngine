@@ -40,6 +40,20 @@ namespace PigeonEngine
         }
         PPrimitiveComponent::SendUpdateRenderState();
     }
+    void PMeshComponent::MarkRenderTransformAsDirty()
+    {
+        //TODO
+        PPrimitiveComponent::MarkRenderTransformAsDirty();
+    }
+    void PMeshComponent::MarkRenderStateAsDirty()
+    {
+        PPrimitiveComponent::MarkRenderStateAsDirty();
+    }
+    void PMeshComponent::CleanMarkRenderStateDirty()
+    {
+        //TODO
+        PPrimitiveComponent::CleanMarkRenderStateDirty();
+    }
     // Render proxy functions END
 
 }

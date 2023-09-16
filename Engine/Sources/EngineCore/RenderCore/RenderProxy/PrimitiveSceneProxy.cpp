@@ -1,6 +1,5 @@
 #include "PrimitiveSceneProxy.h"
 #include <Renderer/RenderScene.h>
-#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
 namespace PigeonEngine
 {
@@ -13,10 +12,11 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
+		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE)
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
-		: RBaseSceneProxy(Other)
+		: RBaseSceneProxy(Other), IsMovable(Other.IsMovable), IsCastShadow(Other.IsCastShadow), IsReceiveShadow(Other.IsReceiveShadow)
 	{
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
@@ -38,13 +38,15 @@ namespace PigeonEngine
 	{
 		return IsReceiveShadow;
 	}
-	void RPrimitiveSceneProxy::SetupSceneProxy(PPrimitiveComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
+	void RPrimitiveSceneProxy::SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
 	{
-		IsMovable = InIsMovable;
-		IsCastShadow = InIsCastShadow;
+		IsMovable		= InIsMovable;
+		IsCastShadow	= InIsCastShadow;
 		IsReceiveShadow = InIsReceiveShadow;
-		SetupProxyWorldTransform(InComponent->GetComponentWorldLocation(), InComponent->GetComponentWorldRotation(), InComponent->GetComponentWorldScale());
-		//TODO
+	}
+	void RPrimitiveSceneProxy::UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices)
+	{
+		SetProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, InMatrices.WorldScaling);
 	}
 
 };

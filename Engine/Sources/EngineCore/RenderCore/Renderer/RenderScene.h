@@ -148,13 +148,9 @@ namespace PigeonEngine
 		const RSceneProxyMapping<RSkeletalMeshSceneProxy>&		GetSkeletalMeshSceneProxies()const;
 	protected:
 		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
-
 		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
-
 		void	AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
-		void	UpdateStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy);
 		void	AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
-		void	UpdateSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy);
 	protected:
 		ROctree		RenderSceneOctree;
 	protected:

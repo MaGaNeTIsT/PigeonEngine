@@ -11,8 +11,8 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PPrimitiveComponent::PPrimitiveComponent()
+        : Bounds(EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE)), IsCastShadow(FALSE), IsReceiveShadow(FALSE)
     {
-        Bounds = EBoundAABB(Vector3(0), Vector3(0), false);
     }
 
     PPrimitiveComponent::~PPrimitiveComponent()
@@ -66,6 +66,20 @@ namespace PigeonEngine
             //TODO
         }
         PSceneComponent::SendUpdateRenderState();
+    }
+    void PPrimitiveComponent::MarkRenderTransformAsDirty()
+    {
+        //TODO
+        PSceneComponent::MarkRenderTransformAsDirty();
+    }
+    void PPrimitiveComponent::MarkRenderStateAsDirty()
+    {
+        PSceneComponent::MarkRenderStateAsDirty();
+    }
+    void PPrimitiveComponent::CleanMarkRenderStateDirty()
+    {
+        //TODO
+        PSceneComponent::CleanMarkRenderStateDirty();
     }
     // Render proxy functions END
 

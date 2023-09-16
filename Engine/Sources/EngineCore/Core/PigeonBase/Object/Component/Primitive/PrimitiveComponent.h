@@ -6,6 +6,28 @@
 namespace PigeonEngine
 {
 
+    struct ERenderPrimitiveMatrices : public ERenderTransformInfo
+    {
+    public:
+
+    public:
+        ERenderPrimitiveMatrices(const Vector3& InWorldLocation, const Quaternion& InWorldRotation, const Vector3& InWorldScaling)
+            : ERenderTransformInfo(InWorldLocation, InWorldRotation, InWorldScaling)
+        {
+        }
+        ERenderPrimitiveMatrices() = default;
+        ERenderPrimitiveMatrices(const ERenderPrimitiveMatrices& Other)
+            : ERenderTransformInfo(Other)
+        {
+        }
+        ERenderPrimitiveMatrices& operator=(const ERenderPrimitiveMatrices& Other)
+        {
+            ERenderTransformInfo::CopyFromOther(Other);
+            //TODO
+            return (*this);
+        }
+    };
+
     class PPrimitiveComponent : public PSceneComponent
     {
 
@@ -25,9 +47,13 @@ namespace PigeonEngine
 
         // Render proxy functions START
     public:
-        virtual void	CreateRenderState()override;
-        virtual void	DestroyRenderState()override;
-        virtual void	SendUpdateRenderState()override;
+        virtual void    CreateRenderState()override;
+        virtual void    DestroyRenderState()override;
+        virtual void    SendUpdateRenderState()override;
+    protected:
+        virtual void    MarkRenderTransformAsDirty()override;
+        virtual void    MarkRenderStateAsDirty()override;
+        virtual void    CleanMarkRenderStateDirty()override;
         // Render proxy functions END
     };
 

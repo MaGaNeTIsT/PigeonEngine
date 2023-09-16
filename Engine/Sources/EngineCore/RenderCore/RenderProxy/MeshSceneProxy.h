@@ -11,7 +11,7 @@ namespace PigeonEngine
 	class RMeshSceneProxy : public RPrimitiveSceneProxy
 	{
 	protected:
-		void	SetupSceneProxy(PMeshComponent* InComponent, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
+
 
 		RENDER_PROXY_CLASS_BODY(RMeshSceneProxy)
 

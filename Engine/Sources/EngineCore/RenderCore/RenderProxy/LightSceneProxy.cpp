@@ -185,7 +185,7 @@ namespace PigeonEngine
 	}
 	void RDirectionalLightSceneProxy::UpdateMatrices(const ERenderDirectionalLightMatrices& InMatrices)
 	{
-		SetupProxyWorldTransform(Vector3::Zero(), InMatrices.WorldRotation, Vector3::One());
+		SetProxyWorldTransform(Vector3::Zero(), InMatrices.WorldRotation, Vector3::One());
 	}
 	void RDirectionalLightSceneProxy::UpdateLightParams(const ERenderLightParams& InParams)
 	{
