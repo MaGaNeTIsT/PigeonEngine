@@ -1,6 +1,5 @@
 ﻿#include "FileHelper.h"
 #include <CoreMinimal.h>
-#include <fstream>
 namespace PigeonEngine
 {
 
@@ -72,8 +71,7 @@ namespace PigeonEngine
 
 	BOOL32 EFileHelper::IsFileExists(const EString& FilePath)
 	{
-		std::ifstream File(*FilePath);
-		return File.good();
+		return _access(*FilePath, 00) == 0;
 	}
 
 	BOOL32 EFileHelper::IsDirectoryExists(const EString& DirectoryPath)
