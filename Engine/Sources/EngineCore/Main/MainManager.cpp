@@ -133,6 +133,9 @@ namespace PigeonEngine
 #endif
 
 		PWorldManager::GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+
+		// In this time we can start to rendering a scene
+		SceneRenderer->InitNewFrame();
 	}
 	void EMainManager::FixedUpdate()
 	{
@@ -140,11 +143,12 @@ namespace PigeonEngine
 	}
 	void EMainManager::Draw()
 	{
-		m_RenderDeviceD3D11->ClearFinalOutput();
-		m_RenderDeviceD3D11->SetFinalOutput();
+		SceneRenderer->Render();
+
 #if _EDITOR_ONLY
 		m_ImGUIManager->Draw();
 #endif
+
 		m_RenderDeviceD3D11->Present();
 	}
 #if _EDITOR_ONLY

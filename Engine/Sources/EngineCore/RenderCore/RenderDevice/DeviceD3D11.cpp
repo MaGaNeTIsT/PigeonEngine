@@ -116,26 +116,26 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ShutDown()
 	{
-		if (m_RenderTargetView)
-		{
-			m_RenderTargetView->Release();
-			m_RenderTargetView = nullptr;
-		}
-		if (m_DepthStencilView)
-		{
-			m_DepthStencilView->Release();
-			m_DepthStencilView = nullptr;
-		}
-		if (m_DepthTexture)
-		{
-			m_DepthTexture->Release();
-			m_DepthTexture = nullptr;
-		}
-		if (m_SwapChain)
-		{
-			m_SwapChain->Release();
-			m_SwapChain = nullptr;
-		}
+		//if (m_RenderTargetView)
+		//{
+		//	m_RenderTargetView->Release();
+		//	m_RenderTargetView = nullptr;
+		//}
+		//if (m_DepthStencilView)
+		//{
+		//	m_DepthStencilView->Release();
+		//	m_DepthStencilView = nullptr;
+		//}
+		//if (m_DepthTexture)
+		//{
+		//	m_DepthTexture->Release();
+		//	m_DepthTexture = nullptr;
+		//}
+		//if (m_SwapChain)
+		//{
+		//	m_SwapChain->Release();
+		//	m_SwapChain = nullptr;
+		//}
 		//if (m_ImmediateContext)
 		//{
 		//	m_ImmediateContext->Release();

@@ -84,7 +84,11 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Render()
 	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 
+
+		
+		FinalOutputPass();
 	}
 	void RSceneRenderer::InitViews()
 	{
@@ -157,8 +161,8 @@ namespace PigeonEngine
 	void RSceneRenderer::FinalOutputPass()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		RenderDevice->ClearFinalOutput();
 		RenderDevice->SetFinalOutput();
-
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{
