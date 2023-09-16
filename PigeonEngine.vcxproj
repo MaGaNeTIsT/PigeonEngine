@@ -52,6 +52,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\Config\EngineConfig.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\EngineCommon.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraAndLight\CameraComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.h" />
@@ -278,6 +279,7 @@
     </ClCompile>
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Transform.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\ActorComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\CameraAndLight\CameraComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Component.cpp" />

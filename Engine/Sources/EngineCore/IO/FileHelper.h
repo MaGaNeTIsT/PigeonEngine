@@ -13,6 +13,9 @@ namespace PigeonEngine
 		static BOOL32 ReadFileAsString(const EString& FilePath, EString& Return);
 		static BOOL32 SaveBytesToFile (const EString& FilePath, const void* Bytes, const ULONG& Size);
 		static BOOL32 SaveStringToFile(const EString& FilePath, const EString& Str);
+
+		static BOOL32 IsFileExists(const EString& FilePath);
+		static BOOL32 IsDirectoryExists(const EString& DirectoryPath);
 	public:
 		EFileHelper() = delete;
 		EFileHelper(const EFileHelper&) = delete;

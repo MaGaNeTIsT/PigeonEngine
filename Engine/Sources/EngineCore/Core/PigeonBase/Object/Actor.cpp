@@ -94,8 +94,14 @@ namespace PigeonEngine
 	{
 		Check(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot == nullptr);
 		NewRoot->SetComponentTransform(*RootComponent->GetTransform());
-		delete RootComponent;
+		RootComponent->ReparentChildren(NewRoot);
+		RootComponent->Destroy();
 		this->RootComponent = NewRoot;
+		if(this->MyWorld)
+		{
+			this->RootComponent->BeginAddedToScene(MyWorld);
+		}
+		
 	}
 
 	Vector3 PActor::GetActorLocation() const

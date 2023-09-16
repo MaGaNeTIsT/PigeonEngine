@@ -62,6 +62,14 @@ namespace PigeonEngine
 		AttachedParentComponent = nullptr;
 	}
 
+	void PSceneComponent::ReparentChildren(PSceneComponent* Another)
+	{
+		for(auto& child : this->ChildrenComponents)
+		{
+			child->AttachToComponent(Another);
+		}
+	}
+
 	void PSceneComponent::ClearChildren()
 	{
 		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
@@ -100,9 +108,8 @@ namespace PigeonEngine
 	{
 		ClearChildren();
 		RemoveFromAttachedParent();
-		RemoveFromOwnerActor();
-		PActorComponent::Destroy();
 		RemovedFromScene();
+		PActorComponent::Destroy();
 	}
 
 	void PSceneComponent::BeginAddedToScene(PWorld* World)

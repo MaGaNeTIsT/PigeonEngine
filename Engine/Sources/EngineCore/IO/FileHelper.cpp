@@ -1,7 +1,6 @@
 ﻿#include "FileHelper.h"
 #include <CoreMinimal.h>
 #include <fstream>
-
 namespace PigeonEngine
 {
 
@@ -70,6 +69,18 @@ namespace PigeonEngine
 		out.close();
 		return TRUE;
 	}
+
+	BOOL32 EFileHelper::IsFileExists(const EString& FilePath)
+	{
+		std::ifstream File(*FilePath);
+		return File.good();
+	}
+
+	BOOL32 EFileHelper::IsDirectoryExists(const EString& DirectoryPath)
+	{
+		return _access(*DirectoryPath, 00) == 0;
+	}
+
 	BOOL32 EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size)
 	{
 		using namespace std;

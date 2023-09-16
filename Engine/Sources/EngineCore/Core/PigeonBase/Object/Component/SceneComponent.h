@@ -104,8 +104,9 @@ namespace PigeonEngine
 
     protected:
     	// Set this component's attached parent component, will keep the relative transform.
-    	void             SetAttachedParentComponent(PSceneComponent* NewParent);
-    	void             RemoveFromAttachedParent();
+    	void SetAttachedParentComponent(PSceneComponent* NewParent);
+    	void RemoveFromAttachedParent();
+    	void ReparentChildren(PSceneComponent* Another);
     private:
     	PSceneComponent* AttachedParentComponent = nullptr;
 

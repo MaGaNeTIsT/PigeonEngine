@@ -14,7 +14,7 @@ namespace PigeonEngine
     class PStaticMeshComponent;
     class PSkeletalMeshComponent;
     class RSceneInterface;
-
+    class PLevelActor;
     enum EWorldType : UINT8
     {
         EWT_GAME,
@@ -47,7 +47,7 @@ namespace PigeonEngine
         void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
   
     private:
-        TSet<PActor*> RootActors;
+        PActor* RootActor = nullptr;
         TSet<PActor*> AllActors;
 #if _EDITOR_ONLY
     public:

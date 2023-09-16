@@ -16,7 +16,6 @@ namespace PigeonEngine
 	class PActor : public PObject
 	{
 		friend class PWorld;
-	private:
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
 		

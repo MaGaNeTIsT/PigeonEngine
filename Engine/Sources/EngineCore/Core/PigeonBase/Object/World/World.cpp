@@ -4,6 +4,8 @@
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
+#include "PigeonBase/Object/Actor/LevelActor.h"
+
 namespace PigeonEngine
 {
 
@@ -17,6 +19,8 @@ namespace PigeonEngine
 
     PWorld::PWorld()
     {
+        this->RootActor = new PLevelActor();
+        this->RootActor->BeginAddedToScene(this);
     }
     PWorld::~PWorld()
     {
@@ -55,7 +59,8 @@ namespace PigeonEngine
     {
         Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor == nullptr);
         
-        this->RootActors.Add(NewActor);
+        // this->RootActors.Add(NewActor);
+        NewActor->AttachActorTo(RootActor);
         this->AllActors.Add(NewActor);
         NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
         NewActor->BeginAddedToScene(this);
@@ -101,6 +106,7 @@ namespace PigeonEngine
 
     PWorldManager::PWorldManager()
     {
+       
     }
     PWorldManager::~PWorldManager()
     {
