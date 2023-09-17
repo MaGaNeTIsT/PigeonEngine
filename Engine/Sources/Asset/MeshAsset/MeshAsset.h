@@ -35,6 +35,7 @@ namespace PigeonEngine
 	extern EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType);
 	extern UINT32 TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
 	extern EVertexLayoutType TranslateVertexPartTypeToVertexBaseLayout(UINT32 InVertexPartType);
+	extern UINT32 TranslateVertexPartTypeToVertexBaseIndex(UINT32 InVertexPartType);
 
 	struct EVertexDescriptor
 	{
@@ -431,6 +432,21 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
+		enum EVertexResourcesType : UINT8
+		{
+			VERTEX_RESOURCES_TYPE_POSITION		= 0,
+			VERTEX_RESOURCES_TYPE_NORMAL,
+			VERTEX_RESOURCES_TYPE_UV,
+			VERTEX_RESOURCES_TYPE_TANGENT,
+			VERTEX_RESOURCES_TYPE_COLOR,
+			VERTEX_RESOURCES_TYPE_BLENDINDICES,
+			VERTEX_RESOURCES_TYPE_BLENDWEIGHT,
+			VERTEX_RESOURCES_TYPE_BINORMAL,
+			VERTEX_RESOURCES_TYPE_COUNT
+		};
+	public:
+		using TVertexResourceType = TMap<EVertexResourcesType, TArray<RBufferResource>>;
+	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual void	ReleaseRenderResource()override;
 	public:
@@ -443,7 +459,7 @@ namespace PigeonEngine
 		void	CopyRenderResourcesInternal(const EMeshRenderResource* Other);
 	protected:
 		RBufferResource			IndexRenderResource;
-		TArray<RBufferResource>	VertexRenderResources;
+		TVertexResourceType		VertexRenderResources;
 	};
 
 	class EStaticMeshRenderResource : public EMeshRenderResource

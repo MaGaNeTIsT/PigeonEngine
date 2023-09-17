@@ -153,6 +153,50 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this vertex part type for mesh layout."));
 		return (EVertexLayoutType::MESH_INDEX_FULL);	//TODO Not support type is fix output index type for now.
 	}
+	UINT32 TranslateVertexPartTypeToVertexBaseIndex(UINT32 InVertexPartType)
+	{
+		if ((InVertexPartType & 0x3u) != 0u)
+		{
+			if ((InVertexPartType & 0x1u) != 0u)
+			{
+				return (EVertexLayoutType::MESH_INDEX_FULL);
+			}
+			else if ((InVertexPartType & 0x2u) != 0u)
+			{
+				return (EVertexLayoutType::MESH_INDEX_HALF);
+			}
+		}
+		else if ((InVertexPartType & (0xfu << 2u)) != 0u)
+		{
+			return ((InVertexPartType >> 2u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 6u)) != 0u)
+		{
+			return ((InVertexPartType >> 6u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 10u)) != 0u)
+		{
+			return ((InVertexPartType >> 10u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 14u)) != 0u)
+		{
+			return ((InVertexPartType >> 14u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 18u)) != 0u)
+		{
+			return ((InVertexPartType >> 18u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 22u)) != 0u)
+		{
+			return ((InVertexPartType >> 22u) & 0xfu);
+		}
+		else if ((InVertexPartType & (0xfu << 26u)) != 0u)
+		{
+			return ((InVertexPartType >> 26u) & 0xfu);
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this vertex part type for mesh layout."));
+		return (EVertexLayoutType::MESH_INDEX_FULL);	//TODO Not support type is fix output index type for now.
+	}
 
 	EMesh::EMesh()
 		: MeshName(ESettings::ENGINE_DEFAULT_NAME)
@@ -951,9 +995,16 @@ namespace PigeonEngine
 		if ((IndexRenderResource.IsRenderResourceValid()) && (VertexRenderResources.Length() > 0u))
 		{
 			BOOL32 Result = TRUE;
-			for (UINT32 Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
+			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				Result = Result && (VertexRenderResources[Index].IsRenderResourceValid());
+				const TArray<RBufferResource>& Buffers = It->second;
+				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
+				{
+					for (UINT32 i = 0u; i < BufferNum; i++)
+					{
+						Result = Result && (Buffers[i].IsRenderResourceValid());
+					}
+				}
 			}
 			return Result;
 		}
@@ -964,9 +1015,17 @@ namespace PigeonEngine
 		IndexRenderResource.ReleaseRenderResource();
 		if (VertexRenderResources.Length() > 0u)
 		{
-			for (UINT32 Index = 0u, Length = VertexRenderResources.Length(); Index < Length; Index++)
+			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				VertexRenderResources[Index].ReleaseRenderResource();
+				TArray<RBufferResource>& Buffers = It->second;
+				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
+				{
+					for (UINT32 i = 0u; i < BufferNum; i++)
+					{
+						Buffers[i].ReleaseRenderResource();
+					}
+					Buffers.Clear();
+				}
 			}
 			VertexRenderResources.Clear();
 		}
@@ -1051,9 +1110,17 @@ namespace PigeonEngine
 		}
 		if (VertexRenderResources.Length() > 0u)
 		{
-			for (UINT32 i = 0u, n = VertexRenderResources.Length(); i < n; i++)
+			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				VertexRenderResources[i].ReleaseRenderResource();
+				TArray<RBufferResource>& Buffers = It->second;
+				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
+				{
+					for (UINT32 i = 0u; i < BufferNum; i++)
+					{
+						Buffers[i].ReleaseRenderResource();
+					}
+					Buffers.Clear();
+				}
 			}
 			VertexRenderResources.Clear();
 		}
@@ -1081,6 +1148,12 @@ namespace PigeonEngine
 				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
 #endif
 				FullyCreated = FALSE;
+			}
+			{
+				const UINT32 VertexType = MeshVertexData.PartType;
+				EVertexLayoutType VertexLayout = TranslateVertexPartTypeToVertexBaseLayout(VertexType);
+				UINT32 VertexIndex = TranslateVertexPartTypeToVertexBaseIndex(VertexType);
+				if(VertexRenderResources.ContainsKey())
 			}
 			VertexRenderResources.Add(NewVertexRenderResource);
 		}

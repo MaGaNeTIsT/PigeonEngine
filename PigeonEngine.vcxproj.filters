@@ -397,6 +397,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -585,6 +586,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
@@ -718,5 +720,7 @@
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\FullScreenTriangle_PEVS.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\MeshRenderer</Filter>
     </FxCompile>
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\StaticMesh_PEPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\StaticMesh_PEVS.hlsl" />
   </ItemGroup>
 </Project>

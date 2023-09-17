@@ -31,10 +31,31 @@ namespace PigeonEngine
 		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 		UpdateMeshAsset(InMeshAsset);
+
+		CreatePrimitiveCBuffer<RStaticMeshCBufferData>();
 	}
 	void RStaticMeshSceneProxy::UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset)
 	{
 		MeshAsset = InMeshAsset;
+	}
+	void RStaticMeshSceneProxy::UpdateRenderResource()
+	{
+		RStaticMeshCBufferData NewData;
+		Matrix4x4 InvMat(LocalToWorldMatrix.Inverse());
+		NewData._WorldMatrix = TranslateUploadType(LocalToWorldMatrix);
+		NewData._WorldInvMatrix = TranslateUploadType(InvMat);
+		NewData._WorldInvTransposeMatrix = TranslateUploadType(InvMat.Transpose());
+		UploadPrimitiveCBuffer(&NewData);
+	}
+	void RStaticMeshSceneProxy::BindRenderResource()
+	{
+		BindPrimitiveCBuffer(1u);
+#if _EDITOR_ONLY
+		if (MeshAsset->IsRenderResourceValid())
+#endif
+		{
+			MeshAsset->GetRenderResource()->
+		}
 	}
 
 };

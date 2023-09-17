@@ -116,17 +116,24 @@ namespace PigeonEngine
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
-				// View params MUST be updating before matrices.
 				SceneProxy->UpdateViewSettings(TempIsMainCamera);
+				BOOL32 NeedUpdateRenderResource = FALSE;
+				// View params MUST be updating before matrices.
 				if (TempParams)
 				{
 					SceneProxy->UpdateViewParams(*TempParams);
 					delete TempParams;
+					NeedUpdateRenderResource = TRUE;
 				}
 				if (TempMatrices)
 				{
 					SceneProxy->UpdateMatrices(*TempMatrices);
 					delete TempMatrices;
+					NeedUpdateRenderResource = TRUE;
+				}
+				if (NeedUpdateRenderResource)
+				{
+					SceneProxy->UpdateRenderResource();
 				}
 			});
 	}
@@ -286,15 +293,21 @@ namespace PigeonEngine
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
 			{
+				BOOL32 NeedUpdateRenderResource = FALSE;
 				SceneProxy->SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
 					delete TempMatrices;
+					NeedUpdateRenderResource = TRUE;
 				}
 				if (TempMeshAsset)
 				{
 					SceneProxy->UpdateMeshAsset(TempMeshAsset);
+				}
+				if (NeedUpdateRenderResource)
+				{
+					SceneProxy->UpdateRenderResource();
 				}
 			});
 	}

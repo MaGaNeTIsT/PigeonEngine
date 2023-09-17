@@ -131,6 +131,11 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Render()
 	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
+		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
+		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
+		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
 		BasePass();
 
@@ -237,7 +242,6 @@ namespace PigeonEngine
 		if (FinalOutputView != 0u)
 		{
 			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
-			RenderDevice->BindPSSamplerState(DefaultSamplers[SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 0u);
 		}
 		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
 	}

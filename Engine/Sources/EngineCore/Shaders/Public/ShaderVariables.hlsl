@@ -3,8 +3,14 @@
 
 #include "./ShaderDefCommon.hlsl"
 
-#define PER_OBJECT_TRANSFORM					float4x4 _WorldMatrix; float4x4 _WorldInvMatrix; float4x4 _WorldInvTransposeMatrix;
-#define RENDER_AO_INPUT(__AOInputName,__Slot)	Texture2D<float> __AOInputName : register(__Slot);
+#define PER_OBJECT_TRANSFORM \
+	float4x4 _WorldMatrix;\
+	float4x4 _WorldInvMatrix;\
+	float4x4 _WorldInvTransposeMatrix;\
+
+#define RENDER_AO_INPUT(__AOInputName,__Slot) \
+	Texture2D<float> __AOInputName : register(__Slot);\
+
 
 cbuffer ConstantBufferPerFrame : register(b0)
 {

@@ -5,7 +5,17 @@
 namespace PigeonEngine
 {
 
-	EString GetEngineDefaultTexturePath(RDefaultTextureType texType)
+	PE_INLINE DirectX::XMFLOAT4X4 TranslateUploadType(const Matrix4x4& InData)
+	{
+		DirectX::XMFLOAT4X4 Result(InData.GetDirectXTransposeValue4x4());
+		return Result;
+	}
+	PE_INLINE DirectX::XMFLOAT4 TranslateUploadType(const Vector4& InData)
+	{
+		DirectX::XMFLOAT4 Result(InData.GetDirectXValue4());
+		return Result;
+	}
+	PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType)
 	{
 		static TMap<RDefaultTextureType, EString> engineDefaultTexturePathMap = {
 			{ RDefaultTextureType::TEXTURE2D_WHITE, (ENGINE_DEFAULT_TEXTURE2D_WHITE) },
@@ -19,7 +29,7 @@ namespace PigeonEngine
 
 		return engineDefaultTexturePathMap[texType];
 	}
-	UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
+	PE_INLINE UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
 	{
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
 		UINT32 SemanticName = input.SemanticName;
@@ -35,7 +45,7 @@ namespace PigeonEngine
 		else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 8u; }
 		return 0u;
 	}
-	UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input)
+	PE_INLINE UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input)
 	{
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
 		UINT32 SemanticName = input.SemanticName;
@@ -51,7 +61,7 @@ namespace PigeonEngine
 		else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 2u; }
 		return 0u;
 	}
-	RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input)
+	PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return RShaderSemanticType::SHADER_SEMANTIC_NONE; }
 		UINT32 SemanticType = input;
@@ -67,13 +77,13 @@ namespace PigeonEngine
 		else if ((SemanticType >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return RShaderSemanticType::SHADER_SEMANTIC_PSIZE; }
 		return RShaderSemanticType::SHADER_SEMANTIC_NONE;
 	}
-	UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input)
+	PE_INLINE UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
 		UINT32 SemanticType = input;
 		return (SemanticType & 0xffu);
 	}
-	void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
+	PE_INLINE void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
 		const static RShaderSemanticType _EngineDefaultMeshInputLayout[7u] = {
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
@@ -87,7 +97,7 @@ namespace PigeonEngine
 		OutLayouts = _EngineDefaultMeshInputLayout;
 		OutLayoutNum = 7u;
 	}
-	void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
+	PE_INLINE void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
 		const static RShaderSemanticType _EngineDefaultSkeletalMeshInputLayout[9u] = {
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,

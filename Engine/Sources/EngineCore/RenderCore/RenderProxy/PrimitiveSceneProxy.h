@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include "BaseSceneProxy.h"
+#include <RenderResource.h>
 #include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 
 namespace PigeonEngine
@@ -15,12 +16,26 @@ namespace PigeonEngine
 		BOOL32			IsSceneProxyCastShadow()const;
 		BOOL32			IsSceneProxyReceiveShadow()const;
 	public:
-		void	SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
-		void	UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);
+		void			SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
+		void			UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);
+		virtual void	UpdateRenderResource();
+		virtual void	BindRenderResource();
+	public:
+		const RBufferResource&	GetPrimitiveCBuffer()const;
 	protected:
-		BOOL32	IsMovable;
-		BOOL32	IsCastShadow;
-		BOOL32	IsReceiveShadow;
+		template<typename _TStructType>
+		void CreatePrimitiveCBuffer();
+		template<typename _TStructType>
+		void UploadPrimitiveCBuffer(const _TStructType* InStruct);
+		void BindPrimitiveCBuffer(const UINT32 InSlot);
+	protected:
+		BOOL32			IsMovable;
+		BOOL32			IsCastShadow;
+		BOOL32			IsReceiveShadow;
+#if _EDITOR_ONLY
+		UINT32			PrimitiveCBufferSize;
+#endif
+		RBufferResource	PrimitiveCBuffer;
 
 		RENDER_PROXY_CLASS_BODY(RPrimitiveSceneProxy)
 
