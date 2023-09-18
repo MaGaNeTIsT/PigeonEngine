@@ -107,7 +107,7 @@ namespace PigeonEngine
 			else
 			{
 				EString ErrorInfo = EString("Try to add animation clip but already exist [animation clip name = ") + InClip.ClipName + "].";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 		}
@@ -187,7 +187,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -199,7 +199,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -211,7 +211,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton animation importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -234,7 +234,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Assimp importer can not load skeleton animation file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -271,7 +271,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + TempFullPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultAsset;
@@ -338,7 +338,7 @@ namespace PigeonEngine
 				ErrorData += ", load file name : ";
 				ErrorData += InLoadName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -356,7 +356,7 @@ namespace PigeonEngine
 				EString ErrorData("Load skeleton animation asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return LoadedSkeletonAnimationResource;
@@ -412,7 +412,7 @@ namespace PigeonEngine
 						EString ErrorData("Load skeleton animation asset failed (load file path : ");
 						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton animation type.";
-						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+						PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 					}
 #endif
 					delete[]ReadFileMem;
@@ -429,7 +429,7 @@ namespace PigeonEngine
 						EString ErrorData("Load skeleton animation asset failed (load file path : ");
 						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton animation type.";
-						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+						PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 					}
 #endif
 					delete[]ReadFileMem;
@@ -537,7 +537,7 @@ namespace PigeonEngine
 				ErrorData += ", save file name : ";
 				ErrorData += InSaveName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;

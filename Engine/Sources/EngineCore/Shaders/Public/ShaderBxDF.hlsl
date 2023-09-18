@@ -1,7 +1,7 @@
 #ifndef _SHADER_BXDF_HLSL
 #define _SHADER_BXDF_HLSL
 
-#include "./ShaderDefCommon.hlsl"
+#include "./ShaderStructCommon.hlsl"
 #include "./ShaderFunctions.hlsl"
 
 /*

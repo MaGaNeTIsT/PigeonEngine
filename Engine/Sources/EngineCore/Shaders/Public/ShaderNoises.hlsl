@@ -106,13 +106,13 @@ float ValueNoise3(in float3 InValue3)
 	float c = SimpleRandom3(i + float3(0.0, 1.0, 0.0));
 	float d = SimpleRandom3(i + float3(1.0, 1.0, 0.0));
 	float e = SimpleRandom3(i + float3(0.0, 0.0, 1.0));
-	float f = SimpleRandom3(i + float3(1.0, 0.0, 1.0));
-	float g = SimpleRandom3(i + float3(0.0, 1.0, 1.0));
-	float h = SimpleRandom3(i + float3(1.0, 1.0, 1.0));
+	float j = SimpleRandom3(i + float3(1.0, 0.0, 1.0));
+	float k = SimpleRandom3(i + float3(0.0, 1.0, 1.0));
+	float l = SimpleRandom3(i + float3(1.0, 1.0, 1.0));
 
 	f = smoothstep(0.0, 1.0, f);
 	float v1 = lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
-	float v2 = lerp(lerp(e, f, f.x), lerp(g, h, f.x), f.y);
+	float v2 = lerp(lerp(e, j, f.x), lerp(k, l, f.x), f.y);
 	float v3 = lerp(v1, v2, f.z);
 
 	return v3;
@@ -128,13 +128,13 @@ float PerlinNoise3(in float3 InValue3)
 	float c = dot(SimpleRandom3(i + float3(0.0, 1.0, 0.0)) * 2.0 - 1.0, f - float3(0.0, 1.0, 0.0));
 	float d = dot(SimpleRandom3(i + float3(1.0, 1.0, 0.0)) * 2.0 - 1.0, f - float3(1.0, 1.0, 0.0));
 	float e = dot(SimpleRandom3(i + float3(0.0, 0.0, 1.0)) * 2.0 - 1.0, f - float3(0.0, 0.0, 1.0));
-	float f = dot(SimpleRandom3(i + float3(1.0, 0.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 0.0, 1.0));
-	float g = dot(SimpleRandom3(i + float3(0.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(0.0, 1.0, 1.0));
-	float h = dot(SimpleRandom3(i + float3(1.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 1.0, 1.0));
+	float j = dot(SimpleRandom3(i + float3(1.0, 0.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 0.0, 1.0));
+	float k = dot(SimpleRandom3(i + float3(0.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(0.0, 1.0, 1.0));
+	float l = dot(SimpleRandom3(i + float3(1.0, 1.0, 1.0)) * 2.0 - 1.0, f - float3(1.0, 1.0, 1.0));
 
 	f = smoothstep(0.0, 1.0, f);
 	float v1 = lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
-	float v2 = lerp(lerp(e, f, f.x), lerp(g, h, f.x), f.y);
+	float v2 = lerp(lerp(e, j, f.x), lerp(k, l, f.x), f.y);
 	float v3 = lerp(v1, v2, f.z);
 
 	return v3;

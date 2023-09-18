@@ -17,7 +17,6 @@ namespace PigeonEngine
 	typedef	short						BOOL16;
 	typedef	int							INT32;
 	typedef	unsigned int				UINT32;
-	typedef	int							BOOL32;
 	typedef	long long					BOOL64;
 	typedef	long						LONG;
 	typedef	long long					INT64;
@@ -118,5 +117,93 @@ namespace PigeonEngine
  */
 #define PE_FLOAT_NORMAL_THRESH			(0.0001f)
 #define PE_DOUBLE_NORMAL_THRESH			(0.0001)
+
+	struct BOOL32
+	{
+	public:
+		constexpr BOOL32(const INT32 InValue)noexcept : BoolValue(InValue) {}
+		BOOL32()noexcept : BoolValue(FALSE) {}
+		BOOL32(const BOOL32& Other)noexcept : BoolValue(Other.BoolValue) {}
+		BOOL32(const BOOL8& Other)noexcept : BoolValue(Other == true) {}
+	public:
+		BOOL32& operator=(const BOOL32& Other)
+		{
+			BoolValue = Other.BoolValue & 0x1;
+			return (*this);
+		}
+		BOOL32& operator|=(const BOOL32& Other)
+		{
+			BoolValue = (BoolValue & 0x1) | (Other.BoolValue & 0x1);
+			return (*this);
+		}
+		BOOL32& operator&=(const BOOL32& Other)
+		{
+			BoolValue = (BoolValue & 0x1) & (Other.BoolValue & 0x1);
+			return (*this);
+		}
+		BOOL8 operator==(const BOOL32& Other)const
+		{
+			return ((BoolValue & 0x1) == (Other.BoolValue & 0x1));
+		}
+		BOOL8 operator!=(const BOOL32& Other)const
+		{
+			return ((BoolValue & 0x1) != (Other.BoolValue & 0x1));
+		}
+		BOOL32& operator=(const INT32& InValue)
+		{
+			BoolValue = InValue & 0x1;
+			return (*this);
+		}
+		BOOL32& operator|=(const INT32& InValue)
+		{
+			BoolValue = (BoolValue & 0x1) | (InValue & 0x1);
+			return (*this);
+		}
+		BOOL32& operator&=(const INT32& InValue)
+		{
+			BoolValue = (BoolValue & 0x1) & (InValue & 0x1);
+			return (*this);
+		}
+		BOOL8 operator==(const INT32& InValue)const
+		{
+			return ((BoolValue & 0x1) == (InValue & 0x1));
+		}
+		BOOL8 operator!=(const INT32& InValue)const
+		{
+			return ((BoolValue & 0x1) != (InValue & 0x1));
+		}
+		operator BOOL8()const
+		{
+			return ((BoolValue & 0x1) != 0x0);
+		}
+		BOOL8 operator!()const
+		{
+			return ((BoolValue & 0x1) == 0x0);
+		}
+		BOOL32& operator=(const BOOL8& Other)
+		{
+			BoolValue = (Other == true);
+			return (*this);
+		}
+		operator INT32()const
+		{
+			return BoolValue;
+		}
+	public:
+		INT32	BoolValue;
+	};
+
+	BOOL32 operator&(const BOOL32& A, const BOOL32& B);
+	BOOL32 operator|(const BOOL32& A, const BOOL32& B);
+	BOOL8 operator&&(const BOOL32& A, const BOOL32& B);
+	BOOL8 operator||(const BOOL32& A, const BOOL32& B);
+	BOOL8 operator&&(const BOOL8& A, const BOOL32& B);
+	BOOL8 operator||(const BOOL8& A, const BOOL32& B);
+	BOOL8 operator&&(const BOOL32& A, const BOOL8& B);
+	BOOL8 operator||(const BOOL32& A, const BOOL8& B);
+	BOOL8 operator==(const BOOL8& A, const BOOL32& B);
+	BOOL8 operator!=(const BOOL8& A, const BOOL32& B);
+	BOOL8 operator==(const BOOL32& A, const BOOL8& B);
+	BOOL8 operator!=(const BOOL32& A, const BOOL8& B);
 
 };

@@ -7,6 +7,7 @@
 
 namespace PigeonEngine
 {
+
 	class EMath
 	{
 	public:

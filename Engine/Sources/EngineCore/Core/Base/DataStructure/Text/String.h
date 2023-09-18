@@ -2,6 +2,7 @@
 
 #include "../../../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
+#include <Base/DataStructure/BaseType.h>
 #include <string>
 
 namespace PigeonEngine

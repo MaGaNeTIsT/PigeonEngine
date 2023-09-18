@@ -31,11 +31,23 @@ namespace PigeonEngine
 		MESH_BITANGENT		= (1 << 22),
 		MESH_SKIN			= (1 << 26)
 	};
+	enum EVertexResourceType : UINT8
+	{
+		VERTEX_RESOURCE_TYPE_POSITION = 0,
+		VERTEX_RESOURCE_TYPE_NORMAL,
+		VERTEX_RESOURCE_TYPE_UV,
+		VERTEX_RESOURCE_TYPE_TANGENT,
+		VERTEX_RESOURCE_TYPE_COLOR,
+		VERTEX_RESOURCE_TYPE_BINORMAL,
+		VERTEX_RESOURCE_TYPE_COUNT
+	};
 	extern UINT32 GetMeshVertexLayoutTypeStartBitIndex(EVertexLayoutType InType);
 	extern EVertexLayoutType TranslateSemanticBaseTypeToVertexBaseLayout(RShaderSemanticType InBaseType);
 	extern UINT32 TranslateVertexBaseLayoutToSemanticBaseType(EVertexLayoutType InBaseType);
 	extern EVertexLayoutType TranslateVertexPartTypeToVertexBaseLayout(UINT32 InVertexPartType);
 	extern UINT32 TranslateVertexPartTypeToVertexBaseIndex(UINT32 InVertexPartType);
+	extern EVertexLayoutType TranslateVertexResourceTypeToVertexLayoutType(const UINT8 InVertexResourceType);
+	extern EVertexResourceType TranslateVertexLayoutTypeToVertexResourceType(EVertexLayoutType InVertexLayoutType);
 
 	struct EVertexDescriptor
 	{
@@ -432,20 +444,7 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		enum EVertexResourcesType : UINT8
-		{
-			VERTEX_RESOURCES_TYPE_POSITION		= 0,
-			VERTEX_RESOURCES_TYPE_NORMAL,
-			VERTEX_RESOURCES_TYPE_UV,
-			VERTEX_RESOURCES_TYPE_TANGENT,
-			VERTEX_RESOURCES_TYPE_COLOR,
-			VERTEX_RESOURCES_TYPE_BLENDINDICES,
-			VERTEX_RESOURCES_TYPE_BLENDWEIGHT,
-			VERTEX_RESOURCES_TYPE_BINORMAL,
-			VERTEX_RESOURCES_TYPE_COUNT
-		};
-	public:
-		using TVertexResourceType = TMap<EVertexResourcesType, TArray<RBufferResource>>;
+		using TVertexResourceType = TMap<UINT8, TArray<RBufferResource*>>;
 	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual void	ReleaseRenderResource()override;

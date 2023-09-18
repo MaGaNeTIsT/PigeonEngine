@@ -265,7 +265,7 @@ namespace PigeonEngine
 			EString ErrorInfo("Try to removing not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
-			PE_FAILED((ENGINE_ASSET_ERROR), ErrorInfo);
+			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 			return FALSE;
 		}
@@ -309,7 +309,7 @@ namespace PigeonEngine
 			EString ErrorInfo("Try to getting not exist bone [");
 			ErrorInfo = ErrorInfo + InBoneName + "] in skeleton [";
 			ErrorInfo = ErrorInfo + SkeletonName + "].";
-			PE_FAILED((ENGINE_ASSET_ERROR), ErrorInfo);
+			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 			return FALSE;
 		}
@@ -395,7 +395,7 @@ namespace PigeonEngine
 					ErrorInfo += "] bones buffer [num = ";
 					ErrorInfo += ToString(SkeletonBoneNum);
 					ErrorInfo += "] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 					delete[]SkeletonMatrices;
 					return FALSE;
@@ -437,7 +437,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skeleton name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -489,7 +489,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -501,7 +501,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -513,7 +513,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for skeleton importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -535,7 +535,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Assimp importer can not load skeleton file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -572,7 +572,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skeleton asset path = [") + TempFullPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultSkeletonAsset;
@@ -625,7 +625,7 @@ namespace PigeonEngine
 				ErrorData += ", save file name : ";
 				ErrorData += InSaveName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -637,7 +637,7 @@ namespace PigeonEngine
 				EString ErrorData("Save skeleton asset failed (save file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ") this asset is null.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -652,7 +652,7 @@ namespace PigeonEngine
 				ErrorData += ", skeleton asset name : ";
 				ErrorData += InSkeletonAsset->GetDebugName();
 				ErrorData += ") this asset is not contain valid skeleton resource.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -672,7 +672,7 @@ namespace PigeonEngine
 				ErrorData += ", load file name : ";
 				ErrorData += InLoadName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -690,7 +690,7 @@ namespace PigeonEngine
 				EString ErrorData("Load skeleton asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return LoadedSkeletonResource;
@@ -746,7 +746,7 @@ namespace PigeonEngine
 						EString ErrorData("Load skeleton asset failed (load file path : ");
 						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton type.";
-						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+						PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 					}
 #endif
 					delete[]ReadFileMem;
@@ -763,7 +763,7 @@ namespace PigeonEngine
 						EString ErrorData("Load skeleton asset failed (load file path : ");
 						ErrorData += TempFullPathName;
 						ErrorData += ") this asset is not skeleton type.";
-						PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+						PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 					}
 #endif
 					delete[]ReadFileMem;
@@ -850,7 +850,7 @@ namespace PigeonEngine
 				ErrorData += ", save file name : ";
 				ErrorData += InSaveName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;

@@ -63,7 +63,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] does not contain input layouts when init resource.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return FALSE;
@@ -73,7 +73,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -127,7 +127,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -181,7 +181,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -247,7 +247,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Import shader asset error (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -259,7 +259,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for shader importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -272,7 +272,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file type for shader importer (import shader name type : ");
 				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -301,7 +301,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Import shader asset error (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -313,7 +313,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for shader importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -326,7 +326,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file type for shader importer (import shader name type : ");
 				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -355,7 +355,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Import shader asset error (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -367,7 +367,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for shader importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -380,7 +380,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file type for shader importer (import shader name type : ");
 				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -425,7 +425,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Vertex shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultShaderAsset;
@@ -459,7 +459,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultShaderAsset;
@@ -493,7 +493,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Pixel shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultShaderAsset;
@@ -528,7 +528,7 @@ namespace PigeonEngine
 				ErrorData += ", load file name : ";
 				ErrorData += InLoadName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -545,7 +545,7 @@ namespace PigeonEngine
 				EString ErrorData("Load shader asset failed (load file path : ");
 				ErrorData += TempFullLoadPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -649,7 +649,7 @@ namespace PigeonEngine
 				ErrorData += ", save file name : ";
 				ErrorData += InSaveName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -735,7 +735,7 @@ namespace PigeonEngine
 		{
 			EString ErrorData("Save shader asset failed (output file path : ");
 			ErrorData = ErrorData + TempFullSavePathName + ").";
-			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 		}
 #endif
 		return FALSE;
@@ -754,7 +754,7 @@ namespace PigeonEngine
 				ErrorData += ", save file name : ";
 				ErrorData += InSaveName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;

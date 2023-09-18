@@ -5,16 +5,6 @@
 namespace PigeonEngine
 {
 
-	PE_INLINE DirectX::XMFLOAT4X4 TranslateUploadType(const Matrix4x4& InData)
-	{
-		DirectX::XMFLOAT4X4 Result(InData.GetDirectXTransposeValue4x4());
-		return Result;
-	}
-	PE_INLINE DirectX::XMFLOAT4 TranslateUploadType(const Vector4& InData)
-	{
-		DirectX::XMFLOAT4 Result(InData.GetDirectXValue4());
-		return Result;
-	}
 	PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType)
 	{
 		static TMap<RDefaultTextureType, EString> engineDefaultTexturePathMap = {

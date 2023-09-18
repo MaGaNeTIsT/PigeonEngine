@@ -31,6 +31,8 @@
     <ClInclude Include="Engine\EngineThirdParty\RapidJson\Headers\JsonManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
     <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
+    <ClInclude Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureAsset.h" />
@@ -64,6 +66,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Material.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.h" />
@@ -197,10 +200,13 @@
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
     <ClCompile Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\SkeletonAsset\SkeletonAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureAsset.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BaseType.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Container\Octree.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\ObjectBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\Text\String.cpp">
@@ -291,6 +297,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\SceneComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Controller\Controller.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\GameActor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Material.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Object.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Level.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\Scene.cpp">
@@ -473,10 +480,13 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">$(ProjectDir)Engine\Temp\OutputRawShaders\%(Filename).cso</ObjectFileOutput>
       <FileType>Document</FileType>
     </FxCompile>
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderStructCommon.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderDefCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderDefCommon.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFastMath.hlsl">

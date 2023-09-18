@@ -29,7 +29,7 @@
 	THE SOFTWARE.
 ********************************************************************************/
 
-#include "./ShaderDefCommon.hlsl"
+#include "./ShaderStructCommon.hlsl"
 
 #define COMPILER_PSSL	0
 

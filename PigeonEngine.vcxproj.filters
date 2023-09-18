@@ -398,6 +398,9 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderScene.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Material.h" />
+    <ClInclude Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -587,12 +590,16 @@
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Renderer\SceneRenderer.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\RenderSingletonObject.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelActor.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\Base\DataStructure\BuiltInType.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Material.cpp" />
+    <ClCompile Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
-    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderDefCommon.hlsl">
+    <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderDefCommon.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\Common</Filter>
     </None>
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderFastMath.hlsl">
@@ -706,6 +713,7 @@
     <None Include="Engine\Sources\OldEngineCode\EngineRender\HLSLResources\RenderPipeline\EngineGPUCulling.hlsl">
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </None>
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderStructCommon.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEVS.hlsl">

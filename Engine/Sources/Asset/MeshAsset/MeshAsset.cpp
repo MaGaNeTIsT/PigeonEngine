@@ -197,6 +197,69 @@ namespace PigeonEngine
 		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this vertex part type for mesh layout."));
 		return (EVertexLayoutType::MESH_INDEX_FULL);	//TODO Not support type is fix output index type for now.
 	}
+	EVertexLayoutType TranslateVertexResourceTypeToVertexLayoutType(const UINT8 InVertexResourcesType)
+	{
+		Check((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexResourcesType >= EVertexResourceType::VERTEX_RESOURCE_TYPE_POSITION) && (InVertexResourcesType < EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT)));
+		const EVertexLayoutType TempVertexLayoutLists[] =
+		{
+			EVertexLayoutType::MESH_VERTEX,
+			EVertexLayoutType::MESH_NORMAL,
+			EVertexLayoutType::MESH_TEXTURECOORD,
+			EVertexLayoutType::MESH_TANGENT,
+			EVertexLayoutType::MESH_COLOR,
+			EVertexLayoutType::MESH_BITANGENT
+		};
+		return TempVertexLayoutLists[InVertexResourcesType];
+	}
+	EVertexResourceType TranslateVertexLayoutTypeToVertexResourceType(EVertexLayoutType InVertexLayoutType)
+	{
+		Check((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexLayoutType > EVertexLayoutType::MESH_INDEX_HALF) && (InVertexLayoutType < (0x1u << 30u))));
+		const UINT32 TempVertexLayoutType = InVertexLayoutType;
+		if ((TempVertexLayoutType & 0x3u) != 0u)
+		{
+			if ((TempVertexLayoutType & 0x1u) != 0u)
+			{
+				// Not support
+				return (EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT);
+			}
+			else if ((TempVertexLayoutType & 0x2u) != 0u)
+			{
+				// Not support
+				return (EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT);
+			}
+		}
+		else if ((TempVertexLayoutType & (0xfu << 2u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_POSITION);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 6u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_UV);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 10u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_NORMAL);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 14u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_TANGENT);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 18u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_COLOR);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 22u)) != 0u)
+		{
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_BINORMAL);
+		}
+		else if ((TempVertexLayoutType & (0xfu << 26u)) != 0u)
+		{
+			// Not support
+			return (EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT);
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Do not support this vertex part type for vertex resource."));
+		return (EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT);	// Not support type is fix output index type for now.
+	}
 
 	EMesh::EMesh()
 		: MeshName(ESettings::ENGINE_DEFAULT_NAME)
@@ -997,12 +1060,15 @@ namespace PigeonEngine
 			BOOL32 Result = TRUE;
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				const TArray<RBufferResource>& Buffers = It->second;
+				const TArray<RBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
 					{
-						Result = Result && (Buffers[i].IsRenderResourceValid());
+						if (Buffers[i])
+						{
+							Result = Result && (Buffers[i]->IsRenderResourceValid());
+						}
 					}
 				}
 			}
@@ -1017,12 +1083,17 @@ namespace PigeonEngine
 		{
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				TArray<RBufferResource>& Buffers = It->second;
+				TArray<RBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
 					{
-						Buffers[i].ReleaseRenderResource();
+						if (Buffers[i])
+						{
+							Buffers[i]->ReleaseRenderResource();
+							delete (Buffers[i]);
+							Buffers[i] = nullptr;
+						}
 					}
 					Buffers.Clear();
 				}
@@ -1055,7 +1126,7 @@ namespace PigeonEngine
 					ErrorInfo += "] index buffer [num = ";
 					ErrorInfo += ToString(OutIndexData->ElementNum);
 					ErrorInfo += "] [stride = 32bits] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 					return FALSE;
 				}
@@ -1081,7 +1152,7 @@ namespace PigeonEngine
 					ErrorInfo += "] index buffer [num = ";
 					ErrorInfo += ToString(OutIndexData->ElementNum);
 					ErrorInfo += "] [stride = 16bits] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 					delete[]TempIndices;
 					return FALSE;
@@ -1104,7 +1175,7 @@ namespace PigeonEngine
 			EString ErrorInfo("Create vertex render resource but mesh [name = ");
 			ErrorInfo += InMesh->GetMeshName();
 			ErrorInfo += "] does not contain vertex datas.";
-			PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 			return FALSE;
 		}
@@ -1112,12 +1183,17 @@ namespace PigeonEngine
 		{
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				TArray<RBufferResource>& Buffers = It->second;
+				TArray<RBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
 					{
-						Buffers[i].ReleaseRenderResource();
+						if (Buffers[i])
+						{
+							Buffers[i]->ReleaseRenderResource();
+							delete (Buffers[i]);
+							Buffers[i] = nullptr;
+						}
 					}
 					Buffers.Clear();
 				}
@@ -1126,36 +1202,44 @@ namespace PigeonEngine
 		}
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		BOOL32 FullyCreated = TRUE;
-		for (UINT32 MeshVertexIndex = 0u, MeshVertexNum = MeshVertices.Length(); MeshVertexIndex < MeshVertexNum; MeshVertexIndex++)
+
+		for (UINT8 VertexLayoutIndex = 0u, VertexLayoutNum = EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT; VertexLayoutIndex < VertexLayoutNum; VertexLayoutIndex++)
 		{
-			const EVertexData& MeshVertexData = MeshVertices[MeshVertexIndex];
-			RSubresourceDataDesc SubresourceDataDesc;
-			SubresourceDataDesc.pSysMem = MeshVertexData.Datas;
-			RBufferResource NewVertexRenderResource;
-			if (!(RenderDevice->CreateBuffer(
-				NewVertexRenderResource,
-				RBufferDesc((MeshVertexData.Stride * MeshVertexData.ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
-				(&SubresourceDataDesc))))
+			EVertexLayoutType TempVertexLayout = TranslateVertexResourceTypeToVertexLayoutType(VertexLayoutIndex);
+			if (!(VertexRenderResources.ContainsKey(VertexLayoutIndex)))
 			{
+				VertexRenderResources.Add(VertexLayoutIndex, TArray<RBufferResource*>());
+			}
+			TArray<RBufferResource*>& TempVertexPartArray = VertexRenderResources[VertexLayoutIndex];
+			for (UINT32 VertexPartIndex = 0u; VertexPartIndex < 4u; VertexPartIndex++)
+			{
+				TempVertexPartArray.Add(nullptr);
+				if (const EVertexData* TempVertexData = nullptr; InMesh->GetVertexElement(TempVertexLayout, VertexPartIndex, TempVertexData))
+				{
+					TempVertexPartArray[VertexPartIndex] = new RBufferResource();
+
+					RSubresourceDataDesc SubresourceDataDesc;
+					SubresourceDataDesc.pSysMem = TempVertexData->Datas;
+
+					if (!(RenderDevice->CreateBuffer(
+						*(TempVertexPartArray[VertexPartIndex]),
+						RBufferDesc((TempVertexData->Stride * TempVertexData->ElementNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+						(&SubresourceDataDesc))))
+					{
 #if _EDITOR_ONLY
-				EString ErrorInfo("Create mesh [name = ");
-				ErrorInfo += InMesh->GetMeshName();
-				ErrorInfo += "] vertex buffer [num = ";
-				ErrorInfo += ToString(MeshVertexData.ElementNum);
-				ErrorInfo += "] [stride = ";
-				ErrorInfo += ToString(MeshVertexData.Stride);
-				ErrorInfo += "] failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+						EString ErrorInfo("Create mesh [name = ");
+						ErrorInfo += InMesh->GetMeshName();
+						ErrorInfo += "] vertex buffer [num = ";
+						ErrorInfo += ToString(TempVertexData->ElementNum);
+						ErrorInfo += "] [stride = ";
+						ErrorInfo += ToString(TempVertexData->Stride);
+						ErrorInfo += "] failed.";
+						PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
-				FullyCreated = FALSE;
+						FullyCreated = FALSE;
+					}
+				}
 			}
-			{
-				const UINT32 VertexType = MeshVertexData.PartType;
-				EVertexLayoutType VertexLayout = TranslateVertexPartTypeToVertexBaseLayout(VertexType);
-				UINT32 VertexIndex = TranslateVertexPartTypeToVertexBaseIndex(VertexType);
-				if(VertexRenderResources.ContainsKey())
-			}
-			VertexRenderResources.Add(NewVertexRenderResource);
 		}
 		return FullyCreated;
 	}
@@ -1168,9 +1252,11 @@ namespace PigeonEngine
 		IndexRenderResource = Other->IndexRenderResource;
 		if (Other->VertexRenderResources.Length() > 0u)
 		{
-			for (UINT32 i = 0u, n = Other->VertexRenderResources.Length(); i < n; i++)
+			for (auto It = Other->VertexRenderResources.Begin(); It != Other->VertexRenderResources.End(); It++)
 			{
-				VertexRenderResources.Add(Other->VertexRenderResources[i]);
+				const UINT8 Key = It->first;
+				const TArray<RBufferResource*>& Buffers = It->second;
+				VertexRenderResources.Add(Key, Buffers);
 			}
 		}
 	}
@@ -1321,7 +1407,7 @@ namespace PigeonEngine
 				EString ErrorInfo("Create mesh skeleton render resource but skeleton [name = ");
 				ErrorInfo += Skeleton->GetSkeletonName();
 				ErrorInfo += "] does not contain bone datas.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 			if (!SkinnedMesh)
 			{
@@ -1332,7 +1418,7 @@ namespace PigeonEngine
 				EString ErrorInfo("Create mesh skeleton render resource but skinned mesh [name = ");
 				ErrorInfo += SkinnedMesh->GetMeshName();
 				ErrorInfo += "] does not contain bone datas.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 			if (SkeletonBoneNum < MeshSkinnedBoneNum)
 			{
@@ -1345,7 +1431,7 @@ namespace PigeonEngine
 				ErrorInfo += "]'s bone num [";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "].";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX)
 			{
@@ -1356,7 +1442,7 @@ namespace PigeonEngine
 				ErrorInfo += "] is greater than engine's bone max num [";
 				ErrorInfo += ToString(RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 				ErrorInfo += "].";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return FALSE;
@@ -1389,7 +1475,7 @@ namespace PigeonEngine
 				ErrorInfo += "] bones buffer [num = ";
 				ErrorInfo += ToString(MeshSkinnedBoneNum);
 				ErrorInfo += "] failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 				delete[]SkeletonMatrices;
 				return FALSE;
@@ -1413,7 +1499,7 @@ namespace PigeonEngine
 				EString ErrorInfo("Create skin render resource but skinned mesh [name = ");
 				ErrorInfo += SkinnedMesh->GetMeshName();
 				ErrorInfo += "] does not contain bone datas.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 			if (MeshSkinnedBoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX)
 			{
@@ -1424,7 +1510,7 @@ namespace PigeonEngine
 				ErrorInfo += "] is greater than engine's bone max num [";
 				ErrorInfo += ToString(RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 				ErrorInfo += "].";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return FALSE;
@@ -1474,7 +1560,7 @@ namespace PigeonEngine
 					ErrorInfo += "] skin index buffer [num = ";
 					ErrorInfo += ToString(SkinData.ElementNum);
 					ErrorInfo += "] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 					FullyCreated = FALSE;
 				}
@@ -1510,7 +1596,7 @@ namespace PigeonEngine
 					ErrorInfo += "] skin weight buffer [num = ";
 					ErrorInfo += ToString(SkinData.ElementNum);
 					ErrorInfo += "] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 #endif
 					FullyCreated = FALSE;
 				}
@@ -1561,7 +1647,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Static mesh name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -1617,7 +1703,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skinned mesh name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -1690,7 +1776,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1702,7 +1788,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1714,7 +1800,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1727,7 +1813,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Assimp importer can not load mesh file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1760,7 +1846,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1772,7 +1858,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1784,7 +1870,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for mesh importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1797,7 +1883,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Assimp importer can not load mesh file from path (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempSaveFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -1846,7 +1932,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Static mesh asset path = [") + TempLoadFullPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultMeshAsset;
@@ -1880,7 +1966,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Skinned mesh asset path = [") + TempLoadFullPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultMeshAsset;
@@ -1919,7 +2005,7 @@ namespace PigeonEngine
 					EString ErrorData("Load mesh asset failed (load file path : ");
 					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not match mesh asset type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				delete NewMeshAsset;
@@ -1936,7 +2022,7 @@ namespace PigeonEngine
 					EString ErrorData("Load mesh asset failed (load file path : ");
 					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not match mesh asset type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				delete NewMeshAsset;
@@ -1951,7 +2037,7 @@ namespace PigeonEngine
 					EString ErrorData("Load mesh asset failed (load file path : ");
 					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				delete NewMeshAsset;
@@ -1991,7 +2077,7 @@ namespace PigeonEngine
 				EString ErrorData("Save mesh asset failed (save file path : ");
 				ErrorData += TempSaveFullPathName;
 				ErrorData += ") this asset is null.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -2007,7 +2093,7 @@ namespace PigeonEngine
 				ErrorData += ", mesh asset name : ";
 				ErrorData += InMeshAsset->GetAssetName();
 				ErrorData += ") this asset is not contain valid mesh resource.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -2026,7 +2112,7 @@ namespace PigeonEngine
 					ErrorData += ", mesh asset name : ";
 					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not match mesh asset type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				return FALSE;
@@ -2044,7 +2130,7 @@ namespace PigeonEngine
 					ErrorData += ", mesh asset name : ";
 					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not match mesh asset type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				return FALSE;
@@ -2059,7 +2145,7 @@ namespace PigeonEngine
 					ErrorData += ", mesh asset name : ";
 					ErrorData += InMeshAsset->GetAssetName();
 					ErrorData += ") this asset is not mesh type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				return FALSE;
@@ -2086,7 +2172,7 @@ namespace PigeonEngine
 				EString ErrorData("Load mesh asset failed (load file path : ");
 				ErrorData += TempLoadFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return LoadedMeshResource;
@@ -2149,7 +2235,7 @@ namespace PigeonEngine
 					EString ErrorData("Load mesh asset failed (load file path : ");
 					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				delete[]ReadFileMem;
@@ -2179,7 +2265,7 @@ namespace PigeonEngine
 					EString ErrorData("Load mesh asset failed (load file path : ");
 					ErrorData += TempLoadFullPathName;
 					ErrorData += ") this asset is not mesh type.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 				}
 #endif
 				delete[]ReadFileMem;

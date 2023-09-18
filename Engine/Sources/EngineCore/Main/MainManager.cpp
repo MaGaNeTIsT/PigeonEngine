@@ -154,7 +154,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 	void EMainManager::EditorUpdate()
 	{
-		bool TempEditorOpen = m_EditorOpen;
+		BOOL8 TempEditorOpen = m_EditorOpen;
 		ImGui::Begin("EditorRoot", &TempEditorOpen, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();

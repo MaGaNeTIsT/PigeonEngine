@@ -2,7 +2,6 @@
 
 #include "../../EngineCore/Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
-#include <Base/DataStructure/Text/String.h>
 
 namespace PigeonEngine
 {
@@ -16,7 +15,7 @@ namespace PigeonEngine
 			WINDOWS_BOX_TYPE_OK = 0,
 		};
 	public:
-		static void _Check_Default(const EString& inCaption, const EString& inText, const BOOL32& condition);
+		static void _Check_Default(const CHAR* inCaption, const CHAR* inText, const BOOL8 condition);
 
 		template<typename TConditionLambdaType>
 		static void _Check_Default(const TConditionLambdaType& conditionFunc);

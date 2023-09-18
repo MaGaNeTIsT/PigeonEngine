@@ -5,15 +5,18 @@
 #include "./ShaderFunctions.hlsl"
 
 #define ENGINE_CAMERA_POSITION		(_CameraWorldPosition)
-#define ENGINE_MATRIX_W				(_WorldMatrix)
 #define ENGINE_MATRIX_V				(_ViewMatrix)
 #define ENGINE_MATRIX_P				(_ProjectionMatrix)
-#define ENGINE_MATRIX_I_W			(_WorldInvMatrix)
 #define ENGINE_MATRIX_I_V			(_ViewInvMatrix)
 #define ENGINE_MATRIX_I_P			(_ProjectionInvMatrix)
-#define ENGINE_MATRIX_I_T_W			(_WorldInvTransposeMatrix)
 #define ENGINE_MATRIX_VP			(_ViewProjectionMatrix)
 #define ENGINE_MATRIX_I_VP			(_ViewProjectionInvMatrix)
+
+#ifdef SHADER_USE_TRANSFORM
+#define ENGINE_MATRIX_W				(_WorldMatrix)
+#define ENGINE_MATRIX_I_W			(_WorldInvMatrix)
+#define ENGINE_MATRIX_I_T_W			(_WorldInvTransposeMatrix)
+#endif
 
 float3 GetCameraWorldPosition()
 {
@@ -34,16 +37,28 @@ float3 TransformDirectionToSpecificSpace(const float3 InDirection, const float3x
 }
 float3 TransformObjectToWorld(const float3 InPosition)
 {
+#ifdef SHADER_USE_TRANSFORM
 	return mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
+#else
+	return (InPosition.xyz);
+#endif
 }
 float4 TransformObjectToClip(const float3 InPosition)
 {
+#ifdef SHADER_USE_TRANSFORM
 	float3 PositionWS = mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
+#else
+	float3 PositionWS = InPosition.xyz;
+#endif
 	return mul(float4(PositionWS, 1.0), ENGINE_MATRIX_VP);
 }
 float3 TransformWorldToObject(const float3 position)
 {
+#ifdef SHADER_USE_TRANSFORM
 	return mul(float4(position, 1), ENGINE_MATRIX_I_W).xyz;
+#else
+	return (position.xyz);
+#endif
 }
 float3 TransformWorldToView(const float3 position)
 {
@@ -80,21 +95,34 @@ float3 TransformScreenToView(float2 uv, float viewZ)
 }
 float3 TransformObjectToWorldNormal(const float3 normal, uniform bool bNormalize = true)
 {
-	float3 normalWS = mul(normal, (float3x3)ENGINE_MATRIX_I_T_W);
+#ifdef SHADER_USE_TRANSFORM
+	float3 normalWS = mul(normal.xyz, (float3x3)ENGINE_MATRIX_I_T_W);
+#else
+	float3 normalWS = normal.xyz;
+#endif
+	
 	if (bNormalize == true)
 		normalWS = SafeNormalize(normalWS);
 	return normalWS;
 }
 float3 TransformObjectToWorldDir(const float3 dir, uniform bool bNormalize = true)
 {
-	float3 dirWS = mul(dir, (float3x3)ENGINE_MATRIX_W);
+#ifdef SHADER_USE_TRANSFORM
+	float3 dirWS = mul(dir.xyz, (float3x3)ENGINE_MATRIX_W);
+#else
+	float3 dirWS = dir.xyz;
+#endif
 	if (bNormalize == true)
 		dirWS = SafeNormalize(dirWS);
 	return dirWS;
 }
 float3 TransformWorldToObjectDir(const float3 dir, uniform bool bNormalize = true)
 {
-	float3 dirOS = mul(dir, (float3x3)ENGINE_MATRIX_I_W);
+#ifdef SHADER_USE_TRANSFORM
+	float3 dirOS = mul(dir.xyz, (float3x3)ENGINE_MATRIX_I_W);
+#else
+	float3 dirOS = dir.xyz;
+#endif
 	if (bNormalize == true)
 		dirOS = SafeNormalize(dirOS);
 	return dirOS;

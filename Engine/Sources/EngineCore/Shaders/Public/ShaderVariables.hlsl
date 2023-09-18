@@ -1,16 +1,7 @@
 #ifndef _SHADER_VARIABLES_HLSL
 #define _SHADER_VARIABLES_HLSL
 
-#include "./ShaderDefCommon.hlsl"
-
-#define PER_OBJECT_TRANSFORM \
-	float4x4 _WorldMatrix;\
-	float4x4 _WorldInvMatrix;\
-	float4x4 _WorldInvTransposeMatrix;\
-
-#define RENDER_AO_INPUT(__AOInputName,__Slot) \
-	Texture2D<float> __AOInputName : register(__Slot);\
-
+#include "./ShaderStructCommon.hlsl"
 
 cbuffer ConstantBufferPerFrame : register(b0)
 {
@@ -29,9 +20,26 @@ cbuffer ConstantBufferPerFrame : register(b0)
 	float4			_CameraWorldPosition;
 };
 
+cbuffer ConstantBufferPerDraw : register(b1)
+{
+#ifdef SHADER_USE_TRANSFORM
+	float4x4		_WorldMatrix;
+	float4x4		_WorldInvMatrix;
+	float4x4		_WorldInvTransposeMatrix;
+#endif
+};
+
 SamplerState		_PointClampSampler		: register(s0);
 SamplerState		_PointWrapSampler		: register(s1);
 SamplerState		_LinearClampSampler		: register(s2);
 SamplerState		_LinearWrapSampler		: register(s3);
+
+#ifdef SHADER_USE_AO_INPUT
+#ifdef SHADER_USE_AO_INPUT_SLOT
+Texture2D<float>	__ShaderAOInput			: register(SHADER_USE_AO_INPUT_SLOT);
+#else
+Texture2D<float>	__ShaderAOInput			: register(t0);
+#endif
+#endif
 
 #endif

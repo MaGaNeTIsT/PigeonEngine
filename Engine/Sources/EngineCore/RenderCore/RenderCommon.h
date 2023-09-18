@@ -138,7 +138,7 @@ namespace PigeonEngine
 			, DepthFunc(RComparisonFunctionType::COMPARISON_NEVER) {}
 		RDepthState(const RDepthState& Other)noexcept
 			: DepthEnable(Other.DepthEnable), DepthWriteMask(Other.DepthWriteMask), DepthFunc(Other.DepthFunc) {}
-		constexpr RDepthState(RComparisonFunctionType InComparisonFunction
+		RDepthState(RComparisonFunctionType InComparisonFunction
 			, RDepthWriteMaskType InWriteMask = RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL, const BOOL32 InDepthEnable = TRUE)noexcept
 			: DepthEnable(InDepthEnable), DepthWriteMask(InWriteMask), DepthFunc(InComparisonFunction) {}
 
@@ -249,7 +249,7 @@ namespace PigeonEngine
 			: BlendEnable(Other.BlendEnable), SrcBlend(Other.SrcBlend), DstBlend(Other.DstBlend)
 			, BlendOp(Other.BlendOp), SrcBlendAlpha(Other.SrcBlendAlpha), DstBlendAlpha(Other.DstBlendAlpha)
 			, BlendOpAlpha(Other.BlendOpAlpha), RenderTargetWriteMask(Other.RenderTargetWriteMask) {}
-		constexpr RBlendState(RBlendOptionType InSrcOp, RBlendOptionType InDstOp, RBlendOperationType InOpType
+		RBlendState(RBlendOptionType InSrcOp, RBlendOptionType InDstOp, RBlendOperationType InOpType
 			, RBlendOptionType InSrcAlphaOp, RBlendOptionType InDstAlphaOp, RBlendOperationType InAlphaOpType
 			, const UINT8 InWriteMask = RColorWriteMaskType::COLOR_WRITE_MASK_ALL, const BOOL32 IsBlendEnable = TRUE)noexcept
 			: BlendEnable(IsBlendEnable), SrcBlend(InSrcOp), DstBlend(InDstOp), BlendOp(InOpType), SrcBlendAlpha(InSrcAlphaOp)
@@ -572,7 +572,7 @@ namespace PigeonEngine
 			: GPUWritable(Other.GPUWritable), AccessFlags(Other.AccessFlags)
 			, StructureSize(Other.StructureSize), FirstElement(Other.FirstElement)
 			, NumElements(Other.NumElements), UAVFlags(Other.UAVFlags) {}
-		constexpr RStructuredBufferDesc(const UINT32 InStructureSize, const UINT32 InNumElements, const BOOL32 InWritableGPU = FALSE
+		RStructuredBufferDesc(const UINT32 InStructureSize, const UINT32 InNumElements, const BOOL32 InWritableGPU = FALSE
 			, RCPUAccessFlagType InCPUAccessFlags = RCPUAccessFlagType::CPU_ACCESS_DEFAULT, const UINT32 InFirstElement = 0u
 			, RUAVFlagType InUAVFlags = RUAVFlagType::UAV_FLAG_NONE)noexcept
 			: GPUWritable(InWritableGPU), AccessFlags(InCPUAccessFlags), StructureSize(InStructureSize)
@@ -737,7 +737,7 @@ namespace PigeonEngine
 	{
 		RQueryTimestampDisjoint()noexcept : Frequency(1u), Disjoint(TRUE) {}
 		RQueryTimestampDisjoint(const RQueryTimestampDisjoint& Other)noexcept : Frequency(Other.Frequency), Disjoint(Other.Disjoint) {}
-		constexpr RQueryTimestampDisjoint(const ULONGLONG InFrequency, const BOOL32 InDisjoint)noexcept
+		RQueryTimestampDisjoint(const ULONGLONG InFrequency, const BOOL32 InDisjoint)noexcept
 			: Frequency(InFrequency), Disjoint(InDisjoint) {}
 		void Reset() { Frequency = 1u; Disjoint = TRUE; }
 
@@ -770,8 +770,6 @@ namespace PigeonEngine
 	_WorldInvMatrix = __Name._WorldInvMatrix;\
 	_WorldInvTransposeMatrix = __Name._WorldInvTransposeMatrix;\
 
-	extern PE_INLINE DirectX::XMFLOAT4X4 TranslateUploadType(const Matrix4x4& InData);
-	extern PE_INLINE DirectX::XMFLOAT4 TranslateUploadType(const Vector4& InData);
 	extern PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);

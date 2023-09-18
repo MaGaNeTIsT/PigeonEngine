@@ -707,7 +707,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -726,7 +726,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create vertex shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -753,7 +753,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create vertex shader input layout failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -775,7 +775,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -794,7 +794,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create pixel shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -816,7 +816,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Can not open file path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;
@@ -835,7 +835,7 @@ namespace PigeonEngine
 				{
 					EString debugInfo("Create compute shader resource failed. path : ");
 					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), debugInfo);
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
 				}
 #endif
 				return FALSE;

@@ -1,0 +1,6 @@
+#ifndef _SHADER_DEFINE_COMMON_HLSL
+#define _SHADER_DEFINE_COMMON_HLSL
+
+
+
+#endif

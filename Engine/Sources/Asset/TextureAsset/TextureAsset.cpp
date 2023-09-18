@@ -374,7 +374,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			return TRUE;
@@ -440,7 +440,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -452,7 +452,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -464,7 +464,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Error file path for texture 2d importer (import file path : ");
 				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
@@ -523,7 +523,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D path = [") + TempFullPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
 			delete ResultAsset;
@@ -546,7 +546,7 @@ namespace PigeonEngine
 			{
 				EString ErrorData("Loading texture 2d asset error.(load file path : ");
 				ErrorData = ErrorData + TempFullPathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -564,7 +564,7 @@ namespace PigeonEngine
 				EString ErrorData("Load shader asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return nullptr;
@@ -649,7 +649,7 @@ namespace PigeonEngine
 				ErrorData = ErrorData + TempFullPathName + ", is asset valid : " +
 					((!!InTextureResource) ? ((InTextureResource->IsResourceValid()) ? "true" : "false") : "false")
 					+ ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (ErrorData));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}
 #endif
 			return FALSE;
