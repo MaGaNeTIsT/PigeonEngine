@@ -29,14 +29,6 @@ namespace PigeonEngine
 		SHADER_PARAMETER_TYPE_COUNT
 	};
 
-	enum EShaderParameterContainerType : UINT8
-	{
-		SHADER_PARAMETER_CONTAINER_TYPE_UNKNOWN = 0,
-		SHADER_PARAMETER_CONTAINER_TYPE_SINGLE,
-		SHADER_PARAMETER_CONTAINER_TYPE_ARRAY,
-		SHADER_PARAMETER_CONTAINER_TYPE_COUNT
-	};
-
 	struct EShaderParameterData
 	{
 	public:
@@ -108,6 +100,21 @@ namespace PigeonEngine
 			}
 			return (*this);
 		}
+		void Resize(const ULONGLONG& InSize)
+		{
+			if (Datas)
+			{
+				delete[]Datas;
+				Datas = nullptr;
+			}
+			Size = 0u;
+			if ((InSize > 0u) && ((InSize % 2u) == 0u))
+			{
+				Size	= InSize;
+				Datas	= new BYTE[Size];
+				::memset(Datas, 0, Size);
+			}
+		}
 		void Release()
 		{
 			if (Datas)
@@ -123,27 +130,21 @@ namespace PigeonEngine
 	{
 	public:
 		BYTE*							ValuePtr;
-		EShaderParameterContainerType	ContainerType;
 		EShaderParameterValueType		ValueType;
 		EShaderParameterBase			ParameterInfo;
 
 		template<typename _TValueType>
-		void SetupParameter(BYTE* InRawPtr, const UINT32 InOffset, EShaderParameterValueType InValueType, const _TValueType* InInitValuePtr = nullptr,
-			EShaderParameterContainerType InContainerType = EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_SINGLE,
-			const UINT32 InElementNum = 1u)
+		void SetupParameter(BYTE* InRawPtr, const UINT32 InOffset, EShaderParameterValueType InValueType,
+			const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter can not greater than 2G."), ((sizeof(_TValueType) * InElementNum) <= ((UINT32)(-1))));
+			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter can not greater than 2G."), ((sizeof(_TValueType) * InElementNum) < ((UINT32)(-1))));
 			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter raw pointer failed."), (!!InRawPtr));
 			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter value type failed."), (
 				(InValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
 				(InValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT)));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter container type failed."), (
-				(InContainerType > EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_UNKNOWN) &&
-				(InContainerType < EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_COUNT)));
 			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter element num failed."), (InElementNum > 0u));
 
 			ValuePtr				= &(InRawPtr[InOffset]);
-			ContainerType			= InContainerType;
 			ValueType				= InValueType;
 			ParameterInfo.Offset	= InOffset;
 			ParameterInfo.Size		= sizeof(_TValueType);
@@ -155,7 +156,6 @@ namespace PigeonEngine
 			}
 		}
 		EShaderParameter() : ValuePtr(nullptr)
-			, ContainerType(EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_UNKNOWN)
 			, ValueType(EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN)
 		{
 			ParameterInfo.Offset	= 0u;
@@ -163,29 +163,30 @@ namespace PigeonEngine
 			ParameterInfo.Element	= 0u;
 		}
 		EShaderParameter(const EShaderParameter& Other) : ValuePtr(nullptr)
-			, ContainerType(Other.ContainerType), ValueType(Other.ValueType)
 			, ParameterInfo(Other.ParameterInfo)
 		{
 		}
 		EShaderParameter& operator=(const EShaderParameter& Other)
 		{
 			ValuePtr		= nullptr;
-			ContainerType	= Other.ContainerType;
 			ValueType		= Other.ValueType;
 			ParameterInfo	= Other.ParameterInfo;
 			return (*this);
 		}
 		void operator=(const void* InValuePtr)
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter can not greater than 2G."), ((sizeof(ParameterInfo.Size) * InElementNum) <= ((UINT32)(-1))));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter raw pointer failed."), (!!InRawPtr));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter value type failed."), (
-				(InValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
-				(InValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT)));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter container type failed."), (
-				(InContainerType > EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_UNKNOWN) &&
-				(InContainerType < EShaderParameterContainerType::SHADER_PARAMETER_CONTAINER_TYPE_COUNT)));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter element num failed."), (InElementNum > 0u));
+			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter is invalid, so can not copy value."), (
+				(!!ValuePtr) &&
+				(ValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
+				(ValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT) &&
+				(ParameterInfo.Element > 0u) &&
+				(ParameterInfo.Size > 0u) &&
+				(ParameterInfo.Size < ((UINT32)(-1)))));
+			if (InValuePtr)
+			{
+				const UINT32 MemSize = ParameterInfo.Size * ParameterInfo.Element;
+				::memcpy_s(ValuePtr, MemSize, InValuePtr, MemSize);
+			}
 		}
 	};
 
@@ -210,6 +211,10 @@ namespace PigeonEngine
 			{
 				RawCommands.ClearRegister();
 			}
+			UINT32 GetQueueCount()const
+			{
+				return (RawCommands.GetRegisterNum());
+			}
 		private:
 			ERegisterBase	RawCommands;
 		public:
@@ -218,13 +223,31 @@ namespace PigeonEngine
 			~ECommand() {}
 			ECommand& operator=(const ECommand&) = delete;
 		};
-		template<typename _TValueType>
-		void AddParameterInfo(const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
+		template<typename _TValueType, EShaderParameterValueType __TParameterValueType>
+		void AddParameter(const EString& InValueName, const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
 		{
+			const UINT32 TempOffset = RawData.Size;
 			RawData.Size += sizeof(_TValueType) * InElementNum;
+			InitCommands.EnqueueCommand(
+				[InInitValuePtr, InElementNum, this, TempOffset]()->void
+				{
+#if _EDITOR_ONLY
+					if (ShaderParameterNames.ContainsKey(InValueName))
+					{
+						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Shader parameter is exist, so can not add same value."));
+						return;
+					}
+#endif
+					ShaderParameterNames.Add(InValueName, ShaderParameters.Length());
+					EShaderParameter& ShaderParameter = ShaderParameters.Add_Default_GetRef();
+					ShaderParameter.SetupParameter<_TValueType>(RawData.Datas, TempOffset, __TParameterValueType, InInitValuePtr, InElementNum);
+				});
 		}
-	public:
-		void	ReleaseParameter();
+		void BeginSetupParameter();
+		void EndSetupParameter();
+		void ClearParameter();
+	protected:
+		BOOL32						HasPaddings;
 	private:
 		ECommand					InitCommands;
 		EShaderParameterRaw			RawData;

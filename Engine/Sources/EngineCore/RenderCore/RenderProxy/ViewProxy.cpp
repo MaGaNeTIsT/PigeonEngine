@@ -12,6 +12,17 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	RViewMaterialParameter::RViewMaterialParameter()
+	{
+	}
+	RViewMaterialParameter::~RViewMaterialParameter()
+	{
+	}
+	void RViewMaterialParameter::SetupParameters()
+	{
+		//TODO
+	}
+
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
 		:
 #if _EDITOR_ONLY

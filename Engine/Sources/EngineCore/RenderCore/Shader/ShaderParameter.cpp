@@ -15,19 +15,46 @@ namespace PigeonEngine
 	}
 
 	EMaterialParameter::EMaterialParameter()
+		: HasPaddings(FALSE)
 	{
 		SetupParameters();
 	}
 	EMaterialParameter::EMaterialParameter(const EMaterialParameter& Other)
+		: HasPaddings(FALSE)
 	{
 		SetupParameters();
 	}
 	EMaterialParameter::~EMaterialParameter()
 	{
-		ReleaseParameter();
+		ClearParameter();
 	}
-	void EMaterialParameter::ReleaseParameter()
+	void EMaterialParameter::BeginSetupParameter()
 	{
+		ClearParameter();
+	}
+	void EMaterialParameter::EndSetupParameter()
+	{
+		ULONGLONG UsedSize = RawData.Size;
+#if _EDITOR_ONLY
+		if (UsedSize == 0u || InitCommands.GetQueueCount() == 0u)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error shader parameter try to allocating 0 size buffer."));
+			return;
+		}
+#endif
+		if ((UsedSize % 2u) != 0u)
+		{
+			HasPaddings = TRUE;
+			UsedSize = UsedSize + 1u;
+		}
+		RawData.Resize(UsedSize);
+
+		InitCommands.DoCommands();
+		InitCommands.EmptyQueue();
+	}
+	void EMaterialParameter::ClearParameter()
+	{
+		HasPaddings = FALSE;
 		InitCommands.DoCommands();
 		InitCommands.EmptyQueue();
 		RawData.Release();

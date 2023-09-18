@@ -34,6 +34,10 @@ namespace PigeonEngine
 		{
 			FunctionRegistry.clear();
 		}
+		UINT32 GetRegisterNum()const
+		{
+			return static_cast<UINT32>(FunctionRegistry.size());
+		}
 	private:
 		std::vector<_FunctionType> FunctionRegistry;
 	public:

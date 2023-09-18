@@ -5,12 +5,24 @@
 #include <RenderConfig/RenderConfig.h>
 #include "BaseSceneProxy.h"
 #include <RenderResource.h>
+#include <Shader/ShaderParameter.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 
 namespace PigeonEngine
 {
 
 	class RScene;
+
+	class RViewMaterialParameter : public EMaterialParameter
+	{
+	protected:
+		virtual void	SetupParameters()override;
+	public:
+		RViewMaterialParameter();
+		virtual ~RViewMaterialParameter();
+		RViewMaterialParameter(const RViewMaterialParameter&) = delete;
+		RViewMaterialParameter& operator=(const RViewMaterialParameter&) = delete;
+	};
 
 	class RViewProxy : public RBaseSceneProxy
 	{
