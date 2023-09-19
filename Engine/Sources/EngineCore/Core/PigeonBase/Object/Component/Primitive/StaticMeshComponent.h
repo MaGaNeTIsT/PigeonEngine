@@ -16,7 +16,7 @@ namespace PigeonEngine
 
     public:
         const EStaticMeshAsset*     GetMeshAsset()const;
-        void                        SetMeshAsset(EStaticMeshAsset* InMeshAsset);
+        void                        SetMeshAsset(const EStaticMeshAsset* InMeshAsset);
     protected:
         const EStaticMeshAsset*     MeshAsset;
 

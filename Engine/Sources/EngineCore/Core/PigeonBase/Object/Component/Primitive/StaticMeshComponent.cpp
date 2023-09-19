@@ -25,7 +25,7 @@ namespace PigeonEngine
     {
         return MeshAsset;
     }
-    void PStaticMeshComponent::SetMeshAsset(EStaticMeshAsset* InMeshAsset)
+    void PStaticMeshComponent::SetMeshAsset(const EStaticMeshAsset* InMeshAsset)
     {
         MeshAsset = InMeshAsset;
         MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET);
