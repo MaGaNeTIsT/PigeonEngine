@@ -43,3 +43,8 @@
 //Materials Include
 #include <Jolt/Physics/Collision/PhysicsMaterial.h>
 #include <Jolt/Physics/Collision/PhysicsMaterialSimple.h>
+
+//Character Include
+#include <Jolt/Physics/Character/CharacterBase.h>
+#include <Jolt/Physics/Character/Character.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>

@@ -19,6 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\Character.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterBase.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterVirtual.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltIncludes.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
@@ -193,6 +197,8 @@
     <ClInclude Include="Engine\ThirdParty\rapidjson\writer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\Character.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterBase.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />

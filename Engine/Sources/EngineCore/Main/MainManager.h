@@ -40,7 +40,7 @@ namespace PigeonEngine
 		BOOL32						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
-		class CPhysicsManager*				m_PhysicsManager			= nullptr;
+		class FPhysicsManager*				m_PhysicsManager			= nullptr;
 
 		// Render region START
 		class RDeviceD3D11*					m_RenderDeviceD3D11			= nullptr;

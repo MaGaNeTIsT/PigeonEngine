@@ -31,7 +31,7 @@ namespace PigeonEngine
 
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
 
-		m_PhysicsManager	= CPhysicsManager::GetSingleton();
+		m_PhysicsManager	= FPhysicsManager::GetSingleton();
 #if _EDITOR_ONLY
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();

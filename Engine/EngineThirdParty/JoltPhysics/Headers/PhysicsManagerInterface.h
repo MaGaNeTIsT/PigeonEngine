@@ -1,18 +1,17 @@
 #pragma once
 
-namespace PigeonEngine
+PIGEONENGINE_NAMESPACE_BEGIN
+class IPhysicsManagerInterface
 {
-	class IPhysicsManagerInterface
-	{
-	public:
-		IPhysicsManagerInterface()					{}
-		virtual ~IPhysicsManagerInterface()			= default;
+public:
+	IPhysicsManagerInterface()					{}
+	virtual ~IPhysicsManagerInterface()			= default;
 
-	public:
-		virtual void InitPhysics()					{}
-		virtual void UninitPhysics()				{}
-		virtual void PrePhysicsUpdate()				{}
-		virtual void PhysicsUpdate()				{}
-		virtual void PostPhysicsUpdate()			{}
-	};
+public:
+	virtual void InitPhysics()					{}
+	virtual void UninitPhysics()				{}
+	virtual void PrePhysicsUpdate()				{}
+	virtual void PhysicsUpdate()				{}
+	virtual void PostPhysicsUpdate()			{}
 };
+PIGEONENGINE_NAMESPACE_END

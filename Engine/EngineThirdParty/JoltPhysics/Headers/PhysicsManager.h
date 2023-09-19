@@ -2,37 +2,33 @@
 #include <CoreMinimal.h>
 #include "JoltPhysics.h"
 
-namespace PigeonEngine
+PIGEONENGINE_NAMESPACE_BEGIN
+typedef FPhysics_Jolt FPhysicsInterface;
+
+class FPhysicsManager : public FPhysicsInterface
 {
-	typedef CPhysics_Jolt CPhysicsInterface;
-
-	class CPhysicsManager : public CPhysicsInterface
+	CLASS_SINGLETON_BODY(FPhysicsManager)
+public:
+	static void		Initialize(HWND hWnd)		{}
+	static void		ShutDown()					{}
+	static void		StaticUpdate()				{}
+public:
+	static void		Init()						{ GetSingleton()->InitPhysics(); }
+	static void		Uninit()					{ GetSingleton()->UninitPhysics(); }
+	static void		Update()					{}
+	static void		FixedUpdate(FLOAT DeltaTime)
 	{
-		CLASS_SINGLETON_BODY(CPhysicsManager)
-	public:
-		static void		Initialize(HWND hWnd)		{}
-		static void		ShutDown()					{}
-		static void		StaticUpdate()				{}
-	public:
-		static void		Init()						{ GetSingleton()->InitPhysics(); }
-		static void		Uninit()					{ GetSingleton()->UninitPhysics(); }
-		static void		Update()					{}
-		static void		FixedUpdate(float DeltaTime)
-		{
-			GetSingleton()->PrePhysicsUpdate();
-			GetSingleton()->PhysicsUpdate(DeltaTime);
-			GetSingleton()->PostPhysicsUpdate();
-		}
-		static void		Draw()						{}
+		GetSingleton()->PrePhysicsUpdate();
+		GetSingleton()->PhysicsUpdate(DeltaTime);
+		GetSingleton()->PostPhysicsUpdate();
+	}
+	static void		Draw()						{}
 #if _EDITOR_ONLY
-	public:
-		static void		EditorUpdate() {}
-	private:
-		BOOL32			m_EditorOpen = FALSE;
+public:
+	static void		EditorUpdate() {}
+private:
+	BOOL32			m_EditorOpen = FALSE;
 #endif
-	};
-
-	CPhysicsManager::CPhysicsManager() {}
-	CPhysicsManager::~CPhysicsManager() {}
-
 };
+
+PIGEONENGINE_NAMESPACE_END
