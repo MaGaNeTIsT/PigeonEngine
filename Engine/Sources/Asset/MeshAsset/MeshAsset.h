@@ -444,10 +444,11 @@ namespace PigeonEngine
 	class EMeshRenderResource : public EObjectBase, public RRenderResourceInterface
 	{
 	public:
-		using TVertexResourceType = TMap<UINT8, TArray<RBufferResource*>>;
+		using TVertexResourceType = TMap<UINT8, TArray<RVertexBufferResource*>>;
 	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual void	ReleaseRenderResource()override;
+		const TArray<RVertexBufferResource*>* GetVertexRenderResource(const UINT8 InType)const;
 	public:
 		EMeshRenderResource();
 		EMeshRenderResource(const EMeshRenderResource& Other);

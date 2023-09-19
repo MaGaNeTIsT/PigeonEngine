@@ -98,7 +98,7 @@ namespace PigeonEngine
 		virtual ~EVertexShaderAsset();
 	public:
 		const RInputLayoutDesc*		GetShaderInputLayouts()const { return ShaderInputLayouts; }
-		const UINT32&					GetShaderInputLayoutNum()const { return ShaderInputLayoutNum; }
+		const UINT32&				GetShaderInputLayoutNum()const { return ShaderInputLayoutNum; }
 	public:
 		virtual BOOL32	InitResource()override;
 	protected:

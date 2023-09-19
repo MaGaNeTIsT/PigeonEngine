@@ -1,32 +1,105 @@
 #include "ShaderParameter.h"
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
 
-	PE_INLINE DirectX::XMFLOAT4X4 TranslateUploadType(const Matrix4x4& InData)
+	PE_INLINE Matrix4x4	TranslateUploadMatrixType(const Matrix4x4& InData)
 	{
-		DirectX::XMFLOAT4X4 Result(InData.GetDirectXTransposeValue4x4());
-		return Result;
+		return Matrix4x4(InData.GetDirectXTransposeValue4x4());
 	}
-	PE_INLINE DirectX::XMFLOAT4 TranslateUploadType(const Vector4& InData)
+	PE_INLINE Matrix4x4 TranslateUploadTransposeMatrixType(const Matrix4x4& InData)
 	{
-		DirectX::XMFLOAT4 Result(InData.GetDirectXValue4());
-		return Result;
+		return InData;
+	}
+	PE_INLINE Vector4 TranslateUploadVectorType(const Vector4& InData)
+	{
+		return InData;
 	}
 
 	EMaterialParameter::EMaterialParameter()
 		: HasPaddings(FALSE)
 	{
-		SetupParameters();
 	}
 	EMaterialParameter::EMaterialParameter(const EMaterialParameter& Other)
 		: HasPaddings(FALSE)
 	{
-		SetupParameters();
 	}
 	EMaterialParameter::~EMaterialParameter()
 	{
 		ClearParameter();
+	}
+	EShaderParameter& EMaterialParameter::operator[](const EString& InParamName)
+	{
+#if _EDITOR_ONLY
+		if (UINT32 ParamIndex = -1u; ShaderParameterNames.FindValue(InParamName, ParamIndex))
+#else
+		const UINT32 ParamIndex = ShaderParameterNames[InParamName];
+#endif
+		{
+#if _EDITOR_ONLY
+			if (ParamIndex < ShaderParameters.Length())
+#endif
+			{
+				return (ShaderParameters[ParamIndex]);
+			}
+		}
+#if _EDITOR_ONLY
+		EString ErrorInfo("Could not find name[");
+		ErrorInfo = ErrorInfo + InParamName + "] parameter.";
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
+#endif
+		return EShaderParameter();
+	}
+	void EMaterialParameter::CreateConstantBuffer()
+	{
+#if _EDITOR_ONLY
+		if (RawData.Size == 0u)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(size is zero)."));
+			return;
+		}
+		if (ConstantBuffer.IsRenderResourceValid())
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(already created)."));
+			return;
+		}
+#endif
+#if _EDITOR_ONLY
+		BOOL32 Result =
+#endif
+			RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(ConstantBuffer.Buffer,
+				RBufferDesc(RawData.Size, RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+#if _EDITOR_ONLY
+		if (!Result)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(render resource create failed)."));
+		}
+#endif
+	}
+	void EMaterialParameter::UploadConstantBuffer()
+	{
+#if _EDITOR_ONLY
+		if ((RawData.Size == 0u) || (!(RawData.Datas)))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check material parameter constant buffer failed(size is zero)."));
+			return;
+		}
+		if (!(ConstantBuffer.IsRenderResourceValid()))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check material parameter constant buffer failed(buffer is null)."));
+			return;
+		}
+#endif
+		RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(ConstantBuffer.Buffer, RawData.Datas);
+	}
+	RBufferResource& EMaterialParameter::GetConstantBuffer()
+	{
+		return ConstantBuffer;
+	}
+	const RBufferResource& EMaterialParameter::GetConstantBuffer()const
+	{
+		return ConstantBuffer;
 	}
 	void EMaterialParameter::BeginSetupParameter()
 	{
@@ -51,6 +124,8 @@ namespace PigeonEngine
 
 		InitCommands.DoCommands();
 		InitCommands.EmptyQueue();
+
+		CreateConstantBuffer();
 	}
 	void EMaterialParameter::ClearParameter()
 	{

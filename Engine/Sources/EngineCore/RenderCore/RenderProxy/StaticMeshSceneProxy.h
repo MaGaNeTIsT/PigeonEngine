@@ -2,10 +2,19 @@
 
 #include <CoreMinimal.h>
 #include "MeshSceneProxy.h"
+#include <ShaderAsset/ShaderAsset.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 
 namespace PigeonEngine
 {
+
+	class RStaticMeshMaterialParameter : public RMeshMaterialParameter
+	{
+	public:
+		virtual void	SetupParameters()override;
+
+		CLASS_MATERIAL_PARAMETER(RStaticMeshMaterialParameter)
+	};
 
 	class RStaticMeshSceneProxy : public RMeshSceneProxy
 	{
@@ -17,26 +26,15 @@ namespace PigeonEngine
 		virtual void	UpdateRenderResource()override;
 		virtual void	BindRenderResource()override;
 	protected:
-		struct RStaticMeshCBufferData
-		{
-		public:
-			RStaticMeshCBufferData() = default;
-			RStaticMeshCBufferData(const RStaticMeshCBufferData& Other)
-			{
-				RENDER_PER_OBJECT_TRANSFORM_COPY(Other)
-			}
-			RStaticMeshCBufferData& operator=(const RStaticMeshCBufferData& Other)
-			{
-				RENDER_PER_OBJECT_TRANSFORM_COPY(Other)
-				return (*this);
-			}
-		public:
-			RENDER_PER_OBJECT_TRANSFORM
-		};
+		void			SetupShaders();
+		void			BindMaterialParameter(const UINT32 InSlot);
 	protected:
-		const EStaticMeshAsset*		MeshAsset;
+		const EVertexShaderAsset*		VertexShader;
+		const EPixelShaderAsset*		PixelShader;
+		const EStaticMeshAsset*			MeshAsset;
+		RStaticMeshMaterialParameter	MaterialParameter;
 	protected:
-		const PStaticMeshComponent*	Component;
+		const PStaticMeshComponent*		Component;
 
 		RENDER_PROXY_CLASS_BODY(RStaticMeshSceneProxy)
 

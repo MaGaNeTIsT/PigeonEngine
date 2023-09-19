@@ -11,19 +11,19 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	void RPrimitiveMaterialParameter::AddPrimitiveMaterialParameter()
+	{
+		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldMatrix"));
+		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldInvMatrix"));
+		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldInvTransposeMatrix"));
+	}
+
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
 		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE)
-#if _EDITOR_ONLY
-		, PrimitiveCBufferSize(0u)
-#endif
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
 		: RBaseSceneProxy(Other), IsMovable(Other.IsMovable), IsCastShadow(Other.IsCastShadow), IsReceiveShadow(Other.IsReceiveShadow)
-#if _EDITOR_ONLY
-		, PrimitiveCBufferSize(Other.PrimitiveCBufferSize)
-#endif
-		, PrimitiveCBuffer(Other.PrimitiveCBuffer)
 	{
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
@@ -62,19 +62,6 @@ namespace PigeonEngine
 	void RPrimitiveSceneProxy::BindRenderResource()
 	{
 
-	}
-	const RBufferResource& RPrimitiveSceneProxy::GetPrimitiveCBuffer()const
-	{
-		return PrimitiveCBuffer;
-	}
-	void RPrimitiveSceneProxy::BindPrimitiveCBuffer(const UINT32 InSlot)
-	{
-#if _EDITOR_ONLY
-		if (PrimitiveCBuffer.IsRenderResourceValid())
-#endif
-		{
-			RDeviceD3D11::GetDeviceSingleton()->BindVSConstantBuffer(PrimitiveCBuffer.Buffer, InSlot);
-		}
 	}
 
 };

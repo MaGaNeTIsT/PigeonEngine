@@ -1,12 +1,22 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <RenderResource.h>
 
 namespace PigeonEngine
 {
 
-	extern PE_INLINE DirectX::XMFLOAT4X4 TranslateUploadType(const Matrix4x4& InData);
-	extern PE_INLINE DirectX::XMFLOAT4 TranslateUploadType(const Vector4& InData);
+#define CLASS_MATERIAL_PARAMETER(__Name) \
+	public:\
+		__Name() {}\
+		virtual ~__Name() {}\
+		__Name(const __Name&) = delete;\
+		__Name& operator=(const __Name&) = delete;\
+
+
+	extern PE_INLINE Matrix4x4	TranslateUploadMatrixType(const Matrix4x4& InData);
+	extern PE_INLINE Matrix4x4	TranslateUploadTransposeMatrixType(const Matrix4x4& InData);
+	extern PE_INLINE Vector4	TranslateUploadVectorType(const Vector4& InData);
 
 	enum EShaderParameterValueType : UINT8
 	{
@@ -133,6 +143,14 @@ namespace PigeonEngine
 		EShaderParameterValueType		ValueType;
 		EShaderParameterBase			ParameterInfo;
 
+		BOOL32 IsValid()const
+		{
+			return ((!!ValuePtr) &&
+				(ValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
+				(ValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT) &&
+				(ParameterInfo.Size > 0u) &&
+				(ParameterInfo.Element > 0u));
+		}
 		template<typename _TValueType>
 		void SetupParameter(BYTE* InRawPtr, const UINT32 InOffset, EShaderParameterValueType InValueType,
 			const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
@@ -193,7 +211,12 @@ namespace PigeonEngine
 	class EMaterialParameter
 	{
 	public:
-		virtual void	SetupParameters() {}
+		virtual void			SetupParameters() {}
+		EShaderParameter&		operator[](const EString& InParamName);
+		void					CreateConstantBuffer();
+		void					UploadConstantBuffer();
+		RBufferResource&		GetConstantBuffer();
+		const RBufferResource&	GetConstantBuffer()const;
 	protected:
 		class ECommand final
 		{
@@ -253,6 +276,7 @@ namespace PigeonEngine
 		EShaderParameterRaw			RawData;
 		TMap<EString, UINT32>		ShaderParameterNames;
 		TArray<EShaderParameter>	ShaderParameters;
+		RBufferResource				ConstantBuffer;
 	public:
 		EMaterialParameter();
 		EMaterialParameter(const EMaterialParameter& Other);

@@ -78,6 +78,24 @@ namespace PigeonEngine
             }
             return FALSE;
         }
+        V* FindValueRef(const K& Key)
+        {
+            auto It = Map.find(Key);
+            if (It != Map.end())
+            {
+                return (&(It->second));
+            }
+            return nullptr;
+        }
+        const V* FindValueRef(const K& Key)const
+        {
+            auto It = Map.find(Key);
+            if (It != Map.end())
+            {
+                return (&(It->second));
+            }
+            return nullptr;
+        }
 
         void GenerateKeyArray  (TArray<K>& OutKeys);
         void GenerateValueArray(TArray<V>& OutValues);

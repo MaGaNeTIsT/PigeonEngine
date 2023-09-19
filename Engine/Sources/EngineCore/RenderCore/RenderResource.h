@@ -66,6 +66,7 @@ namespace PigeonEngine
 				LayoutNum = 0u;
 			}
 		};
+
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	Shader;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>	InputLayout;
 		RInputLayoutDesc*							RawLayouts;
@@ -96,6 +97,7 @@ namespace PigeonEngine
 		{
 			Shader = nullptr;
 		};
+
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> Shader;
 	};
 	class RComputeShaderResource : public RRenderResourceInterface
@@ -123,6 +125,7 @@ namespace PigeonEngine
 		{
 			Shader = nullptr;
 		};
+
 		Microsoft::WRL::ComPtr<ID3D11ComputeShader> Shader;
 	};
 	class RStructuredBuffer : public RRenderResourceInterface
@@ -159,6 +162,7 @@ namespace PigeonEngine
 			UnorderedAccessView	= nullptr;
 			ShaderResourceView	= nullptr;
 		}
+
 		BOOL32	AccessMapRead;
 		BOOL32	AccessMapWrite;
 		Microsoft::WRL::ComPtr<ID3D11Buffer>				Buffer;
@@ -199,6 +203,7 @@ namespace PigeonEngine
 			ShaderResourceView	= nullptr;
 			DepthStencilView	= nullptr;
 		}
+
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		RenderTargetView;
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
@@ -237,6 +242,7 @@ namespace PigeonEngine
 			UnorderedAccessView	= nullptr;
 			ShaderResourceView	= nullptr;
 		};
+
 		Microsoft::WRL::ComPtr<ID3D11Texture3D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView>		RenderTargetView;
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
@@ -270,6 +276,7 @@ namespace PigeonEngine
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
 		}
+
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
@@ -301,6 +308,7 @@ namespace PigeonEngine
 			Buffer				= nullptr;
 			ShaderResourceView	= nullptr;
 		}
+
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
@@ -330,7 +338,32 @@ namespace PigeonEngine
 		{
 			Buffer = nullptr;
 		}
+
 		Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
+	};
+	class RVertexBufferResource : public RBufferResource
+	{
+	public:
+		RVertexBufferResource() : Stride(0u) {}
+		RVertexBufferResource(const RVertexBufferResource& Other) : RBufferResource(Other), Stride(Other.Stride) {}
+		virtual ~RVertexBufferResource() {}
+		RVertexBufferResource& operator=(const RVertexBufferResource& Other)
+		{
+			Buffer = Other.Buffer;
+			Stride = Other.Stride;
+			return (*this);
+		}
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			return (RBufferResource::IsRenderResourceValid() && (Stride != 0u));
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			RBufferResource::ReleaseRenderResource();
+			Stride = 0u;
+		}
+
+		UINT32 Stride;
 	};
 	class RSamplerResource : public RRenderResourceInterface
 	{
@@ -358,6 +391,7 @@ namespace PigeonEngine
 		{
 			SamplerState = nullptr;
 		}
+
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState;
 	};
 	class RSceneTextures final

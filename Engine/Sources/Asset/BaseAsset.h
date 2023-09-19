@@ -148,8 +148,22 @@ namespace PigeonEngine
 			ReleaseRenderResourceInternal();
 		}
 	public:
-		BOOL32	IsRenderResourceValid()const { return ((!!RenderResourceData) && (RenderResourceData->IsRenderResourceValid())); }
-		const TRenderResourceType*	GetRenderResource()const { return RenderResourceData; }
+		BOOL32 IsRenderResourceValid()const
+		{
+#if _EDITOR_ONLY
+			if (RenderResourceData)
+			{
+				return (RenderResourceData->IsRenderResourceValid());
+			}
+			return FALSE;
+#else
+			return ((!!RenderResourceData) && (RenderResourceData->IsRenderResourceValid()));
+#endif
+		}
+		const TRenderResourceType* GetRenderResource()const
+		{
+			return RenderResourceData;
+		}
 	protected:
 		template<typename TCreateRenderResourceLambdaType>
 		BOOL32 CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL32& bHoldStoragedResource)

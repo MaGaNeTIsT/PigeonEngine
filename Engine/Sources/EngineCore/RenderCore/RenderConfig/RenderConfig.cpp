@@ -51,7 +51,7 @@ namespace PigeonEngine
 		else if ((SemanticName >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return 2u; }
 		return 0u;
 	}
-	PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input)
+	PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(const UINT16 input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return RShaderSemanticType::SHADER_SEMANTIC_NONE; }
 		UINT32 SemanticType = input;
@@ -67,7 +67,7 @@ namespace PigeonEngine
 		else if ((SemanticType >> 6) & 0x1u) { /*SHADER_SEMANTIC_PSIZE[n]*/return RShaderSemanticType::SHADER_SEMANTIC_PSIZE; }
 		return RShaderSemanticType::SHADER_SEMANTIC_NONE;
 	}
-	PE_INLINE UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input)
+	PE_INLINE UINT32 GetShaderSemanticTypeSlot(const UINT16 input)
 	{
 		if (input == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return 0u; }
 		UINT32 SemanticType = input;

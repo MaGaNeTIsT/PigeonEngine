@@ -760,21 +760,11 @@ namespace PigeonEngine
 		PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	= 5
 	};
 
-#define RENDER_PER_OBJECT_TRANSFORM \
-	DirectX::XMFLOAT4X4 _WorldMatrix;\
-	DirectX::XMFLOAT4X4 _WorldInvMatrix;\
-	DirectX::XMFLOAT4X4 _WorldInvTransposeMatrix;\
-
-#define RENDER_PER_OBJECT_TRANSFORM_COPY(__Name) \
-	_WorldMatrix = __Name._WorldMatrix;\
-	_WorldInvMatrix = __Name._WorldInvMatrix;\
-	_WorldInvTransposeMatrix = __Name._WorldInvTransposeMatrix;\
-
 	extern PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);
-	extern PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(RShaderSemanticType input);
-	extern PE_INLINE UINT32 GetShaderSemanticTypeSlot(RShaderSemanticType input);
+	extern PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(const UINT16 input);
+	extern PE_INLINE UINT32 GetShaderSemanticTypeSlot(const UINT16 input);
 	extern PE_INLINE void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 	extern PE_INLINE void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 

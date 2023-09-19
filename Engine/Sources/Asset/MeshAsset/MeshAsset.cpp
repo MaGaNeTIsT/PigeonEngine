@@ -1060,7 +1060,7 @@ namespace PigeonEngine
 			BOOL32 Result = TRUE;
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				const TArray<RBufferResource*>& Buffers = It->second;
+				const TArray<RVertexBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
@@ -1100,6 +1100,10 @@ namespace PigeonEngine
 			}
 			VertexRenderResources.Clear();
 		}
+	}
+	const TArray<RBufferResource*>* EMeshRenderResource::GetVertexRenderResource(const UINT8 InType)const
+	{
+		return (VertexRenderResources.FindValueRef(InType));
 	}
 	BOOL32 EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
 	{

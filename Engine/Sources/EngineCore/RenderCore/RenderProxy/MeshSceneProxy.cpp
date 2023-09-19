@@ -1,5 +1,4 @@
 #include "MeshSceneProxy.h"
-#include <PigeonBase/Object/Component/Primitive/MeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -10,6 +9,11 @@ namespace PigeonEngine
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+	void RMeshMaterialParameter::AddMeshMaterialParameter()
+	{
+
+	}
 
 	RMeshSceneProxy::RMeshSceneProxy()
 	{
