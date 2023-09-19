@@ -17,7 +17,7 @@ namespace PigeonEngine
 	{
 		if(!RootComponent)
 		{
-			this->SetRootComponent(new PSceneComponent());
+			RootComponent = new PSceneComponent();
 		}
 	}
 	
@@ -54,6 +54,7 @@ namespace PigeonEngine
 		{
 			Component->FixedTick(deltaTime);
 		}
+		RootComponent->FixedTick(deltaTime);
 		UserTick(deltaTime);
 	}
 
@@ -67,6 +68,7 @@ namespace PigeonEngine
 		{
 			Component->EditorTick(deltaTime);
 		}
+		RootComponent->FixedTick(deltaTime);
 	}
 
 	PActor* PActor::GetAttachedParentActor() const
@@ -113,7 +115,7 @@ namespace PigeonEngine
 		// RootComponent->ReparentChildren(NewRoot);
 		if (RootComponent)
 		{
-			RootComponent->Destroy();
+			//RootComponent->Destroy();
 
 		}
 		
@@ -202,10 +204,10 @@ namespace PigeonEngine
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
 		{
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
-			//if (this->GetWorld())
-			//{
-			//	SceneComp->BeginAddedToScene(MyWorld);
-			//}
+			if (this->GetWorld())
+			{
+				SceneComp->BeginAddedToScene(this->GetWorld());
+			}
 		}
 		this->Components.Add(NewComponent);
 		

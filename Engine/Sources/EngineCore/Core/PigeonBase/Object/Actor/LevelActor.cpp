@@ -3,6 +3,7 @@
 #include "../Component/Primitive/StaticMeshComponent.h"
 #include "../World/World.h"
 #include "MeshAsset/MeshAsset.h"
+#include "../Controller/Controller.h"
 namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
@@ -15,9 +16,19 @@ namespace PigeonEngine
         // this->Destroy();
     }
 	
-    void PLevelActor::UserBeginPlay()
+	void PLevelActor::BeginAddedToScene(PWorld* World)
+	{
+		this->SetWorld(World);
+	}
+
+	void PLevelActor::RemovedFromScene()
+	{
+
+	}
+
+	void PLevelActor::UserBeginPlay()
     {
-  //      
+      
 		PActor* New = new PActor();
 		this->GetWorld()->AddActor(New);
 		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
@@ -30,7 +41,9 @@ namespace PigeonEngine
 		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
 
 
-		// NewStaticMeshComp->SetMeshAsset(Asset);
+		NewStaticMeshComp->SetMeshAsset(Asset);
+		
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -100));
     }
 
 	void PLevelActor::UserEndPlay()

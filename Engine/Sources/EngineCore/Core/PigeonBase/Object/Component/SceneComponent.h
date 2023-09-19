@@ -50,7 +50,10 @@ namespace PigeonEngine
     	virtual void Init() override;
     	virtual void Uninit() override;
     	virtual void Destroy() override;
-
+		void	FixedTick(FLOAT deltaTime) override;
+#if _EDITOR_ONLY
+		void	EditorTick(FLOAT deltaTime) override;
+#endif
     protected:
         void BeginAddedToScene(PWorld* World) override;
         void RemovedFromScene() override;
