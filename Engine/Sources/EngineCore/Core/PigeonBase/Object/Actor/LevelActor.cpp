@@ -35,6 +35,7 @@ namespace PigeonEngine
 		this->GetWorld()->AddActor(New);
     	
 		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+    	NewStaticMeshComp->SetIsTickable(TRUE);
 		New->AddComponent(NewStaticMeshComp);
 
 		const EStaticMeshAsset* Asset = nullptr;
