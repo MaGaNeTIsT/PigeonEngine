@@ -17,7 +17,7 @@ namespace PigeonEngine
 	{
 		if(!RootComponent)
 		{
-			this->SetRootComponent(new PSceneComponent());
+			RootComponent = new PSceneComponent();
 		}
 	}
 	
@@ -113,7 +113,7 @@ namespace PigeonEngine
 		// RootComponent->ReparentChildren(NewRoot);
 		if (RootComponent)
 		{
-			RootComponent->Destroy();
+			//RootComponent->Destroy();
 
 		}
 		

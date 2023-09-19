@@ -120,8 +120,8 @@ namespace PigeonEngine
 
 		m_GameTimer->Reset();
 
-		m_WorldManager->Init();
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
+		m_WorldManager->Init();
 	}
 	void EMainManager::Uninit()
 	{

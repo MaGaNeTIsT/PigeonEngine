@@ -41,7 +41,9 @@ namespace PigeonEngine
 	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
 		Check(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child != Parent);
-		Check(ENGINE_COMPONENT_ERROR, "Something is nullptr when attaching", Child && Parent && Parent->GetOwnerActor());
+		Check(ENGINE_COMPONENT_ERROR, "Child is nullptr when attaching", Child );
+		Check(ENGINE_COMPONENT_ERROR, "Parent is nullptr when attaching", Parent);
+		Check(ENGINE_COMPONENT_ERROR, "Parent->GetOwnerActor() is nullptr when attaching", Parent->GetOwnerActor());
 
 		// Remove from current parent
 		Child->DetachFromParentComponent();

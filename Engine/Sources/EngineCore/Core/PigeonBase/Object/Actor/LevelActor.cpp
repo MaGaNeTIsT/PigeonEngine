@@ -15,9 +15,14 @@ namespace PigeonEngine
         // this->Destroy();
     }
 	
-    void PLevelActor::UserBeginPlay()
+	void PLevelActor::BeginAddedToScene(PWorld* World)
+	{
+		this->SetWorld(World);
+	}
+
+	void PLevelActor::UserBeginPlay()
     {
-  //      
+      
 		PActor* New = new PActor();
 		this->GetWorld()->AddActor(New);
 		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
