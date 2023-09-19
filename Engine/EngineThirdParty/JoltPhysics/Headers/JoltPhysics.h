@@ -94,12 +94,12 @@ struct PhysicsBodyId
 	}
 };
 
-static void TraceImpl(const char* inFMT, ...)
+static void TraceImpl(const CHAR* inFMT, ...)
 {
 	// Format the message
 	va_list list;
 	va_start(list, inFMT);
-	char buffer[1024];
+	CHAR buffer[1024];
 	vsnprintf(buffer, sizeof(buffer), inFMT, list);
 
 	// Print to the TTY

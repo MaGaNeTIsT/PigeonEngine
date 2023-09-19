@@ -44,6 +44,11 @@ namespace PigeonEngine
 			executeFunc(WindowsMessageBox(tempText, tempCaption, tempType));
 		}
 	}
-
+	static bool DummyAssertFailed(const CHAR* inExpression, const CHAR* inMessage, const CHAR* inFile, UINT inLine)
+	{
+		//alert here;
+		return true; // Trigger breakpoint
+	};
+	AssertFailedFunc AssertFailed = DummyAssertFailed;
 #endif
 };

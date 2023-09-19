@@ -31,9 +31,20 @@ namespace PigeonEngine
 		DWindowsMessage& operator=(const DWindowsMessage&) = delete;
 	};
 
+//Only WindowsPlatform
+#define BREAKPOINT		__debugbreak()
+using AssertFailedFunc = bool(*)(const CHAR* inExpression, const CHAR* inMessage, const CHAR* inFile, UINT inLine);
+__declspec(dllexport) extern AssertFailedFunc AssertFailed;
+
+// Helper functions to pass message on to failed function
+struct AssertLastParameter { };
+inline bool AssertFailedHelper(const CHAR* inExpression, const CHAR* inFile, UINT inLine, AssertLastParameter) { return AssertFailed(inExpression, nullptr, inFile, inLine); }
+inline bool AssertFailedHelper(const CHAR* inExpression, const CHAR* inFile, UINT inLine, const CHAR* inMessage, AssertLastParameter) { return AssertFailed(inExpression, inMessage, inFile, inLine); }
+#define ASSERT(inExpression, ...)	do { if (!(inExpression) && AssertFailedHelper(#inExpression, __FILE__, UINT(__LINE__), ##__VA_ARGS__, AssertLastParameter())) BREAKPOINT; } while (false)
 #define PE_FAILED(_Caption,_Text)			(DWindowsMessage::_Check_Default((_Caption),(_Text),(FALSE)))
 #define Check(_Caption,_Text,_Condition)	(DWindowsMessage::_Check_Default((_Caption),(_Text),(_Condition)))
 #else
+#define ASSERT(inExpression, ...)			(;)
 #define PE_FAILED(_Caption,_Text)			(;)
 #define Check(_Caption, _Text, _Condition)	(;)
 #endif
