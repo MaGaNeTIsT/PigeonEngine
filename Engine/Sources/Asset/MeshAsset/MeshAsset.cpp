@@ -400,7 +400,7 @@ namespace PigeonEngine
 	BOOL32 EMesh::AddIndexElement(EIndexData* InIndexData)
 	{
 		if ((!InIndexData) || (InIndexData->PartType == 0u) || (InIndexData->ElementNum < 3u) ||
-			(!(InIndexData->Indices)) || ((InIndexData->Stride != 2u) || (InIndexData->Stride != 4u)))
+			(!(InIndexData->Indices)) || ((InIndexData->Stride != 2u) && (InIndexData->Stride != 4u)))
 		{
 			PE_FAILED((ENGINE_ASSET_ERROR), ("Mesh add index descriptor check failed."));
 			return FALSE;
@@ -615,7 +615,7 @@ namespace PigeonEngine
 			}
 		}
 #if _DEBUG_MODE
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist vertex."));
+		//PE_FAILED((ENGINE_ASSET_ERROR), ("Try to get not exist vertex."));
 #endif
 		return FALSE;
 	}
