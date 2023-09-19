@@ -19,7 +19,7 @@ namespace PigeonEngine
 
     PWorld::PWorld()
     {
-        Init();
+       
     }
     PWorld::~PWorld()
     {
@@ -30,8 +30,10 @@ namespace PigeonEngine
         GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
 		this->RootActor = new PActor();
 		this->RootActor->BeginAddedToScene(this);
+        this->RootActor->Init();
 		this->LevelScriptor = new PLevelActor();
 		this->LevelScriptor->BeginAddedToScene(this);
+        this->LevelScriptor->Init();
     }
 
     void PWorld::Uninit()
@@ -107,6 +109,21 @@ namespace PigeonEngine
     {
         return RenderScene;
     }
+
+    void PWorldManager::Init()
+    {
+        World = new PWorld();
+    }
+
+    void PWorldManager::Uninit()
+    {
+        if(World)
+        {
+            World->Destroy();
+            World = nullptr;
+        }
+    }
+
     //Render scene state END
 
     PWorldManager::PWorldManager()

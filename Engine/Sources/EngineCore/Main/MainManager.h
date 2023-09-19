@@ -53,6 +53,8 @@ namespace PigeonEngine
 		class CAssimpManager*				m_AssimpManager				= nullptr;
 #endif
 		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager	= nullptr;
+
+		class EWorldManager*                m_WorldManager              = nullptr; 
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 

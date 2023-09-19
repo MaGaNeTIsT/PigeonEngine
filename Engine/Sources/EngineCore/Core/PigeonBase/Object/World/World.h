@@ -67,6 +67,8 @@ namespace PigeonEngine
         class PLevelActor* LevelScriptor = nullptr;
 
     private:
+        class PController* Controller = nullptr;
+    private:
         // Timer
         const EGameTimer* GameTimer = nullptr;
 
@@ -82,17 +84,5 @@ namespace PigeonEngine
 
     };
 
-    class PWorldManager final
-    {
-    public:
-        static PE_INLINE PWorld* GetWorld()
-        {
-            static PWorld* PE_RESTRICT StaticGlobalWorld = &(PWorldManager::GetSingleton()->World);
-            return StaticGlobalWorld;
-        }
-    private:
-        PWorld  World;
-
-        CLASS_SINGLETON_BODY(PWorldManager)
-    };
+   
 };
