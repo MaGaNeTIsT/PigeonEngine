@@ -6,6 +6,7 @@
 #include <Renderer/SceneRenderer.h>
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include "PigeonBase/Object/World/World.h"
+#include "PigeonBase/Object/World/WorldManager.h"
 
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
@@ -28,7 +29,7 @@ namespace PigeonEngine
 		m_GraphicDepth	= 24u;
 		m_FrameRate		= static_cast<UINT32>(ESettings::ENGINE_UPDATE_FRAME);
 		m_Windowed		= ESettings::ENGINE_WINDOWED;
-
+		
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
 
 		m_PhysicsManager	= CPhysicsManager::GetSingleton();
@@ -37,6 +38,8 @@ namespace PigeonEngine
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
 #endif
 		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
+		m_WorldManager = EWorldManager::GetManagerSingleton();
+		
 	}
 	EMainManager::~EMainManager()
 	{
@@ -64,16 +67,18 @@ namespace PigeonEngine
 			SceneRenderer->Initialize();
 			RenderScene = SceneRenderer->GetRenderScene();
 		}
-		PWorldManager::GetWorld()->BindRenderScene(RenderScene);
 #if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
 #endif
 
+		
 		m_WindowTimer.Init();
+
 	}
 	void EMainManager::ShutDown()
 	{
+		m_WorldManager->ShutDown();
 #if _EDITOR_ONLY
 		m_AssimpManager->ShutDown();
 		m_ImGUIManager->ShutDown();
@@ -113,9 +118,13 @@ namespace PigeonEngine
 		RenderScene->Init();
 
 		m_GameTimer->Reset();
+
+		m_WorldManager->Init();
+		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 	}
 	void EMainManager::Uninit()
 	{
+		m_WorldManager->Uninit();
 		RenderScene->Uninit();
 
 		if (m_GameTimer)
@@ -123,6 +132,7 @@ namespace PigeonEngine
 			delete m_GameTimer;
 			m_GameTimer = nullptr;
 		}
+		
 	}
 	void EMainManager::Update()
 	{
@@ -131,8 +141,7 @@ namespace PigeonEngine
 		m_ImGUIManager->Update();
 		EditorUpdate();
 #endif
-
-		PWorldManager::GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 
 		// In this time we can start to rendering a scene
 		SceneRenderer->InitNewFrame();

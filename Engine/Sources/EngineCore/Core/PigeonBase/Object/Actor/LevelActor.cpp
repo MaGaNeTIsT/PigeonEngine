@@ -24,7 +24,7 @@ namespace PigeonEngine
 		New->AddComponent(NewStaticMeshComp);
 
 		const EStaticMeshAsset* Asset = nullptr;
-		EString ImportPath(". /Engine/Assets/EngineModels/SceneModels/Camera/");
+		EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Camera/");
 		EString ImportName("Camera");
 		EString ImportFileType("obj");
 		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
