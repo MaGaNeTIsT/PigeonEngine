@@ -17,7 +17,7 @@ namespace PigeonEngine
     void PController::Init()
     {
         PActor::Init();
-        
+        this->SetIsTickable(TRUE);
       
     }
 

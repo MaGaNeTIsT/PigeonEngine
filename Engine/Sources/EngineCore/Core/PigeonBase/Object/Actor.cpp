@@ -54,6 +54,7 @@ namespace PigeonEngine
 		{
 			Component->FixedTick(deltaTime);
 		}
+		RootComponent->FixedTick(deltaTime);
 		UserTick(deltaTime);
 	}
 
@@ -67,6 +68,7 @@ namespace PigeonEngine
 		{
 			Component->EditorTick(deltaTime);
 		}
+		RootComponent->FixedTick(deltaTime);
 	}
 
 	PActor* PActor::GetAttachedParentActor() const

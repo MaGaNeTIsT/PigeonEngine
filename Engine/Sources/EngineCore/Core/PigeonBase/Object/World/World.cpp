@@ -28,9 +28,11 @@ namespace PigeonEngine
     {
         GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
 		this->RootActor = new PActor();
+        this->RootActor->SetIsTickable(TRUE);
 		this->RootActor->BeginAddedToScene(this);
         this->RootActor->Init();
 		this->LevelScriptor = new PLevelActor();
+        this->LevelScriptor->SetIsTickable(TRUE);
 		this->LevelScriptor->BeginAddedToScene(this);
         this->LevelScriptor->Init();
 
@@ -50,13 +52,20 @@ namespace PigeonEngine
         {
             GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
         }
-        RootActor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
+        RootActor->FixedTick(deltaTime);
 
-        LevelScriptor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
+        LevelScriptor->FixedTick(deltaTime);
     }
 
     void PWorld::EditorTick(FLOAT deltaTime)
     {
+        if (!GameTimer)
+        {
+            GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
+        }
+        RootActor->EditorTick(deltaTime);
+
+        LevelScriptor->EditorTick(deltaTime);
     }
 
   
