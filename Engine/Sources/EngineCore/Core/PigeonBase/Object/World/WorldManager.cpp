@@ -4,6 +4,15 @@
 
 namespace PigeonEngine
 {
+    EWorldManager::EWorldManager()
+	{
+        this->World = nullptr;
+	}
+
+    EWorldManager::~EWorldManager()
+	{
+		
+	}
     void EWorldManager::Initialize()
     {
         EManagerBase::Initialize();

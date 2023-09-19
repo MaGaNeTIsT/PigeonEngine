@@ -74,6 +74,7 @@ namespace PigeonEngine
 
 		
 		m_WindowTimer.Init();
+		m_WorldManager->Initialize();
 
 	}
 	void EMainManager::ShutDown()

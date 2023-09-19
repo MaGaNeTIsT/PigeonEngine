@@ -18,7 +18,7 @@ namespace PigeonEngine
 
     PWorld::PWorld()
     {
-       
+        this->RenderScene = nullptr;
     }
     PWorld::~PWorld()
     {
