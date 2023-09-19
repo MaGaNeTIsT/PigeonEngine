@@ -114,6 +114,11 @@ namespace PigeonEngine
 		{
 			SendUpdateRenderState();
 		}
+		for(const auto& elem : ChildrenComponents)
+		{
+			elem->FixedTick(deltaTime);
+		}
+		
 	}
 
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
@@ -124,6 +129,10 @@ namespace PigeonEngine
 		{
 			SendUpdateRenderState();
 		}
+		for(const auto& elem : ChildrenComponents)
+        {
+        	elem->EditorTick(deltaTime);
+        }
 	}
 
 	void PSceneComponent::BeginAddedToScene(PWorld* World)
