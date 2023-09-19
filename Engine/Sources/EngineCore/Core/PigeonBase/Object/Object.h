@@ -32,7 +32,7 @@ namespace PigeonEngine
 		void SetIsTickable(const BOOL32& bTickable);
 		BOOL32 IsTickable() const;
 	private:
-		BOOL32 bCanTick = false;
+		BOOL32 bCanTick = FALSE;
 	public:
 		virtual void Destroy();
 

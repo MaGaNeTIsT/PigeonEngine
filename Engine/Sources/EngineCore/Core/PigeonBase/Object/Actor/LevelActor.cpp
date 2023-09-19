@@ -1,18 +1,47 @@
 ﻿#include "LevelActor.h"
 #include "../Component/SceneComponent.h"
+#include "../Component/Primitive/StaticMeshComponent.h"
+#include "../World/World.h"
+#include "MeshAsset/MeshAsset.h"
 namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
     {
-        if(!GetRootComponent())
-        {
-            SetRootComponent(new PSceneComponent());
-        }
+       
     }
 	
     PLevelActor::~PLevelActor()
     {
-        this->Destroy();
+        // this->Destroy();
     }
 	
+    void PLevelActor::UserBeginPlay()
+    {
+  //      
+		PActor* New = new PActor();
+		this->GetWorld()->AddActor(New);
+		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+		New->AddComponent(NewStaticMeshComp);
+
+		const EStaticMeshAsset* Asset = nullptr;
+		EString ImportPath(". /Engine/Assets/EngineModels/SceneModels/Camera/");
+		EString ImportName("Camera");
+		EString ImportFileType("obj");
+		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
+
+
+		// NewStaticMeshComp->SetMeshAsset(Asset);
+    }
+
+	void PLevelActor::UserEndPlay()
+	{
+
+	}
+
+	void PLevelActor::UserTick(FLOAT deltaTime)
+	{
+
+	}
+
+
 }

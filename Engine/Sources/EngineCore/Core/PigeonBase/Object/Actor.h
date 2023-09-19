@@ -30,8 +30,18 @@ namespace PigeonEngine
 		void    Destroy() override;
 	
 	protected:
+		// for frame, 
 		virtual void BeginAddedToScene(PWorld* World);
 		virtual void RemovedFromScene();
+
+		// for users
+		virtual void UserBeginPlay();
+		virtual void UserTick(FLOAT deltaTime);
+		virtual void UserEndPlay();
+	public:
+		PWorld* GetWorld() const;
+	protected:
+		void SetWorld(PWorld* NewWorld);
 	private:
 		PWorld* MyWorld = nullptr;
 
@@ -45,7 +55,6 @@ namespace PigeonEngine
 		PE_NODISCARD Vector3    GetActorScale() const;
 		
 		PE_NODISCARD const ETransform& GetActorTransform() const;
-
 		PE_NODISCARD ETransform GetActorWorldTransform() const;
 
 		void SetActorLocation (const Vector3& Location);
@@ -83,9 +92,9 @@ namespace PigeonEngine
 
 		void DetachFromParentActor();
 		// Attach this actor to another;
-		void AttachToActor(PActor* Another, const ETransform& RelativeTransform = ETransform());
+		void AttachToActor(PActor* Parent, const ETransform& RelativeTransform = ETransform());
 		// Attach another actor to this;
-		void AttachActorTo(PActor* Another, const ETransform& RelativeTransform = ETransform());
+		void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 		
 	private:

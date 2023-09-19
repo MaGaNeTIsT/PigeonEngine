@@ -19,8 +19,7 @@ namespace PigeonEngine
 
     PWorld::PWorld()
     {
-        this->RootActor = new PLevelActor();
-        this->RootActor->BeginAddedToScene(this);
+        Init();
     }
     PWorld::~PWorld()
     {
@@ -29,6 +28,10 @@ namespace PigeonEngine
     void PWorld::Init()
     {
         GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
+		this->RootActor = new PActor();
+		this->RootActor->BeginAddedToScene(this);
+		this->LevelScriptor = new PLevelActor();
+		this->LevelScriptor->BeginAddedToScene(this);
     }
 
     void PWorld::Uninit()
@@ -38,11 +41,13 @@ namespace PigeonEngine
 
     void PWorld::Tick(FLOAT deltaTime)
     {
-        Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", GameTimer == nullptr);
-        for(const auto& Actor : AllActors)
+        if (!GameTimer)
         {
-            Actor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
+            GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
         }
+        RootActor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
+
+        LevelScriptor->FixedTick(static_cast<FLOAT>(GameTimer->GetDeltaTime()));
     }
 
     void PWorld::EditorTick(FLOAT deltaTime)
@@ -57,11 +62,11 @@ namespace PigeonEngine
 
     void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
     {
-        Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor == nullptr);
+		Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor != nullptr);
+		Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding world root to world.", NewActor != RootActor);
         
-        // this->RootActors.Add(NewActor);
-        NewActor->AttachActorTo(RootActor);
-        this->AllActors.Add(NewActor);
+        
+        NewActor->AttachToActor(RootActor);
         NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
         NewActor->BeginAddedToScene(this);
     }

@@ -64,6 +64,9 @@ namespace PigeonEngine
 
 
     private:
+        class PLevelActor* LevelScriptor = nullptr;
+
+    private:
         // Timer
         const EGameTimer* GameTimer = nullptr;
 
