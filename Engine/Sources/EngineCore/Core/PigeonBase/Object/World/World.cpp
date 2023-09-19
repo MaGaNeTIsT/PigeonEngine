@@ -94,7 +94,12 @@ namespace PigeonEngine
     }
 #endif
 
-    //Render scene state START
+	PigeonEngine::PController* PWorld::GetController() const
+	{
+        return this->Controller;
+	}
+
+	//Render scene state START
     void PWorld::BindRenderScene(RSceneInterface* InScene)
     {
         if (RenderScene)

@@ -65,7 +65,8 @@ namespace PigeonEngine
 
     private:
         class PLevelActor* LevelScriptor = nullptr;
-
+    public:
+        PController* GetController()const;
     private:
         class PController* Controller = nullptr;
     private:

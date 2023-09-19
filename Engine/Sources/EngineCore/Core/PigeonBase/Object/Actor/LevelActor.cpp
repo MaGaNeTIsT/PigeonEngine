@@ -20,6 +20,11 @@ namespace PigeonEngine
 		this->SetWorld(World);
 	}
 
+	void PLevelActor::RemovedFromScene()
+	{
+
+	}
+
 	void PLevelActor::UserBeginPlay()
     {
       
@@ -35,7 +40,7 @@ namespace PigeonEngine
 		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
 
 
-		// NewStaticMeshComp->SetMeshAsset(Asset);
+		NewStaticMeshComp->SetMeshAsset(Asset);
     }
 
 	void PLevelActor::UserEndPlay()
