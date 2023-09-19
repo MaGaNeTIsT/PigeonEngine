@@ -202,10 +202,10 @@ namespace PigeonEngine
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
 		{
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
-			//if (this->GetWorld())
-			//{
-			//	SceneComp->BeginAddedToScene(MyWorld);
-			//}
+			if (this->GetWorld())
+			{
+				SceneComp->BeginAddedToScene(this->GetWorld());
+			}
 		}
 		this->Components.Add(NewComponent);
 		

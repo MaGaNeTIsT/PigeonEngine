@@ -3,6 +3,7 @@
 #include "../Component/Primitive/StaticMeshComponent.h"
 #include "../World/World.h"
 #include "MeshAsset/MeshAsset.h"
+#include "../Controller/Controller.h"
 namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
@@ -41,6 +42,8 @@ namespace PigeonEngine
 
 
 		NewStaticMeshComp->SetMeshAsset(Asset);
+		
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -100));
     }
 
 	void PLevelActor::UserEndPlay()
