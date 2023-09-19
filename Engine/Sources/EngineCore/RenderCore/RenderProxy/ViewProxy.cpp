@@ -147,13 +147,13 @@ namespace PigeonEngine
 		ViewMaterialParameter["_CameraWorldPosition"] = &TranslateUploadVectorType(MakeVector4(WorldLocation, 0.f));
 		ViewMaterialParameter.UploadConstantBuffer();
 	}
-	void RViewProxy::BindRenderResource()
+	void RViewProxy::BindRenderResource()const
 	{
 		BindViewMaterialParameter(0u);
 	}
-	void RViewProxy::BindViewMaterialParameter(const UINT32 InSlot)
+	void RViewProxy::BindViewMaterialParameter(const UINT32 InSlot)const
 	{
-		RBufferResource& ConstantBuffer = ViewMaterialParameter.GetConstantBuffer();
+		const RBufferResource& ConstantBuffer = ViewMaterialParameter.GetConstantBuffer();
 #if _EDITOR_ONLY
 		if (((InSlot >= 0u) && (InSlot < 16u)) && (ConstantBuffer.IsRenderResourceValid()))
 #endif

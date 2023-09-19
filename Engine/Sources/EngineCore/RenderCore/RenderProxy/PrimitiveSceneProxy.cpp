@@ -55,13 +55,5 @@ namespace PigeonEngine
 	{
 		SetProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, InMatrices.WorldScaling);
 	}
-	void RPrimitiveSceneProxy::UpdateRenderResource()
-	{
-
-	}
-	void RPrimitiveSceneProxy::BindRenderResource()
-	{
-
-	}
 
 };

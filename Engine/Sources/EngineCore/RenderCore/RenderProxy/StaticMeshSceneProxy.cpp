@@ -44,6 +44,11 @@ namespace PigeonEngine
 
 		MaterialParameter.SetupParameters();
 	}
+	BOOL32 RStaticMeshSceneProxy::IsRenderValid()const
+	{
+		//TODO
+		return TRUE;
+	}
 	void RStaticMeshSceneProxy::UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset)
 	{
 		MeshAsset = InMeshAsset;
@@ -55,7 +60,7 @@ namespace PigeonEngine
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
 	}
-	void RStaticMeshSceneProxy::BindRenderResource()
+	void RStaticMeshSceneProxy::BindRenderResource()const
 	{
 		BindVertexShader();
 		BindPixelShader();
@@ -88,7 +93,7 @@ namespace PigeonEngine
 				&ImportPath, &ImportPSName);
 		}
 	}
-	void RStaticMeshSceneProxy::BindVertexShader()
+	void RStaticMeshSceneProxy::BindVertexShader()const
 	{
 #if _EDITOR_ONLY
 		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()))
@@ -108,7 +113,7 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void RStaticMeshSceneProxy::BindPixelShader()
+	void RStaticMeshSceneProxy::BindPixelShader()const
 	{
 #if _EDITOR_ONLY
 		if ((!!PixelShader) && (PixelShader->IsRenderResourceValid()))
@@ -126,7 +131,7 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void RStaticMeshSceneProxy::BindMeshResource()
+	void RStaticMeshSceneProxy::BindMeshResource()const
 	{
 #if _EDITOR_ONLY
 		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()) && (!!PixelShader) && (PixelShader->IsRenderResourceValid()) && (!!MeshAsset) && (MeshAsset->IsRenderResourceValid()))
@@ -189,9 +194,9 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void RStaticMeshSceneProxy::BindMaterialParameter(const UINT32 InSlot)
+	void RStaticMeshSceneProxy::BindMaterialParameter(const UINT32 InSlot)const
 	{
-		RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
+		const RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
 #if _EDITOR_ONLY
 		if (((InSlot >= 0u) && (InSlot < 16u)) && (ConstantBuffer.IsRenderResourceValid()))
 #endif
@@ -207,7 +212,7 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void RStaticMeshSceneProxy::Draw()
+	void RStaticMeshSceneProxy::Draw()const
 	{
 #if _EDITOR_ONLY
 		if ((!!MeshAsset) && (MeshAsset->IsRenderResourceValid()))

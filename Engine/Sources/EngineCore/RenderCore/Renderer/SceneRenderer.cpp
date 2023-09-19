@@ -194,6 +194,11 @@ namespace PigeonEngine
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
+		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
+		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
+		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
+
 		BasePass();
 
 		FinalOutputPass();
@@ -275,11 +280,6 @@ namespace PigeonEngine
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 
-		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
-		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
-		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
-
 		const TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
 		{
@@ -294,6 +294,7 @@ namespace PigeonEngine
 			RenderDevice->SetViewport(ViewProxy->GetRenderViewport());
 
 			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
+			ViewProxy->BindRenderResource();
 
 			RenderDevice->ClearRenderTargetView(SceneTextures->SceneColor.RenderTargetView);
 			RenderDevice->ClearDepthStencilView(SceneTextures->SceneDepthStencil.DepthStencilView);
@@ -304,9 +305,12 @@ namespace PigeonEngine
 			{
 				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
 #if _EDITOR_ONLY
-				StaticMesh->BindRenderResource();
+				if ((!!StaticMesh) && (StaticMesh->IsRenderValid()))
 #endif
-				StaticMesh->Draw();
+				{
+					StaticMesh->BindRenderResource();
+					StaticMesh->Draw();
+				}
 			}
 		}
 	}

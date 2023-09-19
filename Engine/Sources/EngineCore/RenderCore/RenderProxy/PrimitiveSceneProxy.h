@@ -28,8 +28,6 @@ namespace PigeonEngine
 	public:
 		void			SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
 		void			UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);
-		virtual void	UpdateRenderResource();
-		virtual void	BindRenderResource();
 	protected:
 		BOOL32			IsMovable;
 		BOOL32			IsCastShadow;

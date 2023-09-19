@@ -46,9 +46,9 @@ namespace PigeonEngine
 		void	UpdateMatrices(const ERenderViewMatrices& InMatrices);
 		void	UpdateViewParams(const ERenderViewParams& InParams);
 		void	UpdateRenderResource();
-		void	BindRenderResource();
+		void	BindRenderResource()const;
 	protected:
-		void	BindViewMaterialParameter(const UINT32 InSlot);
+		void	BindViewMaterialParameter(const UINT32 InSlot)const;
 	protected:
 		RViewMaterialParameter		ViewMaterialParameter;
 		BOOL32						IsMainView;
