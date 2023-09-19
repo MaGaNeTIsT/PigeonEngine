@@ -40,19 +40,19 @@ namespace PigeonEngine
         PMeshComponent::CreateRenderState();
         if (ShouldRender())
         {
-            PWorldManager::GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
+          this->GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
         }
     }
     void PSkeletalMeshComponent::DestroyRenderState()
     {
-        PWorldManager::GetWorld()->GetRenderScene()->RemoveSkeletalMesh(this);
+        this->GetWorld()->GetRenderScene()->RemoveSkeletalMesh(this);
         PMeshComponent::DestroyRenderState();
     }
     void PSkeletalMeshComponent::SendUpdateRenderState()
     {
         if (ShouldRender() && IsRenderStateDirty())
         {
-            PWorldManager::GetWorld()->GetRenderScene()->UpdateSkeletalMesh(this);
+            this->GetWorld()->GetRenderScene()->UpdateSkeletalMesh(this);
         }
         PMeshComponent::SendUpdateRenderState();
     }

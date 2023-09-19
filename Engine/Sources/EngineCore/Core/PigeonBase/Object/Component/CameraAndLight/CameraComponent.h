@@ -93,6 +93,7 @@ namespace PigeonEngine
 
 	class PCameraComponent : public PSceneComponent
 	{
+		friend class PController;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PCameraComponent)
 
@@ -113,6 +114,10 @@ namespace PigeonEngine
 	public:
 		BOOL32	IsMainCamera()const;
 		void	UpdateCameraMatrix();
+		
+	private:
+		void SetIsMainCamera(BOOL32 IsMain);
+		BOOL32 bMainCamera = FALSE;
 	protected:
 		ECameraViewInfo		CameraViewInfo;
 		EViewMatrix			CameraMatrix;
@@ -142,6 +147,12 @@ namespace PigeonEngine
 	protected:
 		UINT8				UpdateState;
 		// Render proxy functions END
+	protected:
+		// for frame, 
+		void BeginAddedToScene(PWorld* World) override;
+		void RemovedFromScene() override;
+
+
 	};
 
 };

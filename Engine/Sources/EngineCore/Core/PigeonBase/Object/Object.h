@@ -8,6 +8,7 @@
 namespace PigeonEngine
 {
 	class CJsonObject;
+	class PWorld;
 	class PObject : public EObjectBase
 	{
 	public:
@@ -40,6 +41,17 @@ namespace PigeonEngine
 		virtual TSharedPtr<CJsonObject> Serialize();
 		
 
+	public:
+		virtual PWorld* GetWorld() const;
+	protected:
+		virtual void SetWorld(PWorld* NewWorld);
+	private:
+		PWorld* MyWorld = nullptr;
+
+	protected:
+		// for frame, 
+		virtual void BeginAddedToScene(PWorld* World);
+		virtual void RemovedFromScene();
 	};
 
 };

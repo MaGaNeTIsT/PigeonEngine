@@ -76,14 +76,14 @@ namespace PigeonEngine
 
 	void PActor::DetachFromParentActor()
 	{
-		Check(ENGINE_ACTOR_ERROR, "This actor belong to no world", MyWorld == nullptr);
+		Check(ENGINE_ACTOR_ERROR, "This actor belong to no world", this->GetWorld() != nullptr);
 		ETransform WolrdTrans = this->GetActorWorldTransform();
 		if(this->AttachedParentActor)
 		{
 			this->AttachedParentActor->ChildrenActors.Remove(this);
 		}
 		this->RootComponent->DetachFromParentComponent();
-		this->MyWorld->AddActor(this);
+		this->GetWorld()->AddActor(this);
 	}
 
 	void PActor::AttachToActor(PActor* Parent, const ETransform& RelativeTransform)
@@ -119,9 +119,9 @@ namespace PigeonEngine
 		
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
-		if(this->MyWorld)
+		if(this->GetWorld())
 		{
-			this->RootComponent->BeginAddedToScene(MyWorld);
+			this->RootComponent->BeginAddedToScene(this->GetWorld());
 		}
 		
 	}
@@ -242,7 +242,7 @@ namespace PigeonEngine
 	void PActor::BeginAddedToScene(PWorld* World)
 	{
 		this->SetWorld(World);
-		this->RootComponent->BeginAddedToScene(MyWorld);
+		this->RootComponent->BeginAddedToScene(this->GetWorld());
 		this->UserBeginPlay();
 	}
 
@@ -265,16 +265,7 @@ namespace PigeonEngine
 
 	}
 
-	PWorld* PActor::GetWorld() const
-	{
-		return this->MyWorld;
-	}
 
-	void PActor::SetWorld(PWorld* NewWorld)
-	{
-		// Check(ENGINE_ACTOR_ERROR, "PActor::SetWorld : NewWorld is nullptr", NewWorld == nullptr);
-		this->MyWorld = NewWorld;
-	}
 
 	PSceneComponent* PActor::GetRootComponent() const
 	{

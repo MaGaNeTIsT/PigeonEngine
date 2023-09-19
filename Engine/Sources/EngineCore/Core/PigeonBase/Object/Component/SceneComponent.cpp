@@ -107,11 +107,7 @@ namespace PigeonEngine
 
 	void PSceneComponent::BeginAddedToScene(PWorld* World)
 	{
-		if (this->MyWolrd == World)
-		{
-			return;
-		}
-		this->MyWolrd = World;
+		PActorComponent::BeginAddedToScene(World);
 		this->CreateRenderState();
 		for(const auto& child : this->ChildrenComponents)
 		{
@@ -122,11 +118,14 @@ namespace PigeonEngine
 
 	void PSceneComponent::RemovedFromScene()
 	{
+		
 		for(const auto& child : this->ChildrenComponents)
 		{
 			child->RemovedFromScene();
 		}
+		
 		this->DestroyRenderState();
+		PActorComponent::RemovedFromScene();
 	}
 
 	EMobilityType PSceneComponent::GetMobility() const

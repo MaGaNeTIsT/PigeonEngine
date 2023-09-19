@@ -86,19 +86,19 @@ namespace PigeonEngine
 		PSceneComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			PWorldManager::GetWorld()->GetRenderScene()->AddDirectionalLight(this);
+			this->GetWorld()->GetRenderScene()->AddDirectionalLight(this);
 		}
 	}
 	void PDirectionalLightComponent::DestroyRenderState()
 	{
-		PWorldManager::GetWorld()->GetRenderScene()->RemoveDirectionalLight(this);
+		this->GetWorld()->GetRenderScene()->RemoveDirectionalLight(this);
 		PSceneComponent::DestroyRenderState();
 	}
 	void PDirectionalLightComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			PWorldManager::GetWorld()->GetRenderScene()->UpdateDirectionalLight(this);
+			this->GetWorld()->GetRenderScene()->UpdateDirectionalLight(this);
 		}
 		PSceneComponent::SendUpdateRenderState();
 	}

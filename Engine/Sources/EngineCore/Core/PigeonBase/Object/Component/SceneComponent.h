@@ -52,9 +52,8 @@ namespace PigeonEngine
     	virtual void Destroy() override;
 
     protected:
-    	
-    	virtual void BeginAddedToScene(PWorld* World);
-    	virtual void RemovedFromScene();
+        void BeginAddedToScene(PWorld* World) override;
+        void RemovedFromScene() override;
     private:
     	PWorld* MyWolrd;
     public:

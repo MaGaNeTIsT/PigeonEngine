@@ -18,6 +18,7 @@ namespace PigeonEngine
 		virtual void	EditorTick(FLOAT deltaTime)override;
 #endif
 
+
 		CLASS_VIRTUAL_NOCOPY_BODY(PComponent)
 	public:
 		void Destroy() override;

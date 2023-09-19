@@ -96,7 +96,7 @@ namespace PigeonEngine
 	}
 	BOOL32 PCameraComponent::IsMainCamera()const
 	{
-		return TRUE;	//TODO
+		return bMainCamera;	//TODO
 	}
 	void PCameraComponent::UpdateCameraMatrix()
 	{
@@ -104,6 +104,11 @@ namespace PigeonEngine
 		CameraMatrix.GenerateFinalMatrix();
 
 		MarkRenderTransformAsDirty();
+	}
+
+	void PCameraComponent::SetIsMainCamera(BOOL32 IsMain)
+	{
+		this->bMainCamera = IsMain;
 	}
 
 	// Render proxy functions START
@@ -122,19 +127,19 @@ namespace PigeonEngine
 		PSceneComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			PWorldManager::GetWorld()->GetRenderScene()->AddCamera(this);
+			this->GetWorld()->GetRenderScene()->AddCamera(this);
 		}
 	}
 	void PCameraComponent::DestroyRenderState()
 	{
-		PWorldManager::GetWorld()->GetRenderScene()->RemoveCamera(this);
+		this->GetWorld()->GetRenderScene()->RemoveCamera(this);
 		PSceneComponent::DestroyRenderState();
 	}
 	void PCameraComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			PWorldManager::GetWorld()->GetRenderScene()->UpdateCamera(this);
+			this->GetWorld()->GetRenderScene()->UpdateCamera(this);
 		}
 		PSceneComponent::SendUpdateRenderState();
 	}
@@ -164,6 +169,17 @@ namespace PigeonEngine
 		UpdateState = PCameraUpdateState::CAMERA_UPDATE_STATE_NONE;
 		PSceneComponent::CleanMarkRenderStateDirty();
 	}
+
+	void PCameraComponent::BeginAddedToScene(PWorld* World)
+	{
+		PSceneComponent::BeginAddedToScene(World);
+	}
+
+	void PCameraComponent::RemovedFromScene()
+	{
+		PSceneComponent::RemovedFromScene();
+	}
+
 	// Render proxy functions END
 
 };

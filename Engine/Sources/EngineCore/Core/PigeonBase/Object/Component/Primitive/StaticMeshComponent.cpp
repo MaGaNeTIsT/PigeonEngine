@@ -47,19 +47,19 @@ namespace PigeonEngine
         PMeshComponent::CreateRenderState();
         if (ShouldRender())
         {
-            PWorldManager::GetWorld()->GetRenderScene()->AddStaticMesh(this);
+            this->GetWorld()->GetRenderScene()->AddStaticMesh(this);
         }
     }
     void PStaticMeshComponent::DestroyRenderState()
     {
-        PWorldManager::GetWorld()->GetRenderScene()->RemoveStaticMesh(this);
+        this->GetWorld()->GetRenderScene()->RemoveStaticMesh(this);
         PMeshComponent::DestroyRenderState();
     }
     void PStaticMeshComponent::SendUpdateRenderState()
     {
         if (ShouldRender() && IsRenderStateDirty())
         {
-            PWorldManager::GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
+            this->GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
         }
         PMeshComponent::SendUpdateRenderState();
     }

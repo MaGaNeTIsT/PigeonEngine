@@ -43,6 +43,25 @@ namespace PigeonEngine
 		return TSharedPtr<CJsonObject>::MakeShared();
 	}
 
+	PWorld* PObject::GetWorld() const
+	{
+		return this->MyWorld;
+	}
+
+	void PObject::SetWorld(PWorld* NewWorld)
+	{
+		this->MyWorld = NewWorld;
+	}
+
+	void PObject::BeginAddedToScene(PWorld* World)
+	{
+		this->SetWorld(World);
+	}
+
+	void PObject::RemovedFromScene()
+	{
+	}
+
 
 #if _EDITOR_ONLY
 	void PObject::SetName(const EString& name)

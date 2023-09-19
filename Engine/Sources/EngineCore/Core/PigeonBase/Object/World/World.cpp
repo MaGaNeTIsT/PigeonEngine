@@ -2,9 +2,8 @@
 #include "../../../../Main/MainManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
-#include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
-
 #include "PigeonBase/Object/Actor/LevelActor.h"
+#include "PigeonBase/Object/Controller/Controller.h"
 
 namespace PigeonEngine
 {
@@ -34,6 +33,10 @@ namespace PigeonEngine
 		this->LevelScriptor = new PLevelActor();
 		this->LevelScriptor->BeginAddedToScene(this);
         this->LevelScriptor->Init();
+
+        this->Controller = new PController();
+        this->Controller->BeginAddedToScene(this);
+        this->Controller->Init();
     }
 
     void PWorld::Uninit()
@@ -110,28 +113,6 @@ namespace PigeonEngine
         return RenderScene;
     }
 
-    void PWorldManager::Init()
-    {
-        World = new PWorld();
-    }
 
-    void PWorldManager::Uninit()
-    {
-        if(World)
-        {
-            World->Destroy();
-            World = nullptr;
-        }
-    }
-
-    //Render scene state END
-
-    PWorldManager::PWorldManager()
-    {
-       
-    }
-    PWorldManager::~PWorldManager()
-    {
-    }
 
 };

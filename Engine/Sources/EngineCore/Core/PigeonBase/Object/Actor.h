@@ -38,44 +38,36 @@ namespace PigeonEngine
 		virtual void UserBeginPlay();
 		virtual void UserTick(FLOAT deltaTime);
 		virtual void UserEndPlay();
-	public:
-		PWorld* GetWorld() const;
-	protected:
-		void SetWorld(PWorld* NewWorld);
-	private:
-		PWorld* MyWorld = nullptr;
 
-		
 	public:
 		PE_NODISCARD PSceneComponent* GetRootComponent() const;
 		void                          SetRootComponent(PSceneComponent* NewRoot);
 
-		PE_NODISCARD Vector3    GetActorLocation() const;
-		PE_NODISCARD Quaternion GetActorRotation() const;
-		PE_NODISCARD Vector3    GetActorScale() const;
+		PE_NODISCARD virtual Vector3    GetActorLocation() const;
+		PE_NODISCARD virtual Quaternion GetActorRotation() const;
+		PE_NODISCARD virtual Vector3    GetActorScale() const;
 		
-		PE_NODISCARD const ETransform& GetActorTransform() const;
-		PE_NODISCARD ETransform GetActorWorldTransform() const;
+		PE_NODISCARD virtual const ETransform& GetActorTransform() const;
+		PE_NODISCARD virtual ETransform GetActorWorldTransform() const;
 
-		void SetActorLocation (const Vector3& Location);
-		void SetActorRotation (const Quaternion& Rotation);
-		void SetActorScale    (const Vector3& Scale);
+		virtual void SetActorLocation (const Vector3& Location);
+		virtual void SetActorRotation (const Quaternion& Rotation);
+		virtual void SetActorScale    (const Vector3& Scale);
 		
-		PE_NODISCARD Vector3 GetActorForwardVector()const;
-		PE_NODISCARD Vector3 GetActorRightVector()const;
-		PE_NODISCARD Vector3 GetActorUpVector()const;
+		PE_NODISCARD virtual Vector3 GetActorForwardVector()const;
+		PE_NODISCARD virtual Vector3 GetActorRightVector()const;
+		PE_NODISCARD virtual Vector3 GetActorUpVector()const;
 
-		PE_NODISCARD EMobilityType GetMobility() const;
+		PE_NODISCARD virtual EMobilityType GetMobility() const;
 
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
 	
 	public:
-		
-		void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
-		void DestoyComponent  (PActorComponent* Component);
-		void ClearComponents  ();
+		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
+		virtual void DestoyComponent  (PActorComponent* Component);
+		virtual void ClearComponents  ();
 	protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
@@ -88,13 +80,13 @@ namespace PigeonEngine
 		
 	public:
 		 
-		PE_NODISCARD PActor* GetAttachedParentActor() const;
+		PE_NODISCARD virtual PActor* GetAttachedParentActor() const;
 
-		void DetachFromParentActor();
+		virtual void DetachFromParentActor();
 		// Attach this actor to another;
-		void AttachToActor(PActor* Parent, const ETransform& RelativeTransform = ETransform());
+		virtual void AttachToActor(PActor* Parent, const ETransform& RelativeTransform = ETransform());
 		// Attach another actor to this;
-		void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
+		virtual void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 		
 	private:
