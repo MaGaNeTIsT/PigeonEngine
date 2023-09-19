@@ -29,8 +29,9 @@ namespace PigeonEngine
 
 	void PLevelActor::UserBeginPlay()
     {
-      
+		
 		PActor* New = new PActor();
+    	New->SetIsTickable(TRUE);
 		this->GetWorld()->AddActor(New);
     	
 		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
@@ -50,7 +51,7 @@ namespace PigeonEngine
 
 	void PLevelActor::UserEndPlay()
 	{
-
+		
 	}
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
