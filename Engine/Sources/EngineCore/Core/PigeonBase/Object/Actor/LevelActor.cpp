@@ -19,6 +19,7 @@ namespace PigeonEngine
 	void PLevelActor::BeginAddedToScene(PWorld* World)
 	{
 		this->SetWorld(World);
+    	UserBeginPlay();
 	}
 
 	void PLevelActor::RemovedFromScene()
@@ -31,6 +32,7 @@ namespace PigeonEngine
       
 		PActor* New = new PActor();
 		this->GetWorld()->AddActor(New);
+    	
 		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 		New->AddComponent(NewStaticMeshComp);
 

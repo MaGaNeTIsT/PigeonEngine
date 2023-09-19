@@ -18,6 +18,7 @@ namespace PigeonEngine
 		if(!RootComponent)
 		{
 			RootComponent = new PSceneComponent();
+			RootComponent->SetOwnerActor(this);
 		}
 	}
 	

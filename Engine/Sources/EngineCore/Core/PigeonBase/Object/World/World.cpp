@@ -31,14 +31,17 @@ namespace PigeonEngine
         this->RootActor->SetIsTickable(TRUE);
 		this->RootActor->BeginAddedToScene(this);
         this->RootActor->Init();
+
+        this->Controller = new PController();
+        this->Controller->BeginAddedToScene(this);
+        this->Controller->Init();
+        
 		this->LevelScriptor = new PLevelActor();
         this->LevelScriptor->SetIsTickable(TRUE);
 		this->LevelScriptor->BeginAddedToScene(this);
         this->LevelScriptor->Init();
 
-        this->Controller = new PController();
-        this->Controller->BeginAddedToScene(this);
-        this->Controller->Init();
+
     }
 
     void PWorld::Uninit()
