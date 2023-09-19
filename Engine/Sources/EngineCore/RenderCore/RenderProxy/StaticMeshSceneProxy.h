@@ -25,13 +25,13 @@ namespace PigeonEngine
 		void			UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset);
 		virtual void	UpdateRenderResource()override;
 		virtual void	BindRenderResource()override;
+		void			Draw();
 	protected:
 		void			SetupShaders();
 		void			BindVertexShader();
 		void			BindPixelShader();
 		void			BindMeshResource();
 		void			BindMaterialParameter(const UINT32 InSlot);
-		void			Draw();
 	protected:
 		const EVertexShaderAsset*		VertexShader;
 		const EPixelShaderAsset*		PixelShader;

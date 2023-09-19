@@ -613,4 +613,8 @@ namespace PigeonEngine
 
 	};
 
+	extern void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName
+		, const EStaticMeshAsset*& OutAsset
+		, const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
+
 };

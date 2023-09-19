@@ -43,7 +43,7 @@ namespace PigeonEngine
 		void			InitRendererSettings();
 		BOOL32			IsNeedStencil()const;
 	public:
-		enum RDefaultSamplerType : UINT8
+		enum RSamplerType : UINT8
 		{
 			SAMPLER_TYPE_POINT_CLAMP	= 0,
 			SAMPLER_TYPE_POINT_WRAP,
@@ -51,11 +51,36 @@ namespace PigeonEngine
 			SAMPLER_TYPE_LINEAR_WRAP,
 			SAMPLER_TYPE_COUNT
 		};
+		enum RRasterizerType : UINT8
+		{
+			RASTERIZER_TYPE_WIREFRAME	= 0,
+			RASTERIZER_TYPE_SOLID_NONE,
+			RASTERIZER_TYPE_SOLID_BACK,
+			RASTERIZER_TYPE_SOLID_FRONT,
+			RASTERIZER_TYPE_COUNT
+		};
+		enum RBlendType : UINT8
+		{
+			BLEND_TYPE_OPAQUE_DEPTH = 0,
+			BLEND_TYPE_OPAQUE_BASEPASS,
+			BLEND_TYPE_COUNT
+		};
+		enum RDepthStencilType : UINT8
+		{
+			DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP = 0,
+			DEPTH_STENCIL_TYPE_DEPTH_LESS_STENCIL_NOP,
+			DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP,
+			DEPTH_STENCIL_TYPE_DEPTH_EQUAL_STENCIL_NOP,
+			DEPTH_STENCIL_TYPE_COUNT
+		};
 	protected:
 		RScene*						Scene;
 		RFullScreenTriangle			FullScreenTriangle;
 	protected:
-		RSamplerResource			DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_COUNT];
+		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];
+		RRasterizerResource			Rasterizer[RRasterizerType::RASTERIZER_TYPE_COUNT];
+		RBlendResource				Blend[RBlendType::BLEND_TYPE_COUNT];
+		RDepthStencilResource		DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_COUNT];
 		const EVertexShaderAsset*	SimpleFullScreenVertexShader;
 		const EPixelShaderAsset*	SimpleFullScreenPixelShader;
 	protected:

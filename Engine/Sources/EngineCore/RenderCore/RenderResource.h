@@ -422,6 +422,93 @@ namespace PigeonEngine
 
 		Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState;
 	};
+	class RRasterizerResource : public RRenderResourceInterface
+	{
+	public:
+		RRasterizerResource() : RasterizerState(nullptr) {}
+		RRasterizerResource(const RRasterizerResource& Other) : RasterizerState(Other.RasterizerState) {}
+		virtual ~RRasterizerResource() { ReleaseRenderResource(); }
+		RRasterizerResource& operator=(const RRasterizerResource& Other)
+		{
+			RasterizerState = Other.RasterizerState;
+			return (*this);
+		}
+		// RasterizerResource validation only determines by RasterizerState valid.
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			return (!!RasterizerState);
+		}
+		virtual BOOL32 InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			RasterizerState = nullptr;
+		}
+
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	RasterizerState;
+	};
+	class RBlendResource : public RRenderResourceInterface
+	{
+	public:
+		RBlendResource() : BlendState(nullptr) {}
+		RBlendResource(const RBlendResource& Other) : BlendState(Other.BlendState) {}
+		virtual ~RBlendResource() { ReleaseRenderResource(); }
+		RBlendResource& operator=(const RBlendResource& Other)
+		{
+			BlendState = Other.BlendState;
+			return (*this);
+		}
+		// BlendResource validation only determines by BlendState valid.
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			return (!!BlendState);
+		}
+		virtual BOOL32 InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			BlendState = nullptr;
+		}
+
+		Microsoft::WRL::ComPtr<ID3D11BlendState>	BlendState;
+	};
+	class RDepthStencilResource : public RRenderResourceInterface
+	{
+	public:
+		RDepthStencilResource() : DepthStencilState(nullptr) {}
+		RDepthStencilResource(const RDepthStencilResource& Other) : DepthStencilState(Other.DepthStencilState) {}
+		virtual ~RDepthStencilResource() { ReleaseRenderResource(); }
+		RDepthStencilResource& operator=(const RDepthStencilResource& Other)
+		{
+			DepthStencilState = Other.DepthStencilState;
+			return (*this);
+		}
+		// DepthStencilResource validation only determines by DepthStencilState valid.
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			return (!!DepthStencilState);
+		}
+		virtual BOOL32 InitRenderResource()override
+		{
+			// Render resource must init by specific type and input.
+			// We do not want raw render resource init.
+			return TRUE;
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			DepthStencilState = nullptr;
+		}
+
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState>	DepthStencilState;
+	};
 	class RSceneTextures final
 	{
 	public:

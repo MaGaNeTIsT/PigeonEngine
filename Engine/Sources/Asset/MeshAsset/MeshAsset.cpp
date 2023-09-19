@@ -2648,4 +2648,37 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
+	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
+		Check((ENGINE_ASSET_ERROR), ("Check output static mesh asset pointer is initialized failed."), (!OutAsset));
+		if (MeshAssetManager->LoadStaticMeshAsset(InLoadPath, InLoadName, OutAsset))
+		{
+			return;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load static mesh asset failed."));
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			BOOL32 Result = MeshAssetManager->ImportStaticMesh(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath);
+			if (Result)
+			{
+				if (!(MeshAssetManager->LoadStaticMeshAsset(InLoadPath, InLoadName, OutAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load static mesh asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import static mesh asset failed."));
+			}
+		}
+#endif
+	}
+
 };

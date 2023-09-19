@@ -59,8 +59,8 @@ namespace PigeonEngine
 	{
 		BindVertexShader();
 		BindPixelShader();
-		BindMaterialParameter(1u);
 		BindMeshResource();
+		BindMaterialParameter(1u);
 	}
 	void RStaticMeshSceneProxy::SetupShaders()
 	{
@@ -101,6 +101,12 @@ namespace PigeonEngine
 				RenderDevice->SetVSShader(VSResource->Shader);
 			}
 		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh vertex shader is invalid."));
+		}
+#endif
 	}
 	void RStaticMeshSceneProxy::BindPixelShader()
 	{
@@ -113,6 +119,12 @@ namespace PigeonEngine
 				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(PSResource->Shader);
 			}
 		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh pixel shader is invalid."));
+		}
+#endif
 	}
 	void RStaticMeshSceneProxy::BindMeshResource()
 	{
@@ -132,6 +144,12 @@ namespace PigeonEngine
 				RFormatType IndexFormat = IndexRenderResource->UseShort ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT;
 				RenderDevice->SetIndexBuffer(IndexRenderResource->Buffer, 0u, IndexFormat);
 			}
+#if _EDITOR_ONLY
+			else
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh index buffer is invalid."));
+			}
+#endif
 			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
 			{
 				const RInputLayoutDesc&					Layout					= Layouts[LayoutIndex];
@@ -149,6 +167,12 @@ namespace PigeonEngine
 					{
 						RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, ShaderSemanticSlot);
 					}
+#if _EDITOR_ONLY
+					else
+					{
+						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh vertex buffer is invalid."));
+					}
+#endif
 				}
 #if _EDITOR_ONLY
 				else
@@ -176,6 +200,12 @@ namespace PigeonEngine
 			RenderDevice->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
 			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
 		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Constant buffer is invalid."));
+		}
+#endif
 	}
 	void RStaticMeshSceneProxy::Draw()
 	{
@@ -191,7 +221,19 @@ namespace PigeonEngine
 			{
 				RDeviceD3D11::GetDeviceSingleton()->DrawIndexed(IndexRenderResource->IndexCount);
 			}
+#if _EDITOR_ONLY
+			else
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw indexed is invalid."));
+			}
+#endif
 		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh asset is invalid."));
+		}
+#endif
 	}
 
 };

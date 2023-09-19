@@ -5,6 +5,8 @@
 #include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
+#include <RenderProxy/MeshSceneProxy.h>
+#include <RenderProxy/StaticMeshSceneProxy.h>
 
 namespace PigeonEngine
 {
@@ -28,30 +30,85 @@ namespace PigeonEngine
 	{
 		{
 			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
+			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
 				RSamplerState(
 					RFilterType::FILTER_POINT,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
-			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState,
+			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState,
 				RSamplerState(
 					RFilterType::FILTER_POINT,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
-			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState,
+			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState,
 				RSamplerState(
 					RFilterType::FILTER_LINEAR,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
-			RenderDevice->CreateSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState,
+			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState,
 				RSamplerState(
 					RFilterType::FILTER_LINEAR,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
+		}
+
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_WIREFRAME].RasterizerState,
+				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_WIREFRAME));
+			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_NONE].RasterizerState,
+				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID));
+			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState,
+				RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID));
+			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_FRONT].RasterizerState,
+				RRasterizerState(RCullModeType::CULL_FRONT, RFillModeType::FILL_SOLID));
+		}
+
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			{
+				const RBlendState BlendStates[] =
+				{
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+				};
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_DEPTH].BlendState, BlendStates, 1u);
+			}
+			{
+				const RBlendState BlendStates[] =
+				{
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+				};
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, 1u);
+			}
+		}
+
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+			RStencilState TempNopStencilState(
+				0xffu, 0xffu, RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP)
+				, RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE);
+
+			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState,
+				RDepthState(RComparisonFunctionType::COMPARISON_ALWAYS, RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL, FALSE),
+				&TempNopStencilState);
+			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_STENCIL_NOP].DepthStencilState,
+				RDepthState(RComparisonFunctionType::COMPARISON_LESS),
+				&TempNopStencilState);
+			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState,
+				RDepthState(RComparisonFunctionType::COMPARISON_LESS_EQUAL),
+				&TempNopStencilState);
+			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_EQUAL_STENCIL_NOP].DepthStencilState,
+				RDepthState(RComparisonFunctionType::COMPARISON_EQUAL),
+				&TempNopStencilState);
 		}
 
 		{
@@ -132,10 +189,10 @@ namespace PigeonEngine
 	void RSceneRenderer::Render()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-		RenderDevice->BindPSSamplerState(DefaultSamplers[RDefaultSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
+		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
+		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
+		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
+		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
 		BasePass();
 
@@ -217,6 +274,12 @@ namespace PigeonEngine
 	void RSceneRenderer::BasePass()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
+		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
+		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
+
 		const TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Length(); ViewIndex < ViewNum; ViewIndex++)
 		{
@@ -228,7 +291,23 @@ namespace PigeonEngine
 				continue;
 			}
 #endif
+			RenderDevice->SetViewport(ViewProxy->GetRenderViewport());
 
+			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
+
+			RenderDevice->ClearRenderTargetView(SceneTextures->SceneColor.RenderTargetView);
+			RenderDevice->ClearDepthStencilView(SceneTextures->SceneDepthStencil.DepthStencilView);
+			RenderDevice->SetRenderTarget(SceneTextures->SceneColor.RenderTargetView, SceneTextures->SceneDepthStencil.DepthStencilView);
+
+			RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
+			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.SceneProxies.Length(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
+			{
+				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
+#if _EDITOR_ONLY
+				StaticMesh->BindRenderResource();
+#endif
+				StaticMesh->Draw();
+			}
 		}
 	}
 	void RSceneRenderer::FinalOutputPass()

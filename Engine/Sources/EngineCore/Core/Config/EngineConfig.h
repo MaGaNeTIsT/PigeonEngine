@@ -34,6 +34,7 @@ namespace PigeonEngine
 		constexpr static const CHAR*	ENGINE_ASSET_NAME_TYPE												= ".PAsset";
 		constexpr static const CHAR*	ENGINE_RAW_SHADER_OUTPUT_PATH										= "./Engine/Temp/OutputRawShaders/";
 		constexpr static const CHAR*	ENGINE_SHADER_PATH													= "./Engine/Temp/OutputShaders/";
+		constexpr static const CHAR*	ENGINE_MESH_PATH													= "./Engine/Temp/OutputMeshes/";
 		constexpr static const CHAR*	ENGINE_IMPORT_SHADER_NAME_TYPE										= ".cso";
 		constexpr static const CHAR*	ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE								= "PEVS";
 		constexpr static const CHAR*	ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= "PEPS";
