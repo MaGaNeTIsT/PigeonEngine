@@ -341,6 +341,34 @@ namespace PigeonEngine
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	};
+	class RIndexBufferResource : public RBufferResource
+	{
+	public:
+		RIndexBufferResource() : UseShort(FALSE), IndexCount(0u) {}
+		RIndexBufferResource(const RIndexBufferResource& Other) : RBufferResource(Other), UseShort(Other.UseShort), IndexCount(Other.IndexCount) {}
+		virtual ~RIndexBufferResource() {}
+		RIndexBufferResource& operator=(const RIndexBufferResource& Other)
+		{
+			Buffer		= Other.Buffer;
+			UseShort	= Other.UseShort;
+			IndexCount	= Other.IndexCount;
+			return (*this);
+		}
+		virtual BOOL32 IsRenderResourceValid()const override
+		{
+			Check((ENGINE_RENDER_CORE_ERROR), ("Check index buffer short index failed."), (UseShort ? (IndexCount <= 65536u) : TRUE));
+			return (RBufferResource::IsRenderResourceValid() && (IndexCount != 0u));
+		}
+		virtual void ReleaseRenderResource()override
+		{
+			RBufferResource::ReleaseRenderResource();
+			UseShort	= FALSE;
+			IndexCount	= 0u;
+		}
+
+		BOOL32	UseShort;
+		UINT32	IndexCount;
+	};
 	class RVertexBufferResource : public RBufferResource
 	{
 	public:

@@ -217,6 +217,7 @@ namespace PigeonEngine
 		void					UploadConstantBuffer();
 		RBufferResource&		GetConstantBuffer();
 		const RBufferResource&	GetConstantBuffer()const;
+		void					ClearParameter();
 	protected:
 		class ECommand final
 		{
@@ -249,10 +250,10 @@ namespace PigeonEngine
 		template<typename _TValueType, EShaderParameterValueType __TParameterValueType>
 		void AddParameter(const EString& InValueName, const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
 		{
-			const UINT32 TempOffset = RawData.Size;
+			const UINT32 TempOffset = static_cast<UINT32>(RawData.Size);
 			RawData.Size += sizeof(_TValueType) * InElementNum;
 			InitCommands.EnqueueCommand(
-				[InInitValuePtr, InElementNum, this, TempOffset]()->void
+				[InValueName, InInitValuePtr, InElementNum, this, TempOffset]()->void
 				{
 #if _EDITOR_ONLY
 					if (ShaderParameterNames.ContainsKey(InValueName))
@@ -268,7 +269,6 @@ namespace PigeonEngine
 		}
 		void BeginSetupParameter();
 		void EndSetupParameter();
-		void ClearParameter();
 	protected:
 		BOOL32						HasPaddings;
 	private:

@@ -27,7 +27,11 @@ namespace PigeonEngine
 		virtual void	BindRenderResource()override;
 	protected:
 		void			SetupShaders();
+		void			BindVertexShader();
+		void			BindPixelShader();
+		void			BindMeshResource();
 		void			BindMaterialParameter(const UINT32 InSlot);
+		void			Draw();
 	protected:
 		const EVertexShaderAsset*		VertexShader;
 		const EPixelShaderAsset*		PixelShader;

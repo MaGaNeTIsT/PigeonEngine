@@ -31,8 +31,9 @@ namespace PigeonEngine
 	}
 	EShaderParameter& EMaterialParameter::operator[](const EString& InParamName)
 	{
+		static EShaderParameter _StaticParameter;
 #if _EDITOR_ONLY
-		if (UINT32 ParamIndex = -1u; ShaderParameterNames.FindValue(InParamName, ParamIndex))
+		if (UINT32 ParamIndex = (UINT32)(-1); ShaderParameterNames.FindValue(InParamName, ParamIndex))
 #else
 		const UINT32 ParamIndex = ShaderParameterNames[InParamName];
 #endif
@@ -49,7 +50,7 @@ namespace PigeonEngine
 		ErrorInfo = ErrorInfo + InParamName + "] parameter.";
 		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
 #endif
-		return EShaderParameter();
+		return _StaticParameter;
 	}
 	void EMaterialParameter::CreateConstantBuffer()
 	{
@@ -69,7 +70,7 @@ namespace PigeonEngine
 		BOOL32 Result =
 #endif
 			RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(ConstantBuffer.Buffer,
-				RBufferDesc(RawData.Size, RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+				RBufferDesc(static_cast<UINT32>(RawData.Size), RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
 #if _EDITOR_ONLY
 		if (!Result)
 		{
@@ -101,6 +102,15 @@ namespace PigeonEngine
 	{
 		return ConstantBuffer;
 	}
+	void EMaterialParameter::ClearParameter()
+	{
+		HasPaddings = FALSE;
+		InitCommands.DoCommands();
+		InitCommands.EmptyQueue();
+		RawData.Release();
+		ShaderParameterNames.Clear();
+		ShaderParameters.Clear();
+	}
 	void EMaterialParameter::BeginSetupParameter()
 	{
 		ClearParameter();
@@ -126,15 +136,6 @@ namespace PigeonEngine
 		InitCommands.EmptyQueue();
 
 		CreateConstantBuffer();
-	}
-	void EMaterialParameter::ClearParameter()
-	{
-		HasPaddings = FALSE;
-		InitCommands.DoCommands();
-		InitCommands.EmptyQueue();
-		RawData.Release();
-		ShaderParameterNames.Clear();
-		ShaderParameters.Clear();
 	}
 
 };

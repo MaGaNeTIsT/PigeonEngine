@@ -78,7 +78,7 @@ namespace PigeonEngine
             }
             return FALSE;
         }
-        V* FindValueRef(const K& Key)
+        V* FindValueAsPtr(const K& Key)
         {
             auto It = Map.find(Key);
             if (It != Map.end())
@@ -87,7 +87,7 @@ namespace PigeonEngine
             }
             return nullptr;
         }
-        const V* FindValueRef(const K& Key)const
+        const V* FindValueAsPtr(const K& Key)const
         {
             auto It = Map.find(Key);
             if (It != Map.end())

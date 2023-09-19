@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <RenderCommon.h>
 #include "PrimitiveSceneProxy.h"
+#include <MeshAsset/MeshAsset.h>
 #include <PigeonBase/Object/Component/Primitive/MeshComponent.h>
 
 namespace PigeonEngine

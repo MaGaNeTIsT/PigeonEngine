@@ -448,7 +448,8 @@ namespace PigeonEngine
 	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual void	ReleaseRenderResource()override;
-		const TArray<RVertexBufferResource*>* GetVertexRenderResource(const UINT8 InType)const;
+		const RIndexBufferResource*				GetIndexRenderResource()const;
+		const TArray<RVertexBufferResource*>*	GetVertexRenderResource(const UINT8 InType)const;
 	public:
 		EMeshRenderResource();
 		EMeshRenderResource(const EMeshRenderResource& Other);
@@ -458,7 +459,7 @@ namespace PigeonEngine
 		BOOL32	CreateVertexRenderResourceInternal(const EMesh* InMesh);
 		void	CopyRenderResourcesInternal(const EMeshRenderResource* Other);
 	protected:
-		RBufferResource			IndexRenderResource;
+		RIndexBufferResource	IndexRenderResource;
 		TVertexResourceType		VertexRenderResources;
 	};
 

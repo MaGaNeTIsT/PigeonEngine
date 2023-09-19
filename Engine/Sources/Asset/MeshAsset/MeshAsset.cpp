@@ -1083,7 +1083,7 @@ namespace PigeonEngine
 		{
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				TArray<RBufferResource*>& Buffers = It->second;
+				TArray<RVertexBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
@@ -1101,9 +1101,13 @@ namespace PigeonEngine
 			VertexRenderResources.Clear();
 		}
 	}
-	const TArray<RBufferResource*>* EMeshRenderResource::GetVertexRenderResource(const UINT8 InType)const
+	const RIndexBufferResource* EMeshRenderResource::GetIndexRenderResource()const
 	{
-		return (VertexRenderResources.FindValueRef(InType));
+		return (&IndexRenderResource);
+	}
+	const TArray<RVertexBufferResource*>* EMeshRenderResource::GetVertexRenderResource(const UINT8 InType)const
+	{
+		return (VertexRenderResources.FindValueAsPtr(InType));
 	}
 	BOOL32 EMeshRenderResource::CreateIndexRenderResourceInternal(const EMesh* InMesh)
 	{
@@ -1117,6 +1121,8 @@ namespace PigeonEngine
 			UINT32 IndexType = static_cast<UINT32>(OutIndexData->PartType);
 			if ((IndexType & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
 			{
+				IndexRenderResource.UseShort = FALSE;
+				IndexRenderResource.IndexCount = OutIndexData->ElementNum;
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = OutIndexData->Indices;
 				if (!(RenderDevice->CreateBuffer(
@@ -1143,6 +1149,8 @@ namespace PigeonEngine
 					Check((ENGINE_ASSET_ERROR), ("Mesh index type check failed, half index element num must lower than 65535u."), ((OutIndexData->Indices[i]) < 0xffffu));
 					TempIndices[i] = static_cast<UINT16>(OutIndexData->Indices[i]);
 				}
+				IndexRenderResource.UseShort = TRUE;
+				IndexRenderResource.IndexCount = OutIndexData->ElementNum;
 				RSubresourceDataDesc SubresourceDataDesc;
 				SubresourceDataDesc.pSysMem = TempIndices;
 				if (!(RenderDevice->CreateBuffer(
@@ -1187,7 +1195,7 @@ namespace PigeonEngine
 		{
 			for (auto It = VertexRenderResources.Begin(); It != VertexRenderResources.End(); It++)
 			{
-				TArray<RBufferResource*>& Buffers = It->second;
+				TArray<RVertexBufferResource*>& Buffers = It->second;
 				if (const UINT32 BufferNum = Buffers.Length(); BufferNum > 0u)
 				{
 					for (UINT32 i = 0u; i < BufferNum; i++)
@@ -1212,15 +1220,16 @@ namespace PigeonEngine
 			EVertexLayoutType TempVertexLayout = TranslateVertexResourceTypeToVertexLayoutType(VertexLayoutIndex);
 			if (!(VertexRenderResources.ContainsKey(VertexLayoutIndex)))
 			{
-				VertexRenderResources.Add(VertexLayoutIndex, TArray<RBufferResource*>());
+				VertexRenderResources.Add(VertexLayoutIndex, TArray<RVertexBufferResource*>());
 			}
-			TArray<RBufferResource*>& TempVertexPartArray = VertexRenderResources[VertexLayoutIndex];
+			TArray<RVertexBufferResource*>& TempVertexPartArray = VertexRenderResources[VertexLayoutIndex];
 			for (UINT32 VertexPartIndex = 0u; VertexPartIndex < 4u; VertexPartIndex++)
 			{
 				TempVertexPartArray.Add(nullptr);
 				if (const EVertexData* TempVertexData = nullptr; InMesh->GetVertexElement(TempVertexLayout, VertexPartIndex, TempVertexData))
 				{
-					TempVertexPartArray[VertexPartIndex] = new RBufferResource();
+					TempVertexPartArray[VertexPartIndex] = new RVertexBufferResource();
+					TempVertexPartArray[VertexPartIndex]->Stride = TempVertexData->Stride;
 
 					RSubresourceDataDesc SubresourceDataDesc;
 					SubresourceDataDesc.pSysMem = TempVertexData->Datas;
@@ -1259,7 +1268,7 @@ namespace PigeonEngine
 			for (auto It = Other->VertexRenderResources.Begin(); It != Other->VertexRenderResources.End(); It++)
 			{
 				const UINT8 Key = It->first;
-				const TArray<RBufferResource*>& Buffers = It->second;
+				const TArray<RVertexBufferResource*>& Buffers = It->second;
 				VertexRenderResources.Add(Key, Buffers);
 			}
 		}

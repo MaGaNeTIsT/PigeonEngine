@@ -57,45 +57,10 @@ namespace PigeonEngine
 	}
 	void RStaticMeshSceneProxy::BindRenderResource()
 	{
+		BindVertexShader();
+		BindPixelShader();
 		BindMaterialParameter(1u);
-#if _EDITOR_ONLY
-		if (((!!VertexShader) && (!!MeshAsset)) && (MeshAsset->IsRenderResourceValid()))
-#endif
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			const EStaticMeshRenderResource*	MeshRenderResource	= MeshAsset->GetRenderResource();
-			const UINT32						LayoutNum			= VertexShader->GetShaderInputLayoutNum();
-			const RInputLayoutDesc*				Layouts				= VertexShader->GetShaderInputLayouts();
-			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
-			{
-				const RInputLayoutDesc&			Layout					= Layouts[LayoutIndex];
-				UINT32							ShaderSemanticSlot		= 0u;
-				EVertexResourceType				VertexResource			= TranslateInputLayoutToVertexResource(Layout, ShaderSemanticSlot);
-				const TArray<RBufferResource*>*	VertexRenderResource	= MeshRenderResource->GetVertexRenderResource(VertexResource);
-#if _EDITOR_ONLY
-				if ((!!VertexRenderResource) && (ShaderSemanticSlot < VertexRenderResource->Length()))
-#endif
-				{
-					const RBufferResource* RenderResource = (*VertexRenderResource)[ShaderSemanticSlot];
-#if _EDITOR_ONLY
-
-#endif
-					RenderDevice->SetVertexBuffer(RenderResource->Buffer,);
-				}
-#if _EDITOR_ONLY
-				else
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check static mesh scene proxy vertex render resource is invalid."));
-				}
-#endif
-			}
-		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check static mesh scene proxy is invalid."));
-		}
-#endif
+		BindMeshResource();
 	}
 	void RStaticMeshSceneProxy::SetupShaders()
 	{
@@ -123,6 +88,83 @@ namespace PigeonEngine
 				&ImportPath, &ImportPSName);
 		}
 	}
+	void RStaticMeshSceneProxy::BindVertexShader()
+	{
+#if _EDITOR_ONLY
+		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()))
+#endif
+		{
+			const RVertexShaderResource* VSResource = VertexShader->GetRenderResource();
+			{
+				RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+				RenderDevice->SetInputLayout(VSResource->InputLayout);
+				RenderDevice->SetVSShader(VSResource->Shader);
+			}
+		}
+	}
+	void RStaticMeshSceneProxy::BindPixelShader()
+	{
+#if _EDITOR_ONLY
+		if ((!!PixelShader) && (PixelShader->IsRenderResourceValid()))
+#endif
+		{
+			const RPixelShaderResource* PSResource = PixelShader->GetRenderResource();
+			{
+				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(PSResource->Shader);
+			}
+		}
+	}
+	void RStaticMeshSceneProxy::BindMeshResource()
+	{
+#if _EDITOR_ONLY
+		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()) && (!!PixelShader) && (PixelShader->IsRenderResourceValid()) && (!!MeshAsset) && (MeshAsset->IsRenderResourceValid()))
+#endif
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			const EStaticMeshRenderResource*	MeshRenderResource	= MeshAsset->GetRenderResource();
+			const UINT32						LayoutNum			= VertexShader->GetShaderInputLayoutNum();
+			const RInputLayoutDesc*				Layouts				= VertexShader->GetShaderInputLayouts();
+			const RIndexBufferResource*			IndexRenderResource	= MeshRenderResource->GetIndexRenderResource();
+#if _EDITOR_ONLY
+			if ((!!IndexRenderResource) && (IndexRenderResource->IsRenderResourceValid()))
+#endif
+			{
+				RFormatType IndexFormat = IndexRenderResource->UseShort ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT;
+				RenderDevice->SetIndexBuffer(IndexRenderResource->Buffer, 0u, IndexFormat);
+			}
+			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
+			{
+				const RInputLayoutDesc&					Layout					= Layouts[LayoutIndex];
+				UINT32									ShaderSemanticSlot		= 0u;
+				EVertexResourceType						VertexResource			= TranslateInputLayoutToVertexResource(Layout, ShaderSemanticSlot);
+				const TArray<RVertexBufferResource*>*	VertexRenderResources	= MeshRenderResource->GetVertexRenderResource(VertexResource);
+#if _EDITOR_ONLY
+				if ((!!VertexRenderResources) && (ShaderSemanticSlot < VertexRenderResources->Length()))
+#endif
+				{
+					const RVertexBufferResource* VertexRenderResource = (*VertexRenderResources)[ShaderSemanticSlot];
+#if _EDITOR_ONLY
+					if ((!!VertexRenderResource) && (VertexRenderResource->IsRenderResourceValid()))
+#endif
+					{
+						RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, ShaderSemanticSlot);
+					}
+				}
+#if _EDITOR_ONLY
+				else
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check static mesh scene proxy vertex render resource is invalid."));
+				}
+#endif
+			}
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check static mesh scene proxy is invalid."));
+		}
+#endif
+	}
 	void RStaticMeshSceneProxy::BindMaterialParameter(const UINT32 InSlot)
 	{
 		RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
@@ -130,8 +172,25 @@ namespace PigeonEngine
 		if (((InSlot >= 0u) && (InSlot < 16u)) && (ConstantBuffer.IsRenderResourceValid()))
 #endif
 		{
-			RDeviceD3D11::GetDeviceSingleton()->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
-			RDeviceD3D11::GetDeviceSingleton()->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+		}
+	}
+	void RStaticMeshSceneProxy::Draw()
+	{
+#if _EDITOR_ONLY
+		if ((!!MeshAsset) && (MeshAsset->IsRenderResourceValid()))
+#endif
+		{
+			const EStaticMeshRenderResource*	MeshRenderResource	= MeshAsset->GetRenderResource();
+			const RIndexBufferResource*			IndexRenderResource	= MeshRenderResource->GetIndexRenderResource();
+#if _EDITOR_ONLY
+			if ((!!IndexRenderResource) && (IndexRenderResource->IsRenderResourceValid()))
+#endif
+			{
+				RDeviceD3D11::GetDeviceSingleton()->DrawIndexed(IndexRenderResource->IndexCount);
+			}
 		}
 	}
 
