@@ -18,7 +18,7 @@ namespace PigeonEngine
     {
         PActor::Init();
         this->SetIsTickable(TRUE);
-      
+        SetCamera(MyCamera);
     }
 
     void PController::Uninit()
@@ -69,6 +69,7 @@ namespace PigeonEngine
     {
         MyCamera = new PCameraComponent();
         this->SetRootComponent(MyCamera);
+        
     }
     PController::~PController()
     {
