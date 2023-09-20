@@ -61,14 +61,14 @@ namespace PigeonEngine
 
 #define PE_ASSERT(__Expression, ...) \
 	DWindowsMessage::__Check_(\
-		[]()->BOOL8\
+		[&]()->BOOL8\
 		{\
 			return (__Expression);\
 		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument());\
 
 #define PE_FAILED(__Caption, __Text) \
 	DWindowsMessage::__Check_(\
-		[]()->BOOL8\
+		[&]()->BOOL8\
 		{\
 			return FALSE;\
 		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument());\
