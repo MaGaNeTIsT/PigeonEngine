@@ -33,9 +33,10 @@ namespace PigeonEngine
         this->RootActor->Init();
 
         this->Controller = new PController();
+        this->Controller->SetIsTickable(TRUE);
         this->Controller->BeginAddedToScene(this);
         this->Controller->Init();
-        
+
 		this->LevelScriptor = new PLevelActor();
         this->LevelScriptor->SetIsTickable(TRUE);
 		this->LevelScriptor->BeginAddedToScene(this);

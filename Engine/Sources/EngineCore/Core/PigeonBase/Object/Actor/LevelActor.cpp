@@ -47,7 +47,7 @@ namespace PigeonEngine
 
 		NewStaticMeshComp->SetMeshAsset(Asset);
 		
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -500));
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -40));
     }
 
 	void PLevelActor::UserEndPlay()
