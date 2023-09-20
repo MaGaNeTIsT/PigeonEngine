@@ -19,6 +19,7 @@ PPhysicsComponent::~PPhysicsComponent()
 
 void PPhysicsComponent::Init()
 {
+	PActorComponent::Init();
 	Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 	Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
 	if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape,false, pos, rot,MotionType,Layer,m_BodyId))
@@ -29,11 +30,13 @@ void PPhysicsComponent::Init()
 
 void PPhysicsComponent::Uninit()
 {
+	PActorComponent::Uninit();
 	FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), false);
 }
 
 void PPhysicsComponent::Destroy()
 {
+	PActorComponent::Destroy();
 	if (m_Shape)
 		RemoveShape();
 }

@@ -5,7 +5,7 @@
 PIGEONENGINE_NAMESPACE_BEGIN
 typedef FPhysics_Jolt FPhysicsInterface;
 
-class FPhysicsManager : public FPhysicsInterface
+class FPhysicsManager final : public FPhysicsInterface
 {
 	CLASS_SINGLETON_BODY(FPhysicsManager)
 public:
