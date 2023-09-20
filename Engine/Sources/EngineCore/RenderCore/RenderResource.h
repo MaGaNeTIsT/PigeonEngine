@@ -63,8 +63,8 @@ namespace PigeonEngine
 			{
 				delete[]RawLayouts;
 				RawLayouts = nullptr;
-				LayoutNum = 0u;
 			}
+			LayoutNum = 0u;
 		};
 
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>	Shader;

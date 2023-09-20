@@ -205,18 +205,20 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitViews()
 	{
-		// Update requires
+		// Add, Update, Remove requires
 		{
+			RCommand& AddCommands = Scene->GetAddCommands();
 			RCommand& UpdateCommands = Scene->GetUpdateCommands();
+			RCommand& RemoveCommands = Scene->GetRemoveCommands();
+
+			AddCommands.DoCommands();
+			AddCommands.EmptyQueue();
+
 			UpdateCommands.DoCommands();
 			UpdateCommands.EmptyQueue();
-		}
 
-		// Add or remove requires
-		{
-			RCommand& AddOrRemoveCommands = Scene->GetAddOrRemoveCommands();
-			AddOrRemoveCommands.DoCommands();
-			AddOrRemoveCommands.EmptyQueue();
+			RemoveCommands.DoCommands();
+			RemoveCommands.EmptyQueue();
 		}
 
 		// Reset view proxies per frame datas

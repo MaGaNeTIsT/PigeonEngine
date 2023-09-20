@@ -140,7 +140,7 @@ namespace PigeonEngine
 	{
 	public:
 		BYTE*							ValuePtr;
-		EShaderParameterValueType		ValueType;
+		UINT8							ValueType;
 		EShaderParameterBase			ParameterInfo;
 
 		BOOL32 IsValid()const
@@ -162,7 +162,7 @@ namespace PigeonEngine
 				(InValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT)));
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter element num failed."), (InElementNum > 0u));
 
-			ValuePtr				= &(InRawPtr[InOffset]);
+			ValuePtr				= InRawPtr;
 			ValueType				= InValueType;
 			ParameterInfo.Offset	= InOffset;
 			ParameterInfo.Size		= sizeof(_TValueType);
@@ -170,7 +170,8 @@ namespace PigeonEngine
 			if (InInitValuePtr)
 			{
 				const UINT32 MemSize = sizeof(_TValueType) * InElementNum;
-				::memcpy_s(ValuePtr, MemSize, InInitValuePtr, MemSize);
+				BYTE* DstPtr = &(ValuePtr[ParameterInfo.Offset]);
+				::memcpy_s(DstPtr, MemSize, InInitValuePtr, MemSize);
 			}
 		}
 		EShaderParameter() : ValuePtr(nullptr)
@@ -180,13 +181,14 @@ namespace PigeonEngine
 			ParameterInfo.Size		= 0u;
 			ParameterInfo.Element	= 0u;
 		}
-		EShaderParameter(const EShaderParameter& Other) : ValuePtr(nullptr)
+		EShaderParameter(const EShaderParameter& Other)
+			: ValuePtr(Other.ValuePtr), ValueType(Other.ValueType)
 			, ParameterInfo(Other.ParameterInfo)
 		{
 		}
 		EShaderParameter& operator=(const EShaderParameter& Other)
 		{
-			ValuePtr		= nullptr;
+			ValuePtr		= Other.ValuePtr;
 			ValueType		= Other.ValueType;
 			ParameterInfo	= Other.ParameterInfo;
 			return (*this);
@@ -203,7 +205,8 @@ namespace PigeonEngine
 			if (InValuePtr)
 			{
 				const UINT32 MemSize = ParameterInfo.Size * ParameterInfo.Element;
-				::memcpy_s(ValuePtr, MemSize, InValuePtr, MemSize);
+				BYTE* DstPtr = &(ValuePtr[ParameterInfo.Offset]);
+				::memcpy_s(DstPtr, MemSize, InValuePtr, MemSize);
 			}
 		}
 	};
@@ -252,8 +255,9 @@ namespace PigeonEngine
 		{
 			const UINT32 TempOffset = static_cast<UINT32>(RawData.Size);
 			RawData.Size += sizeof(_TValueType) * InElementNum;
+			EShaderParameterRaw& TempRawData = RawData;
 			InitCommands.EnqueueCommand(
-				[InValueName, InInitValuePtr, InElementNum, this, TempOffset]()->void
+				[InValueName, InInitValuePtr, InElementNum, TempOffset, this, &TempRawData]()->void
 				{
 #if _EDITOR_ONLY
 					if (ShaderParameterNames.ContainsKey(InValueName))
@@ -264,7 +268,7 @@ namespace PigeonEngine
 #endif
 					ShaderParameterNames.Add(InValueName, ShaderParameters.Length());
 					EShaderParameter& ShaderParameter = ShaderParameters.Add_Default_GetRef();
-					ShaderParameter.SetupParameter<_TValueType>(RawData.Datas, TempOffset, __TParameterValueType, InInitValuePtr, InElementNum);
+					ShaderParameter.SetupParameter<_TValueType>(TempRawData.Datas, TempOffset, __TParameterValueType, InInitValuePtr, InElementNum);
 				});
 		}
 		void BeginSetupParameter();

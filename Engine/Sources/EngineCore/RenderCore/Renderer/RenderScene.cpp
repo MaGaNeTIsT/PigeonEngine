@@ -45,6 +45,10 @@ namespace PigeonEngine
 	}
 	void RScene::UnbindErrorCheck()
 	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all views' mapping failed"), (ViewProxies.SceneProxyMapping.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all views failed"), (ViewProxies.SceneProxies.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights' mapping failed"), (DirectionalLightSceneProxies.SceneProxyMapping.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights failed"), (DirectionalLightSceneProxies.SceneProxies.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProxies.SceneProxyMapping.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes failed"), (StaticMeshSceneProxies.SceneProxies.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProxies.SceneProxyMapping.Length() == 0u));
@@ -63,7 +67,7 @@ namespace PigeonEngine
 			InComponent->GetCameraMatrix());
 		ERenderViewParams* TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderAddCommands.EnqueueCommand(
 			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
 				SceneProxy->SetupProxy(TempIsMainCamera, *TempMatrices, *TempParams);
@@ -77,7 +81,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RViewProxy* SceneProxy = InComponent->ViewProxy;
 		InComponent->ViewProxy = nullptr;
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, FALSE);
@@ -157,7 +161,7 @@ namespace PigeonEngine
 			TempUsedCascadeShadowData = new ECascadeShadowData(*TempCascadeShadowData);
 		}
 
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderAddCommands.EnqueueCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempUsedCascadeShadowData]()->void
 			{
 				SceneProxy->SetupProxy(*TempMatrices, *TempParams, TempUsedCascadeShadowData);
@@ -172,7 +176,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, FALSE);
@@ -246,7 +250,7 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldScale());
 		const EStaticMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
 
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderAddCommands.EnqueueCommand(
 			[Scene, SceneProxy, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
 			{
 				SceneProxy->SetupProxy(InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset);
@@ -259,7 +263,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, FALSE);
@@ -315,7 +319,7 @@ namespace PigeonEngine
 	{
 		RScene* Scene = this;
 		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderAddCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
@@ -325,7 +329,7 @@ namespace PigeonEngine
 	{
 		RScene* Scene = this;
 		RSkeletalMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
-		RenderAddRemoveCommands.EnqueueCommand(
+		RenderRemoveCommands.EnqueueCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
@@ -343,13 +347,21 @@ namespace PigeonEngine
 
 			});
 	}
-	RCommand& RScene::GetAddOrRemoveCommands()
+	RCommand& RScene::GetAddCommands()
 	{
-		return RenderAddRemoveCommands;
+		return RenderAddCommands;
 	}
-	const RCommand& RScene::GetAddOrRemoveCommands()const
+	const RCommand& RScene::GetAddCommands()const
 	{
-		return RenderAddRemoveCommands;
+		return RenderAddCommands;
+	}
+	RCommand& RScene::GetRemoveCommands()
+	{
+		return RenderRemoveCommands;
+	}
+	const RCommand& RScene::GetRemoveCommands()const
+	{
+		return RenderRemoveCommands;
 	}
 	RCommand& RScene::GetUpdateCommands()
 	{

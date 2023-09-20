@@ -133,8 +133,10 @@ namespace PigeonEngine
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 	public:
-		RCommand&		GetAddOrRemoveCommands();
-		const RCommand&	GetAddOrRemoveCommands()const;
+		RCommand&		GetAddCommands();
+		const RCommand&	GetAddCommands()const;
+		RCommand&		GetRemoveCommands();
+		const RCommand&	GetRemoveCommands()const;
 		RCommand&		GetUpdateCommands();
 		const RCommand&	GetUpdateCommands()const;
 		ROctree&		GetSceneOctree();
@@ -161,7 +163,8 @@ namespace PigeonEngine
 		RSceneProxyMapping<RStaticMeshSceneProxy>		StaticMeshSceneProxies;
 		RSceneProxyMapping<RSkeletalMeshSceneProxy>		SkeletalMeshSceneProxies;
 	protected:
-		RCommand	RenderAddRemoveCommands;
+		RCommand	RenderAddCommands;
+		RCommand	RenderRemoveCommands;
 		RCommand	RenderUpdateCommands;
 	public:
 		RScene();

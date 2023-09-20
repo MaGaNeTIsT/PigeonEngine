@@ -97,6 +97,17 @@ namespace PigeonEngine
 		{
 			RDeviceD3D11* DeviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
 			Result = new RVertexShaderResource();
+#if _EDITOR_ONLY
+			if (ShaderInputLayoutNum > 0u)
+#endif
+			{
+				Result->RawLayouts = new RInputLayoutDesc[ShaderInputLayoutNum];
+				Result->LayoutNum = ShaderInputLayoutNum;
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < ShaderInputLayoutNum; LayoutIndex++)
+				{
+					Result->RawLayouts[LayoutIndex] = ShaderInputLayouts[LayoutIndex];
+				}
+			}
 			if (!DeviceD3D11->CreateVertexShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result, ShaderInputLayouts, ShaderInputLayoutNum))
 			{
 				delete Result;
