@@ -69,18 +69,23 @@ namespace PigeonEngine
     {
         PActor::SetActorLocation(Location);
         this->GetCamera()->UpdateCameraMatrix();
+		this->GetCamera()->SendUpdateRenderState();
+
     }
 
     void PController::SetActorRotation(const Quaternion& Rotation)
     {
         PActor::SetActorRotation(Rotation);
         this->GetCamera()->UpdateCameraMatrix();
+		this->GetCamera()->SendUpdateRenderState();
+
     }
 
     void PController::SetActorScale(const Vector3& Scale)
     {
         PActor::SetActorScale(Scale);
         this->GetCamera()->UpdateCameraMatrix();
+        this->GetCamera()->SendUpdateRenderState();
     }
 
     PController::PController()
