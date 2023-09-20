@@ -36,12 +36,20 @@ namespace PigeonEngine
 	}
 	void RScene::Uninit()
 	{
-
+		UnbindErrorCheck();
 	}
 	void RScene::ClearAll()
 	{
-		UnbindErrorCheck();
+		RenderAddCommands.DoCommands();
+		RenderAddCommands.EmptyQueue();
+		RenderUpdateCommands.DoCommands();
+		RenderUpdateCommands.EmptyQueue();
+		RenderRemoveCommands.DoCommands();
+		RenderRemoveCommands.EmptyQueue();
+
 		RenderSceneOctree.ClearPrimitives();
+
+		UnbindErrorCheck();
 	}
 	void RScene::UnbindErrorCheck()
 	{

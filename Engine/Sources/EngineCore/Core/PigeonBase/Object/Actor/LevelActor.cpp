@@ -58,8 +58,7 @@ namespace PigeonEngine
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-    	FLOAT newZ  = (sin(this->GetWorld()->GetGameTimer()->GetClockTime()) - 1) * 100 ;
-    	Vector3 newPos = Vector3(FLOAT(0), FLOAT(0), newZ);
+		Vector3 newPos = Vector3(0.f, 0.f, -10.f);
     	this->GetWorld()->GetController()->SetActorLocation(newPos);
 	}
 
