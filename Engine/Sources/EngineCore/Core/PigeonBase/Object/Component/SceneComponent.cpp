@@ -69,6 +69,7 @@ namespace PigeonEngine
 	{
 		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
 		{
+			(*elem)->ParentComponent = nullptr;
 			(*elem)->Destroy();
 		}
 		ChildrenComponents.Clear();
@@ -86,6 +87,8 @@ namespace PigeonEngine
 	void PSceneComponent::RemoveChildComponent(PSceneComponent* NewChild)
 	{
 		ChildrenComponents.Remove(NewChild);
+		NewChild->ParentComponent = nullptr;
+		
 	}
 
 	
@@ -101,9 +104,9 @@ namespace PigeonEngine
 
 	void PSceneComponent::Destroy()
 	{
+		DestroyRenderState();
 		DetachFromParentComponent();
 		ClearChildren();
-		RemovedFromScene();
 		PActorComponent::Destroy();
 	}
 
@@ -147,17 +150,6 @@ namespace PigeonEngine
 		
 	}
 
-	void PSceneComponent::RemovedFromScene()
-	{
-		
-		for(const auto& child : this->ChildrenComponents)
-		{
-			child->RemovedFromScene();
-		}
-		
-		this->DestroyRenderState();
-		PActorComponent::RemovedFromScene();
-	}
 
 	EMobilityType PSceneComponent::GetMobility() const
 	{

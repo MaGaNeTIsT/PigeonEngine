@@ -19,7 +19,7 @@ namespace PigeonEngine
 	}
 	PObject::~PObject()
 	{
-		Destroy();
+
 	}
 
 	void PObject::SetIsTickable(const BOOL32& bTickable)
@@ -34,7 +34,7 @@ namespace PigeonEngine
 
 	void PObject::Destroy()
 	{
-		// delete this;
+		delete this;
 	}
 
 	TSharedPtr<CJsonObject> PObject::Serialize()

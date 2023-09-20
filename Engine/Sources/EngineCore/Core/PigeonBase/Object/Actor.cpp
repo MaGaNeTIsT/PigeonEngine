@@ -222,11 +222,13 @@ namespace PigeonEngine
 
 	void PActor::ClearComponents()
 	{
-		for (auto elem = Components.Begin(); elem != Components.End(); elem++)
-		{
-			DestoyComponent(*elem);
-		}
-		Components.Clear();
+
+		// for (auto elem = Components.Begin(); elem != Components.End(); elem++)
+		// {
+		// 	DestoyComponent(*elem);
+		// }
+		// Components.Clear();
+		RootComponent->Destroy();
 	}
 
 	EBoundAABB PActor::GetComponentsBoundingBox()
@@ -238,6 +240,7 @@ namespace PigeonEngine
 	void PActor::Destroy()
 	{
 		// RemoveFromScene
+		this->UserEndPlay();
 		ClearComponents();
 		PObject::Destroy();
 	}
@@ -248,12 +251,7 @@ namespace PigeonEngine
 		this->RootComponent->BeginAddedToScene(this->GetWorld());
 		this->UserBeginPlay();
 	}
-
-	void PActor::RemovedFromScene()
-	{
-		this->RootComponent->RemovedFromScene();
-		this->UserEndPlay();
-	}
+	
 
 	void PActor::UserBeginPlay()
 	{

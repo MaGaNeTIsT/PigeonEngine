@@ -26,10 +26,6 @@ namespace PigeonEngine
 	
 	void PActorComponent::RemoveFromOwnerActor()
 	{
-		/*if(Owner)
-		{
-			Owner->DestoyComponent(this);
-		}*/
 		Owner = nullptr;
 	}
 

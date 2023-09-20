@@ -53,7 +53,6 @@ namespace PigeonEngine
     void PWorld::Tick(FLOAT deltaTime)
     {
         RootActor->FixedTick(deltaTime);
-
         LevelScriptor->FixedTick(deltaTime);
         this->Controller->FixedTick(deltaTime);
     }
@@ -68,6 +67,9 @@ namespace PigeonEngine
   
     void PWorld::Destroy()
     {
+        LevelScriptor->Destroy();
+        RootActor->Destroy();
+        Controller->Destroy();
         PObject::Destroy();
     }
 

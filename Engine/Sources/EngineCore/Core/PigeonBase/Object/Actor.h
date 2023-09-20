@@ -32,7 +32,6 @@ namespace PigeonEngine
 	protected:
 		// for frame, 
 		virtual void BeginAddedToScene(PWorld* World);
-		virtual void RemovedFromScene();
 
 		// for users
 		virtual void UserBeginPlay();
@@ -67,6 +66,7 @@ namespace PigeonEngine
 	public:
 		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		virtual void DestoyComponent  (PActorComponent* Component);
+	protected:
 		virtual void ClearComponents  ();
 	protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());

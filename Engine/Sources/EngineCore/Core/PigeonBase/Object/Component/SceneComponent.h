@@ -59,7 +59,7 @@ namespace PigeonEngine
         virtual void TickRenderState();
     protected:
         void BeginAddedToScene(PWorld* World) override;
-        void RemovedFromScene() override;
+
     private:
     	PWorld* MyWolrd;
     public:
@@ -117,10 +117,9 @@ namespace PigeonEngine
     	PSceneComponent* ParentComponent = nullptr;
 
     public:
-    	
     	void RemoveChildComponent(PSceneComponent* NewChild);
+    protected:
     	void ClearChildren       ();
-    	
     private:
     	
     	TSet<PSceneComponent*> ChildrenComponents;
