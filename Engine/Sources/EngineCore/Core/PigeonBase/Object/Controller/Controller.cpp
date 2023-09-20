@@ -65,6 +65,24 @@ namespace PigeonEngine
         }
     }
 
+    void PController::SetActorLocation(const Vector3& Location)
+    {
+        PActor::SetActorLocation(Location);
+        this->GetCamera()->UpdateCameraMatrix();
+    }
+
+    void PController::SetActorRotation(const Quaternion& Rotation)
+    {
+        PActor::SetActorRotation(Rotation);
+        this->GetCamera()->UpdateCameraMatrix();
+    }
+
+    void PController::SetActorScale(const Vector3& Scale)
+    {
+        PActor::SetActorScale(Scale);
+        this->GetCamera()->UpdateCameraMatrix();
+    }
+
     PController::PController()
     {
         MyCamera = new PCameraComponent(0.f, 0.f, ESettings::ENGINE_SCREEN_WIDTH, ESettings::ENGINE_SCREEN_HEIGHT);

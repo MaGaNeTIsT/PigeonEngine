@@ -69,11 +69,9 @@ namespace PigeonEngine
         class PController* GetController()const;
     private:
         class PController* Controller = nullptr;
-    private:
-        // Timer
-        const EGameTimer* GameTimer = nullptr;
-
-
+    public:
+        const EGameTimer* GetGameTimer() const;
+  
         //Render scene state START
     public:
         void                    BindRenderScene(RSceneInterface* InScene);

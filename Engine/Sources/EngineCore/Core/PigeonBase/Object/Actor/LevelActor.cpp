@@ -4,6 +4,8 @@
 #include "../World/World.h"
 #include "MeshAsset/MeshAsset.h"
 #include "../Controller/Controller.h"
+#include "Base/Timer/Timer.h"
+
 namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
@@ -29,7 +31,6 @@ namespace PigeonEngine
 
 	void PLevelActor::UserBeginPlay()
     {
-		
 		PActor* New = new PActor();
     	New->SetIsTickable(TRUE);
 		this->GetWorld()->AddActor(New);
@@ -47,7 +48,7 @@ namespace PigeonEngine
 
 		NewStaticMeshComp->SetMeshAsset(Asset);
 		
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -40));
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -100));
     }
 
 	void PLevelActor::UserEndPlay()
@@ -57,7 +58,9 @@ namespace PigeonEngine
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-
+    	FLOAT newZ  = (sin(this->GetWorld()->GetGameTimer()->GetClockTime()) - 1) * 100 ;
+    	Vector3 newPos = Vector3(FLOAT(0), FLOAT(0), newZ);
+    	this->GetWorld()->GetController()->SetActorLocation(newPos);
 	}
 
 

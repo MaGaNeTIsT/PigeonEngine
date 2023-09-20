@@ -26,7 +26,7 @@ namespace PigeonEngine
 
     void PWorld::Init()
     {
-        GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
+        
 		this->RootActor = new PActor();
         this->RootActor->SetIsTickable(TRUE);
 		this->RootActor->BeginAddedToScene(this);
@@ -52,10 +52,6 @@ namespace PigeonEngine
 
     void PWorld::Tick(FLOAT deltaTime)
     {
-        if (!GameTimer)
-        {
-            GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
-        }
         RootActor->FixedTick(deltaTime);
 
         LevelScriptor->FixedTick(deltaTime);
@@ -63,10 +59,6 @@ namespace PigeonEngine
 
     void PWorld::EditorTick(FLOAT deltaTime)
     {
-        if (!GameTimer)
-        {
-            GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
-        }
         RootActor->EditorTick(deltaTime);
 
         LevelScriptor->EditorTick(deltaTime);
@@ -112,7 +104,12 @@ namespace PigeonEngine
         return this->Controller;
 	}
 
-	//Render scene state START
+    const EGameTimer* PWorld::GetGameTimer() const
+    {
+        return EMainManager::GetManagerSingleton()->GetGameTimer();;
+    }
+
+    //Render scene state START
     void PWorld::BindRenderScene(RSceneInterface* InScene)
     {
         if (RenderScene)
