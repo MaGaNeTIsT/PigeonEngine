@@ -8,6 +8,8 @@ struct Varying
     float2 Texcoord : TEXCOORD0;
 };
 
+#define SHADER_USE_TRANSFORM
+
 #include "../Common/ShaderCommon.hlsl"
 
 void main(in Varying Input, out float4 Ouput : SV_Target)

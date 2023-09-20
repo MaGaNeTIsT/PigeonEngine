@@ -21,13 +21,13 @@ namespace PigeonEngine
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ProjectionInvMatrix"));
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewProjectionMatrix"));
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewProjectionInvMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_TimeParams"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_DepthMultiAdd"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_ScreenToViewSpaceParams"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportMinSizeAndInvBufferSize"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportSizeAndInvSize"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportRect"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraWorldPosition"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_TimeParams"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_DepthMultiAdd"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_ScreenToViewSpaceParams"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportMinSizeAndInvBufferSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportSizeAndInvSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportRect"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraWorldPosition"));
 		EndSetupParameter();
 	}
 
@@ -55,6 +55,8 @@ namespace PigeonEngine
 		UpdateMatrices(InMatrices);
 
 		ViewMaterialParameter.SetupParameters();
+
+		UpdateRenderResource();
 	}
 	BOOL32 RViewProxy::IsMainRenderView()const
 	{

@@ -43,6 +43,8 @@ namespace PigeonEngine
 		UpdateMeshAsset(InMeshAsset);
 
 		MaterialParameter.SetupParameters();
+
+		UpdateRenderResource();
 	}
 	BOOL32 RStaticMeshSceneProxy::IsRenderValid()const
 	{
@@ -59,6 +61,7 @@ namespace PigeonEngine
 		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(LocalToWorldMatrix);
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
+		MaterialParameter.UploadConstantBuffer();
 	}
 	void RStaticMeshSceneProxy::BindRenderResource()const
 	{
@@ -73,9 +76,9 @@ namespace PigeonEngine
 		const EString ImportVSName = EString("StaticMesh_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0)
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, 0u, 0u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, 0u, 1u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, 0u, 2u)
 		};
 		if (!VertexShader)
 		{
@@ -170,7 +173,7 @@ namespace PigeonEngine
 					if ((!!VertexRenderResource) && (VertexRenderResource->IsRenderResourceValid()))
 #endif
 					{
-						RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, ShaderSemanticSlot);
+						RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, LayoutIndex);
 					}
 #if _EDITOR_ONLY
 					else

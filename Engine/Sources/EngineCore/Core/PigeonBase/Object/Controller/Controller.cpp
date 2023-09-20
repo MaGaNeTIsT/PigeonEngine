@@ -67,7 +67,7 @@ namespace PigeonEngine
 
     PController::PController()
     {
-        MyCamera = new PCameraComponent();
+        MyCamera = new PCameraComponent(0.f, 0.f, ESettings::ENGINE_SCREEN_WIDTH, ESettings::ENGINE_SCREEN_HEIGHT);
         this->SetRootComponent(MyCamera);
         
     }
