@@ -54,6 +54,9 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
+
+    protected:
+        virtual void TickRenderState();
     protected:
         void BeginAddedToScene(PWorld* World) override;
         void RemovedFromScene() override;

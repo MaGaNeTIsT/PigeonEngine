@@ -13,6 +13,16 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+
+	void PCameraComponent::TickRenderState()
+	{
+		if(IsRenderStateDirty())
+		{
+			UpdateCameraMatrix();
+			SendUpdateRenderState();
+		}
+	}
+
 	PCameraComponent::PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
 		: CameraViewInfo(ECameraViewInfo(InViewportLeftTopX, InViewportLeftTopY, InViewportWidth, InViewportHeight, InFovAngleY, InFarDist, InNearDist)), ViewProxy(nullptr), UpdateState(PCameraUpdateState::CAMERA_UPDATE_STATE_NONE)
 	{

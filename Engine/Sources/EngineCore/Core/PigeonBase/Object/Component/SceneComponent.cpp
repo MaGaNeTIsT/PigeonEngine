@@ -110,29 +110,30 @@ namespace PigeonEngine
 	void PSceneComponent::FixedTick(FLOAT deltaTime)
 	{
 		PActorComponent::FixedTick(deltaTime);
-		if(IsRenderStateDirty())
-		{
-			SendUpdateRenderState();
-		}
 		for(const auto& elem : ChildrenComponents)
 		{
 			elem->FixedTick(deltaTime);
 		}
-		
+		this->TickRenderState();
 	}
 
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
 
 		PActorComponent::EditorTick(deltaTime);
-		if(IsRenderStateDirty())
-		{
-			SendUpdateRenderState();
-		}
 		for(const auto& elem : ChildrenComponents)
         {
         	elem->EditorTick(deltaTime);
         }
+		this->TickRenderState();
+	}
+
+	void PSceneComponent::TickRenderState()
+	{
+		if(IsRenderStateDirty())
+		{
+			SendUpdateRenderState();
+		}
 	}
 
 	void PSceneComponent::BeginAddedToScene(PWorld* World)

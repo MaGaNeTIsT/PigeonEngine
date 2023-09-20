@@ -54,6 +54,7 @@ namespace PigeonEngine
         }
         this->MyCamera = NewCam;
         this->MyCamera->SetIsMainCamera(TRUE);
+        this->MyCamera->SetIsTickable(TRUE);
     }
 
     void PController::ResetToDefaultCamera()
@@ -68,24 +69,16 @@ namespace PigeonEngine
     void PController::SetActorLocation(const Vector3& Location)
     {
         PActor::SetActorLocation(Location);
-        this->GetCamera()->UpdateCameraMatrix();
-		this->GetCamera()->SendUpdateRenderState();
-
     }
 
     void PController::SetActorRotation(const Quaternion& Rotation)
     {
         PActor::SetActorRotation(Rotation);
-        this->GetCamera()->UpdateCameraMatrix();
-		this->GetCamera()->SendUpdateRenderState();
-
     }
 
     void PController::SetActorScale(const Vector3& Scale)
     {
         PActor::SetActorScale(Scale);
-        this->GetCamera()->UpdateCameraMatrix();
-        this->GetCamera()->SendUpdateRenderState();
     }
 
     PController::PController()

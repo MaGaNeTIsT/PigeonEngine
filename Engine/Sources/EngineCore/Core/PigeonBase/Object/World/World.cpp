@@ -55,6 +55,7 @@ namespace PigeonEngine
         RootActor->FixedTick(deltaTime);
 
         LevelScriptor->FixedTick(deltaTime);
+        this->Controller->FixedTick(deltaTime);
     }
 
     void PWorld::EditorTick(FLOAT deltaTime)

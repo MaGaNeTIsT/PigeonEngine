@@ -96,8 +96,10 @@ namespace PigeonEngine
 		friend class PController;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PCameraComponent)
-
+	protected:
+		void TickRenderState() override;
 	public:
+		
 		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = ESettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		const ECameraViewInfo&	GetCameraViewInfo()const { return CameraViewInfo; }
 		const EViewMatrix&		GetCameraMatrix()const { return CameraMatrix; }
