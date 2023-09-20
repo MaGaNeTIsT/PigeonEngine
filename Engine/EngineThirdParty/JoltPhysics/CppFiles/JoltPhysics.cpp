@@ -121,7 +121,7 @@ namespace PigeonEngine
 		m_Characters.Remove(Character);
 	}
 
-	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID)
+	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, FPhysicsBodyId& outBodyID)
 	{
 		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer));
 		if (body)
@@ -133,7 +133,7 @@ namespace PigeonEngine
 		return false;
 	}
 
-	void FPhysics_Jolt::AddBody(const ObjectIdentityType& GameObjectId, const PhysicsBodyId& inBodyID, EActivate inActivationMode)
+	void FPhysics_Jolt::AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode)
 	{
 		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActivate::Activate? EActivation::Activate : EActivation::DontActivate);
 		m_Bodys.Add(GameObjectId, inBodyID);
@@ -141,7 +141,7 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = true*/)
 	{
-		PhysicsBodyId ID;
+		FPhysicsBodyId ID;
 		if (m_Bodys.FindValue(GameObjectId, ID))
 		{
 			PhysicsData->BodyInterface->RemoveBody(ID.ID);
@@ -156,39 +156,39 @@ namespace PigeonEngine
 		}
 	}
 
-	Vector3 FPhysics_Jolt::GetPosition(const PhysicsBodyId& PhysicsBodyId)
+	Vector3 FPhysics_Jolt::GetPosition(const FPhysicsBodyId& FPhysicsBodyId)
 	{
-		return PhysicsUtility::Convert2Centimeter(PhysicsData->BodyInterface->GetPosition(PhysicsBodyId.ID));
+		return PhysicsUtility::Convert2Centimeter(PhysicsData->BodyInterface->GetPosition(FPhysicsBodyId.ID));
 	}
-	Quaternion FPhysics_Jolt::GetRotation(const PhysicsBodyId& PhysicsBodyId)
+	Quaternion FPhysics_Jolt::GetRotation(const FPhysicsBodyId& FPhysicsBodyId)
 	{
-		return PhysicsUtility::Convert(PhysicsData->BodyInterface->GetRotation(PhysicsBodyId.ID));
+		return PhysicsUtility::Convert(PhysicsData->BodyInterface->GetRotation(FPhysicsBodyId.ID));
 	}
 
-	void FPhysics_Jolt::SetPosition(const PhysicsBodyId& inPhysicsBodyId, Vector3 inPosition, EActivate inActivationMode)
+	void FPhysics_Jolt::SetPosition(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inPosition, EActivate inActivationMode)
 	{
 		PhysicsData->BodyInterface->SetPosition(inPhysicsBodyId.ID, PhysicsUtility::Convert2Meter(inPosition), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate);
 	}
 
-	void FPhysics_Jolt::SetRoation(const PhysicsBodyId& inPhysicsBodyId, Quaternion inRotation, EActivate inActivationMode)
+	void FPhysics_Jolt::SetRoation(const FPhysicsBodyId& inPhysicsBodyId, Quaternion inRotation, EActivate inActivationMode)
 	{
 		PhysicsData->BodyInterface->SetRotation(inPhysicsBodyId.ID, PhysicsUtility::Convert(inRotation), inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate);
 	}
 
-	void FPhysics_Jolt::AddForce(const PhysicsBodyId& inPhysicsBodyId, Vector3 inForce)
+	void FPhysics_Jolt::AddForce(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inForce)
 	{
 		PhysicsData->BodyInterface->AddForce(inPhysicsBodyId.ID, PhysicsUtility::Convert(inForce));
 	}
-	void FPhysics_Jolt::AddForce(const PhysicsBodyId& inPhysicsBodyId, Vector3 inForce, Vector3 inPoint)
+	void FPhysics_Jolt::AddForce(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inForce, Vector3 inPoint)
 	{
 		PhysicsData->BodyInterface->AddForce(inPhysicsBodyId.ID, PhysicsUtility::Convert(inForce), PhysicsUtility::Convert2Meter(inPoint));
 	}
 
-	void FPhysics_Jolt::AddImpulse(const PhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse)
+	void FPhysics_Jolt::AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse)
 	{
 		PhysicsData->BodyInterface->AddImpulse(inPhysicsBodyId.ID, PhysicsUtility::Convert(inImpulse));
 	}
-	void FPhysics_Jolt::AddImpulse(const PhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint)
+	void FPhysics_Jolt::AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint)
 	{
 		PhysicsData->BodyInterface->AddImpulse(inPhysicsBodyId.ID, PhysicsUtility::Convert(inImpulse), PhysicsUtility::Convert2Meter(inPoint));
 	}

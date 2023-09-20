@@ -9,7 +9,7 @@ class FPhysicsManager : public FPhysicsInterface
 {
 	CLASS_SINGLETON_BODY(FPhysicsManager)
 public:
-	static void		Initialize(HWND hWnd)		{}
+	static void		Initialize()				{}
 	static void		ShutDown()					{}
 	static void		StaticUpdate()				{}
 public:

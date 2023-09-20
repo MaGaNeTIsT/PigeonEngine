@@ -53,4 +53,9 @@ namespace PigeonEngine
 		m_ShapeSettings = CreateShapeSettingsInternal();
 		return m_ShapeSettings;
 	}
+
+	FCastRay::FCastRay()
+	{
+	}
 }
+

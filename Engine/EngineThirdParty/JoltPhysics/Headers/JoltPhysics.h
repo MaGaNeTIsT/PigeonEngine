@@ -38,30 +38,30 @@ struct FPhysicsData
 	PigeonEngine::FContactListener*						ContactListener;
 };
 
-struct PhysicsBodyId
+struct FPhysicsBodyId
 {
 	BodyID ID;
 
 	/// Equals check
-	inline BOOL32				operator == (const PhysicsBodyId& inRHS) const
+	inline BOOL32				operator == (const FPhysicsBodyId& inRHS) const
 	{
 		return ID == inRHS.ID;
 	}
 
 	/// Not equals check
-	inline BOOL32				operator != (const PhysicsBodyId& inRHS) const
+	inline BOOL32				operator != (const FPhysicsBodyId& inRHS) const
 	{
 		return ID != inRHS.ID;
 	}
 
 	/// Smaller than operator, can be used for sorting bodies
-	inline BOOL32				operator < (const PhysicsBodyId& inRHS) const
+	inline BOOL32				operator < (const FPhysicsBodyId& inRHS) const
 	{
 		return ID < inRHS.ID;
 	}
 
 	/// Greater than operator, can be used for sorting bodies
-	inline BOOL32				operator > (const PhysicsBodyId& inRHS) const
+	inline BOOL32				operator > (const FPhysicsBodyId& inRHS) const
 	{
 		return ID > inRHS.ID;
 	}
@@ -125,8 +125,8 @@ public:
 	void RemoveCharacter(class FCharacter* Character);
 
 public:
-	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, PhysicsBodyId& outBodyID);
-	void AddBody(const ObjectIdentityType& GameObjectId, const PhysicsBodyId& inBodyID, EActivate inActivationMode = EActivate::DontActivate);
+	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, FPhysicsBodyId& outBodyID);
+	void AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode = EActivate::DontActivate);
 	/// <summary>
 	/// remove a rigid body by a GameObjectId.
 	/// </summary>
@@ -134,19 +134,19 @@ public:
 	/// <param name="bDeleteShape">true to delete shape at sametime,if your shape is shared to other bodys, set false.</param>
 	void RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape = true);
 
-	Vector3 GetPosition(const PhysicsBodyId& PhysicsBodyId);
-	Quaternion GetRotation(const PhysicsBodyId& PhysicsBodyId);
-	void SetPosition(const PhysicsBodyId& inPhysicsBodyId, Vector3 inPosition, EActivate inActivationMode = EActivate::DontActivate);
-	void SetRoation(const PhysicsBodyId& inPhysicsBodyId, Quaternion inRotation, EActivate inActivationMode = EActivate::DontActivate);
-	void AddForce(const PhysicsBodyId& inPhysicsBodyId, Vector3 inForce);
-	void AddForce(const PhysicsBodyId& inPhysicsBodyId, Vector3 inForce, Vector3 inPoint);
-	void AddImpulse(const PhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse); ///< Applied at center of mass
-	void AddImpulse(const PhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint); ///< Applied at inPoint
+	Vector3 GetPosition(const FPhysicsBodyId& FPhysicsBodyId);
+	Quaternion GetRotation(const FPhysicsBodyId& FPhysicsBodyId);
+	void SetPosition(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inPosition, EActivate inActivationMode = EActivate::DontActivate);
+	void SetRoation(const FPhysicsBodyId& inPhysicsBodyId, Quaternion inRotation, EActivate inActivationMode = EActivate::DontActivate);
+	void AddForce(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inForce);
+	void AddForce(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inForce, Vector3 inPoint);
+	void AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse); ///< Applied at center of mass
+	void AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint); ///< Applied at inPoint
 
 	void SetGravity(Vector3 inGravity);
 private:
-	TMap<ObjectIdentityType, PhysicsBodyId>					m_Bodys;
-	TMap<PhysicsBodyId, FShape*>							m_Shapes;
+	TMap<ObjectIdentityType, FPhysicsBodyId>					m_Bodys;
+	TMap<FPhysicsBodyId, FShape*>							m_Shapes;
 	TSet<class FCharacter*>									m_Characters;
 private:
 	FPhysicsData* PhysicsData;

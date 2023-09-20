@@ -77,9 +77,12 @@ namespace PigeonEngine
 		m_WindowTimer.Init();
 		m_WorldManager->Initialize();
 
+		m_PhysicsManager->Initialize();
+
 	}
 	void EMainManager::ShutDown()
 	{
+		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
 #if _EDITOR_ONLY
 		m_AssimpManager->ShutDown();
@@ -123,9 +126,11 @@ namespace PigeonEngine
 
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 		m_WorldManager->Init();
+		m_PhysicsManager->Init();
 	}
 	void EMainManager::Uninit()
 	{
+		m_PhysicsManager->Uninit();
 		m_WorldManager->Uninit();
 		RenderScene->Uninit();
 
@@ -150,7 +155,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::FixedUpdate()
 	{
-
+		m_PhysicsManager->FixedUpdate(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 	}
 	void EMainManager::Draw()
 	{
