@@ -62,11 +62,12 @@ namespace PigeonEngine
 		m_RenderDeviceD3D11->Initialize();
 
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check scene renderer is not null."), (!SceneRenderer));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check scene renderer is not null."), (!SceneRenderer));
 			SceneRenderer = new RSceneRenderer();
 			SceneRenderer->Initialize();
 			RenderScene = SceneRenderer->GetRenderScene();
 		}
+
 #if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
@@ -115,7 +116,7 @@ namespace PigeonEngine
 		m_EditorOpen = true;
 #endif
 
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene can not be null."), (!!RenderScene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene can not be null."), (!!RenderScene));
 		RenderScene->Init();
 
 		m_GameTimer->Reset();

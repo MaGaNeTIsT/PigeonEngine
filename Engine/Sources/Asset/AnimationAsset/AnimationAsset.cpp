@@ -37,7 +37,7 @@ namespace PigeonEngine
 				Result = Result || (AnimationClips[i].IsValid());
 			}
 		}
-		Check((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
 		return Result;
 	}
 	BOOL32 ESkeletonAnimation::InitResource()
@@ -90,7 +90,7 @@ namespace PigeonEngine
 		{
 			AnimationClipMapping.Add(AnimationClips[i].ClipName, i);
 		}
-		Check((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
 	}
 	BOOL32 ESkeletonAnimation::AddAnimationClip(const ESkeletonAnimationClip& InClip)
 	{
@@ -100,7 +100,7 @@ namespace PigeonEngine
 			{
 				AnimationClips.Add(InClip);
 				AnimationClipMapping.Add(InClip.ClipName, AnimationClips.Length() - 1u);
-				Check((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
+				PE_CHECK((ENGINE_ASSET_ERROR), ("Check if skeleton animation mapping num fits failed."), (AnimationClipMapping.Length() == AnimationClips.Length()));
 				return TRUE;
 			}
 #if _EDITOR_ONLY
@@ -368,7 +368,7 @@ namespace PigeonEngine
 #define LOAD_ASSET_MEMORY(__MemType, __MemSize, __OutputValue) \
 		__MemType __OutputValue;\
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
 			const __MemType* TempPtr = (const __MemType*)RstMemPtr;\
 			(__OutputValue) = TempPtr[0];\
 			RstMemPtr = &(TempPtr[1]);\
@@ -379,7 +379,7 @@ namespace PigeonEngine
 		EString __OutputEString;\
 		{\
 			const UINT32 StrStride = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= StrStride));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= StrStride));\
 			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
 			CHAR StrValues[(__LengthMax)];\
 			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
@@ -392,7 +392,7 @@ namespace PigeonEngine
 		__PtrType* __Ptr = nullptr;\
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
@@ -502,7 +502,7 @@ namespace PigeonEngine
 					}
 				}
 			}
-			Check((ENGINE_ASSET_ERROR), ("Check read skeleton animation resource rest memory already failed."), (RstMemSize == 0));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check read skeleton animation resource rest memory already failed."), (RstMemSize == 0));
 		}
 
 #undef LOAD_ASSET_MEMORY
@@ -595,7 +595,7 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_MEMORY(__Type, __Value) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
 			__Type* TempPtr = (__Type*)RstMemPtr;\
 			TempPtr[0] = (__Value);\
 			RstMemPtr = &(TempPtr[1]);\
@@ -605,7 +605,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
 		{\
 			const UINT32 NameLengthMax = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
 			const EString& SavedName = (__EString);\
 			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
 			CHAR* TempPtr = (CHAR*)RstMemPtr;\
@@ -617,7 +617,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton animation asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			BYTE* TempPtr = (BYTE*)RstMemPtr;\
 			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
 			RstMemPtr = &(TempPtr[MemSize]);\
@@ -689,7 +689,7 @@ namespace PigeonEngine
 					}
 				}
 			}
-			Check((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));
 		}
 
 #undef SAVE_ASSET_MEMORY

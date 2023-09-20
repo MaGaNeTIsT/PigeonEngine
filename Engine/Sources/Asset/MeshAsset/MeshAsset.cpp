@@ -199,7 +199,7 @@ namespace PigeonEngine
 	}
 	EVertexLayoutType TranslateVertexResourceTypeToVertexLayoutType(const UINT8 InVertexResourcesType)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexResourcesType >= EVertexResourceType::VERTEX_RESOURCE_TYPE_POSITION) && (InVertexResourcesType < EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT)));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexResourcesType >= EVertexResourceType::VERTEX_RESOURCE_TYPE_POSITION) && (InVertexResourcesType < EVertexResourceType::VERTEX_RESOURCE_TYPE_COUNT)));
 		const EVertexLayoutType TempVertexLayoutLists[] =
 		{
 			EVertexLayoutType::MESH_VERTEX,
@@ -213,7 +213,7 @@ namespace PigeonEngine
 	}
 	EVertexResourceType TranslateVertexLayoutTypeToVertexResourceType(EVertexLayoutType InVertexLayoutType)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexLayoutType > EVertexLayoutType::MESH_INDEX_HALF) && (InVertexLayoutType < (0x1u << 30u))));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Translate vertex resource type to vertex layout type failed."), ((InVertexLayoutType > EVertexLayoutType::MESH_INDEX_HALF) && (InVertexLayoutType < (0x1u << 30u))));
 		const UINT32 TempVertexLayoutType = InVertexLayoutType;
 		if ((TempVertexLayoutType & 0x3u) != 0u)
 		{
@@ -1146,7 +1146,7 @@ namespace PigeonEngine
 				UINT16* TempIndices = new UINT16[OutIndexData->ElementNum];
 				for (UINT32 i = 0u, n = OutIndexData->ElementNum; i < n; i++)
 				{
-					Check((ENGINE_ASSET_ERROR), ("Mesh index type check failed, half index element num must lower than 65535u."), ((OutIndexData->Indices[i]) < 0xffffu));
+					PE_CHECK((ENGINE_ASSET_ERROR), ("Mesh index type check failed, half index element num must lower than 65535u."), ((OutIndexData->Indices[i]) < 0xffffu));
 					TempIndices[i] = static_cast<UINT16>(OutIndexData->Indices[i]);
 				}
 				IndexRenderResource.UseShort = TRUE;
@@ -1543,7 +1543,7 @@ namespace PigeonEngine
 		{
 			const ESkinData& SkinData = Skins[SkinIndex];
 			const UINT32 EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
-			Check((ENGINE_ASSET_ERROR), ("Check effect bone num failed when create skin render resource."), (EffectBoneNum == SkinnedMesh->GetEffectBoneNum()));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check effect bone num failed when create skin render resource."), (EffectBoneNum == SkinnedMesh->GetEffectBoneNum()));
 			{
 				const UINT32 IndexNum = EffectBoneNum * SkinData.ElementNum;
 				UINT16* TempSkinIndexMem = new UINT16[IndexNum];
@@ -1553,7 +1553,7 @@ namespace PigeonEngine
 					{
 						if ((i * EffectBoneNum + BoneIndex) < IndexNum)
 						{
-							Check((ENGINE_ASSET_ERROR), ("Check skin bone index is lower than 65535u failed when create skin render resource."), ((SkinData.Indices[i * EffectBoneNum + BoneIndex]) <= 0xffffu));
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Check skin bone index is lower than 65535u failed when create skin render resource."), ((SkinData.Indices[i * EffectBoneNum + BoneIndex]) <= 0xffffu));
 							TempSkinIndexMem[i * EffectBoneNum + BoneIndex] = static_cast<UINT16>(SkinData.Indices[i * EffectBoneNum + BoneIndex]);
 						}
 					}
@@ -2197,7 +2197,7 @@ namespace PigeonEngine
 #define LOAD_ASSET_MEMORY(__MemType, __MemSize, __OutputValue) \
 		__MemType __OutputValue;\
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
 			const __MemType* TempPtr = (const __MemType*)RstMemPtr;\
 			(__OutputValue) = TempPtr[0];\
 			RstMemPtr = &(TempPtr[1]);\
@@ -2208,7 +2208,7 @@ namespace PigeonEngine
 		EString __OutputEString;\
 		{\
 			const UINT32 StrStride = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= StrStride));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= StrStride));\
 			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
 			CHAR StrValues[(__LengthMax)];\
 			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
@@ -2221,7 +2221,7 @@ namespace PigeonEngine
 		__PtrType* __Ptr = nullptr;\
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
@@ -2359,7 +2359,7 @@ namespace PigeonEngine
 		if (MeshType == EMeshType::MESH_TYPE_SKIN)
 		{
 			ESkinnedMesh* TempMeshPtr = LoadedMeshResource->AsType<ESkinnedMesh>();
-			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
 #if _EDITOR_ONLY
 			if (TempMeshPtr)
 #endif
@@ -2410,7 +2410,7 @@ namespace PigeonEngine
 			}
 		}
 
-		Check((ENGINE_ASSET_ERROR), ("Check read mesh resource rest memory already failed."), (RstMemSize == 0));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check read mesh resource rest memory already failed."), (RstMemSize == 0));
 
 #undef LOAD_ASSET_MEMORY
 #undef LOAD_ASSET_STRING_MEMORY
@@ -2464,12 +2464,12 @@ namespace PigeonEngine
 			if (InMesh->IsTypeOf<ESkinnedMesh>())
 			{
 				const ESkinnedMesh* TempMeshPtr = InMesh->AsType<ESkinnedMesh>();
-				Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+				PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
 #if _EDITOR_ONLY
 				if (TempMeshPtr)
 #endif
 				{
-					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
+					PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh bind pose num error."), ((TempMeshPtr->GetBindPoseValue().Length()) == (TempMeshPtr->GetBindPoseIndex().Length())));
 					Result += sizeof(UINT32);	// Bind pose num
 					Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(Matrix4x4)) * TempMeshPtr->GetBindPoseValue().Length();	// Bind pose value datas
 					Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * TempMeshPtr->GetBindPoseIndex().Length();		// Bind pose Index datas
@@ -2480,7 +2480,7 @@ namespace PigeonEngine
 					{
 						const ESkinData& SkinData = SkinPart[SkinIndex];
 						const UINT32 EffectBoneNum = SkinData.Stride / sizeof(FLOAT);
-						Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), (EffectBoneNum == (TempMeshPtr->GetEffectBoneNum())));
+						PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), (EffectBoneNum == (TempMeshPtr->GetEffectBoneNum())));
 						Result += sizeof(UINT32);	// Skin element num
 						Result += sizeof(UINT32);	// Skin part type
 						Result += sizeof(UINT32) * EffectBoneNum * SkinData.ElementNum;	// Skin index datas
@@ -2514,7 +2514,7 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_MEMORY(__Type, __Value) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
 			__Type* TempPtr = (__Type*)RstMemPtr;\
 			TempPtr[0] = (__Value);\
 			RstMemPtr = &(TempPtr[1]);\
@@ -2524,7 +2524,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
 		{\
 			const UINT32 NameLengthMax = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
 			const EString& SavedName = (__EString);\
 			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
 			CHAR* TempPtr = (CHAR*)RstMemPtr;\
@@ -2536,7 +2536,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save mesh asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			BYTE* TempPtr = (BYTE*)RstMemPtr;\
 			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
 			RstMemPtr = &(TempPtr[MemSize]);\
@@ -2586,14 +2586,14 @@ namespace PigeonEngine
 		if (InMeshResource->IsTypeOf<ESkinnedMesh>())
 		{
 			const ESkinnedMesh* TempMeshPtr = InMeshResource->AsType<ESkinnedMesh>();
-			Check((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh is null."), (!!TempMeshPtr));
 #if _EDITOR_ONLY
 			if (TempMeshPtr)
 #endif
 			{
 				const ESkinnedMesh::EBindPoseValue& BindPoseValues = TempMeshPtr->GetBindPoseValue();
 				const ESkinnedMesh::EBindPoseIndex& BindPoseIndices = TempMeshPtr->GetBindPoseIndex();
-				Check((ENGINE_ASSET_ERROR), ("Check save skinned mesh asset bind pose num error."), (BindPoseValues.Length() == BindPoseIndices.Length()));
+				PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skinned mesh asset bind pose num error."), (BindPoseValues.Length() == BindPoseIndices.Length()));
 				const UINT32 BindPoseNum = BindPoseValues.Length();
 
 				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(BindPoseNum));
@@ -2621,7 +2621,7 @@ namespace PigeonEngine
 				for (UINT32 i = 0u, n = SkinPart.Length(); i < n; i++)
 				{
 					const ESkinData& SkinData = SkinPart[i];
-					Check((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), ((SkinData.Stride / sizeof(FLOAT)) == EffectBoneNum));
+					PE_CHECK((ENGINE_ASSET_ERROR), ("Check skinned mesh effect bone num error."), ((SkinData.Stride / sizeof(FLOAT)) == EffectBoneNum));
 
 					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.ElementNum));
 					SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(SkinData.PartType));
@@ -2631,7 +2631,7 @@ namespace PigeonEngine
 			};
 		}
 
-		Check((ENGINE_ASSET_ERROR), ("Check write mesh resource rest memory already failed."), (RstMemSize == 0));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check write mesh resource rest memory already failed."), (RstMemSize == 0));
 
 #undef SAVE_ASSET_MEMORY
 #undef SAVE_ASSET_STRING_MEMORY
@@ -2651,7 +2651,7 @@ namespace PigeonEngine
 	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
 	{
 		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
-		Check((ENGINE_ASSET_ERROR), ("Check output static mesh asset pointer is initialized failed."), (!OutAsset));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output static mesh asset pointer is initialized failed."), (!OutAsset));
 		if (MeshAssetManager->LoadStaticMeshAsset(InLoadPath, InLoadName, OutAsset))
 		{
 			return;

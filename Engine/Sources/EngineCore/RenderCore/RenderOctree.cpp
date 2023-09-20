@@ -224,7 +224,7 @@ namespace PigeonEngine
 										//TODO GetOctreeArrayIndex(OutOctreePerAxisCellNum, const FBezierGrassOctreeLayerInfo& InLayerInfo, INT32 InX, INT32 InY, INT32 InZ);
 										TempParentIndex = TempParentParentCellNum + (ParentLayerDimension[0] * ParentLayerDimension[2]) * TempParentIndexY + ParentLayerDimension[2] * TempParentIndexX + TempParentIndexZ;
 									}
-									Check((ENGINE_RENDER_CORE_ERROR), ("Render octree's parent node index is over node array."), (TempParentIndex < ((INT32)(OutOctreeNodes.Length()))));
+									PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Render octree's parent node index is over node array."), (TempParentIndex < ((INT32)(OutOctreeNodes.Length()))));
 									AddNode.ParentIndex = TempParentIndex;
 									OutOctreeNodes[TempParentIndex].ChildrenIndex.Add(NodeIndex);
 								}
@@ -243,7 +243,7 @@ namespace PigeonEngine
 		{
 			return Result;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if ((!InSceneProxy) || (!(InSceneProxy->IsRenderValid())))
 		{
 			return Result;
@@ -262,7 +262,7 @@ namespace PigeonEngine
 		}
 		Element.PrimitiveMapping.Add(InSceneProxy->GetUniqueID(), (INT32)(Element.Primitives.Length()));
 		Element.Primitives.Add(InSceneProxy);
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		Result = TRUE;
 		return Result;
 	}
@@ -273,7 +273,7 @@ namespace PigeonEngine
 		{
 			return Result;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if (OutErrorPrimitives.Length() > 0u)
 		{
 			OutErrorPrimitives.Clear();
@@ -297,7 +297,7 @@ namespace PigeonEngine
 		{
 			return Result;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if (!InSceneProxy)
 		{
 			return Result;
@@ -311,14 +311,14 @@ namespace PigeonEngine
 		}
 		ROctreeElement& Element = Elements[TempElementIndex];
 		const UINT32 PrimitiveNum = Element.Primitives.Length();
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		if (PrimitiveNum == 0u)
 		{
 			return Result;
 		}
 		if (INT32 PrimitiveMappingValue = -1; Element.PrimitiveMapping.FindValue(InSceneProxy->GetUniqueID(), PrimitiveMappingValue))
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive index in render octree element failed."), ((PrimitiveMappingValue >= 0) && (PrimitiveMappingValue < ((INT32)PrimitiveNum))));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check primitive index in render octree element failed."), ((PrimitiveMappingValue >= 0) && (PrimitiveMappingValue < ((INT32)PrimitiveNum))));
 			const UINT32 PrimitiveIndex = (UINT32)PrimitiveMappingValue;
 			const ObjectIdentityType& PrimitiveID = InSceneProxy->GetUniqueID();
 			Element.PrimitiveMapping.Remove(PrimitiveID);
@@ -332,7 +332,7 @@ namespace PigeonEngine
 			Element.Primitives.Pop();
 			Result = TRUE;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree element primitive container failed."), (Element.Primitives.Length() == Element.PrimitiveMapping.Length()));
 		return Result;
 	}
 	BOOL32 ROctree::RemovePrimitives(const TArray<RPrimitiveSceneProxy*>& InPrimitives, TArray<INT32>& OutErrorPrimitives)
@@ -342,7 +342,7 @@ namespace PigeonEngine
 		{
 			return Result;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		if (OutErrorPrimitives.Length() > 0u)
 		{
 			OutErrorPrimitives.Clear();
@@ -411,8 +411,8 @@ namespace PigeonEngine
 		if (SplitOctreeInternal(LevelBoundsOrigin, LevelBoundsExtent, (TargetCellSize / 2.f), BoundOrigin, BoundSize,
 			UsedCellSize, TempPerAxisCellNum, TempPerAxisDepth, MaxDepth, LayerInfos, Elements, Nodes))
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis cell num array failed."), (TempPerAxisCellNum.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis depth array failed."), (TempPerAxisDepth.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis cell num array failed."), (TempPerAxisCellNum.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree per axis depth array failed."), (TempPerAxisDepth.Length() == EOctreeAxisType::OCTREE_AXIS_COUNT));
 			for (UINT32 i = 0u; i < EOctreeAxisType::OCTREE_AXIS_COUNT; i++)
 			{
 				PerAxisCellNum[i] = TempPerAxisCellNum[i];
@@ -429,7 +429,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree nodes and elements num failed."), (Nodes.Length() == Elements.Length()));
 		BOOL32						Result			= FALSE;
 		TArray<BOOL32>				VisibleNodeMaps;
 		TArray<INT32>				OldNewMaps;
@@ -517,7 +517,7 @@ namespace PigeonEngine
 				{
 					const INT32 AddElementIndex = (INT32)(Elements.Length());
 					const INT32 AddNodeIndex = (INT32)(Nodes.Length());
-					Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree add element and node failed."), (AddElementIndex == AddNodeIndex));
+					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree add element and node failed."), (AddElementIndex == AddNodeIndex));
 					ROctreeElement& AddElement = Elements.Add_Default_GetRef();
 					ROctreeNode& AddNode = Nodes.Add_Default_GetRef();
 					OldNewMaps[OldNodeElementIndex] = AddNodeIndex;
@@ -565,7 +565,7 @@ namespace PigeonEngine
 	}
 	UINT32 ROctree::GetAxisCellNum(EOctreeAxisType InAxisType)const
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
 #if _EDITOR_ONLY
 		if ((InAxisType >= EOctreeAxisType::OCTREE_AXIS_X) && (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT))
 #endif
@@ -578,7 +578,7 @@ namespace PigeonEngine
 	}
 	UINT32 ROctree::GetAxisDepth(EOctreeAxisType InAxisType)const
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check octree axis type failed."), (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT));
 #if _EDITOR_ONLY
 		if ((InAxisType >= EOctreeAxisType::OCTREE_AXIS_X) && (InAxisType < EOctreeAxisType::OCTREE_AXIS_COUNT))
 #endif
@@ -607,7 +607,7 @@ namespace PigeonEngine
 	}
 	void ROctree::SetTargetCellSize(const Vector3& InTargetCellSize)
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render octree target cell size failed."), ((InTargetCellSize.x > 0.5f) && (InTargetCellSize.y > 0.5f) && (InTargetCellSize.z > 0.5f)));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render octree target cell size failed."), ((InTargetCellSize.x > 0.5f) && (InTargetCellSize.y > 0.5f) && (InTargetCellSize.z > 0.5f)));
 		TargetCellSize = InTargetCellSize;
 	}
 

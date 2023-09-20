@@ -356,7 +356,7 @@ namespace PigeonEngine
 		}
 		virtual BOOL32 IsRenderResourceValid()const override
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check index buffer short index failed."), (UseShort ? (IndexCount <= 65536u) : TRUE));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check index buffer short index failed."), (UseShort ? (IndexCount <= 65536u) : TRUE));
 			return (RBufferResource::IsRenderResourceValid() && (IndexCount != 0u));
 		}
 		virtual void ReleaseRenderResource()override

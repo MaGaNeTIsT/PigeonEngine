@@ -94,10 +94,10 @@ namespace PigeonEngine
 	}
 	PE_INLINE static void StoreVertexData(const aiVector2D* InOriginDatas, const UINT32 InOriginDataNum, const UINT32 InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
-		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		if (InOriginDatas && OutStoredDatas)
 		{
 			for (UINT32 i = 0u; i < InOriginDataNum; i++)
@@ -110,10 +110,10 @@ namespace PigeonEngine
 	}
 	PE_INLINE static void StoreVertexData(const aiVector3D* InOriginDatas, const UINT32 InOriginDataNum, const UINT32 InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
-		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		if (InOriginDatas && OutStoredDatas)
 		{
 			for (UINT32 i = 0u; i < InOriginDataNum; i++)
@@ -130,10 +130,10 @@ namespace PigeonEngine
 	}
 	PE_INLINE static void StoreVertexData(const aiColor4D* InOriginDatas, const UINT32 InOriginDataNum, const UINT32 InStoredDataStrideIn32Bits, FLOAT*& OutStoredDatas)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
-		Check((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
-		Check((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored origin vertex data can not be null."), (!!InOriginDatas));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Number of stored origin vertex data is too small."), (InOriginDataNum >= 3u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data's stride must be bigger than 2 in 32bits."), (InStoredDataStrideIn32Bits >= 2u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored vertex data can not be null."), (!!OutStoredDatas));
 		if (InOriginDatas && OutStoredDatas)
 		{
 			for (UINT32 i = 0u; i < InOriginDataNum; i++)
@@ -165,10 +165,10 @@ namespace PigeonEngine
 	};
 	PE_INLINE static void StoreSkinData(const TArray<EReaderVertexWeights>& InDatas, const UINT32 InMaxEffectNum, UINT32*& OutIndices, FLOAT*& OutWeights)
 	{
-		Check((ENGINE_ASSET_ERROR), ("Stored origin skin data can not be null."), (InDatas.Length() > 0u));
-		Check((ENGINE_ASSET_ERROR), ("Stored skin data's effect bone num must be bigger than 1."), (InMaxEffectNum >= 1u));
-		Check((ENGINE_ASSET_ERROR), ("Stored indices data can not be null."), (!!OutIndices));
-		Check((ENGINE_ASSET_ERROR), ("Stored weights data can not be null."), (!!OutWeights));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored origin skin data can not be null."), (InDatas.Length() > 0u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored skin data's effect bone num must be bigger than 1."), (InMaxEffectNum >= 1u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored indices data can not be null."), (!!OutIndices));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Stored weights data can not be null."), (!!OutWeights));
 		if (OutIndices && OutWeights && InDatas.Length() > 0u)
 		{
 			for (UINT32 i = 0u, n = InDatas.Length(); i < n; i++)
@@ -609,14 +609,14 @@ namespace PigeonEngine
 #endif
 		{
 #if !(_TEST_MODE || _SHIPPING_MODE)
-			Check((ENGINE_ASSET_ERROR), ("number of [BlendIndices] and number of [BlendWeight] is not matched."), ((BlendIndicesSlots.Length()) == (BlendWeightsSlots.Length())));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("number of [BlendIndices] and number of [BlendWeight] is not matched."), ((BlendIndicesSlots.Length()) == (BlendWeightsSlots.Length())));
 #endif
 			for (UINT32 BlendIndex = 0u, BlendNum = BlendIndicesSlots.Length(); BlendIndex < BlendNum; BlendIndex++)
 			{
 				UINT32 BlendIndicesSlot = BlendIndicesSlots[BlendIndex];
 				UINT32 BlendWeightsSlot = BlendWeightsSlots[BlendIndex];
 #if !(_TEST_MODE || _SHIPPING_MODE)
-				Check((ENGINE_ASSET_ERROR), ("slot of [BlendIndices] and slot of [BlendWeight] is not matched."), (BlendIndicesSlot == BlendWeightsSlot));
+				PE_CHECK((ENGINE_ASSET_ERROR), ("slot of [BlendIndices] and slot of [BlendWeight] is not matched."), (BlendIndicesSlot == BlendWeightsSlot));
 #else
 				if (BlendIndicesSlot != BlendWeightsSlot)
 				{
@@ -644,7 +644,7 @@ namespace PigeonEngine
 		for (UINT32 FaceIndex = 0u, FaceNum = InMesh->mNumFaces; FaceIndex < FaceNum; FaceIndex++)
 		{
 			const aiFace& TempFace = InMesh->mFaces[FaceIndex];
-			Check((ENGINE_ASSET_ERROR), ("We must import mesh that only consist of triangles."), (TempFace.mNumIndices == 3u));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("We must import mesh that only consist of triangles."), (TempFace.mNumIndices == 3u));
 			for (UINT32 TriangleIndex = 0u; TriangleIndex < 3u; TriangleIndex++)
 			{
 				if ((FaceIndex * 3u + TriangleIndex) < ElementNum)
@@ -652,7 +652,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 					if (IndexStride == 2u)
 					{
-						Check((ENGINE_ASSET_ERROR), ("Half type index buffer can not greater than 65535u."), ((TempFace.mIndices[TriangleIndex]) <= 0xffffu));
+						PE_CHECK((ENGINE_ASSET_ERROR), ("Half type index buffer can not greater than 65535u."), ((TempFace.mIndices[TriangleIndex]) <= 0xffffu));
 					}
 #endif
 					OutMeshIndices->Indices[FaceIndex * 3u + TriangleIndex] = TempFace.mIndices[TriangleIndex];
@@ -1084,7 +1084,7 @@ namespace PigeonEngine
 		{
 			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletalMesh;
 			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletalMesh);
-			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
 			for (UINT32 i = 0u, n = TempMeshes.Length(); i < n; i++)
 			{
 				if (TempIsSkeletalMesh[i])
@@ -1103,7 +1103,7 @@ namespace PigeonEngine
 			return Result;
 		}
 
-		Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (Meshes.Length() > 0u));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (Meshes.Length() > 0u));
 
 		const RShaderSemanticType* EngineLayouts; UINT32 EngineLayoutNum;
 		GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
@@ -1263,7 +1263,7 @@ namespace PigeonEngine
 		{
 			TArray<const aiMesh*> TempMeshes; TArray<TArray<RShaderSemanticType>> TempMeshesLayouts; TArray<BOOL32> TempIsSkeletalMesh;
 			FindMeshesAndVertexLayouts(Scene, TempMeshes, TempMeshesLayouts, TempIsSkeletalMesh);
-			Check((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Meshes and layouts are not matched."), (TempMeshes.Length() > 0u && TempMeshes.Length() == TempMeshesLayouts.Length() && TempMeshes.Length() == TempIsSkeletalMesh.Length()));
 			for (UINT32 i = 0u, n = TempMeshes.Length(); i < n; i++)
 			{
 				if (!(TempIsSkeletalMesh[i]))

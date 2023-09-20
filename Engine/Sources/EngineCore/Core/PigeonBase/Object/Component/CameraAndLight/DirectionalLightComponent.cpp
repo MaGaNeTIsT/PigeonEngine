@@ -77,7 +77,7 @@ namespace PigeonEngine
 	}
 	RDirectionalLightSceneProxy* PDirectionalLightComponent::CreateSceneProxy()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
 		SceneProxy = new RDirectionalLightSceneProxy(this);
 		return SceneProxy;
 	}

@@ -63,6 +63,12 @@ namespace PigeonEngine
 #define PE_DLLEXPORT					__declspec(dllexport)								/* DLL export definitions */
 #define PE_DLLIMPORT					__declspec(dllimport)								/* DLL import definitions */
 
+#if _EDITOR_ONLY
+#define PE_BREAKPOINT					(__debugbreak())
+#else
+#define PE_BREAKPOINT					(;)
+#endif
+
 #define PE_FLOAT32_MAX					(3.402823466e+38f)
 
 #define PE_PI							(3.1415926535897932f)								/* Extra digits if needed: 3.1415926535897932384626433832795f */

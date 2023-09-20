@@ -118,7 +118,7 @@ namespace PigeonEngine
 	}
 	RViewProxy* PCameraComponent::CreateSceneProxy()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!ViewProxy));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!ViewProxy));
 		ViewProxy = new RViewProxy(this);
 		return ViewProxy;
 	}

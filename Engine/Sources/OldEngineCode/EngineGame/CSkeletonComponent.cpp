@@ -208,7 +208,7 @@ void CSkeletonComponent::Uninit()
 }
 void CSkeletonComponent::Update()
 {
-	// TODO Check(!this->IsValid())
+	// TODO PE_CHECK(!this->IsValid())
 	this->m_SkeletonPerFrameUpload = TRUE;
 	this->UpdateSkeletonTransformInfo();
 }

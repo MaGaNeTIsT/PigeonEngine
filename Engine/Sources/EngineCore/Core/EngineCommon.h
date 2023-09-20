@@ -732,7 +732,7 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
+			PE_CHECK((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((!!InLayers) && (!!InBorders) && (InCascadeNum > 0u)));
 			for (UINT32 i = 0u; i < InCascadeNum; i++)
 			{
 #if _EDITOR_ONLY
@@ -782,7 +782,7 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			Check((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((InLayers.Length() > 0u) && (InLayers.Length() == (InLayers.Length() + 1u))));
+			PE_CHECK((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((InLayers.Length() > 0u) && (InLayers.Length() == (InLayers.Length() + 1u))));
 			Layers	= InLayers;
 			Borders	= InBorders;
 		}

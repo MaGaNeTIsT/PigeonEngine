@@ -21,7 +21,7 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent)
 		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), Component(InComponent)
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Create static mesh scene proxy failed"), (!!Component));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create static mesh scene proxy failed"), (!!Component));
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy()
 		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), Component(nullptr)

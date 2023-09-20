@@ -79,7 +79,7 @@ namespace PigeonEngine
 
 	void PActor::DetachFromParentActor()
 	{
-		Check(ENGINE_ACTOR_ERROR, "This actor belong to no world", this->GetWorld() != nullptr);
+		PE_CHECK(ENGINE_ACTOR_ERROR, "This actor belong to no world", this->GetWorld() != nullptr);
 		ETransform WolrdTrans = this->GetActorWorldTransform();
 		if(this->AttachedParentActor)
 		{
@@ -101,8 +101,8 @@ namespace PigeonEngine
 
 	void PActor::AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform)
 	{
-		Check(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
-		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
+		PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
 		
 		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), RelativeTransform);
 		Parent->ChildrenActors.Add(Child);
@@ -111,7 +111,7 @@ namespace PigeonEngine
 
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
 	{
-		Check(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot != nullptr);
+		PE_CHECK(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot != nullptr);
 		// NewRoot->SetComponentTransform(RootComponent->GetTransform());
 		// RootComponent->ReparentChildren(NewRoot);
 		if (RootComponent)
@@ -192,14 +192,14 @@ namespace PigeonEngine
 	
 	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform )
 	{
-		Check(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !(!Component || !Actor || !Actor->GetRootComponent()));
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !(!Component || !Actor || !Actor->GetRootComponent()));
 		PSceneComponent::AttachComponentToComponent(Component, Actor->GetRootComponent(), RelativeTransform);
 		
 	}
 
 	void PActor::AddComponent(PActorComponent* NewComponent, const ETransform& RelativeTransform)
 	{
-		Check(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent != nullptr );
+		PE_CHECK(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent != nullptr );
 		
 		
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
@@ -216,7 +216,7 @@ namespace PigeonEngine
 
 	void PActor::DestoyComponent(PActorComponent* Component)
 	{
-		Check(ENGINE_ACTOR_ERROR, "You are destroy a component doesn't belonged to this", !Components.Contains(Component));
+		PE_CHECK(ENGINE_ACTOR_ERROR, "You are destroy a component doesn't belonged to this", !Components.Contains(Component));
 		Component->Destroy();
 	}
 

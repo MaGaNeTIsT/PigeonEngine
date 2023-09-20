@@ -384,7 +384,7 @@ namespace PigeonEngine
 			const FLOAT AbsY = Abs(Y);
 			if (AbsY <= PE_SMALL_NUMBER)	// Note: this constant should match that used by VectorMod() implementations
 			{
-				Check((ENGINE_MATH_ERROR), ("FMath::FMod(X, Y) : Y is zero, this is invalid and would result in NaN!"), (Y != 0));
+				PE_CHECK((ENGINE_MATH_ERROR), ("FMath::FMod(X, Y) : Y is zero, this is invalid and would result in NaN!"), (Y != 0));
 				return 0.f;
 			}
 			return fmodf(X, Y);
@@ -394,7 +394,7 @@ namespace PigeonEngine
 			const DOUBLE AbsY = Abs(Y);
 			if (AbsY <= PE_DOUBLE_SMALL_NUMBER)	// Note: this constant should match that used by VectorMod() implementations
 			{
-				Check((ENGINE_MATH_ERROR), ("FMath::FMod(X, Y) : Y is zero, this is invalid and would result in NaN!"), (Y != 0));
+				PE_CHECK((ENGINE_MATH_ERROR), ("FMath::FMod(X, Y) : Y is zero, this is invalid and would result in NaN!"), (Y != 0));
 				return 0.0;
 			}
 			return fmod(X, Y);

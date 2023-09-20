@@ -35,7 +35,7 @@ namespace PigeonEngine
 
 	void PActorComponent::SetOwnerActor(PActor* NewOwner)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "You are setting this component's owner actor to a nullptr. ", NewOwner != nullptr);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "You are setting this component's owner actor to a nullptr. ", NewOwner != nullptr);
 		this->Owner = NewOwner;
 		// NewOwner->AddComponent(this);
 	}

@@ -25,11 +25,11 @@ namespace PigeonEngine
 	}
 	RSceneTextures::~RSceneTextures()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneDepthStencil.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneColor.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferA.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferB.IsRenderResourceValid())));
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferC.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneDepthStencil.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(SceneColor.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferA.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferB.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferC.IsRenderResourceValid())));
 	}
 	void RSceneTextures::InitResources(const Vector2Int& InTextureSize, const BOOL32 IsNeedStencil)
 	{
@@ -64,7 +64,7 @@ namespace PigeonEngine
 						RBindFlagType::BIND_DEPTH_STENCIL | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_UNKNOWN, nullptr, nullptr, nullptr, 32u, NeedStencil));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 		}
 		if (NeedRecreateTexture)
@@ -77,7 +77,7 @@ namespace PigeonEngine
 						RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_R11G11B10_FLOAT));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
 #if _EDITOR_ONLY
@@ -88,7 +88,7 @@ namespace PigeonEngine
 						RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_R8G8B8A8_UNORM));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
 #if _EDITOR_ONLY
@@ -99,7 +99,7 @@ namespace PigeonEngine
 						RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_R10G10B10A2_UNORM));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 
 #if _EDITOR_ONLY
@@ -110,7 +110,7 @@ namespace PigeonEngine
 						RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_R8G8B8A8_UNORM));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
 #endif
 		}
 	}
@@ -145,11 +145,11 @@ namespace PigeonEngine
 	}
 	RShadowTexture::~RShadowTexture()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check shadow texture release failed."), (ShadowMaps.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow texture release failed."), (ShadowMaps.Length() == 0u));
 	}
 	void RShadowTexture::InitResources(const TArray<Vector2Int>& InTextureSizes)
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Init shadow texture's num can not smaller than 0."), (InTextureSizes.Length() > 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Init shadow texture's num can not smaller than 0."), (InTextureSizes.Length() > 0u));
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		for (UINT32 i = 0u, n = InTextureSizes.Length(); i < n; i++)
 		{
@@ -162,7 +162,7 @@ namespace PigeonEngine
 			{
 				ShadowMaps.Add_Default_GetRef();
 			}
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Length() == ShadowMaps.Length()));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Length() == ShadowMaps.Length()));
 			if ((TextureSizes[i].x == TextureSize.x) && (TextureSizes[i].y == TextureSize.y))
 			{
 				continue;
@@ -179,13 +179,13 @@ namespace PigeonEngine
 						RBindFlagType::BIND_DEPTH_STENCIL | RBindFlagType::BIND_SHADER_RESOURCE,
 						RFormatType::FORMAT_UNKNOWN, nullptr, nullptr, nullptr, RCommonSettings::RENDER_SHADOW_MAP_DEPTH_BIT));
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check create shadow texture failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create shadow texture failed."), (Result));
 #endif
 		}
 	}
 	void RShadowTexture::ClearResources()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Clear shadow texture's num can not smaller than 0."), (ShadowMaps.Length() > 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Clear shadow texture's num can not smaller than 0."), (ShadowMaps.Length() > 0u));
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		for (UINT32 i = 0u, n = ShadowMaps.Length(); i < n; i++)
 		{
@@ -194,7 +194,7 @@ namespace PigeonEngine
 	}
 	void RShadowTexture::ReleaseResources()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Length() == ShadowMaps.Length()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Length() == ShadowMaps.Length()));
 		if (const UINT32 ShadowMapNum = ShadowMaps.Length(); ShadowMapNum > 0u)
 		{
 			for (UINT32 i = 0u; i < ShadowMapNum; i++)

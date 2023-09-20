@@ -24,7 +24,7 @@ namespace PigeonEngine
 	}
 	RSceneRenderer::~RSceneRenderer()
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!!Scene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!!Scene));
 	}
 	void RSceneRenderer::Initialize()
 	{
@@ -129,7 +129,7 @@ namespace PigeonEngine
 				SimpleFullScreenPixelShader,
 				&ImportPath, &ImportPSName);
 		}
-		Check((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
 		Scene = new RScene();
 	}
 	void RSceneRenderer::ShutDown()
@@ -227,7 +227,7 @@ namespace PigeonEngine
 			{
 				RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
 				if (!ViewProxy)
 				{
 					continue;
@@ -245,7 +245,7 @@ namespace PigeonEngine
 		{
 			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
 			if (!ViewProxy)
 			{
 				continue;
@@ -285,7 +285,7 @@ namespace PigeonEngine
 		{
 			const RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
 			if (!ViewProxy)
 			{
 				continue;
@@ -364,7 +364,7 @@ namespace PigeonEngine
 		{
 			RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
 #if _EDITOR_ONLY
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
 			if (!LightProxy)
 			{
 				continue;
@@ -373,7 +373,7 @@ namespace PigeonEngine
 			LightProxy->GenerateViewInfo(InViewProxy);
 
 			RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
 			RDirectionalLightSceneProxy::RPerViewVisibilityMapType& VisibilityMaps = LightProxy->GetVisibilityMap();
 			if (!(VisibilityMaps.ContainsKey(InViewProxy->GetUniqueID())))
 			{
@@ -382,7 +382,7 @@ namespace PigeonEngine
 
 			TArray<RDirectionalLightSceneProxy::RVisibilityMapType>&	LayerVisibilityMap	= VisibilityMaps[InViewProxy->GetUniqueID()];
 			const TArray<EViewDomainInfo>&								DomainInfos			= ViewDomainInfos[InViewProxy->GetUniqueID()];
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), ((ViewDomainInfos.Length() > 0u) && ((!(LightProxy->IsLightUseCascadeShadow())) || ((LightProxy->IsLightUseCascadeShadow()) && (!!(LightProxy->GetCascadeShadowData())) && ((LightProxy->GetCascadeShadowData()->Layers.Length()) == (ViewDomainInfos.Length()))))));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), ((ViewDomainInfos.Length() > 0u) && ((!(LightProxy->IsLightUseCascadeShadow())) || ((LightProxy->IsLightUseCascadeShadow()) && (!!(LightProxy->GetCascadeShadowData())) && ((LightProxy->GetCascadeShadowData()->Layers.Length()) == (ViewDomainInfos.Length()))))));
 			for (UINT32 DomainIndex = 0u, DomainNum = DomainInfos.Length(); DomainIndex < DomainNum; DomainIndex++)
 			{
 				if (DomainIndex >= LayerVisibilityMap.Length())
@@ -412,7 +412,7 @@ namespace PigeonEngine
 			{
 				RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
 #if _EDITOR_ONLY
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
 				if (!LightProxy)
 				{
 					continue;
@@ -420,7 +420,7 @@ namespace PigeonEngine
 #endif
 				TArray<Vector2Int> ShadowTextureSizes;
 				RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
 				const TArray<EViewDomainInfo>& DomainInfos = ViewDomainInfos[InViewProxy->GetUniqueID()];
 				for (UINT32 DomainIndex = 0u, DomainNum = DomainInfos.Length(); DomainIndex < DomainNum; DomainIndex++)
 				{
@@ -467,13 +467,13 @@ namespace PigeonEngine
 		SceneOctree.BackwardRecursionNode(0, TempDeep,
 			[&InOutVisibilityMap, &OctreeElements](ROctreeNode& InNode, INT32 InDeep)->INT32
 			{
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check element index of octree node is valid failed."), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < ((INT32)(OctreeElements.Length())))));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check element index of octree node is valid failed."), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < ((INT32)(OctreeElements.Length())))));
 				const ROctreeElement& OctreeElement = OctreeElements[InNode.ElementIndex];
 				for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = OctreeElement.Primitives.Length(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 				{
 					const RPrimitiveSceneProxy* PrimitiveSceneProxy = OctreeElement.Primitives[PrimitiveIndex];
 #if _EDITOR_ONLY
-					Check((ENGINE_RENDER_CORE_ERROR), ("Check primitive scene proxy is null."), (!!PrimitiveSceneProxy));
+					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check primitive scene proxy is null."), (!!PrimitiveSceneProxy));
 					if (!PrimitiveSceneProxy)
 					{
 						continue;
@@ -487,7 +487,7 @@ namespace PigeonEngine
 			},
 			[&TempAxis, &InViewFrustum, &OctreeLayerInfos, &OctreeLayerNum](ROctreeNode& InNode, INT32 InDeep)->BOOL32
 			{
-				Check((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene octree deep with layer infos failed."), (InDeep < OctreeLayerNum));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene octree deep with layer infos failed."), (InDeep < OctreeLayerNum));
 				const Vector3 NodeOrigin = InNode.Origin;
 				const Vector3 NodeExtent = OctreeLayerInfos[InDeep].Extent;
 				const FLOAT AxisExtent[3] = { NodeExtent.x, NodeExtent.x, NodeExtent.z };

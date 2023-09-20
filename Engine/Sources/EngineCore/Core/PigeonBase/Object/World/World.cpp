@@ -79,8 +79,8 @@ namespace PigeonEngine
 
     void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)
     {
-		Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor != nullptr);
-		Check(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding world root to world.", NewActor != RootActor);
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding nullptr to world.", NewActor != nullptr);
+		PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::AddActor : Adding world root to world.", NewActor != RootActor);
         
         
         NewActor->AttachToActor(RootActor);

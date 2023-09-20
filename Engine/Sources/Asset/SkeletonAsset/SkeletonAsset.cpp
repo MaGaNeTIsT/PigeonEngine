@@ -702,7 +702,7 @@ namespace PigeonEngine
 #define LOAD_ASSET_MEMORY(__MemType, __MemSize, __OutputValue) \
 		__MemType __OutputValue;\
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= (__MemSize)));\
 			const __MemType* TempPtr = (const __MemType*)RstMemPtr;\
 			(__OutputValue) = TempPtr[0];\
 			RstMemPtr = &(TempPtr[1]);\
@@ -713,7 +713,7 @@ namespace PigeonEngine
 		EString __OutputEString;\
 		{\
 			const UINT32 StrStride = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= StrStride));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= StrStride));\
 			const CHAR* TempPtr = (const CHAR*)RstMemPtr;\
 			CHAR StrValues[(__LengthMax)];\
 			::memcpy_s(StrValues, StrStride, TempPtr, StrStride);\
@@ -726,7 +726,7 @@ namespace PigeonEngine
 		__PtrType* __Ptr = nullptr;\
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check load skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			void* NewPtr = new BYTE[MemSize];\
 			const BYTE* TempPtr = (const BYTE*)RstMemPtr;\
 			::memcpy_s(NewPtr, MemSize, TempPtr, MemSize);\
@@ -799,7 +799,7 @@ namespace PigeonEngine
 						BoneData.Children.Add(TempChildIndex);
 					}
 
-					Check((ENGINE_ASSET_ERROR), ("Check read skeleton resource's bone index failed"), (TempIndex == i));
+					PE_CHECK((ENGINE_ASSET_ERROR), ("Check read skeleton resource's bone index failed"), (TempIndex == i));
 
 					BoneData.Index				= TempIndex;
 					BoneData.Name				= TempBoneName;
@@ -817,7 +817,7 @@ namespace PigeonEngine
 				}
 			}
 
-			Check((ENGINE_ASSET_ERROR), ("Check read skeleton resource rest memory already failed."), (RstMemSize == 0));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check read skeleton resource rest memory already failed."), (RstMemSize == 0));
 		}
 
 #undef LOAD_ASSET_MEMORY
@@ -892,7 +892,7 @@ namespace PigeonEngine
 
 #define SAVE_ASSET_MEMORY(__Type, __Value) \
 		{\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= (sizeof(__Type))));\
 			__Type* TempPtr = (__Type*)RstMemPtr;\
 			TempPtr[0] = (__Value);\
 			RstMemPtr = &(TempPtr[1]);\
@@ -902,7 +902,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_STRING_MEMORY(__EString, __LengthMax) \
 		{\
 			const UINT32 NameLengthMax = sizeof(CHAR) * (__LengthMax);\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= NameLengthMax));\
 			const EString& SavedName = (__EString);\
 			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
 			CHAR* TempPtr = (CHAR*)RstMemPtr;\
@@ -914,7 +914,7 @@ namespace PigeonEngine
 #define SAVE_ASSET_PTR_MEMORY(__ElementStride, __ElementNum, __Ptr) \
 		{\
 			const UINT32 MemSize = (__ElementStride) * (__ElementNum);\
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton asset [rest memory size] failed."), (RstMemSize >= MemSize));\
 			BYTE* TempPtr = (BYTE*)RstMemPtr;\
 			::memcpy_s(TempPtr, MemSize, (__Ptr), MemSize);\
 			RstMemPtr = &(TempPtr[MemSize]);\
@@ -929,7 +929,7 @@ namespace PigeonEngine
 			const ESkeleton::EBonePart&		BonePart	= InSkeletonResource->GetBonePart();
 			const TMap<EString, USHORT>&	BoneMapping = InSkeletonResource->GetBoneMapping();
 			const USHORT BoneNum = static_cast<USHORT>(BonePart.Length());	// Skeleton bone num can not greater than 65535u.
-			Check((ENGINE_ASSET_ERROR), ("Check save skeleton asset bone num failed, bone mapping num is not match bone num."), ((BoneNum > 0u) && (BoneNum == static_cast<USHORT>(BoneMapping.Length()))));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check save skeleton asset bone num failed, bone mapping num is not match bone num."), ((BoneNum > 0u) && (BoneNum == static_cast<USHORT>(BoneMapping.Length()))));
 
 			SAVE_ASSET_MEMORY(USHORT, BoneNum);
 
@@ -960,7 +960,7 @@ namespace PigeonEngine
 				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
 			}
 
-			Check((ENGINE_ASSET_ERROR), ("Check write skeleton resource rest memory already failed."), (RstMemSize == 0));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton resource rest memory already failed."), (RstMemSize == 0));
 		}
 
 #undef SAVE_ASSET_MEMORY

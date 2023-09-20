@@ -19,7 +19,7 @@ namespace PigeonEngine
     }
     PSkeletalMeshComponent::~PSkeletalMeshComponent()
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
     }
     RSkeletalMeshSceneProxy* PSkeletalMeshComponent::GetSceneProxy()
     {
@@ -31,7 +31,7 @@ namespace PigeonEngine
     }
     RSkeletalMeshSceneProxy* PSkeletalMeshComponent::CreateSceneProxy()
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
         SceneProxy = new RSkeletalMeshSceneProxy(this);
         return SceneProxy;
     }

@@ -229,7 +229,7 @@ namespace PigeonEngine
             OutDotBackwardStr   = ESettings::ENGINE_DEFAULT_NAME;
             return FALSE;
         }
-        Check((ENGINE_STRING_ERROR), ("Check string rest length error."), (OriginStrLen >= (LastDot + 1u)));
+        PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (OriginStrLen >= (LastDot + 1u)));
         OutDotForwardStr    = InOriginStr.Substring(0u, LastDot);
         OutDotBackwardStr   = InOriginStr.Substring((LastDot + 1u), OriginStrLen - (LastDot + 1u));
         return TRUE;

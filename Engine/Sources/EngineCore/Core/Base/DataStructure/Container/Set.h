@@ -115,7 +115,7 @@ namespace PigeonEngine
     template <typename T>
     T& TSet<T>::Get(const UINT32& Index) const
     {
-        Check(ENGINE_SET_ERROR, "Set has no such index", Index > Length());
+        PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index > Length());
         return Elements[Index];
     }
 

@@ -321,7 +321,7 @@ namespace PigeonEngine
 			{
 				if (textureDesc.Depth == 16u)
 				{
-					Check((ENGINE_RENDER_CORE_ERROR), ("Depth texture with 16 bits can not hold stencil buffer."), (!(textureDesc.HasStencil)));
+					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Depth texture with 16 bits can not hold stencil buffer."), (!(textureDesc.HasStencil)));
 					tFormat = DXGI_FORMAT::DXGI_FORMAT_R16_TYPELESS;
 				}
 				else if (textureDesc.Depth == 24u)

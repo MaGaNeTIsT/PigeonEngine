@@ -34,7 +34,7 @@ namespace PigeonEngine
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
 		: IsMainView(FALSE), Component(InComponent)
 	{
-		Check((ENGINE_RENDER_CORE_ERROR), ("Create view proxy failed"), (!!Component));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create view proxy failed"), (!!Component));
 	}
 	RViewProxy::RViewProxy()
 		: IsMainView(FALSE), Component(nullptr)

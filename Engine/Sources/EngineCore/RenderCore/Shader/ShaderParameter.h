@@ -155,12 +155,12 @@ namespace PigeonEngine
 		void SetupParameter(BYTE* InRawPtr, const UINT32 InOffset, EShaderParameterValueType InValueType,
 			const _TValueType* InInitValuePtr = nullptr, const UINT32 InElementNum = 1u)
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter can not greater than 2G."), ((sizeof(_TValueType) * InElementNum) < ((UINT32)(-1))));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter raw pointer failed."), (!!InRawPtr));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter value type failed."), (
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Shader parameter can not greater than 2G."), ((sizeof(_TValueType) * InElementNum) < ((UINT32)(-1))));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter raw pointer failed."), (!!InRawPtr));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter value type failed."), (
 				(InValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
 				(InValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT)));
-			Check((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter element num failed."), (InElementNum > 0u));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shader parameter element num failed."), (InElementNum > 0u));
 
 			ValuePtr				= &(InRawPtr[InOffset]);
 			ValueType				= InValueType;
@@ -193,7 +193,7 @@ namespace PigeonEngine
 		}
 		void operator=(const void* InValuePtr)
 		{
-			Check((ENGINE_RENDER_CORE_ERROR), ("Shader parameter is invalid, so can not copy value."), (
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Shader parameter is invalid, so can not copy value."), (
 				(!!ValuePtr) &&
 				(ValueType > EShaderParameterValueType::SHADER_PARAMETER_TYPE_UNKNOWN) &&
 				(ValueType < EShaderParameterValueType::SHADER_PARAMETER_TYPE_COUNT) &&

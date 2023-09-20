@@ -40,10 +40,10 @@ namespace PigeonEngine
 
 	void PSceneComponent::AttachComponentToComponent(PSceneComponent* Child, PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child != Parent);
-		Check(ENGINE_COMPONENT_ERROR, "Child is nullptr when attaching", Child );
-		Check(ENGINE_COMPONENT_ERROR, "Parent is nullptr when attaching", Parent);
-		Check(ENGINE_COMPONENT_ERROR, "Parent->GetOwnerActor() is nullptr when attaching", Parent->GetOwnerActor());
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "You are attaching an component to itself", Child != Parent);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "Child is nullptr when attaching", Child );
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "Parent is nullptr when attaching", Parent);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "Parent->GetOwnerActor() is nullptr when attaching", Parent->GetOwnerActor());
 
 		// Remove from current parent
 		Child->DetachFromParentComponent();
@@ -184,7 +184,7 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentLocation(const Vector3& Location)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetLocation_Local(Location);
 		
 		MarkRenderTransformAsDirty();
@@ -192,21 +192,21 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_Local(Rotation);
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentScale(const Vector3& Scale)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_Local(Scale);
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		SetComponentLocation(Trans.GetLocation_Local());
 		SetComponentRotation(Trans.GetRotation_Local());
 		SetComponentScale(Trans.GetScaling_Local());
@@ -215,7 +215,7 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 
 		Transform.SetLocation_World(Location, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
@@ -223,21 +223,21 @@ namespace PigeonEngine
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_World(Rotation, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_World(Scale, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
 	{
-		Check(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
+		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldTransform : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		SetComponentWorldLocation(Trans.GetLocation_World(this->ParentComponent, this->GetOwnerActor()));
 		SetComponentWorldRotation(Trans.GetRotation_World(this->ParentComponent, this->GetOwnerActor()));
 		SetComponentWorldScale(Trans.GetScaling_World(this->ParentComponent, this->GetOwnerActor()));

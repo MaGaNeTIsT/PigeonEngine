@@ -569,7 +569,7 @@ namespace PigeonEngine
 #endif
 			return nullptr;
 		}
-		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
 		BOOL32 Result = FALSE;
 		void* TempPtr = ReadFileMem;
 		ULONG RstSize = ReadFileSize;

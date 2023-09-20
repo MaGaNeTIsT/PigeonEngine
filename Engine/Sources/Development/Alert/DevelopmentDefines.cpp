@@ -5,50 +5,32 @@ namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
-	INT32 WindowsMessageBox(const CHAR* outText, const CHAR* outCaption, const UINT32& type)
+	INT32 DWindowsMessage::__WindowsMessageBox_(const CHAR* OutText, const CHAR* OutCaption, const UINT32 InType)
 	{
-		return (::MessageBox(EMainManager::GetManagerSingleton()->GetWindowHandle(), outText, outCaption, type));
+		return (::MessageBox(EMainManager::GetManagerSingleton()->GetWindowHandle(), OutText, OutCaption, InType));
 	}
 
-	void DWindowsMessage::_Check_Default(const CHAR* inCaption, const CHAR* inText, const BOOL8 condition)
+	void DWindowsMessage::__DummyAlert_(const CHAR* InExpression, const CHAR* InMessage, const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption)
 	{
-		if (!condition)
+#if _DEBUG_MODE
 		{
-			const UINT32 tempType = MB_OK;
-			if (WindowsMessageBox(inText, inCaption, tempType) == IDOK)
+			const UINT32 TempType = MB_OK;
+			if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
+			{
+				//TODO
+			}
+			PE_BREAKPOINT;
+		}
+#elif _DEVELOP_MODE
+		{
+			const UINT32 TempType = MB_OK;
+			if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
 			{
 				//TODO
 			}
 		}
-	}
-
-	template<typename TConditionLambdaType>
-	void DWindowsMessage::_Check_Default(const TConditionLambdaType& conditionFunc)
-	{
-		EString tempText, tempCaption; const UINT32 tempType = MB_OK;
-		if (!(conditionFunc(tempText, tempCaption)))
-		{
-			if (WindowsMessageBox(tempText, tempCaption, tempType) == IDOK)
-			{
-				//TODO
-			}
-		}
-	}
-
-	template<typename TConditionLambdaType, typename TExecuteLambdaType>
-	void DWindowsMessage::_Check_Full(const TConditionLambdaType& conditionFunc, const TExecuteLambdaType& executeFunc)
-	{
-		EString tempText, tempCaption; UINT32 tempType = 0u;
-		if (!(conditionFunc(tempText, tempCaption, tempType)))
-		{
-			executeFunc(WindowsMessageBox(tempText, tempCaption, tempType));
-		}
-	}
-	static bool DummyAssertFailed(const CHAR* inExpression, const CHAR* inMessage, const CHAR* inFile, UINT inLine)
-	{
-		//alert here;
-		return true; // Trigger breakpoint
+#endif
 	};
-	AssertFailedFunc AssertFailed = DummyAssertFailed;
+
 #endif
 };

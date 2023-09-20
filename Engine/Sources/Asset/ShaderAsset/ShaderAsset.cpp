@@ -550,7 +550,7 @@ namespace PigeonEngine
 #endif
 			return nullptr;
 		}
-		Check((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 3u)));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 3u)));
 		void* TempPtr = ReadFileMem;
 		ULONG RstSize = ReadFileSize;
 		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
@@ -719,7 +719,7 @@ namespace PigeonEngine
 				TempPtr = (void*)(&(SavedAssetTypePtr[ShaderInputLayoutNum]));
 				RstSize = RstSize - ShaderInputLayoutDescSize;
 			}
-			Check((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), (RstSize == InShaderResource->ShaderByteCodeSize));
+			PE_CHECK((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), (RstSize == InShaderResource->ShaderByteCodeSize));
 			::memcpy_s(TempPtr, RstSize, InShaderResource->ShaderByteCode, InShaderResource->ShaderByteCodeSize);
 
 			if (EFileHelper::SaveBytesToFile(TempFullSavePathName, SaveMem, ShaderSaveSize))
@@ -790,7 +790,7 @@ namespace PigeonEngine
 	void TryLoadVertexShader(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
 	{
 		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
-		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
 		if (ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
 		{
 			return;
@@ -830,7 +830,7 @@ namespace PigeonEngine
 	void TryLoadPixelShader(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName)
 	{
 		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
-		Check((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
 		if (ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
 		{
 			return;

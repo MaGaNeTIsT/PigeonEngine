@@ -19,7 +19,7 @@ namespace PigeonEngine
     }
     PStaticMeshComponent::~PStaticMeshComponent()
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
     }
     const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset()const
     {
@@ -38,7 +38,7 @@ namespace PigeonEngine
     }
     RStaticMeshSceneProxy* PStaticMeshComponent::CreateSceneProxy()
     {
-        Check((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
         SceneProxy = new RStaticMeshSceneProxy(this);
         return SceneProxy;
     }
