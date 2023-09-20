@@ -13,10 +13,10 @@ namespace PigeonEngine
 		{
 			FLOAT FullScreenTriangleVertex[] =
 			{
-				0.f, 0.f,
-				1.f, 0.f,
 				0.f, 1.f,
-				1.f, 1.f
+				1.f, 1.f,
+				0.f, 0.f,
+				1.f, 0.f
 			};
 			RSubresourceDataDesc SubresourceDataDesc;
 			SubresourceDataDesc.pSysMem = FullScreenTriangleVertex;

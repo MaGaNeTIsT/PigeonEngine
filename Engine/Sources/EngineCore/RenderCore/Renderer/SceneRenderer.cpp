@@ -322,6 +322,7 @@ namespace PigeonEngine
 		RenderDevice->ClearFinalOutput();
 		RenderDevice->SetFinalOutput();
 		FullScreenTriangle.BindPrimitiveBuffers();
+		RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
 		RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
 		RenderDevice->SetPSShader(SimpleFullScreenPixelShader->GetRenderResource()->Shader);
 		if (FinalOutputView != 0u)
