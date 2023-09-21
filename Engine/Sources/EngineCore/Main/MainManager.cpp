@@ -130,7 +130,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::Uninit()
 	{
-		m_PhysicsManager->Uninit();
+		// m_PhysicsManager->Uninit();
 		m_WorldManager->Uninit();
 		RenderScene->Uninit();
 

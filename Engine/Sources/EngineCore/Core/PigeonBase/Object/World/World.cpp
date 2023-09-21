@@ -47,7 +47,7 @@ namespace PigeonEngine
 
     void PWorld::Uninit()
     {
-        PObject::Uninit();
+        // PObject::Uninit();
     }
 
     void PWorld::Tick(FLOAT deltaTime)
@@ -67,9 +67,22 @@ namespace PigeonEngine
   
     void PWorld::Destroy()
     {
-        LevelScriptor->Destroy();
-        RootActor->Destroy();
-        Controller->Destroy();
+        if(LevelScriptor)
+        {
+            LevelScriptor->Destroy();
+            LevelScriptor = nullptr;
+        }
+        if(RootActor)
+        {
+            RootActor->Destroy();
+            RootActor = nullptr;
+        }
+        if(Controller)
+        {
+            Controller->Destroy();
+            Controller = nullptr;
+        }
+
         PObject::Destroy();
     }
 
