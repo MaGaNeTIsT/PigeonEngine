@@ -24,7 +24,7 @@ namespace PigeonEngine
 	}
 	RSceneRenderer::~RSceneRenderer()
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!!Scene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
 	}
 	void RSceneRenderer::Initialize()
 	{
