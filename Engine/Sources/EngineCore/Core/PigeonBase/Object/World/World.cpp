@@ -26,7 +26,21 @@ namespace PigeonEngine
 
     void PWorld::Init()
     {
-        
+        if(Controller)
+        {
+            Controller->Destroy();
+            Controller = nullptr;
+        }
+        if(LevelScriptor)
+        {
+            LevelScriptor->Destroy();
+            LevelScriptor = nullptr;
+        }
+        if(RootActor)
+        {
+            RootActor->Destroy();
+            RootActor = nullptr;
+        }
 		this->RootActor = new PActor();
         this->RootActor->SetIsTickable(TRUE);
 		this->RootActor->BeginAddedToScene(this);
@@ -41,13 +55,12 @@ namespace PigeonEngine
         this->LevelScriptor->SetIsTickable(TRUE);
 		this->LevelScriptor->BeginAddedToScene(this);
         this->LevelScriptor->Init();
-
-
     }
 
     void PWorld::Uninit()
     {
         // PObject::Uninit();
+        this->Destroy();
     }
 
     void PWorld::Tick(FLOAT deltaTime)
@@ -67,6 +80,11 @@ namespace PigeonEngine
   
     void PWorld::Destroy()
     {
+        if(Controller)
+        {
+            Controller->Destroy();
+            Controller = nullptr;
+        }
         if(LevelScriptor)
         {
             LevelScriptor->Destroy();
@@ -77,11 +95,7 @@ namespace PigeonEngine
             RootActor->Destroy();
             RootActor = nullptr;
         }
-        if(Controller)
-        {
-            Controller->Destroy();
-            Controller = nullptr;
-        }
+       
 
         PObject::Destroy();
     }

@@ -222,12 +222,6 @@ namespace PigeonEngine
 
 	void PActor::ClearComponents()
 	{
-
-		// for (auto elem = Components.Begin(); elem != Components.End(); elem++)
-		// {
-		// 	DestoyComponent(*elem);
-		// }
-		// Components.Clear();
 		RootComponent->Destroy();
 	}
 

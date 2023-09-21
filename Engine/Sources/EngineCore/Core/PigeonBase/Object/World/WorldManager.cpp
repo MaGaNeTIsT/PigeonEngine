@@ -32,10 +32,11 @@ namespace PigeonEngine
 
     void EWorldManager::Init()
     {
-        if(this->World)
+        if(!this->World)
         {
-            this->World->Init();
+            this->World = new PWorld();
         }
+        this->World->Init();
     }
 
     void EWorldManager::Uninit()
@@ -43,6 +44,7 @@ namespace PigeonEngine
         if(this->World)
         {
             this->World->Uninit();
+            this->World = nullptr;
         }
     }
 
