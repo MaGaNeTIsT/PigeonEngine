@@ -24,6 +24,7 @@
 #include "../../Development/Config/EngineDebugName.h"
 #endif
 #include "../../Development/Alert/DevelopmentDefines.h"
-#include "../HID/Input/Input.h"
 #include "../IO/FileHelper.h"
+#include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsDefines.h"
+#include "../HID/Input/Input.h"
 #include <Base/DataStructure/ObjectBase.h>

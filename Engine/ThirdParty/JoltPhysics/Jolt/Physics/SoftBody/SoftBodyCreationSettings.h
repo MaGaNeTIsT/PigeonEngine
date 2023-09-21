@@ -21,7 +21,7 @@ public:
 
 	/// Constructor
 						SoftBodyCreationSettings() = default;
-						SoftBodyCreationSettings(const SoftBodySharedSettings *inSettings, RVec3Arg inPosition = RVec3::sZero(), QuatArg inRotation = Quat::sIdentity()) : mSettings(inSettings), mPosition(inPosition), mRotation(inRotation) { }
+						SoftBodyCreationSettings(const SoftBodySharedSettings *inSettings, RVec3Arg inPosition, QuatArg inRotation, ObjectLayer inObjectLayer) : mSettings(inSettings), mPosition(inPosition), mRotation(inRotation), mObjectLayer(inObjectLayer) { }
 
 	/// Saves the state of this object in binary form to inStream. Doesn't store the shared settings nor the group filter.
 	void				SaveBinaryState(StreamOut &inStream) const;
@@ -67,6 +67,7 @@ public:
 	float				mGravityFactor = 1.0f;				///< Value to multiply gravity with for this body
 	bool				mUpdatePosition = true;				///< Update the position of the body while simulating (set to false for something that is attached to the static world)
 	bool				mMakeRotationIdentity = true;		///< Bake specified mRotation in the vertices and set the body rotation to identity (simulation is slightly more accurate if the rotation of a soft body is kept to identity)
+	bool				mAllowSleeping = true;				///< If this body can go to sleep or not
 };
 
 JPH_NAMESPACE_END

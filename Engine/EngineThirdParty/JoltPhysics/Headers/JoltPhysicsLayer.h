@@ -1,7 +1,7 @@
 #pragma once
 #include <CoreMinimal.h>
-#include "JoltIncludes.h"
 #include "PhysicsUtility.h"
+#include "JoltIncludes.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
 // All Jolt symbols are in the JPH namespace

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\Character.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterBase.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterVirtual.h" />
@@ -27,6 +26,8 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysics.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsLayer.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\JoltPhysicsListener.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsDefines.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsListener.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsManagerInterface.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsUtility.h" />
@@ -164,9 +165,11 @@
     <ClInclude Include="Engine\ThirdParty\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\Character.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterBase.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\JoltPhysics.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsListener.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Shapes.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\RapidJson\CppFiles\JsonObject.cpp" />

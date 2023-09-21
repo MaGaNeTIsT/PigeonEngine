@@ -5,17 +5,19 @@ namespace PigeonEngine
 {
 	void FPhysics_Jolt::InitPhysics()
 	{
-		//create PhysicsData
-		PhysicsData = new FPhysicsData();
+		// Register allocation hook
+		RegisterDefaultAllocator();
 
 		Trace = TraceImpl;
 
 		// Create a factory
 		Factory::sInstance = new Factory();
-		PhysicsData->PhysicsSystem = new PhysicsSystem();
 
 		// Register all Jolt physics types
 		RegisterTypes();
+
+		//create PhysicsData
+		PhysicsData = new FPhysicsData();
 
 		//pre-allocated memory for simulation.
 		PhysicsData->TempAllocator = new TempAllocatorImpl(PhysicsData->PreAllocatedSize);
@@ -29,6 +31,8 @@ namespace PigeonEngine
 
 		PhysicsData->ObjectLayerPairFilterImpl = new CObjectLayerPairFilterImpl();
 		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = new CObjectVsBroadPhaseLayerFilterImpl();
+
+		PhysicsData->PhysicsSystem = new PhysicsSystem();
 		PhysicsData->PhysicsSystem->Init(PhysicsData->MaxBodies, PhysicsData->NumBodyMutexes, PhysicsData->MaxBodyPairs, PhysicsData->MaxContactConstraints, *PhysicsData->BPLayerInterface, *PhysicsData->ObjectVsBroadPhaseLayerFilterImpl, *PhysicsData->ObjectLayerPairFilterImpl);
 
 		PhysicsData->BodyActivationListener = new FBodyActivationListener();
