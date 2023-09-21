@@ -19,7 +19,7 @@ namespace PigeonEngine
     }
     PStaticMeshComponent::~PStaticMeshComponent()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!SceneProxy));
     }
     const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset()const
     {
