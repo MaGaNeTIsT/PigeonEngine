@@ -356,41 +356,6 @@
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Renderer\RenderInterface.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\MeshSceneProxy.h" />
     <ClInclude Include="Engine\Sources\EngineCore\IO\SerializationHelper.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\allocators.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\document.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\encodedstream.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\encodings.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\error\en.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\error\error.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\filereadstream.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\filewritestream.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\fwd.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\biginteger.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\diyfp.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\dtoa.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\ieee754.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\itoa.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\meta.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\pow10.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\regex.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\stack.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\strfunc.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\strtod.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\internal\swap.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\istreamwrapper.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\memorybuffer.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\memorystream.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\msinttypes\inttypes.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\msinttypes\stdint.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\ostreamwrapper.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\pointer.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\prettywriter.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\rapidjson.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\reader.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\schema.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\stream.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\stringbuffer.h" />
-    <ClInclude Include="Engine\ThirdParty\rapidjson\writer.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\StaticMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\SkeletalMeshComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\RenderProxy\StaticMeshSceneProxy.h" />
@@ -405,6 +370,8 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterBase.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterVirtual.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -600,6 +567,8 @@
     <ClCompile Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\Character.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterBase.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
