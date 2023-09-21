@@ -308,7 +308,7 @@ namespace PigeonEngine
 		/************** END RAW MOUSE MESSAGES **************/
 		}
 
-		return DefWindowProc(hWnd, msg, wParam, lParam);
+		return ::DefWindowProc(hWnd, msg, wParam, lParam);
 	}
 	BOOL32 IController::IsKeyPressed(unsigned char keycode) const
 	{
