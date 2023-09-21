@@ -40,14 +40,14 @@ namespace PigeonEngine
 	}
 	void RScene::ClearAll()
 	{
+		RenderSceneOctree.ClearPrimitives();
+
 		RenderAddCommands.DoCommands();
 		RenderAddCommands.EmptyQueue();
 		RenderUpdateCommands.DoCommands();
 		RenderUpdateCommands.EmptyQueue();
 		RenderRemoveCommands.DoCommands();
 		RenderRemoveCommands.EmptyQueue();
-
-		RenderSceneOctree.ClearPrimitives();
 
 		UnbindErrorCheck();
 	}
