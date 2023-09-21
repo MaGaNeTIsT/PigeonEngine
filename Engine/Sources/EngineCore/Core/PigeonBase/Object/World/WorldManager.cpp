@@ -25,6 +25,7 @@ namespace PigeonEngine
         if(this->World)
         {
             this->World->Destroy();
+            this->World = nullptr;
         }
         EManagerBase::ShutDown();
     }

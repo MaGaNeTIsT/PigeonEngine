@@ -71,7 +71,7 @@ namespace PigeonEngine
 #endif
 	void PObject::Uninit()
 	{
-		Destroy();
+		// Destroy();
 	}
 
 	BOOL32 PObject::IsActive()const
