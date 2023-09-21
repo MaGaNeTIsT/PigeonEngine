@@ -1155,7 +1155,7 @@ namespace PigeonEngine
 				SubresourceDataDesc.pSysMem = TempIndices;
 				if (!(RenderDevice->CreateBuffer(
 					IndexRenderResource,
-					RBufferDesc((4u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
+					RBufferDesc((2u * OutIndexData->ElementNum), RBindFlagType::BIND_INDEX_BUFFER, 4u),
 					(&SubresourceDataDesc))))
 				{
 #if _EDITOR_ONLY

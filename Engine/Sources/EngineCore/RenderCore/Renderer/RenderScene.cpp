@@ -36,7 +36,7 @@ namespace PigeonEngine
 	}
 	void RScene::Uninit()
 	{
-		UnbindErrorCheck();
+		ClearAll();
 	}
 	void RScene::ClearAll()
 	{
