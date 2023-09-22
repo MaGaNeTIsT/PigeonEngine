@@ -14,8 +14,9 @@ namespace PigeonEngine
 
 	void RDirectionalLightMaterialParameter::SetupParameters()
 	{
-		ClearParameter();
-		BeginSetupParameter();
+	}
+	void RDirectionalLightMaterialParameter::AddLightParameters()
+	{
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewMatrix"));
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewInvMatrix"));
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ProjectionMatrix"));
@@ -25,8 +26,18 @@ namespace PigeonEngine
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_LightColorIntensity"));
 		AddParameter<Vector2Int, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT2>(("_LightShadowMapSize"));
 		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT3>(("_LightWorldPosition"));
-		EndSetupParameter();
-		CreateBuffer();
+	}
+	void RDirectionalLightMaterialParameter::UpdateParameterValue(const UINT32 InIndex, const EViewDomainInfo& InInfo, const ELightData& InData)
+	{
+		FindParameter(InIndex, "_ViewMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.ViewMatrix);
+		FindParameter(InIndex, "_ViewInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.InverseViewMatrix);
+		FindParameter(InIndex, "_ProjectionMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ProjectionPart.ProjectionMatrix);
+		FindParameter(InIndex, "_ProjectionInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ProjectionPart.InverseProjectionMatrix);
+		FindParameter(InIndex, "_ViewProjectionMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewProjectionMatrix);
+		FindParameter(InIndex, "_ViewProjectionInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.InverseViewProjectionMatrix);
+		FindParameter(InIndex, "_LightColorIntensity") = &TranslateUploadVectorType(Vector4(InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.LightIntensity));
+		FindParameter(InIndex, "_LightShadowMapSize") = &TranslateUploadVectorType(InData.ShadowMapSize);
+		FindParameter(InIndex, "_LightWorldPosition") = &TranslateUploadVectorType(Vector3::Zero());
 	}
 
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent)
@@ -191,6 +202,12 @@ namespace PigeonEngine
 	BOOL32 RDirectionalLightSceneProxy::IsLightUseCascadeShadow()const
 	{
 		return (IsCascadeShadow && (!!CascadeShadowData) && (CascadeShadowData->Layers.Length() > 0u) && (CascadeShadowData->Layers.Length() == (CascadeShadowData->Borders.Length() + 1u)));
+	}
+	BOOL32 RDirectionalLightSceneProxy::IsNeedUpdateParams()const
+	{
+		BOOL32 Result = NeedUpdateParams;
+		NeedUpdateParams = FALSE;
+		return Result;
 	}
 	RDirectionalLightSceneProxy::RViewSetType& RDirectionalLightSceneProxy::GetViews()
 	{

@@ -12,7 +12,15 @@ namespace PigeonEngine
 	{
 		return InData;
 	}
+	PE_INLINE Vector3 TranslateUploadVectorType(const Vector3& InData)
+	{
+		return InData;
+	}
 	PE_INLINE Vector4 TranslateUploadVectorType(const Vector4& InData)
+	{
+		return InData;
+	}
+	PE_INLINE Vector2Int TranslateUploadVectorType(const Vector2Int& InData)
 	{
 		return InData;
 	}
@@ -257,12 +265,6 @@ namespace PigeonEngine
 		{
 			StructuredBuffer.ReleaseRenderResource();
 		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to clear a not init constant buffer."));
-		}
-#endif
 	}
 	EShaderParameter* EMaterialStructParameter::FindParameter(const EString& InParamName)
 	{
@@ -333,7 +335,6 @@ namespace PigeonEngine
 			ClearBuffer();
 		}
 		ElementNum = InElementNum;
-		CreateBuffer();
 	}
 	UINT32 EMaterialStructParameter::GetElementNum()const
 	{
@@ -347,6 +348,15 @@ namespace PigeonEngine
 	const RStructuredBuffer& EMaterialStructParameter::GetStructPBuffer()const
 	{
 		return StructuredBuffer;
+	}
+	void EMaterialStructParameter::BeginSetupStructParameter(const UINT32 InElementNum)
+	{
+		SetElementNum(InElementNum);
+		BeginSetupParameter();
+	}
+	void EMaterialStructParameter::EndSetupStructParameter()
+	{
+		EndSetupParameter();
 	}
 	void EMaterialStructParameter::BeginSetupParameter()
 	{

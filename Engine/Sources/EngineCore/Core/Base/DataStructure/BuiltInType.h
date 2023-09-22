@@ -50,6 +50,7 @@ namespace PigeonEngine
 
 #define PE_CONSTEXPR					constexpr
 #define PE_CONST						const
+#define PE_MUTABLE						mutable
 
 #define PE_CDECL						__cdecl												/* Standard C function */
 #define PE_STDCALL						__stdcall											/* Standard calling convention */

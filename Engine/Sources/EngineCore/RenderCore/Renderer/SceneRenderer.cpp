@@ -362,6 +362,7 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitDirectionalLights(RViewProxy* InViewProxy)
 	{
+		UINT32 UsedDLightNum = 0u;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
 		for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
 		{
@@ -383,6 +384,12 @@ namespace PigeonEngine
 				VisibilityMaps.Add(InViewProxy->GetUniqueID(), TArray<RDirectionalLightSceneProxy::RVisibilityMapType>());
 			}
 
+			if (!(ViewDLightParams.ContainsKey(InViewProxy->GetUniqueID())))
+			{
+				ViewDLightParams.Add(InViewProxy->GetUniqueID(), RDirectionalLightMaterialParameter());
+			}
+			UsedDLightNum += 1u;
+
 			TArray<RDirectionalLightSceneProxy::RVisibilityMapType>&	LayerVisibilityMap	= VisibilityMaps[InViewProxy->GetUniqueID()];
 			const TArray<EViewDomainInfo>&								DomainInfos			= ViewDomainInfos[InViewProxy->GetUniqueID()];
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), ((ViewDomainInfos.Length() > 0u) && ((!(LightProxy->IsLightUseCascadeShadow())) || ((LightProxy->IsLightUseCascadeShadow()) && (!!(LightProxy->GetCascadeShadowData())) && ((LightProxy->GetCascadeShadowData()->Layers.Length()) == (ViewDomainInfos.Length()))))));
@@ -396,6 +403,46 @@ namespace PigeonEngine
 				const EViewDomainInfo&								DomainInfo		= DomainInfos[DomainIndex];
 				OctreeCull(DomainInfo.ViewFrustum, VisibilityMap);
 				PrimitiveCull(DomainInfo.ViewFrustum, VisibilityMap);
+			}
+		}
+
+		{
+			RDirectionalLightMaterialParameter& DLightParams = ViewDLightParams[InViewProxy->GetUniqueID()];
+			if (UsedDLightNum > 0u)
+			{
+				if (DLightParams.GetElementNum() != UsedDLightNum)
+				{
+					DLightParams.ClearBuffer();
+					DLightParams.ClearParameter();
+					DLightParams.BeginSetupStructParameter(UsedDLightNum);
+					DLightParams.AddLightParameters();
+					DLightParams.EndSetupStructParameter();
+					DLightParams.CreateBuffer();
+
+					UINT32 DLightIndex = 0u;
+					for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
+					{
+						RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
+#if _EDITOR_ONLY
+						PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+						if (!LightProxy)
+						{
+							continue;
+						}
+#endif
+						RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
+						const TArray<EViewDomainInfo>& DomainInfos = ViewDomainInfos[InViewProxy->GetUniqueID()];
+						PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), (ViewDomainInfos.Length() > 0u));
+						const EViewDomainInfo& DomainInfo = DomainInfos[0];
+
+						DLightParams.UpdateParameterValue(DLightIndex, DomainInfo, LightProxy->GetLightData());
+					}
+				}
+			}
+			else
+			{
+				DLightParams.ClearBuffer();
+				DLightParams.ClearParameter();
 			}
 		}
 	}

@@ -11,11 +11,14 @@ namespace PigeonEngine
 
 	class RScene;
 	class RViewProxy;
+	class RDirectionalLightSceneProxy;
 
 	class RDirectionalLightMaterialParameter : public EMaterialStructParameter
 	{
 	public:
 		virtual void	SetupParameters()override;
+		void			AddLightParameters();
+		void			UpdateParameterValue(const UINT32 InIndex, const EViewDomainInfo& InInfo, const ELightData& InData);
 
 		RDirectionalLightMaterialParameter() {}
 		virtual ~RDirectionalLightMaterialParameter() {}
@@ -44,6 +47,7 @@ namespace PigeonEngine
 		const ECascadeShadowData*			GetCascadeShadowData()const;
 		BOOL32								IsLightCastShadow()const;
 		BOOL32								IsLightUseCascadeShadow()const;
+		BOOL32								IsNeedUpdateParams()const;
 		RViewSetType&						GetViews();
 		const RViewSetType&					GetViews()const;
 	public:
@@ -51,6 +55,7 @@ namespace PigeonEngine
 		void	UpdateLightParams(const ERenderLightParams& InParams);
 		void	UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData);
 	protected:
+		PE_MUTABLE BOOL32					NeedUpdateParams;
 		RPerViewVisibilityMapType			VisibilityMap;
 	protected:
 		ELightData							LightData;

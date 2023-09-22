@@ -19,6 +19,7 @@ namespace PigeonEngine
 		using RViewSceneTextureType	= TMap<ObjectIdentityType, RSceneTextures*>;
 		using RShadowMapType		= TMap<ObjectIdentityType, RShadowTexture*>;
 		using RViewShadowMapType	= TMap<ObjectIdentityType, RShadowMapType>;
+		using RDLightParamsType		= TMap<ObjectIdentityType, RDirectionalLightMaterialParameter>;
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
@@ -88,6 +89,7 @@ namespace PigeonEngine
 		BOOL32						NeedStencil;
 		RViewSceneTextureType		ViewSceneTextures;
 		RViewShadowMapType			ViewShadowMaps;
+		RDLightParamsType			ViewDLightParams;
 	public:
 		RSceneRenderer();
 		virtual ~RSceneRenderer();
