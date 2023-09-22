@@ -14,6 +14,7 @@ namespace PigeonEngine
 
 	void RViewMaterialParameter::SetupParameters()
 	{
+		ClearParameter();
 		BeginSetupParameter();
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewMatrix"));
 		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewInvMatrix"));
@@ -29,6 +30,7 @@ namespace PigeonEngine
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraViewportRect"));
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_CameraWorldPosition"));
 		EndSetupParameter();
+		CreateBuffer();
 	}
 
 	RViewProxy::RViewProxy(const PCameraComponent* InComponent)
@@ -147,7 +149,7 @@ namespace PigeonEngine
 		ViewMaterialParameter["_CameraViewportSizeAndInvSize"] = &TranslateUploadVectorType(Vector4(ViewDomainInfo.RenderViewport.Width, ViewDomainInfo.RenderViewport.Height, 1.f / ViewDomainInfo.RenderViewport.Width, 1.f / ViewDomainInfo.RenderViewport.Height));
 		ViewMaterialParameter["_CameraViewportRect"] = &TranslateUploadVectorType(Vector4(ViewDomainInfo.RenderViewport.TopLeftX, ViewDomainInfo.RenderViewport.TopLeftY, ViewDomainInfo.RenderViewport.Width, ViewDomainInfo.RenderViewport.Height));
 		ViewMaterialParameter["_CameraWorldPosition"] = &TranslateUploadVectorType(MakeVector4(WorldLocation, 0.f));
-		ViewMaterialParameter.UploadConstantBuffer();
+		ViewMaterialParameter.UploadBuffer();
 	}
 	void RViewProxy::BindRenderResource()const
 	{

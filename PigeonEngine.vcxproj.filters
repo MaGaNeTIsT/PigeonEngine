@@ -692,6 +692,7 @@
       <Filter>Engine\Sources\EngineRender\HLSLResources\RenderPipeline</Filter>
     </None>
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderStructCommon.hlsl" />
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderLightings.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEVS.hlsl">

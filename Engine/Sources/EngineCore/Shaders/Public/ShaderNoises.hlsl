@@ -241,4 +241,4 @@ float3 GetRandomVectorFromCoord(int2 InCoord)
 	return RandomVec;
 }
 
-#endif
+#endif	//_SHADER_NOISES_HLSL

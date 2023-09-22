@@ -234,4 +234,4 @@ float3 SurfaceShading_ClothAnisotropic(
 	return Color;
 }
 
-#endif
+#endif	//_SHADER_SHADING_FUNCTIONS_HLSL

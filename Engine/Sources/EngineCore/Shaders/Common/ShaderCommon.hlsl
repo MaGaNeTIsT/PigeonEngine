@@ -38,4 +38,4 @@
 #include "../Public/ShaderBxDF.hlsl"
 #include "../Public/ShaderShadingFunctions.hlsl"
 
-#endif
+#endif	//_SHADER_COMMON_HLSL

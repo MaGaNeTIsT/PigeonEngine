@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include "BaseSceneProxy.h"
+#include <Shader/ShaderParameter.h>
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 
 namespace PigeonEngine
@@ -10,6 +11,17 @@ namespace PigeonEngine
 
 	class RScene;
 	class RViewProxy;
+
+	class RDirectionalLightMaterialParameter : public EMaterialStructParameter
+	{
+	public:
+		virtual void	SetupParameters()override;
+
+		RDirectionalLightMaterialParameter() {}
+		virtual ~RDirectionalLightMaterialParameter() {}
+		RDirectionalLightMaterialParameter(const RDirectionalLightMaterialParameter&) {}
+		RDirectionalLightMaterialParameter& operator=(const RDirectionalLightMaterialParameter&) = delete;
+	};
 
 	class RDirectionalLightSceneProxy : public RBaseSceneProxy
 	{

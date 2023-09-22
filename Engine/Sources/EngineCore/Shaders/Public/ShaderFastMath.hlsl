@@ -365,4 +365,4 @@ int2 SignFastInt(float2 v)
 	return int2(SignFastInt(v.x), SignFastInt(v.y));
 }
 
-#endif
+#endif	//_SHADER_FAST_MATH_HLSL

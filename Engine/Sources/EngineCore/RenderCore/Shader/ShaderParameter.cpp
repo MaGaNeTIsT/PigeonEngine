@@ -17,21 +17,26 @@ namespace PigeonEngine
 		return InData;
 	}
 
-	EMaterialParameter::EMaterialParameter()
-		: HasPaddings(FALSE)
+	EShaderStruct::EShaderStruct()
 	{
 	}
-	EMaterialParameter::EMaterialParameter(const EMaterialParameter& Other)
-		: HasPaddings(FALSE)
+	EShaderStruct::EShaderStruct(const EShaderStruct& Other)
 	{
 	}
-	EMaterialParameter::~EMaterialParameter()
+	EShaderStruct::~EShaderStruct()
 	{
 		ClearParameter();
 	}
-	EShaderParameter& EMaterialParameter::operator[](const EString& InParamName)
+	void EShaderStruct::ClearParameter()
 	{
-		static EShaderParameter _StaticParameter;
+		InitCommands.DoCommands();
+		InitCommands.EmptyQueue();
+		RawData.Release();
+		ShaderParameterNames.Clear();
+		ShaderParameters.Clear();
+	}
+	EShaderParameter* EShaderStruct::FindParameter(const EString& InParamName)
+	{
 #if _EDITOR_ONLY
 		if (UINT32 ParamIndex = (UINT32)(-1); ShaderParameterNames.FindValue(InParamName, ParamIndex))
 #else
@@ -42,7 +47,7 @@ namespace PigeonEngine
 			if (ParamIndex < ShaderParameters.Length())
 #endif
 			{
-				return (ShaderParameters[ParamIndex]);
+				return (&(ShaderParameters[ParamIndex]));
 			}
 		}
 #if _EDITOR_ONLY
@@ -50,9 +55,33 @@ namespace PigeonEngine
 		ErrorInfo = ErrorInfo + InParamName + "] parameter.";
 		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
 #endif
-		return _StaticParameter;
+		return nullptr;
 	}
-	void EMaterialParameter::CreateConstantBuffer()
+	void EShaderStruct::BeginSetupParameter()
+	{
+	}
+	void EShaderStruct::EndSetupParameter()
+	{
+	}
+
+	EMaterialParameter::EMaterialParameter()
+		: HasPaddings(FALSE)
+	{
+	}
+	EMaterialParameter::EMaterialParameter(const EMaterialParameter& Other)
+		: HasPaddings(FALSE)
+	{
+	}
+	EMaterialParameter::~EMaterialParameter()
+	{
+		ClearBuffer();
+	}
+	void EMaterialParameter::ClearParameter()
+	{
+		EShaderStruct::ClearParameter();
+		HasPaddings = FALSE;
+	}
+	void EMaterialParameter::CreateBuffer()
 	{
 #if _EDITOR_ONLY
 		if (RawData.Size == 0u)
@@ -78,7 +107,7 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void EMaterialParameter::UploadConstantBuffer()
+	void EMaterialParameter::UploadBuffer()
 	{
 #if _EDITOR_ONLY
 		if ((RawData.Size == 0u) || (!(RawData.Datas)))
@@ -94,6 +123,34 @@ namespace PigeonEngine
 #endif
 		RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(ConstantBuffer.Buffer, RawData.Datas);
 	}
+	void EMaterialParameter::ClearBuffer()
+	{
+#if _EDITOR_ONLY
+		if (ConstantBuffer.IsRenderResourceValid())
+#endif
+		{
+			ConstantBuffer.ReleaseRenderResource();
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to clear a not init constant buffer."));
+		}
+#endif
+	}
+	EShaderParameter& EMaterialParameter::operator[](const EString& InParamName)
+	{
+		if (EShaderParameter* Parameter = FindParameter(InParamName); !!Parameter)
+		{
+			return (*Parameter);
+		}
+#if _EDITOR_ONLY
+		static EShaderParameter _FailedParameter;
+#else
+		EShaderParameter _FailedParameter;
+#endif
+		return _FailedParameter;
+	}
 	RBufferResource& EMaterialParameter::GetConstantBuffer()
 	{
 		return ConstantBuffer;
@@ -102,18 +159,12 @@ namespace PigeonEngine
 	{
 		return ConstantBuffer;
 	}
-	void EMaterialParameter::ClearParameter()
+	BOOL32 EMaterialParameter::IsHasPaddings()const
 	{
-		HasPaddings = FALSE;
-		InitCommands.DoCommands();
-		InitCommands.EmptyQueue();
-		RawData.Release();
-		ShaderParameterNames.Clear();
-		ShaderParameters.Clear();
+		return HasPaddings;
 	}
 	void EMaterialParameter::BeginSetupParameter()
 	{
-		ClearParameter();
 	}
 	void EMaterialParameter::EndSetupParameter()
 	{
@@ -134,8 +185,190 @@ namespace PigeonEngine
 
 		InitCommands.DoCommands();
 		InitCommands.EmptyQueue();
+	}
 
-		CreateConstantBuffer();
+	EMaterialStructParameter::EMaterialStructParameter()
+		: ElementNum(0u)
+	{
+	}
+	EMaterialStructParameter::EMaterialStructParameter(const EMaterialStructParameter& Other)
+		: ElementNum(Other.ElementNum)
+	{
+	}
+	EMaterialStructParameter::~EMaterialStructParameter()
+	{
+		ClearBuffer();
+	}
+	void EMaterialStructParameter::ClearParameter()
+	{
+		EShaderStruct::ClearParameter();
+		ElementNum = 0u;
+	}
+	void EMaterialStructParameter::CreateBuffer()
+	{
+#if _EDITOR_ONLY
+		if ((ElementNum > 0u) && (ElementNum <= 65536u) && (RawData.Size > 0u))
+#endif
+		{
+			Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
+			Check(((RawData.Size % ElementNum) == 0u), (ENGINE_RENDER_CORE_ERROR));
+			Check((!(StructuredBuffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR));
+#if _EDITOR_ONLY
+			BOOL32 Result =
+#endif
+				RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(StructuredBuffer,
+					RStructuredBufferDesc(static_cast<UINT32>(RawData.Size) / ElementNum, ElementNum));
+#if _EDITOR_ONLY
+			if (!Result)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material struct parameter create buffer failed(render resource create failed)."));
+			}
+#endif
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to create a error memory size struct buffer."));
+		}
+#endif
+	}
+	void EMaterialStructParameter::UploadBuffer()
+	{
+#if _EDITOR_ONLY
+		if ((StructuredBuffer.IsRenderResourceValid()) && (RawData.Size > 0u) && (!!(RawData.Datas)))
+#endif
+		{
+			Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
+			const UINT32 TempSize = static_cast<UINT32>(RawData.Size) * ElementNum;
+			RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(StructuredBuffer.Buffer, RawData.Datas, TempSize, TempSize);
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to create a error memory size struct buffer."));
+		}
+#endif
+	}
+	void EMaterialStructParameter::ClearBuffer()
+	{
+#if _EDITOR_ONLY
+		if (StructuredBuffer.IsRenderResourceValid())
+#endif
+		{
+			StructuredBuffer.ReleaseRenderResource();
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to clear a not init constant buffer."));
+		}
+#endif
+	}
+	EShaderParameter* EMaterialStructParameter::FindParameter(const EString& InParamName)
+	{
+		return nullptr;
+	}
+	EShaderParameter EMaterialStructParameter::FindParameter(const UINT32 InStructIndex, const EString& InParamName)
+	{
+		EShaderParameter Result;
+#if _EDITOR_ONLY
+		if (InStructIndex < ElementNum && (!!(RawData.Datas)) && (RawData.Size > 0u))
+#endif
+		{
+#if _EDITOR_ONLY
+			if (UINT32 ParamIndex = (UINT32)(-1); ShaderParameterNames.FindValue(InParamName, ParamIndex))
+#else
+			const UINT32 ParamIndex = ShaderParameterNames[InParamName];
+#endif
+			{
+#if _EDITOR_ONLY
+				if (ParamIndex < ShaderParameters.Length())
+#endif
+				{
+					Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
+					const UINT32 StructElementIndex = (static_cast<UINT32>(RawData.Size) / ElementNum) * InStructIndex;
+					Result.ValuePtr			= &(RawData.Datas[StructElementIndex]);
+					Result.ValueType		= ShaderParameters[ParamIndex].ValueType;
+					Result.ParameterInfo	= ShaderParameters[ParamIndex].ParameterInfo;
+				}
+#if _EDITOR_ONLY
+				else
+				{
+					EString ErrorInfo("Could not find parameter by index[");
+					ErrorInfo = ErrorInfo + ToString(ParamIndex) + "].";
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
+				}
+#endif
+			}
+#if _EDITOR_ONLY
+			else
+			{
+				EString ErrorInfo("Could not find name[");
+				ErrorInfo = ErrorInfo + InParamName + "] parameter.";
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
+			}
+#endif
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Material struct parameter does not contain this index[");
+			ErrorInfo += ToString(InStructIndex);
+			ErrorInfo += "].";
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
+		}
+#endif
+		return Result;
+	}
+	void EMaterialStructParameter::SetElementNum(const UINT32 InElementNum)
+	{
+#if _EDITOR_ONLY
+		if ((InElementNum == 0u) || (InElementNum > 65536u))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try set 0 to material struct parameter."));
+		}
+#endif
+		if (ElementNum != 0u)
+		{
+			ClearBuffer();
+		}
+		ElementNum = InElementNum;
+		CreateBuffer();
+	}
+	UINT32 EMaterialStructParameter::GetElementNum()const
+	{
+		Check((ElementNum <= 65536u), (ENGINE_RENDER_CORE_ERROR));
+		return ElementNum;
+	}
+	RStructuredBuffer& EMaterialStructParameter::GetStructPBuffer()
+	{
+		return StructuredBuffer;
+	}
+	const RStructuredBuffer& EMaterialStructParameter::GetStructPBuffer()const
+	{
+		return StructuredBuffer;
+	}
+	void EMaterialStructParameter::BeginSetupParameter()
+	{
+	}
+	void EMaterialStructParameter::EndSetupParameter()
+	{
+		ULONGLONG UsedSize = RawData.Size * ElementNum;
+#if _EDITOR_ONLY
+		if ((ElementNum == 0u) || (ElementNum > 65536u))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try setup 0 element material struct parameter."));
+		}
+		if (UsedSize == 0u || InitCommands.GetQueueCount() == 0u)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error shader parameter try to allocating 0 size buffer."));
+			return;
+		}
+#endif
+		RawData.Resize(UsedSize);
+
+		InitCommands.DoCommands();
+		InitCommands.EmptyQueue();
 	}
 
 };

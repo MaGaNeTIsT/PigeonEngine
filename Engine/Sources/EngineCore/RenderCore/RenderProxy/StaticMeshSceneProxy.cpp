@@ -12,10 +12,12 @@ namespace PigeonEngine
 
 	void RStaticMeshMaterialParameter::SetupParameters()
 	{
+		ClearParameter();
 		BeginSetupParameter();
 		AddPrimitiveMaterialParameter();
 		AddMeshMaterialParameter();
 		EndSetupParameter();
+		CreateBuffer();
 	}
 
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent)
@@ -61,7 +63,7 @@ namespace PigeonEngine
 		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(LocalToWorldMatrix);
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
-		MaterialParameter.UploadConstantBuffer();
+		MaterialParameter.UploadBuffer();
 	}
 	void RStaticMeshSceneProxy::BindRenderResource()const
 	{

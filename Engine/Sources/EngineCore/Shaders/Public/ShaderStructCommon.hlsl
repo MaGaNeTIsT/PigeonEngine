@@ -58,4 +58,4 @@ struct PixelParams
 #endif
 };
 
-#endif
+#endif	//_SHADER_STRUCT_COMMON_HLSL

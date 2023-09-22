@@ -171,4 +171,4 @@ float ConvertDeviceZToViewZ(float deviceZ)
 	return rcp(deviceZ * _DepthMultiAdd.x + _DepthMultiAdd.y);
 }
 
-#endif
+#endif	//_SHADER_SPACE_TRANSFORM_HLSL

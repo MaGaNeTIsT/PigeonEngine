@@ -458,6 +458,9 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">$(ProjectDir)Engine\Temp\OutputRawShaders\%(Filename).cso</ObjectFileOutput>
       <FileType>Document</FileType>
     </FxCompile>
+    <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderLightings.hlsl">
+      <FileType>Document</FileType>
+    </None>
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderStructCommon.hlsl">
       <FileType>Document</FileType>
     </None>

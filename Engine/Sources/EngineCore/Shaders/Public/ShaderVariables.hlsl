@@ -1,9 +1,47 @@
 #ifndef _SHADER_VARIABLES_HLSL
 #define _SHADER_VARIABLES_HLSL
 
-#include "./ShaderStructCommon.hlsl"
+#ifndef SHADER_USE_SAMPLER_INPUT
+#define SHADER_USE_SAMPLER_INPUT					0
+#endif	//SHADER_USE_SAMPLER_INPUT
 
-cbuffer ConstantBufferPerFrame : register(b0)
+#ifndef SHADER_USE_VIEW_INPUT
+#define SHADER_USE_VIEW_INPUT						0
+#endif	//SHADER_USE_VIEW_INPUT
+
+#ifndef SHADER_VIEW_INPUT_SLOT
+#define SHADER_VIEW_INPUT_SLOT						b0
+#endif	//SHADER_VIEW_INPUT_SLOT
+
+#ifndef SHADER_USE_PERDRAW_INPUT
+#define SHADER_USE_PERDRAW_INPUT					0
+#endif	//SHADER_USE_PERDRAW_INPUT
+
+#ifndef SHADER_PERDRAW_INPUT_SLOT
+#define SHADER_PERDRAW_INPUT_SLOT					b1
+#endif	//SHADER_PERDRAW_INPUT_SLOT
+
+#ifndef SHADER_USE_TRANSFORM_INPUT
+#define SHADER_USE_TRANSFORM_INPUT					0
+#endif	//SHADER_USE_TRANSFORM_INPUT
+
+#ifndef SHADER_USE_AO_INPUT
+#define SHADER_USE_AO_INPUT							0
+#endif	//SHADER_USE_AO_INPUT
+
+#ifndef SHADER_AO_INPUT_SLOT
+#define SHADER_AO_INPUT_SLOT						t0
+#endif	//SHADER_AO_INPUT_SLOT
+
+#if (SHADER_USE_SAMPLER_INPUT)
+SamplerState		_PointClampSampler		: register(s0);
+SamplerState		_PointWrapSampler		: register(s1);
+SamplerState		_LinearClampSampler		: register(s2);
+SamplerState		_LinearWrapSampler		: register(s3);
+#endif
+
+#if (SHADER_USE_VIEW_INPUT)
+cbuffer ConstantBufferPerFrame : register(SHADER_VIEW_INPUT_SLOT)
 {
 	float4x4		_ViewMatrix;
 	float4x4		_ViewInvMatrix;
@@ -19,27 +57,23 @@ cbuffer ConstantBufferPerFrame : register(b0)
 	float4			_CameraViewportRect;
 	float4			_CameraWorldPosition;
 };
+#endif
 
-cbuffer ConstantBufferPerDraw : register(b1)
+#if (SHADER_USE_PERDRAW_INPUT)
+cbuffer ConstantBufferPerDraw : register(SHADER_PERDRAW_INPUT_SLOT)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM_INPUT)
 	float4x4		_WorldMatrix;
 	float4x4		_WorldInvMatrix;
 	float4x4		_WorldInvTransposeMatrix;
 #endif
 };
-
-SamplerState		_PointClampSampler		: register(s0);
-SamplerState		_PointWrapSampler		: register(s1);
-SamplerState		_LinearClampSampler		: register(s2);
-SamplerState		_LinearWrapSampler		: register(s3);
-
-#ifdef SHADER_USE_AO_INPUT
-#ifdef SHADER_USE_AO_INPUT_SLOT
-Texture2D<float>	__ShaderAOInput			: register(SHADER_USE_AO_INPUT_SLOT);
-#else
-Texture2D<float>	__ShaderAOInput			: register(t0);
-#endif
 #endif
 
+#if (SHADER_USE_AO_INPUT)
+Texture2D<float>	_ShaderAOInput : register(SHADER_AO_INPUT_SLOT);
 #endif
+
+#include "./ShaderLightings.hlsl"
+
+#endif	//_SHADER_VARIABLES_HLSL

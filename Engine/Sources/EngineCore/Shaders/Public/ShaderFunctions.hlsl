@@ -38,4 +38,4 @@ float Min3(float3 Input)
 	return min(min(Input.x, Input.y), Input.z);
 }
 
-#endif
+#endif	//_SHADER_FUNCTIONS_HLSL

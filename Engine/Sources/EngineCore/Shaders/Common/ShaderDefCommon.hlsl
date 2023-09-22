@@ -3,4 +3,4 @@
 
 
 
-#endif
+#endif	//_SHADER_DEFINE_COMMON_HLSL

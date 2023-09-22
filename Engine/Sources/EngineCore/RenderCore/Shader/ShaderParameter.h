@@ -211,16 +211,14 @@ namespace PigeonEngine
 		}
 	};
 
-	class EMaterialParameter
+	class EShaderStruct
 	{
 	public:
 		virtual void			SetupParameters() {}
-		EShaderParameter&		operator[](const EString& InParamName);
-		void					CreateConstantBuffer();
-		void					UploadConstantBuffer();
-		RBufferResource&		GetConstantBuffer();
-		const RBufferResource&	GetConstantBuffer()const;
-		void					ClearParameter();
+		virtual void			ClearParameter();
+		virtual void			CreateBuffer()	= 0;
+		virtual void			UploadBuffer()	= 0;
+		virtual void			ClearBuffer()	= 0;
 	protected:
 		class ECommand final
 		{
@@ -271,21 +269,69 @@ namespace PigeonEngine
 					ShaderParameter.SetupParameter<_TValueType>(TempRawData.Datas, TempOffset, __TParameterValueType, InInitValuePtr, InElementNum);
 				});
 		}
-		void BeginSetupParameter();
-		void EndSetupParameter();
+		virtual EShaderParameter*	FindParameter(const EString& InParamName);
+		virtual void				BeginSetupParameter();
+		virtual void				EndSetupParameter();
 	protected:
-		BOOL32						HasPaddings;
-	private:
 		ECommand					InitCommands;
 		EShaderParameterRaw			RawData;
 		TMap<EString, UINT32>		ShaderParameterNames;
 		TArray<EShaderParameter>	ShaderParameters;
-		RBufferResource				ConstantBuffer;
+	public:
+		EShaderStruct();
+		EShaderStruct(const EShaderStruct& Other);
+		virtual ~EShaderStruct();
+		EShaderStruct& operator=(const EShaderStruct&) = delete;
+	};
+
+	class EMaterialParameter : public EShaderStruct
+	{
+	public:
+		virtual void			ClearParameter()override;
+		virtual void			CreateBuffer()override;
+		virtual void			UploadBuffer()override;
+		virtual void			ClearBuffer()override;
+		EShaderParameter&		operator[](const EString& InParamName);
+		RBufferResource&		GetConstantBuffer();
+		const RBufferResource&	GetConstantBuffer()const;
+		BOOL32					IsHasPaddings()const;
+	protected:
+		virtual void			BeginSetupParameter()override;
+		virtual void			EndSetupParameter()override;
+	private:
+		BOOL32					HasPaddings;
+		RBufferResource			ConstantBuffer;
 	public:
 		EMaterialParameter();
 		EMaterialParameter(const EMaterialParameter& Other);
 		virtual ~EMaterialParameter();
 		EMaterialParameter& operator=(const EMaterialParameter&) = delete;
+	};
+
+	class EMaterialStructParameter : public EShaderStruct
+	{
+	public:
+		virtual void				ClearParameter()override;
+		virtual void				CreateBuffer()override;
+		virtual void				UploadBuffer()override;
+		virtual void				ClearBuffer()override;
+		virtual EShaderParameter*	FindParameter(const EString& InParamName)override;
+		EShaderParameter			FindParameter(const UINT32 InStructIndex, const EString& InParamName);
+		void						SetElementNum(const UINT32 InElementNum);
+		UINT32						GetElementNum()const;
+		RStructuredBuffer&			GetStructPBuffer();
+		const RStructuredBuffer&	GetStructPBuffer()const;
+	protected:
+		virtual void				BeginSetupParameter()override;
+		virtual void				EndSetupParameter()override;
+	private:
+		UINT32						ElementNum;
+		RStructuredBuffer			StructuredBuffer;
+	public:
+		EMaterialStructParameter();
+		EMaterialStructParameter(const EMaterialStructParameter& Other);
+		virtual ~EMaterialStructParameter();
+		EMaterialStructParameter& operator=(const EMaterialStructParameter&) = delete;
 	};
 
 };

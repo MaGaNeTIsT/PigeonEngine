@@ -255,4 +255,4 @@ float3 ClothSheenBRDF(const NormalViewLightDotParams InSVLContent, const PixelPa
 #endif
 }
 
-#endif
+#endif  //_SHADER_BXDF_HLSL
