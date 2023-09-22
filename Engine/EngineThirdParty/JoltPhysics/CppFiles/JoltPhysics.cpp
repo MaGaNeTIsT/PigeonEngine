@@ -24,7 +24,7 @@ namespace PigeonEngine
 
 		//an example implementation for jobsystem
 		//used for multiple threads
-		PhysicsData->JobSystem = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
+		PhysicsData->JobSystem = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
 
 		// Create mapping table from object layer to broadphase layer
 		PhysicsData->BPLayerInterface = new CBPLayerInterfaceImpl();

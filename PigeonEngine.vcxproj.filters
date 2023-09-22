@@ -369,9 +369,10 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\Character.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterBase.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterVirtual.h" />
-    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsDefines.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsListener.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -569,6 +570,8 @@
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterBase.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
+    <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsListener.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">

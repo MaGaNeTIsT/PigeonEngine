@@ -1086,7 +1086,7 @@
     <ProjectGuid>{F9CB49CB-F0A4-44C4-8CBB-0C7B3D6D7E25}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PigeonEngine</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
