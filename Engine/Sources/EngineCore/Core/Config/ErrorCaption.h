@@ -16,4 +16,6 @@ namespace PigeonEngine
 #define ENGINE_OCTREE_ERROR             ("ENGINE_OCTREE_ERROR")
 #define ENGINE_WORLD_ERROR              ("ENGINE_WORLD_ERROR")
 
+#define ENGINE_FILE_ERROR               ("File Error")
+
 };

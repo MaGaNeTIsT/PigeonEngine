@@ -5,21 +5,22 @@
 
 namespace PigeonEngine
 {
-
 	class EFileHelper
 	{
 	public:
-		static BOOL32 ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size);
-		static BOOL32 ReadFileAsString(const EString& FilePath, EString& Return);
-		static BOOL32 SaveBytesToFile (const EString& FilePath, const void* Bytes, const ULONG& Size);
-		static BOOL32 SaveStringToFile(const EString& FilePath, const EString& Str);
+		static BOOL8 ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size);
+		static BOOL8 ReadFileAsString(const EString& FilePath, EString& Return);
+		static BOOL8 SaveBytesToFile (const EString& FilePath, const void* Bytes, const ULONG& Size, const BOOL8& bCreateDirectory = TRUE);
+		static BOOL8 SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory = TRUE);
 
-		static BOOL32 IsFileExists(const EString& FilePath);
-		static BOOL32 IsDirectoryExists(const EString& DirectoryPath);
+		static BOOL8 IsFileExists(const EString& FilePath);
+		static BOOL8 IsDirectoryExists(const EString& DirectoryPath);
+
+		static BOOL8 MakeDirectory(const EString& DirectoryPath);
 	public:
 		EFileHelper() = delete;
 		EFileHelper(const EFileHelper&) = delete;
-		~EFileHelper() {}
+		~EFileHelper() = default;
 	public:
 		EFileHelper& operator=(const EFileHelper&) = delete;
 	};

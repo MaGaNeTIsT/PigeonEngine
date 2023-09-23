@@ -1,104 +1,101 @@
 ﻿#include "FileHelper.h"
 #include <CoreMinimal.h>
 #include <fstream>
+#include <filesystem>
 namespace PigeonEngine
 {
 
-	BOOL32 EFileHelper::ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size)
+	BOOL8 EFileHelper::ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size)
 	{
-		using namespace std;
-		ifstream  fin(*FilePath, ios::in | ios::binary);
-		if (!fin)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsBinary(open file path : ");
-				ErrorData += FilePath;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		fin.seekg(0, ios_base::end);
-		Size = static_cast<ULONG>(fin.tellg());
-		fin.seekg(0, ios_base::beg);
-		Return = new CHAR[Size];
-		fin.read((CHAR*)Return, sizeof(CHAR) * Size);
-		fin.close();
-		return TRUE;
+		std::ifstream file(*FilePath, std::ios::binary);
+		PE_CHECK(ENGINE_FILE_ERROR, "Load file failed", file.is_open())
+
+		// 获取文件长度
+		file.seekg(0, std::ios::end);
+		Size = static_cast<ULONG>(file.tellg());
+		file.seekg(0, std::ios::beg);
+
+		// 分配内存并读取文件数据
+		Return = new char[Size];
+		file.read(static_cast<char*>(Return), Size);
+
+		file.close();
+		return true;
 	}
-	BOOL32 EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
+	
+	BOOL8 EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
 	{
-		using namespace std;
-		ifstream fin(*FilePath, ios::in);
-		if (!fin)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error occured when calling EFileHelper::ReadFileAsString(open file path : ");
-				ErrorData += FilePath;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
+		std::ifstream file(*FilePath);
+		PE_CHECK(ENGINE_FILE_ERROR, "Load file failed", file.is_open())
+
+		// 使用流操作符将文件内容读取到字符串中
+		std::string line;
+		Return = "";
+		while (std::getline(file, line)) {
+			Return += line + '\n';
 		}
-		istreambuf_iterator<CHAR> beg(fin), end;
-		Return = string(beg, end);
-		fin.close();
-		return TRUE;
+		file.close();
+		return true;
 	}
-	BOOL32 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str)
+	
+	BOOL8 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory)
 	{
-		using namespace std;
-		ofstream out(*FilePath, ios::out);
-		if (!out)
+		std::filesystem::path directoryPath = std::filesystem::path(*FilePath).parent_path();
+		if (!std::filesystem::exists(directoryPath))
 		{
-#if _EDITOR_ONLY
+			if(bCreateDirectory)
 			{
-				EString ErrorData("Error occured when calling EFileHelper::SaveStringToFile (open file path : ");
-				ErrorData += FilePath;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (*ErrorData));
+				PE_CHECK(ENGINE_FILE_ERROR, "Create directory failed when save string to file", std::filesystem::create_directories(directoryPath))
 			}
-#endif
-			return FALSE;
+			else
+			{
+				return FALSE;
+			}
 		}
+		std::ofstream out(*FilePath);
+		PE_CHECK(ENGINE_FILE_ERROR, "save string to file failed", out.is_open())
 		out << (*Str);
 		out.close();
 		return TRUE;
 	}
-
-	BOOL32 EFileHelper::IsFileExists(const EString& FilePath)
+	
+	BOOL8 EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size, const BOOL8& bCreateDirectory)
 	{
-		return _access(*FilePath, 00) == 0;
-	}
-
-	BOOL32 EFileHelper::IsDirectoryExists(const EString& DirectoryPath)
-	{
-		return _access(*DirectoryPath, 00) == 0;
-	}
-
-	BOOL32 EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size)
-	{
-		using namespace std;
-		ofstream out(*FilePath, ios::out | ios::binary);
-		if (!out)
+		std::filesystem::path directoryPath = std::filesystem::path(*FilePath).parent_path();
+		if (!std::filesystem::exists(directoryPath))
 		{
-#if _EDITOR_ONLY
+			if(bCreateDirectory)
 			{
-				EString ErrorData("Error occured when calling EFileHelper::SaveBytesToFile (open file path : ");
-				ErrorData += FilePath;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_IO_FILE_ERROR), (*ErrorData));
+				PE_CHECK(ENGINE_FILE_ERROR, "Create directory failed when save string to file", std::filesystem::create_directories(directoryPath))
 			}
-#endif
-			return FALSE;
+			else
+			{
+				return FALSE;
+			}
 		}
-		out.write(reinterpret_cast<const CHAR*>(Bytes), Size);
+		
+		std::ofstream out(*FilePath, std::ios::binary);
+		PE_CHECK(ENGINE_FILE_ERROR, "Save bytes to file failed", out.is_open())
+		out.write(static_cast<const CHAR*>(Bytes), Size);
 		out.close();
 		return TRUE;
 	}
+	
+	BOOL8 EFileHelper::IsFileExists(const EString& FilePath)
+	{
+		return static_cast<BOOL8>(std::filesystem::exists(*FilePath));
+	}
+
+	BOOL8 EFileHelper::IsDirectoryExists(const EString& DirectoryPath)
+	{
+		return static_cast<BOOL8>(std::filesystem::exists(*DirectoryPath) && std::filesystem::is_directory(*DirectoryPath));
+	}
+
+	BOOL8 EFileHelper::MakeDirectory(const EString& DirectoryPath)
+	{
+		return static_cast<BOOL8>(std::filesystem::create_directories(*DirectoryPath));
+	}
+
+	
 
 };

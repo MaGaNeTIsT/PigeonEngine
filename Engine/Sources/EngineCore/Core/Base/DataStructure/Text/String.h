@@ -19,7 +19,7 @@ namespace PigeonEngine
         EString(const CHAR* Other);
 
         explicit EString(const std::string& Other);
-        explicit EString(std::string&& Other);
+        EString(std::string&& Other);
         ~EString() = default;
 
         EString&    operator=(const EString& Other);
