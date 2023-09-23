@@ -227,20 +227,28 @@ namespace PigeonEngine
 		RenderUpdateCommands.EnqueueCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempUsedCascadeShadowData]()->void
 			{
+				BOOL32 NeedUpdateParams = FALSE;
 				if (TempMatrices)
 				{
 					SceneProxy->UpdateMatrices(*TempMatrices);
 					delete TempMatrices;
+					NeedUpdateParams = TRUE;
 				}
 				if (TempParams)
 				{
 					SceneProxy->UpdateLightParams(*TempParams);
 					delete TempParams;
+					NeedUpdateParams = TRUE;
 				}
 				if (TempUsedCascadeShadowData)
 				{
 					SceneProxy->UpdateCascadeData(TempUsedCascadeShadowData);
 					delete TempUsedCascadeShadowData;
+					NeedUpdateParams = TRUE;
+				}
+				if (NeedUpdateParams)
+				{
+					SceneProxy->MarkNeedUpdateParams();
 				}
 			});
 	}

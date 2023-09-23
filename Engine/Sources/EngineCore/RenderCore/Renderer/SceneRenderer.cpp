@@ -306,11 +306,16 @@ namespace PigeonEngine
 			{
 				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
 #if _EDITOR_ONLY
-				if ((!!StaticMesh) && (StaticMesh->IsRenderValid()))
+				if (!!StaticMesh)
 #endif
 				{
-					StaticMesh->BindRenderResource();
-					StaticMesh->Draw();
+#if _EDITOR_ONLY
+					if (StaticMesh->IsRenderValid())
+#endif
+					{
+						StaticMesh->BindRenderResource();
+						StaticMesh->Draw();
+					}
 				}
 			}
 		}
@@ -435,6 +440,32 @@ namespace PigeonEngine
 						const EViewDomainInfo& DomainInfo = DomainInfos[0];
 
 						DLightParams.UpdateParameterValue(DLightIndex, DomainInfo, LightProxy->GetLightData());
+						DLightIndex += 1u;
+					}
+				}
+				else
+				{
+					UINT32 DLightIndex = 0u;
+					for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
+					{
+						RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
+#if _EDITOR_ONLY
+						PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+						if (!LightProxy)
+						{
+							continue;
+						}
+#endif
+						if (LightProxy->IsNeedUpdateParams())
+						{
+							RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
+							const TArray<EViewDomainInfo>& DomainInfos = ViewDomainInfos[InViewProxy->GetUniqueID()];
+							PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), (ViewDomainInfos.Length() > 0u));
+							const EViewDomainInfo& DomainInfo = DomainInfos[0];
+
+							DLightParams.UpdateParameterValue(DLightIndex, DomainInfo, LightProxy->GetLightData());
+						}
+						DLightIndex += 1u;
 					}
 				}
 			}

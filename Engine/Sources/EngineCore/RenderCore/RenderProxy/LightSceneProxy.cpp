@@ -52,9 +52,12 @@ namespace PigeonEngine
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const RDirectionalLightSceneProxy& Other)
 		: RBaseSceneProxy(Other), VisibilityMap(Other.VisibilityMap), LightData(Other.LightData), ViewDomainInfos(Other.ViewDomainInfos), CascadeShadowData(nullptr), IsCascadeShadow(Other.IsCascadeShadow), Views(Other.Views), Component(Other.Component)
 	{
-		if (Other.IsCascadeShadow && (!!(Other.CascadeShadowData)))
+		if (Other.IsCascadeShadow)
 		{
-			CascadeShadowData = new ECascadeShadowData(*(Other.CascadeShadowData));
+			if (!!(Other.CascadeShadowData))
+			{
+				CascadeShadowData = new ECascadeShadowData(*(Other.CascadeShadowData));
+			}
 		}
 	}
 	RDirectionalLightSceneProxy::~RDirectionalLightSceneProxy()
@@ -201,7 +204,18 @@ namespace PigeonEngine
 	}
 	BOOL32 RDirectionalLightSceneProxy::IsLightUseCascadeShadow()const
 	{
-		return (IsCascadeShadow && (!!CascadeShadowData) && (CascadeShadowData->Layers.Length() > 0u) && (CascadeShadowData->Layers.Length() == (CascadeShadowData->Borders.Length() + 1u)));
+		if (IsCascadeShadow)
+		{
+			if (!!CascadeShadowData)
+			{
+				return ((CascadeShadowData->Layers.Length() > 0u) && (CascadeShadowData->Layers.Length() == (CascadeShadowData->Borders.Length() + 1u)));
+			}
+		}
+		return FALSE;
+	}
+	void RDirectionalLightSceneProxy::MarkNeedUpdateParams()const
+	{
+		NeedUpdateParams = TRUE;
 	}
 	BOOL32 RDirectionalLightSceneProxy::IsNeedUpdateParams()const
 	{
@@ -239,13 +253,18 @@ namespace PigeonEngine
 			{
 				CascadeShadowData = new ECascadeShadowData();
 			}
-			const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
 #if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), (CascadeLayerNum > 0u));
-			if (CascadeLayerNum > 0u)
+			if (InCascadeShadowData)
 #endif
 			{
-				CascadeShadowData->Setup(InCascadeShadowData->IsUseShadow, InCascadeShadowData->Layers, InCascadeShadowData->Borders);
+				const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
+#if _EDITOR_ONLY
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), (CascadeLayerNum > 0u));
+				if (CascadeLayerNum > 0u)
+#endif
+				{
+					CascadeShadowData->Setup(InCascadeShadowData->IsUseShadow, InCascadeShadowData->Layers, InCascadeShadowData->Borders);
+				}
 			}
 		}
 		else

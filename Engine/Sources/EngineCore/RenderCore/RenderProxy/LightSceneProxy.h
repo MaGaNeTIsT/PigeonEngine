@@ -47,6 +47,7 @@ namespace PigeonEngine
 		const ECascadeShadowData*			GetCascadeShadowData()const;
 		BOOL32								IsLightCastShadow()const;
 		BOOL32								IsLightUseCascadeShadow()const;
+		void								MarkNeedUpdateParams()const;
 		BOOL32								IsNeedUpdateParams()const;
 		RViewSetType&						GetViews();
 		const RViewSetType&					GetViews()const;

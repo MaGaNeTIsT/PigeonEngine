@@ -156,6 +156,35 @@ namespace PigeonEngine
                 });
             return Result;
         }
+
+        template<typename _TClassType>
+        const CHAR* GetStaticClassName()const
+        {
+            if (auto It = ClassTypeInfos.find(GetClassHashCode<_TClassType>()); It != ClassTypeInfos.end())
+            {
+                return (It->second.TypeName.c_str());
+            }
+            return ("EngineUnknownClassName");
+        }
+
+        const CHAR* GetStaticClassName(const size_t& InClassTypeHash)const
+        {
+            if (auto It = ClassTypeInfos.find(InClassTypeHash); It != ClassTypeInfos.end())
+            {
+                return (It->second.TypeName.c_str());
+            }
+            return ("EngineUnknownClassName");
+        }
+
+        template<typename _TClassType>
+        const CHAR* GetStaticClassName(const _TClassType* InClassTypePtr)const
+        {
+            if (auto It = ClassTypeInfos.find(GetClassHashCode<_TClassType>(InClassTypePtr)); It != ClassTypeInfos.end())
+            {
+                return (It->second.TypeName.c_str());
+            }
+            return ("EngineUnknownClassName");
+        }
     private:
         struct EClassTypeInfo
         {
@@ -372,6 +401,17 @@ namespace PigeonEngine
     template<typename _TFromType, typename _TToType>
     extern PE_INLINE BOOL32 IsClass(const _TFromType* InFromPtr, const _TToType* InToPtr);
 
+    // Gather [_TClassType] class static name
+    template<typename _TClassType>
+    extern PE_INLINE const CHAR* StaticClassName();
+
+    // Gather class static name by class hash [InClassHash]
+    extern PE_INLINE const CHAR* StaticClassName(const size_t& InClassHash);
+
+    // Gather class static name of [InClassPtr] point to
+    template<typename _TClassType>
+    extern PE_INLINE const CHAR* StaticClassName(const _TClassType* InClassPtr);
+
     template<typename _TToType>
     extern PE_INLINE const _TToType* AsClassPtrUnsafe(const void* InFromPtr);
 
@@ -493,6 +533,23 @@ namespace PigeonEngine
     PE_INLINE BOOL32 IsClass(const _TFromType* InFromPtr, const _TToType* InToPtr)
     {
         return ((GetClassHashCode<_TFromType>(InFromPtr)) == (GetClassHashCode<_TToType>(InToPtr)));
+    }
+
+    template<typename _TClassType>
+    PE_INLINE const CHAR* EngineStaticClassName()
+    {
+        return (ERTTIManager::GetManagerSingleton()->GetStaticClassName<_TClassType>());
+    }
+
+    PE_INLINE const CHAR* EngineStaticClassName(const size_t& InClassHash)
+    {
+        return (ERTTIManager::GetManagerSingleton()->GetStaticClassName(InClassHash));
+    }
+
+    template<typename _TClassType>
+    PE_INLINE const CHAR* EngineStaticClassName(const _TClassType* InClassPtr)
+    {
+        return (ERTTIManager::GetManagerSingleton()->GetStaticClassName<_TClassType>(InClassPtr));
     }
 
     template<typename _TToType>

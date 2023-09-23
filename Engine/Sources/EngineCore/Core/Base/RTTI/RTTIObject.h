@@ -84,6 +84,11 @@ namespace PigeonEngine
             }
             return Result;
         }
+
+        virtual const CHAR* StaticClassName()const
+        {
+            return (EngineStaticClassName(this));
+        }
     protected:
         /// <summary>
         /// Get hash code of [*this] type

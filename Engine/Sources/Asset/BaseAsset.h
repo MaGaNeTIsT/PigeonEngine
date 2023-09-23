@@ -49,7 +49,14 @@ namespace PigeonEngine
 			ReleaseResourceInternal();
 		}
 	public:
-		BOOL32					IsResourceValid()const { return ((!!ResourceData) && (ResourceData->IsResourceValid())); }
+		BOOL32 IsResourceValid()const
+		{
+			if (!!ResourceData)
+			{
+				return (ResourceData->IsResourceValid());
+			}
+			return FALSE;
+		}
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 		const EString&			GetAssetPath()const { return AssetPath; }
 		const EString&			GetAssetName()const { return AssetName; }
