@@ -22,8 +22,8 @@ namespace PigeonEngine
 
 		RDirectionalLightMaterialParameter() {}
 		virtual ~RDirectionalLightMaterialParameter() {}
-		RDirectionalLightMaterialParameter(const RDirectionalLightMaterialParameter&) {}
-		RDirectionalLightMaterialParameter& operator=(const RDirectionalLightMaterialParameter&) = delete;
+		RDirectionalLightMaterialParameter(const RDirectionalLightMaterialParameter& Other) {}
+		RDirectionalLightMaterialParameter& operator=(const RDirectionalLightMaterialParameter& Other) { return (*this); }
 	};
 
 	class RDirectionalLightSceneProxy : public RBaseSceneProxy

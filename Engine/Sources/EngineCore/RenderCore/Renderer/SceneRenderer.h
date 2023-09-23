@@ -4,6 +4,7 @@
 #include "RenderScene.h"
 #include <RenderResource.h>
 #include <RenderProxy/RenderSingletonObject.h>
+#include <RenderProxy/LightSceneProxy.h>
 
 namespace PigeonEngine
 {

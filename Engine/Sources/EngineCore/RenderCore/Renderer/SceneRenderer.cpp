@@ -3,7 +3,6 @@
 #include <RenderDevice/DeviceD3D11.h>
 #include <ShaderAsset/ShaderAsset.h>
 #include <RenderProxy/ViewProxy.h>
-#include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
