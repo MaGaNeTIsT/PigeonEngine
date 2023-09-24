@@ -42,6 +42,9 @@ namespace PigeonEngine
 	protected:
 		BOOL32	RenderStateDirty = FALSE;
 		// Render proxy functions END
+
+	public:
+		virtual BOOL8 GenerateImgui();
 	};
 
 };

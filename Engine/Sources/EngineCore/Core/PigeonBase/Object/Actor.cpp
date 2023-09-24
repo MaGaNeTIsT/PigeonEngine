@@ -47,6 +47,7 @@ namespace PigeonEngine
 
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
+		this->RootComponent->TickRender();
 		if(!IsTickable())
 		{
 			return;
@@ -56,11 +57,13 @@ namespace PigeonEngine
 			Component->FixedTick(deltaTime);
 		}
 		RootComponent->FixedTick(deltaTime);
+		
 		UserTick(deltaTime);
 	}
 
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
+		this->RootComponent->TickRender();
 		if(!IsTickable())
 		{
 			return;
@@ -69,7 +72,7 @@ namespace PigeonEngine
 		{
 			Component->EditorTick(deltaTime);
 		}
-		RootComponent->FixedTick(deltaTime);
+		RootComponent->EditorTick(deltaTime);
 	}
 
 	PActor* PActor::GetAttachedParentActor() const
@@ -107,6 +110,11 @@ namespace PigeonEngine
 		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), RelativeTransform);
 		Parent->ChildrenActors.Add(Child);
 		
+	}
+
+	TSet<PActor*> PActor::GetAllActorsAttached() const
+	{
+		return this->ChildrenActors;
 	}
 
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
@@ -265,5 +273,30 @@ namespace PigeonEngine
 	PSceneComponent* PActor::GetRootComponent() const
 	{
 		return this->RootComponent;
+	}
+
+	BOOL8 PActor::GenerateImgui(BOOL8 bSelectedActor)
+	{
+	
+		
+		if(ImGui::Checkbox("		Actor", &bSelectedActor))
+		{
+			return TRUE;
+		}
+		// for(const auto& elem : ChildrenActors)
+		// {
+		// 	elem->GenerateImgui(bSelectedActor);
+		// }
+
+		return FALSE;
+	}
+
+	BOOL8 PActor::GenerateComponentsImgui()
+	{
+		if(RootComponent)
+		{
+			RootComponent->GenerateImgui();
+		}
+		return FALSE;
 	}
 };

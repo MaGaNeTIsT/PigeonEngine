@@ -175,6 +175,8 @@ namespace PigeonEngine
 		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
 		m_EditorOpen = TempEditorOpen;
+		
+		m_WorldManager->EditorUpdate();
 	}
 #endif
 	HWND EMainManager::GetWindowHandle()

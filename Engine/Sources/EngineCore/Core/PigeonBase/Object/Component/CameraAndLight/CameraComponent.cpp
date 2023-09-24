@@ -14,7 +14,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 
-	void PCameraComponent::TickRenderState()
+	void PCameraComponent::TickRender()
 	{
 		if(IsRenderStateDirty())
 		{

@@ -12,7 +12,10 @@ namespace PigeonEngine
 
         void Init();
         void Uninit();
-
+#if _EDITOR_ONLY
+    public:
+        void EditorUpdate();
+#endif
     public:
         PE_NODISCARD PWorld* GetWorld()const;
     private:

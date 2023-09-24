@@ -65,19 +65,29 @@ namespace PigeonEngine
 
     void PWorld::Tick(FLOAT deltaTime)
     {
-        RootActor->FixedTick(deltaTime);
-        LevelScriptor->FixedTick(deltaTime);
-        this->Controller->FixedTick(deltaTime);
+#if _EDITOR_ONLY
+        EditorTick(deltaTime);
+        return;
+#endif
+        FixTick(deltaTime);
+        
     }
 
     void PWorld::EditorTick(FLOAT deltaTime)
     {
         RootActor->EditorTick(deltaTime);
-
         LevelScriptor->EditorTick(deltaTime);
+        Controller->EditorTick(deltaTime);
     }
 
-  
+    void PWorld::FixTick(FLOAT deltaTime)
+    {
+        RootActor->FixedTick(deltaTime);
+        LevelScriptor->FixedTick(deltaTime);
+        Controller->FixedTick(deltaTime);
+    }
+
+
     void PWorld::Destroy()
     {
         if(Controller)
@@ -158,6 +168,22 @@ namespace PigeonEngine
         return RenderScene;
     }
 
+    void PWorld::GenerateImgui()
+    {
+        ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+        for(const auto& elem : RootActor->GetAllActorsAttached())
+        {
+            if(elem->GenerateImgui(elem == ImguiSelectedActor))
+            {
+                ImguiSelectedActor = elem;
+            }
+        }
+        ImGui::Text("Detail");
+        if(ImguiSelectedActor)
+        {
+            ImguiSelectedActor->GenerateComponentsImgui();
+        }
 
-
+        ImGui::End();
+    }
 };

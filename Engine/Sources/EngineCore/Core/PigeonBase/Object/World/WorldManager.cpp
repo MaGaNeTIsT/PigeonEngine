@@ -47,7 +47,18 @@ namespace PigeonEngine
             this->World = nullptr;
         }
     }
-
+#if _EDITOR_ONLY
+    void EWorldManager::EditorUpdate()
+    {
+        ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("PigeonWo");
+        if(this->GetWorld())
+        {
+            this->GetWorld()->GenerateImgui();
+        }
+        ImGui::End();
+    }
+#endif
     PWorld* EWorldManager::GetWorld() const
     {
         return this->World;

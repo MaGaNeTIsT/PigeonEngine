@@ -88,6 +88,15 @@ namespace PigeonEngine
 	{
 		RenderStateDirty = FALSE;
 	}
+
+	BOOL8 PActorComponent::GenerateImgui()
+	{
+		ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+		ImGui::Text("ActorComponent");
+		ImGui::End();
+		return false;
+	}
+
 	// Render proxy functions END
 
 };

@@ -91,7 +91,12 @@ namespace PigeonEngine
 		
 	}
 
-	
+	TSet<PSceneComponent*> PSceneComponent::GetChildrenComponents() const
+	{
+		return this->ChildrenComponents;
+	}
+
+
 	void PSceneComponent::Init()
 	{
 		PActorComponent::Init();
@@ -117,25 +122,28 @@ namespace PigeonEngine
 		{
 			elem->FixedTick(deltaTime);
 		}
-		this->TickRenderState();
+		// this->TickRender();
 	}
 
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
-
 		PActorComponent::EditorTick(deltaTime);
 		for(const auto& elem : ChildrenComponents)
         {
         	elem->EditorTick(deltaTime);
         }
-		this->TickRenderState();
+		// this->TickRender();
 	}
 
-	void PSceneComponent::TickRenderState()
+	void PSceneComponent::TickRender()
 	{
 		if(IsRenderStateDirty())
 		{
 			SendUpdateRenderState();
+		}
+		for(const auto& elem : ChildrenComponents)
+		{
+			elem->TickRender();
 		}
 	}
 
@@ -322,6 +330,18 @@ namespace PigeonEngine
 		RenderTransformDirty = FALSE;
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
+
+	BOOL8 PSceneComponent::GenerateImgui()
+	{
+		ImGui::Text("		SceneComponent");
+		for(const auto& elem : ChildrenComponents)
+		{
+			elem->GenerateImgui();
+		}
+
+		return FALSE;
+	}
+
 	// Render proxy functions END
 
 };

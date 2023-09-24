@@ -31,7 +31,7 @@ namespace PigeonEngine
 	
 	protected:
 		// for frame, 
-		virtual void BeginAddedToScene(PWorld* World);
+		void BeginAddedToScene(PWorld* World) override;
 
 		// for users
 		virtual void UserBeginPlay();
@@ -88,11 +88,21 @@ namespace PigeonEngine
 		// Attach another actor to this;
 		virtual void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
-		
+
+		TSet<PActor*> GetAllActorsAttached() const;
 	private:
 
 		PActor* AttachedParentActor = nullptr;
 		TSet<PActor*> ChildrenActors;
+
+		// Imgui
+#if _EDITOR_ONLY
+	public:
+		virtual BOOL8 GenerateImgui(BOOL8 bSelectedActor);
+		virtual BOOL8 GenerateComponentsImgui();
+	private:
+		PActorComponent* ImguiSelectedComponent = nullptr;
+#endif
 		
 	};
 

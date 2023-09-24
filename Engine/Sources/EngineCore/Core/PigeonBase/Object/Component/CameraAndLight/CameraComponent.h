@@ -97,7 +97,7 @@ namespace PigeonEngine
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PCameraComponent)
 	protected:
-		void TickRenderState() override;
+		void TickRender() override;
 	public:
 		
 		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = ESettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);

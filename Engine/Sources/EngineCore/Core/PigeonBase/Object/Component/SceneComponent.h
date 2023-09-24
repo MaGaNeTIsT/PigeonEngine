@@ -56,7 +56,7 @@ namespace PigeonEngine
 #endif
 
     protected:
-        virtual void TickRenderState();
+        virtual void TickRender();
     protected:
         void BeginAddedToScene(PWorld* World) override;
 
@@ -118,6 +118,7 @@ namespace PigeonEngine
 
     public:
     	void RemoveChildComponent(PSceneComponent* NewChild);
+    	PE_NODISCARD TSet<PSceneComponent*> GetChildrenComponents() const;
     protected:
     	void ClearChildren       ();
     private:
@@ -140,7 +141,9 @@ namespace PigeonEngine
     protected:
         BOOL32          RenderTransformDirty = FALSE;
         // Render proxy functions END
-    	
+
+    public:
+    	virtual BOOL8 GenerateImgui() override;
     };
 
 };

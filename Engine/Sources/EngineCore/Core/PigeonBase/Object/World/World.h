@@ -35,9 +35,11 @@ namespace PigeonEngine
         void	Init() override;
         void	Uninit() override;
         void	Tick(FLOAT deltaTime) override;
+    protected:
 #if _EDITOR_ONLY
-        void	EditorTick(FLOAT deltaTime) override;
+        void EditorTick(FLOAT deltaTime) override;
 #endif
+        void FixTick(FLOAT deltaTime);
     public:
         void Destroy() override;
     // End PObject Interface
@@ -81,6 +83,14 @@ namespace PigeonEngine
         RSceneInterface*    RenderScene = nullptr;
         //Render scene state END
 
+        // IMGUI
+#if _EDITOR_ONLY
+    public:
+        virtual void GenerateImgui();
+    private:
+        PActor* ImguiSelectedActor = nullptr;
+#endif
+        
     };
 
    
