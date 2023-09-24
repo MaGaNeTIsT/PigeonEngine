@@ -22,7 +22,7 @@ public:
 	//  Max distance between the floor and the character to still consider the character standing on the floor
 	FLOAT								MaxSeparationDistance = 0.05f;
 };
-class FCharacter final : FCharacterBase
+class FCharacter final : public FCharacterBase
 {
 public:
 	FCharacter(const FCharacterSettings* inSettings);
@@ -31,7 +31,7 @@ public:
 	virtual								~FCharacter() override;
 
 	/// Add bodies and constraints to the system and optionally activate the bodies
-	void								AddToPhysicsSystem(EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies);
+	void								AddToPhysicsSystem(EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies = true);
 
 	/// Remove bodies and constraints from the system
 	void								RemoveFromPhysicsSystem(BOOL32 inLockBodies = true);
@@ -43,7 +43,7 @@ public:
 	void								SetLinearAndAngularVelocity(Vector3 inLinearVelocity, Vector3 inAngularVelocity, BOOL32 inLockBodies = true);
 
 	/// Get the linear velocity of the character (m / s)
-	Vec3								GetLinearVelocity(BOOL32 inLockBodies = true) const;
+	Vector3								GetLinearVelocity(BOOL32 inLockBodies = true) const;
 
 	/// Set the linear velocity of the character (m / s)
 	void								SetLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies = true);

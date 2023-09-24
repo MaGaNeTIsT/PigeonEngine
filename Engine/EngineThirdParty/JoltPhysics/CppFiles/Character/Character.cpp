@@ -22,7 +22,13 @@ FCharacter::FCharacter(const FCharacterSettings* inSettings) :
 
 FCharacter::~FCharacter()
 {
+	delete m_CharacterCreateSettings->Shape;
+	delete m_CharacterCreateSettings;
+	m_CharacterCreateSettings = nullptr;
 	delete m_CharacterSettings;
+	m_CharacterSettings = nullptr;
+	if (m_Character)
+		RemoveFromPhysicsSystem();
 }
 void FCharacter::AddToPhysicsSystem(EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies)
 {
@@ -34,6 +40,7 @@ void FCharacter::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
 	m_Character->RemoveFromPhysicsSystem(inLockBodies);
 	delete m_Character;
+	m_Character = nullptr;
 }
 void FCharacter::Activate(BOOL32 inLockBodies)
 {
@@ -47,9 +54,9 @@ void FCharacter::SetLinearAndAngularVelocity(Vector3 inLinearVelocity, Vector3 i
 {
 	m_Character->SetLinearAndAngularVelocity(PhysicsUtility::Convert(inLinearVelocity), PhysicsUtility::Convert(inAngularVelocity), inLockBodies);
 }
-Vec3 FCharacter::GetLinearVelocity(BOOL32 inLockBodies) const
+Vector3 FCharacter::GetLinearVelocity(BOOL32 inLockBodies) const
 {
-	return m_Character->GetLinearVelocity(inLockBodies);
+	return PhysicsUtility::Convert(m_Character->GetLinearVelocity(inLockBodies));
 }
 void FCharacter::SetLinearVelocity(Vector3 inLinearVelocity, BOOL32 inLockBodies)
 {

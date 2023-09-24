@@ -37,6 +37,8 @@
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
     <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.h" />
@@ -177,6 +179,8 @@
     <ClCompile Include="Engine\EngineThirdParty\assimp\CppFiles\assimpManager.cpp" />
     <ClCompile Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MaterialAsset\MaterialAsset.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.cpp" />

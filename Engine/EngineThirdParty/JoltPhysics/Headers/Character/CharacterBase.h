@@ -30,6 +30,7 @@ public:
 	FCharacterBase(const FCharacterBaseSettings* inSettings)
 	{
 		CharacterBaseSettings = inSettings;
+		Shape = inSettings->Shape;
 	}
 
 	/// Destructor
@@ -48,8 +49,7 @@ public:
 		return CharacterBase->IsSlopeTooSteep(PhysicsUtility::Convert(inNormal));
 	}
 
-	const FShape*						GetShape() const { return CharacterBaseSettings->Shape; }
-
+	const FShape* GetShape() const { return Shape; }
 	enum class EGroundState
 	{
 		OnGround,						///< Character is on the ground and can move freely.
@@ -71,7 +71,8 @@ public:
 			case JPH::CharacterBase::EGroundState::InAir:
 				return EGroundState::InAir;
 			default:
-				return EGroundState::InAir;
+				PE_ASSERT(false);
+				return EGroundState::NotSupported;
 		}
 	}
 
@@ -88,5 +89,6 @@ public:
 protected:
 	JPH::CharacterBase*					CharacterBase = nullptr;
 	const FCharacterBaseSettings*		CharacterBaseSettings = nullptr;
+	const FShape*						Shape = nullptr;
 };
 PIGEONENGINE_NAMESPACE_END
