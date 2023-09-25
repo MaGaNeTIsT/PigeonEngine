@@ -373,6 +373,8 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsDefines.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsListener.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -572,6 +574,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\PhysicsListener.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
