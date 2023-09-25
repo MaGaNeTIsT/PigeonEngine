@@ -1,8 +1,6 @@
 #pragma once
 #include <CoreMinimal.h>
 #include "LevelActor.h"
-#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
-#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/Character.h"
 
 namespace PigeonEngine
 {
@@ -15,12 +13,12 @@ namespace PigeonEngine
 		/// Init a level character use settings,host point.
 		/// </summary>
 		/// <param name="InCharacterSettings"></param>
-		virtual void InitCharacter(const FCharacterSettings* InCharacterSettings);
+		virtual void InitCharacter(const class FCharacterSettings* InCharacterSettings);
 		virtual void UninitCharacter();
 
-		FShape* GetStandingShape();
-		FShape* GetCrouchingShape();
-		FCharacter* GetPhysicsCharacter();
+		class FShape* GetStandingShape();
+		class FShape* GetCrouchingShape();
+		class FCharacter* GetPhysicsCharacter();
 	protected:
 		// for frame, 
 		virtual void BeginAddedToScene(PWorld* World) override;
@@ -42,10 +40,10 @@ namespace PigeonEngine
 		FLOAT			CharacterSpeed					= 6.0f;
 		FLOAT			JumpSpeed						= 4.0f;
 	protected:
-		class PMovementComponent* MoveMentComponent			= nullptr;
-		FCharacter*		Character						= nullptr;
+		class PMovementComponent*	MoveMentComponent	= nullptr;
+		class FCharacter*			Character			= nullptr;
 		// The different stances for the character
-		FShape*			StandingShape					= nullptr;
-		FShape*			CrouchingShape					= nullptr;
+		class FShape*				StandingShape		= nullptr;
+		class FShape*				CrouchingShape		= nullptr;
 	};
 }

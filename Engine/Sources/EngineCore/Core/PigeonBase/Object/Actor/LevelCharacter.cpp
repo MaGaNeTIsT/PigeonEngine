@@ -1,5 +1,8 @@
 #include "LevelCharacter.h"
 #include "../Component/Character/MovementComponent.h"
+#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
+#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/Character.h"
+#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
 
 PigeonEngine::PLevelCharacter::PLevelCharacter()
@@ -17,10 +20,12 @@ void PigeonEngine::PLevelCharacter::InitCharacter(const FCharacterSettings* InCh
 	this->AddComponent(MoveMentComponent);
 	StandingShape = new FCapsuleShape(CharacterHeightStanding,CharacterRadiusStanding);
 	CrouchingShape = new FCapsuleShape(CharacterHeightCrouching,CharacterRadiusCrouching);
+	FPhysicsManager::GetSingleton()->AddCharacter(Character);
 }
 
 void PigeonEngine::PLevelCharacter::UninitCharacter()
 {
+	FPhysicsManager::GetSingleton()->RemoveCharacter(Character);
 	delete Character;
 	Character = nullptr;
 	delete StandingShape;

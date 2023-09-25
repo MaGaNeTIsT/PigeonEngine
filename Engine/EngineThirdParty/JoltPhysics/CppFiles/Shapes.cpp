@@ -22,16 +22,16 @@ namespace PigeonEngine
 
 	FShape::~FShape()
 	{
-		if (m_Shape)
-		{
-			delete m_Shape;
-			m_Shape = nullptr;
-		}
-		if (m_ShapeSettings)
-		{
-			delete m_ShapeSettings;
-			m_ShapeSettings = nullptr;
-		}
+		//if (m_Shape)
+		//{
+		//	delete m_Shape;
+		//	m_Shape = nullptr;
+		//}
+		//if (m_ShapeSettings)
+		//{
+		//	delete m_ShapeSettings;
+		//	m_ShapeSettings = nullptr;
+		//}
 	}
 
 	Shape* FShape::CreateShape(BOOL32 bCreateNew)
