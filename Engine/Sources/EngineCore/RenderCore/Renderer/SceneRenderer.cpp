@@ -309,13 +309,8 @@ namespace PigeonEngine
 				SceneTextures->GBufferC
 			};
 
-			RenderDevice->ClearDepthStencilView(SceneTextures->SceneDepthStencil);
-			for (UINT32 RTVIndex = 0u; RTVIndex < 4u; RTVIndex++)
-			{
-				RenderDevice->ClearRenderTargetView(RenderTargets[RTVIndex]);
-			}
-			RenderDevice->SetRenderTargets(RenderTargets, 4u);
-			RenderDevice->SetRenderTarget(SceneTextures->SceneDepthStencil);
+			SceneTextures->ClearResources();
+			RenderDevice->SetRenderTargets(RenderTargets, 4u, SceneTextures->SceneDepthStencil);
 
 			RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
 			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.SceneProxies.Length(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)

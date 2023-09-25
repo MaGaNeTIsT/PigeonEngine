@@ -117,11 +117,11 @@ namespace PigeonEngine
 	void RSceneTextures::ClearResources()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->ClearDepthStencilView(SceneDepthStencil.DepthStencilView);
-		RenderDevice->ClearRenderTargetView(SceneColor.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferA.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferB.RenderTargetView);
-		RenderDevice->ClearRenderTargetView(GBufferC.RenderTargetView);
+		RenderDevice->ClearDepthStencilView(SceneDepthStencil);
+		RenderDevice->ClearRenderTargetView(SceneColor);
+		RenderDevice->ClearRenderTargetView(GBufferA);
+		RenderDevice->ClearRenderTargetView(GBufferB);
+		RenderDevice->ClearRenderTargetView(GBufferC);
 	}
 	void RSceneTextures::ReleaseResources()
 	{
@@ -189,7 +189,7 @@ namespace PigeonEngine
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		for (UINT32 i = 0u, n = ShadowMaps.Length(); i < n; i++)
 		{
-			RenderDevice->ClearDepthStencilView(ShadowMaps[i].DepthStencilView);
+			RenderDevice->ClearDepthStencilView(ShadowMaps[i]);
 		}
 	}
 	void RShadowTexture::ReleaseResources()

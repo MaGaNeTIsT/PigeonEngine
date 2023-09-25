@@ -171,6 +171,8 @@ float DiffuseBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams
     return (Diffuse_Lambert());
 #elif defined(ENABLE_BURLEY_DIFFUSE)
     return (Diffuse_Burley(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped, InSVLContent.LdotHClamped, InPixelParams.Roughness));
+#else
+    return 1.0;
 #endif
 }
 

@@ -912,11 +912,11 @@ namespace PigeonEngine
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
 		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
 	}
-	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InRTV)
+	void RDeviceD3D11::SetRenderTargetOnly(const RRenderTexture2D& InRTV)
 	{
 		m_ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), nullptr);
 	}
-	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InDSV)
+	void RDeviceD3D11::SetDepthStencilOnly(const RRenderTexture2D& InDSV)
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
 		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, InDSV.DepthStencilView.Get());

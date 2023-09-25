@@ -42,8 +42,8 @@ namespace PigeonEngine
 		void	SetDefaultBlendState();
 		void	SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor = Color4(0.f, 0.f, 0.f, 0.f), const UINT32& sampleMask = 0xffffffffu);
 		void	SetNoRenderTarget();
-		void	SetRenderTarget(const RRenderTexture2D& InRTV);
-		void	SetRenderTarget(const RRenderTexture2D& InDSV);
+		void	SetRenderTargetOnly(const RRenderTexture2D& InRTV);
+		void	SetDepthStencilOnly(const RRenderTexture2D& InDSV);
 		void	SetRenderTarget(const RRenderTexture2D& InRTV, const RRenderTexture2D& InDSV);
 		void	SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum);
 		void	SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum, const RRenderTexture2D& InDSV);
