@@ -20,7 +20,7 @@ namespace PigeonEngine
 	{
 	public:
 		RStaticMeshSceneProxy(PStaticMeshComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset);		
+		void			SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset);
 	public:
 		virtual BOOL32	IsRenderValid()const override;
 		void			UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset);

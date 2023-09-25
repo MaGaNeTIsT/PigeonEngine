@@ -25,13 +25,15 @@ namespace PigeonEngine
 		BOOL32			IsSceneProxyMovable()const;
 		BOOL32			IsSceneProxyCastShadow()const;
 		BOOL32			IsSceneProxyReceiveShadow()const;
+		BOOL32			IsSceneProxyHidden()const;
 	public:
-		void			SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
+		void			SetPrimitiveSettings(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
 		void			UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);
 	protected:
 		BOOL32			IsMovable;
 		BOOL32			IsCastShadow;
 		BOOL32			IsReceiveShadow;
+		BOOL32			IsHidden;
 
 		RENDER_PROXY_CLASS_BODY(RPrimitiveSceneProxy)
 

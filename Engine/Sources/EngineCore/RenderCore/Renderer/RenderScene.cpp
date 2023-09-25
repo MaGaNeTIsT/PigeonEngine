@@ -257,7 +257,8 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
-		const BOOL32 InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
+		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
+			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
 			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
 			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
@@ -267,9 +268,9 @@ namespace PigeonEngine
 		const EStaticMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
 
 		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
+			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
 			{
-				SceneProxy->SetupProxy(InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset);
+				SceneProxy->SetupProxy(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset);
 				delete TempMatrices;
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, TRUE);
 			});
@@ -293,7 +294,8 @@ namespace PigeonEngine
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
-		const BOOL32 InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
+		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
+			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
 			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
 			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = nullptr;
@@ -311,10 +313,10 @@ namespace PigeonEngine
 		}
 
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
+			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
+				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);

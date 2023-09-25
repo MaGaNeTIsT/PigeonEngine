@@ -11,7 +11,7 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PPrimitiveComponent::PPrimitiveComponent()
-        : Bounds(EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE)), IsCastShadow(FALSE), IsReceiveShadow(FALSE)
+        : Bounds(EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE)), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
     {
     }
 
@@ -35,6 +35,11 @@ namespace PigeonEngine
         return IsReceiveShadow;
     }
 
+    BOOL32 PPrimitiveComponent::IsPrimitiveRenderHidden() const
+    {
+        return IsRenderHidden;
+    }
+
     void PPrimitiveComponent::SetPrimitiveCastShadow(BOOL32 InIsCastShadow)
     {
         IsCastShadow = InIsCastShadow;
@@ -45,7 +50,16 @@ namespace PigeonEngine
         IsReceiveShadow = InIsReceiveShadow;
     }
 
+    void PPrimitiveComponent::SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden)
+    {
+        IsRenderHidden = InIsRenderHidden;
+    }
+
     // Render proxy functions START
+    BOOL32 PPrimitiveComponent::CheckIsRenderHidden()const
+    {
+        return IsPrimitiveRenderHidden();
+    }
     void PPrimitiveComponent::CreateRenderState()
     {
         PSceneComponent::CreateRenderState();

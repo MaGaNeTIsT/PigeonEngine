@@ -31,6 +31,8 @@ namespace PigeonEngine
 
 		// Render proxy functions START
 	public:
+		virtual BOOL32	IsVisible()const;
+		virtual BOOL32	CheckIsRenderHidden()const;
 		BOOL32			ShouldRender()const;
 		BOOL32			IsRenderStateDirty()const;
 		virtual void	CreateRenderState();

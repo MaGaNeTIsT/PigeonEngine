@@ -37,16 +37,20 @@ namespace PigeonEngine
         PE_NODISCARD EBoundAABB GetBounds() const;
         PE_NODISCARD BOOL32 IsPrimitiveCastShadow() const;
         PE_NODISCARD BOOL32 IsPrimitiveReceiveShadow() const;
+        PE_NODISCARD BOOL32 IsPrimitiveRenderHidden() const;
     public:
         void SetPrimitiveCastShadow(BOOL32 InIsCastShadow);
         void SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow);
+        void SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden);
     private:
         EBoundAABB  Bounds;
         BOOL32      IsCastShadow;
         BOOL32      IsReceiveShadow;
+        BOOL32      IsRenderHidden;
 
         // Render proxy functions START
     public:
+        virtual BOOL32	CheckIsRenderHidden()const override;
         virtual void    CreateRenderState()override;
         virtual void    DestroyRenderState()override;
         virtual void    SendUpdateRenderState()override;

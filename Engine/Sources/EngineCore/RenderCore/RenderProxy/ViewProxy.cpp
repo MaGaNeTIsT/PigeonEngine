@@ -164,6 +164,7 @@ namespace PigeonEngine
 		{
 			RDeviceD3D11::GetDeviceSingleton()->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
 			RDeviceD3D11::GetDeviceSingleton()->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+			RDeviceD3D11::GetDeviceSingleton()->BindCSConstantBuffer(ConstantBuffer.Buffer, InSlot);
 		}
 	}
 

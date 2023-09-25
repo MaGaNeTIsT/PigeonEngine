@@ -912,38 +912,38 @@ namespace PigeonEngine
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
 		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, nullptr);
 	}
-	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv)
+	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InRTV)
 	{
-		m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), nullptr);
+		m_ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), nullptr);
 	}
-	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
+	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InDSV)
 	{
 		ID3D11RenderTargetView* rtvs[] = { nullptr };
-		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(1u, rtvs, InDSV.DepthStencilView.Get());
 	}
-	void RDeviceD3D11::SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
+	void RDeviceD3D11::SetRenderTarget(const RRenderTexture2D& InRTV, const RRenderTexture2D& InDSV)
 	{
-		m_ImmediateContext->OMSetRenderTargets(1u, rtv.GetAddressOf(), dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(1u, InRTV.RenderTargetView.GetAddressOf(), InDSV.DepthStencilView.Get());
 	}
-	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum)
+	void RDeviceD3D11::SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum)
 	{
-		TArray<ID3D11RenderTargetView*> rtvs;
-		rtvs.Resize(rtvNum);
-		for (UINT32 i = 0u; i < rtvNum; i++)
+		TArray<ID3D11RenderTargetView*> UsedRTVs;
+		UsedRTVs.Resize(InRTVNum);
+		for (UINT32 i = 0u; i < InRTVNum; i++)
 		{
-			rtvs[i] = rtv[i].Get();
+			UsedRTVs[i] = (InRTVs[i]).RenderTargetView.Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.RawData(), nullptr);
+		m_ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.RawData(), nullptr);
 	}
-	void RDeviceD3D11::SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv)
+	void RDeviceD3D11::SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum, const RRenderTexture2D& InDSV)
 	{
-		TArray<ID3D11RenderTargetView*> rtvs;
-		rtvs.Resize(rtvNum);
-		for (UINT32 i = 0u; i < rtvNum; i++)
+		TArray<ID3D11RenderTargetView*> UsedRTVs;
+		UsedRTVs.Resize(InRTVNum);
+		for (UINT32 i = 0u; i < InRTVNum; i++)
 		{
-			rtvs[i] = rtv[i].Get();
+			UsedRTVs[i] = (InRTVs[i]).RenderTargetView.Get();
 		}
-		m_ImmediateContext->OMSetRenderTargets(rtvNum, rtvs.RawData(), dsv.Get());
+		m_ImmediateContext->OMSetRenderTargets(InRTVNum, UsedRTVs.RawData(), InDSV.DepthStencilView.Get());
 	}
 	void RDeviceD3D11::SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs)
 	{
@@ -1145,17 +1145,17 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->CopyResource(dst.Get(), src.Get());
 	}
-	void RDeviceD3D11::ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Color4& clearColor)
+	void RDeviceD3D11::ClearRenderTargetView(const RRenderTexture2D& InRTV, const Color4& InClearColor)
 	{
-		m_ImmediateContext->ClearRenderTargetView(rtv.Get(), clearColor.rgba);
+		m_ImmediateContext->ClearRenderTargetView(InRTV.RenderTargetView.Get(), InClearColor.rgba);
 	}
-	void RDeviceD3D11::ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT32 flags, const FLOAT& depth, const UINT32& stencil)
+	void RDeviceD3D11::ClearDepthStencilView(const RRenderTexture2D& InDSV, const UINT32 InFlags, const FLOAT InDepth, const UINT32 InStencil)
 	{
-		UINT32 clearFlags = 0u;
-		RDeviceD3D11::TranslateClearDepthStencilFlag(clearFlags, flags);
-		UINT8 clearStencil = static_cast<UINT8>(EMath::Min(stencil, 0xffu));
-		FLOAT clearDepth = EMath::Clamp(depth, 0.f, 1.f);
-		m_ImmediateContext->ClearDepthStencilView(dsv.Get(), clearFlags, clearDepth, clearStencil);
+		UINT32 UsedClearFlags = 0u;
+		RDeviceD3D11::TranslateClearDepthStencilFlag(UsedClearFlags, InFlags);
+		UINT8 UsedClearStencil = static_cast<UINT8>(EMath::Min(InStencil, 0xffu));
+		FLOAT UsedClearDepth = EMath::Clamp(InDepth, 0.f, 1.f);
+		m_ImmediateContext->ClearDepthStencilView(InDSV.DepthStencilView.Get(), UsedClearFlags, UsedClearDepth, UsedClearStencil);
 	}
 	void RDeviceD3D11::ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Color4& clearValue)
 	{
@@ -2009,12 +2009,12 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::ClearFinalOutput()
 	{
-		RDeviceD3D11::ClearRenderTargetView(m_RenderTargetView, Color4(0.5f, 0.5f, 0.5f, 0.f));
-		RDeviceD3D11::ClearDepthStencilView(m_DepthStencilView);
+		m_ImmediateContext->ClearRenderTargetView(m_RenderTargetView.Get(), Color4(0.5f, 0.5f, 0.5f, 1.f).rgba);
+		m_ImmediateContext->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH | D3D11_CLEAR_FLAG::D3D11_CLEAR_STENCIL, 1.f, 0xffu);
 	}
 	void RDeviceD3D11::SetFinalOutput()
 	{
-		RDeviceD3D11::SetRenderTarget(m_RenderTargetView, m_DepthStencilView);
+		m_ImmediateContext->OMSetRenderTargets(1u, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
 		m_ImmediateContext->RSSetViewports(1u, &(m_Viewport));
 	}
  };

@@ -192,6 +192,10 @@ namespace PigeonEngine
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
 		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
@@ -297,25 +301,42 @@ namespace PigeonEngine
 			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
 			ViewProxy->BindRenderResource();
 
-			RenderDevice->ClearRenderTargetView(SceneTextures->SceneColor.RenderTargetView);
-			RenderDevice->ClearDepthStencilView(SceneTextures->SceneDepthStencil.DepthStencilView);
-			RenderDevice->SetRenderTarget(SceneTextures->SceneColor.RenderTargetView, SceneTextures->SceneDepthStencil.DepthStencilView);
+			RRenderTexture2D RenderTargets[4] =
+			{
+				SceneTextures->SceneColor,
+				SceneTextures->GBufferA,
+				SceneTextures->GBufferB,
+				SceneTextures->GBufferC
+			};
+
+			RenderDevice->ClearDepthStencilView(SceneTextures->SceneDepthStencil);
+			for (UINT32 RTVIndex = 0u; RTVIndex < 4u; RTVIndex++)
+			{
+				RenderDevice->ClearRenderTargetView(RenderTargets[RTVIndex]);
+			}
+			RenderDevice->SetRenderTargets(RenderTargets, 4u);
+			RenderDevice->SetRenderTarget(SceneTextures->SceneDepthStencil);
 
 			RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
 			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.SceneProxies.Length(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
 			{
 				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
 #if _EDITOR_ONLY
-				if (!!StaticMesh)
-#endif
+				if (!StaticMesh)
 				{
-#if _EDITOR_ONLY
-					if (StaticMesh->IsRenderValid())
+					PE_FAILED(("Exist a null mesh proxy."), (ENGINE_RENDER_CORE_ERROR));
+					continue;
+				}
+				if (!(StaticMesh->IsRenderValid()))
+				{
+					PE_FAILED(("Exist a render invalid mesh proxy."), (ENGINE_RENDER_CORE_ERROR));
+					continue;
+				}
 #endif
-					{
-						StaticMesh->BindRenderResource();
-						StaticMesh->Draw();
-					}
+				if (!(StaticMesh->IsSceneProxyHidden()))
+				{
+					StaticMesh->BindRenderResource();
+					StaticMesh->Draw();
 				}
 			}
 		}

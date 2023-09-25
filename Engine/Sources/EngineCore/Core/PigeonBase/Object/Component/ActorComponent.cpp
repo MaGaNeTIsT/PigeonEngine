@@ -58,10 +58,17 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
+	BOOL32 PActorComponent::IsVisible()const
+	{
+		return TRUE;
+	}
+	BOOL32 PActorComponent::CheckIsRenderHidden()const
+	{
+		return FALSE;
+	}
 	BOOL32 PActorComponent::ShouldRender()const
 	{
-		//TODO
-		return TRUE;
+		return IsVisible();
 	}
 	BOOL32 PActorComponent::IsRenderStateDirty()const
 	{

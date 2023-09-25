@@ -42,11 +42,11 @@ namespace PigeonEngine
 		void	SetDefaultBlendState();
 		void	SetBlendState(const Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const Color4& blendFactor = Color4(0.f, 0.f, 0.f, 0.f), const UINT32& sampleMask = 0xffffffffu);
 		void	SetNoRenderTarget();
-		void	SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv);
-		void	SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
-		void	SetRenderTarget(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
-		void	SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum);
-		void	SetRenderTargets(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>* rtv, const UINT32& rtvNum, const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv);
+		void	SetRenderTarget(const RRenderTexture2D& InRTV);
+		void	SetRenderTarget(const RRenderTexture2D& InDSV);
+		void	SetRenderTarget(const RRenderTexture2D& InRTV, const RRenderTexture2D& InDSV);
+		void	SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum);
+		void	SetRenderTargets(const RRenderTexture2D* InRTVs, const UINT32& InRTVNum, const RRenderTexture2D& InDSV);
 		void	SetRasterizerState(const Microsoft::WRL::ComPtr<ID3D11RasterizerState>& rs);
 		void	SetViewport(const EViewport& viewport);
 		void	SetViewports(const EViewport* viewports, const UINT32& viewportNum);
@@ -82,8 +82,8 @@ namespace PigeonEngine
 	public:
 		void	CopyTexture2DResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& src, const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dst);
 	public:
-		void	ClearRenderTargetView(const Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& rtv, const Color4& clearColor = Color4(0.f, 0.f, 0.f, 0.f));
-		void	ClearDepthStencilView(const Microsoft::WRL::ComPtr<ID3D11DepthStencilView>& dsv, UINT32 flags = (RClearDepthStencilFlagType::CLEAR_DEPTH | RClearDepthStencilFlagType::CLEAR_STENCIL), const FLOAT& depth = 1.f, const UINT32& stencil = 0x0u);
+		void	ClearRenderTargetView(const RRenderTexture2D& InRTV, const Color4& InClearColor = Color4(0.f, 0.f, 0.f, 0.f));
+		void	ClearDepthStencilView(const RRenderTexture2D& InDSV, const UINT32 InFlags = (RClearDepthStencilFlagType::CLEAR_DEPTH | RClearDepthStencilFlagType::CLEAR_STENCIL), const FLOAT InDepth = 1.f, const UINT32 InStencil = 0x0u);
 		void	ClearUnorderedAccessViewFloat(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Color4& clearValue = Color4(0.f, 0.f, 0.f, 0.f));
 		void	ClearUnorderedAccessViewUint(const Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>& uav, const Vector4Int& clearValue = Vector4Int(0, 0, 0, 0));
 	public:

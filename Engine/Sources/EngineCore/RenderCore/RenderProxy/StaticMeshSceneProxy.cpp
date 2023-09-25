@@ -36,11 +36,11 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
 	}
-	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset)
+	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset)
 	{
 		SetupShaders();
 
-		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		SetPrimitiveSettings(InIsHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 		UpdateMeshAsset(InMeshAsset);
 
