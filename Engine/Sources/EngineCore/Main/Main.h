@@ -37,7 +37,6 @@
 #include <io.h>
 #include <tchar.h>
 #include <dwmapi.h>
-#include <memory>
 
 #if _EDITOR_ONLY
 #include "../../../ThirdParty/imgui/imgui.h"

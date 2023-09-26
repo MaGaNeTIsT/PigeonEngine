@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../../Main/Main.h"
+#include <memory>
 #include "../DataStructure/BuiltInType.h"
 #include <Config/ErrorCaption.h>
 #include "../../../../Development/Alert/DevelopmentDefines.h"
