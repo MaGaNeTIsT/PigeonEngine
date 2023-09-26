@@ -76,70 +76,54 @@ float3 ComputeF0ClearCoatToSurface(const float3 InF0)
 {
 	// Approximation of ComputeIORToF0(ComputeF0ToIOR(F0), 1.5)
 	// This assumes that the clear coat layer has an IOR of 1.5
-#ifdef ENABLE_CONSOLE_SHADING
+#if (ENABLE_CONSOLE_SHADING)
 	return saturate(InF0 * (InF0 * (0.941892 - 0.263008 * InF0) + 0.346479) - 0.0285998);
 #else
 	return saturate(InF0 * (InF0 * 0.526868 + 0.529324) - 0.0482256);
 #endif
 }
 
-NormalViewLightDotParams InitNormalViewLightDotParams(const float3 InNormal, const float3 InLightDirection, const float3 InViewDirection, const float3 InHalfVector)
-{
-	NormalViewLightDotParams Result;
-
-	Result.LdotH		= dot(InLightDirection, InHalfVector);
-	Result.LdotHClamped	= saturate(Result.LdotH);
-	Result.NdotV		= dot(InNormal, InViewDirection);
-	Result.NdotVClamped = ClampNdotV(Result.NdotV);
-	Result.NdotL		= dot(InNormal, InLightDirection);
-	Result.NdotLClamped	= saturate(Result.NdotL);
-	Result.NdotH		= dot(InNormal, InHalfVector);
-	Result.NdotHClamped	= saturate(Result.NdotH);
-
-	return Result;
-}
-
 float3 SurfaceShading_Standard(
-	const PixelParams InPixelParams,
-	const NormalViewLightDotParams InSVLContent,
+	const ShadingPixelParams InPixelParams,
+	const NormalViewLightDotParams InNVLContent,
 	const ShadingLightParams InLightParams,
 	const float3 InViewDirection,
 	const float3 InHalfVector,
-#ifdef MATERIAL_HAS_ANISOTROPY
+#if (SHADER_HAS_ANISOTROPY)
 	float3 InAnisotropicT,
 	float3 InAnisotropicB,
 	float InAnisotropy,
 #endif
-#ifdef MATERIAL_HAS_CLEAR_COAT
+#if (SHADER_HAS_CLEAR_COAT)
 	float InClearCoatStrength,
 	float InClearCoatRoughness,
-#ifdef MATERIAL_HAS_CLEAR_COAT_NORMAL
+#if (SHADER_HAS_CLEAR_COAT_NORMAL)
 	float3 InClearCoatNormal,
 #endif
 #endif
 	float InShadowOcclusion)
 {
-#ifdef MATERIAL_HAS_ANISOTROPY
-	float3 Fr = AnisotropicBRDF(InSVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
+#if (SHADER_HAS_ANISOTROPY)
+	float3 Fr = AnisotropicBRDF(InNVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
 #else
-	float3 Fr = IsotropicBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector);
+	float3 Fr = IsotropicBRDF(InNVLContent, InPixelParams, InPixelParams.ShadingNormal, InHalfVector);
 #endif
-	float3 Fd = DiffuseBRDF(InSVLContent, InPixelParams) * InPixelParams.DiffuseColor;
+	float3 Fd = DiffuseBRDF(InNVLContent, InPixelParams) * InPixelParams.DiffuseColor;
 
 	float EnergyCompensation = 1.0;
 	float3 Color = Fd + Fr * EnergyCompensation;
 
-#ifdef MATERIAL_HAS_CLEAR_COAT
+#if (SHADER_HAS_CLEAR_COAT)
 	float Fcc;
-#ifdef MATERIAL_HAS_CLEAR_COAT_NORMAL
-	float ClearCoat = ClearCoatBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector, InClearCoatNormal, InClearCoatRoughness, InClearCoatStrength, Fcc);
+#if (SHADER_HAS_CLEAR_COAT_NORMAL)
+	float ClearCoat = ClearCoatBRDF(InNVLContent, InPixelParams, InPixelParams.ShadingNormal, InHalfVector, InClearCoatNormal, InClearCoatRoughness, InClearCoatStrength, Fcc);
 #else
-	float ClearCoat = ClearCoatBRDF(InSVLContent, InPixelParams, InPixelParams.ShadingNormalWS, InHalfVector, float3(1.0, 0.0, 0.0), InClearCoatRoughness, InClearCoatStrength, Fcc);
+	float ClearCoat = ClearCoatBRDF(InNVLContent, InPixelParams, InPixelParams.ShadingNormal, InHalfVector, float3(1.0, 0.0, 0.0), InClearCoatRoughness, InClearCoatStrength, Fcc);
 #endif
 	float Attenuation = 1.0 - Fcc;
 
-#if defined(MATERIAL_HAS_NORMALMAP) || defined(MATERIAL_HAS_CLEAR_COAT_NORMAL)
-	Color *= Attenuation * InSVLContent.NdotLClamped;
+#if (SHADER_HAS_CLEAR_COAT_NORMAL)
+	Color *= Attenuation * InNVLContent.NdotLClamped;
 
 	// If the material has a normal map, we want to use the geometric normal
 	// Instead to avoid applying the normal map details to the clear coat layer
@@ -147,25 +131,25 @@ float3 SurfaceShading_Standard(
 	Color += ClearCoat * ClearCoatNdotL;
 
 	// Early exit to avoid the extra multiplication by NdotL
-	return ((Color * InLightParams.ColorIntensity.rgb) * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion));
+	return ((Color * InLightParams.Color.rgb) * (InLightParams.Intensity * InLightParams.Attenuation * InShadowOcclusion));
 #else
 	Color *= Attenuation;
 	Color += ClearCoat;
 #endif
 #endif
 
-	return ((Color * InLightParams.ColorIntensity.rgb) * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion));
+	return ((Color * InLightParams.Color.rgb) * (InLightParams.Intensity * InLightParams.Attenuation * InNVLContent.NdotLClamped * InShadowOcclusion));
 }
 
-float3 SurfaceShading_Cloth(const PixelParams InPixelParams, const NormalViewLightDotParams InSVLContent, const ShadingLightParams InLightParams, float InShadowOcclusion)
+float3 SurfaceShading_Cloth(const ShadingPixelParams InPixelParams, const NormalViewLightDotParams InNVLContent, const ShadingLightParams InLightParams, float InShadowOcclusion)
 {
-	float3 Fr = ClothSheenBRDF(InSVLContent, InPixelParams);
+	float3 Fr = ClothSheenBRDF(InNVLContent, InPixelParams);
 
 	// Diffuse BRDF
-	float Diffuse = DiffuseBRDF(InSVLContent, InPixelParams);
-#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+	float Diffuse = DiffuseBRDF(InNVLContent, InPixelParams);
+#if (SHADER_HAS_SUBSURFACE_COLOR)
 	// Energy conservative wrap diffuse to simulate subsurface scattering
-	Diffuse *= Diffuse_Wrap(InSVLContent.NdotL, 0.5);
+	Diffuse *= Diffuse_Wrap(InNVLContent.NdotL, 0.5);
 #endif
 
 	// We do not multiply the diffuse term by the Fresnel term as discussed in
@@ -173,45 +157,45 @@ float3 SurfaceShading_Cloth(const PixelParams InPixelParams, const NormalViewLig
 	// The effect is fairly subtle and not deemed worth the cost for mobile
 	float3 Fd = Diffuse * InPixelParams.DiffuseColor;
 
-#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+#if (SHADER_HAS_SUBSURFACE_COLOR)
 	// Cheap subsurface scatter
-	Fd *= saturate(InPixelParams.SubsurfaceColor + InSVLContent.NdotLClamped);
+	Fd *= saturate(InPixelParams.SubsurfaceColor + InNVLContent.NdotLClamped);
 	// We need to apply NoL separately to the specular lobe since we already took
 	// it into account in the diffuse lobe
-	float3 Color = Fd + Fr * InSVLContent.NdotLClamped;
-	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion);
+	float3 Color = Fd + Fr * InNVLContent.NdotLClamped;
+	Color *= InLightParams.Color.rgb * (InLightParams.Intensity * InLightParams.Attenuation * InShadowOcclusion);
 #else
 	float3 Color = Fd + Fr;
-	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion);
+	Color *= InLightParams.Color.rgb * (InLightParams.Intensity * InLightParams.Attenuation * InNVLContent.NdotLClamped * InShadowOcclusion);
 #endif
 
 	return Color;
 }
 
 float3 SurfaceShading_ClothAnisotropic(
-	const PixelParams InPixelParams,
-	const NormalViewLightDotParams InSVLContent,
+	const ShadingPixelParams InPixelParams,
+	const NormalViewLightDotParams InNVLContent,
 	const ShadingLightParams InLightParams,
 	const float3 InViewDirection,
 	const float3 InHalfVector,
-#ifdef MATERIAL_HAS_ANISOTROPY
+#if (SHADER_HAS_ANISOTROPY)
 	float3 InAnisotropicT,
 	float3 InAnisotropicB,
 	float InAnisotropy,
 #endif
 	float InShadowOcclusion)
 {
-	float3 Fr = ClothSheenBRDF(InSVLContent, InPixelParams);
+	float3 Fr = ClothSheenBRDF(InNVLContent, InPixelParams);
 
-#ifdef MATERIAL_HAS_ANISOTROPY
-	Fr += AnisotropicBRDF(InSVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
+#if (SHADER_HAS_ANISOTROPY)
+	Fr += AnisotropicBRDF(InNVLContent, InPixelParams, InViewDirection, InLightParams.Direction, InHalfVector, InAnisotropicT, InAnisotropicB, InAnisotropy);
 #endif
 
 	// Diffuse BRDF
-	float Diffuse = DiffuseBRDF(InSVLContent, InPixelParams);
-#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+	float Diffuse = DiffuseBRDF(InNVLContent, InPixelParams);
+#if (SHADER_HAS_SUBSURFACE_COLOR)
 	// Energy conservative wrap diffuse to simulate subsurface scattering
-	Diffuse *= Diffuse_Wrap(InSVLContent.NdotL, 0.5);
+	Diffuse *= Diffuse_Wrap(InNVLContent.NdotL, 0.5);
 #endif
 
 	// We do not multiply the diffuse term by the Fresnel term as discussed in
@@ -219,16 +203,16 @@ float3 SurfaceShading_ClothAnisotropic(
 	// The effect is fairly subtle and not deemed worth the cost for mobile
 	float3 Fd = Diffuse * InPixelParams.DiffuseColor;
 
-#ifdef MATERIAL_HAS_SUBSURFACE_COLOR
+#if (SHADER_HAS_SUBSURFACE_COLOR)
 	// Cheap subsurface scatter
-	Fd *= saturate(InPixelParams.SubsurfaceColor + InSVLContent.NdotLClamped);
+	Fd *= saturate(InPixelParams.SubsurfaceColor + InNVLContent.NdotLClamped);
 	// We need to apply NoL separately to the specular lobe since we already took
 	// it into account in the diffuse lobe
-	float3 Color = Fd + Fr * InSVLContent.NdotLClamped;
-	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InShadowOcclusion);
+	float3 Color = Fd + Fr * InNVLContent.NdotLClamped;
+	Color *= InLightParams.Color.rgb * (InLightParams.Intensity * InLightParams.Attenuation * InShadowOcclusion);
 #else
 	float3 Color = Fd + Fr;
-	Color *= InLightParams.ColorIntensity.rgb * (InLightParams.ColorIntensity.w * InLightParams.Attenuation * InSVLContent.NdotLClamped * InShadowOcclusion);
+	Color *= InLightParams.Color.rgb * (InLightParams.Intensity * InLightParams.Attenuation * InNVLContent.NdotLClamped * InShadowOcclusion);
 #endif
 
 	return Color;

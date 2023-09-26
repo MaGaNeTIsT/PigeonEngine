@@ -84,8 +84,26 @@ namespace PigeonEngine
 					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE)
 				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, 1u);
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, 4u);
+			}
+			{
+				const RBlendState BlendStates[] =
+				{
+					RBlendState(RBlendOptionType::BLEND_SRC_COLOR, RBlendOptionType::BLEND_DEST_COLOR, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, TRUE)
+				};
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState, BlendStates, 1u);
 			}
 		}
 
@@ -123,10 +141,15 @@ namespace PigeonEngine
 				&ImportPath, &ImportVSName,
 				TempShaderInputLayouts, &TempShaderInputLayoutNum);
 
-			const EString ImportPSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportPSName,
+			const EString ImportSimpleFullScreenPSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportSimpleFullScreenPSName,
 				SimpleFullScreenPixelShader,
-				&ImportPath, &ImportPSName);
+				&ImportPath, &ImportSimpleFullScreenPSName);
+
+			const EString ImportSceneLightingPSName = EString("SceneLighting_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportSceneLightingPSName,
+				SceneLightingPixelShader,
+				&ImportPath, &ImportSceneLightingPSName);
 		}
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
 		Scene = new RScene();
@@ -199,7 +222,6 @@ namespace PigeonEngine
 
 		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
-		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
 		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
 
 		BasePass();
@@ -309,6 +331,7 @@ namespace PigeonEngine
 				SceneTextures->GBufferC
 			};
 
+			RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
 			SceneTextures->ClearResources();
 			RenderDevice->SetRenderTargets(RenderTargets, 4u, SceneTextures->SceneDepthStencil);
 
@@ -333,6 +356,25 @@ namespace PigeonEngine
 					StaticMesh->BindRenderResource();
 					StaticMesh->Draw();
 				}
+			}
+
+			if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(ViewProxy->GetUniqueID()); !!DLightParams)
+			{
+				RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
+				RenderDevice->SetRenderTargetOnly(RenderTargets[0]);
+
+				FullScreenTriangle.BindPrimitiveBuffers();
+				RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
+				RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
+				RenderDevice->SetPSShader(SceneLightingPixelShader->GetRenderResource()->Shader);
+
+				RenderDevice->BindPSShaderResourceView(RenderTargets[1].ShaderResourceView, 0u);
+				RenderDevice->BindPSShaderResourceView(RenderTargets[2].ShaderResourceView, 1u);
+				RenderDevice->BindPSShaderResourceView(RenderTargets[3].ShaderResourceView, 2u);
+
+				RenderDevice->BindPSShaderResourceView(DLightParams->GetStructPBuffer().ShaderResourceView, 3u);
+
+				RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
 			}
 		}
 	}
@@ -455,7 +497,7 @@ namespace PigeonEngine
 						PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), (ViewDomainInfos.Length() > 0u));
 						const EViewDomainInfo& DomainInfo = DomainInfos[0];
 
-						DLightParams.UpdateParameterValue(DLightIndex, DomainInfo, LightProxy->GetLightData());
+						DLightParams.UpdateParameterValue(DLightIndex, LightProxy->GetWorldRotation(), DomainInfo, LightProxy->GetLightData());
 						DLightIndex += 1u;
 					}
 				}
@@ -479,7 +521,7 @@ namespace PigeonEngine
 							PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), (ViewDomainInfos.Length() > 0u));
 							const EViewDomainInfo& DomainInfo = DomainInfos[0];
 
-							DLightParams.UpdateParameterValue(DLightIndex, DomainInfo, LightProxy->GetLightData());
+							DLightParams.UpdateParameterValue(DLightIndex, LightProxy->GetWorldRotation(), DomainInfo, LightProxy->GetLightData());
 						}
 						DLightIndex += 1u;
 					}

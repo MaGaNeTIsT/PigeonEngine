@@ -26,8 +26,9 @@ namespace PigeonEngine
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_LightColorIntensity"));
 		AddParameter<Vector2Int, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT2>(("_LightShadowMapSize"));
 		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT3>(("_LightWorldPosition"));
+		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT3>(("_LightWorldDirection"));
 	}
-	void RDirectionalLightMaterialParameter::UpdateParameterValue(const UINT32 InIndex, const EViewDomainInfo& InInfo, const ELightData& InData)
+	void RDirectionalLightMaterialParameter::UpdateParameterValue(const UINT32 InIndex, const Quaternion& InWorldRotation, const EViewDomainInfo& InInfo, const ELightData& InData)
 	{
 		FindParameter(InIndex, "_ViewMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.ViewMatrix);
 		FindParameter(InIndex, "_ViewInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.InverseViewMatrix);
@@ -38,6 +39,7 @@ namespace PigeonEngine
 		FindParameter(InIndex, "_LightColorIntensity") = &TranslateUploadVectorType(Vector4(InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.LightIntensity));
 		FindParameter(InIndex, "_LightShadowMapSize") = &TranslateUploadVectorType(InData.ShadowMapSize);
 		FindParameter(InIndex, "_LightWorldPosition") = &TranslateUploadVectorType(Vector3::Zero());
+		FindParameter(InIndex, "_LightWorldDirection") = &TranslateUploadVectorType(-QuaternionTransformVector(InWorldRotation, Vector3::ZVector()));
 	}
 
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent)

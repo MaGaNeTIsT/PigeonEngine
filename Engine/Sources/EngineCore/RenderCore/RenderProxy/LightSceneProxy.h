@@ -18,7 +18,7 @@ namespace PigeonEngine
 	public:
 		virtual void	SetupParameters()override;
 		void			AddLightParameters();
-		void			UpdateParameterValue(const UINT32 InIndex, const EViewDomainInfo& InInfo, const ELightData& InData);
+		void			UpdateParameterValue(const UINT32 InIndex, const Quaternion& InWorldRotation, const EViewDomainInfo& InInfo, const ELightData& InData);
 
 		RDirectionalLightMaterialParameter() {}
 		virtual ~RDirectionalLightMaterialParameter() {}

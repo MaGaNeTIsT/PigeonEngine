@@ -8,7 +8,7 @@
 * Physically Based Rendering in Filament https://google.github.io/filament/Filament.html#about/authors
 */
 
-#ifdef ENABLE_CONSOLE_SHADING
+#if (ENABLE_CONSOLE_SHADING)
 float D_GGX(float NdotH, float Roughness)
 #else
 float D_GGX(float NdotH, float Roughness, const float3 Normal, const float3 HalfVector)
@@ -27,7 +27,7 @@ float D_GGX(float NdotH, float Roughness, const float3 Normal, const float3 Half
     // This computes 1.0 - NoH^2 directly (which is close to zero in the highlights and has
     // enough precision).
     // Overall this yields better performance, keeping all computations in mediump
-#ifdef ENABLE_CONSOLE_SHADING
+#if (ENABLE_CONSOLE_SHADING)
     float OneMinusNoHSquared = 1.0 - NdotH * NdotH;
 #else
 	float3 NxH = cross(Normal, HalfVector);
@@ -165,35 +165,35 @@ float Diffuse_Wrap(float NdotL, float w)
     return (saturate((NdotL + w) / Power2(1.0 + w)));
 }
 
-float DiffuseBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams InPixelParams)
+float DiffuseBRDF(const NormalViewLightDotParams InNVLContent, const ShadingPixelParams InPixelParams)
 {
 #ifdef ENABLE_LAMBERT_DIFFUSE
     return (Diffuse_Lambert());
 #elif defined(ENABLE_BURLEY_DIFFUSE)
-    return (Diffuse_Burley(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped, InSVLContent.LdotHClamped, InPixelParams.Roughness));
+    return (Diffuse_Burley(InNVLContent.NdotVClamped, InNVLContent.NdotLClamped, InNVLContent.LdotHClamped, InPixelParams.Roughness));
 #else
     return 1.0;
 #endif
 }
 
-float3 IsotropicBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams InPixelParams, const float3 InNormal, const float3 InHalfVector)
+float3 IsotropicBRDF(const NormalViewLightDotParams InNVLContent, const ShadingPixelParams InPixelParams, const float3 InNormal, const float3 InHalfVector)
 {
-#ifdef ENABLE_CONSOLE_SHADING
+#if (ENABLE_CONSOLE_SHADING)
     float F90 = 50.0 * 0.33;
     F90 = saturate(dot(InPixelParams.F0, F90.xxx));
-    float  D = D_GGX(InSVLContent.NdotHClamped, InPixelParams.Roughness);
-    float  V = V_SmithGGXCorrelated(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped, InPixelParams.Roughness);
-    float3 F = F_Schlick(InSVLContent.LdotHClamped, InPixelParams.F0, F90);
+    float  D = D_GGX(InNVLContent.NdotHClamped, InPixelParams.Roughness);
+    float  V = V_SmithGGXCorrelated(InNVLContent.NdotVClamped, InNVLContent.NdotLClamped, InPixelParams.Roughness);
+    float3 F = F_Schlick(InNVLContent.LdotHClamped, InPixelParams.F0, F90);
 #else
-    float  D = D_GGX(InSVLContent.NdotHClamped, InPixelParams.Roughness, InNormal, InHalfVector);
-    float  V = V_SmithGGXCorrelated_Fast(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped, InPixelParams.Roughness);
-    float3 F = F_Schlick(InSVLContent.LdotHClamped, InPixelParams.F0);  // F90 = 1.0
+    float  D = D_GGX(InNVLContent.NdotHClamped, InPixelParams.Roughness, InNormal, InHalfVector);
+    float  V = V_SmithGGXCorrelated_Fast(InNVLContent.NdotVClamped, InNVLContent.NdotLClamped, InPixelParams.Roughness);
+    float3 F = F_Schlick(InNVLContent.LdotHClamped, InPixelParams.F0);  // F90 = 1.0
 #endif
 
     return ((D * V) * F);
 }
 
-float3 AnisotropicBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams InPixelParams, const float3 InViewDirection, const float3 InLightDirection, const float3 InHalfVector, float3 InAnisotropicT, float3 InAnisotropicB, float InAnisotropy)
+float3 AnisotropicBRDF(const NormalViewLightDotParams InNVLContent, const ShadingPixelParams InPixelParams, const float3 InViewDirection, const float3 InLightDirection, const float3 InHalfVector, float3 InAnisotropicT, float3 InAnisotropicB, float InAnisotropy)
 {
     float TdotV = dot(InAnisotropicT, InViewDirection);
     float BdotV = dot(InAnisotropicB, InViewDirection);
@@ -209,48 +209,48 @@ float3 AnisotropicBRDF(const NormalViewLightDotParams InSVLContent, const PixelP
     float ab = max(InPixelParams.Roughness * (1.0 - InAnisotropy), MIN_ROUGHNESS);
 
     // Specular anisotropic BRDF
-    float D = D_GGX_Anisotropic(InSVLContent.NdotHClamped, TdotH, BdotH, at, ab);
-    float V = V_SmithGGXCorrelated_Anisotropic(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped, TdotV, BdotV, TdotL, BdotL, at, ab);
-#ifdef ENABLE_CONSOLE_SHADING
+    float D = D_GGX_Anisotropic(InNVLContent.NdotHClamped, TdotH, BdotH, at, ab);
+    float V = V_SmithGGXCorrelated_Anisotropic(InNVLContent.NdotVClamped, InNVLContent.NdotLClamped, TdotV, BdotV, TdotL, BdotL, at, ab);
+#if (ENABLE_CONSOLE_SHADING)
     float F90 = 50.0 * 0.33;
     F90 = saturate(dot(InPixelParams.F0, F90.xxx));
-    float3 F = F_Schlick(InSVLContent.LdotHClamped, InPixelParams.F0, F90);
+    float3 F = F_Schlick(InNVLContent.LdotHClamped, InPixelParams.F0, F90);
 #else
-    float3 F = F_Schlick(InSVLContent.LdotHClamped, InPixelParams.F0);  // F90 = 1.0
+    float3 F = F_Schlick(InNVLContent.LdotHClamped, InPixelParams.F0);  // F90 = 1.0
 #endif
 
     return ((D * V) * F);
 }
 
-float ClearCoatBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams InPixelParams, const float3 InNormal, const float3 InHalfVector, float3 InClearCoatNormal, float InClearCoatRoughness, float InClearCoatStrength, out float Fcc)
+float ClearCoatBRDF(const NormalViewLightDotParams InNVLContent, const ShadingPixelParams InPixelParams, const float3 InNormal, const float3 InHalfVector, float3 InClearCoatNormal, float InClearCoatRoughness, float InClearCoatStrength, out float Fcc)
 {
-#if defined(MATERIAL_HAS_NORMALMAP) || defined(MATERIAL_HAS_CLEAR_COAT_NORMAL)
+#if (SHADER_HAS_CLEAR_COAT_NORMAL)
     // If the material has a normal map, we want to use the geometric normal
     // Instead to avoid applying the normal map details to the clear coat layer
     float ClearCoatNdotH = saturate(dot(InClearCoatNormal, InHalfVector));
 #else
-    float ClearCoatNdotH = InSVLContent.NdotHClamped;
+    float ClearCoatNdotH = InNVLContent.NdotHClamped;
 #endif
 
     // Clear coat specular lobe
-#ifdef ENABLE_CONSOLE_SHADING
+#if (ENABLE_CONSOLE_SHADING)
     float D = D_GGX(ClearCoatNdotH, InClearCoatRoughness);
 #else
     float D = D_GGX(ClearCoatNdotH, InClearCoatRoughness, InNormal, InHalfVector);
 #endif
-    float V = V_Kelemen(InSVLContent.LdotHClamped);
-    float F = F_Schlick(InSVLContent.LdotHClamped, 0.04, 1.0) * InClearCoatStrength;  // Fix IOR to 1.5
+    float V = V_Kelemen(InNVLContent.LdotHClamped);
+    float F = F_Schlick(InNVLContent.LdotHClamped, 0.04, 1.0) * InClearCoatStrength;  // Fix IOR to 1.5
 
     Fcc = F;
     return ((D * V) * F);
 }
 
-float3 ClothSheenBRDF(const NormalViewLightDotParams InSVLContent, const PixelParams InPixelParams)
+float3 ClothSheenBRDF(const NormalViewLightDotParams InNVLContent, const ShadingPixelParams InPixelParams)
 {
-    float  D = D_Charlie(InSVLContent.NdotHClamped, InPixelParams.Roughness);
-    float  V = V_Neubelt(InSVLContent.NdotVClamped, InSVLContent.NdotLClamped);
+    float  D = D_Charlie(InNVLContent.NdotHClamped, InPixelParams.Roughness);
+    float  V = V_Neubelt(InNVLContent.NdotVClamped, InNVLContent.NdotLClamped);
 
-#ifdef MATERIAL_HAS_SHEEN_COLOR
+#if (SHADER_HAS_SHEEN_COLOR)
     return ((D * V) * InPixelParams.SheenColor);
 #else
     return (D * V);

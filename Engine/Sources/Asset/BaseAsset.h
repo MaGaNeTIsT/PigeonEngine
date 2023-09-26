@@ -69,7 +69,7 @@ namespace PigeonEngine
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to init a new resource, but already storage a resource.";
-				PE_FAILED(ENGINE_ASSET_ERROR, (*errorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
 				if (TempData)
 				{
@@ -85,7 +85,7 @@ namespace PigeonEngine
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to storage a null resource.";
-				PE_FAILED(ENGINE_ASSET_ERROR, (*errorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
 				return FALSE;
 			}
@@ -180,7 +180,7 @@ namespace PigeonEngine
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to create gpu resource, but already has a resource.";
-				PE_FAILED(ENGINE_ASSET_ERROR, (*errorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
 				if (TempData)
 				{
@@ -196,7 +196,7 @@ namespace PigeonEngine
 			{
 #if _EDITOR_ONLY
 				EString errorInfo = DebugName + " try to storage a null resource.";
-				PE_FAILED(ENGINE_ASSET_ERROR, (*errorInfo));
+				PE_FAILED((ENGINE_ASSET_ERROR), (*errorInfo));
 #endif
 				return FALSE;
 			}

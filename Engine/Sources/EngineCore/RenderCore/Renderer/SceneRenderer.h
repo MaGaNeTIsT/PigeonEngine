@@ -65,6 +65,7 @@ namespace PigeonEngine
 		{
 			BLEND_TYPE_OPAQUE_DEPTH = 0,
 			BLEND_TYPE_OPAQUE_BASEPASS,
+			BLEND_TYPE_LIGHTING,
 			BLEND_TYPE_COUNT
 		};
 		enum RDepthStencilType : UINT8
@@ -85,6 +86,7 @@ namespace PigeonEngine
 		RDepthStencilResource		DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_COUNT];
 		const EVertexShaderAsset*	SimpleFullScreenVertexShader;
 		const EPixelShaderAsset*	SimpleFullScreenPixelShader;
+		const EPixelShaderAsset*	SceneLightingPixelShader;
 	protected:
 		ObjectIdentityType			FinalOutputView;
 		BOOL32						NeedStencil;

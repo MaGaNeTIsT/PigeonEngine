@@ -378,6 +378,10 @@ namespace PigeonEngine
 		}
 		Vector2 Lerp(const Vector2& vv, FLOAT t)const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
 		Vector2 Reciprocal()const { return Vector2(1.f / x, 1.f / y); }
+		Vector2 operator-()const
+		{
+			return Vector2(-x, -y);
+		}
 		Vector2& operator=(FLOAT v)
 		{
 			x = y = v;
@@ -563,6 +567,10 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat3(&tempV, DirectX::XMVector3Cross(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)));
 			return (Vector3(tempV.x, tempV.y, tempV.z));
 		}
+		Vector3 operator-()const
+		{
+			return Vector3(-x, -y, -z);
+		}
 		Vector3& operator=(FLOAT v)
 		{
 			x = y = z = v;
@@ -728,6 +736,10 @@ namespace PigeonEngine
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Vector4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));
 		}
+		Vector4 operator-()const
+		{
+			return Vector4(-x, -y, -z, -w);
+		}
 		Vector4& operator=(FLOAT v)
 		{
 			x = y = z = w = v;
@@ -836,6 +848,10 @@ namespace PigeonEngine
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, 0)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, 0, 0)); }
 		void Reset() { (*this) = Vector2Int::Zero(); }
+		Vector2Int operator-()const
+		{
+			return Vector2Int(-x, -y);
+		}
 		Vector2Int& operator=(FLOAT v)
 		{
 			x = y = EMath::TruncToInt32(v);
@@ -1035,6 +1051,10 @@ namespace PigeonEngine
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, 0)); }
 		void Reset() { (*this) = Vector3Int::Zero(); }
+		Vector3Int operator-()const
+		{
+			return Vector3Int(-x, -y, -z);
+		}
 		Vector3Int& operator=(FLOAT v)
 		{
 			x = y = z = EMath::TruncToInt32(v);
@@ -1238,6 +1258,10 @@ namespace PigeonEngine
 		DirectX::XMINT3 GetDirectXValue3()const { return (DirectX::XMINT3(x, y, z)); }
 		DirectX::XMINT4 GetDirectXValue4()const { return (DirectX::XMINT4(x, y, z, w)); }
 		void Reset() { (*this) = Vector4Int::Zero(); }
+		Vector4Int operator-()const
+		{
+			return Vector4Int(-x, -y, -z, -w);
+		}
 		Vector4Int& operator=(FLOAT v)
 		{
 			x = y = z = w = EMath::TruncToInt32(v);

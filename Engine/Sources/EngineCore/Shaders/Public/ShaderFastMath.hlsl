@@ -98,7 +98,7 @@ float3 normalizeFast(float3 v)
 
 float4 fastClamp(float4 x, float4 Min, float4 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -108,7 +108,7 @@ float4 fastClamp(float4 x, float4 Min, float4 Max)
 
 float3 fastClamp(float3 x, float3 Min, float3 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -118,7 +118,7 @@ float3 fastClamp(float3 x, float3 Min, float3 Max)
 
 float2 fastClamp(float2 x, float2 Min, float2 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -128,7 +128,7 @@ float2 fastClamp(float2 x, float2 Min, float2 Max)
 
 float fastClamp(float x, float Min, float Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -138,7 +138,7 @@ float fastClamp(float x, float Min, float Max)
 
 int4 fastClamp(int4 x, int4 Min, int4 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -148,7 +148,7 @@ int4 fastClamp(int4 x, int4 Min, int4 Max)
 
 int3 fastClamp(int3 x, int3 Min, int3 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -158,7 +158,7 @@ int3 fastClamp(int3 x, int3 Min, int3 Max)
 
 int2 fastClamp(int2 x, int2 Min, int2 Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
@@ -168,7 +168,7 @@ int2 fastClamp(int2 x, int2 Min, int2 Max)
 
 int fastClamp(int x, int Min, int Max)
 {
-#if COMPILER_PSSL
+#if (COMPILER_PSSL)
 	// Warning: only correct if Min is smaller than Max
 	return med3(x, Min, Max);
 #else
