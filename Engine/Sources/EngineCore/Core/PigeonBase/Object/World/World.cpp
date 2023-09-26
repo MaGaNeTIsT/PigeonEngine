@@ -178,10 +178,12 @@ namespace PigeonEngine
                 ImguiSelectedActor = elem;
             }
         }
+        
         ImGui::Text("Detail");
         if(ImguiSelectedActor)
         {
             ImguiSelectedActor->GenerateComponentsImgui();
+            
             ImGui::Text("Location:");
             ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().x)));
             ImGui::SameLine(); 
@@ -197,6 +199,13 @@ namespace PigeonEngine
             ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().z)));
             ImGui::SameLine(); 
             ImGui::Text(*(EString("W:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().w)));
+
+            ImGui::Text("Scale:");
+            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().x)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().y)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().z)));
         }
 
         ImGui::End();
