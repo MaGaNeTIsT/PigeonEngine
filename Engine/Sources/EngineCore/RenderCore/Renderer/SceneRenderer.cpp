@@ -17,8 +17,36 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	void RViewLightCommonMaterialParameter::SetupParameters()
+	{
+		ClearParameter();
+		BeginSetupParameter();
+		AddParameter<Vector4Int, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("_LightNum"));
+		EndSetupParameter();
+		CreateBuffer();
+	}
+	void RViewLightCommonMaterialParameter::UpdateRenderResource(const UINT32 InDirectionalLightNum, const UINT32 InPointLightNum, const UINT32 InSpotLightNum)
+	{
+		const UINT32 UsedDirectionalLightNum	= EMath::Min(RenderDirectionalLightNumMax, InDirectionalLightNum);
+		const UINT32 UsedPointLightNum			= EMath::Min(RenderDirectionalLightNumMax, InPointLightNum);
+		const UINT32 UsedSpotLightNum			= EMath::Min(RenderDirectionalLightNumMax, InSpotLightNum);
+		const BOOL32 NeedUpdate = (UsedDirectionalLightNum != DirectionalLightNum) || (UsedPointLightNum != PointLightNum) || (UsedSpotLightNum != SpotLightNum);
+		if (NeedUpdate)
+		{
+			SetLightNum(UsedDirectionalLightNum, UsedPointLightNum, UsedSpotLightNum);
+
+			Vector4Int LightNum(Vector4Int::Zero());
+			LightNum.v[DirectionalLightParameterIndex] = UsedDirectionalLightNum;
+			LightNum.v[PointLightParameterIndex] = UsedPointLightNum;
+			LightNum.v[SpotLightParameterIndex] = UsedSpotLightNum;
+
+			(*this)["_LightNum"] = &TranslateUploadVectorType(LightNum);
+			UploadBuffer();
+		}
+	}
+
 	RSceneRenderer::RSceneRenderer()
-		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
+		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), SceneLightingPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
 	{
 	}
 	RSceneRenderer::~RSceneRenderer()
@@ -358,6 +386,10 @@ namespace PigeonEngine
 				}
 			}
 
+			const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(ViewProxy->GetUniqueID());
+			Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
+			RenderDevice->BindPSConstantBuffer(LightCommonParams->GetConstantBuffer().Buffer, 1u);
+
 			if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(ViewProxy->GetUniqueID()); !!DLightParams)
 			{
 				RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
@@ -372,7 +404,7 @@ namespace PigeonEngine
 				RenderDevice->BindPSShaderResourceView(RenderTargets[2].ShaderResourceView, 1u);
 				RenderDevice->BindPSShaderResourceView(RenderTargets[3].ShaderResourceView, 2u);
 
-				RenderDevice->BindPSShaderResourceView(DLightParams->GetStructPBuffer().ShaderResourceView, 3u);
+				RenderDevice->BindPSShaderResourceView(DLightParams->GetStructBuffer().ShaderResourceView, 3u);
 
 				RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
 			}
@@ -395,8 +427,19 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{
+		if (!(ViewLightCommonParams.ContainsKey(InViewProxy->GetUniqueID())))
+		{
+			ViewLightCommonParams.Add(InViewProxy->GetUniqueID(), RViewLightCommonMaterialParameter());
+			ViewLightCommonParams[InViewProxy->GetUniqueID()].SetupParameters();
+		}
+
 		// Directional lights
-		InitDirectionalLights(InViewProxy);
+		const UINT32 DLightNum = InitDirectionalLights(InViewProxy);
+
+		const UINT32 PLightNum = 0u;
+		const UINT32 SLightNum = 0u;
+
+		ViewLightCommonParams[InViewProxy->GetUniqueID()].UpdateRenderResource(DLightNum, PLightNum, SLightNum);
 
 		// Shadow maps
 		InitShadowTextures(InViewProxy);
@@ -422,7 +465,7 @@ namespace PigeonEngine
 			SceneTextures->InitResources(Vector2Int(RenderViewport.Width, RenderViewport.Height), NeedStencil);
 		}
 	}
-	void RSceneRenderer::InitDirectionalLights(RViewProxy* InViewProxy)
+	UINT32 RSceneRenderer::InitDirectionalLights(RViewProxy* InViewProxy)
 	{
 		UINT32 UsedDLightNum = 0u;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
@@ -500,10 +543,11 @@ namespace PigeonEngine
 						DLightParams.UpdateParameterValue(DLightIndex, LightProxy->GetWorldRotation(), DomainInfo, LightProxy->GetLightData());
 						DLightIndex += 1u;
 					}
+					DLightParams.UploadBuffer();
 				}
 				else
 				{
-					UINT32 DLightIndex = 0u;
+					BOOL32 NeedUpload = FALSE; UINT32 DLightIndex = 0u;
 					for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
 					{
 						RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
@@ -522,8 +566,14 @@ namespace PigeonEngine
 							const EViewDomainInfo& DomainInfo = DomainInfos[0];
 
 							DLightParams.UpdateParameterValue(DLightIndex, LightProxy->GetWorldRotation(), DomainInfo, LightProxy->GetLightData());
+
+							NeedUpload = TRUE;
 						}
 						DLightIndex += 1u;
+					}
+					if (NeedUpload)
+					{
+						DLightParams.UploadBuffer();
 					}
 				}
 			}
@@ -533,6 +583,8 @@ namespace PigeonEngine
 				DLightParams.ClearParameter();
 			}
 		}
+
+		return UsedDLightNum;
 	}
 	void RSceneRenderer::InitShadowTextures(RViewProxy* InViewProxy)
 	{

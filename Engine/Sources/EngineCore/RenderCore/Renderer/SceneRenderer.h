@@ -13,14 +13,44 @@ namespace PigeonEngine
 	class EPixelShaderAsset;
 	class RViewProxy;
 
+	class RViewLightCommonMaterialParameter : public EMaterialParameter
+	{
+	public:
+		const static UINT32		DirectionalLightParameterIndex	= 0u;
+		const static UINT32		PointLightParameterIndex		= 1u;
+		const static UINT32		SpotLightParameterIndex			= 2u;
+
+		const static UINT32		RenderDirectionalLightNumMax	= 4u;
+		const static UINT32		RenderPointLightNumMax			= 16u;
+		const static UINT32		RenderSpotLightNumMax			= 8u;
+	public:
+		virtual void	SetupParameters()override;
+		void			UpdateRenderResource(const UINT32 InDirectionalLightNum, const UINT32 InPointLightNum, const UINT32 InSpotLightNum);
+	public:
+		void			SetLightNum(const UINT32 InDirectionalLightNum, const UINT32 InPointLightNum, const UINT32 InSpotLightNum) { DirectionalLightNum = InDirectionalLightNum; PointLightNum = InPointLightNum; SpotLightNum = InSpotLightNum; }
+		UINT32			GetDirectionalLightNum()const { return DirectionalLightNum; }
+		UINT32			GetPointLightNum()const { return PointLightNum; }
+		UINT32			GetSpotLightNum()const { return SpotLightNum; }
+	protected:
+		UINT32	DirectionalLightNum;
+		UINT32	PointLightNum;
+		UINT32	SpotLightNum;
+	public:
+		RViewLightCommonMaterialParameter() : DirectionalLightNum(0u), PointLightNum(0u), SpotLightNum(0u) {}
+		virtual ~RViewLightCommonMaterialParameter() {}
+		RViewLightCommonMaterialParameter(const RViewLightCommonMaterialParameter& Other) : DirectionalLightNum(0u), PointLightNum(0u), SpotLightNum(0u) {}
+		RViewLightCommonMaterialParameter& operator=(const RViewLightCommonMaterialParameter& Other) { DirectionalLightNum = 0u; PointLightNum = 0u; SpotLightNum = 0u; return (*this); }
+	};
+
 	class RSceneRenderer : public EManagerBase
 	{
 	public:
-		using RVisibilityMapType	= TMap<ObjectIdentityType, BOOL32>;
-		using RViewSceneTextureType	= TMap<ObjectIdentityType, RSceneTextures*>;
-		using RShadowMapType		= TMap<ObjectIdentityType, RShadowTexture*>;
-		using RViewShadowMapType	= TMap<ObjectIdentityType, RShadowMapType>;
-		using RDLightParamsType		= TMap<ObjectIdentityType, RDirectionalLightMaterialParameter>;
+		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
+		using RViewSceneTextureType		= TMap<ObjectIdentityType, RSceneTextures*>;
+		using RShadowMapType			= TMap<ObjectIdentityType, RShadowTexture*>;
+		using RViewShadowMapType		= TMap<ObjectIdentityType, RShadowMapType>;
+		using RLightCommonParamsType	= TMap<ObjectIdentityType, RViewLightCommonMaterialParameter>;
+		using RDLightParamsType			= TMap<ObjectIdentityType, RDirectionalLightMaterialParameter>;
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
@@ -37,7 +67,7 @@ namespace PigeonEngine
 		void			ProcessOcclusionCull(RViewProxy* InViewProxy);
 		void			InitRenderPasses(RViewProxy* InViewProxy);
 	protected:
-		void			InitDirectionalLights(RViewProxy* InViewProxy);
+		UINT32			InitDirectionalLights(RViewProxy* InViewProxy);
 		void			InitShadowTextures(RViewProxy* InViewProxy);
 		void			OctreeCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
 		void			PrimitiveCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
@@ -92,6 +122,7 @@ namespace PigeonEngine
 		BOOL32						NeedStencil;
 		RViewSceneTextureType		ViewSceneTextures;
 		RViewShadowMapType			ViewShadowMaps;
+		RLightCommonParamsType		ViewLightCommonParams;
 		RDLightParamsType			ViewDLightParams;
 	public:
 		RSceneRenderer();

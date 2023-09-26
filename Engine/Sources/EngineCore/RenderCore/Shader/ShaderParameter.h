@@ -19,6 +19,7 @@ namespace PigeonEngine
 	extern PE_INLINE Vector3	TranslateUploadVectorType(const Vector3& InData);
 	extern PE_INLINE Vector4	TranslateUploadVectorType(const Vector4& InData);
 	extern PE_INLINE Vector2Int	TranslateUploadVectorType(const Vector2Int& InData);
+	extern PE_INLINE Vector4Int	TranslateUploadVectorType(const Vector4Int& InData);
 
 	enum EShaderParameterValueType : UINT8
 	{
@@ -321,8 +322,8 @@ namespace PigeonEngine
 		EShaderParameter			FindParameter(const UINT32 InStructIndex, const EString& InParamName);
 		void						SetElementNum(const UINT32 InElementNum);
 		UINT32						GetElementNum()const;
-		RStructuredBuffer&			GetStructPBuffer();
-		const RStructuredBuffer&	GetStructPBuffer()const;
+		RStructuredBuffer&			GetStructBuffer();
+		const RStructuredBuffer&	GetStructBuffer()const;
 		void						BeginSetupStructParameter(const UINT32 InElementNum);
 		void						EndSetupStructParameter();
 	protected:

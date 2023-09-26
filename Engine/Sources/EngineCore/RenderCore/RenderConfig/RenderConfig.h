@@ -24,8 +24,6 @@ namespace PigeonEngine
 		constexpr static UINT8			RENDER_STENCIL_WRITE_MASK			= 0xffu;
 
 		constexpr static UINT32			RENDER_SHADOW_MAP_DEPTH_BIT			= 16u;
-
-		constexpr static USHORT			RENDER_DIRECTIONAL_LIGHT_NUM_MAX	= 2u;
 	public:
 		static RCommonSettings* GetSingleton()
 		{

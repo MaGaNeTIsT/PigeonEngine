@@ -24,6 +24,10 @@ namespace PigeonEngine
 	{
 		return InData;
 	}
+	PE_INLINE Vector4Int TranslateUploadVectorType(const Vector4Int& InData)
+	{
+		return InData;
+	}
 
 	EShaderStruct::EShaderStruct()
 	{
@@ -82,7 +86,12 @@ namespace PigeonEngine
 	}
 	EMaterialParameter::~EMaterialParameter()
 	{
-		ClearBuffer();
+#if _EDITOR_ONLY
+		if (ConstantBuffer.IsRenderResourceValid())
+#endif
+		{
+			ClearBuffer();
+		}
 	}
 	void EMaterialParameter::ClearParameter()
 	{
@@ -341,11 +350,11 @@ namespace PigeonEngine
 		Check((ElementNum <= 65536u), (ENGINE_RENDER_CORE_ERROR));
 		return ElementNum;
 	}
-	RStructuredBuffer& EMaterialStructParameter::GetStructPBuffer()
+	RStructuredBuffer& EMaterialStructParameter::GetStructBuffer()
 	{
 		return StructuredBuffer;
 	}
-	const RStructuredBuffer& EMaterialStructParameter::GetStructPBuffer()const
+	const RStructuredBuffer& EMaterialStructParameter::GetStructBuffer()const
 	{
 		return StructuredBuffer;
 	}
