@@ -19,6 +19,7 @@ namespace PigeonEngine
 		{
 			RootComponent = new PSceneComponent();
 			RootComponent->SetOwnerActor(this);
+			RootComponent->SetName("RootComponent");
 		}
 	}
 	
@@ -277,9 +278,8 @@ namespace PigeonEngine
 
 	BOOL8 PActor::GenerateImgui(BOOL8 bSelectedActor)
 	{
-	
 		
-		if(ImGui::Checkbox("		Actor", &bSelectedActor))
+		if(ImGui::Checkbox(*this->GetDebugName(), &bSelectedActor))
 		{
 			return TRUE;
 		}
@@ -287,7 +287,13 @@ namespace PigeonEngine
 		// {
 		// 	elem->GenerateImgui(bSelectedActor);
 		// }
+		if(bSelectedActor)
+		{
 
+			
+
+
+		}
 		return FALSE;
 	}
 
@@ -295,7 +301,8 @@ namespace PigeonEngine
 	{
 		if(RootComponent)
 		{
-			RootComponent->GenerateImgui();
+			ImGui::Text("Components:");
+			RootComponent->GenerateImgui(" ");
 		}
 		return FALSE;
 	}

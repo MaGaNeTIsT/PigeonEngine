@@ -65,22 +65,24 @@ namespace PigeonEngine
         return *this;
     }
 
-    EString& EString::operator+(const EString& Other)
+
+    EString EString::operator+(const EString& Other)const
     {
-        Str += Other.Str;
-        return *this;
+        EString Res = Str + Other.Str;
+        return Res;
     }
 
-    EString& EString::operator+(const std::string& Other)
+
+    EString EString::operator+(const std::string& Other)const
     {
-        Str += Other;
-        return *this;
+        EString Res = Str + Other;
+        return Res;
     }
 
-    EString& EString::operator+(const CHAR* Other)
+    EString EString::operator+(const CHAR* Other)const
     {
-        Str += Other;
-        return *this;
+        EString Res = Str + Other;
+        return Res;
     }
 
     const CHAR* EString::operator*() const
@@ -126,6 +128,18 @@ namespace PigeonEngine
     EString& EString::operator+=(const EString& Other)
     {
         Str += Other.Str;
+        return *this;
+    }
+
+    EString& EString::operator+=(const std::string& Other) 
+    {
+        Str += Other;
+        return *this;
+    }
+
+    EString& EString::operator+=(const CHAR* Other)
+    {
+        Str += Other;
         return *this;
     }
 
@@ -205,6 +219,28 @@ namespace PigeonEngine
             return -1;
         }
         return atof(Str.c_str());
+    }
+
+    EString EString::FromInt(const UINT32& InValue)
+    {
+        return EString(std::to_string(InValue));
+    }
+
+    EString EString::FromFloat(const FLOAT& InValue)
+    {
+        return EString(std::to_string(InValue));
+    }
+
+    CHAR* EString::GetDataAsCopy() const
+    {
+        const CHAR* Data = Str.c_str();
+        CHAR* charArray = new CHAR[sizeof(Data) + 1];
+        if (strcpy_s(charArray, this->Length(), Data) != 0) {
+            // 复制失败处理
+            delete[] charArray; // 释放分配的内存
+            return nullptr;  // 返回nullptr表示失败
+        }
+        return charArray;
     }
 
     PE_INLINE EString ToString(const UINT32& InValue)

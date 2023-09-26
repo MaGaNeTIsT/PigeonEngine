@@ -331,12 +331,12 @@ namespace PigeonEngine
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
 
-	BOOL8 PSceneComponent::GenerateImgui()
+	BOOL8 PSceneComponent::GenerateImgui(const EString& Spacer)
 	{
-		ImGui::Text("		SceneComponent");
+		ImGui::Text(*(Spacer + this->GetDebugName()));
 		for(const auto& elem : ChildrenComponents)
 		{
-			elem->GenerateImgui();
+			elem->GenerateImgui(Spacer + Spacer);
 		}
 
 		return FALSE;

@@ -1,5 +1,7 @@
 #include "BaseType.h"
 
+#include "Text/String.h"
+
 namespace PigeonEngine
 {
 
@@ -115,6 +117,11 @@ namespace PigeonEngine
 			EMath::Max(A.y, B.y),
 			EMath::Max(A.z, B.z),
 			EMath::Max(A.w, B.w));
+	}
+
+	EString Vector3::ToString() const
+	{
+		return EString(std::to_string(this->x) + " " + std::to_string(this->y) + " " + std::to_string(this->z));
 	}
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)

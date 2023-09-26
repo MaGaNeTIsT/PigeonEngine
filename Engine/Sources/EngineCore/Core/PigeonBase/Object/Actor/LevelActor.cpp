@@ -36,6 +36,7 @@ namespace PigeonEngine
     	{
     		PActor* New = new PActor();
     		New->SetIsTickable(TRUE);
+    		New->SetName("MeshActor");
     		this->GetWorld()->AddActor(New);
     	
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
@@ -48,20 +49,26 @@ namespace PigeonEngine
     		EString ImportFileType("obj");
     		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
 
-
     		NewStaticMeshComp->SetMeshAsset(Asset);
+    		NewStaticMeshComp->SetName("MeshComponent");
     	}
-		// 
+		//
+    	
     	{
     		PActor* New = new PActor();
+    		New->SetName("LightActor");
+
     		New->SetIsTickable(TRUE);
     		this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
+    		LightComp->SetLightIntensity(1000.f);
     		New->AddComponent(LightComp);
-
-    		
+    		LightComp->SetName("DirectLightComponent");
+    		Quaternion Quat = Quaternion(0.5,0.5,0,1);
+    		Quat.Normalize();
+    		New->SetActorRotation(Quat);
     	}
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -100));
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -10));
     }
 
 	void PLevelActor::UserEndPlay()
@@ -71,7 +78,9 @@ namespace PigeonEngine
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-		Vector3 newPos = Vector3(0.f, 0.f, -10.f);
+    	
+    	FLOAT t = EMath::Sin(this->GetWorld()->GetGameTimer()->GetClockTime());
+		Vector3 newPos = Vector3(-10.f * t -10.f * t, -10.f * t);
     	this->GetWorld()->GetController()->SetActorLocation(newPos);
 	}
 

@@ -26,9 +26,9 @@ namespace PigeonEngine
         EString&    operator=(const std::string& Other);
         EString&    operator=(const CHAR* Other);
         EString&    operator=(EString&& Other) noexcept;
-        EString&    operator+(const EString& Other);
-        EString&    operator+(const std::string& Other);
-        EString&    operator+(const CHAR* Other);
+        EString     operator+(const EString& Other) const;
+        EString     operator+(const std::string& Other) const;
+        EString     operator+(const CHAR* Other) const;
         const CHAR* operator*()const;
         CHAR        operator[](const UINT32& Index) const;
 
@@ -40,7 +40,8 @@ namespace PigeonEngine
         BOOL32      operator<=(const EString& Other)const;
 
         EString&    operator+=(const EString& Other);
-
+        EString&    operator+=(const std::string& Other) ;
+        EString&    operator+=(const CHAR* Other) ;
         
         PE_NODISCARD UINT32  Length   ()const;
         PE_NODISCARD BOOL32  StartWith(const EString& SubString)const;
@@ -54,6 +55,10 @@ namespace PigeonEngine
         PE_NODISCARD BOOL32  IsNumeric()const;
         PE_NODISCARD INT32   AtoI() const;
         PE_NODISCARD DOUBLE  AtoF() const;
+
+        static EString FromInt(const UINT32& InValue);
+        static EString FromFloat(const FLOAT& InValue);
+        CHAR* GetDataAsCopy()const;
     private:
         std::string Str;
     };

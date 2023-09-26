@@ -630,6 +630,8 @@ namespace PigeonEngine
 			};
 			FLOAT v[3];
 		};
+
+		class EString ToString()const;
 	};
 
 	struct Vector4

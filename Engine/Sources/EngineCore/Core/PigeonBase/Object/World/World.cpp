@@ -182,6 +182,21 @@ namespace PigeonEngine
         if(ImguiSelectedActor)
         {
             ImguiSelectedActor->GenerateComponentsImgui();
+            ImGui::Text("Location:");
+            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().x)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().y)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().z)));
+
+            ImGui::Text("Quat:");
+            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().x)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().y)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().z)));
+            ImGui::SameLine(); 
+            ImGui::Text(*(EString("W:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().w)));
         }
 
         ImGui::End();

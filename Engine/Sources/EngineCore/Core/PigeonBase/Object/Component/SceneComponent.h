@@ -143,7 +143,7 @@ namespace PigeonEngine
         // Render proxy functions END
 
     public:
-    	virtual BOOL8 GenerateImgui() override;
+    	virtual BOOL8 GenerateImgui(const EString& Spacer) ;
     };
 
 };
