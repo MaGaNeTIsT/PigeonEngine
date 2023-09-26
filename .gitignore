@@ -3,4 +3,5 @@ x64/
 .vs/
 .idea/
 Engine/Temp/
-Engine/ThirdParty/JoltPhysics/lib/
+Engine/ThirdParty/JoltPhysics/lib/Debug/
+Engine/ThirdParty/JoltPhysics/lib/Release/
