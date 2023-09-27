@@ -243,7 +243,23 @@ namespace PigeonEngine
         return charArray;
     }
 
-    PE_INLINE EString ToString(const UINT32& InValue)
+    PE_INLINE EString ToString(const BOOL32& InValue)
+    {
+        return EString(InValue ? ("TRUE") : ("FALSE"));
+    }
+    PE_INLINE EString ToString(const INT32 InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
+    PE_INLINE EString ToString(const UINT32 InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
+    PE_INLINE EString ToString(const FLOAT InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
+    PE_INLINE EString ToString(const DOUBLE& InValue)
     {
         return EString(std::to_string(InValue).c_str());
     }

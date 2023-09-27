@@ -13,6 +13,14 @@ namespace PigeonEngine
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix()); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InForwardVector, const Vector3& InUpVector, const Vector3& InRightVector, const Vector3& InTranslation)
+	{
+		return Matrix4x4(
+			InRightVector.x, InRightVector.y, InRightVector.z, 0.f,
+			InUpVector.x, InUpVector.y, InUpVector.z, 0.f,
+			InForwardVector.x, InForwardVector.y, InForwardVector.z, 0.f,
+			InTranslation.x, InTranslation.y, InTranslation.z, 1.f);
+	}
 	PE_INLINE Matrix4x4 InverseMatrix4x4(const Matrix4x4& InMatrix, Vector4* OutDeterminant)
 	{
 		if (OutDeterminant != nullptr)
@@ -31,6 +39,12 @@ namespace PigeonEngine
 	PE_INLINE Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
 	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
+	PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat) { return Vector3(InMat._31, InMat._32, InMat._33); }
+	PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat) { return Vector3(InMat._21, InMat._22, InMat._23); }
+	PE_INLINE Vector3 SplitRightVector(const Matrix4x4& InMat) { return Vector3(InMat._11, InMat._12, InMat._13); }
+	PE_INLINE Vector3 SplitForwardVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::ZVector()); }
+	PE_INLINE Vector3 SplitUpVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::YVector()); }
+	PE_INLINE Vector3 SplitRightVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::XVector()); }
 	PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w) { return Vector4(v.x, v.y, v.z, w); }
 	PE_INLINE Color3 MakeColor3(const Color4& c) { return Color3(c.x, c.y, c.z); }
 	PE_INLINE Color4 MakeColor4(const Color3& c) { return Color4(c.x, c.y, c.z, 1.f); }
@@ -118,10 +132,24 @@ namespace PigeonEngine
 			EMath::Max(A.z, B.z),
 			EMath::Max(A.w, B.w));
 	}
-
-	EString Vector3::ToString() const
+	PE_INLINE Quaternion LookAtTargetRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection)
 	{
-		return EString(std::to_string(this->x) + " " + std::to_string(this->y) + " " + std::to_string(this->z));
+		Vector3 TempForward(InTargetLocation - InViewLocation);
+		TempForward.Normalize();
+#if _EDITOR_ONLY
+		Check((!((Vector3::Dot(TempForward, InViewUpDirection) > 0.95f) || (Vector3::Dot(TempForward, InViewUpDirection) < -0.95f))), (ENGINE_MATH_ERROR));
+#endif
+		Vector3 TempRight(Vector3::Cross(InViewUpDirection, TempForward));
+		TempRight.Normalize();
+
+		Vector3 TempUp(Vector3::Cross(TempForward, TempRight));
+
+		return MakeQuaternion(MakeMatrix4x4(TempForward, TempUp, TempRight, Vector3::Zero()));
+	}
+
+	EString Vector3::AsString() const
+	{
+		return EString(ToString(x) + " " + ToString(y) + " " + ToString(z));
 	}
 
 	Matrix4x4 operator+(const Matrix4x4& lm, const Matrix4x4& rm)

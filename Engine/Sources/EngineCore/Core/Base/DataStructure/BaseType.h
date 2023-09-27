@@ -631,7 +631,7 @@ namespace PigeonEngine
 			FLOAT v[3];
 		};
 
-		class EString ToString()const;
+		class EString AsString()const;
 	};
 
 	struct Vector4
@@ -1934,6 +1934,7 @@ namespace PigeonEngine
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling);
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation, const Vector3& InScaling);
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation, const Vector3& InScaling);
+	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InForwardVector, const Vector3& InUpVector, const Vector3& InRightVector, const Vector3& InTranslation);
 	extern PE_INLINE Matrix4x4 InverseMatrix4x4(const Matrix4x4& InMatrix, Vector4* OutDeterminant = nullptr);
 	extern PE_INLINE Vector4 Matrix4x4TransformVector(const Matrix4x4& m, const Vector4& v);
 	extern PE_INLINE Vector3 Matrix4x4TransformPosition(const Matrix4x4& m, const Vector3& v);
@@ -1942,6 +1943,12 @@ namespace PigeonEngine
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector4& v);
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian);
 	extern PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v);
+	extern PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat);
+	extern PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat);
+	extern PE_INLINE Vector3 SplitRightVector(const Matrix4x4& InMat);
+	extern PE_INLINE Vector3 SplitForwardVector(const Quaternion& InQuat);
+	extern PE_INLINE Vector3 SplitUpVector(const Quaternion& InQuat);
+	extern PE_INLINE Vector3 SplitRightVector(const Quaternion& InQuat);	
 	extern PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w);
 	extern PE_INLINE Color3 MakeColor3(const Color4& c);
 	extern PE_INLINE Color4 MakeColor4(const Color3& c);
@@ -1957,5 +1964,6 @@ namespace PigeonEngine
 	extern PE_INLINE Vector2Int MaxVector2Int(const Vector2Int& A, const Vector2Int& B);
 	extern PE_INLINE Vector3Int MaxVector3Int(const Vector3Int& A, const Vector3Int& B);
 	extern PE_INLINE Vector4Int MaxVector4Int(const Vector4Int& A, const Vector4Int& B);
+	extern PE_INLINE Quaternion LookAtTargetRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
 
 };

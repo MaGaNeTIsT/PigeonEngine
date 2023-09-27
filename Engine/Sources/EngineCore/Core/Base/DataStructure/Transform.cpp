@@ -12,6 +12,10 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	ETransform::ETransform(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling)
+		: LocalLocation(InLocation), LocalRotation(InRotation), LocalScaling(InScaling)
+	{
+	}
 	ETransform::ETransform() : LocalLocation(Vector3::Zero()), LocalRotation(Quaternion::Identity()), LocalScaling(Vector3::One())
 	{
 	}
@@ -216,37 +220,28 @@ namespace PigeonEngine
 	}
 	Vector3 ETransform::GetLocalToActorForwardVectorInternal(const PSceneComponent* InParentComponent)const
 	{
-		return QuaternionTransformVector(GetLocalToActorRotationInternal(InParentComponent), Vector3::ZVector());
+		return SplitForwardVector(GetLocalToActorRotationInternal(InParentComponent));
 	}
 	Vector3 ETransform::GetLocalToActorUpVectorInternal(const PSceneComponent* InParentComponent)const
 	{
-		return QuaternionTransformVector(GetLocalToActorRotationInternal(InParentComponent), Vector3::YVector());
+		return SplitUpVector(GetLocalToActorRotationInternal(InParentComponent));
 	}
 	Vector3 ETransform::GetLocalToActorRightVectorInternal(const PSceneComponent* InParentComponent)const
 	{
-		return QuaternionTransformVector(GetLocalToActorRotationInternal(InParentComponent), Vector3::XVector());
+		return SplitRightVector(GetLocalToActorRotationInternal(InParentComponent));
 	}
 	Vector3 ETransform::GetLocalToWorldForwardVectorInternal(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
 	{
-		return QuaternionTransformVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor), Vector3::ZVector());
+		return SplitForwardVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor));
 	}
 	Vector3 ETransform::GetLocalToWorldUpVectorInternal(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
 	{
-		return QuaternionTransformVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor), Vector3::YVector());
+		return SplitUpVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor));
 	}
 	Vector3 ETransform::GetLocalToWorldRightVectorInternal(const PSceneComponent* InParentComponent, const PActor* InParentActor)const
 	{
-		return QuaternionTransformVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor), Vector3::XVector());
+		return SplitRightVector(GetLocalToWorldRotationInternal(InParentComponent, InParentActor));
 	}
-
-	ETransform::ETransform(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScale)
-		:
-	LocalLocation(InLocation),
-	LocalRotation(InRotation),
-	LocalScaling(InScale)
-	{
-	}
-
 	Matrix4x4 ETransform::ToMatrix4x4WithScaling_Local()const
 	{
 		return (MakeMatrix4x4(LocalLocation, LocalRotation, LocalScaling));
@@ -357,7 +352,7 @@ namespace PigeonEngine
 	}
 	Vector3 ETransform::GetForwardVector_Local()const
 	{
-		return QuaternionTransformVector(LocalRotation, Vector3::ZVector());
+		return SplitForwardVector(LocalRotation);
 	}
 	Vector3 ETransform::GetForwardVector_Actor(const PSceneComponent* InParentComponent)const
 	{
@@ -369,7 +364,7 @@ namespace PigeonEngine
 	}
 	Vector3 ETransform::GetUpVector_Local()const
 	{
-		return QuaternionTransformVector(LocalRotation, Vector3::YVector());
+		return SplitUpVector(LocalRotation);
 	}
 	Vector3 ETransform::GetUpVector_Actor(const PSceneComponent* InParentComponent)const
 	{
@@ -381,7 +376,7 @@ namespace PigeonEngine
 	}
 	Vector3 ETransform::GetRightVector_Local()const
 	{
-		return QuaternionTransformVector(LocalRotation, Vector3::XVector());
+		return SplitRightVector(LocalRotation);
 	}
 	Vector3 ETransform::GetRightVector_Actor(const PSceneComponent* InParentComponent)const
 	{

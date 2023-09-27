@@ -78,7 +78,6 @@ namespace PigeonEngine
 		m_WorldManager->Initialize();
 
 		m_PhysicsManager->Initialize();
-
 	}
 	void EMainManager::ShutDown()
 	{

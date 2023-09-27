@@ -51,7 +51,7 @@ NormalViewLightDotParams InitNormalViewLightDotParams(const float3 InNormal,
 
 GBufferTerm InitGBuffer(const float3 InNormal, const float3 InBaseColor,
 	const float InRoughness, const float InMetallicness, const uint InShadingModelID,
-	float InReflectance = 1.0, float InPrecomputedShadowFactor = 0.0)
+	float InReflectance = 1.0, float InPrecomputedShadowFactor = 1.0)
 {
 	GBufferTerm Result;
 

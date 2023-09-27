@@ -104,7 +104,7 @@ namespace PigeonEngine
 								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
 				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_DEPTH].BlendState, BlendStates, 1u);
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState, BlendStates, 1u);
 			}
 			{
 				const RBlendState BlendStates[] =
@@ -243,14 +243,9 @@ namespace PigeonEngine
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
 		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
-		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
 
 		BasePass();
 
@@ -359,6 +354,7 @@ namespace PigeonEngine
 				SceneTextures->GBufferC
 			};
 
+			RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
 			RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
 			SceneTextures->ClearResources();
 			RenderDevice->SetRenderTargets(RenderTargets, 4u, SceneTextures->SceneDepthStencil);
@@ -392,6 +388,7 @@ namespace PigeonEngine
 
 			if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(ViewProxy->GetUniqueID()); !!DLightParams)
 			{
+				RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
 				RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
 				RenderDevice->SetRenderTargetOnly(RenderTargets[0]);
 
@@ -413,8 +410,13 @@ namespace PigeonEngine
 	void RSceneRenderer::FinalOutputPass()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
 		RenderDevice->ClearFinalOutput();
+
+		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
+		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState);
 		RenderDevice->SetFinalOutput();
+
 		FullScreenTriangle.BindPrimitiveBuffers();
 		RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
 		RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);

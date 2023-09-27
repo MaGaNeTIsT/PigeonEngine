@@ -63,7 +63,11 @@ namespace PigeonEngine
         std::string Str;
     };
     
-    extern PE_INLINE EString ToString(const UINT32& InValue);
+    extern PE_INLINE EString ToString(const BOOL32& InValue);
+    extern PE_INLINE EString ToString(const INT32 InValue);
+    extern PE_INLINE EString ToString(const UINT32 InValue);
+    extern PE_INLINE EString ToString(const FLOAT InValue);
+    extern PE_INLINE EString ToString(const DOUBLE& InValue);
 
     extern PE_INLINE BOOL32 SplitByLastSign(const CHAR InSplitSign, const EString& InOriginStr, EString& OutDotForwardStr, EString& OutDotBackwardStr);
 

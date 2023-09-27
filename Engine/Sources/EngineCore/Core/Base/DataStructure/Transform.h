@@ -31,7 +31,7 @@ namespace PigeonEngine
 	class ETransform : public EObjectBase
 	{
 	public:
-		ETransform(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScale);
+		ETransform(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling);
 	public:
 		Matrix4x4	ToMatrix4x4WithScaling_Local()const;
 		Matrix4x4	ToMatrix4x4WithScaling_Actor(const PSceneComponent* InParentComponent)const;

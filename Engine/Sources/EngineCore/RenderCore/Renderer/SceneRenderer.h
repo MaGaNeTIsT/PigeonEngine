@@ -93,7 +93,7 @@ namespace PigeonEngine
 		};
 		enum RBlendType : UINT8
 		{
-			BLEND_TYPE_OPAQUE_DEPTH = 0,
+			BLEND_TYPE_BLEND_OFF		= 0,
 			BLEND_TYPE_OPAQUE_BASEPASS,
 			BLEND_TYPE_LIGHTING,
 			BLEND_TYPE_COUNT

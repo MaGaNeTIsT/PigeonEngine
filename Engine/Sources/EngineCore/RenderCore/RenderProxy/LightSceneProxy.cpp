@@ -39,7 +39,7 @@ namespace PigeonEngine
 		FindParameter(InIndex, "_LightColorIntensity") = &TranslateUploadVectorType(Vector4(InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.LightIntensity));
 		FindParameter(InIndex, "_LightShadowMapSize") = &TranslateUploadVectorType(InData.ShadowMapSize);
 		FindParameter(InIndex, "_LightWorldPosition") = &TranslateUploadVectorType(Vector3::Zero());
-		FindParameter(InIndex, "_LightWorldDirection") = &TranslateUploadVectorType(-QuaternionTransformVector(InWorldRotation, Vector3::ZVector()));
+		FindParameter(InIndex, "_LightWorldDirection") = &TranslateUploadVectorType(-SplitForwardVector(InWorldRotation));
 	}
 
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent)

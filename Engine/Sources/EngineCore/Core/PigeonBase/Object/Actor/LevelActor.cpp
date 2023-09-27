@@ -61,12 +61,13 @@ namespace PigeonEngine
     		New->SetIsTickable(TRUE);
     		this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
-    		LightComp->SetLightIntensity(1000.f);
+            LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
+    		LightComp->SetLightIntensity(1.f);
     		New->AddComponent(LightComp);
-    		LightComp->SetName("DirectLightComponent");
-    		Quaternion Quat = Quaternion(0.5,0.5,0,1);
-    		Quat.Normalize();
-    		New->SetActorRotation(Quat);
+            LightComp->SetName("DirectLightComponent");
+            Quaternion Quat = Quaternion(0.5, 0.5, 0, 1);
+            Quat.Normalize();
+            New->SetActorRotation(Quat);
     	}
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -10));
     }
@@ -79,7 +80,7 @@ namespace PigeonEngine
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
     	
-    	FLOAT t = EMath::Sin(this->GetWorld()->GetGameTimer()->GetClockTime());
+        FLOAT t = static_cast<FLOAT>(EMath::Sin(this->GetWorld()->GetGameTimer()->GetClockTime()));
 		Vector3 newPos = Vector3(-10.f * t -10.f * t, -10.f * t);
     	this->GetWorld()->GetController()->SetActorLocation(newPos);
 	}
