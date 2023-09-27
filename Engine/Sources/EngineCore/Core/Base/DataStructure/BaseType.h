@@ -1964,6 +1964,7 @@ namespace PigeonEngine
 	extern PE_INLINE Vector2Int MaxVector2Int(const Vector2Int& A, const Vector2Int& B);
 	extern PE_INLINE Vector3Int MaxVector3Int(const Vector3Int& A, const Vector3Int& B);
 	extern PE_INLINE Vector4Int MaxVector4Int(const Vector4Int& A, const Vector4Int& B);
-	extern PE_INLINE Quaternion LookAtTargetRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
+	extern PE_INLINE Matrix4x4 LookAtTargetMatrixRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
+	extern PE_INLINE Quaternion LookAtTargetQuaternionRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
 
 };

@@ -132,7 +132,7 @@ namespace PigeonEngine
 			EMath::Max(A.z, B.z),
 			EMath::Max(A.w, B.w));
 	}
-	PE_INLINE Quaternion LookAtTargetRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection)
+	PE_INLINE Matrix4x4 LookAtTargetMatrixRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection)
 	{
 		Vector3 TempForward(InTargetLocation - InViewLocation);
 		TempForward.Normalize();
@@ -144,7 +144,11 @@ namespace PigeonEngine
 
 		Vector3 TempUp(Vector3::Cross(TempForward, TempRight));
 
-		return MakeQuaternion(MakeMatrix4x4(TempForward, TempUp, TempRight, Vector3::Zero()));
+		return MakeMatrix4x4(TempForward, TempUp, TempRight, Vector3::Zero());
+	}
+	PE_INLINE Quaternion LookAtTargetQuaternionRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection)
+	{
+		return MakeQuaternion(LookAtTargetMatrixRotation(InTargetLocation, InViewLocation, InViewUpDirection));
 	}
 
 	EString Vector3::AsString() const
