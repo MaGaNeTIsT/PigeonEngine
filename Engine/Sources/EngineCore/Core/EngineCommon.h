@@ -501,8 +501,8 @@ namespace PigeonEngine
 		}
 		BOOL32 TransformWorldPointToScreen(const EViewport& InViewport, const Vector3& InPositionWS, Vector3& OutPositionSS)const
 		{
-			const Vector2 PointScl(0.5f, -0.5f);
-			const Vector2 PointAdd(0.5f, 0.5f);
+			PE_CONSTEXPR_STATIC Vector2 PointScl(0.5f, -0.5f);
+			PE_CONSTEXPR_STATIC Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionWS.x, InPositionWS.y, InPositionWS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ViewProjectionMatrix, TempPoint);
@@ -516,8 +516,8 @@ namespace PigeonEngine
 				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
 				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
-			const static Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
-			const static Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
 
 			Vector3 ViewPortPointMul(InViewport.Width, InViewport.Height, 1.f);
 			Vector3 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY, 0.f);
@@ -560,8 +560,8 @@ namespace PigeonEngine
 		}
 		BOOL32 TransformViewPointToScreen(const EViewport& InViewport, const Vector3& InPositionVS, Vector3& OutPositionSS)const
 		{
-			const Vector2 PointScl(0.5f, -0.5f);
-			const Vector2 PointAdd(0.5f, 0.5f);
+			PE_CONSTEXPR_STATIC Vector2 PointScl(0.5f, -0.5f);
+			PE_CONSTEXPR_STATIC Vector2 PointAdd(0.5f, 0.5f);
 
 			Vector4 TempPoint(InPositionVS.x, InPositionVS.y, InPositionVS.z, 1.f);
 			TempPoint = Matrix4x4TransformVector(ProjectionPart.ProjectionMatrix, TempPoint);
@@ -575,8 +575,8 @@ namespace PigeonEngine
 				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
 				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
 
-			const static Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
-			const static Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
 
 			Vector3 ViewPortPointMul(InViewport.Width, InViewport.Height, 1.f);
 			Vector3 ViewPortPointAdd(InViewport.TopLeftX, InViewport.TopLeftY, 0.f);

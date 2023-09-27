@@ -10,40 +10,40 @@ namespace PigeonEngine
 	class ESettings
 	{
 	public:
-		constexpr static FLOAT			ENGINE_SCREEN_WIDTH													= 1600.f;
-		constexpr static FLOAT			ENGINE_SCREEN_HEIGHT												= 900.f;
-		constexpr static FLOAT			ENGINE_FIXED_UPDATE_FRAME											= 60.f;
-		constexpr static FLOAT			ENGINE_UPDATE_FRAME													= 90.f;
-		constexpr static BOOL32			ENGINE_WINDOWED														= TRUE;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SCREEN_WIDTH													= 1600.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SCREEN_HEIGHT												= 900.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_FIXED_UPDATE_FRAME											= 60.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_UPDATE_FRAME													= 90.f;
+		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_WINDOWED														= TRUE;
 
-		constexpr static FLOAT			ENGINE_BOUND_MINIMUM												= 0.1f;
-		constexpr static FLOAT			ENGINE_BOUND_MINIMUM_HALF											= 0.05f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM												= 0.1f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_HALF											= 0.05f;
 
-		constexpr static UINT32			ENGINE_BONE_WEIGHT_NUM_MAXIMUM										= 16u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_BONE_WEIGHT_NUM_MAXIMUM										= 16u;
 
-		constexpr static UINT32			ENGINE_MESH_NAME_LENGTH_MAX											= 1024u;
-		constexpr static UINT32			ENGINE_SKELETON_NAME_LENGTH_MAX										= 1024u;
-		constexpr static UINT32			ENGINE_ANIMATION_NAME_LENGTH_MAX									= 1024u;
-		constexpr static UINT32			ENGINE_BONE_NAME_LENGTH_MAX											= 512u;
-		constexpr static UINT32			ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX								= 512u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_MESH_NAME_LENGTH_MAX											= 1024u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SKELETON_NAME_LENGTH_MAX										= 1024u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_ANIMATION_NAME_LENGTH_MAX									= 1024u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_BONE_NAME_LENGTH_MAX											= 512u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX								= 512u;
 
-		constexpr static FLOAT			ENGINE_VISIBLE_CULLING_DISTANCE										= 200000.f;
-		constexpr static FLOAT			ENGINE_CAMERA_FOV													= 60.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_VISIBLE_CULLING_DISTANCE										= 200000.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_FOV													= 60.f;
 
-		constexpr static const CHAR*	ENGINE_DEFAULT_NAME													= "PE_DEFAULT_NAME";
-		constexpr static const CHAR*	ENGINE_ASSET_NAME_TYPE												= ".PAsset";
-		constexpr static const CHAR*	ENGINE_RAW_SHADER_OUTPUT_PATH										= "./Engine/Temp/OutputRawShaders/";
-		constexpr static const CHAR*	ENGINE_SHADER_PATH													= "./Engine/Temp/OutputShaders/";
-		constexpr static const CHAR*	ENGINE_MESH_PATH													= "./Engine/Temp/OutputMeshes/";
-		constexpr static const CHAR*	ENGINE_IMPORT_SHADER_NAME_TYPE										= ".cso";
-		constexpr static const CHAR*	ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE								= "PEVS";
-		constexpr static const CHAR*	ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= "PEPS";
-		constexpr static const CHAR*	ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE								= "PECS";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_DEFAULT_NAME													= "PE_DEFAULT_NAME";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_ASSET_NAME_TYPE												= ".PAsset";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_RAW_SHADER_OUTPUT_PATH										= "./Engine/Temp/OutputRawShaders/";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_PATH													= "./Engine/Temp/OutputShaders/";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MESH_PATH													= "./Engine/Temp/OutputMeshes/";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_SHADER_NAME_TYPE										= ".cso";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE								= "PEVS";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= "PEPS";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE								= "PECS";
 
-		constexpr static UINT32			ENGINE_SHADOW_MAP_SIZE												= 2048u;
-		constexpr static UINT32			ENGINE_CASCADE_SHADOW_LAYER_NUM										= 3u;
-		constexpr static FLOAT			ENGINE_CASCADE_SHADOW_LAYER[ENGINE_CASCADE_SHADOW_LAYER_NUM]		= { 1000.f, 3000.f, 5000.f };
-		constexpr static FLOAT			ENGINE_CASCADE_SHADOW_BORDER[ENGINE_CASCADE_SHADOW_LAYER_NUM - 1u]	= { 100.f, 200.f };
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SHADOW_MAP_SIZE												= 2048u;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_CASCADE_SHADOW_LAYER_NUM										= 3u;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_LAYER[ENGINE_CASCADE_SHADOW_LAYER_NUM]		= { 1000.f, 3000.f, 5000.f };
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_BORDER[ENGINE_CASCADE_SHADOW_LAYER_NUM - 1u]	= { 100.f, 200.f };
 	public:
 		static ESettings* GetSingleton()
 		{

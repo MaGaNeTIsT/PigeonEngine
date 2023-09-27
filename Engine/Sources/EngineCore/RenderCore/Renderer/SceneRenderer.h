@@ -16,13 +16,13 @@ namespace PigeonEngine
 	class RViewLightCommonMaterialParameter : public EMaterialParameter
 	{
 	public:
-		const static UINT32		DirectionalLightParameterIndex	= 0u;
-		const static UINT32		PointLightParameterIndex		= 1u;
-		const static UINT32		SpotLightParameterIndex			= 2u;
+		PE_CONSTEXPR_STATIC		UINT32		DirectionalLightParameterIndex	= 0u;
+		PE_CONSTEXPR_STATIC		UINT32		PointLightParameterIndex		= 1u;
+		PE_CONSTEXPR_STATIC		UINT32		SpotLightParameterIndex			= 2u;
 
-		const static UINT32		RenderDirectionalLightNumMax	= 4u;
-		const static UINT32		RenderPointLightNumMax			= 16u;
-		const static UINT32		RenderSpotLightNumMax			= 8u;
+		PE_CONSTEXPR_STATIC		UINT32		RenderDirectionalLightNumMax	= 4u;
+		PE_CONSTEXPR_STATIC		UINT32		RenderPointLightNumMax			= 16u;
+		PE_CONSTEXPR_STATIC		UINT32		RenderSpotLightNumMax			= 8u;
 	public:
 		virtual void	SetupParameters()override;
 		void			UpdateRenderResource(const UINT32 InDirectionalLightNum, const UINT32 InPointLightNum, const UINT32 InSpotLightNum);

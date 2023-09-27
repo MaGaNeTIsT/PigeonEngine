@@ -366,12 +366,12 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				if (!StaticMesh)
 				{
-					PE_FAILED(("Exist a null mesh proxy."), (ENGINE_RENDER_CORE_ERROR));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null mesh proxy."));
 					continue;
 				}
 				if (!(StaticMesh->IsRenderValid()))
 				{
-					PE_FAILED(("Exist a render invalid mesh proxy."), (ENGINE_RENDER_CORE_ERROR));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid mesh proxy."));
 					continue;
 				}
 #endif

@@ -75,21 +75,24 @@ namespace PigeonEngine
 	}
 	PE_INLINE void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
-		const static RShaderSemanticType _EngineDefaultMeshInputLayout[7u] = {
+		PE_CONSTEXPR_STATIC RShaderSemanticType _EngineDefaultMeshInputLayout[7u] =
+		{
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0,
 			RShaderSemanticType::SHADER_SEMANTIC_NORMAL0,
 			RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
 			RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
-			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2 };
+			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2
+		};
 
 		OutLayouts = _EngineDefaultMeshInputLayout;
 		OutLayoutNum = 7u;
 	}
 	PE_INLINE void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
-		const static RShaderSemanticType _EngineDefaultSkeletalMeshInputLayout[9u] = {
+		PE_CONSTEXPR_STATIC RShaderSemanticType _EngineDefaultSkeletalMeshInputLayout[9u] =
+		{
 			RShaderSemanticType::SHADER_SEMANTIC_POSITION0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0,
 			RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0,
@@ -98,7 +101,8 @@ namespace PigeonEngine
 			RShaderSemanticType::SHADER_SEMANTIC_TANGENT0,
 			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD1,
 			RShaderSemanticType::SHADER_SEMANTIC_COLOR0,
-			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2 };
+			RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD2
+		};
 
 		OutLayouts = _EngineDefaultSkeletalMeshInputLayout;
 		OutLayoutNum = 9u;

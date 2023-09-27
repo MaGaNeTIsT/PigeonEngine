@@ -339,7 +339,7 @@ namespace PigeonEngine
 		typedef	TArray<EVertexData>		EVertexPart;
 		typedef	TArray<ESubmeshData>	ESubmeshPart;
 	public:
-		const static UINT32 MeshVertexLayoutPartMaxNum = 4;
+		PE_CONSTEXPR_STATIC UINT32 MeshVertexLayoutPartMaxNum = 4u;
 	public:
 		virtual BOOL32	IsResourceValid()const override;
 		virtual BOOL32	InitResource()override;

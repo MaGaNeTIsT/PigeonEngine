@@ -48,6 +48,7 @@ namespace PigeonEngine
 #endif
 #define RAND_MAX						0x7fff
 
+#define PE_CONSTEXPR_STATIC				constexpr static
 #define PE_CONSTEXPR					constexpr
 #define PE_CONST						const
 #define PE_MUTABLE						mutable

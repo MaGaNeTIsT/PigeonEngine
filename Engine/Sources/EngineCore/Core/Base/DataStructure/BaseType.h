@@ -306,22 +306,22 @@ namespace PigeonEngine
 		Vector2(const Vector2& vv)noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2& Zero()
 		{
-			const static Vector2 _StaticVector2Zero(0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector2 _StaticVector2Zero(0.f, 0.f);
 			return _StaticVector2Zero;
 		}
 		static const Vector2& One()
 		{
-			const static Vector2 _StaticVector2One(1.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector2 _StaticVector2One(1.f, 1.f);
 			return _StaticVector2One;
 		}
 		static const Vector2& XVector()
 		{
-			const static Vector2 _StaticVector2XVector(1.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector2 _StaticVector2XVector(1.f, 0.f);
 			return _StaticVector2XVector;
 		}
 		static const Vector2& YVector()
 		{
-			const static Vector2 _StaticVector2YVector(0.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector2 _StaticVector2YVector(0.f, 1.f);
 			return _StaticVector2YVector;
 		}
 		static Vector2 Normalize(const Vector2& vv)
@@ -470,27 +470,27 @@ namespace PigeonEngine
 		Vector3(const Vector3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3& Zero()
 		{
-			const static Vector3 _StaticVector3Zero(0.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticVector3Zero(0.f, 0.f, 0.f);
 			return _StaticVector3Zero;
 		}
 		static const Vector3& One()
 		{
-			const static Vector3 _StaticVector3One(1.f, 1.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticVector3One(1.f, 1.f, 1.f);
 			return _StaticVector3One;
 		}
 		static const Vector3& XVector()
 		{
-			const static Vector3 _StaticVector3XVector(1.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticVector3XVector(1.f, 0.f, 0.f);
 			return _StaticVector3XVector;
 		}
 		static const Vector3& YVector()
 		{
-			const static Vector3 _StaticVector3YVector(0.f, 1.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticVector3YVector(0.f, 1.f, 0.f);
 			return _StaticVector3YVector;
 		}
 		static const Vector3& ZVector()
 		{
-			const static Vector3 _StaticVector3ZVector(0.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector3 _StaticVector3ZVector(0.f, 0.f, 1.f);
 			return _StaticVector3ZVector;
 		}
 		static Vector3 Normalize(const Vector3& vv)
@@ -664,32 +664,32 @@ namespace PigeonEngine
 		Vector4(const Vector4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4& Zero()
 		{
-			const static Vector4 _StaticVector4Zero(0.f, 0.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4Zero(0.f, 0.f, 0.f, 0.f);
 			return _StaticVector4Zero;
 		}
 		static const Vector4& One()
 		{
-			const static Vector4 _StaticVector4One(1.f, 1.f, 1.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4One(1.f, 1.f, 1.f, 1.f);
 			return _StaticVector4One;
 		}
 		static const Vector4& XVector()
 		{
-			const static Vector4 _StaticVector4XVector(1.f, 0.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4XVector(1.f, 0.f, 0.f, 0.f);
 			return _StaticVector4XVector;
 		}
 		static const Vector4& YVector()
 		{
-			const static Vector4 _StaticVector4YVector(0.f, 1.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4YVector(0.f, 1.f, 0.f, 0.f);
 			return _StaticVector4YVector;
 		}
 		static const Vector4& ZVector()
 		{
-			const static Vector4 _StaticVector4ZVector(0.f, 0.f, 1.f, 0.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4ZVector(0.f, 0.f, 1.f, 0.f);
 			return _StaticVector4ZVector;
 		}
 		static const Vector4& WVector()
 		{
-			const static Vector4 _StaticVector4WVector(0.f, 0.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Vector4 _StaticVector4WVector(0.f, 0.f, 0.f, 1.f);
 			return _StaticVector4WVector;
 		}
 		static Vector4 Normalize(const Vector4& vv)
@@ -830,12 +830,12 @@ namespace PigeonEngine
 		Vector2Int(const Vector2Int& vv)noexcept : x(vv.x), y(vv.y) {}
 		static const Vector2Int& Zero()
 		{
-			const static Vector2Int _StaticVector2IntZero(0, 0);
+			PE_CONSTEXPR_STATIC Vector2Int _StaticVector2IntZero(0, 0);
 			return _StaticVector2IntZero;
 		}
 		static const Vector2Int& One()
 		{
-			const static Vector2Int _StaticVector2IntOne(1, 1);
+			PE_CONSTEXPR_STATIC Vector2Int _StaticVector2IntOne(1, 1);
 			return _StaticVector2IntOne;
 		}
 		void SetDirectXVector(DirectX::CXMVECTOR xv)
@@ -1033,12 +1033,12 @@ namespace PigeonEngine
 		Vector3Int(const Vector3Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Vector3Int& Zero()
 		{
-			const static Vector3Int _StaticVector3IntZero(0, 0, 0);
+			PE_CONSTEXPR_STATIC Vector3Int _StaticVector3IntZero(0, 0, 0);
 			return _StaticVector3IntZero;
 		}
 		static const Vector3Int& One()
 		{
-			const static Vector3Int _StaticVector3IntOne(1, 1, 1);
+			PE_CONSTEXPR_STATIC Vector3Int _StaticVector3IntOne(1, 1, 1);
 			return _StaticVector3IntOne;
 		}
 		void SetDirectXVector(DirectX::CXMVECTOR xv)
@@ -1240,12 +1240,12 @@ namespace PigeonEngine
 		Vector4Int(const Vector4Int& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Vector4Int& Zero()
 		{
-			const static Vector4Int _StaticVector4IntZero(0, 0, 0, 0);
+			PE_CONSTEXPR_STATIC Vector4Int _StaticVector4IntZero(0, 0, 0, 0);
 			return _StaticVector4IntZero;
 		}
 		static const Vector4Int& One()
 		{
-			const static Vector4Int _StaticVector4IntOne(1, 1, 1, 1);
+			PE_CONSTEXPR_STATIC Vector4Int _StaticVector4IntOne(1, 1, 1, 1);
 			return _StaticVector4IntOne;
 		}
 		void SetDirectXVector(DirectX::CXMVECTOR xv)
@@ -1434,32 +1434,32 @@ namespace PigeonEngine
 		Color3(const Color3& vv)noexcept : x(vv.x), y(vv.y), z(vv.z) {}
 		static const Color3& Black()
 		{
-			const static Color3 _StaticColor3Black(0.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3Black(0.f, 0.f, 0.f);
 			return _StaticColor3Black;
 		}
 		static const Color3& White()
 		{
-			const static Color3 _StaticColor3White(1.f, 1.f, 1.f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3White(1.f, 1.f, 1.f);
 			return _StaticColor3White;
 		}
 		static const Color3& MiddleGray()
 		{
-			const static Color3 _StaticColor3MiddleGray(0.5f, 0.5f, 0.5f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3MiddleGray(0.5f, 0.5f, 0.5f);
 			return _StaticColor3MiddleGray;
 		}
 		static const Color3& Red()
 		{
-			const static Color3 _StaticColor3Red(1.f, 0.f, 0.f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3Red(1.f, 0.f, 0.f);
 			return _StaticColor3Red;
 		}
 		static const Color3& Green()
 		{
-			const static Color3 _StaticColor3Green(0.f, 1.f, 0.f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3Green(0.f, 1.f, 0.f);
 			return _StaticColor3Green;
 		}
 		static const Color3& Blue()
 		{
-			const static Color3 _StaticColor3Blue(0.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Color3 _StaticColor3Blue(0.f, 0.f, 1.f);
 			return _StaticColor3Blue;
 		}
 		static Color3 Normalize(const Color3& vv)
@@ -1626,32 +1626,32 @@ namespace PigeonEngine
 		Color4(const Color4& vv)noexcept : x(vv.x), y(vv.y), z(vv.z), w(vv.w) {}
 		static const Color4& Black()
 		{
-			const static Color4 _StaticColor4Black(0.f, 0.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4Black(0.f, 0.f, 0.f, 1.f);
 			return _StaticColor4Black;
 		}
 		static const Color4& White()
 		{
-			const static Color4 _StaticColor4White(1.f, 1.f, 1.f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4White(1.f, 1.f, 1.f, 1.f);
 			return _StaticColor4White;
 		}
 		static const Color4& MiddleGray()
 		{
-			const static Color4 _StaticColor4MiddleGray(0.5f, 0.5f, 0.5f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4MiddleGray(0.5f, 0.5f, 0.5f, 1.f);
 			return _StaticColor4MiddleGray;
 		}
 		static const Color4& Red()
 		{
-			const static Color4 _StaticColor4Red(1.f, 0.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4Red(1.f, 0.f, 0.f, 1.f);
 			return _StaticColor4Red;
 		}
 		static const Color4& Green()
 		{
-			const static Color4 _StaticColor4Green(0.f, 1.f, 0.f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4Green(0.f, 1.f, 0.f, 1.f);
 			return _StaticColor4Green;
 		}
 		static const Color4& Blue()
 		{
-			const static Color4 _StaticColor4Blue(0.f, 0.f, 1.f, 1.f);
+			PE_CONSTEXPR_STATIC Color4 _StaticColor4Blue(0.f, 0.f, 1.f, 1.f);
 			return _StaticColor4Blue;
 		}
 		static Color4 Normalize(const Color4& vv)
