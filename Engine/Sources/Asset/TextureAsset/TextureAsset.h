@@ -16,8 +16,9 @@ namespace PigeonEngine
 
 	enum ETextureType : UINT8
 	{
-		TEXTURE_TYPE_UNKNOWN	= 0,
+		TEXTURE_TYPE_UNKNOWN		= 0,
 		TEXTURE_TYPE_TEXTURE2D,
+		TEXTURE_TYPE_TEXTURECUBE,
 		TEXTURE_TYPE_COUNT
 	};
 
@@ -43,7 +44,7 @@ namespace PigeonEngine
 		RFormatType		Format;
 	};
 
-	class ETexture2D : public EObjectBase, public EResourceInterface
+	class ETexture : public EObjectBase, public EResourceInterface
 	{
 	public:
 		virtual BOOL32	IsResourceValid()const override;
@@ -51,12 +52,30 @@ namespace PigeonEngine
 		virtual void	ReleaseResource()override;
 	public:
 		ETextureType	GetTextureType()const { return TextureType; }
-		void			SetData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB);
 	protected:
+		void			SetTextureData(BYTE* InByteCode, const ETextureResourceProperty& InProperty, BOOL32 InSRGB);
+	public:
 		ETextureType				TextureType;
 		BYTE*						ByteCode;
 		ETextureResourceProperty	ResourceProperties;
 		BOOL32						SRGB;
+	public:
+		ETexture();
+		ETexture(const ETexture& Other);
+		virtual ~ETexture();
+		ETexture& operator=(const ETexture& Other) = delete;
+	public:
+		friend class ETextureAssetManager;
+	};
+
+	class ETexture2D : public ETexture
+	{
+	public:
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
+		virtual void	ReleaseResource()override;
+	public:
+		void			SetTexture2DData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB);
 	public:
 		friend class ETexture2DAsset;
 		friend class ETextureAssetManager;
@@ -66,6 +85,25 @@ namespace PigeonEngine
 
 	};
 
+	class ETextureCube : public ETexture
+	{
+	public:
+		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	InitResource()override;
+		virtual void	ReleaseResource()override;
+	public:
+		void			SetTextureCubeData(BYTE* InByteCode, UINT32 InWidth, UINT32 InPixelByteCount, RFormatType InFormat);
+	public:
+		friend class ETextureCubeAsset;
+		friend class ETextureAssetManager;
+	public:
+
+		CLASS_VIRTUAL_COPY_BODY(ETextureCube)
+	};
+
+	/// <summary>
+	/// A texture type that contains only 1 member. Shader resource view is texture2d.
+	/// </summary>
 	class ETexture2DAsset : public TRenderBaseAsset<ETexture2D, RTexture2DResource>
 	{
 	public:
@@ -86,10 +124,39 @@ namespace PigeonEngine
 
 	};
 
+	/// <summary>
+	/// A texture array type that contains 6 members. Shader resource view is texture cube.
+	/// Face[0] : +X Right face.
+	/// Face[1] : -X Left face.
+	/// Face[2] : +Y Top face.
+	/// Face[3] : -Y Bottom face.
+	/// Face[4] : +Z Forward face.
+	/// Face[5] : -Z Back face.
+	/// </summary>
+	class ETextureCubeAsset : public TRenderBaseAsset<ETextureCube, RTextureCubeResource>
+	{
+	public:
+		ETextureCubeAsset(const EString& InAssetPath, const EString& InAssetName
+#if _EDITOR_ONLY
+			, const EString& InDebugName
+#endif
+		);
+		virtual ~ETextureCubeAsset();
+	public:
+		virtual BOOL32	InitResource()override;
+	protected:
+		RTextureCubeResource* CreateTextureResource(ETextureCube* InResource);
+	public:
+		ETextureCubeAsset() = delete;
+
+		CLASS_REMOVE_COPY_BODY(ETextureCubeAsset)
+	};
+
 	class ETextureAssetManager : public EManagerBase
 	{
 	public:
 		typedef TAssetManager<EString, ETexture2DAsset>		ETexture2DAssetManager;
+		typedef TAssetManager<EString, ETextureCubeAsset>	ETextureCubeAssetManager;
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
@@ -100,11 +167,15 @@ namespace PigeonEngine
 		BOOL32	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
 	private:
 		void	ClearTexture2Ds();
+		void	ClearTextureCubes();
 	private:
 		ETexture2DAsset* LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32* InSRGBOverride = nullptr);
 		BOOL32 SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource);
+		ETextureCubeAsset* LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName);
+		BOOL32 SaveTextureCubeAsset(const EString& InSavePath, const EString& InSaveName, const ETextureCube* InTextureResource);
 	private:
-		ETexture2DAssetManager	Texture2DManager;
+		ETexture2DAssetManager		Texture2DManager;
+		ETextureCubeAssetManager	TextureCubeManager;
 
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ETextureAssetManager)
 

@@ -42,12 +42,13 @@ namespace PigeonEngine
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
     		NewStaticMeshComp->SetIsTickable(TRUE);
     		New->AddComponent(NewStaticMeshComp);
+            New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
 
     		const EStaticMeshAsset* Asset = nullptr;
-    		EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Camera/");
-    		EString ImportName("Camera");
+    		EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
+    		EString ImportName("Robot");
     		EString ImportFileType("obj");
-    		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "CameraMesh", Asset, &ImportPath, &ImportName, &ImportFileType);
+    		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
 
     		NewStaticMeshComp->SetMeshAsset(Asset);
     		NewStaticMeshComp->SetName("MeshComponent");
@@ -69,7 +70,7 @@ namespace PigeonEngine
             Quat.Normalize();
             New->SetActorRotation(Quat);
     	}
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -10));
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -120));
     }
 
 	void PLevelActor::UserEndPlay()

@@ -27,6 +27,7 @@ public:
 protected:
 	CRenderDevice::Texture2DViewInfo m_Texture2D;
 };
+*/
 
 /*
 * // Create from texutre file that has texture array with 6 faces.
@@ -37,17 +38,17 @@ protected:
 * // Face[4] : +Z Forward face.
 * // Face[5] : -Z Back face.
 */
-class CTextureCube : public CTextureBase
-{
-public:
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()const override;
-public:
-	CTextureCube(const std::string& name, const CRenderDevice::TextureCubeViewInfo& v);
-	CTextureCube(const CTextureCube& v);
-	virtual ~CTextureCube() {}
-protected:
-	CRenderDevice::TextureCubeViewInfo m_TextureCube;
-};
+//class CTextureCube : public CTextureBase
+//{
+//public:
+//	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GetShaderResourceView()const override;
+//public:
+//	CTextureCube(const std::string& name, const CRenderDevice::TextureCubeViewInfo& v);
+//	CTextureCube(const CTextureCube& v);
+//	virtual ~CTextureCube() {}
+//protected:
+//	CRenderDevice::TextureCubeViewInfo m_TextureCube;
+//};
 
 /*
 * // Create from different texutre file into texture cube.
@@ -58,13 +59,12 @@ protected:
 * // Face[4] : +Z Forward face.
 * // Face[5] : -Z Back face.
 */
-class CTextureCubeCombine : public CTextureCube
-{
-public:
-	CTextureCubeCombine(const std::string* nameFace, const CRenderDevice::TextureCubeViewInfo& v);
-	CTextureCubeCombine(const CTextureCubeCombine& v);
-	virtual ~CTextureCubeCombine() {}
-protected:
-	std::string m_NameFace[5u];
-};
-*/
+//class CTextureCubeCombine : public CTextureCube
+//{
+//public:
+//	CTextureCubeCombine(const std::string* nameFace, const CRenderDevice::TextureCubeViewInfo& v);
+//	CTextureCubeCombine(const CTextureCubeCombine& v);
+//	virtual ~CTextureCubeCombine() {}
+//protected:
+//	std::string m_NameFace[5u];
+//};

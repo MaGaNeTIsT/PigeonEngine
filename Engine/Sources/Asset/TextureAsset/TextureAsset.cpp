@@ -13,9 +13,12 @@ namespace PigeonEngine
 
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<ETexture2D, EObjectBase, EResourceInterface>();
+		RegisterClassType<ETexture, EObjectBase, EResourceInterface>();
+		RegisterClassType<ETexture2D, ETexture>();
+		RegisterClassType<ETextureCube, ETexture>();
 
 		RegisterTextureClassTypes<ETexture2D, RTexture2DResource, ETexture2DAsset>();
+		RegisterTextureClassTypes<ETextureCube, RTextureCubeResource, ETextureCubeAsset>();
 
 		RegisterClassType<ETextureAssetManager, EManagerBase>();
 	}
@@ -275,62 +278,28 @@ namespace PigeonEngine
 	}
 #endif
 
-	ETexture2D::ETexture2D()
-		: TextureType(ETextureType::TEXTURE_TYPE_TEXTURE2D)
-		, ByteCode(nullptr)
-		, ResourceProperties()
-		, SRGB(FALSE)
+	ETexture::ETexture()
+		: TextureType(ETextureType::TEXTURE_TYPE_UNKNOWN), ByteCode(nullptr), SRGB(FALSE)
 	{
 	}
-	ETexture2D::ETexture2D(const ETexture2D& Other)
-		: TextureType(ETextureType::TEXTURE_TYPE_TEXTURE2D)
-		, ByteCode(nullptr)
-		, ResourceProperties(Other.ResourceProperties)
-		, SRGB(Other.SRGB)
+	ETexture::ETexture(const ETexture& Other)
+		: TextureType(Other.TextureType), ByteCode(nullptr), ResourceProperties(Other.ResourceProperties), SRGB(Other.SRGB)
 	{
-		ResourceProperties.Depth = 0u;
-		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
-		{
-			const UINT32 DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
-			const UINT32 DataSize = DataStride * Other.ResourceProperties.Height;
-			ByteCode = new BYTE[DataSize];
-			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
-		}
 	}
-	ETexture2D::~ETexture2D()
+	ETexture::~ETexture()
 	{
 		ReleaseResource();
 	}
-	ETexture2D& ETexture2D::operator=(const ETexture2D& Other)
+	BOOL32 ETexture::IsResourceValid()const
 	{
-		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
-		if (ByteCode)
-		{
-			delete[]ByteCode;
-			ByteCode = nullptr;
-		}
-		ResourceProperties	= Other.ResourceProperties;
-		SRGB				= Other.SRGB;
-		ResourceProperties.Depth = 0u;
-		if ((!!(Other.ByteCode)) && (Other.ResourceProperties.Width > 0u) && (Other.ResourceProperties.Height > 0u) && (Other.ResourceProperties.PixelByteCount > 0u) && (Other.ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN))
-		{
-			const UINT32 DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
-			const UINT32 DataSize = DataStride * Other.ResourceProperties.Height;
-			ByteCode = new BYTE[DataSize];
-			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
-		}
-		return (*this);
+		return ((!!ByteCode) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u));
 	}
-	BOOL32 ETexture2D::IsResourceValid()const
+	BOOL32 ETexture::InitResource()
 	{
-		return ((!!ByteCode) && (ResourceProperties.Width > 0u) && (ResourceProperties.Height > 0u) && (ResourceProperties.PixelByteCount > 0u) && (ResourceProperties.Format != RFormatType::FORMAT_UNKNOWN));
-	}
-	BOOL32 ETexture2D::InitResource()
-	{
-		// Texture2D resource must init by texture manager.
+		// Texture resource must init by texture manager.
 		return TRUE;
 	}
-	void ETexture2D::ReleaseResource()
+	void ETexture::ReleaseResource()
 	{
 		ResourceProperties = ETextureResourceProperty();
 		SRGB = FALSE;
@@ -340,17 +309,130 @@ namespace PigeonEngine
 			ByteCode = nullptr;
 		}
 	}
-	void ETexture2D::SetData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB)
+	void ETexture::SetTextureData(BYTE* InByteCode, const ETextureResourceProperty& InProperty, BOOL32 InSRGB)
 	{
-		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
 		if (ByteCode)
 		{
 			delete[]ByteCode;
 			ByteCode = nullptr;
 		}
 		ByteCode			= InByteCode;
-		ResourceProperties	= ETextureResourceProperty(InWidth, InHeigh, 0u, InPixelByteCount, InFormat);
+		ResourceProperties	= InProperty;
 		SRGB				= InSRGB;
+	}
+
+	ETexture2D::ETexture2D()
+	{
+		TextureType = ETextureType::TEXTURE_TYPE_TEXTURE2D;
+	}
+	ETexture2D::ETexture2D(const ETexture2D& Other)
+		: ETexture(Other)
+	{
+		ResourceProperties.Depth = 0u;
+		if (Other.IsResourceValid())
+		{
+			const UINT32 DataStride	= Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize	= DataStride * Other.ResourceProperties.Height;
+			ByteCode = new BYTE[DataSize];
+			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
+		}
+	}
+	ETexture2D::~ETexture2D()
+	{
+	}
+	ETexture2D& ETexture2D::operator=(const ETexture2D& Other)
+	{
+		if (ByteCode)
+		{
+			delete[]ByteCode;
+			ByteCode = nullptr;
+		}
+		ResourceProperties	= Other.ResourceProperties;
+		SRGB				= Other.SRGB;
+		ResourceProperties.Depth = 0u;
+		if (Other.IsResourceValid())
+		{
+			const UINT32 DataStride	= Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize	= DataStride * Other.ResourceProperties.Height;
+			ByteCode = new BYTE[DataSize];
+			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
+		}
+		return (*this);
+	}
+	BOOL32 ETexture2D::IsResourceValid()const
+	{
+		return ((TextureType == ETextureType::TEXTURE_TYPE_TEXTURE2D) && (ResourceProperties.Depth == 0u) && ETexture::IsResourceValid());
+	}
+	BOOL32 ETexture2D::InitResource()
+	{
+		// Texture resource must init by texture manager.
+		return TRUE;
+	}
+	void ETexture2D::ReleaseResource()
+	{
+		ETexture::ReleaseResource();
+	}
+	void ETexture2D::SetTexture2DData(BYTE* InByteCode, UINT32 InWidth, UINT32 InHeigh, UINT32 InPixelByteCount, RFormatType InFormat, BOOL32 InSRGB)
+	{
+		SetTextureData(InByteCode, ETextureResourceProperty(InWidth, InHeigh, 0u, InPixelByteCount, InFormat), InSRGB);
+	}
+
+	ETextureCube::ETextureCube()
+	{
+		TextureType = ETextureType::TEXTURE_TYPE_TEXTURECUBE;
+		SRGB = FALSE;
+	}
+	ETextureCube::ETextureCube(const ETextureCube& Other)
+		: ETexture(Other)
+	{
+		SRGB = FALSE;
+		ResourceProperties.Depth = 6u;
+		if (Other.IsResourceValid())
+		{
+			const UINT32 DataStride	= Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize	= DataStride * Other.ResourceProperties.Height * 6u;
+			ByteCode = new BYTE[DataSize];
+			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
+		}
+	}
+	ETextureCube::~ETextureCube()
+	{
+	}
+	ETextureCube& ETextureCube::operator=(const ETextureCube& Other)
+	{
+		if (ByteCode)
+		{
+			delete[]ByteCode;
+			ByteCode = nullptr;
+		}
+		ResourceProperties	= Other.ResourceProperties;
+		SRGB				= FALSE;
+		ResourceProperties.Depth = 6u;
+		if (Other.IsResourceValid())
+		{
+			const UINT32 DataStride = Other.ResourceProperties.Width * Other.ResourceProperties.PixelByteCount;
+			const UINT32 DataSize	= DataStride * Other.ResourceProperties.Height * 6u;
+			ByteCode = new BYTE[DataSize];
+			::memcpy_s(ByteCode, DataSize, Other.ByteCode, DataSize);
+		}
+		return (*this);
+	}
+	BOOL32 ETextureCube::IsResourceValid()const
+	{
+		return ((TextureType == ETextureType::TEXTURE_TYPE_TEXTURECUBE) && (ResourceProperties.Depth == 6u) && (ResourceProperties.Width == ResourceProperties.Height) && (SRGB == FALSE) && ETexture::IsResourceValid());
+	}
+	BOOL32 ETextureCube::InitResource()
+	{
+		// Texture resource must init by texture manager.
+		return TRUE;
+	}
+	void ETextureCube::ReleaseResource()
+	{
+		ETexture::ReleaseResource();
+	}
+	void ETextureCube::SetTextureCubeData(BYTE* InByteCode, UINT32 InWidth, UINT32 InPixelByteCount, RFormatType InFormat)
+	{
+		SetTextureData(InByteCode, ETextureResourceProperty(InWidth, InWidth, 6u, InPixelByteCount, InFormat), FALSE);
 	}
 
 	ETexture2DAsset::ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
@@ -394,21 +476,110 @@ namespace PigeonEngine
 	RTexture2DResource* ETexture2DAsset::CreateTextureResource(ETexture2D* InResource)
 	{
 		RTexture2DResource* Result = nullptr;
-		if ((!!InResource) && (InResource->IsResourceValid()))
+		if (!InResource)
 		{
-			RDeviceD3D11* deviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			RSubresourceDataDesc TempInitData;
+			return Result;
+		}
+		if (!(InResource->IsResourceValid()))
+		{
+			return Result;
+		}
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		RSubresourceDataDesc TempInitData;
+		{
+			TempInitData.pSysMem = InResource->ByteCode;
+			TempInitData.SysMemPitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount;
+			TempInitData.SysMemSlicePitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount * InResource->ResourceProperties.Height;
+		}
+		Result = new RTexture2DResource();
+		if (!(RenderDevice->CreateTexture2D(*Result,
+			RTextureDesc(
+				InResource->ResourceProperties.Width,
+				InResource->ResourceProperties.Height,
+				RBindFlagType::BIND_SHADER_RESOURCE,
+				InResource->ResourceProperties.Format),
+			&TempInitData)))
+		{
+			delete Result;
+			Result = nullptr;
+		}
+		return Result;
+	}
+
+	ETextureCubeAsset::ETextureCubeAsset(const EString& InAssetPath, const EString& InAssetName
+#if _EDITOR_ONLY
+		, const EString& InDebugName
+#endif
+	) : TRenderBaseAsset<ETextureCube, RTextureCubeResource>(InAssetPath, InAssetName
+#if _EDITOR_ONLY
+		, InDebugName
+#endif
+	)
+	{
+	}
+	ETextureCubeAsset::~ETextureCubeAsset()
+	{
+	}
+	BOOL32 ETextureCubeAsset::InitResource()
+	{
+		if (IsInitialized())
+		{
+#if _EDITOR_ONLY
 			{
-				TempInitData.pSysMem = InResource->ByteCode;
-				TempInitData.SysMemPitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount;
-				TempInitData.SysMemSlicePitch = InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount * InResource->ResourceProperties.Height;
+				EString ErrorInfo = EString("TextureCube name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
-			Result = new RTexture2DResource();
-			if (!deviceD3D11->CreateTexture2D(*Result, RTextureDesc(InResource->ResourceProperties.Width, InResource->ResourceProperties.Height, RBindFlagType::BIND_SHADER_RESOURCE, InResource->ResourceProperties.Format), &TempInitData))
+#endif
+			return TRUE;
+		}
+		if (CreateRenderResourceInternal(
+			[this](ETextureCube* InResource)->RTextureCubeResource*
 			{
-				delete Result;
-				Result = nullptr;
-			}
+				return (this->CreateTextureResource(InResource));
+			},
+			FALSE))
+		{
+			bIsInitialized = TRUE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+	RTextureCubeResource* ETextureCubeAsset::CreateTextureResource(ETextureCube* InResource)
+	{
+		RTextureCubeResource* Result = nullptr;
+		if (!InResource)
+		{
+			return Result;
+		}
+		if (!(InResource->IsResourceValid()))
+		{
+			return Result;
+		}
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		const UINT32	SingleFaceMemStride	= InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount;
+		const UINT32	SingleFaceMemSize	= SingleFaceMemStride * InResource->ResourceProperties.Height;
+		const UINT32	TotalFaceMemSize	= SingleFaceMemSize * 6u;
+		BYTE*			StartPtr			= InResource->ByteCode;
+		RSubresourceDataDesc TempInitData[6] =
+		{
+			{ &(StartPtr[0u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize},
+			{ &(StartPtr[1u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize},
+			{ &(StartPtr[2u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize},
+			{ &(StartPtr[3u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize},
+			{ &(StartPtr[4u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize},
+			{ &(StartPtr[5u * SingleFaceMemSize]), SingleFaceMemStride, SingleFaceMemSize}
+		};
+		Result = new RTextureCubeResource();
+		if (!(RenderDevice->CreateTextureCube(*Result,
+			RTextureDesc(
+				InResource->ResourceProperties.Width,
+				InResource->ResourceProperties.Height,
+				RBindFlagType::BIND_SHADER_RESOURCE,
+				InResource->ResourceProperties.Format),
+			TempInitData)))
+		{
+			delete Result;
+			Result = nullptr;
 		}
 		return Result;
 	}
@@ -428,6 +599,7 @@ namespace PigeonEngine
 	void ETextureAssetManager::ShutDown()
 	{
 		ClearTexture2Ds();
+		ClearTextureCubes();
 	}
 #if _EDITOR_ONLY
 	BOOL32 ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
@@ -489,7 +661,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		ETexture2D* NeedSaveTexture2DResource = new ETexture2D();
-		NeedSaveTexture2DResource->SetData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
+		NeedSaveTexture2DResource->SetTexture2DData(ReadByteCode, ReadWidth, ReadHeight, ReadPixelByteCount, ReadFormat, FALSE);
 
 		BOOL32 Result = SaveTexture2DAsset(InSavePath, InAssetName, NeedSaveTexture2DResource);
 
@@ -536,6 +708,10 @@ namespace PigeonEngine
 	{
 		Texture2DManager.Clear();
 	}
+	void ETextureAssetManager::ClearTextureCubes()
+	{
+		TextureCubeManager.Clear();
+	}
 	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32* InSRGBOverride)
 	{
 		EString TempFullPathName(InLoadPath);
@@ -561,7 +737,7 @@ namespace PigeonEngine
 			}
 #if _EDITOR_ONLY
 			{
-				EString ErrorData("Load shader asset failed (load file path : ");
+				EString ErrorData("Load texture 2d asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
@@ -569,7 +745,7 @@ namespace PigeonEngine
 #endif
 			return nullptr;
 		}
-		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read texture 2d asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
 		BOOL32 Result = FALSE;
 		void* TempPtr = ReadFileMem;
 		ULONG RstSize = ReadFileSize;
@@ -604,6 +780,7 @@ namespace PigeonEngine
 		}
 		if ((ReadAssetType == EAssetType::ASSET_TYPE_TEXTURE) &&
 			(ReadTextureType == ETextureType::TEXTURE_TYPE_TEXTURE2D) &&
+			(ReadResourceProperty.Depth == 0u) &&
 			(ReadResourceProperty.Width > 0u) &&
 			(ReadResourceProperty.Height > 0u) &&
 			(ReadResourceProperty.PixelByteCount > 0u) &&
@@ -611,6 +788,7 @@ namespace PigeonEngine
 		{
 			const UINT32 ByteCodeStride = ReadResourceProperty.Width * ReadResourceProperty.PixelByteCount;
 			const UINT32 ByteCodeSize = ByteCodeStride * ReadResourceProperty.Height;
+			Check((RstSize == ByteCodeSize), (ENGINE_ASSET_ERROR));
 			BYTE* ReadByteCode = new BYTE[ByteCodeSize];
 			::memcpy_s(ReadByteCode, ByteCodeSize, TempPtr, RstSize);
 			if (InSRGBOverride)
@@ -627,12 +805,16 @@ namespace PigeonEngine
 				[ReadSRGB, ReadByteCode, &ReadResourceProperty, &StoragedResource]()->ETexture2D*
 				{
 					StoragedResource = new ETexture2D();
-					StoragedResource->SetData(ReadByteCode, ReadResourceProperty.Width, ReadResourceProperty.Height, ReadResourceProperty.PixelByteCount, ReadResourceProperty.Format, ReadSRGB);
+					StoragedResource->SetTexture2DData(ReadByteCode, ReadResourceProperty.Width, ReadResourceProperty.Height, ReadResourceProperty.PixelByteCount, ReadResourceProperty.Format, ReadSRGB);
 					return StoragedResource;
 				})))
 			{
 				//TODO
 			}
+		}
+		else
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Loaded texture 2d PAsset is not valid."));
 		}
 		delete[]ReadFileMem;
 		return OutTextureAsset;
@@ -657,6 +839,161 @@ namespace PigeonEngine
 
 		const UINT32 ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
 		const UINT32 ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height;
+		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL32) + ByteCodeSize;	// EAssetType + TextureType + ETextureResourceProperty + SRGB + ByteCodeSize
+		void* SavedMem = new BYTE[NeedSavedSize];
+		void* TempPtr = SavedMem;
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			SavedAssetTypePtr[0] = EAssetType::ASSET_TYPE_TEXTURE;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			SavedAssetTypePtr[0] = static_cast<UINT32>(InTextureResource->TextureType);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			BOOL32* SavedAssetTypePtr = (BOOL32*)TempPtr;
+			SavedAssetTypePtr[0] = InTextureResource->SRGB;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		{
+			ETextureResourceProperty* SavedAssetTypePtr = (ETextureResourceProperty*)TempPtr;
+			SavedAssetTypePtr[0] = InTextureResource->ResourceProperties;
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+		}
+		::memcpy_s(TempPtr, ByteCodeSize, InTextureResource->ByteCode, ByteCodeSize);
+
+		BOOL32 Result = EFileHelper::SaveBytesToFile(TempFullPathName, SavedMem, NeedSavedSize);
+
+		delete[]SavedMem;
+		return Result;
+	}
+	ETextureCubeAsset* ETextureAssetManager::LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName)
+	{
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		if (TempFullPathName.Length() < 10u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Loading texture cube asset error.(load file path : ");
+				ErrorData = ErrorData + TempFullPathName + ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+			}
+#endif
+			return nullptr;
+		}
+		ETextureCubeAsset* OutTextureAsset = nullptr;
+		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
+		if (!EFileHelper::ReadFileAsBinary(TempFullPathName, ReadFileMem, ReadFileSize))
+		{
+			if (ReadFileMem)
+			{
+				delete[]ReadFileMem;
+			}
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Load texture cube asset failed (load file path : ");
+				ErrorData += TempFullPathName;
+				ErrorData += ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+			}
+#endif
+			return nullptr;
+		}
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read texture cube asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 2u + sizeof(BOOL32) + sizeof(ETextureResourceProperty))));
+		BOOL32 Result = FALSE;
+		void* TempPtr = ReadFileMem;
+		ULONG RstSize = ReadFileSize;
+		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
+		ETextureType ReadTextureType = ETextureType::TEXTURE_TYPE_UNKNOWN;
+		BOOL32 ReadSRGB = FALSE;
+		ETextureResourceProperty ReadResourceProperty;
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			ReadAssetType = static_cast<EAssetType>(SavedAssetTypePtr[0]);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
+			UINT8 TempTextureType = static_cast<UINT8>(SavedAssetTypePtr[0]);
+			ReadTextureType = static_cast<ETextureType>(TempTextureType);
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(UINT32);
+		}
+		{
+			BOOL32* SavedAssetTypePtr = (BOOL32*)TempPtr;
+			ReadSRGB = SavedAssetTypePtr[0];
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(BOOL32);
+		}
+		{
+			ETextureResourceProperty* SavedAssetTypePtr = (ETextureResourceProperty*)TempPtr;
+			ReadResourceProperty = SavedAssetTypePtr[0];
+			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
+			RstSize = RstSize - sizeof(ETextureResourceProperty);
+		}
+		if ((ReadAssetType == EAssetType::ASSET_TYPE_TEXTURE) &&
+			(ReadTextureType == ETextureType::TEXTURE_TYPE_TEXTURECUBE) &&
+			(ReadResourceProperty.Depth == 6u) &&
+			(ReadResourceProperty.Width > 0u) &&
+			(ReadResourceProperty.Height > 0u) &&
+			(ReadResourceProperty.Width == ReadResourceProperty.Height) &&
+			(ReadResourceProperty.PixelByteCount > 0u) &&
+			(ReadResourceProperty.Format != RFormatType::FORMAT_UNKNOWN))
+		{
+			const UINT32 ByteCodeStride = ReadResourceProperty.Width * ReadResourceProperty.PixelByteCount;
+			const UINT32 ByteCodeSize = ByteCodeStride * ReadResourceProperty.Height * 6u;
+			Check((RstSize == ByteCodeSize), (ENGINE_ASSET_ERROR));
+			BYTE* ReadByteCode = new BYTE[ByteCodeSize];
+			::memcpy_s(ReadByteCode, ByteCodeSize, TempPtr, RstSize);
+
+			OutTextureAsset = new ETextureCubeAsset(InLoadPath, InLoadName
+#if _EDITOR_ONLY
+				, InLoadName
+#endif
+			);
+			ETextureCube* StoragedResource = nullptr;
+			if (!(OutTextureAsset->StorageResourceInternal(
+				[ReadSRGB, ReadByteCode, &ReadResourceProperty, &StoragedResource]()->ETextureCube*
+				{
+					StoragedResource = new ETextureCube();
+					StoragedResource->SetTextureCubeData(ReadByteCode, ReadResourceProperty.Width, ReadResourceProperty.PixelByteCount, ReadResourceProperty.Format);
+					return StoragedResource;
+				})))
+			{
+				//TODO
+			}
+		}
+		else
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Loaded texture cube PAsset is not valid."));
+		}
+		delete[]ReadFileMem;
+		return OutTextureAsset;
+	}
+	BOOL32 ETextureAssetManager::SaveTextureCubeAsset(const EString& InSavePath, const EString& InSaveName, const ETextureCube* InTextureResource)
+	{
+		EString TempFullPathName(InSavePath);
+		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorData("Saving texture cube asset error.(save file path : ");
+				ErrorData = ErrorData + TempFullPathName + ", is asset valid : " +
+					((!!InTextureResource) ? ((InTextureResource->IsResourceValid()) ? "true" : "false") : "false")
+					+ ").";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+			}
+#endif
+			return FALSE;
+		}
+
+		const UINT32 ByteCodeStride = InTextureResource->ResourceProperties.Width * InTextureResource->ResourceProperties.PixelByteCount;
+		const UINT32 ByteCodeSize = ByteCodeStride * InTextureResource->ResourceProperties.Height * 6u;
 		ULONG NeedSavedSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(ETextureResourceProperty) + sizeof(BOOL32) + ByteCodeSize;	// EAssetType + TextureType + ETextureResourceProperty + SRGB + ByteCodeSize
 		void* SavedMem = new BYTE[NeedSavedSize];
 		void* TempPtr = SavedMem;
