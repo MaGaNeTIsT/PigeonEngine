@@ -203,7 +203,7 @@ namespace PigeonEngine
 
 				const UINT32 RenderPixelStride = FrameWidth * RenderDataByteCount;
 				const UINT32 RenderPixelByteSize = RenderPixelStride * FrameHeight;
-				OutputRenderPixelData = new BYTE[RenderPixelByteSize];
+				OutputRenderPixelData = new BYTE[RenderPixelByteSize]{ 0u };
 
 				if ((RenderPixelByteSize == PixelByteSize) && (!NeedSwitchRB))
 				{
@@ -231,14 +231,16 @@ namespace PigeonEngine
 									}
 								}
 							}
+
+							//TODO We can not simply switch R<->B byte.
 							if (NeedSwitchRB)
 							{
-								if ((RenderCoord + 2u) < RenderPixelByteSize)
-								{
-									BYTE TempValue = OutputRenderPixelData[RenderCoord + 0u];
-									OutputRenderPixelData[RenderCoord + 0u] = OutputRenderPixelData[RenderCoord + 2u];
-									OutputRenderPixelData[RenderCoord + 2u] = TempValue;
-								}
+								//if ((RenderCoord + 2u) < RenderPixelByteSize)
+								//{
+								//	BYTE TempValue = OutputRenderPixelData[RenderCoord + 0u];
+								//	OutputRenderPixelData[RenderCoord + 0u] = OutputRenderPixelData[RenderCoord + 2u];
+								//	OutputRenderPixelData[RenderCoord + 2u] = TempValue;
+								//}
 							}
 						}
 					}
@@ -250,7 +252,7 @@ namespace PigeonEngine
 					OutWidth = FrameWidth;
 					OutHeight = FrameHeight;
 					OutPixelByteCount = RenderDataByteCount;
-					OutFormat = RFormatType::FORMAT_UNKNOWN;
+					OutFormat = FormatType;
 				}
 			}
 		}
@@ -669,6 +671,132 @@ namespace PigeonEngine
 		delete NeedSaveTexture2DResource;
 		return Result;
 	}
+	BOOL32 ETextureAssetManager::ImportTextureCube(const EString& InAssetName, const TArray<EString>& InImportFullPathName, const EString& InSavePath)
+	{
+		constexpr UINT32 TextureCubeRawAssetCount = 6u;
+
+		EString TempFullPathName(InSavePath);
+		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		{
+			BOOL32 ImportPathValid = (InImportFullPathName.Length() == TextureCubeRawAssetCount) && (TempFullPathName.Length() >= 10u);
+			if (ImportPathValid)
+			{
+				for (UINT32 ImportIndex = 0u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+				{
+					ImportPathValid = ImportPathValid && (InImportFullPathName[ImportIndex].Length() >= 3u);
+				}
+			}
+			if (!ImportPathValid)
+			{
+#if _EDITOR_ONLY
+				{
+					EString ErrorData("Error file path for texture cube importer (import file path : ");
+					ErrorData = ErrorData + ", save assset path : " + TempFullPathName + ").";
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				}
+#endif
+				return FALSE;
+			}
+		}
+		BYTE* ReadByteCode[TextureCubeRawAssetCount] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+		UINT32 ReadWidth[TextureCubeRawAssetCount] = { 0u, 0u, 0u, 0u, 0u, 0u },
+			ReadHeight[TextureCubeRawAssetCount] = { 0u, 0u, 0u, 0u, 0u, 0u },
+			ReadPixelByteCount[TextureCubeRawAssetCount] = { 0u, 0u, 0u, 0u, 0u, 0u };
+		RFormatType ReadFormat[TextureCubeRawAssetCount] =
+		{
+			RFormatType::FORMAT_UNKNOWN,RFormatType::FORMAT_UNKNOWN,RFormatType::FORMAT_UNKNOWN,
+			RFormatType::FORMAT_UNKNOWN,RFormatType::FORMAT_UNKNOWN,RFormatType::FORMAT_UNKNOWN
+		};
+		BOOL32 ImportFullSuccess = TRUE;
+		for (UINT32 ImportIndex = 0u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+		{
+			const EString& TempImportFullPathName = InImportFullPathName[ImportIndex];
+			EString ImportPathName; EString ImportFileType;
+			if (!(SplitByLastSign('.', TempImportFullPathName, ImportPathName, ImportFileType)))
+			{
+#if _EDITOR_ONLY
+				{
+					EString ErrorData("Error file path for texture cube importer (import file path : ");
+					ErrorData = ErrorData + TempImportFullPathName + ", save assset path : " + TempFullPathName + ").";
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				}
+#endif
+				ImportFullSuccess = FALSE;
+				continue;
+			}
+			//TODO Check import type(like jpg, png, tiff...).
+			if (ImportPathName.Length() <= 3u)
+			{
+#if _EDITOR_ONLY
+				{
+					EString ErrorData("Error file path for texture 2d importer (import file path : ");
+					ErrorData = ErrorData + TempImportFullPathName + ", save assset path : " + TempFullPathName + ").";
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				}
+#endif
+				ImportFullSuccess = FALSE;
+				continue;
+			}
+			if (!ReadAndDecodingDigitalImage(TempImportFullPathName, ReadByteCode[ImportIndex], ReadWidth[ImportIndex], ReadHeight[ImportIndex], ReadPixelByteCount[ImportIndex], ReadFormat[ImportIndex]))
+			{
+				if (ReadByteCode[ImportIndex])
+				{
+					delete[](ReadByteCode[ImportIndex]);
+					ReadByteCode[ImportIndex] = nullptr;
+				}
+				ImportFullSuccess = FALSE;
+				continue;
+			}
+			if ((!(ReadByteCode[ImportIndex])) || (ReadWidth[ImportIndex] == 0u) || (ReadHeight[ImportIndex] == 0u) || (ReadWidth[ImportIndex] != ReadHeight[ImportIndex]) || (ReadPixelByteCount[ImportIndex] == 0u) || (ReadFormat[ImportIndex] == RFormatType::FORMAT_UNKNOWN))
+			{
+				if (ReadByteCode[ImportIndex])
+				{
+					delete[](ReadByteCode[ImportIndex]);
+					ReadByteCode[ImportIndex] = nullptr;
+				}
+				ImportFullSuccess = FALSE;
+				continue;
+			}
+		}
+		BOOL32 Result = FALSE;
+		if (ImportFullSuccess)
+		{
+			Result = TRUE;
+			for (UINT32 ImportIndex = 1u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+			{
+				Result = Result && (((ReadWidth[0] == ReadWidth[ImportIndex]) && (ReadFormat[0] == ReadFormat[ImportIndex])) && (ReadPixelByteCount[0] == ReadPixelByteCount[ImportIndex]));
+			}
+			if (Result)
+			{
+				const UINT32		TotalWidth			= ReadWidth[0];
+				const UINT32		TotalPixelByteCount	= ReadPixelByteCount[0];
+				const RFormatType	TotalFormat			= ReadFormat[0];
+				const UINT32		SingleMemSize		= TotalWidth * TotalPixelByteCount * TotalWidth;
+				BYTE*				TotalReadByteCode	= new BYTE[SingleMemSize * TextureCubeRawAssetCount];
+				for (UINT32 ImportIndex = 0u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+				{
+					::memcpy_s(&(TotalReadByteCode[SingleMemSize * ImportIndex]), SingleMemSize, ReadByteCode[ImportIndex], SingleMemSize);
+				}
+
+				ETextureCube* NeedSaveTextureCubeResource = new ETextureCube();
+				NeedSaveTextureCubeResource->SetTextureCubeData(TotalReadByteCode, TotalWidth, TotalPixelByteCount, TotalFormat);
+
+				BOOL32 Result = SaveTextureCubeAsset(InSavePath, InAssetName, NeedSaveTextureCubeResource);
+
+				NeedSaveTextureCubeResource->ReleaseResource();
+				delete NeedSaveTextureCubeResource;
+			}
+		}
+		for (UINT32 ImportIndex = 0u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+		{
+			if (ReadByteCode[ImportIndex])
+			{
+				delete[](ReadByteCode[ImportIndex]);
+				ReadByteCode[ImportIndex] = nullptr;
+			}
+		}
+		return Result;
+	}
 #endif
 	BOOL32 ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset)
 	{
@@ -685,7 +813,7 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		if (!ResultAsset->InitResource())
+		if (!(ResultAsset->InitResource()))
 		{
 			delete ResultAsset;
 			return FALSE;
@@ -695,6 +823,40 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			{
 				EString ErrorInfo = EString("Texture2D path = [") + TempFullPathName + "] add into manager list failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
+			}
+#endif
+			delete ResultAsset;
+			return FALSE;
+		}
+		OutTextureAsset = ResultAsset;
+		return TRUE;
+	}
+	BOOL32 ETextureAssetManager::LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName, const ETextureCubeAsset*& OutTextureAsset)
+	{
+		EString TempFullPathName(InLoadPath);
+		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		ETextureCubeAsset* ResultAsset = TextureCubeManager.Find(TempFullPathName);
+		if (ResultAsset)
+		{
+			OutTextureAsset = ResultAsset;
+			return TRUE;
+		}
+		ResultAsset = LoadTextureCubeAsset(InLoadPath, InLoadName);
+		if (!ResultAsset)
+		{
+			return FALSE;
+		}
+		if (!(ResultAsset->InitResource()))
+		{
+			delete ResultAsset;
+			return FALSE;
+		}
+		if (TextureCubeManager.Add(TempFullPathName, ResultAsset, TRUE) == 0u)
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("TextureCube path = [") + TempFullPathName + "] add into manager list failed.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
 			}
 #endif
@@ -1023,6 +1185,82 @@ namespace PigeonEngine
 
 		delete[]SavedMem;
 		return Result;
+	}
+
+	void TryLoadTexture2D(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		ETextureAssetManager* TextureAssetManager = ETextureAssetManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output texture asset pointer is initialized failed."), (!OutTextureAsset));
+		if (TextureAssetManager->LoadTexture2DAsset(InLoadPath, InLoadName, OutTextureAsset))
+		{
+			return;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load texture 2d asset failed."));
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			BOOL32 Result = TextureAssetManager->ImportTexture2D(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath);
+			if (Result)
+			{
+				if (!(TextureAssetManager->LoadTexture2DAsset(InLoadPath, InLoadName, OutTextureAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load texture 2d asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import texture 2d asset failed."));
+			}
+		}
+#endif
+	}
+	void TryLoadTextureCube(const EString& InLoadPath, const EString& InLoadName, const ETextureCubeAsset*& OutTextureAsset, const TArray<EString>* InImportPath, const TArray<EString>* InImportName, const TArray<EString>* InImportFileType)
+	{
+		ETextureAssetManager* TextureAssetManager = ETextureAssetManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output texture asset pointer is initialized failed."), (!OutTextureAsset));
+		if (TextureAssetManager->LoadTextureCubeAsset(InLoadPath, InLoadName, OutTextureAsset))
+		{
+			return;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load texture 2d asset failed."));
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		{
+			constexpr UINT32 TextureCubeRawAssetCount = 6u;
+			if ((InImportPath->Length() == TextureCubeRawAssetCount) && (InImportName->Length() == TextureCubeRawAssetCount) && (InImportFileType->Length() == TextureCubeRawAssetCount))
+			{
+				TArray<EString> TempImportFullPath;
+				for (UINT32 ImportIndex = 0u; ImportIndex < TextureCubeRawAssetCount; ImportIndex++)
+				{
+					TempImportFullPath.Add((*InImportPath)[ImportIndex] + (*InImportName)[ImportIndex] + (".") + (*InImportFileType)[ImportIndex]);
+				}
+				BOOL32 Result = TextureAssetManager->ImportTextureCube(
+					InLoadName,
+					TempImportFullPath,
+					InLoadPath);
+				if (Result)
+				{
+					if (!(TextureAssetManager->LoadTextureCubeAsset(InLoadPath, InLoadName, OutTextureAsset)))
+					{
+						PE_FAILED((ENGINE_ASSET_ERROR), ("Try load texture cube asset failed."));
+					}
+				}
+				else
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try import texture cube asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import texture cube asset path invalid."));
+			}
+		}
+#endif
 	}
 
 };

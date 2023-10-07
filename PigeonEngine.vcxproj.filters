@@ -376,6 +376,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.h" />
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureRGB9E5Common.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\SkyLightComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -578,6 +579,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.cpp" />
     <ClCompile Include="Engine\Sources\Asset\TextureAsset\TextureRGB9E5Common.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\SkyLightComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">

@@ -163,8 +163,11 @@ namespace PigeonEngine
 	public:
 #if _EDITOR_ONLY
 		BOOL32	ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportTextureCube(const EString& InAssetName, const TArray<EString>& InImportFullPathName, const EString& InSavePath);
 #endif
+	public:
 		BOOL32	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
+		BOOL32	LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName, const ETextureCubeAsset*& OutTextureAsset);
 	private:
 		void	ClearTexture2Ds();
 		void	ClearTextureCubes();
@@ -180,5 +183,12 @@ namespace PigeonEngine
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ETextureAssetManager)
 
 	};
+
+	extern void TryLoadTexture2D(const EString& InLoadPath, const EString& InLoadName,
+		const ETexture2DAsset*& OutTextureAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
+	extern void TryLoadTextureCube(const EString& InLoadPath, const EString& InLoadName,
+		const ETextureCubeAsset*& OutTextureAsset,
+		const TArray<EString>* InImportPath = nullptr, const TArray<EString>* InImportName = nullptr, const TArray<EString>* InImportFileType = nullptr);
 
 };

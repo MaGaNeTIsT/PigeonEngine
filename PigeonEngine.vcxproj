@@ -41,6 +41,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\SkyLightComponent.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.h" />
     <ClInclude Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.h" />
     <ClInclude Include="Engine\Sources\Asset\MeshAsset\MeshAsset.h" />
@@ -184,6 +185,7 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Physics\PhysicsComponent.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Primitive\SkyLightComponent.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\World\WorldManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\RenderCore\Shader\ShaderParameter.cpp" />
     <ClCompile Include="Engine\Sources\Asset\MeshAsset\MeshAsset.cpp" />
