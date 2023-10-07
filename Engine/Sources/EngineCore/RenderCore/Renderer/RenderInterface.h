@@ -6,6 +6,7 @@ namespace PigeonEngine
 {
 
 	class PCameraComponent;
+	class PSkyLightComponent;
 	class PDirectionalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
@@ -19,6 +20,10 @@ namespace PigeonEngine
 		virtual void	AddCamera(PCameraComponent* InComponent)						= 0;
 		virtual void	RemoveCamera(PCameraComponent* InComponent)						= 0;
 		virtual void	UpdateCamera(PCameraComponent* InComponent)						= 0;
+
+		virtual void	AddSkyLight(PSkyLightComponent* InComponent)					= 0;
+		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent)					= 0;
+		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent)					= 0;
 
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)	= 0;
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)	= 0;

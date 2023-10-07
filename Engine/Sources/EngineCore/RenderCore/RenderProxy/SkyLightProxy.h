@@ -13,20 +13,17 @@ namespace PigeonEngine
 	{
 	public:
 		RSkyLightSceneProxy(PSkyLightComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset);
+		void			SetupProxy(const ERenderSkyLightMatrices& InMatrices, const ERenderSkyLightParams& InSkyLightParams, const ETextureCubeAsset* InTextureCubeAsset);
 	public:
-		void			UpdateMeshAsset(const ETextureCube* InTextureCubeAsset);
-		void			UpdateRenderResource();
-		void			BindRenderResource()const;
-		void			Draw()const;
+		void			UpdateTextureCubeAsset(const ETextureCubeAsset* InTextureCubeAsset);
+		void			UpdateSkyLightParams(const ERenderSkyLightParams& InSkyLightParams);
+		void			UpdateMatrices(const ERenderSkyLightMatrices& InMatrices);
+	public:
+
 	protected:
-		void			SetupShaders();
-		void			BindVertexShader()const;
-		void			BindPixelShader()const;
-		void			BindMeshResource()const;
-		void			BindMaterialParameter(const UINT32 InSlot)const;
-	protected:
-		const ETextureCube*			TextureCubeAsset;
+		const ETextureCubeAsset*	TextureCubeAsset;
+		Color3						AdjustColor;
+		FLOAT						AdjustIntensity;
 	protected:
 		const PSkyLightComponent*	Component;
 
