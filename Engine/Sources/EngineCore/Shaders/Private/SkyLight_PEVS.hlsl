@@ -3,7 +3,7 @@
 
 struct Attribute
 {
-    float4 Position         : POSITION;
+    float4 Position         : POSITION0;
 };
 
 struct Varying
@@ -27,7 +27,7 @@ cbuffer ConstantBufferSkyLight : register(b1)
 void main(in Attribute Input, out Varying Output)
 {
     Output.WorldLocation    = TransformPositionToSpecificSpace(float4(Input.Position.xyz, 1.0), _WorldMatrix);
-    Output.Position         = TransformWorldToClip(Output.WorldLocation.xyz);
+    Output.Position         = TransformWorldToClip(Output.WorldLocation.xyz).xyww;
 }
 
 #endif

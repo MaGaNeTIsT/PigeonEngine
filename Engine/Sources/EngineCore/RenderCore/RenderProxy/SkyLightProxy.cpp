@@ -47,14 +47,14 @@ namespace PigeonEngine
 			VSName += ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 			RInputLayoutDesc VSInputLayout[] = { RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0) };
 			const UINT32 VSInputLayoutNum = 1u;
-			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, "SkyLight_", RSkyLightSceneProxy::SkyDomeVertexShader, &ImportPath, &VSName, VSInputLayout, &VSInputLayoutNum);
+			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, VSName, RSkyLightSceneProxy::SkyDomeVertexShader, &ImportPath, &VSName, VSInputLayout, &VSInputLayoutNum);
 		}
 		if (!(RSkyLightSceneProxy::SkyDomePixelShader))
 		{
 			EString ImportPath(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 			EString PSName("SkyLight_");
 			PSName += ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, "SkyLight_", RSkyLightSceneProxy::SkyDomePixelShader, &ImportPath, &PSName);
+			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, PSName, RSkyLightSceneProxy::SkyDomePixelShader, &ImportPath, &PSName);
 		}
 	}
 
