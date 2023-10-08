@@ -1,4 +1,6 @@
 #include "SkeletalMeshComponent.h"
+#include <MeshAsset/MeshAsset.h>
+#include <SkeletonAsset/SkeletonAsset.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
@@ -14,24 +16,40 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PSkeletalMeshComponent::PSkeletalMeshComponent()
-        : SceneProxy(nullptr)
+        : MeshAsset(nullptr), SkeletonAsset(nullptr), SceneProxy(nullptr), UpdateState(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_NONE)
     {
     }
     PSkeletalMeshComponent::~PSkeletalMeshComponent()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in skeletal mesh component distruction."), (!!SceneProxy));
     }
-    RSkeletalMeshSceneProxy* PSkeletalMeshComponent::GetSceneProxy()
+    const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset()const
     {
-        return SceneProxy;
+        return MeshAsset;
     }
-    const RSkeletalMeshSceneProxy* PSkeletalMeshComponent::GetSceneProxy()const
+    void PSkeletalMeshComponent::SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset)
     {
-        return SceneProxy;
+        MeshAsset = InMeshAsset;
+        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_ASSET);
+    }
+    const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset()const
+    {
+        return SkeletonAsset;
+    }
+    void PSkeletalMeshComponent::SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset)
+    {
+        SkeletonAsset = InSkeletonAsset;
+        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_ASSET);
+    }
+
+    // Render proxy functions START
+    UINT8 PSkeletalMeshComponent::GetUpdateRenderState()const
+    {
+        return UpdateState;
     }
     RSkeletalMeshSceneProxy* PSkeletalMeshComponent::CreateSceneProxy()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating skeletal mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
         SceneProxy = new RSkeletalMeshSceneProxy(this);
         return SceneProxy;
     }
@@ -40,7 +58,7 @@ namespace PigeonEngine
         PMeshComponent::CreateRenderState();
         if (ShouldRender())
         {
-          this->GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
+            this->GetWorld()->GetRenderScene()->AddSkeletalMesh(this);
         }
     }
     void PSkeletalMeshComponent::DestroyRenderState()
@@ -56,5 +74,32 @@ namespace PigeonEngine
         }
         PMeshComponent::SendUpdateRenderState();
     }
+    void PSkeletalMeshComponent::MarkAsDirty(PSkeletalMeshUpdateState InState)
+    {
+        if (InState == PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MATRIX)
+        {
+            MarkRenderTransformAsDirty();
+        }
+        else
+        {
+            UpdateState |= InState;
+            MarkRenderStateAsDirty();
+        }
+    }
+    void PSkeletalMeshComponent::MarkRenderTransformAsDirty()
+    {
+        UpdateState |= PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MATRIX;
+        PMeshComponent::MarkRenderTransformAsDirty();
+    }
+    void PSkeletalMeshComponent::MarkRenderStateAsDirty()
+    {
+        PMeshComponent::MarkRenderStateAsDirty();
+    }
+    void PSkeletalMeshComponent::CleanMarkRenderStateDirty()
+    {
+        UpdateState = PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_NONE;
+        PMeshComponent::CleanMarkRenderStateDirty();
+    }
+    // Render proxy functions END
 
 }

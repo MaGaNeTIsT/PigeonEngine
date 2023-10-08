@@ -123,14 +123,18 @@ namespace PigeonEngine
 			SKELETON_RENDER_RESOURCE_COUNT
 		};
 	public:
+		void			SetBoneNum(const UINT32 InBoneNum);
+		UINT32			GetBoneNum()const;
+		void			UpdateRenderResource(const Matrix4x4* InMatrices, const UINT32 InMatrixNum);
+	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
 	protected:
-		ESkeleton*			Skeleton;
+		UINT32				BoneNum;
 		RStructuredBuffer	RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
 	public:
-		ESkeletonRenderResource(ESkeleton* InSkeleton);
+		ESkeletonRenderResource();
 		virtual ~ESkeletonRenderResource();
 	private:
 		friend class ESkeletonAssetManager;
@@ -141,7 +145,7 @@ namespace PigeonEngine
 
 	};
 
-	class ESkeletonAsset : public TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>
+	class ESkeletonAsset : public TBaseAsset<ESkeleton>
 	{
 	public:
 		ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
@@ -186,5 +190,9 @@ namespace PigeonEngine
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ESkeletonAssetManager)
 
 	};
+
+	extern void TryLoadSkeleton(const EString& InLoadPath, const EString& InLoadName,
+		const ESkeletonAsset*& OutAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
 
 };

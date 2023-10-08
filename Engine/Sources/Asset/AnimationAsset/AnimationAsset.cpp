@@ -156,6 +156,17 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAnimationAsset::InitResource()
 	{
 		// Skeleton animation resource do not need to initialize.
+		if (IsInitialized())
+		{
+#if _EDITOR_ONLY
+			{
+				EString ErrorInfo = EString("Skeleton animation name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
+			}
+#endif
+			return TRUE;
+		}
+		bIsInitialized = TRUE;
 		return TRUE;
 	}
 

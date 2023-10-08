@@ -38,7 +38,7 @@ namespace PigeonEngine
 	}
 	PCameraComponent::~PCameraComponent()
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!ViewProxy));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in camera component distruction."), (!ViewProxy));
 	}
 	void PCameraComponent::SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY, FLOAT InFarDist, FLOAT InNearDist)
 	{

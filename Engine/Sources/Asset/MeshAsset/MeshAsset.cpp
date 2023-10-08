@@ -2680,5 +2680,37 @@ namespace PigeonEngine
 		}
 #endif
 	}
+	void TryLoadSkinnedMesh(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skinned mesh asset pointer is initialized failed."), (!OutAsset));
+		if (MeshAssetManager->LoadSkinnedMeshAsset(InLoadPath, InLoadName, OutAsset))
+		{
+			return;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skinned mesh asset failed."));
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			BOOL32 Result = MeshAssetManager->ImportSkinnedMesh(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath);
+			if (Result)
+			{
+				if (!(MeshAssetManager->LoadSkinnedMeshAsset(InLoadPath, InLoadName, OutAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load skinned mesh asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import skinned mesh asset failed."));
+			}
+		}
+#endif
+	}
 
 };

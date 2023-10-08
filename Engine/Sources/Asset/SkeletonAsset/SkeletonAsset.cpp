@@ -1,18 +1,20 @@
 #include "SkeletonAsset.h"
 #include <RenderDevice/DeviceD3D11.h>
 #include <Config/EngineConfig.h>
+#include <RenderConfig/RenderConfig.h>
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
+#include <Shader/ShaderParameter.h>
 
 namespace PigeonEngine
 {
 
-	template <typename _TAssetResourceType, typename _TAssetRenderResourceType, typename _AssetType>
+	template <typename _TAssetResourceType, typename _AssetType>
 	static void RegisterSkeletonClassTypes()
 	{
-		RegisterRenderBaseAssetClassTypes<_TAssetResourceType, _TAssetRenderResourceType>();
-		RegisterClassType<_AssetType, TRenderBaseAsset<_TAssetResourceType, _TAssetRenderResourceType>>();
+		RegisterBaseAssetClassTypes<_TAssetResourceType>();
+		RegisterClassType<_AssetType, TBaseAsset<_TAssetResourceType>>();
 	}
 
 	static void RegisterClassTypes()
@@ -21,7 +23,7 @@ namespace PigeonEngine
 		RegisterClassType<ESkeletonRenderResource, EObjectBase, RRenderResourceInterface>();
 		RegisterClassType<ESkeletonAssetManager, EManagerBase>();
 
-		RegisterSkeletonClassTypes<ESkeleton, ESkeletonRenderResource, ESkeletonAsset>();
+		RegisterSkeletonClassTypes<ESkeleton, ESkeletonAsset>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -337,26 +339,74 @@ namespace PigeonEngine
 		RecursionRemoveBone(this->Bones, InBoneIndex);
 	}
 
-	ESkeletonRenderResource::ESkeletonRenderResource(ESkeleton* InSkeleton)
-		: Skeleton(InSkeleton)
+	ESkeletonRenderResource::ESkeletonRenderResource()
+		: BoneNum(0u)
 	{
 	}
 	ESkeletonRenderResource::~ESkeletonRenderResource()
 	{
 		ReleaseRenderResource();
 	}
+	void ESkeletonRenderResource::SetBoneNum(const UINT32 InBoneNum)
+	{
+		if (BoneNum != InBoneNum)
+		{
+			BOOL32 NeedInitNewResource = BoneNum != 0u;
+			BoneNum = InBoneNum;
+			if (NeedInitNewResource)
+			{
+#if _EDITOR_ONLY
+				BOOL32 Result =
+#endif
+					InitRenderResource();
+#if _EDITOR_ONLY
+				PE_CHECK((ENGINE_ASSET_ERROR), ("New skeleton render resource create failed."), (Result));
+#endif
+			}
+		}
+	}
+	UINT32 ESkeletonRenderResource::GetBoneNum()const
+	{
+		return BoneNum;
+	}
+	void ESkeletonRenderResource::UpdateRenderResource(const Matrix4x4* InMatrices, const UINT32 InMatrixNum)
+	{
+#if _EDITOR_ONLY
+		if ((!!InMatrices) && (InMatrixNum > 0u) && (InMatrixNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX))
+#endif
+		{
+			Check((IsRenderResourceValid()), (ENGINE_ASSET_ERROR));
+			Check((BoneNum == InMatrixNum), (ENGINE_ASSET_ERROR));
+			Matrix4x4* NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
+			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX] = new Matrix4x4[InMatrixNum];
+			const UINT32 MatrixSize = sizeof(Matrix4x4) * InMatrixNum;
+			::memcpy_s(NewMatrices, MatrixSize, InMatrices, MatrixSize);
+			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX] = new Matrix4x4[InMatrixNum];
+			for (UINT32 i = 0u; i < InMatrixNum; i++)
+			{
+				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX])[i] = TranslateUploadTransposeMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i].Inverse());
+				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i] = TranslateUploadMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i]);
+			}
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
+			{
+				RenderDevice->UploadBuffer(RenderResource[i].Buffer, NewMatrices[i], MatrixSize, MatrixSize);
+			}
+			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX]);
+			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX]);
+		}
+	}
 	BOOL32 ESkeletonRenderResource::IsRenderResourceValid()const
 	{
-		if ((!!Skeleton) && Skeleton->IsResourceValid())
+		BOOL32 Result = (BoneNum > 0u) && (BoneNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
+		if (Result)
 		{
-			BOOL32 Result = TRUE;
 			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 			{
 				Result = Result && (RenderResource[i].IsRenderResourceValid());
 			}
-			return Result;
 		}
-		return FALSE;
+		return Result;
 	}
 	BOOL32 ESkeletonRenderResource::InitRenderResource()
 	{
@@ -367,48 +417,44 @@ namespace PigeonEngine
 				RenderResource[i].ReleaseRenderResource();
 			}
 		}
-		if ((!!Skeleton) && Skeleton->IsResourceValid())
+		if ((BoneNum == 0u) || (BoneNum > RCommonSettings::RENDER_MESH_BONE_NUM_MAX))
 		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			const UINT32 SkeletonBoneNum = Skeleton->GetBoneCount();
-			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
-			{
-				DirectX::XMFLOAT4X4* SkeletonMatrices = new DirectX::XMFLOAT4X4[RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX];
-				{
-					DirectX::XMFLOAT4X4 TempIdentity;
-					DirectX::XMStoreFloat4x4((&TempIdentity), DirectX::XMMatrixIdentity());
-					for (UINT32 i = 0u; (i < SkeletonBoneNum) && (i < RCommonSettings::RENDER_SKELETON_BONE_NUM_MAX); i++)
-					{
-						SkeletonMatrices[i] = TempIdentity;
-					}
-				}
-				RSubresourceDataDesc SubresourceDataDesc;
-				SubresourceDataDesc.pSysMem = SkeletonMatrices;
-				if (!(RenderDevice->CreateStructuredBuffer(
-					(RenderResource[i]),
-					RStructuredBufferDesc(sizeof(DirectX::XMFLOAT4X4), SkeletonBoneNum, TRUE),
-					(&SubresourceDataDesc))))
-				{
-#if _EDITOR_ONLY
-					EString ErrorInfo("Create skeleton resource [name = ");
-					ErrorInfo += Skeleton->GetDebugName();
-					ErrorInfo += "] bones buffer [num = ";
-					ErrorInfo += ToString(SkeletonBoneNum);
-					ErrorInfo += "] failed.";
-					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-#endif
-					delete[]SkeletonMatrices;
-					return FALSE;
-				}
-				delete[]SkeletonMatrices;
-			}
-			return TRUE;
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Skeleton asset init render resource failed(bone num error)."));
+			return FALSE;
 		}
-		return FALSE;
+		const UINT32 SkeletonBoneNum = BoneNum;
+		for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
+		{
+			Matrix4x4* SkeletonMatrices = new Matrix4x4[SkeletonBoneNum];
+			{
+				for (UINT32 i = 0u; i < SkeletonBoneNum; i++)
+				{
+					SkeletonMatrices[i] = Matrix4x4::Identity();
+				}
+			}
+			RSubresourceDataDesc SubresourceDataDesc;
+			SubresourceDataDesc.pSysMem = SkeletonMatrices;
+			if (!(RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(
+				(RenderResource[i]),
+				RStructuredBufferDesc(sizeof(Matrix4x4), SkeletonBoneNum, FALSE),
+				(&SubresourceDataDesc))))
+			{
+#if _EDITOR_ONLY
+				EString ErrorInfo("Create skeleton resource bones buffer [num = ");
+				ErrorInfo += ToString(SkeletonBoneNum);
+				ErrorInfo += "] failed.";
+				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
+#endif
+				delete[]SkeletonMatrices;
+				return FALSE;
+			}
+			delete[]SkeletonMatrices;
+		}
+		return TRUE;
 	}
 	void ESkeletonRenderResource::ReleaseRenderResource()
 	{
-		Skeleton = nullptr;
+		BoneNum = 0u;
 		for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 		{
 			RenderResource[i].ReleaseRenderResource();
@@ -419,7 +465,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
-	) : TRenderBaseAsset<ESkeleton, ESkeletonRenderResource>(InAssetPath, InAssetName
+	) : TBaseAsset<ESkeleton>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
 		, InDebugName
 #endif
@@ -432,6 +478,7 @@ namespace PigeonEngine
 	}
 	BOOL32 ESkeletonAsset::InitResource()
 	{
+		// Skeleton resource do not need to initialize.
 		if (IsInitialized())
 		{
 #if _EDITOR_ONLY
@@ -442,23 +489,8 @@ namespace PigeonEngine
 #endif
 			return TRUE;
 		}
-		if (CreateRenderResourceInternal(
-			[](ESkeleton* InResource)->ESkeletonRenderResource*
-			{
-				ESkeletonRenderResource* RenderResource = nullptr;
-				if ((!!InResource) && (InResource->IsResourceValid()))
-				{
-					RenderResource = new ESkeletonRenderResource(InResource);
-					RenderResource->InitRenderResource();
-				}
-				return RenderResource;
-			},
-			TRUE))
-		{
-			bIsInitialized = TRUE;
-			return TRUE;
-		}
-		return FALSE;
+		bIsInitialized = TRUE;
+		return TRUE;
 	}
 
 	ESkeletonAssetManager::ESkeletonAssetManager()
@@ -974,6 +1006,39 @@ namespace PigeonEngine
 		}
 		delete[]OutputMem;
 		return FALSE;
+	}
+
+	void TryLoadSkeleton(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		ESkeletonAssetManager* SkeletonAssetManager = ESkeletonAssetManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skeleton asset pointer is initialized failed."), (!OutAsset));
+		if (SkeletonAssetManager->LoadSkeletonAsset(InLoadPath, InLoadName, OutAsset))
+		{
+			return;
+		}
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton asset failed."));
+#if _EDITOR_ONLY
+		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			BOOL32 Result = SkeletonAssetManager->ImportSkeleton(
+				InLoadName,
+				TempImportFullPath,
+				InLoadPath);
+			if (Result)
+			{
+				if (!(SkeletonAssetManager->LoadSkeletonAsset(InLoadPath, InLoadName, OutAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load skeleton asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import skeleton asset failed."));
+			}
+		}
+#endif
 	}
 
 };

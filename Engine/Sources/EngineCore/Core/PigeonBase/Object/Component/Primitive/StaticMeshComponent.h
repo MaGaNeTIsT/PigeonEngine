@@ -2,11 +2,11 @@
 
 #include <CoreMinimal.h>
 #include "MeshComponent.h"
-#include <MeshAsset/MeshAsset.h>
 
 namespace PigeonEngine
 {
 
+    class EStaticMeshAsset;
     class RStaticMeshSceneProxy;
 
     class PStaticMeshComponent : public PMeshComponent

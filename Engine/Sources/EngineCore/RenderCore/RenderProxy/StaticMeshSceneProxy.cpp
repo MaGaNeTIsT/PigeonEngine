@@ -1,4 +1,6 @@
 #include "StaticMeshSceneProxy.h"
+#include <ShaderAsset/ShaderAsset.h>
+#include <MeshAsset/MeshAsset.h>
 
 namespace PigeonEngine
 {

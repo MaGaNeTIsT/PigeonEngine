@@ -24,6 +24,7 @@ namespace PigeonEngine
 			delete CascadeShadowData;
 			CascadeShadowData = nullptr;
 		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in directional light component distruction."), (!!SceneProxy));
 	}
 	ELightType PDirectionalLightComponent::GetLightType()const
 	{

@@ -19,6 +19,7 @@ namespace PigeonEngine
 	}
 	PSkyLightComponent::~PSkyLightComponent()
 	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in sky light component distruction."), (!!SceneProxy));
 	}
 	const ETextureCubeAsset* PSkyLightComponent::GetCubeMapAsset()const
 	{

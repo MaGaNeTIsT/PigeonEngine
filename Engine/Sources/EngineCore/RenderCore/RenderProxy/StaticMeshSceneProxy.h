@@ -2,11 +2,14 @@
 
 #include <CoreMinimal.h>
 #include "MeshSceneProxy.h"
-#include <ShaderAsset/ShaderAsset.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 
 namespace PigeonEngine
 {
+
+	class EStaticMeshAsset;
+	class EVertexShaderAsset;
+	class EPixelShaderAsset;
 
 	class RStaticMeshMaterialParameter : public RMeshMaterialParameter
 	{

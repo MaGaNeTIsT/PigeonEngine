@@ -1,4 +1,5 @@
 #include "StaticMeshComponent.h"
+#include <MeshAsset/MeshAsset.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
@@ -19,7 +20,7 @@ namespace PigeonEngine
     }
     PStaticMeshComponent::~PStaticMeshComponent()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in mesh component distruction."), (!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in static mesh component distruction."), (!SceneProxy));
     }
     const EStaticMeshAsset* PStaticMeshComponent::GetMeshAsset()const
     {
@@ -38,7 +39,7 @@ namespace PigeonEngine
     }
     RStaticMeshSceneProxy* PStaticMeshComponent::CreateSceneProxy()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Try creating static mesh scene proxy, but already exist scene proxy."), (!SceneProxy));
         SceneProxy = new RStaticMeshSceneProxy(this);
         return SceneProxy;
     }
