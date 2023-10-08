@@ -212,9 +212,8 @@ namespace PigeonEngine
                 {
                    ImguiSelectedActor->SetActorLocation(Vector3(LocX, LocY, LocZ));
                 }
-				ImGui::Text("RealLocation for debug : ");
-
-				ImGui::Text(*(ImguiSelectedActor->GetActorLocation().AsString()));
+				ImGui::Text("Real World Location for debug : ");
+				ImGui::Text(*(ImguiSelectedActor->GetActorWorldLocation().AsString()));
             }
             
             {
@@ -228,9 +227,6 @@ namespace PigeonEngine
                 {
                     ImguiSelectedActor->SetActorRotation(Quaternion(QuatX, QuatY, QuatZ, QuatW));
                 }
-                ImGui::Text("RealLocation for debug : ");
-                ImGui::Text(*(ImguiSelectedActor->GetActorWorldScale().AsString()));
-                ImGui::Text(*(RootActor->GetActorWorldScale().AsString()));
 
             }
             
@@ -244,9 +240,8 @@ namespace PigeonEngine
 				{
 					ImguiSelectedActor->SetActorScale(Vector3(ScaleX, ScaleY, ScaleZ));
 				}
-				ImGui::Text("RealLocation for debug : ");
+				ImGui::Text("Real World Scale for debug : ");
 				ImGui::Text(*(ImguiSelectedActor->GetActorWorldScale().AsString()));
-				ImGui::Text(*(RootActor->GetActorWorldScale().AsString()));
 
 			}
         }
