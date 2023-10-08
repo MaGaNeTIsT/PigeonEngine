@@ -92,11 +92,7 @@ namespace PigeonEngine
 
     void PWorld::Destroy()
     {
-        if(Controller)
-        {
-            Controller->Destroy();
-            Controller = nullptr;
-        }
+        
         if(LevelScriptor)
         {
             LevelScriptor->Destroy();
@@ -169,18 +165,19 @@ namespace PigeonEngine
     {
         return RenderScene;
     }
+
 #if _EDITOR_ONLY
     static Quaternion Quat;
     static Vector3 Scale;
-    static Vector3 Location;
-    static FLOAT LocX;
-    static FLOAT LocY;
-    static FLOAT LocZ;
-    
+    static FLOAT LocX = 0.0f;
+    static FLOAT LocY = 0.0f;
+    static FLOAT LocZ = 0.0f;
+
+    static FLOAT ScaleX = 0.0f;
+    static FLOAT ScaleY = 0.0f;
+    static FLOAT ScaleZ = 0.0f;
     void PWorld::GenerateWorldOutline()
     {
-        
-        
         for(const auto& elem : RootActor->GetAllActorsAttached())
         {
             if(elem->GenerateImgui(elem == ImguiSelectedActor))
@@ -190,12 +187,13 @@ namespace PigeonEngine
                     continue;
                 }
                 ImguiSelectedActor = elem;
-                // Location =  ImguiSelectedActor->GetActorLocation();
-                // LocX = Location.x;
-                // LocY = Location.y;
-                // LocZ = Location.z;
-                // Quat     =  ImguiSelectedActor->GetActorRotation();
-                // Scale    =  ImguiSelectedActor->GetActorScale();
+                LocX = ImguiSelectedActor->GetActorLocation().x;
+                LocY = ImguiSelectedActor->GetActorLocation().y;
+                LocZ = ImguiSelectedActor->GetActorLocation().z;
+                Quat     =  ImguiSelectedActor->GetActorRotation();
+                ScaleX = ImguiSelectedActor->GetActorScale().x;
+                ScaleY = ImguiSelectedActor->GetActorScale().y;
+                ScaleZ = ImguiSelectedActor->GetActorScale().z;
             }
         }
 
@@ -208,20 +206,16 @@ namespace PigeonEngine
         {
             ImguiSelectedActor->GenerateComponentsImgui();
 
-            static bool inputs_step = true;
-            const double f64_one = 1.0f;
             
             {
                 ImGui::Text("Location:");
-                
-                BOOL bLocationChanged = ImGui::DragScalar("X",    ImGuiDataType_Double, &LocX, 0.0005f, NULL, NULL,     "%.6f");
-               // ImGui::SameLine(); 
-                bLocationChanged = bLocationChanged || ImGui::DragScalar("Y",    ImGuiDataType_Double, &LocY, 0.0005f, NULL, NULL,     "%.6f");
-               // ImGui::SameLine(); 
-                bLocationChanged = bLocationChanged || ImGui::DragScalar("Z",    ImGuiDataType_Double, &LocZ, 0.0005f, NULL, NULL,     "%.6f");
-                if(bLocationChanged)
+                const BOOL8 bLocationChangedX = ImGui::DragScalar("LocX", ImGuiDataType_Float, &LocX, 0.05f, NULL, NULL, "X %.6f");
+                const BOOL8 bLocationChangedY = ImGui::DragScalar("LocY", ImGuiDataType_Float, &LocY, 0.05f, NULL, NULL, "Y %.6f");
+                const BOOL8 bLocationChangedZ = ImGui::DragScalar("LocZ", ImGuiDataType_Float, &LocZ, 0.05f, NULL, NULL, "Z %.6f");
+
+                if(bLocationChangedX || bLocationChangedY || bLocationChangedZ)
                 {
-                   //ImguiSelectedActor->SetActorLocation(Location);
+                    ImguiSelectedActor->SetActorLocation(Vector3(LocX, LocY, LocZ));
                 }
             }
            
@@ -240,19 +234,17 @@ namespace PigeonEngine
             //     }
             // }
             //
-            // {
-            //     ImGui::Text("Scale:");
-            //     BOOL bScaleChanged = ImGui::InputScalar("X",  ImGuiDataType_Double, &Scale.x, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Y",  ImGuiDataType_Double, &Scale.y, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Z",  ImGuiDataType_Double, &Scale.z, inputs_step ? &f64_one : NULL);
-            //     if(bScaleChanged)
-            //     {
-            //         ImguiSelectedActor->SetActorScale(Scale);
-            //     }
-            // }
-          
+
+            {
+                ImGui::Text("Scale:");
+                const BOOL8 bScaleChangedX = ImGui::DragScalar("ScaleX", ImGuiDataType_Float, &ScaleX, 0.05f, NULL, NULL, "X %.6f");
+                const BOOL8 bScaleChangedY = ImGui::DragScalar("ScaleY", ImGuiDataType_Float, &ScaleY, 0.05f, NULL, NULL, "Y %.6f");
+                const BOOL8 bScaleChangedZ = ImGui::DragScalar("ScaleZ", ImGuiDataType_Float, &ScaleZ, 0.05f, NULL, NULL, "Z %.6f");
+                if(bScaleChangedX || bScaleChangedY || bScaleChangedZ)
+                {
+                    ImguiSelectedActor->SetActorScale(Vector3(ScaleX, ScaleY, ScaleZ));
+                }
+            }
 
          
         }
