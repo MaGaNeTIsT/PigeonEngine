@@ -14,11 +14,15 @@ namespace PigeonEngine
 	{
 #if _DEBUG_MODE
 		{
-			const UINT32 TempType = MB_OK;
-			if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
+#if 0
 			{
-				//TODO
+				const UINT32 TempType = MB_OK;
+				if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
+				{
+					//TODO
+				}
 			}
+#endif
 			PE_BREAKPOINT;
 		}
 #elif _DEVELOP_MODE

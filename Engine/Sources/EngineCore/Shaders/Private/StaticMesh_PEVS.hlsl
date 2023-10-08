@@ -3,7 +3,7 @@
 
 struct Attribute
 {
-    float4 Position : POSITION;
+    float4 Position : POSITION0;
     float4 Normal   : NORMAL0;
     float2 Texcoord : TEXCOORD0;
 };

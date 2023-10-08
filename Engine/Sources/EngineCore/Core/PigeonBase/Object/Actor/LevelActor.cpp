@@ -88,7 +88,7 @@ namespace PigeonEngine
             for (UINT32 i = 0u; i < 6u; i++)
             {
                 ImportPaths.Add("./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/");
-                ImportFileTypes.Add("tga");
+                ImportFileTypes.Add("png");
             }
             ImportNames.Add("Sky_001_Right");
             ImportNames.Add("Sky_001_Left");
@@ -96,13 +96,14 @@ namespace PigeonEngine
             ImportNames.Add("Sky_001_Bottom");
             ImportNames.Add("Sky_001_Forward");
             ImportNames.Add("Sky_001_Back");
-            TryLoadTextureCube(ESettings::ENGINE_TEXTURE_PATH, "SkyDome", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
+            TryLoadTextureCube(ESettings::ENGINE_TEXTURE_PATH, "SkyBox001", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
 
             SkyLightComp->SetCubeMapAsset(CubeMap);
-            SkyLightComp->SetLightAdjust(Color3(1.0f, 1.0f, 1.0f));
+            SkyLightComp->SetLightAdjust(Color3(1.f, 1.f, 1.f));
             SkyLightComp->SetIntensity(1.f);
             New->AddComponent(SkyLightComp);
             SkyLightComp->SetName("SkyLightComponent");
+            New->SetActorScale(Vector3(1000.f, 1000.f, 1000.f));
         }
 
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -120));

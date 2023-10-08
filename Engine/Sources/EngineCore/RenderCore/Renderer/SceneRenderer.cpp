@@ -433,26 +433,32 @@ namespace PigeonEngine
 	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
 	{
 		RSceneProxyMapping<RSkyLightSceneProxy>& SkyLights = Scene->GetSkyLightProxies();
-		for (UINT32 SkyLightIndex = 0u, SkyLightNum = SkyLights.GetSceneProxyCount(); SkyLightIndex < SkyLightNum; SkyLightIndex++)
+		if (const UINT32 SkyLightNum = SkyLights.GetSceneProxyCount(); SkyLightNum > 0u)
 		{
-			RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_FRONT].RasterizerState);
+			for (UINT32 SkyLightIndex = 0u; SkyLightIndex < SkyLightNum; SkyLightIndex++)
+			{
+				RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
 #if _EDITOR_ONLY
-			if (!SkyLight)
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
-				continue;
-			}
-			if (!(SkyLight->IsRenderValid()))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
-				continue;
-			}
+				if (!SkyLight)
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
+					continue;
+				}
+				if (!(SkyLight->IsRenderValid()))
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
+					continue;
+				}
 #endif
-			{
-				SkyLight->BindRenderResource();
-				SkyLight->Draw();
-				return;
+				{
+					SkyLight->BindRenderResource();
+					SkyLight->Draw();
+					break;
+				}
 			}
+			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
 		}
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
