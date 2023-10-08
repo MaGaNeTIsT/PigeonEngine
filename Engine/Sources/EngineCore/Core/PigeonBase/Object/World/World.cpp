@@ -198,7 +198,7 @@ namespace PigeonEngine
                 }
 				ImGui::Text("RealLocation for debug : ");
 
-                ImGui::Text(*(ImguiSelectedActor->GetActorLocation().AsString()));
+				ImGui::Text(*(ImguiSelectedActor->GetActorLocation().AsString()));
             }
         }
     }

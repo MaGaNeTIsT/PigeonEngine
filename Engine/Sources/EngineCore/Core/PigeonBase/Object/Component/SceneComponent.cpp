@@ -190,6 +190,10 @@ namespace PigeonEngine
 		Transform.SetLocation_Local(Location);
 		
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentRotation(const Quaternion& Rotation)
@@ -197,6 +201,10 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_Local(Rotation);
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentScale(const Vector3& Scale)
@@ -204,6 +212,10 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_Local(Scale);
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentTransform(const ETransform& Trans)
@@ -212,7 +224,6 @@ namespace PigeonEngine
 		SetComponentLocation(Trans.GetLocation_Local());
 		SetComponentRotation(Trans.GetRotation_Local());
 		SetComponentScale(Trans.GetScaling_Local());
-		MarkRenderTransformAsDirty();
 	}
 
 	void PSceneComponent::SetComponentWorldLocation(const Vector3& Location)
@@ -221,6 +232,10 @@ namespace PigeonEngine
 
 		Transform.SetLocation_World(Location, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentWorldRotation(const Quaternion& Rotation)
@@ -228,6 +243,10 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldRotation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetRotation_World(Rotation, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentWorldScale(const Vector3& Scale)
@@ -235,6 +254,10 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentWorldScale : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetScaling_World(Scale, this->ParentComponent, this->GetOwnerActor());
 		MarkRenderTransformAsDirty();
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->MarkRenderTransformAsDirty();
+		}
 	}
 
 	void PSceneComponent::SetComponentWorldTransform(const ETransform& Trans)
@@ -243,7 +266,7 @@ namespace PigeonEngine
 		SetComponentWorldLocation(Trans.GetLocation_World(this->ParentComponent, this->GetOwnerActor()));
 		SetComponentWorldRotation(Trans.GetRotation_World(this->ParentComponent, this->GetOwnerActor()));
 		SetComponentWorldScale(Trans.GetScaling_World(this->ParentComponent, this->GetOwnerActor()));
-		MarkRenderTransformAsDirty();
+		
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const
@@ -321,6 +344,7 @@ namespace PigeonEngine
 	{
 		RenderTransformDirty = TRUE;
 		MarkRenderStateAsDirty();
+		
 	}
 	void PSceneComponent::MarkRenderStateAsDirty()
 	{
