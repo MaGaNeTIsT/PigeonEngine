@@ -49,7 +49,7 @@ namespace PigeonEngine
         void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
         //void DestroyActor();
     private:
-        PActor* RootActor = nullptr;
+        PLevelActor* RootActor = nullptr;
         TSet<PActor*> AllActors;
 #if _EDITOR_ONLY
     public:
@@ -64,9 +64,6 @@ namespace PigeonEngine
         TArray<PScene*> Scenes;
 #endif
 
-
-    private:
-        class PLevelActor* LevelScriptor = nullptr;
     public:
         class PController* GetController()const;
     private:

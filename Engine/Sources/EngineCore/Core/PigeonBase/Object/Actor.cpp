@@ -123,7 +123,7 @@ namespace PigeonEngine
 
 	void PActor::DetachActorsAttached()
 	{
-		TSet<PActor*> ActorsAttached = this->ChildrenActors;
+		TSet<PActor*> ActorsAttached(this->ChildrenActors);
 		for(auto& elem : ActorsAttached)
 		{
 			elem->DetachFromParentActor();
@@ -132,10 +132,12 @@ namespace PigeonEngine
 
 	void PActor::DestroyActorsAttached()
 	{
-		TSet<PActor*> ActorsAttached = this->ChildrenActors;
+		// TSet<PActor*> ActorsAttached = this->ChildrenActors;
+
+		TSet<PActor*> ActorsAttached(this->ChildrenActors);
 		for(auto& elem : ActorsAttached)
 		{
-			elem->DetachActorsAttached();
+			elem->DestroyActorsAttached();
 			elem->Destroy();
 		}
 	}
@@ -266,7 +268,7 @@ namespace PigeonEngine
 	{
 		// RemoveFromScene
 		this->UserEndPlay();
-		DetachActorsAttached();
+		// DetachActorsAttached();
 		ClearComponents();
 		PObject::Destroy();
 	}

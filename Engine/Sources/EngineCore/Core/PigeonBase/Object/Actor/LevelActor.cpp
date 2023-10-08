@@ -13,7 +13,7 @@ namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
     {
-       
+        this->SetIsTickable(TRUE);
     }
 	
     PLevelActor::~PLevelActor()

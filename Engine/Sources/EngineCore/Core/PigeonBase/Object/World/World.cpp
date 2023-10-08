@@ -31,32 +31,23 @@ namespace PigeonEngine
             Controller->Destroy();
             Controller = nullptr;
         }
-        if(LevelScriptor)
-        {
-            LevelScriptor->Destroy();
-            LevelScriptor = nullptr;
-        }
+       
         if(RootActor)
         {
             RootActor->Destroy();
             RootActor = nullptr;
         }
-		this->RootActor = new PActor();
-        this->RootActor->SetIsTickable(TRUE);
-		this->RootActor->BeginAddedToScene(this);
-        this->RootActor->Init();
-
+		this->RootActor = new PLevelActor();
+		
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
         this->Controller->SetName("Controller");
         this->AddActor(Controller);
         // this->Controller->BeginAddedToScene(this);
-        this->Controller->Init();
 
-		this->LevelScriptor = new PLevelActor();
-        this->LevelScriptor->SetIsTickable(TRUE);
-		this->LevelScriptor->BeginAddedToScene(this);
-        this->LevelScriptor->Init();
+        this->Controller->Init();
+        this->RootActor->Init();
+        this->RootActor->BeginAddedToScene(this);
     }
 
     void PWorld::Uninit()
@@ -78,32 +69,24 @@ namespace PigeonEngine
     void PWorld::EditorTick(FLOAT deltaTime)
     {
         RootActor->EditorTick(deltaTime);
-        LevelScriptor->EditorTick(deltaTime);
         Controller->EditorTick(deltaTime);
     }
 
     void PWorld::FixTick(FLOAT deltaTime)
     {
         RootActor->FixedTick(deltaTime);
-        LevelScriptor->FixedTick(deltaTime);
         Controller->FixedTick(deltaTime);
     }
 
 
     void PWorld::Destroy()
     {
-        if(LevelScriptor)
-        {
-            LevelScriptor->Destroy();
-            LevelScriptor = nullptr;
-        }
         if(RootActor)
         {
+            // RootActor->DestroyActorsAttached();
             RootActor->Destroy();
             RootActor = nullptr;
         }
-       
-
         // AllActors.Clear();
         PObject::Destroy();
     }
