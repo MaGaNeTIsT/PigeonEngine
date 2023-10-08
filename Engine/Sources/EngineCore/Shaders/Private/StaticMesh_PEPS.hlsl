@@ -13,6 +13,7 @@ struct Varying
 #define SHADER_USE_VIEW_INPUT           1
 #define SHADER_USE_PERDRAW_INPUT        1
 #define SHADER_USE_TRANSFORM_INPUT      1
+#define SHADER_USE_TRANSFORM            1
 
 #include "../Common/ShaderCommon.hlsl"
 
