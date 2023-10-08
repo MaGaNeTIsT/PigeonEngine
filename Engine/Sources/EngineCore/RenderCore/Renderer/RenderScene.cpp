@@ -1,12 +1,15 @@
 #include "RenderScene.h"
 #include <MeshAsset/MeshAsset.h>
+#include <TextureAsset/TextureAsset.h>
 #include <RenderProxy/ViewProxy.h>
+#include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
+#include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
@@ -55,6 +58,8 @@ namespace PigeonEngine
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all views' mapping failed"), (ViewProxies.SceneProxyMapping.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all views failed"), (ViewProxies.SceneProxies.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all sky lights' failed"), (SkyLightProxies.SceneProxyMapping.Length() == 0u));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all sky lights failed"), (SkyLightProxies.SceneProxies.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights' mapping failed"), (DirectionalLightSceneProxies.SceneProxyMapping.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights failed"), (DirectionalLightSceneProxies.SceneProxies.Length() == 0u));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProxies.SceneProxyMapping.Length() == 0u));
@@ -146,6 +151,91 @@ namespace PigeonEngine
 				if (NeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
+				}
+			});
+	}
+	void RScene::AddSkyLight(PSkyLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkyLightSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+
+		ERenderSkyLightMatrices* TempMatrices = new ERenderSkyLightMatrices(
+			InComponent->GetComponentWorldLocation(),
+			InComponent->GetComponentWorldRotation(),
+			InComponent->GetComponentWorldScale());
+		ERenderSkyLightParams* TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity());
+		const ETextureCubeAsset* TempCubeMapAsset = InComponent->GetCubeMapAsset();
+
+		RenderAddCommands.EnqueueCommand(
+			[Scene, SceneProxy, TempMatrices, TempParams, TempCubeMapAsset]()->void
+			{
+				SceneProxy->SetupProxy(*TempMatrices, *TempParams, TempCubeMapAsset);
+				delete TempMatrices;
+				delete TempParams;
+				Scene->AddOrRemoveSkyLight_RenderThread(SceneProxy, TRUE);
+			});
+	}
+	void RScene::RemoveSkyLight(PSkyLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkyLightSceneProxy* SceneProxy = InComponent->SceneProxy;
+		InComponent->SceneProxy = nullptr;
+		RenderRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveSkyLight_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
+			});
+	}
+	void RScene::UpdateSkyLight(PSkyLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RSkyLightSceneProxy* SceneProxy = InComponent->SceneProxy;
+
+		UINT8 UpdateState = InComponent->GetUpdateRenderState();
+
+		ERenderSkyLightMatrices* TempMatrices = nullptr;
+		if ((UpdateState & PSkyLightComponent::PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_MATRIX) != 0u)
+		{
+			TempMatrices = new ERenderSkyLightMatrices(
+				InComponent->GetComponentWorldLocation(),
+				InComponent->GetComponentWorldRotation(),
+				InComponent->GetComponentWorldScale());
+		}
+		ERenderSkyLightParams* TempParams = nullptr;
+		if ((UpdateState & PSkyLightComponent::PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS) != 0u)
+		{
+			TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity());
+		}
+		const ETextureCubeAsset* TempCubeMapAsset = nullptr;
+		if ((UpdateState & PSkyLightComponent::PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_TEXTURE) != 0u)
+		{
+			TempCubeMapAsset = InComponent->GetCubeMapAsset();
+		}
+
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy, TempMatrices, TempParams, TempCubeMapAsset]()->void
+			{
+				BOOL32 NeedUpdateRenderResource = FALSE;
+				if (TempMatrices)
+				{
+					SceneProxy->UpdateMatrices(*TempMatrices);
+					delete TempMatrices;
+					NeedUpdateRenderResource = TRUE;
+				}
+				if (TempParams)
+				{
+					SceneProxy->UpdateSkyLightParams(*TempParams);
+					delete TempParams;
+					NeedUpdateRenderResource = TRUE;
+				}
+				if (TempCubeMapAsset)
+				{
+					SceneProxy->UpdateTextureCubeAsset(TempCubeMapAsset);
+				}
+				if (NeedUpdateRenderResource)
+				{
+					//TODO
 				}
 			});
 	}
@@ -405,6 +495,14 @@ namespace PigeonEngine
 	{
 		return ViewProxies;
 	}
+	RSceneProxyMapping<RSkyLightSceneProxy>& RScene::GetSkyLightProxies()
+	{
+		return SkyLightProxies;
+	}
+	const RSceneProxyMapping<RSkyLightSceneProxy>& RScene::GetSkyLightProxies()const
+	{
+		return SkyLightProxies;
+	}
 	RSceneProxyMapping<RDirectionalLightSceneProxy>& RScene::GetDirectionalLightSceneProxies()
 	{
 		return DirectionalLightSceneProxies;
@@ -438,6 +536,17 @@ namespace PigeonEngine
 		else
 		{
 			ViewProxies.RemoveSceneProxy(InSceneProxy);
+		}
+	}
+	void RScene::AddOrRemoveSkyLight_RenderThread(RSkyLightSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			SkyLightProxies.AddSceneProxy(InSceneProxy);
+		}
+		else
+		{
+			SkyLightProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
 	void RScene::AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd)

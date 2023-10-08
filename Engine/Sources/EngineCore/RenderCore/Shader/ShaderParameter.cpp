@@ -4,6 +4,25 @@
 namespace PigeonEngine
 {
 
+	PE_INLINE FLOAT TranslateUploadBaseType(const FLOAT InData)
+	{
+		return InData;
+	}
+	PE_INLINE INT32 TranslateUploadBaseType(const INT32 InData)
+	{
+		return InData;
+	}
+	PE_INLINE INT32 TranslateUploadBaseType(const UINT32 InData)
+	{
+		union Bit32
+		{
+			INT32	A;
+			UINT32	B;
+		};
+		Bit32 Data;
+		Data.B = InData;
+		return (Data.A);
+	}
 	PE_INLINE Matrix4x4	TranslateUploadMatrixType(const Matrix4x4& InData)
 	{
 		return Matrix4x4(InData.GetDirectXTransposeValue4x4());
@@ -27,6 +46,14 @@ namespace PigeonEngine
 	PE_INLINE Vector4Int TranslateUploadVectorType(const Vector4Int& InData)
 	{
 		return InData;
+	}
+	PE_INLINE Vector3 TranslateUploadColorType(const Color3& InData)
+	{
+		return Vector3(InData.r, InData.g, InData.b);
+	}
+	PE_INLINE Vector4 TranslateUploadColorType(const Color4& InData)
+	{
+		return Vector4(InData.r, InData.g, InData.b, InData.a);
 	}
 
 	EShaderStruct::EShaderStruct()

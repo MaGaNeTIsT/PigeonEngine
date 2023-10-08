@@ -8,10 +8,12 @@ namespace PigeonEngine
 {
 
 	class PCameraComponent;
+	class PSkyLightComponent;
 	class PDirectionalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
 	class RViewProxy;
+	class RSkyLightSceneProxy;
 	class RDirectionalLightSceneProxy;
 	class RStaticMeshSceneProxy;
 	class RSkeletalMeshSceneProxy;
@@ -122,6 +124,10 @@ namespace PigeonEngine
 		virtual void	RemoveCamera(PCameraComponent* InComponent)override;
 		virtual void	UpdateCamera(PCameraComponent* InComponent)override;
 
+		virtual void	AddSkyLight(PSkyLightComponent* InComponent)override;
+		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent)override;
+		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent)override;
+
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override;
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override;
 		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)override;
@@ -144,6 +150,8 @@ namespace PigeonEngine
 
 		RSceneProxyMapping<RViewProxy>&							GetViewProxies();
 		const RSceneProxyMapping<RViewProxy>&					GetViewProxies()const;
+		RSceneProxyMapping<RSkyLightSceneProxy>&				GetSkyLightProxies();
+		const RSceneProxyMapping<RSkyLightSceneProxy>&			GetSkyLightProxies()const;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>&		GetDirectionalLightSceneProxies();
 		const RSceneProxyMapping<RDirectionalLightSceneProxy>&	GetDirectionalLightSceneProxies()const;
 		RSceneProxyMapping<RStaticMeshSceneProxy>&				GetStaticMeshSceneProxies();
@@ -152,6 +160,7 @@ namespace PigeonEngine
 		const RSceneProxyMapping<RSkeletalMeshSceneProxy>&		GetSkeletalMeshSceneProxies()const;
 	protected:
 		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
+		void	AddOrRemoveSkyLight_RenderThread(RSkyLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveDirectionalLight_RenderThread(RDirectionalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
@@ -159,6 +168,7 @@ namespace PigeonEngine
 		ROctree		RenderSceneOctree;
 	protected:
 		RSceneProxyMapping<RViewProxy>					ViewProxies;
+		RSceneProxyMapping<RSkyLightSceneProxy>			SkyLightProxies;
 		RSceneProxyMapping<RDirectionalLightSceneProxy>	DirectionalLightSceneProxies;
 		RSceneProxyMapping<RStaticMeshSceneProxy>		StaticMeshSceneProxies;
 		RSceneProxyMapping<RSkeletalMeshSceneProxy>		SkeletalMeshSceneProxies;
@@ -182,6 +192,10 @@ namespace PigeonEngine
 		virtual void	AddCamera(PCameraComponent* InComponent)override {}
 		virtual void	RemoveCamera(PCameraComponent* InComponent)override {}
 		virtual void	UpdateCamera(PCameraComponent* InComponent)override {}
+
+		virtual void	AddSkyLight(PSkyLightComponent* InComponent)override {}
+		virtual void	RemoveSkyLight(PSkyLightComponent* InComponent)override {}
+		virtual void	UpdateSkyLight(PSkyLightComponent* InComponent)override {}
 
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)override {}
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)override {}

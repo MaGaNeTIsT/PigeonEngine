@@ -126,12 +126,6 @@ namespace PigeonEngine
 
 	/// <summary>
 	/// A texture array type that contains 6 members. Shader resource view is texture cube.
-	/// Face[0] : +X Right face.
-	/// Face[1] : -X Left face.
-	/// Face[2] : +Y Top face.
-	/// Face[3] : -Y Bottom face.
-	/// Face[4] : +Z Forward face.
-	/// Face[5] : -Z Back face.
 	/// </summary>
 	class ETextureCubeAsset : public TRenderBaseAsset<ETextureCube, RTextureCubeResource>
 	{
@@ -163,8 +157,20 @@ namespace PigeonEngine
 	public:
 #if _EDITOR_ONLY
 		BOOL32	ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+
+		/// <summary>
+		/// Face[0] : +X Right face.
+		/// Face[1] : -X Left face.
+		/// Face[2] : +Y Top face.
+		/// Face[3] : -Y Bottom face.
+		/// Face[4] : +Z Forward face.
+		/// Face[5] : -Z Back face.
+		/// </summary>
+		BOOL32	ImportTextureCube(const EString& InAssetName, const TArray<EString>& InImportFullPathName, const EString& InSavePath);
 #endif
+	public:
 		BOOL32	LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset);
+		BOOL32	LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName, const ETextureCubeAsset*& OutTextureAsset);
 	private:
 		void	ClearTexture2Ds();
 		void	ClearTextureCubes();
@@ -180,5 +186,21 @@ namespace PigeonEngine
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(ETextureAssetManager)
 
 	};
+
+	extern void TryLoadTexture2D(const EString& InLoadPath, const EString& InLoadName,
+		const ETexture2DAsset*& OutTextureAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
+
+	/// <summary>
+	/// Face[0] : +X Right face.
+	/// Face[1] : -X Left face.
+	/// Face[2] : +Y Top face.
+	/// Face[3] : -Y Bottom face.
+	/// Face[4] : +Z Forward face.
+	/// Face[5] : -Z Back face.
+	/// </summary>
+	extern void TryLoadTextureCube(const EString& InLoadPath, const EString& InLoadName,
+		const ETextureCubeAsset*& OutTextureAsset,
+		const TArray<EString>* InImportPath = nullptr, const TArray<EString>* InImportName = nullptr, const TArray<EString>* InImportFileType = nullptr);
 
 };

@@ -59,8 +59,8 @@ namespace PigeonEngine
 	}
 	void RStaticMeshSceneProxy::UpdateRenderResource()
 	{
-		Matrix4x4 InvMat(LocalToWorldMatrix.Inverse());
-		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(LocalToWorldMatrix);
+		Matrix4x4 InvMat(GetLocalToWorldMatrix().Inverse());
+		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
 		MaterialParameter.UploadBuffer();
