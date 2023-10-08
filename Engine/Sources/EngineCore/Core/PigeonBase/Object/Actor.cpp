@@ -91,6 +91,9 @@ namespace PigeonEngine
 		}
 		this->RootComponent->DetachFromParentComponent();
 		this->GetWorld()->AddActor(this);
+		this->SetActorLocation(WolrdTrans.GetLocation_Local());
+		this->SetActorRotation(WolrdTrans.GetRotation_Local());
+		this->SetActorScale(WolrdTrans.GetScaling_Local());
 	}
 
 	void PActor::AttachToActor(PActor* Parent, const ETransform& RelativeTransform)
@@ -116,6 +119,25 @@ namespace PigeonEngine
 	TSet<PActor*> PActor::GetAllActorsAttached() const
 	{
 		return this->ChildrenActors;
+	}
+
+	void PActor::DetachActorsAttached()
+	{
+		TSet<PActor*> ActorsAttached = this->ChildrenActors;
+		for(auto& elem : ActorsAttached)
+		{
+			elem->DetachFromParentActor();
+		}
+	}
+
+	void PActor::DestroyActorsAttached()
+	{
+		TSet<PActor*> ActorsAttached = this->ChildrenActors;
+		for(auto& elem : ActorsAttached)
+		{
+			elem->DetachActorsAttached();
+			elem->Destroy();
+		}
 	}
 
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
@@ -234,7 +256,7 @@ namespace PigeonEngine
 		RootComponent->Destroy();
 	}
 
-	EBoundAABB PActor::GetComponentsBoundingBox()
+	EBoundAABB PActor::GetBounds()
 	{
 		//TODO
 		return EBoundAABB();
@@ -244,6 +266,7 @@ namespace PigeonEngine
 	{
 		// RemoveFromScene
 		this->UserEndPlay();
+		DetachActorsAttached();
 		ClearComponents();
 		PObject::Destroy();
 	}

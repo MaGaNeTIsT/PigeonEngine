@@ -47,7 +47,7 @@ namespace PigeonEngine
     // Actors in world management
     public:
         void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
-  
+        //void DestroyActor();
     private:
         PActor* RootActor = nullptr;
         TSet<PActor*> AllActors;

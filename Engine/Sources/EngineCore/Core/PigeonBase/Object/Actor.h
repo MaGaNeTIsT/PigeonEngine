@@ -76,7 +76,7 @@ namespace PigeonEngine
 
 	public:
 
-		EBoundAABB GetComponentsBoundingBox();
+		EBoundAABB GetBounds();
 		
 	public:
 		 
@@ -90,6 +90,8 @@ namespace PigeonEngine
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 
 		TSet<PActor*> GetAllActorsAttached() const;
+		void DetachActorsAttached();
+		void DestroyActorsAttached();
 	private:
 
 		PActor* AttachedParentActor = nullptr;

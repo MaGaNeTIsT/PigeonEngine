@@ -92,11 +92,6 @@ namespace PigeonEngine
 
     void PWorld::Destroy()
     {
-        if(Controller)
-        {
-            Controller->Destroy();
-            Controller = nullptr;
-        }
         if(LevelScriptor)
         {
             LevelScriptor->Destroy();
@@ -109,6 +104,7 @@ namespace PigeonEngine
         }
        
 
+        // AllActors.Clear();
         PObject::Destroy();
     }
 
@@ -121,6 +117,7 @@ namespace PigeonEngine
         NewActor->AttachToActor(RootActor);
         NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
         NewActor->BeginAddedToScene(this);
+        // AllActors.Add(NewActor);
     }
 
   

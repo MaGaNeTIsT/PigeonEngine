@@ -69,6 +69,7 @@ namespace PigeonEngine
 	{
 		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
 		{
+			
 			(*elem)->ParentComponent = nullptr;
 			(*elem)->Destroy();
 		}
