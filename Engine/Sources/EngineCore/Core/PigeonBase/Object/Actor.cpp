@@ -268,7 +268,6 @@ namespace PigeonEngine
 	{
 		// RemoveFromScene
 		this->UserEndPlay();
-		// DetachActorsAttached();
 		ClearComponents();
 		PObject::Destroy();
 	}

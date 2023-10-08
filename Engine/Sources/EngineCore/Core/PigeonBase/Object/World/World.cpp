@@ -78,7 +78,6 @@ namespace PigeonEngine
         Controller->FixedTick(deltaTime);
     }
 
-
     void PWorld::Destroy()
     {
         if(RootActor)
@@ -152,7 +151,6 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
     static Quaternion Quat;
     static Vector3 Scale;
-    static Vector3 Location;
     static FLOAT LocX;
     static FLOAT LocY;
     static FLOAT LocZ;
@@ -170,12 +168,10 @@ namespace PigeonEngine
                     continue;
                 }
                 ImguiSelectedActor = elem;
-                // Location =  ImguiSelectedActor->GetActorLocation();
-                // LocX = Location.x;
-                // LocY = Location.y;
-                // LocZ = Location.z;
-                // Quat     =  ImguiSelectedActor->GetActorRotation();
-                // Scale    =  ImguiSelectedActor->GetActorScale();
+				LocX = ImguiSelectedActor->GetActorLocation().x;
+				LocY = ImguiSelectedActor->GetActorLocation().y;
+				LocZ = ImguiSelectedActor->GetActorLocation().z;
+
             }
         }
 
@@ -193,49 +189,17 @@ namespace PigeonEngine
             
             {
                 ImGui::Text("Location:");
-                BOOL8 bLocationChanged = FALSE;
                 BOOL8 bLocationChangedX = ImGui::DragScalar("X", ImGuiDataType_Float, &LocX, 0.0005f, NULL, NULL, "%.6f");
-               // ImGui::SameLine(); 
-                BOOL8 bLocationChangedY = ImGui::DragScalar("Y", ImGuiDataType_Float, &LocY, 0.0005f, NULL, NULL, "%.6f");
-               // ImGui::SameLine(); 
+                BOOL8 bLocationChangedY = ImGui::DragScalar("Y", ImGuiDataType_Float, &LocY, 0.0005f, NULL, NULL, "%.6f"); 
                 BOOL8 bLocationChangedZ = ImGui::DragScalar("Z", ImGuiDataType_Float, &LocZ, 0.0005f, NULL, NULL, "%.6f");
-                bLocationChanged = bLocationChangedX || bLocationChangedY || bLocationChangedZ;
-                if(bLocationChanged)
+                if(bLocationChangedX || bLocationChangedY || bLocationChangedZ)
                 {
-                   //ImguiSelectedActor->SetActorLocation(Location);
+                   ImguiSelectedActor->SetActorLocation(Vector3(LocX, LocY, LocZ));
                 }
-            }
-           
-            // {
-            //     ImGui::Text("Rotation:");
-            //     BOOL bRotationChanged = ImGui::InputScalar("X",  ImGuiDataType_Double, &Quat.x, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("Y",  ImGuiDataType_Double, &Quat.y, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("Z",  ImGuiDataType_Double, &Quat.z, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("W",  ImGuiDataType_Double, &Quat.w, inputs_step ? &f64_one : NULL);
-            //     if(bRotationChanged)
-            //     {
-            //         ImguiSelectedActor->SetActorRotation(Quat);
-            //     }
-            // }
-            //
-            // {
-            //     ImGui::Text("Scale:");
-            //     BOOL bScaleChanged = ImGui::InputScalar("X",  ImGuiDataType_Double, &Scale.x, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Y",  ImGuiDataType_Double, &Scale.y, inputs_step ? &f64_one : NULL);
-            //     ImGui::SameLine(); 
-            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Z",  ImGuiDataType_Double, &Scale.z, inputs_step ? &f64_one : NULL);
-            //     if(bScaleChanged)
-            //     {
-            //         ImguiSelectedActor->SetActorScale(Scale);
-            //     }
-            // }
-          
+				ImGui::Text("RealLocation for debug : ");
 
-         
+                ImGui::Text(*(ImguiSelectedActor->GetActorLocation().AsString()));
+            }
         }
     }
 #endif
