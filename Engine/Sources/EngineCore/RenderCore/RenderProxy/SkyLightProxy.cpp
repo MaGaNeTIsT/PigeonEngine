@@ -3,6 +3,25 @@
 namespace PigeonEngine
 {
 
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<RSkyLightSceneProxy, RBaseSceneProxy>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+	void RSkyLightMaterialParameter::SetupParameters()
+	{
+		ClearParameter();
+		BeginSetupParameter();
+		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldMatrix"));
+		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldInvMatrix"));
+		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_LightAdjustColor"));
+		AddParameter<FLOAT, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT1>(("_LightAdjustIntensity"));
+		EndSetupParameter();
+		CreateBuffer();
+	}
+
 	RSkyLightSceneProxy::RSkyLightSceneProxy(PSkyLightComponent* InComponent)
 		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f), Component(InComponent)
 	{
@@ -24,6 +43,10 @@ namespace PigeonEngine
 		UpdateTextureCubeAsset(InTextureCubeAsset);
 		UpdateSkyLightParams(InSkyLightParams);
 		UpdateMatrices(InMatrices);
+
+		SkyLightMaterialParameter.SetupParameters();
+
+		UpdateRenderResource();
 	}
 	void RSkyLightSceneProxy::UpdateTextureCubeAsset(const ETextureCubeAsset* InTextureCubeAsset)
 	{
@@ -37,6 +60,15 @@ namespace PigeonEngine
 	void RSkyLightSceneProxy::UpdateMatrices(const ERenderSkyLightMatrices& InMatrices)
 	{
 		SetProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, InMatrices.WorldScaling);
+	}
+	void RSkyLightSceneProxy::UpdateRenderResource()
+	{
+		FLOAT LightAdjustIntensity = TranslateUploadBaseType(AdjustIntensity);
+		SkyLightMaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
+		SkyLightMaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix().Inverse());
+		SkyLightMaterialParameter["_LightAdjustColor"] = &TranslateUploadColorType(AdjustColor);
+		SkyLightMaterialParameter["_LightAdjustIntensity"] = &LightAdjustIntensity;
+		SkyLightMaterialParameter.UploadBuffer();
 	}
 
 };

@@ -14,12 +14,17 @@ namespace PigeonEngine
 		__Name& operator=(const __Name&) = delete;\
 
 
+	extern PE_INLINE FLOAT		TranslateUploadBaseType(const FLOAT InData);
+	extern PE_INLINE INT32		TranslateUploadBaseType(const INT32 InData);
+	extern PE_INLINE INT32		TranslateUploadBaseType(const UINT32 InData);
 	extern PE_INLINE Matrix4x4	TranslateUploadMatrixType(const Matrix4x4& InData);
 	extern PE_INLINE Matrix4x4	TranslateUploadTransposeMatrixType(const Matrix4x4& InData);
 	extern PE_INLINE Vector3	TranslateUploadVectorType(const Vector3& InData);
 	extern PE_INLINE Vector4	TranslateUploadVectorType(const Vector4& InData);
 	extern PE_INLINE Vector2Int	TranslateUploadVectorType(const Vector2Int& InData);
 	extern PE_INLINE Vector4Int	TranslateUploadVectorType(const Vector4Int& InData);
+	extern PE_INLINE Vector3	TranslateUploadColorType(const Color3& InData);
+	extern PE_INLINE Vector4	TranslateUploadColorType(const Color4& InData);
 
 	enum EShaderParameterValueType : UINT8
 	{
