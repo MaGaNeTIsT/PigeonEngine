@@ -86,9 +86,11 @@ namespace PigeonEngine
         // IMGUI
 #if _EDITOR_ONLY
     public:
-        virtual void GenerateImgui();
+        void GenerateWorldOutline();
+        void GenerateDetail();
     private:
         PActor* ImguiSelectedActor = nullptr;
+        
 #endif
         
     };

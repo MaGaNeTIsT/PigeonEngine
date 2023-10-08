@@ -47,6 +47,11 @@ namespace PigeonEngine
             this->World = nullptr;
         }
     }
+
+    void EWorldManager::EditorInit()
+    {
+        
+    }
 #if _EDITOR_ONLY
     void EWorldManager::EditorUpdate()
     {
@@ -54,9 +59,12 @@ namespace PigeonEngine
         ImGui::Text("PigeonWo");
         if(this->GetWorld())
         {
-            this->GetWorld()->GenerateImgui();
+            this->GetWorld()->GenerateWorldOutline();
+            this->GetWorld()->GenerateDetail();
         }
         ImGui::End();
+        bool bOpen = false;
+        ImGui::ShowDemoWindow(&bOpen);
     }
 #endif
     PWorld* EWorldManager::GetWorld() const

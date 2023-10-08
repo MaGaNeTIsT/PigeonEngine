@@ -282,6 +282,21 @@ namespace PigeonEngine
 		};
 	};
 
+	struct Euler
+	{
+		constexpr Euler(FLOAT InRoll, FLOAT InPitch, FLOAT InYaw)noexcept : roll(InRoll), pitch(InPitch), yaw(InYaw) {}
+		
+		Euler()noexcept : roll(0.f), pitch(0.f), yaw(0.f) {}
+		union
+		{
+			struct
+			{
+				FLOAT roll, pitch, yaw;
+			};
+			FLOAT v[3];
+		};
+	};
+	
 	struct Vector2
 	{
 		constexpr Vector2(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y) {}

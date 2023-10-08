@@ -48,7 +48,9 @@ namespace PigeonEngine
 
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
-        this->Controller->BeginAddedToScene(this);
+        this->Controller->SetName("Controller");
+        this->AddActor(Controller);
+        // this->Controller->BeginAddedToScene(this);
         this->Controller->Init();
 
 		this->LevelScriptor = new PLevelActor();
@@ -167,47 +169,93 @@ namespace PigeonEngine
     {
         return RenderScene;
     }
-
-    void PWorld::GenerateImgui()
+#if _EDITOR_ONLY
+    static Quaternion Quat;
+    static Vector3 Scale;
+    static Vector3 Location;
+    static FLOAT LocX;
+    static FLOAT LocY;
+    static FLOAT LocZ;
+    
+    void PWorld::GenerateWorldOutline()
     {
-        ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+        
+        
         for(const auto& elem : RootActor->GetAllActorsAttached())
         {
             if(elem->GenerateImgui(elem == ImguiSelectedActor))
             {
+                if(elem == ImguiSelectedActor)
+                {
+                    continue;
+                }
                 ImguiSelectedActor = elem;
+                // Location =  ImguiSelectedActor->GetActorLocation();
+                // LocX = Location.x;
+                // LocY = Location.y;
+                // LocZ = Location.z;
+                // Quat     =  ImguiSelectedActor->GetActorRotation();
+                // Scale    =  ImguiSelectedActor->GetActorScale();
             }
         }
-        
+
+    }
+
+    void PWorld::GenerateDetail()
+    {
         ImGui::Text("Detail");
         if(ImguiSelectedActor)
         {
             ImguiSelectedActor->GenerateComponentsImgui();
+
+            static bool inputs_step = true;
+            const double f64_one = 1.0f;
             
-            ImGui::Text("Location:");
-            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().x)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().y)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorLocation().z)));
+            {
+                ImGui::Text("Location:");
+                
+                BOOL bLocationChanged = ImGui::DragScalar("X",    ImGuiDataType_Double, &LocX, 0.0005f, NULL, NULL,     "%.6f");
+               // ImGui::SameLine(); 
+                bLocationChanged = bLocationChanged || ImGui::DragScalar("Y",    ImGuiDataType_Double, &LocY, 0.0005f, NULL, NULL,     "%.6f");
+               // ImGui::SameLine(); 
+                bLocationChanged = bLocationChanged || ImGui::DragScalar("Z",    ImGuiDataType_Double, &LocZ, 0.0005f, NULL, NULL,     "%.6f");
+                if(bLocationChanged)
+                {
+                   //ImguiSelectedActor->SetActorLocation(Location);
+                }
+            }
+           
+            // {
+            //     ImGui::Text("Rotation:");
+            //     BOOL bRotationChanged = ImGui::InputScalar("X",  ImGuiDataType_Double, &Quat.x, inputs_step ? &f64_one : NULL);
+            //     ImGui::SameLine(); 
+            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("Y",  ImGuiDataType_Double, &Quat.y, inputs_step ? &f64_one : NULL);
+            //     ImGui::SameLine(); 
+            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("Z",  ImGuiDataType_Double, &Quat.z, inputs_step ? &f64_one : NULL);
+            //     ImGui::SameLine(); 
+            //     bRotationChanged = bRotationChanged || ImGui::InputScalar("W",  ImGuiDataType_Double, &Quat.w, inputs_step ? &f64_one : NULL);
+            //     if(bRotationChanged)
+            //     {
+            //         ImguiSelectedActor->SetActorRotation(Quat);
+            //     }
+            // }
+            //
+            // {
+            //     ImGui::Text("Scale:");
+            //     BOOL bScaleChanged = ImGui::InputScalar("X",  ImGuiDataType_Double, &Scale.x, inputs_step ? &f64_one : NULL);
+            //     ImGui::SameLine(); 
+            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Y",  ImGuiDataType_Double, &Scale.y, inputs_step ? &f64_one : NULL);
+            //     ImGui::SameLine(); 
+            //     bScaleChanged = bScaleChanged || ImGui::InputScalar("Z",  ImGuiDataType_Double, &Scale.z, inputs_step ? &f64_one : NULL);
+            //     if(bScaleChanged)
+            //     {
+            //         ImguiSelectedActor->SetActorScale(Scale);
+            //     }
+            // }
+          
 
-            ImGui::Text("Quat:");
-            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().x)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().y)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().z)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("W:") + EString::FromFloat(ImguiSelectedActor->GetActorRotation().w)));
-
-            ImGui::Text("Scale:");
-            ImGui::Text(*(EString("X:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().x)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Y:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().y)));
-            ImGui::SameLine(); 
-            ImGui::Text(*(EString("Z:") + EString::FromFloat(ImguiSelectedActor->GetActorScale().z)));
+         
         }
-
-        ImGui::End();
     }
+#endif
 };

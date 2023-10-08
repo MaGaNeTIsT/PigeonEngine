@@ -23,6 +23,7 @@ namespace PigeonEngine
 		void			Draw();
 #if _EDITOR_ONLY
 	public:
+		void			EditorInit();
 		void			EditorUpdate();
 	private:
 		BOOL32			m_EditorOpen = FALSE;

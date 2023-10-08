@@ -166,6 +166,11 @@ namespace PigeonEngine
 
 		m_RenderDeviceD3D11->Present();
 	}
+
+	void EMainManager::EditorInit()
+	{
+		
+	}
 #if _EDITOR_ONLY
 	void EMainManager::EditorUpdate()
 	{

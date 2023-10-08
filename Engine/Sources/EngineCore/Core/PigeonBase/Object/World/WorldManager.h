@@ -14,6 +14,7 @@ namespace PigeonEngine
         void Uninit();
 #if _EDITOR_ONLY
     public:
+        void EditorInit();
         void EditorUpdate();
 #endif
     public:
