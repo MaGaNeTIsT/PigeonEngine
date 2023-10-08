@@ -2656,7 +2656,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load static mesh asset failed."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load static mesh asset failed."));
 #if _EDITOR_ONLY
 		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
 		{

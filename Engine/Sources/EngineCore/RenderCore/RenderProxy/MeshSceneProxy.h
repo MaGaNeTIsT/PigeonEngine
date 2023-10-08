@@ -19,17 +19,12 @@ namespace PigeonEngine
 
 	class RMeshSceneProxy : public RPrimitiveSceneProxy
 	{
-	protected:
-		static EVertexResourceType TranslateInputLayoutToVertexResource(const RInputLayoutDesc& InLayout, UINT32& OutSlot)
-		{
-			RShaderSemanticType ShaderSemantic = GetShaderSemanticBaseType(InLayout.SemanticName);
-			OutSlot = GetShaderSemanticTypeSlot(InLayout.SemanticName);
-			EVertexLayoutType VertexLayout = TranslateSemanticBaseTypeToVertexBaseLayout(ShaderSemantic);
-			return (TranslateVertexLayoutTypeToVertexResourceType(VertexLayout));
-		}
+	public:
 
 		RENDER_PROXY_CLASS_BODY(RMeshSceneProxy)
 
 	};
+
+	extern EVertexResourceType TranslateInputLayoutToVertexResource(const RInputLayoutDesc& InLayout, UINT32& OutSlot);
 
 };

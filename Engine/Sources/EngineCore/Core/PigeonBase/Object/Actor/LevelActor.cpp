@@ -1,11 +1,13 @@
 ﻿#include "LevelActor.h"
+#include <Base/Timer/Timer.h>
+#include <MeshAsset/MeshAsset.h>
+#include <TextureAsset/TextureAsset.h>
 #include "../Component/SceneComponent.h"
-#include "../Component/Primitive/StaticMeshComponent.h"
 #include "../World/World.h"
-#include "MeshAsset/MeshAsset.h"
 #include "../Controller/Controller.h"
-#include "Base/Timer/Timer.h"
-#include "PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h"
+#include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
+#include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
+#include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -70,6 +72,39 @@ namespace PigeonEngine
             Quat.Normalize();
             New->SetActorRotation(Quat);
     	}
+
+        {
+            PActor* New = new PActor();
+            New->SetName("SkyLightActor");
+
+            New->SetIsTickable(TRUE);
+            this->GetWorld()->AddActor(New);
+            PSkyLightComponent* SkyLightComp = new PSkyLightComponent();
+
+            const ETextureCubeAsset* CubeMap = nullptr;
+            TArray<EString> ImportPaths;
+            TArray<EString> ImportNames;
+            TArray<EString> ImportFileTypes;
+            for (UINT32 i = 0u; i < 6u; i++)
+            {
+                ImportPaths.Add("./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/");
+                ImportFileTypes.Add("tga");
+            }
+            ImportNames.Add("Sky_001_Right");
+            ImportNames.Add("Sky_001_Left");
+            ImportNames.Add("Sky_001_Top");
+            ImportNames.Add("Sky_001_Bottom");
+            ImportNames.Add("Sky_001_Forward");
+            ImportNames.Add("Sky_001_Back");
+            TryLoadTextureCube(ESettings::ENGINE_TEXTURE_PATH, "SkyDome", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
+
+            SkyLightComp->SetCubeMapAsset(CubeMap);
+            SkyLightComp->SetLightAdjust(Color3(1.0f, 1.0f, 1.0f));
+            SkyLightComp->SetIntensity(1.f);
+            New->AddComponent(SkyLightComp);
+            SkyLightComp->SetName("SkyLightComponent");
+        }
+
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -120));
     }
 

@@ -806,7 +806,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load vertex shader asset failed."));
 #if _EDITOR_ONLY
 		if ((!!InImportPath) && (!!InImportName) && (!!InShaderInputLayouts) && (!!InShaderInputLayoutNum) && ((*InShaderInputLayoutNum) > 0u))
 		{
@@ -846,7 +846,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load vertex shader asset failed."));
 #if _EDITOR_ONLY
 		if ((!!InImportPath) && (!!InImportName))
 		{

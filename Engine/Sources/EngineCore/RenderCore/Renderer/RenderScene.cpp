@@ -235,7 +235,7 @@ namespace PigeonEngine
 				}
 				if (NeedUpdateRenderResource)
 				{
-					//TODO
+					SceneProxy->UpdateRenderResource();
 				}
 			});
 	}

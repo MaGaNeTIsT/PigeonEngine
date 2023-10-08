@@ -10,6 +10,14 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	EVertexResourceType TranslateInputLayoutToVertexResource(const RInputLayoutDesc& InLayout, UINT32& OutSlot)
+	{
+		RShaderSemanticType ShaderSemantic = GetShaderSemanticBaseType(InLayout.SemanticName);
+		OutSlot = GetShaderSemanticTypeSlot(InLayout.SemanticName);
+		EVertexLayoutType VertexLayout = TranslateSemanticBaseTypeToVertexBaseLayout(ShaderSemantic);
+		return (TranslateVertexLayoutTypeToVertexResourceType(VertexLayout));
+	}
+
 	void RMeshMaterialParameter::AddMeshMaterialParameter()
 	{
 

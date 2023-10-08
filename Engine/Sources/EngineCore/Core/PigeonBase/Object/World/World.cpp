@@ -213,12 +213,13 @@ namespace PigeonEngine
             
             {
                 ImGui::Text("Location:");
-                
-                BOOL bLocationChanged = ImGui::DragScalar("X",    ImGuiDataType_Double, &LocX, 0.0005f, NULL, NULL,     "%.6f");
+                BOOL8 bLocationChanged = FALSE;
+                BOOL8 bLocationChangedX = ImGui::DragScalar("X", ImGuiDataType_Float, &LocX, 0.0005f, NULL, NULL, "%.6f");
                // ImGui::SameLine(); 
-                bLocationChanged = bLocationChanged || ImGui::DragScalar("Y",    ImGuiDataType_Double, &LocY, 0.0005f, NULL, NULL,     "%.6f");
+                BOOL8 bLocationChangedY = ImGui::DragScalar("Y", ImGuiDataType_Float, &LocY, 0.0005f, NULL, NULL, "%.6f");
                // ImGui::SameLine(); 
-                bLocationChanged = bLocationChanged || ImGui::DragScalar("Z",    ImGuiDataType_Double, &LocZ, 0.0005f, NULL, NULL,     "%.6f");
+                BOOL8 bLocationChangedZ = ImGui::DragScalar("Z", ImGuiDataType_Float, &LocZ, 0.0005f, NULL, NULL, "%.6f");
+                bLocationChanged = bLocationChangedX || bLocationChangedY || bLocationChangedZ;
                 if(bLocationChanged)
                 {
                    //ImguiSelectedActor->SetActorLocation(Location);

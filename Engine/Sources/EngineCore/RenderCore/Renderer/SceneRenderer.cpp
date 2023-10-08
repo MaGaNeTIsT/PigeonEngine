@@ -3,6 +3,7 @@
 #include <RenderDevice/DeviceD3D11.h>
 #include <ShaderAsset/ShaderAsset.h>
 #include <RenderProxy/ViewProxy.h>
+#include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
@@ -360,7 +361,7 @@ namespace PigeonEngine
 			RenderDevice->SetRenderTargets(RenderTargets, 4u, SceneTextures->SceneDepthStencil);
 
 			RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
-			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.SceneProxies.Length(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
+			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.GetSceneProxyCount(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
 			{
 				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
 #if _EDITOR_ONLY
@@ -381,6 +382,8 @@ namespace PigeonEngine
 					StaticMesh->Draw();
 				}
 			}
+
+			RenderSky(ViewProxy);
 
 			const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(ViewProxy->GetUniqueID());
 			Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
@@ -426,6 +429,31 @@ namespace PigeonEngine
 			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
 		}
 		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
+	}
+	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
+	{
+		RSceneProxyMapping<RSkyLightSceneProxy>& SkyLights = Scene->GetSkyLightProxies();
+		for (UINT32 SkyLightIndex = 0u, SkyLightNum = SkyLights.GetSceneProxyCount(); SkyLightIndex < SkyLightNum; SkyLightIndex++)
+		{
+			RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
+#if _EDITOR_ONLY
+			if (!SkyLight)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
+				continue;
+			}
+			if (!(SkyLight->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
+				continue;
+			}
+#endif
+			{
+				SkyLight->BindRenderResource();
+				SkyLight->Draw();
+				return;
+			}
+		}
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{
