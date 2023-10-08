@@ -107,6 +107,10 @@ namespace PigeonEngine
             New->SetActorScale(Vector3(1000.f, 1000.f, 1000.f));
         }
 
+        {
+            
+        }
+
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -160));
     }
 

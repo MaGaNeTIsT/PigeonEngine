@@ -11,17 +11,17 @@ namespace PigeonEngine
 	{
 	public:
 		PMovementComponent():m_Character(nullptr){};
-		PMovementComponent(PLevelCharacter* InCharacter) :m_Character(InCharacter) {};
+		PMovementComponent(PCharacter* InCharacter) :m_Character(InCharacter) {};
 		virtual ~PMovementComponent();
 
 		virtual void Init() override;
 		virtual void Uninit() override;
 
-		void SetCharacter(PLevelCharacter* InCharacter) { m_Character = InCharacter; };
+		void SetCharacter(PCharacter* InCharacter) { m_Character = InCharacter; };
 
 		virtual void HandleInput(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 inSwitchStance);
 
 	private:
-		PLevelCharacter* m_Character = nullptr;
+		PCharacter* m_Character = nullptr;
 	};
 }

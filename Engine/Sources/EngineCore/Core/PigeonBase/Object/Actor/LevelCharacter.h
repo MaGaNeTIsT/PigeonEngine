@@ -1,13 +1,13 @@
 #pragma once
 #include <CoreMinimal.h>
-#include "LevelActor.h"
+#include "Pawn.h"
 
 namespace PigeonEngine
 {
-	class PLevelCharacter : public PLevelActor
+	class PCharacter : public PPawn
 	{
 		friend class PWorld;
-		CLASS_VIRTUAL_NOCOPY_BODY(PLevelCharacter)
+		CLASS_VIRTUAL_NOCOPY_BODY(PCharacter)
 	public:
 		/// <summary>
 		/// Init a level character use settings,host point.

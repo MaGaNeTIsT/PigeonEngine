@@ -5,15 +5,15 @@
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
 
-PigeonEngine::PLevelCharacter::PLevelCharacter()
+PigeonEngine::PCharacter::PCharacter()
 {
 }
 
-PigeonEngine::PLevelCharacter::~PLevelCharacter()
+PigeonEngine::PCharacter::~PCharacter()
 {
 }
 
-void PigeonEngine::PLevelCharacter::InitCharacter(const FCharacterSettings* InCharacterSettings)
+void PigeonEngine::PCharacter::InitCharacter(const FCharacterSettings* InCharacterSettings)
 {
 	Character = new FCharacter(InCharacterSettings);
 	MoveMentComponent = new PMovementComponent(this);
@@ -23,7 +23,7 @@ void PigeonEngine::PLevelCharacter::InitCharacter(const FCharacterSettings* InCh
 	FPhysicsManager::GetSingleton()->AddCharacter(Character);
 }
 
-void PigeonEngine::PLevelCharacter::UninitCharacter()
+void PigeonEngine::PCharacter::UninitCharacter()
 {
 	FPhysicsManager::GetSingleton()->RemoveCharacter(Character);
 	delete Character;
@@ -34,44 +34,44 @@ void PigeonEngine::PLevelCharacter::UninitCharacter()
 	CrouchingShape = nullptr;
 }
 
-PigeonEngine::FShape* PigeonEngine::PLevelCharacter::GetStandingShape()
+PigeonEngine::FShape* PigeonEngine::PCharacter::GetStandingShape()
 {
 	return StandingShape;
 }
 
-PigeonEngine::FShape* PigeonEngine::PLevelCharacter::GetCrouchingShape()
+PigeonEngine::FShape* PigeonEngine::PCharacter::GetCrouchingShape()
 {
 	return CrouchingShape;
 }
 
-PigeonEngine::FCharacter* PigeonEngine::PLevelCharacter::GetPhysicsCharacter()
+PigeonEngine::FCharacter* PigeonEngine::PCharacter::GetPhysicsCharacter()
 {
 	return Character;
 }
 
-void PigeonEngine::PLevelCharacter::BeginAddedToScene(PWorld* World)
+void PigeonEngine::PCharacter::BeginAddedToScene(PWorld* World)
 {
-	PLevelActor::BeginAddedToScene(World);
+	PPawn::BeginAddedToScene(World);
 	Character->AddToPhysicsSystem(EActivate::Activate, GetActorLocation(), GetActorRotation(), 0);
 }
 
-void PigeonEngine::PLevelCharacter::RemovedFromScene()
+void PigeonEngine::PCharacter::RemovedFromScene()
 {
-	PLevelActor::RemovedFromScene();
+	PPawn::RemovedFromScene();
 	Character->RemoveFromPhysicsSystem();
 }
 
-void PigeonEngine::PLevelCharacter::UserBeginPlay()
+void PigeonEngine::PCharacter::UserBeginPlay()
 {
-	PLevelActor::UserBeginPlay();
+	PPawn::UserBeginPlay();
 }
 
-void PigeonEngine::PLevelCharacter::UserTick(FLOAT deltaTime)
+void PigeonEngine::PCharacter::UserTick(FLOAT deltaTime)
 {
-	PLevelActor::UserTick(deltaTime);
+	PPawn::UserTick(deltaTime);
 }
 
-void PigeonEngine::PLevelCharacter::UserEndPlay()
+void PigeonEngine::PCharacter::UserEndPlay()
 {
-	PLevelActor::UserEndPlay();
+	PPawn::UserEndPlay();
 }
