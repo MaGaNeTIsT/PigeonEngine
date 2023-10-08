@@ -38,7 +38,7 @@ namespace PigeonEngine
             RootActor = nullptr;
         }
 		this->RootActor = new PLevelActor();
-		
+        this->RootActor->SetActorScale(Vector3(1,1,1));
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
         this->Controller->SetName("Controller");
@@ -154,7 +154,15 @@ namespace PigeonEngine
     static FLOAT LocX;
     static FLOAT LocY;
     static FLOAT LocZ;
-    
+
+    static FLOAT QuatX;
+    static FLOAT QuatY;
+    static FLOAT QuatZ;
+    static FLOAT QuatW;
+
+	static FLOAT ScaleX;
+	static FLOAT ScaleY;
+	static FLOAT ScaleZ;
     void PWorld::GenerateWorldOutline()
     {
         
@@ -172,6 +180,14 @@ namespace PigeonEngine
 				LocY = ImguiSelectedActor->GetActorLocation().y;
 				LocZ = ImguiSelectedActor->GetActorLocation().z;
 
+                QuatX = ImguiSelectedActor->GetActorRotation().x;
+                QuatY = ImguiSelectedActor->GetActorRotation().y;
+                QuatZ = ImguiSelectedActor->GetActorRotation().z;
+                QuatW = ImguiSelectedActor->GetActorRotation().w;
+
+                ScaleX = ImguiSelectedActor->GetActorScale().x;
+                ScaleY = ImguiSelectedActor->GetActorScale().y;
+                ScaleZ = ImguiSelectedActor->GetActorScale().z;
             }
         }
 
@@ -179,7 +195,7 @@ namespace PigeonEngine
 
     void PWorld::GenerateDetail()
     {
-        ImGui::Text("Detail");
+        
         if(ImguiSelectedActor)
         {
             ImguiSelectedActor->GenerateComponentsImgui();
@@ -189,10 +205,10 @@ namespace PigeonEngine
             
             {
                 ImGui::Text("Location:");
-                BOOL8 bLocationChangedX = ImGui::DragScalar("X", ImGuiDataType_Float, &LocX, 0.0005f, NULL, NULL, "%.6f");
-                BOOL8 bLocationChangedY = ImGui::DragScalar("Y", ImGuiDataType_Float, &LocY, 0.0005f, NULL, NULL, "%.6f"); 
-                BOOL8 bLocationChangedZ = ImGui::DragScalar("Z", ImGuiDataType_Float, &LocZ, 0.0005f, NULL, NULL, "%.6f");
-                if(bLocationChangedX || bLocationChangedY || bLocationChangedZ)
+                const BOOL8 bChangedX = ImGui::DragScalar("LocX", ImGuiDataType_Float, &LocX, 0.0005f, NULL, NULL, "%.6f");
+                const BOOL8 bChangedY = ImGui::DragScalar("LocY", ImGuiDataType_Float, &LocY, 0.0005f, NULL, NULL, "%.6f"); 
+                const BOOL8 bChangedZ = ImGui::DragScalar("LocZ", ImGuiDataType_Float, &LocZ, 0.0005f, NULL, NULL, "%.6f");
+                if(bChangedX || bChangedY || bChangedZ)
                 {
                    ImguiSelectedActor->SetActorLocation(Vector3(LocX, LocY, LocZ));
                 }
@@ -200,6 +216,39 @@ namespace PigeonEngine
 
 				ImGui::Text(*(ImguiSelectedActor->GetActorLocation().AsString()));
             }
+            
+            {
+                ImGui::Text("Rotation:");
+                const BOOL8 bChangedX = ImGui::DragScalar("QuatX", ImGuiDataType_Float, &QuatX, 0.0005f, NULL, NULL, "%.6f");
+                const BOOL8 bChangedY = ImGui::DragScalar("QuatY", ImGuiDataType_Float, &QuatY, 0.0005f, NULL, NULL, "%.6f");
+                const BOOL8 bChangedZ = ImGui::DragScalar("QuatZ", ImGuiDataType_Float, &QuatZ, 0.0005f, NULL, NULL, "%.6f");
+                const BOOL8 bChangedW = ImGui::DragScalar("QuatW", ImGuiDataType_Float, &QuatW, 0.0005f, NULL, NULL, "%.6f");
+
+                if (bChangedX || bChangedY || bChangedZ || QuatW)
+                {
+                    ImguiSelectedActor->SetActorRotation(Quaternion(QuatX, QuatY, QuatZ, QuatW));
+                }
+                ImGui::Text("RealLocation for debug : ");
+                ImGui::Text(*(ImguiSelectedActor->GetActorWorldScale().AsString()));
+                ImGui::Text(*(RootActor->GetActorWorldScale().AsString()));
+
+            }
+            
+			{
+				ImGui::Text("Scale:");
+				BOOL8 bChangedX = ImGui::DragScalar("ScaleX", ImGuiDataType_Float, &ScaleX, 0.0005f, NULL, NULL, "%.6f");
+				BOOL8 bChangedY = ImGui::DragScalar("ScaleY", ImGuiDataType_Float, &ScaleY, 0.0005f, NULL, NULL, "%.6f");
+				BOOL8 bChangedZ = ImGui::DragScalar("ScaleZ", ImGuiDataType_Float, &ScaleZ, 0.0005f, NULL, NULL, "%.6f");
+				
+                if (bChangedX || bChangedY || bChangedZ)
+				{
+					ImguiSelectedActor->SetActorScale(Vector3(ScaleX, ScaleY, ScaleZ));
+				}
+				ImGui::Text("RealLocation for debug : ");
+				ImGui::Text(*(ImguiSelectedActor->GetActorWorldScale().AsString()));
+				ImGui::Text(*(RootActor->GetActorWorldScale().AsString()));
+
+			}
         }
     }
 #endif

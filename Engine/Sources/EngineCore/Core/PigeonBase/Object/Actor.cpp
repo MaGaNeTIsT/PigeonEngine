@@ -113,7 +113,7 @@ namespace PigeonEngine
 		
 		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), RelativeTransform);
 		Parent->ChildrenActors.Add(Child);
-		
+		Child->AttachedParentActor = Parent;
 	}
 
 	TSet<PActor*> PActor::GetAllActorsAttached() const
@@ -175,6 +175,21 @@ namespace PigeonEngine
 	Vector3 PActor::GetActorScale() const
 	{
 		return this->RootComponent->GetComponentLocalScale();
+	}
+
+	PE_NODISCARD Vector3 PActor::GetActorWorldLocation() const
+	{
+		return this->RootComponent->GetComponentWorldLocation();
+	}
+
+	PE_NODISCARD Quaternion PActor::GetActorWorldRotation() const
+	{
+		return this->RootComponent->GetComponentWorldRotation();
+	}
+
+	PE_NODISCARD Vector3 PActor::GetActorWorldScale() const
+	{
+		return this->RootComponent->GetComponentWorldScale();
 	}
 
 	const ETransform& PActor::GetActorTransform() const

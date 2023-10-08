@@ -156,9 +156,7 @@ namespace PigeonEngine
 		{
 			child->BeginAddedToScene(MyWolrd);
 		}
-		
 	}
-
 
 	EMobilityType PSceneComponent::GetMobility() const
 	{
@@ -286,32 +284,32 @@ namespace PigeonEngine
 
 	Vector3 PSceneComponent::GetComponentWorldLocation() const
 	{
-		return this->Transform.GetLocation_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetLocation_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	Quaternion PSceneComponent::GetComponentWorldRotation() const
 	{
-		return this->Transform.GetRotation_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRotation_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentWorldScale() const
 	{
-		return this->Transform.GetScaling_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetScaling_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentForwardVector() const
 	{
-		return this->Transform.GetForwardVector_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetForwardVector_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentRightVector() const
 	{
-		return this->Transform.GetRightVector_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetRightVector_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	Vector3 PSceneComponent::GetComponentUpVector() const
 	{
-		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor());
+		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor()->GetAttachedParentActor());
 	}
 
 	// Render proxy functions START

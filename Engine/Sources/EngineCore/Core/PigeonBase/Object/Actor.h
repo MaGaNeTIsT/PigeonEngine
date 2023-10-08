@@ -46,6 +46,10 @@ namespace PigeonEngine
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;
 		PE_NODISCARD virtual Vector3    GetActorScale() const;
 		
+		PE_NODISCARD virtual Vector3    GetActorWorldLocation() const;
+		PE_NODISCARD virtual Quaternion GetActorWorldRotation() const;
+		PE_NODISCARD virtual Vector3    GetActorWorldScale() const;
+
 		PE_NODISCARD virtual const ETransform& GetActorTransform() const;
 		PE_NODISCARD virtual ETransform GetActorWorldTransform() const;
 
@@ -92,7 +96,7 @@ namespace PigeonEngine
 		TSet<PActor*> GetAllActorsAttached() const;
 		void DetachActorsAttached();
 		void DestroyActorsAttached();
-	private:
+	protected:
 
 		PActor* AttachedParentActor = nullptr;
 		TSet<PActor*> ChildrenActors;

@@ -40,12 +40,13 @@ namespace PigeonEngine
     		New->SetIsTickable(TRUE);
     		New->SetName("MeshActor");
     		this->GetWorld()->AddActor(New);
-    	
+            Vector3 S = New->GetActorWorldScale();
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
     		NewStaticMeshComp->SetIsTickable(TRUE);
     		New->AddComponent(NewStaticMeshComp);
-            New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
-
+            S = New->GetActorWorldScale();
+            New->SetActorScale(Vector3(10, 10, 10));
+            S = New->GetActorWorldScale();
     		const EStaticMeshAsset* Asset = nullptr;
     		EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
     		EString ImportName("Robot");

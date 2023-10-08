@@ -55,11 +55,17 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
     void EWorldManager::EditorUpdate()
     {
+        if (!this->GetWorld())
+        {
+            return;
+        }
         ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
-        ImGui::Text("PigeonWo");
-        if(this->GetWorld())
+        if (ImGui::CollapsingHeader("PigeonOutline", ImGuiTreeNodeFlags_DefaultOpen))
         {
             this->GetWorld()->GenerateWorldOutline();
+        }
+        if(ImGui::CollapsingHeader("Detail", ImGuiTreeNodeFlags_DefaultOpen))
+        {
             this->GetWorld()->GenerateDetail();
         }
         ImGui::End();
