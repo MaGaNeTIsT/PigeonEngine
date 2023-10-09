@@ -13,6 +13,7 @@ namespace PigeonEngine
 
     PMeshComponent::PMeshComponent()
     {
+        this->SetName("MeshComponent");
     }
     PMeshComponent::~PMeshComponent()
     {

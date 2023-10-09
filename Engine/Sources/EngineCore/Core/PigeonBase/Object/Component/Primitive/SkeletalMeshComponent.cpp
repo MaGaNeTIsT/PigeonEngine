@@ -18,6 +18,7 @@ namespace PigeonEngine
     PSkeletalMeshComponent::PSkeletalMeshComponent()
         : MeshAsset(nullptr), SkeletonAsset(nullptr), SceneProxy(nullptr), UpdateState(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_NONE)
     {
+        this->SetName("SkeletalMeshComponent");
     }
     PSkeletalMeshComponent::~PSkeletalMeshComponent()
     {

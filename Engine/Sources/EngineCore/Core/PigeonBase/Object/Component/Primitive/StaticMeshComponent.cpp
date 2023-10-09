@@ -17,6 +17,7 @@ namespace PigeonEngine
     PStaticMeshComponent::PStaticMeshComponent()
         : MeshAsset(nullptr), SceneProxy(nullptr), UpdateState(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_NONE)
     {
+        this->SetName("StaticMeshComponent");
     }
     PStaticMeshComponent::~PStaticMeshComponent()
     {

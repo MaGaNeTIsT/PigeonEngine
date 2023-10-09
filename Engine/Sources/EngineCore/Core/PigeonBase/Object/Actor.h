@@ -104,8 +104,8 @@ namespace PigeonEngine
 		// Imgui
 #if _EDITOR_ONLY
 	public:
-		virtual BOOL8 GenerateImgui(BOOL8 bSelectedActor);
-		virtual BOOL8 GenerateComponentsImgui();
+		virtual void GenerateWorldOutline(const PActor* WorldCurrentSelectedActor);
+		virtual void GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent);
 	private:
 		PActorComponent* ImguiSelectedComponent = nullptr;
 #endif

@@ -45,8 +45,12 @@ namespace PigeonEngine
 		BOOL32	RenderStateDirty = FALSE;
 		// Render proxy functions END
 
+#if _EDITOR_ONLY
 	public:
-		virtual BOOL8 GenerateImgui();
-	};
+		virtual void GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent);
+		virtual void GenerateComponentDetail();
+		virtual void OnSelectedByImGui();
+#endif
 
-};
+	};
+}

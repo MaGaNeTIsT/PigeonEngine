@@ -96,12 +96,21 @@ namespace PigeonEngine
 		RenderStateDirty = FALSE;
 	}
 
-	BOOL8 PActorComponent::GenerateImgui()
+
+
+	void PActorComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
-		ImGui::Begin("PigeonWo", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
-		ImGui::Text("ActorComponent");
-		ImGui::End();
-		return false;
+
+	}
+
+	void PActorComponent::GenerateComponentDetail()
+	{
+
+	}
+
+	void PActorComponent::OnSelectedByImGui()
+	{
+
 	}
 
 	// Render proxy functions END

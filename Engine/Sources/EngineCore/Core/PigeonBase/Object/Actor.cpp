@@ -309,40 +309,46 @@ namespace PigeonEngine
 	}
 
 
-
 	PSceneComponent* PActor::GetRootComponent() const
 	{
 		return this->RootComponent;
 	}
 
-	BOOL8 PActor::GenerateImgui(BOOL8 bSelectedActor)
+	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
+		BOOL8 bSelectedActor = WorldCurrentSelectedActor == this;
+		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
+
+		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + this->GetDebugName() + EString("_TreeNode")), TreeNodeFlag);
+		ImGui::SameLine();
+		BOOL bSelected        = ImGui::Selectable(*this->GetDebugName(), &bSelectedActor);
+
+		if (bTreeNodeExpand)
+		{
+			// child actors
+			for (const auto& elem : ChildrenActors)
+			{
+				elem->GenerateWorldOutline(WorldCurrentSelectedActor);
+			}
+			ImGui::TreePop();
+		}
 		
-		if(ImGui::Checkbox(*this->GetDebugName(), &bSelectedActor))
+		if (bSelected)
 		{
-			return TRUE;
+			this->GetWorld()->SetSelectedActor(this);
 		}
-		// for(const auto& elem : ChildrenActors)
-		// {
-		// 	elem->GenerateImgui(bSelectedActor);
-		// }
-		if(bSelectedActor)
-		{
-
-			
-
-
-		}
-		return FALSE;
 	}
 
-	BOOL8 PActor::GenerateComponentsImgui()
+	void PActor::GenerateDetails(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 		if(RootComponent)
 		{
-			ImGui::Text("Components:");
-			RootComponent->GenerateImgui(" ");
+			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components");
+			if (bTreeNodeExpand)
+			{
+				RootComponent->GenerateComponentOutline(WorldCurrentSelectedComponent);
+				ImGui::TreePop();
+			}
 		}
-		return FALSE;
 	}
 };

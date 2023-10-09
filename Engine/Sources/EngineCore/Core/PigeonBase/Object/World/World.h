@@ -11,6 +11,7 @@ namespace PigeonEngine
 
     class PScene;
     class EGameTimer;
+    class PActorComponent;
     class PStaticMeshComponent;
     class PSkeletalMeshComponent;
     class RSceneInterface;
@@ -80,14 +81,18 @@ namespace PigeonEngine
         RSceneInterface*    RenderScene = nullptr;
         //Render scene state END
 
-        // IMGUI
+        
 #if _EDITOR_ONLY
+        // IMGUI
+    public:
+        void SetSelectedActor(PActor* Selected);
+        void SetSelectedComponent(PActorComponent* Selected);
     public:
         void GenerateWorldOutline();
         void GenerateDetail();
     private:
         PActor* ImguiSelectedActor = nullptr;
-        
+        PActorComponent* ImguiSelectedComponent = nullptr;
 #endif
         
     };

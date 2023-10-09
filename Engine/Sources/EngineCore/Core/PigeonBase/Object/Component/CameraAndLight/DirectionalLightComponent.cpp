@@ -16,6 +16,7 @@ namespace PigeonEngine
 	PDirectionalLightComponent::PDirectionalLightComponent()
 		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), SceneProxy(nullptr), UpdateState(PLightUpdateState::LIGHT_UPDATE_STATE_NONE)
 	{
+		this->SetName("DirectionalLightComponent");
 	}
 	PDirectionalLightComponent::~PDirectionalLightComponent()
 	{

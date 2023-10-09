@@ -1,9 +1,8 @@
 ﻿#include "./SceneComponent.h"
 
 #include <PigeonBase/Object/Actor.h>
-
 #include "../../../../IO/SerializationHelper.h"
-
+#include "../World/World.h"
 namespace PigeonEngine
 {
 
@@ -354,17 +353,108 @@ namespace PigeonEngine
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
 
-	BOOL8 PSceneComponent::GenerateImgui(const EString& Spacer)
-	{
-		ImGui::Text(*(Spacer + this->GetDebugName()));
-		for(const auto& elem : ChildrenComponents)
-		{
-			elem->GenerateImgui(Spacer + Spacer);
-		}
+	static FLOAT LocX;
+	static FLOAT LocY;
+	static FLOAT LocZ;
 
-		return FALSE;
+	static FLOAT QuatX;
+	static FLOAT QuatY;
+	static FLOAT QuatZ;
+	static FLOAT QuatW;
+
+	static FLOAT ScaleX;
+	static FLOAT ScaleY;
+	static FLOAT ScaleZ;
+
+	void PSceneComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
+	{
+		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
+		
+		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
+		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + this->GetDebugName() + EString("_TreeNode")), TreeNodeFlag);
+		ImGui::SameLine();
+		BOOL8 bSelected = ImGui::Selectable(*this->GetDebugName(), &bSelectedComponent);
+
+		if (bTreeNodeExpand)
+		{
+			// child actors
+			for (const auto& elem : ChildrenComponents)
+			{
+				elem->GenerateComponentOutline(WorldCurrentSelectedComponent);
+			}
+			ImGui::TreePop();
+		}
+		
+		if (bSelected)
+		{
+			this->GetOwnerActor()->GetWorld()->SetSelectedComponent(this);
+		}
+		
+
 	}
 
-	// Render proxy functions END
+	void PSceneComponent::GenerateComponentDetail()
+	{
+		BOOL8 bTransformExpand = ImGui::TreeNodeEx("Transform") ;
+		if (bTransformExpand)
+		{
+			if (ImGui::TreeNodeEx("Location"))
+			{
+				const BOOL8 bChangedX = ImGui::DragScalar("##LocX", ImGuiDataType_Float, &LocX, 0.05f, NULL, NULL, "X : %.6f");
+				const BOOL8 bChangedY = ImGui::DragScalar("##LocY", ImGuiDataType_Float, &LocY, 0.05f, NULL, NULL, "Y : %.6f");
+				const BOOL8 bChangedZ = ImGui::DragScalar("##LocZ", ImGuiDataType_Float, &LocZ, 0.05f, NULL, NULL, "Z : %.6f");
+				if (bChangedX || bChangedY || bChangedZ)
+				{
+					this->SetComponentLocation(Vector3(LocX, LocY, LocZ));
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("Rotation"))
+			{
+				const BOOL8 bChangedX = ImGui::DragScalar("##QuatX", ImGuiDataType_Float, &QuatX, 0.05f, NULL, NULL, "X : %.6f");
+				const BOOL8 bChangedY = ImGui::DragScalar("##QuatY", ImGuiDataType_Float, &QuatY, 0.05f, NULL, NULL, "Y : %.6f");
+				const BOOL8 bChangedZ = ImGui::DragScalar("##QuatZ", ImGuiDataType_Float, &QuatZ, 0.05f, NULL, NULL, "Z : %.6f");
+				const BOOL8 bChangedW = ImGui::DragScalar("##QuatW", ImGuiDataType_Float, &QuatW, 0.05f, NULL, NULL, "W : %.6f");
+
+				if (bChangedX || bChangedY || bChangedZ || QuatW)
+				{
+					this->SetComponentRotation(Quaternion(QuatX, QuatY, QuatZ, QuatW));
+				}
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("Scale"))
+			{
+				BOOL8 bChangedX = ImGui::DragScalar("##ScaleX", ImGuiDataType_Float, &ScaleX, 0.05f, NULL, NULL, "X : %.6f");
+				BOOL8 bChangedY = ImGui::DragScalar("##ScaleY", ImGuiDataType_Float, &ScaleY, 0.05f, NULL, NULL, "Y : %.6f");
+				BOOL8 bChangedZ = ImGui::DragScalar("##ScaleZ", ImGuiDataType_Float, &ScaleZ, 0.05f, NULL, NULL, "Z : %.6f");
+
+				if (bChangedX || bChangedY || bChangedZ)
+				{
+					this->SetComponentScale(Vector3(ScaleX, ScaleY, ScaleZ));
+				}
+				ImGui::TreePop();
+			}
+			ImGui::TreePop();
+		}
+		
+	}
+
+	void PSceneComponent::OnSelectedByImGui()
+	{
+		LocX = this->GetComponentLocalLocation().x;
+		LocY = this->GetComponentLocalLocation().y;
+		LocZ = this->GetComponentLocalLocation().z;
+
+		QuatX = this->GetComponentLocalRotation().x;
+		QuatY = this->GetComponentLocalRotation().y;
+		QuatZ = this->GetComponentLocalRotation().z;
+		QuatW = this->GetComponentLocalRotation().w;
+
+		ScaleX = this->GetComponentLocalScale().x;
+		ScaleY = this->GetComponentLocalScale().y;
+		ScaleZ = this->GetComponentLocalScale().z;
+	}
 
 };

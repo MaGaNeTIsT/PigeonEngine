@@ -16,6 +16,7 @@ namespace PigeonEngine
 	PSkyLightComponent::PSkyLightComponent()
 		: CubeMapAsset(nullptr), LightAdjust(Color3::White()), Intensity(1.f), SceneProxy(nullptr), UpdateState(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_NONE)
 	{
+		this->SetName("SkyLightComponent");
 	}
 	PSkyLightComponent::~PSkyLightComponent()
 	{
