@@ -66,6 +66,7 @@ namespace PigeonEngine
 			Check((MeshAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
 			{
 				const ESkinnedMesh* SkinnedMesh = MeshAsset->GetStoragedResource();
+				Check((!!SkinnedMesh), (ENGINE_RENDER_CORE_ERROR));
 				const UINT32 BoneNum = SkinnedMesh->GetBindPoseValue().Length();
 				Check((BoneNum > 0u), (ENGINE_RENDER_CORE_ERROR));
 				SkeletonRenderResource.SetBoneNum(BoneNum);
@@ -83,10 +84,38 @@ namespace PigeonEngine
 	void RSkeletalMeshSceneProxy::UpdateRenderResource()
 	{
 #if _EDITOR_ONLY
-		if (SkeletonRenderResource.IsRenderResourceValid())
+		if ((!!SkeletonAsset) && (SkeletonRenderResource.IsRenderResourceValid()))
 #endif
 		{
-			SkeletonRenderResource.UpdateRenderResource();
+			Check((SkeletonAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
+			const ESkeleton* Skeleton = SkeletonAsset->GetStoragedResource();
+			const ESkeleton::EBonePart& SkeletonBonePart = Skeleton->GetBonePart();
+			const TMap<EString, USHORT>& SkeletonBoneMapping = Skeleton->GetBoneMapping();
+
+			Check((!!MeshAsset), (ENGINE_RENDER_CORE_ERROR));
+			Check((MeshAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
+			const ESkinnedMesh* SkinnedMesh = MeshAsset->GetStoragedResource();
+			Check((!!SkinnedMesh), (ENGINE_RENDER_CORE_ERROR));
+			const ESkinnedMesh::EBindPoseValue& BindPoses = SkinnedMesh->GetBindPoseValue();
+			const ESkinnedMesh::EBindPoseIndex& BindPoseMappings = SkinnedMesh->GetBindPoseIndex();
+
+			Check(((BindPoses.Length() > 0u) && (BindPoses.Length() == BindPoseMappings.Length())), (ENGINE_RENDER_CORE_ERROR));
+			Check((BindPoses.Length() == BoneValues.Length()), (ENGINE_RENDER_CORE_ERROR));
+			Check(((SkeletonBonePart.Length() > 0u) && (SkeletonBonePart.Length() == SkeletonBoneMapping.Length())), (ENGINE_RENDER_CORE_ERROR));
+			Check((SkeletonBonePart.Length() == BindPoses.Length()), (ENGINE_RENDER_CORE_ERROR));
+
+			for (auto It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
+			{
+				const Matrix4x4* BindPosePtr = BindPoses.FindValueAsPtr(It->first);
+				const USHORT* BoneIndex = SkeletonBoneMapping.FindValueAsPtr(It->first);
+				Check((!!BindPosePtr), (ENGINE_RENDER_CORE_ERROR));
+				Check((!!BoneIndex), (ENGINE_RENDER_CORE_ERROR));
+				Check(((*BoneIndex) < SkeletonBonePart.Length()), (ENGINE_RENDER_CORE_ERROR));
+				{
+					//BoneValues[It->second] = SkeletonBonePart[*BoneIndex]. * (*BindPosePtr);
+				}
+			}
+			//SkeletonRenderResource.UpdateRenderResource();
 		}
 #if _EDITOR_ONLY
 		else

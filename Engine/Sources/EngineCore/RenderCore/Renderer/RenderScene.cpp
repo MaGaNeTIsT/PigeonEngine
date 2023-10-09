@@ -425,35 +425,15 @@ namespace PigeonEngine
 	}
 	void RScene::AddSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
-			});
+
 	}
 	void RScene::RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
-		RenderRemoveCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
-				delete SceneProxy;
-			});
+
 	}
 	void RScene::UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->GetSceneProxy();
-		//TODO
-		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy]()->void
-			{
 
-			});
 	}
 	RCommand& RScene::GetAddCommands()
 	{

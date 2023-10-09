@@ -139,7 +139,6 @@ namespace PigeonEngine
 	private:
 		friend class ESkeletonAssetManager;
 	public:
-		ESkeletonRenderResource() = delete;
 
 		CLASS_REMOVE_COPY_BODY(ESkeletonRenderResource)
 

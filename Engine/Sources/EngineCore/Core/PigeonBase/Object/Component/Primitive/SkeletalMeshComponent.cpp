@@ -21,7 +21,7 @@ namespace PigeonEngine
     }
     PSkeletalMeshComponent::~PSkeletalMeshComponent()
     {
-        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in skeletal mesh component distruction."), (!!SceneProxy));
+        PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("SceneProxy is not null in skeletal mesh component distruction."), (!SceneProxy));
     }
     const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset()const
     {
@@ -30,7 +30,7 @@ namespace PigeonEngine
     void PSkeletalMeshComponent::SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset)
     {
         MeshAsset = InMeshAsset;
-        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_ASSET);
+        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MESHASSET);
     }
     const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset()const
     {
@@ -39,7 +39,19 @@ namespace PigeonEngine
     void PSkeletalMeshComponent::SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset)
     {
         SkeletonAsset = InSkeletonAsset;
-        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_ASSET);
+        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_SKELETONASSET);
+    }
+    void PSkeletalMeshComponent::AddSkeletonBoneDataRef(const EString& InBoneName, const Matrix4x4* InBoneMatrixPtr)
+    {
+        //TODO
+    }
+    void PSkeletalMeshComponent::RemoveSkeletonBoneDataRef(const EString& InBoneName)
+    {
+        //TODO
+    }
+    void PSkeletalMeshComponent::ClearSkeletonBoneDataRef()
+    {
+        //TODO
     }
 
     // Render proxy functions START
