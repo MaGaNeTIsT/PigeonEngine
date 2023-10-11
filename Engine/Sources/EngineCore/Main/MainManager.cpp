@@ -5,12 +5,14 @@
 #include <Renderer/RenderScene.h>
 #include <Renderer/SceneRenderer.h>
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
+
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/World/WorldManager.h"
 
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
+#include "../Editor/EditorManager.h"
 #endif
 
 namespace PigeonEngine
@@ -36,6 +38,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
+		m_EditorManager     = EEditorManager::GetManagerSingleton();
 #endif
 		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
 		m_WorldManager = EWorldManager::GetManagerSingleton();
@@ -114,9 +117,6 @@ namespace PigeonEngine
 			m_GameTimer = nullptr;
 		}
 		m_GameTimer = new EGameTimer(&(this->m_WindowTimer));
-#if _EDITOR_ONLY
-		m_EditorOpen = true;
-#endif
 
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene can not be null."), (!!RenderScene));
 		RenderScene->Init();
@@ -145,7 +145,7 @@ namespace PigeonEngine
 		m_GameTimer->Update();
 #if _EDITOR_ONLY
 		m_ImGUIManager->Update();
-		EditorUpdate();
+		m_EditorManager->EditorUpdate();
 #endif
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 
@@ -167,22 +167,6 @@ namespace PigeonEngine
 		m_RenderDeviceD3D11->Present();
 	}
 
-	void EMainManager::EditorInit()
-	{
-		
-	}
-#if _EDITOR_ONLY
-	void EMainManager::EditorUpdate()
-	{
-		BOOL8 TempEditorOpen = m_EditorOpen;
-		ImGui::Begin("EditorRoot", &TempEditorOpen, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
-		ImGui::Text("Frame Rate Average %.3f ms/frame (%.1f FPS)", 1000.f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::End();
-		m_EditorOpen = TempEditorOpen;
-		
-		m_WorldManager->EditorUpdate();
-	}
-#endif
 	HWND EMainManager::GetWindowHandle()
 	{
 		return (m_HWND);

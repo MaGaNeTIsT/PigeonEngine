@@ -6,6 +6,7 @@ namespace PigeonEngine
     class PWorld;
     class EWorldManager final : public EManagerBase
     {
+        CLASS_VIRTUAL_NOCOPY_BODY(EWorldManager)
     public:
         void Initialize() override;
         void ShutDown() override;
@@ -28,7 +29,7 @@ namespace PigeonEngine
             static EWorldManager _StaticManagerSingletonObject;
             return (&_StaticManagerSingletonObject);
         }
-        CLASS_VIRTUAL_NOCOPY_BODY(EWorldManager)
+        
 
     };
 }

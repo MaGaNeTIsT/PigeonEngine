@@ -54,10 +54,7 @@ namespace PigeonEngine
 
         PE_NODISCARD BOOL32  IsNumeric()const;
         PE_NODISCARD INT32   AtoI() const;
-        PE_NODISCARD DOUBLE  AtoF() const;
-
-        // return a copy, will not change the original string
-        EString Replace(const EString& From, const EString& To);
+		PE_NODISCARD DOUBLE  AtoF() const;
 
         static EString FromInt(const UINT32& InValue);
         static EString FromFloat(const FLOAT& InValue);

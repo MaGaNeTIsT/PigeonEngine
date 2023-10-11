@@ -371,8 +371,9 @@ namespace PigeonEngine
 	{
 		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
 		
-		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
-		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
+		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_DefaultOpen;
+		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + this->GetDebugName() + EString("_TreeNode")), TreeNodeFlag);
+
 		ImGui::SameLine();
 		BOOL8 bSelected = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedComponent);
 

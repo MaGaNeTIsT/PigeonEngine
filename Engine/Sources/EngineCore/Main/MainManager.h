@@ -21,13 +21,7 @@ namespace PigeonEngine
 		void			Update();
 		void			FixedUpdate();
 		void			Draw();
-#if _EDITOR_ONLY
-	public:
-		void			EditorInit();
-		void			EditorUpdate();
-	private:
-		BOOL32			m_EditorOpen = FALSE;
-#endif
+
 	public:
 		HWND						GetWindowHandle();
 		const EBaseTimer&			GetWindowTimer();
@@ -52,10 +46,12 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		class CImGUIManager*				m_ImGUIManager				= nullptr;
 		class CAssimpManager*				m_AssimpManager				= nullptr;
+		class EEditorManager*               m_EditorManager             = nullptr;
 #endif
 		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager	= nullptr;
 
-		class EWorldManager*                m_WorldManager              = nullptr; 
+		class EWorldManager*                m_WorldManager              = nullptr;
+		
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 

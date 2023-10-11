@@ -353,7 +353,7 @@ namespace PigeonEngine
 	{
 		if(RootComponent)
 		{
-			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components");
+			BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_DefaultOpen);
 			if (bTreeNodeExpand)
 			{
 				RootComponent->GenerateComponentOutline(WorldCurrentSelectedComponent);
