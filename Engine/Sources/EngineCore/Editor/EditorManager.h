@@ -5,7 +5,7 @@ namespace PigeonEngine
 {
 	class EEditorManager : public EManagerBase
 	{
-		CLASS_VIRTUAL_NOCOPY_BODY(EEditorManager)
+		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorManager)
 	public:
 		void Initialize() override;
 		void ShutDown() override;
@@ -18,16 +18,6 @@ namespace PigeonEngine
 	private:
 		BOOL32			m_EditorOpen = FALSE;
 #endif
-
-	public:
-		static EEditorManager* GetManagerSingleton()
-		{
-			static EEditorManager _StaticManagerSingletonObject;
-			return (&_StaticManagerSingletonObject);
-			return nullptr;
-		}
-		
-
 	};
 }
 
