@@ -17,9 +17,7 @@ namespace PigeonEngine
 	{
 		if(!RootComponent)
 		{
-			RootComponent = new PSceneComponent();
-			RootComponent->SetOwnerActor(this);
-			RootComponent->SetName("RootComponent");
+			SetRootComponent(new PSceneComponent());
 		}
 	}
 	
@@ -145,16 +143,28 @@ namespace PigeonEngine
 	void PActor::SetRootComponent(PSceneComponent* NewRoot)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are setting root component with a nullptr", NewRoot != nullptr);
-		// NewRoot->SetComponentTransform(RootComponent->GetTransform());
-		// RootComponent->ReparentChildren(NewRoot);
+
+		ETransform trans;
+		NewRoot->SetOwnerActor(this);
 		if (RootComponent)
 		{
-			//RootComponent->Destroy();
-
+			trans = RootComponent->Transform;
+			TSet<PSceneComponent*> Components = RootComponent->ChildrenComponents;
+			for (auto& elem : Components)
+			{
+				elem->AttachToComponent(NewRoot);
+			}
+			this->RootComponent->AttachToComponent(NewRoot);
+			this->RootComponent->SetName(this->RootComponent->GetDebugName().Replace("(Root)", ""));
+			this->RootComponent->SetComponentTransform(ETransform());
+			this->RootComponent = nullptr;
 		}
 		
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
+		this->RootComponent->SetName(this->RootComponent->GetDebugName() + "(Root)");
+		this->RootComponent->SetComponentTransform(trans);
+
 		if(this->GetWorld())
 		{
 			this->RootComponent->BeginAddedToScene(this->GetWorld());

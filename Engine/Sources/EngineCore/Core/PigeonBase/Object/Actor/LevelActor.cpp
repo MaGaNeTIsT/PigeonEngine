@@ -40,13 +40,9 @@ namespace PigeonEngine
     		New->SetIsTickable(TRUE);
     		New->SetName("MeshActor");
     		this->GetWorld()->AddActor(New);
-            Vector3 S = New->GetActorWorldScale();
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
     		NewStaticMeshComp->SetIsTickable(TRUE);
     		New->AddComponent(NewStaticMeshComp);
-            S = New->GetActorWorldScale();
-            New->SetActorScale(Vector3(10, 10, 10));
-            S = New->GetActorWorldScale();
     		const EStaticMeshAsset* Asset = nullptr;
     		EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
     		EString ImportName("Robot");
@@ -54,7 +50,6 @@ namespace PigeonEngine
     		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
 
     		NewStaticMeshComp->SetMeshAsset(Asset);
-    		NewStaticMeshComp->SetName("MeshComponent");
     	}
 		//
     	
@@ -66,9 +61,8 @@ namespace PigeonEngine
     		this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
             LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
-    		LightComp->SetLightIntensity(1.f);
+    		LightComp->SetLightIntensity(0.5f);
     		New->AddComponent(LightComp);
-            LightComp->SetName("DirectLightComponent");
             Quaternion Quat = Quaternion(0.5, 0.5, 0, 1);
             Quat.Normalize();
             New->SetActorRotation(Quat);
@@ -103,7 +97,6 @@ namespace PigeonEngine
             SkyLightComp->SetLightAdjust(Color3(1.f, 1.f, 1.f));
             SkyLightComp->SetIntensity(1.f);
             New->AddComponent(SkyLightComp);
-            SkyLightComp->SetName("SkyLightComponent");
             New->SetActorScale(Vector3(1000.f, 1000.f, 1000.f));
         }
 

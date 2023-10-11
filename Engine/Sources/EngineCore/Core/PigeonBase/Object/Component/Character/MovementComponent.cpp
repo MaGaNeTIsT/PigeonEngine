@@ -6,19 +6,19 @@
 
 namespace PigeonEngine
 {
-	PigeonEngine::PMovementComponent::~PMovementComponent()
+	PMovementComponent::~PMovementComponent()
 	{
 	}
 
-	void PigeonEngine::PMovementComponent::Init()
+	void PMovementComponent::Init()
 	{
 	}
 
-	void PigeonEngine::PMovementComponent::Uninit()
+	void PMovementComponent::Uninit()
 	{
 	}
 
-	void PigeonEngine::PMovementComponent::HandleInput(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 inSwitchStance)
+	void PMovementComponent::HandleInput(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 inSwitchStance)
 	{
 		FCharacter* character = m_Character->GetPhysicsCharacter();
 		character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());

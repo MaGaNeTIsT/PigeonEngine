@@ -165,18 +165,20 @@ namespace PigeonEngine
 
     EString EString::Replace(const EString& From, const EString& To) const
     {
+		
         const UINT32 FromLength = From.Length();
         EString Temp = *this;
         UINT32 FromStart  = Temp.Find(From);
         while(FromStart < Temp.Length())
         {
-            Temp.Str.replace(Temp.Str.begin() + FromStart, Temp.Str.begin() + FromStart + FromLength - 1, *To);
+            Temp.Str.replace(Temp.Str.begin() + FromStart, Temp.Str.begin() + FromStart + FromLength, *To);
             FromStart  = Temp.Find(From);
         }
         return Temp;
     }
 
-    EString EString::Left(const UINT32& Count) const
+
+	EString EString::Left(const UINT32& Count) const
     {
         return EString(Str.substr(0, EMath::Min(Length(), Count)));
     }

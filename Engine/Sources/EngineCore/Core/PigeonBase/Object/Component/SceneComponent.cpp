@@ -15,6 +15,7 @@ namespace PigeonEngine
 
 	PSceneComponent::PSceneComponent()
 	{
+		this->SetName("SceneComponent");
 	}
 	
 	PSceneComponent::~PSceneComponent()
@@ -412,7 +413,9 @@ namespace PigeonEngine
 
 			if (ImGui::TreeNodeEx("Rotation"))
 			{
-				const BOOL8 bChangedX = ImGui::DragScalar("##QuatX", ImGuiDataType_Float, &QuatX, 0.05f, NULL, NULL, "X : %.6f");
+				const FLOAT Min = -1.0f;
+				const FLOAT Max = 1.0f;
+				const BOOL8 bChangedX = ImGui::DragScalar("##QuatX", ImGuiDataType_Float, &QuatX, 0.05f, &Min, NULL, "X : %.6f");
 				const BOOL8 bChangedY = ImGui::DragScalar("##QuatY", ImGuiDataType_Float, &QuatY, 0.05f, NULL, NULL, "Y : %.6f");
 				const BOOL8 bChangedZ = ImGui::DragScalar("##QuatZ", ImGuiDataType_Float, &QuatZ, 0.05f, NULL, NULL, "Z : %.6f");
 				const BOOL8 bChangedW = ImGui::DragScalar("##QuatW", ImGuiDataType_Float, &QuatW, 0.05f, NULL, NULL, "W : %.6f");
