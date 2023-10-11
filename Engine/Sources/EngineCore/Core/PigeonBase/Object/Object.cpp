@@ -62,13 +62,6 @@ namespace PigeonEngine
 	{
 	}
 
-
-#if _EDITOR_ONLY
-	void PObject::SetName(const EString& name)
-	{
-		DebugName = name;
-	}
-#endif
 	void PObject::Uninit()
 	{
 		// Destroy();

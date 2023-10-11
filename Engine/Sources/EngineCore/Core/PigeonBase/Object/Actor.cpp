@@ -155,14 +155,14 @@ namespace PigeonEngine
 				elem->AttachToComponent(NewRoot);
 			}
 			this->RootComponent->AttachToComponent(NewRoot);
-			this->RootComponent->SetName(this->RootComponent->GetDebugName().Replace("(Root)", ""));
+			POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)).Replace("(Root)", ""));
 			this->RootComponent->SetComponentTransform(ETransform());
 			this->RootComponent = nullptr;
 		}
 		
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
-		this->RootComponent->SetName(this->RootComponent->GetDebugName() + "(Root)");
+		POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)) + "(Root)");
 		this->RootComponent->SetComponentTransform(trans);
 
 		if(this->GetWorld())
@@ -329,9 +329,9 @@ namespace PigeonEngine
 		BOOL8 bSelectedActor = WorldCurrentSelectedActor == this;
 		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 
-		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + this->GetDebugName() + EString("_TreeNode")), TreeNodeFlag);
+		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
 		ImGui::SameLine();
-		BOOL bSelected        = ImGui::Selectable(*this->GetDebugName(), &bSelectedActor);
+		BOOL bSelected        = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
 
 		if (bTreeNodeExpand)
 		{

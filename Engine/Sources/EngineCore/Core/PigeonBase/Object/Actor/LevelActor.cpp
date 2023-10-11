@@ -38,7 +38,7 @@ namespace PigeonEngine
     	{
     		PActor* New = new PActor();
     		New->SetIsTickable(TRUE);
-    		New->SetName("MeshActor");
+            POBJ_DEBUGNAME_SET(New, "MeshActor");
     		this->GetWorld()->AddActor(New);
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
     		NewStaticMeshComp->SetIsTickable(TRUE);
@@ -55,7 +55,7 @@ namespace PigeonEngine
     	
     	{
     		PActor* New = new PActor();
-    		New->SetName("LightActor");
+            POBJ_DEBUGNAME_SET(New, "LightActor");
 
     		New->SetIsTickable(TRUE);
     		this->GetWorld()->AddActor(New);
@@ -63,14 +63,14 @@ namespace PigeonEngine
             LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
     		LightComp->SetLightIntensity(0.5f);
     		New->AddComponent(LightComp);
-            Quaternion Quat = Quaternion(0.5, 0.5, 0, 1);
+            Quaternion Quat = Quaternion(0.5f, 0.5f, 0.0f, 1.0f);
             Quat.Normalize();
             New->SetActorRotation(Quat);
     	}
 
         {
             PActor* New = new PActor();
-            New->SetName("SkyLightActor");
+            POBJ_DEBUGNAME_SET(New, "SkyLightActor");
 
             New->SetIsTickable(TRUE);
             this->GetWorld()->AddActor(New);
@@ -94,17 +94,17 @@ namespace PigeonEngine
             TryLoadTextureCube(ESettings::ENGINE_TEXTURE_PATH, "SkyBox001", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
 
             SkyLightComp->SetCubeMapAsset(CubeMap);
-            SkyLightComp->SetLightAdjust(Color3(1.f, 1.f, 1.f));
-            SkyLightComp->SetIntensity(1.f);
+            SkyLightComp->SetLightAdjust(Color3(1.0f, 1.0f, 1.0f));
+            SkyLightComp->SetIntensity(1.0f);
             New->AddComponent(SkyLightComp);
-            New->SetActorScale(Vector3(1000.f, 1000.f, 1000.f));
+            New->SetActorScale(Vector3(1000.0f, 1000.0f, 1000.0f));
         }
 
         {
             
         }
 
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0, 0, -160));
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 0.0f, -200.0f));
     }
 
 	void PLevelActor::UserEndPlay()
@@ -116,8 +116,8 @@ namespace PigeonEngine
 	{
     	
         FLOAT t = static_cast<FLOAT>(EMath::Sin(this->GetWorld()->GetGameTimer()->GetClockTime()));
-		Vector3 newPos = Vector3(-10.f * t -10.f * t, -10.f * t);
-    	this->GetWorld()->GetController()->SetActorLocation(newPos);
+        Vector3 newPos = Vector3(-10.0f * t - 10.0f * t, -10.0f * t);
+        this->GetWorld()->GetController()->SetActorLocation(newPos);
 	}
 
 

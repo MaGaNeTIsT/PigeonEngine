@@ -41,7 +41,7 @@ namespace PigeonEngine
         this->RootActor->SetActorScale(Vector3(1,1,1));
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
-        this->Controller->SetName("Controller");
+        POBJ_DEBUGNAME_SET(this->Controller, "Controller");
         this->AddActor(Controller);
         // this->Controller->BeginAddedToScene(this);
 

@@ -43,6 +43,10 @@ namespace PigeonEngine
 	{
 		return DebugName;
 	}
+	void EObjectBase::SetDebugName(const EString& InDebugName)
+	{
+		DebugName = InDebugName;
+	}
 #endif
 
 	EManagerBase::EManagerBase()

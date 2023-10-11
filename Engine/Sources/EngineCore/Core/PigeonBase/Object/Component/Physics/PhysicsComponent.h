@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class PPhysicsComponent : PActorComponent
 	{
 	public:
-		PPhysicsComponent() :m_Shape(nullptr) {};
+		PPhysicsComponent() :m_Shape(nullptr) { POBJ_DEBUGNAME_SET(this, "PhysicsComponent"); }
 		PPhysicsComponent(FShape* InShape) :m_Shape(InShape) {};
 		virtual ~PPhysicsComponent();
 

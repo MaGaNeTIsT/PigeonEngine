@@ -28,6 +28,11 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const EBoneTransform& InBoneTransform)
+	{
+		return MakeMatrix4x4(InBoneTransform.Position, InBoneTransform.Rotation, InBoneTransform.Scaling);
+	}
+
 	static void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());
@@ -682,7 +687,7 @@ namespace PigeonEngine
 				EString ErrorData("Save skeleton asset failed (save file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ", skeleton asset name : ";
-				ErrorData += InSkeletonAsset->GetDebugName();
+				ErrorData += (POBJ_DEBUGNAME_GET(InSkeletonAsset));
 				ErrorData += ") this asset is not contain valid skeleton resource.";
 				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
 			}

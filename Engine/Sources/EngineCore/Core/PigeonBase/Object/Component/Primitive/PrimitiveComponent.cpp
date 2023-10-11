@@ -13,6 +13,7 @@ namespace PigeonEngine
     PPrimitiveComponent::PPrimitiveComponent()
         : Bounds(EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE)), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
     {
+        POBJ_DEBUGNAME_SET(this, "PrimitiveComponent");
     }
 
     PPrimitiveComponent::~PPrimitiveComponent()

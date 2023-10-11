@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class PMovementComponent :public PActorComponent
 	{
 	public:
-		PMovementComponent() :m_Character(nullptr) { this->SetName("MovementComponent"); };
+		PMovementComponent() :m_Character(nullptr) { POBJ_DEBUGNAME_SET(this, "MovementComponent"); }
 		PMovementComponent(PCharacter* InCharacter) :m_Character(InCharacter) {};
 		virtual ~PMovementComponent();
 

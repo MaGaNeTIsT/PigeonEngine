@@ -13,6 +13,7 @@ namespace PigeonEngine
 
 	PActorComponent::PActorComponent() 
 	{
+		POBJ_DEBUGNAME_SET(this, "ActorComponent");
 	}
 	PActorComponent::~PActorComponent()
 	{

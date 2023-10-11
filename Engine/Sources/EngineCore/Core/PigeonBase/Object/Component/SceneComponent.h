@@ -61,7 +61,7 @@ namespace PigeonEngine
         void BeginAddedToScene(PWorld* World) override;
 
     private:
-    	PWorld* MyWolrd;
+        PWorld* MyWolrd = nullptr;
     public:
     	PE_NODISCARD  EMobilityType GetMobility() const;
     	void                        SetMobility(const EMobilityType& NewMobility);

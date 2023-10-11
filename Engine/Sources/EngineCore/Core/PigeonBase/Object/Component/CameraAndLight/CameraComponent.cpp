@@ -31,7 +31,7 @@ namespace PigeonEngine
 		CameraMatrix.GenerateFinalMatrix();
 
 		CameraFrustum.GeneratePerspectiveFrustumInfo(CameraViewInfo.FovAngleY, CameraViewInfo.Viewport.Width / CameraViewInfo.Viewport.Height, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
-		this->SetName("CameraComponent");
+		POBJ_DEBUGNAME_SET(this, "CameraComponent");
 	}
 	PCameraComponent::PCameraComponent()
 		: ViewProxy(nullptr), UpdateState(PCameraUpdateState::CAMERA_UPDATE_STATE_NONE)

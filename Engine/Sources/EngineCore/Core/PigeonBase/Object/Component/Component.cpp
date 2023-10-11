@@ -12,7 +12,7 @@ namespace PigeonEngine
 
 	PComponent::PComponent()
 	{
-		
+		POBJ_DEBUGNAME_SET(this, "Component");
 	}
 	PComponent::~PComponent()
 	{

@@ -15,7 +15,7 @@ namespace PigeonEngine
 
 	PSceneComponent::PSceneComponent()
 	{
-		this->SetName("SceneComponent");
+		POBJ_DEBUGNAME_SET(this, "SceneComponent");
 	}
 	
 	PSceneComponent::~PSceneComponent()
@@ -372,9 +372,9 @@ namespace PigeonEngine
 		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
 		
 		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
-		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + this->GetDebugName() + EString("_TreeNode")), TreeNodeFlag);
+		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
 		ImGui::SameLine();
-		BOOL8 bSelected = ImGui::Selectable(*this->GetDebugName(), &bSelectedComponent);
+		BOOL8 bSelected = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedComponent);
 
 		if (bTreeNodeExpand)
 		{

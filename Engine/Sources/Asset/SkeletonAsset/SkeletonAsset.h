@@ -75,6 +75,24 @@ namespace PigeonEngine
 		TArray<SHORT>	Children;
 	};
 
+	struct EBoneTransform
+	{
+		EBoneTransform() : Position(Vector3::Zero()), Rotation(Quaternion::Identity()), Scaling(Vector3::One()) {}
+		EBoneTransform(const EBoneTransform& Other) : Position(Other.Position), Rotation(Other.Rotation), Scaling(Other.Scaling) {}
+		~EBoneTransform() {}
+		EBoneTransform& operator=(const EBoneTransform& Other)
+		{
+			Position = Other.Position; Rotation = Other.Rotation; Scaling = Other.Scaling;
+			return (*this);
+		}
+
+		Vector3			Position;
+		Quaternion		Rotation;
+		Vector3			Scaling;
+	};
+
+	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const EBoneTransform& InBoneTransform);
+
 	class ESkeleton : public EObjectBase, public EResourceInterface
 	{
 	public:
@@ -142,6 +160,14 @@ namespace PigeonEngine
 
 		CLASS_REMOVE_COPY_BODY(ESkeletonRenderResource)
 
+	};
+
+	class ESkeletonMemoryPool
+	{
+	public:
+
+	private:
+		TArray<EBoneTransform> BoneTransforms;
 	};
 
 	class ESkeletonAsset : public TBaseAsset<ESkeleton>
