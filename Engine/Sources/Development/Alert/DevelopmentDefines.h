@@ -98,17 +98,17 @@ namespace PigeonEngine
 
 #else
 
-#define CheckSlow(__Condition, ...)						(;)
+#define CheckSlow(__Condition, ...)						{}
 
 #endif
 
 #else
 
-#define PE_ASSERT(__Expression, ...)					(;)
-#define PE_FAILED(__Caption, __Text)					(;)
-#define PE_CHECK(__Caption, __Text, __Condition)		(;)
-#define Check(__Condition, ...)							(;)
-#define CheckSlow(__Condition, ...)						(;)
+#define PE_ASSERT(__Expression, ...)					{}
+#define PE_FAILED(__Caption, __Text)					{}
+#define PE_CHECK(__Caption, __Text, __Condition)		{}
+#define Check(__Condition, ...)							{}
+#define CheckSlow(__Condition, ...)						{}
 
 #endif
 

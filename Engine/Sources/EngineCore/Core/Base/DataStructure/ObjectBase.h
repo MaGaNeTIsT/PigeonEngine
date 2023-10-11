@@ -42,8 +42,8 @@ namespace PigeonEngine
 	(__Ptr)->SetDebugName((__Name))\
 
 #else
-#define POBJ_DEBUGNAME_GET(__Ptr)			(;)
-#define POBJ_DEBUGNAME_SET(__Ptr, __Name)	(;)
+#define POBJ_DEBUGNAME_GET(__Ptr)			("")
+#define POBJ_DEBUGNAME_SET(__Ptr, __Name)	{}
 #endif
 
 	class EManagerBase : public EObjectBase

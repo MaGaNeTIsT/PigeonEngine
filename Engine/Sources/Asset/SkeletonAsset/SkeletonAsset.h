@@ -77,14 +77,21 @@ namespace PigeonEngine
 
 	struct EBoneTransform
 	{
+		EBoneTransform(const Vector3& InPosition, const Quaternion& InRotation, const Vector3& InScaling) : Position(InPosition), Rotation(InRotation), Scaling(InScaling) {}
 		EBoneTransform() : Position(Vector3::Zero()), Rotation(Quaternion::Identity()), Scaling(Vector3::One()) {}
 		EBoneTransform(const EBoneTransform& Other) : Position(Other.Position), Rotation(Other.Rotation), Scaling(Other.Scaling) {}
-		~EBoneTransform() {}
 		EBoneTransform& operator=(const EBoneTransform& Other)
 		{
 			Position = Other.Position; Rotation = Other.Rotation; Scaling = Other.Scaling;
 			return (*this);
 		}
+		static const EBoneTransform& Identity()
+		{
+			static EBoneTransform _StaticBoneTransformIdentity(Vector3::Zero(), Quaternion::Identity(), Vector3::One());
+			return (_StaticBoneTransformIdentity);
+		}
+
+		PE_INLINE Matrix4x4 ToMatrix4x4()const;
 
 		Vector3			Position;
 		Quaternion		Rotation;
@@ -104,7 +111,9 @@ namespace PigeonEngine
 	public:
 		ESkeletonType					GetSkeletonType()const;
 		const EString&					GetSkeletonName()const;
+		EBonePart&						GetBonePart();
 		const EBonePart&				GetBonePart()const;
+		TMap<EString, USHORT>&			GetBoneMapping();
 		const TMap<EString, USHORT>&	GetBoneMapping()const;
 		UINT32							GetBoneCount()const;
 	public:
@@ -165,9 +174,156 @@ namespace PigeonEngine
 	class ESkeletonMemoryPool
 	{
 	public:
-
+		ESkeletonMemoryPool(const ESkeleton* InRawSkeletonPtr);
+	public:
+		void	GenerateFromSkeleton(const ESkeleton* InRawSkeletonPtr);
+		void	RecursionToRootTransforms();
+	public:
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionBone(SHORT InBoneIndex, _TCustomType InValue, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData, InValue))
+			{
+				InFunc(CurrentBoneData, InValue);
+				if (CurrentBoneData.Children.Length() > 0u)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InValue, InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionBone(SHORT InBoneIndex, _TCustomType InValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData, InValue))
+			{
+				InFunc(CurrentBoneData, InValue);
+				if (CurrentBoneData.Children.Length() > 0u)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InValue, InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionBone(SHORT InBoneIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData))
+			{
+				InFunc(CurrentBoneData);
+				if (CurrentBoneData.Children.Length() > 0u)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionBone<_TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void BackwardRecursionBone(SHORT InBoneIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData))
+			{
+				InFunc(CurrentBoneData);
+				if (CurrentBoneData.Children.Length() > 0u)
+				{
+					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
+					{
+						BackwardRecursionBone<_TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InFunc, InCond);
+					}
+				}
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionBone(SHORT InBoneIndex, _TCustomType InValue, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData, InValue))
+			{
+				InFunc(CurrentBoneData, InValue);
+				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, InValue, InFunc, InCond);
+			}
+		}
+		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionBone(SHORT InBoneIndex, _TCustomType InValue, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData, InValue))
+			{
+				InFunc(CurrentBoneData, InValue);
+				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, InValue, InFunc, InCond);
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionBone(SHORT InBoneIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData))
+			{
+				InFunc(CurrentBoneData);
+				ForwardRecursionBone<_TLambdaType, _TConditionType>(CurrentBoneData.Parent, InFunc, InCond);
+			}
+		}
+		template<typename _TLambdaType, typename _TConditionType>
+		void ForwardRecursionBone(SHORT InBoneIndex, const _TLambdaType& InFunc, const _TConditionType& InCond)const
+		{
+			if ((InBoneIndex < 0) || (!RawSkeletonPtr) || (((SHORT)(RawSkeletonPtr->GetBoneCount())) <= InBoneIndex))
+			{
+				return;
+			}
+			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
+			if (InCond(CurrentBoneData))
+			{
+				InFunc(CurrentBoneData);
+				ForwardRecursionBone<_TLambdaType, _TConditionType>(CurrentBoneData.Parent, InFunc, InCond);
+			}
+		}
 	private:
-		TArray<EBoneTransform> BoneTransforms;
+		const ESkeleton*		RawSkeletonPtr;
+		TArray<EBoneTransform>	BoneRelativeTransforms;
+		TArray<EBoneTransform>	BoneToRootTransforms;
+	public:
+		ESkeletonMemoryPool();
+		ESkeletonMemoryPool(const ESkeletonMemoryPool& Other);
+		virtual ~ESkeletonMemoryPool();
+		ESkeletonMemoryPool& operator=(const ESkeletonMemoryPool& Other);
 	};
 
 	class ESkeletonAsset : public TBaseAsset<ESkeleton>

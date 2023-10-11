@@ -33,6 +33,11 @@ namespace PigeonEngine
 		return MakeMatrix4x4(InBoneTransform.Position, InBoneTransform.Rotation, InBoneTransform.Scaling);
 	}
 
+	PE_INLINE Matrix4x4 EBoneTransform::ToMatrix4x4()const
+	{
+		return MakeMatrix4x4(*this);
+	}
+
 	static void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());
@@ -220,9 +225,17 @@ namespace PigeonEngine
 	{
 		return SkeletonName;
 	}
+	ESkeleton::EBonePart& ESkeleton::GetBonePart()
+	{
+		return Bones;
+	}
 	const ESkeleton::EBonePart& ESkeleton::GetBonePart()const
 	{
 		return Bones;
+	}
+	TMap<EString, USHORT>& ESkeleton::GetBoneMapping()
+	{
+		return BoneMapping;
 	}
 	const TMap<EString, USHORT>& ESkeleton::GetBoneMapping()const
 	{
@@ -230,6 +243,7 @@ namespace PigeonEngine
 	}
 	UINT32 ESkeleton::GetBoneCount()const
 	{
+		Check((Bones.Length() == BoneMapping.Length()));
 		return (Bones.Length());
 	}
 	BOOL32 ESkeleton::AddBoneElement(EBoneData* InIndexData)
@@ -385,7 +399,7 @@ namespace PigeonEngine
 			Matrix4x4* NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
 			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX] = new Matrix4x4[InMatrixNum];
 			const UINT32 MatrixSize = sizeof(Matrix4x4) * InMatrixNum;
-			::memcpy_s(NewMatrices, MatrixSize, InMatrices, MatrixSize);
+			::memcpy_s(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX], MatrixSize, InMatrices, MatrixSize);
 			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX] = new Matrix4x4[InMatrixNum];
 			for (UINT32 i = 0u; i < InMatrixNum; i++)
 			{
@@ -464,6 +478,91 @@ namespace PigeonEngine
 		{
 			RenderResource[i].ReleaseRenderResource();
 		}
+	}
+
+	ESkeletonMemoryPool::ESkeletonMemoryPool(const ESkeleton* InRawSkeletonPtr)
+		: RawSkeletonPtr(InRawSkeletonPtr)
+	{
+	}
+	ESkeletonMemoryPool::ESkeletonMemoryPool()
+		: RawSkeletonPtr(nullptr)
+	{
+	}
+	ESkeletonMemoryPool::ESkeletonMemoryPool(const ESkeletonMemoryPool& Other)
+		: RawSkeletonPtr(Other.RawSkeletonPtr)
+		, BoneRelativeTransforms(Other.BoneRelativeTransforms)
+		, BoneToRootTransforms(Other.BoneToRootTransforms)
+	{
+	}
+	ESkeletonMemoryPool::~ESkeletonMemoryPool()
+	{
+	}
+	ESkeletonMemoryPool& ESkeletonMemoryPool::operator=(const ESkeletonMemoryPool& Other)
+	{
+		if (BoneRelativeTransforms.Length() > 0u)
+		{
+			BoneRelativeTransforms.Clear();
+		}
+		if (BoneToRootTransforms.Length() > 0u)
+		{
+			BoneToRootTransforms.Clear();
+		}
+		RawSkeletonPtr			= Other.RawSkeletonPtr;
+		BoneRelativeTransforms	= Other.BoneRelativeTransforms;
+		BoneToRootTransforms	= Other.BoneToRootTransforms;
+		return (*this);
+	}
+	void ESkeletonMemoryPool::GenerateFromSkeleton(const ESkeleton* InRawSkeletonPtr)
+	{
+		if (BoneRelativeTransforms.Length() > 0u)
+		{
+			BoneRelativeTransforms.Clear();
+		}
+		if (BoneToRootTransforms.Length() > 0u)
+		{
+			BoneToRootTransforms.Clear();
+		}
+		RawSkeletonPtr = InRawSkeletonPtr;
+		if (!!RawSkeletonPtr)
+		{
+			const TMap<EString, USHORT>& BoneMappings = RawSkeletonPtr->GetBoneMapping();
+			const ESkeleton::EBonePart& BonePart = RawSkeletonPtr->GetBonePart();
+			Check(((BoneMappings.Length() > 0u) && (BoneMappings.Length() == BonePart.Length())));
+			const UINT32 BoneNum = BonePart.Length();
+			BoneRelativeTransforms.Resize(BoneNum);
+			BoneToRootTransforms.Resize(BoneNum);
+			for (UINT32 BoneIndex = 0u; BoneIndex < BoneNum; BoneIndex++)
+			{
+				BoneRelativeTransforms[BoneIndex].Position	= BonePart[BoneIndex].DefaultPosition;
+				BoneRelativeTransforms[BoneIndex].Rotation	= BonePart[BoneIndex].DefaultRotation;
+				BoneRelativeTransforms[BoneIndex].Scaling	= BonePart[BoneIndex].DefaultScaling;
+			}
+			RecursionToRootTransforms();
+		}
+	}
+	void ESkeletonMemoryPool::RecursionToRootTransforms()
+	{
+		TArray<EBoneTransform>& UsedRelativeTransforms = BoneRelativeTransforms;
+		TArray<EBoneTransform>& UsedToRootTransforms = BoneToRootTransforms;
+		BackwardRecursionBone(
+			0,
+			EBoneTransform::Identity(),
+			[&UsedRelativeTransforms, &UsedToRootTransforms](const EBoneData& InBoneData, EBoneTransform& InBoneTransform)->void
+			{
+				//Matrix4x4 TempGlobalTransform = UsedRelativeTransforms[InBoneData.Index].ToMatrix4x4().Transpose();
+				//TempGlobalTransform = InMatrix * TempGlobalTransform;
+				//UsedToRootTransforms[InBoneData.Index] = TempGlobalTransform;
+				//InMatrix = TempGlobalTransform;
+				const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
+				InBoneTransform.Position += TempRelativeBoneTransform.Position;
+				InBoneTransform.Rotation = TempRelativeBoneTransform.Rotation * InBoneTransform.Rotation;
+				InBoneTransform.Scaling *= TempRelativeBoneTransform.Scaling;
+				UsedToRootTransforms[InBoneData.Index] = InBoneTransform;
+			},
+			[](const EBoneData& InBoneData, const EBoneTransform& InMatrix)->BOOL32
+			{
+				return TRUE;
+			});
 	}
 
 	ESkeletonAsset::ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName
