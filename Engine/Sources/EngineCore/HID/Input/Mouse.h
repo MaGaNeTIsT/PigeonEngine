@@ -35,8 +35,8 @@ namespace PigeonEngine
 
 		private:
 			EType Type;
-			BOOL32 bLeftIsPressed = false;
-			BOOL32 bRightIsPressed = false;
+			BOOL32 bLeftIsPressed = FALSE;
+			BOOL32 bRightIsPressed = FALSE;
 			INT32 x;
 			INT32 y;
 
@@ -113,11 +113,11 @@ namespace PigeonEngine
 		const UINT32 BufferSize = 16u;
 		INT32 x = 0;
 		INT32 y = 0;
-		BOOL32 bLeftIsPressed = false;
-		BOOL32 bRightIsPressed = false;
-		BOOL32 bIsInWindow = false;
+		BOOL32 bLeftIsPressed = FALSE;
+		BOOL32 bRightIsPressed = FALSE;
+		BOOL32 bIsInWindow = FALSE;
 		INT32 WheelDeltaCarry = 0;
-		BOOL32 RawEnabled = true;
+		BOOL32 RawEnabled = TRUE;
 		std::queue<Event> Buffer;
 		std::queue<RawDelta> RawDeltaBuffer;
 	};

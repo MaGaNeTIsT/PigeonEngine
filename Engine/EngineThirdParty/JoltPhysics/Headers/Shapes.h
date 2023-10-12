@@ -31,13 +31,13 @@ public:
 	/// </summary>
 	/// <param name="bCreateNew">true to create a new shape</param>
 	/// <returns>if has created,return the old shape.</returns>
-	Shape* CreateShape(BOOL32 bCreateNew = false);
+	Shape* CreateShape(BOOL32 bCreateNew = FALSE);
 	/// <summary>
 	/// Create a physics shape setting,Use to Jolt Physics System
 	/// </summary>
 	/// <param name="bCreateNew">true to create a new shape setting</param>
 	/// <returns>if has created,return the old shape setting.</returns>
-	ShapeSettings* CreateShapeSettings(BOOL32 bCreateNew = false);
+	ShapeSettings* CreateShapeSettings(BOOL32 bCreateNew = FALSE);
 };
 
 class FCastRay : public ERTTIObject

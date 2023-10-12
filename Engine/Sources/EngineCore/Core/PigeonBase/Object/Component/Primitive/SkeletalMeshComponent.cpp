@@ -1,6 +1,5 @@
 #include "SkeletalMeshComponent.h"
 #include <MeshAsset/MeshAsset.h>
-#include <SkeletonAsset/SkeletonAsset.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
@@ -39,20 +38,28 @@ namespace PigeonEngine
     }
     void PSkeletalMeshComponent::SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset)
     {
+        BOOL32 NeedRegenerate = (SkeletonAsset != InSkeletonAsset);
         SkeletonAsset = InSkeletonAsset;
+        if ((!!SkeletonAsset) && NeedRegenerate)
+        {
+            if (SkeletonAsset->IsResourceValid())
+            {
+                BoneMemoryPool.GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+            }
+        }
         MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_SKELETONASSET);
     }
-    void PSkeletalMeshComponent::AddSkeletonBoneDataRef(const EString& InBoneName, const Matrix4x4* InBoneMatrixPtr)
+    const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
     {
-        //TODO
+        return BoneMemoryPool;
     }
-    void PSkeletalMeshComponent::RemoveSkeletonBoneDataRef(const EString& InBoneName)
+    ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()
     {
-        //TODO
+        return BoneMemoryPool;
     }
-    void PSkeletalMeshComponent::ClearSkeletonBoneDataRef()
+    void PSkeletalMeshComponent::MarkBoneMemoryPoolDirty()
     {
-        //TODO
+        MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_BONE_DATA);
     }
 
     // Render proxy functions START

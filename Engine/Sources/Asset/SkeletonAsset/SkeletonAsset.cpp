@@ -33,11 +33,6 @@ namespace PigeonEngine
 		return MakeMatrix4x4(InBoneTransform.Position, InBoneTransform.Rotation, InBoneTransform.Scaling);
 	}
 
-	PE_INLINE Matrix4x4 EBoneTransform::ToMatrix4x4()const
-	{
-		return MakeMatrix4x4(*this);
-	}
-
 	static void BreakBoneRelation(ESkeleton::EBonePart& InOutDatas, USHORT InBoneIndex)
 	{
 		SHORT BoneNum = static_cast<SHORT>(InOutDatas.Length());
@@ -246,6 +241,24 @@ namespace PigeonEngine
 		Check((Bones.Length() == BoneMapping.Length()));
 		return (Bones.Length());
 	}
+	USHORT ESkeleton::GetBoneIndex(const EString& InBoneName)const
+	{
+#if _EDITOR_ONLY
+		if (const USHORT* BoneIndex = BoneMapping.FindValueAsPtr(InBoneName); !!BoneIndex)
+#endif
+		{
+			return (*BoneIndex);
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + SkeletonName + "] skeleton.";
+			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
+		}
+		return (static_cast<USHORT>(-1));
+#endif
+	}
 	BOOL32 ESkeleton::AddBoneElement(EBoneData* InIndexData)
 	{
 		if (!InIndexData)
@@ -388,18 +401,19 @@ namespace PigeonEngine
 	{
 		return BoneNum;
 	}
-	void ESkeletonRenderResource::UpdateRenderResource(const Matrix4x4* InMatrices, const UINT32 InMatrixNum)
+	void ESkeletonRenderResource::UpdateRenderResource(const TArray<Matrix4x4>& InMatrices)
 	{
+		const UINT32 InMatrixNum = InMatrices.Length();
 #if _EDITOR_ONLY
-		if ((!!InMatrices) && (InMatrixNum > 0u) && (InMatrixNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX))
+		if ((InMatrixNum > 0u) && (InMatrixNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX))
 #endif
 		{
 			Check((IsRenderResourceValid()), (ENGINE_ASSET_ERROR));
-			Check((BoneNum == InMatrixNum), (ENGINE_ASSET_ERROR));
+			Check((BoneNum == InMatrices.Length()), (ENGINE_ASSET_ERROR));
 			Matrix4x4* NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
 			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX] = new Matrix4x4[InMatrixNum];
 			const UINT32 MatrixSize = sizeof(Matrix4x4) * InMatrixNum;
-			::memcpy_s(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX], MatrixSize, InMatrices, MatrixSize);
+			::memcpy_s(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX], MatrixSize, InMatrices.RawData(), MatrixSize);
 			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX] = new Matrix4x4[InMatrixNum];
 			for (UINT32 i = 0u; i < InMatrixNum; i++)
 			{
@@ -480,24 +494,25 @@ namespace PigeonEngine
 		}
 	}
 
-	ESkeletonMemoryPool::ESkeletonMemoryPool(const ESkeleton* InRawSkeletonPtr)
+	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool(const ESkeleton* InRawSkeletonPtr)
 		: RawSkeletonPtr(InRawSkeletonPtr)
 	{
+		GenerateFromSkeleton(InRawSkeletonPtr);
 	}
-	ESkeletonMemoryPool::ESkeletonMemoryPool()
+	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool()
 		: RawSkeletonPtr(nullptr)
 	{
 	}
-	ESkeletonMemoryPool::ESkeletonMemoryPool(const ESkeletonMemoryPool& Other)
+	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool(const ESkeletonBoneMemoryPool& Other)
 		: RawSkeletonPtr(Other.RawSkeletonPtr)
 		, BoneRelativeTransforms(Other.BoneRelativeTransforms)
 		, BoneToRootTransforms(Other.BoneToRootTransforms)
 	{
 	}
-	ESkeletonMemoryPool::~ESkeletonMemoryPool()
+	ESkeletonBoneMemoryPool::~ESkeletonBoneMemoryPool()
 	{
 	}
-	ESkeletonMemoryPool& ESkeletonMemoryPool::operator=(const ESkeletonMemoryPool& Other)
+	ESkeletonBoneMemoryPool& ESkeletonBoneMemoryPool::operator=(const ESkeletonBoneMemoryPool& Other)
 	{
 		if (BoneRelativeTransforms.Length() > 0u)
 		{
@@ -512,7 +527,11 @@ namespace PigeonEngine
 		BoneToRootTransforms	= Other.BoneToRootTransforms;
 		return (*this);
 	}
-	void ESkeletonMemoryPool::GenerateFromSkeleton(const ESkeleton* InRawSkeletonPtr)
+	BOOL32 ESkeletonBoneMemoryPool::IsValid()const
+	{
+		return ((!!RawSkeletonPtr) && (BoneRelativeTransforms.Length() > 0u) && (BoneRelativeTransforms.Length() == BoneToRootTransforms.Length()));
+	}
+	void ESkeletonBoneMemoryPool::GenerateFromSkeleton(const ESkeleton* InRawSkeletonPtr)
 	{
 		if (BoneRelativeTransforms.Length() > 0u)
 		{
@@ -540,29 +559,238 @@ namespace PigeonEngine
 			RecursionToRootTransforms();
 		}
 	}
-	void ESkeletonMemoryPool::RecursionToRootTransforms()
+	void ESkeletonBoneMemoryPool::RecursionToRootTransforms()
 	{
-		TArray<EBoneTransform>& UsedRelativeTransforms = BoneRelativeTransforms;
-		TArray<EBoneTransform>& UsedToRootTransforms = BoneToRootTransforms;
-		BackwardRecursionBone(
-			0,
-			EBoneTransform::Identity(),
-			[&UsedRelativeTransforms, &UsedToRootTransforms](const EBoneData& InBoneData, EBoneTransform& InBoneTransform)->void
-			{
-				//Matrix4x4 TempGlobalTransform = UsedRelativeTransforms[InBoneData.Index].ToMatrix4x4().Transpose();
-				//TempGlobalTransform = InMatrix * TempGlobalTransform;
-				//UsedToRootTransforms[InBoneData.Index] = TempGlobalTransform;
-				//InMatrix = TempGlobalTransform;
-				const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
-				InBoneTransform.Position += TempRelativeBoneTransform.Position;
-				InBoneTransform.Rotation = TempRelativeBoneTransform.Rotation * InBoneTransform.Rotation;
-				InBoneTransform.Scaling *= TempRelativeBoneTransform.Scaling;
-				UsedToRootTransforms[InBoneData.Index] = InBoneTransform;
-			},
-			[](const EBoneData& InBoneData, const EBoneTransform& InMatrix)->BOOL32
-			{
-				return TRUE;
-			});
+#if _EDITOR_ONLY
+		if (IsValid())
+#endif
+		{
+			TArray<EBoneTransform>& UsedRelativeTransforms = BoneRelativeTransforms;
+			TArray<EBoneTransform>& UsedToRootTransforms = BoneToRootTransforms;
+#if _EDITOR_ONLY
+			const UINT32 UsedRelativeTransformNum = UsedRelativeTransforms.Length();
+#endif
+			BackwardRecursionBone(
+				0,
+				EBoneTransform::Identity(),
+				[&UsedRelativeTransforms, &UsedToRootTransforms
+#if _EDITOR_ONLY
+				, &UsedRelativeTransformNum
+#endif
+				](const EBoneData& InBoneData, EBoneTransform& InBoneTransform)->void
+				{
+					Check((InBoneData.Index >= 0));
+					Check((((UINT32)(InBoneData.Index)) < UsedRelativeTransformNum));
+					//Matrix4x4 TempGlobalTransform = UsedRelativeTransforms[InBoneData.Index].ToMatrix4x4().Transpose();
+					//TempGlobalTransform = InMatrix * TempGlobalTransform;
+					//UsedToRootTransforms[InBoneData.Index] = TempGlobalTransform;
+					//InMatrix = TempGlobalTransform;
+					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
+					InBoneTransform.Position += TempRelativeBoneTransform.Position;
+					InBoneTransform.Rotation = TempRelativeBoneTransform.Rotation * InBoneTransform.Rotation;
+					InBoneTransform.Scaling *= TempRelativeBoneTransform.Scaling;
+					UsedToRootTransforms[InBoneData.Index] = InBoneTransform;
+				},
+				[](const EBoneData& InBoneData, const EBoneTransform& InMatrix)->BOOL32
+				{
+					return TRUE;
+				});
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Skeleton [");
+			ErrorInfo = ErrorInfo + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] could not do [RecursionToRootTransforms()].";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	const ESkeleton* ESkeletonBoneMemoryPool::GetRawSkeleton()const
+	{
+		return RawSkeletonPtr;
+	}
+	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneRelativeTransforms()const
+	{
+		return BoneRelativeTransforms;
+	}
+	TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneRelativeTransforms()
+	{
+		return BoneRelativeTransforms;
+	}
+	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()const
+	{
+		return BoneToRootTransforms;
+	}
+	TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()
+	{
+		return BoneToRootTransforms;
+	}
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneRelativeTransform(const EString& InBoneName)const
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			return (BoneRelativeTransforms[BoneIndex]);
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+		return (EBoneTransform::Identity());
+#endif
+	}
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			return (BoneToRootTransforms[BoneIndex]);
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+		return (EBoneTransform::Identity());
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Position = InPosition;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeRotation(const EString& InBoneName, const Quaternion& InRotation)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeScaling(const EString& InBoneName, const Vector3& InScaling)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Quaternion& InRotation)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Position = InPosition;
+			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Vector3& InScaling)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Position = InPosition;
+			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const Quaternion& InRotation, const Vector3& InScaling)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
+			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
+	}
+	void ESkeletonBoneMemoryPool::SetBoneRelativeTransform(const EString& InBoneName, const EBoneTransform& InBoneTransform)
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			BoneRelativeTransforms[BoneIndex] = InBoneTransform;
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+		}
+#endif
 	}
 
 	ESkeletonAsset::ESkeletonAsset(const EString& InAssetPath, const EString& InAssetName

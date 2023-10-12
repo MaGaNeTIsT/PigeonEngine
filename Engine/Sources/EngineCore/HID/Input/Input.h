@@ -44,7 +44,7 @@ namespace PigeonEngine
 
 	private:
 		IMouse Mouse;
-		BOOL32 bCursorEnabled = true;
+		BOOL32 bCursorEnabled = TRUE;
 		std::vector<BYTE> rawBuffer;
 
 		/*Mouse part end*/

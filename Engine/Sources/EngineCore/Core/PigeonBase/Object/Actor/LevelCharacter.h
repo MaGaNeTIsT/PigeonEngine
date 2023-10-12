@@ -36,7 +36,7 @@ namespace PigeonEngine
 		FLOAT			CharacterRadiusCrouching		= 30.f;
 
 		// Character movement properties
-		BOOL32			ControlMovementDuringJump		= true;	///< If false the character cannot change movement direction in mid air
+		BOOL32			ControlMovementDuringJump		= TRUE;	///< If false the character cannot change movement direction in mid air
 		FLOAT			CharacterSpeed					= 6.0f;
 		FLOAT			JumpSpeed						= 4.0f;
 	protected:

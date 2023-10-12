@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 #include "MeshComponent.h"
+#include <SkeletonAsset/SkeletonAsset.h>
 
 namespace PigeonEngine
 {
@@ -16,16 +17,17 @@ namespace PigeonEngine
         CLASS_VIRTUAL_NOCOPY_BODY(PSkeletalMeshComponent)
 
     public:
-        const ESkinnedMeshAsset*    GetMeshAsset()const;
-        void                        SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
-        const ESkeletonAsset*       GetSkeletonAsset()const;
-        void                        SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
-        void                        AddSkeletonBoneDataRef(const EString& InBoneName, const Matrix4x4* InBoneMatrixPtr);
-        void                        RemoveSkeletonBoneDataRef(const EString& InBoneName);
-        void                        ClearSkeletonBoneDataRef();
+        const ESkinnedMeshAsset*        GetMeshAsset()const;
+        void                            SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
+        const ESkeletonAsset*           GetSkeletonAsset()const;
+        void                            SetSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
+        const ESkeletonBoneMemoryPool&  GetBoneMemoryPool()const;
+        ESkeletonBoneMemoryPool&        GetBoneMemoryPool();
+        void                            MarkBoneMemoryPoolDirty();
     protected:
-        const ESkinnedMeshAsset*            MeshAsset;
-        const ESkeletonAsset*               SkeletonAsset;
+        const ESkinnedMeshAsset*        MeshAsset;
+        const ESkeletonAsset*           SkeletonAsset;
+        ESkeletonBoneMemoryPool         BoneMemoryPool;
 
         // Render proxy functions START
     public:

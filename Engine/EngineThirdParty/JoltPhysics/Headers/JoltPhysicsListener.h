@@ -53,7 +53,7 @@ public:
 	virtual void						OnAdjustBodyVelocity(const CharacterVirtual* inCharacter, const Body& inBody2, Vec3& ioLinearVelocity, Vec3& ioAngularVelocity) { /* Do nothing, the linear and angular velocity are already filled in */ }
 
 	/// Checks if a character can collide with specified body. Return true if the contact is valid.
-	virtual bool						OnContactValidate(const CharacterVirtual* inCharacter, const BodyID& inBodyID2, const SubShapeID& inSubShapeID2) { return true; }
+	virtual bool						OnContactValidate(const CharacterVirtual* inCharacter, const BodyID& inBodyID2, const SubShapeID& inSubShapeID2) { return TRUE; }
 
 	/// Called whenever the character collides with a body. Returns true if the contact can push the character.
 	/// @param inCharacter Character that is being solved

@@ -51,7 +51,7 @@ public:
 		{
 		case (BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
 		case (BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
-		default:													JPH_ASSERT(false); return "INVALID";
+		default:													JPH_ASSERT(FALSE); return "INVALID";
 		}
 	}
 #endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
@@ -71,10 +71,10 @@ public:
 		case Layers::NON_MOVING:
 			return inLayer2 == BroadPhaseLayer(BroadPhaseLayers::MOVING);
 		case Layers::MOVING:
-			return true;
+			return TRUE;
 		default:
-			JPH_ASSERT(false);
-			return false;
+			JPH_ASSERT(FALSE);
+			return FALSE;
 		}
 	}
 };
@@ -90,10 +90,10 @@ public:
 		case Layers::NON_MOVING:
 			return inObject2 == Layers::MOVING; // Non moving only collides with moving
 		case Layers::MOVING:
-			return true; // Moving collides with everything
+			return TRUE; // Moving collides with everything
 		default:
-			JPH_ASSERT(false);
-			return false;
+			JPH_ASSERT(FALSE);
+			return FALSE;
 		}
 	}
 };

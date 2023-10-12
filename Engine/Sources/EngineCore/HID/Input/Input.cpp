@@ -43,13 +43,13 @@ namespace PigeonEngine
 	}
 	void IController::EnableCursor()
 	{
-		bCursorEnabled = true;
+		bCursorEnabled = TRUE;
 		ShowCursor();
 		FreeCursor();
 	}
 	void IController::DisableCursor()
 	{
-		bCursorEnabled = false;
+		bCursorEnabled = FALSE;
 		HideCursor();
 		ConfineCursor();
 	}

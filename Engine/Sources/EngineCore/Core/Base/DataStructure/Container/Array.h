@@ -345,10 +345,10 @@ namespace PigeonEngine
          {
              if(elem == Element)
              {
-                 return true;
+                 return TRUE;
              }
          }
-         return false;
+         return FALSE;
     }
 
     template <typename T>

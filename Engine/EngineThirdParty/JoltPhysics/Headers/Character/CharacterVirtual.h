@@ -15,7 +15,7 @@ public:
 	Vector3								ShapeOffset = Vector3::Zero();
 
 	///@name Movement settings
-	BOOL32								CanBackFaceMode = true;									///< When colliding with back faces, the character will not be able to move through back facing triangles. Use this if you have triangles that need to collide on both sides.
+	BOOL32								CanBackFaceMode = TRUE;									///< When colliding with back faces, the character will not be able to move through back facing triangles. Use this if you have triangles that need to collide on both sides.
 	FLOAT								PredictiveContactDistance = 0.1f;						///< How far to scan outside of the shape for predictive contacts. A value of 0 will most likely cause the character to get stuck as it properly calculate a sliding direction anymore. A value that's too high will cause ghost collisions.
 	UINT32								MaxCollisionIterations = 5;								///< Max amount of collision loops
 	UINT32								MaxConstraintIterations = 15;							///< How often to try stepping in the constraint solving

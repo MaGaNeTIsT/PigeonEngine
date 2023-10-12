@@ -76,7 +76,7 @@ namespace PigeonEngine
 	private:
 		static constexpr UINT32 nKeys = 256u;
 		static constexpr UINT32 BufferSize = 16u;
-		BOOL32 bAutorepeatEnabled = false;
+		BOOL32 bAutorepeatEnabled = FALSE;
 		std::bitset<nKeys> KeyStates;
 		std::queue<Event> KeyBuffer;
 		std::queue<char> CharBuffer;

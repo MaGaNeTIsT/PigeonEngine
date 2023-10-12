@@ -39,7 +39,7 @@ namespace PigeonEngine
 	RSkeletalMeshSceneProxy::~RSkeletalMeshSceneProxy()
 	{
 	}
-	void RSkeletalMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const ESkinnedMeshAsset* InMeshAsset, const ESkeletonAsset* InSkeletonAsset)
+	void RSkeletalMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const ESkinnedMeshAsset* InMeshAsset, const ESkeletonAsset* InSkeletonAsset, const TArray<Matrix4x4>& InBoneToRootMatrices)
 	{
 		SetupShaders();
 
@@ -47,6 +47,7 @@ namespace PigeonEngine
 		UpdatePrimitiveMatrices(InMatrices);
 		UpdateMeshAsset(InMeshAsset);
 		UpdateSkeletonAsset(InSkeletonAsset);
+		UpdateSkeletonRenderResource(InBoneToRootMatrices);
 
 		SkeletonRenderResource.InitRenderResource();
 		MaterialParameter.SetupParameters();
@@ -81,7 +82,7 @@ namespace PigeonEngine
 	{
 		SkeletonAsset = InSkeletonAsset;
 	}
-	void RSkeletalMeshSceneProxy::UpdateRenderResource()
+	void RSkeletalMeshSceneProxy::UpdateSkeletonRenderResource(const TArray<Matrix4x4>& InBoneToRootMatrices)
 	{
 #if _EDITOR_ONLY
 		if ((!!SkeletonAsset) && (SkeletonRenderResource.IsRenderResourceValid()))
@@ -89,8 +90,7 @@ namespace PigeonEngine
 		{
 			Check((SkeletonAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
 			const ESkeleton* Skeleton = SkeletonAsset->GetStoragedResource();
-			const ESkeleton::EBonePart& SkeletonBonePart = Skeleton->GetBonePart();
-			const TMap<EString, USHORT>& SkeletonBoneMapping = Skeleton->GetBoneMapping();
+			Check((Skeleton->GetBoneCount() > 0u), (ENGINE_RENDER_CORE_ERROR));
 
 			Check((!!MeshAsset), (ENGINE_RENDER_CORE_ERROR));
 			Check((MeshAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
@@ -99,23 +99,45 @@ namespace PigeonEngine
 			const ESkinnedMesh::EBindPoseValue& BindPoses = SkinnedMesh->GetBindPoseValue();
 			const ESkinnedMesh::EBindPoseIndex& BindPoseMappings = SkinnedMesh->GetBindPoseIndex();
 
+			Check((BindPoses.Length() <= InBoneToRootMatrices.Length()), (ENGINE_RENDER_CORE_ERROR));
 			Check(((BindPoses.Length() > 0u) && (BindPoses.Length() == BindPoseMappings.Length())), (ENGINE_RENDER_CORE_ERROR));
 			Check((BindPoses.Length() == BoneValues.Length()), (ENGINE_RENDER_CORE_ERROR));
-			Check(((SkeletonBonePart.Length() > 0u) && (SkeletonBonePart.Length() == SkeletonBoneMapping.Length())), (ENGINE_RENDER_CORE_ERROR));
-			Check((SkeletonBonePart.Length() == BindPoses.Length()), (ENGINE_RENDER_CORE_ERROR));
 
+#if _EDITOR_ONLY
+			BOOL32 CheckBoneUpdate = FALSE;
+#endif
 			for (auto It = BindPoseMappings.Begin(); It != BindPoseMappings.End(); It++)
 			{
 				const Matrix4x4* BindPosePtr = BindPoses.FindValueAsPtr(It->first);
-				const USHORT* BoneIndex = SkeletonBoneMapping.FindValueAsPtr(It->first);
-				Check((!!BindPosePtr), (ENGINE_RENDER_CORE_ERROR));
-				Check((!!BoneIndex), (ENGINE_RENDER_CORE_ERROR));
-				Check(((*BoneIndex) < SkeletonBonePart.Length()), (ENGINE_RENDER_CORE_ERROR));
+				const USHORT BoneIndex = Skeleton->GetBoneIndex(It->first);
+#if _EDITOR_ONLY
+				if ((!!BindPosePtr) && (BoneIndex < InBoneToRootMatrices.Length()))
+#endif
 				{
-					//BoneValues[It->second] = SkeletonBonePart[*BoneIndex]. * (*BindPosePtr);
+					BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex].Transpose()) * (*BindPosePtr);
+#if _EDITOR_ONLY
+					CheckBoneUpdate = TRUE;
+#endif
 				}
+#if _EDITOR_ONLY
+				else
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeleton render resource is not valid."));
+				}
+#endif
 			}
-			//SkeletonRenderResource.UpdateRenderResource();
+#if _EDITOR_ONLY
+			if (CheckBoneUpdate)
+#endif
+			{
+				SkeletonRenderResource.UpdateRenderResource(BoneValues);
+			}
+#if _EDITOR_ONLY
+			else
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Updating skeleton render resource failed."));
+			}
+#endif
 		}
 #if _EDITOR_ONLY
 		else
@@ -123,7 +145,9 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeleton render resource is not valid."));
 		}
 #endif
-
+	}
+	void RSkeletalMeshSceneProxy::UpdateRenderResource()
+	{
 		Matrix4x4 InvMat(GetLocalToWorldMatrix().Inverse());
 		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);

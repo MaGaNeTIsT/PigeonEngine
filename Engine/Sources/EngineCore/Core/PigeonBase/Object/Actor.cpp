@@ -326,12 +326,12 @@ namespace PigeonEngine
 
 	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
-		BOOL8 bSelectedActor = WorldCurrentSelectedActor == this;
+		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
 		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Length() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 
-		BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
+		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
 		ImGui::SameLine();
-		BOOL bSelected        = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
+		BOOL8 bSelected			= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
 
 		if (bTreeNodeExpand)
 		{

@@ -75,6 +75,8 @@ namespace PigeonEngine
 		TArray<SHORT>	Children;
 	};
 
+	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const struct EBoneTransform& InBoneTransform);
+
 	struct EBoneTransform
 	{
 		EBoneTransform(const Vector3& InPosition, const Quaternion& InRotation, const Vector3& InScaling) : Position(InPosition), Rotation(InRotation), Scaling(InScaling) {}
@@ -91,14 +93,15 @@ namespace PigeonEngine
 			return (_StaticBoneTransformIdentity);
 		}
 
-		PE_INLINE Matrix4x4 ToMatrix4x4()const;
+		PE_INLINE Matrix4x4 ToMatrix4x4()const
+		{
+			return MakeMatrix4x4(*this);
+		}
 
 		Vector3			Position;
 		Quaternion		Rotation;
 		Vector3			Scaling;
 	};
-
-	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const EBoneTransform& InBoneTransform);
 
 	class ESkeleton : public EObjectBase, public EResourceInterface
 	{
@@ -116,6 +119,7 @@ namespace PigeonEngine
 		TMap<EString, USHORT>&			GetBoneMapping();
 		const TMap<EString, USHORT>&	GetBoneMapping()const;
 		UINT32							GetBoneCount()const;
+		USHORT							GetBoneIndex(const EString& InBoneName)const;
 	public:
 		BOOL32	AddBoneElement(EBoneData* InIndexData);
 		BOOL32	RemoveBoneElement(const EString& InBoneName);
@@ -152,7 +156,7 @@ namespace PigeonEngine
 	public:
 		void			SetBoneNum(const UINT32 InBoneNum);
 		UINT32			GetBoneNum()const;
-		void			UpdateRenderResource(const Matrix4x4* InMatrices, const UINT32 InMatrixNum);
+		void			UpdateRenderResource(const TArray<Matrix4x4>& InMatrices);
 	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual BOOL32	InitRenderResource()override;
@@ -171,13 +175,30 @@ namespace PigeonEngine
 
 	};
 
-	class ESkeletonMemoryPool
+	class ESkeletonBoneMemoryPool
 	{
 	public:
-		ESkeletonMemoryPool(const ESkeleton* InRawSkeletonPtr);
+		ESkeletonBoneMemoryPool(const ESkeleton* InRawSkeletonPtr);
 	public:
+		BOOL32	IsValid()const;
 		void	GenerateFromSkeleton(const ESkeleton* InRawSkeletonPtr);
 		void	RecursionToRootTransforms();
+	public:
+		const ESkeleton*				GetRawSkeleton()const;
+		const TArray<EBoneTransform>&	GetBoneRelativeTransforms()const;
+		TArray<EBoneTransform>&			GetBoneRelativeTransforms();
+		const TArray<EBoneTransform>&	GetBoneToRootTransforms()const;
+		TArray<EBoneTransform>&			GetBoneToRootTransforms();
+		const EBoneTransform&			GetBoneRelativeTransform(const EString& InBoneName)const;
+		const EBoneTransform&			GetBoneToRootTransform(const EString& InBoneName)const;
+	public:
+		void	SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition);
+		void	SetBoneRelativeRotation(const EString& InBoneName, const Quaternion& InRotation);
+		void	SetBoneRelativeScaling(const EString& InBoneName, const Vector3& InScaling);
+		void	SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Quaternion& InRotation);
+		void	SetBoneRelativeTransform(const EString& InBoneName, const Vector3& InPosition, const Vector3& InScaling);
+		void	SetBoneRelativeTransform(const EString& InBoneName, const Quaternion& InRotation, const Vector3& InScaling);
+		void	SetBoneRelativeTransform(const EString& InBoneName, const EBoneTransform& InBoneTransform);
 	public:
 		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
 		void BackwardRecursionBone(SHORT InBoneIndex, _TCustomType InValue, const _TLambdaType& InFunc, const _TConditionType& InCond)
@@ -320,10 +341,10 @@ namespace PigeonEngine
 		TArray<EBoneTransform>	BoneRelativeTransforms;
 		TArray<EBoneTransform>	BoneToRootTransforms;
 	public:
-		ESkeletonMemoryPool();
-		ESkeletonMemoryPool(const ESkeletonMemoryPool& Other);
-		virtual ~ESkeletonMemoryPool();
-		ESkeletonMemoryPool& operator=(const ESkeletonMemoryPool& Other);
+		ESkeletonBoneMemoryPool();
+		ESkeletonBoneMemoryPool(const ESkeletonBoneMemoryPool& Other);
+		virtual ~ESkeletonBoneMemoryPool();
+		ESkeletonBoneMemoryPool& operator=(const ESkeletonBoneMemoryPool& Other);
 	};
 
 	class ESkeletonAsset : public TBaseAsset<ESkeleton>

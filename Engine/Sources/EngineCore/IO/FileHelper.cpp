@@ -24,7 +24,7 @@ namespace PigeonEngine
 		file.read(static_cast<char*>(Return), Size);
 
 		file.close();
-		return true;
+		return TRUE;
 	}
 	
 	BOOL8 EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
@@ -42,7 +42,7 @@ namespace PigeonEngine
 			Return += line + '\n';
 		}
 		file.close();
-		return true;
+		return TRUE;
 	}
 	
 	BOOL8 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory)

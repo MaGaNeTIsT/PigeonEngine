@@ -209,10 +209,10 @@ namespace PigeonEngine
             if(elem.second == Value)
             {
                 OutKey = elem.first;
-                return true;
+                return TRUE;
            }
         }
-        return false;
+        return FALSE;
     }
 
     template <typename K, typename V>

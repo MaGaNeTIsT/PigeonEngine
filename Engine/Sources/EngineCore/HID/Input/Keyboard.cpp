@@ -50,11 +50,11 @@ namespace PigeonEngine
 	}
 	void IKeyboard::EnableAutorepeat()
 	{
-		bAutorepeatEnabled = true;
+		bAutorepeatEnabled = TRUE;
 	}
 	void IKeyboard::DisableAutorepeat()
 	{
-		bAutorepeatEnabled = false;
+		bAutorepeatEnabled = FALSE;
 	}
 	BOOL32 IKeyboard::IsAutorepeatEnabled() const
 	{
@@ -62,13 +62,13 @@ namespace PigeonEngine
 	}
 	void IKeyboard::OnKeyPressed(unsigned char keycode)
 	{
-		KeyStates[keycode] = true;
+		KeyStates[keycode] = TRUE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Press, keycode));
 		TrimBuffer(KeyBuffer);
 	}
 	void IKeyboard::OnKeyReleased(unsigned char keycode)
 	{
-		KeyStates[keycode] = false;
+		KeyStates[keycode] = FALSE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Release, keycode));
 		TrimBuffer(KeyBuffer);
 	}

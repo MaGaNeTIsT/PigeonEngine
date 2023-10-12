@@ -131,8 +131,8 @@ public:
 	/// remove a rigid body by a GameObjectId.
 	/// </summary>
 	/// <param name="GameObjectId">Id</param>
-	/// <param name="bDeleteShape">true to delete shape at sametime,if your shape is shared to other bodys, set false.</param>
-	void RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape = true);
+	/// <param name="bDeleteShape">TRUE to delete shape at sametime,if your shape is shared to other bodys, set FALSE.</param>
+	void RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape = TRUE);
 
 	Vector3 GetPosition(const FPhysicsBodyId& FPhysicsBodyId);
 	Quaternion GetRotation(const FPhysicsBodyId& FPhysicsBodyId);

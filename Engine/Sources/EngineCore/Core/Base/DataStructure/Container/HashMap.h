@@ -189,10 +189,10 @@ namespace PigeonEngine
             if(elem.second == Value)
             {
                 OutKey = elem.first;
-                return true;
+                return TRUE;
             }
         }
-        return false;
+        return FALSE;
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
@@ -201,10 +201,10 @@ namespace PigeonEngine
         const auto it = HashMap.find(Key);
         if(!(it < HashMap.end()))
         {
-            return false;
+            return FALSE;
         }
         OutValue = it->second;
-        return true;
+        return TRUE;
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>

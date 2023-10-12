@@ -71,7 +71,7 @@ public:
 			case JPH::CharacterBase::EGroundState::InAir:
 				return EGroundState::InAir;
 			default:
-				PE_ASSERT(false);
+				PE_ASSERT(FALSE);
 				return EGroundState::NotSupported;
 		}
 	}

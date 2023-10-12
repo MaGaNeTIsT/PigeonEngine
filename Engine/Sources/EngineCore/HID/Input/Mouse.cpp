@@ -53,11 +53,11 @@ namespace PigeonEngine
 	}
 	void IMouse::EnableRaw()
 	{
-		RawEnabled = true;
+		RawEnabled = TRUE;
 	}
 	void IMouse::DisableRaw()
 	{
-		RawEnabled = false;
+		RawEnabled = FALSE;
 	}
 	BOOL32 IMouse::IsRawEnabled() const
 	{
@@ -73,13 +73,13 @@ namespace PigeonEngine
 	}
 	void IMouse::OnMouseLeave()
 	{
-		bIsInWindow = false;
+		bIsInWindow = FALSE;
 		Buffer.push(IMouse::Event(IMouse::Event::EType::Leave, *this));
 		TrimBuffer();
 	}
 	void IMouse::OnMouseEnter()
 	{
-		bIsInWindow = true;
+		bIsInWindow = TRUE;
 		Buffer.push(IMouse::Event(IMouse::Event::EType::Enter, *this));
 		TrimBuffer();
 	}
@@ -90,28 +90,28 @@ namespace PigeonEngine
 	}
 	void IMouse::OnLeftPressed(INT32 x, INT32 y)
 	{
-		bLeftIsPressed = true;
+		bLeftIsPressed = TRUE;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LPress, *this));
 		TrimBuffer();
 	}
 	void IMouse::OnLeftReleased(INT32 x, INT32 y)
 	{
-		bLeftIsPressed = false;
+		bLeftIsPressed = FALSE;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LRelease, *this));
 		TrimBuffer();
 	}
 	void IMouse::OnRightPressed(INT32 x, INT32 y)
 	{
-		bRightIsPressed = true;
+		bRightIsPressed = TRUE;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RPress, *this));
 		TrimBuffer();
 	}
 	void IMouse::OnRightReleased(INT32 x, INT32 y)
 	{
-		bRightIsPressed = false;
+		bRightIsPressed = FALSE;
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RRelease, *this));
 		TrimBuffer();

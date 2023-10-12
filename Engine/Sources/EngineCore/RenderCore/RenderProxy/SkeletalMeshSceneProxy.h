@@ -25,11 +25,12 @@ namespace PigeonEngine
 	{
 	public:
 		RSkeletalMeshSceneProxy(PSkeletalMeshComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const ESkinnedMeshAsset* InMeshAsset, const ESkeletonAsset* InSkeletonAsset);
+		void			SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const ESkinnedMeshAsset* InMeshAsset, const ESkeletonAsset* InSkeletonAsset, const TArray<Matrix4x4>& InBoneToRootMatrices);
 	public:
 		virtual BOOL32	IsRenderValid()const override;
 		void			UpdateMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
 		void			UpdateSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
+		void			UpdateSkeletonRenderResource(const TArray<Matrix4x4>& InBoneToRootMatrices);
 		void			UpdateRenderResource();
 		void			BindRenderResource()const;
 		void			Draw()const;

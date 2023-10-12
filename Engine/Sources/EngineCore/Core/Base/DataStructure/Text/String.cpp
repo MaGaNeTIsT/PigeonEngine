@@ -199,10 +199,10 @@ namespace PigeonEngine
         {
             if(!(elem < '9' && elem > '0'))
             {
-                return false;
+                return FALSE;
             }
         }
-        return true;
+        return TRUE;
     }
 
     INT32 EString::AtoI() const

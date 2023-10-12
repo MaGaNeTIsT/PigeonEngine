@@ -50,7 +50,7 @@ namespace PigeonEngine
         EWorldManager* m_WorldManager = EWorldManager::GetManagerSingleton();
         m_WorldManager->EditorUpdate();
 
-        bool bOpen = false;
+        BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
     }
 }

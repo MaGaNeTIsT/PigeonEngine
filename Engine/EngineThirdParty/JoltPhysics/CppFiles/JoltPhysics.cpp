@@ -132,9 +132,9 @@ namespace PigeonEngine
 		{
 			outBodyID.ID = body->GetID();
 			m_Shapes.Add(outBodyID, inShape);
-			return true;
+			return TRUE;
 		}
-		return false;
+		return FALSE;
 	}
 
 	void FPhysics_Jolt::AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode)
@@ -143,7 +143,7 @@ namespace PigeonEngine
 		m_Bodys.Add(GameObjectId, inBodyID);
 	}
 
-	void FPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = true*/)
+	void FPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = TRUE*/)
 	{
 		FPhysicsBodyId ID;
 		if (m_Bodys.FindValue(GameObjectId, ID))

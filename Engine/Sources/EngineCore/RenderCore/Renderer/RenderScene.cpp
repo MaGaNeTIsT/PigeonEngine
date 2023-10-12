@@ -1,6 +1,7 @@
 #include "RenderScene.h"
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
+#include <SkeletonAsset/SkeletonAsset.h>
 #include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
@@ -425,15 +426,126 @@ namespace PigeonEngine
 	}
 	void RScene::AddSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
+		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
+		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
+			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
+			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
+			InComponent->GetComponentWorldLocation(),
+			InComponent->GetComponentWorldRotation(),
+			InComponent->GetComponentWorldScale());
+		const ESkinnedMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
+		const ESkeletonAsset* TempSkeletonAsset = InComponent->GetSkeletonAsset();
+		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
+
+		RenderAddCommands.EnqueueCommand(
+			[Scene, SceneProxy, InIsRenderHidden, InIsCastShadow, InIsReceiveShadow,
+			TempMatrices, TempMeshAsset, TempSkeletonAsset,
+			TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
+			]()->void
+			{
+				TArray<Matrix4x4> TempBoneToRootMatrices;
+				if (const UINT32 MatrixNum = TempBoneToRootTransforms.Length(); MatrixNum > 0u)
+				{
+					TempBoneToRootMatrices.Resize(MatrixNum);
+					for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
+					{
+						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixNum].ToMatrix4x4();
+					}
+				}
+				SceneProxy->SetupProxy(InIsRenderHidden, TRUE, InIsCastShadow, InIsReceiveShadow,
+					*TempMatrices, TempMeshAsset, TempSkeletonAsset, TempBoneToRootMatrices);
+				delete TempMatrices;
+				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
+			});
 	}
 	void RScene::RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
+		InComponent->SceneProxy = nullptr;
+		RenderRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
+			});
 	}
 	void RScene::UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
+		RScene* Scene = this;
+		RSkeletalMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
 
+		UINT8 UpdateState = InComponent->GetUpdateRenderState();
+
+		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
+		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
+			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
+			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		ERenderPrimitiveMatrices* TempMatrices = nullptr;
+		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MATRIX) != 0u)
+		{
+			TempMatrices = new ERenderPrimitiveMatrices(
+				InComponent->GetComponentWorldLocation(),
+				InComponent->GetComponentWorldRotation(),
+				InComponent->GetComponentWorldScale());
+		}
+		const ESkinnedMeshAsset* TempMeshAsset = nullptr;
+		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MESHASSET) != 0u)
+		{
+			TempMeshAsset = InComponent->GetMeshAsset();
+		}
+		const ESkeletonAsset* TempSkeletonAsset = nullptr;
+		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_SKELETONASSET) != 0u)
+		{
+			TempSkeletonAsset = InComponent->GetSkeletonAsset();
+		}
+		BOOL32 TempUpdateBoneData = (UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_BONE_DATA) != 0u;
+		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
+
+		RenderUpdateCommands.EnqueueCommand(
+			[Scene, SceneProxy, InIsRenderHidden, InIsCastShadow, InIsReceiveShadow,
+			TempMatrices, TempMeshAsset, TempSkeletonAsset,
+			TempUpdateBoneData, TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
+			]()->void
+			{
+				BOOL32 NeedUpdateRenderResource = FALSE;
+				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, TRUE, InIsCastShadow, InIsReceiveShadow);
+				if (TempMatrices)
+				{
+					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
+					delete TempMatrices;
+					NeedUpdateRenderResource = TRUE;
+				}
+				if (TempMeshAsset)
+				{
+					SceneProxy->UpdateMeshAsset(TempMeshAsset);
+				}
+				if (TempSkeletonAsset)
+				{
+					SceneProxy->UpdateSkeletonAsset(TempSkeletonAsset);
+				}
+				if (TempUpdateBoneData)
+				{
+					TArray<Matrix4x4> TempBoneToRootMatrices;
+					if (const UINT32 MatrixNum = TempBoneToRootTransforms.Length(); MatrixNum > 0u)
+					{
+						TempBoneToRootMatrices.Resize(MatrixNum);
+						for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
+						{
+							TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixNum].ToMatrix4x4();
+						}
+					}
+					SceneProxy->UpdateSkeletonRenderResource(TempBoneToRootMatrices);
+				}
+				if (NeedUpdateRenderResource)
+				{
+					SceneProxy->UpdateRenderResource();
+				}
+			});
 	}
 	RCommand& RScene::GetAddCommands()
 	{

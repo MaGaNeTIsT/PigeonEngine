@@ -53,7 +53,7 @@ namespace PigeonEngine
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, false, pos, rot, MotionType, Layer, m_BodyId))
+		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, m_BodyId))
 		{
 			FPhysicsManager::GetSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
 		}
@@ -71,7 +71,7 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::RemoveShape()
 	{
-		FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), true);
+		FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
 		m_Shape = nullptr;
 	}
 

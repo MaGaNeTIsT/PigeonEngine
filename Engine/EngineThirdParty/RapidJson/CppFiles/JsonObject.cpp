@@ -72,212 +72,212 @@ namespace PigeonEngine
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsInt())
-			return false;
+			return FALSE;
 		Out = itr->value.GetInt();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetInt64Field(const std::string& FieldName, INT64& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsInt64())
-			return false;
+			return FALSE;
 		Out = itr->value.GetInt64();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetUIntField(const std::string& FieldName, UINT32& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsUint())
-			return false;
+			return FALSE;
 		Out = itr->value.GetUint();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetUInt64Field(const std::string& FieldName, UINT64& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsUint64())
-			return false;
+			return FALSE;
 		Out = itr->value.GetUint64();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetFloatField(const std::string& FieldName, FLOAT& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsFloat())
-			return false;
+			return FALSE;
 		Out = itr->value.GetFloat();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetDoubleField(const std::string& FieldName, DOUBLE& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsDouble())
-			return false;
+			return FALSE;
 		Out = itr->value.GetDouble();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetStringField(const std::string& FieldName, std::string& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsString())
-			return false;
+			return FALSE;
 		Out = itr->value.GetString();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetBoolField(const std::string& FieldName, BOOL32& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsBool())
-			return false;
+			return FALSE;
 		Out = itr->value.GetBool();
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetObjectField(const std::string& FieldName, CJsonObject& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsObject())
-			return false;
+			return FALSE;
 		rapidjson::Document* OutDoc = new rapidjson::Document;
 		OutDoc->CopyFrom(itr->value, Doc->GetAllocator());
 		Out.SetDocument(OutDoc);
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetIntArrayField(const std::string& FieldName, std::vector<INT32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsInt())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetInt());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetInt64ArrayField(const std::string& FieldName, std::vector<INT64>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsInt64())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetInt64());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetUIntArrayField(const std::string& FieldName, std::vector<UINT32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsUint())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetUint());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetUInt64ArrayField(const std::string& FieldName, std::vector<UINT64>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsUint64())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetUint64());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetFloatArrayField(const std::string& FieldName, std::vector<FLOAT>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsFloat())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetFloat());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetDoubleArrayField(const std::string& FieldName, std::vector<DOUBLE>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsDouble())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetDouble());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetStringArrayField(const std::string& FieldName, std::vector<std::string>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsString())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetString());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetBoolArrayField(const std::string& FieldName, std::vector<BOOL32>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsBool())
-				return false;
+				return FALSE;
 			Out.push_back(v.GetBool());
 		}
-		return true;
+		return TRUE;
 	}
 
 	BOOL32 CJsonObject::GetObjectArrayField(const std::string& FieldName, std::vector<CJsonObject*>& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(FieldName.c_str());
 		if (itr == Doc->MemberEnd() || !itr->value.IsArray())
-			return false;
+			return FALSE;
 		for (auto& v : itr->value.GetArray())
 		{
 			if (!v.IsObject())
-				return false;
+				return FALSE;
 			rapidjson::Document* TempDoc = new rapidjson::Document;
 			TempDoc->CopyFrom(v, Doc->GetAllocator());
 			CJsonObject* Obj = new CJsonObject(TempDoc);
 			Out.push_back(Obj);
 		}
-		return true;
+		return TRUE;
 	}
 
 	void CJsonObject::SetIntField(const std::string& FieldName, const INT32& In)
