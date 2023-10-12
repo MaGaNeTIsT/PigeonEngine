@@ -4,6 +4,13 @@
 
 namespace PigeonEngine
 {
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<EWorldManager, EManagerBase>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+    
     EWorldManager::EWorldManager()
 	{
         this->World = nullptr;
@@ -69,8 +76,6 @@ namespace PigeonEngine
             this->GetWorld()->GenerateDetail();
         }
         ImGui::End();
-        bool bOpen = false;
-        ImGui::ShowDemoWindow(&bOpen);
     }
 #endif
     PWorld* EWorldManager::GetWorld() const

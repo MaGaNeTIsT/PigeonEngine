@@ -4,6 +4,13 @@
 
 namespace PigeonEngine
 {
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<EEditorManager, EManagerBase>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+    
     EEditorManager::EEditorManager()
     {
     }
@@ -42,5 +49,8 @@ namespace PigeonEngine
         m_EditorOpen = TempEditorOpen;
         EWorldManager* m_WorldManager = EWorldManager::GetManagerSingleton();
         m_WorldManager->EditorUpdate();
+
+        bool bOpen = false;
+        ImGui::ShowDemoWindow(&bOpen);
     }
 }

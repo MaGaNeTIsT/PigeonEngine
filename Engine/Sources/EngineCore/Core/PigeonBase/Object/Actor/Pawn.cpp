@@ -5,6 +5,7 @@ namespace PigeonEngine
 {
     PPawn::PPawn()
     {
+        POBJ_DEBUGNAME_SET(this, "Pawn");
         this->SetIsTickable(TRUE);
     }
 
