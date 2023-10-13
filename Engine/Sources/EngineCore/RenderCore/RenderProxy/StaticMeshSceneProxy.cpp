@@ -116,7 +116,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh vertex shader is invalid."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh vertex shader is invalid."));
 		}
 #endif
 	}
@@ -134,7 +134,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh pixel shader is invalid."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh pixel shader is invalid."));
 		}
 #endif
 	}
@@ -159,7 +159,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			else
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh index buffer is invalid."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh index buffer is invalid."));
 			}
 #endif
 			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
@@ -182,7 +182,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 					else
 					{
-						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh vertex buffer is invalid."));
+						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh vertex buffer is invalid."));
 					}
 #endif
 				}
@@ -205,7 +205,7 @@ namespace PigeonEngine
 	{
 		const RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
 #if _EDITOR_ONLY
-		if (((InSlot >= 0u) && (InSlot < 16u)) && (ConstantBuffer.IsRenderResourceValid()))
+		if (((InSlot >= 0u) && (InSlot < 8u)) && (ConstantBuffer.IsRenderResourceValid()))
 #endif
 		{
 			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
@@ -215,7 +215,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Constant buffer is invalid."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh constant buffer is invalid."));
 		}
 #endif
 	}
@@ -236,14 +236,14 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			else
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw indexed is invalid."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw static mesh indexed is invalid."));
 			}
 #endif
 		}
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Mesh asset is invalid."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh asset is invalid."));
 		}
 #endif
 	}

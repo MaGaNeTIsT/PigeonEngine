@@ -160,7 +160,7 @@ namespace PigeonEngine
 		BindPixelShader();
 		BindMeshResource();
 		BindMaterialParameter(1u);
-		BindSkeletonRenderResource();
+		BindSkeletonRenderResource(0u);
 	}
 	void RSkeletalMeshSceneProxy::Draw()const
 	{
@@ -168,23 +168,155 @@ namespace PigeonEngine
 	}
 	void RSkeletalMeshSceneProxy::SetupShaders()
 	{
-
+		const EString ImportPath(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+		const EString ImportVSName = EString("SkeletalMesh_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+		const RInputLayoutDesc TempShaderInputLayouts[] =
+		{
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, 0u, 0u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, 0u, 1u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, 0u, 2u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0, 0u, 3u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT0, 0u, 4u)
+		};
+		if (!VertexShader)
+		{
+			const UINT32 TempShaderInputLayoutNum = 3u;
+			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
+				VertexShader,
+				&ImportPath, &ImportVSName,
+				TempShaderInputLayouts, &TempShaderInputLayoutNum);
+		}
+		if (!PixelShader)
+		{
+			const EString ImportPSName = EString("SkeletalMesh_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportPSName,
+				PixelShader,
+				&ImportPath, &ImportPSName);
+		}
 	}
 	void RSkeletalMeshSceneProxy::BindVertexShader()const
 	{
-
+#if _EDITOR_ONLY
+		BOOL32 IsResourceValid = !!VertexShader;
+		if (IsResourceValid)
+		{
+			IsResourceValid = VertexShader->IsRenderResourceValid();
+		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh vertex shader is invalid."), (IsResourceValid));
+		if (IsResourceValid)
+#endif
+		{
+			const RVertexShaderResource* VSResource = VertexShader->GetRenderResource();
+			{
+				RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+				RenderDevice->SetInputLayout(VSResource->InputLayout);
+				RenderDevice->SetVSShader(VSResource->Shader);
+			}
+		}
 	}
 	void RSkeletalMeshSceneProxy::BindPixelShader()const
 	{
-
+#if _EDITOR_ONLY
+		BOOL32 IsResourceValid = !!PixelShader;
+		if (IsResourceValid)
+		{
+			IsResourceValid = PixelShader->IsRenderResourceValid();
+		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh pixel shader is invalid."), (IsResourceValid));
+		if (IsResourceValid)
+#endif
+		{
+			const RPixelShaderResource* PSResource = PixelShader->GetRenderResource();
+			{
+				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(PSResource->Shader);
+			}
+		}
 	}
 	void RSkeletalMeshSceneProxy::BindMeshResource()const
 	{
+#if _EDITOR_ONLY
+		BOOL32 IsResourceValid = (!!VertexShader) && (!!PixelShader) && (!!MeshAsset);
+		if (IsResourceValid)
+		{
+			IsResourceValid = (VertexShader->IsRenderResourceValid()) && (PixelShader->IsRenderResourceValid()) && (MeshAsset->IsRenderResourceValid());
+		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check skeletal mesh scene proxy is invalid."), (IsResourceValid));
+		if (IsResourceValid)
+#endif
+		{
+			RDeviceD3D11*						RenderDevice		= RDeviceD3D11::GetDeviceSingleton();
+			const ESkinnedMeshRenderResource*	MeshRenderResource	= MeshAsset->GetRenderResource();
+			const UINT32						LayoutNum			= VertexShader->GetShaderInputLayoutNum();
+			const RInputLayoutDesc*				Layouts				= VertexShader->GetShaderInputLayouts();
+			const RIndexBufferResource*			IndexRenderResource	= MeshRenderResource->GetIndexRenderResource();
+#if _EDITOR_ONLY
+			BOOL32 IsIndexBufferValid = !!IndexRenderResource;
+			if (IsIndexBufferValid)
+			{
+				IsIndexBufferValid = IndexRenderResource->IsRenderResourceValid();
+			}
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh index buffer is invalid."), (IsIndexBufferValid));
+			if (IsIndexBufferValid)
+#endif
+			{
+				RFormatType IndexFormat = IndexRenderResource->UseShort ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT;
+				RenderDevice->SetIndexBuffer(IndexRenderResource->Buffer, 0u, IndexFormat);
+			}
+			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
+			{
 
+				const RInputLayoutDesc& Layout = Layouts[LayoutIndex];
+				const BOOL32 IsSkinLayout = ((Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT15)) || ((Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES15));
+				if (IsSkinLayout)
+				{
+					//TODO
+				}
+				else
+				{
+					UINT32									ShaderSemanticSlot		= 0u;
+					EVertexResourceType						VertexResource			= TranslateInputLayoutToVertexResource(Layout, ShaderSemanticSlot);
+					const TArray<RVertexBufferResource*>*	VertexRenderResources	= MeshRenderResource->GetVertexRenderResource(VertexResource);
+#if _EDITOR_ONLY
+					BOOL32 IsVertexBuffersValid = (!!VertexRenderResources) && (ShaderSemanticSlot < VertexRenderResources->Length());
+					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check skeletal mesh scene proxy vertex render resources is invalid."), (IsVertexBuffersValid));
+					if (IsVertexBuffersValid)
+#endif
+					{
+						const RVertexBufferResource* VertexRenderResource = (*VertexRenderResources)[ShaderSemanticSlot];
+#if _EDITOR_ONLY
+						BOOL32 IsVertexBufferValid = !!VertexRenderResource;
+						if (IsVertexBufferValid)
+						{
+							IsVertexBufferValid = VertexRenderResource->IsRenderResourceValid();
+						}
+						PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh vertex buffer is invalid."), (IsVertexBufferValid));
+						if (IsVertexBufferValid)
+#endif
+						{
+							RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, LayoutIndex);
+						}
+					}
+				}
+			}
+		}
 	}
 	void RSkeletalMeshSceneProxy::BindMaterialParameter(const UINT32 InSlot)const
 	{
-
+		const RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
+#if _EDITOR_ONLY
+		BOOL32 IsBufferValid = (InSlot >= 0u) && (InSlot < 8u);
+		if (IsBufferValid)
+		{
+			IsBufferValid = ConstantBuffer.IsRenderResourceValid();
+		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh constant buffer is invalid."), (IsBufferValid));
+		if (IsBufferValid)
+#endif
+		{
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+		}
 	}
 	void RSkeletalMeshSceneProxy::BindSkeletonRenderResource(const UINT32 InSlot)const
 	{
