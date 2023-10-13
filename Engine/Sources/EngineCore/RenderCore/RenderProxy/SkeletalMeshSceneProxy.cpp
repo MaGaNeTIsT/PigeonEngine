@@ -156,7 +156,11 @@ namespace PigeonEngine
 	}
 	void RSkeletalMeshSceneProxy::BindRenderResource()const
 	{
-
+		BindVertexShader();
+		BindPixelShader();
+		BindMeshResource();
+		BindMaterialParameter(1u);
+		BindSkeletonRenderResource();
 	}
 	void RSkeletalMeshSceneProxy::Draw()const
 	{
@@ -179,6 +183,10 @@ namespace PigeonEngine
 
 	}
 	void RSkeletalMeshSceneProxy::BindMaterialParameter(const UINT32 InSlot)const
+	{
+
+	}
+	void RSkeletalMeshSceneProxy::BindSkeletonRenderResource(const UINT32 InSlot)const
 	{
 
 	}

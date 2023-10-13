@@ -40,6 +40,7 @@ namespace PigeonEngine
 		void			BindPixelShader()const;
 		void			BindMeshResource()const;
 		void			BindMaterialParameter(const UINT32 InSlot)const;
+		void			BindSkeletonRenderResource(const UINT32 InSlot)const;
 	protected:
 		const EVertexShaderAsset*		VertexShader;
 		const EPixelShaderAsset*		PixelShader;

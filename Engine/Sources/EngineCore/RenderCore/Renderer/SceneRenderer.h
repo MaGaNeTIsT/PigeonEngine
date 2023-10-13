@@ -63,6 +63,8 @@ namespace PigeonEngine
 		void			BasePass();
 		void			FinalOutputPass();
 	protected:
+		void			RenderBasePass(RSceneTextures* InSceneTextures);
+		void			RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		void			RenderSky(const RViewProxy* InViewProxy);
 	protected:
 		void			InitLights(RViewProxy* InViewProxy);

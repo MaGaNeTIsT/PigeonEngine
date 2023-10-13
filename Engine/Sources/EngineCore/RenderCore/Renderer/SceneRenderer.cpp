@@ -7,6 +7,7 @@
 #include <RenderProxy/PrimitiveSceneProxy.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
+#include <RenderProxy/SkeletalMeshSceneProxy.h>
 
 namespace PigeonEngine
 {
@@ -347,67 +348,11 @@ namespace PigeonEngine
 			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
 			ViewProxy->BindRenderResource();
 
-			RRenderTexture2D RenderTargets[4] =
-			{
-				SceneTextures->SceneColor,
-				SceneTextures->GBufferA,
-				SceneTextures->GBufferB,
-				SceneTextures->GBufferC
-			};
-
-			RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
-			RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
-			SceneTextures->ClearResources();
-			RenderDevice->SetRenderTargets(RenderTargets, 4u, SceneTextures->SceneDepthStencil);
-
-			RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
-			for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.GetSceneProxyCount(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
-			{
-				RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
-#if _EDITOR_ONLY
-				if (!StaticMesh)
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null mesh proxy."));
-					continue;
-				}
-				if (!(StaticMesh->IsRenderValid()))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid mesh proxy."));
-					continue;
-				}
-#endif
-				if (!(StaticMesh->IsSceneProxyHidden()))
-				{
-					StaticMesh->BindRenderResource();
-					StaticMesh->Draw();
-				}
-			}
+			RenderBasePass(SceneTextures);
 
 			RenderSky(ViewProxy);
 
-			const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(ViewProxy->GetUniqueID());
-			Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
-			RenderDevice->BindPSConstantBuffer(LightCommonParams->GetConstantBuffer().Buffer, 1u);
-
-			if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(ViewProxy->GetUniqueID()); !!DLightParams)
-			{
-				RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
-				RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
-				RenderDevice->SetRenderTargetOnly(RenderTargets[0]);
-
-				FullScreenTriangle.BindPrimitiveBuffers();
-				RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
-				RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
-				RenderDevice->SetPSShader(SceneLightingPixelShader->GetRenderResource()->Shader);
-
-				RenderDevice->BindPSShaderResourceView(RenderTargets[1].ShaderResourceView, 0u);
-				RenderDevice->BindPSShaderResourceView(RenderTargets[2].ShaderResourceView, 1u);
-				RenderDevice->BindPSShaderResourceView(RenderTargets[3].ShaderResourceView, 2u);
-
-				RenderDevice->BindPSShaderResourceView(DLightParams->GetStructBuffer().ShaderResourceView, 3u);
-
-				RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
-			}
+			RenderLighting(ViewProxy, SceneTextures);
 		}
 	}
 	void RSceneRenderer::FinalOutputPass()
@@ -429,6 +374,99 @@ namespace PigeonEngine
 			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
 		}
 		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
+	}
+	void RSceneRenderer::RenderBasePass(RSceneTextures* InSceneTextures)
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+		RRenderTexture2D RenderTargets[4] =
+		{
+			InSceneTextures->SceneColor,
+			InSceneTextures->GBufferA,
+			InSceneTextures->GBufferB,
+			InSceneTextures->GBufferC
+		};
+
+		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
+		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
+		InSceneTextures->ClearResources();
+		RenderDevice->SetRenderTargets(RenderTargets, 4u, InSceneTextures->SceneDepthStencil);
+
+		// Static mesh part
+		RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
+		for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.GetSceneProxyCount(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
+		{
+			RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
+#if _EDITOR_ONLY
+			if (!StaticMesh)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null static mesh proxy."));
+				continue;
+			}
+			if (!(StaticMesh->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid static mesh proxy."));
+				continue;
+			}
+#endif
+			if (!(StaticMesh->IsSceneProxyHidden()))
+			{
+				StaticMesh->BindRenderResource();
+				StaticMesh->Draw();
+			}
+		}
+
+		// Skeletal mesh part
+		RSceneProxyMapping<RSkeletalMeshSceneProxy>& SkeletalMeshes = Scene->GetSkeletalMeshSceneProxies();
+		for (UINT32 SkeletalMeshIndex = 0u, SkeletalMeshNum = SkeletalMeshes.GetSceneProxyCount(); SkeletalMeshIndex < SkeletalMeshNum; SkeletalMeshIndex++)
+		{
+			RSkeletalMeshSceneProxy* SkeletalMesh = SkeletalMeshes.SceneProxies[SkeletalMeshIndex];
+#if _EDITOR_ONLY
+			if (!SkeletalMesh)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null skeletal mesh proxy."));
+				continue;
+			}
+			if (!(SkeletalMesh->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid skeletal mesh proxy."));
+				continue;
+			}
+#endif
+			if (!(SkeletalMesh->IsSceneProxyHidden()))
+			{
+				SkeletalMesh->BindRenderResource();
+				SkeletalMesh->Draw();
+			}
+		}
+	}
+	void RSceneRenderer::RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+		const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(InViewProxy->GetUniqueID());
+		Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
+		RenderDevice->BindPSConstantBuffer(LightCommonParams->GetConstantBuffer().Buffer, 1u);
+
+		if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(InViewProxy->GetUniqueID()); !!DLightParams)
+		{
+			RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
+			RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
+			RenderDevice->SetRenderTargetOnly(InSceneTextures->SceneColor);
+
+			FullScreenTriangle.BindPrimitiveBuffers();
+			RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
+			RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
+			RenderDevice->SetPSShader(SceneLightingPixelShader->GetRenderResource()->Shader);
+
+			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferA.ShaderResourceView, 0u);
+			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferB.ShaderResourceView, 1u);
+			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferC.ShaderResourceView, 2u);
+
+			RenderDevice->BindPSShaderResourceView(DLightParams->GetStructBuffer().ShaderResourceView, 3u);
+
+			RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
+		}
 	}
 	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
 	{
