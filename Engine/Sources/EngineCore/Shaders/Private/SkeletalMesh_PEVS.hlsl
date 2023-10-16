@@ -3,9 +3,11 @@
 
 struct Attribute
 {
-    float4 Position : POSITION0;
-    float4 Normal   : NORMAL0;
-    float2 Texcoord : TEXCOORD0;
+    float4  Position    : POSITION0;
+    float4  Normal      : NORMAL0;
+    float2  Texcoord    : TEXCOORD0;
+    uint4   BlendIndex  : BLENDINDICES0;
+    float4  BlendWeight : BLENDWEIGHT0;
 };
 
 struct Varying

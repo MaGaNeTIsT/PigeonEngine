@@ -2,12 +2,14 @@
 #include <Base/Timer/Timer.h>
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
+#include <SkeletonAsset/SkeletonAsset.h>
 #include "../Component/SceneComponent.h"
 #include "../World/World.h"
 #include "../Controller/Controller.h"
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
+#include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 
 namespace PigeonEngine
 {
@@ -38,7 +40,7 @@ namespace PigeonEngine
     	{
     		PActor* New = new PActor();
     		New->SetIsTickable(TRUE);
-            POBJ_DEBUGNAME_SET(New, "MeshActor");
+            POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
     		this->GetWorld()->AddActor(New);
     		PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
     		NewStaticMeshComp->SetIsTickable(TRUE);
@@ -50,9 +52,34 @@ namespace PigeonEngine
     		TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
 
     		NewStaticMeshComp->SetMeshAsset(Asset);
+
+            New->SetActorLocation(Vector3(100.0f, 0.0f, 0.0f));
     	}
-		//
-    	
+
+        // add a skeletal mesh actor
+        {
+            PActor* New = new PActor();
+            New->SetIsTickable(TRUE);
+            POBJ_DEBUGNAME_SET(New, "SkeletalMeshActor");
+            this->GetWorld()->AddActor(New);
+            PSkeletalMeshComponent* NewSkeletalMeshComp = new PSkeletalMeshComponent();
+            NewSkeletalMeshComp->SetIsTickable(TRUE);
+            New->AddComponent(NewSkeletalMeshComp);
+
+            const ESkinnedMeshAsset* MeshAsset = nullptr;
+            const ESkeletonAsset* SkeletonAsset = nullptr;
+            EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
+            EString ImportName("SK_Mannequin_UE4_WithWeapon");
+            EString ImportFileType("FBX");
+            TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "UEQuin_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType);
+            TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "UEQuin_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+
+            NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
+            NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
+
+            New->SetActorLocation(Vector3(-100.0f, 0.0f, 0.0f));
+        }
+
     	{
     		PActor* New = new PActor();
             POBJ_DEBUGNAME_SET(New, "LightActor");

@@ -80,9 +80,9 @@ namespace PigeonEngine
 		const EString ImportVSName = EString("StaticMesh_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, 0u, 0u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, 0u, 1u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, 0u, 2u)
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 0u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 1u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(FLOAT), 2u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 2u)
 		};
 		if (!VertexShader)
 		{

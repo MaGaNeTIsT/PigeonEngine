@@ -1733,7 +1733,7 @@ namespace PigeonEngine
 		output.SrcBlendAlpha = blendMap[input.SrcBlendAlpha];
 		output.DestBlendAlpha = blendMap[input.DstBlendAlpha];
 		output.BlendOpAlpha = blendOpMap[input.BlendOpAlpha];
-		if (input.RenderTargetWriteMask == RColorWriteMaskType::COLOR_WRITE_MASK_ALL)
+		if (input.RenderTargetWriteMask == (RColorWriteMaskType::COLOR_WRITE_MASK_ALL))
 		{
 			output.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
 		}
@@ -1957,79 +1957,289 @@ namespace PigeonEngine
 			"TEXCOORD"
 		};
 
+		auto TranslateMemberToFormat = [](const RInputLayoutDesc& InDesc)->DXGI_FORMAT
+		{
+			CheckSlow(((InDesc.MemberFormat >= RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT) && (InDesc.MemberFormat < RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_COUNT)), (ENGINE_RENDER_CORE_ERROR));
+			CheckSlow(((InDesc.MemberStride > 0u) && (InDesc.MemberStride <= 4u) && (InDesc.MemberStride != 3u)), (ENGINE_RENDER_CORE_ERROR));
+			CheckSlow(((InDesc.MemberNum > 0u) && (InDesc.MemberNum <= 4u)), (ENGINE_RENDER_CORE_ERROR));
+			if (InDesc.MemberNum == 1u)
+			{
+				if (InDesc.MemberStride == 1u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8_SNORM;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 2u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 4u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+						}
+					}
+				}
+			}
+			else if (InDesc.MemberNum == 2u)
+			{
+				if (InDesc.MemberStride == 1u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8_SNORM;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 2u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 4u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32_UINT;
+						}
+					}
+				}
+			}
+			else if (InDesc.MemberNum == 3u)
+			{
+				if (InDesc.MemberStride == 1u)
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Engine does not support [rgb8 type] this format."));
+				}
+				else if (InDesc.MemberStride == 2u)
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Engine does not support [rgb16 type] this format."));
+				}
+				else if (InDesc.MemberStride == 4u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32_UINT;
+						}
+					}
+				}
+			}
+			else if (InDesc.MemberNum == 4u)
+			{
+				if (InDesc.MemberStride == 1u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_SNORM;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 2u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
+						}
+					}
+				}
+				else if (InDesc.MemberStride == 4u)
+				{
+					switch (InDesc.MemberFormat)
+					{
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_SINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_UINT;
+						}
+					}
+				}
+			}
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Can not find this input layout member format."));
+			return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		};
+
 		if (input.SemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE) { return; }
 		{
 			EString strSemanticName; UINT32 semanticName = input.SemanticName;
 			output.SemanticIndex = semanticName & 0xfu;
+			output.Format = TranslateMemberToFormat(input);
 			if ((semanticName >> 15) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TEXCOORD[n]
 				//strSemanticName = "TEXCOORD";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_TEXCOORD];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT;
 			}
 			else if ((semanticName >> 14) & 0x1u)
 			{
 				//SHADER_SEMANTIC_POSITION[n]
 				//strSemanticName = "POSITION";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_POSITION];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 13) & 0x1u)
 			{
 				//SHADER_SEMANTIC_NORMAL[n]
 				//strSemanticName = "NORMAL";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_NORMAL];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 12) & 0x1u)
 			{
 				//SHADER_SEMANTIC_TANGENT[n]
 				//strSemanticName = "TANGENT";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_TANGENT];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 11) & 0x1u)
 			{
 				//SHADER_SEMANTIC_COLOR[n]
 				//strSemanticName = "COLOR";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_COLOR];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 10) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BLENDINDICES[n]
 				//strSemanticName = "BLENDINDICES";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BLENDINDICES];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
 			}
 			else if ((semanticName >> 9) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BLENDWEIGHT[n]
 				//strSemanticName = "BLENDWEIGHT";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BLENDWEIGHT];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 8) & 0x1u)
 			{
 				//SHADER_SEMANTIC_BINORMAL[n]
 				//strSemanticName = "BINORMAL";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_BINORMAL];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 7) & 0x1u)
 			{
 				//SHADER_SEMANTIC_POSITIONT[n]
 				//strSemanticName = "POSITIONT";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_POSITIONT];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 			else if ((semanticName >> 6) & 0x1u)
 			{
 				//SHADER_SEMANTIC_PSIZE[n]
 				//strSemanticName = "PSIZE";
 				output.SemanticName = StaticSemanticIndexName[ESemanticIndexType::SEMANTIC_INDEX_PSIZE];
-				output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
+				//output.Format = DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 		}
 		output.InputSlot = input.InputSlot;

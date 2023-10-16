@@ -82,8 +82,10 @@ namespace PigeonEngine
 			[this](EShaderResource* InResource)->RVertexShaderResource*
 			{
 				return (this->CreateShaderRenderResource(InResource));
-			},
-			FALSE))
+			}, FALSE, [this](EShaderResource* InResource)->void
+			{
+				this->ReleaseResourceInternal();
+			}))
 		{
 			bIsInitialized = TRUE;
 			return TRUE;
@@ -147,8 +149,10 @@ namespace PigeonEngine
 			[this](EShaderResource* InResource)->RPixelShaderResource*
 			{
 				return (this->CreateShaderRenderResource(InResource));
-			},
-			FALSE))
+			}, FALSE, [this](EShaderResource* InResource)->void
+			{
+				this->ReleaseResourceInternal();
+			}))
 		{
 			bIsInitialized = TRUE;
 			return TRUE;
@@ -201,7 +205,10 @@ namespace PigeonEngine
 			[this](EShaderResource* InResource)->RComputeShaderResource*
 			{
 				return (this->CreateShaderRenderResource(InResource));
-			}, FALSE))
+			}, FALSE, [this](EShaderResource* InResource)->void
+			{
+				this->ReleaseResourceInternal();
+			}))
 		{
 			bIsInitialized = TRUE;
 			return TRUE;
