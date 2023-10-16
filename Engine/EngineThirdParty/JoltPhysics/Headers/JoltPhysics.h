@@ -8,35 +8,12 @@
 #include "JoltPhysicsListener.h"
 #include "PhysicsManagerInterface.h"
 #include "Shapes.h"
+#include "PhysicsData.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
 // All Jolt symbols are in the JPH namespace
 using namespace JPH;
 using namespace PhysicsUtility;
-
-struct FPhysicsData
-{
-	//Initialized Parameters
-	UINT32 PreAllocatedSize = 70 * 1024 * 1024;			//pre-allocated memory for simulation.
-	UINT32 MaxBodies = 65535;							//Max amount of rigid bodies.
-	UINT32 NumBodyMutexes = 0;							//Mutexes count,0 to default setting.
-	UINT32 MaxBodyPairs = 65535;						//Max amount of body pairs that can be queued at any time.
-	UINT32 MaxContactConstraints = 65535;				//This is the maximum size of the contact constraint buffer.
-
-	//Runtime Parameters
-	INT32 CollisionSteps = 1;							// Do n collision step per cDeltaTime
-
-	//Physics Parameters
-	PhysicsSystem*										PhysicsSystem;
-	BodyInterface*										BodyInterface;
-	TempAllocatorImpl*									TempAllocator;
-	JobSystemThreadPool*								JobSystem;
-	PigeonEngine::CBPLayerInterfaceImpl*				BPLayerInterface;
-	PigeonEngine::CObjectLayerPairFilterImpl*			ObjectLayerPairFilterImpl;
-	PigeonEngine::CObjectVsBroadPhaseLayerFilterImpl*	ObjectVsBroadPhaseLayerFilterImpl;
-	PigeonEngine::FBodyActivationListener*				BodyActivationListener;
-	PigeonEngine::FContactListener*						ContactListener;
-};
 
 struct FPhysicsBodyId
 {

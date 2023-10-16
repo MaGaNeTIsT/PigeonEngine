@@ -1,5 +1,6 @@
 #include "../Headers/JoltPhysics.h"
 #include "../Headers/Character/Character.h"
+#include "../../../Sources/EngineCore/PhysicsCore/PhysicsConfig/PhysicsConfig.h"
 
 namespace PigeonEngine
 {
@@ -19,8 +20,10 @@ namespace PigeonEngine
 		//create PhysicsData
 		PhysicsData = new FPhysicsData();
 
+		FCommonSettings* CommonSettings = FCommonSettings::GetSingleton();
+
 		//pre-allocated memory for simulation.
-		PhysicsData->TempAllocator = new TempAllocatorImpl(PhysicsData->PreAllocatedSize);
+		PhysicsData->TempAllocator = new TempAllocatorImpl(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
 
 		//an example implementation for jobsystem
 		//used for multiple threads
@@ -33,7 +36,7 @@ namespace PigeonEngine
 		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = new CObjectVsBroadPhaseLayerFilterImpl();
 
 		PhysicsData->PhysicsSystem = new PhysicsSystem();
-		PhysicsData->PhysicsSystem->Init(PhysicsData->MaxBodies, PhysicsData->NumBodyMutexes, PhysicsData->MaxBodyPairs, PhysicsData->MaxContactConstraints, *PhysicsData->BPLayerInterface, *PhysicsData->ObjectVsBroadPhaseLayerFilterImpl, *PhysicsData->ObjectLayerPairFilterImpl);
+		PhysicsData->PhysicsSystem->Init(CommonSettings->PHYSICS_MAX_BODIES, CommonSettings->PHYSICS_NUM_BODY_MUTEXES, CommonSettings->PHYSICS_MAX_BODY_PAIRS, CommonSettings->PHYSICS_MAX_CONTACT_CONSTRAINTS, *PhysicsData->BPLayerInterface, *PhysicsData->ObjectVsBroadPhaseLayerFilterImpl, *PhysicsData->ObjectLayerPairFilterImpl);
 
 		PhysicsData->BodyActivationListener = new FBodyActivationListener();
 		PhysicsData->PhysicsSystem->SetBodyActivationListener(PhysicsData->BodyActivationListener);
@@ -48,7 +51,8 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::PhysicsUpdate(FLOAT InDeltaTime)
 	{
-		PhysicsData->PhysicsSystem->Update(InDeltaTime, PhysicsData->CollisionSteps, PhysicsData->TempAllocator, PhysicsData->JobSystem);
+		FCommonSettings* CommonSettings = FCommonSettings::GetSingleton();
+		PhysicsData->PhysicsSystem->Update(InDeltaTime, CommonSettings->PHYSICS_COLLISION_STEPS, PhysicsData->TempAllocator, PhysicsData->JobSystem);
 		for (auto Character = m_Characters.Begin(); Character != m_Characters.End(); ++Character)
 		{
 			//TODO:unsafe;
