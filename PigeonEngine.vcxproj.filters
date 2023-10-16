@@ -380,6 +380,9 @@
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\Pawn.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Editor\EditorManager.h" />
     <ClInclude Include="Engine\Sources\Asset\AssetManager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsConfig\PhysicsConfig.h" />
+    <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsData.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsTest\PhysicsTest.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -586,6 +589,8 @@
     <ClCompile Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\Pawn.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\Editor\EditorManager.cpp" />
     <ClCompile Include="Engine\Sources\Asset\AssetManager.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsConfig\PhysicsConfig.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsTest\PhysicsTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">

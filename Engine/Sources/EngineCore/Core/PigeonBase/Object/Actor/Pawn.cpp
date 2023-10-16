@@ -17,12 +17,14 @@ namespace PigeonEngine
     void PPawn::BeginAddedToScene(PWorld* World)
     {
         PActor::BeginAddedToScene(World);
+        SkeletalMeshComponent = new PSkeletalMeshComponent();
+        AddComponent(SkeletalMeshComponent, ETransform());
     }
 
     void PPawn::RemovedFromScene()
     {
         PActor::RemovedFromScene();
-
+        DestoyComponent(SkeletalMeshComponent);
     }
 
     void PPawn::UserBeginPlay()
@@ -42,6 +44,5 @@ namespace PigeonEngine
         PActor::UserTick(deltaTime);
 
     }
-
 
 }

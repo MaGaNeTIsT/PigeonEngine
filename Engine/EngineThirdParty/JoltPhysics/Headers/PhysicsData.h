@@ -1,6 +1,8 @@
 #pragma once
 #include <CoreMinimal.h>
 #include "JoltIncludes.h"
+#include "../../../Sources/EngineCore/PhysicsCore/PhysicsConfig/PhysicsConfig.h"
+
 PIGEONENGINE_NAMESPACE_BEGIN
 using namespace JPH;
 struct FPhysicsData

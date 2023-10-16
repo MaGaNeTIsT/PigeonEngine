@@ -1,6 +1,5 @@
 #include "../Headers/JoltPhysics.h"
 #include "../Headers/Character/Character.h"
-#include "../../../Sources/EngineCore/PhysicsCore/PhysicsConfig/PhysicsConfig.h"
 
 namespace PigeonEngine
 {
