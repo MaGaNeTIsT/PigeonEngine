@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Sources\Asset\AssetManager.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\Character.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterBase.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\Character\CharacterVirtual.h" />
@@ -171,6 +172,7 @@
     <ClInclude Include="Engine\ThirdParty\imgui\imstb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Sources\Asset\AssetManager.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterVirtual.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\Character.cpp" />
     <ClCompile Include="Engine\EngineThirdParty\JoltPhysics\CppFiles\Character\CharacterBase.cpp" />

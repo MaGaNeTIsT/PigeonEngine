@@ -1,6 +1,7 @@
 #include "EditorManager.h"
 
 #include "PigeonBase/Object/World/WorldManager.h"
+#include "AssetManager.h"
 
 namespace PigeonEngine
 {
@@ -49,7 +50,9 @@ namespace PigeonEngine
         m_EditorOpen = TempEditorOpen;
         EWorldManager* m_WorldManager = EWorldManager::GetManagerSingleton();
         m_WorldManager->EditorUpdate();
-
+        
+        EAssetManager* m_AssetManager = EAssetManager::GetManagerSingleton();
+        m_AssetManager->EditorUpdate();
         BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
     }

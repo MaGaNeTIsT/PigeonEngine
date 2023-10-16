@@ -6,7 +6,7 @@ namespace PigeonEngine
     class PWorld;
     class EWorldManager final : public EManagerBase
     {
-        CLASS_VIRTUAL_NOCOPY_BODY(EWorldManager)
+        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EWorldManager)
     public:
         void Initialize() override;
         void ShutDown() override;
@@ -22,14 +22,6 @@ namespace PigeonEngine
         PE_NODISCARD PWorld* GetWorld()const;
     private:
         PWorld*  World;
-
-    public:
-        static EWorldManager* GetManagerSingleton()
-        {
-            static EWorldManager _StaticManagerSingletonObject;
-            return (&_StaticManagerSingletonObject);
-        }
-        
 
     };
 }
