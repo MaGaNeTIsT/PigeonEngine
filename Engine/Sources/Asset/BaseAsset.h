@@ -172,8 +172,8 @@ namespace PigeonEngine
 			return RenderResourceData;
 		}
 	protected:
-		template<typename TCreateRenderResourceLambdaType>
-		BOOL32 CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL32& bHoldStoragedResource)
+		template<typename TCreateRenderResourceLambdaType, typename TReleaseStoragedResourceLambdaType>
+		BOOL32 CreateRenderResourceInternal(const TCreateRenderResourceLambdaType& lCreateFunc, const BOOL32& bHoldStoragedResource, const TReleaseStoragedResourceLambdaType& InReleaseFunc)
 		{
 			TRenderResourceType* TempData = lCreateFunc(ResourceData);
 			if (RenderResourceData)
@@ -200,9 +200,9 @@ namespace PigeonEngine
 #endif
 				return FALSE;
 			}
-			if (!bHoldStoragedResource)
+			// Release part of storaged resource that we do not need during runtime.
 			{
-				ReleaseResourceInternal();
+				InReleaseFunc(ResourceData);
 			}
 			bHoldResource = bHoldStoragedResource;
 			return TRUE;

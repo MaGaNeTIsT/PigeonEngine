@@ -531,6 +531,7 @@ namespace PigeonEngine
 				return;
 			}
 		}
+		OutMesh.SetEffectBoneNum(TempMaxWeightCount);
 		{
 			UINT32 AddElementCounter = 0u;
 			for (UINT32 TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)

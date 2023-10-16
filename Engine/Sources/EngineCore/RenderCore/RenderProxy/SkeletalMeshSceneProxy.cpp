@@ -63,6 +63,9 @@ namespace PigeonEngine
 	{
 		MeshAsset = InMeshAsset;
 		Check((!!MeshAsset), (ENGINE_RENDER_CORE_ERROR));
+#if _EDITOR_ONLY
+		if (!!MeshAsset)
+#endif
 		{
 			Check((MeshAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
 			{
@@ -172,11 +175,11 @@ namespace PigeonEngine
 		const EString ImportVSName = EString("SkeletalMesh_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, 0u, 0u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, 0u, 1u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, 0u, 2u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0, 0u, 3u),
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT0, 0u, 4u)
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 0u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_NORMAL0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 1u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(FLOAT), 2u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 2u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES0, sizeof(USHORT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT, 0u, 3u),
+			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 4u)
 		};
 		if (!VertexShader)
 		{
@@ -264,12 +267,53 @@ namespace PigeonEngine
 			}
 			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
 			{
-
 				const RInputLayoutDesc& Layout = Layouts[LayoutIndex];
-				const BOOL32 IsSkinLayout = ((Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT15)) || ((Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES15));
+				const BOOL32 IsSkinIndex = (Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES15);
+				const BOOL32 IsSkinWeight = (Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT) && (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT15);
+				CheckSlow((MeshAsset ? (MeshAsset->GetStoragedResource() ? (Layout.MemberNum == MeshAsset->GetStoragedResource()->GetEffectBoneNum()) : TRUE) : TRUE), (ENGINE_RENDER_CORE_ERROR));
+				const BOOL32 IsSkinLayout = IsSkinIndex || IsSkinWeight
+#if _EDITOR_ONLY
+					|| (Layout.MemberNum == MeshAsset->GetStoragedResource()->GetEffectBoneNum())
+#endif
+					;
 				if (IsSkinLayout)
 				{
-					//TODO
+					const TArray<RVertexBufferResource>& SkinRenderResources = MeshRenderResource->GetSkinRenderResource();
+					//TODO We only use first skin data for rendering for now.
+#if _EDITOR_ONLY
+					BOOL32 IsSkinRenderResourcesValid = (SkinRenderResources.Length() > 0u) && ((SkinRenderResources.Length() & 0x1u) == 0u);
+					Check((IsSkinRenderResourcesValid), (ENGINE_RENDER_CORE_ERROR));
+					if (IsSkinRenderResourcesValid)
+#endif
+					{
+						if (IsSkinIndex)
+						{
+#if _EDITOR_ONLY
+							PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh skin index buffer is invalid."), (SkinRenderResources[0].IsRenderResourceValid()));
+							if (SkinRenderResources[0].IsRenderResourceValid())
+#endif
+							{
+								RenderDevice->SetVertexBuffer(SkinRenderResources[0].Buffer, SkinRenderResources[0].Stride, 0u, LayoutIndex);
+							}
+						}
+						else if (IsSkinWeight)
+						{
+#if _EDITOR_ONLY
+							PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh skin weight buffer is invalid."), (SkinRenderResources[1].IsRenderResourceValid()));
+							if (SkinRenderResources[1].IsRenderResourceValid())
+#endif
+							{
+								Check((SkinRenderResources[1].Stride == (sizeof(FLOAT) * 4u)), (ENGINE_RENDER_CORE_ERROR));
+								RenderDevice->SetVertexBuffer(SkinRenderResources[1].Buffer, SkinRenderResources[1].Stride, 0u, LayoutIndex);
+							}
+						}
+#if _EDITOR_ONLY
+						else
+						{
+							PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh skin data error."));
+						}
+#endif
+					}
 				}
 				else
 				{

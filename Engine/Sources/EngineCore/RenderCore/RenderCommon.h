@@ -636,22 +636,33 @@ namespace PigeonEngine
 
 #undef SHADER_SEMANTIC_DEFINE
 
+	enum RInputLayoutFormatType : UINT8
+	{
+		INPUT_LAYOUT_FORMAT_FLOAT = 0,
+		INPUT_LAYOUT_FORMAT_INT,
+		INPUT_LAYOUT_FORMAT_UINT,
+		INPUT_LAYOUT_FORMAT_COUNT
+	};
+
 	struct RInputLayoutDesc
 	{
 		RInputLayoutDesc()noexcept
 			: SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE), SemanticIndex(0u)
-			, InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA)
-			, InstanceDataStepRate(0u) {}
+			, InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA), InstanceDataStepRate(0u)
+			, MemberStride(0u), MemberNum(0u), MemberFormat(RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_COUNT) {}
 		RInputLayoutDesc(const RInputLayoutDesc& Other)noexcept
 			: SemanticName(Other.SemanticName), SemanticIndex(Other.SemanticIndex)
 			, InputSlot(Other.InputSlot), InputSlotClass(Other.InputSlotClass)
-			, InstanceDataStepRate(Other.InstanceDataStepRate) {}
+			, InstanceDataStepRate(Other.InstanceDataStepRate), MemberStride(Other.MemberStride)
+			, MemberNum(Other.MemberNum), MemberFormat(Other.MemberFormat) {}
 		constexpr RInputLayoutDesc(RShaderSemanticType InSemanticName
+			, const UINT32 InMemberStride, const UINT32 InMemberNum, RInputLayoutFormatType InMemberFormat
 			, const UINT32 InSemanticIndex = 0u, const UINT32 InInputSlot = 0u
 			, RInputClassificationType InInputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA
 			, const UINT32 InInstanceDataStepRate = 0u)noexcept
 			: SemanticName(InSemanticName), SemanticIndex(InSemanticIndex), InputSlot(InInputSlot)
-			, InputSlotClass(InInputSlotClass), InstanceDataStepRate(InInstanceDataStepRate) {}
+			, InputSlotClass(InInputSlotClass), InstanceDataStepRate(InInstanceDataStepRate)
+			, MemberStride(InMemberStride), MemberNum(InMemberNum), MemberFormat(InMemberFormat) {}
 		RInputLayoutDesc& operator=(const RInputLayoutDesc& Other)
 		{
 			SemanticName			= Other.SemanticName;
@@ -659,6 +670,9 @@ namespace PigeonEngine
 			InputSlot				= Other.InputSlot;
 			InputSlotClass			= Other.InputSlotClass;
 			InstanceDataStepRate	= Other.InstanceDataStepRate;
+			MemberStride			= Other.MemberStride;
+			MemberNum				= Other.MemberNum;
+			MemberFormat			= Other.MemberFormat;
 			return (*this);
 		}
 
@@ -667,6 +681,9 @@ namespace PigeonEngine
 		UINT32						InputSlot;
 		RInputClassificationType	InputSlotClass;
 		UINT32						InstanceDataStepRate;
+		UINT32						MemberStride;
+		UINT32						MemberNum;
+		RInputLayoutFormatType		MemberFormat;
 	};
 	enum RResourceMapType : UINT8
 	{

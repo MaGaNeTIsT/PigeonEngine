@@ -467,8 +467,10 @@ namespace PigeonEngine
 			[this](ETexture2D* InResource)->RTexture2DResource*
 			{
 				return (this->CreateTextureResource(InResource));
-			},
-			FALSE))
+			}, FALSE, [this](ETexture2D* InResource)->void
+			{
+				this->ReleaseResourceInternal();
+			}))
 		{
 			bIsInitialized = TRUE;
 			return TRUE;
@@ -538,8 +540,10 @@ namespace PigeonEngine
 			[this](ETextureCube* InResource)->RTextureCubeResource*
 			{
 				return (this->CreateTextureResource(InResource));
-			},
-			FALSE))
+			}, FALSE, [this](ETextureCube* InResource)->void
+			{
+				this->ReleaseResourceInternal();
+			}))
 		{
 			bIsInitialized = TRUE;
 			return TRUE;

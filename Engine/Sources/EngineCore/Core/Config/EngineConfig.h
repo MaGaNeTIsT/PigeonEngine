@@ -36,6 +36,7 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_PATH													= "./Engine/Temp/OutputShaders/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MESH_PATH													= "./Engine/Temp/OutputMeshes/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_TEXTURE_PATH													= "./Engine/Temp/OutputTextures/";
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SKELETON_PATH												= "./Engine/Temp/OutputSkeletons/";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_SHADER_NAME_TYPE										= ".cso";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE								= "PEVS";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= "PEPS";

@@ -367,6 +367,9 @@ namespace PigeonEngine
 		BOOL32	AddSubmesh(const ESubmeshData* InSubmeshData, UINT32* OutSubmeshIndex = nullptr);
 		BOOL32	RemoveSubmesh(UINT32 InSubmeshIndex);
 		BOOL32	GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
+	public:
+		void	UnsafeReleaseIndexPart();
+		void	UnsafeReleaseVertexPart();
 	protected:
 		void	CopyBaseDataFromOtherInternal(const EMesh& Other);
 		void	SetVertexLayoutPartExistInternal(UINT32 InVertexLayoutType, UINT32 InPartIndex, BOOL32 InIsExist, BOOL32* OutIsAlreadyExist = nullptr);
@@ -422,11 +425,14 @@ namespace PigeonEngine
 		void					GenerateBindPoseIndex();
 		const EBindPoseValue&	GetBindPoseValue()const;
 		const EBindPoseIndex&	GetBindPoseIndex()const;
+		void					SetEffectBoneNum(const USHORT InEffectBoneNum);
 		USHORT					GetEffectBoneNum()const;
 		BOOL32					AddSkinElement(ESkinData* InSkinData, UINT32* OutLayoutIndex = nullptr);
 		BOOL32					RemoveSkinElement(UINT32 InLayoutIndex);
 		BOOL32					GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData)const;
 		const ESkinPart&		GetSkinPart()const;
+	public:
+		void	UnsafeReleaseSkinPart();
 	protected:
 		EBindPoseValue	BindPoseValue;
 		EBindPoseIndex	BindPoseIndex;
@@ -486,6 +492,7 @@ namespace PigeonEngine
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual BOOL32	InitRenderResource()override;
 		virtual void	ReleaseRenderResource()override;
+		const TArray<RVertexBufferResource>&	GetSkinRenderResource()const;
 	public:
 		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
 	public:
@@ -494,14 +501,11 @@ namespace PigeonEngine
 		ESkinnedMeshRenderResource(const ESkinnedMeshRenderResource& Other);
 		virtual ~ESkinnedMeshRenderResource();
 	protected:
-		BOOL32	CreateMeshSkeletonRenderResourceInternal();
 		BOOL32	CreateSkinRenderResourceInternal();
 		void	CopySkinRenderResourcesInternal(const ESkinnedMeshRenderResource* Other);
 	protected:
-		const class ESkeleton*	Skeleton;
-		RStructuredBuffer		MeshSkeletonRenderResource;
-		ESkinnedMesh*			SkinnedMesh;
-		TArray<RBufferResource>	SkinRenderResources;
+		ESkinnedMesh*					SkinnedMesh;
+		TArray<RVertexBufferResource>	SkinRenderResources;
 	};
 
 	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
