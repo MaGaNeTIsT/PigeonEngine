@@ -523,6 +523,7 @@ namespace PigeonEngine
 				if (TempMeshAsset)
 				{
 					SceneProxy->UpdateMeshAsset(TempMeshAsset);
+					NeedUpdateRenderResource = TRUE;
 				}
 				if (TempSkeletonAsset)
 				{

@@ -18,6 +18,7 @@ namespace PigeonEngine
 		BeginSetupParameter();
 		AddPrimitiveMaterialParameter();
 		AddMeshMaterialParameter();
+		AddParameter<Vector4Int, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("_SkeletonParams"));
 		EndSetupParameter();
 		CreateBuffer();
 	}
@@ -155,6 +156,7 @@ namespace PigeonEngine
 		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
+		MaterialParameter["_SkeletonParams"] = &TranslateUploadVectorType(Vector4Int(MeshAsset ? ((MeshAsset->GetStoragedResource()) ? (MeshAsset->GetStoragedResource()->GetBindPoseValue().Length()) : 0u) : 0u, 0u, 0u, 0u));
 		MaterialParameter.UploadBuffer();
 	}
 	void RSkeletalMeshSceneProxy::BindRenderResource()const
@@ -163,11 +165,35 @@ namespace PigeonEngine
 		BindPixelShader();
 		BindMeshResource();
 		BindMaterialParameter(1u);
-		BindSkeletonRenderResource(0u);
+		BindSkeletonRenderResource(0u, 1u);
 	}
 	void RSkeletalMeshSceneProxy::Draw()const
 	{
-
+#if _EDITOR_ONLY
+		BOOL32 IsMeshAssetValid = !!MeshAsset;
+		if (IsMeshAssetValid)
+		{
+			IsMeshAssetValid = MeshAsset->IsRenderResourceValid();
+		}
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skeletal mesh asset is invalid."), (IsMeshAssetValid));
+		if (IsMeshAssetValid)
+#endif
+		{
+			const ESkinnedMeshRenderResource* MeshRenderResource = MeshAsset->GetRenderResource();
+			const RIndexBufferResource* IndexRenderResource = MeshRenderResource->GetIndexRenderResource();
+#if _EDITOR_ONLY
+			BOOL32 IsIndexRenderResourceValid = !!IndexRenderResource;
+			if (IsIndexRenderResourceValid)
+			{
+				IsIndexRenderResourceValid = IndexRenderResource->IsRenderResourceValid();
+			}
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Draw skeletal mesh indexed is invalid."), (IsIndexRenderResourceValid));
+			if (IsIndexRenderResourceValid)
+#endif
+			{
+				RDeviceD3D11::GetDeviceSingleton()->DrawIndexed(IndexRenderResource->IndexCount);
+			}
+		}
 	}
 	void RSkeletalMeshSceneProxy::SetupShaders()
 	{
@@ -183,7 +209,7 @@ namespace PigeonEngine
 		};
 		if (!VertexShader)
 		{
-			const UINT32 TempShaderInputLayoutNum = 3u;
+			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
 			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
 				VertexShader,
 				&ImportPath, &ImportVSName,
@@ -362,9 +388,20 @@ namespace PigeonEngine
 			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
 		}
 	}
-	void RSkeletalMeshSceneProxy::BindSkeletonRenderResource(const UINT32 InSlot)const
+	void RSkeletalMeshSceneProxy::BindSkeletonRenderResource(const UINT32 InMatrixSlot, const UINT32 InInvTranMatrixSlot)const
 	{
-
+#if _EDITOR_ONLY
+		BOOL32 IsValid = SkeletonRenderResource.IsRenderResourceValid();
+		Check((IsValid), (ENGINE_RENDER_CORE_ERROR));
+		if (IsValid)
+#endif
+		{
+			const RStructuredBuffer& MatrixBuffer = SkeletonRenderResource.GetRenderResource(ESkeletonRenderResource::ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX);
+			const RStructuredBuffer& MatrixITBuffer = SkeletonRenderResource.GetRenderResource(ESkeletonRenderResource::ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX);
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			RenderDevice->BindVSShaderResourceView(MatrixBuffer.ShaderResourceView, InMatrixSlot);
+			RenderDevice->BindVSShaderResourceView(MatrixITBuffer.ShaderResourceView, InInvTranMatrixSlot);
+		}
 	}
 
 };

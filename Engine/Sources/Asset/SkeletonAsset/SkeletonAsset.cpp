@@ -401,6 +401,11 @@ namespace PigeonEngine
 	{
 		return BoneNum;
 	}
+	const RStructuredBuffer& ESkeletonRenderResource::GetRenderResource(ESkeletonRenderResourceType InType)const
+	{
+		Check(((InType >= ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX) && (InType < ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT)), (ENGINE_ASSET_ERROR));
+		return (RenderResource[InType]);
+	}
 	void ESkeletonRenderResource::UpdateRenderResource(const TArray<Matrix4x4>& InMatrices)
 	{
 		const UINT32 InMatrixNum = InMatrices.Length();

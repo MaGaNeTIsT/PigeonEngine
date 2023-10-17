@@ -67,6 +67,9 @@ cbuffer ConstantBufferPerDraw : register(SHADER_PERDRAW_INPUT_SLOT)
 	float4x4		_WorldInvMatrix;
 	float4x4		_WorldInvTransposeMatrix;
 #endif
+#if (SHADER_USE_SKELETON_INPUT)
+	uint4			_SkeletonParams;
+#endif
 };
 #endif
 

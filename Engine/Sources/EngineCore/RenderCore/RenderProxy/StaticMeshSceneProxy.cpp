@@ -86,7 +86,7 @@ namespace PigeonEngine
 		};
 		if (!VertexShader)
 		{
-			const UINT32 TempShaderInputLayoutNum = 3u;
+			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
 			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
 				VertexShader,
 				&ImportPath, &ImportVSName,

@@ -154,9 +154,10 @@ namespace PigeonEngine
 			SKELETON_RENDER_RESOURCE_COUNT
 		};
 	public:
-		void			SetBoneNum(const UINT32 InBoneNum);
-		UINT32			GetBoneNum()const;
-		void			UpdateRenderResource(const TArray<Matrix4x4>& InMatrices);
+		void						SetBoneNum(const UINT32 InBoneNum);
+		UINT32						GetBoneNum()const;
+		const RStructuredBuffer&	GetRenderResource(ESkeletonRenderResourceType InType)const;
+		void						UpdateRenderResource(const TArray<Matrix4x4>& InMatrices);
 	public:
 		virtual BOOL32	IsRenderResourceValid()const override;
 		virtual BOOL32	InitRenderResource()override;

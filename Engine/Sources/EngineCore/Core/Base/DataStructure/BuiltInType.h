@@ -65,6 +65,8 @@ namespace PigeonEngine
 #define PE_DLLEXPORT					__declspec(dllexport)								/* DLL export definitions */
 #define PE_DLLIMPORT					__declspec(dllimport)								/* DLL import definitions */
 
+#define PE_ARRAYSIZE(__Array)			(static_cast<UINT32>(sizeof((__Array)) / sizeof(*((__Array)))))
+
 #if _EDITOR_ONLY
 #define PE_BREAKPOINT					(__debugbreak())
 #else

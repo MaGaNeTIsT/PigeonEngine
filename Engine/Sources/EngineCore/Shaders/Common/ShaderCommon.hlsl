@@ -39,10 +39,13 @@
 #include "../Public/ShaderFastMath.hlsl"
 #include "../Public/ShaderSpaceTransform.hlsl"
 #include "../Public/ShaderRenderCommon.hlsl"
-#if SHADER_USE_DEFERRED_SHADING
+#if (SHADER_USE_DEFERRED_SHADING)
 #include "../Public/ShaderDeferredCommon.hlsl"
 #endif
 #include "../Public/ShaderBxDF.hlsl"
 #include "../Public/ShaderShadingFunctions.hlsl"
+#if (SHADER_USE_SKELETON_INPUT)
+#include "../Public/ShaderSkinnings.hlsl"
+#endif
 
 #endif	//_SHADER_COMMON_HLSL

@@ -68,11 +68,11 @@ namespace PigeonEngine
 
             const ESkinnedMeshAsset* MeshAsset = nullptr;
             const ESkeletonAsset* SkeletonAsset = nullptr;
-            EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
-            EString ImportName("SK_Mannequin_UE4_WithWeapon");
+            EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
+            EString ImportName("Model");
             EString ImportFileType("FBX");
-            TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "UEQuin_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType);
-            TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "UEQuin_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+            TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "D.Va_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType);
+            TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "D.Va_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 
             NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
             NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);

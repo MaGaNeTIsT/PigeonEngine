@@ -5,8 +5,6 @@
 namespace PigeonEngine
 {
 
-#define ENGINE_CUSTOM_ARRAYSIZE(_ARR)						(static_cast<UINT32>(sizeof(_ARR) / sizeof(*(_ARR))))
-
 	class ESettings
 	{
 	public:

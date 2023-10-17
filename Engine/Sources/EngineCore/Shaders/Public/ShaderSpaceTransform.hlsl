@@ -4,6 +4,10 @@
 #include "./ShaderVariables.hlsl"
 #include "./ShaderFunctions.hlsl"
 
+#ifndef SHADER_USE_TRANSFORM
+#define SHADER_USE_TRANSFORM		0
+#endif	//SHADER_USE_TRANSFORM
+
 #define ENGINE_CAMERA_POSITION		(_CameraWorldPosition)
 #define ENGINE_MATRIX_V				(_ViewMatrix)
 #define ENGINE_MATRIX_P				(_ProjectionMatrix)
@@ -12,7 +16,7 @@
 #define ENGINE_MATRIX_VP			(_ViewProjectionMatrix)
 #define ENGINE_MATRIX_I_VP			(_ViewProjectionInvMatrix)
 
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 #define ENGINE_MATRIX_W				(_WorldMatrix)
 #define ENGINE_MATRIX_I_W			(_WorldInvMatrix)
 #define ENGINE_MATRIX_I_T_W			(_WorldInvTransposeMatrix)
@@ -37,7 +41,7 @@ float3 TransformDirectionToSpecificSpace(const float3 InDirection, const float3x
 }
 float3 TransformObjectToWorld(const float3 InPosition)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	return mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
 #else
 	return (InPosition.xyz);
@@ -45,7 +49,7 @@ float3 TransformObjectToWorld(const float3 InPosition)
 }
 float4 TransformObjectToClip(const float3 InPosition)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	float3 PositionWS = mul(float4(InPosition, 1.0), ENGINE_MATRIX_W).xyz;
 #else
 	float3 PositionWS = InPosition.xyz;
@@ -54,7 +58,7 @@ float4 TransformObjectToClip(const float3 InPosition)
 }
 float3 TransformWorldToObject(const float3 InPosition)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	return mul(float4(InPosition, 1.0), ENGINE_MATRIX_I_W).xyz;
 #else
 	return (InPosition.xyz);
@@ -95,7 +99,7 @@ float3 TransformScreenToView(float2 InUV, float InViewZ)
 }
 float3 TransformObjectToWorldNormal(const float3 InNormal, uniform bool bNormalize = true)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	float3 NormalWS = mul(InNormal.xyz, (float3x3)ENGINE_MATRIX_I_T_W);
 #else
 	float3 NormalWS = InNormal.xyz;
@@ -108,7 +112,7 @@ float3 TransformObjectToWorldNormal(const float3 InNormal, uniform bool bNormali
 }
 float3 TransformObjectToWorldDir(const float3 InDir, uniform bool bNormalize = true)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	float3 DirWS = mul(InDir.xyz, (float3x3)ENGINE_MATRIX_W);
 #else
 	float3 DirWS = InDir.xyz;
@@ -121,7 +125,7 @@ float3 TransformObjectToWorldDir(const float3 InDir, uniform bool bNormalize = t
 }
 float3 TransformWorldToObjectDir(const float3 InDir, uniform bool bNormalize = true)
 {
-#ifdef SHADER_USE_TRANSFORM
+#if (SHADER_USE_TRANSFORM)
 	float3 DirOS = mul(InDir.xyz, (float3x3)ENGINE_MATRIX_I_W);
 #else
 	float3 DirOS = InDir.xyz;

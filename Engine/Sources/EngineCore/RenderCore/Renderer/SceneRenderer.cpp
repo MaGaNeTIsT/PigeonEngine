@@ -165,7 +165,7 @@ namespace PigeonEngine
 			{
 				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(FLOAT), 2u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
 			};
-			const UINT32 TempShaderInputLayoutNum = 1u;
+			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
 			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
 				SimpleFullScreenVertexShader,
 				&ImportPath, &ImportVSName,
