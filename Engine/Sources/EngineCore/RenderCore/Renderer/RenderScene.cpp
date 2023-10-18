@@ -453,7 +453,11 @@ namespace PigeonEngine
 					TempBoneToRootMatrices.Resize(MatrixNum);
 					for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
 					{
-						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixNum].ToMatrix4x4();
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex];
+#else
+						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex].ToMatrix4x4();
+#endif
 					}
 				}
 				SceneProxy->SetupProxy(InIsRenderHidden, TRUE, InIsCastShadow, InIsReceiveShadow,
@@ -531,20 +535,27 @@ namespace PigeonEngine
 				}
 				if (TempUpdateBoneData)
 				{
-					TArray<Matrix4x4> TempBoneToRootMatrices;
-					if (const UINT32 MatrixNum = TempBoneToRootTransforms.Length(); MatrixNum > 0u)
-					{
-						TempBoneToRootMatrices.Resize(MatrixNum);
-						for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
-						{
-							TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixNum].ToMatrix4x4();
-						}
-					}
-					SceneProxy->UpdateSkeletonRenderResource(TempBoneToRootMatrices);
+					NeedUpdateRenderResource = TRUE;
 				}
 				if (NeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
+					{
+						TArray<Matrix4x4> TempBoneToRootMatrices;
+						if (const UINT32 MatrixNum = TempBoneToRootTransforms.Length(); MatrixNum > 0u)
+						{
+							TempBoneToRootMatrices.Resize(MatrixNum);
+							for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
+							{
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+								TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex];
+#else
+								TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex].ToMatrix4x4();
+#endif
+							}
+						}
+						SceneProxy->UpdateSkeletonRenderResource(TempBoneToRootMatrices);
+					}
 				}
 			});
 	}

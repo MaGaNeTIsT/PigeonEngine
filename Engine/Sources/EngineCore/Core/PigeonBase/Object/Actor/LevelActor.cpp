@@ -37,7 +37,7 @@ namespace PigeonEngine
 	void PLevelActor::UserBeginPlay()
     {
     	// add a static mesh actor
-		/*{
+		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
 			POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
@@ -54,7 +54,7 @@ namespace PigeonEngine
 			NewStaticMeshComp->SetMeshAsset(Asset);
 
 			New->SetActorLocation(Vector3(100.0f, 0.0f, 0.0f));
-		}*/
+		}
 
         // add a skeletal mesh actor
 		{
@@ -80,7 +80,7 @@ namespace PigeonEngine
 			New->SetActorLocation(Vector3(-100.0f, 0.0f, 0.0f));
 		}
 
-		/*{
+		{
 			PActor* New = new PActor();
 			POBJ_DEBUGNAME_SET(New, "LightActor");
 
@@ -125,7 +125,7 @@ namespace PigeonEngine
 			SkyLightComp->SetIntensity(1.0f);
 			New->AddComponent(SkyLightComp);
 			New->SetActorScale(Vector3(1000.0f, 1000.0f, 1000.0f));
-		}*/
+		}
 
         {
             

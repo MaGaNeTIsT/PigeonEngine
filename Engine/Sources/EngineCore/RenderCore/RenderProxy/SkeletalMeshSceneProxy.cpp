@@ -94,7 +94,7 @@ namespace PigeonEngine
 				Check((Skeleton->GetBoneCount() > 0u), (ENGINE_RENDER_CORE_ERROR));
 
 				Check((!!MeshAsset), (ENGINE_RENDER_CORE_ERROR));
-				Check((MeshAsset->IsResourceValid()), (ENGINE_RENDER_CORE_ERROR));
+				Check((MeshAsset->GetStoragedResource()), (ENGINE_RENDER_CORE_ERROR));
 				const ESkinnedMesh* SkinnedMesh = MeshAsset->GetStoragedResource();
 				Check((!!SkinnedMesh), (ENGINE_RENDER_CORE_ERROR));
 				const ESkinnedMesh::EBindPoseValue& BindPoses = SkinnedMesh->GetBindPoseValue();
@@ -115,7 +115,13 @@ namespace PigeonEngine
 					if ((!!BindPosePtr) && (BoneIndex < InBoneToRootMatrices.Length()))
 #endif
 					{
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex]) * (*BindPosePtr);
+						//BoneValues[It->second] = BoneValues[It->second].Transpose();
+#else
 						BoneValues[It->second] = (InBoneToRootMatrices[BoneIndex].Transpose()) * (*BindPosePtr);
+						//BoneValues[It->second] = BoneValues[It->second].Transpose();
+#endif
 #if _EDITOR_ONLY
 						CheckBoneUpdate = TRUE;
 #endif

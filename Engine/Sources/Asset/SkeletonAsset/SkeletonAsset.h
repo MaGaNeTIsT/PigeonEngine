@@ -176,6 +176,8 @@ namespace PigeonEngine
 
 	};
 
+#define _USE_MATRIX_FOR_BONE_TO_ROOT	1
+
 	class ESkeletonBoneMemoryPool
 	{
 	public:
@@ -188,10 +190,16 @@ namespace PigeonEngine
 		const ESkeleton*				GetRawSkeleton()const;
 		const TArray<EBoneTransform>&	GetBoneRelativeTransforms()const;
 		TArray<EBoneTransform>&			GetBoneRelativeTransforms();
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+		const TArray<Matrix4x4>&		GetBoneToRootTransforms()const;
+		TArray<Matrix4x4>&				GetBoneToRootTransforms();
+		const Matrix4x4&				GetBoneToRootTransform(const EString& InBoneName)const;
+#else
 		const TArray<EBoneTransform>&	GetBoneToRootTransforms()const;
 		TArray<EBoneTransform>&			GetBoneToRootTransforms();
-		const EBoneTransform&			GetBoneRelativeTransform(const EString& InBoneName)const;
 		const EBoneTransform&			GetBoneToRootTransform(const EString& InBoneName)const;
+#endif
+		const EBoneTransform&			GetBoneRelativeTransform(const EString& InBoneName)const;
 	public:
 		void	SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition);
 		void	SetBoneRelativeRotation(const EString& InBoneName, const Quaternion& InRotation);
@@ -340,7 +348,11 @@ namespace PigeonEngine
 	private:
 		const ESkeleton*		RawSkeletonPtr;
 		TArray<EBoneTransform>	BoneRelativeTransforms;
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+		TArray<Matrix4x4>		BoneToRootTransforms;
+#else
 		TArray<EBoneTransform>	BoneToRootTransforms;
+#endif
 	public:
 		ESkeletonBoneMemoryPool();
 		ESkeletonBoneMemoryPool(const ESkeletonBoneMemoryPool& Other);

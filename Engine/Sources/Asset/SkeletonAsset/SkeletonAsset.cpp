@@ -569,32 +569,56 @@ namespace PigeonEngine
 #endif
 		{
 			TArray<EBoneTransform>& UsedRelativeTransforms = BoneRelativeTransforms;
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+			TArray<Matrix4x4>& UsedToRootTransforms = BoneToRootTransforms;
+#else
 			TArray<EBoneTransform>& UsedToRootTransforms = BoneToRootTransforms;
+#endif
 #if _EDITOR_ONLY
 			const UINT32 UsedRelativeTransformNum = UsedRelativeTransforms.Length();
 #endif
 			BackwardRecursionBone(
 				0,
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+				Matrix4x4::Identity(),
+#else
 				EBoneTransform::Identity(),
+#endif
 				[&UsedRelativeTransforms, &UsedToRootTransforms
 #if _EDITOR_ONLY
 				, &UsedRelativeTransformNum
 #endif
-				](const EBoneData& InBoneData, EBoneTransform& InBoneTransform)->void
+				](const EBoneData& InBoneData,
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+					Matrix4x4& InBoneMatrix
+#else
+					EBoneTransform& InBoneTransform
+#endif
+					)->void
 				{
 					Check((InBoneData.Index >= 0));
 					Check((((UINT32)(InBoneData.Index)) < UsedRelativeTransformNum));
-					//Matrix4x4 TempGlobalTransform = UsedRelativeTransforms[InBoneData.Index].ToMatrix4x4().Transpose();
-					//TempGlobalTransform = InMatrix * TempGlobalTransform;
-					//UsedToRootTransforms[InBoneData.Index] = TempGlobalTransform;
-					//InMatrix = TempGlobalTransform;
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
+					Matrix4x4 TempGlobalMatrix = TempRelativeBoneTransform.ToMatrix4x4().Transpose();
+					TempGlobalMatrix = InBoneMatrix * TempGlobalMatrix;
+					InBoneMatrix = TempGlobalMatrix;
+					UsedToRootTransforms[InBoneData.Index] = TempGlobalMatrix;
+#else
 					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
 					InBoneTransform.Position += TempRelativeBoneTransform.Position;
-					InBoneTransform.Rotation = TempRelativeBoneTransform.Rotation * InBoneTransform.Rotation;
+					InBoneTransform.Rotation = (TempRelativeBoneTransform.Rotation) * (InBoneTransform.Rotation);
 					InBoneTransform.Scaling *= TempRelativeBoneTransform.Scaling;
 					UsedToRootTransforms[InBoneData.Index] = InBoneTransform;
+#endif
 				},
-				[](const EBoneData& InBoneData, const EBoneTransform& InMatrix)->BOOL32
+				[](const EBoneData& InBoneData,
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+					const Matrix4x4& InMatrix
+#else
+					const EBoneTransform& InMatrix
+#endif
+					)->BOOL32
 				{
 					return TRUE;
 				});
@@ -620,6 +644,35 @@ namespace PigeonEngine
 	{
 		return BoneRelativeTransforms;
 	}
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+	const TArray<Matrix4x4>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()const
+	{
+		return BoneToRootTransforms;
+	}
+	TArray<Matrix4x4>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()
+	{
+		return BoneToRootTransforms;
+	}
+	const Matrix4x4& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
+	{
+		CheckSlow(IsValid());
+#if _EDITOR_ONLY
+		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#endif
+		{
+			return (BoneToRootTransforms[BoneIndex]);
+		}
+#if _EDITOR_ONLY
+		else
+		{
+			EString ErrorInfo("Can not find [");
+			ErrorInfo = ErrorInfo + InBoneName + "] bone in [" + (RawSkeletonPtr ? RawSkeletonPtr->GetSkeletonName() : "null") + "] skeleton.";
+			PE_FAILED((ENGINE_UNKNOWN_ERROR), (*ErrorInfo));
+	}
+		return (Matrix4x4::Identity());
+#endif
+	}
+#else
 	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneToRootTransforms()const
 	{
 		return BoneToRootTransforms;
@@ -628,14 +681,14 @@ namespace PigeonEngine
 	{
 		return BoneToRootTransforms;
 	}
-	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneRelativeTransform(const EString& InBoneName)const
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
 	{
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
 #endif
 		{
-			return (BoneRelativeTransforms[BoneIndex]);
+			return (BoneToRootTransforms[BoneIndex]);
 		}
 #if _EDITOR_ONLY
 		else
@@ -647,14 +700,15 @@ namespace PigeonEngine
 		return (EBoneTransform::Identity());
 #endif
 	}
-	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneToRootTransform(const EString& InBoneName)const
+#endif
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetBoneRelativeTransform(const EString& InBoneName)const
 	{
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
 #endif
 		{
-			return (BoneToRootTransforms[BoneIndex]);
+			return (BoneRelativeTransforms[BoneIndex]);
 		}
 #if _EDITOR_ONLY
 		else
