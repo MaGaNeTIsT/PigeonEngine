@@ -55,7 +55,7 @@ namespace PigeonEngine
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 
-    protected:
+    public:
         virtual void TickRender();
     protected:
         void BeginAddedToScene(PWorld* World) override;
@@ -121,8 +121,7 @@ namespace PigeonEngine
     	PE_NODISCARD TSet<PSceneComponent*> GetChildrenComponents() const;
     protected:
     	void ClearChildren       ();
-    private:
-    	
+    protected:
     	TSet<PSceneComponent*> ChildrenComponents;
     	
     public:

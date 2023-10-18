@@ -28,7 +28,8 @@ namespace PigeonEngine
         const ESkinnedMeshAsset*        MeshAsset;
         const ESkeletonAsset*           SkeletonAsset;
         ESkeletonBoneMemoryPool         BoneMemoryPool;
-
+	protected:
+		virtual void TickRender();
         // Render proxy functions START
     public:
         enum PSkeletalMeshUpdateState : UINT8

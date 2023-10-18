@@ -62,7 +62,19 @@ namespace PigeonEngine
         MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_BONE_DATA);
     }
 
-    // Render proxy functions START
+	void PSkeletalMeshComponent::TickRender()
+	{
+		if (IsRenderStateDirty())
+		{
+			SendUpdateRenderState();
+		}
+		for (const auto& elem : ChildrenComponents)
+		{
+			elem->TickRender();
+		}
+	}
+
+	// Render proxy functions START
     UINT8 PSkeletalMeshComponent::GetUpdateRenderState()const
     {
         return UpdateState;
