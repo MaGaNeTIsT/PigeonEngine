@@ -42,6 +42,10 @@ namespace PigeonEngine
         SkeletonAsset = InSkeletonAsset;
         if ((!!SkeletonAsset) && NeedRegenerate)
         {
+            if (!!MeshAsset)
+            {
+                MeshAsset->SetSkeleton(SkeletonAsset->GetStoragedResource());
+            }
             if (SkeletonAsset->IsResourceValid())
             {
                 BoneMemoryPool.GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());

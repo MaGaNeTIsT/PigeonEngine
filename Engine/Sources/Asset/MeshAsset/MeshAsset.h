@@ -569,12 +569,12 @@ namespace PigeonEngine
 	public:
 		virtual BOOL32	InitResource()override;
 	public:
-		void	SetSkeleton(const class ESkeleton* InSkeleton);
+		void	SetSkeleton(const class ESkeleton* InSkeleton)const;
 		const class ESkeleton*	GetSkeleton()const;
 	protected:
 		ESkinnedMeshRenderResource*	CreateMeshResource(ESkinnedMesh* InResource);
 	protected:
-		const class ESkeleton* Skeleton;
+		PE_MUTABLE const class ESkeleton* Skeleton;
 	public:
 		ESkinnedMeshAsset() = delete;
 

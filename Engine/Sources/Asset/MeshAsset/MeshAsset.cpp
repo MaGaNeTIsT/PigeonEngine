@@ -1506,7 +1506,7 @@ namespace PigeonEngine
 					FullyCreated = FALSE;
 				}
 				delete[]TempSkinIndexMem;
-				TempSkinIndexBufferResource.Stride = sizeof(UINT16);
+				TempSkinIndexBufferResource.Stride = IndexStride;
 				SkinRenderResources.Add(TempSkinIndexBufferResource);
 			}
 
@@ -1666,7 +1666,7 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	void ESkinnedMeshAsset::SetSkeleton(const ESkeleton* InSkeleton)
+	void ESkinnedMeshAsset::SetSkeleton(const ESkeleton* InSkeleton)const
 	{
 		if (!!InSkeleton)
 		{

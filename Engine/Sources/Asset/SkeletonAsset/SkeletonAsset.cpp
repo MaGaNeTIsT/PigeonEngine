@@ -383,9 +383,7 @@ namespace PigeonEngine
 	{
 		if (BoneNum != InBoneNum)
 		{
-			BOOL32 NeedInitNewResource = BoneNum != 0u;
 			BoneNum = InBoneNum;
-			if (NeedInitNewResource)
 			{
 #if _EDITOR_ONLY
 				BOOL32 Result =
