@@ -735,7 +735,7 @@
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SceneLighting_PEPS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkyLight_PEPS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkyLight_PEVS.hlsl" />
-    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkeletalMesh_PEVS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkeletalMesh_PEPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkeletalMesh_PEVS.hlsl" />
   </ItemGroup>
 </Project>

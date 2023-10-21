@@ -100,35 +100,35 @@ float4x4 GetFinalBoneMatrix(in Attribute Input)
 
 float4x4 GetFinalBoneInverseTransposeMatrix(in Attribute Input)
 {
-	const uint BoneNum = _SkeletonParams.x;
-	float4x4 OutFinalMatrix = USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex0.x] * Input.BlendWeight0.x;
+	//const uint BoneNum = _SkeletonParams.x;
+	float4x4 OutFinalMatrix = USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex0.x] * Input.BlendWeight0.x;
 	float FinalWeight = Input.BlendWeight0.x;
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 2)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex0.y] * Input.BlendWeight0.y;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex0.y] * Input.BlendWeight0.y;
 	FinalWeight += Input.BlendWeight0.y;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 3)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex0.z] * Input.BlendWeight0.z;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex0.z] * Input.BlendWeight0.z;
 	FinalWeight += Input.BlendWeight0.z;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 4)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex0.w] * Input.BlendWeight0.w;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex0.w] * Input.BlendWeight0.w;
 	FinalWeight += Input.BlendWeight0.z;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 5)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex1.x] * Input.BlendWeight1.x;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex1.x] * Input.BlendWeight1.x;
 	FinalWeight += Input.BlendWeight1.x;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 6)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex1.y] * Input.BlendWeight1.y;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex1.y] * Input.BlendWeight1.y;
 	FinalWeight += Input.BlendWeight1.y;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 7)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex1.z] * Input.BlendWeight1.z;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex1.z] * Input.BlendWeight1.z;
 	FinalWeight += Input.BlendWeight1.z;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 8)
-	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[BoneNum + Input.BlendIndex1.w] * Input.BlendWeight1.w;
+	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex1.w] * Input.BlendWeight1.w;
 	FinalWeight += Input.BlendWeight1.w;
 #endif
 	OutFinalMatrix /= FinalWeight;
