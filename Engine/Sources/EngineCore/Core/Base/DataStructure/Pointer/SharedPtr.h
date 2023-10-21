@@ -15,17 +15,20 @@ namespace PigeonEngine
     public:
         TSharedPtr();
         TSharedPtr(const TSharedPtr<T>& Other);
-        explicit TSharedPtr(const std::shared_ptr<T>& Other);
+        TSharedPtr(const std::shared_ptr<T>& Other);
+        TSharedPtr(T* value = nullptr);
 
         T&              operator*()const;
         T*              operator->()const;
+        TSharedPtr<T>&  operator=(T* value);
         TSharedPtr<T>&  operator=(const TSharedPtr<T>& Other);
         TSharedPtr<T>&  operator=(const std::shared_ptr<T>& Other);
-        explicit        operator BOOL32() const;
-        BOOL32          operator==(const TSharedPtr<T>& Other);
-        BOOL32          operator!=(const TSharedPtr<T>& Other);
+        explicit        operator BOOL8() const;
+        BOOL8           operator!() const;
+        BOOL8           operator==(const TSharedPtr<T>& Other) const;
+        BOOL8           operator!=(const TSharedPtr<T>& Other);
         
-        PE_NODISCARD BOOL32 IsValid()const;
+        PE_NODISCARD BOOL8 IsValid()const;
         
         T* Get() const;
 
@@ -50,11 +53,18 @@ namespace PigeonEngine
     Shared(Other.Shared)
     {
     }
-
+    
     template <typename T>
     TSharedPtr<T>::TSharedPtr(const std::shared_ptr<T>& Other)
         :
     Shared(Other)
+    {
+    }
+
+    template <typename T>
+    TSharedPtr<T>::TSharedPtr(T* value)
+        :
+    Shared(value ? std::make_shared<T>(*value) : nullptr)
     {
     }
 
@@ -68,6 +78,13 @@ namespace PigeonEngine
     T* TSharedPtr<T>::operator->() const
     {
         return Shared.get();
+    }
+
+    template <typename T>
+    TSharedPtr<T>& TSharedPtr<T>::operator=(T* value)
+    {
+        Shared = (value ? std::make_shared<T>(*value) : nullptr);
+        return *this;
     }
 
     template <typename T>
@@ -85,25 +102,31 @@ namespace PigeonEngine
     }
 
     template <typename T>
-    TSharedPtr<T>::operator BOOL32() const
+    TSharedPtr<T>::operator BOOL8() const
     {
         return IsValid();
     }
 
     template <typename T>
-    BOOL32 TSharedPtr<T>::operator==(const TSharedPtr<T>& Other)
+    BOOL8 TSharedPtr<T>::operator!() const
     {
-        return this->Shared==Other.Shared;
+        return this->Shared == nullptr;
     }
 
     template <typename T>
-    BOOL32 TSharedPtr<T>::operator!=(const TSharedPtr<T>& Other)
+    BOOL8 TSharedPtr<T>::operator==(const TSharedPtr<T>& Other) const
+    {
+        return this->Shared == Other.Shared;
+    }
+
+    template <typename T>
+    BOOL8 TSharedPtr<T>::operator!=(const TSharedPtr<T>& Other)
     {
         return !(*this==Other);
     }
 
     template <typename T>
-    BOOL32 TSharedPtr<T>::IsValid() const
+    BOOL8 TSharedPtr<T>::IsValid() const
     {
         return Shared.get() == nullptr;
     }
@@ -126,6 +149,4 @@ namespace PigeonEngine
     {
         return TSharedPtr<T>(std::make_shared<T>(Args...));
     }
-};
-
- 
+}

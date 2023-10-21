@@ -44,6 +44,7 @@ namespace PigeonEngine
         EString&    operator+=(const CHAR* Other) ;
         
         PE_NODISCARD UINT32  Length   ()const;
+        PE_NODISCARD UINT32  LastIndex()const;
         PE_NODISCARD BOOL32  StartWith(const EString& SubString)const;
         PE_NODISCARD UINT32  Find     (const EString& SubString) const;
         PE_NODISCARD UINT32  RightFind(const EString& SubString) const;
@@ -51,7 +52,7 @@ namespace PigeonEngine
         PE_NODISCARD EString Left     (const UINT32& Count) const;
         PE_NODISCARD EString Right    (const UINT32& Count) const;
         PE_NODISCARD EString Substring(const UINT32& Start, const UINT32& Count) const;
-
+        
         PE_NODISCARD BOOL32  IsNumeric()const;
         PE_NODISCARD INT32   AtoI() const;
 		PE_NODISCARD DOUBLE  AtoF() const;

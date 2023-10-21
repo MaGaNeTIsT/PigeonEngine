@@ -14,9 +14,13 @@ namespace PigeonEngine
 		void Uninit();
 #if _EDITOR_ONLY
 	public:
+		void EditorInit();
 		void EditorUpdate();
 	private:
 		BOOL32			m_EditorOpen = FALSE;
+
+		class EWorldManager* m_WorldManager = nullptr;
+		class EAssetManager* m_AssetManager = nullptr;
 #endif
 	};
 }

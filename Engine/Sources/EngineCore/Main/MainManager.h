@@ -23,6 +23,9 @@ namespace PigeonEngine
 		void			Draw();
 
 	public:
+		void            EditorInit();
+		void            EditorUpdate();
+	public:
 		HWND						GetWindowHandle();
 		const EBaseTimer&			GetWindowTimer();
 		const EGameTimer*			GetGameTimer();

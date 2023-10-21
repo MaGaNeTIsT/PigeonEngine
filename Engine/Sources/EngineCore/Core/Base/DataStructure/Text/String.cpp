@@ -148,6 +148,11 @@ namespace PigeonEngine
         return static_cast<UINT32>(Str.length());
     }
 
+    UINT32 EString::LastIndex() const
+    {
+        return this->Length() - 1;
+    }
+
     BOOL32 EString::StartWith(const EString& SubString) const
     {
         return Find(SubString) == 0;

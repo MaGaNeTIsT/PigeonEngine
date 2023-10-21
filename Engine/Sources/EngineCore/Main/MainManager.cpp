@@ -126,6 +126,9 @@ namespace PigeonEngine
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 		m_WorldManager->Init();
 		m_PhysicsManager->Init();
+
+		EditorInit();
+		
 	}
 	void EMainManager::Uninit()
 	{
@@ -145,7 +148,7 @@ namespace PigeonEngine
 		m_GameTimer->Update();
 #if _EDITOR_ONLY
 		m_ImGUIManager->Update();
-		m_EditorManager->EditorUpdate();
+		EditorUpdate();
 #endif
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 
@@ -165,6 +168,24 @@ namespace PigeonEngine
 #endif
 
 		m_RenderDeviceD3D11->Present();
+	}
+
+	void EMainManager::EditorInit()
+	{
+#if _EDITOR_ONLY
+		m_EditorManager->EditorInit();
+#else
+		return;
+#endif
+	}
+
+	void EMainManager::EditorUpdate()
+	{
+#if _EDITOR_ONLY
+		m_EditorManager->EditorUpdate();
+#else
+		return;
+#endif
 	}
 
 	HWND EMainManager::GetWindowHandle()

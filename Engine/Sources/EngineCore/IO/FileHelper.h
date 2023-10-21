@@ -17,6 +17,8 @@ namespace PigeonEngine
 		static BOOL8 IsDirectoryExists(const EString& DirectoryPath);
 
 		static BOOL8 MakeDirectory(const EString& DirectoryPath);
+
+		static BOOL8 ScanDirectory(const EString& DirectoryPath, TArray<EString>& OutFolders, TArray<EString>& OutFiles, const BOOL8& OutWithFullPath);
 	public:
 		EFileHelper() = delete;
 		EFileHelper(const EFileHelper&) = delete;

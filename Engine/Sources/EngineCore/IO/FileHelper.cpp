@@ -103,6 +103,25 @@ namespace PigeonEngine
 		return static_cast<BOOL8>(std::filesystem::create_directories(*DirectoryPath));
 	}
 
-	
+	BOOL8 EFileHelper::ScanDirectory(const EString& DirectoryPath, TArray<EString>& OutFolders,
+		TArray<EString>& OutFiles, const BOOL8& OutWithFullPath)
+	{
+		const std::filesystem::path dirPath(*DirectoryPath);
 
+		if(!(std::filesystem::exists(dirPath) && std::filesystem::is_directory(dirPath)))
+		{
+			return FALSE;
+		}
+		for (const auto& entry : std::filesystem::directory_iterator(dirPath))
+		{
+			if (std::filesystem::is_directory(entry)) {
+				OutFolders.Add(entry.path().string());
+			}
+			else if (std::filesystem::is_regular_file(entry)) {
+				OutFiles.Add(entry.path().string());
+			}
+		}
+		
+		return TRUE;
+	}
 };
