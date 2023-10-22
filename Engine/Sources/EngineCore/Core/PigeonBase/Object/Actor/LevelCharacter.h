@@ -26,7 +26,7 @@ namespace PigeonEngine
 	protected:
 
 		virtual void UserBeginPlay();
-		virtual void UserTick(FLOAT deltaTime);
+		virtual void UserTick(FLOAT deltaTime) override;
 		virtual void UserEndPlay();
 	public:
 		// Character size
@@ -39,6 +39,7 @@ namespace PigeonEngine
 		BOOL32			ControlMovementDuringJump		= TRUE;	///< If false the character cannot change movement direction in mid air
 		FLOAT			CharacterSpeed					= 6.0f;
 		FLOAT			JumpSpeed						= 4.0f;
+
 	protected:
 		class PMovementComponent*	MoveMentComponent	= nullptr;
 		class FCharacter*			Character			= nullptr;

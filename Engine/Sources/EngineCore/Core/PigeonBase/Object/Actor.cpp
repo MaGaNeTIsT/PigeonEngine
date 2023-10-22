@@ -39,7 +39,7 @@ namespace PigeonEngine
 	{
 #if _EDITOR_ONLY
 		EditorTick(deltaTime);
-		return;
+		//return;
 #endif
 		FixedTick(deltaTime);
 	}

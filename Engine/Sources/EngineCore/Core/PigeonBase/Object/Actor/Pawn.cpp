@@ -17,14 +17,14 @@ namespace PigeonEngine
     void PPawn::BeginAddedToScene(PWorld* World)
     {
         PActor::BeginAddedToScene(World);
-        SkeletalMeshComponent = new PSkeletalMeshComponent();
-        AddComponent(SkeletalMeshComponent, ETransform());
+        //SkeletalMeshComponent = new PSkeletalMeshComponent();
+        //AddComponent(SkeletalMeshComponent, ETransform());
     }
 
     void PPawn::RemovedFromScene()
     {
         PActor::RemovedFromScene();
-        DestoyComponent(SkeletalMeshComponent);
+        //DestoyComponent(SkeletalMeshComponent);
     }
 
     void PPawn::UserBeginPlay()

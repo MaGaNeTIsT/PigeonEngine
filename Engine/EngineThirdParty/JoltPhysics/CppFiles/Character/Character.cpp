@@ -12,7 +12,8 @@ FCharacter::FCharacter(const FCharacterSettings* inSettings) :
 	m_CharacterSettings = new CharacterSettings();
 	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings->Up);
 	m_CharacterSettings->mMaxSlopeAngle = inSettings->MaxSlopeAngle;
-	m_CharacterSettings->mShape = inSettings->Shape->CreateShape();
+	if(inSettings->Shape)
+		m_CharacterSettings->mShape = inSettings->Shape->CreateShape();
 	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings->PlaneVector),inSettings->CharacterRadiusStanding);
 	m_CharacterSettings->mLayer = Layers::MOVING;
 	m_CharacterSettings->mMass = inSettings->Mass;

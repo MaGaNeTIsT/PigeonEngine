@@ -123,9 +123,11 @@ namespace PigeonEngine
 
 		m_GameTimer->Reset();
 
+		//need Init before world manager.
+		m_PhysicsManager->Init();
+
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 		m_WorldManager->Init();
-		m_PhysicsManager->Init();
 
 		EditorInit();
 		

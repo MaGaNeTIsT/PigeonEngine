@@ -11,6 +11,9 @@
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 
+//Test
+#include "../../../../PhysicsCore/PhysicsTest/PhysicsTest.h"
+
 namespace PigeonEngine
 {
     PLevelActor::PLevelActor()
@@ -130,6 +133,30 @@ namespace PigeonEngine
         {
             
         }
+
+		// add a Physics CharacterTest Actor
+		{
+			PPhysicsTestCharacter* New = new PPhysicsTestCharacter();
+			New->SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(New, "Physics Test Character");
+			FCharacterSettings* Settings = new FCharacterSettings();
+			Settings->Layer = Layers::MOVING;
+			Settings->Shape = new FCapsuleShape(1.35f,0.35f);
+			New->InitCharacter(Settings);
+			this->GetWorld()->AddActor(New);
+
+			New->StaticMeshComponent = new PStaticMeshComponent();
+			New->StaticMeshComponent->SetIsTickable(TRUE);
+			const EStaticMeshAsset* Asset = nullptr;
+			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
+			EString ImportName("Robot");
+			EString ImportFileType("obj");
+			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
+			New->StaticMeshComponent->SetMeshAsset(Asset);
+			New->AddComponent(New->StaticMeshComponent, ETransform());
+
+			New->SetActorLocation(Vector3(200.0f, 0.0f, 0.0f));
+		}
 
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 0.0f, -200.0f));
     }
