@@ -71,11 +71,18 @@ namespace PigeonEngine
 
 			const ESkinnedMeshAsset* MeshAsset = nullptr;
 			const ESkeletonAsset* SkeletonAsset = nullptr;
-			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
-			EString ImportName("SK_Mannequin_UE4_WithWeapon");
+			//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
+			//EString ImportName("SK_Mannequin_UE4_WithWeapon");
+			//EString ImportFileType("FBX");
+			//EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
+			//EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
+			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
+			EString ImportName("Model");
 			EString ImportFileType("FBX");
-			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "SK_Mannequin_UE4_WithWeapon_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "SK_Mannequin_UE4_WithWeapon_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+			EString MeshAssetName("DVa_Mesh");
+			EString SkeletonAssetName("DVa_Skeleton");
+			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 
 			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
 			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);

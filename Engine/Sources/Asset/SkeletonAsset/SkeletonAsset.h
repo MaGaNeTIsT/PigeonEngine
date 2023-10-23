@@ -219,12 +219,12 @@ namespace PigeonEngine
 			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
 			if (InCond(CurrentBoneData, InValue))
 			{
-				InFunc(CurrentBoneData, InValue);
+				_TCustomType NewValue = InFunc(CurrentBoneData, InValue);
 				if (CurrentBoneData.Children.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{
-						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InValue, InFunc, InCond);
+						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], NewValue, InFunc, InCond);
 					}
 				}
 			}
@@ -239,12 +239,12 @@ namespace PigeonEngine
 			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
 			if (InCond(CurrentBoneData, InValue))
 			{
-				InFunc(CurrentBoneData, InValue);
+				_TCustomType NewValue = InFunc(CurrentBoneData, InValue);
 				if (CurrentBoneData.Children.Length() > 0u)
 				{
 					for (UINT32 ChildIndex = 0u, ChildNum = CurrentBoneData.Children.Length(); ChildIndex < ChildNum; ChildIndex++)
 					{
-						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], InValue, InFunc, InCond);
+						BackwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Children[ChildIndex], NewValue, InFunc, InCond);
 					}
 				}
 			}
@@ -299,8 +299,8 @@ namespace PigeonEngine
 			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
 			if (InCond(CurrentBoneData, InValue))
 			{
-				InFunc(CurrentBoneData, InValue);
-				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, InValue, InFunc, InCond);
+				_TCustomType NewValue = InFunc(CurrentBoneData, InValue);
+				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, NewValue, InFunc, InCond);
 			}
 		}
 		template<typename _TCustomType, typename _TLambdaType, typename _TConditionType>
@@ -313,8 +313,8 @@ namespace PigeonEngine
 			const EBoneData& CurrentBoneData = (RawSkeletonPtr->GetBonePart())[InBoneIndex];
 			if (InCond(CurrentBoneData, InValue))
 			{
-				InFunc(CurrentBoneData, InValue);
-				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, InValue, InFunc, InCond);
+				_TCustomType NewValue = InFunc(CurrentBoneData, InValue);
+				ForwardRecursionBone<_TCustomType, _TLambdaType, _TConditionType>(CurrentBoneData.Parent, NewValue, InFunc, InCond);
 			}
 		}
 		template<typename _TLambdaType, typename _TConditionType>

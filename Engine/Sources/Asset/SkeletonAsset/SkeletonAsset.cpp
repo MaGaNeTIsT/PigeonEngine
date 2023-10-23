@@ -594,22 +594,22 @@ namespace PigeonEngine
 #else
 					EBoneTransform& InBoneTransform
 #endif
-					)->void
+					)->Matrix4x4
 				{
 					Check((InBoneData.Index >= 0));
 					Check((((UINT32)(InBoneData.Index)) < UsedRelativeTransformNum));
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
 					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
-					Matrix4x4 TempGlobalMatrix = TempRelativeBoneTransform.ToMatrix4x4().Transpose();
-					TempGlobalMatrix = InBoneMatrix * TempGlobalMatrix;
-					InBoneMatrix = TempGlobalMatrix;
-					UsedToRootTransforms[InBoneData.Index] = TempGlobalMatrix;
+					UsedToRootTransforms[InBoneData.Index] = TempRelativeBoneTransform.ToMatrix4x4().Transpose();
+					UsedToRootTransforms[InBoneData.Index] = InBoneMatrix * UsedToRootTransforms[InBoneData.Index];
+					return (UsedToRootTransforms[InBoneData.Index]);
 #else
 					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
-					InBoneTransform.Position += TempRelativeBoneTransform.Position;
-					InBoneTransform.Rotation = (TempRelativeBoneTransform.Rotation) * (InBoneTransform.Rotation);
-					InBoneTransform.Scaling *= TempRelativeBoneTransform.Scaling;
-					UsedToRootTransforms[InBoneData.Index] = InBoneTransform;
+					UsedToRootTransforms[InBoneData.Index] = TempRelativeBoneTransform;
+					UsedToRootTransforms[InBoneData.Index].Position += InBoneTransform.Position;
+					UsedToRootTransforms[InBoneData.Index].Rotation = (TempRelativeBoneTransform.Rotation) * (InBoneTransform.Rotation);
+					UsedToRootTransforms[InBoneData.Index].Scaling *= InBoneTransform.Scaling;
+					return (UsedToRootTransforms[InBoneData.Index]);
 #endif
 				},
 				[](const EBoneData& InBoneData,
