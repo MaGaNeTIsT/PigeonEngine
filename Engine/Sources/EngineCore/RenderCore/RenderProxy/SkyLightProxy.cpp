@@ -38,7 +38,7 @@ namespace PigeonEngine
 			EString ImportPath("./Engine/Assets/EngineModels/BaseShapes/");
 			EString ImportName("SphereUV");
 			EString ImportFileType("obj");
-			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "SkyDome", RSkyLightSceneProxy::SkyDomeMeshAsset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "SkyDome", RSkyLightSceneProxy::SkyDomeMeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 		}
 		if (!(RSkyLightSceneProxy::SkyDomeVertexShader))
 		{

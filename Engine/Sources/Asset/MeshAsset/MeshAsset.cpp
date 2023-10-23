@@ -1712,7 +1712,7 @@ namespace PigeonEngine
 		ClearSkinnedMeshes();
 	}
 #if _EDITOR_ONLY
-	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes)
 	{
 		EString TempSaveFullPathName(InSavePath);
 		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
@@ -1753,7 +1753,7 @@ namespace PigeonEngine
 		}
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		TArray<EStaticMesh> AssimpMeshes;
-		if ((AssimpManager->ReadStaticMeshFile(InImportFullPathName, AssimpMeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		if ((AssimpManager->ReadStaticMeshFile(InImportFullPathName, AssimpMeshes, IsCombineSubmeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
 #if _EDITOR_ONLY
 			{
@@ -1782,7 +1782,7 @@ namespace PigeonEngine
 		}
 		return (SavedMeshCount > 0u);
 	}
-	BOOL32 EMeshAssetManager::ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EMeshAssetManager::ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes)
 	{
 		EString TempSaveFullPathName(InSavePath);
 		TempSaveFullPathName = TempSaveFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
@@ -1823,7 +1823,7 @@ namespace PigeonEngine
 		}
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		TArray<ESkinnedMesh> AssimpMeshes;
-		if ((AssimpManager->ReadSkinnedMeshFile(InImportFullPathName, AssimpMeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		if ((AssimpManager->ReadSkinnedMeshFile(InImportFullPathName, AssimpMeshes, IsCombineSubmeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
 #if _EDITOR_ONLY
 			{
@@ -2581,7 +2581,7 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType, const BOOL32 IsCombineSubmeshes)
 	{
 		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output static mesh asset pointer is initialized failed."), (!OutAsset));
@@ -2598,7 +2598,9 @@ namespace PigeonEngine
 			BOOL32 Result = MeshAssetManager->ImportStaticMesh(
 				InLoadName,
 				TempImportFullPath,
-				InLoadPath);
+				InLoadPath,
+				IsCombineSubmeshes
+			);
 			if (Result)
 			{
 				if (!(MeshAssetManager->LoadStaticMeshAsset(InLoadPath, InLoadName, OutAsset)))
@@ -2613,7 +2615,7 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void TryLoadSkinnedMesh(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	void TryLoadSkinnedMesh(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType, const BOOL32 IsCombineSubmeshes)
 	{
 		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skinned mesh asset pointer is initialized failed."), (!OutAsset));
@@ -2630,7 +2632,9 @@ namespace PigeonEngine
 			BOOL32 Result = MeshAssetManager->ImportSkinnedMesh(
 				InLoadName,
 				TempImportFullPath,
-				InLoadPath);
+				InLoadPath,
+				IsCombineSubmeshes
+			);
 			if (Result)
 			{
 				if (!(MeshAssetManager->LoadSkinnedMeshAsset(InLoadPath, InLoadName, OutAsset)))

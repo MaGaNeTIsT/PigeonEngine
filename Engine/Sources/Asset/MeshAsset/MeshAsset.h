@@ -592,8 +592,8 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
-		BOOL32	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
+		BOOL32	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
 #endif
 		BOOL32	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset);
 		BOOL32	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
@@ -619,9 +619,11 @@ namespace PigeonEngine
 
 	extern void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName,
 		const EStaticMeshAsset*& OutAsset,
-		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr,
+		const BOOL32 IsCombineSubmeshes = TRUE);
 	extern void TryLoadSkinnedMesh(const EString& InLoadPath, const EString& InLoadName,
 		const ESkinnedMeshAsset*& OutAsset,
-		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr,
+		const BOOL32 IsCombineSubmeshes = TRUE);
 
 };

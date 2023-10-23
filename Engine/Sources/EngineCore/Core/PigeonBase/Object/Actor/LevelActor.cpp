@@ -52,7 +52,7 @@ namespace PigeonEngine
 			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
 			EString ImportName("Robot");
 			EString ImportFileType("obj");
-			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 
 			NewStaticMeshComp->SetMeshAsset(Asset);
 
@@ -71,11 +71,11 @@ namespace PigeonEngine
 
 			const ESkinnedMeshAsset* MeshAsset = nullptr;
 			const ESkeletonAsset* SkeletonAsset = nullptr;
-			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
-			EString ImportName("Model");
+			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
+			EString ImportName("SK_Mannequin_UE4_WithWeapon");
 			EString ImportFileType("FBX");
-			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "D.Va_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType);
-			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "D.Va_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, "SK_Mannequin_UE4_WithWeapon_Mesh", MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, "SK_Mannequin_UE4_WithWeapon_Skeleton", SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 
 			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
 			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
@@ -151,7 +151,7 @@ namespace PigeonEngine
 			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
 			EString ImportName("Robot");
 			EString ImportFileType("obj");
-			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadStaticMesh(ESettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 			New->StaticMeshComponent->SetMeshAsset(Asset);
 			New->AddComponent(New->StaticMeshComponent, ETransform());
 

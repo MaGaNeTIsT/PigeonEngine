@@ -26,9 +26,9 @@ namespace PigeonEngine
 		virtual void Initialize()override;
 		virtual void ShutDown()override;
 	public:
-		CReadFileStateType ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes);
+		CReadFileStateType ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes, const BOOL32 IsCombineSubmeshes);
 		CReadFileStateType ReadSkeletonFile(const EString& InPath, ESkeleton& OutSkeleton);
-		CReadFileStateType ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes);
+		CReadFileStateType ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes, const BOOL32 IsCombineSubmeshes);
 		CReadFileStateType ReadSkeletonAnimationFile(const EString& path, TArray<ESkeletonAnimationClip>& OutSkeletonAnimationClips);
 
 		CLASS_MANAGER_SINGLETON_BODY(CAssimpManager)

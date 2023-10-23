@@ -531,6 +531,10 @@ namespace PigeonEngine
 				return;
 			}
 		}
+		if (TempMaxWeightCount == 3u)
+		{
+			TempMaxWeightCount = 4u;
+		}
 		OutMesh.SetEffectBoneNum(TempMaxWeightCount);
 		{
 			UINT32 AddElementCounter = 0u;
@@ -662,6 +666,462 @@ namespace PigeonEngine
 		}
 		return OutMeshIndices;
 	}
+	static void CombineEngineMeshIntoSubmeshes(const TArray<EStaticMesh>& InMeshes, EStaticMesh& OutMesh)
+	{
+		if (InMeshes.Length() == 0u)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("There is no static meshes for combine."));
+			return;
+		}
+
+		if (InMeshes.Length() == 1u)
+		{
+			OutMesh = InMeshes[0];
+			return;
+		}
+
+		constexpr UINT32 VertexLayoutTypes[6] =
+		{
+			EVertexLayoutType::MESH_VERTEX,
+			EVertexLayoutType::MESH_TEXTURECOORD,
+			EVertexLayoutType::MESH_NORMAL,
+			EVertexLayoutType::MESH_TANGENT,
+			EVertexLayoutType::MESH_COLOR,
+			EVertexLayoutType::MESH_BITANGENT
+		};
+		constexpr UINT32 VertexLayoutIndices[6] =
+		{
+			2u,
+			6u,
+			10u,
+			14u,
+			18u,
+			22u
+		};
+		constexpr UINT32 VertexLayout32BitsNum[6] =
+		{
+			4u,
+			2u,
+			4u,
+			4u,
+			4u,
+			4u
+		};
+		constexpr UINT32 VertexLayoutStrides[6] =
+		{
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 2u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u
+		};
+		UINT32 MeshVertexLayoutNum[6] = { 0u, 0u, 0u, 0u, 0u, 0u };
+		UINT32 NewMeshVertexNum = 0u, NewMeshIndexNum = 0u;
+		TArray<ESubmeshData> NewMeshSubmeshDatas;
+		for (UINT32 MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+		{
+			const EStaticMesh&			UsedMesh				= InMeshes[MeshIndex];
+			const EMesh::EVertexPart&	VertexPart				= UsedMesh.GetVertexPart();
+			const EMesh::EIndexPart&	IndexPart				= UsedMesh.GetIndexPart();
+			const UINT32				UsedMeshVertexLayout	= UsedMesh.GetVertexLayout();
+			Check((UsedMeshVertexLayout != 0x0u), (ENGINE_ASSET_ERROR));
+			Check(((IndexPart.ElementNum > 0u) && ((IndexPart.Stride == 2u) || (IndexPart.Stride == 4u))), (ENGINE_ASSET_ERROR));
+			Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+			UINT32 TempMeshVertexLayoutNum = 0u;
+			for (UINT32 MeshVertexLayoutIndex = 0u; MeshVertexLayoutIndex < 6u; MeshVertexLayoutIndex++)
+			{
+				MeshVertexLayoutNum[MeshVertexLayoutIndex] = (MeshVertexLayoutNum[MeshVertexLayoutIndex]) | ((UsedMeshVertexLayout & (0xfu << (VertexLayoutIndices[MeshVertexLayoutIndex]))) >> (VertexLayoutIndices[MeshVertexLayoutIndex]));
+			}
+			ESubmeshData& NewSubmeshData = NewMeshSubmeshDatas.Add_Default_GetRef();
+			NewSubmeshData.StartIndex	= NewMeshIndexNum;
+			NewSubmeshData.IndexNum		= IndexPart.ElementNum;
+			NewSubmeshData.StartVertex	= NewMeshVertexNum;
+			NewSubmeshData.VertexNum	= VertexPart[0].ElementNum;
+			NewMeshVertexNum	= NewMeshVertexNum + VertexPart[0].ElementNum;
+			NewMeshIndexNum		= NewMeshIndexNum + IndexPart.ElementNum;
+		}
+		UINT32 NewMeshIndexStride = 2u;
+		if (NewMeshVertexNum > 65536u)
+		{
+			Check((NewMeshVertexNum <= 0xffffffffu), (ENGINE_ASSET_ERROR));
+			NewMeshIndexStride = 4u;
+		}
+		EIndexData NewIndexData;
+		TArray<EVertexData> NewVertexDatas;
+		{
+			{
+				NewIndexData.PartType	= (NewMeshIndexStride == 4u) ? EVertexLayoutType::MESH_INDEX_FULL : EVertexLayoutType::MESH_INDEX_HALF;
+				NewIndexData.ElementNum	= NewMeshIndexNum;
+				NewIndexData.Stride		= NewMeshIndexStride;
+				NewIndexData.Indices	= new UINT32[NewMeshIndexNum];
+			}
+			{
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+				{
+					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+					{
+						EVertexData& NewVertexData	= NewVertexDatas.Add_Default_GetRef();
+						NewVertexData.PartType		= VertexLayoutTypes[LayoutIndex];
+						NewVertexData.ElementNum	= NewMeshVertexNum;
+						NewVertexData.Stride		= 0u;
+						NewVertexData.Datas			= nullptr;
+						if ((MeshVertexLayoutNum[LayoutIndex] & (0x1u << LayoutPartIndex)) != 0u)
+						{
+							NewVertexData.Stride	= VertexLayoutStrides[LayoutIndex];
+							NewVertexData.Datas		= new FLOAT[(VertexLayoutStrides[LayoutIndex] / sizeof(FLOAT)) * NewMeshVertexNum];
+							::memset(NewVertexData.Datas, 0, VertexLayoutStrides[LayoutIndex] * NewMeshVertexNum);
+						}
+					}
+				}
+			}
+			for (UINT32 MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+			{
+				const EStaticMesh&	UsedMesh		= InMeshes[MeshIndex];
+				const ESubmeshData&	NewSubmeshData	= NewMeshSubmeshDatas[MeshIndex];
+
+				// Index part append
+				const EMesh::EIndexPart& IndexPart = UsedMesh.GetIndexPart();
+				Check((NewSubmeshData.IndexNum == IndexPart.ElementNum), (ENGINE_ASSET_ERROR));
+				for (UINT32 i = 0u, n = IndexPart.ElementNum; i < n; i++)
+				{
+					NewIndexData.Indices[NewSubmeshData.StartIndex + i] = IndexPart.Indices[i] + NewSubmeshData.StartVertex;
+				}
+
+				// Vertex part append
+				const EMesh::EVertexPart& VertexPart = UsedMesh.GetVertexPart();
+				Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == VertexPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+				{
+					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+					{
+						EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
+						if (!!(NewVertexData.Datas))
+						{
+							const EVertexData* OldVertexData = nullptr;
+							if (UsedMesh.GetVertexElement(VertexLayoutTypes[LayoutIndex], LayoutPartIndex, OldVertexData))
+							{
+								Check((NewVertexData.Stride == OldVertexData->Stride), (ENGINE_ASSET_ERROR));
+								for (UINT32 i = 0u, n = OldVertexData->ElementNum; i < n; i++)
+								{
+									for (UINT32 j = 0u; j < VertexLayout32BitsNum[LayoutIndex]; j++)
+									{
+										NewVertexData.Datas[(NewSubmeshData.StartVertex + i) * VertexLayout32BitsNum[LayoutIndex] + j] = OldVertexData->Datas[i * VertexLayout32BitsNum[LayoutIndex] + j];
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		OutMesh.AddIndexElement(&NewIndexData);
+		for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+		{
+			for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+			{
+				EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
+				if (!!(NewVertexData.Datas))
+				{
+#if _EDITOR_ONLY
+					BOOL32 Result =
+#endif
+						OutMesh.AddVertexElement(&NewVertexData);
+#if _EDITOR_ONLY
+					Check((Result), (ENGINE_ASSET_ERROR));
+#endif
+				}
+			}
+		}
+		for (UINT32 SubmeshIndex = 0u, SubmeshNum = NewMeshSubmeshDatas.Length(); SubmeshIndex < SubmeshNum; SubmeshIndex++)
+		{
+			ESubmeshData& NewMeshSubmeshData = NewMeshSubmeshDatas[SubmeshIndex];
+			OutMesh.AddSubmesh(&NewMeshSubmeshData);
+		}
+	}
+	static void CombineEngineMeshIntoSubmeshes(const TArray<ESkinnedMesh>& InMeshes, const USHORT InMaxBoneWeightNum, ESkinnedMesh& OutMesh)
+	{
+		if (InMeshes.Length() == 0u)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("There is no skinned meshes for combine."));
+			return;
+		}
+
+		Check(((InMaxBoneWeightNum > 0u) && (InMaxBoneWeightNum <= ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)), (ENGINE_ASSET_ERROR));
+
+		if (InMeshes.Length() == 1u)
+		{
+			OutMesh = InMeshes[0];
+			return;
+		}
+
+		constexpr UINT32 VertexLayoutTypes[7] =
+		{
+			EVertexLayoutType::MESH_VERTEX,
+			EVertexLayoutType::MESH_TEXTURECOORD,
+			EVertexLayoutType::MESH_NORMAL,
+			EVertexLayoutType::MESH_TANGENT,
+			EVertexLayoutType::MESH_COLOR,
+			EVertexLayoutType::MESH_BITANGENT,
+			EVertexLayoutType::MESH_SKIN
+		};
+		constexpr UINT32 VertexLayoutIndices[7] =
+		{
+			2u,
+			6u,
+			10u,
+			14u,
+			18u,
+			22u,
+			26u
+		};
+		constexpr UINT32 VertexLayout32BitsNum[6] =
+		{
+			4u,
+			2u,
+			4u,
+			4u,
+			4u,
+			4u
+		};
+		const UINT32 VertexLayoutStrides[7] =
+		{
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 2u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u,
+			sizeof(FLOAT) * 4u,
+			InMaxBoneWeightNum * sizeof(FLOAT)
+		};
+		UINT32 MeshVertexLayoutNum[7] = { 0u, 0u, 0u, 0u, 0u, 0u, 0u };
+		UINT32 NewMeshVertexNum = 0u, NewMeshIndexNum = 0u;
+		TArray<ESubmeshData> NewMeshSubmeshDatas;
+		for (UINT32 MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+		{
+			const ESkinnedMesh&				UsedMesh				= InMeshes[MeshIndex];
+			const EMesh::EVertexPart&		VertexPart				= UsedMesh.GetVertexPart();
+			const EMesh::EIndexPart&		IndexPart				= UsedMesh.GetIndexPart();
+#if _EDITOR_ONLY
+			const ESkinnedMesh::ESkinPart&	SkinPart				= UsedMesh.GetSkinPart();
+#endif
+			const UINT32					UsedMeshVertexLayout	= UsedMesh.GetVertexLayout();
+			Check((UsedMeshVertexLayout != 0x0u), (ENGINE_ASSET_ERROR));
+			Check(((IndexPart.ElementNum > 0u) && ((IndexPart.Stride == 2u) || (IndexPart.Stride == 4u))), (ENGINE_ASSET_ERROR));
+			Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+#if _EDITOR_ONLY
+			Check((SkinPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+			Check((VertexPart[0].ElementNum == SkinPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+#endif
+			UINT32 TempMeshVertexLayoutNum = 0u;
+			for (UINT32 MeshVertexLayoutIndex = 0u; MeshVertexLayoutIndex < 7u; MeshVertexLayoutIndex++)
+			{
+				MeshVertexLayoutNum[MeshVertexLayoutIndex] = (MeshVertexLayoutNum[MeshVertexLayoutIndex]) | ((UsedMeshVertexLayout & (0xfu << (VertexLayoutIndices[MeshVertexLayoutIndex]))) >> (VertexLayoutIndices[MeshVertexLayoutIndex]));
+			}
+			ESubmeshData& NewSubmeshData = NewMeshSubmeshDatas.Add_Default_GetRef();
+			NewSubmeshData.StartIndex	= NewMeshIndexNum;
+			NewSubmeshData.IndexNum		= IndexPart.ElementNum;
+			NewSubmeshData.StartVertex	= NewMeshVertexNum;
+			NewSubmeshData.VertexNum	= VertexPart[0].ElementNum;
+			NewMeshVertexNum	= NewMeshVertexNum + VertexPart[0].ElementNum;
+			NewMeshIndexNum		= NewMeshIndexNum + IndexPart.ElementNum;
+
+			const ESkinnedMesh::EBindPoseIndex& BindPoseIndexPart = UsedMesh.GetBindPoseIndex();
+			const ESkinnedMesh::EBindPoseValue& BindPoseValuePart = UsedMesh.GetBindPoseValue();
+			Check(((BindPoseIndexPart.Length() > 0u) && (BindPoseIndexPart.Length() == BindPoseValuePart.Length())), (ENGINE_ASSET_ERROR));
+			for (auto It = BindPoseIndexPart.Begin(); It != BindPoseIndexPart.End(); It++)
+			{
+				if (const Matrix4x4* BindPoseValuePtr = BindPoseValuePart.FindValueAsPtr(It->first); !!BindPoseValuePtr)
+				{
+					OutMesh.AddBindPose(It->first, (*BindPoseValuePtr));
+				}
+			}
+		}
+
+		OutMesh.GenerateBindPoseIndex();
+		OutMesh.SetEffectBoneNum(InMaxBoneWeightNum);
+
+		UINT32 NewMeshIndexStride = 2u;
+		if (NewMeshVertexNum > 65536u)
+		{
+			Check((NewMeshVertexNum <= 0xffffffffu), (ENGINE_ASSET_ERROR));
+			NewMeshIndexStride = 4u;
+		}
+		EIndexData NewIndexData;
+		TArray<EVertexData> NewVertexDatas;
+		TArray<ESkinData> NewSkinDatas;
+		{
+			{
+				NewIndexData.PartType	= (NewMeshIndexStride == 4u) ? EVertexLayoutType::MESH_INDEX_FULL : EVertexLayoutType::MESH_INDEX_HALF;
+				NewIndexData.ElementNum = NewMeshIndexNum;
+				NewIndexData.Stride		= NewMeshIndexStride;
+				NewIndexData.Indices	= new UINT32[NewMeshIndexNum];
+			}
+			{
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+				{
+					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+					{
+						EVertexData& NewVertexData	= NewVertexDatas.Add_Default_GetRef();
+						NewVertexData.PartType		= VertexLayoutTypes[LayoutIndex];
+						NewVertexData.ElementNum	= NewMeshVertexNum;
+						NewVertexData.Stride		= 0u;
+						NewVertexData.Datas			= nullptr;
+						if ((MeshVertexLayoutNum[LayoutIndex] & (0x1u << LayoutPartIndex)) != 0u)
+						{
+							NewVertexData.Stride = VertexLayoutStrides[LayoutIndex];
+							NewVertexData.Datas = new FLOAT[(VertexLayoutStrides[LayoutIndex] / sizeof(FLOAT)) * NewMeshVertexNum];
+							::memset(NewVertexData.Datas, 0, VertexLayoutStrides[LayoutIndex] * NewMeshVertexNum);
+						}
+					}
+				}
+				for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+				{
+					ESkinData& NewSkinData	= NewSkinDatas.Add_Default_GetRef();
+					NewSkinData.PartType	= VertexLayoutTypes[6];
+					NewSkinData.ElementNum	= NewMeshVertexNum;
+					NewSkinData.Stride		= 0u;
+					NewSkinData.Indices		= nullptr;
+					NewSkinData.Weights		= nullptr;
+					if ((MeshVertexLayoutNum[6] & (0x1u << LayoutPartIndex)) != 0u)
+					{
+						NewSkinData.Stride = VertexLayoutStrides[6];
+						NewSkinData.Indices = new UINT32[InMaxBoneWeightNum * NewMeshVertexNum];
+						NewSkinData.Weights = new FLOAT[InMaxBoneWeightNum * NewMeshVertexNum];
+						::memset(NewSkinData.Indices, 0, InMaxBoneWeightNum * 4u * NewMeshVertexNum);
+						::memset(NewSkinData.Weights, 0, InMaxBoneWeightNum * 4u * NewMeshVertexNum);
+					}
+				}
+			}
+			const ESkinnedMesh::EBindPoseIndex& NewBindPoseIndexPart = OutMesh.GetBindPoseIndex();
+			for (UINT32 MeshIndex = 0u, MeshNum = InMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+			{
+				const ESkinnedMesh& UsedMesh = InMeshes[MeshIndex];
+				const ESubmeshData& NewSubmeshData = NewMeshSubmeshDatas[MeshIndex];
+
+				// Index part append
+				const EMesh::EIndexPart& IndexPart = UsedMesh.GetIndexPart();
+				Check((NewSubmeshData.IndexNum == IndexPart.ElementNum), (ENGINE_ASSET_ERROR));
+				for (UINT32 i = 0u, n = IndexPart.ElementNum; i < n; i++)
+				{
+					NewIndexData.Indices[NewSubmeshData.StartIndex + i] = IndexPart.Indices[i] + NewSubmeshData.StartVertex;
+				}
+
+				// Vertex part append
+				const EMesh::EVertexPart& VertexPart = UsedMesh.GetVertexPart();
+				Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == VertexPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+				{
+					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+					{
+						EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
+						if (!!(NewVertexData.Datas))
+						{
+							const EVertexData* OldVertexData = nullptr;
+							if (UsedMesh.GetVertexElement(VertexLayoutTypes[LayoutIndex], LayoutPartIndex, OldVertexData))
+							{
+								Check((NewVertexData.Stride == OldVertexData->Stride), (ENGINE_ASSET_ERROR));
+								for (UINT32 i = 0u, n = OldVertexData->ElementNum; i < n; i++)
+								{
+									for (UINT32 j = 0u; j < VertexLayout32BitsNum[LayoutIndex]; j++)
+									{
+										NewVertexData.Datas[(NewSubmeshData.StartVertex + i) * VertexLayout32BitsNum[LayoutIndex] + j] = OldVertexData->Datas[i * VertexLayout32BitsNum[LayoutIndex] + j];
+									}
+								}
+							}
+						}
+					}
+				}
+
+				// Skin part append
+				const ESkinnedMesh::EBindPoseIndex& BindPoseIndexPart = UsedMesh.GetBindPoseIndex();
+				TMap<USHORT, EString> TempBindPoseIndexPart;
+				for (auto It = BindPoseIndexPart.Begin(); It != BindPoseIndexPart.End(); It++)
+				{
+					TempBindPoseIndexPart.Add(It->second, It->first);
+				}
+				const ESkinnedMesh::ESkinPart& SkinPart = UsedMesh.GetSkinPart();
+				Check((SkinPart.Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == SkinPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+				{
+					ESkinData& NewSkinData = NewSkinDatas[LayoutPartIndex];
+					if ((!!(NewSkinData.Indices)) && (!!(NewSkinData.Weights)))
+					{
+						const ESkinData* OldSkinData = nullptr;
+						if (UsedMesh.GetSkinElement(LayoutPartIndex, OldSkinData))
+						{
+							Check((InMaxBoneWeightNum >= UsedMesh.GetEffectBoneNum()), (ENGINE_ASSET_ERROR));
+							Check((UsedMesh.GetEffectBoneNum() == (OldSkinData->Stride / sizeof(FLOAT))), (ENGINE_ASSET_ERROR));
+							for (UINT32 i = 0u, n = OldSkinData->ElementNum; i < n; i++)
+							{
+								for (USHORT j = 0u, k = UsedMesh.GetEffectBoneNum(); j < k; j++)
+								{
+									USHORT OldIndices = OldSkinData->Indices[i * k + j];
+									FLOAT OldWeights = OldSkinData->Weights[i * k + j];
+									if (const EString* BoneNamePtr = TempBindPoseIndexPart.FindValueAsPtr(OldIndices); !!BoneNamePtr)
+									{
+										if (const USHORT* NewBoneIndexPtr = NewBindPoseIndexPart.FindValueAsPtr(*BoneNamePtr); !!NewBoneIndexPtr)
+										{
+											NewSkinData.Indices[(NewSubmeshData.StartVertex + i) * InMaxBoneWeightNum + j] = (*NewBoneIndexPtr);
+											NewSkinData.Weights[(NewSubmeshData.StartVertex + i) * InMaxBoneWeightNum + j] = OldWeights;
+										}
+									}
+								}
+							}
+						}
+#if _EDITOR_ONLY
+						else
+						{
+							EString ErrorInfo("Skin does not contain this[");
+							ErrorInfo = ErrorInfo + ToString(LayoutPartIndex) + ("] skin data.");
+							PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
+						}
+#endif
+					}
+				}
+			}
+		}
+		OutMesh.AddIndexElement(&NewIndexData);
+		for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
+		{
+			for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+			{
+				EVertexData& NewVertexData = NewVertexDatas[LayoutIndex * 4u + LayoutPartIndex];
+				if (!!(NewVertexData.Datas))
+				{
+#if _EDITOR_ONLY
+					BOOL32 Result =
+#endif
+						OutMesh.AddVertexElement(&NewVertexData);
+#if _EDITOR_ONLY
+					Check((Result), (ENGINE_ASSET_ERROR));
+#endif
+				}
+			}
+		}
+		for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
+		{
+			ESkinData& NewSkinData = NewSkinDatas[LayoutPartIndex];
+			if ((!!(NewSkinData.Indices)) && (!!(NewSkinData.Weights)))
+			{
+#if _EDITOR_ONLY
+				BOOL32 Result =
+#endif
+					OutMesh.AddSkinElement(&NewSkinData);
+#if _EDITOR_ONLY
+				Check((Result), (ENGINE_ASSET_ERROR));
+#endif
+			}
+		}
+		for (UINT32 SubmeshIndex = 0u, SubmeshNum = NewMeshSubmeshDatas.Length(); SubmeshIndex < SubmeshNum; SubmeshIndex++)
+		{
+			ESubmeshData& NewMeshSubmeshData = NewMeshSubmeshDatas[SubmeshIndex];
+			OutMesh.AddSubmesh(&NewMeshSubmeshData);
+		}
+	}
 	static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT32 InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes)
 	{
 		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
@@ -677,12 +1137,21 @@ namespace PigeonEngine
 			{
 				OutMesh.SetBoundAABB(AssimpTranslateVector3(AssimpMesh->mAABB.mMin), AssimpTranslateVector3(AssimpMesh->mAABB.mMax));
 
+				ESubmeshData NewSubmeshData;
+				NewSubmeshData.StartIndex = 0u;
+				NewSubmeshData.StartVertex = 0u;
+
 				EIndexData* MeshIndices = TranslateAssimpMeshFaceToEngineMeshIndices(AssimpMesh);
+				NewSubmeshData.IndexNum = MeshIndices->ElementNum;
 				if (!(OutMesh.AddIndexElement(MeshIndices)))
 				{
 					MeshIndices->Release();
 					delete MeshIndices;
 				}
+
+				NewSubmeshData.VertexNum = AssimpMesh->mNumVertices;
+
+				OutMesh.AddSubmesh(&NewSubmeshData);
 			}
 			for (UINT32 LayoutDescIndex = 0u, LayoutDescNum = ShouldStoredLayoutDescriptions.Length(); LayoutDescIndex < LayoutDescNum; LayoutDescIndex++)
 			{
@@ -795,12 +1264,21 @@ namespace PigeonEngine
 			{
 				OutMesh.SetBoundAABB(AssimpTranslateVector3(AssimpMesh->mAABB.mMin), AssimpTranslateVector3(AssimpMesh->mAABB.mMax));
 
+				ESubmeshData NewSubmeshData;
+				NewSubmeshData.StartIndex = 0u;
+				NewSubmeshData.StartVertex = 0u;
+
 				EIndexData* MeshIndices = TranslateAssimpMeshFaceToEngineMeshIndices(AssimpMesh);
+				NewSubmeshData.IndexNum = MeshIndices->ElementNum;
 				if (!(OutMesh.AddIndexElement(MeshIndices)))
 				{
 					MeshIndices->Release();
 					delete MeshIndices;
 				}
+
+				NewSubmeshData.VertexNum = AssimpMesh->mNumVertices;
+
+				OutMesh.AddSubmesh(&NewSubmeshData);
 			}
 			for (UINT32 LayoutDescIndex = 0u, LayoutDescNum = ShouldStoredLayoutDescriptions.Length(); LayoutDescIndex < LayoutDescNum; LayoutDescIndex++)
 			{
@@ -1015,7 +1493,7 @@ namespace PigeonEngine
 			_GAssetImporter = nullptr;
 		}
 	}
-	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes, const BOOL32 IsCombineSubmeshes)
 	{
 		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
@@ -1109,7 +1587,23 @@ namespace PigeonEngine
 		const RShaderSemanticType* EngineLayouts; UINT32 EngineLayoutNum;
 		GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
-		TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+		TArray<EStaticMesh> TempOutMeshes;
+		if (IsCombineSubmeshes)
+		{
+			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, TempOutMeshes);
+
+			EStaticMesh& NewStaticMesh = OutMeshes.Add_Default_GetRef();
+			if (TempOutMeshes.Length() > 0u)
+			{
+				NewStaticMesh.SetMeshName(TempOutMeshes[0].GetMeshName());
+			}
+
+			CombineEngineMeshIntoSubmeshes(TempOutMeshes, NewStaticMesh);
+		}
+		else
+		{
+			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+		}
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
@@ -1191,7 +1685,7 @@ namespace PigeonEngine
 		AssImporter->FreeScene();
 		return Result;
 	}
-	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes)
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadSkinnedMeshFile(const EString& InPath, TArray<ESkinnedMesh>& OutMeshes, const BOOL32 IsCombineSubmeshes)
 	{
 		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
@@ -1286,8 +1780,29 @@ namespace PigeonEngine
 		const RShaderSemanticType* EngineLayouts; UINT32 EngineLayoutNum;
 		GetEngineDefaultSkeletalMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
-		TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+		TArray<ESkinnedMesh> TempOutMeshes;
+		if (IsCombineSubmeshes)
+		{
+			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, TempOutMeshes);
 
+			ESkinnedMesh& NewSkinnedMesh = OutMeshes.Add_Default_GetRef();
+			if (TempOutMeshes.Length() > 0u)
+			{
+				NewSkinnedMesh.SetMeshName(TempOutMeshes[0].GetMeshName());
+			}
+			USHORT EffectBoneNum = 0u;
+			for (UINT32 MeshIndex = 0u, MeshNum = TempOutMeshes.Length(); MeshIndex < MeshNum; MeshIndex++)
+			{
+				ESkinnedMesh& TempSkinnedMesh = TempOutMeshes[MeshIndex];
+				EffectBoneNum = EMath::Max(EffectBoneNum, TempSkinnedMesh.GetEffectBoneNum());
+			}
+
+			CombineEngineMeshIntoSubmeshes(TempOutMeshes, EffectBoneNum, NewSkinnedMesh);
+		}
+		else
+		{
+			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+		}
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
 		// We're done. Everything will be cleaned up by the importer destructor
