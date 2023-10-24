@@ -43,21 +43,21 @@ namespace PigeonEngine
 	{
 		Euler euler;
 		// Roll (x-axis rotation)
-		double sinr_cosp = 2.0 * (InQuat.w * InQuat.x + InQuat.y * InQuat.z);
-		double cosr_cosp = 1.0 - 2.0 * (InQuat.x * InQuat.x + InQuat.y * InQuat.y);
+		FLOAT sinr_cosp = 2.f * (InQuat.w * InQuat.x + InQuat.y * InQuat.z);
+		FLOAT cosr_cosp = 1.f - 2.f * (InQuat.x * InQuat.x + InQuat.y * InQuat.y);
 		euler.Roll = static_cast<FLOAT>(EMath::Atan2(sinr_cosp, cosr_cosp));
 
 		// Pitch (y-axis rotation)
-		double sinp = 2.0 * (InQuat.w * InQuat.y - InQuat.z * InQuat.x);
+		FLOAT sinp = 2.f * (InQuat.w * InQuat.y - InQuat.z * InQuat.x);
 		if (std::abs(sinp) >= 1)
-			euler.Pitch = static_cast<FLOAT>(EMath::Abs(EMath::EnginePI() / 2)) * static_cast<FLOAT>(EMath::Sign(sinp)); // use 90 degrees if out of range 
+			euler.Pitch = EMath::Abs(EMath::EnginePI() / 2) * EMath::Sign(sinp); // use 90 degrees if out of range 
 		else
-			euler.Pitch = static_cast<FLOAT>(EMath::ASin(sinp));
+			euler.Pitch = EMath::ASin(sinp);
 
 		// Yaw (z-axis rotation)
 		FLOAT siny_cosp = 2.f * (InQuat.w * InQuat.z + InQuat.x * InQuat.y);
 		FLOAT cosy_cosp = 1.f - 2.f * (InQuat.y * InQuat.y + InQuat.z * InQuat.z);
-		euler.Yaw = static_cast<FLOAT>(EMath::Atan2(siny_cosp, cosy_cosp));
+		euler.Yaw = EMath::Atan2(siny_cosp, cosy_cosp);
 
 
 		// Euler RotatorFromQuat = Euler(Pitch, Yaw, Roll);
