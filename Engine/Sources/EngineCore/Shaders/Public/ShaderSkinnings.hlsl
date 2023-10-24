@@ -76,7 +76,7 @@ float4x4 GetFinalBoneMatrix(in Attribute Input)
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 4)
 	OutFinalMatrix += USED_SKELETON_INPUT[Input.BlendIndex0.w] * Input.BlendWeight0.w;
-	FinalWeight += Input.BlendWeight0.z;
+	FinalWeight += Input.BlendWeight0.w;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 5)
 	OutFinalMatrix += USED_SKELETON_INPUT[Input.BlendIndex1.x] * Input.BlendWeight1.x;
@@ -113,7 +113,7 @@ float4x4 GetFinalBoneInverseTransposeMatrix(in Attribute Input)
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 4)
 	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex0.w] * Input.BlendWeight0.w;
-	FinalWeight += Input.BlendWeight0.z;
+	FinalWeight += Input.BlendWeight0.w;
 #endif
 #if (SHADER_SKELETON_EFFECT_BONE_NUM >= 5)
 	OutFinalMatrix += USED_SKELETON_INVERSE_TRANSPOSE_INPUT[Input.BlendIndex1.x] * Input.BlendWeight1.x;

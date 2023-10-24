@@ -594,7 +594,11 @@ namespace PigeonEngine
 #else
 					EBoneTransform& InBoneTransform
 #endif
-					)->Matrix4x4
+#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
+				)->Matrix4x4
+#else
+				)->EBoneTransform
+#endif
 				{
 					Check((InBoneData.Index >= 0));
 					Check((((UINT32)(InBoneData.Index)) < UsedRelativeTransformNum));
