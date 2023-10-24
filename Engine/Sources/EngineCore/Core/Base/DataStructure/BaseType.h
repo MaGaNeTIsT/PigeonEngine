@@ -178,10 +178,10 @@ namespace PigeonEngine
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
 		Quaternion(const Quaternion& q)noexcept : x(q.x), y(q.y), z(q.z), w(q.w) {}
-		Quaternion(FLOAT pitch, FLOAT yaw, FLOAT roll)
+		Quaternion(FLOAT InPitch, FLOAT InYaw, FLOAT InRoll)
 		{
 			DirectX::XMFLOAT4 tempQ;
-			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationRollPitchYaw(pitch, yaw, roll));
+			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionRotationRollPitchYaw(InPitch, InYaw, InRoll));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
 		static const Quaternion& Identity()
@@ -259,6 +259,16 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat4(&tempQ, DirectX::XMQuaternionNormalize(DirectX::XMVectorSet(x, y, z, w)));
 			x = tempQ.x; y = tempQ.y; z = tempQ.z; w = tempQ.w;
 		}
+		BOOL32 IsContainNaN()const
+		{
+#if _DEBUG_MODE
+			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w);
+			Check((!ContainNaN));
+			return ContainNaN;
+#else
+			return (EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w));
+#endif
+		}
 		Quaternion& operator=(const Quaternion& q)
 		{
 			x = q.x; y = q.y; z = q.z; w = q.w;
@@ -284,14 +294,30 @@ namespace PigeonEngine
 
 	struct Euler
 	{
-		constexpr Euler(FLOAT InRoll, FLOAT InPitch, FLOAT InYaw)noexcept : roll(InRoll), pitch(InPitch), yaw(InYaw) {}
-		
-		Euler()noexcept : roll(0.f), pitch(0.f), yaw(0.f) {}
+		constexpr Euler(const FLOAT InPitch, const FLOAT InYaw, const FLOAT InRoll)noexcept : Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
+		Euler()noexcept : Pitch(0.f), Yaw(0.f), Roll(0.f) {}
+		Euler(const Euler& Other)noexcept : Pitch(Other.Pitch), Yaw(Other.Yaw), Roll(Other.Roll) {}
+		static const Euler& Zero()
+		{
+			const static Euler _StaticZeroEuler(0.f, 0.f, 0.f);
+			return _StaticZeroEuler;
+		}
+		BOOL32 IsContainNaN()const
+		{
+#if _DEBUG_MODE
+			BOOL32 ContainNaN = EMath::IsNaN(Pitch) && EMath::IsNaN(Yaw) && EMath::IsNaN(Yaw);
+			Check((!ContainNaN));
+			return ContainNaN;
+#else
+			return (EMath::IsNaN(Pitch) && EMath::IsNaN(Yaw) && EMath::IsNaN(Yaw));
+#endif
+		}
+
 		union
 		{
 			struct
 			{
-				FLOAT roll, pitch, yaw;
+				FLOAT Pitch, Yaw, Roll;
 			};
 			FLOAT v[3];
 		};
@@ -393,6 +419,16 @@ namespace PigeonEngine
 		}
 		Vector2 Lerp(const Vector2& vv, FLOAT t)const { return (Vector2(x * (1.f - t) + vv.x * t, y * (1.f - t) + vv.y * t)); }
 		Vector2 Reciprocal()const { return Vector2(1.f / x, 1.f / y); }
+		BOOL32 IsContainNaN()const
+		{
+#if _DEBUG_MODE
+			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y);
+			Check((!ContainNaN));
+			return ContainNaN;
+#else
+			return (EMath::IsNaN(x) && EMath::IsNaN(y));
+#endif
+		}
 		Vector2 operator-()const
 		{
 			return Vector2(-x, -y);
@@ -582,6 +618,16 @@ namespace PigeonEngine
 			DirectX::XMStoreFloat3(&tempV, DirectX::XMVector3Cross(DirectX::XMVectorSet(x, y, z, 0.f), DirectX::XMVectorSet(vv.x, vv.y, vv.z, 0.f)));
 			return (Vector3(tempV.x, tempV.y, tempV.z));
 		}
+		BOOL32 IsContainNaN()const
+		{
+#if _DEBUG_MODE
+			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z);
+			Check((!ContainNaN));
+			return ContainNaN;
+#else
+			return (EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z));
+#endif
+		}
 		Vector3 operator-()const
 		{
 			return Vector3(-x, -y, -z);
@@ -752,6 +798,16 @@ namespace PigeonEngine
 		{
 			FLOAT ft = static_cast<FLOAT>(t);
 			return (Vector4(x * (1.f - ft) + vv.x * ft, y * (1.f - ft) + vv.y * ft, z * (1.f - ft) + vv.z * ft, w * (1.f - ft) + vv.w * ft));
+		}
+		BOOL32 IsContainNaN()const
+		{
+#if _DEBUG_MODE
+			BOOL32 ContainNaN = EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w);
+			Check((!ContainNaN));
+			return ContainNaN;
+#else
+			return (EMath::IsNaN(x) && EMath::IsNaN(y) && EMath::IsNaN(z) && EMath::IsNaN(w));
+#endif
 		}
 		Vector4 operator-()const
 		{
@@ -1944,6 +2000,7 @@ namespace PigeonEngine
 	extern PE_INLINE Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation);
 	extern PE_INLINE Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation);
 	extern PE_INLINE Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling);
+	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Euler& InEuler);
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation);
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation);
 	extern PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling);
@@ -1957,6 +2014,8 @@ namespace PigeonEngine
 	extern PE_INLINE Quaternion MakeQuaternion(const Matrix4x4& m);
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector4& v);
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian);
+	extern PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler);
+	extern PE_INLINE Euler MakeEuler(const Quaternion& InQuat);
 	extern PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v);
 	extern PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat);
 	extern PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat);

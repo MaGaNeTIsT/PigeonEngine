@@ -8,6 +8,7 @@ namespace PigeonEngine
 	PE_INLINE Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation) { return Matrix4x4(DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
 	PE_INLINE Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
 	PE_INLINE Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Euler& InEuler) { return Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(InEuler.Pitch, InEuler.Yaw, InEuler.Roll)); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
@@ -38,6 +39,55 @@ namespace PigeonEngine
 	PE_INLINE Quaternion MakeQuaternion(const Matrix4x4& m) { return Quaternion(m.GetDirectXMatrix()); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
+	PE_INLINE Euler MakeEuler(const Quaternion& InQuat)
+	{
+		const FLOAT SingularityTest = Z * X - W * Y;
+		const FLOAT YawY = 2.f * (W * Z + X * Y);
+		const FLOAT YawX = (1.f - 2.f * (EMath::Square(Y) + EMath::Square(Z)));
+
+		// reference 
+		// http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+		// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/
+
+		// this value was found from experience, the above websites recommend different values
+		// but that isn't the case for us, so I went through different testing, and finally found the case 
+		// where both of world lives happily. 
+		constexpr FLOAT SINGULARITY_THRESHOLD = 0.4999995f;
+		constexpr FLOAT RAD_TO_DEG = (180.f / PE_PI);
+		FLOAT Pitch, Yaw, Roll;
+
+		if (SingularityTest < -SINGULARITY_THRESHOLD)
+		{
+			Pitch = -90.f;
+			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
+			Roll = FRotator3f::NormalizeAxis(-Yaw - (2.f * FMath::Atan2(X, W) * RAD_TO_DEG));
+		}
+		else if (SingularityTest > SINGULARITY_THRESHOLD)
+		{
+			Pitch = 90.f;
+			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
+			Roll = FRotator3f::NormalizeAxis(Yaw - (2.f * FMath::Atan2(X, W) * RAD_TO_DEG));
+		}
+		else
+		{
+			Pitch = (FMath::FastAsin(2.f * SingularityTest) * RAD_TO_DEG);
+			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
+			Roll = (FMath::Atan2(-2.f * (W * X + Y * Z), (1.f - 2.f * (FMath::Square(X) + FMath::Square(Y)))) * RAD_TO_DEG);
+		}
+
+		Euler RotatorFromQuat = Euler(Pitch, Yaw, Roll);
+#if _DEBUG_MODE
+		if (RotatorFromQuat.IsContainNaN())
+		{
+			RotatorFromQuat = Euler::Zero();
+		}
+#endif
+		return RotatorFromQuat;
+	}
+	PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler)
+	{
+		return Quaternion(InEuler.Pitch, InEuler.Yaw, InEuler.Roll);
+	}
 	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
 	PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat) { return Vector3(InMat._31, InMat._32, InMat._33); }
 	PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat) { return Vector3(InMat._21, InMat._22, InMat._23); }

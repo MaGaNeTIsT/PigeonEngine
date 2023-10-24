@@ -28,6 +28,10 @@ namespace PigeonEngine
 		template<typename TValueType>
 		PE_NODISCARD static PE_CONSTEXPR PE_FORCEINLINE TValueType	Min(const TValueType A, const TValueType B) { return (A < B) ? A : B; }
 
+		/** Returns value^2 in a generic way */
+		template<typename TValueType>
+		PE_NODISCARD static PE_CONSTEXPR PE_FORCEINLINE TValueType	Square(const TValueType InValue) { return (InValue * InValue); }
+
 		/** Clamps X to be between Min and Max, inclusive */
 		template<typename TValueType>
 		PE_NODISCARD static PE_CONSTEXPR PE_FORCEINLINE TValueType	Clamp(const TValueType X, const TValueType Min, const TValueType Max) { return ((X < Min) ? Min : (X < Max) ? X : Max); }
