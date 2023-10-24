@@ -13,7 +13,7 @@ namespace PigeonEngine
 		/// Init a level character use settings,host point.
 		/// </summary>
 		/// <param name="InCharacterSettings"></param>
-		virtual void InitCharacter(const class FCharacterSettings* InCharacterSettings);
+		virtual void InitCharacter(class FCharacterSettings* InCharacterSettings);
 		virtual void UninitCharacter();
 
 		class FShape* GetStandingShape();

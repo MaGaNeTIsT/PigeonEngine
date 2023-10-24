@@ -13,13 +13,14 @@ PigeonEngine::PCharacter::~PCharacter()
 {
 }
 
-void PigeonEngine::PCharacter::InitCharacter(const FCharacterSettings* InCharacterSettings)
+void PigeonEngine::PCharacter::InitCharacter(FCharacterSettings* InCharacterSettings)
 {
+	StandingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(),new FCapsuleShape(0.5f * CharacterHeightStanding,CharacterRadiusStanding));
+	CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
+	InCharacterSettings->Shape = StandingShape;
 	Character = new FCharacter(InCharacterSettings);
 	MoveMentComponent = new PMovementComponent(this);
 	this->AddComponent(MoveMentComponent);
-	StandingShape = new FCapsuleShape(CharacterHeightStanding,CharacterRadiusStanding);
-	CrouchingShape = new FCapsuleShape(CharacterHeightCrouching,CharacterRadiusCrouching);
 	FPhysicsManager::GetSingleton()->AddCharacter(Character);
 }
 
@@ -53,6 +54,7 @@ void PigeonEngine::PCharacter::BeginAddedToScene(PWorld* World)
 {
 	PPawn::BeginAddedToScene(World);
 	Character->AddToPhysicsSystem(EActivate::Activate, GetActorLocation(), GetActorRotation(), 0);
+	Character->Activate();
 }
 
 void PigeonEngine::PCharacter::RemovedFromScene()

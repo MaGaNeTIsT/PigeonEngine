@@ -170,4 +170,35 @@ protected:
 		return new CylinderShapeSettings(HalfHeight, Raidus, ConvexRaidus, Material);
 	}
 };
+
+class FRotatedTranslatedShape : public FShape
+{
+
+public:
+	Vector3 Position;
+	Quaternion Rotation;
+	FShape* HostedShape;
+public:
+	FRotatedTranslatedShape(Vector3 InPosition, Quaternion InRotation, FShape* InShape) :
+		Position(InPosition),
+		Rotation(InRotation),
+		HostedShape(InShape)
+	{
+	}
+
+	~FRotatedTranslatedShape()
+	{
+		delete HostedShape;
+	}
+protected:
+	virtual Shape* CreateShapeInternal() override
+	{
+		return new RotatedTranslatedShape(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
+	}
+
+	virtual ShapeSettings* CreateShapeSettingsInternal() override
+	{
+		return new RotatedTranslatedShapeSettings(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
+	}
+};
 PIGEONENGINE_NAMESPACE_END

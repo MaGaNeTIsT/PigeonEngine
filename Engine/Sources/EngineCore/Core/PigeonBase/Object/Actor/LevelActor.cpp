@@ -148,7 +148,6 @@ namespace PigeonEngine
 			POBJ_DEBUGNAME_SET(New, "Physics Test Character");
 			FCharacterSettings* Settings = new FCharacterSettings();
 			Settings->Layer = Layers::MOVING;
-			Settings->Shape = new FCapsuleShape(1.35f,0.35f);
 			New->InitCharacter(Settings);
 			this->GetWorld()->AddActor(New);
 
@@ -162,7 +161,7 @@ namespace PigeonEngine
 			New->StaticMeshComponent->SetMeshAsset(Asset);
 			New->AddComponent(New->StaticMeshComponent, ETransform());
 
-			New->SetActorLocation(Vector3(200.0f, 0.0f, 0.0f));
+			New->SetActorLocation(Vector3(-20.0f, 0.0f, 50.0f));
 		}
 
 		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 0.0f, -200.0f));

@@ -10,7 +10,7 @@ namespace PigeonEngine
 	class PPhysicsTestCharacter : public PCharacter
 	{
 	public:
-		virtual void InitCharacter(const class FCharacterSettings* InCharacterSettings) override;
+		virtual void InitCharacter(class FCharacterSettings* InCharacterSettings) override;
 		virtual void UninitCharacter() override;
 		PStaticMeshComponent* StaticMeshComponent = NULL;
 	};

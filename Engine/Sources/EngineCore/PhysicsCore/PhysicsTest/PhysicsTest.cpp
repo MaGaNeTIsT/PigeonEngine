@@ -3,7 +3,7 @@
 #include <TextureAsset/TextureAsset.h>
 #include "../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
-void PigeonEngine::PPhysicsTestCharacter::InitCharacter(const FCharacterSettings* InCharacterSettings)
+void PigeonEngine::PPhysicsTestCharacter::InitCharacter(FCharacterSettings* InCharacterSettings)
 {
 	PCharacter::InitCharacter(InCharacterSettings);
 	FShape* Shape = new FBoxShape(Vector3(1000.f,10.f,1000.f),0.f);
