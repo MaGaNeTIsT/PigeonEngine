@@ -354,14 +354,9 @@ namespace PigeonEngine
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
 
-	static FLOAT LocX;
-	static FLOAT LocY;
-	static FLOAT LocZ;
-
-	static Euler Rot;
-	static FLOAT ScaleX;
-	static FLOAT ScaleY;
-	static FLOAT ScaleZ;
+	static Vector3 Location;
+	static Euler   Rotation;
+	static Vector3 Scale;
 
 	void PSceneComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
@@ -396,12 +391,12 @@ namespace PigeonEngine
 		{
 			if (ImGui::TreeNodeEx("Location"))
 			{
-				const BOOL8 bChangedX = ImGui::DragScalar("##LocX", ImGuiDataType_Float, &LocX, 0.05f, NULL, NULL, "X : %.6f");
-				const BOOL8 bChangedY = ImGui::DragScalar("##LocY", ImGuiDataType_Float, &LocY, 0.05f, NULL, NULL, "Y : %.6f");
-				const BOOL8 bChangedZ = ImGui::DragScalar("##LocZ", ImGuiDataType_Float, &LocZ, 0.05f, NULL, NULL, "Z : %.6f");
+				const BOOL8 bChangedX = ImGui::DragScalar("##LocX", ImGuiDataType_Float, &Location.x, 0.05f, NULL, NULL, "X : %.6f");
+				const BOOL8 bChangedY = ImGui::DragScalar("##LocY", ImGuiDataType_Float, &Location.y, 0.05f, NULL, NULL, "Y : %.6f");
+				const BOOL8 bChangedZ = ImGui::DragScalar("##LocZ", ImGuiDataType_Float, &Location.z, 0.05f, NULL, NULL, "Z : %.6f");
 				if (bChangedX || bChangedY || bChangedZ)
 				{
-					this->SetComponentLocation(Vector3(LocX, LocY, LocZ));
+					this->SetComponentLocation(Location);
 					
 				}
 				ImGui::TreePop();
@@ -412,27 +407,26 @@ namespace PigeonEngine
 				const FLOAT Min = -180.0f;
 				const FLOAT Max = 180.0f;
 				
-				const BOOL8 bChangedRoll  = ImGui::DragScalar("##Roll",  ImGuiDataType_Float, &Rot.Roll, 0.05f, &Min, &Max, "Roll : %.6f");
-				const BOOL8 bChangedPitch = ImGui::DragScalar("##Pitch", ImGuiDataType_Float, &Rot.Pitch, 0.05f, &Min, &Max, "Pitch : %.6f");
-				const BOOL8 bChangedYaw   = ImGui::DragScalar("##Yaw",   ImGuiDataType_Float, &Rot.Yaw,   0.05f, &Min, &Max, "Yaw : %.6f");
+				const BOOL8 bChangedRoll  = ImGui::DragScalar("##Roll",  ImGuiDataType_Float, &Rotation.Roll,  0.05f, &Min, &Max, "Roll  : %.6f");
+				const BOOL8 bChangedPitch = ImGui::DragScalar("##Pitch", ImGuiDataType_Float, &Rotation.Pitch, 0.05f, &Min, &Max, "Pitch : %.6f");
+				const BOOL8 bChangedYaw   = ImGui::DragScalar("##Yaw",   ImGuiDataType_Float, &Rotation.Yaw,   0.05f, &Min, &Max, "Yaw   : %.6f");
 
 				if (bChangedRoll || bChangedPitch || bChangedYaw)
 				{
-					this->SetComponentRotation(MakeQuaternion(Euler(Rot.Pitch, Rot.Yaw, Rot.Roll)));
-					// Rot = MakeEuler(this->GetComponentLocalRotation());
+					this->SetComponentRotation(MakeQuaternion(Euler(Rotation.Pitch, Rotation.Yaw, Rotation.Roll)));
 				}
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNodeEx("Scale"))
 			{
-				BOOL8 bChangedX = ImGui::DragScalar("##ScaleX", ImGuiDataType_Float, &ScaleX, 0.05f, NULL, NULL, "X : %.6f");
-				BOOL8 bChangedY = ImGui::DragScalar("##ScaleY", ImGuiDataType_Float, &ScaleY, 0.05f, NULL, NULL, "Y : %.6f");
-				BOOL8 bChangedZ = ImGui::DragScalar("##ScaleZ", ImGuiDataType_Float, &ScaleZ, 0.05f, NULL, NULL, "Z : %.6f");
+				BOOL8 bChangedX = ImGui::DragScalar("##ScaleX", ImGuiDataType_Float, &Scale.x, 0.05f, NULL, NULL, "X : %.6f");
+				BOOL8 bChangedY = ImGui::DragScalar("##ScaleY", ImGuiDataType_Float, &Scale.y, 0.05f, NULL, NULL, "Y : %.6f");
+				BOOL8 bChangedZ = ImGui::DragScalar("##ScaleZ", ImGuiDataType_Float, &Scale.z, 0.05f, NULL, NULL, "Z : %.6f");
 
 				if (bChangedX || bChangedY || bChangedZ)
 				{
-					this->SetComponentScale(Vector3(ScaleX, ScaleY, ScaleZ));
+					this->SetComponentScale(Scale);
 				}
 				ImGui::TreePop();
 			}
@@ -443,15 +437,9 @@ namespace PigeonEngine
 
 	void PSceneComponent::OnSelectedByImGui()
 	{
-		LocX = this->GetComponentLocalLocation().x;
-		LocY = this->GetComponentLocalLocation().y;
-		LocZ = this->GetComponentLocalLocation().z;
-		
-		Rot = MakeEuler(this->GetComponentLocalRotation());
-
-		ScaleX = this->GetComponentLocalScale().x;
-		ScaleY = this->GetComponentLocalScale().y;
-		ScaleZ = this->GetComponentLocalScale().z;
+		Location = this->GetComponentLocalLocation();
+		Rotation = MakeEuler(this->GetComponentLocalRotation());
+		Scale    = this->GetComponentLocalScale();
 	}
 
 };
