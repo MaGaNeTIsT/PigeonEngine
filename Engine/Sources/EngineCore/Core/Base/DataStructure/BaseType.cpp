@@ -41,48 +41,33 @@ namespace PigeonEngine
 	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
 	PE_INLINE Euler MakeEuler(const Quaternion& InQuat)
 	{
-		const FLOAT SingularityTest = Z * X - W * Y;
-		const FLOAT YawY = 2.f * (W * Z + X * Y);
-		const FLOAT YawX = (1.f - 2.f * (EMath::Square(Y) + EMath::Square(Z)));
+		Euler euler;
+		// Roll (x-axis rotation)
+		double sinr_cosp = 2.0 * (InQuat.w * InQuat.x + InQuat.y * InQuat.z);
+		double cosr_cosp = 1.0 - 2.0 * (InQuat.x * InQuat.x + InQuat.y * InQuat.y);
+		euler.Roll = static_cast<FLOAT>(EMath::Atan2(sinr_cosp, cosr_cosp));
 
-		// reference 
-		// http://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-		// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToEuler/
-
-		// this value was found from experience, the above websites recommend different values
-		// but that isn't the case for us, so I went through different testing, and finally found the case 
-		// where both of world lives happily. 
-		constexpr FLOAT SINGULARITY_THRESHOLD = 0.4999995f;
-		constexpr FLOAT RAD_TO_DEG = (180.f / PE_PI);
-		FLOAT Pitch, Yaw, Roll;
-
-		if (SingularityTest < -SINGULARITY_THRESHOLD)
-		{
-			Pitch = -90.f;
-			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
-			Roll = FRotator3f::NormalizeAxis(-Yaw - (2.f * FMath::Atan2(X, W) * RAD_TO_DEG));
-		}
-		else if (SingularityTest > SINGULARITY_THRESHOLD)
-		{
-			Pitch = 90.f;
-			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
-			Roll = FRotator3f::NormalizeAxis(Yaw - (2.f * FMath::Atan2(X, W) * RAD_TO_DEG));
-		}
+		// Pitch (y-axis rotation)
+		double sinp = 2.0 * (InQuat.w * InQuat.y - InQuat.z * InQuat.x);
+		if (std::abs(sinp) >= 1)
+			euler.Pitch = static_cast<FLOAT>(EMath::Abs(EMath::EnginePI() / 2)) * static_cast<FLOAT>(EMath::Sign(sinp)); // use 90 degrees if out of range 
 		else
-		{
-			Pitch = (FMath::FastAsin(2.f * SingularityTest) * RAD_TO_DEG);
-			Yaw = (FMath::Atan2(YawY, YawX) * RAD_TO_DEG);
-			Roll = (FMath::Atan2(-2.f * (W * X + Y * Z), (1.f - 2.f * (FMath::Square(X) + FMath::Square(Y)))) * RAD_TO_DEG);
-		}
+			euler.Pitch = static_cast<FLOAT>(EMath::ASin(sinp));
 
-		Euler RotatorFromQuat = Euler(Pitch, Yaw, Roll);
+		// Yaw (z-axis rotation)
+		FLOAT siny_cosp = 2.f * (InQuat.w * InQuat.z + InQuat.x * InQuat.y);
+		FLOAT cosy_cosp = 1.f - 2.f * (InQuat.y * InQuat.y + InQuat.z * InQuat.z);
+		euler.Yaw = static_cast<FLOAT>(EMath::Atan2(siny_cosp, cosy_cosp));
+
+
+		// Euler RotatorFromQuat = Euler(Pitch, Yaw, Roll);
 #if _DEBUG_MODE
-		if (RotatorFromQuat.IsContainNaN())
+		if (euler.IsContainNaN())
 		{
-			RotatorFromQuat = Euler::Zero();
+			euler = Euler::Zero();
 		}
 #endif
-		return RotatorFromQuat;
+		return euler;
 	}
 	PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler)
 	{

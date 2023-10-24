@@ -187,14 +187,12 @@ namespace PigeonEngine
 				{
 					ImGui::BeginChild("Project", ImVec2(180, 150), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Project");
-					// ImGui::CollapsingHeader(*Node->GetDisplayName(), ImGuiTreeNodeFlags_DefaultOpen);
 					EFolderTreeNode::TraverseFolder(ProjectAssetRoot, Current);
 					ImGui::EndChild();
 				}
 				{
 					ImGui::BeginChild("Engine", ImVec2(180, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Engine");
-					// ImGui::CollapsingHeader(*Node->GetDisplayName(), ImGuiTreeNodeFlags_DefaultOpen);
 					EFolderTreeNode::TraverseFolder(EngineAssetRoot, Current);
 					ImGui::EndChild();
 				}

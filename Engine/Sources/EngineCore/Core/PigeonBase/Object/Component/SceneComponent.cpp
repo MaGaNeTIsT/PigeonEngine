@@ -358,11 +358,7 @@ namespace PigeonEngine
 	static FLOAT LocY;
 	static FLOAT LocZ;
 
-	static FLOAT QuatX;
-	static FLOAT QuatY;
-	static FLOAT QuatZ;
-	static FLOAT QuatW;
-
+	static Euler Rot;
 	static FLOAT ScaleX;
 	static FLOAT ScaleY;
 	static FLOAT ScaleZ;
@@ -391,8 +387,6 @@ namespace PigeonEngine
 		{
 			this->GetOwnerActor()->GetWorld()->SetSelectedComponent(this);
 		}
-		
-
 	}
 
 	void PSceneComponent::GenerateComponentDetail()
@@ -408,22 +402,24 @@ namespace PigeonEngine
 				if (bChangedX || bChangedY || bChangedZ)
 				{
 					this->SetComponentLocation(Vector3(LocX, LocY, LocZ));
+					
 				}
 				ImGui::TreePop();
 			}
 
 			if (ImGui::TreeNodeEx("Rotation"))
 			{
-				const FLOAT Min = -1.0f;
-				const FLOAT Max = 1.0f;
-				const BOOL8 bChangedX = ImGui::DragScalar("##QuatX", ImGuiDataType_Float, &QuatX, 0.05f, &Min, NULL, "X : %.6f");
-				const BOOL8 bChangedY = ImGui::DragScalar("##QuatY", ImGuiDataType_Float, &QuatY, 0.05f, NULL, NULL, "Y : %.6f");
-				const BOOL8 bChangedZ = ImGui::DragScalar("##QuatZ", ImGuiDataType_Float, &QuatZ, 0.05f, NULL, NULL, "Z : %.6f");
-				const BOOL8 bChangedW = ImGui::DragScalar("##QuatW", ImGuiDataType_Float, &QuatW, 0.05f, NULL, NULL, "W : %.6f");
+				const FLOAT Min = -180.0f;
+				const FLOAT Max = 180.0f;
+				
+				const BOOL8 bChangedRoll  = ImGui::DragScalar("##Roll",  ImGuiDataType_Float, &Rot.Roll, 0.05f, &Min, &Max, "Roll : %.6f");
+				const BOOL8 bChangedPitch = ImGui::DragScalar("##Pitch", ImGuiDataType_Float, &Rot.Pitch, 0.05f, &Min, &Max, "Pitch : %.6f");
+				const BOOL8 bChangedYaw   = ImGui::DragScalar("##Yaw",   ImGuiDataType_Float, &Rot.Yaw,   0.05f, &Min, &Max, "Yaw : %.6f");
 
-				if (bChangedX || bChangedY || bChangedZ || QuatW)
+				if (bChangedRoll || bChangedPitch || bChangedYaw)
 				{
-					this->SetComponentRotation(Quaternion(QuatX, QuatY, QuatZ, QuatW));
+					this->SetComponentRotation(MakeQuaternion(Euler(Rot.Pitch, Rot.Yaw, Rot.Roll)));
+					// Rot = MakeEuler(this->GetComponentLocalRotation());
 				}
 				ImGui::TreePop();
 			}
@@ -450,11 +446,8 @@ namespace PigeonEngine
 		LocX = this->GetComponentLocalLocation().x;
 		LocY = this->GetComponentLocalLocation().y;
 		LocZ = this->GetComponentLocalLocation().z;
-
-		QuatX = this->GetComponentLocalRotation().x;
-		QuatY = this->GetComponentLocalRotation().y;
-		QuatZ = this->GetComponentLocalRotation().z;
-		QuatW = this->GetComponentLocalRotation().w;
+		
+		Rot = MakeEuler(this->GetComponentLocalRotation());
 
 		ScaleX = this->GetComponentLocalScale().x;
 		ScaleY = this->GetComponentLocalScale().y;
