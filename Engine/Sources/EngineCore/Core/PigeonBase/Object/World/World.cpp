@@ -172,7 +172,6 @@ namespace PigeonEngine
         {
             elem->GenerateWorldOutline(ImguiSelectedActor);
         }
-
     }
 
     void PWorld::GenerateDetail()
@@ -188,8 +187,6 @@ namespace PigeonEngine
             return;
         }
         ImguiSelectedComponent->GenerateComponentDetail();
-		
-        
     }
 #endif
 };
