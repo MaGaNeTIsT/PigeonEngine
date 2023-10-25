@@ -24,7 +24,7 @@ void main(in Varying Input,
     out float4 OutGBufferC      : SV_Target3)
 {
     GBufferTerm GBuffer = InitGBuffer(SafeNormalize(Input.Normal.xyz), float3(0.9, 0.9, 0.9),
-        0.5, 0.0, SHADER_SHADING_MODEL_DEFAULT_LIT, 1.0, 1.0);
+        0.7, 0.4, SHADER_SHADING_MODEL_DEFAULT_LIT, 1.0, 1.0);
 
     OutSceneColor = float4(0.0, 0.0, 0.0, 1.0);
 

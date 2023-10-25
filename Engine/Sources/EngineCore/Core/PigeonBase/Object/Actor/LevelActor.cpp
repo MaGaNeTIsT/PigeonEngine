@@ -71,25 +71,28 @@ namespace PigeonEngine
 
 			const ESkinnedMeshAsset* MeshAsset = nullptr;
 			const ESkeletonAsset* SkeletonAsset = nullptr;
-			//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
-			//EString ImportName("SK_Mannequin_UE4_WithWeapon");
-			//EString ImportFileType("FBX");
-			//EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
-			//EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
-			EString ImportName("Model");
+			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
+			EString ImportName("SK_Mannequin_UE4_WithWeapon");
 			EString ImportFileType("FBX");
-			EString MeshAssetName("DVa_Mesh");
-			EString SkeletonAssetName("DVa_Skeleton");
+			EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
+			EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
+			//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
+			//EString ImportName("Model");
+			//EString ImportFileType("FBX");
+			//EString MeshAssetName("DVa_Mesh");
+			//EString SkeletonAssetName("DVa_Skeleton");
 			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 
 			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
 			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
-			NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(180.0f)), Vector3::One());
-			NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+			{
+				Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
+				NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), DefaultRot, Vector3::One());
+				NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+			}
 
-			New->SetActorLocation(Vector3(-100.0f, 0.0f, 0.0f));
+			New->SetActorLocation(Vector3(-100.0f, -90.0f, 0.0f));
 		}
 
 		{
@@ -100,7 +103,7 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
 			LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
-			LightComp->SetLightIntensity(0.5f);
+			LightComp->SetLightIntensity(1.5f);
 			New->AddComponent(LightComp);
 			Quaternion Quat = Quaternion(0.5f, 0.5f, 0.0f, 1.0f);
 			Quat.Normalize();
