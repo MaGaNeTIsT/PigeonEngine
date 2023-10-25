@@ -130,7 +130,7 @@ namespace PigeonEngine
 		m_WorldManager->Init();
 
 		EditorInit();
-		
+
 	}
 	void EMainManager::Uninit()
 	{

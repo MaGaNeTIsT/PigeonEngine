@@ -74,6 +74,7 @@ namespace PigeonEngine
 #endif
 
 #define PE_FLOAT32_MAX					(3.402823466e+38f)
+#define PE_FLOAT32_EPSILON				(1.192092896e-07f) 
 
 #define PE_PI							(3.1415926535897932f)								/* Extra digits if needed: 3.1415926535897932384626433832795f */
 #define PE_SMALL_NUMBER					(1.e-8f)

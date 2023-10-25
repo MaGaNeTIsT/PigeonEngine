@@ -302,6 +302,27 @@ namespace PigeonEngine
 			const static Euler _StaticZeroEuler(0.f, 0.f, 0.f);
 			return _StaticZeroEuler;
 		}
+		static FLOAT ClampAxis(const FLOAT InAngle)
+		{
+			// returns Angle in the range (-360,360)
+			FLOAT ResultAngle = EMath::FMod(InAngle, 360.0f);
+			if (ResultAngle < 0.0f)
+			{
+				// shift to [0,360) range
+				ResultAngle += 360.0f;
+			}
+			return ResultAngle;
+		}
+		static FLOAT NormalizeAxis(const FLOAT InAngle)
+		{
+			FLOAT ResultAngle = Euler::ClampAxis(InAngle);
+			if (ResultAngle > 180.0f)
+			{
+				// shift to (-180,180]
+				ResultAngle -= 360.0f;
+			}
+			return ResultAngle;
+		}
 		BOOL32 IsContainNaN()const
 		{
 #if _DEBUG_MODE
@@ -2015,6 +2036,7 @@ namespace PigeonEngine
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector4& v);
 	extern PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian);
 	extern PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler);
+	extern PE_INLINE Euler MakeEuler(const Vector3& v);
 	extern PE_INLINE Euler MakeEuler(const Quaternion& InQuat);
 	extern PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v);
 	extern PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat);
@@ -2023,6 +2045,7 @@ namespace PigeonEngine
 	extern PE_INLINE Vector3 SplitForwardVector(const Quaternion& InQuat);
 	extern PE_INLINE Vector3 SplitUpVector(const Quaternion& InQuat);
 	extern PE_INLINE Vector3 SplitRightVector(const Quaternion& InQuat);	
+	extern PE_INLINE Vector3 MakeVector3(const Euler& InEuler);
 	extern PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w);
 	extern PE_INLINE Color3 MakeColor3(const Color4& c);
 	extern PE_INLINE Color4 MakeColor4(const Color3& c);

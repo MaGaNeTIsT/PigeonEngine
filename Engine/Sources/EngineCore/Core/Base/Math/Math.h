@@ -475,6 +475,32 @@ namespace PigeonEngine
 			}
 			return atan2(Y, X);
 		}
+
+		// Note:  We use FASTASIN_HALF_PI instead of HALF_PI inside of FastASin(), since it was the value that accompanied the minimax coefficients below.
+		// It is important to use exactly the same value in all places inside this function to ensure that FastASin(0.0f) == 0.0f.
+		// For comparison:
+		//		HALF_PI				== 1.57079632679f == 0x3fC90FDB
+		//		FASTASIN_HALF_PI	== 1.5707963050f  == 0x3fC90FDA
+#define PE_FASTASIN_HALF_PI		(1.5707963050f)
+
+		PE_NODISCARD static PE_FORCEINLINE FLOAT FastAsin(const FLOAT InValue)
+		{
+			// Clamp input to [-1,1].
+			BOOL8 nonnegative = (InValue >= 0.0f);
+			FLOAT x = EMath::Abs(InValue);
+			FLOAT omx = 1.0f - x;
+			if (omx < 0.0f)
+			{
+				omx = 0.0f;
+			}
+			FLOAT root = EMath::Sqrt(omx);
+			// 7-degree minimax approximation
+			FLOAT result = ((((((-0.0012624911f * x + 0.0066700901f) * x - 0.0170881256f) * x + 0.0308918810f) * x - 0.0501743046f) * x + 0.0889789874f) * x - 0.2145988016f) * x + PE_FASTASIN_HALF_PI;
+			result *= root;  // acos(|x|)
+			// acos(x) = pi - acos(-x) when x < 0, asin(x) = pi/2 - acos(x)
+			return (nonnegative ? (PE_FASTASIN_HALF_PI - result) : (result - PE_FASTASIN_HALF_PI));
+		}
+
 		static PE_FORCEINLINE void SinCos(FLOAT& OutSinValue, FLOAT& OutCosValue, const FLOAT InValue)
 		{
 			OutSinValue = Sin(InValue);

@@ -8,7 +8,7 @@ namespace PigeonEngine
 	PE_INLINE Matrix4x4 MakeTranslationMatrix4x4(const Vector3& InTranslation) { return Matrix4x4(DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
 	PE_INLINE Matrix4x4 MakeRotationMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
 	PE_INLINE Matrix4x4 MakeScalingMatrix4x4(const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z)); }
-	PE_INLINE Matrix4x4 MakeMatrix4x4(const Euler& InEuler) { return Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(InEuler.Pitch, InEuler.Yaw, InEuler.Roll)); }
+	PE_INLINE Matrix4x4 MakeMatrix4x4(const Euler& InEuler) { return Matrix4x4(DirectX::XMMatrixRotationRollPitchYaw(EMath::DegreesToRadians(InEuler.Pitch), EMath::DegreesToRadians(InEuler.Yaw), EMath::DegreesToRadians(InEuler.Roll))); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix()); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Quaternion& InRotation) { return Matrix4x4(InRotation.GetDirectXMatrix() * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
 	PE_INLINE Matrix4x4 MakeMatrix4x4(const Vector3& InTranslation, const Vector3& InScaling) { return Matrix4x4(DirectX::XMMatrixScaling(InScaling.x, InScaling.y, InScaling.z) * DirectX::XMMatrixTranslation(InTranslation.x, InTranslation.y, InTranslation.z)); }
@@ -39,40 +39,49 @@ namespace PigeonEngine
 	PE_INLINE Quaternion MakeQuaternion(const Matrix4x4& m) { return Quaternion(m.GetDirectXMatrix()); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector4& v) { return Quaternion(v.x, v.y, v.z, v.w); }
 	PE_INLINE Quaternion MakeQuaternion(const Vector3& InAxis, FLOAT InRadian) { return Quaternion(DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(InAxis.x, InAxis.y, InAxis.z, 0.f), InRadian)); }
+	PE_INLINE Euler MakeEuler(const Vector3& v) { return Euler(v.x, v.y, v.z); }
 	PE_INLINE Euler MakeEuler(const Quaternion& InQuat)
 	{
-		Euler euler;
-		// Roll (x-axis rotation)
-		FLOAT sinr_cosp = 2.f * (InQuat.w * InQuat.x + InQuat.y * InQuat.z);
-		FLOAT cosr_cosp = 1.f - 2.f * (InQuat.x * InQuat.x + InQuat.y * InQuat.y);
-		euler.Roll = static_cast<FLOAT>(EMath::Atan2(sinr_cosp, cosr_cosp));
+		Euler RotatorFromQuat(Euler::Zero());
 
-		// Pitch (y-axis rotation)
-		FLOAT sinp = 2.f * (InQuat.w * InQuat.y - InQuat.z * InQuat.x);
-		if (std::abs(sinp) >= 1)
-			euler.Pitch = EMath::Abs(EMath::EnginePI() / 2) * EMath::Sign(sinp); // use 90 degrees if out of range 
-		else
-			euler.Pitch = EMath::ASin(sinp);
+		const FLOAT xx = InQuat.x * InQuat.x;
+		const FLOAT yy = InQuat.y * InQuat.y;
+		const FLOAT zz = InQuat.z * InQuat.z;
 
-		// Yaw (z-axis rotation)
-		FLOAT siny_cosp = 2.f * (InQuat.w * InQuat.z + InQuat.x * InQuat.y);
-		FLOAT cosy_cosp = 1.f - 2.f * (InQuat.y * InQuat.y + InQuat.z * InQuat.z);
-		euler.Yaw = EMath::Atan2(siny_cosp, cosy_cosp);
+		const FLOAT m31 = 2.f * InQuat.x * InQuat.z + 2.f * InQuat.y * InQuat.w;
+		const FLOAT m32 = 2.f * InQuat.y * InQuat.z - 2.f * InQuat.x * InQuat.w;
+		const FLOAT m33 = 1.f - 2.f * xx - 2.f * yy;
 
+		const FLOAT cy = sqrtf(m33 * m33 + m31 * m31);
+		const FLOAT cx = atan2f(-m32, cy);
 
-		// Euler RotatorFromQuat = Euler(Pitch, Yaw, Roll);
-#if _DEBUG_MODE
-		if (euler.IsContainNaN())
+		if (cy > 16.f * PE_FLOAT32_EPSILON)
 		{
-			euler = Euler::Zero();
+			const FLOAT m12 = 2.f * InQuat.x * InQuat.y + 2.f * InQuat.z * InQuat.w;
+			const FLOAT m22 = 1.f - 2.f * xx - 2.f * zz;
+
+			RotatorFromQuat.Pitch = EMath::RadiansToDegrees(cx);
+			RotatorFromQuat.Yaw = EMath::RadiansToDegrees(atan2f(m31, m33));
+			RotatorFromQuat.Roll = EMath::RadiansToDegrees(atan2f(m12, m22));
+		}
+		else
+		{
+			const FLOAT m11 = 1.f - 2.f * yy - 2.f * zz;
+			const FLOAT m21 = 2.f * InQuat.x * InQuat.y - 2.f * InQuat.z * InQuat.w;
+
+			RotatorFromQuat.Pitch = EMath::RadiansToDegrees(cx);
+			RotatorFromQuat.Yaw = 0.f;
+			RotatorFromQuat.Roll = EMath::RadiansToDegrees(atan2f(-m21, m11));
+		}
+#if _DEBUG_MODE
+		if (RotatorFromQuat.IsContainNaN())
+		{
+			RotatorFromQuat = Euler::Zero();
 		}
 #endif
-		return euler;
+		return RotatorFromQuat;
 	}
-	PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler)
-	{
-		return Quaternion(InEuler.Pitch, InEuler.Yaw, InEuler.Roll);
-	}
+	PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler) { return Quaternion(EMath::DegreesToRadians(InEuler.Pitch), EMath::DegreesToRadians(InEuler.Yaw), EMath::DegreesToRadians(InEuler.Roll)); }
 	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
 	PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat) { return Vector3(InMat._31, InMat._32, InMat._33); }
 	PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat) { return Vector3(InMat._21, InMat._22, InMat._23); }
@@ -80,6 +89,7 @@ namespace PigeonEngine
 	PE_INLINE Vector3 SplitForwardVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::ZVector()); }
 	PE_INLINE Vector3 SplitUpVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::YVector()); }
 	PE_INLINE Vector3 SplitRightVector(const Quaternion& InQuat) { return QuaternionTransformVector(InQuat, Vector3::XVector()); }
+	PE_INLINE Vector3 MakeVector3(const Euler& InEuler) { return Vector3(InEuler.Pitch, InEuler.Yaw, InEuler.Roll); }
 	PE_INLINE Vector4 MakeVector4(const Vector3& v, FLOAT w) { return Vector4(v.x, v.y, v.z, w); }
 	PE_INLINE Color3 MakeColor3(const Color4& c) { return Color3(c.x, c.y, c.z); }
 	PE_INLINE Color4 MakeColor4(const Color3& c) { return Color4(c.x, c.y, c.z, 1.f); }
