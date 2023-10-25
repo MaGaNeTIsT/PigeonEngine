@@ -498,16 +498,17 @@ namespace PigeonEngine
 	}
 
 	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool(const ESkeleton* InRawSkeletonPtr)
-		: RawSkeletonPtr(InRawSkeletonPtr)
+		: RawSkeletonPtr(InRawSkeletonPtr), SkeletonRootTransform(EBoneTransform::Identity())
 	{
 		GenerateFromSkeleton(InRawSkeletonPtr);
 	}
 	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool()
-		: RawSkeletonPtr(nullptr)
+		: RawSkeletonPtr(nullptr), SkeletonRootTransform(EBoneTransform::Identity())
 	{
 	}
 	ESkeletonBoneMemoryPool::ESkeletonBoneMemoryPool(const ESkeletonBoneMemoryPool& Other)
 		: RawSkeletonPtr(Other.RawSkeletonPtr)
+		, SkeletonRootTransform(Other.SkeletonRootTransform)
 		, BoneRelativeTransforms(Other.BoneRelativeTransforms)
 		, BoneToRootTransforms(Other.BoneToRootTransforms)
 	{
@@ -580,9 +581,9 @@ namespace PigeonEngine
 			BackwardRecursionBone(
 				0,
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
-				Matrix4x4::Identity(),
+				SkeletonRootTransform.ToMatrix4x4(),
 #else
-				EBoneTransform::Identity(),
+				SkeletonRootTransform,
 #endif
 				[&UsedRelativeTransforms, &UsedToRootTransforms
 #if _EDITOR_ONLY
@@ -639,6 +640,10 @@ namespace PigeonEngine
 	const ESkeleton* ESkeletonBoneMemoryPool::GetRawSkeleton()const
 	{
 		return RawSkeletonPtr;
+	}
+	const EBoneTransform& ESkeletonBoneMemoryPool::GetRootTransform()const
+	{
+		return SkeletonRootTransform;
 	}
 	const TArray<EBoneTransform>& ESkeletonBoneMemoryPool::GetBoneRelativeTransforms()const
 	{
@@ -723,6 +728,12 @@ namespace PigeonEngine
 		}
 		return (EBoneTransform::Identity());
 #endif
+	}
+	void ESkeletonBoneMemoryPool::SetRootTransform(const Vector3& InPosition, const Quaternion& InRotation, const Vector3& InScaling)
+	{
+		SkeletonRootTransform.Position = InPosition;
+		SkeletonRootTransform.Rotation = InRotation;
+		SkeletonRootTransform.Scaling = InScaling;
 	}
 	void ESkeletonBoneMemoryPool::SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition)
 	{

@@ -188,6 +188,7 @@ namespace PigeonEngine
 		void	RecursionToRootTransforms();
 	public:
 		const ESkeleton*				GetRawSkeleton()const;
+		const EBoneTransform&			GetRootTransform()const;
 		const TArray<EBoneTransform>&	GetBoneRelativeTransforms()const;
 		TArray<EBoneTransform>&			GetBoneRelativeTransforms();
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
@@ -201,6 +202,7 @@ namespace PigeonEngine
 #endif
 		const EBoneTransform&			GetBoneRelativeTransform(const EString& InBoneName)const;
 	public:
+		void	SetRootTransform(const Vector3& InPosition, const Quaternion& InRotation, const Vector3& InScaling);
 		void	SetBoneRelativePosition(const EString& InBoneName, const Vector3& InPosition);
 		void	SetBoneRelativeRotation(const EString& InBoneName, const Quaternion& InRotation);
 		void	SetBoneRelativeScaling(const EString& InBoneName, const Vector3& InScaling);
@@ -347,6 +349,7 @@ namespace PigeonEngine
 		}
 	private:
 		const ESkeleton*		RawSkeletonPtr;
+		EBoneTransform			SkeletonRootTransform;
 		TArray<EBoneTransform>	BoneRelativeTransforms;
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
 		TArray<Matrix4x4>		BoneToRootTransforms;

@@ -86,6 +86,8 @@ namespace PigeonEngine
 
 			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
 			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
+			NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(180.0f)), Vector3::One());
+			NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
 
 			New->SetActorLocation(Vector3(-100.0f, 0.0f, 0.0f));
 		}
