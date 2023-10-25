@@ -95,4 +95,47 @@ namespace PigeonEngine
 		RenderDevice->SetVertexBuffer(_GFullScreenTriangleVertexBuffer.Buffer, (sizeof(FLOAT) * 2u), 0u, 0u);
 	}
 
+#if _EDITOR_ONLY
+	/*PE_CONSTEXPR_ASSEMBLY_DECLARE(Vector3, _GDebugCircleLinePointList,
+		Vector3(1.f, 1.f, 1.f),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3(),
+		Vector3()
+	);*/
+	RDebugCircleLineList::RDebugCircleLineList()
+	{
+		//constexpr UINT32 n = PE_CONSTEXPR_ASSEMBLY_VARIABLE_NAME(_GDebugCircleLinePointList).__Assembly.__ElementNum;
+	}
+	RDebugCircleLineList::RDebugCircleLineList(const RDebugCircleLineList& Other)
+	{
+	}
+	RDebugCircleLineList::~RDebugCircleLineList()
+	{
+	}
+	RDebugCircleLineList& RDebugCircleLineList::operator=(const RDebugCircleLineList& Other)
+	{
+		return (*this);
+	}
+	UINT32 RDebugCircleLineList::GetIndexCount()const
+	{
+		return 0u;
+	}
+	void RDebugCircleLineList::BindPrimitiveBuffers()
+	{
+	}
+
+#endif
+
 };
