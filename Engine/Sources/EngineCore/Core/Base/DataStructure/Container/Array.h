@@ -371,26 +371,4 @@ namespace PigeonEngine
          }
     }
 
-    template<typename _TElementValueType, typename _TElementCountType, typename... _TVariadicTemplates>
-    struct TConstexprArray
-    {
-    public:
-        PE_STATIC_CONSTEXPR _TElementCountType                              __ElementNum    = sizeof...(_TVariadicTemplates);
-        PE_STATIC_CONSTEXPR std::array<_TElementValueType, __ElementNum>    __ElementValues = { _TVariadicTemplates... };
-    };
-
-    template<typename _TElementValueType, typename... _TVariadicTemplates>
-    struct TConstexprAssembly
-    {
-    public:
-        using __PEConstexprArray = TConstexprArray<_TElementValueType, UINT32, _TVariadicTemplates...>;
-
-        __PEConstexprArray __Assembly;
-    };
-
-#define PE_CONSTEXPR_ASSEMBLY_DECLARE(__TypeName, __VariableName, ...) \
-    TConstexprAssembly<__TypeName, ##__VA_ARGS__> __VariableName##ConstexprAssembly;\
-
-#define PE_CONSTEXPR_ASSEMBLY_VARIABLE_NAME(__VariableName) (__VariableName##ConstexprAssembly)
-
 };

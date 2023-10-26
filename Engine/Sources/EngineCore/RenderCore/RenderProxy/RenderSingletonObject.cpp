@@ -96,46 +96,149 @@ namespace PigeonEngine
 	}
 
 #if _EDITOR_ONLY
-	/*PE_CONSTEXPR_ASSEMBLY_DECLARE(Vector3, _GDebugCircleLinePointList,
-		Vector3(1.f, 1.f, 1.f),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3(),
-		Vector3()
-	);*/
-	RDebugCircleLineList::RDebugCircleLineList()
-	{
-		//constexpr UINT32 n = PE_CONSTEXPR_ASSEMBLY_VARIABLE_NAME(_GDebugCircleLinePointList).__Assembly.__ElementNum;
-	}
-	RDebugCircleLineList::RDebugCircleLineList(const RDebugCircleLineList& Other)
+	RDebugWireframePrimitive::RDebugWireframePrimitive()
+		: IndexCount(0u)
 	{
 	}
-	RDebugCircleLineList::~RDebugCircleLineList()
+	RDebugWireframePrimitive::RDebugWireframePrimitive(const RDebugWireframePrimitive& Other)
+		: IndexCount(Other.IndexCount), VertexBuffer(Other.VertexBuffer)
 	{
 	}
-	RDebugCircleLineList& RDebugCircleLineList::operator=(const RDebugCircleLineList& Other)
+	RDebugWireframePrimitive::~RDebugWireframePrimitive()
 	{
+	}
+	RDebugWireframePrimitive& RDebugWireframePrimitive::operator=(const RDebugWireframePrimitive& Other)
+	{
+		IndexCount		= Other.IndexCount;
+		VertexBuffer	= Other.VertexBuffer;
 		return (*this);
 	}
-	UINT32 RDebugCircleLineList::GetIndexCount()const
+	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InDatas, const UINT32& InNum)
 	{
-		return 0u;
+		if (VertexBuffer.IsRenderResourceValid())
+		{
+			Check((IndexCount > 0u), (ENGINE_RENDER_CORE_ERROR));
+			return TRUE;
+		}
+
+		IndexCount = InNum;
+
+		RSubresourceDataDesc SubresourceDataDesc;
+		SubresourceDataDesc.pSysMem = InDatas;
+
+		BOOL32 Result = RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer.Buffer,
+			RBufferDesc((sizeof(Vector3) * InNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+			(&SubresourceDataDesc));
+		return Result;
 	}
-	void RDebugCircleLineList::BindPrimitiveBuffers()
+	UINT32 RDebugWireframePrimitive::GetIndexCount()const
 	{
+		return IndexCount;
+	}
+	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveBuffer()const
+	{
+		return VertexBuffer;
 	}
 
+	RDebugWireframePrimitiveManager::RDebugWireframePrimitiveManager()
+	{
+	}
+	RDebugWireframePrimitiveManager::~RDebugWireframePrimitiveManager()
+	{
+	}
+	void RDebugWireframePrimitiveManager::Initialize()
+	{
+
+	}
+	void RDebugWireframePrimitiveManager::ShutDown()
+	{
+
+	}
+	void RDebugWireframePrimitiveManager::CreateCustomPrimitive(RDebugWireframeType InType)
+	{
+
+	}
+	void RDebugWireframePrimitiveManager::CreatePrimitiveInternal(RDebugWireframeType InType, const EString* InCustomName, const UINT32* InVectorNum, const Vector3* InVectorDatas)
+	{
+		const UINT32 TargetIndex = InType - 1u;
+		BOOL32 Result = FALSE;
+		switch (InType)
+		{
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE:
+			{
+				const Vector3 PointListSingleLine[] =
+				{
+					Vector3(0.f, 0.5f, 0.f),
+					Vector3(0.f, -0.5f, 0.f)
+				};
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListSingleLine, PE_ARRAYSIZE(PointListSingleLine));
+			}
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_PLANE:
+			{
+				const Vector3 PointListPlane[] =
+				{
+					Vector3(-0.5f, 0.5f, 0.f),
+					Vector3(0.5f, 0.5f, 0.f),
+					Vector3(0.5f, -0.5f, 0.f),
+					Vector3(-0.5f, -0.5f, 0.f),
+					Vector3(-0.5f, 0.5f, 0.f)
+				};
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListPlane, PE_ARRAYSIZE(PointListPlane));
+			}
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CIRCLE:
+			{
+				const Vector3 PointListCircle[] =
+				{
+					Vector3(1.f, 0.f, 0.f),
+					Vector3(0.92388f, 0.382683f, 0.f),
+					Vector3(0.707107f, 0.707107f, 0.f),
+					Vector3(0.382683f, 0.92388f, 0.f),
+					Vector3(-4.37114e-08f, 1.f, 0.f),
+					Vector3(-0.382683f, 0.92388f, 0.f),
+					Vector3(-0.707107f, 0.707107f, 0.f),
+					Vector3(-0.92388f, 0.382683f, 0.f),
+					Vector3(-1.f, -8.74228e-08f, 0.f),
+					Vector3(-0.92388f, -0.382683f, 0.f),
+					Vector3(-0.707107f, -0.707107f, 0.f),
+					Vector3(-0.382684f, -0.92388f, 0.f),
+					Vector3(1.19249e-08f, -1.f, 0.f),
+					Vector3(0.382684f, -0.923879f, 0.f),
+					Vector3(0.707107f, -0.707107f, 0.f),
+					Vector3(0.92388f, -0.3826830f, 0.f),
+					Vector3(1.f, 0.f, 0.f)
+				};
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListCircle, PE_ARRAYSIZE(PointListCircle));
+			}
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBE:
+			{
+				const Vector3 PointListPlane[] =
+				{
+					Vector3(-0.5f, 0.5f, 0.f),
+					Vector3(0.5f, 0.5f, 0.f),
+					Vector3(0.5f, -0.5f, 0.f),
+					Vector3(-0.5f, -0.5f, 0.f),
+					Vector3(-0.5f, 0.5f, 0.f)
+				};
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListPlane, PE_ARRAYSIZE(PointListPlane));
+			}
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE:
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE:
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER:
+			break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_CUSTOM:
+			break;
+		default:
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error type for debug wireframe primitive."));
+			break;
+		}
+		Check((Result), (ENGINE_RENDER_CORE_ERROR));
+	}
 #endif
 
 };
