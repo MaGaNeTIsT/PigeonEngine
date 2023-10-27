@@ -105,38 +105,9 @@ namespace PigeonEngine
         ERTTIObject& operator=(const ERTTIObject&) { return (*this); }
     };
 
-    class EClassTypeRegisterManager final : public ERegisterBase
-    {
-    public:
-        class EClassTypeRegisterObject final
-        {
-        public:
-            template<typename _TClassTypeRegisterFunctionType>
-            EClassTypeRegisterObject(_TClassTypeRegisterFunctionType InClassTypeRegisterFunction)
-            {
-                EClassTypeRegisterManager::GetManagerSingleton()->AddRegisterFunction<_TClassTypeRegisterFunctionType>(InClassTypeRegisterFunction);
-            }
-        public:
-            ~EClassTypeRegisterObject() {}
-            EClassTypeRegisterObject() = delete;
-            EClassTypeRegisterObject(const EClassTypeRegisterObject&) = delete;
-            EClassTypeRegisterObject& operator=(const EClassTypeRegisterObject&) = delete;
-        };
-    public:
-        EClassTypeRegisterManager(const EClassTypeRegisterManager&) = delete;
-        EClassTypeRegisterManager& operator=(const EClassTypeRegisterManager&) = delete;
-    private:
-        EClassTypeRegisterManager() {}
-        virtual ~EClassTypeRegisterManager() {}
-    public:
-        static EClassTypeRegisterManager* GetManagerSingleton()
-        {
-            static EClassTypeRegisterManager _StaticManagerSingletonObject;
-            return (&_StaticManagerSingletonObject);
-        }
-    };
+    PE_REGISTER_CLASS_DECLARE(EClassTypeRegisterManager, EVoidFunctionType);
 
 #define PE_REGISTER_CLASS_TYPE(__Func) \
-    static PigeonEngine::EClassTypeRegisterManager::EClassTypeRegisterObject ClassTypeRegisterObject(__Func);\
+    static PigeonEngine::EClassTypeRegisterManager::ERegisterObject ClassTypeRegisterObject(__Func);\
 
 };

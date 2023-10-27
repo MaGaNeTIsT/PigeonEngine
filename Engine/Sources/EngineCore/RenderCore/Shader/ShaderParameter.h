@@ -249,7 +249,7 @@ namespace PigeonEngine
 				return (RawCommands.GetRegisterNum());
 			}
 		private:
-			ERegisterBase	RawCommands;
+			ERegisterBase<std::function<void(void)>>	RawCommands;
 		public:
 			ECommand() {}
 			ECommand(const ECommand&) = delete;

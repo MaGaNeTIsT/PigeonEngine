@@ -1,7 +1,7 @@
 ﻿#pragma once
-#include <functional>
 
 #include "Base/DataStructure/BuiltInType.h"
+#include <functional>
 
 namespace PigeonEngine
 {
@@ -17,10 +17,10 @@ namespace PigeonEngine
         explicit TFunction(std::function<Ret(Args ...)>&& op);
         ~TFunction();
     public:
-        TFunction<Ret(Args...)>& operator=(const TFunction<Ret(Args ...)>& Other);
-        TFunction<Ret(Args...)>& operator=(std::function<Ret(Args ...)> Other);
-        Ret                      operator()(Args... Arguments);
-        BOOL32                     operator==(const TFunction<Ret(Args ...)>& Other);
+        TFunction<Ret(Args...)>&    operator=(const TFunction<Ret(Args ...)>& Other);
+        TFunction<Ret(Args...)>&    operator=(std::function<Ret(Args ...)> Other);
+        Ret                         operator()(Args... Arguments);
+        BOOL32                      operator==(const TFunction<Ret(Args ...)>& Other);
         
     private:
         std::function<Ret(Args...)> Operation = nullptr;

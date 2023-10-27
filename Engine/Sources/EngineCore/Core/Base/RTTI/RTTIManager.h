@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Base/DataStructure/BuiltInType.h>
+#include <Base/RegisterBase.h>
 #include <Config/EngineConfig.h>
 #include <typeinfo>
 #include <map>
@@ -45,6 +46,20 @@ namespace PigeonEngine
         void SaveClassInfo()
         {
             ProcessClassInfoInternal<_TType, _TParentTypes...>();
+        }
+
+        /// <summary>
+        /// Register factory function [void* __Func(void)] of [_TType] class
+        /// </summary>
+        /// <typeparam name="_TType"></typeparam>
+        /// <param name="__Function"></param>
+        template<typename _TType>
+        void SaveClassFactoryFunction(ERawPtrFunctionType __Function)
+        {
+            if (ClassFactories.find(GetClassHashCode<_TType>()) == ClassFactories.end())
+            {
+                ClassFactories.insert_or_assign(GetClassHashCode<_TType>(), __Function);
+            }
         }
 
         /// <summary>
@@ -314,7 +329,8 @@ namespace PigeonEngine
             }
         }
     private:
-        std::map<size_t, EClassTypeInfo> ClassTypeInfos;
+        std::map<size_t, EClassTypeInfo>        ClassTypeInfos;
+        std::map<size_t, ERawPtrFunctionType>   ClassFactories;
     private:
         ERTTIManager() {}
         ~ERTTIManager() {}
@@ -403,14 +419,14 @@ namespace PigeonEngine
 
     // Gather [_TClassType] class static name
     template<typename _TClassType>
-    extern PE_INLINE const CHAR* StaticClassName();
+    extern PE_INLINE const CHAR* EngineStaticClassName();
 
     // Gather class static name by class hash [InClassHash]
-    extern PE_INLINE const CHAR* StaticClassName(const size_t& InClassHash);
+    extern PE_INLINE const CHAR* EngineStaticClassName(const size_t& InClassHash);
 
     // Gather class static name of [InClassPtr] point to
     template<typename _TClassType>
-    extern PE_INLINE const CHAR* StaticClassName(const _TClassType* InClassPtr);
+    extern PE_INLINE const CHAR* EngineStaticClassName(const _TClassType* InClassPtr);
 
     template<typename _TToType>
     extern PE_INLINE const _TToType* AsClassPtrUnsafe(const void* InFromPtr);

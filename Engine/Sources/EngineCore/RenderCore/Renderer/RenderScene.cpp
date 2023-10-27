@@ -20,7 +20,6 @@ namespace PigeonEngine
 
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<RCommand, ERegisterBase>();
 		RegisterClassType<RScene, EObjectBase, RSceneInterface>();
 		RegisterClassType<RSceneNull, EObjectBase, RSceneInterface>();
 	}
