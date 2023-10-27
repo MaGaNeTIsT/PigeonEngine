@@ -35,7 +35,7 @@ namespace PigeonEngine
 			RawCommands.ClearRegister();
 		}
 	private:
-		ERegisterBase	RawCommands;
+		ERegisterBase<std::function<void(void)>>	RawCommands;
 	public:
 		RCommand() {}
 		RCommand(const RCommand&) = delete;
