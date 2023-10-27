@@ -110,4 +110,9 @@ namespace PigeonEngine
 #define PE_REGISTER_CLASS_TYPE(__Func) \
     static PigeonEngine::EClassTypeRegisterManager::ERegisterObject ClassTypeRegisterObject(__Func);\
 
+    PE_REGISTER_CLASS_DECLARE(EClassFactoryRegisterManager, EVoidFunctionType);
+
+#define PE_REGISTER_CLASS_FACTORY(__Func) \
+    static PigeonEngine::EClassFactoryRegisterManager::ERegisterObject ClassFactoryRegisterObject(__Func);\
+
 };

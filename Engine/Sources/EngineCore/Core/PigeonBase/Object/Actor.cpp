@@ -12,7 +12,14 @@ namespace PigeonEngine
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-	
+
+	static void RegisterClassFactories()
+	{
+		SaveClassFactoryFunction<PActor>(&PActor::StaticCreateActor);
+	}
+
+	PE_REGISTER_CLASS_FACTORY(&RegisterClassFactories);
+
 	PActor::PActor()
 	{
 		if(!RootComponent)

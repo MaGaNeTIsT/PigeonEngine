@@ -38,22 +38,23 @@ namespace PigeonEngine
 		BOOL32						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
-		class FPhysicsManager*				m_PhysicsManager			= nullptr;
+		class FPhysicsManager*				m_PhysicsManager				= nullptr;
 
 		// Render region START
-		class RDeviceD3D11*					m_RenderDeviceD3D11			= nullptr;
-		class RScene*						RenderScene					= nullptr;
-		class RSceneRenderer*				SceneRenderer				= nullptr;
+		class RDeviceD3D11*					m_RenderDeviceD3D11				= nullptr;
+		class RScene*						RenderScene						= nullptr;
+		class RSceneRenderer*				SceneRenderer					= nullptr;
 		// Render region END
 
 #if _EDITOR_ONLY
-		class CImGUIManager*				m_ImGUIManager				= nullptr;
-		class CAssimpManager*				m_AssimpManager				= nullptr;
-		class EEditorManager*               m_EditorManager             = nullptr;
+		class CImGUIManager*				m_ImGUIManager					= nullptr;
+		class CAssimpManager*				m_AssimpManager					= nullptr;
+		class EEditorManager*               m_EditorManager					= nullptr;
 #endif
-		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager	= nullptr;
+		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager		= nullptr;
+		class EClassFactoryRegisterManager*	m_ClassFactoryRegisterManager	= nullptr;
 
-		class EWorldManager*                m_WorldManager              = nullptr;
+		class EWorldManager*                m_WorldManager					= nullptr;
 		
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);

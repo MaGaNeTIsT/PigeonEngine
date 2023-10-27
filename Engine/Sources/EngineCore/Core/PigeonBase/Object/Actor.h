@@ -110,6 +110,13 @@ namespace PigeonEngine
 		PActorComponent* ImguiSelectedComponent = nullptr;
 #endif
 		
+	public:
+		static PActor* StaticCreateActor()
+		{
+			PActor* New = new PActor();
+			return New;
+		}
+
 	};
 
 };

@@ -41,6 +41,8 @@ namespace PigeonEngine
 		m_EditorManager     = EEditorManager::GetManagerSingleton();
 #endif
 		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
+		m_ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
+
 		m_WorldManager = EWorldManager::GetManagerSingleton();
 		
 	}
@@ -59,6 +61,8 @@ namespace PigeonEngine
 	void EMainManager::Initialize()
 	{
 		m_ClassTypeRegisterManager->DoRegister();
+		m_ClassFactoryRegisterManager->DoRegister();
+
 		EInput::Initialize(m_HWND);
 
 		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
@@ -131,6 +135,7 @@ namespace PigeonEngine
 
 		// Please ensure that this function is called at the end
 		EditorInit();
+
 
 	}
 	void EMainManager::Uninit()
