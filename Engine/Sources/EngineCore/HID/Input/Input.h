@@ -2,7 +2,6 @@
 
 #include "../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
-#include <Base/DataStructure/BaseType.h>
 #include <Config/EngineConfig.h>
 #include "Mouse.h"
 #include "Keyboard.h"
@@ -10,7 +9,8 @@
 
 namespace PigeonEngine
 {
-
+	MAKE_DELEGATE_MULTI_ONE_PARAM(OnMyMouseEvent, IMouse::Event::EType)
+	MAKE_DELEGATE_MULTI_TWO_PARAM(OnMyKeyEvent, IKeyboard::Event::EType, unsigned char)
 	class IController
 	{
 	public:
@@ -94,6 +94,11 @@ namespace PigeonEngine
 		static LRESULT	HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 	public:
 		static IController	Controller;
+
+	public:
+		static OnMyMouseEvent MouseEvent;
+		static OnMyKeyEvent KeyEvent;
 	};
 
-};
+}
+

@@ -14,13 +14,14 @@ namespace PigeonEngine
     {
     public:
         TFunction();
-        explicit TFunction(std::function<Ret(Args ...)>&& op);
+        TFunction(std::function<Ret(Args ...)>&& op);
+        TFunction(const TFunction<Ret(Args ...)>& Other);
         ~TFunction();
     public:
         TFunction<Ret(Args...)>& operator=(const TFunction<Ret(Args ...)>& Other);
         TFunction<Ret(Args...)>& operator=(std::function<Ret(Args ...)> Other);
         Ret                      operator()(Args... Arguments);
-        BOOL32                     operator==(const TFunction<Ret(Args ...)>& Other);
+        BOOL32                   operator==(const TFunction<Ret(Args ...)>& Other);
         
     private:
         std::function<Ret(Args...)> Operation = nullptr;
@@ -34,6 +35,11 @@ namespace PigeonEngine
     template <typename Ret, typename ... Args>
     TFunction<Ret(Args...)>::TFunction(std::function<Ret(Args...)>&& op): Operation(std::move(op))
     {}
+
+    template <typename Ret, typename ... Args>
+    TFunction<Ret(Args...)>::TFunction(const TFunction<Ret(Args...)>& Other):Operation(Other.Operation)
+    {
+    }
 
     template <typename Ret, typename ... Args>
     TFunction<Ret(Args...)>::~TFunction()

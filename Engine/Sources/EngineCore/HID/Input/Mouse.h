@@ -5,7 +5,7 @@
 #include <Base/DataStructure/BaseType.h>
 #include <queue>
 #include <optional>
-
+#include "Base/Delegate/Delegate.h"
 namespace PigeonEngine
 {
 
@@ -108,7 +108,8 @@ namespace PigeonEngine
 		void TrimBuffer();
 		void TrimRawInputBuffer();
 		void OnWheelDelta(INT32 x, INT32 y, INT32 delta);
-
+		
+	
 	private:
 		const UINT32 BufferSize = 16u;
 		INT32 x = 0;

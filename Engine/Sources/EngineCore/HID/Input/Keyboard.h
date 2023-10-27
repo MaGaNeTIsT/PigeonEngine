@@ -7,9 +7,10 @@
 #include <bitset>
 #include <optional>
 
+#include "Base/Delegate/Delegate.h"
+
 namespace PigeonEngine
 {
-
 	class IKeyboard
 	{
 		friend class IController;
@@ -72,6 +73,7 @@ namespace PigeonEngine
 		void ClearState();
 		template<typename T>
 		static void TrimBuffer(std::queue<T>& buffer);
+	public:
 
 	private:
 		static constexpr UINT32 nKeys = 256u;
@@ -81,5 +83,5 @@ namespace PigeonEngine
 		std::queue<Event> KeyBuffer;
 		std::queue<char> CharBuffer;
 	};
-
+	
 };

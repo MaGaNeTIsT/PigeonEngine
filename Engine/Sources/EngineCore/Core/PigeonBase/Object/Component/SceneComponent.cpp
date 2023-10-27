@@ -121,7 +121,10 @@ namespace PigeonEngine
 		PActorComponent::FixedTick(deltaTime);
 		for(const auto& elem : ChildrenComponents)
 		{
-			elem->FixedTick(deltaTime);
+			if(elem->GetOwnerActor() == this->GetOwnerActor())
+			{
+				elem->FixedTick(deltaTime);
+			}
 		}
 		// this->TickRender();
 	}
@@ -131,7 +134,10 @@ namespace PigeonEngine
 		PActorComponent::EditorTick(deltaTime);
 		for(const auto& elem : ChildrenComponents)
         {
-        	elem->EditorTick(deltaTime);
+			if(elem->GetOwnerActor() == this->GetOwnerActor())
+			{
+				elem->EditorTick(deltaTime);
+			}
         }
 		// this->TickRender();
 	}
@@ -144,7 +150,10 @@ namespace PigeonEngine
 		}
 		for(const auto& elem : ChildrenComponents)
 		{
-			elem->TickRender();
+			if(elem->GetOwnerActor() == this->GetOwnerActor())
+			{
+				elem->TickRender();
+			}
 		}
 	}
 

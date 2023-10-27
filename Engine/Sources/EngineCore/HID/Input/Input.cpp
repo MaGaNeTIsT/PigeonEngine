@@ -2,8 +2,9 @@
 
 namespace PigeonEngine
 {
-
-	IController EInput::Controller;
+	OnMyMouseEvent EInput::MouseEvent;
+	OnMyKeyEvent   EInput::KeyEvent;
+	IController    EInput::Controller;
 	//BYTE EInput::m_OldKeyState[256];
 	//BYTE EInput::m_KeyState[256];
 

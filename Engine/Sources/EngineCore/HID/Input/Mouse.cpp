@@ -1,5 +1,7 @@
 #include "Mouse.h"
 
+#include "Input.h"
+
 namespace PigeonEngine
 {
 
@@ -67,7 +69,6 @@ namespace PigeonEngine
 	{
 		x = newx;
 		y = newy;
-
 		Buffer.push(IMouse::Event(IMouse::Event::EType::Move, *this));
 		TrimBuffer();
 	}
@@ -94,6 +95,7 @@ namespace PigeonEngine
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LPress, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::LPress);
 	}
 	void IMouse::OnLeftReleased(INT32 x, INT32 y)
 	{
@@ -101,6 +103,7 @@ namespace PigeonEngine
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::LRelease, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::LRelease);
 	}
 	void IMouse::OnRightPressed(INT32 x, INT32 y)
 	{
@@ -108,6 +111,7 @@ namespace PigeonEngine
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RPress, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::RPress);
 	}
 	void IMouse::OnRightReleased(INT32 x, INT32 y)
 	{
@@ -115,6 +119,7 @@ namespace PigeonEngine
 
 		Buffer.push(IMouse::Event(IMouse::Event::EType::RRelease, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::RRelease);
 	}
 	void IMouse::OnWheelUp(INT32 x, INT32 y)
 	{

@@ -37,9 +37,7 @@ namespace PigeonEngine
         void	Uninit() override;
         void	Tick(FLOAT deltaTime) override;
     protected:
-#if _EDITOR_ONLY
-        void EditorTick(FLOAT deltaTime) override;
-#endif
+
         void FixTick(FLOAT deltaTime);
     public:
         void Destroy() override;
@@ -93,6 +91,10 @@ namespace PigeonEngine
     private:
         PActor* ImguiSelectedActor = nullptr;
         PActorComponent* ImguiSelectedComponent = nullptr;
+    protected:
+        void EditorTick(FLOAT deltaTime) override;
+    private:
+        class PEditorController* EditorController = nullptr;
 #endif
         
     };

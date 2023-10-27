@@ -39,7 +39,6 @@ namespace PigeonEngine
 
 	TSharedPtr<CJsonObject> PObject::Serialize()
 	{
-		
 		return TSharedPtr<CJsonObject>::MakeShared();
 	}
 

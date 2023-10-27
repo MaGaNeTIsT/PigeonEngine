@@ -27,7 +27,15 @@ namespace PigeonEngine
 	
 	void PActor::Init()
 	{
-		
+		this->RootComponent->Init();
+		for(const auto& Component : Components)
+		{
+			Component->Init();
+		}
+		for(const auto& child : ChildrenActors)
+		{
+			child->Init();
+		}
 	}
 
 	void PActor::Uninit()
@@ -56,7 +64,10 @@ namespace PigeonEngine
 			Component->FixedTick(deltaTime);
 		}
 		RootComponent->FixedTick(deltaTime);
-		
+		for(const auto& child : ChildrenActors)
+		{
+			child->FixedTick(deltaTime);
+		}
 		UserTick(deltaTime);
 	}
 
@@ -72,6 +83,10 @@ namespace PigeonEngine
 			Component->EditorTick(deltaTime);
 		}
 		RootComponent->EditorTick(deltaTime);
+		for(const auto& child : ChildrenActors)
+		{
+			child->EditorTick(deltaTime);
+		}
 	}
 
 	PActor* PActor::GetAttachedParentActor() const

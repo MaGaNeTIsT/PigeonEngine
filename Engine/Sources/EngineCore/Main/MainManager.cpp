@@ -129,6 +129,7 @@ namespace PigeonEngine
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 		m_WorldManager->Init();
 
+		// Please ensure that this function is called at the end
 		EditorInit();
 
 	}

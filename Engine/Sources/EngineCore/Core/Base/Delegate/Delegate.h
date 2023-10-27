@@ -96,7 +96,7 @@ namespace PigeonEngine
     template <typename ... Args>
     void TDelegateBroadcast<void(Args...)>::Broadcast(Args... Arguments)
     {
-        for (const auto& elem : ToCall)
+        for (auto& elem : ToCall)
         {
             elem(Arguments...);
         }

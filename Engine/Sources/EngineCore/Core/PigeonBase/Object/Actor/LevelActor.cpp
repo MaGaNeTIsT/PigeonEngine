@@ -60,40 +60,40 @@ namespace PigeonEngine
 		}
 
         // add a skeletal mesh actor
-		{
-			PActor* New = new PActor();
-			New->SetIsTickable(TRUE);
-			POBJ_DEBUGNAME_SET(New, "SkeletalMeshActor");
-			this->GetWorld()->AddActor(New);
-			PSkeletalMeshComponent* NewSkeletalMeshComp = new PSkeletalMeshComponent();
-			NewSkeletalMeshComp->SetIsTickable(TRUE);
-			New->AddComponent(NewSkeletalMeshComp);
-
-			const ESkinnedMeshAsset* MeshAsset = nullptr;
-			const ESkeletonAsset* SkeletonAsset = nullptr;
-			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
-			EString ImportName("SK_Mannequin_UE4_WithWeapon");
-			EString ImportFileType("FBX");
-			EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
-			EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-			//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
-			//EString ImportName("Model");
-			//EString ImportFileType("FBX");
-			//EString MeshAssetName("DVa_Mesh");
-			//EString SkeletonAssetName("DVa_Skeleton");
-			TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
-
-			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
-			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
-			{
-				Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
-				NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), DefaultRot, Vector3::One());
-				NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
-			}
-
-			New->SetActorLocation(Vector3(-100.0f, -90.0f, 0.0f));
-		}
+		// {
+		// 	PActor* New = new PActor();
+		// 	New->SetIsTickable(TRUE);
+		// 	POBJ_DEBUGNAME_SET(New, "SkeletalMeshActor");
+		// 	this->GetWorld()->AddActor(New);
+		// 	PSkeletalMeshComponent* NewSkeletalMeshComp = new PSkeletalMeshComponent();
+		// 	NewSkeletalMeshComp->SetIsTickable(TRUE);
+		// 	New->AddComponent(NewSkeletalMeshComp);
+		//
+		// 	const ESkinnedMeshAsset* MeshAsset = nullptr;
+		// 	const ESkeletonAsset* SkeletonAsset = nullptr;
+		// 	EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
+		// 	EString ImportName("SK_Mannequin_UE4_WithWeapon");
+		// 	EString ImportFileType("FBX");
+		// 	EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
+		// 	EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
+		// 	//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
+		// 	//EString ImportName("Model");
+		// 	//EString ImportFileType("FBX");
+		// 	//EString MeshAssetName("DVa_Mesh");
+		// 	//EString SkeletonAssetName("DVa_Skeleton");
+		// 	TryLoadSkinnedMesh(ESettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+		// 	TryLoadSkeleton(ESettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+		//
+		// 	NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
+		// 	NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
+		// 	{
+		// 		Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
+		// 		NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), DefaultRot, Vector3::One());
+		// 		NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+		// 	}
+		//
+		// 	New->SetActorLocation(Vector3(-100.0f, -90.0f, 0.0f));
+		// }
 
 		{
 			PActor* New = new PActor();

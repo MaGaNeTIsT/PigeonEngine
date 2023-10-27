@@ -55,11 +55,12 @@ namespace PigeonEngine
         }
     }
 
+#if _EDITOR_ONLY
     void EWorldManager::EditorInit()
     {
         
     }
-#if _EDITOR_ONLY
+
     void EWorldManager::EditorUpdate()
     {
         if (!this->GetWorld())

@@ -1,8 +1,8 @@
 #include "Keyboard.h"
+#include "Input.h"
 
 namespace PigeonEngine
 {
-
 	BOOL32 IKeyboard::IsKeyPressed(unsigned char keycode) const
 	{
 		return KeyStates[keycode];;
@@ -65,12 +65,14 @@ namespace PigeonEngine
 		KeyStates[keycode] = TRUE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Press, keycode));
 		TrimBuffer(KeyBuffer);
+		EInput::KeyEvent.Broadcast(IKeyboard::Event::EType::Press, keycode);
 	}
 	void IKeyboard::OnKeyReleased(unsigned char keycode)
 	{
 		KeyStates[keycode] = FALSE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Release, keycode));
 		TrimBuffer(KeyBuffer);
+		EInput::KeyEvent.Broadcast(IKeyboard::Event::EType::Release, keycode);
 	}
 	void IKeyboard::OnChar(char character)
 	{

@@ -124,4 +124,10 @@ namespace PigeonEngine
 		
 		return TRUE;
 	}
+
+	BOOL8 EFileHelper::ReadFirstNumberOfBytesInFile(const EString& FilePath, void*& Return, ULONG& Size)
+	{
+		
+		return FALSE;
+	}
 };

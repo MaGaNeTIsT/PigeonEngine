@@ -39,13 +39,23 @@ namespace PigeonEngine
         }
 		this->RootActor = new PLevelActor();
         this->RootActor->SetActorScale(Vector3(1,1,1));
+#if _EDITOR_ONLY
+        this->EditorController = new PEditorController();
+        this->EditorController->SetIsTickable(TRUE);
+        POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
+        this->AddActor(EditorController);
+#else
+
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
         POBJ_DEBUGNAME_SET(this->Controller, "Controller");
         this->AddActor(Controller);
+#endif
+        
+       
         // this->Controller->BeginAddedToScene(this);
 
-        this->Controller->Init();
+        
         this->RootActor->Init();
         this->RootActor->BeginAddedToScene(this);
     }
@@ -64,12 +74,6 @@ namespace PigeonEngine
 #endif
         FixTick(deltaTime);
         
-    }
-
-    void PWorld::EditorTick(FLOAT deltaTime)
-    {
-        RootActor->EditorTick(deltaTime);
-        Controller->EditorTick(deltaTime);
     }
 
     void PWorld::FixTick(FLOAT deltaTime)
@@ -118,10 +122,20 @@ namespace PigeonEngine
     {
         CurrentScene = Scene;
     }
+    
+    void PWorld::EditorTick(FLOAT deltaTime)
+    {
+        RootActor->EditorTick(deltaTime);
+        // Controller->EditorTick(deltaTime);
+    }
+
 #endif
 
-	PigeonEngine::PController* PWorld::GetController() const
+	PController* PWorld::GetController() const
 	{
+#if _EDITOR_ONLY
+        return this->EditorController;
+#endif
         return this->Controller;
 	}
 
