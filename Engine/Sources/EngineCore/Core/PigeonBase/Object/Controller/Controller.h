@@ -47,7 +47,7 @@ namespace PigeonEngine
     private:
         TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
         BOOL8 bStart = false;
-        
+        FLOAT MovingSpeed = 50.0;
         Vector2 MousePositionLastTick = Vector2::Zero();
     };
 #endif

@@ -395,6 +395,9 @@ namespace PigeonEngine
 
 	void PSceneComponent::GenerateComponentDetail()
 	{
+		Location = this->GetComponentLocalLocation();
+		Rotation = MakeEuler(this->GetComponentLocalRotation());
+		Scale    = this->GetComponentLocalScale();
 		const BOOL8 bTransformExpand = ImGui::TreeNodeEx("Transform") ;
 		if (bTransformExpand)
 		{

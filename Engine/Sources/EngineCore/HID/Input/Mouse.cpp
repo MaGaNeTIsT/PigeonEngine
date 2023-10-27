@@ -125,11 +125,13 @@ namespace PigeonEngine
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelUp, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::WheelUp);
 	}
 	void IMouse::OnWheelDown(INT32 x, INT32 y)
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelDown, *this));
 		TrimBuffer();
+		EInput::MouseEvent.Broadcast(IMouse::Event::EType::WheelDown);
 	}
 	void IMouse::TrimBuffer()
 	{

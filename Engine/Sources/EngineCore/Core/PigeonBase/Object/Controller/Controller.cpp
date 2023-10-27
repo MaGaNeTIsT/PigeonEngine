@@ -119,25 +119,31 @@ namespace PigeonEngine
         {
             return;
         }
-
+       
         // rotation
         {
-            FLOAT RotationSpeed = 5.0f;
+            FLOAT RotationSpeed = 0.05f;
             Vector2 MousePosition = Vector2::Zero();
             MousePosition.x = static_cast<FLOAT>(EInput::Controller.GetMousePosition().first);
             MousePosition.y = static_cast<FLOAT>(EInput::Controller.GetMousePosition().second);
+            
             const Vector2 DeltaMouse = MousePosition - MousePositionLastTick;
-            Euler CurrentRotation = MakeEuler(this->GetActorRotation());
-            CurrentRotation.Yaw    = EMath::FMod((CurrentRotation.Yaw   + DeltaMouse.x * RotationSpeed * deltaTime), 360.f);
-            CurrentRotation.Pitch  = EMath::FMod((CurrentRotation.Pitch + DeltaMouse.y * RotationSpeed * deltaTime), 360.f);
-            this->SetActorRotation(MakeQuaternion(CurrentRotation));
+            
+            Quaternion CurrentRotation = this->GetActorRotation();
+            
+            const Vector3 WorldUpDir    = Vector3(0.f, 1.f, 0.f);
+            const Vector3 ActorRightDir = this->GetActorRightVector();
+            Quaternion A = MakeQuaternion(ActorRightDir, DeltaMouse.y * RotationSpeed * deltaTime);
+            Quaternion B = MakeQuaternion(WorldUpDir,    DeltaMouse.x * RotationSpeed * deltaTime);
+            Quaternion Final = Quaternion::MultiplyQuaternion(CurrentRotation, A);
+            Final = Quaternion::MultiplyQuaternion(Final, B);
+            this->SetActorRotation(Final);
             MousePositionLastTick = MousePosition;
-      
         }
+        
         
         // position
         {
-            FLOAT MovingSpeed = 50.0f;
             Vector3 MovingDirection = Vector3::Zero();
             const BOOL8 bWPressed = EInput::Controller.IsKeyPressed(0x57);
             const BOOL8 bAPressed = EInput::Controller.IsKeyPressed(0x41);
@@ -161,14 +167,24 @@ namespace PigeonEngine
         {
             MousePositionLastTick.x = static_cast<FLOAT>(EInput::Controller.GetMousePosition().first);
             MousePositionLastTick.y = static_cast<FLOAT>(EInput::Controller.GetMousePosition().second);
-            //EInput::Controller.HideCursor();
             bStart = TRUE;
         }
 
         if(Type == IMouse::Event::EType::RRelease)
         {
-            //EInput::Controller.ShowCursor();
             bStart = FALSE;
+        }
+        if(!bStart)
+        {
+            return;
+        }
+        if(Type == IMouse::Event::EType::WheelUp)
+        {
+            this->MovingSpeed += 10.0f;
+        }
+        if(Type == IMouse::Event::EType::WheelDown)
+        {
+            this->MovingSpeed += -10.0f;
         }
     }
 
