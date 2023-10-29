@@ -107,22 +107,30 @@ namespace PigeonEngine
             this->OnMouse(Type);
         }; 
         OnMouseDown = func;
+
+        auto func1 =  [this](IKeyboard::Event::EType Type, unsigned char KeyCode)
+        {
+            this->OnKey(Type, KeyCode);
+        }; 
+        OnKeyDown = func1;
         
         EInput::MouseEvent.Add(OnMouseDown);
+        EInput::KeyEvent.Add(OnKeyDown);
 
     }
 
     void PEditorController::EditorTick(FLOAT deltaTime)
     {
         PController::EditorTick(deltaTime);
+
+        DrawImGui();
         if(!bStart)
         {
             return;
         }
-       
+        
         // rotation
         {
-            FLOAT RotationSpeed = 0.05f;
             Vector2 MousePosition = Vector2::Zero();
             MousePosition.x = static_cast<FLOAT>(EInput::Controller.GetMousePosition().first);
             MousePosition.y = static_cast<FLOAT>(EInput::Controller.GetMousePosition().second);
@@ -186,6 +194,21 @@ namespace PigeonEngine
         {
             this->MovingSpeed += -10.0f;
         }
+    }
+
+    void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
+    {
+        
+        printf("asdasdas\r\n");
+    }
+
+    void PEditorController::DrawImGui()
+    {
+        ImGui::Begin("EditorController", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+        ImGui::Text("Editor Controller Setup");
+        const BOOL8 bChangedX = ImGui::DragScalar("##MovingSpeed",   ImGuiDataType_Float, &this->MovingSpeed, 0.05f,    NULL, NULL, "MovingSpeed : %.6f");
+        const BOOL8 bChangedY = ImGui::DragScalar("##RotationSpeed", ImGuiDataType_Float, &this->RotationSpeed, 0.001f, NULL, NULL, "RotationSpeed : %.6f");
+        ImGui::End();
     }
 
 

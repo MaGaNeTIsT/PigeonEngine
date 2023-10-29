@@ -44,10 +44,15 @@ namespace PigeonEngine
         void Init() override;
         void EditorTick(FLOAT deltaTime) override;
         void OnMouse(IMouse::Event::EType Type);
+        void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode);
+
+        void DrawImGui();
     private:
         TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
+        TFunction<void(IKeyboard::Event::EType Type, unsigned char KeyCode)> OnKeyDown;
         BOOL8 bStart = false;
         FLOAT MovingSpeed = 50.0;
+        FLOAT RotationSpeed = 0.05f;
         Vector2 MousePositionLastTick = Vector2::Zero();
     };
 #endif

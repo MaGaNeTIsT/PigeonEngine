@@ -39,7 +39,9 @@ namespace PigeonEngine
 
 	TSharedPtr<CJsonObject> PObject::Serialize()
 	{
-		return TSharedPtr<CJsonObject>::MakeShared();
+		auto Json = TSharedPtr<CJsonObject>::MakeShared();
+		Json->SetUInt64Field("TypeHash", this->GetTypeHash());
+		return Json;
 	}
 
 	PWorld* PObject::GetWorld() const
