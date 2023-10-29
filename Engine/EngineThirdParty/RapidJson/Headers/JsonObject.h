@@ -14,7 +14,7 @@ namespace PigeonEngine
 
 		CJsonObject();
 
-		CJsonObject(const std::string& JsonStr);
+		CJsonObject(const EString& JsonStr);
 		CJsonObject(const char* JsonStr);
 		CJsonObject(const CJsonObject& Other);
 		CJsonObject(rapidjson::Document* const Other);
@@ -32,56 +32,56 @@ namespace PigeonEngine
 	public:
 		
 		/*Field query*/
-		BOOL32 HasField(const std::string& FieldName);
-		void RemoveField(const std::string& FieldName);
+		BOOL8 HasField(const EString& FieldName);
+		void RemoveField(const EString& FieldName);
 
 	public:
 		/*Field Getter*/
-		BOOL32 GetIntField(const std::string& FieldName, INT32& Out);
-		BOOL32 GetInt64Field(const std::string& FieldName, INT64& Out);
-		BOOL32 GetUIntField(const std::string& FieldName, UINT32& Out);
-		BOOL32 GetUInt64Field(const std::string& FieldName, UINT64& Out);
-		BOOL32 GetFloatField(const std::string& FieldName, FLOAT& Out);
-		BOOL32 GetDoubleField(const std::string& FieldName, DOUBLE& Out);
-		BOOL32 GetStringField(const std::string& FieldName, std::string& Out);
-		BOOL32 GetBoolField(const std::string& FieldName, BOOL32& Out);
+		BOOL8 GetIntField   (const EString& FieldName, INT32& Out);
+		BOOL8 GetInt64Field (const EString& FieldName, INT64& Out);
+		BOOL8 GetUIntField  (const EString& FieldName, UINT32& Out);
+		BOOL8 GetUInt64Field(const EString& FieldName, UINT64& Out);
+		BOOL8 GetFloatField (const EString& FieldName, FLOAT& Out);
+		BOOL8 GetDoubleField(const EString& FieldName, DOUBLE& Out);
+		BOOL8 GetStringField(const EString& FieldName, EString& Out);
+		BOOL8 GetBoolField  (const EString& FieldName, BOOL8& Out);
 
-		BOOL32 GetObjectField(const std::string& FieldName, CJsonObject& Out);
+		BOOL8 GetObjectField(const EString& FieldName, CJsonObject& Out);
 
-		BOOL32 GetIntArrayField(const std::string& FieldName, std::vector<INT32>& Out);
-		BOOL32 GetInt64ArrayField(const std::string& FieldName, std::vector<INT64>& Out);
-		BOOL32 GetUIntArrayField(const std::string& FieldName, std::vector<UINT32>& Out);
-		BOOL32 GetUInt64ArrayField(const std::string& FieldName, std::vector<UINT64>& Out);
-		BOOL32 GetFloatArrayField(const std::string& FieldName, std::vector<FLOAT>& Out);
-		BOOL32 GetDoubleArrayField(const std::string& FieldName, std::vector<DOUBLE>& Out);
-		BOOL32 GetStringArrayField(const std::string& FieldName, std::vector<std::string>& Out);
-		BOOL32 GetBoolArrayField(const std::string& FieldName, std::vector<BOOL32>& Out);
+		BOOL8 GetIntArrayField   (const EString& FieldName, TArray<INT32>& Out);
+		BOOL8 GetInt64ArrayField (const EString& FieldName, TArray<INT64>& Out);
+		BOOL8 GetUIntArrayField  (const EString& FieldName, TArray<UINT32>& Out);
+		BOOL8 GetUInt64ArrayField(const EString& FieldName, TArray<UINT64>& Out);
+		BOOL8 GetFloatArrayField (const EString& FieldName, TArray<FLOAT>& Out);
+		BOOL8 GetDoubleArrayField(const EString& FieldName, TArray<DOUBLE>& Out);
+		BOOL8 GetStringArrayField(const EString& FieldName, TArray<EString>& Out);
+		BOOL8 GetBoolArrayField  (const EString& FieldName, TArray<BOOL8>& Out);
 
-		BOOL32 GetObjectArrayField(const std::string& FieldName, std::vector<CJsonObject*>& Out);
+		BOOL8 GetObjectArrayField(const EString& FieldName, TArray<CJsonObject*>& Out);
 
 	public:
 		/*Field Setter*/
-		void SetIntField(const std::string& FieldName, const INT32& In);
-		void SetInt64Field(const std::string& FieldName, const INT64& In);
-		void SetUIntField(const std::string& FieldName, const UINT32& In);
-		void SetUInt64Field(const std::string& FieldName, const UINT64& In);
-		void SetFloatField(const std::string& FieldName, const FLOAT& In);
-		void SetDoubleField(const std::string& FieldName, const DOUBLE& In);
-		void SetStringField(const std::string& FieldName, const std::string& In);
-		void SetBoolField(const std::string& FieldName, const BOOL32& In);
+		void SetIntField   (const EString& FieldName, const INT32& In);
+		void SetInt64Field (const EString& FieldName, const INT64& In);
+		void SetUIntField  (const EString& FieldName, const UINT32& In);
+		void SetUInt64Field(const EString& FieldName, const UINT64& In);
+		void SetFloatField (const EString& FieldName, const FLOAT& In);
+		void SetDoubleField(const EString& FieldName, const DOUBLE& In);
+		void SetStringField(const EString& FieldName, const EString& In);
+		void SetBoolField  (const EString& FieldName, const BOOL8& In);
 
-		void SetObjectField(const std::string& FieldName, const CJsonObject* In);
+		void SetObjectField(const EString& FieldName, const CJsonObject* In);
 
-		void SetIntArrayField(const std::string& FieldName, const std::vector<INT32>& In);
-		void SetInt64ArrayField(const std::string& FieldName, const std::vector<INT64>& In);
-		void SetUIntArrayField(const std::string& FieldName, const std::vector<UINT32>& In);
-		void SetUInt64ArrayField(const std::string& FieldName, const std::vector<UINT64>& In);
-		void SetFloatArrayField(const std::string& FieldName, const std::vector<FLOAT>& In);
-		void SetDoubleArrayField(const std::string& FieldName, const std::vector<DOUBLE>& In);
-		void SetStringArrayField(const std::string& FieldName, const std::vector<std::string>& In);
-		void SetBoolArrayField(const std::string& FieldName, const std::vector<BOOL32>& In);
+		void SetIntArrayField   (const EString& FieldName, const TArray<INT32>& In);
+		void SetInt64ArrayField (const EString& FieldName, const TArray<INT64>& In);
+		void SetUIntArrayField  (const EString& FieldName, const TArray<UINT32>& In);
+		void SetUInt64ArrayField(const EString& FieldName, const TArray<UINT64>& In);
+		void SetFloatArrayField (const EString& FieldName, const TArray<FLOAT>& In);
+		void SetDoubleArrayField(const EString& FieldName, const TArray<DOUBLE>& In);
+		void SetStringArrayField(const EString& FieldName, const TArray<EString>& In);
+		void SetBoolArrayField  (const EString& FieldName, const TArray<BOOL8>& In);
 
-		void SetObjectArrayField(const std::string& FieldName, const std::vector<CJsonObject*>& In);
+		void SetObjectArrayField(const EString& FieldName, const TArray<CJsonObject*>& In);
 
 	private:
 
