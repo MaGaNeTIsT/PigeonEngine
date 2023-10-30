@@ -136,7 +136,6 @@ namespace PigeonEngine
 		// Please ensure that this function is called at the end
 		EditorInit();
 
-
 	}
 	void EMainManager::Uninit()
 	{

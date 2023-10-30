@@ -1,5 +1,5 @@
 #include "EditorManager.h"
-
+#include <Base/RTTI/RTTIManager.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "AssetManager.h"
 

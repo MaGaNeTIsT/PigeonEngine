@@ -1,4 +1,5 @@
 #include "ObjectBase.h"
+#include <Base/RTTI/RTTIManager.h>
 #include <Config/EngineConfig.h>
 #if _EDITOR_ONLY
 #include "../../../../Development/Config/EngineDebugName.h"

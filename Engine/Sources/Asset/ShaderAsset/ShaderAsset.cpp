@@ -14,7 +14,8 @@ namespace PigeonEngine
 
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<EShaderResource, EResourceInterface>();
+		RegisterClassType<EShaderResource, ERTTIObject, EResourceInterface>();
+
 		RegisterClassType<TBaseAsset<EShaderResource>, EObjectBase>();
 
 		RegisterShaderClassTypes<RVertexShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, EVertexShaderAsset>();

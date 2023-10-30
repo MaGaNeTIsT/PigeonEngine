@@ -14,6 +14,7 @@ namespace PigeonEngine
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<ETexture, EObjectBase, EResourceInterface>();
+
 		RegisterClassType<ETexture2D, ETexture>();
 		RegisterClassType<ETextureCube, ETexture>();
 

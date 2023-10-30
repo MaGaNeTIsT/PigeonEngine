@@ -13,10 +13,23 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+#if 1
+	static PActor* CreatePActorClassObject()
+	{
+		return (new PActor());
+	}
 	static void RegisterClassFactories()
 	{
-		SaveClassFactoryFunction<PActor>(&PActor::StaticCreateActor);
+		SaveClassFactoryFunction<PActor>(&CreatePActorClassObject);
 	}
+#else
+	PE_REGISTER_CLASS_FACTORY_DEFAULT_DECLARE(PActor);
+
+	static void RegisterClassFactories()
+	{
+		PE_REGISTER_CLASS_FACTORY_DEFAULT_IMPLEMENT(PActor);
+	}
+#endif
 
 	PE_REGISTER_CLASS_FACTORY(&RegisterClassFactories);
 

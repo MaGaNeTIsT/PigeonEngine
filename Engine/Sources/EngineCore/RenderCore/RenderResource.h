@@ -11,7 +11,7 @@
 namespace PigeonEngine
 {
 
-	class RVertexShaderResource : public RRenderResourceInterface
+	class RVertexShaderResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RVertexShaderResource() : Shader(nullptr), InputLayout(nullptr), RawLayouts(nullptr), LayoutNum(0u) {}
@@ -72,7 +72,7 @@ namespace PigeonEngine
 		RInputLayoutDesc*							RawLayouts;
 		UINT32										LayoutNum;
 	};
-	class RPixelShaderResource : public RRenderResourceInterface
+	class RPixelShaderResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RPixelShaderResource() : Shader(nullptr) {}
@@ -100,7 +100,7 @@ namespace PigeonEngine
 
 		Microsoft::WRL::ComPtr<ID3D11PixelShader> Shader;
 	};
-	class RComputeShaderResource : public RRenderResourceInterface
+	class RComputeShaderResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RComputeShaderResource() : Shader(nullptr) {}
@@ -128,7 +128,7 @@ namespace PigeonEngine
 
 		Microsoft::WRL::ComPtr<ID3D11ComputeShader> Shader;
 	};
-	class RStructuredBuffer : public RRenderResourceInterface
+	class RStructuredBuffer : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RStructuredBuffer() : AccessMapRead(FALSE), AccessMapWrite(FALSE), Buffer(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr) {}
@@ -169,7 +169,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
-	class RRenderTexture2D : public RRenderResourceInterface
+	class RRenderTexture2D : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RRenderTexture2D() : Buffer(nullptr), RenderTargetView(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr), DepthStencilView(nullptr) {}
@@ -210,7 +210,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView>		DepthStencilView;
 	};
-	class RRenderTexture3D : public RRenderResourceInterface
+	class RRenderTexture3D : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RRenderTexture3D() : Buffer(nullptr), RenderTargetView(nullptr), UnorderedAccessView(nullptr), ShaderResourceView(nullptr) {}
@@ -248,7 +248,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UnorderedAccessView;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
-	class RTexture2DResource : public RRenderResourceInterface
+	class RTexture2DResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RTexture2DResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
@@ -280,7 +280,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
-	class RTextureCubeResource : public RRenderResourceInterface
+	class RTextureCubeResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RTextureCubeResource() : Buffer(nullptr), ShaderResourceView(nullptr) {}
@@ -312,7 +312,7 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11Texture2D>				Buffer;
 		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	ShaderResourceView;
 	};
-	class RBufferResource : public RRenderResourceInterface
+	class RBufferResource : public ERTTIObject, public RRenderResourceInterface
 	{
 	public:
 		RBufferResource() : Buffer(nullptr) {}

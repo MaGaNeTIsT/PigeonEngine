@@ -91,7 +91,7 @@ namespace PigeonEngine
         }
 
         /// <summary>
-        /// Use class hash code to finding registed factory function then create object class.
+        /// Use class hash code to finding registed factory function then create object class
         /// </summary>
         /// <param name="InHashCode"></param>
         /// <returns></returns>
@@ -106,7 +106,7 @@ namespace PigeonEngine
         }
 
         /// <summary>
-        /// Use class name to finding registed factory function then create object class.
+        /// Use class name to finding registed factory function then create object class
         /// </summary>
         /// <param name="InHashCode"></param>
         /// <returns></returns>
@@ -116,6 +116,46 @@ namespace PigeonEngine
             {
                 void* NewObject = (It->second)();
                 return (NewObject);
+            }
+            return nullptr;
+        }
+
+        /// <summary>
+        /// Use class hash code to finding registed factory function then create object class then cast pointer into [_TType](must be parent class of create object class or the same class)
+        /// </summary>
+        /// <param name="InHashCode"></param>
+        /// <returns></returns>
+        template<typename _TType>
+        _TType* CreateClassObject(const size_t& InHashCode)
+        {
+            if (auto It = ClassFactories.find(InHashCode); It != ClassFactories.end())
+            {
+                class ERTTIObject* NewObject = (class ERTTIObject*)((It->second)());
+                if (IsChildClassType(GetClassHashCode<_TType>(), typeid(*NewObject).hash_code()))
+                {
+                    return ((_TType*)NewObject);
+                }
+                delete NewObject;
+            }
+            return nullptr;
+        }
+
+        /// <summary>
+        /// Use class name to finding registed factory function then create object class then cast pointer into [_TType](must be parent class of create object class or the same class)
+        /// </summary>
+        /// <param name="InHashCode"></param>
+        /// <returns></returns>
+        template<typename _TType>
+        _TType* CreateClassObject(const CHAR* InClassName)
+        {
+            if (auto It = ClassFactories.find(GetClassHashCodeByName(InClassName)); It != ClassFactories.end())
+            {
+                class ERTTIObject* NewObject = (class ERTTIObject*)((It->second)());
+                if (IsChildClassType(GetClassHashCode<_TType>(), typeid(*NewObject).hash_code()))
+                {
+                    return ((_TType*)NewObject);
+                }
+                delete NewObject;
             }
             return nullptr;
         }
@@ -522,6 +562,14 @@ namespace PigeonEngine
     // Create class object memory by class register name from registed factory function [void* _Func(void)]
     extern PE_INLINE void* CreateClassObject(const CHAR* InClassName);
 
+    // Use class hash code to finding registed factory function then create object class then cast pointer into [_TType](must be parent class of create object class or the same class)
+    template<typename _TType>
+    extern PE_INLINE _TType* CreateClassObject(const size_t& InHashCode);
+
+    // Use class name to finding registed factory function then create object class then cast pointer into [_TType](must be parent class of create object class or the same class)
+    template<typename _TType>
+    extern PE_INLINE _TType* CreateClassObject(const CHAR* InClassName);
+
     template<typename _TType, typename... _TParentTypes>
     PE_INLINE void RegisterClassType()
     {
@@ -716,6 +764,18 @@ namespace PigeonEngine
     PE_INLINE void* CreateClassObject(const CHAR* InClassName)
     {
         return (ERTTIManager::GetManagerSingleton()->CreateClassObject(InClassName));
+    }
+
+    template<typename _TType>
+    PE_INLINE _TType* CreateClassObject(const size_t& InHashCode)
+    {
+        return (ERTTIManager::GetManagerSingleton()->CreateClassObject<_TType>(InHashCode));
+    }
+
+    template<typename _TType>
+    PE_INLINE _TType* CreateClassObject(const CHAR* InClassName)
+    {
+        return (ERTTIManager::GetManagerSingleton()->CreateClassObject<_TType>(InClassName));
     }
 
 };

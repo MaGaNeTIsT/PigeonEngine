@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RTTIManager.h"
-#include <Base/RegisterBase.h>
 #include <Base/TemplateHeaders.h>
+#include <Base/RegisterBase.h>
+#include <Base/RTTI/RTTIManager.h>
 
 namespace PigeonEngine
 {
@@ -85,6 +85,10 @@ namespace PigeonEngine
             return Result;
         }
 
+        /// <summary>
+        /// Get c plus plus class name by typeid
+        /// </summary>
+        /// <returns></returns>
         virtual const CHAR* StaticClassName()const
         {
             return (EngineStaticClassName(this));
@@ -114,5 +118,14 @@ namespace PigeonEngine
 
 #define PE_REGISTER_CLASS_FACTORY(__Func) \
     static PigeonEngine::EClassFactoryRegisterManager::ERegisterObject ClassFactoryRegisterObject(__Func);\
+
+#define PE_REGISTER_CLASS_FACTORY_DEFAULT_DECLARE(__ClassName) \
+    static __ClassName* Create##__ClassName##ClassObject()\
+    {\
+        return (new __ClassName());\
+    }\
+
+#define PE_REGISTER_CLASS_FACTORY_DEFAULT_IMPLEMENT(__ClassName) \
+    SaveClassFactoryFunction<__ClassName>(&Create##__ClassName##ClassObject)\
 
 };

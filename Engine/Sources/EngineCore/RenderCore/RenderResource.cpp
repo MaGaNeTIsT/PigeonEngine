@@ -6,15 +6,15 @@ namespace PigeonEngine
 
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<RVertexShaderResource, RRenderResourceInterface>();
-		RegisterClassType<RPixelShaderResource, RRenderResourceInterface>();
-		RegisterClassType<RComputeShaderResource, RRenderResourceInterface>();
-		RegisterClassType<RStructuredBuffer, RRenderResourceInterface>();
-		RegisterClassType<RRenderTexture2D, RRenderResourceInterface>();
-		RegisterClassType<RRenderTexture3D, RRenderResourceInterface>();
-		RegisterClassType<RTexture2DResource, RRenderResourceInterface>();
-		RegisterClassType<RTextureCubeResource, RRenderResourceInterface>();
-		RegisterClassType<RBufferResource, RRenderResourceInterface>();
+		RegisterClassType<RVertexShaderResource, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RPixelShaderResource, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RComputeShaderResource, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RStructuredBuffer, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RRenderTexture2D, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RRenderTexture3D, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RTexture2DResource, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RTextureCubeResource, ERTTIObject, RRenderResourceInterface>();
+		RegisterClassType<RBufferResource, ERTTIObject, RRenderResourceInterface>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

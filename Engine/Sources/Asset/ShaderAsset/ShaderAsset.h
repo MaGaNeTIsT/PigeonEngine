@@ -9,7 +9,7 @@
 namespace PigeonEngine
 {
 
-	class EShaderResource : public EResourceInterface
+	class EShaderResource : public ERTTIObject, public EResourceInterface
 	{
 	public:
 		EShaderResource() : ShaderByteCode(nullptr), ShaderByteCodeSize(0u) {}
