@@ -18,10 +18,11 @@ namespace PigeonEngine
 		void EditorInit();
 		void EditorUpdate();
 	private:
-		BOOL32			m_EditorOpen = FALSE;
+		BOOL32 m_EditorOpen = FALSE;
 
-		class EWorldManager* m_WorldManager = nullptr;
-		class EAssetManager* m_AssetManager = nullptr;
+		class EWorldManager*     m_WorldManager = nullptr;
+		class EAssetManager*     m_AssetManager = nullptr;
+		class EEditorLogManager* m_LogsManager  = nullptr;
 #endif
 	};
 }

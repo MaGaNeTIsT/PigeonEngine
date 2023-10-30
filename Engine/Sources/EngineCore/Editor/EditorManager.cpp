@@ -2,6 +2,7 @@
 #include <Base/RTTI/RTTIManager.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "AssetManager.h"
+#include "EditorLogManager.h"
 
 namespace PigeonEngine
 {
@@ -45,6 +46,8 @@ namespace PigeonEngine
     {
         m_WorldManager = EWorldManager::GetManagerSingleton();
         m_AssetManager = EAssetManager::GetManagerSingleton();
+        m_LogsManager  = EEditorLogManager::GetManagerSingleton();
+        m_LogsManager->EditorInit();
         m_AssetManager->EditorInit();
         m_WorldManager->EditorInit();
     }
@@ -60,7 +63,7 @@ namespace PigeonEngine
         
         m_WorldManager->EditorUpdate();
         m_AssetManager->EditorUpdate();
-        
+        m_LogsManager->EditorUpdate();
         BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
     }

@@ -1,5 +1,7 @@
 ﻿#include "Controller.h"
 
+#include "../../../../Editor/EditorLogManager.h"
+#include "../../../../HID/Input/InputType.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 
 namespace PigeonEngine
@@ -198,8 +200,25 @@ namespace PigeonEngine
 
     void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
     {
-        
-        printf("asdasdas\r\n");
+        EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();
+        EString TestLog;
+        switch (Type)
+        {
+        case IKeyboard::Event::EType::Press:
+            {
+                TestLog += "Press ";
+                break;
+            }
+        case IKeyboard::Event::EType::Release:
+            {
+                TestLog += "Release ";
+                break;
+            }
+            
+        }
+
+        TestLog = EString("EditorController:TestLog:") + TestLog + EKeysBuiltIn::GetKeyByKeyCode(KeyCode).GetKeyName();
+        LogsManager->AddALog(TestLog);
     }
 
     void PEditorController::DrawImGui()
