@@ -200,7 +200,7 @@ namespace PigeonEngine
 
     void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
     {
-        EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();
+       //  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();
         EString TestLog;
         switch (Type)
         {
@@ -218,7 +218,8 @@ namespace PigeonEngine
         }
 
         TestLog = EString("EditorController:TestLog:") + TestLog + EKeysBuiltIn::GetKeyByKeyCode(KeyCode).GetKeyName();
-        LogsManager->AddALog(TestLog);
+        // LogsManager->AddALog(TestLog);
+        PE_LOG(TestLog)
     }
 
     void PEditorController::DrawImGui()

@@ -42,7 +42,7 @@ namespace PigeonEngine
     {
         ImGui::Begin("PigeonLogs", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
         ImGui::Text("PigeonLogs");
-        ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+        ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
         for(const auto& elem : Logs)
         {
             EString Output = EString("Logs:") + elem;

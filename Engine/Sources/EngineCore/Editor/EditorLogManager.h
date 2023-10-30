@@ -5,7 +5,7 @@
 #include <Base/DataStructure/ObjectBase.h>
 
 #include "Base/DataStructure/Container/Array.h"
-
+#define PE_LOG(Log)  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(Log);
 namespace PigeonEngine
 {
     class EEditorLogManager : public EManagerBase
