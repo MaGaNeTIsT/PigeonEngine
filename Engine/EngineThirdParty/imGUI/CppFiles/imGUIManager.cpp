@@ -3,6 +3,7 @@
 #include <Base/Timer/Timer.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include <Config/EngineConfig.h>
+#include <TextureAsset/TextureAsset.h>
 
 namespace PigeonEngine
 {
@@ -905,6 +906,19 @@ namespace PigeonEngine
         if (m_D3DData.ConstantBuffer) { m_D3DData.ConstantBuffer->Release(); m_D3DData.ConstantBuffer = nullptr; }
         if (m_D3DData.InputLayout) { m_D3DData.InputLayout->Release(); m_D3DData.InputLayout = nullptr; }
         if (m_D3DData.VertexShader) { m_D3DData.VertexShader->Release(); m_D3DData.VertexShader = nullptr; }
+    }
+
+    PE_INLINE ImTextureID EngineTextureToImgui(const ETexture2DAsset* InAsset)
+    {
+        if (!!InAsset)
+        {
+            if (InAsset->IsRenderResourceValid())
+            {
+                const RTexture2DResource* RenderResource = InAsset->GetRenderResource();
+                return ((ImTextureID)(RenderResource->ShaderResourceView.Get()));
+            }
+        }
+        return nullptr;
     }
 
 #endif

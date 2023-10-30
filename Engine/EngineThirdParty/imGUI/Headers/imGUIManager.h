@@ -71,5 +71,7 @@ namespace PigeonEngine
 
     };
 
+    extern PE_INLINE ImTextureID EngineTextureToImgui(const class ETexture2DAsset* InAsset);
+
 #endif
 };
