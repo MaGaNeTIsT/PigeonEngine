@@ -68,7 +68,7 @@ namespace PigeonEngine
         ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
         for(const auto& elem : Logs)
         {
-            elem.PrintLog();
+            elem->PrintLog();
         }
 		
         ImGui::EndChild();
@@ -77,7 +77,8 @@ namespace PigeonEngine
 
     void EEditorLogManager::AddALog(ELogType Type, const EString& NewLog)
     {
-        this->Logs.Add(ELog(Type, NewLog));
+       // TSharedPtr<ELogType> NewLog = TSharedPtr<ELogType>::MakeShared(Type, NewLog);
+        this->Logs.Add(TSharedPtr<ELog>::MakeShared(Type, NewLog));
     }
 
    
