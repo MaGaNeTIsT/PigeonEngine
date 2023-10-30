@@ -1,16 +1,19 @@
 ﻿#pragma once
-
-
-
 #include <Base/DataStructure/ObjectBase.h>
 #include "Base/DataStructure/Container/Array.h"
-
+#include "Base/DataStructure/Pointer/SharedPtr.h"
+#if _EDITOR_ONLY
 #define PE_LOG_LOG(Log)   EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_LOG, Log);
 #define PE_LOG_WARN(Log)  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_WARNING, Log);
 #define PE_LOG_ERROR(Log) EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_ERROR, Log);
-
+#else
+#define PE_LOG_LOG(Log)  
+#define PE_LOG_WARN(Log)
+#define PE_LOG_ERROR(Log) 
+#endif
 namespace PigeonEngine
 {
+
     enum ELogType : UINT8
     {
         ELT_LOG,
@@ -19,12 +22,14 @@ namespace PigeonEngine
     };
     struct ELog
     {
+        ELog() = delete;
         ELog(ELogType InType, const EString& InLog);
 
         void PrintLog() const;
         ELogType Type;
         EString Log;
     };
+    
     class EEditorLogManager : public EManagerBase
     {
         CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorLogManager)
@@ -41,7 +46,7 @@ namespace PigeonEngine
 
         void AddALog(ELogType Type, const EString& NewLog);
     private:
-        TArray<ELog> Logs;
+        TArray<TSharedPtr<ELog>> Logs;
 
 #endif
     };
