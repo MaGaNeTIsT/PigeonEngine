@@ -158,14 +158,16 @@ namespace PigeonEngine
         return Find(SubString) == 0;
     }
 
-    UINT32 EString::Find(const EString& SubString) const
+    INT32 EString::Find(const EString& SubString) const
     {
-        return static_cast<UINT32>(Str.find(*SubString));
+        const auto index = Str.find(*SubString);
+        return index == std::string::npos ? -1 : static_cast<INT32>(index);
     }
 
-    UINT32 EString::RightFind(const EString& SubString) const
+    INT32 EString::RightFind(const EString& SubString) const
     {
-        return static_cast<UINT32>(Str.rfind(*SubString));
+        const auto index = Str.rfind(*SubString);
+        return index == std::string::npos ? -1 : static_cast<INT32>(index);
     }
 
     EString EString::Replace(const EString& From, const EString& To) const
@@ -196,6 +198,11 @@ namespace PigeonEngine
     EString EString::Substring(const UINT32& Start, const UINT32& Count) const
     {
         return EString(Str.substr(EMath::Max(0u, Start), EMath::Min(Length() - Start, Count)));
+    }
+
+    BOOL8 EString::Contains(const EString& Substring) const
+    {
+        return Find(Substring) >= 0;
     }
 
     BOOL32 EString::IsNumeric() const

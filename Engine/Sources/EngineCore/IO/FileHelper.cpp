@@ -114,20 +114,28 @@ namespace PigeonEngine
 		}
 		for (const auto& entry : std::filesystem::directory_iterator(dirPath))
 		{
-			if (std::filesystem::is_directory(entry)) {
+			if (std::filesystem::is_directory(entry))
+			{
 				OutFolders.Add(entry.path().string());
 			}
-			else if (std::filesystem::is_regular_file(entry)) {
+			else if (std::filesystem::is_regular_file(entry))
+			{
 				OutFiles.Add(entry.path().string());
 			}
 		}
-		
 		return TRUE;
 	}
 
-	BOOL8 EFileHelper::ReadFirstNumberOfBytesInFile(const EString& FilePath, void*& Return, ULONG& Size)
+	BOOL8 EFileHelper::ReadFirstNumberOfBytesInFile(const EString& FilePath, void*& Return, const ULONG& Size)
 	{
-		
+		std::ifstream file(*FilePath, std::ios::binary);
+		if (file.is_open())
+		{
+			Return = new char[Size];
+			file.read(static_cast<char*>(Return), Size);
+			file.close();
+			return TRUE;
+		} 
 		return FALSE;
 	}
 };

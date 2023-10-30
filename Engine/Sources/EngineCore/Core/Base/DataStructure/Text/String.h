@@ -45,13 +45,15 @@ namespace PigeonEngine
         
         PE_NODISCARD UINT32  Length   ()const;
         PE_NODISCARD UINT32  LastIndex()const;
-        PE_NODISCARD BOOL32  StartWith(const EString& SubString)const;
-        PE_NODISCARD UINT32  Find     (const EString& SubString) const;
-        PE_NODISCARD UINT32  RightFind(const EString& SubString) const;
+        PE_NODISCARD BOOL32  StartWith(const EString& SubString) const;
+        PE_NODISCARD INT32   Find     (const EString& SubString) const;
+        PE_NODISCARD INT32   RightFind(const EString& SubString) const;
         PE_NODISCARD EString Replace  (const EString& From, const EString& To) const;
         PE_NODISCARD EString Left     (const UINT32& Count) const;
         PE_NODISCARD EString Right    (const UINT32& Count) const;
         PE_NODISCARD EString Substring(const UINT32& Start, const UINT32& Count) const;
+
+        PE_NODISCARD BOOL8 Contains(const EString& Substring) const;
         
         PE_NODISCARD BOOL32  IsNumeric()const;
         PE_NODISCARD INT32   AtoI() const;

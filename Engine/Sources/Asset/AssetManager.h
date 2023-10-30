@@ -1,4 +1,5 @@
 #pragma once
+#include "BaseAsset.h"
 #include "Base/DataStructure/ObjectBase.h"
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
@@ -7,6 +8,19 @@ namespace PigeonEngine
 {
 
 #if _EDITOR_ONLY
+	class EAssetFile
+	{
+	public:
+		EAssetFile() = delete;
+		EAssetFile(const EString& InPath);
+		~EAssetFile() = default;
+	public:
+		PE_NODISCARD EString GetDisplayName() const;
+	private:
+		EString Path;
+		EAssetType Type;
+	};
+	
 	class EFolderTreeNode
 	{
 	public:
@@ -21,7 +35,7 @@ namespace PigeonEngine
 		void SetChildrenFolder(const TArray<EString>& Paths);
 		void SetChildrenFiles(const TArray<EString>& Paths);
 		PE_NODISCARD const TArray<TSharedPtr<EFolderTreeNode>>& GetChildrenFolder() const;
-		PE_NODISCARD const TArray<TSharedPtr<EFolderTreeNode>>& GetChildrenFile() const;
+		PE_NODISCARD const TArray<TSharedPtr<EAssetFile>>& GetChildrenFile() const;
 		void ClearChildren();
 
 		PE_NODISCARD const EString& GetPath() const;
@@ -30,7 +44,7 @@ namespace PigeonEngine
 		EString Path;
 		TSharedPtr<EFolderTreeNode> Parent = nullptr;
 		TArray<TSharedPtr<EFolderTreeNode>> ChildrenFolder;
-		TArray<TSharedPtr<EFolderTreeNode>> ChildrenFile;
+		TArray<TSharedPtr<EAssetFile>> ChildrenFile;
 	};
 
 	

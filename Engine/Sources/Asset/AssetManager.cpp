@@ -12,17 +12,80 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 
-	EFolderTreeNode::EFolderTreeNode(EString InPath)
-		:
-	Path(std::move(InPath))
+	EAssetFile::EAssetFile(const EString& InPath)
 	{
+		Path = InPath.Replace("\\", "/");
+		void* Type = nullptr;
+		if(EFileHelper::ReadFirstNumberOfBytesInFile(Path, Type, 4))
+		{
+			this->Type = *static_cast<EAssetType*>(Type);
+		}
+		
+	}
+
+	EString EAssetFile::GetDisplayName() const
+	{
+		auto index = Path.RightFind("/");
+		EString target = Path;
+		if(index == Path.LastIndex())
+		{
+			target = Path.Substring(0, Path.Length() - 1);
+			index = target.RightFind("/");
+		}
+		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
+		switch (this->Type)
+		{
+		case ASSET_TYPE_UNKNOWN	:
+			{
+				Name += " UnKnown";
+				break;
+			}
+		case ASSET_TYPE_TEXTURE	:
+			{
+				Name += " Texture";
+				break;
+			}
+		case ASSET_TYPE_MESH	:
+			{
+				Name += " Mesh";
+				break;
+			}
+		case ASSET_TYPE_SKELETON	:
+			{
+				Name += " Skeleton";
+				break;
+			}
+		case ASSET_TYPE_ANIMATION	:
+			{
+				Name += " Animation";
+				break;
+			}
+		case ASSET_TYPE_SHADER	:
+			{
+				Name += " Shader";
+				break;
+			}
+		case ASSET_TYPE_COUNT	:
+			{
+				Name += " Count";
+				break;
+			}
+
+		}
+		Name = Name.Replace(".PAsset", "");
+		return Name;
+	}
+
+	EFolderTreeNode::EFolderTreeNode(EString InPath)
+	{
+		Path = InPath.Replace("\\", "/");
 	}
 
 	EFolderTreeNode::EFolderTreeNode(const TSharedPtr<EFolderTreeNode>& InParent, EString InPath)
 		:
-	Path(std::move(InPath)),
 	Parent(InParent)
 	{
+		Path = InPath.Replace("\\", "/");
 	}
 
 	void EFolderTreeNode::TraverseFolder(const TSharedPtr<EFolderTreeNode>& Node, TSharedPtr<EFolderTreeNode>& CurrentSelectedFolder)
@@ -71,7 +134,10 @@ namespace PigeonEngine
 		ChildrenFile.Clear();
 		for(const auto& elem : Paths)
 		{
-			ChildrenFile.Add(TSharedPtr<EFolderTreeNode>::MakeShared(this, elem));
+			if(elem.Contains(".PAsset"))
+			{
+				ChildrenFile.Add(TSharedPtr<EAssetFile>::MakeShared(elem));
+			}
 		}
 	}
 	
@@ -80,7 +146,7 @@ namespace PigeonEngine
 		return this->ChildrenFolder;
 	}
 
-	const TArray<TSharedPtr<EFolderTreeNode>>& EFolderTreeNode::GetChildrenFile() const
+	const TArray<TSharedPtr<EAssetFile>>& EFolderTreeNode::GetChildrenFile() const
 	{
 		return this->ChildrenFile;
 	}
@@ -203,11 +269,47 @@ namespace PigeonEngine
 			ImGui::SameLine();
 			{
 				ImGui::BeginChild("Content", ImVec2(700, 0), true);
+				if(Current.Get())
+				{
+					ImVec2 button_sz(100, 100);
+					auto ChildrenFolder = Current->GetChildrenFolder();
+					FLOAT window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+					UINT i = 0;
+					for(; i < ChildrenFolder.Length(); ++i)
+					{
+						ImGui::PushID(i);
+						if(ImGui::Button(*ChildrenFolder[i]->GetDisplayName(), button_sz))
+						{
+							Current = ChildrenFolder[i];
+							// return;
+						}
+						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
+						const ImGuiStyle& style = ImGui::GetStyle();
+						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x; 
+						if ( next_button_x2 < window_visible_x2)
+							ImGui::SameLine();
+						ImGui::PopID();
+						
+					}
+
+					for(auto& elem : Current->GetChildrenFile())
+					{
+						ImGui::PushID(i);
+						if(ImGui::Button(*elem->GetDisplayName(), button_sz))
+						{
+							// Current = ChildrenFolder[i];
+							// return;
+						}
+						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
+						const ImGuiStyle& style = ImGui::GetStyle();
+						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
+						if ( next_button_x2 < window_visible_x2)
+							ImGui::SameLine();
+						ImGui::PopID();
+					}
+					
+				}
 				
-				// if(ImGui::CollapsingHeader("Detail", ImGuiTreeNodeFlags_DefaultOpen))
-				// {
-				// 	
-				// }
 				ImGui::EndChild();
 			}
 		}
