@@ -219,7 +219,7 @@ namespace PigeonEngine
 
         TestLog = EString("EditorController:TestLog:") + TestLog + EKeysBuiltIn::GetKeyByKeyCode(KeyCode).GetKeyName();
         // LogsManager->AddALog(TestLog);
-        PE_LOG(TestLog)
+        PE_LOG_WARN(TestLog)
     }
 
     void PEditorController::DrawImGui()

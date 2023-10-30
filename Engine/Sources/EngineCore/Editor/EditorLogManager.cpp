@@ -8,7 +8,30 @@ namespace PigeonEngine
     }
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-    
+
+    ELog::ELog(ELogType InType, const EString& InLog)
+        :
+    Type(InType),
+    Log(InLog)
+    {
+    }
+
+    void ELog::PrintLog() const
+    {
+        
+        if(Type == ELogType::ELT_LOG)
+        {
+            EString Output = EString("Logs:") + Log;
+            ImGui::Text(*Output);
+        }
+        else
+        {
+            EString Output = Type == ELogType::ELT_ERROR ? EString("Error:") : EString("Warning:") + Log;
+            
+            ImGui::TextColored(Type == ELogType::ELT_ERROR ? ImVec4(1.0f, 0.0f, 0.0f, 1.0f) : ImVec4(1.0f, 1.0f, 0.0f, 1.0f), *Output);
+        }
+    }
+
     EEditorLogManager::EEditorLogManager()
     {
     }
@@ -45,18 +68,18 @@ namespace PigeonEngine
         ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
         for(const auto& elem : Logs)
         {
-            EString Output = EString("Logs:") + elem;
-            ImGui::Text(*Output);
+            elem.PrintLog();
         }
 		
         ImGui::EndChild();
         ImGui::End();
     }
 
-    void EEditorLogManager::AddALog(const EString& NewLog)
+    void EEditorLogManager::AddALog(ELogType Type, const EString& NewLog)
     {
-        this->Logs.Add(NewLog);
+        this->Logs.Add(ELog(Type, NewLog));
     }
 
+   
 
 }
