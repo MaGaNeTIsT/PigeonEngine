@@ -1,6 +1,9 @@
 #include "AssetManager.h"
 
 #include "../EngineCore/IO/FileHelper.h"
+#include <TextureAsset/TextureAsset.h>
+
+#include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 
 namespace PigeonEngine
 {
@@ -33,47 +36,57 @@ namespace PigeonEngine
 			index = target.RightFind("/");
 		}
 		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
-		switch (this->Type)
-		{
-		case ASSET_TYPE_UNKNOWN	:
-			{
-				Name += " UnKnown";
-				break;
-			}
-		case ASSET_TYPE_TEXTURE	:
-			{
-				Name += " Texture";
-				break;
-			}
-		case ASSET_TYPE_MESH	:
-			{
-				Name += " Mesh";
-				break;
-			}
-		case ASSET_TYPE_SKELETON	:
-			{
-				Name += " Skeleton";
-				break;
-			}
-		case ASSET_TYPE_ANIMATION	:
-			{
-				Name += " Animation";
-				break;
-			}
-		case ASSET_TYPE_SHADER	:
-			{
-				Name += " Shader";
-				break;
-			}
-		case ASSET_TYPE_COUNT	:
-			{
-				Name += " Count";
-				break;
-			}
-
-		}
+		// switch (this->Type)
+		// {
+		// case ASSET_TYPE_UNKNOWN	:
+		// 	{
+		// 		Name += " UnKnown";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_TEXTURE	:
+		// 	{
+		// 		Name += " Texture";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_MESH	:
+		// 	{
+		// 		Name += " Mesh";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_SKELETON	:
+		// 	{
+		// 		Name += " Skeleton";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_ANIMATION	:
+		// 	{
+		// 		Name += " Animation";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_SHADER	:
+		// 	{
+		// 		Name += " Shader";
+		// 		break;
+		// 	}
+		// case ASSET_TYPE_COUNT	:
+		// 	{
+		// 		Name += " Count";
+		// 		break;
+		// 	}
+		//
+		// }
 		Name = Name.Replace(".PAsset", "");
 		return Name;
+	}
+
+	EAssetType EAssetFile::GetType() const
+	{
+		return this->Type;
+	}
+
+	EString EAssetFile::GetPath() const
+	{
+		return this->Path;
 	}
 
 	EFolderTreeNode::EFolderTreeNode(EString InPath)
@@ -235,6 +248,95 @@ namespace PigeonEngine
 		{
 			ProjectAssetRoot = nullptr;
 		}
+
+		// folder icon
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_Folder");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Folder",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				FolderTextureId = EngineTextureToImgui(Asset);
+			}	
+		}
+
+		// mesh
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_Mesh");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Mesh",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				ImTextureID TextureId = EngineTextureToImgui(Asset);
+				TypeThumbNails.Add(EAssetType::ASSET_TYPE_MESH, TextureId);
+			}	
+		}
+
+		// shader
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_Shader");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Shader",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				ImTextureID TextureId = EngineTextureToImgui(Asset);
+				TypeThumbNails.Add(EAssetType::ASSET_TYPE_SHADER, TextureId);
+			}	
+		}
+
+		// shader
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_Skeleton");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Skeleton",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				ImTextureID TextureId = EngineTextureToImgui(Asset);
+				TypeThumbNails.Add(EAssetType::ASSET_TYPE_SKELETON, TextureId);
+			}	
+		}
+
+		// animation
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_Animation");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Animation",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				ImTextureID TextureId = EngineTextureToImgui(Asset);
+				TypeThumbNails.Add(EAssetType::ASSET_TYPE_ANIMATION, TextureId);
+			}	
+		}
+
+		// animation
+		{
+			EString ImportPath("./Engine/Assets/EngineTextures/Editor/");
+			EString ImportName("Icon_ContentBrowser_No");
+			EString ImportFileType("PNG");
+		
+			const ETexture2DAsset* Asset = nullptr;
+			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_No",Asset, &ImportPath, &ImportName, &ImportFileType);
+			if(Asset)
+			{
+				ImTextureID TextureId = EngineTextureToImgui(Asset);
+				TypeThumbNails.Add(EAssetType::ASSET_TYPE_UNKNOWN, TextureId);
+			}	
+		}
 	}
 
 	void EAssetManager::EditorUpdate()
@@ -278,11 +380,13 @@ namespace PigeonEngine
 					for(; i < ChildrenFolder.Length(); ++i)
 					{
 						ImGui::PushID(i);
-						if(ImGui::Button(*ChildrenFolder[i]->GetDisplayName(), button_sz))
+						ImGui::BeginChild("asdas", ImVec2(120, 150), false);
+						if(ImGui::ImageButton(FolderTextureId, button_sz))
 						{
 							Current = ChildrenFolder[i];
-							// return;
 						}
+						ImGui::TextWrapped(*ChildrenFolder[i]->GetDisplayName());
+						ImGui::EndChild();
 						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
 						const ImGuiStyle& style = ImGui::GetStyle();
 						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x; 
@@ -295,16 +399,19 @@ namespace PigeonEngine
 					for(auto& elem : Current->GetChildrenFile())
 					{
 						ImGui::PushID(i);
-						if(ImGui::Button(*elem->GetDisplayName(), button_sz))
-						{
-							// Current = ChildrenFolder[i];
-							// return;
-						}
+						ImGui::BeginChild("asdas", ImVec2(120, 150), false);
+						const ImTextureID id = GetThumbNail(elem->GetType(), elem);
+						
+						ImGui::ImageButton(id, button_sz);
+						
+						ImGui::TextWrapped(*elem->GetDisplayName());
+						ImGui::EndChild();
 						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
 						const ImGuiStyle& style = ImGui::GetStyle();
 						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
 						if ( next_button_x2 < window_visible_x2)
 							ImGui::SameLine();
+						++i;
 						ImGui::PopID();
 					}
 					
@@ -317,4 +424,37 @@ namespace PigeonEngine
 		ImGui::End();
 	}
 
+	ImTextureID EAssetManager::GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File)
+	{
+		if(Type != EAssetType::ASSET_TYPE_TEXTURE)
+		{
+			return TypeThumbNails[Type];
+		}
+		
+		if(!File)
+		{
+			return TypeThumbNails[EAssetType::ASSET_TYPE_UNKNOWN];
+		}
+
+		// const EString Path = File->GetPath();
+		// if(TextureThumbNails.ContainsKey(Path))
+		// {
+		// 	return TextureThumbNails[Path];
+		// }
+		// EString ImportPath = Path.Replace(File->GetDisplayName(), "");
+		// ImportPath = ImportPath.Replace(".PAsset", "");
+		// EString ImportName = File->GetDisplayName();
+		// EString ImportFileType("PNG");
+		//
+		// const ETexture2DAsset* Asset = nullptr;
+		// TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, File->GetDisplayName(),Asset, &ImportPath, &ImportName, &ImportFileType);
+		// if(Asset)
+		// {
+		// 	ImTextureID TextureId = EngineTextureToImgui(Asset);
+		// 	TextureThumbNails.Add(Path, TextureId);
+		// 	return TextureId;
+		// }
+
+		return TypeThumbNails[EAssetType::ASSET_TYPE_UNKNOWN];
+	}
 }

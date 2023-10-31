@@ -16,6 +16,8 @@ namespace PigeonEngine
 		~EAssetFile() = default;
 	public:
 		PE_NODISCARD EString GetDisplayName() const;
+		PE_NODISCARD EAssetType GetType() const;
+		PE_NODISCARD EString GetPath() const;
 	private:
 		EString Path;
 		EAssetType Type;
@@ -40,6 +42,7 @@ namespace PigeonEngine
 
 		PE_NODISCARD const EString& GetPath() const;
 		PE_NODISCARD EString GetDisplayName() const;
+		
 	private:
 		EString Path;
 		TSharedPtr<EFolderTreeNode> Parent = nullptr;
@@ -68,11 +71,15 @@ namespace PigeonEngine
 
 	protected:
 		void GenerateContentBrowser();
-
+		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr) ;
 	private:
 		TSharedPtr<EFolderTreeNode> EngineAssetRoot  = nullptr;
 		TSharedPtr<EFolderTreeNode> ProjectAssetRoot = nullptr;
 		TSharedPtr<EFolderTreeNode> Current          = nullptr;
+
+		ImTextureID FolderTextureId;
+		TMap<EAssetType, ImTextureID> TypeThumbNails;
+		TMap<EString, ImTextureID>    TextureThumbNails;
 #endif
 
 	};
