@@ -4,6 +4,7 @@
 #include <TextureAsset/TextureAsset.h>
 
 #include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
+#include "../EngineCore/Editor/EditorLogManager.h"
 
 namespace PigeonEngine
 {
@@ -36,45 +37,7 @@ namespace PigeonEngine
 			index = target.RightFind("/");
 		}
 		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
-		// switch (this->Type)
-		// {
-		// case ASSET_TYPE_UNKNOWN	:
-		// 	{
-		// 		Name += " UnKnown";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_TEXTURE	:
-		// 	{
-		// 		Name += " Texture";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_MESH	:
-		// 	{
-		// 		Name += " Mesh";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_SKELETON	:
-		// 	{
-		// 		Name += " Skeleton";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_ANIMATION	:
-		// 	{
-		// 		Name += " Animation";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_SHADER	:
-		// 	{
-		// 		Name += " Shader";
-		// 		break;
-		// 	}
-		// case ASSET_TYPE_COUNT	:
-		// 	{
-		// 		Name += " Count";
-		// 		break;
-		// 	}
-		//
-		// }
+		
 		Name = Name.Replace(".PAsset", "");
 		return Name;
 	}
@@ -353,7 +316,7 @@ namespace PigeonEngine
 				ImGui::BeginChild("Tree", ImVec2(200, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 				ImGui::Text("FolderTree");
 				{
-					ImGui::BeginChild("Project", ImVec2(180, 150), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
+					ImGui::BeginChild("Project", ImVec2(180, 120), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Project");
 					EFolderTreeNode::TraverseFolder(ProjectAssetRoot, Current);
 					ImGui::EndChild();
@@ -400,15 +363,22 @@ namespace PigeonEngine
 					{
 						ImGui::PushID(i);
 						ImGui::BeginChild("asdas", ImVec2(120, 150), false);
+						const BOOL8 bSelected = ImGui::Selectable(*(EString("##") + elem->GetDisplayName()), elem == SelectedFile, 0, ImVec2(120, 150));
 						const ImTextureID id = GetThumbNail(elem->GetType(), elem);
-						
-						ImGui::ImageButton(id, button_sz);
-						
+						ImGui::SetItemAllowOverlap();
+						ImGui::SetCursorPos(ImVec2(0,0));
+						ImGui::Image(id, button_sz);
+						ImGui::SetCursorPos(ImVec2(0, button_sz.y + 10));
 						ImGui::TextWrapped(*elem->GetDisplayName());
 						ImGui::EndChild();
 						const FLOAT last_button_x2 = ImGui::GetItemRectMax().x;
 						const ImGuiStyle& style = ImGui::GetStyle();
 						const FLOAT next_button_x2 = last_button_x2 + style.ItemSpacing.x + button_sz.x;
+						if(bSelected)
+						{
+							SelectedFile = elem;
+							PE_LOG_LOG(EString("ContentBrowser:Select ") + elem->GetDisplayName());
+						}
 						if ( next_button_x2 < window_visible_x2)
 							ImGui::SameLine();
 						++i;
@@ -456,5 +426,50 @@ namespace PigeonEngine
 		// }
 
 		return TypeThumbNails[EAssetType::ASSET_TYPE_UNKNOWN];
+	}
+
+	EString EAssetManager::AssetTypeAsString(const EAssetType& Type)
+	{
+		EString Name;
+		switch (Type)
+		{
+		case ASSET_TYPE_UNKNOWN	:
+			{
+				Name += " UnKnown";
+				break;
+			}
+		case ASSET_TYPE_TEXTURE	:
+			{
+				Name += " Texture";
+				break;
+			}
+		case ASSET_TYPE_MESH	:
+			{
+				Name += " Mesh";
+				break;
+			}
+		case ASSET_TYPE_SKELETON	:
+			{
+				Name += " Skeleton";
+				break;
+			}
+		case ASSET_TYPE_ANIMATION	:
+			{
+				Name += " Animation";
+				break;
+			}
+		case ASSET_TYPE_SHADER	:
+			{
+				Name += " Shader";
+				break;
+			}
+		case ASSET_TYPE_COUNT	:
+			{
+				Name += " Count";
+				break;
+			}
+		
+		}
+		return Name;
 	}
 }

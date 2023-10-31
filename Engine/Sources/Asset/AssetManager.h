@@ -72,11 +72,12 @@ namespace PigeonEngine
 	protected:
 		void GenerateContentBrowser();
 		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr) ;
+		static EString AssetTypeAsString(const EAssetType& Type);
 	private:
 		TSharedPtr<EFolderTreeNode> EngineAssetRoot  = nullptr;
 		TSharedPtr<EFolderTreeNode> ProjectAssetRoot = nullptr;
 		TSharedPtr<EFolderTreeNode> Current          = nullptr;
-
+		TSharedPtr<EAssetFile>      SelectedFile     = nullptr;
 		ImTextureID FolderTextureId;
 		TMap<EAssetType, ImTextureID> TypeThumbNails;
 		TMap<EString, ImTextureID>    TextureThumbNails;
