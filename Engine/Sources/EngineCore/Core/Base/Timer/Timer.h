@@ -40,4 +40,44 @@ namespace PigeonEngine
 		DOUBLE			m_Total;
 		DOUBLE			m_Delta;
 	};
+
+#if _EDITOR_ONLY
+	namespace EngineSystemTime
+	{
+
+		struct ESystemTime
+		{
+			ESystemTime(const USHORT InYear, const USHORT InMonth, const USHORT InDayOfWeek,
+				const USHORT InDay, const USHORT InHour, const USHORT InMinute, const USHORT InSecond,
+				const USHORT InMilliseconds)noexcept : Year(InYear), Month(InMonth), DayOfWeek(InDayOfWeek),
+				Day(InDay), Hour(InHour), Minute(InMinute), Second(InSecond), Milliseconds(InMilliseconds) {}
+			ESystemTime()noexcept : Year(0u), Month(0u), DayOfWeek(0u), Day(0u),
+				Hour(0u), Minute(0u), Second(0u), Milliseconds(0u) {}
+			ESystemTime(const ESystemTime& Other)noexcept : Year(Other.Year), Month(Other.Month),
+				DayOfWeek(Other.DayOfWeek), Day(Other.Day), Hour(Other.Hour), Minute(Other.Minute),
+				Second(Other.Second), Milliseconds(Other.Milliseconds) {}
+			ESystemTime& operator=(const ESystemTime& Other)
+			{
+				Year = Other.Year; Month = Other.Month;
+				DayOfWeek = Other.DayOfWeek; Day = Other.Day;
+				Hour = Other.Hour; Minute = Other.Minute; Second = Other.Second;
+				Milliseconds = Other.Milliseconds;
+				return (*this);
+			}
+
+			USHORT	Year;
+			USHORT	Month;
+			USHORT	DayOfWeek;
+			USHORT	Day;
+			USHORT	Hour;
+			USHORT	Minute;
+			USHORT	Second;
+			USHORT	Milliseconds;
+		};
+
+		extern PE_INLINE ESystemTime Now();
+
+	};
+#endif
+
 };

@@ -67,6 +67,8 @@ namespace PigeonEngine
     };
     
     extern PE_INLINE EString ToString(const BOOL32& InValue);
+    extern PE_INLINE EString ToString(const SHORT InValue);
+    extern PE_INLINE EString ToString(const USHORT InValue);
     extern PE_INLINE EString ToString(const INT32 InValue);
     extern PE_INLINE EString ToString(const UINT32 InValue);
     extern PE_INLINE EString ToString(const FLOAT InValue);

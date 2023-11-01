@@ -1,4 +1,4 @@
-#include "./Timer.h"
+#include "Timer.h"
 
 namespace PigeonEngine
 {
@@ -77,4 +77,25 @@ namespace PigeonEngine
 	{
 		return (this->m_Delta);
 	}
+
+	namespace EngineSystemTime
+	{
+
+		static PE_INLINE ESystemTime TranslateToSystemTime(const ::SYSTEMTIME& InStruct)
+		{
+			return ESystemTime(
+				InStruct.wYear, InStruct.wMonth, InStruct.wDayOfWeek,
+				InStruct.wDay, InStruct.wHour, InStruct.wMinute,
+				InStruct.wSecond, InStruct.wMilliseconds
+			);
+		}
+
+		PE_INLINE ESystemTime Now()
+		{
+			::SYSTEMTIME _WindowsPlatformSystemTime;
+			::GetLocalTime(&_WindowsPlatformSystemTime);
+			return TranslateToSystemTime(_WindowsPlatformSystemTime);
+		}
+
+	};
 };

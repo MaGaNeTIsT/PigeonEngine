@@ -261,6 +261,14 @@ namespace PigeonEngine
     {
         return EString(InValue ? ("TRUE") : ("FALSE"));
     }
+    PE_INLINE EString ToString(const SHORT InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
+    PE_INLINE EString ToString(const USHORT InValue)
+    {
+        return EString(std::to_string(InValue).c_str());
+    }
     PE_INLINE EString ToString(const INT32 InValue)
     {
         return EString(std::to_string(InValue).c_str());
