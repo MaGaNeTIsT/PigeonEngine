@@ -339,7 +339,7 @@ namespace PigeonEngine
 					ImVec2 button_sz(100, 100);
 					auto ChildrenFolder = Current->GetChildrenFolder();
 					FLOAT window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-					UINT i = 0;
+					UINT32 i = 0;
 					for(; i < ChildrenFolder.Length(); ++i)
 					{
 						ImGui::PushID(i);

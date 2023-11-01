@@ -23,12 +23,15 @@ namespace PigeonEngine
 	class RDebugWireframePrimitive
 	{
 	public:
-		BOOL32					InitPrimitive(const Vector3* InDatas, const UINT32& InNum);
+		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum);
+		BOOL32					InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum, const UINT32* InIndexDatas, const UINT32 InIndexNum);
 		UINT32					GetIndexCount()const;
 		const RBufferResource&	GetPrimitiveBuffer()const;
 	private:
+		BOOL32				UseShortIndex;
 		UINT32				IndexCount;
 		RBufferResource		VertexBuffer;
+		RBufferResource		IndexBuffer;
 	public:
 		RDebugWireframePrimitive();
 		RDebugWireframePrimitive(const RDebugWireframePrimitive& Other);

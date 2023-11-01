@@ -97,11 +97,11 @@ namespace PigeonEngine
 
 #if _EDITOR_ONLY
 	RDebugWireframePrimitive::RDebugWireframePrimitive()
-		: IndexCount(0u)
+		: UseShortIndex(FALSE), IndexCount(0u)
 	{
 	}
 	RDebugWireframePrimitive::RDebugWireframePrimitive(const RDebugWireframePrimitive& Other)
-		: IndexCount(Other.IndexCount), VertexBuffer(Other.VertexBuffer)
+		: UseShortIndex(Other.UseShortIndex), IndexCount(Other.IndexCount), VertexBuffer(Other.VertexBuffer), IndexBuffer(Other.IndexBuffer)
 	{
 	}
 	RDebugWireframePrimitive::~RDebugWireframePrimitive()
@@ -109,26 +109,133 @@ namespace PigeonEngine
 	}
 	RDebugWireframePrimitive& RDebugWireframePrimitive::operator=(const RDebugWireframePrimitive& Other)
 	{
+		UseShortIndex	= Other.UseShortIndex;
 		IndexCount		= Other.IndexCount;
 		VertexBuffer	= Other.VertexBuffer;
+		IndexBuffer		= Other.IndexBuffer;
 		return (*this);
 	}
-	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InDatas, const UINT32& InNum)
+	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum)
 	{
-		if (VertexBuffer.IsRenderResourceValid())
+		if (InVertexNum == 0u)
 		{
-			Check((IndexCount > 0u), (ENGINE_RENDER_CORE_ERROR));
-			return TRUE;
+			return FALSE;
 		}
 
-		IndexCount = InNum;
+		const UINT32 LineCount = InVertexNum - 1u;
+
+		if (VertexBuffer.IsRenderResourceValid() && IndexBuffer.IsRenderResourceValid())
+		{
+			if (IndexCount == (LineCount * 2u))
+			{
+				return TRUE;
+			}
+			VertexBuffer.ReleaseRenderResource();
+			IndexBuffer.ReleaseRenderResource();
+		}
+
+		UseShortIndex = (InVertexNum <= 65536u) ? TRUE : FALSE;
+		IndexCount = LineCount * 2u;
+
+		UINT32* UintIndices = nullptr;
+		USHORT* UshortIndices = nullptr;
+		if (UseShortIndex)
+		{
+			UshortIndices = new USHORT[IndexCount];
+			for (USHORT i = 0u, n = static_cast<USHORT>(LineCount); i < n; i++)
+			{
+				if ((static_cast<UINT32>(i * 2u + 1u)) < IndexCount)
+				{
+					UshortIndices[i * 2u + 0u] = i;
+					UshortIndices[i * 2u + 1u] = i + 1u;
+				}
+			}
+		}
+		else
+		{
+			UintIndices = new UINT32[IndexCount];
+			for (UINT32 i = 0u; i < LineCount; i++)
+			{
+				if ((i * 2u + 1u) < IndexCount)
+				{
+					UintIndices[i * 2u + 0u] = i;
+					UintIndices[i * 2u + 1u] = i + 1u;
+				}
+			}
+		}
 
 		RSubresourceDataDesc SubresourceDataDesc;
-		SubresourceDataDesc.pSysMem = InDatas;
+		SubresourceDataDesc.pSysMem = InVertexDatas;
 
 		BOOL32 Result = RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer.Buffer,
-			RBufferDesc((sizeof(Vector3) * InNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+			RBufferDesc((sizeof(Vector3) * InVertexNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
 			(&SubresourceDataDesc));
+
+		SubresourceDataDesc.pSysMem = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)UintIndices);
+
+		Result = Result && RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(IndexBuffer.Buffer,
+			RBufferDesc(((UseShortIndex ? 2u : 4u) * IndexCount), RBindFlagType::BIND_INDEX_BUFFER, (UseShortIndex ? 2u : 4u)),
+			(&SubresourceDataDesc));
+
+		if (!!UintIndices)
+		{
+			delete[]UintIndices;
+		}
+		if (!!UshortIndices)
+		{
+			delete[]UshortIndices;
+		}
+
+		return Result;
+	}
+	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum, const UINT32* InIndexDatas, const UINT32 InIndexNum)
+	{
+		if ((InVertexNum == 0u) || (InIndexNum == 0u) || ((InIndexNum & 0x1u) != 0u))
+		{
+			return FALSE;
+		}
+
+		if (VertexBuffer.IsRenderResourceValid() && IndexBuffer.IsRenderResourceValid())
+		{
+			if (IndexCount == InIndexNum)
+			{
+				return TRUE;
+			}
+			VertexBuffer.ReleaseRenderResource();
+			IndexBuffer.ReleaseRenderResource();
+		}
+
+		UseShortIndex = (InVertexNum <= 65536u) ? TRUE : FALSE;
+		IndexCount = InIndexNum;
+
+		USHORT* UshortIndices = nullptr;
+		if (UseShortIndex)
+		{
+			UshortIndices = new USHORT[IndexCount];
+			for (UINT32 i = 0u; i < InIndexNum; i++)
+			{
+				UshortIndices[i] = static_cast<USHORT>(InIndexDatas[i]);
+			}
+		}
+
+		RSubresourceDataDesc SubresourceDataDesc;
+		SubresourceDataDesc.pSysMem = InVertexDatas;
+
+		BOOL32 Result = RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer.Buffer,
+			RBufferDesc((sizeof(Vector3) * InVertexNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+			(&SubresourceDataDesc));
+
+		SubresourceDataDesc.pSysMem = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)InIndexDatas);
+
+		Result = Result && RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(IndexBuffer.Buffer,
+			RBufferDesc(((UseShortIndex ? 2u : 4u) * IndexCount), RBindFlagType::BIND_INDEX_BUFFER, (UseShortIndex ? 2u : 4u)),
+			(&SubresourceDataDesc));
+
+		if (!!UshortIndices)
+		{
+			delete[]UshortIndices;
+		}
+
 		return Result;
 	}
 	UINT32 RDebugWireframePrimitive::GetIndexCount()const
@@ -214,18 +321,124 @@ namespace PigeonEngine
 			break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBE:
 			{
-				const Vector3 PointListPlane[] =
+				const Vector3 CubePoints[] =
 				{
-					Vector3(-0.5f, 0.5f, 0.f),
-					Vector3(0.5f, 0.5f, 0.f),
-					Vector3(0.5f, -0.5f, 0.f),
-					Vector3(-0.5f, -0.5f, 0.f),
-					Vector3(-0.5f, 0.5f, 0.f)
+					Vector3(-0.5f, 0.5f, 0.5f),
+					Vector3(0.5f, 0.5f, 0.5f),
+					Vector3(-0.5f, 0.5f, -0.5f),
+					Vector3(0.5f, 0.5f, -0.5f),
+
+					Vector3(-0.5f, -0.5f, 0.5f),
+					Vector3(0.5f, -0.5f, 0.5f),
+					Vector3(-0.5f, -0.5f, -0.5f),
+					Vector3(0.5f, -0.5f, -0.5f)
 				};
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListPlane, PE_ARRAYSIZE(PointListPlane));
+				const UINT32 CubeLines[] =
+				{
+					0u, 1u,
+					1u, 2u,
+					2u, 3u,
+					3u, 0u,
+
+					0u, 4u,
+					1u, 5u,
+					2u, 6u,
+					3u, 7u,
+
+					4u, 5u,
+					5u, 6u,
+					6u, 7u,
+					7u, 0u
+				};
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CubePoints, PE_ARRAYSIZE(CubePoints), CubeLines, PE_ARRAYSIZE(CubeLines));
 			}
 			break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE:
+			{
+				Matrix4x4 RotY(MakeMatrix4x4(MakeQuaternion(Vector3::YVector(), EMath::DegreesToRadians(90.f))));
+				Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
+
+				const Vector3 SpherePoints[] =
+				{
+					Vector3(1.f, 0.f, 0.f),
+					Vector3(0.92388f, 0.382683f, 0.f),
+					Vector3(0.707107f, 0.707107f, 0.f),
+					Vector3(0.382683f, 0.92388f, 0.f),
+					Vector3(-4.37114e-08f, 1.f, 0.f),
+					Vector3(-0.382683f, 0.92388f, 0.f),
+					Vector3(-0.707107f, 0.707107f, 0.f),
+					Vector3(-0.92388f, 0.382683f, 0.f),
+					Vector3(-1.f, -8.74228e-08f, 0.f),
+					Vector3(-0.92388f, -0.382683f, 0.f),
+					Vector3(-0.707107f, -0.707107f, 0.f),
+					Vector3(-0.382684f, -0.92388f, 0.f),
+					Vector3(1.19249e-08f, -1.f, 0.f),
+					Vector3(0.382684f, -0.923879f, 0.f),
+					Vector3(0.707107f, -0.707107f, 0.f),
+					Vector3(0.92388f, -0.3826830f, 0.f),
+					Matrix4x4TransformPosition(RotY, SpherePoints[0]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[1]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[2]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[3]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[4]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[5]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[6]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[7]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[8]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[9]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[10]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[11]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[12]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[13]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[14]),
+					Matrix4x4TransformPosition(RotY, SpherePoints[15]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[0]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[1]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[2]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[3]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[4]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[5]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[6]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[7]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[8]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[9]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[10]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[11]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[12]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[13]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[14]),
+					Matrix4x4TransformPosition(RotX, SpherePoints[15]),
+				};
+
+#define GENERATE_SPHERE_LINES(__Index) \
+	0u + (16u * __Index), 1u + (16u * __Index),\
+	1u + (16u * __Index), 2u + (16u * __Index),\
+	2u + (16u * __Index), 3u + (16u * __Index),\
+	3u + (16u * __Index), 4u + (16u * __Index),\
+	4u + (16u * __Index), 5u + (16u * __Index),\
+	5u + (16u * __Index), 6u + (16u * __Index),\
+	6u + (16u * __Index), 7u + (16u * __Index),\
+	7u + (16u * __Index), 8u + (16u * __Index),\
+	8u + (16u * __Index), 9u + (16u * __Index),\
+	9u + (16u * __Index), 10u + (16u * __Index),\
+	10u + (16u * __Index), 11u + (16u * __Index),\
+	11u + (16u * __Index), 12u + (16u * __Index),\
+	12u + (16u * __Index), 13u + (16u * __Index),\
+	13u + (16u * __Index), 14u + (16u * __Index),\
+	14u + (16u * __Index), 15u + (16u * __Index),\
+	15u + (16u * __Index), 0u + (16u * __Index)\
+
+				const UINT32 SphereLines[] =
+				{
+					GENERATE_SPHERE_LINES(0u),
+					GENERATE_SPHERE_LINES(1u),
+					GENERATE_SPHERE_LINES(2u)
+				};
+
+#undef GENERATE_SPHERE_LINES
+
+				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(SpherePoints, PE_ARRAYSIZE(SpherePoints), SphereLines, PE_ARRAYSIZE(SphereLines));
+			}
 			break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE:
 			break;
