@@ -5,6 +5,7 @@
 #include <Base/DataStructure/BaseType.h>
 #include <string>
 
+
 namespace PigeonEngine
 {
     class EString

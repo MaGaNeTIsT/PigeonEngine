@@ -29,7 +29,8 @@ namespace PigeonEngine
 
     void EEditorManager::ShutDown()
     {
-
+        m_LogsManager->ShutDown();
+        m_AssetManager->ShutDown();
     }
 
     void EEditorManager::Init()

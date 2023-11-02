@@ -91,6 +91,7 @@ namespace PigeonEngine
 		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
 #if _EDITOR_ONLY
+		m_EditorManager->ShutDown();
 		m_AssimpManager->ShutDown();
 		m_ImGUIManager->ShutDown();
 #endif

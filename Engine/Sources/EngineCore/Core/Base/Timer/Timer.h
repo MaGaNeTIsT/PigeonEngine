@@ -2,6 +2,7 @@
 
 #include <CoreMinimal.h>
 
+
 namespace PigeonEngine
 {
 	class EBaseTimer
@@ -64,7 +65,11 @@ namespace PigeonEngine
 				Milliseconds = Other.Milliseconds;
 				return (*this);
 			}
-
+			
+			PE_NODISCARD EString GetDateAsString() const;
+			PE_NODISCARD EString GetTimeAsString() const;
+			PE_NODISCARD EString AsString() const;
+		
 			USHORT	Year;
 			USHORT	Month;
 			USHORT	DayOfWeek;

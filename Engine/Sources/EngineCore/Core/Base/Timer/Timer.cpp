@@ -53,6 +53,24 @@ namespace PigeonEngine
 	EGameTimer::~EGameTimer()
 	{
 	}
+#if _EDITOR_ONLY
+	EString EngineSystemTime::ESystemTime::GetDateAsString() const
+	{
+		return ToString(Year) + "-" + ToString(Month) + "-" + ToString(Day);
+	}
+
+	EString EngineSystemTime::ESystemTime::GetTimeAsString() const
+	{
+		return ToString(Hour) + ":" + ToString(Minute) + ":" + ToString(Second);
+	}
+
+	EString EngineSystemTime::ESystemTime::AsString() const
+	{
+		
+		return ToString(Year) + "-" + ToString(Month) + "-" + ToString(Day) + " " + ToString(Hour) + ":" + ToString(Minute) + ":" + ToString(Second);
+		
+	}
+#endif
 	void EGameTimer::Reset()
 	{
 		this->m_Total = static_cast<DOUBLE>(0);

@@ -42,6 +42,7 @@ namespace PigeonEngine
 
 		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_CONTENT_PATH                                                 = "./Engine/Temp/";
 		PE_CONSTEXPR_STATIC		const CHAR*     PROJECT_CONTENT_PATH                                                = "UNDEFINED";
+		PE_CONSTEXPR_STATIC		const CHAR*     EDITOR_LOGS_PATH                                                    = "./Engine/Temp/Logs/";
 
 		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SHADOW_MAP_SIZE												= 2048u;
 		PE_CONSTEXPR_STATIC		UINT32			ENGINE_CASCADE_SHADOW_LAYER_NUM										= 3u;

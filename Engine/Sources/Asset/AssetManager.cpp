@@ -430,46 +430,38 @@ namespace PigeonEngine
 
 	EString EAssetManager::AssetTypeAsString(const EAssetType& Type)
 	{
-		EString Name;
 		switch (Type)
 		{
 		case ASSET_TYPE_UNKNOWN	:
 			{
-				Name += " UnKnown";
-				break;
+				return "UnKnown";
 			}
 		case ASSET_TYPE_TEXTURE	:
 			{
-				Name += " Texture";
-				break;
+				return "Texture";
 			}
 		case ASSET_TYPE_MESH	:
 			{
-				Name += " Mesh";
-				break;
+				return "Mesh";
 			}
 		case ASSET_TYPE_SKELETON	:
 			{
-				Name += " Skeleton";
-				break;
+				return "Skeleton";
 			}
 		case ASSET_TYPE_ANIMATION	:
 			{
-				Name += " Animation";
-				break;
+				return "Animation";
 			}
 		case ASSET_TYPE_SHADER	:
 			{
-				Name += " Shader";
-				break;
+				return "Shader";
 			}
 		case ASSET_TYPE_COUNT	:
 			{
-				Name += " Count";
-				break;
+				return "Count";
 			}
 		
 		}
-		return Name;
+		return "Invalid";
 	}
 }
