@@ -1007,7 +1007,7 @@ namespace PigeonEngine
 		}
 
 		{
-			EString Info("Debug wireframe primitive Init failed.");
+			EString Info("Init debug wireframe primitive.");
 			Info = Info + "Type : " + ToString(static_cast<UINT32>(InType));
 			if (InCustomName)
 			{
@@ -1015,10 +1015,12 @@ namespace PigeonEngine
 			}
 			if (Result)
 			{
+				Info = Info + " success.";
 				PE_LOG_LOG(Info);
 			}
 			else
 			{
+				Info = Info + " failed.";
 				PE_LOG_WARN(Info);
 			}
 		}
