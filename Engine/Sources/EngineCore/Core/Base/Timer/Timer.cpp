@@ -66,9 +66,7 @@ namespace PigeonEngine
 
 	EString EngineSystemTime::ESystemTime::AsString() const
 	{
-		
-		return ToString(Year) + "-" + ToString(Month) + "-" + ToString(Day) + " " + ToString(Hour) + ":" + ToString(Minute) + ":" + ToString(Second);
-		
+		return ToString(Year) + "-" + ToString(Month) + "-" + ToString(Day) + " " + ToString(Hour) + ":" + ToString(Minute) + ":" + ToString(Second) + ":" + ToString(Milliseconds);
 	}
 #endif
 	void EGameTimer::Reset()

@@ -48,7 +48,6 @@ namespace PigeonEngine
         void EditorUpdate();
         
         void AddALog(ELogType Type, const EString& NewLog);
-    protected:
         void WriteDownLogs();
     private:
         TArray<TSharedPtr<ELog>> Logs;

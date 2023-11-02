@@ -1,4 +1,6 @@
 #include "DevelopmentDefines.h"
+
+#include "../../EngineCore/Editor/EditorLogManager.h"
 #include "../../EngineCore/Main/MainManager.h"
 
 namespace PigeonEngine
@@ -12,6 +14,13 @@ namespace PigeonEngine
 
 	void DWindowsMessage::__DummyAlert_(const CHAR* InExpression, const CHAR* InMessage, const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption)
 	{
+#if _EDITOR_ONLY
+		{
+			PE_LOG_ERROR(InExpression)
+			EEditorLogManager* EditorLogManager = EEditorLogManager::GetManagerSingleton();
+			EditorLogManager->WriteDownLogs();
+		}
+#endif
 #if _DEBUG_MODE
 		{
 #if 0
@@ -23,6 +32,7 @@ namespace PigeonEngine
 				}
 			}
 #endif
+
 			PE_BREAKPOINT;
 		}
 #elif _DEVELOP_MODE

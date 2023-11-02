@@ -116,5 +116,6 @@ namespace PigeonEngine
         EString FileName = EString(ESettings::EDITOR_LOGS_PATH) + EString("[") + EngineSystemTime::Now().AsString() + EString("]") + EString("Log.txt");
         FileName = FileName.Replace(":", "-");
         EFileHelper::SaveStringToFile(FileName, Str);
+        this->Logs.Clear();
     }
 }
