@@ -1,17 +1,10 @@
 ﻿#pragma once
+
 #include <Base/DataStructure/ObjectBase.h>
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
 #include "Base/Timer/Timer.h"
-#if _EDITOR_ONLY
-#define PE_LOG_LOG(Log)   EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_LOG, Log);
-#define PE_LOG_WARN(Log)  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_WARNING, Log);
-#define PE_LOG_ERROR(Log) EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();LogsManager->AddALog(ELogType::ELT_ERROR, Log);
-#else
-#define PE_LOG_LOG(Log)  
-#define PE_LOG_WARN(Log)
-#define PE_LOG_ERROR(Log) 
-#endif
+
 namespace PigeonEngine
 {
 
@@ -54,5 +47,19 @@ namespace PigeonEngine
 
 #endif
     };
-}
 
+#if _EDITOR_ONLY
+
+#define PE_LOG_LOG(__Log)       { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_LOG, (__Log)); }
+#define PE_LOG_WARN(__Log)      { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_WARNING, (__Log)); }
+#define PE_LOG_ERROR(__Log)     { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_ERROR, (__Log)); }
+
+#else
+
+#define PE_LOG_LOG(__Log)       {}
+#define PE_LOG_WARN(__Log)      {}
+#define PE_LOG_ERROR(__Log)     {}
+
+#endif
+
+}

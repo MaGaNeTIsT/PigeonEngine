@@ -1,6 +1,13 @@
 #include "RenderSingletonObject.h"
 #include <RenderResource.h>
 #include <RenderDevice/DeviceD3D11.h>
+#if _EDITOR_ONLY
+#include <RenderConfig/RenderConfig.h>
+#include <Shader/ShaderParameter.h>
+#include <ShaderAsset/ShaderAsset.h>
+#include "../../Editor/EditorLogManager.h"
+#include <RenderProxy/ViewProxy.h>
+#endif
 
 namespace PigeonEngine
 {
@@ -96,13 +103,18 @@ namespace PigeonEngine
 	}
 
 #if _EDITOR_ONLY
+	const EVertexShaderAsset* _GDebugWireframePrimitiveVS = nullptr;
+	const EPixelShaderAsset* _GDebugWireframePrimitivePS = nullptr;
+
 	RDebugWireframePrimitive::RDebugWireframePrimitive()
 		: UseShortIndex(FALSE), IndexCount(0u)
 	{
+		Bound.IsValid = TRUE;
 	}
 	RDebugWireframePrimitive::RDebugWireframePrimitive(const RDebugWireframePrimitive& Other)
-		: UseShortIndex(Other.UseShortIndex), IndexCount(Other.IndexCount), VertexBuffer(Other.VertexBuffer), IndexBuffer(Other.IndexBuffer)
+		: UseShortIndex(Other.UseShortIndex), IndexCount(Other.IndexCount), Bound(Other.Bound), VertexBuffer(Other.VertexBuffer), IndexBuffer(Other.IndexBuffer)
 	{
+		Bound.IsValid = TRUE;
 	}
 	RDebugWireframePrimitive::~RDebugWireframePrimitive()
 	{
@@ -111,6 +123,7 @@ namespace PigeonEngine
 	{
 		UseShortIndex	= Other.UseShortIndex;
 		IndexCount		= Other.IndexCount;
+		Bound			= Other.Bound;
 		VertexBuffer	= Other.VertexBuffer;
 		IndexBuffer		= Other.IndexBuffer;
 		return (*this);
@@ -186,6 +199,16 @@ namespace PigeonEngine
 			delete[]UshortIndices;
 		}
 
+		{
+			Bound.AABBMin = Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+			Bound.AABBMax = Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+			for (UINT32 i = 0u; i < InVertexNum; i++)
+			{
+				Bound.AABBMin = MinVector3(InVertexDatas[i], Bound.AABBMin);
+				Bound.AABBMax = MaxVector3(InVertexDatas[i], Bound.AABBMax);
+			}
+		}
+
 		return Result;
 	}
 	BOOL32 RDebugWireframePrimitive::InitPrimitive(const Vector3* InVertexDatas, const UINT32 InVertexNum, const UINT32* InIndexDatas, const UINT32 InIndexNum)
@@ -236,15 +259,37 @@ namespace PigeonEngine
 			delete[]UshortIndices;
 		}
 
+		{
+			Bound.AABBMin = Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+			Bound.AABBMax = Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+			for (UINT32 i = 0u; i < InVertexNum; i++)
+			{
+				Bound.AABBMin = MinVector3(InVertexDatas[i], Bound.AABBMin);
+				Bound.AABBMax = MaxVector3(InVertexDatas[i], Bound.AABBMax);
+			}
+		}
+
 		return Result;
+	}
+	BOOL32 RDebugWireframePrimitive::IsUseShortIndex()const
+	{
+		return UseShortIndex;
 	}
 	UINT32 RDebugWireframePrimitive::GetIndexCount()const
 	{
 		return IndexCount;
 	}
-	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveBuffer()const
+	const EBoundAABB& RDebugWireframePrimitive::GetBound()const
+	{
+		return Bound;
+	}
+	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveVertexBuffer()const
 	{
 		return VertexBuffer;
+	}
+	const RBufferResource& RDebugWireframePrimitive::GetPrimitiveIndexBuffer()const
+	{
+		return IndexBuffer;
 	}
 
 	RDebugWireframePrimitiveManager::RDebugWireframePrimitiveManager()
@@ -255,202 +300,728 @@ namespace PigeonEngine
 	}
 	void RDebugWireframePrimitiveManager::Initialize()
 	{
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_PLANE);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CIRCLE);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBOID);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE);
+		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER);
 
+		{
+			const EString ImportPath(EString(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH) + "Development/");
+			if (!_GDebugWireframePrimitiveVS)
+			{
+				const EString ImportVSName = EString("DebugWireFramePrimitive_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+				const RInputLayoutDesc TempShaderInputLayouts[] =
+				{
+					RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
+				};
+				constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
+				TryLoadVertexShader(EString(ESettings::ENGINE_SHADER_PATH) + "Development/", ImportVSName,
+					_GDebugWireframePrimitiveVS,
+					&ImportPath, &ImportVSName,
+					TempShaderInputLayouts, &TempShaderInputLayoutNum);
+			}
+			if (!_GDebugWireframePrimitivePS)
+			{
+				const EString ImportPSName = EString("DebugWireFramePrimitive_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+				TryLoadPixelShader(EString(ESettings::ENGINE_SHADER_PATH) + "Development/", ImportPSName,
+					_GDebugWireframePrimitivePS,
+					&ImportPath, &ImportPSName);
+			}
+		}
 	}
 	void RDebugWireframePrimitiveManager::ShutDown()
 	{
-
 	}
-	void RDebugWireframePrimitiveManager::CreateCustomPrimitive(RDebugWireframeType InType)
+	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
 	{
+		{
+			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
+			{
+				PrimitiveTransforms[i].Clear();
+				PrimitiveColors[i].Clear();
+			}
+			for (auto It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
+			{
+				It->second.Clear();
+			}
+			for (auto It = CustomPrimitiveColors.Begin(); It != CustomPrimitiveColors.End(); It++)
+			{
+				It->second.Clear();
+			}
+		}
 
+		{
+			RequireCreateCustomCommands.DoCommands();
+			RequireCreateCustomCommands.EmptyQueue();
+			RequireCommands.DoCommands();
+			RequireCommands.EmptyQueue();
+
+#if _DEBUG_MODE
+			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
+			{
+				Check(PrimitiveTransforms[i].Length() == PrimitiveColors[i].Length());
+			}
+			Check(CustomPrimitiveTransforms.Length() == CustomPrimitiveColors.Length());
+#endif
+		}
+
+		{
+			constexpr UINT32 TransformSize = sizeof(Matrix4x4) * PrimitiveDrawableMaxNum;
+			constexpr UINT32 ColorSize = sizeof(Color4) * PrimitiveDrawableMaxNum;
+
+			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+			RenderDevice->SetVSShader(_GDebugWireframePrimitiveVS->GetRenderResource()->Shader);
+			RenderDevice->SetPSShader(_GDebugWireframePrimitivePS->GetRenderResource()->Shader);
+
+			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
+			{
+				if (!(PrimitiveTransformsBuffer[i].IsRenderResourceValid()))
+				{
+					RenderDevice->CreateStructuredBuffer(PrimitiveTransformsBuffer[i], RStructuredBufferDesc(sizeof(Matrix4x4), PrimitiveDrawableMaxNum));
+				}
+				if (!(PrimitiveColorsBuffer[i].IsRenderResourceValid()))
+				{
+					RenderDevice->CreateStructuredBuffer(PrimitiveColorsBuffer[i], RStructuredBufferDesc(sizeof(Color4), PrimitiveDrawableMaxNum));
+				}
+
+				const TArray<Matrix4x4>& TempTransforms = PrimitiveTransforms[i];
+				const TArray<Color4>& TempColors = PrimitiveColors[i];
+				Check(TempTransforms.Length() == TempColors.Length());
+
+				if (TempTransforms.Length() > 0u)
+				{
+					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
+					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
+
+					for (UINT32 Index = 0u, Num = TempTransforms.Length(); (Index < Num) && (Index < PrimitiveDrawableMaxNum); Index++)
+					{
+						TempDataTransforms[Index] = TempTransforms[Index];
+						TempDataColor4s[Index] = TempColors[Index];
+					}
+
+					RenderDevice->UploadBuffer(PrimitiveTransformsBuffer[i].Buffer, TempDataTransforms, TransformSize, TransformSize);
+					RenderDevice->UploadBuffer(PrimitiveColorsBuffer[i].Buffer, TempDataColor4s, ColorSize, ColorSize);
+
+					delete[]TempDataTransforms;
+					delete[]TempDataColor4s;
+
+					RenderDevice->SetVertexBuffer(DebugWireframePrimitives[i].GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 4u);
+					RenderDevice->SetIndexBuffer(DebugWireframePrimitives[i].GetPrimitiveIndexBuffer().Buffer, 0u, (DebugWireframePrimitives[i].IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
+					RenderDevice->BindVSShaderResourceView(PrimitiveTransformsBuffer[i].ShaderResourceView, 0u);
+					RenderDevice->BindVSShaderResourceView(PrimitiveColorsBuffer[i].ShaderResourceView, 1u);
+					RenderDevice->DrawIndexed(DebugWireframePrimitives[i].GetIndexCount());
+				}
+			}
+
+			for (auto It = CustomPrimitiveTransforms.Begin(); It != CustomPrimitiveTransforms.End(); It++)
+			{
+				const EString& Name = (It->first);
+
+				const TArray<Matrix4x4>& CustomTransforms = (It->second);
+				TArray<Color4>* CustomColors = CustomPrimitiveColors.FindValueAsPtr(Name);
+				Check(((!!CustomColors) && (CustomColors->Length() == CustomTransforms.Length())));
+
+				if (!(CustomPrimitiveTransformsBuffer.ContainsKey(Name)))
+				{
+					CustomPrimitiveTransformsBuffer.Add(Name, RStructuredBuffer());
+					RStructuredBuffer* Buffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
+					RenderDevice->CreateStructuredBuffer((*Buffer), RStructuredBufferDesc(sizeof(Matrix4x4), PrimitiveDrawableMaxNum));
+				}
+				if (!(CustomPrimitiveColorsBuffer.ContainsKey(Name)))
+				{
+					CustomPrimitiveColorsBuffer.Add(Name, RStructuredBuffer());
+					RStructuredBuffer* Buffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
+					RenderDevice->CreateStructuredBuffer((*Buffer), RStructuredBufferDesc(sizeof(Color4), PrimitiveDrawableMaxNum));
+				}
+
+				if (CustomTransforms.Length() > 0u)
+				{
+					RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
+					RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
+
+					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
+					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
+
+					for (UINT32 Index = 0u, Num = CustomTransforms.Length(); (Index < Num) && (Index < PrimitiveDrawableMaxNum); Index++)
+					{
+						TempDataTransforms[Index] = CustomTransforms[Index];
+						TempDataColor4s[Index] = (*CustomColors)[Index];
+					}
+
+					RenderDevice->UploadBuffer(TransformsBuffer->Buffer, TempDataTransforms, TransformSize, TransformSize);
+					RenderDevice->UploadBuffer(ColorsBuffer->Buffer, TempDataColor4s, ColorSize, ColorSize);
+
+					delete[]TempDataTransforms;
+					delete[]TempDataColor4s;
+
+					RDebugWireframePrimitive* Primitive = DebugWireframeCustomPrimitives.FindValueAsPtr(Name);
+
+					RenderDevice->SetVertexBuffer(Primitive->GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 4u);
+					RenderDevice->SetIndexBuffer(Primitive->GetPrimitiveIndexBuffer().Buffer, 0u, (Primitive->IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
+					RenderDevice->BindVSShaderResourceView(TransformsBuffer->ShaderResourceView, 0u);
+					RenderDevice->BindVSShaderResourceView(ColorsBuffer->ShaderResourceView, 1u);
+					RenderDevice->DrawIndexed(Primitive->GetIndexCount());
+				}
+			}
+		}
+	}
+	void RDebugWireframePrimitiveManager::DrawSingleLine(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		Vector3 Direction = InPos1 - InPos0;
+		FLOAT DirectionLength = Direction.Length();
+		if (DirectionLength <= 1e-3f)
+		{
+			Direction = Vector3::XVector();
+			DirectionLength = 1e-3f;
+		}
+		else
+		{
+			Direction = Direction / DirectionLength;
+		}
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InPos0, MakeQuaternion(Vector3::YVector(), Direction), Vector3(1.f, DirectionLength, 1.f)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawPlane(const Vector3& InLocation, const Quaternion& InRotation, const FLOAT InWidthX, const FLOAT InHeightY, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_PLANE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InWidthX, InHeightY, 1.f)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawCircle(const Vector3& InLocation, const Quaternion& InRotation, const FLOAT InRadius, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CIRCLE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InRadius, InRadius, 1.f)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawCuboid(const Vector3& InLocation, const Quaternion& InRotation, const FLOAT InWidthX, const FLOAT InHeightY, const FLOAT InLengthZ, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBOID - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InWidthX, InHeightY, InLengthZ)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawSphere(const Vector3& InLocation, const FLOAT InRadius, const Color4& InDebugColor, const Quaternion& InRotation)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InRadius, InRadius, InRadius)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawCone(const Vector3& InBottomCenterLocation, const FLOAT InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		Vector3 Direction = InTopLocation - InBottomCenterLocation;
+		FLOAT DirectionLength = Direction.Length();
+		if (DirectionLength <= 1e-3f)
+		{
+			Direction = Vector3::XVector();
+			DirectionLength = 1e-3f;
+		}
+		else
+		{
+			Direction = Direction / DirectionLength;
+		}
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InBottomCenterLocation, MakeQuaternion(Vector3::YVector(), Direction), Vector3(InRadius, DirectionLength, InRadius)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawCylinder(const Vector3& InBottomCenterLocation, const FLOAT InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	{
+		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER - 1u;
+		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
+		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
+
+		Vector3 Direction = InTopLocation - InBottomCenterLocation;
+		FLOAT DirectionLength = Direction.Length();
+		if (DirectionLength <= 1e-3f)
+		{
+			Direction = Vector3::XVector();
+			DirectionLength = 1e-3f;
+		}
+		else
+		{
+			Direction = Direction / DirectionLength;
+		}
+
+		RequireCommands.EnqueueCommand(
+			[&TargetTransforms, &TargetColors,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InBottomCenterLocation, MakeQuaternion(Vector3::YVector(), Direction), Vector3(InRadius, DirectionLength, InRadius)))]()->void
+			{
+				TargetTransforms.Add(LocalToWorld);
+				TargetColors.Add(DebugColor);
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::DrawCustom(const EString& InCustomName, const Matrix4x4& InLocalToWorld, const Color4& InDebugColor)
+	{
+		TMap<EString, RDebugWireframePrimitive>& TargetPrimitives = DebugWireframeCustomPrimitives;
+		TMap<EString, TArray<Matrix4x4>>& TargetTransforms = CustomPrimitiveTransforms;
+		TMap<EString, TArray<Color4>>& TargetColors = CustomPrimitiveColors;
+
+		RequireCommands.EnqueueCommand(
+			[&TargetPrimitives, &TargetTransforms, &TargetColors,
+			CustomName = InCustomName,
+			DebugColor = InDebugColor,
+			LocalToWorld = TranslateUploadMatrixType(InLocalToWorld)]()->void
+			{
+				if (TargetPrimitives.ContainsKey(CustomName))
+				{
+					if (!(TargetTransforms.ContainsKey(CustomName)))
+					{
+						TargetTransforms.Add(CustomName, TArray<Matrix4x4>());
+					}
+					if (!(TargetColors.ContainsKey(CustomName)))
+					{
+						TargetColors.Add(CustomName, TArray<Color4>());
+					}
+					TArray<Matrix4x4>* TransformContainer = TargetTransforms.FindValueAsPtr(CustomName);
+					TArray<Color4>* ColorContainer = TargetColors.FindValueAsPtr(CustomName);
+					TransformContainer->Add(LocalToWorld);
+					ColorContainer->Add(DebugColor);
+				}
+			}
+		);
+	}
+	void RDebugWireframePrimitiveManager::CreatePrimitive(RDebugWireframeType InType)
+	{
+		CreatePrimitiveInternal(InType);
+	}
+	void RDebugWireframePrimitiveManager::CreateCustomPrimitive(const EString& InCustomName, const Vector3* InPointDatas, const UINT32 InPointNum)
+	{
+		RDebugWireframePrimitiveManager* Manager = this;
+		Vector3* PointDatas = nullptr;
+		if (InPointNum > 0u)
+		{
+			PointDatas = new Vector3[InPointNum];
+			const UINT32 MemSize = sizeof(Vector3) * InPointNum;
+			::memset(PointDatas, 0, MemSize);
+			::memcpy_s(PointDatas, MemSize, InPointDatas, MemSize);
+		}
+
+		RequireCreateCustomCommands.EnqueueCommand(
+			[Manager, PointDatas,
+			CustomName = InCustomName,
+			PointNum = InPointNum
+			]()->void
+			{
+				Manager->CreatePrimitiveInternal(RDebugWireframeType::DEBUG_WIREFRAME_CUSTOM, &CustomName, &PointNum, PointDatas);
+				if (!!PointDatas)
+				{
+					delete[]PointDatas;
+				}
+			}
+		);
 	}
 	void RDebugWireframePrimitiveManager::CreatePrimitiveInternal(RDebugWireframeType InType, const EString* InCustomName, const UINT32* InVectorNum, const Vector3* InVectorDatas)
 	{
 		const UINT32 TargetIndex = InType - 1u;
 		BOOL32 Result = FALSE;
+
 		switch (InType)
 		{
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SINGLELINE:
+		{
+			const Vector3 PointListSingleLine[] =
 			{
-				const Vector3 PointListSingleLine[] =
-				{
-					Vector3(0.f, 0.5f, 0.f),
-					Vector3(0.f, -0.5f, 0.f)
-				};
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListSingleLine, PE_ARRAYSIZE(PointListSingleLine));
-			}
-			break;
+				Vector3(0.f, 0.0f, 0.f),
+				Vector3(0.f, 1.0f, 0.f)
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListSingleLine, PE_ARRAYSIZE(PointListSingleLine));
+		}
+		break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_PLANE:
+		{
+			const Vector3 PointListPlane[] =
 			{
-				const Vector3 PointListPlane[] =
-				{
-					Vector3(-0.5f, 0.5f, 0.f),
-					Vector3(0.5f, 0.5f, 0.f),
-					Vector3(0.5f, -0.5f, 0.f),
-					Vector3(-0.5f, -0.5f, 0.f),
-					Vector3(-0.5f, 0.5f, 0.f)
-				};
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListPlane, PE_ARRAYSIZE(PointListPlane));
-			}
-			break;
+				Vector3(-0.5f, 0.5f, 0.f),
+				Vector3(0.5f, 0.5f, 0.f),
+				Vector3(0.5f, -0.5f, 0.f),
+				Vector3(-0.5f, -0.5f, 0.f),
+				Vector3(-0.5f, 0.5f, 0.f)
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListPlane, PE_ARRAYSIZE(PointListPlane));
+		}
+		break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CIRCLE:
+		{
+			const Vector3 PointListCircle[] =
 			{
-				const Vector3 PointListCircle[] =
-				{
-					Vector3(1.f, 0.f, 0.f),
-					Vector3(0.92388f, 0.382683f, 0.f),
-					Vector3(0.707107f, 0.707107f, 0.f),
-					Vector3(0.382683f, 0.92388f, 0.f),
-					Vector3(-4.37114e-08f, 1.f, 0.f),
-					Vector3(-0.382683f, 0.92388f, 0.f),
-					Vector3(-0.707107f, 0.707107f, 0.f),
-					Vector3(-0.92388f, 0.382683f, 0.f),
-					Vector3(-1.f, -8.74228e-08f, 0.f),
-					Vector3(-0.92388f, -0.382683f, 0.f),
-					Vector3(-0.707107f, -0.707107f, 0.f),
-					Vector3(-0.382684f, -0.92388f, 0.f),
-					Vector3(1.19249e-08f, -1.f, 0.f),
-					Vector3(0.382684f, -0.923879f, 0.f),
-					Vector3(0.707107f, -0.707107f, 0.f),
-					Vector3(0.92388f, -0.3826830f, 0.f),
-					Vector3(1.f, 0.f, 0.f)
-				};
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListCircle, PE_ARRAYSIZE(PointListCircle));
-			}
-			break;
-		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBE:
+				Vector3(1.f, 0.f, 0.f),
+				Vector3(0.92388f, 0.382683f, 0.f),
+				Vector3(0.707107f, 0.707107f, 0.f),
+				Vector3(0.382683f, 0.92388f, 0.f),
+				Vector3(-4.37114e-08f, 1.f, 0.f),
+				Vector3(-0.382683f, 0.92388f, 0.f),
+				Vector3(-0.707107f, 0.707107f, 0.f),
+				Vector3(-0.92388f, 0.382683f, 0.f),
+				Vector3(-1.f, -8.74228e-08f, 0.f),
+				Vector3(-0.92388f, -0.382683f, 0.f),
+				Vector3(-0.707107f, -0.707107f, 0.f),
+				Vector3(-0.382684f, -0.92388f, 0.f),
+				Vector3(1.19249e-08f, -1.f, 0.f),
+				Vector3(0.382684f, -0.923879f, 0.f),
+				Vector3(0.707107f, -0.707107f, 0.f),
+				Vector3(0.92388f, -0.3826830f, 0.f),
+				Vector3(1.f, 0.f, 0.f)
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(PointListCircle, PE_ARRAYSIZE(PointListCircle));
+		}
+		break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBOID:
+		{
+			const Vector3 CubePoints[] =
 			{
-				const Vector3 CubePoints[] =
-				{
-					Vector3(-0.5f, 0.5f, 0.5f),
-					Vector3(0.5f, 0.5f, 0.5f),
-					Vector3(-0.5f, 0.5f, -0.5f),
-					Vector3(0.5f, 0.5f, -0.5f),
+				Vector3(-0.5f, 0.5f, 0.5f),
+				Vector3(0.5f, 0.5f, 0.5f),
+				Vector3(-0.5f, 0.5f, -0.5f),
+				Vector3(0.5f, 0.5f, -0.5f),
 
-					Vector3(-0.5f, -0.5f, 0.5f),
-					Vector3(0.5f, -0.5f, 0.5f),
-					Vector3(-0.5f, -0.5f, -0.5f),
-					Vector3(0.5f, -0.5f, -0.5f)
-				};
-				const UINT32 CubeLines[] =
-				{
-					0u, 1u,
-					1u, 2u,
-					2u, 3u,
-					3u, 0u,
+				Vector3(-0.5f, -0.5f, 0.5f),
+				Vector3(0.5f, -0.5f, 0.5f),
+				Vector3(-0.5f, -0.5f, -0.5f),
+				Vector3(0.5f, -0.5f, -0.5f)
+			};
+			const UINT32 CubeLines[] =
+			{
+				0u, 1u,
+				1u, 2u,
+				2u, 3u,
+				3u, 0u,
 
-					0u, 4u,
-					1u, 5u,
-					2u, 6u,
-					3u, 7u,
+				0u, 4u,
+				1u, 5u,
+				2u, 6u,
+				3u, 7u,
 
-					4u, 5u,
-					5u, 6u,
-					6u, 7u,
-					7u, 0u
-				};
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CubePoints, PE_ARRAYSIZE(CubePoints), CubeLines, PE_ARRAYSIZE(CubeLines));
-			}
-			break;
+				4u, 5u,
+				5u, 6u,
+				6u, 7u,
+				7u, 0u
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CubePoints, PE_ARRAYSIZE(CubePoints), CubeLines, PE_ARRAYSIZE(CubeLines));
+		}
+		break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE:
-			{
-				Matrix4x4 RotY(MakeMatrix4x4(MakeQuaternion(Vector3::YVector(), EMath::DegreesToRadians(90.f))));
-				Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
+		{
+			Matrix4x4 RotY(MakeMatrix4x4(MakeQuaternion(Vector3::YVector(), EMath::DegreesToRadians(90.f))));
+			Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
 
-				const Vector3 SpherePoints[] =
-				{
-					Vector3(1.f, 0.f, 0.f),
-					Vector3(0.92388f, 0.382683f, 0.f),
-					Vector3(0.707107f, 0.707107f, 0.f),
-					Vector3(0.382683f, 0.92388f, 0.f),
-					Vector3(-4.37114e-08f, 1.f, 0.f),
-					Vector3(-0.382683f, 0.92388f, 0.f),
-					Vector3(-0.707107f, 0.707107f, 0.f),
-					Vector3(-0.92388f, 0.382683f, 0.f),
-					Vector3(-1.f, -8.74228e-08f, 0.f),
-					Vector3(-0.92388f, -0.382683f, 0.f),
-					Vector3(-0.707107f, -0.707107f, 0.f),
-					Vector3(-0.382684f, -0.92388f, 0.f),
-					Vector3(1.19249e-08f, -1.f, 0.f),
-					Vector3(0.382684f, -0.923879f, 0.f),
-					Vector3(0.707107f, -0.707107f, 0.f),
-					Vector3(0.92388f, -0.3826830f, 0.f),
-					Matrix4x4TransformPosition(RotY, SpherePoints[0]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[1]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[2]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[3]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[4]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[5]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[6]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[7]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[8]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[9]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[10]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[11]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[12]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[13]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[14]),
-					Matrix4x4TransformPosition(RotY, SpherePoints[15]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[0]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[1]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[2]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[3]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[4]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[5]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[6]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[7]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[8]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[9]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[10]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[11]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[12]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[13]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[14]),
-					Matrix4x4TransformPosition(RotX, SpherePoints[15]),
-				};
+			const Vector3 SpherePoints[] =
+			{
+				Vector3(1.f, 0.f, 0.f),
+				Vector3(0.92388f, 0.382683f, 0.f),
+				Vector3(0.707107f, 0.707107f, 0.f),
+				Vector3(0.382683f, 0.92388f, 0.f),
+				Vector3(-4.37114e-08f, 1.f, 0.f),
+				Vector3(-0.382683f, 0.92388f, 0.f),
+				Vector3(-0.707107f, 0.707107f, 0.f),
+				Vector3(-0.92388f, 0.382683f, 0.f),
+				Vector3(-1.f, -8.74228e-08f, 0.f),
+				Vector3(-0.92388f, -0.382683f, 0.f),
+				Vector3(-0.707107f, -0.707107f, 0.f),
+				Vector3(-0.382684f, -0.92388f, 0.f),
+				Vector3(1.19249e-08f, -1.f, 0.f),
+				Vector3(0.382684f, -0.923879f, 0.f),
+				Vector3(0.707107f, -0.707107f, 0.f),
+				Vector3(0.92388f, -0.3826830f, 0.f),
+				Matrix4x4TransformPosition(RotY, SpherePoints[0]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[1]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[2]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[3]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[4]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[5]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[6]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[7]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[8]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[9]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[10]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[11]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[12]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[13]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[14]),
+				Matrix4x4TransformPosition(RotY, SpherePoints[15]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[0]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[1]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[2]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[3]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[4]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[5]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[6]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[7]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[8]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[9]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[10]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[11]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[12]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[13]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[14]),
+				Matrix4x4TransformPosition(RotX, SpherePoints[15]),
+			};
 
 #define GENERATE_SPHERE_LINES(__Index) \
-	0u + (16u * __Index), 1u + (16u * __Index),\
-	1u + (16u * __Index), 2u + (16u * __Index),\
-	2u + (16u * __Index), 3u + (16u * __Index),\
-	3u + (16u * __Index), 4u + (16u * __Index),\
-	4u + (16u * __Index), 5u + (16u * __Index),\
-	5u + (16u * __Index), 6u + (16u * __Index),\
-	6u + (16u * __Index), 7u + (16u * __Index),\
-	7u + (16u * __Index), 8u + (16u * __Index),\
-	8u + (16u * __Index), 9u + (16u * __Index),\
-	9u + (16u * __Index), 10u + (16u * __Index),\
-	10u + (16u * __Index), 11u + (16u * __Index),\
-	11u + (16u * __Index), 12u + (16u * __Index),\
-	12u + (16u * __Index), 13u + (16u * __Index),\
-	13u + (16u * __Index), 14u + (16u * __Index),\
-	14u + (16u * __Index), 15u + (16u * __Index),\
-	15u + (16u * __Index), 0u + (16u * __Index)\
+				0u + (16u * __Index), 1u + (16u * __Index),\
+				1u + (16u * __Index), 2u + (16u * __Index),\
+				2u + (16u * __Index), 3u + (16u * __Index),\
+				3u + (16u * __Index), 4u + (16u * __Index),\
+				4u + (16u * __Index), 5u + (16u * __Index),\
+				5u + (16u * __Index), 6u + (16u * __Index),\
+				6u + (16u * __Index), 7u + (16u * __Index),\
+				7u + (16u * __Index), 8u + (16u * __Index),\
+				8u + (16u * __Index), 9u + (16u * __Index),\
+				9u + (16u * __Index), 10u + (16u * __Index),\
+				10u + (16u * __Index), 11u + (16u * __Index),\
+				11u + (16u * __Index), 12u + (16u * __Index),\
+				12u + (16u * __Index), 13u + (16u * __Index),\
+				13u + (16u * __Index), 14u + (16u * __Index),\
+				14u + (16u * __Index), 15u + (16u * __Index),\
+				15u + (16u * __Index), 0u + (16u * __Index)\
 
-				const UINT32 SphereLines[] =
-				{
-					GENERATE_SPHERE_LINES(0u),
-					GENERATE_SPHERE_LINES(1u),
-					GENERATE_SPHERE_LINES(2u)
-				};
+			const UINT32 SphereLines[] =
+			{
+				GENERATE_SPHERE_LINES(0u),
+				GENERATE_SPHERE_LINES(1u),
+				GENERATE_SPHERE_LINES(2u)
+			};
 
 #undef GENERATE_SPHERE_LINES
 
-				Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(SpherePoints, PE_ARRAYSIZE(SpherePoints), SphereLines, PE_ARRAYSIZE(SphereLines));
-			}
-			break;
-		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE:
-			break;
-		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER:
-			break;
-		case RDebugWireframeType::DEBUG_WIREFRAME_CUSTOM:
-			break;
-		default:
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error type for debug wireframe primitive."));
-			break;
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(SpherePoints, PE_ARRAYSIZE(SpherePoints), SphereLines, PE_ARRAYSIZE(SphereLines));
 		}
-		Check((Result), (ENGINE_RENDER_CORE_ERROR));
+		break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE:
+		{
+			Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
+			const Vector3 ConePoints[] =
+			{
+				Matrix4x4TransformPosition(RotX, Vector3(1.f, 0.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, 0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, 0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.382683f, 0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-4.37114e-08f, 1.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.382683f, 0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, 0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, 0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-1.f, -8.74228e-08f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, -0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, -0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.382684f, -0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(1.19249e-08f, -1.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.382684f, -0.923879f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, -0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, -0.3826830f, 0.f)),
+
+				Vector3(0.f, 0.f, 0.f),
+				Vector3(0.f, 1.f, 0.f)
+			};
+			const UINT32 ConeLines[] =
+			{
+				0u, 1u,
+				1u, 2u,
+				2u, 3u,
+				3u, 4u,
+				4u, 5u,
+				5u, 6u,
+				6u, 7u,
+				7u, 8u,
+				8u, 9u,
+				9u, 10,
+				10u, 11u,
+				11u, 12u,
+				12u, 13u,
+				13u, 14u,
+				14u, 15u,
+				15u, 0u,
+
+				16u, 17u
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(ConePoints, PE_ARRAYSIZE(ConePoints), ConeLines, PE_ARRAYSIZE(ConeLines));
+		}
+		break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER:
+		{
+			Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
+			const Vector3 CylinderPoints[] =
+			{
+				Matrix4x4TransformPosition(RotX, Vector3(1.f, 0.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, 0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, 0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.382683f, 0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-4.37114e-08f, 1.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.382683f, 0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, 0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, 0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-1.f, -8.74228e-08f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, -0.382683f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, -0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(-0.382684f, -0.92388f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(1.19249e-08f, -1.f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.382684f, -0.923879f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, -0.707107f, 0.f)),
+				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, -0.3826830f, 0.f)),
+
+				CylinderPoints[0] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[1] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[2] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[3] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[4] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[5] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[6] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[7] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[8] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[9] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[10] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[11] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[12] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[13] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[14] + (Vector3::YVector() * 1.0f),
+				CylinderPoints[15] + (Vector3::YVector() * 1.0f),
+
+				Vector3(0.f, 0.f, 0.f),
+				Vector3(0.f, 1.f, 0.f)
+			};
+			const UINT32 CylinderLines[] =
+			{
+				0u, 1u,
+				1u, 2u,
+				2u, 3u,
+				3u, 4u,
+				4u, 5u,
+				5u, 6u,
+				6u, 7u,
+				7u, 8u,
+				8u, 9u,
+				9u, 10,
+				10u, 11u,
+				11u, 12u,
+				12u, 13u,
+				13u, 14u,
+				14u, 15u,
+				15u, 0u,
+
+				0u + 16u, 1u + 16u,
+				1u + 16u, 2u + 16u,
+				2u + 16u, 3u + 16u,
+				3u + 16u, 4u + 16u,
+				4u + 16u, 5u + 16u,
+				5u + 16u, 6u + 16u,
+				6u + 16u, 7u + 16u,
+				7u + 16u, 8u + 16u,
+				8u + 16u, 9u + 16u,
+				9u + 16u, 10 + 16u,
+				10u + 16u, 11u + 16u,
+				11u + 16u, 12u + 16u,
+				12u + 16u, 13u + 16u,
+				13u + 16u, 14u + 16u,
+				14u + 16u, 15u + 16u,
+				15u + 16u, 0u + 16u,
+
+				32u, 33u
+			};
+			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CylinderPoints, PE_ARRAYSIZE(CylinderPoints), CylinderLines, PE_ARRAYSIZE(CylinderLines));
+		}
+		break;
+		case RDebugWireframeType::DEBUG_WIREFRAME_CUSTOM:
+		{
+			if ((!!InCustomName) && (!!InVectorNum) && (!!InVectorDatas) && ((*InCustomName).Length() > 1u) && (*InVectorNum > 0u))
+			{
+				const EString& CustomName = (*InCustomName);
+				if (!(DebugWireframeCustomPrimitives.ContainsKey(CustomName)))
+				{
+					DebugWireframeCustomPrimitives.Add(CustomName, RDebugWireframePrimitive());
+					RDebugWireframePrimitive* New = DebugWireframeCustomPrimitives.FindValueAsPtr(CustomName);
+					Result = New->InitPrimitive(InVectorDatas, (*InVectorNum));
+				}
+			}
+		}
+		break;
+		default:
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error type for debug wireframe primitive."));
+		}
+		break;
+		}
+
+		{
+			EString Info("Debug wireframe primitive Init failed.");
+			Info = Info + "Type : " + ToString(static_cast<UINT32>(InType));
+			if (InCustomName)
+			{
+				Info = Info + " Custom name : " + (*InCustomName);
+			}
+			if (Result)
+			{
+				PE_LOG_LOG(Info);
+			}
+			else
+			{
+				PE_LOG_WARN(Info);
+			}
+		}
 	}
 #endif
 

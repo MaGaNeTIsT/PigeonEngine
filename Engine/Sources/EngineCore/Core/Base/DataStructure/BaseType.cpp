@@ -82,6 +82,18 @@ namespace PigeonEngine
 		return RotatorFromQuat;
 	}
 	PE_INLINE Quaternion MakeQuaternion(const Euler& InEuler) { return Quaternion(EMath::DegreesToRadians(InEuler.Pitch), EMath::DegreesToRadians(InEuler.Yaw), EMath::DegreesToRadians(InEuler.Roll)); }
+	PE_INLINE Quaternion MakeQuaternion(const Vector3& InFromVec, const Vector3& InToVec)
+	{
+		Vector3 Axis = Vector3::Cross(InFromVec, InToVec);
+		const FLOAT AxisLength = Axis.Length();
+		if (AxisLength <= 1e-3f)
+		{
+			return Quaternion::Identity();
+		}
+		Axis = Axis / AxisLength;
+		const FLOAT CosRad = Vector3::Dot(InFromVec, InToVec);
+		return MakeQuaternion(Axis, EMath::ACos(CosRad));
+	}
 	PE_INLINE Vector3 QuaternionTransformVector(const Quaternion& q, const Vector3& v) { return Vector3(DirectX::XMVector3Rotate(DirectX::XMVectorSet(v.x, v.y, v.z, 0.f), DirectX::XMVectorSet(q.x, q.y, q.z, q.w))); }
 	PE_INLINE Vector3 SplitForwardVector(const Matrix4x4& InMat) { return Vector3(InMat._31, InMat._32, InMat._33); }
 	PE_INLINE Vector3 SplitUpVector(const Matrix4x4& InMat) { return Vector3(InMat._21, InMat._22, InMat._23); }

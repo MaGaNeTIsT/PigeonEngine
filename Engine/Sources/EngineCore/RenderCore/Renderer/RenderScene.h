@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Base/RegisterBase.h>
 #include "RenderInterface.h"
 #include <RenderOctree.h>
 
@@ -35,7 +36,7 @@ namespace PigeonEngine
 			RawCommands.ClearRegister();
 		}
 	private:
-		ERegisterBase<std::function<void(void)>>	RawCommands;
+		ERegisterBase<EVoidFunctionType>	RawCommands;
 	public:
 		RCommand() {}
 		RCommand(const RCommand&) = delete;

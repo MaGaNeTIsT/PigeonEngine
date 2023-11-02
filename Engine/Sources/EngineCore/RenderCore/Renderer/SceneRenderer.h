@@ -113,6 +113,9 @@ namespace PigeonEngine
 	protected:
 		RScene*						Scene;
 		RFullScreenTriangle			FullScreenTriangle;
+#if _EDITOR_ONLY
+		RDebugWireframePrimitiveManager* DebugWireframePrimitiveManager;
+#endif
 	protected:
 		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];
 		RRasterizerResource			Rasterizer[RRasterizerType::RASTERIZER_TYPE_COUNT];

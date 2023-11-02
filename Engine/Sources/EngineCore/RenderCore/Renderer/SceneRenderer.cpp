@@ -50,6 +50,9 @@ namespace PigeonEngine
 	RSceneRenderer::RSceneRenderer()
 		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), SceneLightingPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
 	{
+#if _EDITOR_ONLY
+		DebugWireframePrimitiveManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+#endif
 	}
 	RSceneRenderer::~RSceneRenderer()
 	{
@@ -57,6 +60,11 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::Initialize()
 	{
+#if _EDITOR_ONLY
+		{
+			DebugWireframePrimitiveManager->Initialize();
+		}
+#endif
 		{
 			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
@@ -227,6 +235,12 @@ namespace PigeonEngine
 			delete Scene;
 			Scene = nullptr;
 		}
+
+#if _EDITOR_ONLY
+		{
+			DebugWireframePrimitiveManager->ShutDown();
+		}
+#endif
 	}
 	RScene* RSceneRenderer::GetRenderScene()
 	{
@@ -353,6 +367,13 @@ namespace PigeonEngine
 			RenderSky(ViewProxy);
 
 			RenderLighting(ViewProxy, SceneTextures);
+
+#if _EDITOR_ONLY
+			{
+				//RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(ViewProxy);
+			}
+#endif
 		}
 	}
 	void RSceneRenderer::FinalOutputPass()

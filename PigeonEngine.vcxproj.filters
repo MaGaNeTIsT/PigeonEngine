@@ -383,6 +383,7 @@
     <ClInclude Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsConfig\PhysicsConfig.h" />
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsData.h" />
     <ClInclude Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsTest\PhysicsTest.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Editor\EditorLogManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">
@@ -591,6 +592,7 @@
     <ClCompile Include="Engine\Sources\Asset\AssetManager.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsConfig\PhysicsConfig.cpp" />
     <ClCompile Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsTest\PhysicsTest.cpp" />
+    <ClCompile Include="Engine\Sources\EngineCore\Editor\EditorLogManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Engine\Sources\EngineCore\Shaders\Common\ShaderCommon.hlsl">
@@ -737,5 +739,7 @@
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkyLight_PEVS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkeletalMesh_PEPS.hlsl" />
     <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\SkeletalMesh_PEVS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\Development\DebugWireFramePrimitive_PEPS.hlsl" />
+    <FxCompile Include="Engine\Sources\EngineCore\Shaders\Private\Development\DebugWireFramePrimitive_PEVS.hlsl" />
   </ItemGroup>
 </Project>
