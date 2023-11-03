@@ -11,7 +11,9 @@ namespace PigeonEngine
 	{
 	public:
 		virtual void InitCharacter(class FCharacterSettings* InCharacterSettings) override;
+		virtual void UserTick(FLOAT deltaTime) override;
 		virtual void UninitCharacter() override;
 		PStaticMeshComponent* StaticMeshComponent = NULL;
+		FShape* Shape = NULL;
 	};
 }

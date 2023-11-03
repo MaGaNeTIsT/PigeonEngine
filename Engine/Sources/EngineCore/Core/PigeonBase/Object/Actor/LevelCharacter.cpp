@@ -71,7 +71,7 @@ void PigeonEngine::PCharacter::UserBeginPlay()
 void PigeonEngine::PCharacter::UserTick(FLOAT deltaTime)
 {
 	PPawn::UserTick(deltaTime);
-	MoveMentComponent->HandleInput(Vector3(1.f, 0.f, 0.f), false , false);
+	//MoveMentComponent->HandleInput(Vector3(0.1f, 0.f, 0.f), false , false);
 }
 
 void PigeonEngine::PCharacter::UserEndPlay()

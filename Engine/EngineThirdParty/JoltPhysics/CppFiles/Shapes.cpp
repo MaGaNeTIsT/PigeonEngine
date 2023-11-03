@@ -57,5 +57,24 @@ namespace PigeonEngine
 	FCastRay::FCastRay()
 	{
 	}
-}
 
+	void FBoxShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	{
+		Manager->DrawCuboid(inPosition, inRotation, HalfExtent.x, HalfExtent.y, HalfExtent.z);
+	}
+
+	void FSphereShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	{
+		Manager->DrawSphere(inPosition, Raidus, Color4::Green());
+	}
+
+	void FCapsuleShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	{
+
+	}
+
+	void FRotatedTranslatedShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	{
+		return HostedShape->DrawPrimitive(Manager, inPosition + Position, inRotation * Rotation);
+	}
+}

@@ -4,6 +4,10 @@
 #include "PhysicsUtility.h"
 #include "JoltIncludes.h"
 
+#if _EDITOR_ONLY
+#include <RenderProxy/RenderSingletonObject.h>
+#endif
+
 PIGEONENGINE_NAMESPACE_BEGIN
 using namespace JPH;
 struct AABBBox
@@ -17,6 +21,7 @@ class FShape : public ERTTIObject
 public:
 	FShape();
 	virtual ~FShape();
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) = 0;
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
 	Shape* m_Shape;
@@ -71,15 +76,18 @@ public:
 		//	Material = nullptr;
 		//}
 	}
+
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new BoxShape(PhysicsUtility::Convert2Meter(HalfExtent), ConvexRadius, Material);
+		return new BoxShape(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new BoxShapeSettings(PhysicsUtility::Convert2Meter(HalfExtent), ConvexRadius, Material);
+		return new BoxShapeSettings(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
 	}
 };
 
@@ -99,15 +107,17 @@ public:
 	{
 	}
 
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new SphereShape(Raidus, Material);
+		return new SphereShape(PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new SphereShapeSettings(Raidus, Material);
+		return new SphereShapeSettings(PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 };
 
@@ -128,15 +138,18 @@ public:
 	~FCapsuleShape()
 	{
 	}
+
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new CapsuleShape(HalfHeightOfCylinder, Raidus, Material);
+		return new CapsuleShape(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new CapsuleShapeSettings(HalfHeightOfCylinder, Raidus, Material);
+		return new CapsuleShapeSettings(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 };
 
@@ -159,15 +172,18 @@ public:
 	~FCylinerShape()
 	{
 	}
+
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new CylinderShape(HalfHeight, Raidus, ConvexRaidus, Material);
+		return new CylinderShape(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new CylinderShapeSettings(HalfHeight, Raidus, ConvexRaidus, Material);
+		return new CylinderShapeSettings(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
 	}
 };
 
@@ -190,6 +206,9 @@ public:
 	{
 		delete HostedShape;
 	}
+
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{

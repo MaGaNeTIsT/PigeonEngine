@@ -18,6 +18,10 @@ namespace PigeonEngine
 		virtual void Uninit() override;
 	public:
 		virtual void Destroy() override;
+
+#if _EDITOR_ONLY
+		virtual void EditorTick(FLOAT deltaTime)override;
+#endif
 		/// <summary>
 		/// Add a Shape and host it;
 		/// </summary>

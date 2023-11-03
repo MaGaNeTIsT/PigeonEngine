@@ -70,7 +70,7 @@ namespace PigeonEngine
     {
 #if _EDITOR_ONLY
         EditorTick(deltaTime);
-        return;
+        //return;
 #endif
         FixTick(deltaTime);
         
@@ -79,7 +79,7 @@ namespace PigeonEngine
     void PWorld::FixTick(FLOAT deltaTime)
     {
         RootActor->FixedTick(deltaTime);
-        Controller->FixedTick(deltaTime);
+        //Controller->FixedTick(deltaTime);
     }
 
     void PWorld::Destroy()

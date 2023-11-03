@@ -70,4 +70,10 @@ JPH_INLINE JPH::Quat Convert(Quaternion Vec)
 {
 	return JPH::Quat(Vec.x, Vec.y, Vec.z, Vec.w);
 }
+
+JPH_INLINE float Convert2Meter(FLOAT centimeter)
+{
+	return centimeter * 0.01f;
+}
+
 PHYSICSUTILITY_NAMESPACE_END

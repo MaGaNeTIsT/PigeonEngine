@@ -21,7 +21,7 @@ namespace PigeonEngine
 	void PMovementComponent::HandleInput(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 inSwitchStance)
 	{
 		FCharacter* character = m_Character->GetPhysicsCharacter();
-		character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());
+		//character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());
 		FCharacterBase::EGroundState ground_state = character->GetGroundState();
 		if (ground_state == FCharacterBase::EGroundState::OnSteepGround
 			|| ground_state == FCharacterBase::EGroundState::NotSupported)

@@ -1,5 +1,8 @@
 #include "PhysicsComponent.h"
 #include <PigeonBase/Object/Actor.h>
+#if _EDITOR_ONLY
+#include <RenderProxy/RenderSingletonObject.h>
+#endif
 
 namespace PigeonEngine 
 {
@@ -36,7 +39,13 @@ namespace PigeonEngine
 		if (m_Shape)
 			RemoveShape();
 	}
-
+#if _EDITOR_ONLY
+	void PPhysicsComponent::EditorTick(FLOAT deltaTime)
+	{
+		RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+		const Vector3 Pos = GetOwnerActor()->GetActorLocation();
+	}
+#endif
 	void PPhysicsComponent::SetShape(FShape* InShape)
 	{
 		if (m_Shape)
