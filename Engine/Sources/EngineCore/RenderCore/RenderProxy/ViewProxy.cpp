@@ -151,9 +151,9 @@ namespace PigeonEngine
 		ViewMaterialParameter["_CameraWorldPosition"] = &TranslateUploadVectorType(MakeVector4(WorldLocation, 0.f));
 		ViewMaterialParameter.UploadBuffer();
 	}
-	void RViewProxy::BindRenderResource()const
+	void RViewProxy::BindRenderResource(const UINT32 InSolt)const
 	{
-		BindViewMaterialParameter(0u);
+		BindViewMaterialParameter(InSolt);
 	}
 	void RViewProxy::BindViewMaterialParameter(const UINT32 InSlot)const
 	{

@@ -51,7 +51,9 @@ namespace PigeonEngine
 		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), SceneLightingPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
 	{
 #if _EDITOR_ONLY
-		DebugWireframePrimitiveManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+		{
+			DebugWireframePrimitiveManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+		}
 #endif
 	}
 	RSceneRenderer::~RSceneRenderer()
@@ -114,7 +116,7 @@ namespace PigeonEngine
 								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
 				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState, BlendStates, 1u);
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
 			}
 			{
 				const RBlendState BlendStates[] =
@@ -132,7 +134,7 @@ namespace PigeonEngine
 								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE)
 				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, 4u);
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
 			}
 			{
 				const RBlendState BlendStates[] =
@@ -141,7 +143,16 @@ namespace PigeonEngine
 								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
 								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, TRUE)
 				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState, BlendStates, 1u);
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
+			}
+			{
+				const RBlendState BlendStates[] =
+				{
+					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE)
+				};
+				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_FORWARD].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
 			}
 		}
 
@@ -360,7 +371,7 @@ namespace PigeonEngine
 			RenderDevice->SetViewport(ViewProxy->GetRenderViewport());
 
 			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
-			ViewProxy->BindRenderResource();
+			ViewProxy->BindRenderResource(0u);
 
 			RenderBasePass(SceneTextures);
 
@@ -368,12 +379,7 @@ namespace PigeonEngine
 
 			RenderLighting(ViewProxy, SceneTextures);
 
-#if _EDITOR_ONLY
-			{
-				//RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				//DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(ViewProxy);
-			}
-#endif
+			RenderForward(ViewProxy, SceneTextures);
 		}
 	}
 	void RSceneRenderer::FinalOutputPass()
@@ -519,6 +525,22 @@ namespace PigeonEngine
 			}
 			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
 		}
+	}
+	void RSceneRenderer::RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
+		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_FORWARD].BlendState);
+		RenderDevice->SetRenderTarget(InSceneTextures->SceneColor, InSceneTextures->SceneDepthStencil);
+#if _EDITOR_ONLY
+		{
+			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
+
+			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
+
+			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		}
+#endif
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{

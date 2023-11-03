@@ -66,6 +66,7 @@ namespace PigeonEngine
 		void			RenderBasePass(RSceneTextures* InSceneTextures);
 		void			RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		void			RenderSky(const RViewProxy* InViewProxy);
+		void			RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 	protected:
 		void			InitLights(RViewProxy* InViewProxy);
 		void			ProcessOcclusionCull(RViewProxy* InViewProxy);
@@ -100,6 +101,7 @@ namespace PigeonEngine
 			BLEND_TYPE_BLEND_OFF		= 0,
 			BLEND_TYPE_OPAQUE_BASEPASS,
 			BLEND_TYPE_LIGHTING,
+			BLEND_TYPE_FORWARD,
 			BLEND_TYPE_COUNT
 		};
 		enum RDepthStencilType : UINT8

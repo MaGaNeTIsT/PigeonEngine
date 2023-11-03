@@ -315,7 +315,7 @@ namespace PigeonEngine
 				const EString ImportVSName = EString("DebugWireFramePrimitive_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 				const RInputLayoutDesc TempShaderInputLayouts[] =
 				{
-					RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
+					RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 3u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
 				};
 				constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
 				TryLoadVertexShader(EString(ESettings::ENGINE_SHADER_PATH) + "Development/", ImportVSName,
@@ -375,6 +375,7 @@ namespace PigeonEngine
 			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 
 			RenderDevice->SetVSShader(_GDebugWireframePrimitiveVS->GetRenderResource()->Shader);
+			RenderDevice->SetInputLayout(_GDebugWireframePrimitiveVS->GetRenderResource()->InputLayout);
 			RenderDevice->SetPSShader(_GDebugWireframePrimitivePS->GetRenderResource()->Shader);
 
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
@@ -392,12 +393,12 @@ namespace PigeonEngine
 				const TArray<Color4>& TempColors = PrimitiveColors[i];
 				Check(TempTransforms.Length() == TempColors.Length());
 
-				if (TempTransforms.Length() > 0u)
+				if (const UINT32 InstanceNum = TempTransforms.Length(); InstanceNum > 0u)
 				{
 					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
 					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
 
-					for (UINT32 Index = 0u, Num = TempTransforms.Length(); (Index < Num) && (Index < PrimitiveDrawableMaxNum); Index++)
+					for (UINT32 Index = 0u; (Index < InstanceNum) && (Index < PrimitiveDrawableMaxNum); Index++)
 					{
 						TempDataTransforms[Index] = TempTransforms[Index];
 						TempDataColor4s[Index] = TempColors[Index];
@@ -409,11 +410,11 @@ namespace PigeonEngine
 					delete[]TempDataTransforms;
 					delete[]TempDataColor4s;
 
-					RenderDevice->SetVertexBuffer(DebugWireframePrimitives[i].GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 4u);
+					RenderDevice->SetVertexBuffer(DebugWireframePrimitives[i].GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 3u, 0u, 0u);
 					RenderDevice->SetIndexBuffer(DebugWireframePrimitives[i].GetPrimitiveIndexBuffer().Buffer, 0u, (DebugWireframePrimitives[i].IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
 					RenderDevice->BindVSShaderResourceView(PrimitiveTransformsBuffer[i].ShaderResourceView, 0u);
 					RenderDevice->BindVSShaderResourceView(PrimitiveColorsBuffer[i].ShaderResourceView, 1u);
-					RenderDevice->DrawIndexed(DebugWireframePrimitives[i].GetIndexCount());
+					RenderDevice->DrawIndexedInstance(InstanceNum, DebugWireframePrimitives[i].GetIndexCount());
 				}
 			}
 
@@ -438,7 +439,7 @@ namespace PigeonEngine
 					RenderDevice->CreateStructuredBuffer((*Buffer), RStructuredBufferDesc(sizeof(Color4), PrimitiveDrawableMaxNum));
 				}
 
-				if (CustomTransforms.Length() > 0u)
+				if (const UINT32 InstanceNum = CustomTransforms.Length(); InstanceNum > 0u)
 				{
 					RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
 					RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
@@ -446,7 +447,7 @@ namespace PigeonEngine
 					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
 					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
 
-					for (UINT32 Index = 0u, Num = CustomTransforms.Length(); (Index < Num) && (Index < PrimitiveDrawableMaxNum); Index++)
+					for (UINT32 Index = 0u; (Index < InstanceNum) && (Index < PrimitiveDrawableMaxNum); Index++)
 					{
 						TempDataTransforms[Index] = CustomTransforms[Index];
 						TempDataColor4s[Index] = (*CustomColors)[Index];
@@ -460,11 +461,11 @@ namespace PigeonEngine
 
 					RDebugWireframePrimitive* Primitive = DebugWireframeCustomPrimitives.FindValueAsPtr(Name);
 
-					RenderDevice->SetVertexBuffer(Primitive->GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 4u);
+					RenderDevice->SetVertexBuffer(Primitive->GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 3u, 0u, 0u);
 					RenderDevice->SetIndexBuffer(Primitive->GetPrimitiveIndexBuffer().Buffer, 0u, (Primitive->IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
 					RenderDevice->BindVSShaderResourceView(TransformsBuffer->ShaderResourceView, 0u);
 					RenderDevice->BindVSShaderResourceView(ColorsBuffer->ShaderResourceView, 1u);
-					RenderDevice->DrawIndexed(Primitive->GetIndexCount());
+					RenderDevice->DrawIndexedInstance(InstanceNum, Primitive->GetIndexCount());
 				}
 			}
 		}
@@ -561,7 +562,7 @@ namespace PigeonEngine
 			}
 		);
 	}
-	void RDebugWireframePrimitiveManager::DrawCone(const Vector3& InBottomCenterLocation, const FLOAT InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	void RDebugWireframePrimitiveManager::DrawCone(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
 	{
 		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE - 1u;
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
@@ -589,7 +590,7 @@ namespace PigeonEngine
 			}
 		);
 	}
-	void RDebugWireframePrimitiveManager::DrawCylinder(const Vector3& InBottomCenterLocation, const FLOAT InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	void RDebugWireframePrimitiveManager::DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
 	{
 		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER - 1u;
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
@@ -738,13 +739,13 @@ namespace PigeonEngine
 			{
 				Vector3(-0.5f, 0.5f, 0.5f),
 				Vector3(0.5f, 0.5f, 0.5f),
-				Vector3(-0.5f, 0.5f, -0.5f),
 				Vector3(0.5f, 0.5f, -0.5f),
+				Vector3(-0.5f, 0.5f, -0.5f),
 
 				Vector3(-0.5f, -0.5f, 0.5f),
 				Vector3(0.5f, -0.5f, 0.5f),
-				Vector3(-0.5f, -0.5f, -0.5f),
-				Vector3(0.5f, -0.5f, -0.5f)
+				Vector3(0.5f, -0.5f, -0.5f),
+				Vector3(-0.5f, -0.5f, -0.5f)
 			};
 			const UINT32 CubeLines[] =
 			{
@@ -761,7 +762,7 @@ namespace PigeonEngine
 				4u, 5u,
 				5u, 6u,
 				6u, 7u,
-				7u, 0u
+				7u, 4u
 			};
 			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CubePoints, PE_ARRAYSIZE(CubePoints), CubeLines, PE_ARRAYSIZE(CubeLines));
 		}

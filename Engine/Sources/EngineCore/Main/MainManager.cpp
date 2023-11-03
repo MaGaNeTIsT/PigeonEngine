@@ -15,6 +15,10 @@
 #include "../Editor/EditorManager.h"
 #endif
 
+#if _EDITOR_ONLY
+#include <RenderProxy/RenderSingletonObject.h>
+#endif
+
 namespace PigeonEngine
 {
 	static void RegisterClassTypes()
@@ -159,6 +163,21 @@ namespace PigeonEngine
 		EditorUpdate();
 #endif
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+
+#if _EDITOR_ONLY
+		{
+			RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+			const Vector3 TempPos(-500.f, 0.f, 200.f);
+			Manager->DrawSingleLine(TempPos + Vector3(100.f, -50.f, 0.f), TempPos + Vector3(100.f, -50.f, 0.f) + Vector3(0.f, 100.f, 0.f), Color4::White());
+			Manager->DrawPlane(TempPos + Vector3(200.f, 0.f, 0.f), Quaternion::Identity(), 80.f, 80.f, Color4::White());
+			Manager->DrawCircle(TempPos + Vector3(300.f, 0.f, 0.f), Quaternion::Identity(), 40.f, Color4::White());
+			Manager->DrawCuboid(TempPos + Vector3(400.f, 0.f, 0.f), Quaternion::Identity(), 80.f, 80.f, 80.f, Color4::White());
+			Manager->DrawCone(TempPos + Vector3(500.f, -50.f, 0.f), TempPos + Vector3(500.f, -50.f, 0.f) + Vector3(0.f, 100.f, 0.f), 40.f, Color4::White());
+			Manager->DrawCylinder(TempPos + Vector3(600.f, -50.f, 0.f), TempPos + Vector3(600.f, -50.f, 0.f) + Vector3(0.f, 100.f, 0.f), 40.f, Color4::White());
+			Manager->DrawSphere(TempPos + Vector3(700.f, 0.f, 0.f), 40.f, Color4::White(), Quaternion::Identity());
+			Manager->DrawSphere(TempPos + Vector3(800.f, 0.f, 0.f), 40.f, Color4::White(), Quaternion::Identity());
+		}
+#endif
 
 		// In this time we can start to rendering a scene
 		SceneRenderer->InitNewFrame();
