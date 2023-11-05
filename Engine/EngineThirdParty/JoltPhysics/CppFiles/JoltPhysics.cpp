@@ -19,7 +19,7 @@ namespace PigeonEngine
 		//create PhysicsData
 		PhysicsData = new FPhysicsData();
 
-		FCommonSettings* CommonSettings = FCommonSettings::GetSingleton();
+		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 
 		//pre-allocated memory for simulation.
 		PhysicsData->TempAllocator = new TempAllocatorImpl(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
@@ -50,7 +50,7 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::PhysicsUpdate(FLOAT InDeltaTime)
 	{
-		FCommonSettings* CommonSettings = FCommonSettings::GetSingleton();
+		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 		PhysicsData->PhysicsSystem->Update(InDeltaTime, CommonSettings->PHYSICS_COLLISION_STEPS, PhysicsData->TempAllocator, PhysicsData->JobSystem);
 		for (auto Character = m_Characters.Begin(); Character != m_Characters.End(); ++Character)
 		{

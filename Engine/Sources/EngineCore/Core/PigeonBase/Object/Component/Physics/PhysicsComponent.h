@@ -7,11 +7,18 @@
 namespace PigeonEngine 
 {
 
-	class PPhysicsComponent : PActorComponent
+	class PPhysicsComponent : public PActorComponent
 	{
 	public:
-		PPhysicsComponent() :m_Shape(nullptr) { POBJ_DEBUGNAME_SET(this, "PhysicsComponent"); }
-		PPhysicsComponent(FShape* InShape) :m_Shape(InShape) {};
+		PPhysicsComponent() :m_Shape(nullptr) 
+		{ 
+			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
+		}
+		PPhysicsComponent(FShape* InShape) :m_Shape(InShape) 
+		{
+			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
+			//InitPhysicsComponent();
+		};
 		virtual ~PPhysicsComponent();
 
 		virtual void Init() override;
@@ -21,6 +28,8 @@ namespace PigeonEngine
 
 #if _EDITOR_ONLY
 		virtual void EditorTick(FLOAT deltaTime)override;
+
+		virtual void DrawPrimitive();
 #endif
 		/// <summary>
 		/// Add a Shape and host it;

@@ -19,6 +19,11 @@ namespace PigeonEngine
 		class FShape* GetStandingShape();
 		class FShape* GetCrouchingShape();
 		class FCharacter* GetPhysicsCharacter();
+
+#if _EDITOR_ONLY
+		void EditorTick(FLOAT deltaTime) override;
+#endif
+
 	protected:
 		// for frame, 
 		virtual void BeginAddedToScene(PWorld* World) override;

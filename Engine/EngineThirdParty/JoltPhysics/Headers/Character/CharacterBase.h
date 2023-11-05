@@ -18,7 +18,7 @@ public:
 
 	Vector3								PlaneVector = Vector3::YVector();
 
-	const FLOAT							CharacterRadiusStanding = -1.e10f;
+	const FLOAT							CharacterRadiusStanding = -0.3f;
 };
 
 /// <summary>

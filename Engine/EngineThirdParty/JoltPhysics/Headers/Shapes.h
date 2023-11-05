@@ -21,7 +21,7 @@ class FShape : public ERTTIObject
 public:
 	FShape();
 	virtual ~FShape();
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) = 0;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager,const Vector3& inPosition, const Quaternion& inRotation) const = 0;
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
 	Shape* m_Shape;
@@ -77,7 +77,7 @@ public:
 		//}
 	}
 
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 
 protected:
 	virtual Shape* CreateShapeInternal() override
@@ -107,7 +107,7 @@ public:
 	{
 	}
 
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 
 protected:
 	virtual Shape* CreateShapeInternal() override
@@ -139,7 +139,7 @@ public:
 	{
 	}
 
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 
 protected:
 	virtual Shape* CreateShapeInternal() override
@@ -173,7 +173,7 @@ public:
 	{
 	}
 
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 
 protected:
 	virtual Shape* CreateShapeInternal() override
@@ -207,7 +207,7 @@ public:
 		delete HostedShape;
 	}
 
-	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation) override;
+	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
 
 protected:
 	virtual Shape* CreateShapeInternal() override

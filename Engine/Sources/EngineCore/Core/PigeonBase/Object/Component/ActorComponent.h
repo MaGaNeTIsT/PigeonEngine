@@ -21,7 +21,7 @@ namespace PigeonEngine
 	public:
 		PActor* GetOwnerActor()const;
 		void    RemoveFromOwnerActor();
-	protected:
+	//protected: //Phyiscs Test note : Time 23/11/5
 		void    SetOwnerActor(PActor* NewOwner);
 	private:
 		PActor* Owner = nullptr;

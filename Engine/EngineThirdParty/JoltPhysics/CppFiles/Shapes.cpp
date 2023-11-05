@@ -58,22 +58,27 @@ namespace PigeonEngine
 	{
 	}
 
-	void FBoxShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	void FBoxShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
-		Manager->DrawCuboid(inPosition, inRotation, HalfExtent.x, HalfExtent.y, HalfExtent.z);
+		Manager->DrawCuboid(inPosition, inRotation, HalfExtent.x * 2, HalfExtent.y * 2, HalfExtent.z * 2, Color4::Green());
 	}
 
-	void FSphereShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	void FSphereShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
 		Manager->DrawSphere(inPosition, Raidus, Color4::Green());
 	}
 
-	void FCapsuleShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	void FCapsuleShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
-
+		Vector3 Direction = QuaternionTransformVector(inRotation, Vector3(0.f, HalfHeightOfCylinder, 0.f));
+		Vector3 Top = inPosition + Direction;
+		Vector3 Bottom = inPosition - Direction;
+		Manager->DrawCylinder(Bottom, Top, Raidus, Color4::Green());
+		Manager->DrawSphere(Bottom, Raidus, Color4::Green());
+		Manager->DrawSphere(Top, Raidus, Color4::Green());
 	}
 
-	void FRotatedTranslatedShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, Vector3 inPosition, Quaternion inRotation)
+	void FRotatedTranslatedShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
 		return HostedShape->DrawPrimitive(Manager, inPosition + Position, inRotation * Rotation);
 	}

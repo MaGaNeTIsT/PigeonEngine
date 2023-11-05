@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	class FCommonSettings
+	class FPhysicsCommonSettings
 	{
 	public:
 		//Initialized Parameters		
@@ -17,16 +17,19 @@ namespace PigeonEngine
 
 		//Runtime Parameters
 		PE_CONSTEXPR_STATIC INT32 PHYSICS_COLLISION_STEPS			= 1;						// Do n collision step per cDeltaTime
+#if _EDITOR_ONLY
+		PE_CONSTEXPR_STATIC BOOL32 PHYSICS_DRAW_DEBUG_PRIMITIVE		= TRUE;
+#endif
 	public:
-		static FCommonSettings* GetSingleton()
+		static FPhysicsCommonSettings* GetSingleton()
 		{
-			static FCommonSettings _StaticSingletonObject;
+			static FPhysicsCommonSettings _StaticSingletonObject;
 			return (&_StaticSingletonObject);
 		}
-		FCommonSettings(const FCommonSettings&) = delete;
-		FCommonSettings& operator=(const FCommonSettings&) = delete;
+		FPhysicsCommonSettings(const FPhysicsCommonSettings&) = delete;
+		FPhysicsCommonSettings& operator=(const FPhysicsCommonSettings&) = delete;
 	private:
-		FCommonSettings() {}
-		~FCommonSettings() {}
+		FPhysicsCommonSettings() {}
+		~FPhysicsCommonSettings() {}
 	};
 }
