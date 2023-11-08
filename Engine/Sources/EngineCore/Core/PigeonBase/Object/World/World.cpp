@@ -79,7 +79,6 @@ namespace PigeonEngine
     void PWorld::FixTick(FLOAT deltaTime)
     {
         RootActor->FixedTick(deltaTime);
-        //Controller->FixedTick(deltaTime);
     }
 
     void PWorld::Destroy()
@@ -92,6 +91,35 @@ namespace PigeonEngine
         }
         // AllActors.Clear();
         PObject::Destroy();
+    }
+
+    const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildActor) const
+    {
+        PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::GetActorByUniqueId : RootActor is nullptr.", RootActor != nullptr);
+        for(auto& elem : RootActor->ChildrenActors)
+        {
+            const PActor* Ret = elem->GetActorByUniqueID(UniqueID, bIncludeChildActor);
+            if(Ret)
+            {
+                return Ret;
+            }
+        }
+        return nullptr;
+        
+    }
+
+    const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& UniqueID,
+        BOOL8 bIncludeChildComponent) const
+    {
+        for(auto& elem : RootActor->ChildrenActors)
+        {
+            const PActorComponent* Ret = elem->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+            if(Ret)
+            {
+                return Ret;
+            }
+        }
+        return nullptr;
     }
 
     void PWorld::AddActor(PActor* NewActor, const ETransform& Trans)

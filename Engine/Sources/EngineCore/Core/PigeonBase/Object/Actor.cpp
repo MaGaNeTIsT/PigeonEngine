@@ -149,9 +149,32 @@ namespace PigeonEngine
 		Child->AttachedParentActor = Parent;
 	}
 
-	TSet<PActor*> PActor::GetAllActorsAttached() const
+	const TSet<PActor*> PActor::GetAllActorsAttached() const
 	{
 		return this->ChildrenActors;
+	}
+
+	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildActor) const
+	{
+		if(this->GetUniqueID() == UniqueID)
+		{
+			return this;
+		}
+		if(!bIncludeChildActor)
+		{
+			return nullptr;
+		}
+		
+		for(auto& elem : ChildrenActors)
+		{
+			const PActor* Ret = elem->GetActorByUniqueID(UniqueID, bIncludeChildActor);
+			if(Ret)
+			{
+				return Ret;
+			}
+			
+		}
+		return nullptr;
 	}
 
 	void PActor::DetachActorsAttached()
@@ -305,6 +328,25 @@ namespace PigeonEngine
 		}
 		this->Components.Add(NewComponent);
 		
+	}
+
+	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildComponent) const
+	{
+		const PActorComponent* Ret = RootComponent->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+		
+		if(Ret)
+		{
+			return Ret;
+		}
+		
+		for(auto& elem : Components)
+		{
+			if(elem->GetUniqueID() == UniqueID)
+			{
+				return elem;
+			}
+		}
+		return nullptr;
 	}
 
 	void PActor::DestoyComponent(PActorComponent* Component)

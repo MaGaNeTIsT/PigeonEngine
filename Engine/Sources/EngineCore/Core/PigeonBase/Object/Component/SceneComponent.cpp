@@ -92,6 +92,28 @@ namespace PigeonEngine
 		
 	}
 
+	const PSceneComponent* PSceneComponent::GetComponentByUniqueID(const ObjectIdentityType& UniqueID,
+		BOOL8 bIncludeChildComponent) const
+	{
+		if(this->GetUniqueID() == UniqueID)
+		{
+			return this;
+		}
+		if(!bIncludeChildComponent)
+		{
+			return nullptr;
+		}
+		for(const auto& elem : ChildrenComponents)
+		{
+			const PSceneComponent* Ret = elem->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+			if(Ret)
+			{
+				return Ret;
+			}
+		}
+		return nullptr;
+	}
+
 	TSet<PSceneComponent*> PSceneComponent::GetChildrenComponents() const
 	{
 		return this->ChildrenComponents;

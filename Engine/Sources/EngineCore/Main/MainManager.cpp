@@ -83,7 +83,6 @@ namespace PigeonEngine
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
 #endif
-
 		
 		m_WindowTimer.Init();
 		m_WorldManager->Initialize();
