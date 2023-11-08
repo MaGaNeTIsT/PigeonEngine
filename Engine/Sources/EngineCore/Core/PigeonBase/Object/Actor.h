@@ -69,7 +69,7 @@ namespace PigeonEngine
 	
 	public:
 		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
-		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildComponent) const ;
+		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
 		virtual void DestoyComponent  (PActorComponent* Component);
 	protected:
 		virtual void ClearComponents  ();
@@ -95,7 +95,7 @@ namespace PigeonEngine
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 
 		PE_NODISCARD const TSet<PActor*> GetAllActorsAttached() const;
-		PE_NODISCARD const PActor* GetActorByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildActor) const ;
+		PE_NODISCARD const PActor* GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		void DetachActorsAttached();
 		void DestroyActorsAttached();
 	protected:

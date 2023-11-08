@@ -93,7 +93,7 @@ namespace PigeonEngine
 	}
 
 	const PSceneComponent* PSceneComponent::GetComponentByUniqueID(const ObjectIdentityType& UniqueID,
-		BOOL8 bIncludeChildComponent) const
+		const BOOL8& bIncludeChildComponent) const
 	{
 		if(this->GetUniqueID() == UniqueID)
 		{

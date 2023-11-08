@@ -45,8 +45,8 @@ namespace PigeonEngine
 
     // Actors in world management
     public:
-        PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueId, BOOL8 bIncludeChildActor) const ;
-        PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildComponent) const ;
+        PE_NODISCARD const PActor*          GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
+        PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
         void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
         //void DestroyActor();
     private:

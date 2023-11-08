@@ -154,7 +154,7 @@ namespace PigeonEngine
 		return this->ChildrenActors;
 	}
 
-	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildActor) const
+	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const
 	{
 		if(this->GetUniqueID() == UniqueID)
 		{
@@ -330,7 +330,7 @@ namespace PigeonEngine
 		
 	}
 
-	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& UniqueID, BOOL8 bIncludeChildComponent) const
+	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const
 	{
 		const PActorComponent* Ret = RootComponent->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
 		
