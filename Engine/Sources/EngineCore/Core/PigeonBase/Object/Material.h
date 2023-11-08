@@ -36,6 +36,11 @@ namespace PigeonEngine
 	public:
 		void	AddParameter(EMaterialParameterType InType, const EString& InParamName = "_Param");
 	protected:
+		struct EParameterUnit
+		{
+			EMaterialParameterType	Type;
+			TArray<BYTE>			Data;
+		};
 		EMaterialParameter			MaterialParameter;
 		const EVertexShaderAsset*	VertexShader;
 		const EPixelShaderAsset*	PixelShader;
