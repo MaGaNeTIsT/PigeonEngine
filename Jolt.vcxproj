@@ -52,11 +52,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.18362.0</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">x64\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\Engine\ThirdParty\JoltPhysics\lib\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">x64\Debug\Jolt.dir\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Jolt</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.lib</TargetExt>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">x64\Develop\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">.\Engine\ThirdParty\JoltPhysics\lib\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">x64\Develop\Jolt.dir\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">Jolt</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Develop|x64'">.lib</TargetExt>
