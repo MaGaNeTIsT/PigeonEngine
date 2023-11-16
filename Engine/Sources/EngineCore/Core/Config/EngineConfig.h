@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	class ESettings
+	class EEngineSettings final
 	{
 	public:
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SCREEN_WIDTH													= 1706.f;
@@ -51,16 +51,16 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_LAYER[ENGINE_CASCADE_SHADOW_LAYER_NUM]		= { 1000.f, 3000.f, 5000.f };
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_BORDER[ENGINE_CASCADE_SHADOW_LAYER_NUM - 1u]	= { 100.f, 200.f };
 	public:
-		static ESettings* GetSingleton()
+		static EEngineSettings* GetSingleton()
 		{
-			static ESettings _StaticSingletonObject;
+			static EEngineSettings _StaticSingletonObject;
 			return (&_StaticSingletonObject);
 		}
-		ESettings(const ESettings&) = delete;
-		ESettings& operator=(const ESettings&) = delete;
+		EEngineSettings(const EEngineSettings&) = delete;
+		EEngineSettings& operator=(const EEngineSettings&) = delete;
 	private:
-		ESettings() {}
-		~ESettings() {}
+		EEngineSettings() {}
+		~EEngineSettings() {}
 	};
 
 #define ENGINE_DEFAULT_TEXTURE2D_WHITE						("./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga")

@@ -60,7 +60,7 @@ namespace PigeonEngine
 		const TResourceType*	GetStoragedResource()const { return ResourceData; }
 		const EString&			GetAssetPath()const { return AssetPath; }
 		const EString&			GetAssetName()const { return AssetName; }
-		const EString&			GetAssetFullPathName()const { return (AssetPath + AssetName + ESettings::ENGINE_ASSET_NAME_TYPE); }
+		const EString&			GetAssetFullPathName()const { return (AssetPath + AssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE); }
 		template<typename TInitResourceLambdaType>
 		BOOL32 StorageResourceInternal(const TInitResourceLambdaType& lStorageFunc)
 		{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../Main/Main.h"
+#include <Base/BuiltInLanguage.h>
 
 namespace PigeonEngine
 {

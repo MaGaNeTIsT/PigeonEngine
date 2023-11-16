@@ -208,7 +208,7 @@ namespace PigeonEngine
 	}
 	void ESkeleton::ReleaseResource()
 	{
-		SkeletonName = ESettings::ENGINE_DEFAULT_NAME;
+		SkeletonName = EEngineSettings::ENGINE_DEFAULT_NAME;
 		Bones.Clear();
 		BoneMapping.Clear();
 	}
@@ -918,7 +918,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -957,7 +957,7 @@ namespace PigeonEngine
 		EString UsedSkeletonName;
 		if (InAssetName.Length() < 2u)
 		{
-			UsedSkeletonName = ESettings::ENGINE_DEFAULT_NAME;
+			UsedSkeletonName = EEngineSettings::ENGINE_DEFAULT_NAME;
 		}
 		else
 		{
@@ -986,7 +986,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		ESkeletonAsset* ResultSkeletonAsset = SkeletonAssetDataManager.Find(TempFullPathName);
 		if (ResultSkeletonAsset)
 		{
@@ -1051,7 +1051,7 @@ namespace PigeonEngine
 	BOOL32 ESkeletonAssetManager::SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -1098,7 +1098,7 @@ namespace PigeonEngine
 	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -1207,7 +1207,7 @@ namespace PigeonEngine
 				}
 			}
 			{
-				LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX, TempSkeletonName);
+				LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX, TempSkeletonName);
 				LoadedSkeletonResource = new ESkeleton(TempSkeletonName);
 			}
 			{
@@ -1219,7 +1219,7 @@ namespace PigeonEngine
 				for (SHORT i = 0u, n = static_cast<SHORT>(TempBoneNum); i < n; i++)
 				{
 					LOAD_ASSET_MEMORY(SHORT, sizeof(SHORT), TempIndex);
-					LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
+					LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
 					LOAD_ASSET_MEMORY(Vector3, sizeof(Vector3), TempDefaultPosition);
 					LOAD_ASSET_MEMORY(Quaternion, sizeof(Quaternion), TempDefaultRotation);
 					LOAD_ASSET_MEMORY(Vector3, sizeof(Vector3), TempDefaultScaling);
@@ -1246,7 +1246,7 @@ namespace PigeonEngine
 				}
 				for (USHORT i = 0u; i < TempBoneNum; i++)
 				{
-					LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
+					LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
 					LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempBoneIndex);
 
 					BoneMapping.Add(TempBoneName, TempBoneIndex);
@@ -1276,7 +1276,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -1298,7 +1298,7 @@ namespace PigeonEngine
 
 			Result += sizeof(UINT32);		// EAssetType
 			Result += sizeof(UINT32);		// ESkeletonType
-			Result += sizeof(CHAR) * ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX;	// Skeleton name
+			Result += sizeof(CHAR) * EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX;	// Skeleton name
 			Result += sizeof(USHORT);		// Bone num and bone mapping
 
 			const ESkeleton::EBonePart& BonePart = InSkeleton->GetBonePart();
@@ -1307,7 +1307,7 @@ namespace PigeonEngine
 				const EBoneData& BoneData = BonePart[i];
 
 				Result += sizeof(SHORT);		// Bone data index
-				Result += sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone data name
+				Result += sizeof(CHAR) * EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone data name
 				Result += sizeof(Vector3);		// Bone data default position
 				Result += sizeof(Quaternion);	// Bone data default rotation
 				Result += sizeof(Vector3);		// Bone data default scaling
@@ -1315,7 +1315,7 @@ namespace PigeonEngine
 				Result += sizeof(USHORT);		// Bone data children num
 				Result += sizeof(SHORT) * BoneData.Children.Length();	// Bone data children index
 			}
-			Result += (sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Length();	// Bone mapping datas
+			Result += (sizeof(CHAR) * EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Length();	// Bone mapping datas
 
 			return Result;
 		};
@@ -1360,7 +1360,7 @@ namespace PigeonEngine
 		{
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_SKELETON));
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(InSkeletonResource->GetSkeletonType()));
-			SAVE_ASSET_STRING_MEMORY(InSkeletonResource->GetSkeletonName(), ESettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
+			SAVE_ASSET_STRING_MEMORY(InSkeletonResource->GetSkeletonName(), EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
 
 			const ESkeleton::EBonePart&		BonePart	= InSkeletonResource->GetBonePart();
 			const TMap<EString, USHORT>&	BoneMapping = InSkeletonResource->GetBoneMapping();
@@ -1374,7 +1374,7 @@ namespace PigeonEngine
 				const EBoneData& BondData = BonePart[i];
 
 				SAVE_ASSET_MEMORY(SHORT, BondData.Index);
-				SAVE_ASSET_STRING_MEMORY(BondData.Name, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_STRING_MEMORY(BondData.Name, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultPosition);
 				SAVE_ASSET_MEMORY(Quaternion, BondData.DefaultRotation);
 				SAVE_ASSET_MEMORY(Vector3, BondData.DefaultScaling);
@@ -1392,7 +1392,7 @@ namespace PigeonEngine
 			}
 			for (auto ItMapping = BoneMapping.Begin(); ItMapping != BoneMapping.End(); ItMapping++)
 			{
-				SAVE_ASSET_STRING_MEMORY(ItMapping->first, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+				SAVE_ASSET_STRING_MEMORY(ItMapping->first, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
 			}
 

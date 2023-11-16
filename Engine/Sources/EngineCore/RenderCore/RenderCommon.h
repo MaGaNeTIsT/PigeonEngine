@@ -19,56 +19,6 @@ namespace PigeonEngine
 		virtual BOOL32 InitRenderResource() = 0;
 		virtual void ReleaseRenderResource() = 0;
 	};
-	struct RBoundingBox
-	{
-		RBoundingBox()noexcept : Anchor(Vector3::Zero()), Dimensions(Vector3(ESettings::ENGINE_BOUND_MINIMUM_HALF)) {}
-		RBoundingBox(const RBoundingBox& Other)noexcept : Anchor(Other.Anchor), Dimensions(Other.Dimensions) {}
-		RBoundingBox(const Vector3& InAnchor, const Vector3& InDimensions)noexcept : Anchor(InAnchor), Dimensions(InDimensions) {}
-
-		Vector3		Anchor;
-		Vector3		Dimensions;
-	};
-	struct RBoundingSphere
-	{
-		RBoundingSphere()noexcept : Anchor(Vector3::Zero()), Radius(ESettings::ENGINE_BOUND_MINIMUM_HALF) {}
-		RBoundingSphere(const RBoundingSphere& Other)noexcept : Anchor(Other.Anchor), Radius(Other.Radius) {}
-		RBoundingSphere(const Vector3& InAnchor, const FLOAT InRadius)noexcept : Anchor(InAnchor), Radius(InRadius) {}
-
-		Vector3		Anchor;
-		FLOAT		Radius;
-	};
-	struct RPerFrameConstantBuffer
-	{
-		RPerFrameConstantBuffer() { ::ZeroMemory(this, sizeof(*this)); }
-		RPerFrameConstantBuffer(const RPerFrameConstantBuffer& Other)
-			: ViewMatrix(Other.ViewMatrix)
-			, ViewInvMatrix(Other.ViewInvMatrix)
-			, ProjectionMatrix(Other.ProjectionMatrix)
-			, ProjectionInvMatrix(Other.ProjectionInvMatrix)
-			, ViewProjectionMatrix(Other.ViewProjectionMatrix)
-			, ViewProjectionInvMatrix(Other.ViewProjectionInvMatrix)
-			, TimeParams(Other.TimeParams)
-			, DepthMultiAdd(Other.DepthMultiAdd)
-			, ScreenToViewSpaceParams(Other.ScreenToViewSpaceParams)
-			, CameraViewportMinSizeAndInvBufferSize(Other.CameraViewportMinSizeAndInvBufferSize)
-			, CameraViewportSizeAndInvSize(Other.CameraViewportSizeAndInvSize)
-			, CameraViewportRect(Other.CameraViewportRect)
-			, CameraWorldPosition(Other.CameraWorldPosition) {}
-
-		DirectX::XMFLOAT4X4		ViewMatrix;
-		DirectX::XMFLOAT4X4		ViewInvMatrix;
-		DirectX::XMFLOAT4X4		ProjectionMatrix;
-		DirectX::XMFLOAT4X4		ProjectionInvMatrix;
-		DirectX::XMFLOAT4X4		ViewProjectionMatrix;
-		DirectX::XMFLOAT4X4		ViewProjectionInvMatrix;
-		DirectX::XMFLOAT4		TimeParams;
-		DirectX::XMFLOAT4		DepthMultiAdd;
-		DirectX::XMFLOAT4		ScreenToViewSpaceParams;
-		DirectX::XMFLOAT4		CameraViewportMinSizeAndInvBufferSize;
-		DirectX::XMFLOAT4		CameraViewportSizeAndInvSize;
-		DirectX::XMFLOAT4		CameraViewportRect;
-		DirectX::XMFLOAT4		CameraWorldPosition;
-	};
 	enum RShaderFrequencyType : UINT8
 	{
 		SHADER_FREQUENCY_COMPUTE	= 0,

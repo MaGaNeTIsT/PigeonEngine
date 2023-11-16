@@ -31,10 +31,10 @@ namespace PigeonEngine
 	EMainManager::EMainManager()
 	{
 		m_HWND			= nullptr;
-		m_WindowSize	= Vector2Int(static_cast<INT32>(ESettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(ESettings::ENGINE_SCREEN_HEIGHT));
+		m_WindowSize	= Vector2Int(static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
 		m_GraphicDepth	= 24u;
-		m_FrameRate		= static_cast<UINT32>(ESettings::ENGINE_UPDATE_FRAME);
-		m_Windowed		= ESettings::ENGINE_WINDOWED;
+		m_FrameRate		= static_cast<UINT32>(EEngineSettings::ENGINE_UPDATE_FRAME);
+		m_Windowed		= EEngineSettings::ENGINE_WINDOWED;
 		
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
 

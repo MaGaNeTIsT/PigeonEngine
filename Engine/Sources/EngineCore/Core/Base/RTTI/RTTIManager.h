@@ -301,7 +301,7 @@ namespace PigeonEngine
     private:
         struct EClassTypeInfo
         {
-            EClassTypeInfo() : TypeName(ESettings::ENGINE_DEFAULT_NAME), TypeHashCode(-1) {}
+            EClassTypeInfo() : TypeName(EEngineSettings::ENGINE_DEFAULT_NAME), TypeHashCode(-1) {}
             EClassTypeInfo(const std::string& InTypeName, const size_t& InTypeHashCode) : TypeName(InTypeName), TypeHashCode(InTypeHashCode) {}
             EClassTypeInfo(const EClassTypeInfo& Other) : TypeName(Other.TypeName), TypeHashCode(Other.TypeHashCode)
             {

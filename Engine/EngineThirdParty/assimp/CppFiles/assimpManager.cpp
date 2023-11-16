@@ -153,15 +153,15 @@ namespace PigeonEngine
 	{
 		EReaderVertexWeights()noexcept : MaxCount(0u)
 		{
-			for (UINT32 i = 0u; i < ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM; i++)
+			for (UINT32 i = 0u; i < EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM; i++)
 			{
 				Indices[i] = 0u;
 				Weights[i] = 0.f;
 			}
 		}
 		USHORT	MaxCount;
-		USHORT	Indices[ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
-		FLOAT	Weights[ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
+		USHORT	Indices[EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
+		FLOAT	Weights[EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM];
 	};
 	PE_INLINE static void StoreSkinData(const TArray<EReaderVertexWeights>& InDatas, const UINT32 InMaxEffectNum, UINT32*& OutIndices, FLOAT*& OutWeights)
 	{
@@ -206,7 +206,7 @@ namespace PigeonEngine
 			}
 			else
 			{
-				TempNodeName = ESettings::ENGINE_DEFAULT_NAME;
+				TempNodeName = EEngineSettings::ENGINE_DEFAULT_NAME;
 			}
 			EString TempOldName = TempNodeName + "_";
 			EString TempNewName = TempNodeName;
@@ -508,7 +508,7 @@ namespace PigeonEngine
 					if (TempAssimpWeight.mVertexId < InVertexNum)
 					{
 						EReaderVertexWeights& ModifyWeight = TempVertexWeights[TempAssimpWeight.mVertexId];
-						if (ModifyWeight.MaxCount < static_cast<USHORT>(ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM))
+						if (ModifyWeight.MaxCount < static_cast<USHORT>(EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM))
 						{
 							if (TempBoneList.FindValue(AssimpTranslateString(TempBone->mName), ModifyWeight.Indices[ModifyWeight.MaxCount]))
 							{
@@ -848,7 +848,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		Check(((InMaxBoneWeightNum > 0u) && (InMaxBoneWeightNum <= ESettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)), (ENGINE_ASSET_ERROR));
+		Check(((InMaxBoneWeightNum > 0u) && (InMaxBoneWeightNum <= EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)), (ENGINE_ASSET_ERROR));
 
 		if (InMeshes.Length() == 1u)
 		{
@@ -1512,10 +1512,10 @@ namespace PigeonEngine
 			}
 		}
 		
-		if ((ResultBound.AABBMax - ResultBound.AABBMin).Length() <= ESettings::ENGINE_BOUND_MINIMUM)
+		if ((ResultBound.AABBMax - ResultBound.AABBMin).Length() <= EEngineSettings::ENGINE_BOUND_MINIMUM)
 		{
 			Vector3 TempOrigin = (ResultBound.AABBMax + ResultBound.AABBMin) * 0.5f;
-			Vector3 TempExtent = Vector3(ESettings::ENGINE_BOUND_MINIMUM_HALF, ESettings::ENGINE_BOUND_MINIMUM_HALF, ESettings::ENGINE_BOUND_MINIMUM_HALF);
+			Vector3 TempExtent = Vector3(EEngineSettings::ENGINE_BOUND_MINIMUM_HALF, EEngineSettings::ENGINE_BOUND_MINIMUM_HALF, EEngineSettings::ENGINE_BOUND_MINIMUM_HALF);
 			ResultBound.AABBMin = TempOrigin - TempExtent;
 			ResultBound.AABBMax = TempOrigin + TempExtent;
 		}

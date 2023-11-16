@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-	class RCommonSettings
+	class RCommonSettings final
 	{
 	public:
 		PE_CONSTEXPR_STATIC		FLOAT			RENDER_DEPTH_MIN					= 0.f;

@@ -767,7 +767,7 @@ namespace PigeonEngine
         }
 
         {
-            EString vsName(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+            EString vsName(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
             vsName += IMGUI_VS_FILE_NAME_PATH;
             FILE* file;
             LONG fsize;
@@ -825,7 +825,7 @@ namespace PigeonEngine
         }
 
         {
-            EString psName(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+            EString psName(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
             psName += IMGUI_PS_FILE_NAME_PATH;
             FILE* file;
             LONG fsize;

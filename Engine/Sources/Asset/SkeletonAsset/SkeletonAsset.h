@@ -18,7 +18,7 @@ namespace PigeonEngine
 	struct EBoneData
 	{
 		EBoneData()noexcept
-			: Index(-2), Name(ESettings::ENGINE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
+			: Index(-2), Name(EEngineSettings::ENGINE_DEFAULT_NAME), DefaultPosition(Vector3::Zero())
 			, DefaultRotation(Quaternion::Identity()), DefaultScaling(Vector3::One()), Parent(-2)
 		{
 		}

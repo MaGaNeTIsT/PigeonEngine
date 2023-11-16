@@ -40,6 +40,8 @@
 #include <tchar.h>
 #include <dwmapi.h>
 
+#include <Base/DataStructure/BuiltInType.h>
+
 #if _EDITOR_ONLY
 #include "../../../ThirdParty/imgui/imgui.h"
 #endif

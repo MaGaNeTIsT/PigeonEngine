@@ -20,7 +20,7 @@ namespace PigeonEngine
 	EObjectBase::EObjectBase()
 		: UniqueID(_AllocUniqueID())
 #if _EDITOR_ONLY
-		, DebugName(ESettings::ENGINE_DEFAULT_NAME)
+		, DebugName(EEngineSettings::ENGINE_DEFAULT_NAME)
 #endif
 	{
 	}

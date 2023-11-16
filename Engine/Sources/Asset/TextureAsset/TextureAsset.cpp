@@ -612,7 +612,7 @@ namespace PigeonEngine
 	BOOL32 ETextureAssetManager::ImportTexture2D(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -681,7 +681,7 @@ namespace PigeonEngine
 		constexpr UINT32 TextureCubeRawAssetCount = 6u;
 
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		{
 			BOOL32 ImportPathValid = (InImportFullPathName.Length() == TextureCubeRawAssetCount) && (TempFullPathName.Length() >= 10u);
 			if (ImportPathValid)
@@ -806,7 +806,7 @@ namespace PigeonEngine
 	BOOL32 ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const ETexture2DAsset*& OutTextureAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		ETexture2DAsset* ResultAsset = Texture2DManager.Find(TempFullPathName);
 		if (ResultAsset)
 		{
@@ -840,7 +840,7 @@ namespace PigeonEngine
 	BOOL32 ETextureAssetManager::LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName, const ETextureCubeAsset*& OutTextureAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		ETextureCubeAsset* ResultAsset = TextureCubeManager.Find(TempFullPathName);
 		if (ResultAsset)
 		{
@@ -882,7 +882,7 @@ namespace PigeonEngine
 	ETexture2DAsset* ETextureAssetManager::LoadTexture2DAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32* InSRGBOverride)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -989,7 +989,7 @@ namespace PigeonEngine
 	BOOL32 ETextureAssetManager::SaveTexture2DAsset(const EString& InSavePath, const EString& InSaveName, const ETexture2D* InTextureResource)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
 #if _EDITOR_ONLY
@@ -1039,7 +1039,7 @@ namespace PigeonEngine
 	ETextureCubeAsset* ETextureAssetManager::LoadTextureCubeAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -1144,7 +1144,7 @@ namespace PigeonEngine
 	BOOL32 ETextureAssetManager::SaveTextureCubeAsset(const EString& InSavePath, const EString& InSaveName, const ETextureCube* InTextureResource)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((TempFullPathName.Length() < 10u) || (!InTextureResource) || (!(InTextureResource->IsResourceValid())))
 		{
 #if _EDITOR_ONLY

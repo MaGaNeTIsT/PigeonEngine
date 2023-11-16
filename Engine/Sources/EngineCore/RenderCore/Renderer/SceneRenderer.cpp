@@ -178,25 +178,25 @@ namespace PigeonEngine
 		}
 
 		{
-			const EString ImportPath(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-			const EString ImportVSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+			const EString ImportPath(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+			const EString ImportVSName = EString("FullScreenTriangle_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 			const RInputLayoutDesc TempShaderInputLayouts[] =
 			{
 				RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(FLOAT), 2u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
 			};
 			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
+			TryLoadVertexShader(EEngineSettings::ENGINE_SHADER_PATH, ImportVSName,
 				SimpleFullScreenVertexShader,
 				&ImportPath, &ImportVSName,
 				TempShaderInputLayouts, &TempShaderInputLayoutNum);
 
-			const EString ImportSimpleFullScreenPSName = EString("FullScreenTriangle_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportSimpleFullScreenPSName,
+			const EString ImportSimpleFullScreenPSName = EString("FullScreenTriangle_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(EEngineSettings::ENGINE_SHADER_PATH, ImportSimpleFullScreenPSName,
 				SimpleFullScreenPixelShader,
 				&ImportPath, &ImportSimpleFullScreenPSName);
 
-			const EString ImportSceneLightingPSName = EString("SceneLighting_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportSceneLightingPSName,
+			const EString ImportSceneLightingPSName = EString("SceneLighting_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(EEngineSettings::ENGINE_SHADER_PATH, ImportSceneLightingPSName,
 				SceneLightingPixelShader,
 				&ImportPath, &ImportSceneLightingPSName);
 		}

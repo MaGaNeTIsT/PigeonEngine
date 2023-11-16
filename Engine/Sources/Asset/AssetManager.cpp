@@ -201,8 +201,8 @@ namespace PigeonEngine
 	
 	void EAssetManager::EditorInit()
 	{
-		EngineAssetRoot  = TSharedPtr<EFolderTreeNode>::MakeShared(nullptr, ESettings::ENGINE_CONTENT_PATH);
-		ProjectAssetRoot = TSharedPtr<EFolderTreeNode>::MakeShared(nullptr, ESettings::PROJECT_CONTENT_PATH);
+		EngineAssetRoot  = TSharedPtr<EFolderTreeNode>::MakeShared(nullptr, EEngineSettings::ENGINE_CONTENT_PATH);
+		ProjectAssetRoot = TSharedPtr<EFolderTreeNode>::MakeShared(nullptr, EEngineSettings::PROJECT_CONTENT_PATH);
 		if(!ScanFolder(EngineAssetRoot))
 		{
 			EngineAssetRoot = nullptr;
@@ -219,7 +219,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Folder",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Folder",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				FolderTextureId = EngineTextureToImgui(Asset);
@@ -233,7 +233,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Mesh",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Mesh",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
@@ -248,7 +248,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Shader",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Shader",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
@@ -263,7 +263,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Skeleton",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Skeleton",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
@@ -278,7 +278,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Animation",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Animation",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
@@ -293,7 +293,7 @@ namespace PigeonEngine
 			EString ImportFileType("PNG");
 		
 			const ETexture2DAsset* Asset = nullptr;
-			TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_No",Asset, &ImportPath, &ImportName, &ImportFileType);
+			TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_No",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
 			{
 				ImTextureID TextureId = EngineTextureToImgui(Asset);
@@ -417,7 +417,7 @@ namespace PigeonEngine
 		// EString ImportFileType("PNG");
 		//
 		// const ETexture2DAsset* Asset = nullptr;
-		// TryLoadTexture2D(ESettings::ENGINE_TEXTURE_PATH, File->GetDisplayName(),Asset, &ImportPath, &ImportName, &ImportFileType);
+		// TryLoadTexture2D(EEngineSettings::ENGINE_TEXTURE_PATH, File->GetDisplayName(),Asset, &ImportPath, &ImportName, &ImportFileType);
 		// if(Asset)
 		// {
 		// 	ImTextureID TextureId = EngineTextureToImgui(Asset);

@@ -2,7 +2,6 @@
 
 #include "../Main/Main.h"
 
-#include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
 
 #include <Base/RTTI/RTTIManager.h>

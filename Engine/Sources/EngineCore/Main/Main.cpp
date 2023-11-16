@@ -30,7 +30,7 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 		{
 			return TRUE;
 		}
-		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::ESettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::ESettings::ENGINE_SCREEN_HEIGHT) };
+		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT) };
 		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
 		::AdjustWindowRect(&clientRect, style, FALSE);
 		windowHandle = ::CreateWindowEx(
@@ -55,8 +55,8 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	MainManager->Init();
 
 	DOUBLE currentTime, fixedLastTime, updateLastTime, fixedStepTime, updateStepTime;
-	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::ESettings::ENGINE_FIXED_UPDATE_FRAME);
-	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::ESettings::ENGINE_UPDATE_FRAME);
+	fixedStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME);
+	updateStepTime	= static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_UPDATE_FRAME);
 	currentTime = fixedLastTime = updateLastTime = MainManager->GetWindowTimer().GetClockTime();
 
 	// register mouse raw input device

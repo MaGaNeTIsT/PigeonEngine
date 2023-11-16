@@ -191,7 +191,7 @@ namespace PigeonEngine
 	BOOL32 EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
 	{
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InAssetName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if ((InImportFullPathName.Length() < 3u) || (TempFullPathName.Length() < 10u))
 		{
 #if _EDITOR_ONLY
@@ -230,7 +230,7 @@ namespace PigeonEngine
 		EString UsedSkeletonAnimation;
 		if (InAssetName.Length() < 2u)
 		{
-			UsedSkeletonAnimation = ESettings::ENGINE_DEFAULT_NAME;
+			UsedSkeletonAnimation = EEngineSettings::ENGINE_DEFAULT_NAME;
 		}
 		else
 		{
@@ -260,7 +260,7 @@ namespace PigeonEngine
 	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		ESkeletonAnimationAsset* ResultAsset = SkeletonAnimationAssetManager.Find(TempFullPathName);
 		if (ResultAsset)
 		{
@@ -339,7 +339,7 @@ namespace PigeonEngine
 	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName)
 	{
 		EString TempFullPathName(InLoadPath);
-		TempFullPathName = TempFullPathName + InLoadName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -448,7 +448,7 @@ namespace PigeonEngine
 				}
 			}
 			{
-				LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX, TempAnimationName);
+				LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX, TempAnimationName);
 				LoadedSkeletonAnimationResource = new ESkeletonAnimation(TempAnimationName);
 			}
 			{
@@ -458,7 +458,7 @@ namespace PigeonEngine
 
 				for (UINT32 i = 0u; i < TempAnimationClipNum; i++)
 				{
-					LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX, TempAnimationClipName);
+					LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX, TempAnimationClipName);
 					LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempDuration);
 					LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempTicksPerSecond);
 					LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempAnimationCurveNum);
@@ -472,7 +472,7 @@ namespace PigeonEngine
 
 					for (UINT32 j = 0u; j < TempAnimationCurveNum; j++)
 					{
-						LOAD_ASSET_STRING_MEMORY(ESettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX, TempBoneName);
 						LOAD_ASSET_MEMORY(EAnimationBehaviourType, sizeof(EAnimationBehaviourType), TempPreState);
 						LOAD_ASSET_MEMORY(EAnimationBehaviourType, sizeof(EAnimationBehaviourType), TempPostState);
 
@@ -538,7 +538,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		EString TempFullPathName(InSavePath);
-		TempFullPathName = TempFullPathName + InSaveName + ESettings::ENGINE_ASSET_NAME_TYPE;
+		TempFullPathName = TempFullPathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
 		if (TempFullPathName.Length() < 10u)
 		{
 #if _EDITOR_ONLY
@@ -560,7 +560,7 @@ namespace PigeonEngine
 
 			Result += sizeof(UINT32);		// EAssetType
 			Result += sizeof(UINT32);		// EAnimationType
-			Result += sizeof(CHAR) * ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX;	// Skeleton animation name
+			Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX;	// Skeleton animation name
 			Result += sizeof(UINT32);		// Animation clip num
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimation->GetAnimationClips();
@@ -568,7 +568,7 @@ namespace PigeonEngine
 			{
 				const ESkeletonAnimationClip& AnimationClip = AnimationClips[i];
 
-				Result += sizeof(CHAR) * ESettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX;	// Animation clip name
+				Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX;	// Animation clip name
 				Result += sizeof(FLOAT);	// Animation clip duration
 				Result += sizeof(FLOAT);	// Animation clip ticks per second
 				Result += sizeof(UINT32);	// Animation clip bone animation curve num
@@ -578,7 +578,7 @@ namespace PigeonEngine
 				{
 					const EBoneAnimationCurve& BoneAnimationCurve = BoneAnimationCurves[j];
 
-					Result += sizeof(CHAR) * ESettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone animation curve bone name
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX;	// Bone animation curve bone name
 					Result += sizeof(EAnimationBehaviourType);	// Bone animation curve pre state
 					Result += sizeof(EAnimationBehaviourType);	// Bone animation curve post state
 
@@ -638,7 +638,7 @@ namespace PigeonEngine
 		{
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_ANIMATION));
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAnimationType::ANIMATION_TYPE_SKELETON));
-			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetAnimationName(), ESettings::ENGINE_ANIMATION_NAME_LENGTH_MAX);
+			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetAnimationName(), EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX);
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimationResource->GetAnimationClips();
 			const UINT32 AnimationClipNum = AnimationClips.Length();
@@ -649,7 +649,7 @@ namespace PigeonEngine
 			{
 				const ESkeletonAnimationClip& AnimationClip = AnimationClips[i];
 
-				SAVE_ASSET_STRING_MEMORY(AnimationClip.ClipName, ESettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX);
+				SAVE_ASSET_STRING_MEMORY(AnimationClip.ClipName, EEngineSettings::ENGINE_ANIMATION_CLIP_NAME_LENGTH_MAX);
 				SAVE_ASSET_MEMORY(FLOAT, AnimationClip.Duration);
 				SAVE_ASSET_MEMORY(FLOAT, AnimationClip.TicksPerSecond);
 
@@ -662,7 +662,7 @@ namespace PigeonEngine
 				{
 					const EBoneAnimationCurve& BoneAnimationCurve = BoneAnimationCurves[j];
 
-					SAVE_ASSET_STRING_MEMORY(BoneAnimationCurve.BoneName, ESettings::ENGINE_BONE_NAME_LENGTH_MAX);
+					SAVE_ASSET_STRING_MEMORY(BoneAnimationCurve.BoneName, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 					SAVE_ASSET_MEMORY(EAnimationBehaviourType, BoneAnimationCurve.PreState);
 					SAVE_ASSET_MEMORY(EAnimationBehaviourType, BoneAnimationCurve.PostState);
 

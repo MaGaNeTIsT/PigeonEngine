@@ -309,24 +309,24 @@ namespace PigeonEngine
 		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER);
 
 		{
-			const EString ImportPath(EString(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH) + "Development/");
+			const EString ImportPath(EString(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH) + "Development/");
 			if (!_GDebugWireframePrimitiveVS)
 			{
-				const EString ImportVSName = EString("DebugWireFramePrimitive_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+				const EString ImportVSName = EString("DebugWireFramePrimitive_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 				const RInputLayoutDesc TempShaderInputLayouts[] =
 				{
 					RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 3u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
 				};
 				constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-				TryLoadVertexShader(EString(ESettings::ENGINE_SHADER_PATH) + "Development/", ImportVSName,
+				TryLoadVertexShader(EString(EEngineSettings::ENGINE_SHADER_PATH) + "Development/", ImportVSName,
 					_GDebugWireframePrimitiveVS,
 					&ImportPath, &ImportVSName,
 					TempShaderInputLayouts, &TempShaderInputLayoutNum);
 			}
 			if (!_GDebugWireframePrimitivePS)
 			{
-				const EString ImportPSName = EString("DebugWireFramePrimitive_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-				TryLoadPixelShader(EString(ESettings::ENGINE_SHADER_PATH) + "Development/", ImportPSName,
+				const EString ImportPSName = EString("DebugWireFramePrimitive_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+				TryLoadPixelShader(EString(EEngineSettings::ENGINE_SHADER_PATH) + "Development/", ImportPSName,
 					_GDebugWireframePrimitivePS,
 					&ImportPath, &ImportPSName);
 			}

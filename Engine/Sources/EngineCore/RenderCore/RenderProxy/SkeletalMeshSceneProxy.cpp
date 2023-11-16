@@ -193,8 +193,8 @@ namespace PigeonEngine
 	}
 	void RSkeletalMeshSceneProxy::SetupShaders()
 	{
-		const EString ImportPath(ESettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-		const EString ImportVSName = EString("SkeletalMesh_") + ESettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+		const EString ImportPath(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+		const EString ImportVSName = EString("SkeletalMesh_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
 			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 0u),
@@ -206,15 +206,15 @@ namespace PigeonEngine
 		if (!VertexShader)
 		{
 			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-			TryLoadVertexShader(ESettings::ENGINE_SHADER_PATH, ImportVSName,
+			TryLoadVertexShader(EEngineSettings::ENGINE_SHADER_PATH, ImportVSName,
 				VertexShader,
 				&ImportPath, &ImportVSName,
 				TempShaderInputLayouts, &TempShaderInputLayoutNum);
 		}
 		if (!PixelShader)
 		{
-			const EString ImportPSName = EString("SkeletalMesh_") + ESettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(ESettings::ENGINE_SHADER_PATH, ImportPSName,
+			const EString ImportPSName = EString("SkeletalMesh_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			TryLoadPixelShader(EEngineSettings::ENGINE_SHADER_PATH, ImportPSName,
 				PixelShader,
 				&ImportPath, &ImportPSName);
 		}
