@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Base/BuiltInLanguage.h>
+
 #ifndef _DEBUG_MODE
 #define _DEBUG_MODE 0
 #else

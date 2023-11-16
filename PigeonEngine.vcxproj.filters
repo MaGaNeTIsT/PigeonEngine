@@ -383,6 +383,7 @@
     <ClInclude Include="Engine\EngineThirdParty\JoltPhysics\Headers\PhysicsData.h" />
     <ClInclude Include="Engine\Sources\EngineCore\PhysicsCore\PhysicsTest\PhysicsTest.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Editor\EditorLogManager.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\BuiltInLanguage.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Sources\EngineCore\Main\Main.cpp">

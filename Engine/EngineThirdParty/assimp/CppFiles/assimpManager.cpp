@@ -1477,6 +1477,51 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
+	template<typename _TMesh>
+	static void GatherMeshBounds(_TMesh& InOutMesh)
+	{
+		EBoundAABB ResultBound(Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX), Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX), TRUE);
+
+		for (UINT32 i = 0u; i < EMesh::MeshVertexLayoutPartMaxNum; i++)
+		{
+			const EVertexData* VertexDataPtr = nullptr;
+			if (InOutMesh.GetVertexElement(EVertexLayoutType::MESH_VERTEX, i, VertexDataPtr))
+			{
+				if (VertexDataPtr)
+				{
+					const UINT32 VertexElementNum = VertexDataPtr->Stride / sizeof(FLOAT);
+					for (UINT32 VertexIndex = 0u; VertexIndex < VertexDataPtr->ElementNum; VertexIndex++)
+					{
+						Vector3 TempVertex(Vector3::Zero());
+						if (VertexElementNum > 0)
+						{
+							TempVertex.x = VertexDataPtr->Datas[VertexIndex * VertexElementNum + 0];
+						}
+						if (VertexElementNum > 1)
+						{
+							TempVertex.y = VertexDataPtr->Datas[VertexIndex * VertexElementNum + 1];
+						}
+						if (VertexElementNum > 2)
+						{
+							TempVertex.z = VertexDataPtr->Datas[VertexIndex * VertexElementNum + 2];
+						}
+						ResultBound.AABBMin = MinVector3(TempVertex, ResultBound.AABBMin);
+						ResultBound.AABBMax = MaxVector3(TempVertex, ResultBound.AABBMax);
+					}
+				}
+			}
+		}
+		
+		if ((ResultBound.AABBMax - ResultBound.AABBMin).Length() <= ESettings::ENGINE_BOUND_MINIMUM)
+		{
+			Vector3 TempOrigin = (ResultBound.AABBMax + ResultBound.AABBMin) * 0.5f;
+			Vector3 TempExtent = Vector3(ESettings::ENGINE_BOUND_MINIMUM_HALF, ESettings::ENGINE_BOUND_MINIMUM_HALF, ESettings::ENGINE_BOUND_MINIMUM_HALF);
+			ResultBound.AABBMin = TempOrigin - TempExtent;
+			ResultBound.AABBMax = TempOrigin + TempExtent;
+		}
+
+		InOutMesh.SetBoundAABB(ResultBound.AABBMin, ResultBound.AABBMax);
+	}
 	void CAssimpManager::Initialize()
 	{
 		if (_GAssetImporter == nullptr)
@@ -1599,10 +1644,17 @@ namespace PigeonEngine
 			}
 
 			CombineEngineMeshIntoSubmeshes(TempOutMeshes, NewStaticMesh);
+
+			GatherMeshBounds(NewStaticMesh);
 		}
 		else
 		{
 			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+
+			for (UINT32 OutMeshIndex = 0u, OutMeshNum = OutMeshes.Length(); OutMeshIndex < OutMeshNum; OutMeshIndex++)
+			{
+				GatherMeshBounds(OutMeshes[OutMeshIndex]);
+			}
 		}
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;
@@ -1798,10 +1850,17 @@ namespace PigeonEngine
 			}
 
 			CombineEngineMeshIntoSubmeshes(TempOutMeshes, EffectBoneNum, NewSkinnedMesh);
+
+			GatherMeshBounds(NewSkinnedMesh);
 		}
 		else
 		{
 			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, OutMeshes);
+
+			for (UINT32 OutMeshIndex = 0u, OutMeshNum = OutMeshes.Length(); OutMeshIndex < OutMeshNum; OutMeshIndex++)
+			{
+				GatherMeshBounds(OutMeshes[OutMeshIndex]);
+			}
 		}
 
 		Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED;

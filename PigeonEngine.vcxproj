@@ -39,6 +39,7 @@
     <ClInclude Include="Engine\EngineThirdParty\assimp\Headers\assimpManager.h" />
     <ClInclude Include="Engine\Sources\Asset\AnimationAsset\AnimationAsset.h" />
     <ClInclude Include="Engine\Sources\Asset\TextureAsset\TextureRGB9E5Common.h" />
+    <ClInclude Include="Engine\Sources\EngineCore\Core\Base\BuiltInLanguage.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\LevelCharacter.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Actor\Pawn.h" />
     <ClInclude Include="Engine\Sources\EngineCore\Core\PigeonBase\Object\Component\Character\MovementComponent.h" />
