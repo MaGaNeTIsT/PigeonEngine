@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.10)
+
+set(ENGINE_PROJECT_NAME PigeonEngine)
+
+project(${ENGINE_PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
+
+add_executable(${ENGINE_PROJECT_NAME})
+
+set(BASE_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Engine)
+set(BASE_CONFIG_SOURCE_DIR ${BASE_SOURCE_DIR}/Configs)
+set(ENGINE_SOURCE_DIR ${BASE_SOURCE_DIR}/Sources)
+set(THIRD_PARTY_SOURCE_DIR ${BASE_SOURCE_DIR}/ThirdParty)
+set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Assets)
+
+set(BASE_BINARY_DIR ${PROJECT_BINARY_DIR}/Engine)
+set(BASE_CONFIG_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
+set(TEMP_BINARY_DIR ${PROJECT_BINARY_DIR}/Temp)
+#set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/Build)
+
+set(ENGINE_EDITOR_ENTRY ${ENGINE_SOURCE_DIR}/EngineCore/Main/Main.cpp)
+
+set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
+	C_STANDARD 11
+	C_STANDARD_REQUIRED ON
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED ON
+)
+
+configure_file(
+	${BASE_CONFIG_SOURCE_DIR}/BaseConfig.h.in
+	${BASE_CONFIG_BINARY_DIR}/BaseConfig.h
+)
+
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/imgui/
+)
+
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/assimp/assimp/
+)
+target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/assimp/lib/Debug/zlibstaticd.lib
+	${THIRD_PARTY_SOURCE_DIR}/assimp/lib/Debug/assimp-vc143-mtd.lib
+)
+
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/Jolt/
+)
+target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/lib/Debug/Jolt.lib
+)
+
+target_include_directories(${ENGINE_PROJECT_NAME} PUBLIC
+	${BASE_CONFIG_BINARY_DIR}/
+	${BASE_SOURCE_DIR}/Sources/
+	${BASE_SOURCE_DIR}/EngineThirdParty/
+)
+
+target_sources(${ENGINE_PROJECT_NAME} PRIVATE ${ENGINE_EDITOR_ENTRY})

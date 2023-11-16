@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Base/BuiltInLanguage.h>
-#include <Base/DataStructure/BuiltInType.h>
+#include "${ENGINE_SOURCE_DIR}/EngineCore/Core/Base/BuiltInLanguage.h"
+#include "${ENGINE_SOURCE_DIR}/EngineCore/Core/Base/DataStructure/BuiltInType.h"
 
 namespace PigeonEngine
 {
