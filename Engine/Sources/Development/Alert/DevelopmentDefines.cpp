@@ -7,6 +7,8 @@ namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
+#define PE_BREAKPOINT	{__debugbreak();}
+
 	INT32 DWindowsMessage::__WindowsMessageBox_(const CHAR* OutText, const CHAR* OutCaption, const UINT32 InType)
 	{
 		return (::MessageBox(EMainManager::GetManagerSingleton()->GetWindowHandle(), OutText, OutCaption, InType));
@@ -14,13 +16,11 @@ namespace PigeonEngine
 
 	void DWindowsMessage::__DummyAlert_(const CHAR* InExpression, const CHAR* InMessage, const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption)
 	{
-#if _EDITOR_ONLY
 		{
 			PE_LOG_ERROR(InExpression)
 			EEditorLogManager* EditorLogManager = EEditorLogManager::GetManagerSingleton();
 			EditorLogManager->WriteDownLogs();
 		}
-#endif
 #if _DEBUG_MODE
 		{
 #if 0
@@ -45,6 +45,10 @@ namespace PigeonEngine
 		}
 #endif
 	};
+
+#else
+
+#define PE_BREAKPOINT	{;}
 
 #endif
 };

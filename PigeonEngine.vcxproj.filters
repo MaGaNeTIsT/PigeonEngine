@@ -718,6 +718,7 @@
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderSelectFunctions.hlsl" />
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderRenderCommon.hlsl" />
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderSkinnings.hlsl" />
+    <None Include="Engine\Configs\BasePhysicsConfig.h.in" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Engine\EngineThirdParty\imGUI\HLSLResources\imGUI_PEVS.hlsl">
