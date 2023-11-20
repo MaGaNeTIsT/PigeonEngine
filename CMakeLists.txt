@@ -24,11 +24,108 @@ set(ENGINE_EDITOR_ENTRY ${ENGINE_SOURCE_DIR}/EngineCore/Main/Main.cpp)
 #TODO Shipping Entry
 
 #Pigeon Engine Build Properties
+option(ENABLED_WARNING_AS_ERROR "Enable warning as error" ON)
+option(USE_AVX2 "Enable AVX2" ON)
 set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
-	C_STANDARD 11
-	C_STANDARD_REQUIRED ON
 	CXX_STANDARD 17
 	CXX_STANDARD_REQUIRED ON
+	C_STANDARD 11
+	C_STANDARD_REQUIRED ON
+)
+target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
+	$<$<CONFIG:Debug>:/MTd>
+	$<$<CONFIG:DebugEditor>:/MTd>
+	$<$<CONFIG:Develop>:/MT>
+	$<$<CONFIG:DevelopEditor>:/MT>
+	$<$<CONFIG:Shipping>:/MT>
+	$<$<CONFIG:Debug>:/ZI>
+	$<$<CONFIG:DebugEditor>:/ZI>
+	$<$<CONFIG:Develop>:/Zi>
+	$<$<CONFIG:DevelopEditor>:/Zi>
+	$<$<CONFIG:Shipping>:/Zi>
+)
+if(MSVC)
+	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
+		/nologo
+		/diagnostics:classic
+		/D_MBCS
+		/sdl
+		/MP
+		/W4
+		/Gm-
+		/EHsc
+		/fp:fast
+		/Zc:wchar_t
+		/Zc:forScope
+		/Zc:inline
+		/std:c++17
+		/std:c11
+		/Gd
+		/FC
+	)
+	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
+		$<$<BOOL:${ENABLED_WARNING_AS_ERROR}>:/WX>
+		$<$<NOT:$<BOOL:${ENABLED_WARNING_AS_ERROR}>>:/WX->
+		$<$<BOOL:${USE_AVX2}>:/arch:AVX2>
+	)
+	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
+		$<$<CONFIG:Debug>:/Od>
+		$<$<CONFIG:DebugEditor>:/Od>
+		$<$<CONFIG:Develop>:/O2>
+		$<$<CONFIG:DevelopEditor>:/O2>
+		$<$<CONFIG:Shipping>:/O2>
+		$<$<CONFIG:Develop>:/Oi>
+		$<$<CONFIG:DevelopEditor>:/Oi>
+		$<$<CONFIG:Shipping>:/Oi>
+		$<$<CONFIG:Shipping>:/Ot>
+		$<$<CONFIG:Shipping>:/GL>
+		$<$<CONFIG:Debug>:/Ob0>
+		$<$<CONFIG:DebugEditor>:/Ob0>
+		$<$<CONFIG:Develop>:/Ob1>
+		$<$<CONFIG:DevelopEditor>:/Ob1>
+		$<$<CONFIG:Shipping>:/Ob2>
+		$<$<CONFIG:Debug>:/RTCc>
+		$<$<CONFIG:DebugEditor>:/RTCc>
+		$<$<CONFIG:Debug>:/RTC1>
+		$<$<CONFIG:DebugEditor>:/RTC1>
+		$<$<CONFIG:Develop>:/RTC1>
+		$<$<CONFIG:DevelopEditor>:/RTC1>
+		$<$<CONFIG:Debug>:/GS>
+		$<$<CONFIG:DebugEditor>:/GS>
+		$<$<CONFIG:Develop>:/GS>
+		$<$<CONFIG:DevelopEditor>:/GS>
+		$<$<CONFIG:Shipping>:/GS->
+		$<$<CONFIG:Shipping>:/Gy>
+		$<$<CONFIG:Debug>:/fp:except>
+		$<$<CONFIG:DebugEditor>:/fp:except>
+		$<$<CONFIG:Develop>:/fp:except->
+		$<$<CONFIG:DevelopEditor>:/fp:except->
+		$<$<CONFIG:Shipping>:/fp:except->
+		$<$<CONFIG:Debug>:/Zc:rvalueCast>
+		$<$<CONFIG:DebugEditor>:/Zc:rvalueCast>
+		$<$<CONFIG:Develop>:/Zc:rvalueCast>
+		$<$<CONFIG:DevelopEditor>:/Zc:rvalueCast>
+		$<$<CONFIG:Shipping>:/Zc:rvalueCast->
+	)
+	target_link_options(${ENGINE_PROJECT_NAME} PUBLIC
+		$<$<CONFIG:Debug>:/INCREMENTAL>
+		$<$<CONFIG:DebugEditor>:/INCREMENTAL>
+		$<$<CONFIG:Develop>:/INCREMENTAL>
+		$<$<CONFIG:DevelopEditor>:/INCREMENTAL>
+		$<$<CONFIG:Shipping>:/INCREMENTAL:NO>
+		$<$<CONFIG:Debug>:/DEBUG>
+		$<$<CONFIG:DebugEditor>:/DEBUG>
+		$<$<CONFIG:Develop>:/DEBUG>
+		$<$<CONFIG:DevelopEditor>:/DEBUG>
+	)
+	target_link_options(${ENGINE_PROJECT_NAME} PRIVATE
+		/SUBSYSTEM:WINDOWS
+	)
+endif()
+target_link_options(${ENGINE_PROJECT_NAME} PUBLIC
+	$<$<CONFIG:Develop>:/LTCG>
+	$<$<CONFIG:DevelopEditor>:/LTCG>
+	$<$<CONFIG:Shipping>:/LTCG>
 )
 
 #Pigeon Engine Build Configs
@@ -39,15 +136,21 @@ configure_file(
 
 #Pigeon Engine Platform Settings
 option(PLATFORM_WINDOWS "Build on WindowsPlatform" ON)
-target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<BOOL:${PLATFORM_WINDOWS}>:_WINDOWS>
-)
+if(PLATFORM_WINDOWS)
+	target_compile_definitions(${ENGINE_PROJECT_NAME} PUBLIC
+		$<$<BOOL:${PLATFORM_WINDOWS}>:_WINDOWS>
+	)
+	set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
+		VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION 10.0.18362.0
+	)
+endif()
 
 #Pigeon Engine Definitions
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
 	$<$<CONFIG:Debug>:_DEBUG=1>
 	$<$<CONFIG:DebugEditor>:_DEBUG=1>
 	$<$<CONFIG:Develop>:_DEBUG=1>
+	$<$<CONFIG:DevelopEditor>:_DEBUG=1>
 	$<$<CONFIG:Shipping>:NDEBUG>
 )
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
@@ -112,60 +215,43 @@ target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
 
 #Pigeon Engine Third Party Jolt Physics
 set(JOLT_LIB_DIR ${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/lib)
-configure_file(
-	${BASE_CONFIG_SOURCE_DIR}/BasePhysicsConfig.h.in
-	${BASE_CONFIG_BINARY_DIR}/BasePhysicsConfig.h
-)
+#configure_file(
+#	${BASE_CONFIG_SOURCE_DIR}/BasePhysicsConfig.h.in
+#	${BASE_CONFIG_BINARY_DIR}/BasePhysicsConfig.h
+#)
 #Note that this currently only works using MSVC.
 #Clang turns Float2 into a SIMD vector sometimes
 #causing floating point exceptions (the option is ignored).
 option(FLOATING_POINT_EXCEPTIONS_ENABLED "Enable floating point exceptions" ON)
-option(USE_SSE4_1 "Enable SSE4.1" ON)
-option(USE_SSE4_2 "Enable SSE4.2" ON)
-option(USE_AVX "Enable AVX" ON)
-option(USE_AVX2 "Enable AVX2" ON)
+option(USE_SSE4_1 "Enable SSE4.1" OFF)
+option(USE_SSE4_2 "Enable SSE4.2" OFF)
+option(USE_AVX "Enable AVX" OFF)
 option(USE_AVX512 "Enable AVX512" OFF)
 option(USE_LZCNT "Enable LZCNT" ON)
 option(USE_TZCNT "Enable TZCNT" ON)
 option(USE_F16C "Enable F16C" ON)
 option(USE_FMADD "Enable FMADD" ON)
 #option(ENABLE_ALL_WARNINGS "Enable all warnings and warnings as errors" ON)
+target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
+	JPH_PROFILE_ENABLED
+	JPH_DISABLE_CUSTOM_ALLOCATOR
+)
 if(PLATFORM_WINDOWS)
 	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
 		$<$<BOOL:${FLOATING_POINT_EXCEPTIONS_ENABLED}>:JPH_FLOATING_POINT_EXCEPTIONS_ENABLED>
 	)
 endif()
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
-	JPH_PROFILE_ENABLED
-	JPH_DISABLE_CUSTOM_ALLOCATOR
+	$<$<BOOL:${USE_SSE4_1}>:JPH_USE_SSE4_1>
+	$<$<BOOL:${USE_SSE4_2}>:JPH_USE_SSE4_2>
+	$<$<BOOL:${USE_AVX}>:JPH_USE_AVX>
+	$<$<BOOL:${USE_AVX2}>:JPH_USE_AVX2>
+	$<$<BOOL:${USE_AVX512}>:JPH_USE_AVX512>
+	$<$<BOOL:${USE_LZCNT}>:JPH_USE_LZCNT>
+	$<$<BOOL:${USE_TZCNT}>:JPH_USE_TZCNT>
+	$<$<BOOL:${USE_F16C}>:JPH_USE_F16C>
+	$<$<BOOL:${USE_FMADD}>:JPH_USE_FMADD>
 )
-if(USE_SSE4_1)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_SSE4_1)
-endif()
-if(USE_SSE4_2)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_SSE4_2)
-endif()
-if(USE_AVX)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_AVX)
-endif()
-if(USE_AVX2)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_AVX2)
-endif()
-if(USE_AVX512)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_AVX512)
-endif()
-if(USE_LZCNT)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_LZCNT)
-endif()
-if(USE_TZCNT)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_TZCNT)
-endif()
-if(USE_F16C)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_F16C)
-endif()
-if(USE_FMADD)
-	target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE JPH_USE_FMADD)
-endif()
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 	${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/Jolt/
 )

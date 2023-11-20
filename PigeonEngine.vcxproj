@@ -479,7 +479,6 @@
       <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Test|x64'">$(ProjectDir)Engine\Temp\OutputRawShaders\%(Filename).cso</ObjectFileOutput>
       <FileType>Document</FileType>
     </FxCompile>
-    <None Include="Engine\Configs\BasePhysicsConfig.h.in" />
     <None Include="Engine\Sources\EngineCore\Shaders\Public\ShaderSkinnings.hlsl">
       <FileType>Document</FileType>
     </None>
@@ -1290,8 +1289,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
