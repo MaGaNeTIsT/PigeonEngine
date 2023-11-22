@@ -3,8 +3,8 @@
 
 PIGEONENGINE_NAMESPACE_BEGIN
 
-FCharacter::FCharacter(const FCharacterSettings* inSettings) :
-	FCharacterBase(inSettings)
+FCharacter::FCharacter(const FCharacterSettings* inSettings) 
+	:FCharacterBase(inSettings)
 {
 	m_CharacterCreateSettings = inSettings;
 	CharacterBaseSettings = inSettings;

@@ -4,10 +4,8 @@
 #include "BuiltInType.h"
 #include "BaseType.h"
 #include "ObjectBase.h"
-#if _EDITOR_ONLY
 #include <Config/ErrorCaption.h>
 #include "../../../../Development/Alert/DevelopmentDefines.h"
-#endif
 
 namespace PigeonEngine
 {

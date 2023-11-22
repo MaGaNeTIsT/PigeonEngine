@@ -19,7 +19,7 @@ namespace BroadPhaseLayers
 	static constexpr UINT8 NON_MOVING(0);
 	static constexpr UINT8 MOVING(1);
 	static constexpr UINT8 NUM_LAYERS(2);
-};
+}
 
 // BroadPhaseLayerInterface implementation
 // This defines a mapping between object and broadphase layers.

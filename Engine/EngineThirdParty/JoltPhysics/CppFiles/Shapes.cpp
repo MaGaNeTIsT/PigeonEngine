@@ -57,7 +57,7 @@ namespace PigeonEngine
 	FCastRay::FCastRay()
 	{
 	}
-
+#if _EDITOR_ONLY
 	void FBoxShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const
 	{
 		Manager->DrawCuboid(inPosition, inRotation, HalfExtent.x * 2, HalfExtent.y * 2, HalfExtent.z * 2, Color4::Green());
@@ -82,4 +82,5 @@ namespace PigeonEngine
 	{
 		return HostedShape->DrawPrimitive(Manager, inPosition + Position, inRotation * Rotation);
 	}
+#endif
 }

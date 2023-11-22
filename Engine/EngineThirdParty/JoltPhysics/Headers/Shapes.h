@@ -21,7 +21,9 @@ class FShape : public ERTTIObject
 public:
 	FShape();
 	virtual ~FShape();
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager,const Vector3& inPosition, const Quaternion& inRotation) const = 0;
+#endif
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
 	Shape* m_Shape;
@@ -76,9 +78,9 @@ public:
 		//	Material = nullptr;
 		//}
 	}
-
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
-
+#endif
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
@@ -106,9 +108,9 @@ public:
 	~FSphereShape()
 	{
 	}
-
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
-
+#endif
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
@@ -138,9 +140,9 @@ public:
 	~FCapsuleShape()
 	{
 	}
-
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
-
+#endif
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
@@ -172,9 +174,9 @@ public:
 	~FCylinerShape()
 	{
 	}
-
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
-
+#endif
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
@@ -206,9 +208,9 @@ public:
 	{
 		delete HostedShape;
 	}
-
+#if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
-
+#endif
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{

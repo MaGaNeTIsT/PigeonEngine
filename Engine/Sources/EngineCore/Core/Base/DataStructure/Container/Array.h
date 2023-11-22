@@ -9,9 +9,7 @@
 #include <random>
 #include <rapidjson.h>
 #include <array>
-#if _EDITOR_ONLY
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
-#endif
 
 namespace PigeonEngine
 {
