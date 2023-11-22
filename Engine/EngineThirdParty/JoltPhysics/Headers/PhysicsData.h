@@ -1,6 +1,8 @@
 #pragma once
 #include <CoreMinimal.h>
 #include "JoltIncludes.h"
+#include "JoltPhysicsLayer.h"
+#include "JoltPhysicsListener.h"
 #include "../../../Sources/EngineCore/PhysicsCore/PhysicsConfig/PhysicsConfig.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
@@ -12,10 +14,10 @@ struct FPhysicsData
 	BodyInterface* BodyInterface;
 	TempAllocatorImpl* TempAllocator;
 	JobSystemThreadPool* JobSystem;
-	PigeonEngine::CBPLayerInterfaceImpl* BPLayerInterface;
-	PigeonEngine::CObjectLayerPairFilterImpl* ObjectLayerPairFilterImpl;
-	PigeonEngine::CObjectVsBroadPhaseLayerFilterImpl* ObjectVsBroadPhaseLayerFilterImpl;
-	PigeonEngine::FBodyActivationListener* BodyActivationListener;
-	PigeonEngine::FContactListener* ContactListener;
+	CBPLayerInterfaceImpl* BPLayerInterface;
+	CObjectLayerPairFilterImpl* ObjectLayerPairFilterImpl;
+	CObjectVsBroadPhaseLayerFilterImpl* ObjectVsBroadPhaseLayerFilterImpl;
+	FBodyActivationListener* BodyActivationListener;
+	FContactListener* ContactListener;
 };
 PIGEONENGINE_NAMESPACE_END
