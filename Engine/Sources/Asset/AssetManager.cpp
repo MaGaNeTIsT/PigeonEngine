@@ -1,5 +1,5 @@
 #include "AssetManager.h"
-
+#if _EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
 #include <TextureAsset/TextureAsset.h>
 
@@ -8,6 +8,7 @@
 
 namespace PigeonEngine
 {
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<EAssetManager, EManagerBase>();
@@ -464,4 +465,6 @@ namespace PigeonEngine
 		}
 		return "Invalid";
 	}
+
 }
+#endif

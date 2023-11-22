@@ -41,8 +41,9 @@ namespace PigeonEngine
 	{
 		auto Json = TSharedPtr<CJsonObject>::MakeShared();
 		Json->SetUInt64Field("TypeHash", this->GetTypeHash());
+#if _EDITOR_ONLY
 		Json->SetStringField("Name", this->GetDebugName());
-
+#endif
 		return Json;
 	}
 

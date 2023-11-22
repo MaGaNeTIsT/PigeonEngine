@@ -6,6 +6,7 @@
 
 namespace PigeonEngine
 {
+#if _EDITOR_ONLY
     static void RegisterClassTypes()
     {
         RegisterClassType<EEditorManager, EManagerBase>();
@@ -68,4 +69,5 @@ namespace PigeonEngine
         BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
     }
+#endif
 }

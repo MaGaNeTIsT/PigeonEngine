@@ -1,9 +1,10 @@
 ﻿#include "EditorLogManager.h"
-
+#if _EDITOR_ONLY
 #include "Base/Timer/Timer.h"
 
 namespace PigeonEngine
 {
+
     static void RegisterClassTypes()
     {
         RegisterClassType<EEditorLogManager, EManagerBase>();
@@ -119,3 +120,4 @@ namespace PigeonEngine
         this->Logs.Clear();
     }
 }
+#endif

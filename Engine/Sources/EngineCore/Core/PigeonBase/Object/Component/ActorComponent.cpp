@@ -98,7 +98,7 @@ namespace PigeonEngine
 	}
 
 
-
+#if _EDITOR_ONLY
 	void PActorComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 
@@ -113,7 +113,7 @@ namespace PigeonEngine
 	{
 
 	}
-
+#endif
 	// Render proxy functions END
 
 };

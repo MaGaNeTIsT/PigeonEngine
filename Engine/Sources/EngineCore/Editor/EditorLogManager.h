@@ -1,13 +1,15 @@
 ﻿#pragma once
 
 #include <Base/DataStructure/ObjectBase.h>
+
+#if _EDITOR_ONLY
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
 #include "Base/Timer/Timer.h"
 
 namespace PigeonEngine
 {
-
+    
     enum ELogType : UINT8
     {
         ELT_LOG,
@@ -35,7 +37,7 @@ namespace PigeonEngine
 
         void Init();
         void Uninit();
-#if _EDITOR_ONLY
+
     public:
         void EditorInit();
         void EditorUpdate();
@@ -45,21 +47,14 @@ namespace PigeonEngine
     private:
         TArray<TSharedPtr<ELog>> Logs;
 
-#endif
+
     };
-
-#if _EDITOR_ONLY
-
 #define PE_LOG_LOG(__Log)       { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_LOG, (__Log)); }
 #define PE_LOG_WARN(__Log)      { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_WARNING, (__Log)); }
 #define PE_LOG_ERROR(__Log)     { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_ERROR, (__Log)); }
 
-#else
-
-#define PE_LOG_LOG(__Log)       {}
-#define PE_LOG_WARN(__Log)      {}
-#define PE_LOG_ERROR(__Log)     {}
+}
 
 #endif
 
-}
+

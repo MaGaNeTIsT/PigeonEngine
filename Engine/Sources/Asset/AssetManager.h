@@ -1,13 +1,14 @@
 #pragma once
-#include "BaseAsset.h"
 #include "Base/DataStructure/ObjectBase.h"
+#if _EDITOR_ONLY
+#include "BaseAsset.h"
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
 
 namespace PigeonEngine
 {
 
-#if _EDITOR_ONLY
+
 	class EAssetFile
 	{
 	public:
@@ -51,7 +52,7 @@ namespace PigeonEngine
 	};
 
 	
-#endif
+
 	
 	
 	class EAssetManager : public EManagerBase
@@ -63,7 +64,6 @@ namespace PigeonEngine
 
 		void Init();
 		void Uninit();
-#if _EDITOR_ONLY
 	public:
 		void EditorInit();
 	public:
@@ -81,9 +81,9 @@ namespace PigeonEngine
 		ImTextureID FolderTextureId;
 		TMap<EAssetType, ImTextureID> TypeThumbNails;
 		TMap<EString, ImTextureID>    TextureThumbNails;
-#endif
+
 
 	};
 
 }
-
+#endif

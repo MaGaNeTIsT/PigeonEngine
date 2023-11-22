@@ -150,7 +150,7 @@ namespace PigeonEngine
 		}
 		// this->TickRender();
 	}
-
+#if _EDITOR_ONLY
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
 		PActorComponent::EditorTick(deltaTime);
@@ -163,7 +163,8 @@ namespace PigeonEngine
         }
 		// this->TickRender();
 	}
-
+#endif
+	
 	void PSceneComponent::TickRender()
 	{
 		if(IsRenderStateDirty())
@@ -384,7 +385,7 @@ namespace PigeonEngine
 		RenderTransformDirty = FALSE;
 		PActorComponent::CleanMarkRenderStateDirty();
 	}
-
+#if _EDITOR_ONLY
 	static Vector3 Location;
 	static Euler   Rotation;
 	static Vector3 Scale;
@@ -491,5 +492,5 @@ namespace PigeonEngine
 		Rotation = MakeEuler(this->GetComponentLocalRotation());
 		Scale    = this->GetComponentLocalScale();
 	}
-
+#endif
 };

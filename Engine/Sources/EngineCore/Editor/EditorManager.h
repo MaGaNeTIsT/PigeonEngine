@@ -4,6 +4,7 @@
 
 namespace PigeonEngine
 {
+#if _EDITOR_ONLY
 	class EEditorManager : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorManager)
@@ -13,7 +14,7 @@ namespace PigeonEngine
 
 		void Init();
 		void Uninit();
-#if _EDITOR_ONLY
+
 	public:
 		void EditorInit();
 		void EditorUpdate();
@@ -23,7 +24,8 @@ namespace PigeonEngine
 		class EWorldManager*     m_WorldManager = nullptr;
 		class EAssetManager*     m_AssetManager = nullptr;
 		class EEditorLogManager* m_LogsManager  = nullptr;
-#endif
+
 	};
+#endif
 }
 

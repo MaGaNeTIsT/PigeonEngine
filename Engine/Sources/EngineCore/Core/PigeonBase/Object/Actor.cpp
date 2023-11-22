@@ -90,7 +90,7 @@ namespace PigeonEngine
 		}
 		UserTick(deltaTime);
 	}
-
+#if _EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
 		this->RootComponent->TickRender();
@@ -108,7 +108,7 @@ namespace PigeonEngine
 			child->EditorTick(deltaTime);
 		}
 	}
-
+#endif
 	PActor* PActor::GetAttachedParentActor() const
 	{
 		return this->AttachedParentActor;
@@ -401,6 +401,7 @@ namespace PigeonEngine
 		return this->RootComponent;
 	}
 
+#if _EDITOR_ONLY
 	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
 		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
@@ -438,4 +439,6 @@ namespace PigeonEngine
 			}
 		}
 	}
+#endif
+	
 };
