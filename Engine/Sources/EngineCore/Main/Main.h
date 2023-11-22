@@ -23,7 +23,7 @@
 #define _SHIPPING_MODE 1
 #endif
 #if (_DEBUG_MODE || _DEVELOP_MODE)
-#define _EDITOR_ONLY 1
+#define _EDITOR_ONLY 0
 #else
 #define _EDITOR_ONLY 0
 #endif

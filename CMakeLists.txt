@@ -17,6 +17,7 @@ set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Assets)
 set(BASE_BINARY_DIR ${PROJECT_BINARY_DIR}/Engine)
 set(BASE_CONFIG_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
 set(TEMP_BINARY_DIR ${PROJECT_BINARY_DIR}/Temp)
+set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/Build64)
 
 #Pigeon Engine Entry
 #Editor Entry
@@ -214,6 +215,7 @@ target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
 )
 
 #Pigeon Engine Third Party Jolt Physics
+add_subdirectory(${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/)
 set(JOLT_LIB_DIR ${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/lib)
 #configure_file(
 #	${BASE_CONFIG_SOURCE_DIR}/BasePhysicsConfig.h.in
@@ -270,8 +272,39 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 	${BASE_SOURCE_DIR}/EngineThirdParty/
 )
 
+set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
+	$<$<CONFIG:Debug>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
+	$<$<CONFIG:Debug>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
+	$<$<CONFIG:Debug>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
+	$<$<CONFIG:Debug>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
+	$<$<CONFIG:Debug>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Debug/">
+	$<$<CONFIG:DebugEditor>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
+	$<$<CONFIG:DebugEditor>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
+	$<$<CONFIG:DebugEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
+	$<$<CONFIG:DebugEditor>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
+	$<$<CONFIG:DebugEditor>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/DebugEditor/">
+	$<$<CONFIG:Develop>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
+	$<$<CONFIG:Develop>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
+	$<$<CONFIG:Develop>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
+	$<$<CONFIG:Develop>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
+	$<$<CONFIG:Develop>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Develop/">
+	$<$<CONFIG:DevelopEditor>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
+	$<$<CONFIG:DevelopEditor>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
+	$<$<CONFIG:DevelopEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
+	$<$<CONFIG:DevelopEditor>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
+	$<$<CONFIG:DevelopEditor>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/DevelopEditor/">
+	$<$<CONFIG:Shipping>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
+	$<$<CONFIG:Shipping>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
+	$<$<CONFIG:Shipping>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
+	$<$<CONFIG:Shipping>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
+	$<$<CONFIG:Shipping>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Shipping/">
+)
+
 #Pigeon Engine Target Sources
 #Editor Entry
 target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:DebugEditor>:${ENGINE_EDITOR_ENTRY}>)
 target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:DevelopEditor>:${ENGINE_EDITOR_ENTRY}>)
-#TODO Shipping Entry
+#TODO Debug Develop Shipping Entry
+target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:${ENGINE_EDITOR_ENTRY}>)
+target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Develop>:${ENGINE_EDITOR_ENTRY}>)
+target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Shipping>:${ENGINE_EDITOR_ENTRY}>)
