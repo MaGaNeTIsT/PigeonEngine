@@ -3,9 +3,7 @@
 #include "../../../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include "../../../../Core/Config/ErrorCaption.h"
-#if _EDITOR_ONLY
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
-#endif
 
 namespace PigeonEngine
 {

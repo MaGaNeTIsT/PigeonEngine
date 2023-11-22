@@ -245,6 +245,8 @@ namespace PigeonEngine
 	{
 #if _EDITOR_ONLY
 		if (const USHORT* BoneIndex = BoneMapping.FindValueAsPtr(InBoneName); !!BoneIndex)
+#else
+		const USHORT* BoneIndex = BoneMapping.FindValueAsPtr(InBoneName);
 #endif
 		{
 			return (*BoneIndex);
@@ -602,7 +604,9 @@ namespace PigeonEngine
 #endif
 				{
 					Check((InBoneData.Index >= 0));
+#if _EDITOR_ONLY
 					Check((((UINT32)(InBoneData.Index)) < UsedRelativeTransformNum));
+#endif
 #if (_USE_MATRIX_FOR_BONE_TO_ROOT)
 					const EBoneTransform& TempRelativeBoneTransform = UsedRelativeTransforms[InBoneData.Index];
 					UsedToRootTransforms[InBoneData.Index] = TempRelativeBoneTransform.ToMatrix4x4().Transpose();
@@ -667,6 +671,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			return (BoneToRootTransforms[BoneIndex]);
@@ -715,6 +721,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			return (BoneRelativeTransforms[BoneIndex]);
@@ -740,6 +748,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
@@ -758,6 +768,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
@@ -776,6 +788,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Scaling = InScaling;
@@ -794,6 +808,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
@@ -813,6 +829,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Position = InPosition;
@@ -832,6 +850,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex].Rotation = InRotation;
@@ -851,6 +871,8 @@ namespace PigeonEngine
 		CheckSlow(IsValid());
 #if _EDITOR_ONLY
 		if (const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName)); BoneIndex < BoneRelativeTransforms.Length())
+#else
+		const UINT32 BoneIndex = (UINT32)(RawSkeletonPtr->GetBoneIndex(InBoneName));
 #endif
 		{
 			BoneRelativeTransforms[BoneIndex] = InBoneTransform;
