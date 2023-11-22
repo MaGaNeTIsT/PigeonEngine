@@ -19,10 +19,10 @@
 #include <Base/DataStructure/Transform.h>
 #include <Config/EngineConfig.h>
 #include <Config/ErrorCaption.h>
-#if _EDITOR_ONLY
+
 #include "../../Development/Config/EngineDebugName.h"
-#endif
 #include "../../Development/Alert/DevelopmentDefines.h"
+
 #include "../IO/FileHelper.h"
 #include "../../../EngineThirdParty/JoltPhysics/Headers/PhysicsDefines.h"
 #include "../HID/Input/Input.h"

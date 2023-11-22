@@ -42,7 +42,6 @@ namespace PigeonEngine
 		DOUBLE			m_Delta;
 	};
 
-#if _EDITOR_ONLY
 	namespace EngineSystemTime
 	{
 
@@ -83,6 +82,5 @@ namespace PigeonEngine
 		extern PE_INLINE ESystemTime Now();
 
 	};
-#endif
 
 };
