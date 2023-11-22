@@ -151,6 +151,7 @@ namespace PigeonEngine
 		// this->TickRender();
 	}
 
+#if _EDITOR_ONLY
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
 		PActorComponent::EditorTick(deltaTime);
@@ -163,6 +164,7 @@ namespace PigeonEngine
         }
 		// this->TickRender();
 	}
+#endif
 
 	void PSceneComponent::TickRender()
 	{

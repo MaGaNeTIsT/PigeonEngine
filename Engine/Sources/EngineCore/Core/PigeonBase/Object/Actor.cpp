@@ -91,6 +91,7 @@ namespace PigeonEngine
 		UserTick(deltaTime);
 	}
 
+#if _EDITOR_ONLY
 	void PActor::EditorTick(FLOAT deltaTime)
 	{
 		this->RootComponent->TickRender();
@@ -108,6 +109,7 @@ namespace PigeonEngine
 			child->EditorTick(deltaTime);
 		}
 	}
+#endif
 
 	PActor* PActor::GetAttachedParentActor() const
 	{
