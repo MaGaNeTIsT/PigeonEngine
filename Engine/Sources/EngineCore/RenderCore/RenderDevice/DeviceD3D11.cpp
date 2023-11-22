@@ -889,7 +889,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::Present(const UINT32& syncInterval)
 	{
-		HRESULT hr = m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
+		/*HRESULT hr =*/ m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
 	}
 	void RDeviceD3D11::SetDefaultDepthStencilState()
 	{

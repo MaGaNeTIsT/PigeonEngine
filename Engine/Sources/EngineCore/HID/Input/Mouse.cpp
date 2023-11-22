@@ -89,7 +89,7 @@ namespace PigeonEngine
 		RawDeltaBuffer.push({ dx,dy });
 		TrimBuffer();
 	}
-	void IMouse::OnLeftPressed(INT32 x, INT32 y)
+	void IMouse::OnLeftPressed(INT32 InX, INT32 InY)
 	{
 		bLeftIsPressed = TRUE;
 
@@ -97,7 +97,7 @@ namespace PigeonEngine
 		TrimBuffer();
 		EInput::MouseEvent.Broadcast(IMouse::Event::EType::LPress);
 	}
-	void IMouse::OnLeftReleased(INT32 x, INT32 y)
+	void IMouse::OnLeftReleased(INT32 InX, INT32 InY)
 	{
 		bLeftIsPressed = FALSE;
 
@@ -105,7 +105,7 @@ namespace PigeonEngine
 		TrimBuffer();
 		EInput::MouseEvent.Broadcast(IMouse::Event::EType::LRelease);
 	}
-	void IMouse::OnRightPressed(INT32 x, INT32 y)
+	void IMouse::OnRightPressed(INT32 InX, INT32 InY)
 	{
 		bRightIsPressed = TRUE;
 
@@ -113,7 +113,7 @@ namespace PigeonEngine
 		TrimBuffer();
 		EInput::MouseEvent.Broadcast(IMouse::Event::EType::RPress);
 	}
-	void IMouse::OnRightReleased(INT32 x, INT32 y)
+	void IMouse::OnRightReleased(INT32 InX, INT32 InY)
 	{
 		bRightIsPressed = FALSE;
 
@@ -121,13 +121,13 @@ namespace PigeonEngine
 		TrimBuffer();
 		EInput::MouseEvent.Broadcast(IMouse::Event::EType::RRelease);
 	}
-	void IMouse::OnWheelUp(INT32 x, INT32 y)
+	void IMouse::OnWheelUp(INT32 InX, INT32 InY)
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelUp, *this));
 		TrimBuffer();
 		EInput::MouseEvent.Broadcast(IMouse::Event::EType::WheelUp);
 	}
-	void IMouse::OnWheelDown(INT32 x, INT32 y)
+	void IMouse::OnWheelDown(INT32 InX, INT32 InY)
 	{
 		Buffer.push(IMouse::Event(IMouse::Event::EType::WheelDown, *this));
 		TrimBuffer();
@@ -147,19 +147,19 @@ namespace PigeonEngine
 			RawDeltaBuffer.pop();
 		}
 	}
-	void IMouse::OnWheelDelta(INT32 x, INT32 y, INT32 delta)
+	void IMouse::OnWheelDelta(INT32 InX, INT32 InY, INT32 delta)
 	{
 		WheelDeltaCarry += delta;
 		// generate events for every 120 
 		while (WheelDeltaCarry >= WHEEL_DELTA)
 		{
 			WheelDeltaCarry -= WHEEL_DELTA;
-			OnWheelUp(x, y);
+			OnWheelUp(InX, InY);
 		}
 		while (WheelDeltaCarry <= -WHEEL_DELTA)
 		{
 			WheelDeltaCarry += WHEEL_DELTA;
-			OnWheelDown(x, y);
+			OnWheelDown(InX, InY);
 		}
 	}
 

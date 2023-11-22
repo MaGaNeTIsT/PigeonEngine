@@ -5,7 +5,7 @@
 namespace PigeonEngine
 {
 
-    const EKey EKeysBuiltIn::AnyKey("AnyKey", -1);
+    const EKey EKeysBuiltIn::AnyKey("AnyKey", ((UINT8)(-1)));
 
     // const EKey EKeysBuiltIn::MouseX("MouseX");
     // const EKey EKeysBuiltIn::MouseY("MouseY");

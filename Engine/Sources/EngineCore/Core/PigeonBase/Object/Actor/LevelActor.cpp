@@ -55,7 +55,7 @@ namespace PigeonEngine
 			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
 			EString ImportName("Robot");
 			EString ImportFileType("obj");
-			TryLoadStaticMesh(EEngineSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 
 			NewStaticMeshComp->SetMeshAsset(Asset);
 
@@ -139,7 +139,7 @@ namespace PigeonEngine
 			ImportNames.Add("Sky_001_Bottom");
 			ImportNames.Add("Sky_001_Forward");
 			ImportNames.Add("Sky_001_Back");
-			TryLoadTextureCube(EEngineSettings::ENGINE_TEXTURE_PATH, "SkyBox001", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
+			TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, "SkyBox001", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
 
 			SkyLightComp->SetCubeMapAsset(CubeMap);
 			SkyLightComp->SetLightAdjust(Color3(1.0f, 1.0f, 1.0f));
@@ -172,8 +172,8 @@ namespace PigeonEngine
 		 	EString ImportFileType("FBX");
 		 	EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
 		 	EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-		 	TryLoadSkinnedMesh(EEngineSettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-		 	TryLoadSkeleton(EEngineSettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+		 	TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+		 	TryLoadSkeleton(EBaseSettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 		
 		 	NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
 		 	NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);

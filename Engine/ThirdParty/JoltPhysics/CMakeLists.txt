@@ -1,13 +1,33 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Develop;DevelopEditor;Shipping" CACHE STRING "Jolt Project Configurations" FORCE)
+
 #Jolt Project
 set(PROJECT_NAME Jolt)
 
 project(${PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
 
-file(GLOB_RECURSE JOLT_SOURCES "${PROJECT_SOURCE_DIR}/Jolt/*.cpp")
+file(GLOB_RECURSE JOLT_PROJECT_HEADERS_H ./Jolt/*.h)
+file(GLOB_RECURSE JOLT_PROJECT_HEADERS_HPP ./Jolt/*.hpp)
+file(GLOB_RECURSE JOLT_PROJECT_HEADERS_C ./Jolt/*.c)
+file(GLOB_RECURSE JOLT_PROJECT_HEADERS_CPP ./Jolt/*.cpp)
 
-add_library(${PROJECT_NAME} STATIC ${JOLT_SOURCES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ FILES ${JOLT_PROJECT_HEADERS_H})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ FILES ${JOLT_PROJECT_HEADERS_HPP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ FILES ${JOLT_PROJECT_HEADERS_C})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/ FILES ${JOLT_PROJECT_HEADERS_CPP})
+
+add_library(${PROJECT_NAME} STATIC
+	${JOLT_PROJECT_HEADERS_C}
+	${JOLT_PROJECT_HEADERS_CPP}
+)
+
+target_sources(${PROJECT_NAME} PRIVATE
+	${JOLT_PROJECT_HEADERS_H}
+	${JOLT_PROJECT_HEADERS_HPP}
+	${JOLT_PROJECT_HEADERS_C}
+	${JOLT_PROJECT_HEADERS_CPP}
+)
 
 #Jolt Build Properties
 option(ENABLED_WARNING_AS_ERROR "Enable warning as error" ON)
@@ -42,6 +62,7 @@ if(MSVC)
 		/Gm-
 		/EHsc
 		/fp:fast
+		/fp:except-
 		/Zc:wchar_t
 		/Zc:forScope
 		/Zc:inline
@@ -56,82 +77,34 @@ if(MSVC)
 		$<$<NOT:$<BOOL:${ENABLED_WARNING_AS_ERROR}>>:/WX->
 		$<$<BOOL:${USE_AVX2}>:/arch:AVX2>
 	)
-	target_compile_options(${PROJECT_NAME} PRIVATE
-		$<$<CONFIG:Debug>:/Od>
-		$<$<CONFIG:DebugEditor>:/Od>
-		$<$<CONFIG:Develop>:/O2>
-		$<$<CONFIG:DevelopEditor>:/O2>
-		$<$<CONFIG:Shipping>:/O2>
-		$<$<CONFIG:Develop>:/Oi>
-		$<$<CONFIG:DevelopEditor>:/Oi>
-		$<$<CONFIG:Shipping>:/Oi>
-		$<$<CONFIG:Shipping>:/Ot>
-		$<$<CONFIG:Shipping>:/GL>
-		$<$<CONFIG:Debug>:/Ob0>
-		$<$<CONFIG:DebugEditor>:/Ob0>
-		$<$<CONFIG:Develop>:/Ob1>
-		$<$<CONFIG:DevelopEditor>:/Ob1>
-		$<$<CONFIG:Shipping>:/Ob2>
-		$<$<CONFIG:Debug>:/RTCc>
-		$<$<CONFIG:DebugEditor>:/RTCc>
-		$<$<CONFIG:Debug>:/RTC1>
-		$<$<CONFIG:DebugEditor>:/RTC1>
-		$<$<CONFIG:Develop>:/RTC1>
-		$<$<CONFIG:DevelopEditor>:/RTC1>
-		$<$<CONFIG:Debug>:/GS>
-		$<$<CONFIG:DebugEditor>:/GS>
-		$<$<CONFIG:Develop>:/GS>
-		$<$<CONFIG:DevelopEditor>:/GS>
-		$<$<CONFIG:Shipping>:/GS->
-		$<$<CONFIG:Shipping>:/Gy>
-		$<$<CONFIG:Debug>:/fp:except>
-		$<$<CONFIG:DebugEditor>:/fp:except>
-		$<$<CONFIG:Develop>:/fp:except->
-		$<$<CONFIG:DevelopEditor>:/fp:except->
-		$<$<CONFIG:Shipping>:/fp:except->
-		$<$<CONFIG:Debug>:/Zc:rvalueCast>
-		$<$<CONFIG:DebugEditor>:/Zc:rvalueCast>
-		$<$<CONFIG:Develop>:/Zc:rvalueCast>
-		$<$<CONFIG:DevelopEditor>:/Zc:rvalueCast>
-		$<$<CONFIG:Shipping>:/Zc:rvalueCast->
+	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
+		$<$<CONFIG:Debug>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DebugEditor>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Shipping>:/O2 /Oi /Ot /GL /Ob2 /Gy>
 	)
 endif()
 
 #Jolt Platform Settings
-set_target_properties(${PROJECT_NAME} PROPERTIES
-	$<$<CONFIG:Debug>:LIBRARY_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:COMPILE_PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:ARCHIVE_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:RUNTIME_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Bin/Debug/">
-	$<$<CONFIG:DebugEditor>:LIBRARY_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:ARCHIVE_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:RUNTIME_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Bin/DebugEditor/">
-	$<$<CONFIG:Develop>:LIBRARY_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:COMPILE_PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:ARCHIVE_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:RUNTIME_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Bin/Develop/">
-	$<$<CONFIG:DevelopEditor>:LIBRARY_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:ARCHIVE_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:RUNTIME_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Bin/DevelopEditor/">
-	$<$<CONFIG:Shipping>:LIBRARY_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:COMPILE_PDB_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:ARCHIVE_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:RUNTIME_OUTPUT_DIRECTORY="${PROJECT_BINARY_DIR}/Bin/Shipping/">
-)
+set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/JoltBuild64)
+foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+	set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		PDB_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		COMPILE_PDB_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		ARCHIVE_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		RUNTIME_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Bin/${CONFIG_UPPER}/
+	)
+endforeach()
 option(PLATFORM_WINDOWS "Build on WindowsPlatform" ON)
 if(PLATFORM_WINDOWS)
 	target_compile_definitions(${PROJECT_NAME} PUBLIC
 		$<$<BOOL:${PLATFORM_WINDOWS}>:_WINDOWS>
 	)
 	set_target_properties(${PROJECT_NAME} PROPERTIES
-		VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION 10.0.18362.0
+		VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "10.0.18362.0"
 	)
 endif()
 
@@ -155,7 +128,6 @@ option(USE_LZCNT "Enable LZCNT" ON)
 option(USE_TZCNT "Enable TZCNT" ON)
 option(USE_F16C "Enable F16C" ON)
 option(USE_FMADD "Enable FMADD" ON)
-#option(ENABLE_ALL_WARNINGS "Enable all warnings and warnings as errors" ON)
 target_compile_definitions(${PROJECT_NAME} PRIVATE
 	JPH_PROFILE_ENABLED
 	JPH_DISABLE_CUSTOM_ALLOCATOR
@@ -177,7 +149,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 	$<$<BOOL:${USE_FMADD}>:JPH_USE_FMADD>
 )
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/Jolt.dir/cmake_pch.hxx)
+target_precompile_headers(${PROJECT_NAME} PRIVATE ./Jolt.dir/cmake_pch.hxx)
 
 #Jolt Sources Include
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/Jolt/)
+target_include_directories(${PROJECT_NAME} PRIVATE ./)

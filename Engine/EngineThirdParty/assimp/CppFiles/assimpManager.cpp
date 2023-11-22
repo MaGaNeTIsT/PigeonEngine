@@ -607,20 +607,20 @@ namespace PigeonEngine
 			//TODO We hard coding to finding VertexBaseType for now.
 			CurrentDesc.BaseVertexLayout = TranslateSemanticBaseTypeToVertexBaseLayout(SemanticBaseType);
 		}
-#if !(_TEST_MODE || _SHIPPING_MODE)
+#if !(_SHIPPING_MODE)
 		if ((BlendIndicesSlots.Length()) > 0u)
 #else
 		if (((BlendIndicesSlots.Length()) > 0u) && ((BlendIndicesSlots.Length()) == (BlendWeightsSlots.Length())))
 #endif
 		{
-#if !(_TEST_MODE || _SHIPPING_MODE)
+#if !(_SHIPPING_MODE)
 			PE_CHECK((ENGINE_ASSET_ERROR), ("number of [BlendIndices] and number of [BlendWeight] is not matched."), ((BlendIndicesSlots.Length()) == (BlendWeightsSlots.Length())));
 #endif
 			for (UINT32 BlendIndex = 0u, BlendNum = BlendIndicesSlots.Length(); BlendIndex < BlendNum; BlendIndex++)
 			{
 				UINT32 BlendIndicesSlot = BlendIndicesSlots[BlendIndex];
 				UINT32 BlendWeightsSlot = BlendWeightsSlots[BlendIndex];
-#if !(_TEST_MODE || _SHIPPING_MODE)
+#if !(_SHIPPING_MODE)
 				PE_CHECK((ENGINE_ASSET_ERROR), ("slot of [BlendIndices] and slot of [BlendWeight] is not matched."), (BlendIndicesSlot == BlendWeightsSlot));
 #else
 				if (BlendIndicesSlot != BlendWeightsSlot)
@@ -728,7 +728,7 @@ namespace PigeonEngine
 			Check((UsedMeshVertexLayout != 0x0u), (ENGINE_ASSET_ERROR));
 			Check(((IndexPart.ElementNum > 0u) && ((IndexPart.Stride == 2u) || (IndexPart.Stride == 4u))), (ENGINE_ASSET_ERROR));
 			Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
-			UINT32 TempMeshVertexLayoutNum = 0u;
+			//UINT32 TempMeshVertexLayoutNum = 0u;
 			for (UINT32 MeshVertexLayoutIndex = 0u; MeshVertexLayoutIndex < 6u; MeshVertexLayoutIndex++)
 			{
 				MeshVertexLayoutNum[MeshVertexLayoutIndex] = (MeshVertexLayoutNum[MeshVertexLayoutIndex]) | ((UsedMeshVertexLayout & (0xfu << (VertexLayoutIndices[MeshVertexLayoutIndex]))) >> (VertexLayoutIndices[MeshVertexLayoutIndex]));
@@ -914,7 +914,7 @@ namespace PigeonEngine
 			Check((SkinPart.Length() > 0u), (ENGINE_ASSET_ERROR));
 			Check((VertexPart[0].ElementNum == SkinPart[0].ElementNum), (ENGINE_ASSET_ERROR));
 #endif
-			UINT32 TempMeshVertexLayoutNum = 0u;
+			//UINT32 TempMeshVertexLayoutNum = 0u;
 			for (UINT32 MeshVertexLayoutIndex = 0u; MeshVertexLayoutIndex < 7u; MeshVertexLayoutIndex++)
 			{
 				MeshVertexLayoutNum[MeshVertexLayoutIndex] = (MeshVertexLayoutNum[MeshVertexLayoutIndex]) | ((UsedMeshVertexLayout & (0xfu << (VertexLayoutIndices[MeshVertexLayoutIndex]))) >> (VertexLayoutIndices[MeshVertexLayoutIndex]));
@@ -1059,7 +1059,7 @@ namespace PigeonEngine
 							{
 								for (USHORT j = 0u, k = UsedMesh.GetEffectBoneNum(); j < k; j++)
 								{
-									USHORT OldIndices = OldSkinData->Indices[i * k + j];
+									USHORT OldIndices = (USHORT)(OldSkinData->Indices[i * k + j]);
 									FLOAT OldWeights = OldSkinData->Weights[i * k + j];
 									if (const EString* BoneNamePtr = TempBindPoseIndexPart.FindValueAsPtr(OldIndices); !!BoneNamePtr)
 									{
@@ -1565,26 +1565,26 @@ namespace PigeonEngine
 		// Use SetPropertyInteger to modify config of importer
 		//Assimp::Importer::SetProperty###();
 
-		const aiScene* Scene = AssImporter->ReadFile(
-			*InPath,
-			aiProcess_CalcTangentSpace |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_MakeLeftHanded |
-			aiProcess_Triangulate |
-			aiProcess_RemoveComponent |
-			aiProcess_GenSmoothNormals |
-			aiProcess_SplitLargeMeshes |
-			/*aiProcess_ImproveCacheLocality |*/
-			aiProcess_RemoveRedundantMaterials |
-			aiProcess_FixInfacingNormals |
-			aiProcess_SortByPType |
-			aiProcess_FindInvalidData |
-			aiProcess_GenUVCoords |
-			aiProcess_OptimizeMeshes |
-			aiProcess_OptimizeGraph |
-			aiProcess_FlipUVs |
-			aiProcess_FlipWindingOrder |
-			aiProcess_GenBoundingBoxes);
+		const UINT32 ReadFlags =
+			(UINT32)(aiProcess_CalcTangentSpace |
+				aiProcess_JoinIdenticalVertices |
+				aiProcess_MakeLeftHanded |
+				aiProcess_Triangulate |
+				aiProcess_RemoveComponent |
+				aiProcess_GenSmoothNormals |
+				aiProcess_SplitLargeMeshes |
+				/*aiProcess_ImproveCacheLocality |*/
+				aiProcess_RemoveRedundantMaterials |
+				aiProcess_FixInfacingNormals |
+				aiProcess_SortByPType |
+				aiProcess_FindInvalidData |
+				aiProcess_GenUVCoords |
+				aiProcess_OptimizeMeshes |
+				aiProcess_OptimizeGraph |
+				aiProcess_FlipUVs |
+				aiProcess_FlipWindingOrder |
+				aiProcess_GenBoundingBoxes);
+		const aiScene* Scene = AssImporter->ReadFile(*InPath, ReadFlags);
 
 		// If the import failed, report it
 		if (Scene == nullptr)

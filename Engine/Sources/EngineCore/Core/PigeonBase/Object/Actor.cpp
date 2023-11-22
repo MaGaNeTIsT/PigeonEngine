@@ -156,9 +156,9 @@ namespace PigeonEngine
 		return this->ChildrenActors;
 	}
 
-	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const
+	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
 	{
-		if(this->GetUniqueID() == UniqueID)
+		if(this->GetUniqueID() == InUniqueID)
 		{
 			return this;
 		}
@@ -169,7 +169,7 @@ namespace PigeonEngine
 		
 		for(auto& elem : ChildrenActors)
 		{
-			const PActor* Ret = elem->GetActorByUniqueID(UniqueID, bIncludeChildActor);
+			const PActor* Ret = elem->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
 			if(Ret)
 			{
 				return Ret;
@@ -209,8 +209,8 @@ namespace PigeonEngine
 		if (RootComponent)
 		{
 			trans = RootComponent->Transform;
-			TSet<PSceneComponent*> Components = RootComponent->ChildrenComponents;
-			for (auto& elem : Components)
+			TSet<PSceneComponent*> TempComponents = RootComponent->ChildrenComponents;
+			for (auto& elem : TempComponents)
 			{
 				elem->AttachToComponent(NewRoot);
 			}
@@ -332,9 +332,9 @@ namespace PigeonEngine
 		
 	}
 
-	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const
+	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildComponent) const
 	{
-		const PActorComponent* Ret = RootComponent->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+		const PActorComponent* Ret = RootComponent->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
 		
 		if(Ret)
 		{
@@ -343,7 +343,7 @@ namespace PigeonEngine
 		
 		for(auto& elem : Components)
 		{
-			if(elem->GetUniqueID() == UniqueID)
+			if(elem->GetUniqueID() == InUniqueID)
 			{
 				return elem;
 			}

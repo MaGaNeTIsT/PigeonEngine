@@ -118,7 +118,7 @@ namespace PigeonEngine
 
     public:
         void RemoveChildComponent(PSceneComponent* NewChild);
-        PE_NODISCARD const PSceneComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const;
+        PE_NODISCARD const PSceneComponent* GetComponentByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildComponent) const;
         PE_NODISCARD TSet<PSceneComponent*> GetChildrenComponents() const;
     protected:
         void ClearChildren();

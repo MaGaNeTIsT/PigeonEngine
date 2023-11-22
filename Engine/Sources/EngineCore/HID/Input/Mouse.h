@@ -95,19 +95,19 @@ namespace PigeonEngine
 		BOOL32 IsRawEnabled() const;
 
 	public:
-		void OnMouseMove(INT32 x, INT32 y);
+		void OnMouseMove(INT32 InX, INT32 InY);
 		void OnMouseLeave();
 		void OnMouseEnter();
 		void OnRawDelta(INT32 dx, INT32 dy);
-		void OnLeftPressed(INT32 x, INT32 y);
-		void OnLeftReleased(INT32 x, INT32 y);
-		void OnRightPressed(INT32 x, INT32 y);
-		void OnRightReleased(INT32 x, INT32 y);
-		void OnWheelUp(INT32 x, INT32 y);
-		void OnWheelDown(INT32 x, INT32 y);
+		void OnLeftPressed(INT32 InX, INT32 InY);
+		void OnLeftReleased(INT32 InX, INT32 InY);
+		void OnRightPressed(INT32 InX, INT32 InY);
+		void OnRightReleased(INT32 InX, INT32 InY);
+		void OnWheelUp(INT32 InX, INT32 InY);
+		void OnWheelDown(INT32 InX, INT32 InY);
 		void TrimBuffer();
 		void TrimRawInputBuffer();
-		void OnWheelDelta(INT32 x, INT32 y, INT32 delta);
+		void OnWheelDelta(INT32 InX, INT32 InY, INT32 delta);
 		
 	
 	private:

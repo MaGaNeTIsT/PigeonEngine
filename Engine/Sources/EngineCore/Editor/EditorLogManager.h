@@ -2,7 +2,7 @@
 
 #include <Base/DataStructure/ObjectBase.h>
 
-#if _EDITOR_ONLY
+#if !(_SHIPPING_MODE)
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
 #include "Base/Timer/Timer.h"
@@ -54,6 +54,17 @@ namespace PigeonEngine
 #define PE_LOG_ERROR(__Log)     { EEditorLogManager::GetManagerSingleton()->AddALog(ELogType::ELT_ERROR, (__Log)); }
 
 }
+
+#else
+
+namespace PigeonEngine
+{
+
+#define PE_LOG_LOG(__Log)       {;}
+#define PE_LOG_WARN(__Log)      {;}
+#define PE_LOG_ERROR(__Log)     {;}
+
+};
 
 #endif
 

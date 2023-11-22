@@ -20,7 +20,7 @@ namespace PigeonEngine
 
     private:
         EString KeyName;
-        UINT8   KeyCode = -1;
+		UINT8   KeyCode = ((UINT8)(-1));
     };
 
     struct EKeysBuiltIn

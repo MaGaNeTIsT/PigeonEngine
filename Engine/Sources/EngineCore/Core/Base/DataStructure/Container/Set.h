@@ -132,7 +132,7 @@ namespace PigeonEngine
             }
             iIndex++;
         }
-        return -1;
+        return ((UINT32)(-1));
     }
 
     template <typename T>

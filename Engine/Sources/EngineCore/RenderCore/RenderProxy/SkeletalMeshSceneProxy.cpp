@@ -193,7 +193,7 @@ namespace PigeonEngine
 	}
 	void RSkeletalMeshSceneProxy::SetupShaders()
 	{
-		const EString ImportPath(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+		const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 		const EString ImportVSName = EString("SkeletalMesh_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
@@ -206,7 +206,7 @@ namespace PigeonEngine
 		if (!VertexShader)
 		{
 			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-			TryLoadVertexShader(EEngineSettings::ENGINE_SHADER_PATH, ImportVSName,
+			TryLoadVertexShader(EBaseSettings::ENGINE_SHADER_PATH, ImportVSName,
 				VertexShader,
 				&ImportPath, &ImportVSName,
 				TempShaderInputLayouts, &TempShaderInputLayoutNum);
@@ -214,7 +214,7 @@ namespace PigeonEngine
 		if (!PixelShader)
 		{
 			const EString ImportPSName = EString("SkeletalMesh_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(EEngineSettings::ENGINE_SHADER_PATH, ImportPSName,
+			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, ImportPSName,
 				PixelShader,
 				&ImportPath, &ImportPSName);
 		}

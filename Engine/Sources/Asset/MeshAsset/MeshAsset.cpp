@@ -1427,7 +1427,9 @@ namespace PigeonEngine
 	}
 	BOOL32 ESkinnedMeshRenderResource::CreateSkinRenderResourceInternal()
 	{
+#if _EDITOR_ONLY
 		const UINT32 MeshSkinnedBoneNum = ((!!SkinnedMesh) && SkinnedMesh->IsResourceValid()) ? (SkinnedMesh->GetBindPoseIndex().Length()) : 0u;
+#endif
 		if ((!SkinnedMesh) || (!(SkinnedMesh->IsResourceValid())))
 		{
 #if _EDITOR_ONLY

@@ -8,10 +8,10 @@ namespace PigeonEngine
 	//BYTE EInput::m_OldKeyState[256];
 	//BYTE EInput::m_KeyState[256];
 
-	void EInput::Initialize(HWND hWnd)
+	void EInput::Initialize(HWND InhWnd)
 	{
 		// Controller Initialization
-		Controller.Initialize(hWnd, static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
+		Controller.Initialize(InhWnd, static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_HEIGHT));
 
 		//memset(m_OldKeyState, 0, 256);
 		//memset(m_KeyState, 0, 256);
@@ -28,9 +28,9 @@ namespace PigeonEngine
 	{
 		return Controller.ReadRawDelta();
 	}
-	LRESULT EInput::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
+	LRESULT EInput::HandleMsg(HWND InhWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
-		return Controller.HandleMsg(hWnd, msg, wParam, lParam);
+		return Controller.HandleMsg(InhWnd, msg, wParam, lParam);
 	}
 	void IController::Initialize(HWND InhWnd, INT32 InWindowSizeX, INT32 InWindowSizeY)
 	{
@@ -101,7 +101,7 @@ namespace PigeonEngine
 	{
 		return Mouse.ReadRawDelta();
 	}
-	LRESULT IController::HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
+	LRESULT IController::HandleMsg(HWND InhWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (msg)
 		{
@@ -168,7 +168,7 @@ namespace PigeonEngine
 			{
 				if (!Mouse.IsInWindow())
 				{
-					SetCapture(hWnd);
+					SetCapture(InhWnd);
 					Mouse.OnMouseEnter();
 					HideCursor();
 				}
@@ -181,7 +181,7 @@ namespace PigeonEngine
 				Mouse.OnMouseMove(pt.x, pt.y);
 				if (!Mouse.IsInWindow())
 				{
-					SetCapture(hWnd);
+					SetCapture(InhWnd);
 					Mouse.OnMouseEnter();
 				}
 			}
@@ -209,7 +209,7 @@ namespace PigeonEngine
 			}*/
 			const POINTS pt = MAKEPOINTS(lParam);
 			Mouse.OnLeftPressed(pt.x, pt.y);
-			SetForegroundWindow(hWnd);
+			SetForegroundWindow(InhWnd);
 			break;
 		}
 		case WM_RBUTTONDOWN:
@@ -309,7 +309,7 @@ namespace PigeonEngine
 		/************** END RAW MOUSE MESSAGES **************/
 		}
 
-		return ::DefWindowProc(hWnd, msg, wParam, lParam);
+		return ::DefWindowProc(InhWnd, msg, wParam, lParam);
 	}
 	BOOL32 IController::IsKeyPressed(unsigned char keycode) const
 	{

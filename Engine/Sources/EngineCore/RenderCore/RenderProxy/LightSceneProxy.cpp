@@ -128,7 +128,10 @@ namespace PigeonEngine
 		// Generate light view frustum and projection
 		{
 			const EFrustum& ViewProxyFrustum = InViewProxy->GetViewFrustum();
-			for (UINT32 CascadeIndex = 0u, DomainNum = DomainInfos.Length(), CascadeNum = IsUseCascadeShadow ? (CascadeShadowData->Layers.Length()) : 1u; CascadeIndex < CascadeNum; CascadeIndex++)
+#if _EDITOR_ONLY
+			const UINT32 DomainNum = DomainInfos.Length();
+#endif
+			for (UINT32 CascadeIndex = 0u, CascadeNum = IsUseCascadeShadow ? (CascadeShadowData->Layers.Length()) : 1u; CascadeIndex < CascadeNum; CascadeIndex++)
 			{
 #if _EDITOR_ONLY
 				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check cascade num of directional light failed(at least 1)."), ((CascadeNum > 0u) && (CascadeIndex < DomainNum)));
@@ -259,8 +262,8 @@ namespace PigeonEngine
 			if (InCascadeShadowData)
 #endif
 			{
-				const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
 #if _EDITOR_ONLY
+				const UINT32 CascadeLayerNum = InCascadeShadowData->Layers.Length();
 				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check directional light is cascade shadow but setup data is null."), (CascadeLayerNum > 0u));
 				if (CascadeLayerNum > 0u)
 #endif

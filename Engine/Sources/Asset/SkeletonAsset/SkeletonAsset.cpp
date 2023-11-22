@@ -465,9 +465,9 @@ namespace PigeonEngine
 		{
 			Matrix4x4* SkeletonMatrices = new Matrix4x4[SkeletonBoneNum];
 			{
-				for (UINT32 i = 0u; i < SkeletonBoneNum; i++)
+				for (UINT32 j = 0u; j < SkeletonBoneNum; j++)
 				{
-					SkeletonMatrices[i] = Matrix4x4::Identity();
+					SkeletonMatrices[j] = Matrix4x4::Identity();
 				}
 			}
 			RSubresourceDataDesc SubresourceDataDesc;
@@ -1213,7 +1213,7 @@ namespace PigeonEngine
 			}
 			{
 				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempSkeletonType);
-				ESkeletonType SkeletonType = static_cast<ESkeletonType>(TempSkeletonType);
+				//ESkeletonType SkeletonType = static_cast<ESkeletonType>(TempSkeletonType);
 				if ((TempSkeletonType == ESkeletonType::SKELETON_TYPE_UNKNOWN) || (TempSkeletonType >= ESkeletonType::SKELETON_TYPE_COUNT))
 				{
 #if _EDITOR_ONLY

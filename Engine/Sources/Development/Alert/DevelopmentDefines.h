@@ -7,7 +7,7 @@
 namespace PigeonEngine
 {
 
-#if !(_TEST_MODE || _SHIPPING_MODE)
+#if !(_SHIPPING_MODE)
 	class DWindowsMessage
 	{
 	public:

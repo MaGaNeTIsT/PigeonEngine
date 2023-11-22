@@ -38,23 +38,23 @@ namespace PigeonEngine
 			EString ImportPath("./Engine/Assets/EngineModels/BaseShapes/");
 			EString ImportName("SphereUV");
 			EString ImportFileType("obj");
-			TryLoadStaticMesh(EEngineSettings::ENGINE_MESH_PATH, "SkyDome", RSkyLightSceneProxy::SkyDomeMeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "SkyDome", RSkyLightSceneProxy::SkyDomeMeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 		}
 		if (!(RSkyLightSceneProxy::SkyDomeVertexShader))
 		{
-			EString ImportPath(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+			EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 			EString VSName("SkyLight_");
 			VSName += EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 			RInputLayoutDesc VSInputLayout[] = { RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT) };
 			constexpr UINT32 VSInputLayoutNum = PE_ARRAYSIZE(VSInputLayout);
-			TryLoadVertexShader(EEngineSettings::ENGINE_SHADER_PATH, VSName, RSkyLightSceneProxy::SkyDomeVertexShader, &ImportPath, &VSName, VSInputLayout, &VSInputLayoutNum);
+			TryLoadVertexShader(EBaseSettings::ENGINE_SHADER_PATH, VSName, RSkyLightSceneProxy::SkyDomeVertexShader, &ImportPath, &VSName, VSInputLayout, &VSInputLayoutNum);
 		}
 		if (!(RSkyLightSceneProxy::SkyDomePixelShader))
 		{
-			EString ImportPath(EEngineSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
+			EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 			EString PSName("SkyLight_");
 			PSName += EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(EEngineSettings::ENGINE_SHADER_PATH, PSName, RSkyLightSceneProxy::SkyDomePixelShader, &ImportPath, &PSName);
+			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, PSName, RSkyLightSceneProxy::SkyDomePixelShader, &ImportPath, &PSName);
 		}
 	}
 

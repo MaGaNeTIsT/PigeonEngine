@@ -92,10 +92,10 @@ namespace PigeonEngine
 		
 	}
 
-	const PSceneComponent* PSceneComponent::GetComponentByUniqueID(const ObjectIdentityType& UniqueID,
+	const PSceneComponent* PSceneComponent::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
 		const BOOL8& bIncludeChildComponent) const
 	{
-		if(this->GetUniqueID() == UniqueID)
+		if(this->GetUniqueID() == InUniqueID)
 		{
 			return this;
 		}
@@ -105,7 +105,7 @@ namespace PigeonEngine
 		}
 		for(const auto& elem : ChildrenComponents)
 		{
-			const PSceneComponent* Ret = elem->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+			const PSceneComponent* Ret = elem->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
 			if(Ret)
 			{
 				return Ret;

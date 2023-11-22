@@ -565,7 +565,7 @@ namespace PigeonEngine
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 		const UINT32	SingleFaceMemStride	= InResource->ResourceProperties.Width * InResource->ResourceProperties.PixelByteCount;
 		const UINT32	SingleFaceMemSize	= SingleFaceMemStride * InResource->ResourceProperties.Height;
-		const UINT32	TotalFaceMemSize	= SingleFaceMemSize * 6u;
+		//const UINT32	TotalFaceMemSize	= SingleFaceMemSize * 6u;
 		BYTE*			StartPtr			= InResource->ByteCode;
 		RSubresourceDataDesc TempInitData[6] =
 		{

@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+set(CMAKE_CONFIGURATION_TYPES "Debug;DebugEditor;Develop;DevelopEditor;Shipping" CACHE STRING "Pigeon Engine Project Configurations" FORCE)
+
 #Pigeon Engine Project
 set(ENGINE_PROJECT_NAME PigeonEngine)
 
 project(${ENGINE_PROJECT_NAME} VERSION 1.0 LANGUAGES CXX)
+
+if(MSVC)
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${ENGINE_PROJECT_NAME})
+endif()
 
 add_executable(${ENGINE_PROJECT_NAME})
 
@@ -17,6 +23,7 @@ set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Assets)
 set(BASE_BINARY_DIR ${PROJECT_BINARY_DIR}/Engine)
 set(BASE_CONFIG_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
 set(TEMP_BINARY_DIR ${PROJECT_BINARY_DIR}/Temp)
+set(TEMP_RAWSHADER_BINARY_DIR ${TEMP_BINARY_DIR}/OutputRawShaders)
 set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/Build64)
 
 #Pigeon Engine Entry
@@ -29,8 +36,10 @@ option(ENABLED_WARNING_AS_ERROR "Enable warning as error" ON)
 option(USE_AVX2 "Enable AVX2" ON)
 set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
 	CXX_STANDARD 17
+	CXX_EXTENSIONS ON
 	CXX_STANDARD_REQUIRED ON
 	C_STANDARD 11
+	C_EXTENSIONS ON
 	C_STANDARD_REQUIRED ON
 )
 target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
@@ -46,6 +55,7 @@ target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 	$<$<CONFIG:Shipping>:/Zi>
 )
 if(MSVC)
+	#TODO We will not ignore MSBuild warning lists : /wd4201 /wd4100 /wd4238
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 		/nologo
 		/diagnostics:classic
@@ -56,6 +66,7 @@ if(MSVC)
 		/Gm-
 		/EHsc
 		/fp:fast
+		/fp:except-
 		/Zc:wchar_t
 		/Zc:forScope
 		/Zc:inline
@@ -63,6 +74,9 @@ if(MSVC)
 		/std:c11
 		/Gd
 		/FC
+		/wd4201
+		/wd4100
+		/wd4238
 	)
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 		$<$<BOOL:${ENABLED_WARNING_AS_ERROR}>:/WX>
@@ -70,43 +84,11 @@ if(MSVC)
 		$<$<BOOL:${USE_AVX2}>:/arch:AVX2>
 	)
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
-		$<$<CONFIG:Debug>:/Od>
-		$<$<CONFIG:DebugEditor>:/Od>
-		$<$<CONFIG:Develop>:/O2>
-		$<$<CONFIG:DevelopEditor>:/O2>
-		$<$<CONFIG:Shipping>:/O2>
-		$<$<CONFIG:Develop>:/Oi>
-		$<$<CONFIG:DevelopEditor>:/Oi>
-		$<$<CONFIG:Shipping>:/Oi>
-		$<$<CONFIG:Shipping>:/Ot>
-		$<$<CONFIG:Shipping>:/GL>
-		$<$<CONFIG:Debug>:/Ob0>
-		$<$<CONFIG:DebugEditor>:/Ob0>
-		$<$<CONFIG:Develop>:/Ob1>
-		$<$<CONFIG:DevelopEditor>:/Ob1>
-		$<$<CONFIG:Shipping>:/Ob2>
-		$<$<CONFIG:Debug>:/RTCc>
-		$<$<CONFIG:DebugEditor>:/RTCc>
-		$<$<CONFIG:Debug>:/RTC1>
-		$<$<CONFIG:DebugEditor>:/RTC1>
-		$<$<CONFIG:Develop>:/RTC1>
-		$<$<CONFIG:DevelopEditor>:/RTC1>
-		$<$<CONFIG:Debug>:/GS>
-		$<$<CONFIG:DebugEditor>:/GS>
-		$<$<CONFIG:Develop>:/GS>
-		$<$<CONFIG:DevelopEditor>:/GS>
-		$<$<CONFIG:Shipping>:/GS->
-		$<$<CONFIG:Shipping>:/Gy>
-		$<$<CONFIG:Debug>:/fp:except>
-		$<$<CONFIG:DebugEditor>:/fp:except>
-		$<$<CONFIG:Develop>:/fp:except->
-		$<$<CONFIG:DevelopEditor>:/fp:except->
-		$<$<CONFIG:Shipping>:/fp:except->
-		$<$<CONFIG:Debug>:/Zc:rvalueCast>
-		$<$<CONFIG:DebugEditor>:/Zc:rvalueCast>
-		$<$<CONFIG:Develop>:/Zc:rvalueCast>
-		$<$<CONFIG:DevelopEditor>:/Zc:rvalueCast>
-		$<$<CONFIG:Shipping>:/Zc:rvalueCast->
+		$<$<CONFIG:Debug>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DebugEditor>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Shipping>:/O2 /Oi /Ot /GL /Ob2 /Gy>
 	)
 	target_link_options(${ENGINE_PROJECT_NAME} PUBLIC
 		$<$<CONFIG:Debug>:/INCREMENTAL>
@@ -142,7 +124,7 @@ if(PLATFORM_WINDOWS)
 		$<$<BOOL:${PLATFORM_WINDOWS}>:_WINDOWS>
 	)
 	set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
-		VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION 10.0.18362.0
+		VS_WINDOWS_TARGET_PLATFORM_MIN_VERSION "10.0.18362.0"
 	)
 endif()
 
@@ -199,7 +181,7 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 #Pigeon Engine Third Party Assimp
 set(ASSIMP_LIB_DIR ${THIRD_PARTY_SOURCE_DIR}/assimp/lib)
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
-	${THIRD_PARTY_SOURCE_DIR}/assimp/assimp/
+	${THIRD_PARTY_SOURCE_DIR}/assimp/
 )
 target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
 	$<$<CONFIG:Debug>:${ASSIMP_LIB_DIR}/Debug/zlibstaticd.lib>
@@ -215,12 +197,8 @@ target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
 )
 
 #Pigeon Engine Third Party Jolt Physics
+set(JOLT_PROJECT_NAME Jolt)
 add_subdirectory(${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/)
-set(JOLT_LIB_DIR ${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/lib)
-#configure_file(
-#	${BASE_CONFIG_SOURCE_DIR}/BasePhysicsConfig.h.in
-#	${BASE_CONFIG_BINARY_DIR}/BasePhysicsConfig.h
-#)
 #Note that this currently only works using MSVC.
 #Clang turns Float2 into a SIMD vector sometimes
 #causing floating point exceptions (the option is ignored).
@@ -233,7 +211,6 @@ option(USE_LZCNT "Enable LZCNT" ON)
 option(USE_TZCNT "Enable TZCNT" ON)
 option(USE_F16C "Enable F16C" ON)
 option(USE_FMADD "Enable FMADD" ON)
-#option(ENABLE_ALL_WARNINGS "Enable all warnings and warnings as errors" ON)
 target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
 	JPH_PROFILE_ENABLED
 	JPH_DISABLE_CUSTOM_ALLOCATOR
@@ -255,56 +232,143 @@ target_compile_definitions(${ENGINE_PROJECT_NAME} PRIVATE
 	$<$<BOOL:${USE_FMADD}>:JPH_USE_FMADD>
 )
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
-	${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/Jolt/
+	${THIRD_PARTY_SOURCE_DIR}/JoltPhysics/
 )
-target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Debug>:${JOLT_LIB_DIR}/Debug/Jolt.lib>
-	$<$<CONFIG:DebugEditor>:${JOLT_LIB_DIR}/Debug/Jolt.lib>
-	$<$<CONFIG:Develop>:${JOLT_LIB_DIR}/Release/Jolt.lib>
-	$<$<CONFIG:DevelopEditor>:${JOLT_LIB_DIR}/Release/Jolt.lib>
-	$<$<CONFIG:Shipping>:${JOLT_LIB_DIR}/Release/Jolt.lib>
-)
+target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE ${JOLT_PROJECT_NAME})
+
+#Output Settings
+foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER ${CONFIG} CONFIG_UPPER)
+	set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		PDB_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		COMPILE_PDB_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		ARCHIVE_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Lib/${CONFIG_UPPER}/
+		RUNTIME_OUTPUT_DIRECTORY ${BUILD_BINARY_DIR}/Bin/${CONFIG_UPPER}/
+	)
+endforeach()
 
 #Pigeon Engine Sources Include
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 	${BASE_CONFIG_BINARY_DIR}/
 	${BASE_SOURCE_DIR}/Sources/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/Core/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/HID/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/IO/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/Main/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/PhysicsCore/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/RenderCore/
+	${BASE_SOURCE_DIR}/Sources/EngineCore/Shaders/
+	${BASE_SOURCE_DIR}/Sources/Asset/
 	${BASE_SOURCE_DIR}/EngineThirdParty/
 )
 
-set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
-	$<$<CONFIG:Debug>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Debug/">
-	$<$<CONFIG:Debug>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Debug/">
-	$<$<CONFIG:DebugEditor>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DebugEditor/">
-	$<$<CONFIG:DebugEditor>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/DebugEditor/">
-	$<$<CONFIG:Develop>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Develop/">
-	$<$<CONFIG:Develop>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Develop/">
-	$<$<CONFIG:DevelopEditor>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/DevelopEditor/">
-	$<$<CONFIG:DevelopEditor>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/DevelopEditor/">
-	$<$<CONFIG:Shipping>:LIBRARY_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:COMPILE_PDB_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:ARCHIVE_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Lib/Shipping/">
-	$<$<CONFIG:Shipping>:RUNTIME_OUTPUT_DIRECTORY="${BUILD_BINARY_DIR}/Bin/Shipping/">
-)
-
 #Pigeon Engine Target Sources
-#Editor Entry
-target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:DebugEditor>:${ENGINE_EDITOR_ENTRY}>)
-target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:DevelopEditor>:${ENGINE_EDITOR_ENTRY}>)
-#TODO Debug Develop Shipping Entry
-target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:${ENGINE_EDITOR_ENTRY}>)
-target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Develop>:${ENGINE_EDITOR_ENTRY}>)
-target_sources(${ENGINE_PROJECT_NAME} PRIVATE $<$<CONFIG:Shipping>:${ENGINE_EDITOR_ENTRY}>)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_H ${BASE_SOURCE_DIR}/Sources/*.h)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_HPP ${BASE_SOURCE_DIR}/Sources/*.hpp)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_C ${BASE_SOURCE_DIR}/Sources/*.c)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_CPP ${BASE_SOURCE_DIR}/Sources/*.cpp)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_COMMON_HLSL ${BASE_SOURCE_DIR}/Sources/EngineCore/Shaders/Common/*.hlsl)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_PRIVATE_HLSL ${BASE_SOURCE_DIR}/Sources/EngineCore/Shaders/Private/*.hlsl)
+file(GLOB_RECURSE ENGINE_PROJECT_HEADERS_PUBLIC_HLSL ${BASE_SOURCE_DIR}/Sources/EngineCore/Shaders/Public/*.hlsl)
+
+file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_H ${BASE_SOURCE_DIR}/EngineThirdParty/*.h)
+file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_HPP ${BASE_SOURCE_DIR}/EngineThirdParty/*.hpp)
+file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_C ${BASE_SOURCE_DIR}/EngineThirdParty/*.c)
+file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_CPP ${BASE_SOURCE_DIR}/EngineThirdParty/*.cpp)
+file(GLOB_RECURSE ENGINE_THIRDPARTY_HEADERS_HLSL ${BASE_SOURCE_DIR}/EngineThirdParty/*.hlsl)
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_H})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_HPP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_C})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_CPP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_COMMON_HLSL})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_PRIVATE_HLSL})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_PROJECT_HEADERS_PUBLIC_HLSL})
+
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_H})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_HPP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_C})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_CPP})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/Engine/ FILES ${ENGINE_THIRDPARTY_HEADERS_HLSL})
+
+if(MSVC)
+	option(ENABLED_HLSL_DEBUG "Enable hlsl debug info" OFF)
+	message(STATUS "Start set shader files properties")
+	foreach(HLSL_FILE ${ENGINE_PROJECT_HEADERS_COMMON_HLSL})
+		set_source_files_properties(${HLSL_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
+	endforeach()
+	foreach(HLSL_FILE ${ENGINE_PROJECT_HEADERS_PUBLIC_HLSL})
+		set_source_files_properties(${HLSL_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
+	endforeach()
+	foreach(HLSL_FILE ${ENGINE_PROJECT_HEADERS_PRIVATE_HLSL})
+		get_filename_component(FILE_NAME ${HLSL_FILE} NAME)
+		if(FILE_NAME MATCHES "_PEVS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a vertex shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Vertex")
+		endif()
+		if(FILE_NAME MATCHES "_PEPS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a pixel shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Pixel")
+		endif()
+		if(FILE_NAME MATCHES "_PECS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a compute shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Compute")
+		endif()
+		set_source_files_properties(${HLSL_FILE} PROPERTIES
+			VS_SHADER_ENTRYPOINT "main"
+			VS_SHADER_MODEL "5.0"
+		)
+		if(ENABLED_HLSL_DEBUG)
+			set_source_files_properties(${HLSL_FILE} PROPERTIES
+				VS_SHADER_DISABLE_OPTIMIZATIONS ON
+				VS_SHADER_ENABLE_DEBUG ON
+			)
+		endif()
+		get_filename_component(OUTPUT_FILE_NAME ${HLSL_FILE} NAME_WLE)
+		set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_OBJECT_FILE_NAME "${TEMP_RAWSHADER_BINARY_DIR}/${OUTPUT_FILE_NAME}.cso")
+	endforeach()
+	foreach(HLSL_FILE ${ENGINE_THIRDPARTY_HEADERS_HLSL})
+		get_filename_component(FILE_NAME ${HLSL_FILE} NAME)
+		if(FILE_NAME MATCHES "_PEVS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a vertex shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Vertex")
+		endif()
+		if(FILE_NAME MATCHES "_PEPS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a pixel shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Pixel")
+		endif()
+		if(FILE_NAME MATCHES "_PECS\\.hlsl$")
+			message(STATUS "${FILE_NAME} is a compute shader.")
+			set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_TYPE "Compute")
+		endif()
+		set_source_files_properties(${HLSL_FILE} PROPERTIES
+			VS_SHADER_ENTRYPOINT "main"
+			VS_SHADER_MODEL "5.0"
+		)
+		if(ENABLED_HLSL_DEBUG)
+			set_source_files_properties(${HLSL_FILE} PROPERTIES
+				VS_SHADER_DISABLE_OPTIMIZATIONS ON
+				VS_SHADER_ENABLE_DEBUG ON
+			)
+		endif()
+		get_filename_component(OUTPUT_FILE_NAME ${HLSL_FILE} NAME_WLE)
+		set_source_files_properties(${HLSL_FILE} PROPERTIES VS_SHADER_OBJECT_FILE_NAME "${TEMP_RAWSHADER_BINARY_DIR}/${OUTPUT_FILE_NAME}.cso")
+	endforeach()
+endif()
+
+target_sources(${ENGINE_PROJECT_NAME} PRIVATE
+	${ENGINE_PROJECT_HEADERS_H}
+	${ENGINE_PROJECT_HEADERS_HPP}
+	${ENGINE_PROJECT_HEADERS_C}
+	${ENGINE_PROJECT_HEADERS_CPP}
+	${ENGINE_PROJECT_HEADERS_COMMON_HLSL}
+	${ENGINE_PROJECT_HEADERS_PRIVATE_HLSL}
+	${ENGINE_PROJECT_HEADERS_PUBLIC_HLSL}
+	${ENGINE_THIRDPARTY_HEADERS_H}
+	${ENGINE_THIRDPARTY_HEADERS_HPP}
+	${ENGINE_THIRDPARTY_HEADERS_C}
+	${ENGINE_THIRDPARTY_HEADERS_CPP}
+	${ENGINE_THIRDPARTY_HEADERS_HLSL}
+)

@@ -93,12 +93,12 @@ namespace PigeonEngine
         PObject::Destroy();
     }
 
-    const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const
+    const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
     {
         PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::GetActorByUniqueId : RootActor is nullptr.", RootActor != nullptr);
         for(auto& elem : RootActor->ChildrenActors)
         {
-            const PActor* Ret = elem->GetActorByUniqueID(UniqueID, bIncludeChildActor);
+            const PActor* Ret = elem->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
             if(Ret)
             {
                 return Ret;
@@ -108,12 +108,12 @@ namespace PigeonEngine
         
     }
 
-    const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& UniqueID,
+    const PActorComponent* PWorld::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
         const BOOL8& bIncludeChildComponent) const
     {
         for(auto& elem : RootActor->ChildrenActors)
         {
-            const PActorComponent* Ret = elem->GetComponentByUniqueID(UniqueID, bIncludeChildComponent);
+            const PActorComponent* Ret = elem->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
             if(Ret)
             {
                 return Ret;
