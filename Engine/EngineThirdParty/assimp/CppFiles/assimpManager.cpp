@@ -789,9 +789,8 @@ namespace PigeonEngine
 				}
 
 				// Vertex part append
-				const EMesh::EVertexPart& VertexPart = UsedMesh.GetVertexPart();
-				Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
-				Check((NewSubmeshData.VertexNum == VertexPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				Check((UsedMesh.GetVertexPart().Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == (UsedMesh.GetVertexPart())[0].ElementNum), (ENGINE_ASSET_ERROR));
 				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
 				{
 					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
@@ -1009,9 +1008,8 @@ namespace PigeonEngine
 				}
 
 				// Vertex part append
-				const EMesh::EVertexPart& VertexPart = UsedMesh.GetVertexPart();
-				Check((VertexPart.Length() > 0u), (ENGINE_ASSET_ERROR));
-				Check((NewSubmeshData.VertexNum == VertexPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				Check((UsedMesh.GetVertexPart().Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == (UsedMesh.GetVertexPart())[0].ElementNum), (ENGINE_ASSET_ERROR));
 				for (UINT32 LayoutIndex = 0u; LayoutIndex < 6u; LayoutIndex++)
 				{
 					for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
@@ -1042,9 +1040,8 @@ namespace PigeonEngine
 				{
 					TempBindPoseIndexPart.Add(It->second, It->first);
 				}
-				const ESkinnedMesh::ESkinPart& SkinPart = UsedMesh.GetSkinPart();
-				Check((SkinPart.Length() > 0u), (ENGINE_ASSET_ERROR));
-				Check((NewSubmeshData.VertexNum == SkinPart[0].ElementNum), (ENGINE_ASSET_ERROR));
+				Check((UsedMesh.GetSkinPart().Length() > 0u), (ENGINE_ASSET_ERROR));
+				Check((NewSubmeshData.VertexNum == (UsedMesh.GetSkinPart())[0].ElementNum), (ENGINE_ASSET_ERROR));
 				for (UINT32 LayoutPartIndex = 0u; LayoutPartIndex < 4u; LayoutPartIndex++)
 				{
 					ESkinData& NewSkinData = NewSkinDatas[LayoutPartIndex];
