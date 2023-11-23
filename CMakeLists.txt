@@ -45,8 +45,8 @@ set_target_properties(${ENGINE_PROJECT_NAME} PROPERTIES
 target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 	$<$<CONFIG:Debug>:/MTd>
 	$<$<CONFIG:DebugEditor>:/MTd>
-	$<$<CONFIG:Develop>:/MT>
-	$<$<CONFIG:DevelopEditor>:/MT>
+	$<$<CONFIG:Develop>:/MTd>
+	$<$<CONFIG:DevelopEditor>:/MTd>
 	$<$<CONFIG:Shipping>:/MT>
 	$<$<CONFIG:Debug>:/ZI>
 	$<$<CONFIG:DebugEditor>:/ZI>
@@ -86,8 +86,8 @@ if(MSVC)
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 		$<$<CONFIG:Debug>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
 		$<$<CONFIG:DebugEditor>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
-		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
-		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /GS /Zc:rvalueCast>
 		$<$<CONFIG:Shipping>:/O2 /Oi /Ot /GL /Ob2 /Gy>
 	)
 	target_link_options(${ENGINE_PROJECT_NAME} PUBLIC
@@ -179,21 +179,17 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 )
 
 #Pigeon Engine Third Party Assimp
+#set(ASSIMP_PROJECT_NAME assimp)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/assimp/)
+#target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE ${ASSIMP_PROJECT_NAME})
+#target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/assimp/include/)
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE ${THIRD_PARTY_SOURCE_DIR}/assimp/)
 set(ASSIMP_LIB_DIR ${THIRD_PARTY_SOURCE_DIR}/assimp/lib)
-target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
-	${THIRD_PARTY_SOURCE_DIR}/assimp/
-)
 target_link_libraries(${ENGINE_PROJECT_NAME} PRIVATE
-	$<$<CONFIG:Debug>:${ASSIMP_LIB_DIR}/Debug/zlibstaticd.lib>
-	$<$<CONFIG:Debug>:${ASSIMP_LIB_DIR}/Debug/assimp-vc143-mtd.lib>
 	$<$<CONFIG:DebugEditor>:${ASSIMP_LIB_DIR}/Debug/zlibstaticd.lib>
 	$<$<CONFIG:DebugEditor>:${ASSIMP_LIB_DIR}/Debug/assimp-vc143-mtd.lib>
-	$<$<CONFIG:Develop>:${ASSIMP_LIB_DIR}/Release/zlibstatic.lib>
-	$<$<CONFIG:Develop>:${ASSIMP_LIB_DIR}/Release/assimp-vc143-mt.lib>
 	$<$<CONFIG:DevelopEditor>:${ASSIMP_LIB_DIR}/Release/zlibstatic.lib>
 	$<$<CONFIG:DevelopEditor>:${ASSIMP_LIB_DIR}/Release/assimp-vc143-mt.lib>
-	$<$<CONFIG:Shipping>:${ASSIMP_LIB_DIR}/Release/zlibstatic.lib>
-	$<$<CONFIG:Shipping>:${ASSIMP_LIB_DIR}/Release/assimp-vc143-mt.lib>
 )
 
 #Pigeon Engine Third Party Jolt Physics

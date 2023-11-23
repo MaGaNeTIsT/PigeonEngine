@@ -42,8 +42,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_compile_options(${PROJECT_NAME} PRIVATE
 	$<$<CONFIG:Debug>:/MTd>
 	$<$<CONFIG:DebugEditor>:/MTd>
-	$<$<CONFIG:Develop>:/MT>
-	$<$<CONFIG:DevelopEditor>:/MT>
+	$<$<CONFIG:Develop>:/MTd>
+	$<$<CONFIG:DevelopEditor>:/MTd>
 	$<$<CONFIG:Shipping>:/MT>
 	$<$<CONFIG:Debug>:/ZI>
 	$<$<CONFIG:DebugEditor>:/ZI>
@@ -80,8 +80,8 @@ if(MSVC)
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 		$<$<CONFIG:Debug>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
 		$<$<CONFIG:DebugEditor>:/Od /Ob0 /RTC1 /GS /Zc:rvalueCast>
-		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
-		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /RTC1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:Develop>:/O2 /Oi /Ob1 /GS /Zc:rvalueCast>
+		$<$<CONFIG:DevelopEditor>:/O2 /Oi /Ob1 /GS /Zc:rvalueCast>
 		$<$<CONFIG:Shipping>:/O2 /Oi /Ot /GL /Ob2 /Gy>
 	)
 endif()
