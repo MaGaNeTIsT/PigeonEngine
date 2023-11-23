@@ -4,6 +4,10 @@
 #include "../../../../HID/Input/InputType.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
     void PController::BeginAddedToScene(PWorld* World)
@@ -226,8 +230,8 @@ namespace PigeonEngine
     {
         ImGui::Begin("EditorController", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
         ImGui::Text("Editor Controller Setup");
-        const BOOL8 bChangedX = ImGui::DragScalar("##MovingSpeed",   ImGuiDataType_Float, &this->MovingSpeed, 0.05f,    NULL, NULL, "MovingSpeed : %.6f");
-        const BOOL8 bChangedY = ImGui::DragScalar("##RotationSpeed", ImGuiDataType_Float, &this->RotationSpeed, 0.001f, NULL, NULL, "RotationSpeed : %.6f");
+        /*const BOOL8 bChangedX = */ImGui::DragScalar("##MovingSpeed", ImGuiDataType_Float, &this->MovingSpeed, 0.05f, NULL, NULL, "MovingSpeed : %.6f");
+        /*const BOOL8 bChangedY = */ImGui::DragScalar("##RotationSpeed", ImGuiDataType_Float, &this->RotationSpeed, 0.001f, NULL, NULL, "RotationSpeed : %.6f");
         ImGui::End();
     }
 

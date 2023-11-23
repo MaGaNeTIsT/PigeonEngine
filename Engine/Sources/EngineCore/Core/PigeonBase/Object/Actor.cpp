@@ -3,6 +3,10 @@
 #include "Component/SceneComponent.h"
 #include "World/World.h"
 
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
 

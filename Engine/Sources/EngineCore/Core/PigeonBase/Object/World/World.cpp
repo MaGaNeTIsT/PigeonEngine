@@ -163,8 +163,9 @@ namespace PigeonEngine
 	{
 #if _EDITOR_ONLY
         return this->EditorController;
-#endif
+#else
         return this->Controller;
+#endif
 	}
 
     const EGameTimer* PWorld::GetGameTimer() const

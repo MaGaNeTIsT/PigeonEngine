@@ -52,7 +52,8 @@ namespace PigeonEngine
 			NewStaticMeshComp->SetIsTickable(TRUE);
 			New->AddComponent(NewStaticMeshComp);
 			const EStaticMeshAsset* Asset = nullptr;
-			EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
+			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
 			EString ImportName("Robot");
 			EString ImportFileType("obj");
 			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
@@ -79,7 +80,8 @@ namespace PigeonEngine
 		 //	EString ImportFileType("FBX");
 		 //	EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
 		 //	EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-		 //	//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/D.Va/");
+		 // EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+		 //	//EString ImportPath(AssetBasePath + "EngineModels/SceneModels/D.Va/");
 		 //	//EString ImportName("Model");
 		 //	//EString ImportFileType("FBX");
 		 //	//EString MeshAssetName("DVa_Mesh");
@@ -128,9 +130,10 @@ namespace PigeonEngine
 			TArray<EString> ImportPaths;
 			TArray<EString> ImportNames;
 			TArray<EString> ImportFileTypes;
+			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
 			for (UINT32 i = 0u; i < 6u; i++)
 			{
-				ImportPaths.Add("./Engine/Assets/EngineTextures/DefaultSkyBox/Sky_001/");
+				ImportPaths.Add(AssetBasePath + "EngineTextures/DefaultSkyBox/Sky_001/");
 				ImportFileTypes.Add("png");
 			}
 			ImportNames.Add("Sky_001_Right");
@@ -167,8 +170,9 @@ namespace PigeonEngine
 
 			const ESkinnedMeshAsset* MeshAsset = nullptr;
 		 	const ESkeletonAsset* SkeletonAsset = nullptr;
-		 	EString ImportPath("./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/");
-		 	EString ImportName("SK_Mannequin_UE4_WithWeapon");
+			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/UnrealCharacter/");
+			EString ImportName("SK_Mannequin_UE4_WithWeapon");
 		 	EString ImportFileType("FBX");
 		 	EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
 		 	EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
@@ -188,7 +192,8 @@ namespace PigeonEngine
 			//New->StaticMeshComponent = new PStaticMeshComponent();
 			//New->StaticMeshComponent->SetIsTickable(TRUE);
 			//const EStaticMeshAsset* Asset = nullptr;
-			//EString ImportPath("./Engine/Assets/EngineModels/SceneModels/Robot/");
+			//EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			//EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
 			//EString ImportName("Robot");
 			//EString ImportFileType("obj");
 			//TryLoadStaticMesh(EEngineSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);

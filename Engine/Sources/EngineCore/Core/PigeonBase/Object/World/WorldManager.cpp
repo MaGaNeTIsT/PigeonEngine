@@ -2,6 +2,10 @@
 
 #include "World.h"
 
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
     static void RegisterClassTypes()

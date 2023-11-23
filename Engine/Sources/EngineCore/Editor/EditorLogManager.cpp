@@ -1,6 +1,7 @@
 ﻿#include "EditorLogManager.h"
 #if _EDITOR_ONLY
 #include "Base/Timer/Timer.h"
+#include <imgui.h>
 
 namespace PigeonEngine
 {
@@ -114,7 +115,7 @@ namespace PigeonEngine
             Str += elem->AsString() + "\r\n";
         }
         
-        EString FileName = EString(EEngineSettings::EDITOR_LOGS_PATH) + EString("[") + EngineSystemTime::Now().AsString() + EString("]") + EString("Log.txt");
+        EString FileName = EString(EBaseSettings::EDITOR_LOGS_PATH) + EString("[") + EngineSystemTime::Now().AsString() + EString("]") + EString("Log.txt");
         FileName = FileName.Replace(":", "-");
         EFileHelper::SaveStringToFile(FileName, Str);
         this->Logs.Clear();

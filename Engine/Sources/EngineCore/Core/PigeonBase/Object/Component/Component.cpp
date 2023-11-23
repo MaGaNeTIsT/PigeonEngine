@@ -38,9 +38,9 @@ namespace PigeonEngine
 	{
 #if _EDITOR_ONLY
 		EditorTick(deltaTime);
-		return;
-#endif
+#else
 		FixedTick(deltaTime);
+#endif
 	}
 	void PComponent::FixedTick(FLOAT deltaTime)
 	{

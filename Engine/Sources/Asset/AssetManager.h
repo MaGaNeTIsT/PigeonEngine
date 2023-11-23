@@ -1,6 +1,7 @@
 #pragma once
 #include "Base/DataStructure/ObjectBase.h"
 #if _EDITOR_ONLY
+#include <imgui.h>
 #include "BaseAsset.h"
 #include "Base/DataStructure/Container/Array.h"
 #include "Base/DataStructure/Pointer/SharedPtr.h"
@@ -71,7 +72,7 @@ namespace PigeonEngine
 
 	protected:
 		void GenerateContentBrowser();
-		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr) ;
+		ImTextureID GetThumbNail(const EAssetType& Type, const TSharedPtr<EAssetFile>& File = nullptr);
 		static EString AssetTypeAsString(const EAssetType& Type);
 	private:
 		TSharedPtr<EFolderTreeNode> EngineAssetRoot  = nullptr;

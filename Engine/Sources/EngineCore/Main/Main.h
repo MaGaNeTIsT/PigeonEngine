@@ -16,7 +16,3 @@
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <BaseConfig.h>
-
-#if _EDITOR_ONLY
-#include "../../../ThirdParty/imgui/imgui.h"
-#endif

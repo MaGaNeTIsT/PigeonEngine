@@ -786,7 +786,7 @@ namespace PigeonEngine
 				ETextureCube* NeedSaveTextureCubeResource = new ETextureCube();
 				NeedSaveTextureCubeResource->SetTextureCubeData(TotalReadByteCode, TotalWidth, TotalPixelByteCount, TotalFormat);
 
-				BOOL32 Result = SaveTextureCubeAsset(InSavePath, InAssetName, NeedSaveTextureCubeResource);
+				Result = SaveTextureCubeAsset(InSavePath, InAssetName, NeedSaveTextureCubeResource);
 
 				NeedSaveTextureCubeResource->ReleaseResource();
 				delete NeedSaveTextureCubeResource;

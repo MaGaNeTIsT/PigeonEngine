@@ -150,6 +150,5 @@ namespace PigeonEngine
         virtual void OnSelectedByImGui();
     };
 #endif
-    };
 
-}
+};

@@ -3,6 +3,11 @@
 #include <PigeonBase/Object/Actor.h>
 #include "../../../../IO/SerializationHelper.h"
 #include "../World/World.h"
+
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
 
