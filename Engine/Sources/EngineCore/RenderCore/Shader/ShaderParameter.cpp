@@ -93,8 +93,8 @@ namespace PigeonEngine
 		EString ErrorInfo("Could not find name[");
 		ErrorInfo = ErrorInfo + InParamName + "] parameter.";
 		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
-#endif
 		return nullptr;
+#endif
 	}
 	void EShaderStruct::BeginSetupParameter()
 	{
@@ -188,11 +188,7 @@ namespace PigeonEngine
 		{
 			return (*Parameter);
 		}
-#if _EDITOR_ONLY
 		static EShaderParameter _FailedParameter;
-#else
-		EShaderParameter _FailedParameter;
-#endif
 		return _FailedParameter;
 	}
 	RBufferResource& EMaterialParameter::GetConstantBuffer()

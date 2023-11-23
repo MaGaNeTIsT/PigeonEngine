@@ -148,7 +148,7 @@ namespace PigeonEngine
         virtual void GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent);
         virtual void GenerateComponentDetail();
         virtual void OnSelectedByImGui();
-    };
 #endif
+    };
 
 };
