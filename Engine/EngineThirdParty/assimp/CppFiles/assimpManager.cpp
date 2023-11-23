@@ -1,4 +1,7 @@
 #include "../Headers/assimpManager.h"
+
+#if _EDITOR_ONLY
+
 #include <Base/DataStructure/Container/Map.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -8,16 +11,12 @@ namespace PigeonEngine
 {
 #define CUSTOM_IS_QNAN(f)	(f != f)
 
-#if _EDITOR_ONLY
-
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<CAssimpManager, EManagerBase>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-
-#endif
 
 	struct StoredMeshLayoutDesc
 	{
@@ -1965,3 +1964,5 @@ namespace PigeonEngine
 	}
 
 };
+
+#endif

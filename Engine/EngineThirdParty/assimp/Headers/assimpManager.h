@@ -1,5 +1,7 @@
 #pragma once
 
+#if _EDITOR_ONLY
+
 #include "../../../Sources/EngineCore/Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/BaseType.h>
@@ -35,3 +37,5 @@ namespace PigeonEngine
 
 	};
 };
+
+#endif

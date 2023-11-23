@@ -520,7 +520,9 @@ namespace PigeonEngine
 				{
 					SkyLight->BindRenderResource();
 					SkyLight->Draw();
+#if _EDITOR_ONLY
 					break;
+#endif
 				}
 			}
 			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
