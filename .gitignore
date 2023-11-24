@@ -1,3 +1,4 @@
 #folders
 Build/
-Engine/ThirdParty/assimp/lib/
+Engine/ThirdParty/assimp/lib/Debug/
+Engine/ThirdParty/assimp/lib/Release/
