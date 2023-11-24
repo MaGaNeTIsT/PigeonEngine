@@ -115,8 +115,10 @@ namespace PigeonEngine
             Str += elem->AsString() + "\r\n";
         }
         
-        EString FileName = EString(EBaseSettings::EDITOR_LOGS_PATH) + EString("[") + EngineSystemTime::Now().AsString() + EString("]") + EString("Log.txt");
-        FileName = FileName.Replace(":", "-");
+        EString FileName = EString(EBaseSettings::EDITOR_LOGS_PATH);
+        EString FileName1 = EString("[") + EngineSystemTime::Now().AsString() + EString("]");
+        FileName1 = FileName1.Replace(":", "-");
+        FileName = FileName + FileName1 + EString("Log.txt");
         EFileHelper::SaveStringToFile(FileName, Str);
         this->Logs.Clear();
     }
