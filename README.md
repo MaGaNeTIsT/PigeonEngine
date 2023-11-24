@@ -10,7 +10,7 @@ A game engine for Windows
 | JoltPhysics | A multi core friendly rigid body physics and collision detection library. | [JoltPhysics](https://github.com/jrouwe/JoltPhysics) |
 
 ## Engine Preview
-![Image Example](./Engine/Assets/Development/Preview/PigeonEnginePreview.png)
+![Image Example](./Assets/Development/Preview/PigeonEnginePreview.png)
 
 ## Type Name Rule
 | Example Type Name |  Name Type Rule |
