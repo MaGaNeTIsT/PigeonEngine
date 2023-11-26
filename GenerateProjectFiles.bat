@@ -2,7 +2,9 @@
 
 setlocal enabledelayedexpansion
 
-set DecompressLauncher=E:\LocalData\Apps\7-Zip\7z.exe
+set EngineBuildFolder=%~dp0Build
+
+set DecompressLauncher=%~dp0ExtraTools\7z\x64\7za.exe
 
 set AssimpLibFolder=%~dp0Engine\ThirdParty\assimp\lib
 set AssimpLibDebugZip=%~dp0Engine\ThirdParty\assimp\lib\Debug.zip
@@ -29,17 +31,15 @@ if not exist "%AssimpLibReleaseFolder%" (
 	)
 )
 
-set BuildFolder=%~dp0Build
-
-if not exist "%BuildFolder%" (echo Do Not Exist Old Build Folder...)
-if exist "%BuildFolder%" (
+if not exist "%EngineBuildFolder%" (echo Do Not Exist Old Build Folder...)
+if exist "%EngineBuildFolder%" (
 	echo Delete Old Build Folder...Start
-	rd /s /q "%BuildFolder%"
+	rd /s /q "%EngineBuildFolder%"
 	echo Delete Old Build Folder...End
 )
 
 echo Build Pigeon Engine...Start
-cmake -B "%BuildFolder%" -DENABLED_WARNING_AS_ERROR=ON -DPLATFORM_WINDOWS=ON -DENABLED_HLSL_DEBUG=OFF
+cmake -B "%EngineBuildFolder%" -DENABLED_WARNING_AS_ERROR=ON -DPLATFORM_WINDOWS=ON -DENABLED_HLSL_DEBUG=OFF
 echo Build Pigeon Engine...End
 
 pause
