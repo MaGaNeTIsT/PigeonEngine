@@ -44,6 +44,10 @@ namespace PigeonEngine
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::StyleColorsDark();
 
+        io.IniFilename = "./Engine/Configs/ImGUIEngine.ini";
+        io.LogFilename = "./Engine/Configs/ImGUIEngineLog.txt";
+        io.IniSavingRate = 30.f;
+
         InitWnd();
         InitD3D();
 

@@ -21,7 +21,7 @@ set(THIRD_PARTY_SOURCE_DIR ${BASE_SOURCE_DIR}/ThirdParty)
 set(ASSETS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/Assets)
 
 set(BASE_BINARY_DIR ${PROJECT_BINARY_DIR}/Engine)
-set(BASE_CONFIG_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
+set(CONFIGS_BINARY_DIR ${BASE_BINARY_DIR}/Configs)
 set(TEMP_BINARY_DIR ${PROJECT_BINARY_DIR}/Temp)
 set(TEMP_RAWSHADER_BINARY_DIR ${TEMP_BINARY_DIR}/OutputRawShaders)
 set(BUILD_BINARY_DIR ${PROJECT_BINARY_DIR}/Build64)
@@ -114,7 +114,12 @@ target_link_options(${ENGINE_PROJECT_NAME} PUBLIC
 #Pigeon Engine Build Configs
 configure_file(
 	${BASE_CONFIG_SOURCE_DIR}/BaseConfig.h.in
-	${BASE_CONFIG_BINARY_DIR}/BaseConfig.h
+	${CONFIGS_BINARY_DIR}/BaseConfig.h
+)
+configure_file(
+	${BASE_CONFIG_SOURCE_DIR}/ImGUIEngine.ini
+	${CONFIGS_BINARY_DIR}/ImGUIEngine.ini
+	COPYONLY
 )
 
 #Pigeon Engine Platform Settings
@@ -246,7 +251,7 @@ endforeach()
 
 #Pigeon Engine Sources Include
 target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
-	${BASE_CONFIG_BINARY_DIR}/
+	${CONFIGS_BINARY_DIR}/
 	${BASE_SOURCE_DIR}/Sources/
 	${BASE_SOURCE_DIR}/Sources/EngineCore/
 	${BASE_SOURCE_DIR}/Sources/EngineCore/Core/
