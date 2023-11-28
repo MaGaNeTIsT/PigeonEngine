@@ -366,7 +366,7 @@ namespace PigeonEngine
 		RootComponent->Destroy();
 	}
 
-	EBoundAABB PActor::GetBounds()
+	EBoundAABB PActor::GetBounds()const
 	{
 		//TODO
 		return EBoundAABB();

@@ -81,7 +81,7 @@ namespace PigeonEngine
 
 	public:
 
-		EBoundAABB GetBounds();
+		EBoundAABB GetBounds()const;
 		
 	public:
 		 
