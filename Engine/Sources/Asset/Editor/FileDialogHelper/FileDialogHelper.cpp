@@ -7,12 +7,31 @@ using namespace PigeonEngine;
 #define FILE_DIALOG_HELPER_MAX_STRLEN 256
 #endif
 
+CHAR* GetPath(PathSet* pathSet, size_t index)
+{
+    return pathSet->buf + pathSet->indices[index];
+}
+
+void FreePathSet(PathSet* pathSet)
+{
+    free(pathSet->indices);
+    free(pathSet->buf);
+}
+
 BOOL OpenDialog(const CHAR* filterList, const CHAR* defaultPath, CHAR** outPath)
 {
 #if _WINDOWS
 	return OpenDialogWindows(filterList, defaultPath, outPath);
 #else // _WINDOWS
 	return FALSE;
+#endif
+}
+BOOL OpenDialogMultiSelect(const CHAR* filterList, const CHAR* defaultPath, PathSet* outPaths)
+{
+#if _WINDOWS
+    return OpenDialogMultiSelectWindows(filterList, defaultPath, outPaths);
+#else // _WINDOWS
+    return FALSE;
 #endif
 }
 #if _WINDOWS
@@ -208,6 +227,129 @@ static BOOL AddFiltersToDialog(::IFileDialog* fileOpenDialog, const CHAR* filter
     return TRUE;
 }
 
+static size_t GetUTF8ByteCountForWChar(const WCHAR* str)
+{
+    size_t bytesNeeded = WideCharToMultiByte(CP_UTF8, 0,
+        str, -1,
+        NULL, 0, NULL, NULL);
+    return bytesNeeded + 1;
+}
+
+static int CopyWCharToExistingCharBuffer(const WCHAR* inStr, CHAR* outPtr)
+{
+    int bytesNeeded = static_cast<int>(GetUTF8ByteCountForWChar(inStr));
+
+    /* invocation copies null term */
+    int bytesWritten = WideCharToMultiByte(CP_UTF8, 0,
+        inStr, -1,
+        outPtr, bytesNeeded,
+        NULL, 0);
+
+    return bytesWritten;
+
+}
+
+static BOOL AllocPathSet(IShellItemArray* shellItems, PathSet* pathSet)
+{
+    //const char ERRORMSG[] = "Error allocating pathset.";
+
+    assert(shellItems);
+    assert(pathSet);
+
+    // How many items in shellItems?
+    DWORD numShellItems;
+    HRESULT result = shellItems->GetCount(&numShellItems);
+    if (!SUCCEEDED(result))
+    {
+        //TODO:Log Error.
+        return FALSE;
+    }
+
+    pathSet->count = static_cast<size_t>(numShellItems);
+    assert(pathSet->count > 0);
+
+    pathSet->indices = (size_t*)malloc(sizeof(size_t) * pathSet->count);
+    if (!pathSet->indices)
+    {
+        return FALSE;
+    }
+
+    /* count the total bytes needed for buf */
+    size_t bufSize = 0;
+    for (DWORD i = 0; i < numShellItems; ++i)
+    {
+        ::IShellItem* shellItem;
+        result = shellItems->GetItemAt(i, &shellItem);
+        if (!SUCCEEDED(result))
+        {
+            //TODO:Log Error.
+            return FALSE;
+        }
+
+        // Confirm SFGAO_FILESYSTEM is true for this shellitem, or ignore it.
+        SFGAOF attribs;
+        result = shellItem->GetAttributes(SFGAO_FILESYSTEM, &attribs);
+        if (!SUCCEEDED(result))
+        {
+            //TODO:Log Error.
+            return FALSE;
+        }
+        if (!(attribs & SFGAO_FILESYSTEM))
+            continue;
+
+        LPWSTR name;
+        shellItem->GetDisplayName(SIGDN_FILESYSPATH, &name);
+
+        // Calculate length of name with UTF-8 encoding
+        bufSize += GetUTF8ByteCountForWChar(name);
+
+        CoTaskMemFree(name);
+    }
+
+    assert(bufSize);
+
+    pathSet->buf = (CHAR*)malloc(sizeof(CHAR) * bufSize);
+    memset(pathSet->buf, 0, sizeof(CHAR) * bufSize);
+
+    /* fill buf */
+    CHAR* p_buf = pathSet->buf;
+    for (DWORD i = 0; i < numShellItems; ++i)
+    {
+        ::IShellItem* shellItem;
+        result = shellItems->GetItemAt(i, &shellItem);
+        if (!SUCCEEDED(result))
+        {
+            //TODO:Log Error.
+            return FALSE;
+        }
+
+        // Confirm SFGAO_FILESYSTEM is true for this shellitem, or ignore it.
+        SFGAOF attribs;
+        result = shellItem->GetAttributes(SFGAO_FILESYSTEM, &attribs);
+        if (!SUCCEEDED(result))
+        {
+            //TODO:Log Error.
+            return FALSE;
+        }
+        if (!(attribs & SFGAO_FILESYSTEM))
+            continue;
+
+        LPWSTR name;
+        shellItem->GetDisplayName(SIGDN_FILESYSPATH, &name);
+
+        int bytesWritten = CopyWCharToExistingCharBuffer(name, p_buf);
+        CoTaskMemFree(name);
+
+        ptrdiff_t index = p_buf - pathSet->buf;
+        assert(index >= 0);
+        pathSet->indices[i] = static_cast<size_t>(index);
+
+        p_buf += bytesWritten;
+    }
+
+    return TRUE;
+}
+
 BOOL OpenDialogWindows(const CHAR* filterList, const CHAR* defaultPath, CHAR** outPath)
 {
     BOOL RESULT = FALSE;
@@ -225,6 +367,7 @@ BOOL OpenDialogWindows(const CHAR* filterList, const CHAR* defaultPath, CHAR** o
 
 	if (!SUCCEEDED(result))
 	{
+        //TODO:Log Error open failed;
         goto End;
 	}
 
@@ -287,5 +430,97 @@ End:
 
     return RESULT;
 }
+
+BOOL OpenDialogMultiSelectWindows(const CHAR* filterList, const CHAR* defaultPath, PathSet* outPaths)
+{
+    BOOL RESULT = FALSE;
+
+    HRESULT coResult = ::CoInitializeEx(NULL, ::COINIT_APARTMENTTHREADED | ::COINIT_DISABLE_OLE1DDE);
+    if (!((coResult == RPC_E_CHANGED_MODE) || SUCCEEDED(coResult)))
+    {
+        return FALSE;
+    }
+
+    // Create dialog
+    ::IFileOpenDialog* fileOpenDialog(NULL);
+    HRESULT result = ::CoCreateInstance(::CLSID_FileOpenDialog, NULL,
+        CLSCTX_ALL, ::IID_IFileOpenDialog,
+        reinterpret_cast<void**>(&fileOpenDialog));
+
+    if (!SUCCEEDED(result))
+    {
+        //TODO:Log Error open failed;
+        goto End;
+    }
+
+    if (!AddFiltersToDialog(fileOpenDialog, filterList))
+    {
+        goto End;
+    }
+
+    if (!SetDefaultPath(fileOpenDialog, defaultPath))
+    {
+        goto End;
+    }
+
+    // Set a flag for multiple options
+    DWORD dwFlags;
+    result = fileOpenDialog->GetOptions(&dwFlags);
+    if (!SUCCEEDED(result))
+    {
+        //TODO:Log error
+        RESULT = FALSE;
+        goto End;
+    }
+    result = fileOpenDialog->SetOptions(dwFlags | FOS_ALLOWMULTISELECT);
+    if (!SUCCEEDED(result))
+    {
+        //TODO:Log error
+        RESULT = FALSE;
+        goto End;
+    }
+
+    // Show the dialog.
+    result = fileOpenDialog->Show(NULL);
+    if (SUCCEEDED(result))
+    {
+        IShellItemArray* shellItems;
+        result = fileOpenDialog->GetResults(&shellItems);
+        if (!SUCCEEDED(result))
+        {
+            //TODO:Log error
+            RESULT = FALSE;
+            goto End;
+        }
+
+        if (!AllocPathSet(shellItems, outPaths))
+        {
+            shellItems->Release();
+            goto End;
+        }
+
+        shellItems->Release();
+        RESULT = TRUE;
+    }
+    else if (result == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+    {
+        RESULT = FALSE;
+    }
+    else
+    {
+        //TODO:Log error
+        RESULT = FALSE;
+    }
+
+End:
+    if (fileOpenDialog)
+        fileOpenDialog->Release();
+
+    if (SUCCEEDED(coResult))
+        ::CoUninitialize();
+
+    return RESULT;
+}
+
 #endif
 #endif
