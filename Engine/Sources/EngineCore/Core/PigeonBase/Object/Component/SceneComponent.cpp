@@ -350,6 +350,15 @@ namespace PigeonEngine
 		return this->Transform.GetUpVector_World(this->ParentComponent, this->GetOwnerActor() ? this->GetOwnerActor()->GetAttachedParentActor() : nullptr);
 	}
 
+	PE_NODISCARD const EBoundAABB& PSceneComponent::GetLocalBound()const
+	{
+		return LocalBound;
+	}
+	void PSceneComponent::SetLocalBound(const EBoundAABB& InNewBound)
+	{
+		LocalBound = InNewBound;
+	}
+
 	// Render proxy functions START
 	BOOL32 PSceneComponent::IsRenderTransformDirty()const
 	{

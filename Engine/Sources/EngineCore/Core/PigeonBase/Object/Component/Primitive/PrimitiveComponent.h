@@ -34,7 +34,6 @@ namespace PigeonEngine
         CLASS_VIRTUAL_NOCOPY_BODY(PPrimitiveComponent)
 
     public:
-        PE_NODISCARD EBoundAABB GetBounds() const;
         PE_NODISCARD BOOL32 IsPrimitiveCastShadow() const;
         PE_NODISCARD BOOL32 IsPrimitiveReceiveShadow() const;
         PE_NODISCARD BOOL32 IsPrimitiveRenderHidden() const;
@@ -43,7 +42,6 @@ namespace PigeonEngine
         void SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow);
         void SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden);
     private:
-        EBoundAABB  Bounds;
         BOOL32      IsCastShadow;
         BOOL32      IsReceiveShadow;
         BOOL32      IsRenderHidden;

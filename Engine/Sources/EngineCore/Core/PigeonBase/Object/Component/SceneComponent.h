@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <CoreMinimal.h>
-#include <set>
-
+#include <EngineCommon.h>
 #include "ActorComponent.h"
 #include "Base/DataStructure/Container/Set.h"
 
@@ -127,6 +126,12 @@ namespace PigeonEngine
 
     public:
         TSharedPtr<CJsonObject> Serialize() override;
+
+    public:
+        PE_NODISCARD const EBoundAABB&  GetLocalBound()const;
+        void                            SetLocalBound(const EBoundAABB& InNewBound);
+    protected:
+        EBoundAABB  LocalBound;
 
         // Render proxy functions START
     public:

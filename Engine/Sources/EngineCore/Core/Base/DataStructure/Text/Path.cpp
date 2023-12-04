@@ -54,7 +54,7 @@ namespace PigeonEngine
 	EString EPath::Combine(const EString* Paths, INT32 Count)
 	{
 		EString result;
-		for (int i = 0; i < Count - 1; i++)
+		for (INT32 i = 0; i < Count - 1; i++)
 		{
 			result += Paths[i] + "/";
 		}
