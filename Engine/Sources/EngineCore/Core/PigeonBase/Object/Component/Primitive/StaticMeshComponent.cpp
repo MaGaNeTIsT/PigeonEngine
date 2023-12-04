@@ -30,6 +30,17 @@ namespace PigeonEngine
     void PStaticMeshComponent::SetMeshAsset(const EStaticMeshAsset* InMeshAsset)
     {
         MeshAsset = InMeshAsset;
+        if (!!InMeshAsset)
+        {
+            const EStaticMesh* Mesh = InMeshAsset->GetStoragedResource();
+#if _EDITOR_ONLY
+            PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Static mesh asset does not contain mesh resource."), (!!Mesh));
+            if (Mesh)
+#endif
+            {
+                SetLocalBound(Mesh->GetBoundAABB());
+            }
+        }
         MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET);
     }
 

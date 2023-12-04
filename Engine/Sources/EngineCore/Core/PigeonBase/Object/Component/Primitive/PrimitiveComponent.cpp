@@ -11,46 +11,34 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PPrimitiveComponent::PPrimitiveComponent()
-        : Bounds(EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE)), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
+        : IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
     {
         POBJ_DEBUGNAME_SET(this, "PrimitiveComponent");
     }
-
     PPrimitiveComponent::~PPrimitiveComponent()
     {
 
     }
-
-    EBoundAABB PPrimitiveComponent::GetBounds() const
-    {
-        return Bounds;
-    }
-
     BOOL32 PPrimitiveComponent::IsPrimitiveCastShadow() const
     {
         return IsCastShadow;
     }
-
     BOOL32 PPrimitiveComponent::IsPrimitiveReceiveShadow() const
     {
         return IsReceiveShadow;
     }
-
     BOOL32 PPrimitiveComponent::IsPrimitiveRenderHidden() const
     {
         return IsRenderHidden;
     }
-
     void PPrimitiveComponent::SetPrimitiveCastShadow(BOOL32 InIsCastShadow)
     {
         IsCastShadow = InIsCastShadow;
     }
-
     void PPrimitiveComponent::SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow)
     {
         IsReceiveShadow = InIsReceiveShadow;
     }
-
     void PPrimitiveComponent::SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden)
     {
         IsRenderHidden = InIsRenderHidden;

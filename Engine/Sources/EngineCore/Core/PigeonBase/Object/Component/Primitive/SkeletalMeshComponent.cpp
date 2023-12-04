@@ -30,6 +30,17 @@ namespace PigeonEngine
     void PSkeletalMeshComponent::SetMeshAsset(const ESkinnedMeshAsset* InMeshAsset)
     {
         MeshAsset = InMeshAsset;
+        if (!!InMeshAsset)
+        {
+            const ESkinnedMesh* Mesh = InMeshAsset->GetStoragedResource();
+#if _EDITOR_ONLY
+            PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Skinned mesh asset does not contain mesh resource."), (!!Mesh));
+            if (Mesh)
+#endif
+            {
+                SetLocalBound(Mesh->GetBoundAABB());
+            }
+        }
         MarkAsDirty(PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MESHASSET);
     }
     const ESkeletonAsset* PSkeletalMeshComponent::GetSkeletonAsset()const

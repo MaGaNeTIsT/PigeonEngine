@@ -389,11 +389,13 @@ namespace PigeonEngine
 	}
 	void EMesh::SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent)
 	{
+		BoundAABB.IsValid = TRUE;
 		BoundAABB.AABBMin = InOrigin - InExtent;
 		BoundAABB.AABBMax = InOrigin + InExtent;
 	}
 	void EMesh::SetBoundAABB(const Vector3& InMin, const Vector3& InMax)
 	{
+		BoundAABB.IsValid = TRUE;
 		BoundAABB.AABBMin = InMin;
 		BoundAABB.AABBMax = InMax;
 	}
