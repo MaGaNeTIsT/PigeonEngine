@@ -124,25 +124,19 @@ namespace PigeonEngine
 		EBoundAABB()noexcept : AABBMin(Vector3(-0.5f, -0.5f, -0.5f)), AABBMax(Vector3(0.5f, 0.5f, 0.5f)), IsValid(TRUE) {}
 		EBoundAABB(const EBoundAABB& Other)noexcept : AABBMin(Other.AABBMin), AABBMax(Other.AABBMax), IsValid(Other.IsValid)  {}
 		EBoundAABB(const Vector3& Min, const Vector3& Max, const BOOL32& Valid) noexcept :  AABBMin(Min), AABBMax(Max), IsValid(Valid)  {}
-		
-		Vector3	AABBMin;
-		Vector3	AABBMax;
-		BOOL32 IsValid;
-
 		EBoundAABB& operator+=(const EBoundAABB& Other)
 		{
-			if(IsValid)
+			if (IsValid)
 			{
 				AABBMin = Vector3(EMath::Min(AABBMin.x, Other.AABBMin.x), EMath::Min(AABBMin.y, Other.AABBMin.y), EMath::Min(AABBMin.z, Other.AABBMin.z));
 				AABBMax = Vector3(EMath::Max(AABBMin.x, Other.AABBMin.x), EMath::Max(AABBMin.y, Other.AABBMin.y), EMath::Max(AABBMin.z, Other.AABBMin.z));
 			}
-			else if(Other.IsValid)
+			else if (Other.IsValid)
 			{
 				*this = Other;
 			}
 			return (*this);
 		}
-
 		EBoundAABB& operator=(const EBoundAABB& Other)
 		{
 			AABBMin = Other.AABBMin;
@@ -150,7 +144,68 @@ namespace PigeonEngine
 			IsValid = Other.IsValid;
 			return (*this);
 		}
-		
+		void CalculateBoundWorldSpace(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling, TArray<Vector3>& OutPoints)
+		{
+			if (OutPoints.Length() != 8u)
+			{
+				OutPoints.Resize(8u);
+			}
+			const Matrix4x4 WorldMatrix(MakeMatrix4x4(InLocation, InRotation, InScaling));
+			OutPoints[0] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMax.z));
+			OutPoints[1] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMax.z));
+			OutPoints[2] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMin.z));
+			OutPoints[3] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMin.z));
+			OutPoints[4] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMax.z));
+			OutPoints[5] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMax.z));
+			OutPoints[6] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMin.z));
+			OutPoints[7] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMin.z));
+		}
+		static void CalculateSeparatingProjectionWorldSpace(const TArray<Vector3>& InPoints, const TArray<Vector3>& InSeparatingAxis, TArray<Vector2>& OutProjections)
+		{
+			const UINT32 SeparatingAxisNum = InSeparatingAxis.Length();
+			if (OutProjections.Length() > 0u)
+			{
+				OutProjections.Clear();
+			}
+			if ((SeparatingAxisNum == 0u) || (InPoints.Length() != 8u))
+			{
+				return;
+			}
+
+			Vector2 TempData;
+			for (UINT32 SeparatingAxisIndex = 0u; SeparatingAxisIndex < SeparatingAxisNum; SeparatingAxisIndex++)
+			{
+				TempData.x = PE_FLOAT32_MAX;
+				TempData.y = -PE_FLOAT32_MAX;
+				for (UINT32 i = 0u; i < 8u; i++)
+				{
+					const FLOAT TempProjection = Vector3::Dot(InPoints[i], InSeparatingAxis[SeparatingAxisIndex]);
+					TempData.x = EMath::Min(TempProjection, TempData.x);
+					TempData.y = EMath::Max(TempProjection, TempData.y);
+				}
+				OutProjections.Add(TempData);
+			}
+		}
+		static BOOL32 IsProjectionOverlap(const TArray<Vector2>& AProjections, const TArray<Vector2>& BProjections)
+		{
+			const UINT32 ProjectionNum = AProjections.Length();
+			if ((ProjectionNum == 0u) || (ProjectionNum != BProjections.Length()))
+			{
+				return FALSE;
+			}
+			for (UINT32 i = 0u; i < ProjectionNum; i++)
+			{
+				if ((AProjections[i].x > BProjections[i].y) || (AProjections[i].y < BProjections[i].x))
+				{
+					return FALSE;
+				}
+			}
+			return TRUE;
+		}
+
+		BOOL32		IsValid;
+		Vector3		AABBMin;
+		Vector3		AABBMax;
 	};
 	struct EBox
 	{
@@ -197,13 +252,15 @@ namespace PigeonEngine
 			, FarPlaneTopLeft(Vector3::Zero()), FarPlaneTopRight(Vector3::Zero())
 			, FarPlaneBottomLeft(Vector3::Zero()), FarPlaneBottomRight(Vector3::Zero())
 			, NearPlaneTopLeft(Vector3::Zero()), NearPlaneTopRight(Vector3::Zero())
-			, NearPlaneBottomLeft(Vector3::Zero()), NearPlaneBottomRight(Vector3::Zero()) {}
+			, NearPlaneBottomLeft(Vector3::Zero()), NearPlaneBottomRight(Vector3::Zero())
+			, SeparateProjectionX(Vector2::Zero()), SeparateProjectionY(Vector2::Zero()), SeparateProjectionZ(Vector2::Zero()) {}
 		EFrustum(const EFrustum& Other)noexcept
 			: PlaneTop(Other.PlaneTop), PlaneBottom(Other.PlaneBottom), PlaneLeft(Other.PlaneLeft), PlaneRight(Other.PlaneRight)
 			, FarPlaneTopLeft(Other.FarPlaneTopLeft), FarPlaneTopRight(Other.FarPlaneTopRight)
 			, FarPlaneBottomLeft(Other.FarPlaneBottomLeft), FarPlaneBottomRight(Other.FarPlaneBottomRight)
 			, NearPlaneTopLeft(Other.NearPlaneTopLeft), NearPlaneTopRight(Other.NearPlaneTopRight)
-			, NearPlaneBottomLeft(Other.NearPlaneBottomLeft), NearPlaneBottomRight(Other.NearPlaneBottomRight) {}
+			, NearPlaneBottomLeft(Other.NearPlaneBottomLeft), NearPlaneBottomRight(Other.NearPlaneBottomRight)
+			, SeparateProjectionX(Other.SeparateProjectionX), SeparateProjectionY(Other.SeparateProjectionY), SeparateProjectionZ(Other.SeparateProjectionZ) {}
 		EFrustum& operator=(const EFrustum& Other)
 		{
 			for (UINT32 i = 0u; i < 4u; i++)
@@ -213,6 +270,10 @@ namespace PigeonEngine
 			for (UINT32 i = 0u; i < 8u; i++)
 			{
 				FarNearPlanePoint[i] = Other.FarNearPlanePoint[i];
+			}
+			for (UINT32 i = 0u; i < 3u; i++)
+			{
+				SeparateProjection[i] = Other.SeparateProjection[i];
 			}
 			return (*this);
 		}
