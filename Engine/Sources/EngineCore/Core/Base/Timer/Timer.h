@@ -2,7 +2,6 @@
 
 #include <CoreMinimal.h>
 
-
 namespace PigeonEngine
 {
 	class EBaseTimer
@@ -17,9 +16,9 @@ namespace PigeonEngine
 		EBaseTimer();
 		virtual ~EBaseTimer();
 	protected:
-		LARGE_INTEGER	m_T1;
-		LARGE_INTEGER	m_T2;
-		LARGE_INTEGER	m_Ticks;
+		::LARGE_INTEGER	m_T1;
+		::LARGE_INTEGER	m_T2;
+		::LARGE_INTEGER	m_Ticks;
 	protected:
 		DOUBLE			m_Delta;
 		DOUBLE			m_Clock;

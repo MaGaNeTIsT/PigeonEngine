@@ -106,6 +106,114 @@ namespace PigeonEngine
         std::map<K,V> Map;
     };
 
+    template<typename TKeyType, typename TValueType>
+    class TMapManager
+    {
+    public:
+        TMapManager()
+        {
+        }
+        virtual ~TMapManager()
+        {
+            Clear();
+        }
+    public:
+        /*
+        * Add item into mapped datas. This action may reconstruct whole memories.
+        * Params [InReplaceIfHaveKey]: true = If already contain data with InKeyValue will replace it. This action will delete old item. false = If already contain data with InKeyValue will not do anything.
+        * Return [UINT32]: 0 = Add failed. value = Mapped datas' size(after add value).
+        */
+        UINT32 Add(const TKeyType& InKeyValue, TValueType* InDataValue, const BOOL32& InReplaceIfHaveKey = FALSE)
+        {
+            if (!InDataValue)
+            {
+                return 0u;
+            }
+            BOOL32 NeedReplace = FALSE;
+            if (SavedDatas.ContainsKey(InKeyValue))
+            {
+                NeedReplace = TRUE;
+                if (!InReplaceIfHaveKey)
+                {
+                    return 0u;
+                }
+            }
+            if (NeedReplace)
+            {
+                TValueType* TempData = nullptr;
+                if (SavedDatas.FindValue(InKeyValue, TempData))
+                {
+                    if (TempData && TempData == InDataValue)
+                    {
+                        return (SavedDatas.Length());
+                    }
+                    SavedDatas.Remove(InKeyValue);
+                    delete TempData;
+                }
+            }
+            SavedDatas.Add(InKeyValue, InDataValue);
+            return (SavedDatas.Length());
+        }
+        /*
+        * Remove item with InKeyValue in mapped datas.
+        * Return [UINT32]: Mapped datas' size(after remove value).
+        */
+        UINT32 Remove(const TKeyType& InKeyValue)
+        {
+            TValueType* TempData = nullptr;
+            if (SavedDatas.FindValue(InKeyValue, TempData))
+            {
+                SavedDatas.Remove(InKeyValue);
+                delete TempData;
+            }
+            return (SavedDatas.Length());
+        }
+        /*
+        * Find item with InKeyValue in mapped datas.
+        * Return [TValueType*]: If contain key return item. If not then return nullptr.
+        */
+        TValueType* Find(const TKeyType& InKeyValue)
+        {
+            TValueType* TempData = nullptr;
+            SavedDatas.FindValue(InKeyValue, TempData);
+            return TempData;
+        }
+        /*
+        * Check if contains item with InKeyValue in mapped datas.
+        * Return [BOOL32]: If contains return TRUE. If not then return FALSE.
+        */
+        BOOL32 Contain(const TKeyType& InKeyValue)const
+        {
+            return (SavedDatas.ContainsKey(InKeyValue));
+        }
+        /*
+        * Clear whole data list.
+        */
+        void Clear()
+        {
+            if (SavedDatas.Length() > 0u)
+            {
+                for (auto it = SavedDatas.Begin(); it != SavedDatas.End(); it++)
+                {
+                    delete (it->second);
+                }
+                SavedDatas.Clear();
+            }
+        }
+        /*
+        * Get size of mapped datas.
+        */
+        UINT32 Size()const
+        {
+            return (SavedDatas.Length());
+        }
+    protected:
+        TMap<TKeyType, TValueType*> SavedDatas;
+    public:
+        TMapManager(const TMapManager&) = delete;
+        TMapManager& operator=(const TMapManager&) = delete;
+    };
+
     // -------------------   Implementations   -----------------------------
     template <typename K, typename V>
     TMap<K, V>::TMap()
@@ -238,5 +346,6 @@ namespace PigeonEngine
     {
         Map.clear();
     }
+
 }
 
