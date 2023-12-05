@@ -194,7 +194,7 @@ namespace PigeonEngine
 
 	void PActor::DetachActorsAttached()
 	{
-		TSet<PActor*> ActorsAttached(this->ChildrenActors);
+		TArray<PActor*> ActorsAttached(this->ChildrenActors);
 		for(auto& elem : ActorsAttached)
 		{
 			elem->DetachFromParentActor();
@@ -205,7 +205,7 @@ namespace PigeonEngine
 	{
 		// TSet<PActor*> ActorsAttached = this->ChildrenActors;
 
-		TSet<PActor*> ActorsAttached(this->ChildrenActors);
+		TArray<PActor*> ActorsAttached(this->ChildrenActors);
 		for(auto& elem : ActorsAttached)
 		{
 			elem->DestroyActorsAttached();
