@@ -136,10 +136,10 @@ namespace PigeonEngine
 
 		m_WorldManager->GetWorld()->BindRenderScene(RenderScene);
 		m_WorldManager->Init();
-
+#if _EDITOR_ONLY
 		// Please ensure that this function is called at the end
 		EditorInit();
-
+#endif
 	}
 	void EMainManager::Uninit()
 	{
@@ -195,23 +195,18 @@ namespace PigeonEngine
 		m_RenderDeviceD3D11->Present();
 	}
 
+#if _EDITOR_ONLY
 	void EMainManager::EditorInit()
 	{
-#if _EDITOR_ONLY
+
 		m_EditorManager->EditorInit();
-#else
-		return;
-#endif
 	}
 
 	void EMainManager::EditorUpdate()
 	{
-#if _EDITOR_ONLY
 		m_EditorManager->EditorUpdate();
-#else
-		return;
-#endif
 	}
+#endif
 
 	HWND EMainManager::GetWindowHandle()
 	{

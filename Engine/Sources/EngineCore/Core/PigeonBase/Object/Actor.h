@@ -81,7 +81,7 @@ namespace PigeonEngine
 
 	public:
 
-		EBoundAABB GetBounds()const;
+		PE_NODISCARD EBoundAABB GetBounds()const;
 		
 	public:
 		 
@@ -94,14 +94,15 @@ namespace PigeonEngine
 		virtual void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 
-		PE_NODISCARD const TSet<PActor*> GetAllActorsAttached() const;
+		PE_NODISCARD TArray<PActor*> GetAllActorsAttached(BOOL8 bRecursive = false) const;
+		
 		PE_NODISCARD const PActor* GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		void DetachActorsAttached();
 		void DestroyActorsAttached();
 	protected:
 
 		PActor* AttachedParentActor = nullptr;
-		TSet<PActor*> ChildrenActors;
+		TArray<PActor*> ChildrenActors;
 
 		// Imgui
 #if _EDITOR_ONLY

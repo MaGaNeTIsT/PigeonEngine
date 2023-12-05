@@ -2,7 +2,10 @@
 #include <Base/RTTI/RTTIManager.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "AssetManager.h"
+#include "EditorHelper.h"
 #include "EditorLogManager.h"
+#include "PigeonBase/Object/Controller/Controller.h"
+#include "PigeonBase/Object/World/World.h"
 
 namespace PigeonEngine
 {
@@ -36,12 +39,12 @@ namespace PigeonEngine
 
     void EEditorManager::Init()
     {
-
+        
     }
 
     void EEditorManager::Uninit()
     {
-
+        
     }
 
     void EEditorManager::EditorInit()
@@ -52,6 +55,30 @@ namespace PigeonEngine
         m_LogsManager->EditorInit();
         m_AssetManager->EditorInit();
         m_WorldManager->EditorInit();
+
+        // PEditorController* EditorController = static_cast<PEditorController*>(m_WorldManager->GetWorld()->GetController());
+        // if(EditorController)
+        // {
+        //     auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
+        //     {
+        //         if(Type == IMouse::Event::EType::LPress)
+        //         {
+        //             TArray<PActor*> AllActors = this->m_WorldManager->GetWorld()->GetAllActors();
+        //             PController* PC = this->m_WorldManager->GetWorld()->GetController();
+        //             PActor* ClickedActor = SelectObjectInViewport(
+        //                 PC->GetCamera(),
+        //                 AllActors,
+        //                 static_cast<INT32>(MousePos.x),
+        //                 static_cast<INT32>(MousePos.y), );
+        //             if(ClickedActor)
+        //             {
+        //                 this->m_WorldManager->GetWorld()->SetSelectedActor(ClickedActor);
+        //             }
+        //         }
+        //     };
+        //     TFunction<void(IMouse::Event::EType, const Vector2&)> OnMouseBroadcast = func;
+        //     EditorController->OnMouseEvent.Add(OnMouseBroadcast);
+        // }
     }
 
     void EEditorManager::EditorUpdate()

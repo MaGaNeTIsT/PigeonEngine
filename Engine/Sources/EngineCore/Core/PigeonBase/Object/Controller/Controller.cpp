@@ -25,6 +25,20 @@ namespace PigeonEngine
         PActor::Init();
         this->SetIsTickable(TRUE);
         SetCamera(MyCamera);
+        auto func = [this](IMouse::Event::EType Type)
+        {
+            this->OnMouse(Type);
+        }; 
+        OnMouseDown = func;
+
+        auto func1 =  [this](IKeyboard::Event::EType Type, unsigned char KeyCode)
+        {
+            this->OnKey(Type, KeyCode);
+        }; 
+        OnKeyDown = func1;
+        
+        EInput::MouseEvent.Add(OnMouseDown);
+        EInput::KeyEvent.Add(OnKeyDown);
     }
 
     void PController::Uninit()
@@ -45,6 +59,19 @@ namespace PigeonEngine
     void PController::UserEndPlay()
     {
         PActor::UserEndPlay();
+    }
+
+    void PController::OnMouse(IMouse::Event::EType Type)
+    {
+        Vector2 MousePosition = Vector2();
+        MousePosition.x = static_cast<FLOAT>(EInput::Controller.GetMousePosition().first);
+        MousePosition.y = static_cast<FLOAT>(EInput::Controller.GetMousePosition().second);
+        this->OnMouseEvent.Broadcast(Type, MousePosition);
+    }
+
+    void PController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
+    {
+        this->OnKeyEvent.Broadcast(Type, EKeysBuiltIn::GetKeyByKeyCode(KeyCode));
     }
 
     PCameraComponent* PController::GetCamera() const
@@ -108,21 +135,6 @@ namespace PigeonEngine
     void PEditorController::Init()
     {
         PController::Init();
-        auto func = [this](IMouse::Event::EType Type)
-        {
-            this->OnMouse(Type);
-        }; 
-        OnMouseDown = func;
-
-        auto func1 =  [this](IKeyboard::Event::EType Type, unsigned char KeyCode)
-        {
-            this->OnKey(Type, KeyCode);
-        }; 
-        OnKeyDown = func1;
-        
-        EInput::MouseEvent.Add(OnMouseDown);
-        EInput::KeyEvent.Add(OnKeyDown);
-
     }
 
     void PEditorController::EditorTick(FLOAT deltaTime)
@@ -179,6 +191,7 @@ namespace PigeonEngine
     {
         if(Type == IMouse::Event::EType::RPress)
         {
+            MousePositionLastTick = Vector2();
             MousePositionLastTick.x = static_cast<FLOAT>(EInput::Controller.GetMousePosition().first);
             MousePositionLastTick.y = static_cast<FLOAT>(EInput::Controller.GetMousePosition().second);
             bStart = TRUE;
@@ -200,6 +213,7 @@ namespace PigeonEngine
         {
             this->MovingSpeed += -10.0f;
         }
+        
     }
 
     void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
@@ -218,12 +232,9 @@ namespace PigeonEngine
                 TestLog += "Release ";
                 break;
             }
-            
         }
 
-        TestLog = EString("EditorController:TestLog:") + TestLog + EKeysBuiltIn::GetKeyByKeyCode(KeyCode).GetKeyName();
-        // LogsManager->AddALog(TestLog);
-        PE_LOG_WARN(TestLog)
+        PController::OnKey(Type, KeyCode);
     }
 
     void PEditorController::DrawImGui()

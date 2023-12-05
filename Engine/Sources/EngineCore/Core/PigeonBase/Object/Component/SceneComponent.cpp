@@ -359,6 +359,22 @@ namespace PigeonEngine
 		LocalBound = InNewBound;
 	}
 
+	const EBoundAABB PSceneComponent::GetComponentBound() const
+	{
+		EBoundAABB ret = this->GetLocalBound();
+		for(const auto&  elem : this->ChildrenComponents)
+		{
+			EBoundAABB CompBound = elem->GetComponentBound();
+			ret.AABBMax.x = EMath::Max(ret.AABBMax.x, CompBound.AABBMax.x);
+			ret.AABBMax.y = EMath::Max(ret.AABBMax.y, CompBound.AABBMax.y);
+			ret.AABBMax.z = EMath::Max(ret.AABBMax.z, CompBound.AABBMax.z);
+			ret.AABBMin.x = EMath::Min(ret.AABBMin.x, CompBound.AABBMin.x);
+			ret.AABBMin.y = EMath::Min(ret.AABBMin.y, CompBound.AABBMin.y);
+			ret.AABBMin.z = EMath::Min(ret.AABBMin.z, CompBound.AABBMin.z);
+		}
+		return ret;
+	}
+
 	// Render proxy functions START
 	BOOL32 PSceneComponent::IsRenderTransformDirty()const
 	{

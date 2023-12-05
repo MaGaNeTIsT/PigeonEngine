@@ -93,6 +93,11 @@ namespace PigeonEngine
         PObject::Destroy();
     }
 
+    TArray<PActor*> PWorld::GetAllActors() const
+    {
+        return this->RootActor->GetAllActorsAttached(true);
+    }
+
     const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
     {
         PE_CHECK(ENGINE_WORLD_ERROR, "PWorld::GetActorByUniqueId : RootActor is nullptr.", RootActor != nullptr);

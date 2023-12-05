@@ -31,7 +31,8 @@ namespace PigeonEngine
         void RemoveAt(const UINT32& Index);
         void Remove  (const T& Element);
         void Clear   ();
-
+        void Append(const TSet<T>& Other);
+        
         typename TIterator Begin()
         {
             return Elements.begin();
@@ -175,6 +176,15 @@ namespace PigeonEngine
     void TSet<T>::Clear()
     {
         Elements.clear();
+    }
+
+    template <typename T>
+    void TSet<T>::Append(const TSet<T>& Other)
+    {
+        for(const auto& elem: Other)
+        {
+            Add(elem);
+        }
     }
 
     template <typename T>

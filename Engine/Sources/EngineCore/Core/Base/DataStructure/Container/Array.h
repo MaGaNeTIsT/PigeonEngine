@@ -2,7 +2,6 @@
 
 #include "../../../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
-#include <Base/DataStructure/BaseType.h>
 #include "../../../../Core/Config/ErrorCaption.h"
 #include <vector>
 #include <algorithm>
@@ -25,6 +24,7 @@ namespace PigeonEngine
     public:
         TArray();
         TArray(const TArray<T>& Other);
+
         explicit TArray(const std::vector<T>& Other);
         TArray(TArray<T>&& Other) noexcept;
         explicit TArray(std::vector<T>&& Other);

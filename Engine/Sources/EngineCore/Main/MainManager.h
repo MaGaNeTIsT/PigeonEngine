@@ -23,8 +23,11 @@ namespace PigeonEngine
 		void			Draw();
 
 	public:
+#if _EDITOR_ONLY
 		void            EditorInit();
 		void            EditorUpdate();
+#endif
+		
 	public:
 		HWND						GetWindowHandle();
 		const EBaseTimer&			GetWindowTimer();

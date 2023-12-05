@@ -155,9 +155,18 @@ namespace PigeonEngine
 		Child->AttachedParentActor = Parent;
 	}
 
-	const TSet<PActor*> PActor::GetAllActorsAttached() const
+	TArray<PActor*> PActor::GetAllActorsAttached(BOOL8 bRecursive) const
 	{
-		return this->ChildrenActors;
+		if(!bRecursive)
+		{
+			return this->ChildrenActors;
+		}
+		TArray<PActor*> Out = this->ChildrenActors;
+		for(const auto& elem : this->ChildrenActors)
+		{
+			Out.Append(elem->GetAllActorsAttached(true));
+		}
+		return Out;
 	}
 
 	const PActor* PActor::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const
@@ -369,7 +378,7 @@ namespace PigeonEngine
 	EBoundAABB PActor::GetBounds()const
 	{
 		//TODO
-		return EBoundAABB();
+		return this->RootComponent->GetComponentBound();
 	}
 
 	void PActor::Destroy()

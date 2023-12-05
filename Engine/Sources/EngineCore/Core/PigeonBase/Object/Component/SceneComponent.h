@@ -128,8 +128,12 @@ namespace PigeonEngine
         TSharedPtr<CJsonObject> Serialize() override;
 
     public:
+        // children components wil NOT be involved
         PE_NODISCARD const EBoundAABB&  GetLocalBound()const;
         void                            SetLocalBound(const EBoundAABB& InNewBound);
+        // children components WILL be involved
+        PE_NODISCARD const EBoundAABB  GetComponentBound()const;
+
     protected:
         EBoundAABB  LocalBound;
 

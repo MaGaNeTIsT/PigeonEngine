@@ -1,7 +1,10 @@
 ﻿#pragma once
+#include "Input/InputType.h"
 #include "PigeonBase/Object/Actor.h"
 namespace PigeonEngine
 {
+    MAKE_DELEGATE_MULTI_TWO_PARAM(OnMouseEvent, IMouse::Event::EType,  const Vector2&);
+    MAKE_DELEGATE_MULTI_TWO_PARAM(OnKeyEvent,   IKeyboard::Event::EType, const EKey&);
     class PCameraComponent;
     class PController : public PActor
     {
@@ -18,7 +21,15 @@ namespace PigeonEngine
         void UserBeginPlay() override;
         void UserTick(FLOAT deltaTime) override;
         void UserEndPlay() override;
-
+    protected:
+        virtual void OnMouse(IMouse::Event::EType Type) ;
+        virtual void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode) ;
+    public:
+        OnMouseEvent OnMouseEvent;
+        OnKeyEvent   OnKeyEvent;
+    private:
+        TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
+        TFunction<void(IKeyboard::Event::EType Type, unsigned char KeyCode)> OnKeyDown;
     public:
         
         PE_NODISCARD PCameraComponent* GetCamera() const;
@@ -37,19 +48,21 @@ namespace PigeonEngine
     };
 
 #if _EDITOR_ONLY
+
+    
     class PEditorController : public PController
     {
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PEditorController)
         void Init() override;
         void EditorTick(FLOAT deltaTime) override;
-        void OnMouse(IMouse::Event::EType Type);
-        void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode);
-
         void DrawImGui();
+    protected:
+        void OnMouse(IMouse::Event::EType Type) override;
+        void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode) override;
+
     private:
-        TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
-        TFunction<void(IKeyboard::Event::EType Type, unsigned char KeyCode)> OnKeyDown;
+        
         BOOL8 bStart = false;
         FLOAT MovingSpeed = 50.0;
         FLOAT RotationSpeed = 0.05f;
