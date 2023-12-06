@@ -4,6 +4,7 @@
 #include "AssetManager.h"
 #include "EditorHelper.h"
 #include "EditorLogManager.h"
+#include <Asset/Editor/AssetImporter/ImportManager.h>
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/World/World.h"
 
@@ -35,6 +36,7 @@ namespace PigeonEngine
     {
         m_LogsManager->ShutDown();
         m_AssetManager->ShutDown();
+        m_ImportManager->ShutDown();
     }
 
     void EEditorManager::Init()
@@ -49,12 +51,14 @@ namespace PigeonEngine
 
     void EEditorManager::EditorInit()
     {
-        m_WorldManager = EWorldManager::GetManagerSingleton();
-        m_AssetManager = EAssetManager::GetManagerSingleton();
-        m_LogsManager  = EEditorLogManager::GetManagerSingleton();
+        m_WorldManager  = EWorldManager::GetManagerSingleton();
+        m_AssetManager  = EAssetManager::GetManagerSingleton();
+        m_LogsManager   = EEditorLogManager::GetManagerSingleton();
+        m_ImportManager = EImportManager::GetManagerSingleton();
         m_LogsManager->EditorInit();
         m_AssetManager->EditorInit();
         m_WorldManager->EditorInit();
+        m_ImportManager->EditorInit();
 
         // PEditorController* EditorController = static_cast<PEditorController*>(m_WorldManager->GetWorld()->GetController());
         // if(EditorController)
@@ -93,6 +97,7 @@ namespace PigeonEngine
         m_WorldManager->EditorUpdate();
         m_AssetManager->EditorUpdate();
         m_LogsManager->EditorUpdate();
+        m_ImportManager->EditorUpdate();
         BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
     }

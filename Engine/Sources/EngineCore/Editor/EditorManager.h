@@ -21,9 +21,10 @@ namespace PigeonEngine
 	private:
 		BOOL32 m_EditorOpen = FALSE;
 
-		class EWorldManager*     m_WorldManager = nullptr;
-		class EAssetManager*     m_AssetManager = nullptr;
-		class EEditorLogManager* m_LogsManager  = nullptr;
+		class EWorldManager*		m_WorldManager		= nullptr;
+		class EAssetManager*		m_AssetManager		= nullptr;
+		class EEditorLogManager*	m_LogsManager		= nullptr;
+		class EImportManager*		m_ImportManager		= nullptr;
 
 	};
 #endif

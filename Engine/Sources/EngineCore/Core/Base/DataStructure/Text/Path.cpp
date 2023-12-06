@@ -4,6 +4,7 @@
 #include <Config/EngineConfig.h>
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
 #include <filesystem>
+#include <Base/DataStructure/Container/Array.h>
 
 namespace PigeonEngine
 {
@@ -18,7 +19,7 @@ namespace PigeonEngine
 			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (FirstSlash + 1u)));
 		}
 		return FirstSlash;
-	};
+	}
 
 	UINT32 FindLastSlashIndex(const EString& Path)
 	{
@@ -31,7 +32,25 @@ namespace PigeonEngine
 			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (LastSlash + 1u)));
 		}
 		return LastSlash;
-	};
+	}
+
+	EString ToLower(const EString& String)
+	{
+		TArray<CHAR> out;
+		for(UINT32 i = 0;i < String.Length();i++)
+			out.Add((CHAR)::tolower(String[i]));
+		out.Add('\0');//TODO : did this necessary?
+		return EString(out.RawData());
+	}
+
+	EString ToUpper(const EString& String)
+	{
+		TArray<CHAR> out;
+		for (UINT32 i = 0; i < String.Length(); i++)
+			out.Add((CHAR)::toupper(String[i]));
+		out.Add('\0');//TODO : did this necessary?
+		return EString(out.RawData());
+	}
 
 	EString EPath::ChangeExtension(const EString& Path, const EString& Extension)
 	{

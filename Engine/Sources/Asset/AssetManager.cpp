@@ -5,6 +5,7 @@
 
 #include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../EngineCore/Editor/EditorLogManager.h"
+#include "../Asset/Editor/AssetImporter/ImportManager.h"
 
 namespace PigeonEngine
 {
@@ -323,6 +324,7 @@ namespace PigeonEngine
 				ImGui::BeginChild("Tree", ImVec2(200, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 				ImGui::Text("FolderTree");
 				{
+					EImportManager::GetManagerSingleton()->ShowImporterButton();
 					ImGui::BeginChild("Project", ImVec2(180, 120), true, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 					ImGui::Text("Project");
 					EFolderTreeNode::TraverseFolder(ProjectAssetRoot, Current);
@@ -337,7 +339,7 @@ namespace PigeonEngine
 		
 				ImGui::EndChild();
 			}
-			
+
 			ImGui::SameLine();
 			{
 				ImGui::BeginChild("Content", ImVec2(700, 0), true);

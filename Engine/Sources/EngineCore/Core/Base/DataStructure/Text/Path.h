@@ -76,5 +76,7 @@ namespace PigeonEngine
 
     extern UINT32 FindFirstSlashIndex(const EString& Path);
     extern UINT32 FindLastSlashIndex(const EString& Path);
+    extern EString ToLower(const EString& String);
+    extern EString ToUpper(const EString& String);
 };
 
