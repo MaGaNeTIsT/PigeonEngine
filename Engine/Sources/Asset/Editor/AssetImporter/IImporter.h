@@ -10,7 +10,5 @@ namespace PigeonEngine
 		virtual ~IImporter() {};
 		virtual void CreateImportEditor(EString Path) = 0;
 	};
-
-	extern void RegisterImporter();
 };
 #endif

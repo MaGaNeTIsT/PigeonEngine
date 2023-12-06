@@ -3,6 +3,9 @@
 #include <Base/DataStructure/Text/Path.h>
 #include <Base/RTTI/RTTIManager.h>
 #if _EDITOR_ONLY
+//Importer
+#include "FBXImporter.h"
+
 namespace PigeonEngine
 {
 	static void RegisterClassTypes()
@@ -61,7 +64,7 @@ void PigeonEngine::EImportManager::ShowImporterButton()
 
 void PigeonEngine::EImportManager::EditorInit()
 {
-
+	AddImporter("FBX", new FBXImporter());
 }
 
 void PigeonEngine::EImportManager::EditorUpdate()
