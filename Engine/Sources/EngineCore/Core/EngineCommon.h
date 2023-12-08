@@ -144,21 +144,21 @@ namespace PigeonEngine
 			IsValid = Other.IsValid;
 			return (*this);
 		}
-		void CalculateBoundWorldSpace(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling, TArray<Vector3>& OutPoints)
+		void CalculateBoundWithSpace(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling, TArray<Vector3>& OutPoints)
 		{
 			if (OutPoints.Length() != 8u)
 			{
 				OutPoints.Resize(8u);
 			}
-			const Matrix4x4 WorldMatrix(MakeMatrix4x4(InLocation, InRotation, InScaling));
-			OutPoints[0] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMax.z));
-			OutPoints[1] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMax.z));
-			OutPoints[2] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMin.z));
-			OutPoints[3] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMin.z));
-			OutPoints[4] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMax.z));
-			OutPoints[5] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMax.z));
-			OutPoints[6] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMin.z));
-			OutPoints[7] = Matrix4x4TransformPosition(WorldMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMin.z));
+			const Matrix4x4 SpaceMatrix(MakeMatrix4x4(InLocation, InRotation, InScaling));
+			OutPoints[0] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMax.z));
+			OutPoints[1] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMax.z));
+			OutPoints[2] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMin.x, AABBMax.y, AABBMin.z));
+			OutPoints[3] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMax.x, AABBMax.y, AABBMin.z));
+			OutPoints[4] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMax.z));
+			OutPoints[5] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMax.z));
+			OutPoints[6] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMin.x, AABBMin.y, AABBMin.z));
+			OutPoints[7] = Matrix4x4TransformPosition(SpaceMatrix, Vector3(AABBMax.x, AABBMin.y, AABBMin.z));
 		}
 		static void CalculateSeparatingProjectionWorldSpace(const TArray<Vector3>& InPoints, const TArray<Vector3>& InSeparatingAxis, TArray<Vector2>& OutProjections)
 		{

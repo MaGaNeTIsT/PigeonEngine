@@ -361,18 +361,31 @@ namespace PigeonEngine
 
 	const EBoundAABB PSceneComponent::GetComponentBound() const
 	{
-		EBoundAABB ret = this->GetLocalBound();
-		for(const auto&  elem : this->ChildrenComponents)
+		EBoundAABB ResultBound(this->GetLocalBound());
+
+		for (const auto& ChildComponent : this->ChildrenComponents)
 		{
-			EBoundAABB CompBound = elem->GetComponentBound();
-			ret.AABBMax.x = EMath::Max(ret.AABBMax.x, CompBound.AABBMax.x);
-			ret.AABBMax.y = EMath::Max(ret.AABBMax.y, CompBound.AABBMax.y);
-			ret.AABBMax.z = EMath::Max(ret.AABBMax.z, CompBound.AABBMax.z);
-			ret.AABBMin.x = EMath::Min(ret.AABBMin.x, CompBound.AABBMin.x);
-			ret.AABBMin.y = EMath::Min(ret.AABBMin.y, CompBound.AABBMin.y);
-			ret.AABBMin.z = EMath::Min(ret.AABBMin.z, CompBound.AABBMin.z);
+			const Vector3		TempLocalLocation(this->GetComponentLocalLocation());
+			const Quaternion	TempLocalRotation(this->GetComponentLocalRotation());
+			const Vector3		TempLocalScaling(this->GetComponentLocalScale());
+			EBoundAABB			TempLocalBound = ChildComponent->GetComponentBound();
+
+			TArray<Vector3> TempBoundPoints;
+			TempLocalBound.CalculateBoundWithSpace(
+				TempLocalLocation,
+				TempLocalRotation,
+				TempLocalScaling,
+				TempBoundPoints
+			);
+
+			for (UINT32 i = 0u, n = TempBoundPoints.Length(); i < n; i++)
+			{
+				ResultBound.AABBMin = MinVector3(TempBoundPoints[i], ResultBound.AABBMin);
+				ResultBound.AABBMax = MaxVector3(TempBoundPoints[i], ResultBound.AABBMax);
+			}
 		}
-		return ret;
+
+		return ResultBound;
 	}
 
 	// Render proxy functions START

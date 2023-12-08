@@ -67,7 +67,7 @@ namespace PigeonEngine
 					continue;
 				}
 				TArray<Vector3> TempBoundPoints;
-				TempActorBound.CalculateBoundWorldSpace(
+				TempActorBound.CalculateBoundWithSpace(
 					InActors[i]->GetActorWorldLocation(),
 					InActors[i]->GetActorWorldRotation(),
 					InActors[i]->GetActorWorldScale(),
@@ -216,7 +216,7 @@ namespace PigeonEngine
 					continue;
 				}
 				TArray<Vector3> TempBoundPoints;
-				TempComponentBound.CalculateBoundWorldSpace(
+				TempComponentBound.CalculateBoundWithSpace(
 					InComponents[i]->GetComponentWorldLocation(),
 					InComponents[i]->GetComponentWorldRotation(),
 					InComponents[i]->GetComponentWorldScale(),
@@ -321,17 +321,30 @@ namespace PigeonEngine
 				{
 					continue;
 				}
-				const Quaternion BoundWorldRotation(InObjects[i]->GetActorWorldRotation());
-				const Vector3 BoundWorldScaling(InObjects[i]->GetActorWorldScale());
-				const Vector3 BoundExtent(((TempBound.AABBMax - TempBound.AABBMin) * 0.5f) * BoundWorldScaling);
-				const Vector3 BoundCenter(
-					Matrix4x4TransformPosition(MakeMatrix4x4(
-						InObjects[i]->GetActorWorldLocation(),
-						BoundWorldRotation,
-						BoundWorldScaling),
-						(TempBound.AABBMin + TempBound.AABBMax) * 0.5f
-					)
+				const Vector3		BoundWorldLocation(InObjects[i]->GetActorWorldLocation());
+				const Quaternion	BoundWorldRotation(InObjects[i]->GetActorWorldRotation());
+				const Vector3		BoundWorldScaling(InObjects[i]->GetActorWorldScale());
+				TArray<Vector3> BoundWorldPoints;
+				TempBound.CalculateBoundWithSpace(
+					BoundWorldLocation,
+					BoundWorldRotation,
+					BoundWorldScaling,
+					BoundWorldPoints
 				);
+				const Vector3 BoundExtent(
+					(BoundWorldPoints[1] - BoundWorldPoints[0]).Length(),
+					(BoundWorldPoints[0] - BoundWorldPoints[4]).Length(),
+					(BoundWorldPoints[0] - BoundWorldPoints[2]).Length()
+				);
+				Vector3 BoundCenter(0.f, 0.f, 0.f);
+				{
+					const UINT32 PointNum = BoundWorldPoints.Length();
+					for (UINT32 PointIndex = 0u; PointIndex < PointNum; PointIndex++)
+					{
+						BoundCenter += BoundWorldPoints[PointIndex];
+					}
+					BoundCenter /= (FLOAT)PointNum;
+				}
 				DebugPrimitiveMangaer->DrawCuboid(BoundCenter, BoundWorldRotation,
 					BoundExtent.x, BoundExtent.y, BoundExtent.z,
 					DebugColor);
