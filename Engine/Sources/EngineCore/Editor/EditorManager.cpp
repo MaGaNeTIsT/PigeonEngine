@@ -102,6 +102,8 @@ namespace PigeonEngine
         m_ImportManager->EditorUpdate();
         BOOL8 bOpen = FALSE;
         ImGui::ShowDemoWindow(&bOpen);
+        TArray<PActor*> AllActors = this->m_WorldManager->GetWorld()->GetAllActors();
+        DrawObjectBounds(AllActors);
     }
 #endif
 }
