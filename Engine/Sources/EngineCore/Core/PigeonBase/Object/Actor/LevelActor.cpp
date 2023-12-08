@@ -15,6 +15,7 @@
 #include <PhysicsTest/PhysicsTest.h>
 #include <PigeonBase/Object/Component/Physics/PhysicsComponent.h>
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
+#include "Editor/EditorLogManager.h"
 
 
 namespace PigeonEngine
@@ -60,9 +61,34 @@ namespace PigeonEngine
 
 			NewStaticMeshComp->SetMeshAsset(Asset);
 
+			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
+			PE_LOG_LOG(NewStaticMeshComp->GetComponentWorldLocation().AsString());
+			PE_LOG_LOG(New->GetBounds().AsString());
 			New->SetActorLocation(Vector3(100.0f, 0.0f, 0.0f));
-		}
+			PE_LOG_LOG(New->GetBounds().AsString());
 
+		}
+		// // Cube
+	 //    {
+		// 	PActor* New = new PActor();
+		// 	New->SetIsTickable(TRUE);
+		// 	POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
+		// 	this->GetWorld()->AddActor(New);
+		// 	PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+		// 	NewStaticMeshComp->SetIsTickable(TRUE);
+		// 	New->AddComponent(NewStaticMeshComp);
+		// 	const EStaticMeshAsset* Asset = nullptr;
+		// 	EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+		// 	EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
+		// 	EString ImportName("Robot");
+		// 	EString ImportFileType("obj");
+		// 	TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+	 //
+		// 	NewStaticMeshComp->SetMeshAsset(Asset);
+	 //
+		// 	New->SetActorLocation(Vector3(100.0f, 0.0f, 0.0f));
+	 //    }
+		
          //add a skeletal mesh actor
 		 //{
 		 //	PActor* New = new PActor();

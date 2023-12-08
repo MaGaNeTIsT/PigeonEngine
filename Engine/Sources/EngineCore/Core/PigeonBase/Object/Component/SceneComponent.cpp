@@ -365,9 +365,9 @@ namespace PigeonEngine
 
 		for (const auto& ChildComponent : this->ChildrenComponents)
 		{
-			const Vector3		TempLocalLocation(this->GetComponentLocalLocation());
-			const Quaternion	TempLocalRotation(this->GetComponentLocalRotation());
-			const Vector3		TempLocalScaling(this->GetComponentLocalScale());
+			const Vector3		TempLocalLocation(ChildComponent->GetComponentLocalLocation());
+			const Quaternion	TempLocalRotation(ChildComponent->GetComponentLocalRotation());
+			const Vector3		TempLocalScaling(ChildComponent->GetComponentLocalScale());
 			EBoundAABB			TempLocalBound = ChildComponent->GetComponentBound();
 
 			TArray<Vector3> TempBoundPoints;

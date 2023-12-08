@@ -202,6 +202,10 @@ namespace PigeonEngine
 			}
 			return TRUE;
 		}
+		EString AsString() const
+		{
+			return EString(EString("{ AABBMin : ") + ToString(AABBMin.x) + " " + ToString(AABBMin.y) + " " + ToString(AABBMin.z) + EString(" AABBMax : ") + ToString(AABBMax.x) + " " + ToString(AABBMax.y) + " " + ToString(AABBMax.z) + EString(" }"));
+		}
 
 		BOOL32		IsValid;
 		Vector3		AABBMin;
