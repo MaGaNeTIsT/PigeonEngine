@@ -15,7 +15,7 @@ namespace PigeonEngine
 		const UINT32 ActorNum = InActors.Length();
 		const FLOAT UsedMouseX = InMouseX;
 		const FLOAT UsedMouseY = InMouseY;
-
+		DrawObjectBounds(InActors);
 		if ((!InCamera) || (ActorNum == 0u) || (InScreenRect.Right <= InScreenRect.Left) || (InScreenRect.Bottom <= InScreenRect.Top))
 		{
 			return nullptr;
@@ -164,7 +164,7 @@ namespace PigeonEngine
 		const UINT32 ComponentNum = InComponents.Length();
 		const FLOAT UsedMouseX = InMouseX;
 		const FLOAT UsedMouseY = InMouseY;
-
+		
 		if ((!InCamera) || (ComponentNum == 0u) || (InScreenRect.Right <= InScreenRect.Left) || (InScreenRect.Bottom <= InScreenRect.Top))
 		{
 			return nullptr;
