@@ -140,7 +140,7 @@ namespace PigeonEngine
 			}*/
 			if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
 			{
-				Keyboard.OnKeyPressed(static_cast<unsigned char>(wParam));
+				Keyboard.OnKeyPressed(static_cast<BYTE>(wParam));
 			}
 			break;
 		case WM_KEYUP:
@@ -149,14 +149,14 @@ namespace PigeonEngine
 			{
 				break;
 			}*/
-			Keyboard.OnKeyReleased(static_cast<unsigned char>(wParam));
+			Keyboard.OnKeyReleased(static_cast<BYTE>(wParam));
 			break;
 		case WM_CHAR:
 			/*if (imio.WantCaptureKeyboard)
 			{
 				break;
 			}*/
-			Keyboard.OnChar(static_cast<unsigned char>(wParam));
+			Keyboard.OnChar(static_cast<BYTE>(wParam));
 			break;
 			/*********** END KEYBOARD MESSAGES ***********/
 			/************* MOUSE MESSAGES ****************/
@@ -311,7 +311,7 @@ namespace PigeonEngine
 
 		return ::DefWindowProc(InhWnd, msg, wParam, lParam);
 	}
-	BOOL32 IController::IsKeyPressed(unsigned char keycode) const
+	BOOL32 IController::IsKeyPressed(BYTE keycode) const
 	{
 		return Keyboard.IsKeyPressed(keycode);
 	}

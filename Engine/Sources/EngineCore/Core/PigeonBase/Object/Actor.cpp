@@ -164,7 +164,7 @@ namespace PigeonEngine
 		TArray<PActor*> Out = this->ChildrenActors;
 		for(const auto& elem : this->ChildrenActors)
 		{
-			Out.Append(elem->GetAllActorsAttached(true));
+			Out.Append(elem->GetAllActorsAttached(TRUE));
 		}
 		return Out;
 	}

@@ -95,7 +95,7 @@ namespace PigeonEngine
 
     TArray<PActor*> PWorld::GetAllActors() const
     {
-        return this->RootActor->GetAllActorsAttached(true);
+        return this->RootActor->GetAllActorsAttached(TRUE);
     }
 
     const PActor* PWorld::GetActorByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildActor) const

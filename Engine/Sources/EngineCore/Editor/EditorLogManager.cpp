@@ -87,7 +87,7 @@ namespace PigeonEngine
     {
         ImGui::Begin("PigeonLogs", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
         ImGui::Text("PigeonLogs");
-        ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), true, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+        ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
         for(const auto& elem : Logs)
         {
             elem->PrintLog();

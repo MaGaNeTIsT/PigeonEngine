@@ -455,7 +455,7 @@ namespace PigeonEngine
 	{
 		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RCommonSettings::RENDER_DEPTH_MIN), MaxDepth(RCommonSettings::RENDER_DEPTH_MAX) {}
 		EViewport(const EViewport& Other) noexcept : TopLeftX(Other.TopLeftX), TopLeftY(Other.TopLeftY), Width(Other.Width), Height(Other.Height), MinDepth(Other.MinDepth), MaxDepth(Other.MaxDepth) {}
-		constexpr EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(rectSize.x), TopLeftY(rectSize.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
+		constexpr EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(startPos.x), TopLeftY(startPos.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
 		EViewport& operator=(const EViewport& Other)
 		{
 			TopLeftX	= Other.TopLeftX;

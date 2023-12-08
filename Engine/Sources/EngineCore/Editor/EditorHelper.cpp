@@ -3,15 +3,18 @@
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <RenderConfig/RenderConfig.h>
+#if _EDITOR_ONLY
+#include <RenderProxy/RenderSingletonObject.h>
+#endif
 
 namespace PigeonEngine
 {
 
-	PActor* SelectObjectInViewport(const PCameraComponent* InCamera, TArray<PActor*>& InActors, const INT32 InMouseX, const INT32 InMouseY, const ERect& InScreenRect)
+	PActor* SelectObjectInViewport(const PCameraComponent* InCamera, TArray<PActor*>& InActors, const FLOAT InMouseX, const FLOAT InMouseY, const ERect& InScreenRect)
 	{
 		const UINT32 ActorNum = InActors.Length();
-		const FLOAT UsedMouseX = (FLOAT)InMouseX;
-		const FLOAT UsedMouseY = (FLOAT)InMouseY;
+		const FLOAT UsedMouseX = InMouseX;
+		const FLOAT UsedMouseY = InMouseY;
 
 		if ((!InCamera) || (ActorNum == 0u) || (InScreenRect.Right <= InScreenRect.Left) || (InScreenRect.Bottom <= InScreenRect.Top))
 		{
@@ -156,11 +159,11 @@ namespace PigeonEngine
 		return Result;
 	}
 
-	PSceneComponent* SelectObjectInViewport(const PCameraComponent* InCamera, TArray<PSceneComponent*>& InComponents, const INT32 InMouseX, const INT32 InMouseY, const ERect& InScreenRect)
+	PSceneComponent* SelectObjectInViewport(const PCameraComponent* InCamera, TArray<PSceneComponent*>& InComponents, const FLOAT InMouseX, const FLOAT InMouseY, const ERect& InScreenRect)
 	{
 		const UINT32 ComponentNum = InComponents.Length();
-		const FLOAT UsedMouseX = (FLOAT)InMouseX;
-		const FLOAT UsedMouseY = (FLOAT)InMouseY;
+		const FLOAT UsedMouseX = InMouseX;
+		const FLOAT UsedMouseY = InMouseY;
 
 		if ((!InCamera) || (ComponentNum == 0u) || (InScreenRect.Right <= InScreenRect.Left) || (InScreenRect.Bottom <= InScreenRect.Top))
 		{
@@ -304,5 +307,38 @@ namespace PigeonEngine
 
 		return Result;
 	}
+
+#if _EDITOR_ONLY
+	void DrawObjectBounds(TArray<class PActor*>& InObjects)
+	{
+		if (const UINT32 ObjectNum = InObjects.Length(); ObjectNum > 0u)
+		{
+			const Color4 DebugColor((FLOAT)(0x99) / 255.0f, (FLOAT)(0x32) / 255.0f, (FLOAT)(0xcd) / 255.0f);
+			RDebugWireframePrimitiveManager* DebugPrimitiveMangaer = RDebugWireframePrimitiveManager::GetManagerSingleton();
+			for (UINT32 i = 0u; i < ObjectNum; i++)
+			{
+				EBoundAABB TempBound(InObjects[i]->GetBounds());
+				if (!(TempBound.IsValid))
+				{
+					continue;
+				}
+				const Quaternion BoundWorldRotation(InObjects[i]->GetActorWorldRotation());
+				const Vector3 BoundWorldScaling(InObjects[i]->GetActorWorldScale());
+				const Vector3 BoundExtent(((TempBound.AABBMax - TempBound.AABBMin) * 0.5f) * BoundWorldScaling);
+				const Vector3 BoundCenter(
+					Matrix4x4TransformPosition(MakeMatrix4x4(
+						InObjects[i]->GetActorWorldLocation(),
+						BoundWorldRotation,
+						BoundWorldScaling),
+						(TempBound.AABBMin + TempBound.AABBMax) * 0.5f
+					)
+				);
+				DebugPrimitiveMangaer->DrawCuboid(BoundCenter, BoundWorldRotation,
+					BoundExtent.x, BoundExtent.y, BoundExtent.z,
+					DebugColor);
+			}
+		}
+	}
+#endif
 
 };

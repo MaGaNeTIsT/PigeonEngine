@@ -10,7 +10,7 @@
 namespace PigeonEngine
 {
 	MAKE_DELEGATE_MULTI_ONE_PARAM(OnMyMouseEvent, IMouse::Event::EType)
-	MAKE_DELEGATE_MULTI_TWO_PARAM(OnMyKeyEvent, IKeyboard::Event::EType, unsigned char)
+	MAKE_DELEGATE_MULTI_TWO_PARAM(OnMyKeyEvent, IKeyboard::Event::EType, BYTE)
 	class IController
 	{
 	public:
@@ -52,7 +52,7 @@ namespace PigeonEngine
 		/*Keyboard Part Start*/
 	public:
 		// key event stuff
-		BOOL32 IsKeyPressed(unsigned char keycode) const;
+		BOOL32 IsKeyPressed(BYTE keycode) const;
 		std::optional<IKeyboard::Event> ReadKey();
 		BOOL32 IsKeyEmpty() const;
 		void FlushKey();

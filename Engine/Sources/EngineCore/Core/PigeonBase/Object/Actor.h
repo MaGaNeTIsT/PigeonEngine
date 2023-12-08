@@ -94,7 +94,7 @@ namespace PigeonEngine
 		virtual void AttachActorTo(PActor* Child, const ETransform& RelativeTransform = ETransform());
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 
-		PE_NODISCARD TArray<PActor*> GetAllActorsAttached(BOOL8 bRecursive = false) const;
+		PE_NODISCARD TArray<PActor*> GetAllActorsAttached(BOOL8 bRecursive = FALSE) const;
 		
 		PE_NODISCARD const PActor* GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		void DetachActorsAttached();

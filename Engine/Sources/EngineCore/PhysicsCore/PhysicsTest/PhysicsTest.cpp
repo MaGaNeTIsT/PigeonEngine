@@ -11,7 +11,7 @@ void PigeonEngine::PPhysicsTestCharacter::InitCharacter(FCharacterSettings* InCh
 	PCharacter::InitCharacter(InCharacterSettings);
 	//Shape = new FBoxShape(Vector3(1000.f,10.f,1000.f),0.f);
 	//FPhysicsBodyId BodyId;
-	//FPhysicsManager::GetSingleton()->TryCreateBody(Shape,false,Vector3(0.f,-10.f,0.f),Quaternion::Identity(),PhysicsUtility::EMotionType::Static,Layers::MOVING, BodyId);
+	//FPhysicsManager::GetSingleton()->TryCreateBody(Shape,FALSE,Vector3(0.f,-10.f,0.f),Quaternion::Identity(),PhysicsUtility::EMotionType::Static,Layers::MOVING, BodyId);
 	//FPhysicsManager::GetSingleton()->AddBody(this->GetUniqueID(), BodyId, PhysicsUtility::EActivate::Activate);
 }
 

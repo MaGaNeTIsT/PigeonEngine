@@ -25,9 +25,9 @@ namespace PigeonEngine
 			};
 		private:
 			EType Type;
-			unsigned char Code;
+			BYTE Code;
 		public:
-			Event(EType InType, unsigned char InCode)
+			Event(EType InType, BYTE InCode)
 				:
 				Type(InType),
 				Code(InCode)
@@ -40,7 +40,7 @@ namespace PigeonEngine
 			{
 				return Type == EType::Release;
 			}
-			unsigned char GetCode() const
+			BYTE GetCode() const
 			{
 				return Code;
 			}
@@ -52,7 +52,7 @@ namespace PigeonEngine
 
 	public:
 		// key event stuff
-		BOOL32 IsKeyPressed(unsigned char keycode) const;
+		BOOL32 IsKeyPressed(BYTE keycode) const;
 		std::optional<Event> ReadKey();
 		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
@@ -67,8 +67,8 @@ namespace PigeonEngine
 		BOOL32 IsAutorepeatEnabled() const;
 
 	private:
-		void OnKeyPressed(unsigned char keycode);
-		void OnKeyReleased(unsigned char keycode);
+		void OnKeyPressed(BYTE keycode);
+		void OnKeyReleased(BYTE keycode);
 		void OnChar(char character);
 		void ClearState();
 		template<typename T>

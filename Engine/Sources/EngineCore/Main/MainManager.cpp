@@ -82,6 +82,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
+		m_EditorManager->Initialize();
 #endif
 		
 		m_WindowTimer.Init();
@@ -93,6 +94,7 @@ namespace PigeonEngine
 	{
 		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
+
 #if _EDITOR_ONLY
 		m_EditorManager->ShutDown();
 		m_AssimpManager->ShutDown();

@@ -135,7 +135,7 @@ namespace PigeonEngine
         PE_NODISCARD const EBoundAABB  GetComponentBound()const;
 
     protected:
-        EBoundAABB  LocalBound = EBoundAABB(Vector3(0,0,0), Vector3(0,0,0), true);
+        EBoundAABB  LocalBound = EBoundAABB(Vector3(0.f,0.f,0.f), Vector3(0.f,0.f,0.f), TRUE);
 
         // Render proxy functions START
     public:

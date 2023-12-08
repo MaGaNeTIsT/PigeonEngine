@@ -23,13 +23,13 @@ namespace PigeonEngine
         void UserEndPlay() override;
     protected:
         virtual void OnMouse(IMouse::Event::EType Type) ;
-        virtual void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode) ;
+        virtual void OnKey(IKeyboard::Event::EType Type, BYTE KeyCode) ;
     public:
         OnMouseEvent OnMouseEvent;
         OnKeyEvent   OnKeyEvent;
     private:
         TFunction<void(IMouse::Event::EType Type)> OnMouseDown;
-        TFunction<void(IKeyboard::Event::EType Type, unsigned char KeyCode)> OnKeyDown;
+        TFunction<void(IKeyboard::Event::EType Type, BYTE KeyCode)> OnKeyDown;
     public:
         
         PE_NODISCARD PCameraComponent* GetCamera() const;
@@ -59,11 +59,11 @@ namespace PigeonEngine
         void DrawImGui();
     protected:
         void OnMouse(IMouse::Event::EType Type) override;
-        void OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode) override;
+        void OnKey(IKeyboard::Event::EType Type, BYTE KeyCode) override;
 
     private:
         
-        BOOL8 bStart = false;
+        BOOL8 bStart = FALSE;
         FLOAT MovingSpeed = 50.0;
         FLOAT RotationSpeed = 0.05f;
         Vector2 MousePositionLastTick = Vector2::Zero();

@@ -69,11 +69,13 @@ namespace PigeonEngine
 				{
 					TArray<PActor*> AllActors = this->m_WorldManager->GetWorld()->GetAllActors();
 					PController* PC = this->m_WorldManager->GetWorld()->GetController();
-					PActor* ClickedActor = SelectObjectInViewport(
-						PC->GetCamera(),
-						AllActors,
-						static_cast<INT32>(MousePos.x),
-						static_cast<INT32>(MousePos.y), ERect(0,0, PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH, PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT));
+                    PActor* ClickedActor = SelectObjectInViewport(
+                        PC->GetCamera(),
+                        AllActors,
+                        MousePos.x,
+                        MousePos.y,
+                        ERect(0, 0, PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH, PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT)
+                    );
 					if (ClickedActor)
 					{
 						this->m_WorldManager->GetWorld()->SetSelectedActor(ClickedActor);

@@ -3,7 +3,7 @@
 
 namespace PigeonEngine
 {
-	BOOL32 IKeyboard::IsKeyPressed(unsigned char keycode) const
+	BOOL32 IKeyboard::IsKeyPressed(BYTE keycode) const
 	{
 		return KeyStates[keycode];;
 	}
@@ -29,7 +29,7 @@ namespace PigeonEngine
 	{
 		if (CharBuffer.size() > 0u)
 		{
-			unsigned char charcode = CharBuffer.front();
+			BYTE charcode = CharBuffer.front();
 			CharBuffer.pop();
 			return charcode;
 		}
@@ -60,14 +60,14 @@ namespace PigeonEngine
 	{
 		return bAutorepeatEnabled;
 	}
-	void IKeyboard::OnKeyPressed(unsigned char keycode)
+	void IKeyboard::OnKeyPressed(BYTE keycode)
 	{
 		KeyStates[keycode] = TRUE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Press, keycode));
 		TrimBuffer(KeyBuffer);
 		EInput::KeyEvent.Broadcast(IKeyboard::Event::EType::Press, keycode);
 	}
-	void IKeyboard::OnKeyReleased(unsigned char keycode)
+	void IKeyboard::OnKeyReleased(BYTE keycode)
 	{
 		KeyStates[keycode] = FALSE;
 		KeyBuffer.push(IKeyboard::Event(IKeyboard::Event::EType::Release, keycode));

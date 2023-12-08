@@ -31,7 +31,7 @@ namespace PigeonEngine
         }; 
         OnMouseDown = func;
 
-        auto func1 =  [this](IKeyboard::Event::EType Type, unsigned char KeyCode)
+        auto func1 =  [this](IKeyboard::Event::EType Type, BYTE KeyCode)
         {
             this->OnKey(Type, KeyCode);
         }; 
@@ -69,7 +69,7 @@ namespace PigeonEngine
         this->OnMouseEvent.Broadcast(Type, MousePosition);
     }
 
-    void PController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
+    void PController::OnKey(IKeyboard::Event::EType Type, BYTE KeyCode)
     {
         this->OnKeyEvent.Broadcast(Type, EKeysBuiltIn::GetKeyByKeyCode(KeyCode));
     }
@@ -217,7 +217,7 @@ namespace PigeonEngine
         
     }
 
-    void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
+    void PEditorController::OnKey(IKeyboard::Event::EType Type, BYTE KeyCode)
     {
        //  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();
         PController::OnKey(Type, KeyCode);
