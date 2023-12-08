@@ -309,7 +309,7 @@ namespace PigeonEngine
 	}
 
 #if _EDITOR_ONLY
-	void DrawObjectBounds(TArray<class PActor*>& InObjects)
+	void DrawObjectBounds(TArray<PActor*>& InObjects)
 	{
 		if (const UINT32 ObjectNum = InObjects.Length(); ObjectNum > 0u)
 		{
