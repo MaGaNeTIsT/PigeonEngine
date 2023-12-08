@@ -60,29 +60,29 @@ namespace PigeonEngine
         m_WorldManager->EditorInit();
         m_ImportManager->EditorInit();
 
-        // PEditorController* EditorController = static_cast<PEditorController*>(m_WorldManager->GetWorld()->GetController());
-        // if(EditorController)
-        // {
-        //     auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
-        //     {
-        //         if(Type == IMouse::Event::EType::LPress)
-        //         {
-        //             TArray<PActor*> AllActors = this->m_WorldManager->GetWorld()->GetAllActors();
-        //             PController* PC = this->m_WorldManager->GetWorld()->GetController();
-        //             PActor* ClickedActor = SelectObjectInViewport(
-        //                 PC->GetCamera(),
-        //                 AllActors,
-        //                 static_cast<INT32>(MousePos.x),
-        //                 static_cast<INT32>(MousePos.y), );
-        //             if(ClickedActor)
-        //             {
-        //                 this->m_WorldManager->GetWorld()->SetSelectedActor(ClickedActor);
-        //             }
-        //         }
-        //     };
-        //     TFunction<void(IMouse::Event::EType, const Vector2&)> OnMouseBroadcast = func;
-        //     EditorController->OnMouseEvent.Add(OnMouseBroadcast);
-        // }
+		PEditorController* EditorController = static_cast<PEditorController*>(m_WorldManager->GetWorld()->GetController());
+		if (EditorController)
+		{
+			auto func = [this](IMouse::Event::EType Type, const Vector2& MousePos)
+			{
+				if (Type == IMouse::Event::EType::LPress)
+				{
+					TArray<PActor*> AllActors = this->m_WorldManager->GetWorld()->GetAllActors();
+					PController* PC = this->m_WorldManager->GetWorld()->GetController();
+					PActor* ClickedActor = SelectObjectInViewport(
+						PC->GetCamera(),
+						AllActors,
+						static_cast<INT32>(MousePos.x),
+						static_cast<INT32>(MousePos.y), ERect(0,0, PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH, PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT));
+					if (ClickedActor)
+					{
+						this->m_WorldManager->GetWorld()->SetSelectedActor(ClickedActor);
+					}
+				}
+			};
+			TFunction<void(IMouse::Event::EType, const Vector2&)> OnMouseBroadcast = func;
+			EditorController->OnMouseEvent.Add(OnMouseBroadcast);
+		}
     }
 
     void EEditorManager::EditorUpdate()
