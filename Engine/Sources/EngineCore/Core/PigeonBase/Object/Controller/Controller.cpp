@@ -189,6 +189,7 @@ namespace PigeonEngine
 
     void PEditorController::OnMouse(IMouse::Event::EType Type)
     {
+        PController::OnMouse(Type);
         if(Type == IMouse::Event::EType::RPress)
         {
             MousePositionLastTick = Vector2();
@@ -219,6 +220,7 @@ namespace PigeonEngine
     void PEditorController::OnKey(IKeyboard::Event::EType Type, unsigned char KeyCode)
     {
        //  EEditorLogManager* LogsManager = EEditorLogManager::GetManagerSingleton();
+        PController::OnKey(Type, KeyCode);
         EString TestLog;
         switch (Type)
         {
@@ -234,7 +236,7 @@ namespace PigeonEngine
             }
         }
 
-        PController::OnKey(Type, KeyCode);
+        
     }
 
     void PEditorController::DrawImGui()
