@@ -245,7 +245,7 @@ namespace PigeonEngine
     template <typename T>
     void TArray<T>::RemoveAt(const UINT32& Index)
     {
-        if(Index > Length())
+        if(Index >= Length())
         {
             return;
         }
