@@ -3,7 +3,6 @@
 
 namespace PigeonEngine
 {
-
     static void RegisterClassTypes()
     {
         RegisterClassType<PMeshComponent, PPrimitiveComponent>();
