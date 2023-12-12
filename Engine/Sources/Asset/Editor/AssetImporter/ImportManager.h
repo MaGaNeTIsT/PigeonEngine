@@ -27,9 +27,10 @@ namespace PigeonEngine
 		/// <param name="Importer">Importer</param>
 		void AddImporter(EString FileExtension,IImporter* Importer);
 	private:
-		const CHAR* GetFileFilterList();
+		void ShowEditor();
 	private:
 		TMap<EString, IImporter*> m_Importers;
+		BOOL8 m_ShowEditor = FALSE;
 	};
 };
 #endif

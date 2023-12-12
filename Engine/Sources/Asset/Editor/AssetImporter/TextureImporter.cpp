@@ -1,15 +1,15 @@
-#include "PNGImporter.h"
+#include "TextureImporter.h"
 #include "TextureAsset/TextureAsset.h"
 #include "Base/DataStructure/Text/Path.h"
 #if _EDITOR_ONLY
-void PigeonEngine::EPNGImporter::CreateImportEditor(TArray<EString> Paths)
+void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> Paths)
 {
 	NeedUpdate = TRUE;
 	InitializeEditor = TRUE;
 	m_Paths = Paths;
 }
 
-void PigeonEngine::EPNGImporter::UpdateImportEditor()
+void PigeonEngine::ETextureImporter::UpdateImportEditor()
 {
 	//Combo Item
 	static const CHAR* items[] = { "Texture2D", "TextureCube" };
@@ -19,12 +19,16 @@ void PigeonEngine::EPNGImporter::UpdateImportEditor()
 	static INT32 item_current_idx = 0;
 	static INT32 cube_item_current_idx = 0;
 	static TMap<const CHAR*, EString> CubeMap;
-	static CHAR InputData[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
+	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
+	static CHAR CubeMapName[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
+	static BOOL8 CheckCopyFile = FALSE;
 	if (InitializeEditor)
 	{
 		item_current_idx = 0;
 		cube_item_current_idx = 0;
-		::memset(InputData, 0, EPath::MAX_PATH_LENGTH);
+		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
+		::memset(CubeMapName, 0, EPath::MAX_PATH_LENGTH);
+		CheckCopyFile = FALSE;
 		CubeMap.Clear();
 		//TODO : does this necessary?
 		//const CHAR* cube_items[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
@@ -35,7 +39,7 @@ void PigeonEngine::EPNGImporter::UpdateImportEditor()
 		InitializeEditor = FALSE;
 	}
 
-	ImGui::Begin("PNGImporter", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
+	ImGui::Begin("Texture Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
 		const CHAR* combo_preview_value = items[item_current_idx];
 		ImGui::PushItemWidth(120);
@@ -100,10 +104,12 @@ void PigeonEngine::EPNGImporter::UpdateImportEditor()
 		ImGui::Checkbox("CopyFile", &CheckCopyFile);
 		if (CheckCopyFile)
 		{
-			ImGui::SameLine();
+			ImGui::PushItemWidth(250);
+			ImGui::InputText("Copy File Path", CopyFileFolder, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
+			if (item_current_idx == 1)
 			{
 				ImGui::PushItemWidth(250);
-				ImGui::InputText(";", InputData, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
+				ImGui::InputText("Texture Cube Name", CubeMapName, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
 			}
 		}
 		if (ImGui::Button("Import"))
@@ -115,18 +121,18 @@ void PigeonEngine::EPNGImporter::UpdateImportEditor()
 				{
 					const ETexture2DAsset* Asset = NULL;
 					EString FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
-					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &EPath::GetRootPath(m_Paths[i]), &FileName, &m_Extension);
+					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &EPath::GetRootPath(m_Paths[i]), &FileName, &EPath::GetExtension(m_Paths[i]));
 				}
 			}
 			else if (item_current_idx == 1)//TextureCube
 			{
 				const ETextureCubeAsset* Asset = NULL;
 				TArray<EString> Extensions;
-				Extensions.Add(m_Extension);
 				TArray<EString> FileNames;
 				for (UINT32 i = 0; i < m_Paths.Length(); i++)
 				{
 					FileNames.Add(EPath::GetFileNameWithoutExtension(m_Paths[i]));
+					Extensions.Add(EPath::GetExtension(m_Paths[i]));
 				}
 				TArray<EString> Paths;
 				EString CubeMapPath;

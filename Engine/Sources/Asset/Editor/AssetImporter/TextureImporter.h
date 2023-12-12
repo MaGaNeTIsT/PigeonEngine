@@ -4,13 +4,17 @@
 #if _EDITOR_ONLY
 namespace PigeonEngine
 {
-	class EFBXImporter : public IImporter
+	class ETextureImporter : public IImporter
 	{
 	public:
-		virtual ~EFBXImporter() {};
+		virtual ~ETextureImporter() {};
 		virtual void CreateImportEditor(TArray<EString> Paths) override;
+		virtual EString GetFileFilterList() { return "PNG"; }
 	protected:
 		virtual void UpdateImportEditor() override;
+	private:
+		TArray<EString> m_Paths;
+		BOOL8 InitializeEditor = FALSE;
 	};
 };
 #endif

@@ -10,6 +10,7 @@ namespace PigeonEngine
 	public:
 		virtual ~IImporter() {};
 		virtual void CreateImportEditor(TArray<EString> Path) = 0;
+		virtual EString GetFileFilterList() { return ""; }
 		void UpdateEditor();
 	protected:
 		virtual void UpdateImportEditor() = 0;

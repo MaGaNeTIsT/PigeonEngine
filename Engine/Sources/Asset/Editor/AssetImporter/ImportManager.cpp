@@ -4,8 +4,8 @@
 #include <Base/RTTI/RTTIManager.h>
 #if _EDITOR_ONLY
 //Importer
-#include "FBXImporter.h"
-#include "PNGImporter.h"
+#include "MeshImporter.h"
+#include "TextureImporter.h"
 
 namespace PigeonEngine
 {
@@ -43,38 +43,14 @@ void PigeonEngine::EImportManager::ShowImporterButton()
 {
 	if (ImGui::Button("Import"))
 	{
-		PathSet PathSet;
-		OpenDialogMultiSelect(GetFileFilterList(), NULL, &PathSet);
-
-		TMap<EString,TArray<EString>> PathMap;
-		for (INT32 i = 0; i < PathSet.count; i++)
-		{
-			const CHAR* Path = GetPath(&PathSet, i);
-			EString PathString(Path);
-			EString FileExtension = EPath::GetExtension(PathString);
-			FileExtension = ToUpper(FileExtension);
-			TArray<EString> OutPath;
-			if (!PathMap.FindValue(FileExtension, OutPath))
-			{
-				OutPath.Add(PathString);
-			}
-			PathMap[FileExtension] = OutPath;
-		}
-		for(auto Item = PathMap.Begin();Item != PathMap.End();Item++)
-		{
-			IImporter* Importer;
-			if(m_Importers.FindValue(Item->first, Importer))
-			Importer->CreateImportEditor(Item->second);
-		}
-
-		FreePathSet(&PathSet);
+		m_ShowEditor = TRUE;
 	}
 }
 
 void PigeonEngine::EImportManager::EditorInit()
 {
-	AddImporter("FBX", new EFBXImporter());
-	AddImporter("PNG", new EPNGImporter());
+	AddImporter("Mesh", new EMeshImporter());
+	AddImporter("Texture", new ETextureImporter());
 }
 
 void PigeonEngine::EImportManager::EditorUpdate()
@@ -83,27 +59,60 @@ void PigeonEngine::EImportManager::EditorUpdate()
 	{
 		Item->second->UpdateEditor();
 	}
+	if (m_ShowEditor)
+	{
+		ShowEditor();
+	}
 }
 
 void PigeonEngine::EImportManager::AddImporter(EString FileExtension, IImporter* Importer)
 {
 	m_Importers.Add(FileExtension, Importer);
 }
-
-const CHAR* PigeonEngine::EImportManager::GetFileFilterList()
+void PigeonEngine::EImportManager::ShowEditor()
 {
-	TArray<EString> KeyArray;
-	m_Importers.GenerateKeyArray(KeyArray);
-	if (KeyArray.Length())
+	ImGui::Begin("Importer Select", &m_ShowEditor, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		EString FileFilterList = KeyArray[0];
-		for (UINT32 i = 1; i < KeyArray.Length(); i++)
+		for (auto Item = m_Importers.Begin(); Item != m_Importers.End(); Item++)
 		{
-			FileFilterList += ":";
-			FileFilterList += KeyArray[i];
+			if (ImGui::Button(*Item->first,ImVec2(250,0)))
+			{
+				PathSet PathSet;
+				PathSet.count = 0;
+				OpenDialogMultiSelect(*Item->second->GetFileFilterList(), NULL, &PathSet);
+				TArray<EString> Paths;
+				for (INT32 i = 0; i < PathSet.count; i++)
+				{
+					const CHAR* Path = GetPath(&PathSet, i);
+					Paths.Add(Path);
+				}
+				Item->second->CreateImportEditor(Paths);
+				m_ShowEditor = FALSE;
+
+				//TMap<EString, TArray<EString>> PathMap;
+				//for (INT32 i = 0; i < PathSet.count; i++)
+				//{
+				//	const CHAR* Path = GetPath(&PathSet, i);
+				//	EString PathString(Path);
+				//	EString FileExtension = EPath::GetExtension(PathString);
+				//	FileExtension = ToUpper(FileExtension);
+				//	TArray<EString> OutPath;
+				//	if (!PathMap.FindValue(FileExtension, OutPath))
+				//	{
+				//		OutPath.Add(PathString);
+				//	}
+				//	PathMap[FileExtension] = OutPath;
+				//}
+				//for (auto Item = PathMap.Begin(); Item != PathMap.End(); Item++)
+				//{
+				//	IImporter* Importer;
+				//	if (m_Importers.FindValue(Item->first, Importer))
+				//		Importer->CreateImportEditor(Item->second);
+				//}
+				FreePathSet(&PathSet);
+			}
 		}
-		return *FileFilterList;
 	}
-	return "";
+	ImGui::End();
 }
 #endif

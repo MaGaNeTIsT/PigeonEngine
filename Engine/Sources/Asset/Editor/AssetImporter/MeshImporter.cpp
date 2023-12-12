@@ -1,13 +1,13 @@
-#include "FBXImporter.h"
+#include "MeshImporter.h"
 #include "MeshAsset/MeshAsset.h"
 #if _EDITOR_ONLY
-void PigeonEngine::EFBXImporter::CreateImportEditor(TArray<EString> Paths)
+void PigeonEngine::EMeshImporter::CreateImportEditor(TArray<EString> Paths)
 {
 	//Handle Path.
 	//TryLoadStaticMesh();
 }
 
-void PigeonEngine::EFBXImporter::UpdateImportEditor()
+void PigeonEngine::EMeshImporter::UpdateImportEditor()
 {
 	ImGui::Begin("PigeonContent", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
 	{
