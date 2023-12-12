@@ -5,6 +5,7 @@
 #if _EDITOR_ONLY
 //Importer
 #include "FBXImporter.h"
+#include "PNGImporter.h"
 
 namespace PigeonEngine
 {
@@ -45,17 +46,25 @@ void PigeonEngine::EImportManager::ShowImporterButton()
 		PathSet PathSet;
 		OpenDialogMultiSelect(GetFileFilterList(), NULL, &PathSet);
 
+		TMap<EString,TArray<EString>> PathMap;
 		for (INT32 i = 0; i < PathSet.count; i++)
 		{
 			const CHAR* Path = GetPath(&PathSet, i);
 			EString PathString(Path);
 			EString FileExtension = EPath::GetExtension(PathString);
-			IImporter* Importer;
 			FileExtension = ToUpper(FileExtension);
-			if (m_Importers.FindValue(FileExtension, Importer))
+			TArray<EString> OutPath;
+			if (!PathMap.FindValue(FileExtension, OutPath))
 			{
-				Importer->CreateImportEditor(PathString);
+				OutPath.Add(PathString);
 			}
+			PathMap[FileExtension] = OutPath;
+		}
+		for(auto Item = PathMap.Begin();Item != PathMap.End();Item++)
+		{
+			IImporter* Importer;
+			if(m_Importers.FindValue(Item->first, Importer))
+			Importer->CreateImportEditor(Item->second);
 		}
 
 		FreePathSet(&PathSet);
@@ -64,12 +73,16 @@ void PigeonEngine::EImportManager::ShowImporterButton()
 
 void PigeonEngine::EImportManager::EditorInit()
 {
-	AddImporter("FBX", new FBXImporter());
+	AddImporter("FBX", new EFBXImporter());
+	AddImporter("PNG", new EPNGImporter());
 }
 
 void PigeonEngine::EImportManager::EditorUpdate()
 {
-
+	for (auto Item = m_Importers.Begin(); Item != m_Importers.End(); ++Item)
+	{
+		Item->second->UpdateEditor();
+	}
 }
 
 void PigeonEngine::EImportManager::AddImporter(EString FileExtension, IImporter* Importer)
@@ -89,7 +102,7 @@ const CHAR* PigeonEngine::EImportManager::GetFileFilterList()
 			FileFilterList += ":";
 			FileFilterList += KeyArray[i];
 		}
-		return FileFilterList.GetDataAsCopy();
+		return *FileFilterList;
 	}
 	return "";
 }

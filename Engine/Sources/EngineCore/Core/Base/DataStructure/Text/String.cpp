@@ -223,7 +223,7 @@ namespace PigeonEngine
         {
             return -1;
         }
-        return atoi(Str.c_str());
+        return ::atoi(Str.c_str());
     }
 
     DOUBLE EString::AtoF() const
@@ -232,7 +232,7 @@ namespace PigeonEngine
         {
             return -1;
         }
-        return atof(Str.c_str());
+        return ::atof(Str.c_str());
     }
 
     EString EString::FromInt(const UINT32& InValue)
@@ -249,7 +249,7 @@ namespace PigeonEngine
     {
         const CHAR* Data = Str.c_str();
         CHAR* charArray = new CHAR[sizeof(Data) + 1];
-        if (strcpy_s(charArray, this->Length(), Data) != 0) {
+        if (::strcpy_s(charArray, this->Length() + 1, Data) != 0) {
             // 复制失败处理
             delete[] charArray; // 释放分配的内存
             return nullptr;  // 返回nullptr表示失败

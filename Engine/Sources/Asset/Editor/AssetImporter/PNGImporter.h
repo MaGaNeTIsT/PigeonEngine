@@ -4,13 +4,18 @@
 #if _EDITOR_ONLY
 namespace PigeonEngine
 {
-	class EFBXImporter : public IImporter
+	class EPNGImporter : public IImporter
 	{
 	public:
-		virtual ~EFBXImporter() {};
+		virtual ~EPNGImporter() {};
 		virtual void CreateImportEditor(TArray<EString> Paths) override;
 	protected:
 		virtual void UpdateImportEditor() override;
+	private:
+		TArray<EString> m_Paths;
+		const EString m_Extension = "PNG";
+		BOOL8 CheckCopyFile = FALSE;
+		BOOL8 InitializeEditor = FALSE;
 	};
 };
 #endif

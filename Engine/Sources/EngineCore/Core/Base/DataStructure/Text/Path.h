@@ -72,6 +72,8 @@ namespace PigeonEngine
         /// check if path has extension.
         /// </summary>
         static BOOL32 HasExtension(const EString& Path);
+
+        const static INT32 MAX_PATH_LENGTH = 65535;
     };
 
     extern UINT32 FindFirstSlashIndex(const EString& Path);
