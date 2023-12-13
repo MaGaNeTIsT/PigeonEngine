@@ -53,7 +53,7 @@ namespace PigeonEngine
         /// get absolute path,
         /// </summary>
         /// <param name="Path">:relative path of asset path</param>
-        static EString GetFullPath(const EString& Path);
+        static EString GetFullAssetPath(const EString& Path);
         /// <summary>
         /// get absolute path,
         /// </summary>
@@ -66,7 +66,7 @@ namespace PigeonEngine
         /// <summary>
         /// get a string before last '/'.
         /// </summary>
-        static EString GetFilePath(const EString& Path);
+        static EString GetFileFolderPath(const EString& Path);
         /// <summary>
         /// get relative path,
         /// </summary>

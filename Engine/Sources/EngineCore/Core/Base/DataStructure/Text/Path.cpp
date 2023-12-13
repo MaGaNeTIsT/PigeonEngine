@@ -131,7 +131,7 @@ namespace PigeonEngine
 		return SubString.Substring(0u, LastDot);
 	}
 
-	EString EPath::GetFullPath(const EString& Path)
+	EString EPath::GetFullAssetPath(const EString& Path)
 	{
 		return Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), Path);
 	}
@@ -147,7 +147,7 @@ namespace PigeonEngine
 		return Path.Substring(0, SlashIndex);
 	}
 
-	EString EPath::GetFilePath(const EString& Path)
+	EString EPath::GetFileFolderPath(const EString& Path)
 	{
 		UINT32 SlashIndex = FindLastSlashIndex(Path);
 		return Path.Substring(0, SlashIndex);

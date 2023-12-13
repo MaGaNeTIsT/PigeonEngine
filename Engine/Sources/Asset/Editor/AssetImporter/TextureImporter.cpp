@@ -127,7 +127,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				{
 					const ETexture2DAsset* Asset = NULL;
 					EString FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
-					EString FilePath = EPath::GetFilePath(m_Paths[i]) + "/";
+					EString FilePath = EPath::GetFileFolderPath(m_Paths[i]) + "/";
 					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(m_Paths[i]));
 
 					//CopyFile
@@ -162,37 +162,37 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				EString CubeMapPath;
 				if (CubeMap.FindValue("+X", CubeMapPath))
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-X", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("+Y", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-Y", CubeMapPath))
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("+Z", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
 				if (CubeMap.FindValue("-Z", CubeMapPath)) 
 				{
-					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					Paths.Add(EPath::GetFileFolderPath(CubeMapPath));
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
