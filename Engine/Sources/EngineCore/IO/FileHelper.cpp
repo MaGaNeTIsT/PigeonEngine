@@ -138,4 +138,28 @@ namespace PigeonEngine
 		} 
 		return FALSE;
 	}
+	BOOL8 EFileHelper::CopyFileToNewPath(const EString& FilePath, const EString& NewFilePath)
+	{
+		void* FileData = NULL;
+		ULONG Size = 0u;
+		if (EFileHelper::ReadFileAsBinary(FilePath, FileData, Size))
+		{
+			if (!EFileHelper::SaveBytesToFile(NewFilePath, FileData, Size))
+			{
+				PE_CHECK((ENGINE_ASSET_ERROR), ("EFileHelper::CopyFileToNewPath : save file error!"), (FALSE));
+				delete FileData;
+				return FALSE;
+			}
+			else
+			{
+				delete FileData;
+				return TRUE;
+			}
+		}
+		else
+		{
+			PE_CHECK((ENGINE_ASSET_ERROR), ("EFileHelper::CopyFileToNewPath : read file error!"), (FALSE));
+			return FALSE;
+		}
+	}
 };

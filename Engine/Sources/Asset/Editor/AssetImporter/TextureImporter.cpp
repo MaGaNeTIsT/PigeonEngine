@@ -137,18 +137,9 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 						//BOOL8 CopySuccess = FALSE;
 						//CopyFile(*m_Paths[i], *CopyPath, CopySuccess);
 						//PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer copy file error!"), (CopySuccess));
-						void* FileData = NULL;
-						ULONG Size = 0u;
-						if (EFileHelper::ReadFileAsBinary(m_Paths[i], FileData, Size))
+						if (!EFileHelper::CopyFileToNewPath(m_Paths[i], CopyPath))
 						{
-							if (!EFileHelper::SaveBytesToFile(CopyPath, FileData, Size))
-							{
-								PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer save file error!"), (FALSE));
-							}
-						}
-						else
-						{
-							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer read file error!"), (FALSE));
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer : copy file error!"), (FALSE));
 						}
 					}
 				}
@@ -204,18 +195,9 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 					EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EString(CubeMapName));
 					for (auto Item = CubeMap.Begin(); Item != CubeMap.End(); Item++)
 					{
-						void* FileData = NULL;
-						ULONG Size = 0u;
-						if (EFileHelper::ReadFileAsBinary(Item->second, FileData, Size))
+						if (!EFileHelper::CopyFileToNewPath(Item->second, EPath::Combine(CopyPath, EPath::GetFileNameWithExtension(Item->second))))
 						{
-							if (!EFileHelper::SaveBytesToFile(EPath::Combine(CopyPath, EPath::GetFileNameWithExtension(Item->second)), FileData, Size))
-							{
-								PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer save file error!"), (FALSE));
-							}
-						}
-						else
-						{
-							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer read file error!"), (FALSE));
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer : copy file error!"), (FALSE));
 						}
 					}
 				}

@@ -21,6 +21,7 @@ namespace PigeonEngine
 		static BOOL8 ScanDirectory(const EString& DirectoryPath, TArray<EString>& OutFolders, TArray<EString>& OutFiles, const BOOL8& OutWithFullPath);
 
 		static BOOL8 ReadFirstNumberOfBytesInFile(const EString& FilePath, void*& Return, const ULONG& Size);
+		static BOOL8 CopyFileToNewPath(const EString& FilePath, const EString& NewFilePath);
 	public:
 		EFileHelper() = delete;
 		EFileHelper(const EFileHelper&) = delete;
