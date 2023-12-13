@@ -64,6 +64,10 @@ namespace PigeonEngine
         /// </summary>
         static EString GetRootPath(const EString& Path);
         /// <summary>
+        /// get a string before last '/'.
+        /// </summary>
+        static EString GetFilePath(const EString& Path);
+        /// <summary>
         /// get relative path,
         /// </summary>
         /// <param name="Path">:absolute path</param>

@@ -9,7 +9,7 @@ namespace PigeonEngine
 	public:
 		virtual ~ETextureImporter() {};
 		virtual void CreateImportEditor(TArray<EString> Paths) override;
-		virtual EString GetFileFilterList() { return "PNG"; }
+		virtual EString GetFileFilterList() { return "PNG;TGA;JPG;JEPG"; }
 	protected:
 		virtual void UpdateImportEditor() override;
 	private:

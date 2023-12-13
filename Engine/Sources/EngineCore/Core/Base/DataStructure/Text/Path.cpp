@@ -11,27 +11,31 @@ namespace PigeonEngine
 	UINT32 FindFirstSlashIndex(const EString& Path)
 	{
 		const CHAR slash[] = { '/' ,'\0' };
-		UINT32 FirstSlash = Path.Find(slash);
+		INT32 FirstSlash = Path.Find(slash);
 		if (Path.Length() >= (FirstSlash + 1u))
 		{
 			const CHAR backslash[] = { '\\', '\0' };
-			FirstSlash = Path.Find(backslash);
-			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (FirstSlash + 1u)));
+			INT32 FirstSlash1 = Path.Find(backslash);
+			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (FirstSlash1 + 1u)));
+			if (FirstSlash1 < FirstSlash)
+				FirstSlash = FirstSlash1;
 		}
-		return FirstSlash;
+		return (UINT)FirstSlash;
 	}
 
 	UINT32 FindLastSlashIndex(const EString& Path)
 	{
 		const CHAR slash[] = { '/' ,'\0' };
-		UINT32 LastSlash = Path.RightFind(slash);
+		INT32 LastSlash = Path.RightFind(slash);
 		if (Path.Length() >= (LastSlash + 1u))
 		{
 			const CHAR backslash[] = { '\\', '\0' };
-			LastSlash = Path.RightFind(backslash);
-			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (LastSlash + 1u)));
+			INT32 LastSlash1 = Path.RightFind(backslash);
+			PE_CHECK((ENGINE_STRING_ERROR), ("Check string rest length error."), (Path.Length() >= (LastSlash1 + 1u)));
+			if (LastSlash1 > LastSlash)
+				LastSlash = LastSlash1;
 		}
-		return LastSlash;
+		return (UINT)LastSlash;
 	}
 
 	EString ToLower(const EString& String)
@@ -62,12 +66,22 @@ namespace PigeonEngine
 
 	EString EPath::Combine(const EString& Path1, const EString& Path2)
 	{
+		if (Path1.LastIndex() == FindLastSlashIndex(Path1))
+			return Path1 + Path2;
 		return Path1 + "/" + Path2;
 	}
 
 	EString EPath::Combine(const EString& Path1, const EString& Path2, const EString& Path3)
 	{
-		return Path1 + "/" + Path2 + "/" + Path3;
+		EString Path;
+		if (Path1.LastIndex() == FindLastSlashIndex(Path1))
+			Path = Path1 + Path2;
+		else
+			Path = Path1 + "/" + Path2;
+		if (Path2.LastIndex() == FindLastSlashIndex(Path2))
+			return Path + Path3;
+		else
+			return Path + "/" + Path3;
 	}
 
 	EString EPath::Combine(const EString* Paths, INT32 Count)
@@ -75,7 +89,10 @@ namespace PigeonEngine
 		EString result;
 		for (INT32 i = 0; i < Count - 1; i++)
 		{
-			result += Paths[i] + "/";
+			if (Paths[i].LastIndex() == FindLastSlashIndex(Paths[i]))
+				result += Paths[i];
+			else
+				result += Paths[i] + "/";
 		}
 		result += Paths[Count - 1];
 		return result;
@@ -116,17 +133,23 @@ namespace PigeonEngine
 
 	EString EPath::GetFullPath(const EString& Path)
 	{
-		return EString(EBaseSettings::ENGINE_ASSET_DIRECTORY) + Path;
+		return Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), Path);
 	}
 
 	EString EPath::GetFullPath(const EString& Path, const EString& BasePath)
 	{
-		return BasePath + "/" + Path;
+		return Combine(BasePath, Path);
 	}
 
 	EString EPath::GetRootPath(const EString& Path)
 	{
 		UINT32 SlashIndex = FindFirstSlashIndex(Path);
+		return Path.Substring(0, SlashIndex);
+	}
+
+	EString EPath::GetFilePath(const EString& Path)
+	{
+		UINT32 SlashIndex = FindLastSlashIndex(Path);
 		return Path.Substring(0, SlashIndex);
 	}
 

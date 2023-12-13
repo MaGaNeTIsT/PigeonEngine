@@ -1,12 +1,18 @@
 #include "TextureImporter.h"
 #include "TextureAsset/TextureAsset.h"
 #include "Base/DataStructure/Text/Path.h"
+#include "FileHelper.h"
 #if _EDITOR_ONLY
 void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> Paths)
 {
 	NeedUpdate = TRUE;
 	InitializeEditor = TRUE;
-	m_Paths = Paths;
+	m_Paths.Clear();
+	for (UINT i = 0; i < Paths.Length(); i++)
+	{
+		m_Paths.Add(Paths[i].Replace("\\", "/"));
+	}
+	//m_Paths = Paths;
 }
 
 void PigeonEngine::ETextureImporter::UpdateImportEditor()
@@ -121,7 +127,30 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				{
 					const ETexture2DAsset* Asset = NULL;
 					EString FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
-					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &EPath::GetRootPath(m_Paths[i]), &FileName, &EPath::GetExtension(m_Paths[i]));
+					EString FilePath = EPath::GetFilePath(m_Paths[i]) + "/";
+					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(m_Paths[i]));
+
+					//CopyFile
+					if (Asset && CheckCopyFile)
+					{
+						EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), CopyPath, EPath::GetFileNameWithExtension(m_Paths[i]));
+						//BOOL8 CopySuccess = FALSE;
+						//CopyFile(*m_Paths[i], *CopyPath, CopySuccess);
+						//PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer copy file error!"), (CopySuccess));
+						void* FileData = NULL;
+						ULONG Size = 0u;
+						if (EFileHelper::ReadFileAsBinary(m_Paths[i], FileData, Size))
+						{
+							if (!EFileHelper::SaveBytesToFile(CopyPath, FileData, Size))
+							{
+								PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer save file error!"), (FALSE));
+							}
+						}
+						else
+						{
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer read file error!"), (FALSE));
+						}
+					}
 				}
 			}
 			else if (item_current_idx == 1)//TextureCube
@@ -129,28 +158,66 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				const ETextureCubeAsset* Asset = NULL;
 				TArray<EString> Extensions;
 				TArray<EString> FileNames;
-				for (UINT32 i = 0; i < m_Paths.Length(); i++)
-				{
-					FileNames.Add(EPath::GetFileNameWithoutExtension(m_Paths[i]));
-					Extensions.Add(EPath::GetExtension(m_Paths[i]));
-				}
 				TArray<EString> Paths;
 				EString CubeMapPath;
-				if (CubeMap.FindValue("+X", CubeMapPath)) Paths.Add(CubeMapPath);
-				if (CubeMap.FindValue("-X", CubeMapPath)) Paths.Add(CubeMapPath);
-				if (CubeMap.FindValue("+Y", CubeMapPath)) Paths.Add(CubeMapPath);
-				if (CubeMap.FindValue("-Y", CubeMapPath)) Paths.Add(CubeMapPath);
-				if (CubeMap.FindValue("+Z", CubeMapPath)) Paths.Add(CubeMapPath);
-				if (CubeMap.FindValue("-Z", CubeMapPath)) Paths.Add(CubeMapPath);
-				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, FileNames[0], Asset, &Paths, &FileNames, &Extensions);
-			}
-
-			if (CheckCopyFile)
-			{
-				//CopyFile
-				for (UINT32 i = 0; i < m_Paths.Length(); i++)
+				if (CubeMap.FindValue("+X", CubeMapPath))
 				{
-					
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				if (CubeMap.FindValue("-X", CubeMapPath)) 
+				{
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				if (CubeMap.FindValue("+Y", CubeMapPath)) 
+				{
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				if (CubeMap.FindValue("-Y", CubeMapPath))
+				{
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				if (CubeMap.FindValue("+Z", CubeMapPath)) 
+				{
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				if (CubeMap.FindValue("-Z", CubeMapPath)) 
+				{
+					Paths.Add(EPath::GetFilePath(CubeMapPath));
+					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
+					Extensions.Add(EPath::GetExtension(CubeMapPath));
+				}
+				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, CubeMapName, Asset, &Paths, &FileNames, &Extensions);
+
+				//CopyFile
+				if (Asset && CheckCopyFile)
+				{
+					EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EString(CubeMapName));
+					for (auto Item = CubeMap.Begin(); Item != CubeMap.End(); Item++)
+					{
+						void* FileData = NULL;
+						ULONG Size = 0u;
+						if (EFileHelper::ReadFileAsBinary(Item->second, FileData, Size))
+						{
+							if (!EFileHelper::SaveBytesToFile(EPath::Combine(CopyPath, EPath::GetFileNameWithExtension(Item->second)), FileData, Size))
+							{
+								PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer save file error!"), (FALSE));
+							}
+						}
+						else
+						{
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Texture Importer read file error!"), (FALSE));
+						}
+					}
 				}
 			}
 			NeedUpdate = FALSE;

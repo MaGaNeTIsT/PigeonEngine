@@ -86,30 +86,12 @@ void PigeonEngine::EImportManager::ShowEditor()
 					const CHAR* Path = GetPath(&PathSet, i);
 					Paths.Add(Path);
 				}
-				Item->second->CreateImportEditor(Paths);
+				if (PathSet.count)
+				{
+					Item->second->CreateImportEditor(Paths);
+					FreePathSet(&PathSet);
+				}
 				m_ShowEditor = FALSE;
-
-				//TMap<EString, TArray<EString>> PathMap;
-				//for (INT32 i = 0; i < PathSet.count; i++)
-				//{
-				//	const CHAR* Path = GetPath(&PathSet, i);
-				//	EString PathString(Path);
-				//	EString FileExtension = EPath::GetExtension(PathString);
-				//	FileExtension = ToUpper(FileExtension);
-				//	TArray<EString> OutPath;
-				//	if (!PathMap.FindValue(FileExtension, OutPath))
-				//	{
-				//		OutPath.Add(PathString);
-				//	}
-				//	PathMap[FileExtension] = OutPath;
-				//}
-				//for (auto Item = PathMap.Begin(); Item != PathMap.End(); Item++)
-				//{
-				//	IImporter* Importer;
-				//	if (m_Importers.FindValue(Item->first, Importer))
-				//		Importer->CreateImportEditor(Item->second);
-				//}
-				FreePathSet(&PathSet);
 			}
 		}
 	}
