@@ -14,6 +14,7 @@ namespace PigeonEngine
 		virtual void UpdateImportEditor() override;
 	private:
 		TArray<EString> m_Paths;
+		TArray<INT32> m_CubeMapIndex;
 		BOOL8 InitializeEditor = FALSE;
 	};
 };

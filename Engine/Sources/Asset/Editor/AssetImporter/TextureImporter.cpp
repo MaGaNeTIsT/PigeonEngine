@@ -8,9 +8,11 @@ void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> Paths)
 	NeedUpdate = TRUE;
 	InitializeEditor = TRUE;
 	m_Paths.Clear();
+	m_CubeMapIndex.Clear();
 	for (UINT i = 0; i < Paths.Length(); i++)
 	{
 		m_Paths.Add(Paths[i].Replace("\\", "/"));
+		m_CubeMapIndex.Add(0);
 	}
 	//m_Paths = Paths;
 }
@@ -18,20 +20,18 @@ void PigeonEngine::ETextureImporter::CreateImportEditor(TArray<EString> Paths)
 void PigeonEngine::ETextureImporter::UpdateImportEditor()
 {
 	//Combo Item
-	static const CHAR* items[] = { "Texture2D", "TextureCube" };
+	static const CHAR* type_items[] = { "Texture2D", "TextureCube" };
 	static const CHAR* cube_items[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
 
 	//Initialize Data
-	static INT32 item_current_idx = 0;
-	static INT32 cube_item_current_idx = 0;
+	static INT32 type_item_current_idx = 0;
 	static TMap<const CHAR*, EString> CubeMap;
 	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
 	static CHAR CubeMapName[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
 	static BOOL8 CheckCopyFile = FALSE;
 	if (InitializeEditor)
 	{
-		item_current_idx = 0;
-		cube_item_current_idx = 0;
+		type_item_current_idx = 0;
 		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
 		::memset(CubeMapName, 0, EPath::MAX_PATH_LENGTH);
 		CheckCopyFile = FALSE;
@@ -47,26 +47,26 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 
 	ImGui::Begin("Texture Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
 	{
-		const CHAR* combo_preview_value = items[item_current_idx];
+		const CHAR* combo_preview_value = type_items[type_item_current_idx];
 		ImGui::PushItemWidth(120);
 		if (ImGui::BeginCombo("Import Type", combo_preview_value))
 		{
-			for (INT32 n = 0; n < IM_ARRAYSIZE(items); n++)
+			for (INT32 n = 0; n < IM_ARRAYSIZE(type_items); n++)
 			{
-				const BOOL8 is_selected = (item_current_idx == n);
-				if (ImGui::Selectable(items[n], is_selected))
-					item_current_idx = n;
+				const BOOL8 is_selected = (type_item_current_idx == n);
+				if (ImGui::Selectable(type_items[n], is_selected))
+					type_item_current_idx = n;
 
 				if (is_selected)
 					ImGui::SetItemDefaultFocus();
 			}
 			ImGui::EndCombo();
 		}
-		if (item_current_idx == 0)//Texture2D
+		if (type_item_current_idx == 0)//Texture2D
 		{
 			for (UINT32 i = 0; i < m_Paths.Length(); i++)
 			{
-				ImGui::Text("FilePath:");
+				ImGui::Text("File:");
 				ImGui::SameLine();
 				{
 					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
@@ -74,21 +74,24 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 				}
 			}
 		}
-		else if (item_current_idx == 1)//TextureCube
+		else if (type_item_current_idx == 1)//TextureCube
 		{
+			CubeMap.Clear();
 			for (UINT32 i = 0; i < m_Paths.Length(); i++)
 			{
-				const CHAR* cube_combo_preview_value = cube_items[cube_item_current_idx];
+				const CHAR* cube_combo_preview_value = cube_items[m_CubeMapIndex[i]];
+				CubeMap.Add(cube_combo_preview_value, m_Paths[i]);
 				ImGui::PushItemWidth(50);
-				if (ImGui::BeginCombo("Cube Type", cube_combo_preview_value))
+				UINT32 ToChar = i + 65u;
+				EString CubeType = EString("Cube Type ") + EString((CHAR*)&(ToChar));
+				if (ImGui::BeginCombo(*CubeType, cube_combo_preview_value))
 				{
 					for (INT32 n = 0; n < IM_ARRAYSIZE(cube_items); n++)
 					{
-						const BOOL8 is_selected = (cube_item_current_idx == n);
+						const BOOL8 is_selected = (m_CubeMapIndex[i] == n);
 						if (ImGui::Selectable(cube_items[n], is_selected))
 						{
-							cube_item_current_idx = n;
-							CubeMap.Add(cube_items[cube_item_current_idx], m_Paths[i]);
+							m_CubeMapIndex[i] = n;
 						}
 
 						if (is_selected)
@@ -112,7 +115,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 		{
 			ImGui::PushItemWidth(250);
 			ImGui::InputText("Copy File Path", CopyFileFolder, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
-			if (item_current_idx == 1)
+			if (type_item_current_idx == 1)
 			{
 				ImGui::PushItemWidth(250);
 				ImGui::InputText("Texture Cube Name", CubeMapName, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
@@ -121,7 +124,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 		if (ImGui::Button("Import"))
 		{
 			//Handle Path.
-			if (item_current_idx == 0)//Texture2D
+			if (type_item_current_idx == 0)//Texture2D
 			{
 				for (UINT32 i = 0; i < m_Paths.Length(); i++)
 				{
@@ -144,7 +147,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 					}
 				}
 			}
-			else if (item_current_idx == 1)//TextureCube
+			else if (type_item_current_idx == 1)//TextureCube
 			{
 				const ETextureCubeAsset* Asset = NULL;
 				TArray<EString> Extensions;
