@@ -6,9 +6,11 @@ void PigeonEngine::EMeshImporter::CreateImportEditor(TArray<EString> Paths)
 	NeedUpdate = TRUE;
 	InitializeEditor = TRUE;
 	m_Paths.Clear();
+	m_MeshCombineCheck.Clear();
 	for (UINT i = 0; i < Paths.Length(); i++)
 	{
 		m_Paths.Add(Paths[i].Replace("\\", "/"));
+		m_MeshCombineCheck.Add(FALSE);
 	}
 }
 
@@ -42,17 +44,58 @@ void PigeonEngine::EMeshImporter::UpdateImportEditor()
 			}
 			ImGui::EndCombo();
 		}
-		if (type_item_current_idx == 0)//Texture2D
-		{
+		//if (type_item_current_idx == 0)//Static Mesh
+		//{
 			for (UINT32 i = 0; i < m_Paths.Length(); i++)
 			{
-				ImGui::Text("File:");
+				ImGui::Text("FileName:");
 				ImGui::SameLine();
 				{
 					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
 					ImGui::Text(*FileName);
 				}
+				ImGui::SameLine();
+				{
+					BOOL8 MeshCombineCheck = m_MeshCombineCheck[i];
+					UINT32 ToChar = i + 49u;
+					EString CombineType = EString("IsCombineSubmeshes ") + EString((CHAR*)&(ToChar));
+					ImGui::Checkbox(*CombineType, &MeshCombineCheck);
+					m_MeshCombineCheck[i] = MeshCombineCheck;
+				}
 			}
+		//}
+		//else if (type_item_current_idx == 1)//Skeletal Mesh
+		//{
+
+		//}
+		if (ImGui::Button("Import"))
+		{
+			EString FilePath;
+			EString FileName;
+			EString FileExtension;
+			if (type_item_current_idx == 0)//Static Mesh
+			{
+				for (UINT32 i = 0; i < m_Paths.Length(); i++)
+				{
+					FilePath = EPath::GetFileFolderPath(m_Paths[i]);
+					FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
+					FileExtension = EPath::GetExtension(m_Paths[i]);
+					const EStaticMeshAsset* Asset = NULL;
+					TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, FileName, Asset, &FilePath, &FileName, &FileExtension, m_MeshCombineCheck[i]);
+				}
+			}
+			else if (type_item_current_idx == 1)//Skeletal Mesh
+			{
+				for (UINT32 i = 0; i < m_Paths.Length(); i++)
+				{
+					FilePath = EPath::GetFileFolderPath(m_Paths[i]);
+					FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
+					FileExtension = EPath::GetExtension(m_Paths[i]);
+					const ESkinnedMeshAsset* Asset = NULL;
+					TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, FileName, Asset, &FilePath, &FileName, &FileExtension, m_MeshCombineCheck[i]);
+				}
+			}
+			NeedUpdate = FALSE;
 		}
 	}
 	ImGui::End();

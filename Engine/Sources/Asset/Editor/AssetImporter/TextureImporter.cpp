@@ -66,7 +66,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 		{
 			for (UINT32 i = 0; i < m_Paths.Length(); i++)
 			{
-				ImGui::Text("File:");
+				ImGui::Text("FileName:");
 				ImGui::SameLine();
 				{
 					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);

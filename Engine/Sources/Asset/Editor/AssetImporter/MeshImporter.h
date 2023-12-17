@@ -14,6 +14,7 @@ namespace PigeonEngine
 		virtual void UpdateImportEditor() override;
 	private:
 		TArray<EString> m_Paths;
+		TArray<BOOL32> m_MeshCombineCheck;
 		BOOL8 InitializeEditor = FALSE;
 	};
 };
