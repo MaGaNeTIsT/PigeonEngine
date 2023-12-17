@@ -4,7 +4,7 @@
 void PigeonEngine::EMeshImporter::CreateImportEditor(TArray<EString> Paths)
 {
 	NeedUpdate = TRUE;
-	InitializeEditor = TRUE;
+	InitializeEditor = FALSE;
 	m_Paths.Clear();
 	m_MeshCombineCheck.Clear();
 	for (UINT i = 0; i < Paths.Length(); i++)
@@ -21,10 +21,14 @@ void PigeonEngine::EMeshImporter::UpdateImportEditor()
 	
 	//Initialize Data
 	static INT32 type_item_current_idx = 0;
-	if (InitializeEditor)
+	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
+	static BOOL8 CheckCopyFile = FALSE;
+	if (!InitializeEditor)
 	{
 		type_item_current_idx = 0;
-		InitializeEditor = FALSE;
+		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
+		CheckCopyFile = FALSE;
+		InitializeEditor = TRUE;
 	}
 
 	ImGui::Begin("Mesh Importer", &NeedUpdate, ImGuiWindowFlags_::ImGuiWindowFlags_None);
@@ -44,30 +48,31 @@ void PigeonEngine::EMeshImporter::UpdateImportEditor()
 			}
 			ImGui::EndCombo();
 		}
-		//if (type_item_current_idx == 0)//Static Mesh
-		//{
-			for (UINT32 i = 0; i < m_Paths.Length(); i++)
+		for (UINT32 i = 0; i < m_Paths.Length(); i++)
+		{
+			ImGui::Text("FileName:");
+			ImGui::SameLine();
 			{
-				ImGui::Text("FileName:");
-				ImGui::SameLine();
-				{
-					EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
-					ImGui::Text(*FileName);
-				}
-				ImGui::SameLine();
-				{
-					BOOL8 MeshCombineCheck = m_MeshCombineCheck[i];
-					UINT32 ToChar = i + 49u;
-					EString CombineType = EString("IsCombineSubmeshes ") + EString((CHAR*)&(ToChar));
-					ImGui::Checkbox(*CombineType, &MeshCombineCheck);
-					m_MeshCombineCheck[i] = MeshCombineCheck;
-				}
+				EString FileName = EPath::GetFileNameWithExtension(m_Paths[i]);
+				ImGui::Text(*FileName);
 			}
-		//}
-		//else if (type_item_current_idx == 1)//Skeletal Mesh
-		//{
+			ImGui::SameLine();
+			{
+				BOOL8 MeshCombineCheck = m_MeshCombineCheck[i];
+				UINT32 ToChar = i + 49u;
+				EString CombineType = EString("IsCombineSubmeshes ") + EString((CHAR*)&(ToChar));
+				ImGui::Checkbox(*CombineType, &MeshCombineCheck);
+				m_MeshCombineCheck[i] = MeshCombineCheck;
+			}
+		}
 
-		//}
+		ImGui::Checkbox("CopyFile", &CheckCopyFile);
+		if (CheckCopyFile)
+		{
+			ImGui::PushItemWidth(250);
+			ImGui::InputText("Copy File Path", CopyFileFolder, EPath::MAX_PATH_LENGTH, ImGuiInputTextFlags_CharsNoBlank);
+		}
+
 		if (ImGui::Button("Import"))
 		{
 			EString FilePath;
@@ -77,22 +82,42 @@ void PigeonEngine::EMeshImporter::UpdateImportEditor()
 			{
 				for (UINT32 i = 0; i < m_Paths.Length(); i++)
 				{
-					FilePath = EPath::GetFileFolderPath(m_Paths[i]);
+					FilePath = EPath::GetFileFolderPath(m_Paths[i]) + "/";
 					FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
 					FileExtension = EPath::GetExtension(m_Paths[i]);
 					const EStaticMeshAsset* Asset = NULL;
 					TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, FileName, Asset, &FilePath, &FileName, &FileExtension, m_MeshCombineCheck[i]);
+
+					//CopyFile
+					if (Asset && CheckCopyFile)
+					{
+						EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(m_Paths[i]));
+						if (!EFileHelper::CopyFileToNewPath(m_Paths[i], CopyPath))
+						{
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Mesh Importer : copy file error!"), (FALSE));
+						}
+					}
 				}
 			}
 			else if (type_item_current_idx == 1)//Skeletal Mesh
 			{
 				for (UINT32 i = 0; i < m_Paths.Length(); i++)
 				{
-					FilePath = EPath::GetFileFolderPath(m_Paths[i]);
+					FilePath = EPath::GetFileFolderPath(m_Paths[i]) + "/";
 					FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
 					FileExtension = EPath::GetExtension(m_Paths[i]);
 					const ESkinnedMeshAsset* Asset = NULL;
 					TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, FileName, Asset, &FilePath, &FileName, &FileExtension, m_MeshCombineCheck[i]);
+
+					//CopyFile
+					if (Asset && CheckCopyFile)
+					{
+						EString CopyPath = EPath::Combine(EString(EBaseSettings::ENGINE_ASSET_DIRECTORY), EString(CopyFileFolder), EPath::GetFileNameWithExtension(m_Paths[i]));
+						if (!EFileHelper::CopyFileToNewPath(m_Paths[i], CopyPath))
+						{
+							PE_CHECK((ENGINE_ASSET_ERROR), ("Mesh Importer : copy file error!"), (FALSE));
+						}
+					}
 				}
 			}
 			NeedUpdate = FALSE;

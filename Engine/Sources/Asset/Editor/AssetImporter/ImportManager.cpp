@@ -6,6 +6,8 @@
 //Importer
 #include "MeshImporter.h"
 #include "TextureImporter.h"
+#include "SkeletonImporter.h"
+#include "AnimationImporter.h"
 
 namespace PigeonEngine
 {
@@ -51,6 +53,8 @@ void PigeonEngine::EImportManager::EditorInit()
 {
 	AddImporter("Mesh", new EMeshImporter());
 	AddImporter("Texture", new ETextureImporter());
+	AddImporter("Skeleton", new ESkeletonImporter());
+	AddImporter("Animation", new EAnimationImporter());
 }
 
 void PigeonEngine::EImportManager::EditorUpdate()
