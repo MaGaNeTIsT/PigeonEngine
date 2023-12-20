@@ -3,8 +3,8 @@
 
 namespace PR_SlideHero
 {
-    struct EBuff;
     using namespace PigeonEngine;
+    struct EBuff;
     struct ESkillAcquirement
     {
         UINT8 Level;
@@ -13,6 +13,10 @@ namespace PR_SlideHero
     
     struct ESkill
     {
+        EString  SkillId;
+        EString  SkillName;
+        EString  SkillDescription;
+        ESkillAcquirement Acquirement;
         UINT8 MaxTarget = 1;
         UINT8 Range = 0;
         TArray<EString> AddBuffIds;

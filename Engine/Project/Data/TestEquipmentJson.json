@@ -1,0 +1,13 @@
+[
+  {
+    "itemId"   : 1,
+    "itemName" : "剑",
+    "itemType" : 2,
+    "itemDescription" : "剑",
+    "equipment": {
+      "type" : 0
+    }
+    
+    
+  }  
+]

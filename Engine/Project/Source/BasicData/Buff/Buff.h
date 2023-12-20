@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "../Property/Property.h"
-
+#include "../Property.h"
+#include <CoreMinimal.h>
 namespace PR_SlideHero
 {
     struct EBuff
@@ -10,7 +10,7 @@ namespace PR_SlideHero
         DOUBLE    TotalDuration   = 0.0;
         DOUBLE    DurationPerTick = 0.0; 
         DOUBLE    Interval        = 0.0;
-        EProperty Property;
+        PigeonEngine::TArray<EProperty> Properties;
     };
     
 }

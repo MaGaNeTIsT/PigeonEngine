@@ -3,7 +3,8 @@
 
 namespace PR_SlideHero
 {
-    enum PropertyType
+    using namespace PigeonEngine;
+    enum PropertyType : UINT8
     {
         PT_HP,    // Health
         PT_MS,    // Moving Speed
@@ -14,6 +15,12 @@ namespace PR_SlideHero
         PT_DEF,   // Defence
         PT_RES,   // Resistance
         PT_COUNT, // End of this enum
+    };
+
+    enum PropertyValueType : UINT8
+    {
+        PVT_NUMBER,
+        PVT_PERCENT
     };
     
     // to be finished
@@ -26,15 +33,17 @@ namespace PR_SlideHero
 
     struct EProperty
     {
-        PropertyType PropertyType = PT_COUNT;
-        DOUBLE       Value        = 0.0;
+        EProperty(){}
+        PropertyType      PropertyType;
+        PropertyValueType ValueType;
+        DOUBLE            Value;
     };
 
     struct EResistance : EProperty
     {
         ResistanceType ResistanceType = RT_COUNT;
     };
-
+    
     
 }
 

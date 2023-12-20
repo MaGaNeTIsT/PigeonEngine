@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class SkillManager
+class ItemManager
 {
 public:
     
