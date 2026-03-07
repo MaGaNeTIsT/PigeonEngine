@@ -1,0 +1,18 @@
+{
+    "name": "CS_Invert",
+    "textures": [
+        { "name": "InputTex",  "type": "Texture2D",  "sampler": "PointClamp" },
+        { "name": "OutputTex", "type": "RWTexture2D", "sampler": "PointClamp" }
+    ],
+    "samplers": [
+        { "name": "PointClamp", "filter": "POINT", "address": "CLAMP" }
+    ],
+    "defines": [
+        { "name": "THREAD_GROUP_SIZE_X", "value": 8 },
+        { "name": "THREAD_GROUP_SIZE_Y", "value": 8 }
+    ],
+    "cs": {
+        "hlsl_functions": "CSHelpers.hlsl",
+        "hlsl_surface": "Compute.hlsl"
+    }
+}

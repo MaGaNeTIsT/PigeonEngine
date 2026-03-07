@@ -1,0 +1,9 @@
+{
+    "name": "ColorInvert",
+    "stage": "CS",
+    "material": "CS_Invert",
+    "template_cs": "Engine/Sources/EngineCore/Shaders/Templates/PostProcess_CS.tmpl.hlsl",
+    "variants": [
+        { "name": "default" }
+    ]
+}

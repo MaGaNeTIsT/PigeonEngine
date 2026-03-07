@@ -1,0 +1,29 @@
+{
+    "name": "M_DefaultLit",
+    "constant_buffer": {
+        "name": "MaterialParams",
+        "fields": [
+            { "name": "BaseColorTint",  "type": "float4", "default": [1, 1, 1, 1] },
+            { "name": "RoughnessScale", "type": "float",  "default": [1.0] },
+            { "name": "MetallicScale",  "type": "float",  "default": [0.0] },
+            { "name": "NormalScale",    "type": "float",  "default": [1.0] },
+            { "name": "_pad0",          "type": "float",  "default": [0.0] }
+        ]
+    },
+    "textures": [
+        { "name": "BaseColorMap", "type": "Texture2D", "sampler": "LinearWrap" },
+        { "name": "NormalMap",    "type": "Texture2D", "sampler": "LinearWrap" },
+        { "name": "ORMMap",       "type": "Texture2D", "sampler": "LinearWrap" }
+    ],
+    "samplers": [
+        { "name": "LinearWrap", "filter": "LINEAR", "address": "WRAP" }
+    ],
+    "defines": [
+        { "name": "MATERIAL_USE_NORMAL_MAP", "value": 1 },
+        { "name": "MATERIAL_USE_ORM_MAP",    "value": 1 }
+    ],
+    "ps": {
+        "hlsl_functions": "PSHelpers.hlsl",
+        "hlsl_surface": "Surface.hlsl"
+    }
+}

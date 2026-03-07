@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="PigeonEngine::TArray&lt;*&gt;">
+		<DisplayString>{{Num={ElementNum} Capacity={(Allocator.Heap.HeapSize / sizeof($T1))}}}</DisplayString>
+		<Expand>
+			<Item Name="[Num]" ExcludeView="simple">ElementNum</Item>
+			<Item Name="[Capacity]" ExcludeView="simple">(Allocator.Heap.HeapSize / sizeof($T1))</Item>
+			<Item Name="[Allocator]" ExcludeView="simple">Allocator</Item>
+			<ArrayItem>
+				<Size>ElementNum</Size>
+				<ValuePointer>($T1*)Allocator.HeapPtr._Mypair._Myval2</ValuePointer>
+			</ArrayItem>
+		</Expand>
+	</Type>
+</AutoVisualizer>

@@ -1,4 +1,4 @@
 #folders
-x64/
-.vs/
-Engine/Assets/EngineShaders/
+Build/
+Engine/ThirdParty/assimp/lib/Debug/
+Engine/ThirdParty/assimp/lib/Release/
