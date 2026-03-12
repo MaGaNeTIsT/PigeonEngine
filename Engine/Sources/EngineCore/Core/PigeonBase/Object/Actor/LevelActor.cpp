@@ -1,8 +1,9 @@
-﻿#include "LevelActor.h"
+#include "LevelActor.h"
 #include <Base/Timer/Timer.h>
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#include <MaterialAsset/MaterialAsset.h>
 #include "../Component/SceneComponent.h"
 #include "../World/World.h"
 #include "../Controller/Controller.h"
@@ -45,7 +46,6 @@ namespace PigeonEngine
 
 	void PLevelActor::UserBeginPlay()
     {
-    	// add a static mesh actor
 		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
@@ -63,35 +63,9 @@ namespace PigeonEngine
 
 			NewStaticMeshComp->SetMeshAsset(Asset);
 
-			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
-			PE_LOG_LOG(NewStaticMeshComp->GetComponentWorldLocation().AsString());
-			PE_LOG_LOG(New->GetBounds().AsString());
-			New->SetActorLocation(Vector3(-500.0f, 0.0f, 0.0f));
-			PE_LOG_LOG(New->GetBounds().AsString());
+			New->SetActorLocation(Vector3(-500.0f, 100.0f, 0.0f));
 		}
-		
-		// Cube
-		{
-			PActor* New = new PActor();
-			New->SetIsTickable(TRUE);
-			POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
-			this->GetWorld()->AddActor(New);
-			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
-			NewStaticMeshComp->SetIsTickable(TRUE);
-			New->AddComponent(NewStaticMeshComp);
-			const EStaticMeshAsset* Asset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
-			EString ImportName("Robot");
-			EString ImportFileType("obj");
-			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 
-			NewStaticMeshComp->SetMeshAsset(Asset);
-
-			New->SetActorLocation(Vector3(100.0f, 0.0f, 0.0f));
-		}
-		
-		//add a skeletal mesh actor
 		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
@@ -109,11 +83,6 @@ namespace PigeonEngine
 			EString ImportFileType("FBX");
 			EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
 			EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-			//EString ImportPath(AssetBasePath + "EngineModels/SceneModels/D.Va/");
-			//EString ImportName("Model");
-			//EString ImportFileType("FBX");
-			//EString MeshAssetName("DVa_Mesh");
-			//EString SkeletonAssetName("DVa_Skeleton");
 			TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
 			TryLoadSkeleton(EBaseSettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
 
@@ -126,7 +95,7 @@ namespace PigeonEngine
 				NewSkeletalMeshComp->SetComponentRotation(DefaultRot);
 			}
 
-			New->SetActorLocation(Vector3(-100.0f, -90.0f, 0.0f));
+			New->SetActorLocation(Vector3(500.0f, 0.0f, 0.0f));
 		}
 
 		{
@@ -177,7 +146,7 @@ namespace PigeonEngine
 			New->SetActorScale(Vector3(5000.0f, 5000.0f, 5000.0f));
 		}
 
-		// add a Physics CharacterTest Actor
+		// Physics CharacterTest Actor
 		{
 			PPhysicsTestCharacter* New = new PPhysicsTestCharacter();
 			New->SetIsTickable(TRUE);
@@ -210,15 +179,6 @@ namespace PigeonEngine
 
 			New->SkeletalMeshComponent = NewSkeletalMeshComp;
 
-			//New->StaticMeshComponent = new PStaticMeshComponent();
-			//New->StaticMeshComponent->SetIsTickable(TRUE);
-			//const EStaticMeshAsset* Asset = nullptr;
-			//EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			//EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
-			//EString ImportName("Robot");
-			//EString ImportFileType("obj");
-			//TryLoadStaticMesh(EEngineSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			//New->StaticMeshComponent->SetMeshAsset(Asset);
 			New->AddComponent(New->SkeletalMeshComponent, ETransform());
 
 			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
@@ -240,13 +200,29 @@ namespace PigeonEngine
 			New->SetIsTickable(TRUE);
 			this->GetWorld()->AddActor(New);
 
-			FBoxShape* Shape = new FBoxShape(Vector3(5000.f, 10.f, 5000.f), 0.f);
+			const Vector3 PlaneHalfExtent(1000.f, 10.f, 1000.f);
+
+			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+			NewStaticMeshComp->SetIsTickable(TRUE);
+			const EStaticMeshAsset* Asset = nullptr;
+			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			EString ImportPath(AssetBasePath + "EngineModels/BaseShapes/");
+			EString ImportName("Cube");
+			EString ImportFileType("obj");
+			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Cube", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			NewStaticMeshComp->SetMeshAsset(Asset);
+
+			New->AddComponent(NewStaticMeshComp);
+
+			FBoxShape* Shape = new FBoxShape(PlaneHalfExtent, 0.f);
 			PPhysicsComponent* PhysicsComponent = new PPhysicsComponent(Shape);
 			PhysicsComponent->SetOwnerActor(New);
-			New->SetActorLocation(Vector3(0.0f, -10.0f, 0.0f));
 			PhysicsComponent->InitPhysicsComponent();
+
 			New->AddComponent(PhysicsComponent);
 
+			New->SetActorScale(PlaneHalfExtent * 2.f);
+			New->SetActorLocation(Vector3(0.0f, -10.0f, 0.0f));
 		}
 
 		{
@@ -265,20 +241,62 @@ namespace PigeonEngine
 			PE_LOG_LOG(New->GetBounds().AsString());
 		}
 
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 0.0f, -200.0f));
+		// Material demo: create a static mesh actor and assign a material to its primitive component
+		{
+			PActor* New = new PActor();
+			New->SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(New, "MaterialDemoActor");
+			this->GetWorld()->AddActor(New);
+
+			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+			NewStaticMeshComp->SetIsTickable(TRUE);
+			New->AddComponent(NewStaticMeshComp);
+
+			// Load mesh
+			const EStaticMeshAsset* MeshAsset = nullptr;
+			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			EString ImportPath(AssetBasePath + "EngineModels/BaseShapes/");
+			EString ImportName("Cube");
+			EString ImportFileType("obj");
+			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Cube", MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			NewStaticMeshComp->SetMeshAsset(MeshAsset);
+
+			// Load and assign material
+			const EMaterialAsset* MatAsset = nullptr;
+#if _EDITOR_ONLY
+			EMaterialAssetManager::GetManagerSingleton()->LoadOrCompileMaterialAsset(
+				EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR,
+				"M_DefaultLit",
+				EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
+				EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
+				MatAsset);
+#else
+			EMaterialAssetManager::GetManagerSingleton()->LoadMaterialAsset(
+				EString(EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR) + "M_DefaultLit/",
+				"M_DefaultLit",
+				MatAsset);
+#endif
+			if (MatAsset)
+			{
+				NewStaticMeshComp->SetMaterialAsset(MatAsset);
+			}
+
+			New->SetActorLocation(Vector3(250.0f, 50.0f, 0.0f));
+			New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
+		}
+
+		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+		this->GetWorld()->GetController()->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
     }
 
 	void PLevelActor::UserEndPlay()
 	{
-		
+
 	}
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-    	
-        //FLOAT t = static_cast<FLOAT>(EMath::Sin(this->GetWorld()->GetGameTimer()->GetClockTime()));
-        //Vector3 newPos = Vector3(-10.0f * t - 10.0f * t, -10.0f * t);
-        //this->GetWorld()->GetController()->SetActorLocation(newPos);
+
 	}
 
 

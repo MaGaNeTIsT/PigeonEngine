@@ -23,6 +23,10 @@ namespace PigeonEngine
 		
 		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_CONTENT_PATH					= "${TEMP_BINARY_DIR}/";
 		PE_CONSTEXPR_STATIC		const CHAR*     EDITOR_LOGS_PATH					= "${TEMP_BINARY_DIR}/Logs/";
+		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_MATERIAL_COMPILER_EXE		= "${TOOLS_BINARY_DIR}/MaterialCompiler.exe";
+		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_MATERIAL_OUTPUT_DIR			= "${TEMP_BINARY_DIR}/MaterialShader/";
+		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_MATERIAL_SOURCE_DIR			= "${ASSETS_SOURCE_DIR}/MaterialSources/";
+		PE_CONSTEXPR_STATIC		const CHAR*     ENGINE_MATERIAL_SHADER_INCLUDE_DIR	= "${ENGINE_SOURCE_DIR}/EngineCore/Shaders/";
 	public:
 		static EBaseSettings* GetSingleton()
 		{

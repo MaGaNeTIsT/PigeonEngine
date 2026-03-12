@@ -39,6 +39,7 @@ namespace PigeonEngine
 #endif
             {
                 SetLocalBound(Mesh->GetBoundAABB());
+                SetMaterialSlotsNum(Mesh->GetSubmeshPart().Num<UINT32>());
             }
         }
         MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET);

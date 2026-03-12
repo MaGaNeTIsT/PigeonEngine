@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <EngineCommon.h>
 #include <BaseAsset.h>
 #include <ShaderAsset/ShaderAsset.h>
 
@@ -14,36 +15,36 @@ namespace PigeonEngine
     struct EMaterialCBField
     {
         EString Name;
-        UINT32  Offset = 0u;
-        UINT32  Size = 0u;
+        UINT32  Offset  = 0u;
+        UINT32  Size    = 0u;
         EString Type;
     };
 
     struct EMaterialCBRefl
     {
         EString                    Name;
-        UINT32                     Slot = 0u;
-        UINT32                     SizeBytes = 0u;
+        UINT32                     Slot         = 0u;
+        UINT32                     SizeBytes    = 0u;
         TArray<EMaterialCBField>   Fields;
     };
 
     struct EMaterialSRVRefl
     {
         EString Name;
-        UINT32  Slot = 0u;
+        UINT32  Slot    = 0u;
     };
 
     struct EMaterialSamplerRefl
     {
         EString Name;
-        UINT32  Slot = 0u;
+        UINT32  Slot    = 0u;
     };
 
     struct EMaterialInputLayoutRefl
     {
         EString Semantic;
-        UINT32  Index = 0u;
-        UINT32  Components = 4u;
+        UINT32  Index       = 0u;
+        UINT32  Components;
     };
 
     struct EMaterialReflection
@@ -61,10 +62,10 @@ namespace PigeonEngine
     struct EMaterialVariant
     {
         EString                     PassName;
-        UINT32                      VariantIndex = 0u;
+        UINT32                      VariantIndex    = 0u;
         EString                     VariantName;
-        const EVertexShaderAsset*   VS = nullptr;
-        const EPixelShaderAsset*    PS = nullptr;
+        const EVertexShaderAsset*   VS              = nullptr;
+        const EPixelShaderAsset*    PS              = nullptr;
         EMaterialReflection         Reflection;
     };
 
@@ -75,22 +76,63 @@ namespace PigeonEngine
     class EMaterialAsset
     {
     public:
-        explicit EMaterialAsset(const EString& InName) : Name(InName) {}
-        ~EMaterialAsset() = default;
-
-        const EString& GetName() const { return Name; }
-
-        void AddVariant(EMaterialVariant&& V) { Variants.Add(std::move(V)); }
-
-        // Returns nullptr if not found.
+        const EString&          GetName() const;
+        void                    AddVariant(EMaterialVariant&& V);
         const EMaterialVariant* FindVariant(const EString& PassName, UINT32 VariantIndex) const;
+        const EMaterialVariant* GetFirstVariant() const;
 
     private:
         EString                    Name;
         TArray<EMaterialVariant>   Variants;
 
+    public:
+        EMaterialAsset(const EString& InName);
+        ~EMaterialAsset();
         EMaterialAsset() = delete;
+
         CLASS_REMOVE_COPY_BODY(EMaterialAsset)
+
+    };
+
+    class EMaterialAssetManager : public EManagerBase
+    {
+    public:
+        virtual void Initialize() override;
+        virtual void ShutDown()   override;
+
+    public:
+        // Load a material from its compiled output directory.
+        // InLoadPath  : e.g. "Assets/Materials/M_Rock/"
+        // InLoadName  : e.g. "M_Rock"
+        // OutMaterial : set on success
+        BOOL32 LoadMaterialAsset(
+            const EString& InLoadPath,
+            const EString& InLoadName,
+            const EMaterialAsset*& OutMaterial);
+
+#if _EDITOR_ONLY
+        // Like LoadMaterialAsset but triggers MaterialCompiler if the manifest is missing.
+        // InOutputDir        : compiled shader output dir,  e.g. EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR
+        // InLoadName         : material name,               e.g. "M_Rock"
+        // InSourceDir        : material source dir,         e.g. EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR
+        // InShaderIncludeDir : engine shader include root   e.g. EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR
+        BOOL32 LoadOrCompileMaterialAsset(
+            const EString& InOutputDir,
+            const EString& InLoadName,
+            const EString& InSourceDir,
+            const EString& InShaderIncludeDir,
+            const EMaterialAsset*& OutMaterial);
+#endif
+
+    private:
+        BOOL32 ParseReflection(const EString& ReflJsonPath, EMaterialReflection& Out);
+
+    private:
+        typedef TAssetManager<EString, EMaterialAsset> EMaterialManager;
+        EMaterialManager MaterialManager;
+
+        CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EMaterialAssetManager)
+
     };
 
 } // namespace PigeonEngine

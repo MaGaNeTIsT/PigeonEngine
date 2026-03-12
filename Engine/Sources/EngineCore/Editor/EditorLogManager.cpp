@@ -85,14 +85,13 @@ namespace PigeonEngine
 
     void EEditorLogManager::EditorUpdate()
     {
-        ImGui::Begin("PigeonLogs", FALSE, ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar);
-        ImGui::Text("PigeonLogs");
-        ImGui::BeginChild("PigeonLogs", ImVec2(400, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
+        ImGui::Begin("PigeonLogs");
+        ImGui::BeginChild("PigeonLogsContent", ImVec2(0, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
         for(const auto& elem : Logs)
         {
             elem->PrintLog();
         }
-		
+
         ImGui::EndChild();
         ImGui::End();
     }
@@ -114,13 +113,48 @@ namespace PigeonEngine
         {
             Str += elem->AsString() + "\r\n";
         }
-        
+
         EString FileName = EString(EBaseSettings::EDITOR_LOGS_PATH);
         EString FileName1 = EString("[") + EngineSystemTime::Now().AsString() + EString("]");
         FileName1 = FileName1.Replace(":", "-");
         FileName = FileName + FileName1 + EString("Log.txt");
         EFileHelper::SaveStringToFile(FileName, Str);
         this->Logs.Empty();
+
+        // Prune old log files — keep only the 5 most recent
+        const EString LogDir(EBaseSettings::EDITOR_LOGS_PATH);
+        TArray<EString> Folders, LogFiles;
+        if (EFileHelper::ScanDirectory(LogDir, Folders, LogFiles, TRUE))
+        {
+            // Keep only files that match our naming pattern (contain "Log.txt")
+            TArray<EString> FilteredLogs;
+            for (INT32 i = 0, n = LogFiles.Num<INT32>(); i < n; i++)
+            {
+                if (LogFiles[i].Contains("Log.txt"))
+                {
+                    FilteredLogs.Add(LogFiles[i]);
+                }
+            }
+
+            // Insertion sort ascending by filename (timestamp names → oldest first)
+            for (INT32 i = 1, n = FilteredLogs.Num<INT32>(); i < n; i++)
+            {
+                for (INT32 j = i; j > 0 && FilteredLogs[j] < FilteredLogs[j - 1]; j--)
+                {
+                    EString Tmp = FilteredLogs[j];
+                    FilteredLogs[j] = FilteredLogs[j - 1];
+                    FilteredLogs[j - 1] = Tmp;
+                }
+            }
+
+            // Delete oldest entries beyond the limit
+            const INT32 MaxLogCount = 5;
+            const INT32 NumToDelete = FilteredLogs.Num<INT32>() - MaxLogCount;
+            for (INT32 i = 0; i < NumToDelete; i++)
+            {
+                ::DeleteFileA(*FilteredLogs[i]);
+            }
+        }
     }
 }
 #endif

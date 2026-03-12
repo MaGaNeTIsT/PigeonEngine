@@ -176,6 +176,10 @@ namespace PigeonEngine
 		BOOL32	ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts = nullptr, const UINT32* InShaderInputLayoutNum = nullptr);
 		BOOL32	ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 		BOOL32	ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		// Import directly from raw bytecode bytes (no file-path validation).
+		// Used by MaterialAssetManager to convert compiled .dxbc/.dxil into .PAsset on first load.
+		BOOL32	ImportVertexShaderFromBytes(const EString& InAssetName, const EString& InSavePath, const void* InBytes, ULONG InByteSize, const RInputLayoutDesc* InInputLayouts, UINT32 InInputLayoutNum);
+		BOOL32	ImportPixelShaderFromBytes(const EString& InAssetName, const EString& InSavePath, const void* InBytes, ULONG InByteSize);
 #endif
 		BOOL32	LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset);
 		BOOL32	LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset);

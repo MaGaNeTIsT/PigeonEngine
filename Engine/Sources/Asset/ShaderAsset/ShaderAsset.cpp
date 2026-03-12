@@ -283,7 +283,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
+		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
 			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
 			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE)))
 		{
@@ -337,7 +337,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
+		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
 			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
 			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE)))
 		{
@@ -391,7 +391,7 @@ namespace PigeonEngine
 #endif
 			return FALSE;
 		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 4u, 4u);
+		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
 			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
 			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE)))
 		{
@@ -416,6 +416,45 @@ namespace PigeonEngine
 
 		OutResource->ReleaseResource();
 		delete OutResource;
+		return Result;
+	}
+	BOOL32 EShaderAssetManager::ImportVertexShaderFromBytes(
+		const EString& InAssetName, const EString& InSavePath,
+		const void* InBytes, ULONG InByteSize,
+		const RInputLayoutDesc* InInputLayouts, UINT32 InInputLayoutNum)
+	{
+		if (!InBytes || InByteSize == 0u || !InInputLayouts || InInputLayoutNum == 0u)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportVertexShaderFromBytes: invalid arguments"));
+			return FALSE;
+		}
+		EShaderResource* Resource = new EShaderResource();
+		Resource->ShaderByteCode = new BYTE[InByteSize];
+		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
+		Resource->ShaderByteCodeSize = InByteSize;
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
+			RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, InInputLayouts, &InInputLayoutNum);
+		Resource->ReleaseResource();
+		delete Resource;
+		return Result;
+	}
+	BOOL32 EShaderAssetManager::ImportPixelShaderFromBytes(
+		const EString& InAssetName, const EString& InSavePath,
+		const void* InBytes, ULONG InByteSize)
+	{
+		if (!InBytes || InByteSize == 0u)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportPixelShaderFromBytes: invalid arguments"));
+			return FALSE;
+		}
+		EShaderResource* Resource = new EShaderResource();
+		Resource->ShaderByteCode = new BYTE[InByteSize];
+		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
+		Resource->ShaderByteCodeSize = InByteSize;
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
+			RShaderFrequencyType::SHADER_FREQUENCY_PIXEL);
+		Resource->ReleaseResource();
+		delete Resource;
 		return Result;
 	}
 #endif

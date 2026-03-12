@@ -524,7 +524,7 @@ namespace PigeonEngine
 	void RBezierGrassSceneProxy::SetupShaders()
 	{
 		const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-		const EString ImportVSName = EString("BezierGrass_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+		const EString ImportVSName = EString("BezierGrass") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
 			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(UINT8), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
@@ -539,7 +539,7 @@ namespace PigeonEngine
 		}
 		if (!PixelShader)
 		{
-			const EString ImportPSName = EString("BezierGrass_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			const EString ImportPSName = EString("BezierGrass") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
 			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, ImportPSName,
 				PixelShader,
 				&ImportPath, &ImportPSName);
@@ -638,8 +638,8 @@ namespace PigeonEngine
 	{
 		if (InstanceData.Num() > 0)
 		{
-			const RIndexBufferResource& IndexRenderResource = IndexBuffer;
 #if _EDITOR_ONLY
+			const RIndexBufferResource& IndexRenderResource = IndexBuffer;
 			if (IndexRenderResource.IsRenderResourceValid())
 #endif
 			{

@@ -423,9 +423,11 @@ namespace PigeonEngine
 		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
 		ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenActors.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 
-		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
+		ImGui::PushID((void*)this);
+		BOOL8 bTreeNodeExpand	= ImGui::TreeNodeEx("##node", TreeNodeFlag);
 		ImGui::SameLine();
 		BOOL8 bSelected			= ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedActor);
+		ImGui::PopID();
 
 		if (bTreeNodeExpand)
 		{
@@ -436,7 +438,7 @@ namespace PigeonEngine
 			}
 			ImGui::TreePop();
 		}
-		
+
 		if (bSelected)
 		{
 			this->GetWorld()->SetSelectedActor(this);

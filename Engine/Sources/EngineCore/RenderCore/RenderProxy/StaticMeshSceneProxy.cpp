@@ -77,7 +77,7 @@ namespace PigeonEngine
 	void RStaticMeshSceneProxy::SetupShaders()
 	{
 		const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-		const EString ImportVSName = EString("StaticMesh_") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
+		const EString ImportVSName = EString("StaticMesh") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
 		{
 			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT, 0u, 0u),
@@ -94,7 +94,7 @@ namespace PigeonEngine
 		}
 		if (!PixelShader)
 		{
-			const EString ImportPSName = EString("StaticMesh_") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
+			const EString ImportPSName = EString("StaticMesh") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
 			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, ImportPSName,
 				PixelShader,
 				&ImportPath, &ImportPSName);

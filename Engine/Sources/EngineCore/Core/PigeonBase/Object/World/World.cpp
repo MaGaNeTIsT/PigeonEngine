@@ -201,8 +201,27 @@ namespace PigeonEngine
 	void PWorld::SetSelectedActor(PActor* Selected)
 	{
         this->ImguiSelectedActor = Selected;
-        this->SetSelectedComponent(this->ImguiSelectedActor ? this->ImguiSelectedActor->GetRootComponent() : nullptr);
+        if (!this->ImguiSelectedActor)
+        {
+            this->SetSelectedComponent(nullptr);
+            return;
+        }
 
+        PSceneComponent* Root = this->ImguiSelectedActor->GetRootComponent();
+        PActorComponent* DefaultComp = Root;
+
+        // If root has exactly one child component, auto-select it so properties
+        // like Materials are immediately visible without an extra click.
+        if (Root)
+        {
+            TSet<PSceneComponent*> Children = Root->GetChildrenComponents();
+            if (Children.Num() == 1)
+            {
+                DefaultComp = *Children.begin();
+            }
+        }
+
+        this->SetSelectedComponent(DefaultComp);
 	}
 
 	void PWorld::SetSelectedComponent(PActorComponent* Selected)

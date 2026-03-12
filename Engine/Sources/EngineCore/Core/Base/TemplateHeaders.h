@@ -6,7 +6,9 @@ namespace PigeonEngine
 #define CLASS_REMOVE_COPY_BODY(_ClassName) \
 	public:\
 		_ClassName(const _ClassName&) = delete;\
+		_ClassName(_ClassName&&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 
 #define CLASS_NOCOPY_BODY(_ClassName) \
 	public:\
@@ -14,7 +16,9 @@ namespace PigeonEngine
 		~_ClassName();\
 	public:\
 		_ClassName(const _ClassName&) = delete;\
+		_ClassName(_ClassName&&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 
 #define CLASS_VIRTUAL_NOCOPY_BODY(_ClassName) \
 	public:\
@@ -22,7 +26,9 @@ namespace PigeonEngine
 		virtual ~_ClassName();\
 	public:\
 		_ClassName(const _ClassName&) = delete;\
+		_ClassName(_ClassName&&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 
 #define CLASS_COPY_BODY(_ClassName) \
 	public:\
@@ -30,7 +36,9 @@ namespace PigeonEngine
 		~_ClassName();\
 	public:\
 		_ClassName(const _ClassName& Other);\
+		_ClassName(_ClassName&& Other);\
 		_ClassName& operator=(const _ClassName& Other);\
+		_ClassName& operator=(_ClassName&& Other);\
 
 #define CLASS_VIRTUAL_COPY_BODY(_ClassName) \
 	public:\
@@ -38,21 +46,27 @@ namespace PigeonEngine
 		virtual ~_ClassName();\
 	public:\
 		_ClassName(const _ClassName& Other);\
+		_ClassName(_ClassName&& Other);\
 		_ClassName& operator=(const _ClassName& Other);\
+		_ClassName& operator=(_ClassName&& Other);\
 
 #define RENDER_PROXY_CLASS_BODY(_ClassName) \
 	public:\
 		_ClassName();\
 		_ClassName(const _ClassName& Other);\
 		virtual ~_ClassName();\
+		_ClassName(_ClassName&& Other) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 
 #define CLASS_SINGLETON_BODY(_ClassName) \
 	private:\
 		_ClassName();\
 		_ClassName(const _ClassName&) {}\
+		_ClassName(_ClassName&&) {}\
 		~_ClassName();\
-		_ClassName& operator=(const _ClassName&) {}\
+		_ClassName& operator=(const _ClassName&) { return (*this); }\
+		_ClassName& operator=(_ClassName&&) { return (*this); }\
 	public:\
 		static _ClassName* GetSingleton()\
 		{\
@@ -64,8 +78,10 @@ namespace PigeonEngine
 	private:\
 		_ClassName();\
 		_ClassName(const _ClassName&) {}\
+		_ClassName(_ClassName&&) {}\
 		virtual ~_ClassName();\
-		_ClassName& operator=(const _ClassName&) {}\
+		_ClassName& operator=(const _ClassName&) { return (*this); }\
+		_ClassName& operator=(_ClassName&&) { return (*this); }\
 	public:\
 		static _ClassName* GetSingleton()\
 		{\
@@ -76,7 +92,9 @@ namespace PigeonEngine
 #define CLASS_MANAGER_SINGLETON_BODY(_ClassName) \
 	public:\
 		_ClassName(const _ClassName&) = delete;\
+		_ClassName(_ClassName&&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 	private:\
 		_ClassName();\
 		~_ClassName();\
@@ -90,7 +108,9 @@ namespace PigeonEngine
 #define CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(_ClassName) \
 	public:\
 		_ClassName(const _ClassName&) = delete;\
+		_ClassName(_ClassName&&) = delete;\
 		_ClassName& operator=(const _ClassName&) = delete;\
+		_ClassName& operator=(_ClassName&&) = delete;\
 	private:\
 		_ClassName();\
 		virtual ~_ClassName();\

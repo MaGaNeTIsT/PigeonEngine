@@ -438,12 +438,13 @@ namespace PigeonEngine
 	void PSceneComponent::GenerateComponentOutline(const PActorComponent* WorldCurrentSelectedComponent)
 	{
 		BOOL8 bSelectedComponent = WorldCurrentSelectedComponent == this;
-		
-		const ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_DefaultOpen;
-		const BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx(*(EString("##") + (POBJ_DEBUGNAME_GET(this)) + EString("_TreeNode")), TreeNodeFlag);
 
+		const ImGuiTreeNodeFlags TreeNodeFlag = (ChildrenComponents.Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_DefaultOpen;
+		ImGui::PushID((void*)this);
+		const BOOL8 bTreeNodeExpand = ImGui::TreeNodeEx("##node", TreeNodeFlag);
 		ImGui::SameLine();
 		const BOOL8 bSelected = ImGui::Selectable(*(POBJ_DEBUGNAME_GET(this)), &bSelectedComponent);
+		ImGui::PopID();
 
 		if (bTreeNodeExpand)
 		{
@@ -454,7 +455,7 @@ namespace PigeonEngine
 			}
 			ImGui::TreePop();
 		}
-		
+
 		if (bSelected)
 		{
 			this->GetOwnerActor()->GetWorld()->SetSelectedComponent(this);

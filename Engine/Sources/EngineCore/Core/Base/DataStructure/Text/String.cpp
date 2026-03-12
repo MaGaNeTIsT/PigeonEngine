@@ -3,6 +3,7 @@
 #include <Base/Math/Math.h>
 #include <Config/EngineConfig.h>
 #include "../../../../../Development/Alert/DevelopmentDefines.h"
+#include <cctype>
 
 namespace PigeonEngine
 {
@@ -243,6 +244,22 @@ namespace PigeonEngine
     EString EString::FromFloat(const FLOAT& InValue)
     {
         return EString(std::to_string(InValue));
+    }
+
+    EString EString::FromChar(CHAR InValue)
+    {
+        CHAR Tmp[2] = { InValue, '\0' };
+        return EString(Tmp);
+    }
+
+    EString EString::ToLower() const
+    {
+        std::string Result = Str;
+        for (auto& C : Result)
+        {
+            C = static_cast<CHAR>(std::tolower(static_cast<unsigned char>(C)));
+        }
+        return EString(std::move(Result));
     }
 
     CHAR* EString::GetDataAsCopy() const

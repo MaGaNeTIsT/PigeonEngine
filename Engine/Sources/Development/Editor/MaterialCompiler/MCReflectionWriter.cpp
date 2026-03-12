@@ -113,7 +113,7 @@ bool MCReflectionWriter::Write(const MCReflectionInput& In, const std::string& O
             il.AddMember("semantic",   Value(attr.Semantic.c_str(), alloc), alloc);
             il.AddMember("index",      attr.Index,                          alloc);
             il.AddMember("format",     Value("FLOAT", alloc),               alloc);
-            il.AddMember("components", 4,                                   alloc);
+            il.AddMember("components", attr.Num,                            alloc);
             ilArr.PushBack(il, alloc);
         }
         doc.AddMember("input_layout", ilArr, alloc);

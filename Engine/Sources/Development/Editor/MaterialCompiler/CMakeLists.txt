@@ -38,8 +38,8 @@ set_target_properties(MaterialCompiler PROPERTIES
 foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
     string(TOUPPER ${CONFIG} CONFIG_UPPER)
     set_target_properties(MaterialCompiler PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_BINARY_DIR}/Build64/Bin/${CONFIG_UPPER}"
-        PDB_OUTPUT_DIRECTORY_${CONFIG_UPPER}     "${CMAKE_BINARY_DIR}/Build64/Bin/${CONFIG_UPPER}"
+        RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${CMAKE_BINARY_DIR}/Build64/Tools"
+        PDB_OUTPUT_DIRECTORY_${CONFIG_UPPER}     "${CMAKE_BINARY_DIR}/Build64/Tools"
     )
 endforeach()
 
@@ -60,6 +60,7 @@ target_include_directories(MaterialCompiler PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${DXC_INCLUDE_DIR}
     "${CMAKE_SOURCE_DIR}/Engine/ThirdParty/rapidjson"
+    "${CMAKE_SOURCE_DIR}/Engine/Sources/EngineCore/Core"
 )
 
 target_link_libraries(MaterialCompiler PRIVATE
@@ -121,14 +122,16 @@ if(MSVC)
             $<TARGET_FILE_DIR:MaterialCompiler>
         COMMENT "Copying DXC runtime DLLs from EngineThirdParty"
     )
+
     # Run MaterialCompiler on all material sources
-    add_custom_command(TARGET MaterialCompiler POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/Build/Temp/MaterialAssets"
-        COMMAND $<TARGET_FILE:MaterialCompiler>
-            --shader-include "${CMAKE_SOURCE_DIR}/Engine/Sources/EngineCore/Shaders"
-            "${CMAKE_SOURCE_DIR}/Assets/MaterialSources"
-            "${CMAKE_SOURCE_DIR}/Build/Temp/MaterialAssets"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-        COMMENT "Compiling materials..."
-    )
+    # add_custom_command(TARGET MaterialCompiler POST_BUILD
+    #     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/Build/Temp/MaterialAssets"
+    #     COMMAND $<TARGET_FILE:MaterialCompiler>
+    #         --shader-include "${CMAKE_SOURCE_DIR}/Engine/Sources/EngineCore/Shaders"
+    #         "${CMAKE_SOURCE_DIR}/Assets/MaterialSources"
+    #         "${CMAKE_SOURCE_DIR}/Build/Temp/MaterialAssets"
+    #     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    #     COMMENT "Compiling materials..."
+    # )
+
 endif()

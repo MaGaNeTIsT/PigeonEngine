@@ -62,6 +62,8 @@ namespace PigeonEngine
 
         static EString FromInt(const UINT32& InValue);
         static EString FromFloat(const FLOAT& InValue);
+        static EString FromChar(CHAR InValue);
+        PE_NODISCARD EString ToLower() const;
         CHAR* GetDataAsCopy()const;
     private:
         std::string Str;

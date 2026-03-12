@@ -4,6 +4,8 @@
 #include "MCReflectionWriter.h"
 #include "MCFileWatcher.h"
 
+#include <Config/EngineShaderNaming.h>
+
 #include <document.h>
 #include <prettywriter.h>
 #include <stringbuffer.h>
@@ -32,6 +34,7 @@ struct MCArgs
     std::string FilterMaterial;
     bool        Debug = false;
     bool        Watch = false;
+    bool        Dx11  = false;  // Target DX11 (DXBC/SM5); default is DX12 (DXIL/SM6)
 };
 
 static void PrintUsage()
@@ -42,6 +45,7 @@ static void PrintUsage()
         "  [--debug]                Emit PDB\n"
         "  [--watch]                Stay alive, recompile on JSON change\n"
         "  [--material <name>]      Filter to one material\n"
+        "  [--dx11]                 Target DX11 (DXBC/SM5.0); default is DX12 (DXIL/SM6.0)\n"
         "  <source_dir>             Assets/MaterialSources/\n"
         "  <output_dir>             Build/Temp/MaterialAssets/\n";
 }
@@ -52,8 +56,9 @@ static bool ParseArgs(int argc, char** argv, MCArgs& Out)
     {
         std::string a = argv[i];
         if (a == "--shader-include" && i + 1 < argc) { Out.ShaderIncludeDir = argv[++i]; }
-        else if (a == "--debug")  { Out.Debug = true; }
-        else if (a == "--watch")  { Out.Watch = true; }
+        else if (a == "--debug")    { Out.Debug = true; }
+        else if (a == "--watch")    { Out.Watch = true; }
+        else if (a == "--dx11")     { Out.Dx11  = true; }
         else if (a == "--material" && i + 1 < argc) { Out.FilterMaterial = argv[++i]; }
         else if (Out.SourceDir.empty()) { Out.SourceDir = a; }
         else if (Out.OutputDir.empty()) { Out.OutputDir = a; }
@@ -111,8 +116,14 @@ static std::string VariantKey(const std::string& MatName, const std::string& Pas
 }
 
 static bool IsUpToDate(const Document& Cache, const std::string& Key,
-    const std::vector<std::string>& InputFiles)
+    const std::vector<std::string>& InputFiles,
+    const std::vector<std::string>& OutputFiles)
 {
+    // Output files must all exist
+    for (auto& f : OutputFiles)
+    {
+        if (!fs::exists(f)) return false;
+    }
     if (!Cache.HasMember(Key.c_str())) return false;
     const Value& entry = Cache[Key.c_str()];
     for (auto& f : InputFiles)
@@ -185,12 +196,23 @@ static bool CompileMaterial(
 
     fs::create_directories(MatOutputDir);
 
+    // Target-specific profile names and bytecode extension
+    const std::string kVSProfile   = Args.Dx11 ? "vs_5_0" : "vs_6_0";
+    const std::string kPSProfile   = Args.Dx11 ? "ps_5_0" : "ps_6_0";
+    const std::string kCSProfile   = Args.Dx11 ? "cs_5_0" : "cs_6_0";
+    const std::string kShaderExt   = Args.Dx11 ? ".dxbc"  : ".dxil";
+    const std::string kShaderModel = Args.Dx11 ? "5_0"    : "6_0";
+    // Shader binary name suffixes — kept in sync with engine via EngineShaderNaming.h
+    const std::string kVSSuffix    = MC_SHADER_VS_SUFFIX;   // "_PEVS"
+    const std::string kPSSuffix    = MC_SHADER_PS_SUFFIX;   // "_PEPS"
+    const std::string kCSSuffix    = MC_SHADER_CS_SUFFIX;   // "_PECS"
+
     // Manifest
     Document manifest;
     manifest.SetObject();
     auto& alloc = manifest.GetAllocator();
     manifest.AddMember("name", Value(mat.Name.c_str(), alloc), alloc);
-    manifest.AddMember("shader_model", Value("6_0", alloc), alloc);
+    manifest.AddMember("shader_model", Value(kShaderModel.c_str(), alloc), alloc);
     manifest.AddMember("passes", Value(kArrayType), alloc);
 
     for (auto& passPath : passPaths)
@@ -218,7 +240,12 @@ static bool CompileMaterial(
             if (fs::exists(vfPath))  inputs.push_back(vfPath);
 
             std::string cacheKey = VariantKey(mat.Name, pass.Name, vi);
-            if (IsUpToDate(Cache, cacheKey, inputs))
+            std::vector<std::string> outputs;
+            if (!pass.TemplateVS.empty()) outputs.push_back(MatOutputDir + "/" + pass.Name + "_" + idxStr + kVSSuffix + kShaderExt);
+            if (!pass.TemplatePS.empty()) outputs.push_back(MatOutputDir + "/" + pass.Name + "_" + idxStr + kPSSuffix + kShaderExt);
+            if (!pass.TemplateCS.empty()) outputs.push_back(MatOutputDir + "/" + pass.Name + "_" + idxStr + kCSSuffix + kShaderExt);
+            outputs.push_back(MatOutputDir + "/" + pass.Name + "_" + idxStr + ".refl.json");
+            if (IsUpToDate(Cache, cacheKey, inputs, outputs))
             {
                 std::cout << "[MC] Up-to-date: " << mat.Name << " " << pass.Name << " variant " << vi << "\n";
             }
@@ -242,16 +269,16 @@ static bool CompileMaterial(
                         {
                             MC::MCDxcResult result;
                             std::string tmplVSDir = fs::path(tmplVSPath).parent_path().string();
-                            Dxc.Compile(assembled.HlslSource, pass.Name + "_VS", "vs_6_0",
+                            Dxc.Compile(assembled.HlslSource, pass.Name + "_VS", kVSProfile,
                                 Args.ShaderIncludeDir, tmplVSDir, MatSourceDir, Args.Debug, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] VS errors:\n" << result.Errors << "\n";
                             if (result.Success)
                             {
-                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + "_VS.dxil";
+                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + kVSSuffix + kShaderExt;
                                 WriteDxil(outPath, result.DxilBytes, err);
                                 if (Args.Debug && !result.PdbBytes.empty())
-                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + "_VS.pdb", result.PdbBytes, err);
+                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + kVSSuffix + ".pdb", result.PdbBytes, err);
                             }
                             else ok = false;
                         }
@@ -272,16 +299,16 @@ static bool CompileMaterial(
                         {
                             MC::MCDxcResult result;
                             std::string tmplPSDir = fs::path(tmplPSPath).parent_path().string();
-                            Dxc.Compile(assembled.HlslSource, pass.Name + "_PS", "ps_6_0",
+                            Dxc.Compile(assembled.HlslSource, pass.Name + "_PS", kPSProfile,
                                 Args.ShaderIncludeDir, tmplPSDir, MatSourceDir, Args.Debug, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] PS errors:\n" << result.Errors << "\n";
                             if (result.Success)
                             {
-                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + "_PS.dxil";
+                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + kPSSuffix + kShaderExt;
                                 WriteDxil(outPath, result.DxilBytes, err);
                                 if (Args.Debug && !result.PdbBytes.empty())
-                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + "_PS.pdb", result.PdbBytes, err);
+                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + kPSSuffix + ".pdb", result.PdbBytes, err);
                             }
                             else ok = false;
                         }
@@ -302,16 +329,16 @@ static bool CompileMaterial(
                         {
                             MC::MCDxcResult result;
                             std::string tmplCSDir = fs::path(tmplCSPath).parent_path().string();
-                            Dxc.Compile(assembled.HlslSource, pass.Name + "_CS", "cs_6_0",
+                            Dxc.Compile(assembled.HlslSource, pass.Name + "_CS", kCSProfile,
                                 Args.ShaderIncludeDir, tmplCSDir, MatSourceDir, Args.Debug, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] CS errors:\n" << result.Errors << "\n";
                             if (result.Success)
                             {
-                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + "_CS.dxil";
+                                std::string outPath = MatOutputDir + "/" + pass.Name + "_" + idxStr + kCSSuffix + kShaderExt;
                                 WriteDxil(outPath, result.DxilBytes, err);
                                 if (Args.Debug && !result.PdbBytes.empty())
-                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + "_CS.pdb", result.PdbBytes, err);
+                                    WriteDxil(MatOutputDir + "/" + pass.Name + "_" + idxStr + kCSSuffix + ".pdb", result.PdbBytes, err);
                             }
                             else ok = false;
                         }
@@ -332,9 +359,9 @@ static bool CompileMaterial(
                 }
             }
 
-            std::string vsFile   = pass.Name + "_" + idxStr + "_VS.dxil";
-            std::string psFile   = pass.Name + "_" + idxStr + "_PS.dxil";
-            std::string csFile   = pass.Name + "_" + idxStr + "_CS.dxil";
+            std::string vsFile   = pass.Name + "_" + idxStr + kVSSuffix + kShaderExt;
+            std::string psFile   = pass.Name + "_" + idxStr + kPSSuffix + kShaderExt;
+            std::string csFile   = pass.Name + "_" + idxStr + kCSSuffix + kShaderExt;
             std::string reflFile = pass.Name + "_" + idxStr + ".refl.json";
 
             Value varEntry(kObjectType);
@@ -376,6 +403,12 @@ int main(int argc, char** argv)
 
     auto RunAll = [&]()
     {
+        if (!fs::exists(args.SourceDir))
+        {
+            std::cerr << "[MC] Source directory does not exist: " << args.SourceDir << "\n";
+            return;
+        }
+
         Document cache = LoadCache(args.OutputDir);
 
         for (auto& entry : fs::directory_iterator(args.SourceDir))
