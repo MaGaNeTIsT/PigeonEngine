@@ -65,6 +65,7 @@ target_include_directories(MaterialCompiler PRIVATE
 
 target_link_libraries(MaterialCompiler PRIVATE
     "${DXC_LIB_DIR}/dxcompiler.lib"
+    d3dcompiler.lib
 )
 
 if(MSVC)
@@ -73,6 +74,7 @@ if(MSVC)
     )
     target_compile_options(MaterialCompiler PRIVATE
         /nologo
+        /utf-8
         /diagnostics:classic
         /D_MBCS
         /sdl

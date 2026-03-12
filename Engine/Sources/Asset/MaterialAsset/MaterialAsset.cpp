@@ -484,14 +484,12 @@ namespace PigeonEngine
             }
 
             PE_LOG_LOG(EString("[MaterialCompiler] Process launched (PID=") + ToString(static_cast<UINT32>(ProcessInfo.dwProcessId)) + "), waiting...");
-            ::WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
 
-            DWORD ExitCode = 0;
-            ::GetExitCodeProcess(ProcessInfo.hProcess, &ExitCode);
-            ::CloseHandle(ProcessInfo.hProcess);
-            ::CloseHandle(ProcessInfo.hThread);
-
-            // Drain the pipe and forward every line to the engine log
+            // Drain the pipe while the child runs.
+            // ReadFile blocks until data arrives and returns FALSE when the child
+            // closes its end of the pipe (i.e. on exit) — which naturally serves
+            // as our wait. Doing WaitForSingleObject first would deadlock if the
+            // child's output fills the pipe buffer.
             if (bPipeOk)
             {
                 CHAR   ReadBuf[1024];
@@ -507,7 +505,6 @@ namespace PigeonEngine
                         {
                             if (LineBuf.Length() > 0u)
                             {
-                                // MaterialCompiler writes error lines containing "error" or "Error"
                                 if (LineBuf.Find("error") >= 0 || LineBuf.Find("Error") >= 0 || LineBuf.Find("ERROR") >= 0)
                                 {
                                     PE_LOG_ERROR(LineBuf);
@@ -535,6 +532,14 @@ namespace PigeonEngine
 
                 ::CloseHandle(hReadPipe);
             }
+
+            // Child has closed the pipe (exited); wait just to safely retrieve exit code.
+            ::WaitForSingleObject(ProcessInfo.hProcess, INFINITE);
+
+            DWORD ExitCode = 0;
+            ::GetExitCodeProcess(ProcessInfo.hProcess, &ExitCode);
+            ::CloseHandle(ProcessInfo.hProcess);
+            ::CloseHandle(ProcessInfo.hThread);
 
             if (ExitCode != 0)
             {

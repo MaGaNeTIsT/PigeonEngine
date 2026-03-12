@@ -160,12 +160,33 @@ static bool WriteDxil(const std::string& Path, const std::vector<uint8_t>& Bytes
 }
 
 // ---------------------------------------------------------------------------
+// Derive engine root from --shader-include path
+// Walks up from ShaderIncludeDir until it finds a directory that directly
+// contains a subdirectory named "Engine".
+// ---------------------------------------------------------------------------
+static std::string DeriveEngineRoot(const std::string& ShaderIncludeDir)
+{
+    fs::path p = fs::path(ShaderIncludeDir);
+    // Normalise: remove trailing separator
+    if (p.filename().empty()) p = p.parent_path();
+    while (p.has_parent_path())
+    {
+        if (fs::is_directory(p / "Engine")) return p.string() + "/";
+        fs::path up = p.parent_path();
+        if (up == p) break;
+        p = up;
+    }
+    return {}; // not found
+}
+
+// ---------------------------------------------------------------------------
 // Compile one material directory
 // ---------------------------------------------------------------------------
 static bool CompileMaterial(
     const std::string& MatSourceDir,
     const std::string& MatOutputDir,
     const MCArgs&      Args,
+    const std::string& EngineRoot,
     MC::MCDxcCompiler& Dxc,
     Document&          Cache)
 {
@@ -230,9 +251,15 @@ static bool CompileMaterial(
             auto& variant = pass.Variants[vi];
             std::string idxStr = [&]{ std::ostringstream s; s << std::setw(4) << std::setfill('0') << vi; return s.str(); }();
 
-            std::string tmplVSPath = pass.TemplateVS;
-            std::string tmplPSPath = pass.TemplatePS;
-            std::string tmplCSPath = pass.TemplateCS;
+            // Resolve template paths: relative paths are anchored to engine root
+            auto ResolveTemplate = [&](const std::string& p) -> std::string
+            {
+                if (p.empty() || fs::path(p).is_absolute()) return p;
+                return EngineRoot + p;
+            };
+            std::string tmplVSPath = ResolveTemplate(pass.TemplateVS);
+            std::string tmplPSPath = ResolveTemplate(pass.TemplatePS);
+            std::string tmplCSPath = ResolveTemplate(pass.TemplateCS);
             std::vector<std::string> inputs = { matPath, passPath };
             if (!tmplVSPath.empty()) inputs.push_back(tmplVSPath);
             if (!tmplPSPath.empty()) inputs.push_back(tmplPSPath);
@@ -270,7 +297,7 @@ static bool CompileMaterial(
                             MC::MCDxcResult result;
                             std::string tmplVSDir = fs::path(tmplVSPath).parent_path().string();
                             Dxc.Compile(assembled.HlslSource, pass.Name + "_VS", kVSProfile,
-                                Args.ShaderIncludeDir, tmplVSDir, MatSourceDir, Args.Debug, result);
+                                Args.ShaderIncludeDir, tmplVSDir, MatSourceDir, Args.Debug, Args.Dx11, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] VS errors:\n" << result.Errors << "\n";
                             if (result.Success)
@@ -300,7 +327,7 @@ static bool CompileMaterial(
                             MC::MCDxcResult result;
                             std::string tmplPSDir = fs::path(tmplPSPath).parent_path().string();
                             Dxc.Compile(assembled.HlslSource, pass.Name + "_PS", kPSProfile,
-                                Args.ShaderIncludeDir, tmplPSDir, MatSourceDir, Args.Debug, result);
+                                Args.ShaderIncludeDir, tmplPSDir, MatSourceDir, Args.Debug, Args.Dx11, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] PS errors:\n" << result.Errors << "\n";
                             if (result.Success)
@@ -330,7 +357,7 @@ static bool CompileMaterial(
                             MC::MCDxcResult result;
                             std::string tmplCSDir = fs::path(tmplCSPath).parent_path().string();
                             Dxc.Compile(assembled.HlslSource, pass.Name + "_CS", kCSProfile,
-                                Args.ShaderIncludeDir, tmplCSDir, MatSourceDir, Args.Debug, result);
+                                Args.ShaderIncludeDir, tmplCSDir, MatSourceDir, Args.Debug, Args.Dx11, result);
                             if (!result.Errors.empty())
                                 std::cerr << "[MC] CS errors:\n" << result.Errors << "\n";
                             if (result.Success)
@@ -411,6 +438,14 @@ int main(int argc, char** argv)
 
         Document cache = LoadCache(args.OutputDir);
 
+        std::string engineRoot = DeriveEngineRoot(args.ShaderIncludeDir);
+        if (engineRoot.empty())
+        {
+            std::cerr << "[MC] Could not derive engine root from shader include dir: "
+                      << args.ShaderIncludeDir << "\n";
+            return;
+        }
+
         for (auto& entry : fs::directory_iterator(args.SourceDir))
         {
             if (!entry.is_directory()) continue;
@@ -418,7 +453,7 @@ int main(int argc, char** argv)
             if (!args.FilterMaterial.empty() && matName != args.FilterMaterial) continue;
 
             std::string matOut = args.OutputDir + "/" + matName;
-            CompileMaterial(entry.path().string(), matOut, args, dxc, cache);
+            CompileMaterial(entry.path().string(), matOut, args, engineRoot, dxc, cache);
         }
 
         SaveCache(args.OutputDir, cache);

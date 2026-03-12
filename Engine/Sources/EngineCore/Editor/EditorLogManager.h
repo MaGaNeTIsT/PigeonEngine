@@ -46,6 +46,7 @@ namespace PigeonEngine
         void WriteDownLogs();
     private:
         TArray<TSharedPtr<ELog>> Logs;
+        EString LogFilePath;
 
 
     };

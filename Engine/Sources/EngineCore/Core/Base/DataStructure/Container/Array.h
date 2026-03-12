@@ -622,6 +622,7 @@ namespace PigeonEngine
             EmptyInternal();
             Allocator.MoveFrom<_TOtherSizeType, _TOtherAllocator::AllocateStepSize<_TOtherSizeType>>(EMemory::Move(Other.Allocator));
             ElementNum = Other.Num<_TSizeType>();
+            Other.ElementNum = (_TOtherSizeType)0;
         }
         template<typename _TOtherSizeType, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
         void AppendCapacityInternal(_TOtherSizeType InElementNum)
@@ -961,7 +962,7 @@ namespace PigeonEngine
     template <typename T>
     UINT32 TArray<T>::Add(T&& Element)
     {
-        this->Elements.push_back(Element);
+        this->Elements.push_back(EMemory::Move(Element));
         return LastIndex();
     }
 

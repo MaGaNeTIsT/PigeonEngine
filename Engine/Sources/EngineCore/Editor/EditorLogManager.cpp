@@ -60,6 +60,10 @@ namespace PigeonEngine
     void EEditorLogManager::Initialize()
     {
         EManagerBase::Initialize();
+        EString TimeStamp = EngineSystemTime::Now().AsString();
+        TimeStamp = TimeStamp.Replace(":", "-");
+        TimeStamp = TimeStamp.Replace(" ", "_");
+        LogFilePath = EString(EBaseSettings::EDITOR_LOGS_PATH) + TimeStamp + EString("_Log.txt");
     }
 
     void EEditorLogManager::ShutDown()
@@ -108,17 +112,22 @@ namespace PigeonEngine
         {
             return;
         }
+
+        // Fallback: if Initialize() was never called, generate the path now
+        if (LogFilePath.Length() == 0)
+        {
+            EString TimeStamp = EngineSystemTime::Now().AsString();
+            TimeStamp = TimeStamp.Replace(":", "-");
+            TimeStamp = TimeStamp.Replace(" ", "_");
+            LogFilePath = EString(EBaseSettings::EDITOR_LOGS_PATH) + TimeStamp + EString("_Log.txt");
+        }
         EString Str;
         for(const auto& elem : this->Logs)
         {
             Str += elem->AsString() + "\r\n";
         }
 
-        EString FileName = EString(EBaseSettings::EDITOR_LOGS_PATH);
-        EString FileName1 = EString("[") + EngineSystemTime::Now().AsString() + EString("]");
-        FileName1 = FileName1.Replace(":", "-");
-        FileName = FileName + FileName1 + EString("Log.txt");
-        EFileHelper::SaveStringToFile(FileName, Str);
+        EFileHelper::SaveStringToFile(LogFilePath, Str);
         this->Logs.Empty();
 
         // Prune old log files — keep only the 5 most recent

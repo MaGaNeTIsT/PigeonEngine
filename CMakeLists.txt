@@ -60,6 +60,7 @@ if(MSVC)
 	target_compile_options(${ENGINE_PROJECT_NAME} PUBLIC
 		/nologo
 		/diagnostics:classic
+		/utf-8
 		/D_MBCS
 		/sdl
 		/MP
