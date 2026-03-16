@@ -250,7 +250,6 @@ namespace PigeonEngine
 
 			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 			NewStaticMeshComp->SetIsTickable(TRUE);
-			New->AddComponent(NewStaticMeshComp);
 
 			// Load mesh
 			const EStaticMeshAsset* MeshAsset = nullptr;
@@ -280,6 +279,8 @@ namespace PigeonEngine
 			{
 				NewStaticMeshComp->SetMaterialAsset(MatAsset);
 			}
+
+			New->AddComponent(NewStaticMeshComp);		// TODO : Fix this that BeginAddToScene need later than material asset setting otherwise will be null for proxy
 
 			New->SetActorLocation(Vector3(250.0f, 50.0f, 0.0f));
 			New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));

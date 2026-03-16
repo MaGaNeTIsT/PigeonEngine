@@ -282,7 +282,7 @@ namespace PigeonEngine
                                 Desc.SemanticIndex = ILRefl.Index;
                                 Desc.MemberNum = ILRefl.Components;
                                 Desc.MemberFormat = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT;
-                                Desc.MemberStride = ILRefl.Components * static_cast<UINT32>(sizeof(FLOAT));
+                                Desc.MemberStride = static_cast<UINT32>(sizeof(FLOAT));
                                 Layouts.Add(Desc);
                             }
                             const UINT32 LayoutNum = Layouts.Num<UINT32>();

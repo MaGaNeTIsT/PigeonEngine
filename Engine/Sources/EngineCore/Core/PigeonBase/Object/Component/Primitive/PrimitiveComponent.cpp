@@ -18,6 +18,9 @@ namespace PigeonEngine
 
     PPrimitiveComponent::PPrimitiveComponent()
         : PSceneComponent(), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
+#if _EDITOR_ONLY
+        , MaterialParamsDirty(FALSE)
+#endif
     {
         POBJ_DEBUGNAME_SET(this, "PrimitiveComponent");
     }
@@ -133,71 +136,96 @@ namespace PigeonEngine
 
 #if _EDITOR_ONLY
 
+    BOOL32 PPrimitiveComponent::IsEditorMaterialParamsDirty() const
+    {
+        return MaterialParamsDirty;
+    }
+    void PPrimitiveComponent::MarkEditorMaterialParamsDirty()
+    {
+        MaterialParamsDirty = TRUE;
+    }
+    void PPrimitiveComponent::CleanEditorMaterialParamsDirty()
+    {
+        MaterialParamsDirty = FALSE;
+    }
+    void PPrimitiveComponent::GetEditorSlotCBData(UINT32 SlotIdx, TArray<TArray<BYTE>>& Out) const
+    {
+        Out.Empty();
+        if (SlotIdx >= EditorSlotStates.Num<UINT32>()) { return; }
+        const PMaterialEditorSlotState& State = EditorSlotStates[static_cast<INT32>(SlotIdx)];
+        for (INT32 i = 0; i < State.CBStates.Num<INT32>(); i++)
+        {
+            Out.Add(State.CBStates[i].Data);
+        }
+    }
+
     static CHAR s_MatNameBuf[256] = {};
 
-    static void DrawCBFieldEditor(const EMaterialCBField& Field, TArray<BYTE>& Data, int UniqueId)
+    static bool DrawCBFieldEditor(const EMaterialCBField& Field, TArray<BYTE>& Data, int UniqueId)
     {
         ImGui::PushID(UniqueId);
         const char* type = *Field.Type;
         const bool isColor = (::strstr(*Field.Name, "olor") != nullptr) || (::strstr(*Field.Name, "Tint") != nullptr);
         FLOAT* f = reinterpret_cast<FLOAT*>(&Data[static_cast<INT32>(Field.Offset)]);
         const char* label = *Field.Name;
+        bool changed = false;
 
         if (::strcmp(type, "float4") == 0)
         {
-            if (isColor) ImGui::ColorEdit4(label, f);
-            else         ImGui::DragFloat4(label, f);
+            if (isColor) changed = ImGui::ColorEdit4(label, f);
+            else         changed = ImGui::DragFloat4(label, f);
         }
         else if (::strcmp(type, "float3") == 0)
         {
-            if (isColor) ImGui::ColorEdit3(label, f);
-            else         ImGui::DragFloat3(label, f);
+            if (isColor) changed = ImGui::ColorEdit3(label, f);
+            else         changed = ImGui::DragFloat3(label, f);
         }
         else if (::strcmp(type, "float2") == 0)
         {
-            ImGui::DragFloat2(label, f);
+            changed = ImGui::DragFloat2(label, f);
         }
         else if (::strcmp(type, "float") == 0 || ::strcmp(type, "float1") == 0)
         {
-            ImGui::DragFloat(label, f);
+            changed = ImGui::DragFloat(label, f);
         }
         else if (::strcmp(type, "int4") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_S32, f, 4);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 4);
         }
         else if (::strcmp(type, "int3") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_S32, f, 3);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 3);
         }
         else if (::strcmp(type, "int2") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_S32, f, 2);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 2);
         }
         else if (::strcmp(type, "int") == 0 || ::strcmp(type, "int1") == 0)
         {
-            ImGui::DragScalar(label, ImGuiDataType_S32, f);
+            changed = ImGui::DragScalar(label, ImGuiDataType_S32, f);
         }
         else if (::strcmp(type, "uint4") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_U32, f, 4);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 4);
         }
         else if (::strcmp(type, "uint3") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_U32, f, 3);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 3);
         }
         else if (::strcmp(type, "uint2") == 0)
         {
-            ImGui::DragScalarN(label, ImGuiDataType_U32, f, 2);
+            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 2);
         }
         else if (::strcmp(type, "uint") == 0 || ::strcmp(type, "uint1") == 0)
         {
-            ImGui::DragScalar(label, ImGuiDataType_U32, f);
+            changed = ImGui::DragScalar(label, ImGuiDataType_U32, f);
         }
         else
         {
             ImGui::Text("%s %s (unsupported)", type, label);
         }
         ImGui::PopID();
+        return changed;
     }
 
     void PPrimitiveComponent::RebuildEditorSlotState(UINT32 SlotIdx)
@@ -338,7 +366,10 @@ namespace PigeonEngine
                                         PMaterialEditorCBState& CbState = State.CBStates[CbIdx];
                                         for (INT32 FIdx = 0; FIdx < CbRefl.Fields.Num<INT32>(); FIdx++)
                                         {
-                                            DrawCBFieldEditor(CbRefl.Fields[FIdx], CbState.Data, FIdx);
+                                            if (DrawCBFieldEditor(CbRefl.Fields[FIdx], CbState.Data, FIdx))
+                                            {
+                                                MarkEditorMaterialParamsDirty();
+                                            }
                                         }
                                     }
                                     ImGui::TreePop();

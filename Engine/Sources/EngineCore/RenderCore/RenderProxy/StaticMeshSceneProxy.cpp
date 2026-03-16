@@ -1,6 +1,8 @@
 #include "StaticMeshSceneProxy.h"
 #include <ShaderAsset/ShaderAsset.h>
 #include <MeshAsset/MeshAsset.h>
+#include <MaterialAsset/MaterialAsset.h>
+#include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
@@ -23,24 +25,26 @@ namespace PigeonEngine
 	}
 
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(PStaticMeshComponent* InComponent)
-		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), Component(InComponent)
+		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), MaterialAsset(nullptr), Component(InComponent)
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create static mesh scene proxy failed"), (!!Component));
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy()
-		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), Component(nullptr)
+		: VertexShader(nullptr), PixelShader(nullptr), MeshAsset(nullptr), MaterialAsset(nullptr), Component(nullptr)
 	{
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(const RStaticMeshSceneProxy& Other)
-		: RMeshSceneProxy(Other), VertexShader(Other.VertexShader), PixelShader(Other.PixelShader), MeshAsset(Other.MeshAsset), Component(Other.Component)
+		: RMeshSceneProxy(Other), VertexShader(Other.VertexShader), PixelShader(Other.PixelShader), MeshAsset(Other.MeshAsset), MaterialAsset(Other.MaterialAsset), Component(Other.Component)
 	{
 	}
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
 	}
-	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset)
+	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset, const EMaterialAsset* InMaterialAsset)
 	{
+		MaterialAsset = InMaterialAsset;
 		SetupShaders();
+		SetupMaterialResources();
 
 		SetPrimitiveSettings(InIsHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
@@ -59,6 +63,26 @@ namespace PigeonEngine
 	{
 		MeshAsset = InMeshAsset;
 	}
+	void RStaticMeshSceneProxy::UpdateMaterialAsset(const EMaterialAsset* InMaterialAsset)
+	{
+		MaterialAsset = InMaterialAsset;
+		VertexShader = nullptr;
+		PixelShader = nullptr;
+		SetupShaders();
+		SetupMaterialResources();
+	}
+	void RStaticMeshSceneProxy::UpdateMaterialCBData(const TArray<TArray<BYTE>>& InCBDatas)
+	{
+		RDeviceD3D11* Device = RDeviceD3D11::GetDeviceSingleton();
+		const INT32 Count = (InCBDatas.Num<INT32>() < MaterialCBBuffers.Num<INT32>()) ? InCBDatas.Num<INT32>() : MaterialCBBuffers.Num<INT32>();
+		for (INT32 i = 0; i < Count; i++)
+		{
+			if (!MaterialCBBuffers[i].IsRenderResourceValid()) { continue; }
+			const TArray<BYTE>& Src = InCBDatas[i];
+			if (Src.Num() == 0) { continue; }
+			Device->UploadBuffer(MaterialCBBuffers[i].Buffer, &Src[0], Src.Num<UINT32>(), Src.Num<UINT32>());
+		}
+	}
 	void RStaticMeshSceneProxy::UpdateRenderResource()
 	{
 		Matrix4x4 InvMat(GetLocalToWorldMatrix().Inverse());
@@ -73,9 +97,22 @@ namespace PigeonEngine
 		BindPixelShader();
 		BindMeshResource();
 		BindMaterialParameter(1u);
+		BindMaterialCBs();
 	}
 	void RStaticMeshSceneProxy::SetupShaders()
 	{
+		// Prefer shaders from the assigned material variant
+		if (MaterialAsset)
+		{
+			const EMaterialVariant* Var = MaterialAsset->GetFirstVariant();
+			if (Var)
+			{
+				if (Var->VS) { VertexShader = Var->VS; }
+				if (Var->PS) { PixelShader  = Var->PS; }
+			}
+		}
+
+		// Fallback to the built-in static mesh shaders
 		const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 		const EString ImportVSName = EString("StaticMesh") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
 		const RInputLayoutDesc TempShaderInputLayouts[] =
@@ -98,6 +135,40 @@ namespace PigeonEngine
 			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, ImportPSName,
 				PixelShader,
 				&ImportPath, &ImportPSName);
+		}
+	}
+	void RStaticMeshSceneProxy::SetupMaterialResources()
+	{
+		MaterialCBBuffers.Empty();
+
+		if (!MaterialAsset) { return; }
+		const EMaterialVariant* Var = MaterialAsset->GetFirstVariant();
+		if (!Var) { return; }
+
+		const EMaterialReflection& Refl = Var->Reflection;
+		const INT32 CBCount = Refl.ConstantBuffers.Num<INT32>();
+		if (CBCount == 0) { return; }
+
+		MaterialCBBuffers.SetNum(CBCount);
+
+		RDeviceD3D11* Device = RDeviceD3D11::GetDeviceSingleton();
+		for (INT32 i = 0; i < CBCount; i++)
+		{
+			const EMaterialCBRefl& CbRefl = Refl.ConstantBuffers[i];
+			const UINT32 AlignedSize = (CbRefl.SizeBytes + 15u) & ~15u;
+			if (AlignedSize == 0u) { continue; }
+
+			BYTE* ZeroData = new BYTE[AlignedSize];
+			::memset(ZeroData, 0, AlignedSize);
+
+			const RBufferDesc Desc(
+				AlignedSize,
+				RBindFlagType::BIND_CONSTANT_BUFFER,
+				0u);
+			const RSubresourceDataDesc SubData(ZeroData, 0u, 0u);
+			Device->CreateBuffer(MaterialCBBuffers[i], Desc, &SubData);
+
+			delete[] ZeroData;
 		}
 	}
 	void RStaticMeshSceneProxy::BindVertexShader()const
@@ -218,6 +289,25 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh constant buffer is invalid."));
 		}
 #endif
+	}
+	void RStaticMeshSceneProxy::BindMaterialCBs()const
+	{
+		if (!MaterialAsset || (MaterialCBBuffers.Num<INT32>() == 0)) { return; }
+		const EMaterialVariant* Var = MaterialAsset->GetFirstVariant();
+		if (!Var) { return; }
+
+		const EMaterialReflection& Refl = Var->Reflection;
+		const INT32 CBCount = Refl.ConstantBuffers.Num<INT32>();
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+		for (INT32 i = 0; i < CBCount && i < MaterialCBBuffers.Num<INT32>(); i++)
+		{
+			const RBufferResource& CB = MaterialCBBuffers[i];
+			if (!CB.IsRenderResourceValid()) { continue; }
+			const UINT32 Slot = Refl.ConstantBuffers[i].Slot;
+			RenderDevice->BindVSConstantBuffer(CB.Buffer, Slot);
+			RenderDevice->BindPSConstantBuffer(CB.Buffer, Slot);
+		}
 	}
 	void RStaticMeshSceneProxy::Draw()const
 	{

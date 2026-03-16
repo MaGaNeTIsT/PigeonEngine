@@ -53,7 +53,6 @@ namespace PigeonEngine
 		DEBUG_WIREFRAME_ENGINE_CUBOID,
 		DEBUG_WIREFRAME_ENGINE_SPHERE,
 		DEBUG_WIREFRAME_ENGINE_CONE,
-		DEBUG_WIREFRAME_ENGINE_CYLINDER,
 		DEBUG_WIREFRAME_ENGINE_COUNT,
 		DEBUG_WIREFRAME_CUSTOM
 	};
@@ -73,7 +72,8 @@ namespace PigeonEngine
 		void			DrawCuboid(const Vector3& InLocation, const Quaternion& InRotation, const FLOAT InWidthX, const FLOAT InHeightY, const FLOAT InLengthZ, const Color4& InDebugColor = Color4::Black());
 		void			DrawSphere(const Vector3& InLocation, const FLOAT InRadius, const Color4& InDebugColor = Color4::Black(), const Quaternion& InRotation = Quaternion::Identity());
 		void			DrawCone(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor = Color4::Black());
-		void			DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor = Color4::Black());
+		void			DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor = Color4::Black());
+		void			DrawCapsule(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor = Color4::Black());
 		void			DrawCustom(const EString& InCustomName, const Matrix4x4& InLocalToWorld, const Color4& InDebugColor = Color4::Black());
 	public:
 		void			CreatePrimitive(RDebugWireframeType InType);

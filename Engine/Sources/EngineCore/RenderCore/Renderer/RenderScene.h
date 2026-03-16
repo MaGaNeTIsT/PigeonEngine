@@ -137,6 +137,9 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override;
+#if _EDITOR_ONLY
+		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)override;
+#endif
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
@@ -214,6 +217,9 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override {}
+#if _EDITOR_ONLY
+		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)override {}
+#endif
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}

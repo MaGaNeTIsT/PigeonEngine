@@ -49,7 +49,7 @@ namespace PigeonEngine
 
     void PCharacterController::HandleInput(IKeyboard::Event::EType InType, const EKey& InKey)
     {
-        if (InKey.GetKeyCode() == EKeysBuiltIn::W.GetKeyCode())
+        if (InKey.GetKeyCode() == EKeysBuiltIn::Up.GetKeyCode())
         {
             switch (InType)
             {
@@ -61,7 +61,7 @@ namespace PigeonEngine
                 break;
             }
         }
-        if (InKey.GetKeyCode() == EKeysBuiltIn::S.GetKeyCode())
+        if (InKey.GetKeyCode() == EKeysBuiltIn::Down.GetKeyCode())
         {
             switch (InType)
             {
@@ -73,7 +73,7 @@ namespace PigeonEngine
                 break;
             }
         }
-        if (InKey.GetKeyCode() == EKeysBuiltIn::A.GetKeyCode())
+        if (InKey.GetKeyCode() == EKeysBuiltIn::Left.GetKeyCode())
         {
             switch (InType)
             {
@@ -85,7 +85,7 @@ namespace PigeonEngine
                 break;
             }
         }
-        if (InKey.GetKeyCode() == EKeysBuiltIn::D.GetKeyCode())
+        if (InKey.GetKeyCode() == EKeysBuiltIn::Right.GetKeyCode())
         {
             switch (InType)
             {

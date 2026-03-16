@@ -1,17 +1,17 @@
 {
     "name": "StaticMeshVF",
     "attributes": [
-        { "semantic": "POSITION", "index": 0, "define": "SHADER_USE_POSITION_INPUT", "num": 1 },
-        { "semantic": "NORMAL",   "index": 0, "define": "SHADER_USE_NORMAL_INPUT",   "num": 1 },
-        { "semantic": "TEXCOORD", "index": 0, "define": "SHADER_USE_TEXCOORD_INPUT", "num": 1 },
-        { "semantic": "TANGENT",  "index": 0, "define": "SHADER_USE_TANGENT_INPUT",  "num": 1 }
+        { "semantic": "POSITION", "index": 0, "define": "SHADER_USE_POSITION_INPUT", "num": 4 },
+        { "semantic": "NORMAL",   "index": 0, "define": "SHADER_USE_NORMAL_INPUT",   "num": 4 },
+        { "semantic": "TEXCOORD", "index": 0, "define": "SHADER_USE_TEXCOORD_INPUT", "num": 2 },
+        { "semantic": "TANGENT",  "index": 0, "define": "SHADER_USE_TANGENT_INPUT",  "num": 4 }
     ],
     "defines": [
         { "name": "POSITION_SCALE", "value": 1 }
     ],
     "vs": {
         "hlsl_functions": "VFHelpers.hlsl",
-        "varying_struct": "struct Varying { float4 Pos:SV_POSITION; float3 Normal:NORMAL0; float3 Tangent:TANGENT0; float2 UV:TEXCOORD0; };",
+        "varying_struct": "struct Varying { float4 Pos:SV_POSITION; float4 Normal:NORMAL0; float4 Tangent:TANGENT0; float2 UV:TEXCOORD0; };",
         "hlsl_body": "VertexFactory.hlsl"
     }
 }

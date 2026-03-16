@@ -73,9 +73,7 @@ namespace PigeonEngine
 		Vector3 Direction = QuaternionTransformVector(inRotation, Vector3(0.f, HalfHeightOfCylinder, 0.f));
 		Vector3 Top = inPosition + Direction;
 		Vector3 Bottom = inPosition - Direction;
-		Manager->DrawCylinder(Bottom, Top, Raidus, Color4::Green());
-		Manager->DrawSphere(Bottom, Raidus, Color4::Green());
-		Manager->DrawSphere(Top, Raidus, Color4::Green());
+		Manager->DrawCapsule(Bottom, Top, Raidus, Raidus, Color4::Green());
 	}
 
 	void FRotatedTranslatedShape::DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const

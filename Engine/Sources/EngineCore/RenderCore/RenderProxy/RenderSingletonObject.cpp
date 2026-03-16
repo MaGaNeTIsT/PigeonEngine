@@ -306,7 +306,6 @@ namespace PigeonEngine
 		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CUBOID);
 		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_SPHERE);
 		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE);
-		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER);
 
 		{
 			const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
@@ -590,12 +589,8 @@ namespace PigeonEngine
 			}
 		);
 	}
-	void RDebugWireframePrimitiveManager::DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InRadius, const Color4& InDebugColor)
+	void RDebugWireframePrimitiveManager::DrawCylinder(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor)
 	{
-		const UINT32 TargetIndex = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER - 1u;
-		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
-		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
-
 		Vector3 Direction = InTopLocation - InBottomCenterLocation;
 		FLOAT DirectionLength = Direction.Length();
 		if (DirectionLength <= 1e-3f)
@@ -607,16 +602,16 @@ namespace PigeonEngine
 		{
 			Direction = Direction / DirectionLength;
 		}
-
-		RequireCommands.EnqueueCommand(
-			[&TargetTransforms, &TargetColors,
-			DebugColor = InDebugColor,
-			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InBottomCenterLocation, MakeQuaternion(Vector3::YVector(), Direction), Vector3(InRadius, DirectionLength, InRadius)))]()->void
-			{
-				TargetTransforms.Add(LocalToWorld);
-				TargetColors.Add(DebugColor);
-			}
-		);
+		const Quaternion Rotation = MakeQuaternion(Vector3::YVector(), Direction) * MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f));
+		DrawCircle(InBottomCenterLocation, Rotation, InBottomRadius, InDebugColor);
+		DrawCircle(InTopLocation, Rotation, InTopRadius, InDebugColor);
+		DrawSingleLine(InBottomCenterLocation, InTopLocation, InDebugColor);
+	}
+	void RDebugWireframePrimitiveManager::DrawCapsule(const Vector3& InBottomCenterLocation, const Vector3& InTopLocation, const FLOAT InBottomRadius, const FLOAT InTopRadius, const Color4& InDebugColor)
+	{
+		DrawSphere(InBottomCenterLocation, InBottomRadius, InDebugColor);
+		DrawSphere(InTopLocation, InTopRadius, InDebugColor);
+		DrawSingleLine(InBottomCenterLocation, InTopLocation, InDebugColor);
 	}
 	void RDebugWireframePrimitiveManager::DrawCustom(const EString& InCustomName, const Matrix4x4& InLocalToWorld, const Color4& InDebugColor)
 	{
@@ -901,89 +896,6 @@ namespace PigeonEngine
 				16u, 17u
 			};
 			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(ConePoints, PE_ARRAYSIZE(ConePoints), ConeLines, PE_ARRAYSIZE(ConeLines));
-		}
-		break;
-		case RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CYLINDER:
-		{
-			Matrix4x4 RotX(MakeMatrix4x4(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.f))));
-			const Vector3 CylinderPoints[] =
-			{
-				Matrix4x4TransformPosition(RotX, Vector3(1.f, 0.f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, 0.382683f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, 0.707107f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.382683f, 0.92388f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-4.37114e-08f, 1.f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.382683f, 0.92388f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, 0.707107f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, 0.382683f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-1.f, -8.74228e-08f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.92388f, -0.382683f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.707107f, -0.707107f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(-0.382684f, -0.92388f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(1.19249e-08f, -1.f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.382684f, -0.923879f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.707107f, -0.707107f, 0.f)),
-				Matrix4x4TransformPosition(RotX, Vector3(0.92388f, -0.3826830f, 0.f)),
-
-				CylinderPoints[0] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[1] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[2] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[3] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[4] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[5] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[6] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[7] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[8] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[9] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[10] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[11] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[12] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[13] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[14] + (Vector3::YVector() * 1.0f),
-				CylinderPoints[15] + (Vector3::YVector() * 1.0f),
-
-				Vector3(0.f, 0.f, 0.f),
-				Vector3(0.f, 1.f, 0.f)
-			};
-			const UINT32 CylinderLines[] =
-			{
-				0u, 1u,
-				1u, 2u,
-				2u, 3u,
-				3u, 4u,
-				4u, 5u,
-				5u, 6u,
-				6u, 7u,
-				7u, 8u,
-				8u, 9u,
-				9u, 10,
-				10u, 11u,
-				11u, 12u,
-				12u, 13u,
-				13u, 14u,
-				14u, 15u,
-				15u, 0u,
-
-				0u + 16u, 1u + 16u,
-				1u + 16u, 2u + 16u,
-				2u + 16u, 3u + 16u,
-				3u + 16u, 4u + 16u,
-				4u + 16u, 5u + 16u,
-				5u + 16u, 6u + 16u,
-				6u + 16u, 7u + 16u,
-				7u + 16u, 8u + 16u,
-				8u + 16u, 9u + 16u,
-				9u + 16u, 10 + 16u,
-				10u + 16u, 11u + 16u,
-				11u + 16u, 12u + 16u,
-				12u + 16u, 13u + 16u,
-				13u + 16u, 14u + 16u,
-				14u + 16u, 15u + 16u,
-				15u + 16u, 0u + 16u,
-
-				32u, 33u
-			};
-			Result = DebugWireframePrimitives[TargetIndex].InitPrimitive(CylinderPoints, PE_ARRAYSIZE(CylinderPoints), CylinderLines, PE_ARRAYSIZE(CylinderLines));
 		}
 		break;
 		case RDebugWireframeType::DEBUG_WIREFRAME_CUSTOM:

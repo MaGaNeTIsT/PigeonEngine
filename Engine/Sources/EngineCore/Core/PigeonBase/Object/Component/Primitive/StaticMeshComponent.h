@@ -17,6 +17,8 @@ namespace PigeonEngine
     public:
         const EStaticMeshAsset*     GetMeshAsset()const;
         void                        SetMeshAsset(const EStaticMeshAsset* InMeshAsset);
+        virtual void                SetMaterialAsset(const EMaterialAsset* InMaterialAsset)override;
+        virtual void                SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset)override;
     protected:
         const EStaticMeshAsset*     MeshAsset;
 
@@ -24,9 +26,10 @@ namespace PigeonEngine
     public:
         enum PStaticMeshUpdateState : UINT8
         {
-            STATIC_MESH_UPDATE_STATE_NONE   = 0,
-            STATIC_MESH_UPDATE_STATE_MATRIX = (1 << 0),
-            STATIC_MESH_UPDATE_STATE_ASSET  = (1 << 1)
+            STATIC_MESH_UPDATE_STATE_NONE     = 0,
+            STATIC_MESH_UPDATE_STATE_MATRIX   = (1 << 0),
+            STATIC_MESH_UPDATE_STATE_ASSET    = (1 << 1),
+            STATIC_MESH_UPDATE_STATE_MATERIAL = (1 << 2)
         };
     public:
         RStaticMeshSceneProxy*  SceneProxy;

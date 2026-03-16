@@ -49,8 +49,8 @@ namespace PigeonEngine
         void SetPrimitiveCastShadow(BOOL32 InIsCastShadow);
         void SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow);
         void SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden);
-        void SetMaterialAsset(const EMaterialAsset* InMaterialAsset);
-        void SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset);
+        virtual void SetMaterialAsset(const EMaterialAsset* InMaterialAsset);
+        virtual void SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset);
         void SetMaterialSlotsNum(UINT32 Num);
     private:
         BOOL32                          IsCastShadow;
@@ -88,7 +88,13 @@ namespace PigeonEngine
             TArray<PMaterialEditorCBState>     CBStates;
             TArray<PMaterialEditorTextureSlot> TextureSlots;
         };
+    public:
+        BOOL32  IsEditorMaterialParamsDirty() const;
+        void    MarkEditorMaterialParamsDirty();
+        void    CleanEditorMaterialParamsDirty();
+        void    GetEditorSlotCBData(UINT32 SlotIdx, TArray<TArray<BYTE>>& Out) const;
     protected:
+        BOOL32                           MaterialParamsDirty;
         TArray<PMaterialEditorSlotState> EditorSlotStates;
         void RebuildEditorSlotState(UINT32 SlotIdx);
         void RebuildAllEditorSlotStates();

@@ -44,7 +44,16 @@ namespace PigeonEngine
         }
         MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET);
     }
-
+    void PStaticMeshComponent::SetMaterialAsset(const EMaterialAsset* InMaterialAsset)
+    {
+        PPrimitiveComponent::SetMaterialAsset(InMaterialAsset);
+        MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATERIAL);
+    }
+    void PStaticMeshComponent::SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset)
+    {
+        PPrimitiveComponent::SetMaterialAsset(SlotIdx, InMaterialAsset);
+        MarkAsDirty(PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATERIAL);
+    }
     // Render proxy functions START
     UINT8 PStaticMeshComponent::GetUpdateRenderState()const
     {
@@ -75,6 +84,13 @@ namespace PigeonEngine
         {
             this->GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
         }
+#if _EDITOR_ONLY
+        if (ShouldRender() && !!SceneProxy && IsEditorMaterialParamsDirty())
+        {
+            this->GetWorld()->GetRenderScene()->UpdateStaticMeshMaterialCBData(this);
+            CleanEditorMaterialParamsDirty();
+        }
+#endif
         PMeshComponent::SendUpdateRenderState();
     }
     void PStaticMeshComponent::MarkAsDirty(PStaticMeshUpdateState InState)

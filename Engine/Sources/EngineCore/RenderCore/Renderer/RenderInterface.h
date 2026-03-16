@@ -33,6 +33,9 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)				= 0;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)				= 0;
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)				= 0;
+#if _EDITOR_ONLY
+		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)= 0;
+#endif
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;

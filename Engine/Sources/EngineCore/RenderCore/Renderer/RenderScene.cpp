@@ -2,6 +2,7 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#include <MaterialAsset/MaterialAsset.h>
 #include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
@@ -360,11 +361,12 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldRotation(),
 			InComponent->GetComponentWorldScale());
 		const EStaticMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
+		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
 
 		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
+			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset, TempMatAsset]()->void
 			{
-				SceneProxy->SetupProxy(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset);
+				SceneProxy->SetupProxy(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset, TempMatAsset);
 				delete TempMatrices;
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, TRUE);
 			});
@@ -381,6 +383,22 @@ namespace PigeonEngine
 				delete SceneProxy;
 			});
 	}
+#if _EDITOR_ONLY
+	void RScene::UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)
+	{
+		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
+
+		TArray<TArray<BYTE>>* CBDatas = new TArray<TArray<BYTE>>();
+		InComponent->GetEditorSlotCBData(0u, *CBDatas);
+
+		RenderUpdateCommands.EnqueueCommand(
+			[SceneProxy, CBDatas]()->void
+			{
+				SceneProxy->UpdateMaterialCBData(*CBDatas);
+				delete CBDatas;
+			});
+	}
+#endif
 	void RScene::UpdateStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
@@ -405,9 +423,11 @@ namespace PigeonEngine
 		{
 			TempMeshAsset = InComponent->GetMeshAsset();
 		}
+		const BOOL32 bMatAssetUpdated = (UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATERIAL) != 0u;
+		const EMaterialAsset* TempMatAsset = bMatAssetUpdated ? InComponent->GetMaterialAsset(0u) : nullptr;
 
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset]()->void
+			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset, bMatAssetUpdated, TempMatAsset]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
 				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
@@ -420,6 +440,10 @@ namespace PigeonEngine
 				if (TempMeshAsset)
 				{
 					SceneProxy->UpdateMeshAsset(TempMeshAsset);
+				}
+				if (bMatAssetUpdated)
+				{
+					SceneProxy->UpdateMaterialAsset(TempMatAsset);
 				}
 				if (NeedUpdateRenderResource)
 				{
