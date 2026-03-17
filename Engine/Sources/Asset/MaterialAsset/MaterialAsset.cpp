@@ -56,6 +56,28 @@ namespace PigeonEngine
         if (Name == EString("BLENDINDICES")) return RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES;
         return RShaderSemanticType::SHADER_SEMANTIC_NONE;
     }
+
+    // Parse "FLOAT4", "FLOAT2", "UINT4", "INT4", etc. into engine input layout format fields.
+    static void ParseInputFormat(const EString& Format,
+        RInputLayoutFormatType& OutFmt, UINT32& OutNum, UINT32& OutStride)
+    {
+        OutFmt    = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT;
+        OutNum    = 4u;
+        OutStride = static_cast<UINT32>(sizeof(FLOAT));
+
+        if      (Format == EString("FLOAT4")) { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT; OutNum = 4u; OutStride = sizeof(FLOAT); }
+        else if (Format == EString("FLOAT3")) { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT; OutNum = 3u; OutStride = sizeof(FLOAT); }
+        else if (Format == EString("FLOAT2")) { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT; OutNum = 2u; OutStride = sizeof(FLOAT); }
+        else if (Format == EString("FLOAT1")) { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT; OutNum = 1u; OutStride = sizeof(FLOAT); }
+        else if (Format == EString("INT4"))   { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT;   OutNum = 4u; OutStride = sizeof(INT32);  }
+        else if (Format == EString("INT3"))   { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT;   OutNum = 3u; OutStride = sizeof(INT32);  }
+        else if (Format == EString("INT2"))   { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT;   OutNum = 2u; OutStride = sizeof(INT32);  }
+        else if (Format == EString("INT1"))   { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_INT;   OutNum = 1u; OutStride = sizeof(INT32);  }
+        else if (Format == EString("UINT4"))  { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT;  OutNum = 4u; OutStride = sizeof(UINT32); }
+        else if (Format == EString("UINT3"))  { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT;  OutNum = 3u; OutStride = sizeof(UINT32); }
+        else if (Format == EString("UINT2"))  { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT;  OutNum = 2u; OutStride = sizeof(UINT32); }
+        else if (Format == EString("UINT1"))  { OutFmt = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT;  OutNum = 1u; OutStride = sizeof(UINT32); }
+    }
 #endif
 
     EMaterialAssetManager::EMaterialAssetManager()
@@ -153,7 +175,17 @@ namespace PigeonEngine
                 EMaterialInputLayoutRefl Entry;
                 Il->GetStringField("semantic", Entry.Semantic);
                 Il->GetUIntField("index", Entry.Index);
-                Il->GetUIntField("components", Entry.Components);
+                Il->GetUIntField("slot", Entry.Slot);
+                // "format" is the new explicit field; fall back to old "components" for old refl files.
+                if (!Il->GetStringField("format", Entry.Format))
+                {
+                    UINT32 Components = 4u;
+                    Il->GetUIntField("components", Components);
+                    if (Components < 1u) Components = 1u;
+                    if (Components > 4u) Components = 4u;
+                    const char Digits[] = { '1', '2', '3', '4' };
+                    Entry.Format = EString("FLOAT") + EString::FromChar(Digits[Components - 1u]);
+                }
                 Out.InputLayout.Add(std::move(Entry));
                 delete Il;
             }
@@ -263,50 +295,43 @@ namespace PigeonEngine
                 }
 
 #if _EDITOR_ONLY
-                // Auto-import VS from raw bytecode when the .PAsset doesn't exist yet.
+                // Auto-import VS from raw bytecode — always re-import in editor so stale
+                // .PAsset files (e.g. compiled with a different entry point) get refreshed.
                 if (VsFile.Length() > 0u)
                 {
-                    EString VsAssetPath = InLoadPath + VsName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-                    if (!EFileHelper::IsFileExists(VsAssetPath))
+                    void* VsBytes = nullptr; ULONG VsBytesSize = 0u;
+                    EString RawVsPath = InLoadPath + VsFile;
+                    if (EFileHelper::ReadFileAsBinary(RawVsPath, VsBytes, VsBytesSize))
                     {
-                        void* VsBytes = nullptr; ULONG VsBytesSize = 0u;
-                        EString RawVsPath = InLoadPath + VsFile;
-                        if (EFileHelper::ReadFileAsBinary(RawVsPath, VsBytes, VsBytesSize))
+                        // Translate reflection input layout to RInputLayoutDesc.
+                        TArray<RInputLayoutDesc> Layouts;
+                        for (const EMaterialInputLayoutRefl& ILRefl : Variant.Reflection.InputLayout)
                         {
-                            // Translate reflection input layout to RInputLayoutDesc.
-                            TArray<RInputLayoutDesc> Layouts;
-                            for (const EMaterialInputLayoutRefl& ILRefl : Variant.Reflection.InputLayout)
-                            {
-                                RInputLayoutDesc Desc;
-                                Desc.SemanticName = SemanticTypeFromName(ILRefl.Semantic);
-                                Desc.SemanticIndex = ILRefl.Index;
-                                Desc.MemberNum = ILRefl.Components;
-                                Desc.MemberFormat = RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT;
-                                Desc.MemberStride = static_cast<UINT32>(sizeof(FLOAT));
-                                Layouts.Add(Desc);
-                            }
-                            const UINT32 LayoutNum = Layouts.Num<UINT32>();
-                            EShaderAssetManager::GetManagerSingleton()->ImportVertexShaderFromBytes(
-                                VsName, InLoadPath, VsBytes, VsBytesSize, Layouts.GetData(), LayoutNum);
-                            delete[] VsBytes;
+                            RInputLayoutDesc Desc;
+                            Desc.SemanticName  = SemanticTypeFromName(ILRefl.Semantic);
+                            Desc.SemanticIndex = ILRefl.Index;
+                            Desc.InputSlot     = ILRefl.Slot;
+                            ParseInputFormat(ILRefl.Format, Desc.MemberFormat, Desc.MemberNum, Desc.MemberStride);
+                            Layouts.Add(Desc);
                         }
+                        const UINT32 LayoutNum = Layouts.Num<UINT32>();
+                        EShaderAssetManager::GetManagerSingleton()->ImportVertexShaderFromBytes(
+                            VsName, InLoadPath, VsBytes, VsBytesSize, Layouts.GetData(), LayoutNum);
+                        delete[] VsBytes;
                     }
                 }
 
-                // Auto-import PS from raw bytecode when the .PAsset doesn't exist yet.
+                // Auto-import PS from raw bytecode — always re-import in editor so stale
+                // .PAsset files get refreshed whenever the compiled bytecode changes.
                 if (PsFile.Length() > 0u)
                 {
-                    EString PsAssetPath = InLoadPath + PsName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-                    if (!EFileHelper::IsFileExists(PsAssetPath))
+                    void* PsBytes = nullptr; ULONG PsBytesSize = 0u;
+                    EString RawPsPath = InLoadPath + PsFile;
+                    if (EFileHelper::ReadFileAsBinary(RawPsPath, PsBytes, PsBytesSize))
                     {
-                        void* PsBytes = nullptr; ULONG PsBytesSize = 0u;
-                        EString RawPsPath = InLoadPath + PsFile;
-                        if (EFileHelper::ReadFileAsBinary(RawPsPath, PsBytes, PsBytesSize))
-                        {
-                            EShaderAssetManager::GetManagerSingleton()->ImportPixelShaderFromBytes(
-                                PsName, InLoadPath, PsBytes, PsBytesSize);
-                            delete[] PsBytes;
-                        }
+                        EShaderAssetManager::GetManagerSingleton()->ImportPixelShaderFromBytes(
+                            PsName, InLoadPath, PsBytes, PsBytesSize);
+                        delete[] PsBytes;
                     }
                 }
 #endif
@@ -341,7 +366,8 @@ namespace PigeonEngine
         const EString& InLoadName,
         const EString& InSourceDir,
         const EString& InShaderIncludeDir,
-        const EMaterialAsset*& OutMaterial)
+        const EMaterialAsset*& OutMaterial,
+        BOOL32         bEmitDebugInfo)
     {
         // Output path for this material's manifest: <OutputDir>/<Name>/<Name>.mat.json
         EString MatOutputDir = InOutputDir + InLoadName + "/";
@@ -423,6 +449,8 @@ namespace PigeonEngine
                 "--shader-include \"" + *InShaderIncludeDir + "\" " +
                 "--material \"" + InLoadName + "\" " +
                 "--dx11";
+            if (bEmitDebugInfo)
+                CmdLine += " --debug";
 
             PE_LOG_LOG(EString("[MaterialCompiler] Running: ") + CmdLine);
 

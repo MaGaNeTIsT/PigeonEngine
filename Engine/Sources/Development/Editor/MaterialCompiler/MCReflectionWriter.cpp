@@ -107,13 +107,13 @@ bool MCReflectionWriter::Write(const MCReflectionInput& In, const std::string& O
     // Input layout
     {
         Value ilArr(kArrayType);
-        for (auto& attr : In.VF->Attributes)
+        for (auto& inp : In.VF->Inputs)
         {
             Value il(kObjectType);
-            il.AddMember("semantic",   Value(attr.Semantic.c_str(), alloc), alloc);
-            il.AddMember("index",      attr.Index,                          alloc);
-            il.AddMember("format",     Value("FLOAT", alloc),               alloc);
-            il.AddMember("components", attr.Num,                            alloc);
+            il.AddMember("semantic", Value(inp.Semantic.c_str(), alloc), alloc);
+            il.AddMember("index",    inp.Index,                          alloc);
+            il.AddMember("format",   Value(inp.Format.c_str(), alloc),   alloc);
+            il.AddMember("slot",     inp.Slot,                           alloc);
             ilArr.PushBack(il, alloc);
         }
         doc.AddMember("input_layout", ilArr, alloc);

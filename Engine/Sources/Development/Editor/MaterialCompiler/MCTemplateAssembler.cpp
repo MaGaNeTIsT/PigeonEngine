@@ -1,4 +1,5 @@
 #include "MCTemplateAssembler.h"
+#include <cctype>
 #include <fstream>
 #include <sstream>
 
@@ -24,6 +25,52 @@ void MCTemplateAssembler::ReplaceToken(std::string& Src, const std::string& Toke
     }
 }
 
+std::string MCTemplateAssembler::BuildAttributeStruct(const MCVertexFactory& VF)
+{
+    // Map format string to HLSL scalar/vector type.
+    // "FLOAT4" -> "float4", "FLOAT2" -> "float2", "FLOAT1" -> "float",
+    // "UINT4"  -> "uint4",  "INT4"   -> "int4", etc.
+    auto HlslType = [](const std::string& fmt) -> std::string
+    {
+        std::string base;
+        size_t digitPos = 0;
+        if      (fmt.rfind("FLOAT", 0) == 0) { base = "float"; digitPos = 5; }
+        else if (fmt.rfind("UINT",  0) == 0) { base = "uint";  digitPos = 4; }
+        else if (fmt.rfind("INT",   0) == 0) { base = "int";   digitPos = 3; }
+        else return "float4";
+
+        if (digitPos < fmt.size() && fmt[digitPos] >= '2' && fmt[digitPos] <= '4')
+            return base + fmt[digitPos];
+        return base; // FLOAT1 or bare FLOAT -> "float"
+    };
+
+    // "POSITION" + 0 -> "Position0"  (capitalize first, lowercase rest, append index)
+    auto FieldName = [](const std::string& semantic, int index) -> std::string
+    {
+        std::string name;
+        if (!semantic.empty())
+        {
+            name += (char)::toupper((unsigned char)semantic[0]);
+            for (size_t i = 1; i < semantic.size(); ++i)
+                name += (char)::tolower((unsigned char)semantic[i]);
+        }
+        name += std::to_string(index);
+        return name;
+    };
+
+    std::ostringstream ss;
+    ss << "#define _VF_ATTRIBUTE_STRUCT_DEFINED\n";
+    ss << "struct Attribute\n{\n";
+    for (auto& inp : VF.Inputs)
+    {
+        ss << "    " << HlslType(inp.Format) << "  "
+           << FieldName(inp.Semantic, inp.Index) << "\t: "
+           << inp.Semantic << inp.Index << ";\n";
+    }
+    ss << "};\n";
+    return ss.str();
+}
+
 std::string MCTemplateAssembler::BuildDefineBlock(
     const MCVertexFactory& VF,
     const MCMaterial&      Mat,
@@ -31,11 +78,16 @@ std::string MCTemplateAssembler::BuildDefineBlock(
     const MCVariant&       Variant)
 {
     std::ostringstream ss;
-    // 1. VF attribute defines
-    for (auto& a : VF.Attributes)
+    // 1. Input defines — derived from each input entry's semantic and format
+    //    Name : SHADER_USE_{SEMANTIC}_INPUT
+    //    Value: component count parsed from the last char of Format ("FLOAT4"->4, "FLOAT2"->2)
+    for (auto& inp : VF.Inputs)
     {
-        ss << "#define " << a.Define << " " << a.Num << "\n";
-        ss << "#define " << a.Define << "_NUM " << a.Num << "\n";
+        int num = (!inp.Format.empty() && inp.Format.back() >= '1' && inp.Format.back() <= '4')
+                  ? (inp.Format.back() - '0') : 4;
+        std::string defineName = "SHADER_USE_" + inp.Semantic + "_INPUT";
+        ss << "#define " << defineName       << " " << num << "\n";
+        ss << "#define " << defineName << "_NUM " << num << "\n";
     }
     // 2. VF defines
     for (auto& d : VF.Defines)
@@ -43,10 +95,10 @@ std::string MCTemplateAssembler::BuildDefineBlock(
     // 3. Material defines
     for (auto& d : Mat.Defines)
         ss << "#define " << d.Name << " " << d.Value << "\n";
-    // 3. Pass defines
+    // 4. Pass defines
     for (auto& d : Pass.Defines)
         ss << "#define " << d.Name << " " << d.Value << "\n";
-    // 4. Variant defines (last — can override)
+    // 5. Variant defines (last — can override)
     for (auto& d : Variant.Defines)
         ss << "#define " << d.Name << " " << d.Value << "\n";
     return ss.str();
@@ -97,6 +149,7 @@ bool MCTemplateAssembler::Assemble(
 
     // Pass 1 — token substitution
     std::string src = m_TemplateSource;
+    ReplaceToken(src, "{VF_ATTRIBUTE_STRUCT}",   BuildAttributeStruct(VF));
     ReplaceToken(src, "{VF_VS_FUNCTIONS}",       VF.HlslVSFunctions);
     ReplaceToken(src, "{VF_VS_CODE}",            VF.HlslVS);
     ReplaceToken(src, "{VARYING_STRUCT}",        VF.VaryingStruct);

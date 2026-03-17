@@ -50,6 +50,7 @@ private:
         const MCShaderPass&    Pass,
         const MCVariant&       Variant);
 
+    static std::string BuildAttributeStruct(const MCVertexFactory& VF);
     static std::string BuildCBDecl(const MCMaterial& Mat, int Slot);
     static std::string BuildTextureDecl(const MCMaterial& Mat, int SRVStart, int SamplerStart);
 

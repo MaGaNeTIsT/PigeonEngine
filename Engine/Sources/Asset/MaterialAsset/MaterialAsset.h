@@ -42,9 +42,10 @@ namespace PigeonEngine
 
     struct EMaterialInputLayoutRefl
     {
-        EString Semantic;
-        UINT32  Index       = 0u;
-        UINT32  Components;
+        EString Semantic;           // e.g. "POSITION", "NORMAL"
+        UINT32  Index   = 0u;       // semantic index
+        EString Format;             // e.g. "FLOAT4", "FLOAT2", "UINT4" — encodes type and component count
+        UINT32  Slot    = 0u;       // vertex buffer input slot
     };
 
     struct EMaterialReflection
@@ -121,7 +122,8 @@ namespace PigeonEngine
             const EString& InLoadName,
             const EString& InSourceDir,
             const EString& InShaderIncludeDir,
-            const EMaterialAsset*& OutMaterial);
+            const EMaterialAsset*& OutMaterial,
+            BOOL32         bEmitDebugInfo = FALSE);
 #endif
 
     private:

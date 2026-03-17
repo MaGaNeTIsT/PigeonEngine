@@ -159,7 +159,8 @@ namespace PigeonEngine
         }
     }
 
-    static CHAR s_MatNameBuf[256] = {};
+    static CHAR s_MatNameBuf[256]  = {};
+    static bool s_EmitShaderDebug  = false;
 
     static bool DrawCBFieldEditor(const EMaterialCBField& Field, TArray<BYTE>& Data, int UniqueId)
     {
@@ -311,10 +312,13 @@ namespace PigeonEngine
                         EString(s_MatNameBuf),
                         EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
                         EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-                        NewMat);
+                        NewMat,
+                        s_EmitShaderDebug ? TRUE : FALSE);
                     SetMaterialAsset(static_cast<UINT32>(i), NewMat);
                     RebuildEditorSlotState(static_cast<UINT32>(i));
                 }
+                ImGui::SameLine();
+                ImGui::Checkbox("Shader Debug", &s_EmitShaderDebug);
                 ImGui::SameLine();
                 if (ImGui::Button("Clear"))
                 {

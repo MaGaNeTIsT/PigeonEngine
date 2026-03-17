@@ -1,10 +1,10 @@
 {
     "name": "StaticMeshVF",
-    "attributes": [
-        { "semantic": "POSITION", "index": 0, "define": "SHADER_USE_POSITION_INPUT", "num": 4 },
-        { "semantic": "NORMAL",   "index": 0, "define": "SHADER_USE_NORMAL_INPUT",   "num": 4 },
-        { "semantic": "TEXCOORD", "index": 0, "define": "SHADER_USE_TEXCOORD_INPUT", "num": 2 },
-        { "semantic": "TANGENT",  "index": 0, "define": "SHADER_USE_TANGENT_INPUT",  "num": 4 }
+    "input": [
+        { "semantic": "POSITION", "index": 0, "format": "FLOAT4", "slot": 0 },
+        { "semantic": "NORMAL",   "index": 0, "format": "FLOAT4", "slot": 1 },
+        { "semantic": "TEXCOORD", "index": 0, "format": "FLOAT2", "slot": 2 },
+        { "semantic": "TANGENT",  "index": 0, "format": "FLOAT4", "slot": 3 }
     ],
     "defines": [
         { "name": "POSITION_SCALE", "value": 1 }

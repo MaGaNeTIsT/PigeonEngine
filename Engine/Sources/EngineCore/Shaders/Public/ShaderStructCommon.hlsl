@@ -1,6 +1,7 @@
 #ifndef _SHADER_STRUCT_COMMON_HLSL
 #define _SHADER_STRUCT_COMMON_HLSL
 
+#ifndef _VF_ATTRIBUTE_STRUCT_DEFINED
 struct Attribute
 {
 #if (SHADER_USE_POSITION_INPUT)
@@ -113,6 +114,7 @@ struct Attribute
 #endif	//SHADER_SKELETON_EFFECT_BONE_NUM
 #endif	//SHADER_USE_SKELETON_INPUT
 };
+#endif	//_VF_ATTRIBUTE_STRUCT_DEFINED
 
 struct ShadingLightParams
 {

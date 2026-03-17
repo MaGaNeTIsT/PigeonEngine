@@ -11,18 +11,18 @@ struct MCDefine
     int         Value = 1;
 };
 
-struct MCVFAttribute
+struct MCVFInput
 {
-    std::string Semantic;
-    int         Index  = 0;
-    std::string Define;
-    int         Num    = 1;
+    std::string Semantic;   // e.g. "POSITION", "NORMAL"
+    int         Index = 0;  // semantic index
+    std::string Format;     // e.g. "FLOAT4", "FLOAT2", "UINT4"
+    int         Slot  = 0;  // vertex buffer input slot
 };
 
 struct MCVertexFactory
 {
     std::string                Name;
-    std::vector<MCVFAttribute> Attributes;
+    std::vector<MCVFInput>     Inputs;
     std::vector<MCDefine>      Defines;
     std::string                HlslVS;
     std::string                HlslVSFunctions;

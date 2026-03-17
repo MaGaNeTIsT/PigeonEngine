@@ -46,15 +46,16 @@ bool ParseVertexFactory(const std::string& JsonPath, MCVertexFactory& Out, std::
     if (!ParseDoc(raw, doc, OutError)) return false;
 
     Out.Name = doc["name"].GetString();
-    for (auto& a : doc["attributes"].GetArray())
-    {
-        MCVFAttribute attr;
-        attr.Semantic = a["semantic"].GetString();
-        attr.Index    = a["index"].GetInt();
-        attr.Define   = a["define"].GetString();
-        attr.Num      = a["num"].GetInt();
-        Out.Attributes.push_back(std::move(attr));
-    }
+    if (doc.HasMember("input"))
+        for (auto& i : doc["input"].GetArray())
+        {
+            MCVFInput inp;
+            inp.Semantic = i["semantic"].GetString();
+            inp.Index    = i["index"].GetInt();
+            inp.Format   = i["format"].GetString();
+            inp.Slot     = i.HasMember("slot") ? i["slot"].GetInt() : 0;
+            Out.Inputs.push_back(std::move(inp));
+        }
     std::string dir = JsonPath.substr(0, JsonPath.find_last_of("/\\") + 1);
     if (doc.HasMember("defines"))
         for (auto& d : doc["defines"].GetArray())
