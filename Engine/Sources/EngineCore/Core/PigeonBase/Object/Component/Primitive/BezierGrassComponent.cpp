@@ -46,6 +46,278 @@ namespace PigeonEngine
 
         MarkAsDirty(PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_ASSET);
     }
+#if 0
+    void InitIndices(const TArray<uint32>& InBodyParts, bool InIsSplitBentPart) noexcept
+    {
+        const int32 NumLODs = InBodyParts.Num();
+        check(NumLODs > 0);
+
+        bSplitBentPart = InIsSplitBentPart;
+        IndexData.Reset();
+        BodyParts.Reset();
+        BodyParts.Append(InBodyParts);
+        NumIndices = 0;
+        NumLODIndices.Reset();
+        IndexOffsets.Reset();
+
+        auto GenerateLODIndices = [InIsSplitBentPart](const TArray<uint32>& InBodyParts, uint32 InLODIndex, TArray<uint16>& OutIndices, int32& OutNumIndices)->void
+        {
+            const uint32 UsedBodyParts = InBodyParts[InLODIndex];
+
+            const uint32 NumFirstParts = InIsSplitBentPart ? ((UsedBodyParts + 1) / 2) : UsedBodyParts;
+            const uint32 NumSecondParts = UsedBodyParts - NumFirstParts;
+
+            const uint32 NumTriangles = UsedBodyParts * 2 + 1;
+
+            OutNumIndices = (int32)NumTriangles * 3;
+            OutIndices.Reset();
+            OutIndices.Reserve(OutNumIndices);
+
+            for (uint32 PartIndex = 0; PartIndex < NumFirstParts; PartIndex++)
+            {
+                OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 0));
+                OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 0));
+                OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 1));
+                OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 0));
+                OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 1));
+                OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 1));
+            }
+
+            if (NumSecondParts > 0)
+            {
+                const uint32 StartVertexIndex = NumFirstParts * 2 + 2;
+                for (uint32 PartIndex = 0; PartIndex < NumSecondParts; PartIndex++)
+                {
+                    OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 0 + StartVertexIndex));
+                    OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 0 + StartVertexIndex));
+                    OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 1 + StartVertexIndex));
+                    OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 0 + StartVertexIndex));
+                    OutIndices.Add(static_cast<uint16>((PartIndex + 1) * 2 + 1 + StartVertexIndex));
+                    OutIndices.Add(static_cast<uint16>(PartIndex * 2 + 1 + StartVertexIndex));
+                }
+            }
+
+            const uint32 UsedNumVertices = InIsSplitBentPart ? (UsedBodyParts * 2 + 5) : (UsedBodyParts * 2 + 3);
+            OutIndices.Add(static_cast<uint16>(UsedNumVertices - 3));
+            OutIndices.Add(static_cast<uint16>(UsedNumVertices - 1));
+            OutIndices.Add(static_cast<uint16>(UsedNumVertices - 2));
+        };
+
+        TArray<TArray<uint16>> LODIndices;
+        LODIndices.Reserve(NumLODs);
+        NumLODIndices.Reserve(NumLODs);
+        IndexOffsets.Reserve(NumLODs);
+        for (int32 LODIndex = 0; LODIndex < NumLODs; LODIndex++)
+        {
+            TArray<uint16>& Indices = LODIndices.AddDefaulted_GetRef();
+            int32 CurrentNumIndices = 0;
+            GenerateLODIndices(BodyParts, (uint32)LODIndex, Indices, CurrentNumIndices);
+            NumLODIndices.Add(CurrentNumIndices);
+            IndexOffsets.Add(NumIndices);
+            NumIndices += CurrentNumIndices;
+        }
+
+        IndexData.Reserve(NumIndices);
+        for (int32 LODIndex = 0, UsedNumLODs = LODIndices.Num(); LODIndex < UsedNumLODs; LODIndex++)
+        {
+            IndexData.Append(LODIndices[LODIndex]);
+        }
+    }
+    void InitPosition(const TArray<uint32>& InBodyParts, bool InIsSplitBentPart) noexcept
+    {
+        constexpr float T15BitFloat = (float)(0x7fffu);
+        constexpr float T14BitFloat = (float)(0x3fffu);
+
+        if (!VertexData)
+        {
+            VertexData = new TStaticMeshVertexData<FBezierGrassPositionVertex>{ false };
+        }
+
+        const int32 NumLODs = InBodyParts.Num();
+        check(NumLODs > 0);
+
+        bSplitBentPart = InIsSplitBentPart;
+        BodyParts.Reset();
+        BodyParts.Append(InBodyParts);
+        NumVertices = 0;
+        NumLODVertices.Reset();
+        VertexOffsets.Reset();
+        BentBezierTs.Reset();
+
+        struct FRawPositionData
+        {
+            float	TParam = 0.0f;
+            float	PrevTParam = 0.0f;
+            bool	bSecondPart = false;
+        };
+
+        auto GenerateLODTVertices = [InIsSplitBentPart](const TArray<uint32>& InBodyParts, uint32 InLODIndex, TArray<FRawPositionData>& OutTVertices, int32& OutNumVertices, float& OutMidT)->void
+        {
+            const uint32 UsedNumLODs = (uint32)(InBodyParts.Num());
+            const uint32 UsedBodyParts = InBodyParts[InLODIndex];
+            const bool bGeneratePrevT = (InLODIndex < (UsedNumLODs - 1)) && (UsedBodyParts > BezierGrass::MinBodyParts);
+
+            const uint32 NumFirstParts = InIsSplitBentPart ? ((UsedBodyParts + 1) / 2) : UsedBodyParts;
+            const uint32 NumSecondParts = UsedBodyParts - NumFirstParts;
+            const uint32 UsedNumVertices = InIsSplitBentPart ? (UsedBodyParts * 2 + 5) : (UsedBodyParts * 2 + 3);
+
+            OutNumVertices = UsedNumVertices;
+            OutMidT = 0.0f;
+            OutTVertices.Reset();
+            OutTVertices.Reserve((int32)UsedNumVertices);
+
+            TArray<float> PrevTFirstVertices;
+            TArray<float> PrevTSecondVertices;
+            if (bGeneratePrevT)
+            {
+                const uint32 NumPrevTParts = InBodyParts[InLODIndex + 1];
+                const uint32 NumTs = NumPrevTParts + 2;
+                const uint32 NumPrevTFirstParts = InIsSplitBentPart ? ((NumPrevTParts + 1) / 2) : NumPrevTParts;
+                const uint32 NumPrevTSecondParts = NumPrevTParts - NumPrevTFirstParts;
+
+                PrevTFirstVertices.Reserve((int32)NumPrevTFirstParts + 1);
+                for (uint32 PartIndex = 0, NumParts = NumPrevTFirstParts + 1; PartIndex < NumParts; PartIndex++)
+                {
+                    const float TParam = ((float)PartIndex) / ((float)(NumTs - 1));
+                    PrevTFirstVertices.Add(TParam);
+                }
+
+                PrevTSecondVertices.Reserve((int32)NumPrevTSecondParts + 1);
+                for (uint32 PartIndex = 0, NumParts = NumPrevTSecondParts + 1; PartIndex < NumParts; PartIndex++)
+                {
+                    const float TParam = ((float)(PartIndex + NumPrevTFirstParts)) / ((float)(NumTs - 1));
+                    PrevTSecondVertices.Add(TParam);
+                }
+            }
+
+            // First Part
+            {
+                const FRawPositionData CurrentTParam{ 0.0f, 0.0f, false };
+
+                OutTVertices.Add(CurrentTParam);
+                OutTVertices.Add(CurrentTParam);
+            }
+            for (uint32 PartIndex = 0; PartIndex < NumFirstParts; PartIndex++)
+            {
+                const float TParam = ((float)(PartIndex + 1)) / ((float)(UsedBodyParts + 1));
+
+                float PrevTParam = TParam;
+                if (bGeneratePrevT && (PartIndex != (NumFirstParts - 1)))
+                {
+                    float ClosestTDist = 1.0f;
+                    int32 ClosestTDistIndex = 0;
+                    for (int32 PrevTIndex = 0, NumPrevTs = PrevTFirstVertices.Num(); PrevTIndex < NumPrevTs; PrevTIndex++)
+                    {
+                        float TParamDist = FMath::Abs(TParam - PrevTFirstVertices[PrevTIndex]);
+                        if (TParamDist < ClosestTDist)
+                        {
+                            ClosestTDist = TParamDist;
+                            ClosestTDistIndex = PrevTIndex;
+                        }
+                    }
+                    PrevTParam = PrevTFirstVertices[ClosestTDistIndex];
+                }
+
+                const FRawPositionData CurrentTParam{ TParam, PrevTParam, false };
+
+                OutTVertices.Add(CurrentTParam);
+                OutTVertices.Add(CurrentTParam);
+            }
+
+            // Second Part
+            if (NumSecondParts > 0)
+            {
+                {
+                    const FRawPositionData CurrentTParam{ OutTVertices.Last().TParam, OutTVertices.Last().PrevTParam, true };
+
+                    OutMidT = FMath::FloorToFloat(CurrentTParam.TParam * T15BitFloat) / T15BitFloat;
+
+                    OutTVertices.Add(CurrentTParam);
+                    OutTVertices.Add(CurrentTParam);
+                }
+                for (uint32 PartIndex = 0; PartIndex < NumSecondParts; PartIndex++)
+                {
+                    const float TParam = ((float)(PartIndex + NumFirstParts + 1)) / ((float)(UsedBodyParts + 1));
+
+                    float PrevTParam = TParam;
+                    if (bGeneratePrevT && (PartIndex != (NumSecondParts - 1)))
+                    {
+                        float ClosestTDist = 1.0f;
+                        int32 ClosestTDistIndex = 0;
+                        for (int32 PrevTIndex = 0, NumPrevTs = PrevTSecondVertices.Num(); PrevTIndex < NumPrevTs; PrevTIndex++)
+                        {
+                            float TParamDist = FMath::Abs(TParam - PrevTSecondVertices[PrevTIndex]);
+                            if (TParamDist < ClosestTDist)
+                            {
+                                ClosestTDist = TParamDist;
+                                ClosestTDistIndex = PrevTIndex;
+                            }
+                        }
+                        PrevTParam = PrevTSecondVertices[ClosestTDistIndex];
+                    }
+
+                    const FRawPositionData CurrentTParam{ TParam, PrevTParam, true };
+
+                    OutTVertices.Add(CurrentTParam);
+                    OutTVertices.Add(CurrentTParam);
+                }
+            }
+
+            // Tip
+            OutTVertices.Add(FRawPositionData{ 1.0f, 1.0f, true });
+        };
+        auto GenerateLODVertices = [](const TArray<FRawPositionData>& InTVertices, TArray<FBezierGrassPositionVertex>& OutVertices)->void
+        {
+            OutVertices.Reset();
+            OutVertices.Reserve(InTVertices.Num());
+            for (int32 VertexIndex = 0, UsedNumVertices = InTVertices.Num(); VertexIndex < UsedNumVertices; VertexIndex++)
+            {
+                const bool bPosiOffset = (VertexIndex & 0x1) == 0;
+                const FRawPositionData& VertexRawData = InTVertices[VertexIndex];
+                const float TargetT = VertexRawData.TParam;
+                const float PrevT = VertexRawData.PrevTParam;
+                const bool bSecondPart = VertexRawData.bSecondPart;
+                FBezierGrassPositionVertex& VertexData = OutVertices.AddDefaulted_GetRef();
+                VertexData.Position =
+                    (((uint32)(TargetT * T15BitFloat)) << 17u) |
+                    (((uint32)(PrevT * T14BitFloat)) << 3u) |
+                    (bSecondPart ? 0x4u : 0x0u) |
+                    (bPosiOffset ? 0x2u : 0x0u);
+            }
+            const uint32 LastPosition = OutVertices.Last().Position;
+            OutVertices.Last().Position = ((LastPosition >> 2u) << 2u) | 0x1u;
+        };
+
+        TArray<TArray<FRawPositionData>> LODTVertices;
+        LODTVertices.Reserve(NumLODs);
+        NumLODVertices.Reserve(NumLODs);
+        VertexOffsets.Reserve(NumLODs);
+        BentBezierTs.Reserve(NumLODs);
+        for (int32 LODIndex = 0; LODIndex < NumLODs; LODIndex++)
+        {
+            TArray<FRawPositionData>& TVertices = LODTVertices.AddDefaulted_GetRef();
+            int32 CurrentNumVertices = 0;
+            float CurrentMidT = 0.0f;
+            GenerateLODTVertices(BodyParts, (uint32)LODIndex, TVertices, CurrentNumVertices, CurrentMidT);
+            NumLODVertices.Add(CurrentNumVertices);
+            VertexOffsets.Add(NumVertices);
+            BentBezierTs.Add(CurrentMidT);
+            NumVertices += CurrentNumVertices;
+        }
+
+        TArray<FBezierGrassPositionVertex> FinalVertices;
+        FinalVertices.Reserve(NumVertices);
+        for (int32 LODIndex = 0, UsedNumLODs = LODTVertices.Num(); LODIndex < UsedNumLODs; LODIndex++)
+        {
+            TArray<FBezierGrassPositionVertex> Vertices{};
+            GenerateLODVertices(LODTVertices[LODIndex], Vertices);
+            FinalVertices.Append(MoveTemp(Vertices));
+        }
+
+        VertexData->ResizeBuffer(NumVertices, EResizeBufferFlags::None);
+        FMemory::Memcpy(VertexData->GetDataPointer(), FinalVertices.GetData(), sizeof(FBezierGrassPositionVertex) * NumVertices);
+    }
+#endif
     void PBezierGrassComponent::GenerateInstanceData(const Vector3& InOrigin, FLOAT InBaseHeight, FLOAT InOffsetHeight, FLOAT InLengthX, FLOAT InLengthZ, UINT32 InNumX, UINT32 InNumZ)
     {
         if (InNumX == 0u || InNumZ == 0u || InLengthX < 1e-3f || InLengthZ < 1e-3f || InBaseHeight < 1e-3f || InOffsetHeight < 0.f)
