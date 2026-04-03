@@ -63,6 +63,7 @@ bool MCReflectionWriter::Write(const MCReflectionInput& In, const std::string& O
                 field.AddMember("offset", offset,                        alloc);
                 field.AddMember("size",   sz,                            alloc);
                 field.AddMember("type",   Value(f.Type.c_str(), alloc), alloc);
+                field.AddMember("is_color", f.IsColor,                   alloc);
                 fields.PushBack(field, alloc);
                 offset += sz;
                 total  += sz;
@@ -85,24 +86,62 @@ bool MCReflectionWriter::Write(const MCReflectionInput& In, const std::string& O
             srv.AddMember("slot", slot++, alloc);
             srvArr.PushBack(srv, alloc);
         }
+        for (auto& buf : In.Mat->Buffers)
+        {
+            if (buf.Type.rfind("RW", 0) != 0)
+            {
+                Value srv(kObjectType);
+                srv.AddMember("name", Value(buf.Name.c_str(), alloc), alloc);
+                srv.AddMember("slot", slot++, alloc);
+                srvArr.PushBack(srv, alloc);
+            }
+        }
         doc.AddMember("srvs", srvArr, alloc);
     }
 
-    // Samplers
+    // Samplers — use slot mapping computed during HLSL assembly.
+    // Engine-global samplers (s0-s3) get their actual engine slot; custom ones get s4+.
     {
         Value sampArr(kArrayType);
-        int slot = kMaterialSamplerStartSlot;
-        for (auto& samp : In.Mat->Samplers)
+        for (auto& eng : In.Slots.EngineSamplers)
         {
             Value s(kObjectType);
-            s.AddMember("name", Value(samp.Name.c_str(), alloc), alloc);
-            s.AddMember("slot", slot++, alloc);
+            s.AddMember("name",          Value(eng.SamplerName.c_str(), alloc), alloc);
+            s.AddMember("slot",          eng.EngineSlot,                        alloc);
+            s.AddMember("filter",        Value(eng.Filter.c_str(), alloc),      alloc);
+            s.AddMember("address",       Value(eng.Address.c_str(), alloc),     alloc);
+            s.AddMember("engine_global", true,                                  alloc);
+            sampArr.PushBack(s, alloc);
+        }
+        for (auto& cust : In.Slots.CustomSamplers)
+        {
+            Value s(kObjectType);
+            s.AddMember("name",          Value(cust.SamplerName.c_str(), alloc), alloc);
+            s.AddMember("slot",          cust.Slot,                              alloc);
+            s.AddMember("filter",        Value(cust.Filter.c_str(), alloc),      alloc);
+            s.AddMember("address",       Value(cust.Address.c_str(), alloc),     alloc);
+            s.AddMember("engine_global", false,                                  alloc);
             sampArr.PushBack(s, alloc);
         }
         doc.AddMember("samplers", sampArr, alloc);
     }
 
-    doc.AddMember("uavs", Value(kArrayType), alloc);
+    // UAVs
+    {
+        Value uavArr(kArrayType);
+        int slot = kMaterialUAVStartSlot;
+        for (auto& buf : In.Mat->Buffers)
+        {
+            if (buf.Type.rfind("RW", 0) == 0)
+            {
+                Value uav(kObjectType);
+                uav.AddMember("name", Value(buf.Name.c_str(), alloc), alloc);
+                uav.AddMember("slot", slot++, alloc);
+                uavArr.PushBack(uav, alloc);
+            }
+        }
+        doc.AddMember("uavs", uavArr, alloc);
+    }
 
     // Input layout
     {

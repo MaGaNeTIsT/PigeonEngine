@@ -1,3 +1,8 @@
+#ifndef _SHALLOW_WATERE_QUATION_INTEGRATE_HEIGHT_PE_CS_HLSL
+#define _SHALLOW_WATERE_QUATION_INTEGRATE_HEIGHT_PE_CS_HLSL
+
+#if 0
+
 #define VelocityHeightFoamTex			UCGInput0
 #define GroundTex						UCGInput1
 #define OutIntegrateHeight				UCGOutput0
@@ -166,4 +171,11 @@ void MainPS(in float4 Position : SV_POSITION, in float2 UV : TEXCOORD0, out floa
 {
 	ComputeIntegrateHeight( int2( Position.xy ), OutColor );
 }
-
+#else
+[numthreads(8, 1, 1)]
+void main()
+{
+    
+}
+#endif	// 0
+#endif	// _SHALLOW_WATERE_QUATION_INTEGRATE_HEIGHT_PE_CS_HLSL

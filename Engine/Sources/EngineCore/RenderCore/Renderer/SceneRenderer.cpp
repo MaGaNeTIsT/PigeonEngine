@@ -267,10 +267,18 @@ namespace PigeonEngine
 	void RSceneRenderer::Render()
 	{
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
+		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
+		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
+		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
 		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
+		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
 
 		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
@@ -438,11 +446,8 @@ namespace PigeonEngine
 				continue;
 			}
 #endif
-			if (!(StaticMesh->IsSceneProxyHidden()))
-			{
-				StaticMesh->BindRenderResource();
-				StaticMesh->Draw();
-			}
+			StaticMesh->BindRenderResource();
+			StaticMesh->Draw();
 		}
 
 		// BezierGrass
@@ -462,20 +467,18 @@ namespace PigeonEngine
 				continue;
 			}
 #endif
-			if (!(BezierGrass->IsSceneProxyHidden()))
+			if (BezierGrass->Property.bWireframe)
 			{
-				if (BezierGrass->Property.bWireframe)
-				{
-					RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_WIREFRAME].RasterizerState);
-				}
-				else
-				{
-					RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_NONE].RasterizerState);
-				}
-				BezierGrass->BindRenderResource();
-				BezierGrass->Draw();
-				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
+				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_WIREFRAME].RasterizerState);
 			}
+			else
+			{
+				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_NONE].RasterizerState);
+			}
+			BezierGrass->DispatchComputeShader();
+			BezierGrass->BindRenderResource();
+			BezierGrass->Draw();
+			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
 		}
 
 		// Skeletal mesh part
@@ -495,11 +498,8 @@ namespace PigeonEngine
 				continue;
 			}
 #endif
-			if (!(SkeletalMesh->IsSceneProxyHidden()))
-			{
-				SkeletalMesh->BindRenderResource();
-				SkeletalMesh->Draw();
-			}
+			SkeletalMesh->BindRenderResource();
+			SkeletalMesh->Draw();
 		}
 	}
 	void RSceneRenderer::RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)

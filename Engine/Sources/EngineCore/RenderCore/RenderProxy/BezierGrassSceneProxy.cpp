@@ -1,6 +1,8 @@
 #include "BezierGrassSceneProxy.h"
 #include <ShaderAsset/ShaderAsset.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include <TextureAsset/TextureAsset.h>
+#include <RenderCommon.h>
 #include <array>
 #include <algorithm>
 
@@ -25,9 +27,9 @@ namespace PigeonEngine
 	}
 	void RBezierGrassMaterialParameter::AddBezierGrassMaterialParameter()
 	{
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassParams1"));
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassRootColor"));
 		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassTipColor"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassParams")); // BentBezierT, Roughness, Metallic, _pad
 	}
 
 	typedef UINT16 BEZIER_GRASS_INDEX_TYPE;
@@ -297,12 +299,23 @@ namespace PigeonEngine
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy(PBezierGrassComponent* InComponent)
 		: VertexShader(nullptr)
 		, PixelShader(nullptr)
+		, ComputeShader(nullptr)
 #if _EDITOR_ONLY
 		, DebugComputeShader(nullptr)
 		, DebugScreenComputeShader(nullptr)
 #endif
 		, Component(InComponent)
 		, Property(InComponent->Property)
+		, LayerTypeData(InComponent->LayerTypeData)
+		, TileAnchor(InComponent->TileAnchor)
+		, TileSize(InComponent->TileSize)
+		, NumTilesX(InComponent->NumTilesX)
+		, NumTilesZ(InComponent->NumTilesZ)
+		, WindDirection(InComponent->WindDirection)
+		, WindStrength(InComponent->WindStrength)
+		, LandscapeHeightTexture(nullptr)
+		, LayerIndexTexture(nullptr)
+		, DensityTexture(nullptr)
 	{
 		for (UINT32 LODIndex = 0, NumLODs = BEZIER_GRASS_LOD_NUM; LODIndex < NumLODs; LODIndex++)
 		{
@@ -310,8 +323,7 @@ namespace PigeonEngine
 			IndexOffset[LODIndex] = 0;
 			IndexCount[LODIndex] = 0;
 		}
-		InstanceData.Reset();
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create static mesh scene proxy failed"), (!!Component));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create bezier grass scene proxy failed"), (!!Component));
 	}
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy()
 		: VertexShader(nullptr), PixelShader(nullptr), Component(nullptr)
@@ -324,46 +336,46 @@ namespace PigeonEngine
 	RBezierGrassSceneProxy::~RBezierGrassSceneProxy()
 	{
 	}
-	void RBezierGrassSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices)
+	void RBezierGrassSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices)
 	{
 		SetupShaders();
 
-		SetPrimitiveSettings(InIsHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 
 		MaterialParameter.SetupParameters();
 
 		UpdateRenderResource();
 		SetupVertexIndexBuffer();
+		SetupComputeBuffers();
+		SetupComputeTextures();
+		SetupComputeConstantBuffer();
 	}
 	void RBezierGrassSceneProxy::UpdateProperty(const EBezierGrassProperty& InProperty)
 	{
 		Property = InProperty;
 		Property.LOD = BEZIER_GRASS_MAX_LOD_INDEX - InProperty.LOD;
 	}
-	void RBezierGrassSceneProxy::UpdateInstanceData(TArray<EBezierGrassInstanceData>&& InInstanceData)
+	void RBezierGrassSceneProxy::UpdateLayerTypeData(const EBezierGrassLayerTypeData& InLayerData)
 	{
-		if (InInstanceData.Num() > 0)
+		LayerTypeData = InLayerData;
+		if (LayerTypeBuffer.IsRenderResourceValid())
 		{
-			InstanceData.MoveFrom(EMemory::Forward<TArray<EBezierGrassInstanceData>>(InInstanceData));
+			LayerTypeBuffer.ReleaseRenderResource();
 		}
-		else
-		{
-			InstanceData.Empty();
-		}
-		if (InstanceBuffer.IsRenderResourceValid())
-		{
-			InstanceBuffer.ReleaseRenderResource();
-		}
-		if (InstanceData.Num() > 0)
-		{
-			RSubresourceDataDesc SubresDesc;
-			SubresDesc.pSysMem = InstanceData.GetData();
-			RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(InstanceBuffer,
-				RStructuredBufferDesc(sizeof(EBezierGrassInstanceData), InstanceData.Num<UINT32>(), TRUE),
-				&SubresDesc
-			);
-		}
+		SetupLayerTypeBuffer();
+	}
+	void RBezierGrassSceneProxy::UpdateTileParams(const Vector2& InTileAnchor, const Vector2& InTileSize, UINT32 InNumTilesX, UINT32 InNumTilesZ)
+	{
+		TileAnchor = InTileAnchor;
+		TileSize = InTileSize;
+		NumTilesX = InNumTilesX;
+		NumTilesZ = InNumTilesZ;
+	}
+	void RBezierGrassSceneProxy::UpdateWindParams(const Vector3& InWindDirection, FLOAT InWindStrength)
+	{
+		WindDirection = InWindDirection;
+		WindStrength = InWindStrength;
 	}
 	BOOL32 RBezierGrassSceneProxy::IsRenderValid()const
 	{
@@ -380,9 +392,9 @@ namespace PigeonEngine
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
 
-		MaterialParameter["_BezierGrassParams1"] = &TranslateUploadVectorType(Vector4(Property.LOD, Property.LeafWidth, 0.f, 0.f));
 		MaterialParameter["_BezierGrassRootColor"] = &TranslateUploadVectorType(Vector4(Property.RootColor.r, Property.RootColor.g, Property.RootColor.b, Property.RootColor.a));
 		MaterialParameter["_BezierGrassTipColor"] = &TranslateUploadVectorType(Vector4(Property.TipColor.r, Property.TipColor.g, Property.TipColor.b, Property.TipColor.a));
+		MaterialParameter["_BezierGrassParams"] = &TranslateUploadVectorType(Vector4(Property.BentBezierT, Property.Roughness, Property.Metallic, 0.f));
 
 		MaterialParameter.UploadBuffer();
 	}
@@ -523,26 +535,31 @@ namespace PigeonEngine
 	}
 	void RBezierGrassSceneProxy::SetupShaders()
 	{
-		const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-		const EString ImportVSName = EString("BezierGrass") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
-		const RInputLayoutDesc TempShaderInputLayouts[] =
+		if (!VertexShader && Component->MaterialAsset)
 		{
-			RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD0, sizeof(UINT8), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
-		};
-		if (!VertexShader)
-		{
-			constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-			TryLoadVertexShader(EBaseSettings::ENGINE_SHADER_PATH, ImportVSName,
-				VertexShader,
-				&ImportPath, &ImportVSName,
-				TempShaderInputLayouts, &TempShaderInputLayoutNum);
+			const EMaterialVariant* Variant = Component->MaterialAsset->GetFirstVariant();
+			if (Variant && Variant->VS)
+			{
+				VertexShader = Variant->VS;
+			}
 		}
-		if (!PixelShader)
+
+		if (!PixelShader && Component->MaterialAsset)
 		{
-			const EString ImportPSName = EString("BezierGrass") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, ImportPSName,
-				PixelShader,
-				&ImportPath, &ImportPSName);
+			const EMaterialVariant* Variant = Component->MaterialAsset->GetFirstVariant();
+			if (Variant && Variant->PS)
+			{
+				PixelShader = Variant->PS;
+			}
+		}
+
+		if (!ComputeShader && Component->ComputeMaterialAsset)
+		{
+			const EMaterialVariant* Variant = Component->ComputeMaterialAsset->GetFirstVariant();
+			if (Variant && Variant->CS)
+			{
+				ComputeShader = Variant->CS;
+			}
 		}
 	}
 	void RBezierGrassSceneProxy::BindVertexShader()const
@@ -606,13 +623,15 @@ namespace PigeonEngine
 			}
 
 			{
-				RenderDevice->BindVSShaderResourceView(InstanceBuffer.ShaderResourceView, 1);
+				RenderDevice->BindVSShaderResourceView(PackedInstanceBuffer.ShaderResourceView, 0);
+				RenderDevice->BindVSShaderResourceView(DispatchBuffer.ShaderResourceView, 1);
+				RenderDevice->BindVSShaderResourceView(LayerTypeBuffer.ShaderResourceView, 2);
 			}
 		}
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check static mesh scene proxy is invalid."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check bezier grass scene proxy is invalid."));
 		}
 #endif
 	}
@@ -634,28 +653,270 @@ namespace PigeonEngine
 		}
 #endif
 	}
+	void RBezierGrassSceneProxy::SetupLayerTypeBuffer()
+	{
+		TArray<FLOAT> LayerData;
+		LayerData.Reserve(27);
+
+		LayerData.Add(LayerTypeData.Facing.x);
+		LayerData.Add(LayerTypeData.Facing.y);
+		LayerData.Add(LayerTypeData.Facing.z);
+		LayerData.Add(LayerTypeData.Height.x);
+		LayerData.Add(LayerTypeData.Height.y);
+		LayerData.Add(LayerTypeData.Height.z);
+		LayerData.Add(LayerTypeData.Width.x);
+		LayerData.Add(LayerTypeData.Width.y);
+		LayerData.Add(LayerTypeData.Width.z);
+		LayerData.Add(LayerTypeData.Tilt.x);
+		LayerData.Add(LayerTypeData.Tilt.y);
+		LayerData.Add(LayerTypeData.Tilt.z);
+		LayerData.Add(LayerTypeData.Bend.x);
+		LayerData.Add(LayerTypeData.Bend.y);
+		LayerData.Add(LayerTypeData.Bend.z);
+		LayerData.Add(LayerTypeData.MidPointT.x);
+		LayerData.Add(LayerTypeData.MidPointT.y);
+		LayerData.Add(LayerTypeData.MidPointT.z);
+
+		UINT32 Flags = (LayerTypeData.bBent ? 0x1u : 0x0u) | (LayerTypeData.bUseFacing ? 0x2u : 0x0u);
+		LayerData.Add(*reinterpret_cast<FLOAT*>(&Flags));
+
+		for (INT32 i = 0; i < 8; i++)
+		{
+			LayerData.Add(LayerTypeData.SideCurve[i]);
+		}
+
+		RSubresourceDataDesc SubresDesc;
+		SubresDesc.pSysMem = LayerData.GetData();
+		RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(LayerTypeBuffer,
+			RStructuredBufferDesc(sizeof(FLOAT), LayerData.Num(), TRUE), &SubresDesc);
+	}
+	void RBezierGrassSceneProxy::SetupComputeTextures()
+	{
+		if (!LandscapeHeightTexture)
+		{
+			EString ImportPath(GetEngineDefaultTexturePath(RDefaultTextureType::TEXTURE2D_BLACK));
+			EString TexName(GetEngineDefaultTextureName(RDefaultTextureType::TEXTURE2D_BLACK));
+			EString ImportFileType("png");
+			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, TexName, LandscapeHeightTexture, &ImportPath, &TexName, &ImportFileType);
+		}
+
+		if (!LayerIndexTexture)
+		{
+			EString ImportPath(GetEngineDefaultTexturePath(RDefaultTextureType::TEXTURE2D_BLACK));
+			EString TexName(GetEngineDefaultTextureName(RDefaultTextureType::TEXTURE2D_BLACK));
+			EString ImportFileType("png");
+			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, TexName, LayerIndexTexture, &ImportPath, &TexName, &ImportFileType);
+		}
+
+		if (!DensityTexture)
+		{
+			EString ImportPath(GetEngineDefaultTexturePath(RDefaultTextureType::TEXTURE2D_WHITE));
+			EString TexName(GetEngineDefaultTextureName(RDefaultTextureType::TEXTURE2D_WHITE));
+			EString ImportFileType("png");
+			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, TexName, DensityTexture, &ImportPath, &TexName, &ImportFileType);
+		}
+	}
+	void RBezierGrassSceneProxy::SetupComputeConstantBuffer()
+	{
+		if (ComputeConstantBuffer.IsRenderResourceValid())
+		{
+			ComputeConstantBuffer.ReleaseRenderResource();
+		}
+
+		struct BezierGrassConstructParams
+		{
+			Vector4 CurrentTimeParams;
+			Vector4 PreviousTimeParams;
+			UINT32 LayerTypeElemsBaseCustomTotalNumTypes[4];
+			UINT32 RandomSeedParams[4];
+			UINT32 RandomSeedNumAllocatedLODMaxNumInstances[4];
+			Vector4 TileAnchorSize;
+			UINT32 TileXYNumTiles[4];
+			UINT32 SubTileXYNumSubTiles[4];
+			Vector4 SubTileSizeBorderSize;
+			Vector4 GlobalWindDirectionStrength;
+			Vector4 DensityScaleWindStrengthRange;
+			UINT32 MaskXYNumInstances[4];
+			UINT32 LODBodyPart1[4];
+			UINT32 LODBodyPart2[4];
+			UINT32 IndexOffset1[4];
+			UINT32 IndexOffset2[4];
+			UINT32 VertexOffset1[4];
+			UINT32 VertexOffset2[4];
+			Vector4 LODDistancesSq1;
+			Vector4 LODDistancesSq2;
+			UINT32 HeightMapWorldScaleOffsetBorderPixelSize[4];
+			UINT32 LayerBorderPixelSizeDensityBorderPixelSize[4];
+			Vector4 PreViewTranslationHigh;
+			Vector4 PreViewTranslationLow;
+			Vector4 ViewFrustumPlane0;
+			Vector4 ViewFrustumPlane1;
+			Vector4 ViewFrustumPlane2;
+			Vector4 ViewFrustumPlane3;
+			Vector4 ViewFrustumPlane4;
+		};
+
+		BezierGrassConstructParams Params = {};
+		Params.LayerTypeElemsBaseCustomTotalNumTypes[0] = 19;
+		Params.LayerTypeElemsBaseCustomTotalNumTypes[1] = 0;
+		Params.LayerTypeElemsBaseCustomTotalNumTypes[2] = 19;
+		Params.LayerTypeElemsBaseCustomTotalNumTypes[3] = 1;
+		Params.TileAnchorSize = Vector4(TileAnchor.x, TileAnchor.y, TileSize.x, TileSize.y);
+		Params.TileXYNumTiles[2] = NumTilesX;
+		Params.TileXYNumTiles[3] = NumTilesZ;
+		Params.SubTileXYNumSubTiles[2] = 1;
+		Params.SubTileXYNumSubTiles[3] = 1;
+		Params.SubTileSizeBorderSize = Vector4(TileSize.x, TileSize.y, 5.0f, 5.0f);
+		Params.GlobalWindDirectionStrength = Vector4(WindDirection.x, WindDirection.y, 0.f, WindStrength);
+		Params.DensityScaleWindStrengthRange = Vector4(1.0f, 0.f, 10.0f, 0.f);
+		Params.MaskXYNumInstances[1] = 1;
+		Params.MaskXYNumInstances[2] = 16;
+		Params.MaskXYNumInstances[3] = 16;
+		Params.LODBodyPart1[0] = 2;
+		Params.LODBodyPart1[1] = 3;
+		Params.LODBodyPart1[2] = 4;
+		Params.LODBodyPart1[3] = 5;
+		Params.LODBodyPart2[0] = 6;
+		Params.LODBodyPart2[1] = 6;
+		Params.LODBodyPart2[2] = 6;
+		Params.LODBodyPart2[3] = 6;
+		for (UINT32 i = 0; i < BEZIER_GRASS_LOD_NUM; i++)
+		{
+			Params.IndexOffset1[i] = IndexOffset[i];
+			Params.VertexOffset1[i] = VertexOffset[i];
+		}
+		Params.LODDistancesSq1 = Vector4(10000.f, 40000.f, 90000.f, 160000.f);
+		Params.LODDistancesSq2 = Vector4(250000.f, 360000.f, 490000.f, 640000.f);
+		Params.HeightMapWorldScaleOffsetBorderPixelSize[0] = 0;
+		Params.HeightMapWorldScaleOffsetBorderPixelSize[1] = 0;
+		Params.HeightMapWorldScaleOffsetBorderPixelSize[2] = 8;
+		Params.HeightMapWorldScaleOffsetBorderPixelSize[3] = 256;
+		Params.LayerBorderPixelSizeDensityBorderPixelSize[0] = 8;
+		Params.LayerBorderPixelSizeDensityBorderPixelSize[1] = 256;
+		Params.LayerBorderPixelSizeDensityBorderPixelSize[2] = 8;
+		Params.LayerBorderPixelSizeDensityBorderPixelSize[3] = 256;
+		Params.ViewFrustumPlane0 = Vector4(1.f, 0.f, 0.f, 10000.f);
+		Params.ViewFrustumPlane1 = Vector4(0.f, 1.f, 0.f, 10000.f);
+		Params.ViewFrustumPlane2 = Vector4(0.f, 0.f, 1.f, 10000.f);
+		Params.ViewFrustumPlane3 = Vector4(0.f, 0.f, -1.f, 10000.f);
+		Params.ViewFrustumPlane4 = Vector4(0.f, -1.f, 0.f, 10000.f);
+
+		RSubresourceDataDesc SubresDesc;
+		SubresDesc.pSysMem = &Params;
+		RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(ComputeConstantBuffer,
+			RBufferDesc(sizeof(BezierGrassConstructParams), RBindFlagType::BIND_CONSTANT_BUFFER, 0),
+			&SubresDesc);
+	}
+
+	void RBezierGrassSceneProxy::SetupComputeBuffers()
+	{
+		const UINT32 MaxInstances = 1024;
+
+		if (!PackedInstanceBuffer.IsRenderResourceValid())
+		{
+			RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(PackedInstanceBuffer,
+				RStructuredBufferDesc(sizeof(UINT32), MaxInstances * 10, TRUE));
+		}
+
+		if (!DispatchBuffer.IsRenderResourceValid())
+		{
+			RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(DispatchBuffer,
+				RStructuredBufferDesc(sizeof(UINT32), 7, TRUE));
+		}
+
+		SetupLayerTypeBuffer();
+
+		if (!TileShuffleBuffer.IsRenderResourceValid())
+		{
+			TArray<UINT32> ShuffleData;
+			ShuffleData.SetNum(256);
+			for (UINT32 i = 0; i < 256; i++)
+			{
+				ShuffleData[i] = 0;
+			}
+			RSubresourceDataDesc ShuffleSubresDesc;
+			ShuffleSubresDesc.pSysMem = ShuffleData.GetData();
+			RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(TileShuffleBuffer,
+				RStructuredBufferDesc(sizeof(UINT32), 256, TRUE), &ShuffleSubresDesc);
+		}
+
+		if (!DrawIndirectBuffer.IsRenderResourceValid())
+		{
+			RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(DrawIndirectBuffer,
+				RStructuredBufferDesc(sizeof(UINT32), 5 * BEZIER_GRASS_LOD_NUM, TRUE));
+		}
+	}
+
+	void RBezierGrassSceneProxy::DispatchComputeShader()
+	{
+		if (!ComputeShader || !ComputeShader->IsRenderResourceValid())
+		{
+			return;
+		}
+
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		const RComputeShaderResource* CSResource = ComputeShader->GetRenderResource();
+
+		RenderDevice->SetCSShader(CSResource->Shader);
+
+		// 问题4：绑定ConstantBuffer (slot 0)
+		if (ComputeConstantBuffer.IsRenderResourceValid())
+		{
+			RenderDevice->BindCSConstantBuffer(ComputeConstantBuffer.Buffer, 0);
+		}
+
+		// 问题2：绑定纹理 (slot 0,1,2)
+		if (LandscapeHeightTexture && LandscapeHeightTexture->IsRenderResourceValid())
+		{
+			RenderDevice->BindCSShaderResourceView(LandscapeHeightTexture->GetRenderResource()->ShaderResourceView, 0);
+		}
+		if (LayerIndexTexture && LayerIndexTexture->IsRenderResourceValid())
+		{
+			RenderDevice->BindCSShaderResourceView(LayerIndexTexture->GetRenderResource()->ShaderResourceView, 1);
+		}
+		if (DensityTexture && DensityTexture->IsRenderResourceValid())
+		{
+			RenderDevice->BindCSShaderResourceView(DensityTexture->GetRenderResource()->ShaderResourceView, 2);
+		}
+
+		// 绑定Buffers
+		RenderDevice->BindCSUnorderedAccessView(PackedInstanceBuffer.UnorderedAccessView, 0);
+		RenderDevice->BindCSUnorderedAccessView(DispatchBuffer.UnorderedAccessView, 1);
+		RenderDevice->BindCSUnorderedAccessView(DrawIndirectBuffer.UnorderedAccessView, 2);
+		RenderDevice->BindCSShaderResourceView(LayerTypeBuffer.ShaderResourceView, 5);
+		RenderDevice->BindCSShaderResourceView(TileShuffleBuffer.ShaderResourceView, 6);
+
+		// 问题1：根据实际instance数量计算Dispatch
+		const UINT32 NumInstances = 16 * 16;
+		const UINT32 ThreadGroupSize = 256;
+		const UINT32 ThreadGroupX = (NumInstances + ThreadGroupSize - 1) / ThreadGroupSize;
+		RenderDevice->Dispatch(ThreadGroupX, 1, 1);
+
+		// 清理绑定
+		RenderDevice->BindNoCSUnorderedAccessView(0);
+		RenderDevice->BindNoCSUnorderedAccessView(1);
+		RenderDevice->BindNoCSUnorderedAccessView(2);
+	}
 	void RBezierGrassSceneProxy::Draw()const
 	{
-		if (InstanceData.Num() > 0)
+#if _EDITOR_ONLY
+		const RIndexBufferResource& IndexRenderResource = IndexBuffer;
+		if (IndexRenderResource.IsRenderResourceValid())
+#endif
 		{
-#if _EDITOR_ONLY
-			const RIndexBufferResource& IndexRenderResource = IndexBuffer;
-			if (IndexRenderResource.IsRenderResourceValid())
-#endif
-			{
-				const UINT32 UsedLOD = EMath::Clamp((UINT32)(EMath::CeilToInt32(Property.LOD)), 0u, (UINT32)(BEZIER_GRASS_MAX_LOD_INDEX));
-				const UINT32 UsedIndexOffset = IndexOffset[UsedLOD];
-				const UINT32 UsedIndexCount = IndexCount[UsedLOD];
-				const UINT32 UsedVertexOffset = VertexOffset[UsedLOD];
-				RDeviceD3D11::GetDeviceSingleton()->DrawIndexedInstance(InstanceData.Num(), UsedIndexCount, 0, UsedIndexOffset, UsedVertexOffset);
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw static mesh indexed is invalid."));
-			}
-#endif
+			const UINT32 UsedLOD = EMath::Clamp((UINT32)(EMath::CeilToInt32(Property.LOD)), 0u, (UINT32)(BEZIER_GRASS_MAX_LOD_INDEX));
+			const UINT32 UsedIndexOffset = IndexOffset[UsedLOD];
+			const UINT32 UsedIndexCount = IndexCount[UsedLOD];
+			const UINT32 UsedVertexOffset = VertexOffset[UsedLOD];
+			const UINT32 NumInstances = 256;
+			RDeviceD3D11::GetDeviceSingleton()->DrawIndexedInstance(NumInstances, UsedIndexCount, 0, UsedIndexOffset, UsedVertexOffset);
 		}
+#if _EDITOR_ONLY
+		else
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Draw bezier grass indexed is invalid."));
+		}
+#endif
 	}
 
 };

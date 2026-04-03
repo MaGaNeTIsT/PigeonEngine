@@ -40,13 +40,13 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{
 	}
-	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset, const EMaterialAsset* InMaterialAsset)
+	void RStaticMeshSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset, const EMaterialAsset* InMaterialAsset)
 	{
 		MaterialAsset = InMaterialAsset;
 		SetupShaders();
 		SetupMaterialResources();
 
-		SetPrimitiveSettings(InIsHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 		UpdateMeshAsset(InMeshAsset);
 
@@ -91,6 +91,10 @@ namespace PigeonEngine
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
 		MaterialParameter.UploadBuffer();
 	}
+	void RStaticMeshSceneProxy::UpdateMaterialTextures(const TArray<RMaterialTextureSRV>& InSRVs)
+	{
+		MaterialSRVs = InSRVs;
+	}
 	void RStaticMeshSceneProxy::BindRenderResource()const
 	{
 		BindVertexShader();
@@ -98,6 +102,20 @@ namespace PigeonEngine
 		BindMeshResource();
 		BindMaterialParameter(1u);
 		BindMaterialCBs();
+		BindMaterialTextures();
+	}
+	void RStaticMeshSceneProxy::BindMaterialTextures()const
+	{
+		if (MaterialSRVs.Num<INT32>() == 0) { return; }
+		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		for (INT32 i = 0; i < MaterialSRVs.Num<INT32>(); i++)
+		{
+			const RMaterialTextureSRV& TexSRV = MaterialSRVs[i];
+			if (TexSRV.SRV)
+			{
+				RenderDevice->BindPSShaderResourceView(TexSRV.SRV, TexSRV.Slot);
+			}
+		}
 	}
 	void RStaticMeshSceneProxy::SetupShaders()
 	{

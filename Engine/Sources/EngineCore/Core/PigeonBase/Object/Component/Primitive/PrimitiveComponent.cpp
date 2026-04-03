@@ -3,6 +3,7 @@
 
 #if _EDITOR_ONLY
 #include <TextureAsset/TextureAsset.h>
+#include <RenderProxy/StaticMeshSceneProxy.h>
 #include <imgui.h>
 #endif
 
@@ -17,10 +18,10 @@ namespace PigeonEngine
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
     PPrimitiveComponent::PPrimitiveComponent()
-        : PSceneComponent(), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsRenderHidden(FALSE)
-#if _EDITOR_ONLY
-        , MaterialParamsDirty(FALSE)
-#endif
+        : PSceneComponent()
+        , bMaterialDirty(FALSE)
+        , bCastShadow(FALSE)
+        , bReceiveShadow(FALSE)
     {
         POBJ_DEBUGNAME_SET(this, "PrimitiveComponent");
     }
@@ -28,75 +29,67 @@ namespace PigeonEngine
     {
 
     }
-    BOOL32 PPrimitiveComponent::IsPrimitiveCastShadow() const
+    BOOL32 PPrimitiveComponent::IsCastShadow() const
     {
-        return IsCastShadow;
+        return bCastShadow;
     }
-    BOOL32 PPrimitiveComponent::IsPrimitiveReceiveShadow() const
+    BOOL32 PPrimitiveComponent::IsReceiveShadow() const
     {
-        return IsReceiveShadow;
+        return bReceiveShadow;
     }
-    BOOL32 PPrimitiveComponent::IsPrimitiveRenderHidden() const
+    BOOL32 PPrimitiveComponent::IsMaterialDirty() const
     {
-        return IsRenderHidden;
+        return bMaterialDirty;
     }
-    void PPrimitiveComponent::SetPrimitiveCastShadow(BOOL32 InIsCastShadow)
+    void PPrimitiveComponent::SetCastShadow(BOOL32 InIsCastShadow)
     {
-        IsCastShadow = InIsCastShadow;
+        bCastShadow = InIsCastShadow;
     }
-    void PPrimitiveComponent::SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow)
+    void PPrimitiveComponent::SetReceiveShadow(BOOL32 InIsReceiveShadow)
     {
-        IsReceiveShadow = InIsReceiveShadow;
+        bReceiveShadow = InIsReceiveShadow;
     }
-    void PPrimitiveComponent::SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden)
+    const EMaterialAsset* PPrimitiveComponent::GetMaterialAsset(UINT32 InSlotIdx) const
     {
-        IsRenderHidden = InIsRenderHidden;
-    }
-    const EMaterialAsset* PPrimitiveComponent::GetMaterialAsset(UINT32 SlotIdx) const
-    {
-        if (SlotIdx < MaterialSlots.Num<UINT32>())
+        if (InSlotIdx < MaterialSlots.Num<UINT32>())
         {
-            return MaterialSlots[SlotIdx];
+            return (MaterialSlots[InSlotIdx]);
         }
         return nullptr;
     }
     UINT32 PPrimitiveComponent::GetMaterialSlotCount() const
     {
-        return MaterialSlots.Num<UINT32>();
+        return (MaterialSlots.Num<UINT32>());
     }
     void PPrimitiveComponent::SetMaterialAsset(const EMaterialAsset* InMaterialAsset)
     {
-        if (MaterialSlots.Num<UINT32>() == 0u)
+        if (MaterialSlots.Num<INT32>() <= 0u)
         {
             MaterialSlots.Add(nullptr);
         }
         MaterialSlots[0] = InMaterialAsset;
         MarkRenderStateAsDirty();
     }
-    void PPrimitiveComponent::SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset)
+    void PPrimitiveComponent::SetMaterialAsset(UINT32 InSlotIdx, const EMaterialAsset* InMaterialAsset)
     {
-        if (SlotIdx >= MaterialSlots.Num<UINT32>())
+        if (InSlotIdx >= MaterialSlots.Num<UINT32>())
         {
-            MaterialSlots.SetNum(static_cast<INT32>(SlotIdx) + 1);
+            MaterialSlots.SetNum(InSlotIdx + 1);
         }
-        MaterialSlots[SlotIdx] = InMaterialAsset;
+        MaterialSlots[InSlotIdx] = InMaterialAsset;
         MarkRenderStateAsDirty();
     }
-    void PPrimitiveComponent::SetMaterialSlotsNum(UINT32 Num)
+    void PPrimitiveComponent::SetMaterialSlotsNum(UINT32 InNum)
     {
         const UINT32 OldNum = MaterialSlots.Num<UINT32>();
-        MaterialSlots.SetNum(static_cast<INT32>(Num));
-        for (UINT32 i = OldNum; i < Num; i++)
+        MaterialSlots.SetNum(InNum);
+        for (UINT32 i = OldNum; i < InNum; i++)
         {
-            MaterialSlots[static_cast<INT32>(i)] = nullptr;
+            MaterialSlots[i] = nullptr;
         }
     }
 
     // Render proxy functions START
-    BOOL32 PPrimitiveComponent::CheckIsRenderHidden()const
-    {
-        return IsPrimitiveRenderHidden();
-    }
     void PPrimitiveComponent::CreateRenderState()
     {
         PSceneComponent::CreateRenderState();
@@ -130,161 +123,226 @@ namespace PigeonEngine
     void PPrimitiveComponent::CleanMarkRenderStateDirty()
     {
         //TODO
+        PPrimitiveComponent::CleanMaterialDirty();
         PSceneComponent::CleanMarkRenderStateDirty();
+    }
+    void PPrimitiveComponent::MarkMaterialAsDirty()
+    {
+        bMaterialDirty = TRUE;
+        MarkRenderStateAsDirty();
+    }
+    void PPrimitiveComponent::CleanMaterialDirty()
+    {
+        bMaterialDirty = FALSE;
     }
     // Render proxy functions END
 
-#if _EDITOR_ONLY
-
-    BOOL32 PPrimitiveComponent::IsEditorMaterialParamsDirty() const
-    {
-        return MaterialParamsDirty;
-    }
-    void PPrimitiveComponent::MarkEditorMaterialParamsDirty()
-    {
-        MaterialParamsDirty = TRUE;
-    }
-    void PPrimitiveComponent::CleanEditorMaterialParamsDirty()
-    {
-        MaterialParamsDirty = FALSE;
-    }
-    void PPrimitiveComponent::GetEditorSlotCBData(UINT32 SlotIdx, TArray<TArray<BYTE>>& Out) const
+    void PPrimitiveComponent::GetMaterialConstantBufferDataBySlot(UINT32 InSlotIdx, TArray<TArray<UINT8>>& Out) const
     {
         Out.Empty();
-        if (SlotIdx >= EditorSlotStates.Num<UINT32>()) { return; }
-        const PMaterialEditorSlotState& State = EditorSlotStates[static_cast<INT32>(SlotIdx)];
-        for (INT32 i = 0; i < State.CBStates.Num<INT32>(); i++)
+        if (InSlotIdx >= MaterialStandings.Num<UINT32>())
         {
-            Out.Add(State.CBStates[i].Data);
+            return;
+        }
+        const EMaterialSlotStanding& Standing = MaterialStandings[InSlotIdx];
+        for (INT32 i = 0; i < Standing.ConstantBufferSlots.Num<INT32>(); i++)
+        {
+            Out.Add(Standing.ConstantBufferSlots[i].Data);
+        }
+    }
+    void PPrimitiveComponent::GetMaterialTextureBySlot(UINT32 InSlotIdx, TArray<RMaterialTextureSRV>& Out) const
+    {
+        Out.Empty();
+        if (InSlotIdx >= MaterialStandings.Num<UINT32>())
+        {
+            return;
+        }
+        const EMaterialSlotStanding& Standing = MaterialStandings[InSlotIdx];
+        const EMaterialAsset* Mat = GetMaterialAsset(InSlotIdx);
+        if (!Mat)
+        {
+            return;
+        }
+        const EMaterialVariant* Var = Mat->GetFirstVariant();
+        if (!Var)
+        {
+            return;
+        }
+        const EMaterialReflection& Refl = Var->Reflection;
+        const INT32 NumSrvs = Refl.SRVs.Num<INT32>();
+        for (INT32 i = 0, n = Standing.TextureSlots.Num<INT32>(); (i < NumSrvs) && (i < n); i++)
+        {
+            const EMaterialTextureStanding& TexSlot = Standing.TextureSlots[i];
+            if ((!!(TexSlot.Texture)) && (!!(TexSlot.Texture->GetRenderResource())) && (!!(TexSlot.Texture->GetRenderResource()->ShaderResourceView)))
+            {
+                RMaterialTextureSRV Entry;
+                Entry.Slot = Refl.SRVs[i].Slot;
+                Entry.SRV = TexSlot.Texture->GetRenderResource()->ShaderResourceView;
+                Out.Add(Entry);
+            }
         }
     }
 
     static CHAR s_MatNameBuf[256]  = {};
     static bool s_EmitShaderDebug  = false;
 
-    static bool DrawCBFieldEditor(const EMaterialCBField& Field, TArray<BYTE>& Data, int UniqueId)
+    static bool DrawCBFieldEditor(const EMaterialCBField& Field, TArray<UINT8>& Data, INT32 UniqueId)
     {
         ImGui::PushID(UniqueId);
-        const char* type = *Field.Type;
-        const bool isColor = (::strstr(*Field.Name, "olor") != nullptr) || (::strstr(*Field.Name, "Tint") != nullptr);
-        FLOAT* f = reinterpret_cast<FLOAT*>(&Data[static_cast<INT32>(Field.Offset)]);
-        const char* label = *Field.Name;
-        bool changed = false;
+        const CHAR* FieldType = *Field.Type;
+        const BOOL8 bColor = Field.bIsColor;
+        FLOAT* Value = (FLOAT*)(&(Data[Field.Offset]));
+        const CHAR* FieldName = *Field.Name;
+        BOOL8 bChanged = FALSE;
 
-        if (::strcmp(type, "float4") == 0)
+        if (::strcmp(FieldType, "float4") == 0)
         {
-            if (isColor) changed = ImGui::ColorEdit4(label, f);
-            else         changed = ImGui::DragFloat4(label, f);
+            if (bColor)
+            {
+                bChanged = ImGui::ColorEdit4(FieldName, Value);
+            }
+            else
+            {
+                bChanged = ImGui::DragFloat4(FieldName, Value);
+            }
         }
-        else if (::strcmp(type, "float3") == 0)
+        else if (::strcmp(FieldType, "float3") == 0)
         {
-            if (isColor) changed = ImGui::ColorEdit3(label, f);
-            else         changed = ImGui::DragFloat3(label, f);
+            if (bColor)
+            {
+                bChanged = ImGui::ColorEdit3(FieldName, Value);
+            }
+            else
+            {
+                bChanged = ImGui::DragFloat3(FieldName, Value);
+            }
         }
-        else if (::strcmp(type, "float2") == 0)
+        else if (::strcmp(FieldType, "float2") == 0)
         {
-            changed = ImGui::DragFloat2(label, f);
+            bChanged = ImGui::DragFloat2(FieldName, Value);
         }
-        else if (::strcmp(type, "float") == 0 || ::strcmp(type, "float1") == 0)
+        else if (::strcmp(FieldType, "float") == 0 || ::strcmp(FieldType, "float1") == 0)
         {
-            changed = ImGui::DragFloat(label, f);
+            bChanged = ImGui::DragFloat(FieldName, Value);
         }
-        else if (::strcmp(type, "int4") == 0)
+        else if (::strcmp(FieldType, "int4") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 4);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_S32, Value, 4);
         }
-        else if (::strcmp(type, "int3") == 0)
+        else if (::strcmp(FieldType, "int3") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 3);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_S32, Value, 3);
         }
-        else if (::strcmp(type, "int2") == 0)
+        else if (::strcmp(FieldType, "int2") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_S32, f, 2);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_S32, Value, 2);
         }
-        else if (::strcmp(type, "int") == 0 || ::strcmp(type, "int1") == 0)
+        else if (::strcmp(FieldType, "int") == 0 || ::strcmp(FieldType, "int1") == 0)
         {
-            changed = ImGui::DragScalar(label, ImGuiDataType_S32, f);
+            bChanged = ImGui::DragScalar(FieldName, ImGuiDataType_S32, Value);
         }
-        else if (::strcmp(type, "uint4") == 0)
+        else if (::strcmp(FieldType, "uint4") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 4);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_U32, Value, 4);
         }
-        else if (::strcmp(type, "uint3") == 0)
+        else if (::strcmp(FieldType, "uint3") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 3);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_U32, Value, 3);
         }
-        else if (::strcmp(type, "uint2") == 0)
+        else if (::strcmp(FieldType, "uint2") == 0)
         {
-            changed = ImGui::DragScalarN(label, ImGuiDataType_U32, f, 2);
+            bChanged = ImGui::DragScalarN(FieldName, ImGuiDataType_U32, Value, 2);
         }
-        else if (::strcmp(type, "uint") == 0 || ::strcmp(type, "uint1") == 0)
+        else if (::strcmp(FieldType, "uint") == 0 || ::strcmp(FieldType, "uint1") == 0)
         {
-            changed = ImGui::DragScalar(label, ImGuiDataType_U32, f);
+            bChanged = ImGui::DragScalar(FieldName, ImGuiDataType_U32, Value);
         }
         else
         {
-            ImGui::Text("%s %s (unsupported)", type, label);
+            ImGui::Text("%s %s (unsupported)", FieldType, FieldName);
         }
         ImGui::PopID();
-        return changed;
+        return bChanged;
     }
 
-    void PPrimitiveComponent::RebuildEditorSlotState(UINT32 SlotIdx)
+    void PPrimitiveComponent::RebuildSlot(UINT32 SlotIdx)
     {
         // Ensure EditorSlotStates is large enough
-        while (EditorSlotStates.Num<UINT32>() <= SlotIdx)
+        while (MaterialStandings.Num<UINT32>() <= SlotIdx)
         {
-            EditorSlotStates.Add(PMaterialEditorSlotState());
+            MaterialStandings.Add(EMaterialSlotStanding());
         }
 
-        PMaterialEditorSlotState& State = EditorSlotStates[static_cast<INT32>(SlotIdx)];
-        State.CBStates.Empty();
-        State.TextureSlots.Empty();
+        EMaterialSlotStanding& Standing = MaterialStandings[SlotIdx];
 
         const EMaterialAsset* Mat = GetMaterialAsset(SlotIdx);
-        if (!Mat) { return; }
+        if (!Mat)
+        {
+            Standing.ConstantBufferSlots.Empty();
+            Standing.TextureSlots.Empty();
+            return;
+        }
 
         const EMaterialVariant* Var = Mat->GetFirstVariant();
-        if (!Var) { return; }
+        if (!Var)
+        {
+            Standing.ConstantBufferSlots.Empty();
+            Standing.TextureSlots.Empty();
+            return;
+        }
 
         const EMaterialReflection& Refl = Var->Reflection;
 
-        // Constant buffers
-        for (UINT32 CbIdx = 0u, NumCbs = Refl.ConstantBuffers.Num<UINT32>(); CbIdx < NumCbs; CbIdx++)
+        // Constant buffers - preserve existing data when structure matches
+        const UINT32 NumCbs = Refl.ConstantBuffers.Num<UINT32>();
+        if (Standing.ConstantBufferSlots.Num<UINT32>() != NumCbs)
         {
-            const EMaterialCBRefl& CbRefl = Refl.ConstantBuffers[static_cast<INT32>(CbIdx)];
-            PMaterialEditorCBState CbState;
-            CbState.CBName = CbRefl.Name;
-            CbState.Data.SetNum(static_cast<INT32>(CbRefl.SizeBytes));
-            // Zero-initialize
-            for (INT32 ByteIdx = 0; ByteIdx < static_cast<INT32>(CbRefl.SizeBytes); ByteIdx++)
+            Standing.ConstantBufferSlots.Empty();
+            for (UINT32 CbIdx = 0u; CbIdx < NumCbs; CbIdx++)
             {
-                CbState.Data[ByteIdx] = 0u;
+                const EMaterialCBRefl& CbRefl = Refl.ConstantBuffers[static_cast<INT32>(CbIdx)];
+                EMaterialCBStanding CbState;
+                CbState.Name = CbRefl.Name;
+                CbState.Data.SetNum(static_cast<INT32>(CbRefl.SizeBytes));
+                for (INT32 ByteIdx = 0; ByteIdx < static_cast<INT32>(CbRefl.SizeBytes); ByteIdx++)
+                {
+                    CbState.Data[ByteIdx] = 0u;
+                }
+                Standing.ConstantBufferSlots.Add(std::move(CbState));
             }
-            State.CBStates.Add(std::move(CbState));
         }
 
-        // SRV texture slots
-        for (UINT32 SrvIdx = 0u, NumSrvs = Refl.SRVs.Num<UINT32>(); SrvIdx < NumSrvs; SrvIdx++)
+        // SRV texture slots - preserve existing data when count matches
+        const UINT32 NumSrvs = Refl.SRVs.Num<UINT32>();
+        if (Standing.TextureSlots.Num<UINT32>() != NumSrvs)
         {
-            State.TextureSlots.Add(PMaterialEditorTextureSlot());
+            Standing.TextureSlots.Empty();
+            for (UINT32 SrvIdx = 0u; SrvIdx < NumSrvs; SrvIdx++)
+            {
+                Standing.TextureSlots.Add(EMaterialTextureStanding());
+            }
         }
     }
 
-    void PPrimitiveComponent::RebuildAllEditorSlotStates()
+    void PPrimitiveComponent::RebuildAllSlot()
     {
-        EditorSlotStates.Empty();
         const UINT32 NumSlots = MaterialSlots.Num<UINT32>();
+        // Trim excess slots
+        while (MaterialStandings.Num<UINT32>() > NumSlots)
+        {
+            MaterialStandings.Pop();
+        }
         for (UINT32 SlotIdx = 0u; SlotIdx < NumSlots; SlotIdx++)
         {
-            RebuildEditorSlotState(SlotIdx);
+            RebuildSlot(SlotIdx);
         }
     }
 
+#if _EDITOR_ONLY
     void PPrimitiveComponent::OnSelectedByImGui()
     {
         PSceneComponent::OnSelectedByImGui();
-        RebuildAllEditorSlotStates();
+        RebuildAllSlot();
     }
 
     void PPrimitiveComponent::GenerateComponentDetail()
@@ -297,6 +355,7 @@ namespace PigeonEngine
 
             for (INT32 i = 0; i < NumSlots; i++)
             {
+                const UINT32 SlotIdx = (UINT32)i;
                 const EMaterialAsset* SlotMat = MaterialSlots[i];
                 const char* matName = SlotMat ? *SlotMat->GetName() : "<None>";
                 ImGui::Text("Slot [%d]: %s", i, matName);
@@ -314,16 +373,16 @@ namespace PigeonEngine
                         EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
                         NewMat,
                         s_EmitShaderDebug ? TRUE : FALSE);
-                    SetMaterialAsset(static_cast<UINT32>(i), NewMat);
-                    RebuildEditorSlotState(static_cast<UINT32>(i));
+                    SetMaterialAsset(SlotIdx, NewMat);
+                    RebuildSlot(SlotIdx);
                 }
                 ImGui::SameLine();
                 ImGui::Checkbox("Shader Debug", &s_EmitShaderDebug);
                 ImGui::SameLine();
                 if (ImGui::Button("Clear"))
                 {
-                    SetMaterialAsset(static_cast<UINT32>(i), nullptr);
-                    RebuildEditorSlotState(static_cast<UINT32>(i));
+                    SetMaterialAsset(SlotIdx, nullptr);
+                    RebuildSlot(SlotIdx);
                 }
                 ImGui::PopID();
             }
@@ -333,30 +392,30 @@ namespace PigeonEngine
                 if (ImGui::Button("Add Slot"))
                 {
                     SetMaterialSlotsNum(1u);
-                    RebuildEditorSlotState(0u);
+                    RebuildSlot(0u);
                 }
             }
 
-            static INT32 s_SelectedSlot = 0;
+            static INT32 StaticSelectedSlot = 0;
             const INT32 MaxSlot = (NumSlots > 0) ? (NumSlots - 1) : 0;
-            ImGui::SliderInt("Edit Slot##slot", &s_SelectedSlot, 0, MaxSlot);
+            ImGui::SliderInt("Edit Slot##slot", &StaticSelectedSlot, 0, MaxSlot);
 
-            if (s_SelectedSlot < NumSlots && MaterialSlots[s_SelectedSlot] != nullptr)
+            if (StaticSelectedSlot < NumSlots && MaterialSlots[StaticSelectedSlot] != nullptr)
             {
-                const EMaterialAsset* EditMat = MaterialSlots[s_SelectedSlot];
+                const EMaterialAsset* EditMat = MaterialSlots[StaticSelectedSlot];
                 const EMaterialVariant* Var = EditMat->GetFirstVariant();
 
                 if (Var)
                 {
-                    EString ParamHeader = EString("Parameters [Slot ") + EString::FromInt(static_cast<UINT32>(s_SelectedSlot)) + EString("]");
+                    EString ParamHeader = EString("Parameters [Slot ") + EString::FromInt((UINT32)StaticSelectedSlot) + EString("]");
                     if (ImGui::TreeNode(*ParamHeader))
                     {
                         const EMaterialReflection& Refl = Var->Reflection;
 
                         // Ensure editor state exists for this slot
-                        if (EditorSlotStates.Num<UINT32>() > static_cast<UINT32>(s_SelectedSlot))
+                        if (MaterialStandings.Num<INT32>() > StaticSelectedSlot)
                         {
-                            PMaterialEditorSlotState& State = EditorSlotStates[s_SelectedSlot];
+                            EMaterialSlotStanding& Standing = MaterialStandings[StaticSelectedSlot];
 
                             // Constant buffers
                             for (INT32 CbIdx = 0; CbIdx < Refl.ConstantBuffers.Num<INT32>(); CbIdx++)
@@ -365,14 +424,14 @@ namespace PigeonEngine
                                 ImGui::PushID(CbIdx);
                                 if (ImGui::TreeNode(*CbRefl.Name))
                                 {
-                                    if (CbIdx < State.CBStates.Num<INT32>())
+                                    if (CbIdx < Standing.ConstantBufferSlots.Num<INT32>())
                                     {
-                                        PMaterialEditorCBState& CbState = State.CBStates[CbIdx];
+                                        EMaterialCBStanding& CbStanding = Standing.ConstantBufferSlots[CbIdx];
                                         for (INT32 FIdx = 0; FIdx < CbRefl.Fields.Num<INT32>(); FIdx++)
                                         {
-                                            if (DrawCBFieldEditor(CbRefl.Fields[FIdx], CbState.Data, FIdx))
+                                            if (DrawCBFieldEditor(CbRefl.Fields[FIdx], CbStanding.Data, FIdx))
                                             {
-                                                MarkEditorMaterialParamsDirty();
+                                                MarkMaterialAsDirty();
                                             }
                                         }
                                     }
@@ -388,15 +447,15 @@ namespace PigeonEngine
                                 ImGui::PushID(SrvIdx);
 
                                 const char* texName = "<None>";
-                                if (SrvIdx < State.TextureSlots.Num<INT32>() && State.TextureSlots[SrvIdx].Texture)
+                                if (SrvIdx < Standing.TextureSlots.Num<INT32>() && Standing.TextureSlots[SrvIdx].Texture)
                                 {
-                                    texName = *State.TextureSlots[SrvIdx].Texture->GetAssetName();
+                                    texName = *Standing.TextureSlots[SrvIdx].Texture->GetAssetName();
                                 }
                                 ImGui::Text("%s (slot %u): %s", *Srv.Name, Srv.Slot, texName);
 
-                                if (SrvIdx < State.TextureSlots.Num<INT32>())
+                                if (SrvIdx < Standing.TextureSlots.Num<INT32>())
                                 {
-                                    PMaterialEditorTextureSlot& TexSlot = State.TextureSlots[SrvIdx];
+                                    EMaterialTextureStanding& TexSlot = Standing.TextureSlots[SrvIdx];
                                     EString PathLabel = EString("Path##") + EString::FromInt(static_cast<UINT32>(SrvIdx));
                                     ImGui::InputText(*PathLabel, TexSlot.PathBuf, sizeof(TexSlot.PathBuf));
                                     ImGui::SameLine();
@@ -406,6 +465,7 @@ namespace PigeonEngine
                                         const ETexture2DAsset* NewTex = nullptr;
                                         TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, EString(TexSlot.PathBuf), NewTex);
                                         TexSlot.Texture = NewTex;
+                                        MarkMaterialAsDirty();
                                     }
                                 }
 
@@ -421,7 +481,6 @@ namespace PigeonEngine
             ImGui::TreePop();
         }
     }
-
 #endif // _EDITOR_ONLY
 
 };

@@ -1,0 +1,22 @@
+{
+    "name": "M_BezierGrass",
+    "constant_buffer": {
+        "name": "BezierGrassMaterialParams",
+        "fields": [
+            { "name": "RootColor", "type": "color4", "default": [0.2, 0.4, 0.1, 1] },
+            { "name": "TipColor", "type": "color4", "default": [0.4, 0.8, 0.2, 1] },
+            { "name": "BentBezierT", "type": "float", "default": [0.5] },
+            { "name": "Roughness", "type": "float", "default": [0.8] },
+            { "name": "Metallic", "type": "float", "default": [0.0] },
+            { "name": "_pad0", "type": "float", "default": [0.0] }
+        ]
+    },
+    "defines": [
+        { "name": "BEZIER_GRASS_RENDER_ONLY", "value": 1 }
+    ],
+    "ps": {
+        "hlsl_functions": "PSHelpers.hlsl",
+        "hlsl_surface": "Surface.hlsl"
+    },
+    "hlsl_common": "BezierGrassRenderCommon.hlsl"
+}

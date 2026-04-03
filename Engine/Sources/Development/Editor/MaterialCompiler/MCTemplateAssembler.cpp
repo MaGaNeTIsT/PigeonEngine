@@ -115,7 +115,20 @@ std::string MCTemplateAssembler::BuildCBDecl(const MCMaterial& Mat, int Slot)
     return ss.str();
 }
 
-std::string MCTemplateAssembler::BuildTextureDecl(const MCMaterial& Mat, int SRVStart, int SamplerStart)
+// Try to map a sampler's filter+address combo to one of the 4 engine global samplers (s0-s3).
+// Returns the engine slot (0-3) on match, or -1 if no match.
+static int TryMapEngineGlobalSampler(const std::string& Filter, const std::string& Address,
+    std::string& OutEngineName)
+{
+    if (Filter == "POINT" && Address == "CLAMP")  { OutEngineName = "_PointClampSampler";  return 0; }
+    if (Filter == "POINT" && Address == "WRAP")   { OutEngineName = "_PointWrapSampler";   return 1; }
+    if (Filter == "LINEAR" && Address == "CLAMP") { OutEngineName = "_LinearClampSampler"; return 2; }
+    if (Filter == "LINEAR" && Address == "WRAP")  { OutEngineName = "_LinearWrapSampler";  return 3; }
+    return -1;
+}
+
+std::string MCTemplateAssembler::BuildTextureDecl(const MCMaterial& Mat, int SRVStart, int SamplerStart,
+    MCSlotMap& OutSlots)
 {
     std::ostringstream ss;
     int srvSlot     = SRVStart;
@@ -132,7 +145,62 @@ std::string MCTemplateAssembler::BuildTextureDecl(const MCMaterial& Mat, int SRV
     }
 
     for (auto& samp : Mat.Samplers)
-        ss << "SamplerState s" << samp.Name << " : register(s" << samplerSlot++ << ");\n";
+    {
+        std::string engineName;
+        int engineSlot = TryMapEngineGlobalSampler(samp.Filter, samp.Address, engineName);
+        if (engineSlot >= 0)
+        {
+            // Map to engine global sampler via #define alias — no SamplerState declaration needed.
+            ss << "#define s" << samp.Name << " " << engineName << "\n";
+            MCEngineSamplerMapping mapping;
+            mapping.SamplerName   = samp.Name;
+            mapping.EngineSlot    = engineSlot;
+            mapping.EngineHlslName = engineName;
+            mapping.Filter        = samp.Filter;
+            mapping.Address       = samp.Address;
+            OutSlots.EngineSamplers.push_back(mapping);
+        }
+        else
+        {
+            // Custom sampler — assign to s4+.
+            ss << "SamplerState s" << samp.Name << " : register(s" << samplerSlot << ");\n";
+            MCCustomSamplerMapping mapping;
+            mapping.SamplerName = samp.Name;
+            mapping.Slot        = samplerSlot;
+            mapping.Filter      = samp.Filter;
+            mapping.Address     = samp.Address;
+            OutSlots.CustomSamplers.push_back(mapping);
+            samplerSlot++;
+        }
+    }
+
+    return ss.str();
+}
+
+std::string MCTemplateAssembler::BuildBufferDecl(const MCMaterial& Mat, int SRVStart, int UAVStart)
+{
+    std::ostringstream ss;
+    int srvSlot = SRVStart;
+    int uavSlot = UAVStart;
+
+    for (auto& buf : Mat.Buffers)
+    {
+        bool isRW = buf.Type.rfind("RW", 0) == 0;
+        if (isRW)
+        {
+            if (buf.Struct.empty())
+                ss << buf.Type << " " << buf.Name << " : register(u" << uavSlot++ << ");\n";
+            else
+                ss << buf.Type << "<" << buf.Struct << "> " << buf.Name << " : register(u" << uavSlot++ << ");\n";
+        }
+        else
+        {
+            if (buf.Struct.empty())
+                ss << buf.Type << " " << buf.Name << " : register(t" << srvSlot++ << ");\n";
+            else
+                ss << buf.Type << "<" << buf.Struct << "> " << buf.Name << " : register(t" << srvSlot++ << ");\n";
+        }
+    }
 
     return ss.str();
 }
@@ -143,25 +211,34 @@ bool MCTemplateAssembler::Assemble(
     const MCShaderPass&    Pass,
     const MCVariant&       Variant,
     MCAssembledShader&     Out,
-    std::string&           OutError)
+    std::string&           OutError,
+    bool                   DumpHlsl)
 {
     if (m_TemplateSource.empty()) { OutError = "Template not loaded"; return false; }
 
-    // Pass 1 — token substitution
     std::string src = m_TemplateSource;
     ReplaceToken(src, "{VF_ATTRIBUTE_STRUCT}",   BuildAttributeStruct(VF));
     ReplaceToken(src, "{VF_VS_FUNCTIONS}",       VF.HlslVSFunctions);
     ReplaceToken(src, "{VF_VS_CODE}",            VF.HlslVS);
+    ReplaceToken(src, "{VF_COMMON}",             VF.HlslCommon);
     ReplaceToken(src, "{VARYING_STRUCT}",        VF.VaryingStruct);
     ReplaceToken(src, "{MATERIAL_CB_DECL}",      BuildCBDecl(Mat, kMaterialCBStartSlot));
-    ReplaceToken(src, "{MATERIAL_TEXTURE_DECL}", BuildTextureDecl(Mat, kMaterialSRVStartSlot, kMaterialSamplerStartSlot));
-    ReplaceToken(src, "{MATERIAL_CS_FUNCTIONS}",  Mat.HlslCSFunctions);
-    ReplaceToken(src, "{MATERIAL_PS_FUNCTIONS}",  Mat.HlslPSFunctions);
+    ReplaceToken(src, "{MATERIAL_TEXTURE_DECL}", BuildTextureDecl(Mat, kMaterialSRVStartSlot, kMaterialSamplerStartSlot, Out.Slots));
+    ReplaceToken(src, "{MATERIAL_BUFFER_DECL}",  BuildBufferDecl(Mat, kMaterialSRVStartSlot + static_cast<int>(Mat.Textures.size()), kMaterialUAVStartSlot));
+    ReplaceToken(src, "{MATERIAL_CS_FUNCTIONS}", Mat.HlslCSFunctions);
+    ReplaceToken(src, "{MATERIAL_PS_FUNCTIONS}", Mat.HlslPSFunctions);
     ReplaceToken(src, "{MATERIAL_SURFACE_CODE}", Mat.HlslSurface);
+    ReplaceToken(src, "{MATERIAL_COMMON}",       Mat.HlslCommon);
+    ReplaceToken(src, "{PASS_COMMON}",           Pass.HlslCommon);
 
-    // Pass 2 — prepend #define block
     std::string defines = BuildDefineBlock(VF, Mat, Pass, Variant);
     Out.HlslSource = defines + "\n" + src;
+
+    if (DumpHlsl && !Out.DumpPath.empty())
+    {
+        std::ofstream f(Out.DumpPath);
+        if (f.is_open()) f << Out.HlslSource;
+    }
 
     Out.Slots.CBSlot = kMaterialCBStartSlot;
     OutError.clear();

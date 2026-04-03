@@ -19,11 +19,11 @@ namespace PigeonEngine
 	}
 
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
-		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE), IsHidden(FALSE)
+		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE)
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
-		: RBaseSceneProxy(Other), IsMovable(Other.IsMovable), IsCastShadow(Other.IsCastShadow), IsReceiveShadow(Other.IsReceiveShadow), IsHidden(Other.IsHidden)
+		: RBaseSceneProxy(Other), IsMovable(Other.IsMovable), IsCastShadow(Other.IsCastShadow), IsReceiveShadow(Other.IsReceiveShadow)
 	{
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
@@ -45,16 +45,11 @@ namespace PigeonEngine
 	{
 		return IsReceiveShadow;
 	}
-	BOOL32 RPrimitiveSceneProxy::IsSceneProxyHidden()const
-	{
-		return IsHidden;
-	}
-	void RPrimitiveSceneProxy::SetPrimitiveSettings(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
+	void RPrimitiveSceneProxy::SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow)
 	{
 		IsMovable		= InIsMovable;
 		IsCastShadow	= InIsCastShadow;
 		IsReceiveShadow	= InIsReceiveShadow;
-		IsHidden		= InIsHidden;
 	}
 	void RPrimitiveSceneProxy::UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices)
 	{

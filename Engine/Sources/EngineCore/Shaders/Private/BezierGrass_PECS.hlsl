@@ -1,6 +1,6 @@
 #ifndef _BEZIER_GRASS_PE_CS_HLSL
 #define _BEZIER_GRASS_PE_CS_HLSL
-
+#if 0
 float4 CurrentTimeParams;
 float4 PreviousTimeParams;
 uint4 LayerTypeElemsBaseCustomTotalNumTypes;
@@ -534,4 +534,11 @@ void main( uint InDispatchThreadID : SV_DispatchThreadID )
     }
 }
 
-#endif
+#else
+[numthreads(8, 1, 1)]
+void main()
+{
+    
+}
+#endif  // 0
+#endif  // _BEZIER_GRASS_PE_CS_HLSL

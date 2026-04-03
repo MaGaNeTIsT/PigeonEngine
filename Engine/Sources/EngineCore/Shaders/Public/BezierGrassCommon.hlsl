@@ -1,6 +1,8 @@
 #ifndef _BEZIER_GRASS_COMMON_HLSL
 #define _BEZIER_GRASS_COMMON_HLSL
 
+#if 0
+
 struct FBezierGrassLayerTypeBaseData
 {
     float3 Facing;
@@ -192,8 +194,7 @@ FBezierGrassLayerTypeBaseData GetBezierGrassLayerTypeBaseData( uint InLayerIndex
     Result.bUseFacing = (PackedFlags & (1u << 1u)) != 0x0u;
 	
 	{
-        UNROLL
-
+        [unroll]
         for (int i = 0; i < BEZIER_GRASS_BLADE_CURVE_POINTS_MAX_NUM; i++)
         {
             Result.SideCurve[ i ] = BezierGrassLayerTypeBinding[ InLayerNumTotalElems * InLayerIndex + BEZIER_GRASS_LAYER_TYPE_BASE_NUM_MEMBERS + i ];
@@ -283,17 +284,18 @@ void GetPackedInstanceTimeRelevanceData( in uint InInstanceIndex, inout FBezierG
 {
     InOutPackedInstanceData.CurrentTimeRelevanceData.PackedFacingWindStrength = BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 0 ];
     InOutPackedInstanceData.CurrentTimeRelevanceData.PackedTiltSinCosBendMidPointT = BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 1 ];
-	
+
     InOutPackedInstanceData.PreviousTimeRelevanceData.PackedFacingWindStrength = BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 2 ];
     InOutPackedInstanceData.PreviousTimeRelevanceData.PackedTiltSinCosBendMidPointT = BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 3 ];
 }
 
+#ifndef BEZIER_GRASS_RENDER_ONLY
 // Require define [BezierGrassPackedInstanceBinding] for instance datas
 void SetPackedInstanceTimeRelevanceData( in uint InInstanceIndex, in FBezierGrassPackedInstanceData InPackedInstanceData )
 {
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 0 ] = InPackedInstanceData.CurrentTimeRelevanceData.PackedFacingWindStrength;
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 1 ] = InPackedInstanceData.CurrentTimeRelevanceData.PackedTiltSinCosBendMidPointT;
-	
+
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 2 ] = InPackedInstanceData.PreviousTimeRelevanceData.PackedFacingWindStrength;
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS + 3 ] = InPackedInstanceData.PreviousTimeRelevanceData.PackedTiltSinCosBendMidPointT;
 }
@@ -324,9 +326,10 @@ void SetPackedInstanceData( in uint InInstanceIndex, in FBezierGrassPackedInstan
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + 3 ] = asuint( InPackedInstanceData.OriginHeight );
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + 4 ] = InPackedInstanceData.PerBladeHash;
     BezierGrassPackedInstanceBinding[ BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS * InInstanceIndex + 5 ] = InPackedInstanceData.PackedHeightWidth;
-	
+
     SetPackedInstanceTimeRelevanceData( InInstanceIndex, InPackedInstanceData );
 }
+#endif
 
 // Require define [BezierGrassDispatchBinding] for instance datas
 FBezierGrassDispatchData GetBezierGrassDispatchData()
@@ -335,8 +338,7 @@ FBezierGrassDispatchData GetBezierGrassDispatchData()
 	
     Result.XYNumInstances = uint2( BezierGrassDispatchBinding[ 0 ], BezierGrassDispatchBinding[ 1 ] );
 	{
-        UNROLL
-
+        [unroll]
         for (int i = 0; i < BEZIER_GRASS_BLADE_LODS_MAX_NUM; i++)
         {
             Result.InstanceOffset[ i ] = BezierGrassDispatchBinding[ 2 + i ];
@@ -542,12 +544,10 @@ float4 VoronoiNoise2D_ALU( uint InSeed, float2 InVec2D, bool InIsTiling, float I
 
 	// do a 3x3 search
 	{
-        UNROLL_N( 3 )
-
+        [unroll]
         for (IntegerOffset.x = -1; IntegerOffset.x <= 1; IntegerOffset.x++)
         {
-            UNROLL_N( 3 )
-
+            [unroll]
             for (IntegerOffset.y = -1; IntegerOffset.y <= 1; IntegerOffset.y++)
             {
                 NewOffset = Voronoi2DCornerSample( InSeed, NoiseTile2DWrap( IntegerPart + ((float2)IntegerOffset), InIsTiling, InRepeatSize ) );
@@ -763,7 +763,7 @@ void ModifyBezierGrassBlade(
     float WindLevelStepValueRange;
     float RemappedStrength;
 	{
-        UNROLL
+        [unroll]
         for (int TestWindLevelIndex = 0; TestWindLevelIndex < DEFINE_BEZIER_GRASS_WIND_LEVEL_MAX; TestWindLevelIndex++)
         {
             WindLevel = (GlobalWindStrength > WindLevelStepValue[ TestWindLevelIndex ]) ? (TestWindLevelIndex + 1) : WindLevel;
@@ -863,4 +863,5 @@ void ModifyBezierGrassBlade(
 #endif
 }
 
-#endif
+#endif  // 0
+#endif  // _BEZIER_GRASS_COMMON_HLSL

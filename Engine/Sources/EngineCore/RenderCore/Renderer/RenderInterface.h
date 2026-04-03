@@ -11,6 +11,7 @@ namespace PigeonEngine
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
 	class PBezierGrassComponent;
+	class PFluidWaterComponent;
 
 	class RSceneInterface
 	{
@@ -33,9 +34,7 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)				= 0;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)				= 0;
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)				= 0;
-#if _EDITOR_ONLY
-		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)= 0;
-#endif
+
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)			= 0;
@@ -43,6 +42,10 @@ namespace PigeonEngine
 		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent)				= 0;
 		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)			= 0;
 		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)			= 0;
+
+		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)				= 0;
+		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)				= 0;
+		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)				= 0;
 	public:
 		RSceneInterface() {}
 		RSceneInterface(const RSceneInterface& Other) {}

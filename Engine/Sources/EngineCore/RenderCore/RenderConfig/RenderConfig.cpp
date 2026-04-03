@@ -5,19 +5,23 @@
 namespace PigeonEngine
 {
 
-	PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType)
+	PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType InTexType)
 	{
-		static TMap<RDefaultTextureType, EString> engineDefaultTexturePathMap = {
-			{ RDefaultTextureType::TEXTURE2D_WHITE, (ENGINE_DEFAULT_TEXTURE2D_WHITE) },
-			{ RDefaultTextureType::TEXTURE2D_BLACK, (ENGINE_DEFAULT_TEXTURE2D_BLACK) },
-			{ RDefaultTextureType::TEXTURE2D_GRAY, (ENGINE_DEFAULT_TEXTURE2D_GRAY) },
-			{ RDefaultTextureType::TEXTURE2D_RED, (ENGINE_DEFAULT_TEXTURE2D_RED) },
-			{ RDefaultTextureType::TEXTURE2D_GREEN, (ENGINE_DEFAULT_TEXTURE2D_GREEN) },
-			{ RDefaultTextureType::TEXTURE2D_BLUE, (ENGINE_DEFAULT_TEXTURE2D_BLUE) },
-			{ RDefaultTextureType::TEXTURE2D_BUMP, (ENGINE_DEFAULT_TEXTURE2D_BUMP) },
-			{ RDefaultTextureType::TEXTURE2D_PROPERTY, (ENGINE_DEFAULT_TEXTURE2D_PROPERTY) } };
+		return (EString(EBaseSettings::ENGINE_ASSET_DIRECTORY) + (TEXT("EngineTextures/Default/")));
+	}
+	PE_INLINE EString GetEngineDefaultTextureName(RDefaultTextureType InTexType)
+	{
+		static TMap<RDefaultTextureType, EString> EngineDefaultTextureNameMap = {
+			{ RDefaultTextureType::TEXTURE2D_WHITE, TEXT("EngineDefaultWhite")},
+			{ RDefaultTextureType::TEXTURE2D_BLACK, TEXT("EngineDefaultBlack") },
+			{ RDefaultTextureType::TEXTURE2D_GRAY, TEXT("EngineDefaultGray") },
+			{ RDefaultTextureType::TEXTURE2D_RED, TEXT("EngineDefaultRed") },
+			{ RDefaultTextureType::TEXTURE2D_GREEN, TEXT("EngineDefaultGreen") },
+			{ RDefaultTextureType::TEXTURE2D_BLUE, TEXT("EngineDefaultBlue") },
+			{ RDefaultTextureType::TEXTURE2D_BUMP, TEXT("EngineDefaultBump") },
+			{ RDefaultTextureType::TEXTURE2D_PROPERTY, TEXT("EngineDefaultProperty") } };
 
-		return engineDefaultTexturePathMap[texType];
+		return EngineDefaultTextureNameMap[InTexType];
 	}
 	PE_INLINE UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input)
 	{

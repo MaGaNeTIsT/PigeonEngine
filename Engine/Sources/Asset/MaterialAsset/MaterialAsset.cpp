@@ -129,6 +129,9 @@ namespace PigeonEngine
                         F->GetStringField("type", Field.Type);
                         F->GetUIntField("offset", Field.Offset);
                         F->GetUIntField("size", Field.Size);
+                        BOOL8 bIsColor = FALSE;
+                        if (F->GetBoolField("is_color", bIsColor))
+                            Field.bIsColor = static_cast<BOOL32>(bIsColor);
                         CbRefl.Fields.Add(std::move(Field));
                         delete F;
                     }
@@ -161,6 +164,11 @@ namespace PigeonEngine
                 EMaterialSamplerRefl Samp;
                 S->GetStringField("name", Samp.Name);
                 S->GetUIntField("slot", Samp.Slot);
+                S->GetStringField("filter", Samp.Filter);
+                S->GetStringField("address", Samp.Address);
+                BOOL8 bEG = FALSE;
+                if (S->GetBoolField("engine_global", bEG))
+                    Samp.bEngineGlobal = static_cast<BOOL32>(bEG);
                 Out.Samplers.Add(std::move(Samp));
                 delete S;
             }
@@ -263,14 +271,15 @@ namespace PigeonEngine
             for (CJsonObject* VarObj : Variants)
             {
                 UINT32  VarIdx = 0u;
-                EString VarName, VsFile, PsFile, ReflFile;
+                EString VarName, VsFile, PsFile, CsFile, ReflFile;
                 VarObj->GetUIntField("index", VarIdx);
                 VarObj->GetStringField("name", VarName);
                 VarObj->GetStringField("vs", VsFile);
                 VarObj->GetStringField("ps", PsFile);
+                VarObj->GetStringField("cs", CsFile);
                 VarObj->GetStringField("refl", ReflFile);
 #if _EDITOR_ONLY
-                PE_LOG_LOG(EString("[MaterialAsset]   Variant[") + ToString(VarIdx) + "] '" + VarName + "' VS='" + VsFile + "' PS='" + PsFile + "' Refl='" + ReflFile + "'");
+                PE_LOG_LOG(EString("[MaterialAsset]   Variant[") + ToString(VarIdx) + "] '" + VarName + "' VS='" + VsFile + "' PS='" + PsFile + "' CS='" + CsFile + "' Refl='" + ReflFile + "'");
 #endif
 
                 EMaterialVariant Variant;
@@ -285,6 +294,7 @@ namespace PigeonEngine
                 // Derive asset names from file names (strip extension).
                 EString VsName = VsFile;
                 EString PsName = PsFile;
+                EString CsName = CsFile;
                 {
                     INT32 DotPos = VsName.RightFind(".");
                     if (DotPos >= 0) VsName = VsName.Left(static_cast<UINT32>(DotPos));
@@ -292,6 +302,10 @@ namespace PigeonEngine
                 {
                     INT32 DotPos = PsName.RightFind(".");
                     if (DotPos >= 0) PsName = PsName.Left(static_cast<UINT32>(DotPos));
+                }
+                {
+                    INT32 DotPos = CsName.RightFind(".");
+                    if (DotPos >= 0) CsName = CsName.Left(static_cast<UINT32>(DotPos));
                 }
 
 #if _EDITOR_ONLY
@@ -336,13 +350,47 @@ namespace PigeonEngine
                 }
 #endif
 
-                EShaderAssetManager::GetManagerSingleton()->LoadVertexShaderAsset(InLoadPath, VsName, Variant.VS);
-                EShaderAssetManager::GetManagerSingleton()->LoadPixelShaderAsset(InLoadPath, PsName, Variant.PS);
 #if _EDITOR_ONLY
-                if (Variant.VS) { PE_LOG_LOG(EString("[MaterialAsset]     VS loaded OK: '") + VsName + "'"); }
-                else            { PE_LOG_ERROR(EString("[MaterialAsset]     VS load FAILED: '") + VsName + "'"); }
-                if (Variant.PS) { PE_LOG_LOG(EString("[MaterialAsset]     PS loaded OK: '") + PsName + "'"); }
-                else            { PE_LOG_ERROR(EString("[MaterialAsset]     PS load FAILED: '") + PsName + "'"); }
+                // Auto-import CS from raw bytecode
+                if (CsFile.Length() > 0u)
+                {
+                    void* CsBytes = nullptr; ULONG CsBytesSize = 0u;
+                    EString RawCsPath = InLoadPath + CsFile;
+                    if (EFileHelper::ReadFileAsBinary(RawCsPath, CsBytes, CsBytesSize))
+                    {
+                        EShaderAssetManager::GetManagerSingleton()->ImportComputeShaderFromBytes(
+                            CsName, InLoadPath, CsBytes, CsBytesSize);
+                        delete[] CsBytes;
+                    }
+                }
+#endif
+
+                if (VsName.Length() > 0u)
+                {
+                    EShaderAssetManager::GetManagerSingleton()->LoadVertexShaderAsset(InLoadPath, VsName, Variant.VS);
+                }
+                if (PsName.Length() > 0u)
+                {
+                    EShaderAssetManager::GetManagerSingleton()->LoadPixelShaderAsset(InLoadPath, PsName, Variant.PS);
+                }
+                if (CsName.Length() > 0u)
+                {
+                    EShaderAssetManager::GetManagerSingleton()->LoadComputeShaderAsset(InLoadPath, CsName, Variant.CS);
+                }
+#if _EDITOR_ONLY
+                BOOL32 bIsComputeOnly = (CsName.Length() > 0u && VsName.Length() == 0u && PsName.Length() == 0u);
+                if (!bIsComputeOnly)
+                {
+                    if (Variant.VS) { PE_LOG_LOG(EString("[MaterialAsset]     VS loaded OK: '") + VsName + "'"); }
+                    else            { PE_LOG_ERROR(EString("[MaterialAsset]     VS load FAILED: '") + VsName + "'"); }
+                    if (Variant.PS) { PE_LOG_LOG(EString("[MaterialAsset]     PS loaded OK: '") + PsName + "'"); }
+                    else            { PE_LOG_ERROR(EString("[MaterialAsset]     PS load FAILED: '") + PsName + "'"); }
+                }
+                if (CsName.Length() > 0u)
+                {
+                    if (Variant.CS) { PE_LOG_LOG(EString("[MaterialAsset]     CS loaded OK: '") + CsName + "'"); }
+                    else            { PE_LOG_ERROR(EString("[MaterialAsset]     CS load FAILED: '") + CsName + "'"); }
+                }
 #endif
 
                 Asset->AddVariant(std::move(Variant));

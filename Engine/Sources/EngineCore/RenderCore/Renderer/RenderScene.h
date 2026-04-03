@@ -13,12 +13,14 @@ namespace PigeonEngine
 	class PDirectionalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
+	class PFluidWaterComponent;
 	class RViewProxy;
 	class RSkyLightSceneProxy;
 	class RDirectionalLightSceneProxy;
 	class RStaticMeshSceneProxy;
 	class RSkeletalMeshSceneProxy;
 	class RBezierGrassSceneProxy;
+	class RFluidWaterSceneProxy;
 
 	class RCommand final
 	{
@@ -137,9 +139,7 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override;
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override;
-#if _EDITOR_ONLY
-		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)override;
-#endif
+
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override;
@@ -147,6 +147,10 @@ namespace PigeonEngine
 		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent)override;
 		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)override;
 		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)override;
+
+		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)override;
+		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)override;
+		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)override;
 	public:
 		RCommand&		GetAddCommands();
 		const RCommand&	GetAddCommands()const;
@@ -169,6 +173,8 @@ namespace PigeonEngine
 		const RSceneProxyMapping<RSkeletalMeshSceneProxy>&		GetSkeletalMeshSceneProxies()const;
 		RSceneProxyMapping<RBezierGrassSceneProxy>&				GetBezierGrassSceneProxies();
 		const RSceneProxyMapping<RBezierGrassSceneProxy>&		GetBezierGrassSceneProxies()const;
+		RSceneProxyMapping<RFluidWaterSceneProxy>&				GetFluidWaterSceneProxies();
+		const RSceneProxyMapping<RFluidWaterSceneProxy>&		GetFluidWaterSceneProxies()const;
 	protected:
 		void	AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveSkyLight_RenderThread(RSkyLightSceneProxy* InSceneProxy, BOOL32 InIsAdd);
@@ -176,6 +182,7 @@ namespace PigeonEngine
 		void	AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 		void	AddOrRemoveBezierGrass_RenderThread(RBezierGrassSceneProxy* InSceneProxy, BOOL32 InIsAdd);
+		void	AddOrRemoveFluidWater_RenderThread(RFluidWaterSceneProxy* InSceneProxy, BOOL32 InIsAdd);
 	protected:
 		ROctree		RenderSceneOctree;
 	protected:
@@ -185,6 +192,7 @@ namespace PigeonEngine
 		RSceneProxyMapping<RStaticMeshSceneProxy>		StaticMeshSceneProxies;
 		RSceneProxyMapping<RSkeletalMeshSceneProxy>		SkeletalMeshSceneProxies;
 		RSceneProxyMapping<RBezierGrassSceneProxy>		BezierGrassSceneProxies;
+		RSceneProxyMapping<RFluidWaterSceneProxy>		FluidWaterSceneProxies;
 	protected:
 		RCommand	RenderAddCommands;
 		RCommand	RenderRemoveCommands;
@@ -217,9 +225,7 @@ namespace PigeonEngine
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)override {}
 		virtual void	UpdateStaticMesh(PStaticMeshComponent* InComponent)override {}
-#if _EDITOR_ONLY
-		virtual void	UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)override {}
-#endif
+
 		virtual void	AddSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
 		virtual void	RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
 		virtual void	UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)override {}
@@ -227,6 +233,10 @@ namespace PigeonEngine
 		virtual void	AddBezierGrass(PBezierGrassComponent* InComponent)override {}
 		virtual void	RemoveBezierGrass(PBezierGrassComponent* InComponent)override {}
 		virtual void	UpdateBezierGrass(PBezierGrassComponent* InComponent)override {}
+
+		virtual void	AddFluidWater(PFluidWaterComponent* InComponent)override {}
+		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)override {}
+		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)override {}
 	public:
 		RSceneNull() {}
 		RSceneNull(const RSceneNull& Other) {}

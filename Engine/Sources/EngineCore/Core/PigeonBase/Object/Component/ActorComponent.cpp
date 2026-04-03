@@ -64,10 +64,6 @@ namespace PigeonEngine
 	{
 		return TRUE;
 	}
-	BOOL32 PActorComponent::CheckIsRenderHidden()const
-	{
-		return FALSE;
-	}
 	BOOL32 PActorComponent::ShouldRender()const
 	{
 		return IsVisible();

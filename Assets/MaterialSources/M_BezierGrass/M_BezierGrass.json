@@ -1,0 +1,20 @@
+{
+    "name": "M_BezierGrass",
+    "stage": "VS_PS",
+    "vertex_factory": "VertexFactory.json",
+    "material": "Material.json",
+    "template_vs": "Assets/MaterialSources/M_BezierGrass/BezierGrassPass_VS.tmpl.hlsl",
+    "template_ps": "Assets/MaterialSources/M_BezierGrass/BezierGrassPass_PS.tmpl.hlsl",
+    "defines": [
+        { "name": "SHADER_USE_VIEW_INPUT", "value": 1 },
+        { "name": "SHADER_USE_PERDRAW_INPUT", "value": 1 },
+        { "name": "BEZIER_GRASS_BLADE_LODS_MAX_NUM", "value": 8 },
+        { "name": "BEZIER_GRASS_BLADE_CURVE_POINTS_MAX_NUM", "value": 8 },
+        { "name": "BEZIER_GRASS_LAYER_TYPE_BASE_NUM_MEMBERS", "value": 19 },
+        { "name": "BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS", "value": 10 },
+        { "name": "BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS", "value": 6 }
+    ],
+    "variants": [
+        { "name": "default" }
+    ]
+}

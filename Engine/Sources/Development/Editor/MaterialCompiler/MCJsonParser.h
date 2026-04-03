@@ -27,13 +27,15 @@ struct MCVertexFactory
     std::string                HlslVS;
     std::string                HlslVSFunctions;
     std::string                VaryingStruct;
+    std::string                HlslCommon;  // Common variables/functions
 };
 
 struct MCCBField
 {
     std::string       Name;
-    std::string       Type;   // "float4", "float", "float2", etc.
+    std::string       Type;   // "float4", "float", "float2", "color3", "color4", etc.
     std::vector<float> Default;
+    bool              IsColor = false;  // true if type is "color3" or "color4"
 };
 
 struct MCConstantBuffer
@@ -49,6 +51,13 @@ struct MCTexture
     std::string Sampler; // sampler name reference
 };
 
+struct MCBuffer
+{
+    std::string Name;
+    std::string Type;    // "StructuredBuffer", "RWStructuredBuffer", "ByteAddressBuffer", "RWByteAddressBuffer"
+    std::string Struct;  // struct type name (e.g., "MyData")
+};
+
 struct MCSampler
 {
     std::string Name;
@@ -61,11 +70,13 @@ struct MCMaterial
     std::string          Name;
     MCConstantBuffer     CB;
     std::vector<MCTexture>  Textures;
+    std::vector<MCBuffer>   Buffers;
     std::vector<MCSampler>  Samplers;
     std::vector<MCDefine>   Defines;
     std::string          HlslSurface;
     std::string          HlslPSFunctions;
     std::string          HlslCSFunctions;
+    std::string          HlslCommon;  // Common variables/functions
 };
 
 struct MCVariant
@@ -78,13 +89,14 @@ struct MCShaderPass
 {
     std::string            Name;
     std::string            Stage;         // "VS_PS", "CS"
-    std::string            VertexFactory;
-    std::string            Material;
+    std::string            VertexFactoryPath;  // Path to VF json
+    std::string            MaterialPath;       // Path to Material json
     std::string            TemplateVS;
     std::string            TemplatePS;
     std::string            TemplateCS;
     std::vector<MCDefine>  Defines;
     std::vector<MCVariant> Variants;
+    std::string            HlslCommon;  // Common variables/functions
 };
 
 // Returns false and sets OutError on failure.

@@ -1,0 +1,18 @@
+{
+    "name": "M_DefaultLit",
+    "stage": "VS_PS",
+    "vertex_factory": "VertexFactory.json",
+    "material": "Material.json",
+    "template_vs": "Assets/MaterialSources/Common/Templates/BasePass_VS.tmpl.hlsl",
+    "template_ps": "Assets/MaterialSources/Common/Templates/BasePass_PS.tmpl.hlsl",
+    "defines": [
+        { "name": "SHADER_USE_VIEW_INPUT", "value": 1 },
+        { "name": "SHADER_USE_PERDRAW_INPUT", "value": 1 },
+        { "name": "SHADER_USE_TRANSFORM_INPUT", "value": 1 },
+        { "name": "SHADER_USE_TRANSFORM", "value": 1 }
+    ],
+    "variants": [
+        { "name": "default" },
+        { "name": "alphatest", "defines": [{ "name": "MATERIAL_USE_ALPHA_TEST", "value": 1 }] }
+    ]
+}

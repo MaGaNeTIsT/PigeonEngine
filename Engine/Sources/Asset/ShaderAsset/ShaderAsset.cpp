@@ -457,6 +457,25 @@ namespace PigeonEngine
 		delete Resource;
 		return Result;
 	}
+	BOOL32 EShaderAssetManager::ImportComputeShaderFromBytes(
+		const EString& InAssetName, const EString& InSavePath,
+		const void* InBytes, ULONG InByteSize)
+	{
+		if (!InBytes || InByteSize == 0u)
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportComputeShaderFromBytes: invalid arguments"));
+			return FALSE;
+		}
+		EShaderResource* Resource = new EShaderResource();
+		Resource->ShaderByteCode = new BYTE[InByteSize];
+		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
+		Resource->ShaderByteCodeSize = InByteSize;
+		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
+			RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE);
+		Resource->ReleaseResource();
+		delete Resource;
+		return Result;
+	}
 #endif
 	BOOL32 EShaderAssetManager::LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset)
 	{

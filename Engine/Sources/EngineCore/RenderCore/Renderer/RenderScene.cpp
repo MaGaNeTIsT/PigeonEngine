@@ -11,12 +11,14 @@
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <RenderProxy/BezierGrassSceneProxy.h>
+#include <RenderProxy/FluidWaterSceneProxy.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
+#include <PigeonBase/Object/Component/Primitive/FluidWaterComponent.h>
 
 namespace PigeonEngine
 {
@@ -352,10 +354,9 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
@@ -364,9 +365,9 @@ namespace PigeonEngine
 		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
 
 		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset, TempMatAsset]()->void
+			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMeshAsset, TempMatAsset]()->void
 			{
-				SceneProxy->SetupProxy(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices, TempMeshAsset, TempMatAsset);
+				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMeshAsset, TempMatAsset);
 				delete TempMatrices;
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, TRUE);
 			});
@@ -383,22 +384,6 @@ namespace PigeonEngine
 				delete SceneProxy;
 			});
 	}
-#if _EDITOR_ONLY
-	void RScene::UpdateStaticMeshMaterialCBData(PStaticMeshComponent* InComponent)
-	{
-		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
-
-		TArray<TArray<BYTE>>* CBDatas = new TArray<TArray<BYTE>>();
-		InComponent->GetEditorSlotCBData(0u, *CBDatas);
-
-		RenderUpdateCommands.EnqueueCommand(
-			[SceneProxy, CBDatas]()->void
-			{
-				SceneProxy->UpdateMaterialCBData(*CBDatas);
-				delete CBDatas;
-			});
-	}
-#endif
 	void RScene::UpdateStaticMesh(PStaticMeshComponent* InComponent)
 	{
 		RScene* Scene = this;
@@ -406,10 +391,9 @@ namespace PigeonEngine
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = nullptr;
 		if ((UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX) != 0u)
 		{
@@ -426,11 +410,33 @@ namespace PigeonEngine
 		const BOOL32 bMatAssetUpdated = (UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATERIAL) != 0u;
 		const EMaterialAsset* TempMatAsset = bMatAssetUpdated ? InComponent->GetMaterialAsset(0u) : nullptr;
 
+		TArray<TArray<BYTE>>* TempCBDatas = nullptr;
+		TArray<RMaterialTextureSRV>* TempTexs = nullptr;
+		if (InComponent->IsMaterialDirty())
+		{
+			TempCBDatas = new TArray<TArray<BYTE>>();
+			InComponent->GetMaterialConstantBufferDataBySlot(0u, *TempCBDatas);
+
+			TempTexs = new TArray<RMaterialTextureSRV>();
+			InComponent->GetMaterialTextureBySlot(0u, *TempTexs);
+		}
+
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempMeshAsset, bMatAssetUpdated, TempMatAsset]()->void
+			[Scene
+			, SceneProxy
+			, bMovable
+			, bCastShadow
+			, bReceiveShadow
+			, TempMatrices
+			, TempMeshAsset
+			, bMatAssetUpdated
+			, TempMatAsset
+			, TempCBDatas
+			, TempTexs
+			]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+				SceneProxy->SetPrimitiveSettings(bMovable, bCastShadow, bReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
@@ -445,6 +451,16 @@ namespace PigeonEngine
 				{
 					SceneProxy->UpdateMaterialAsset(TempMatAsset);
 				}
+				if (TempCBDatas)
+				{
+					SceneProxy->UpdateMaterialCBData(*TempCBDatas);
+					delete TempCBDatas;
+				}
+				if(TempTexs)
+				{
+					SceneProxy->UpdateMaterialTextures(*TempTexs);
+					delete TempTexs;
+				}
 				if (NeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
@@ -457,9 +473,8 @@ namespace PigeonEngine
 		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
 		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
@@ -469,7 +484,7 @@ namespace PigeonEngine
 		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
 
 		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsCastShadow, InIsReceiveShadow,
+			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
 			TempMatrices, TempMeshAsset, TempSkeletonAsset,
 			TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
 			]()->void
@@ -487,8 +502,7 @@ namespace PigeonEngine
 #endif
 					}
 				}
-				SceneProxy->SetupProxy(InIsRenderHidden, TRUE, InIsCastShadow, InIsReceiveShadow,
-					*TempMatrices, TempMeshAsset, TempSkeletonAsset, TempBoneToRootMatrices);
+				SceneProxy->SetupProxy(TRUE, bCastShadow, bReceiveShadow, *TempMatrices, TempMeshAsset, TempSkeletonAsset, TempBoneToRootMatrices);
 				delete TempMatrices;
 				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
 			});
@@ -513,9 +527,8 @@ namespace PigeonEngine
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
 		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = nullptr;
 		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MATRIX) != 0u)
 		{
@@ -538,13 +551,13 @@ namespace PigeonEngine
 		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
 
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsCastShadow, InIsReceiveShadow,
+			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
 			TempMatrices, TempMeshAsset, TempSkeletonAsset,
 			TempUpdateBoneData, TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
 			]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, TRUE, InIsCastShadow, InIsReceiveShadow);
+				SceneProxy->SetPrimitiveSettings(TRUE, bCastShadow, bReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
@@ -591,36 +604,24 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RBezierGrassSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
 			InComponent->GetComponentWorldScale());
 		EBezierGrassProperty* TempProperty = new EBezierGrassProperty(InComponent->Property);
-		TArray<EBezierGrassInstanceData>* TempInstanceData;
-		if (InComponent->InstanceData.Num() > 0)
-		{
-			TempInstanceData = new TArray<EBezierGrassInstanceData>();
-			TempInstanceData->CopyFrom(EMemory::Move(InComponent->InstanceData));
-		}
 
 		RenderAddCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempProperty, TempInstanceData]()->void
+			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempProperty]()->void
 			{
-				SceneProxy->SetupProxy(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, *TempMatrices);
+				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices);
 				delete TempMatrices;
 				if (TempProperty)
 				{
 					SceneProxy->UpdateProperty(*TempProperty);
 					delete TempProperty;
-				}
-				if (TempInstanceData && TempInstanceData->Num() > 0)
-				{
-					SceneProxy->UpdateInstanceData(EMemory::Move(*TempInstanceData));
-					delete TempInstanceData;
 				}
 				Scene->AddOrRemoveBezierGrass_RenderThread(SceneProxy, TRUE);
 			});
@@ -644,10 +645,9 @@ namespace PigeonEngine
 
 		UINT8 UpdateState = InComponent->GetUpdateRenderState();
 
-		const BOOL32 InIsRenderHidden = InComponent->IsPrimitiveRenderHidden(),
-			InIsMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC,
-			InIsCastShadow = InComponent->IsPrimitiveCastShadow(),
-			InIsReceiveShadow = InComponent->IsPrimitiveReceiveShadow();
+		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
 		ERenderPrimitiveMatrices* TempMatrices = nullptr;
 		if ((UpdateState & PBezierGrassComponent::PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_MATRIX) != 0u)
 		{
@@ -657,23 +657,30 @@ namespace PigeonEngine
 				InComponent->GetComponentWorldScale());
 		}
 		EBezierGrassProperty* TempProperty = nullptr;
+		EBezierGrassLayerTypeData* TempLayerData = nullptr;
+		Vector2* TempTileAnchor = nullptr;
+		Vector2* TempTileSize = nullptr;
+		UINT32 TempNumTilesX = 0;
+		UINT32 TempNumTilesZ = 0;
+		Vector3* TempWindDirection = nullptr;
+		FLOAT TempWindStrength = 0.f;
 		if ((UpdateState & PBezierGrassComponent::PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_ASSET) != 0u)
 		{
 			TempProperty = new EBezierGrassProperty(InComponent->Property);
-		}
-		TArray<EBezierGrassInstanceData>* TempInstanceData = nullptr;
-		if ((UpdateState & PBezierGrassComponent::PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_INSTANCE) != 0u)
-		{
-			TempInstanceData = new TArray<EBezierGrassInstanceData>();
-			TempInstanceData->CopyFrom(EMemory::Move(InComponent->InstanceData));
+			TempLayerData = new EBezierGrassLayerTypeData(InComponent->LayerTypeData);
+			TempTileAnchor = new Vector2(InComponent->TileAnchor);
+			TempTileSize = new Vector2(InComponent->TileSize);
+			TempNumTilesX = InComponent->NumTilesX;
+			TempNumTilesZ = InComponent->NumTilesZ;
+			TempWindDirection = new Vector3(InComponent->WindDirection);
+			TempWindStrength = InComponent->WindStrength;
 		}
 
 		RenderUpdateCommands.EnqueueCommand(
-			[Scene, SceneProxy, InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow, TempMatrices, TempProperty, TempInstanceData]()->void
+			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempProperty, TempLayerData, TempTileAnchor, TempTileSize, TempNumTilesX, TempNumTilesZ, TempWindDirection, TempWindStrength]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
-				BOOL32 NeedUpdateInstanceResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(InIsRenderHidden, InIsMovable, InIsCastShadow, InIsReceiveShadow);
+				SceneProxy->SetPrimitiveSettings(bMovable, bCastShadow, bReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
@@ -686,20 +693,25 @@ namespace PigeonEngine
 					delete TempProperty;
 					NeedUpdateRenderResource = TRUE;
 				}
-				if (TempInstanceData)
+				if (TempLayerData)
 				{
-					SceneProxy->UpdateInstanceData(EMemory::Move(*TempInstanceData));
-					delete TempInstanceData;
-					NeedUpdateRenderResource = TRUE;
-					NeedUpdateInstanceResource = TRUE;
+					SceneProxy->UpdateLayerTypeData(*TempLayerData);
+					delete TempLayerData;
+				}
+				if (TempTileAnchor && TempTileSize)
+				{
+					SceneProxy->UpdateTileParams(*TempTileAnchor, *TempTileSize, TempNumTilesX, TempNumTilesZ);
+					delete TempTileAnchor;
+					delete TempTileSize;
+				}
+				if (TempWindDirection)
+				{
+					SceneProxy->UpdateWindParams(*TempWindDirection, TempWindStrength);
+					delete TempWindDirection;
 				}
 				if (NeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
-				}
-				if (NeedUpdateInstanceResource)
-				{
-					SceneProxy->UpdateInstanceResource();
 				}
 			});
 	}
@@ -783,6 +795,14 @@ namespace PigeonEngine
 	{
 		return BezierGrassSceneProxies;
 	}
+	RSceneProxyMapping<RFluidWaterSceneProxy>& RScene::GetFluidWaterSceneProxies()
+	{
+		return FluidWaterSceneProxies;
+	}
+	const RSceneProxyMapping<RFluidWaterSceneProxy>& RScene::GetFluidWaterSceneProxies()const
+	{
+		return FluidWaterSceneProxies;
+	}
 	void RScene::AddOrRemoveCamera_RenderThread(RViewProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
 		if (InIsAdd)
@@ -847,6 +867,59 @@ namespace PigeonEngine
 		else
 		{
 			BezierGrassSceneProxies.RemoveSceneProxy(InSceneProxy);
+		}
+	}
+
+	void RScene::AddFluidWater(PFluidWaterComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RFluidWaterSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+
+		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
+		const BOOL32 bCastShadow = InComponent->IsCastShadow();
+		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
+		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
+			InComponent->GetComponentWorldLocation(),
+			InComponent->GetComponentWorldRotation(),
+			InComponent->GetComponentWorldScale());
+		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
+
+		RenderAddCommands.EnqueueCommand(
+			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMatAsset]()->void
+			{
+				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMatAsset);
+				delete TempMatrices;
+				Scene->AddOrRemoveFluidWater_RenderThread(SceneProxy, TRUE);
+			});
+	}
+
+	void RScene::RemoveFluidWater(PFluidWaterComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RFluidWaterSceneProxy* SceneProxy = InComponent->SceneProxy;
+		InComponent->SceneProxy = nullptr;
+		RenderRemoveCommands.EnqueueCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveFluidWater_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
+			});
+	}
+
+	void RScene::UpdateFluidWater(PFluidWaterComponent* InComponent)
+	{
+
+	}
+
+	void RScene::AddOrRemoveFluidWater_RenderThread(RFluidWaterSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	{
+		if (InIsAdd)
+		{
+			FluidWaterSceneProxies.AddSceneProxy(InSceneProxy);
+		}
+		else
+		{
+			FluidWaterSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
 

@@ -3,8 +3,8 @@
     "constant_buffer": {
         "name": "MaterialParams",
         "fields": [
-            { "name": "BaseColor",      "type": "float4", "default": [1, 1, 1, 1] },
-            { "name": "BaseColorTint",  "type": "float4", "default": [1, 1, 1, 1] },
+            { "name": "BaseColor",      "type": "color4", "default": [1, 1, 1, 1] },
+            { "name": "BaseColorTint",  "type": "color4", "default": [1, 1, 1, 1] },
             { "name": "RoughnessScale", "type": "float",  "default": [1.0] },
             { "name": "MetallicScale",  "type": "float",  "default": [0.0] },
             { "name": "NormalScale",    "type": "float",  "default": [1.0] },

@@ -27,6 +27,7 @@ add_executable(MaterialCompiler
     MCDxcCompiler.h      MCDxcCompiler.cpp
     MCReflectionWriter.h MCReflectionWriter.cpp
     MCFileWatcher.h      MCFileWatcher.cpp
+    MCLogger.h           MCLogger.cpp
 )
 
 set_target_properties(MaterialCompiler PROPERTIES

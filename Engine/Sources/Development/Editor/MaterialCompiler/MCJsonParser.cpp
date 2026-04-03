@@ -72,6 +72,7 @@ bool ParseVertexFactory(const std::string& JsonPath, MCVertexFactory& Out, std::
         if (!LoadHlslField(vs, "hlsl_body",      dir, Out.HlslVS,          OutError)) return false;
         if (!LoadHlslField(vs, "varying_struct",  dir, Out.VaryingStruct,   OutError)) return false;
     }
+    if (!LoadHlslField(doc, "hlsl_common", dir, Out.HlslCommon, OutError)) return false;
     return true;
 }
 
@@ -93,6 +94,14 @@ bool ParseMaterial(const std::string& JsonPath, MCMaterial& Out, std::string& Ou
             MCCBField field;
             field.Name = f["name"].GetString();
             field.Type = f["type"].GetString();
+
+            // Check if it's a color type
+            if (field.Type == "color3" || field.Type == "color4")
+            {
+                field.IsColor = true;
+                field.Type = (field.Type == "color3") ? "float3" : "float4";
+            }
+
             if (f.HasMember("default"))
             {
                 auto& def = f["default"];
@@ -113,6 +122,16 @@ bool ParseMaterial(const std::string& JsonPath, MCMaterial& Out, std::string& Ou
             tex.Type    = t["type"].GetString();
             tex.Sampler = t["sampler"].GetString();
             Out.Textures.push_back(std::move(tex));
+        }
+
+    if (doc.HasMember("buffers"))
+        for (auto& b : doc["buffers"].GetArray())
+        {
+            MCBuffer buf;
+            buf.Name   = b["name"].GetString();
+            buf.Type   = b["type"].GetString();
+            buf.Struct = b.HasMember("struct") ? b["struct"].GetString() : "";
+            Out.Buffers.push_back(std::move(buf));
         }
 
     if (doc.HasMember("samplers"))
@@ -148,6 +167,7 @@ bool ParseMaterial(const std::string& JsonPath, MCMaterial& Out, std::string& Ou
         if (!LoadHlslField(cs, "hlsl_functions", dir, Out.HlslCSFunctions, OutError)) return false;
         if (!LoadHlslField(cs, "hlsl_surface",   dir, Out.HlslSurface,     OutError)) return false;
     }
+    if (!LoadHlslField(doc, "hlsl_common", dir, Out.HlslCommon, OutError)) return false;
     return true;
 }
 
@@ -158,13 +178,19 @@ bool ParseShaderPass(const std::string& JsonPath, MCShaderPass& Out, std::string
     rapidjson::Document doc;
     if (!ParseDoc(raw, doc, OutError)) return false;
 
-    Out.Name          = doc["name"].GetString();
-    Out.Stage         = doc["stage"].GetString();
-    Out.VertexFactory = doc.HasMember("vertex_factory") ? doc["vertex_factory"].GetString() : "";
-    Out.Material      = doc["material"].GetString();
-    Out.TemplateVS    = doc.HasMember("template_vs") ? doc["template_vs"].GetString() : "";
-    Out.TemplatePS    = doc.HasMember("template_ps") ? doc["template_ps"].GetString() : "";
-    Out.TemplateCS    = doc.HasMember("template_cs") ? doc["template_cs"].GetString() : "";
+    if (!doc.IsObject() || !doc.HasMember("name") || !doc.HasMember("stage") || !doc.HasMember("material"))
+    {
+        OutError = "Invalid ShaderPass JSON: missing required fields";
+        return false;
+    }
+
+    Out.Name              = doc["name"].GetString();
+    Out.Stage             = doc["stage"].GetString();
+    Out.VertexFactoryPath = doc.HasMember("vertex_factory") ? doc["vertex_factory"].GetString() : "";
+    Out.MaterialPath      = doc.HasMember("material") ? doc["material"].GetString() : "";
+    Out.TemplateVS        = doc.HasMember("template_vs") ? doc["template_vs"].GetString() : "";
+    Out.TemplatePS        = doc.HasMember("template_ps") ? doc["template_ps"].GetString() : "";
+    Out.TemplateCS        = doc.HasMember("template_cs") ? doc["template_cs"].GetString() : "";
 
     if (doc.HasMember("defines"))
         for (auto& d : doc["defines"].GetArray())
@@ -191,6 +217,8 @@ bool ParseShaderPass(const std::string& JsonPath, MCShaderPass& Out, std::string
             Out.Variants.push_back(std::move(var));
         }
 
+    std::string dir = JsonPath.substr(0, JsonPath.find_last_of("/\\") + 1);
+    if (!LoadHlslField(doc, "hlsl_common", dir, Out.HlslCommon, OutError)) return false;
     return true;
 }
 

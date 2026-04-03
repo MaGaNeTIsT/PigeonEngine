@@ -14,46 +14,50 @@ namespace PigeonEngine
 
     struct EMaterialCBField
     {
-        EString Name;
-        UINT32  Offset  = 0u;
-        UINT32  Size    = 0u;
-        EString Type;
+        EString     Name;
+        UINT32      Offset      = 0u;
+        UINT32      Size        = 0u;
+        EString     Type;
+        BOOL32      bIsColor    = FALSE;
     };
 
     struct EMaterialCBRefl
     {
-        EString                    Name;
-        UINT32                     Slot         = 0u;
-        UINT32                     SizeBytes    = 0u;
-        TArray<EMaterialCBField>   Fields;
+        EString                     Name;
+        UINT32                      Slot            = 0u;
+        UINT32                      SizeBytes       = 0u;
+        TArray<EMaterialCBField>    Fields;
     };
 
     struct EMaterialSRVRefl
     {
-        EString Name;
-        UINT32  Slot    = 0u;
+        EString     Name;
+        UINT32      Slot        = 0u;
     };
 
     struct EMaterialSamplerRefl
     {
-        EString Name;
-        UINT32  Slot    = 0u;
+        EString     Name;
+        UINT32      Slot                = 0u;
+        EString     Filter;                         // "POINT" / "LINEAR" / "ANISO" etc.
+        EString     Address;                        // "WRAP" / "CLAMP" etc.
+        BOOL32      bEngineGlobal       = FALSE;    // TRUE if mapped to engine global sampler (s0-s3)
     };
 
     struct EMaterialInputLayoutRefl
     {
-        EString Semantic;           // e.g. "POSITION", "NORMAL"
-        UINT32  Index   = 0u;       // semantic index
-        EString Format;             // e.g. "FLOAT4", "FLOAT2", "UINT4" — encodes type and component count
-        UINT32  Slot    = 0u;       // vertex buffer input slot
+        EString     Semantic;           // e.g. "POSITION", "NORMAL"
+        UINT32      Index       = 0u;   // semantic index
+        EString     Format;             // e.g. "FLOAT4", "FLOAT2", "UINT4" — encodes type and component count
+        UINT32      Slot        = 0u;   // vertex buffer input slot
     };
 
     struct EMaterialReflection
     {
-        TArray<EMaterialCBRefl>          ConstantBuffers;
-        TArray<EMaterialSRVRefl>         SRVs;
-        TArray<EMaterialSamplerRefl>     Samplers;
-        TArray<EMaterialInputLayoutRefl> InputLayout;
+        TArray<EMaterialCBRefl>                 ConstantBuffers;
+        TArray<EMaterialSRVRefl>                SRVs;
+        TArray<EMaterialSamplerRefl>            Samplers;
+        TArray<EMaterialInputLayoutRefl>        InputLayout;
     };
 
     // ---------------------------------------------------------------------------
@@ -62,12 +66,13 @@ namespace PigeonEngine
 
     struct EMaterialVariant
     {
-        EString                     PassName;
-        UINT32                      VariantIndex    = 0u;
-        EString                     VariantName;
-        const EVertexShaderAsset*   VS              = nullptr;
-        const EPixelShaderAsset*    PS              = nullptr;
-        EMaterialReflection         Reflection;
+        EString                         PassName;
+        UINT32                          VariantIndex        = 0u;
+        EString                         VariantName;
+        const EVertexShaderAsset*       VS                  = nullptr;
+        const EPixelShaderAsset*        PS                  = nullptr;
+        const EComputeShaderAsset*      CS                  = nullptr;
+        EMaterialReflection             Reflection;
     };
 
     // ---------------------------------------------------------------------------
@@ -83,8 +88,8 @@ namespace PigeonEngine
         const EMaterialVariant* GetFirstVariant() const;
 
     private:
-        EString                    Name;
-        TArray<EMaterialVariant>   Variants;
+        EString                     Name;
+        TArray<EMaterialVariant>    Variants;
 
     public:
         EMaterialAsset(const EString& InName);

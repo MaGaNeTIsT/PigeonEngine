@@ -1,6 +1,8 @@
 #ifndef _BEZIER_GRASS_PE_VS_HLSL
 #define _BEZIER_GRASS_PE_VS_HLSL
 
+#if 0
+
 struct StreamIn
 {
     float4 BeizerStepData : TEXCOORD0;
@@ -80,4 +82,11 @@ Varying main(StreamIn InStream, uint InstanceID : SV_InstanceID, uint VertexID :
     return Output;
 }
 
-#endif
+#else
+void main(uint InstanceID : SV_InstanceID, uint VertexID : SV_VertexID, out float2 OutTexcoord : TEXCOORD0)
+{
+    OutTexcoord = float2(0, 0);
+}
+
+#endif  // 0
+#endif  // _BEZIER_GRASS_PE_VS_HLSL

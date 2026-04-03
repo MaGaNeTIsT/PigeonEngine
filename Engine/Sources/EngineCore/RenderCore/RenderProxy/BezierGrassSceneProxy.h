@@ -27,17 +27,24 @@ namespace PigeonEngine
 	{
 	public:
 		RBezierGrassSceneProxy(PBezierGrassComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsHidden, const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices);
+		void			SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices);
 		void			UpdateProperty(const EBezierGrassProperty& InProperty);
-		void			UpdateInstanceData(TArray<EBezierGrassInstanceData>&& InInstanceData);
+		void			UpdateLayerTypeData(const EBezierGrassLayerTypeData& InLayerData);
+		void			UpdateTileParams(const Vector2& InTileAnchor, const Vector2& InTileSize, UINT32 InNumTilesX, UINT32 InNumTilesZ);
+		void			UpdateWindParams(const Vector3& InWindDirection, FLOAT InWindStrength);
 	public:
 		virtual BOOL32	IsRenderValid()const override;
 		void			UpdateInstanceResource();
 		void			UpdateRenderResource();
 		void			BindRenderResource()const;
+		void			DispatchComputeShader();
 		void			Draw()const;
 	protected:
 		void			SetupVertexIndexBuffer();
+		void			SetupComputeBuffers();
+		void			SetupComputeTextures();
+		void			SetupComputeConstantBuffer();
+		void			SetupLayerTypeBuffer();
 		void			SetupShaders();
 		void			BindVertexShader()const;
 		void			BindPixelShader()const;
@@ -46,6 +53,7 @@ namespace PigeonEngine
 	protected:
 		const EVertexShaderAsset*			VertexShader;
 		const EPixelShaderAsset*			PixelShader;
+		const EComputeShaderAsset*			ComputeShader;
 #if _EDITOR_ONLY
 		const EComputeShaderAsset*			DebugComputeShader;
 		const EComputeShaderAsset*			DebugScreenComputeShader;
@@ -57,8 +65,22 @@ namespace PigeonEngine
 		RIndexBufferResource				IndexBuffer;
 		RBezierGrassMaterialParameter		MaterialParameter;
 		EBezierGrassProperty				Property;
-		TArray<EBezierGrassInstanceData>	InstanceData;
-		RStructuredBuffer					InstanceBuffer;
+		EBezierGrassLayerTypeData			LayerTypeData;
+		Vector2								TileAnchor;
+		Vector2								TileSize;
+		UINT32								NumTilesX;
+		UINT32								NumTilesZ;
+		Vector3								WindDirection;
+		FLOAT								WindStrength;
+		RStructuredBuffer					PackedInstanceBuffer;
+		RStructuredBuffer					DispatchBuffer;
+		RStructuredBuffer					LayerTypeBuffer;
+		RStructuredBuffer					TileShuffleBuffer;
+		RStructuredBuffer					DrawIndirectBuffer;
+		RBufferResource						ComputeConstantBuffer;
+		const class ETexture2DAsset*		LandscapeHeightTexture;
+		const class ETexture2DAsset*		LayerIndexTexture;
+		const class ETexture2DAsset*		DensityTexture;
 	protected:
 		const PBezierGrassComponent*		Component;
 

@@ -727,7 +727,8 @@ namespace PigeonEngine
 		PRIMITIVE_TOPOLOGY_TRIANGLESTRIP	= 5
 	};
 
-	extern PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType texType);
+	extern PE_INLINE EString GetEngineDefaultTexturePath(RDefaultTextureType InTexType);
+	extern PE_INLINE EString GetEngineDefaultTextureName(RDefaultTextureType InTexType);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeByByte(const RInputLayoutDesc& input);
 	extern PE_INLINE UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);
 	extern PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(const UINT16 input);

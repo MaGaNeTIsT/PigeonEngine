@@ -225,6 +225,7 @@ namespace PigeonEngine
 			New->SetActorLocation(Vector3(0.0f, -10.0f, 0.0f));
 		}
 
+#if 0
 		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
@@ -240,6 +241,7 @@ namespace PigeonEngine
 			New->SetActorLocation(Vector3(0.0f, 0.0f, 0.0f));
 			PE_LOG_LOG(New->GetBounds().AsString());
 		}
+#endif
 
 		// Material demo: create a static mesh actor and assign a material to its primitive component
 		{
@@ -268,7 +270,7 @@ namespace PigeonEngine
 				"M_DefaultLit",
 				EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
 				EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-				MatAsset);
+				MatAsset, TRUE);
 #else
 			EMaterialAssetManager::GetManagerSingleton()->LoadMaterialAsset(
 				EString(EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR) + "M_DefaultLit/",

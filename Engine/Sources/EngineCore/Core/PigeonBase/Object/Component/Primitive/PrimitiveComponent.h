@@ -2,6 +2,7 @@
 
 #include "EngineCommon.h"
 #include <PigeonBase/Object/Component/SceneComponent.h>
+#include <RenderMaterials/MaterialBinding.h>
 
 namespace PigeonEngine
 {
@@ -40,27 +41,20 @@ namespace PigeonEngine
         CLASS_VIRTUAL_NOCOPY_BODY(PPrimitiveComponent)
 
     public:
-        PE_NODISCARD BOOL32                 IsPrimitiveCastShadow() const;
-        PE_NODISCARD BOOL32                 IsPrimitiveReceiveShadow() const;
-        PE_NODISCARD BOOL32                 IsPrimitiveRenderHidden() const;
-        PE_NODISCARD const EMaterialAsset*  GetMaterialAsset(UINT32 SlotIdx = 0u) const;
+        PE_NODISCARD BOOL32                 IsCastShadow() const;
+        PE_NODISCARD BOOL32                 IsReceiveShadow() const;
+        PE_NODISCARD BOOL32                 IsMaterialDirty() const;
+        PE_NODISCARD const EMaterialAsset*  GetMaterialAsset(UINT32 InSlotIdx = 0u) const;
         PE_NODISCARD UINT32                 GetMaterialSlotCount() const;
     public:
-        void SetPrimitiveCastShadow(BOOL32 InIsCastShadow);
-        void SetPrimitiveReceiveShadow(BOOL32 InIsReceiveShadow);
-        void SetPrimitiveRenderHidden(BOOL32 InIsRenderHidden);
-        virtual void SetMaterialAsset(const EMaterialAsset* InMaterialAsset);
-        virtual void SetMaterialAsset(UINT32 SlotIdx, const EMaterialAsset* InMaterialAsset);
-        void SetMaterialSlotsNum(UINT32 Num);
-    private:
-        BOOL32                          IsCastShadow;
-        BOOL32                          IsReceiveShadow;
-        BOOL32                          IsRenderHidden;
-        TArray<const EMaterialAsset*>   MaterialSlots;
+        void            SetCastShadow(BOOL32 InIsCastShadow);
+        void            SetReceiveShadow(BOOL32 InIsReceiveShadow);
+        virtual void    SetMaterialAsset(const EMaterialAsset* InMaterialAsset);
+        virtual void    SetMaterialAsset(UINT32 InSlotIdx, const EMaterialAsset* InMaterialAsset);
+        void            SetMaterialSlotsNum(UINT32 InNum);
 
         // Render proxy functions START
     public:
-        virtual BOOL32	CheckIsRenderHidden()const override;
         virtual void    CreateRenderState()override;
         virtual void    DestroyRenderState()override;
         virtual void    SendUpdateRenderState()override;
@@ -68,39 +62,27 @@ namespace PigeonEngine
         virtual void    MarkRenderTransformAsDirty()override;
         virtual void    MarkRenderStateAsDirty()override;
         virtual void    CleanMarkRenderStateDirty()override;
+        virtual void    MarkMaterialAsDirty();
+        virtual void    CleanMaterialDirty();
         // Render proxy functions END
 
+    public:
+        void            GetMaterialConstantBufferDataBySlot(UINT32 InSlotIdx, TArray<TArray<UINT8>>& Out) const;
+        void            GetMaterialTextureBySlot(UINT32 InSlotIdx, TArray<struct RMaterialTextureSRV>& Out) const;
+        void            RebuildSlot(UINT32 InSlotIdx);
+        void            RebuildAllSlot();
 #if _EDITOR_ONLY
     public:
-        struct PMaterialEditorCBState
-        {
-            EString      CBName;
-            TArray<BYTE> Data;
-        };
-        struct PMaterialEditorTextureSlot
-        {
-            const ETexture2DAsset* Texture;
-            CHAR PathBuf[512];
-            PMaterialEditorTextureSlot() : Texture(nullptr) { PathBuf[0] = '\0'; }
-        };
-        struct PMaterialEditorSlotState
-        {
-            TArray<PMaterialEditorCBState>     CBStates;
-            TArray<PMaterialEditorTextureSlot> TextureSlots;
-        };
-    public:
-        BOOL32  IsEditorMaterialParamsDirty() const;
-        void    MarkEditorMaterialParamsDirty();
-        void    CleanEditorMaterialParamsDirty();
-        void    GetEditorSlotCBData(UINT32 SlotIdx, TArray<TArray<BYTE>>& Out) const;
-    protected:
-        BOOL32                           MaterialParamsDirty;
-        TArray<PMaterialEditorSlotState> EditorSlotStates;
-        void RebuildEditorSlotState(UINT32 SlotIdx);
-        void RebuildAllEditorSlotStates();
-        virtual void GenerateComponentDetail() override;
-        virtual void OnSelectedByImGui() override;
+        virtual void    GenerateComponentDetail() override;
+        virtual void    OnSelectedByImGui() override;
 #endif
+    protected:
+        BOOL32                              bMaterialDirty;
+        BOOL32                              bCastShadow;
+        BOOL32                              bReceiveShadow;
+        TArray<const EMaterialAsset*>       MaterialSlots;
+        TArray<EMaterialSlotStanding>       MaterialStandings;
+
     };
 
 };

@@ -39,6 +39,7 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= MC_SHADER_PS_SUFFIX;
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE								= MC_SHADER_CS_SUFFIX;
 
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_MATERIAL_NAME_LENGTH_MAX										= 1024u;
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_OUTPUT_DIR											= EBaseSettings::ENGINE_MATERIAL_OUTPUT_DIR;
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_SOURCE_DIR											= EBaseSettings::ENGINE_MATERIAL_SOURCE_DIR;
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_SHADER_INCLUDE_DIR									= EBaseSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR;
@@ -64,7 +65,7 @@ namespace PigeonEngine
 		~EEngineSettings() {}
 	};
 
-#define ENGINE_DEFAULT_TEXTURE2D_WHITE						("./Engine/Assets/EngineTextures/Default/EngineDefaultWhite.tga")
+#define ENGINE_DEFAULT_TEXTURE2D_WHITE						("./Assets/EngineTextures/Default/EngineDefaultWhite.tga")
 #define ENGINE_DEFAULT_TEXTURE2D_BLACK						("./Engine/Assets/EngineTextures/Default/EngineDefaultBlack.tga")
 #define ENGINE_DEFAULT_TEXTURE2D_GRAY						("./Engine/Assets/EngineTextures/Default/EngineDefaultGray.tga")
 #define ENGINE_DEFAULT_TEXTURE2D_RED						("./Engine/Assets/EngineTextures/Default/EngineDefaultRed.tga")

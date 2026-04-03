@@ -20,34 +20,12 @@ namespace PigeonEngine
 			: bWireframe(FALSE)
             , LOD(0.f)
 			, LeafWidth(0.f)
-			, RootColor(Color4::Black())
-			, TipColor(Color4::Black())
+			, RootColor(Color4(0.2f, 0.4f, 0.1f, 1.f))
+			, TipColor(Color4(0.4f, 0.8f, 0.2f, 1.f))
+            , BentBezierT(0.5f)
+            , Roughness(0.8f)
+            , Metallic(0.0f)
 		{
-		}
-        EBezierGrassProperty(BOOL8 InIsWireframe, FLOAT InLOD, FLOAT InLeafWidth, const Color4& InRootColor, const Color4& InTipColor) noexcept
-            : bWireframe(InIsWireframe)
-            , LOD(InLOD)
-            , LeafWidth(InLeafWidth)
-            , RootColor(InRootColor)
-            , TipColor(InTipColor)
-		{
-		}
-		EBezierGrassProperty(const EBezierGrassProperty& Other)
-			: bWireframe(Other.bWireframe)
-            ,LOD(Other.LOD)
-			, LeafWidth(Other.LeafWidth)
-			, RootColor(Other.RootColor)
-			, TipColor(Other.TipColor)
-		{
-		}
-        EBezierGrassProperty& operator=(const EBezierGrassProperty& Other)
-		{
-            bWireframe  = Other.bWireframe;
-            LOD         = Other.LOD;
-            LeafWidth   = Other.LeafWidth;
-            RootColor   = Other.RootColor;
-            TipColor    = Other.TipColor;
-			return (*this);
 		}
 
         BOOL8       bWireframe;
@@ -55,48 +33,34 @@ namespace PigeonEngine
         FLOAT		LeafWidth;
         Color4		RootColor;
         Color4		TipColor;
+        FLOAT       BentBezierT;
+        FLOAT       Roughness;
+        FLOAT       Metallic;
 	};
-    struct EBezierGrassInstanceData
+    struct EBezierGrassLayerTypeData
     {
-        EBezierGrassInstanceData() noexcept
-            : Origin(Vector3::Zero())
-            , Tilt(0.f)
-            , Direction(Vector3::Zero())
-            , Bend(0.f)
-            , Tip(Vector2::Zero())
-        {
-        }
-        EBezierGrassInstanceData(const Vector3& InOrigin, const Vector3& InDirection, FLOAT InTilt, FLOAT InBend, const Vector2& InTip) noexcept
-            : Origin(InOrigin)
-            , Tilt(InTilt)
-            , Direction(InDirection)
-            , Bend(InBend)
-            , Tip(InTip)
-        {
-        }
-        EBezierGrassInstanceData(const EBezierGrassInstanceData& Other)
-            : Origin(Other.Origin)
-            , Tilt(Other.Tilt)
-            , Direction(Other.Direction)
-            , Bend(Other.Bend)
-            , Tip(Other.Tip)
-        {
-        }
-        EBezierGrassInstanceData& operator=(const EBezierGrassInstanceData& Other)
-        {
-            Origin      = Other.Origin;
-            Tilt        = Other.Tilt;
-            Direction   = Other.Direction;
-            Bend        = Other.Bend;
-            Tip         = Other.Tip;
-            return (*this);
-        }
+        Vector3 Facing;         // x=base, y=min, z=max
+        Vector3 Height;         // x=base, y=min, z=max
+        Vector3 Width;          // x=base, y=min, z=max
+        Vector3 Tilt;           // x=base, y=min, z=max
+        Vector3 Bend;           // x=base, y=min, z=max
+        Vector3 MidPointT;      // x=base, y=min, z=max
+        BOOL8   bBent;
+        BOOL8   bUseFacing;
+        FLOAT   SideCurve[8];   // BEZIER_GRASS_BLADE_CURVE_POINTS_MAX_NUM = 8
 
-        Vector3     Origin;
-        FLOAT       Tilt;
-        Vector3     Direction;
-        FLOAT       Bend;
-        Vector2     Tip;
+        EBezierGrassLayerTypeData() noexcept
+            : Facing(0.f, -0.1f, 0.1f)
+            , Height(15.f, -5.f, 10.f)
+            , Width(0.5f, -0.2f, 0.3f)
+            , Tilt(0.3f, -0.2f, 0.3f)
+            , Bend(0.5f, -0.3f, 0.4f)
+            , MidPointT(0.5f, -0.1f, 0.2f)
+            , bBent(FALSE)
+            , bUseFacing(FALSE)
+        {
+            for (INT32 i = 0; i < 8; i++) SideCurve[i] = 1.0f;
+        }
     };
 
     class PBezierGrassComponent : public PPrimitiveComponent
@@ -105,18 +69,23 @@ namespace PigeonEngine
         CLASS_VIRTUAL_NOCOPY_BODY(PBezierGrassComponent)
 
     public:
-        void SetProperty(BOOL8 InIsWireframe, FLOAT InLOD, FLOAT InLeafWidth, Color4 InRootColor, Color4 InTipColor);
-        void GenerateInstanceData(const Vector3& InOrigin, FLOAT InBaseHeight, FLOAT InOffsetHeight, FLOAT InLengthX, FLOAT InLengthZ, UINT32 InNumX, UINT32 InNumZ);
+        void SetProperty(BOOL8 InIsWireframe, FLOAT InLOD, FLOAT InLeafWidth, Color4 InRootColor, Color4 InTipColor, FLOAT InBentBezierT, FLOAT InRoughness, FLOAT InMetallic);
+        void SetLayerTypeData(const EBezierGrassLayerTypeData& InLayerData);
+        void SetTileParams(const Vector2& InTileAnchor, const Vector2& InTileSize, UINT32 InNumTilesX, UINT32 InNumTilesZ);
+        void SetWindParams(const Vector3& InWindDirection, FLOAT InWindStrength);
+        void GenerateInstanceData(const Vector3& InOrigin, FLOAT InBaseHeight, FLOAT InOffsetHeight, FLOAT InLengthX, FLOAT InLengthZ, UINT32 InNumX, UINT32 InNumZ); // Deprecated
     protected:
         BOOL8                               bWireframe = FALSE;
         EBezierGrassProperty                Property;
-        TArray<EBezierGrassInstanceData>    InstanceData;
-        FLOAT                               BaseHeight;
-        FLOAT                               OffsetHeight;
-        FLOAT                               LengthX;
-        FLOAT                               LengthZ;
-        UINT32                              NumX;
-        UINT32                              NumZ;
+        EBezierGrassLayerTypeData           LayerTypeData;
+        Vector2                             TileAnchor;
+        Vector2                             TileSize;
+        UINT32                              NumTilesX;
+        UINT32                              NumTilesZ;
+        Vector3                             WindDirection;
+        FLOAT                               WindStrength;
+        const class EMaterialAsset*         MaterialAsset;
+        const class EMaterialAsset*         ComputeMaterialAsset;
 
         // Render proxy functions START
     public:

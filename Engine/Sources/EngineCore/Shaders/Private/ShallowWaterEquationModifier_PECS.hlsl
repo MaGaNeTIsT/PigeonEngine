@@ -1,3 +1,8 @@
+#ifndef _SHALLOW_WATERE_QUATION_MODIFIER_PE_CS_HLSL
+#define _SHALLOW_WATERE_QUATION_MODIFIER_PE_CS_HLSL
+
+#if 0
+
 #include "ShallowWaterEquationCommon.ush"
 
 #define GroundTex						UCGInput0
@@ -100,4 +105,11 @@ void MainPS( in float4 Position : SV_POSITION, in float2 UV : TEXCOORD0, out flo
 {
 	ComputeModifier( int2( Position.xy ), OutColor );
 }
-
+#else
+[numthreads(8, 1, 1)]
+void main()
+{
+    
+}
+#endif	// 0
+#endif	// _SHALLOW_WATERE_QUATION_MODIFIER_PE_CS_HLSL

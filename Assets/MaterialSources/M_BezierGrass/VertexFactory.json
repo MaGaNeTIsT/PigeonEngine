@@ -1,0 +1,12 @@
+{
+    "name": "BezierGrassVF",
+    "input": [
+        { "semantic": "POSITION", "index": 0, "format": "UINT", "slot": 0 }
+    ],
+    "defines": [],
+    "vs": {
+        "hlsl_functions": "VFHelpers.hlsl",
+        "varying_struct": "struct Varying { float4 Pos:SV_POSITION; float3 Normal:NORMAL0; float3 Tangent:TANGENT0; float2 UV:TEXCOORD0; float3 WorldPos:TEXCOORD1; };",
+        "hlsl_body": "VertexFactory.hlsl"
+    }
+}

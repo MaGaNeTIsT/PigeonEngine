@@ -84,13 +84,6 @@ namespace PigeonEngine
         {
             this->GetWorld()->GetRenderScene()->UpdateStaticMesh(this);
         }
-#if _EDITOR_ONLY
-        if (ShouldRender() && !!SceneProxy && IsEditorMaterialParamsDirty())
-        {
-            this->GetWorld()->GetRenderScene()->UpdateStaticMeshMaterialCBData(this);
-            CleanEditorMaterialParamsDirty();
-        }
-#endif
         PMeshComponent::SendUpdateRenderState();
     }
     void PStaticMeshComponent::MarkAsDirty(PStaticMeshUpdateState InState)

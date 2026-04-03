@@ -1,3 +1,8 @@
+#ifndef _SHALLOW_WATER_EQUATION_COMMON_HLSL
+#define _SHALLOW_WATER_EQUATION_COMMON_HLSL
+
+#if 0
+
 #define SWE_InvResX				UCGVectorParams[0].x
 #define SWE_InvResY				UCGVectorParams[0].y
 #define SWE_ResX				UCGVectorParams[0].z
@@ -156,3 +161,6 @@ float FluxOutline(
 	return ( CenterVolume >= InOutlineThreshold ) ? CenterVolume : Outline;
 }
 #endif	// SWE_USE_FLUX_OUTLINE_FUNCTION
+
+#endif	// 0
+#endif	// _SHALLOW_WATER_EQUATION_COMMON_HLSL
