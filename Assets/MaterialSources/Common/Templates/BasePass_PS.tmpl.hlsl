@@ -8,7 +8,7 @@
 #define SHADER_USE_SAMPLER_INPUT    1
 #define SHADER_USE_VIEW_INPUT       1
 
-#include "../Common/ShaderCommon.hlsl"
+#include "Common/ShaderCommon.hlsl"
 
 struct SurfaceOutput
 {

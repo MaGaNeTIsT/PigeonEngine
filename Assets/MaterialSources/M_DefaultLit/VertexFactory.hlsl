@@ -1,4 +1,4 @@
-Varying VertexFactoryMain(Attribute Input, uint InstanceID : SV_InstanceID)
+Varying VertexFactoryMain(Attribute Input)
 {
     Varying Output;
     Output.Pos     = TransformObjectToClip(ScalePosition(Input.Position0.xyz, POSITION_SCALE));

@@ -9,11 +9,13 @@
 #define SHADER_USE_TRANSFORM_INPUT  1
 #define SHADER_USE_TRANSFORM        1
 
-#include "../Common/ShaderCommon.hlsl"
+#include "Common/ShaderCommon.hlsl"
 
 {VF_VS_FUNCTIONS}
 
+{VF_VS_CODE}
+
 void main(in Attribute Input, out Varying Output)
 {
-    {VF_VS_CODE}
+    Output = VertexFactoryMain(Input);
 }
