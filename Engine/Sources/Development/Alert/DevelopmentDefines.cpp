@@ -26,17 +26,7 @@ namespace PigeonEngine
 
 #if _DEBUG_MODE
 		{
-#if 0
-			{
-				const UINT32 TempType = MB_OK;
-				if (DWindowsMessage::__WindowsMessageBox_(InExpression, InCaption, TempType) == IDOK)
-				{
-					//TODO
-				}
-			}
-#endif
-
-			PE_BREAKPOINT;
+			// breakpoint is triggered at the assertion call site via the macro
 		}
 #elif _DEVELOP_MODE
 		{
