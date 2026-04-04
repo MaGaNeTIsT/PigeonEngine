@@ -8,6 +8,21 @@ namespace PigeonEngine
 {
 
 #if !(_SHIPPING_MODE)
+
+#ifdef _WINDOWS
+#define PE_BREAKPOINT	{__debugbreak();}
+#else
+#define PE_BREAKPOINT	{}
+#endif
+
+#define PE_DEBUGDUMP DDebugDump::_Dump_();
+
+	class DDebugDump
+	{
+	public:
+		static void _Dump_();
+	};
+
 	class DWindowsMessage
 	{
 	public:
@@ -72,35 +87,35 @@ namespace PigeonEngine
 		[&]()->BOOL8\
 		{\
 			return (__Expression);\
-		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
+		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #define PE_FAILED(__Caption, __Text) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
 		{\
 			return FALSE;\
-		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
+		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #define PE_CHECK(__Caption, __Text, __Condition) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
 		{\
 			return (__Condition);\
-		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
+		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #define Check(__Condition, ...) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
 		{\
 			return (__Condition);\
-		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
+		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #define CheckSlow(__Condition, ...) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
 		{\
 			return (__Condition);\
-		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
+		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #else
 
@@ -109,7 +124,7 @@ namespace PigeonEngine
 		[&]()->BOOL8\
 		{\
 			return (__Expression);\
-		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) {  __debugbreak();}\
+		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) PE_BREAKPOINT\
 
 #define PE_FAILED(__Caption, __Text) \
 	if (!DWindowsMessage::__Check_(\

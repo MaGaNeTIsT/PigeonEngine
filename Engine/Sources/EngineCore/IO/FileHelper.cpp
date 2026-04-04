@@ -45,7 +45,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 	
-	BOOL8 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory)
+	BOOL8 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory, const BOOL8& bAppend)
 	{
 		std::filesystem::path directoryPath = std::filesystem::path(*FilePath).parent_path();
 		if (!std::filesystem::exists(directoryPath))
@@ -59,7 +59,14 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
-		std::ofstream out(*FilePath);
+		
+		std::ios_base::openmode mode = std::ios::out;
+		if (bAppend)
+		{
+			mode |= std::ios::app;
+		}
+		
+		std::ofstream out(*FilePath, mode);
 		PE_CHECK(ENGINE_FILE_ERROR, "EFileHelper::SaveStringToFile : save string to file failed", out.is_open())
 		out << (*Str);
 		out.close();

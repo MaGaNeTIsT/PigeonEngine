@@ -11,7 +11,7 @@ namespace PigeonEngine
 		static BOOL8 ReadFileAsBinary(const EString& FilePath, void*& Return, ULONG& Size);
 		static BOOL8 ReadFileAsString(const EString& FilePath, EString& Return);
 		static BOOL8 SaveBytesToFile (const EString& FilePath, const void* Bytes, const ULONG& Size, const BOOL8& bCreateDirectory = TRUE);
-		static BOOL8 SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory = TRUE);
+		static BOOL8 SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory = TRUE, const BOOL8& bAppend = FALSE);
 
 		static BOOL8 IsFileExists(const EString& FilePath);
 		static BOOL8 IsDirectoryExists(const EString& DirectoryPath);

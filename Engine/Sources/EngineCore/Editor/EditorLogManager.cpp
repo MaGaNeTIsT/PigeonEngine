@@ -124,10 +124,10 @@ namespace PigeonEngine
         EString Str;
         for(const auto& elem : this->Logs)
         {
-            Str += elem->AsString() + "\r\n";
+            Str += elem->AsString() + "\n";
         }
 
-        EFileHelper::SaveStringToFile(LogFilePath, Str);
+        EFileHelper::SaveStringToFile(LogFilePath, Str, TRUE, TRUE);
         this->Logs.Empty();
 
         // Prune old log files — keep only the 5 most recent
