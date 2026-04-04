@@ -17,13 +17,12 @@ PigeonEngine::PCharacter::~PCharacter()
 	UninitCharacter();
 }
 
-void PigeonEngine::PCharacter::InitCharacter(FCharacterSettings* InCharacterSettings)
+void PigeonEngine::PCharacter::InitCharacter(FCharacterSettings& InCharacterSettings)
 {
-	CharacterSettings = InCharacterSettings;
 	StandingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightStanding,CharacterRadiusStanding));
 	CrouchingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
-	CharacterSettings->Shape = StandingShape;
-	Character = New<FCharacter>(CharacterSettings);
+	InCharacterSettings.Shape = StandingShape;
+	Character = New<FCharacter>(InCharacterSettings);
 	MovementComponent = New<PMovementComponent>(this);
 	this->AddComponent(MovementComponent);
 	FPhysicsManager::GetSingleton()->AddCharacter(Character);
@@ -46,12 +45,6 @@ void PigeonEngine::PCharacter::UninitCharacter()
 	{
 		Delete(CrouchingShape);
 		CrouchingShape = nullptr;
-	}
-	if (CharacterSettings)
-	{
-		CharacterSettings->Shape = nullptr;
-		Delete(CharacterSettings);
-		CharacterSettings = nullptr;
 	}
 	if (MovementComponent)
 	{

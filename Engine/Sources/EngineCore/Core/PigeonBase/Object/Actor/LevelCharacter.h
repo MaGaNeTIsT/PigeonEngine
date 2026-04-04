@@ -13,7 +13,7 @@ namespace PigeonEngine
 		/// Init a level character use settings,host point.
 		/// </summary>
 		/// <param name="InCharacterSettings"></param>
-		virtual void InitCharacter(class FCharacterSettings* InCharacterSettings);
+		virtual void InitCharacter(class FCharacterSettings& InCharacterSettings);
 		virtual void UninitCharacter();
 
 		class FShape* GetStandingShape();
@@ -50,7 +50,7 @@ namespace PigeonEngine
 	protected:
 		class PMovementComponent*   MovementComponent = nullptr;
 		class FCharacter*			Character			= nullptr;
-		class FCharacterSettings*	CharacterSettings	= nullptr;
+		//class FCharacterSettings*	CharacterSettings	= nullptr;
 		// The different stances for the character
 		class FShape*				StandingShape		= nullptr;
 		class FShape*				CrouchingShape		= nullptr;

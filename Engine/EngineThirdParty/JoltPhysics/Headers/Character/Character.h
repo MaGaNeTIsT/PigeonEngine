@@ -25,7 +25,7 @@ public:
 class FCharacter final : public FCharacterBase
 {
 public:
-	FCharacter(const FCharacterSettings* inSettings);
+	FCharacter(const FCharacterSettings& inSettings);
 
 	/// Destructor
 	virtual								~FCharacter() override;
@@ -87,7 +87,7 @@ public:
 	/// @param inLockBodies If the collision query should use the locking body interface (TRUE) or the non locking body interface (FALSE)
 	void								PostSimulation(BOOL32 inLockBodies = TRUE);
 private:
-	const FCharacterSettings*			m_CharacterCreateSettings = nullptr;
+	const FCharacterSettings			m_CharacterCreateSettings;
 	FLOAT								m_MaxSeparationDistance = 0.05f;
 	Character*							m_Character = nullptr;
 	CharacterSettings*					m_CharacterSettings = nullptr;

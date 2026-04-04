@@ -27,10 +27,10 @@ public:
 class FCharacterBase
 {
 public:
-	FCharacterBase(const FCharacterBaseSettings* inSettings)
+	FCharacterBase(const FCharacterBaseSettings& inSettings)
+		: CharacterBaseSettings(inSettings)
 	{
-		CharacterBaseSettings = inSettings;
-		Shape = inSettings->Shape;
+		Shape = inSettings.Shape;
 	}
 
 	/// Destructor
@@ -88,7 +88,7 @@ public:
 
 protected:
 	JPH::CharacterBase*					CharacterBase = nullptr;
-	const FCharacterBaseSettings*		CharacterBaseSettings = nullptr;
+	const FCharacterBaseSettings		CharacterBaseSettings;
 	const FShape*						Shape = nullptr;
 };
 PIGEONENGINE_NAMESPACE_END

@@ -3,28 +3,26 @@
 
 PIGEONENGINE_NAMESPACE_BEGIN
 
-FCharacter::FCharacter(const FCharacterSettings* inSettings) 
-	:FCharacterBase(inSettings)
+FCharacter::FCharacter(const FCharacterSettings& inSettings)
+	:m_CharacterCreateSettings(inSettings)
+	,FCharacterBase(inSettings)
 {
-	m_CharacterCreateSettings = inSettings;
-	CharacterBaseSettings = inSettings;
-	m_MaxSeparationDistance = inSettings->MaxSeparationDistance;
+	m_MaxSeparationDistance = inSettings.MaxSeparationDistance;
 
 	m_CharacterSettings = New<CharacterSettings>();
-	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings->Up);
-	m_CharacterSettings->mMaxSlopeAngle = inSettings->MaxSlopeAngle;
-	if(inSettings->Shape)
-		m_CharacterSettings->mShape = inSettings->Shape->CreateShape();
-	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings->PlaneVector),inSettings->CharacterRadiusStanding);
-	m_CharacterSettings->mLayer = Layers::MOVING;
-	m_CharacterSettings->mMass = inSettings->Mass;
-	m_CharacterSettings->mFriction = inSettings->Friction;
-	m_CharacterSettings->mGravityFactor = inSettings->GravityFactor;
+	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings.Up);
+	m_CharacterSettings->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
+	if(inSettings.Shape)
+		m_CharacterSettings->mShape = inSettings.Shape->CreateShape();
+	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector),inSettings.CharacterRadiusStanding);
+	m_CharacterSettings->mLayer = inSettings.Layer;
+	m_CharacterSettings->mMass = inSettings.Mass;
+	m_CharacterSettings->mFriction = inSettings.Friction;
+	m_CharacterSettings->mGravityFactor = inSettings.GravityFactor;
 }
 
 FCharacter::~FCharacter()
 {
-	m_CharacterCreateSettings = nullptr;
 	Delete(m_CharacterSettings);
 	m_CharacterSettings = nullptr;
 	if (m_Character)

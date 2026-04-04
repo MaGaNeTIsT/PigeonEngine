@@ -6,7 +6,7 @@
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
-void PigeonEngine::PPhysicsTestCharacter::InitCharacter(FCharacterSettings* InCharacterSettings)
+void PigeonEngine::PPhysicsTestCharacter::InitCharacter(FCharacterSettings& InCharacterSettings)
 {
 	PCharacter::InitCharacter(InCharacterSettings);
 	//Shape = new FBoxShape(Vector3(1000.f,10.f,1000.f),0.f);
