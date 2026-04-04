@@ -89,6 +89,34 @@ namespace PigeonEngine
 	class EMemory final
 	{
 	public:
+		static PE_FORCEINLINE PE_NODISCARD void* Allocate(size_t size)
+		{
+			return std::malloc(size);
+		}
+
+		static PE_FORCEINLINE void Deallocate(void* ptr)
+		{
+			std::free(ptr);
+		}
+
+		template<typename _Ty, typename... Args>
+		static PE_FORCEINLINE PE_NODISCARD _Ty* Construct(Args&&... args)
+		{
+			void* ptr = Allocate(sizeof(_Ty));
+			return ::new (ptr) _Ty(static_cast<Args&&>(args)...);
+		}
+
+		template<typename _Ty>
+		static PE_FORCEINLINE void Destroy(_Ty* ptr)
+		{
+			if (ptr)
+			{
+				ptr->~_Ty();
+				Deallocate(ptr);
+			}
+		}
+
+	public:
 		template <typename _TSizeType = UINT32>
 		static PE_FORCEINLINE void Memcpy(void* _Dst, void const* _Src, _TSizeType _Size)
 		{
@@ -161,6 +189,59 @@ namespace PigeonEngine
 			return (&_MemorySingletonObject);
 		}
 	};
+
+	// New with arguments
+	template<typename _Ty, typename... Args>
+	PE_FORCEINLINE PE_NODISCARD _Ty*  New(Args&&... args)
+	{
+		return EMemory::Construct<_Ty>(static_cast<Args&&>(args)...);
+	}
+
+	// New
+	template<typename _Ty>
+	PE_FORCEINLINE PE_NODISCARD _Ty* New()
+	{
+		return EMemory::Construct<_Ty>();
+	}
+
+	// New Array
+	template<typename _Ty>
+	PE_FORCEINLINE PE_NODISCARD _Ty* NewArray(size_t count)
+	{
+		if (count == 0) return nullptr;
+
+		void* ptr = EMemory::Allocate(sizeof(_Ty) * count);
+		_Ty* array = static_cast<_Ty*>(ptr);
+
+		// Construct each element in the array
+		for (size_t i = 0; i < count; ++i)
+		{
+			::new (&array[i]) _Ty();
+		}
+
+		return array;
+	}
+
+	// Delete
+	template<typename _Ty>
+	PE_FORCEINLINE void Delete(_Ty* ptr)
+	{
+		EMemory::Destroy(ptr);
+	}
+
+	// Delete Array
+	template<typename _Ty>
+	PE_FORCEINLINE void DeleteArray(_Ty* ptr, size_t count)
+	{
+		if (ptr && count > 0)
+		{
+			for (size_t i = 0; i < count; ++i)
+			{
+				ptr[i].~_Ty();
+			}
+			EMemory::Deallocate(ptr);
+		}
+	}
 
 	using THeapArrayType = UINT8[];
 

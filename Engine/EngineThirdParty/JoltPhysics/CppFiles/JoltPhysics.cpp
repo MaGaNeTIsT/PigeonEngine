@@ -5,42 +5,42 @@ namespace PigeonEngine
 {
 	void FPhysics_Jolt::InitPhysics()
 	{
+		PE_DEBUGDUMP
 		// Register allocation hook
 		RegisterDefaultAllocator();
 
 		Trace = TraceImpl;
 
 		// Create a factory
-		Factory::sInstance = new Factory();
+		Factory::sInstance = New<Factory>();
 
 		// Register all Jolt physics types
 		RegisterTypes();
 
 		//create PhysicsData
-		PhysicsData = new FPhysicsData();
+		PhysicsData = New<FPhysicsData>();
 
 		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 
 		//pre-allocated memory for simulation.
-		PhysicsData->TempAllocator = new TempAllocatorImpl(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
+		PhysicsData->TempAllocator = New<TempAllocatorImpl>(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
 
 		//an example implementation for jobsystem
 		//used for multiple threads
-		PhysicsData->JobSystem = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
-
+		PhysicsData->JobSystem = New<JobSystemThreadPool>(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
 		// Create mapping table from object layer to broadphase layer
-		PhysicsData->BPLayerInterface = new CBPLayerInterfaceImpl();
+		PhysicsData->BPLayerInterface = New<CBPLayerInterfaceImpl>();
 
-		PhysicsData->ObjectLayerPairFilterImpl = new CObjectLayerPairFilterImpl();
-		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = new CObjectVsBroadPhaseLayerFilterImpl();
+		PhysicsData->ObjectLayerPairFilterImpl = New<CObjectLayerPairFilterImpl>();
+		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = New<CObjectVsBroadPhaseLayerFilterImpl>();
 
-		PhysicsData->PhysicsSystem = new PhysicsSystem();
+		PhysicsData->PhysicsSystem = New<PhysicsSystem>();
 		PhysicsData->PhysicsSystem->Init(CommonSettings->PHYSICS_MAX_BODIES, CommonSettings->PHYSICS_NUM_BODY_MUTEXES, CommonSettings->PHYSICS_MAX_BODY_PAIRS, CommonSettings->PHYSICS_MAX_CONTACT_CONSTRAINTS, *PhysicsData->BPLayerInterface, *PhysicsData->ObjectVsBroadPhaseLayerFilterImpl, *PhysicsData->ObjectLayerPairFilterImpl);
 
-		PhysicsData->BodyActivationListener = new FBodyActivationListener();
+		PhysicsData->BodyActivationListener = New<FBodyActivationListener>();
 		PhysicsData->PhysicsSystem->SetBodyActivationListener(PhysicsData->BodyActivationListener);
 
-		PhysicsData->ContactListener = new FContactListener();
+		PhysicsData->ContactListener = New<FContactListener>();
 		PhysicsData->PhysicsSystem->SetContactListener(PhysicsData->ContactListener);
 
 		PhysicsData->BodyInterface = &PhysicsData->PhysicsSystem->GetBodyInterface();
@@ -69,31 +69,31 @@ namespace PigeonEngine
 
 		for (auto shape = m_Shapes.Begin(); shape != m_Shapes.End(); ++shape)
 		{
-			delete shape->second;
+			Delete(shape->second);
 		}
 
 		PhysicsData->BodyInterface = nullptr;
-		delete PhysicsData->PhysicsSystem;
+		Delete(PhysicsData->PhysicsSystem);
 		PhysicsData->PhysicsSystem = nullptr;
-		delete PhysicsData->TempAllocator;
+		Delete(PhysicsData->TempAllocator);
 		PhysicsData->TempAllocator = nullptr;
-		delete PhysicsData->JobSystem;
+		Delete(PhysicsData->JobSystem);
 		PhysicsData->JobSystem = nullptr;
-		delete PhysicsData->BPLayerInterface;
+		Delete(PhysicsData->BPLayerInterface);
 		PhysicsData->BPLayerInterface = nullptr;
-		delete PhysicsData->BodyActivationListener;
+		Delete(PhysicsData->BodyActivationListener);
 		PhysicsData->BodyActivationListener = nullptr;
-		delete PhysicsData->ContactListener;
+		Delete(PhysicsData->ContactListener);
 		PhysicsData->ContactListener = nullptr;
-		delete PhysicsData->ObjectLayerPairFilterImpl;
+		Delete(PhysicsData->ObjectLayerPairFilterImpl);
 		PhysicsData->ObjectLayerPairFilterImpl = nullptr;
-		delete PhysicsData->ObjectVsBroadPhaseLayerFilterImpl;
+		Delete(PhysicsData->ObjectVsBroadPhaseLayerFilterImpl);
 		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = nullptr;
 
 		// Destroy the factory
-		delete Factory::sInstance;
+		Delete(Factory::sInstance);
 		Factory::sInstance = nullptr;
-		delete PhysicsData;
+		Delete(PhysicsData);
 		PhysicsData = nullptr;
 	}
 
