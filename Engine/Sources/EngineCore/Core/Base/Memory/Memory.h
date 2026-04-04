@@ -89,31 +89,14 @@ namespace PigeonEngine
 	class EMemory final
 	{
 	public:
-		static PE_FORCEINLINE PE_NODISCARD void* Allocate(size_t size)
+		static PE_FORCEINLINE PE_NODISCARD void* Allocate(size_t _InSize)
 		{
-			return std::malloc(size);
+			return std::malloc(_InSize);
 		}
 
-		static PE_FORCEINLINE void Deallocate(void* ptr)
+		static PE_FORCEINLINE void Deallocate(void* _InPtr)
 		{
-			std::free(ptr);
-		}
-
-		template<typename _Ty, typename... Args>
-		static PE_FORCEINLINE PE_NODISCARD _Ty* Construct(Args&&... args)
-		{
-			void* ptr = Allocate(sizeof(_Ty));
-			return ::new (ptr) _Ty(static_cast<Args&&>(args)...);
-		}
-
-		template<typename _Ty>
-		static PE_FORCEINLINE void Destroy(_Ty* ptr)
-		{
-			if (ptr)
-			{
-				ptr->~_Ty();
-				Deallocate(ptr);
-			}
+			std::free(_InPtr);
 		}
 
 	public:
@@ -190,56 +173,54 @@ namespace PigeonEngine
 		}
 	};
 
-	// New with arguments
-	template<typename _Ty, typename... Args>
-	PE_FORCEINLINE PE_NODISCARD _Ty*  New(Args&&... args)
-	{
-		return EMemory::Construct<_Ty>(static_cast<Args&&>(args)...);
-	}
-
 	// New
-	template<typename _Ty>
-	PE_FORCEINLINE PE_NODISCARD _Ty* New()
+	template<typename _Ty, typename... _TArgs>
+	PE_FORCEINLINE PE_NODISCARD _Ty*  New(_TArgs&&... _InArgs)
 	{
-		return EMemory::Construct<_Ty>();
+		void* Ptr = EMemory::Allocate(sizeof(_Ty));
+		return ::new (Ptr) _Ty(EMemory::Forward<_TArgs>(_InArgs)...);
 	}
 
 	// New Array
 	template<typename _Ty>
-	PE_FORCEINLINE PE_NODISCARD _Ty* NewArray(size_t count)
+	PE_FORCEINLINE PE_NODISCARD _Ty* NewArray(size_t _InCount)
 	{
-		if (count == 0) return nullptr;
+		if (_InCount == 0) return nullptr;
 
-		void* ptr = EMemory::Allocate(sizeof(_Ty) * count);
-		_Ty* array = static_cast<_Ty*>(ptr);
+		void* Ptr = EMemory::Allocate(sizeof(_Ty) * _InCount);
+		_Ty* Array = static_cast<_Ty*>(Ptr);
 
 		// Construct each element in the array
-		for (size_t i = 0; i < count; ++i)
+		for (size_t i = 0; i < _InCount; ++i)
 		{
-			::new (&array[i]) _Ty();
+			::new (&Array[i]) _Ty();
 		}
 
-		return array;
+		return Array;
 	}
 
 	// Delete
 	template<typename _Ty>
-	PE_FORCEINLINE void Delete(_Ty* ptr)
+	PE_FORCEINLINE void Delete(_Ty* _InPtr)
 	{
-		EMemory::Destroy(ptr);
+		if (_InPtr)
+		{
+			_InPtr->~_Ty();
+			EMemory::Deallocate(_InPtr);
+		}
 	}
 
 	// Delete Array
 	template<typename _Ty>
-	PE_FORCEINLINE void DeleteArray(_Ty* ptr, size_t count)
+	PE_FORCEINLINE void DeleteArray(_Ty* _InPtr, size_t _InCount)
 	{
-		if (ptr && count > 0)
+		if (_InPtr && _InCount > 0)
 		{
-			for (size_t i = 0; i < count; ++i)
+			for (size_t i = 0; i < _InCount; ++i)
 			{
-				ptr[i].~_Ty();
+				_InPtr[i].~_Ty();
 			}
-			EMemory::Deallocate(ptr);
+			EMemory::Deallocate(_InPtr);
 		}
 	}
 
