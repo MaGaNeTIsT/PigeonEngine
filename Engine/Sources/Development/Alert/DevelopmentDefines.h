@@ -65,6 +65,8 @@ namespace PigeonEngine
 	};
 
 
+#if _DEBUG_MODE
+
 #define PE_ASSERT(__Expression, ...) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
@@ -93,8 +95,6 @@ namespace PigeonEngine
 			return (__Condition);\
 		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
 
-#if _DEBUG_MODE
-
 #define CheckSlow(__Condition, ...) \
 	if (!DWindowsMessage::__Check_(\
 		[&]()->BOOL8\
@@ -103,6 +103,34 @@ namespace PigeonEngine
 		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { __debugbreak(); }\
 
 #else
+
+#define PE_ASSERT(__Expression, ...) \
+	if (!DWindowsMessage::__Check_(\
+		[&]()->BOOL8\
+		{\
+			return (__Expression);\
+		}, #__Expression, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) {  __debugbreak();}\
+
+#define PE_FAILED(__Caption, __Text) \
+	if (!DWindowsMessage::__Check_(\
+		[&]()->BOOL8\
+		{\
+			return FALSE;\
+		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) { }\
+
+#define PE_CHECK(__Caption, __Text, __Condition) \
+	if (!DWindowsMessage::__Check_(\
+		[&]()->BOOL8\
+		{\
+			return (__Condition);\
+		}, (__Text), (__FILE__), UINT32(__LINE__), (__Caption), DWindowsMessage::_DDummyArgument())) { }\
+
+#define Check(__Condition, ...) \
+	if (!DWindowsMessage::__Check_(\
+		[&]()->BOOL8\
+		{\
+			return (__Condition);\
+		}, #__Condition, (__FILE__), UINT32(__LINE__), ##__VA_ARGS__, DWindowsMessage::_DDummyArgument())) { }\
 
 #define CheckSlow(__Condition, ...)						{}
 
