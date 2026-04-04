@@ -5,7 +5,6 @@ namespace PigeonEngine
 {
 	void FPhysics_Jolt::InitPhysics()
 	{
-		PE_DEBUGDUMP
 		// Register allocation hook
 		RegisterDefaultAllocator();
 
