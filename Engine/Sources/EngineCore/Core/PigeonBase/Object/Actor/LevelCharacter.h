@@ -48,8 +48,9 @@ namespace PigeonEngine
 		FLOAT			JumpSpeed						= 4.0f;
 
 	protected:
-		class PMovementComponent*	MoveMentComponent	= nullptr;
+		class PMovementComponent*   MovementComponent = nullptr;
 		class FCharacter*			Character			= nullptr;
+		class FCharacterSettings*	CharacterSettings	= nullptr;
 		// The different stances for the character
 		class FShape*				StandingShape		= nullptr;
 		class FShape*				CrouchingShape		= nullptr;

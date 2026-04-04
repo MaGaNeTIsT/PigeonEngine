@@ -84,12 +84,12 @@ public:
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new BoxShape(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
+		return New<BoxShape>(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new BoxShapeSettings(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
+		return New<BoxShapeSettings>(PhysicsUtility::Convert2Meter(HalfExtent), PhysicsUtility::Convert2Meter(ConvexRadius), Material);
 	}
 };
 
@@ -114,12 +114,12 @@ public:
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new SphereShape(PhysicsUtility::Convert2Meter(Raidus), Material);
+		return New<SphereShape>(PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new SphereShapeSettings(PhysicsUtility::Convert2Meter(Raidus), Material);
+		return New<SphereShapeSettings>(PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 };
 
@@ -146,12 +146,12 @@ public:
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new CapsuleShape(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
+		return New<CapsuleShape>(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new CapsuleShapeSettings(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
+		return New<CapsuleShapeSettings>(PhysicsUtility::Convert2Meter(HalfHeightOfCylinder), PhysicsUtility::Convert2Meter(Raidus), Material);
 	}
 };
 
@@ -180,12 +180,12 @@ public:
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new CylinderShape(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
+		return New<CylinderShape>(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new CylinderShapeSettings(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
+		return New<CylinderShapeSettings>(PhysicsUtility::Convert2Meter(HalfHeight), PhysicsUtility::Convert2Meter(Raidus), ConvexRaidus, Material);
 	}
 };
 
@@ -206,7 +206,7 @@ public:
 
 	~FRotatedTranslatedShape()
 	{
-		delete HostedShape;
+		Delete(HostedShape);
 	}
 #if _EDITOR_ONLY
 	virtual void DrawPrimitive(RDebugWireframePrimitiveManager* Manager, const Vector3& inPosition, const Quaternion& inRotation) const override;
@@ -214,12 +214,12 @@ public:
 protected:
 	virtual Shape* CreateShapeInternal() override
 	{
-		return new RotatedTranslatedShape(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
+		return New<RotatedTranslatedShape>(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
 	}
 
 	virtual ShapeSettings* CreateShapeSettingsInternal() override
 	{
-		return new RotatedTranslatedShapeSettings(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
+		return New<RotatedTranslatedShapeSettings>(PhysicsUtility::Convert2Meter(Position), PhysicsUtility::Convert(Rotation), HostedShape->CreateShape());
 	}
 };
 PIGEONENGINE_NAMESPACE_END

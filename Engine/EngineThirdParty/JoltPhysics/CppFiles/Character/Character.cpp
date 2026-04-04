@@ -8,8 +8,9 @@ FCharacter::FCharacter(const FCharacterSettings* inSettings)
 {
 	m_CharacterCreateSettings = inSettings;
 	CharacterBaseSettings = inSettings;
+	m_MaxSeparationDistance = inSettings->MaxSeparationDistance;
 
-	m_CharacterSettings = new CharacterSettings();
+	m_CharacterSettings = New<CharacterSettings>();
 	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings->Up);
 	m_CharacterSettings->mMaxSlopeAngle = inSettings->MaxSlopeAngle;
 	if(inSettings->Shape)
@@ -23,24 +24,22 @@ FCharacter::FCharacter(const FCharacterSettings* inSettings)
 
 FCharacter::~FCharacter()
 {
-	delete m_CharacterCreateSettings->Shape;
-	delete m_CharacterCreateSettings;
 	m_CharacterCreateSettings = nullptr;
-	delete m_CharacterSettings;
+	Delete(m_CharacterSettings);
 	m_CharacterSettings = nullptr;
 	if (m_Character)
 		RemoveFromPhysicsSystem();
 }
 void FCharacter::AddToPhysicsSystem(EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies)
 {
-	m_Character = new Character(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem);
+	m_Character = New<Character>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem);
 	m_Character->AddToPhysicsSystem(inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 	CharacterBase = m_Character;
 }
 void FCharacter::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
 	m_Character->RemoveFromPhysicsSystem(inLockBodies);
-	delete m_Character;
+	Delete(m_Character);
 	m_Character = nullptr;
 }
 void FCharacter::Activate(BOOL32 inLockBodies)
@@ -49,7 +48,7 @@ void FCharacter::Activate(BOOL32 inLockBodies)
 }
 void FCharacter::PostSimulation(BOOL32 inLockBodies)
 {
-	m_Character->PostSimulation(m_CharacterCreateSettings->MaxSeparationDistance, inLockBodies);
+	m_Character->PostSimulation(m_MaxSeparationDistance, inLockBodies);
 }
 void FCharacter::SetLinearAndAngularVelocity(Vector3 inLinearVelocity, Vector3 inAngularVelocity, BOOL32 inLockBodies)
 {

@@ -14,28 +14,50 @@ PigeonEngine::PCharacter::PCharacter()
 
 PigeonEngine::PCharacter::~PCharacter()
 {
+	UninitCharacter();
 }
 
 void PigeonEngine::PCharacter::InitCharacter(FCharacterSettings* InCharacterSettings)
 {
-	StandingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(),new FCapsuleShape(0.5f * CharacterHeightStanding,CharacterRadiusStanding));
-	CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
-	InCharacterSettings->Shape = StandingShape;
-	Character = new FCharacter(InCharacterSettings);
-	MoveMentComponent = new PMovementComponent(this);
-	this->AddComponent(MoveMentComponent);
+	CharacterSettings = InCharacterSettings;
+	StandingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightStanding,CharacterRadiusStanding));
+	CrouchingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
+	CharacterSettings->Shape = StandingShape;
+	Character = New<FCharacter>(CharacterSettings);
+	MovementComponent = New<PMovementComponent>(this);
+	this->AddComponent(MovementComponent);
 	FPhysicsManager::GetSingleton()->AddCharacter(Character);
 }
 
 void PigeonEngine::PCharacter::UninitCharacter()
 {
-	FPhysicsManager::GetSingleton()->RemoveCharacter(Character);
-	delete Character;
-	Character = nullptr;
-	delete StandingShape;
-	StandingShape = nullptr;
-	delete CrouchingShape;
-	CrouchingShape = nullptr;
+	if (Character)
+	{
+		FPhysicsManager::GetSingleton()->RemoveCharacter(Character);
+		Delete(Character);
+		Character = nullptr;
+	}
+	if (StandingShape)
+	{
+		Delete(StandingShape);
+		StandingShape = nullptr;
+	}
+	if (CrouchingShape)
+	{
+		Delete(CrouchingShape);
+		CrouchingShape = nullptr;
+	}
+	if (CharacterSettings)
+	{
+		CharacterSettings->Shape = nullptr;
+		Delete(CharacterSettings);
+		CharacterSettings = nullptr;
+	}
+	if (MovementComponent)
+	{
+		Delete(MovementComponent);
+		MovementComponent = nullptr;
+	}
 }
 
 PigeonEngine::FShape* PigeonEngine::PCharacter::GetStandingShape()
@@ -54,7 +76,7 @@ PigeonEngine::FCharacter* PigeonEngine::PCharacter::GetPhysicsCharacter()
 }
 PigeonEngine::PMovementComponent* PigeonEngine::PCharacter::GetMovementComponent()
 {
-	return MoveMentComponent;
+	return MovementComponent;
 }
 #if _EDITOR_ONLY
 void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)

@@ -39,7 +39,7 @@ namespace PigeonEngine
 		if (m_Shape && !bCreateNew)
 			return m_Shape;
 		else if (m_Shape)
-			delete m_Shape;
+			Delete(m_Shape);
 		m_Shape = CreateShapeInternal();
 		return m_Shape;
 	}

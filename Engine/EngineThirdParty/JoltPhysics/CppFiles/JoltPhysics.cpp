@@ -51,24 +51,24 @@ namespace PigeonEngine
 	{
 		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 		PhysicsData->PhysicsSystem->Update(InDeltaTime, CommonSettings->PHYSICS_COLLISION_STEPS, PhysicsData->TempAllocator, PhysicsData->JobSystem);
-		for (auto Character = m_Characters.Begin(); Character != m_Characters.End(); ++Character)
+		for (const auto& Character : m_Characters)
 		{
-			//TODO:unsafe;
-			(*Character)->PostSimulation();
+			PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Has a Character been destory but not removed!"), !!Character);
+			Character->PostSimulation();
 		}
 	}
 
 	void FPhysics_Jolt::UninitPhysics()
 	{
-		for (auto body = m_Bodys.Begin(); body != m_Bodys.End(); ++body)
+		for (const auto& body : m_Bodys)
 		{
-			PhysicsData->BodyInterface->RemoveBody(body->second.ID);
-			PhysicsData->BodyInterface->DestroyBody(body->second.ID);
+			PhysicsData->BodyInterface->RemoveBody(body.second.ID);
+			PhysicsData->BodyInterface->DestroyBody(body.second.ID);
 		}
 
-		for (auto shape = m_Shapes.Begin(); shape != m_Shapes.End(); ++shape)
+		for (const auto& shape : m_Shapes)
 		{
-			Delete(shape->second);
+			Delete(shape.second);
 		}
 
 		PhysicsData->BodyInterface = nullptr;
@@ -157,7 +157,7 @@ namespace PigeonEngine
 			{
 				m_Shapes.Remove(ID);
 				if(bDeleteShape)
-					delete Shape;
+					Delete(Shape);
 			}
 		}
 	}

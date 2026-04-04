@@ -4,16 +4,14 @@
 #include <Config/ErrorCaption.h>
 #include <Base/DataStructure/BuiltInType.h>
 
+#include <debugbreak.h>
+
 namespace PigeonEngine
 {
 
 #if !(_SHIPPING_MODE)
 
-#ifdef _WINDOWS
-#define PE_BREAKPOINT	{__debugbreak();}
-#else
-#define PE_BREAKPOINT	{}
-#endif
+#define PE_BREAKPOINT	{debug_break();}
 
 #define PE_DEBUGDUMP DDebugDump::_Dump_();
 

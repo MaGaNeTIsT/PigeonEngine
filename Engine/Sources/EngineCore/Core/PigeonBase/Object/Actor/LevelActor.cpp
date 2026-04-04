@@ -151,7 +151,7 @@ namespace PigeonEngine
 			PPhysicsTestCharacter* New = new PPhysicsTestCharacter();
 			New->SetIsTickable(TRUE);
 			POBJ_DEBUGNAME_SET(New, "Physics Test Character");
-			FCharacterSettings* Settings = new FCharacterSettings();
+			FCharacterSettings* Settings = PigeonEngine::New<FCharacterSettings>();
 			Settings->Layer = Layers::MOVING;
 			New->InitCharacter(Settings);
 			this->GetWorld()->AddActor(New);

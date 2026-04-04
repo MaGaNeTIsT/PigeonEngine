@@ -194,6 +194,102 @@ namespace PigeonEngine
 	template<typename _Ty>
 	using TInitializerList = std::initializer_list<_Ty>;
 
+	template<typename _Ty,class... _TArgs>
+	using TIsConstructible = std::is_constructible<_Ty, _TArgs...>;
+
+	template<typename _Ty>
+	using TIsDefaultConstructible = std::is_default_constructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsCopyConstructible = std::is_copy_constructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsMoveConstructible = std::is_move_constructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsCopyAssignable = std::is_copy_assignable<_Ty>;
+
+	template<typename _Ty>
+	using TIsMoveAssignable = std::is_move_assignable<_Ty>;
+
+	template<typename _Ty>
+	using TIsDestructible = std::is_destructible<_Ty>;
+
+	// True if _Ty is a trivial type (a type with a user-defined destructor is not.).
+	template<typename _Ty>
+	using TIsTrivial = std::is_trivial<_Ty>;
+
+	// True if _Ty can be constructed without running custom construction logic.
+	template<typename _Ty>
+	using TIsTriviallyConstructible = std::is_trivially_constructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsTriviallyCopyConstructible = std::is_trivially_copy_constructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsTriviallyMoveConstructible = std::is_trivially_move_constructible<_Ty>;
+
+	// True if copy assignment is a trivial operation (types with custom operator= usually do not).
+	template<typename _Ty>
+	using TIsTriviallyCopyAssignable = std::is_trivially_copy_assignable<_Ty>;
+
+	template<typename _Ty>
+	using TIsTriviallyMoveAssignable = std::is_trivially_move_assignable<_Ty>;
+
+	// True if destroying _Ty needs no custom destructor logic.
+	template<typename _Ty>
+	using TIsTriviallyDestructible = std::is_trivially_destructible<_Ty>;
+
+	template<typename _Ty>
+	using TIsTriviallyCopyable = std::is_trivially_copyable<_Ty>;
+
+	// True if _Ty has a standard-layout memory layout (a simple struct with non-virtual data members usually passes.).
+	template<typename _Ty>
+	using TIsStandardLayout = std::is_standard_layout<_Ty>;
+
+	template<typename _Ty>
+	using TIsAbstract = std::is_abstract<_Ty>;
+
+	template<typename _Ty>
+	using TIsFinal = std::is_final<_Ty>;
+
+	// True if _Ty has virtual dispatch support.
+	template<typename _Ty>
+	using TIsPolymorphic = std::is_polymorphic<_Ty>;
+
+	template<typename _Ty>
+	using TIsEmpty = std::is_empty<_Ty>;
+
+	template<typename _Ty>
+	using TIsAggregate = std::is_aggregate<_Ty>;
+
+	template<typename _Ty>
+	using TIsSigned = std::is_signed<_Ty>;
+
+	template<typename _Ty>
+	using TIsConst = std::is_const<_Ty>;
+
+	template<typename _Ty>
+	using TIsVolatile = std::is_volatile<_Ty>;
+
+	template<typename _Ty>
+	using TIsReference = std::is_reference<_Ty>;
+
+	template<typename _Ty>
+	using TIsLValueReference = std::is_lvalue_reference<_Ty>;
+
+	template<typename _Ty>
+	using TIsRValueReference = std::is_rvalue_reference<_Ty>;
+
+	template<typename _Ty>
+	using TIsMemberPointer = std::is_member_pointer<_Ty>;
+
+	template<typename _Base, typename _Derived>
+	using TIsBaseOf = std::is_base_of<_Base, _Derived>;
+
+	template<typename _From, typename _To>
+	using TIsConvertible = std::is_convertible<_From, _To>;
+
 #ifdef _FORCE_INTEGRAL_BOOL
 
 	typedef	short						BOOL16;

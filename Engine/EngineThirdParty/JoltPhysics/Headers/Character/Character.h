@@ -88,6 +88,7 @@ public:
 	void								PostSimulation(BOOL32 inLockBodies = TRUE);
 private:
 	const FCharacterSettings*			m_CharacterCreateSettings = nullptr;
+	FLOAT								m_MaxSeparationDistance = 0.05f;
 	Character*							m_Character = nullptr;
 	CharacterSettings*					m_CharacterSettings = nullptr;
 };

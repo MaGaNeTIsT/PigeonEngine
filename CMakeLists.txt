@@ -188,6 +188,11 @@ target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
 	${THIRD_PARTY_SOURCE_DIR}/rapidjson/
 )
 
+#Pigeon Engine Third Party debugbreak
+target_include_directories(${ENGINE_PROJECT_NAME} PRIVATE
+	${THIRD_PARTY_SOURCE_DIR}/debugbreak/
+)
+
 #Pigeon Engine Third Party Assimp
 #set(ASSIMP_PROJECT_NAME assimp)
 #add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/assimp/)
@@ -389,6 +394,7 @@ endif()
 
 #Extra Tools
 add_subdirectory(${ENGINE_SOURCE_DIR}/Development/Editor/MaterialCompiler)
+add_dependencies(${ENGINE_PROJECT_NAME} MaterialCompiler)
 
 target_sources(${ENGINE_PROJECT_NAME} PRIVATE
 	${ENGINE_PROJECT_HEADERS_H}

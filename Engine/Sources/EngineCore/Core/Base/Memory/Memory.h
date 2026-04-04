@@ -175,7 +175,8 @@ namespace PigeonEngine
 
 	// New
 	template<typename _Ty, typename... _TArgs>
-	PE_FORCEINLINE PE_NODISCARD _Ty*  New(_TArgs&&... _InArgs)
+	TEnableIfType<TIsConstructible<_Ty, _TArgs&&...>::value, _Ty*>
+	PE_FORCEINLINE New(_TArgs&&... _InArgs)
 	{
 		void* Ptr = EMemory::Allocate(sizeof(_Ty));
 		return ::new (Ptr) _Ty(EMemory::Forward<_TArgs>(_InArgs)...);
