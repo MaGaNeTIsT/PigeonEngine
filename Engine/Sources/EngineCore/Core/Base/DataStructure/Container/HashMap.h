@@ -161,7 +161,7 @@ namespace PigeonEngine
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     const V& THashMap<K, V, Hash, Pred, Alloc>::operator[](const K& Key)const
     {
-        return HashMap[Key];
+        return HashMap.at(Key);
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
@@ -173,13 +173,17 @@ namespace PigeonEngine
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     void THashMap<K, V, Hash, Pred, Alloc>::Remove(const K& Key)
     {
-        HashMap.erase(HashMap.find(Key));
+        const auto It = HashMap.find(Key);
+        if (It != HashMap.end())
+        {
+            HashMap.erase(It);
+        }
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
     BOOL32 THashMap<K, V, Hash, Pred, Alloc>::ContainsKey(const K& Key) const
     {
-        return HashMap.find(Key) < HashMap.end();
+        return HashMap.find(Key) != HashMap.end();
     }
 
     template <typename K, typename V, class Hash, class Pred, class Alloc>
@@ -200,7 +204,7 @@ namespace PigeonEngine
     BOOL32 THashMap<K, V, Hash, Pred, Alloc>::FindValue(const K& Key, V& OutValue) const
     {
         const auto it = HashMap.find(Key);
-        if(!(it < HashMap.end()))
+        if (it == HashMap.end())
         {
             return FALSE;
         }
