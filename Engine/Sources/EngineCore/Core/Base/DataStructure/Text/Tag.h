@@ -30,11 +30,6 @@ namespace PigeonEngine
 		{
 		}
 
-		ETag(EString&& Other) :
-			Name(EMemory::Move(Other))
-		{
-		}
-
 		ETag(const EString& Other) :
 			Name(Other)
 		{
@@ -102,6 +97,24 @@ namespace PigeonEngine
 			AddTag(ETag(Other));
 		}
 
+		void AddTag(const EName& Other)
+		{
+			AddTag(ETag(Other));
+		}	
+
+		void AddTag(const EString& Other)
+		{
+			AddTag(ETag(Other));
+		}
+
+		void AddTags(const ETagContainer& Other)
+		{
+			for (const auto& Tag : Other.Tags)
+			{
+				AddTag(Tag);
+			}
+		}
+
 		void RemoveTag(const ETag& Other)
 		{
 			Tags.Remove(Other);
@@ -110,6 +123,14 @@ namespace PigeonEngine
 		void RemoveTag(const CHAR* Other)
 		{
 			RemoveTag(ETag(Other));
+		}
+
+		void RemoveTags(const ETagContainer& Other)
+		{
+			for (const auto& Tag : Other.Tags)
+			{
+				RemoveTag(Tag);
+			}
 		}
 
 		PE_NODISCARD BOOL32 HasTag(const ETag& Other) const
