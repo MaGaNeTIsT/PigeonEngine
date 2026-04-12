@@ -9,8 +9,10 @@ namespace PigeonEngine
         FLOAT XInput;
         FLOAT YInput;
         BOOL8 bJump;
+        BOOL8 bJumpPressed;
         BOOL8 bRun;
         BOOL8 bCrouch;
+        BOOL8 bCrouchPressed;
     };
     class PCharacter;
     class PCharacterController : public PController
@@ -31,6 +33,7 @@ namespace PigeonEngine
         const TFunction<void(IKeyboard::Event::EType Type, BYTE KeyCode)> OnKeyDown;
     public:
         void SetCharacter(PCharacter* InCharacter);
+		PE_NODISCARD ECharacterMoveInput ConsumeMoveInput();
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PCharacterController)
 

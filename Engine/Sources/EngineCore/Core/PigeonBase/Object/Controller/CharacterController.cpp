@@ -33,13 +33,6 @@ namespace PigeonEngine
     void PCharacterController::UserTick(FLOAT deltaTime)
     {
         PController::UserTick(deltaTime);
-        if (Character)
-        {
-            if (PMovementComponent* MovementComponent = Character->GetMovementComponent())
-            {
-                MovementComponent->HandleInput(CharacterMoveInput);
-            }
-        }
     }
 
     void PCharacterController::UserEndPlay()
@@ -104,6 +97,7 @@ namespace PigeonEngine
             {
             case PigeonEngine::IKeyboard::Event::EType::Press:
                 CharacterMoveInput.bJump = TRUE;
+                CharacterMoveInput.bJumpPressed = TRUE;
                 break;
             case PigeonEngine::IKeyboard::Event::EType::Release:
                 CharacterMoveInput.bJump = FALSE;
@@ -130,6 +124,7 @@ namespace PigeonEngine
             {
             case PigeonEngine::IKeyboard::Event::EType::Press:
                 CharacterMoveInput.bCrouch = TRUE;
+                CharacterMoveInput.bCrouchPressed = TRUE;
                 break;
             case PigeonEngine::IKeyboard::Event::EType::Release:
                 CharacterMoveInput.bCrouch = FALSE;
@@ -141,15 +136,31 @@ namespace PigeonEngine
     void PCharacterController::SetCharacter(PCharacter* InCharacter)
     {
         Character = InCharacter;
+		if (Character)
+		{
+			Character->SetCharacterController(this);
+		}
     }
+
+	ECharacterMoveInput PCharacterController::ConsumeMoveInput()
+	{
+		ECharacterMoveInput CurrentInput = CharacterMoveInput;
+		CurrentInput.bJump = CharacterMoveInput.bJump;
+		CurrentInput.bCrouch = CharacterMoveInput.bCrouchPressed;
+		CharacterMoveInput.bJumpPressed = FALSE;
+		CharacterMoveInput.bCrouchPressed = FALSE;
+		return CurrentInput;
+	}
 
     PCharacterController::PCharacterController()
     {
         CharacterMoveInput.XInput = 0.f;
         CharacterMoveInput.YInput = 0.f;
         CharacterMoveInput.bJump = FALSE;
+        CharacterMoveInput.bJumpPressed = FALSE;
         CharacterMoveInput.bRun = FALSE;
         CharacterMoveInput.bCrouch = FALSE;
+        CharacterMoveInput.bCrouchPressed = FALSE;
     }
     PCharacterController::~PCharacterController()
     {

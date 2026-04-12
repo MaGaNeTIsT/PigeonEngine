@@ -1,5 +1,5 @@
 #include "../Headers/JoltPhysics.h"
-#include "../Headers/Character/Character.h"
+#include "../Headers/Character/CharacterVirtual.h"
 
 namespace PigeonEngine
 {
@@ -45,6 +45,9 @@ namespace PigeonEngine
 		PhysicsData->ContactListener = New<FContactListener>();
 		PhysicsData->PhysicsSystem->SetContactListener(PhysicsData->ContactListener);
 
+		PhysicsData->SoftBodyContactListener = New<FSoftBodyContactListener>();
+		PhysicsData->PhysicsSystem->SetSoftBodyContactListener(PhysicsData->SoftBodyContactListener);
+
 		PhysicsData->BodyInterface = &PhysicsData->PhysicsSystem->GetBodyInterface();
 
 		PhysicsData->PhysicsSystem->SetGravity(JPH::Vec3(0, -9.81f, 0));
@@ -57,7 +60,7 @@ namespace PigeonEngine
 		for (const auto& Character : m_Characters)
 		{
 			PE_CHECK(ENGINE_THIRD_PARTY_ERROR, ("Has a Character been destory but not removed!"), !!Character);
-			Character->PostSimulation();
+			Character->PostSimulation(InDeltaTime);
 		}
 	}
 
@@ -90,6 +93,8 @@ namespace PigeonEngine
 		PhysicsData->BodyActivationListener = nullptr;
 		Delete(PhysicsData->ContactListener);
 		PhysicsData->ContactListener = nullptr;
+		Delete(PhysicsData->SoftBodyContactListener);
+		PhysicsData->SoftBodyContactListener = nullptr;
 		Delete(PhysicsData->ObjectLayerPairFilterImpl);
 		PhysicsData->ObjectLayerPairFilterImpl = nullptr;
 		Delete(PhysicsData->ObjectVsBroadPhaseLayerFilterImpl);
@@ -126,19 +131,69 @@ namespace PigeonEngine
 		//}
 	}
 
-	void FPhysics_Jolt::AddCharacter(FCharacter* Character)
+	void FPhysics_Jolt::AddCharacter(FCharacterVirtual* Character)
 	{
 		m_Characters.Add(Character);
 	}
 
-	void FPhysics_Jolt::RemoveCharacter(FCharacter* Character)
+	void FPhysics_Jolt::RemoveCharacter(FCharacterVirtual* Character)
 	{
 		m_Characters.Remove(Character);
 	}
 
-	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, FPhysicsBodyId& outBodyID)
+	void FPhysics_Jolt::AddPhysicsListener(FBodyActivationEventListenerInterface* InListener)
 	{
-		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer.ToJolt()));
+		if (PhysicsData && PhysicsData->BodyActivationListener)
+		{
+			PhysicsData->BodyActivationListener->AddListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::RemovePhysicsListener(FBodyActivationEventListenerInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->BodyActivationListener)
+		{
+			PhysicsData->BodyActivationListener->RemoveListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::AddPhysicsListener(FContactEventListenerInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->ContactListener)
+		{
+			PhysicsData->ContactListener->AddListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::RemovePhysicsListener(FContactEventListenerInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->ContactListener)
+		{
+			PhysicsData->ContactListener->RemoveListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::AddPhysicsListener(FSoftBodyContactEventListenerInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->SoftBodyContactListener)
+		{
+			PhysicsData->SoftBodyContactListener->AddListener(InListener);
+		}
+	}
+
+	void FPhysics_Jolt::RemovePhysicsListener(FSoftBodyContactEventListenerInterface* InListener)
+	{
+		if (PhysicsData && PhysicsData->SoftBodyContactListener)
+		{
+			PhysicsData->SoftBodyContactListener->RemoveListener(InListener);
+		}
+	}
+
+	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, const ObjectIdentityType& InObjectID, FPhysicsBodyId& outBodyID)
+	{
+		BodyCreationSettings Settings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer.ToJolt());
+		Settings.mUserData = static_cast<uint64>(InObjectID);
+		Body* body = PhysicsData->BodyInterface->CreateBody(Settings);
 		if (body)
 		{
 			outBodyID.ID = body->GetID();

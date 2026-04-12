@@ -1,58 +1,64 @@
 #pragma once
 #include <CoreMinimal.h>
 #include "Pawn.h"
+#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterVirtual.h"
 
 namespace PigeonEngine
 {
-	class PCharacter : public PPawn
+	class PCharacterController;
+	class PCharacter : public PPawn, public FCharacterContactEventListenerInterface
 	{
 		friend class PWorld;
 		CLASS_VIRTUAL_NOCOPY_BODY(PCharacter)
 	public:
-		/// <summary>
-		/// Init a level character use settings,host point.
-		/// </summary>
-		/// <param name="InCharacterSettings"></param>
-		virtual void InitCharacter(class FCharacterSettings& InCharacterSettings);
+		virtual void InitCharacter(class FCharacterVirtualSettings& InCharacterSettings);
 		virtual void UninitCharacter();
 
 		class FShape* GetStandingShape();
 		class FShape* GetCrouchingShape();
-		class FCharacter* GetPhysicsCharacter();
+		class FCharacterVirtual* GetPhysicsCharacter();
 		class PMovementComponent* GetMovementComponent();
+		void SetCharacterController(PCharacterController* InController);
+		PE_NODISCARD PCharacterController* GetCharacterController() const;
 
 #if _EDITOR_ONLY
 		void EditorTick(FLOAT deltaTime) override;
 #endif
 
 	protected:
-		// for frame, 
 		virtual void BeginAddedToScene(PWorld* World) override;
 		virtual void RemovedFromScene() override;
-	protected:
 
 		virtual void UserBeginPlay();
 		virtual void UserTick(FLOAT deltaTime) override;
 		virtual void UserEndPlay();
-	public:
-		// Character size
-		FLOAT			CharacterHeightStanding			= 135.f;
-		FLOAT			CharacterRadiusStanding			= 30.f;
-		FLOAT			CharacterHeightCrouching		= 80.f;
-		FLOAT			CharacterRadiusCrouching		= 30.f;
 
-		// Character movement properties
-		BOOL32			ControlMovementDuringJump		= TRUE;	///< If false the character cannot change movement direction in mid air
-		FLOAT			CharacterSpeed					= 6.0f;
-		FLOAT			CharacterRunSpeed				= 12.0f;
-		FLOAT			JumpSpeed						= 4.0f;
+		virtual void OnPhysicsAdjustBodyVelocity(const FPhysicsBodyId& inBodyID2, Vector3& ioLinearVelocity, Vector3& ioAngularVelocity) {}
+		virtual bool OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) { return TRUE; }
+		virtual void OnPhysicsContactAdded(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, FPhysicsCharacterContactSettings& ioSettings) {}
+		virtual void OnPhysicsContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) {}
+
+	private:
+		virtual void OnAdjustBodyVelocity(const FPhysicsBodyId& inBodyID2, Vector3& ioLinearVelocity, Vector3& ioAngularVelocity) override;
+		virtual bool OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) override;
+		virtual void OnContactAdded(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, FPhysicsCharacterContactSettings& ioSettings) override;
+		virtual void OnContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) override;
+
+	public:
+		FLOAT CharacterHeightStanding = 135.f;
+		FLOAT CharacterRadiusStanding = 30.f;
+		FLOAT CharacterHeightCrouching = 80.f;
+		FLOAT CharacterRadiusCrouching = 30.f;
+		BOOL32 ControlMovementDuringJump = TRUE;
+		FLOAT CharacterSpeed = 6.0f;
+		FLOAT CharacterRunSpeed = 12.0f;
+		FLOAT JumpSpeed = 4.0f;
 
 	protected:
-		class PMovementComponent*   MovementComponent = nullptr;
-		class FCharacter*			Character			= nullptr;
-		//class FCharacterSettings*	CharacterSettings	= nullptr;
-		// The different stances for the character
-		class FShape*				StandingShape		= nullptr;
-		class FShape*				CrouchingShape		= nullptr;
+		class PMovementComponent* MovementComponent = nullptr;
+		PCharacterController* CharacterController = nullptr;
+		class FCharacterVirtual* Character = nullptr;
+		class FShape* StandingShape = nullptr;
+		class FShape* CrouchingShape = nullptr;
 	};
 }

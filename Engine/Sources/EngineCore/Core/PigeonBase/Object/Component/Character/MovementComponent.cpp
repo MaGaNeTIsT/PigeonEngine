@@ -1,7 +1,7 @@
 #include "MovementComponent.h"
 #include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
 #include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
-#include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/Character.h"
+#include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterVirtual.h"
 #include "../../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterBase.h"
 #include "Base/Math/Math.h"
 
@@ -28,7 +28,7 @@ namespace PigeonEngine
 
 	void PMovementComponent::HandleInputInternal(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 InSwitchStance, BOOL32 InRun)
 	{
-		FCharacter* Character = m_Character->GetPhysicsCharacter();
+		FCharacterVirtual* Character = m_Character->GetPhysicsCharacter();
 		//character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());
 		FCharacterBase::EGroundState GroundState = Character->GetGroundState();
 		if (GroundState == FCharacterBase::EGroundState::OnSteepGround
@@ -54,8 +54,8 @@ namespace PigeonEngine
 			Vector3 NewVelocity = 0.75f * CurrentVelocity + 0.25f * DesiredVelocity;
 
 			// Jump
-			if (InJump && GroundState == FCharacterBase::EGroundState::OnGround)
-				NewVelocity += Vector3(0.f, m_Character->JumpSpeed, 0.f);
+			if (InJump && Character->IsSupported())
+				NewVelocity.y = m_Character->JumpSpeed;
 
 			// Update the velocity
 			Character->SetLinearVelocity(NewVelocity);

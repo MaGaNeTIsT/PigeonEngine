@@ -25,11 +25,15 @@ namespace PigeonEngine
 	void PPhysicsComponent::Init()
 	{
 		PActorComponent::Init();
+		FPhysicsManager::GetSingleton()->AddPhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
+		FPhysicsManager::GetSingleton()->AddPhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		InitPhysicsComponent();
 	}
 
 	void PPhysicsComponent::Uninit()
 	{
+		FPhysicsManager::GetSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
+		FPhysicsManager::GetSingleton()->RemovePhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		PActorComponent::Uninit();
 		UninitPhysicsComponent();
 	}
@@ -73,7 +77,7 @@ namespace PigeonEngine
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, m_BodyId))
+		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
 		{
 			FPhysicsManager::GetSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
 		}
@@ -92,6 +96,7 @@ namespace PigeonEngine
 	void PPhysicsComponent::RemoveShape()
 	{
 		FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
+		m_BodyId = FPhysicsBodyId();
 		m_Shape = nullptr;
 	}
 
@@ -113,6 +118,71 @@ namespace PigeonEngine
 	FPhysicsObjectLayer PPhysicsComponent::GetLayer() const
 	{
 		return Layer;
+	}
+
+	const FPhysicsBodyId& PPhysicsComponent::GetBodyId() const
+	{
+		return m_BodyId;
+	}
+
+	void PPhysicsComponent::OnBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID)
+	{
+		if (ContainsBody(inBodyID))
+		{
+			OnPhysicsBodyActivated(inBodyID, inObjectID);
+		}
+	}
+
+	void PPhysicsComponent::OnBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID)
+	{
+		if (ContainsBody(inBodyID))
+		{
+			OnPhysicsBodyDeactivated(inBodyID, inObjectID);
+		}
+	}
+
+	EPhysicsContactValidateResult PPhysicsComponent::OnContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult)
+	{
+		if (!ContainsAnyBody(inBodyID1, inBodyID2))
+		{
+			return EPhysicsContactValidateResult::AcceptAllContactsForThisBodyPair;
+		}
+
+		return OnPhysicsContactValidate(inBodyID1, inBodyID2, inBaseOffset, inCollisionResult);
+	}
+
+	void PPhysicsComponent::OnContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	{
+		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		{
+			OnPhysicsContactAdded(inBodyID1, inBodyID2, inManifold, ioSettings);
+		}
+	}
+
+	void PPhysicsComponent::OnContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings)
+	{
+		if (ContainsAnyBody(inBodyID1, inBodyID2))
+		{
+			OnPhysicsContactPersisted(inBodyID1, inBodyID2, inManifold, ioSettings);
+		}
+	}
+
+	void PPhysicsComponent::OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair)
+	{
+		if (ContainsAnyBody(inSubShapePair.BodyId1, inSubShapePair.BodyId2))
+		{
+			OnPhysicsContactRemoved(inSubShapePair);
+		}
+	}
+
+	BOOL32 PPhysicsComponent::ContainsBody(const FPhysicsBodyId& InBodyID) const
+	{
+		return m_BodyId == InBodyID;
+	}
+
+	BOOL32 PPhysicsComponent::ContainsAnyBody(const FPhysicsBodyId& InBodyID1, const FPhysicsBodyId& InBodyID2) const
+	{
+		return ContainsBody(InBodyID1) || ContainsBody(InBodyID2);
 	}
 
 

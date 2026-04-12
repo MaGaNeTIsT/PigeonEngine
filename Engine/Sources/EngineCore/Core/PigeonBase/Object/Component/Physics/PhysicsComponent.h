@@ -6,7 +6,7 @@
 
 namespace PigeonEngine 
 {
-	class PPhysicsComponent : public PActorComponent
+	class PPhysicsComponent : public PActorComponent, public FBodyActivationEventListenerInterface, public FContactEventListenerInterface
 	{
 	public:
 		PPhysicsComponent() : m_Shape(nullptr)
@@ -46,10 +46,32 @@ namespace PigeonEngine
 		void AddImpluse(Vector3 InImpluse);
 		void SetLayer(FPhysicsObjectLayer InLayer);
 		FPhysicsObjectLayer GetLayer() const;
+		const FPhysicsBodyId& GetBodyId() const;
+
+	private://Listener interface functions
+		virtual void OnBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) override;
+		virtual void OnBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) override;
+		virtual EPhysicsContactValidateResult OnContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult) override;
+		virtual void OnContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
+		virtual void OnContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) override;
+		virtual void OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair) override;
+
+	protected:
+		virtual void OnPhysicsBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
+		virtual void OnPhysicsBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
+		virtual EPhysicsContactValidateResult OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult)
+		{
+			return EPhysicsContactValidateResult::AcceptAllContactsForThisBodyPair;
+		}
+		virtual void OnPhysicsContactAdded(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
+		virtual void OnPhysicsContactPersisted(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const FPhysicsContactManifold& inManifold, FPhysicsContactSettings& ioSettings) {}
+		virtual void OnPhysicsContactRemoved(const FPhysicsSubShapePair& inSubShapePair) {}
 	public:
 		PhysicsUtility::EMotionType MotionType = PhysicsUtility::EMotionType::Static;
 		FPhysicsObjectLayer Layer = Layers::NON_MOVING;
 	private:
+		BOOL32 ContainsBody(const FPhysicsBodyId& InBodyID) const;
+		BOOL32 ContainsAnyBody(const FPhysicsBodyId& InBodyID1, const FPhysicsBodyId& InBodyID2) const;
 		FShape* m_Shape = nullptr;
 		FPhysicsBodyId m_BodyId;
 	};

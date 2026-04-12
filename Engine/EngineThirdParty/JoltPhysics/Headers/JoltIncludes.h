@@ -17,6 +17,8 @@
 //Listener
 #include <Jolt/Physics/Collision/ContactListener.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/SoftBody/SoftBodyContactListener.h>
+#include <Jolt/Physics/SoftBody/SoftBodyManifold.h>
 
 //Shapes Include
 #include <Jolt/Physics/Collision/CollideShape.h>

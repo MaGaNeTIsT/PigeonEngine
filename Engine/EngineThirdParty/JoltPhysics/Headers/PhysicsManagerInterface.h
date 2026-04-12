@@ -1,12 +1,11 @@
 #pragma once
 
 PIGEONENGINE_NAMESPACE_BEGIN
-class IPhysicsManagerInterface
+class FPhysicsManagerInterface
 {
 public:
-	IPhysicsManagerInterface()					{}
-	virtual ~IPhysicsManagerInterface()			= default;
-
+	FPhysicsManagerInterface()					{}
+	virtual ~FPhysicsManagerInterface()			= default;
 public:
 	virtual void InitPhysics()					{}
 	virtual void UninitPhysics()				{}

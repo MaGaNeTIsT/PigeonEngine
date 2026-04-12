@@ -23,5 +23,6 @@ struct FPhysicsData
 	CObjectVsBroadPhaseLayerFilterImpl* ObjectVsBroadPhaseLayerFilterImpl;
 	FBodyActivationListener* BodyActivationListener;
 	FContactListener* ContactListener;
+	FSoftBodyContactListener* SoftBodyContactListener;
 };
 PIGEONENGINE_NAMESPACE_END
