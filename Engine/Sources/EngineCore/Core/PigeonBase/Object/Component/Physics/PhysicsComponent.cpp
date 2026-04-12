@@ -105,5 +105,15 @@ namespace PigeonEngine
 		FPhysicsManager::GetSingleton()->AddImpulse(m_BodyId, InImpluse);
 	}
 
+	void PPhysicsComponent::SetLayer(FPhysicsObjectLayer InLayer)
+	{
+		Layer = InLayer;
+	}
+
+	FPhysicsObjectLayer PPhysicsComponent::GetLayer() const
+	{
+		return Layer;
+	}
+
 
 }

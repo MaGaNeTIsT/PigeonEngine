@@ -6,7 +6,11 @@
 #include "../../../Sources/EngineCore/PhysicsCore/PhysicsConfig/PhysicsConfig.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
-using namespace JPH;
+using JPH::BodyInterface;
+using JPH::JobSystemThreadPool;
+using JPH::PhysicsSystem;
+using JPH::TempAllocatorImpl;
+
 struct FPhysicsData
 {
 	//Physics Parameters

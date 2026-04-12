@@ -9,7 +9,20 @@
 #endif
 
 PIGEONENGINE_NAMESPACE_BEGIN
-using namespace JPH;
+using JPH::BoxShape;
+using JPH::BoxShapeSettings;
+using JPH::CapsuleShape;
+using JPH::CapsuleShapeSettings;
+using JPH::CylinderShape;
+using JPH::CylinderShapeSettings;
+using JPH::PhysicsMaterial;
+using JPH::RotatedTranslatedShape;
+using JPH::RotatedTranslatedShapeSettings;
+using JPH::Shape;
+using JPH::ShapeSettings;
+using JPH::SphereShape;
+using JPH::SphereShapeSettings;
+
 struct AABBBox
 {
 	Vector3 Min;

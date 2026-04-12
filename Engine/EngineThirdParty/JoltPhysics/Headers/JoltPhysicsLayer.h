@@ -1,100 +1,437 @@
 #pragma once
 #include <CoreMinimal.h>
+#include <Base/DataStructure/Container/Array.h>
 #include "PhysicsUtility.h"
 #include "JoltIncludes.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
 // All Jolt symbols are in the JPH namespace
-using namespace JPH;
+using JPH::BroadPhaseLayer;
+using JPH::BroadPhaseLayerFilter;
+using JPH::BroadPhaseLayerInterface;
+using JPH::ObjectLayer;
+using JPH::ObjectLayerFilter;
+using JPH::ObjectLayerPairFilter;
+using JPH::ObjectVsBroadPhaseLayerFilter;
+using JPH::uint;
+
+class FPhysicsObjectLayer
+{
+public:
+	using Type = UINT16;
+
+	constexpr FPhysicsObjectLayer() : Value(0u) {}
+	explicit constexpr FPhysicsObjectLayer(Type InValue) : Value(InValue) {}
+
+	constexpr operator Type() const
+	{
+		return Value;
+	}
+
+	constexpr Type GetValue() const
+	{
+		return Value;
+	}
+
+	constexpr BOOL32 operator == (const FPhysicsObjectLayer& InRHS) const
+	{
+		return Value == InRHS.Value;
+	}
+
+	constexpr BOOL32 operator != (const FPhysicsObjectLayer& InRHS) const
+	{
+		return Value != InRHS.Value;
+	}
+
+	inline ObjectLayer ToJolt() const
+	{
+		return static_cast<ObjectLayer>(Value);
+	}
+
+	static inline FPhysicsObjectLayer FromJolt(ObjectLayer InLayer)
+	{
+		return FPhysicsObjectLayer(static_cast<Type>(InLayer));
+	}
+
+private:
+	Type Value;
+};
+
+class FPhysicsBroadPhaseLayer
+{
+public:
+	using Type = UINT8;
+
+	constexpr FPhysicsBroadPhaseLayer() : Value(0u) {}
+	explicit constexpr FPhysicsBroadPhaseLayer(Type InValue) : Value(InValue) {}
+
+	constexpr operator Type() const
+	{
+		return Value;
+	}
+
+	constexpr Type GetValue() const
+	{
+		return Value;
+	}
+
+	constexpr BOOL32 operator == (const FPhysicsBroadPhaseLayer& InRHS) const
+	{
+		return Value == InRHS.Value;
+	}
+
+	constexpr BOOL32 operator != (const FPhysicsBroadPhaseLayer& InRHS) const
+	{
+		return Value != InRHS.Value;
+	}
+
+	inline BroadPhaseLayer ToJolt() const
+	{
+		return BroadPhaseLayer(static_cast<JPH::BroadPhaseLayer::Type>(Value));
+	}
+
+	static inline FPhysicsBroadPhaseLayer FromJolt(BroadPhaseLayer InLayer)
+	{
+		return FPhysicsBroadPhaseLayer(static_cast<Type>(InLayer.GetValue()));
+	}
+
+private:
+	Type Value;
+};
 
 namespace Layers
 {
-	static constexpr UINT8 NON_MOVING = 0;
-	static constexpr UINT8 MOVING = 1;
-	static constexpr UINT8 NUM_LAYERS = 2;
+	static constexpr FPhysicsObjectLayer NON_MOVING{ 0 };
+	static constexpr FPhysicsObjectLayer MOVING{ 1 };
+	static constexpr FPhysicsObjectLayer SENSOR{ 2 };
+	static constexpr FPhysicsObjectLayer QUERY_ONLY{ 3 };
+	static constexpr UINT8 NUM_LAYERS = 4;
 }
 
 namespace BroadPhaseLayers
 {
-	static constexpr UINT8 NON_MOVING(0);
-	static constexpr UINT8 MOVING(1);
-	static constexpr UINT8 NUM_LAYERS(2);
+	static constexpr FPhysicsBroadPhaseLayer NON_MOVING{ 0 };
+	static constexpr FPhysicsBroadPhaseLayer MOVING{ 1 };
+	static constexpr FPhysicsBroadPhaseLayer SENSOR{ 2 };
+	static constexpr FPhysicsBroadPhaseLayer QUERY_ONLY{ 3 };
+	static constexpr UINT8 NUM_LAYERS(4);
 }
+
+class FPhysicsLayerConfig
+{
+public:
+	virtual ~FPhysicsLayerConfig() = default;
+
+	virtual uint GetNumObjectLayers() const
+	{
+		return Layers::NUM_LAYERS;
+	}
+
+	virtual uint GetNumBroadPhaseLayers() const
+	{
+		return BroadPhaseLayers::NUM_LAYERS;
+	}
+
+	virtual FPhysicsBroadPhaseLayer GetBroadPhaseLayer(FPhysicsObjectLayer inLayer) const
+	{
+		switch (inLayer)
+		{
+		case Layers::NON_MOVING:
+			return BroadPhaseLayers::NON_MOVING;
+		case Layers::MOVING:
+			return BroadPhaseLayers::MOVING;
+		case Layers::SENSOR:
+			return BroadPhaseLayers::SENSOR;
+		case Layers::QUERY_ONLY:
+			return BroadPhaseLayers::QUERY_ONLY;
+		default:
+			JPH_ASSERT(FALSE);
+			return BroadPhaseLayers::NON_MOVING;
+		}
+	}
+
+	virtual bool ShouldObjectCollideWithBroadPhase(FPhysicsObjectLayer inLayer1, FPhysicsBroadPhaseLayer inLayer2) const
+	{
+		switch (inLayer1)
+		{
+		case Layers::NON_MOVING:
+			return inLayer2 == BroadPhaseLayers::MOVING;
+		case Layers::MOVING:
+			return inLayer2 != BroadPhaseLayers::QUERY_ONLY;
+		case Layers::SENSOR:
+			return inLayer2 == BroadPhaseLayers::MOVING;
+		case Layers::QUERY_ONLY:
+			return FALSE;
+		default:
+			JPH_ASSERT(FALSE);
+			return FALSE;
+		}
+	}
+
+	virtual bool ShouldObjectCollide(FPhysicsObjectLayer inObject1, FPhysicsObjectLayer inObject2) const
+	{
+		switch (inObject1)
+		{
+		case Layers::NON_MOVING:
+			return inObject2 == Layers::MOVING;
+		case Layers::MOVING:
+			return inObject2 != Layers::QUERY_ONLY;
+		case Layers::SENSOR:
+			return inObject2 == Layers::MOVING;
+		case Layers::QUERY_ONLY:
+			return FALSE;
+		default:
+			JPH_ASSERT(FALSE);
+			return FALSE;
+		}
+	}
+
+#if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
+	virtual const char* GetBroadPhaseLayerName(FPhysicsBroadPhaseLayer inLayer) const
+	{
+		switch (inLayer.GetValue())
+		{
+		case BroadPhaseLayers::NON_MOVING.GetValue():	return "NON_MOVING";
+		case BroadPhaseLayers::MOVING.GetValue():		return "MOVING";
+		case BroadPhaseLayers::SENSOR.GetValue():		return "SENSOR";
+		case BroadPhaseLayers::QUERY_ONLY.GetValue():	return "QUERY_ONLY";
+		default:											JPH_ASSERT(FALSE); return "INVALID";
+		}
+	}
+#endif
+};
+
+class FPhysicsBroadPhaseLayerFilterBase : public BroadPhaseLayerFilter
+{
+public:
+	virtual ~FPhysicsBroadPhaseLayerFilterBase() = default;
+
+	virtual bool ShouldCollide(FPhysicsBroadPhaseLayer inLayer) const
+	{
+		return TRUE;
+	}
+
+	virtual bool ShouldCollide(BroadPhaseLayer inLayer) const override final
+	{
+		return ShouldCollide(FPhysicsBroadPhaseLayer::FromJolt(inLayer));
+	}
+};
+
+class FPhysicsBroadPhaseLayerFilter : public FPhysicsBroadPhaseLayerFilterBase
+{
+public:
+	FPhysicsBroadPhaseLayerFilter() = default;
+
+	explicit FPhysicsBroadPhaseLayerFilter(FPhysicsBroadPhaseLayer InLayer)
+	{
+		AllowedLayers.Add(InLayer);
+	}
+
+	explicit FPhysicsBroadPhaseLayerFilter(TInitializerList<FPhysicsBroadPhaseLayer> InLayers)
+		: AllowedLayers(InLayers)
+	{
+	}
+
+	virtual bool ShouldCollide(FPhysicsBroadPhaseLayer inLayer) const override
+	{
+		if (AllowedLayers.IsEmpty())
+			return TRUE;
+
+		for (const FPhysicsBroadPhaseLayer Layer : AllowedLayers)
+		{
+			if (Layer == inLayer)
+				return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	void AddLayer(FPhysicsBroadPhaseLayer InLayer)
+	{
+		for (const FPhysicsBroadPhaseLayer Layer : AllowedLayers)
+		{
+			if (Layer == InLayer)
+				return;
+		}
+
+		AllowedLayers.Add(InLayer);
+	}
+
+	void Reset()
+	{
+		AllowedLayers.Empty();
+	}
+
+private:
+	TArray<FPhysicsBroadPhaseLayer> AllowedLayers;
+};
+
+class FDefaultPhysicsBroadPhaseLayerFilter final : public FPhysicsBroadPhaseLayerFilter
+{
+public:
+	static const FDefaultPhysicsBroadPhaseLayerFilter& Get()
+	{
+		static FDefaultPhysicsBroadPhaseLayerFilter Instance;
+		return Instance;
+	}
+};
+
+class FDefaultPhysicsLayerConfig final : public FPhysicsLayerConfig
+{
+public:
+	static const FDefaultPhysicsLayerConfig& Get()
+	{
+		static FDefaultPhysicsLayerConfig Instance;
+		return Instance;
+	}
+};
 
 // BroadPhaseLayerInterface implementation
 // This defines a mapping between object and broadphase layers.
 class CBPLayerInterfaceImpl final : public BroadPhaseLayerInterface
 {
 public:
-	CBPLayerInterfaceImpl()
+	explicit CBPLayerInterfaceImpl(const FPhysicsLayerConfig& InLayerConfig)
+		: mLayerConfig(InLayerConfig)
 	{
-		// Create a mapping table from object to broad phase layer
-		mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayer(BroadPhaseLayers::NON_MOVING);
-		mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayer(BroadPhaseLayers::MOVING);
+		mObjectToBroadPhase.SetNum(mLayerConfig.GetNumObjectLayers());
+		for (UINT32 LayerIndex = 0u; LayerIndex < mLayerConfig.GetNumObjectLayers(); ++LayerIndex)
+		{
+			mObjectToBroadPhase[LayerIndex] = mLayerConfig.GetBroadPhaseLayer(FPhysicsObjectLayer(static_cast<FPhysicsObjectLayer::Type>(LayerIndex))).ToJolt();
+		}
 	}
 
 	virtual uint					GetNumBroadPhaseLayers() const override
 	{
-		return BroadPhaseLayers::NUM_LAYERS;
+		return mLayerConfig.GetNumBroadPhaseLayers();
 	}
 
 	virtual BroadPhaseLayer			GetBroadPhaseLayer(ObjectLayer inLayer) const override
 	{
-		JPH_ASSERT(inLayer < Layers::NUM_LAYERS);
-		return mObjectToBroadPhase[(INT32)inLayer];
+		JPH_ASSERT(inLayer < mObjectToBroadPhase.Num<ObjectLayer>());
+		return mObjectToBroadPhase[(size_t)inLayer];
 	}
 
 #if defined(JPH_EXTERNAL_PROFILE) || defined(JPH_PROFILE_ENABLED)
 	virtual const char* GetBroadPhaseLayerName(BroadPhaseLayer inLayer) const
 	{
-		switch ((BroadPhaseLayer::Type)inLayer)
-		{
-		case (BroadPhaseLayer::Type)BroadPhaseLayers::NON_MOVING:	return "NON_MOVING";
-		case (BroadPhaseLayer::Type)BroadPhaseLayers::MOVING:		return "MOVING";
-		default:													JPH_ASSERT(FALSE); return "INVALID";
-		}
+		return mLayerConfig.GetBroadPhaseLayerName(FPhysicsBroadPhaseLayer::FromJolt(inLayer));
 	}
 #endif // JPH_EXTERNAL_PROFILE || JPH_PROFILE_ENABLED
 
 private:
-	BroadPhaseLayer					mObjectToBroadPhase[Layers::NUM_LAYERS];
+	const FPhysicsLayerConfig& mLayerConfig;
+	TArray<BroadPhaseLayer> mObjectToBroadPhase;
 };
 
 /// Class that determines if an object layer can collide with a broadphase layer
 class CObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter
 {
 public:
+	explicit CObjectVsBroadPhaseLayerFilterImpl(const FPhysicsLayerConfig& InLayerConfig)
+		: mLayerConfig(InLayerConfig)
+	{
+	}
+
 	virtual bool ShouldCollide(ObjectLayer inLayer1, BroadPhaseLayer inLayer2) const override
 	{
-		switch (inLayer1)
-		{
-		case Layers::NON_MOVING:
-			return inLayer2 == BroadPhaseLayer(BroadPhaseLayers::MOVING);
-		case Layers::MOVING:
-			return TRUE;
-		default:
-			JPH_ASSERT(FALSE);
-			return FALSE;
-		}
+		return mLayerConfig.ShouldObjectCollideWithBroadPhase(FPhysicsObjectLayer::FromJolt(inLayer1), FPhysicsBroadPhaseLayer::FromJolt(inLayer2));
 	}
+
+private:
+	const FPhysicsLayerConfig& mLayerConfig;
 };
 
 /// Class that determines if two object layers can collide
 class CObjectLayerPairFilterImpl : public ObjectLayerPairFilter
 {
 public:
-	virtual bool					ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override
+	explicit CObjectLayerPairFilterImpl(const FPhysicsLayerConfig& InLayerConfig)
+		: mLayerConfig(InLayerConfig)
 	{
-		switch (inObject1)
+	}
+
+	virtual bool ShouldCollide(ObjectLayer inObject1, ObjectLayer inObject2) const override
+	{
+		return mLayerConfig.ShouldObjectCollide(FPhysicsObjectLayer::FromJolt(inObject1), FPhysicsObjectLayer::FromJolt(inObject2));
+	}
+
+private:
+	const FPhysicsLayerConfig& mLayerConfig;
+};
+
+class FPhysicsQueryLayerFilterBase : public ObjectLayerFilter
+{
+public:
+	virtual ~FPhysicsQueryLayerFilterBase() = default;
+
+	virtual bool ShouldCollide(FPhysicsObjectLayer inLayer) const
+	{
+		return TRUE;
+	}
+
+	virtual bool ShouldCollide(ObjectLayer inLayer) const override final
+	{
+		return ShouldCollide(FPhysicsObjectLayer::FromJolt(inLayer));
+	}
+};
+
+class FPhysicsQueryLayerFilter : public FPhysicsQueryLayerFilterBase
+{
+public:
+	FPhysicsQueryLayerFilter() = default;
+
+	explicit FPhysicsQueryLayerFilter(FPhysicsObjectLayer InLayer)
+	{
+		AllowedLayers.Add(InLayer);
+	}
+
+	explicit FPhysicsQueryLayerFilter(TInitializerList<FPhysicsObjectLayer> InLayers)
+		: AllowedLayers(InLayers)
+	{
+	}
+
+	virtual bool ShouldCollide(FPhysicsObjectLayer inLayer) const override
+	{
+		if (AllowedLayers.IsEmpty())
+			return TRUE;
+
+		for (const FPhysicsObjectLayer Layer : AllowedLayers)
 		{
-		case Layers::NON_MOVING:
-			return inObject2 == Layers::MOVING; // Non moving only collides with moving
-		case Layers::MOVING:
-			return TRUE; // Moving collides with everything
-		default:
-			JPH_ASSERT(FALSE);
-			return FALSE;
+			if (Layer == inLayer)
+				return TRUE;
 		}
+
+		return FALSE;
+	}
+
+	void AddLayer(FPhysicsObjectLayer InLayer)
+	{
+		for (const FPhysicsObjectLayer Layer : AllowedLayers)
+		{
+			if (Layer == InLayer)
+				return;
+		}
+
+		AllowedLayers.Add(InLayer);
+	}
+
+	void Reset()
+	{
+		AllowedLayers.Empty();
+	}
+
+private:
+	TArray<FPhysicsObjectLayer> AllowedLayers;
+};
+
+class FDefaultPhysicsQueryLayerFilter final : public FPhysicsQueryLayerFilter
+{
+public:
+	static const FDefaultPhysicsQueryLayerFilter& Get()
+	{
+		static FDefaultPhysicsQueryLayerFilter Instance;
+		return Instance;
 	}
 };
 PIGEONENGINE_NAMESPACE_END

@@ -13,8 +13,8 @@
 
 PIGEONENGINE_NAMESPACE_BEGIN
 // All Jolt symbols are in the JPH namespace
-using namespace JPH;
-using namespace PhysicsUtility;
+using JPH::BodyID;
+using PhysicsUtility::EActivate;
 
 struct FPhysicsBodyId
 {
@@ -88,7 +88,7 @@ static void TraceImpl(const CHAR* inFMT, ...)
 class FPhysics_Jolt : public IPhysicsManagerInterface
 {
 public:
-	FPhysics_Jolt() : PhysicsData(nullptr) {}
+	FPhysics_Jolt() : PhysicsData(nullptr), LayerConfig(nullptr) {}
 	virtual ~FPhysics_Jolt() {}
 public:
 	virtual void InitPhysics();
@@ -103,7 +103,7 @@ public:
 	void RemoveCharacter(class FCharacter* Character);
 
 public:
-	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, FPhysicsBodyId& outBodyID);
+	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, FPhysicsBodyId& outBodyID);
 	void AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode = EActivate::DontActivate);
 	BOOL32 FindObjectIdentityByBodyId(const FPhysicsBodyId& inBodyID, ObjectIdentityType& outGameObjectId) const;
 	/// <summary>
@@ -123,6 +123,8 @@ public:
 	void AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint); ///< Applied at inPoint
 
 	void SetGravity(Vector3 inGravity);
+	void SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig);
+	const FPhysicsLayerConfig& GetLayerConfig() const;
 private:
 	TMap<ObjectIdentityType, TArray<FPhysicsBodyId>>		m_Bodys;
 	TMap<FPhysicsBodyId, ObjectIdentityType>				m_BodyToObjectIds;
@@ -130,5 +132,6 @@ private:
 	TSet<class FCharacter*>									m_Characters;
 private:
 	FPhysicsData* PhysicsData;
+	const FPhysicsLayerConfig* LayerConfig;
 };
 PIGEONENGINE_NAMESPACE_END

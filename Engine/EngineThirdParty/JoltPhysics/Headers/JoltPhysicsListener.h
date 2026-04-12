@@ -3,7 +3,24 @@
 #include "JoltIncludes.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
-using namespace JPH;
+using JPH::Body;
+using JPH::BodyActivationListener;
+using JPH::BodyID;
+using JPH::CharacterContactListener;
+using JPH::CharacterContactSettings;
+using JPH::CharacterVirtual;
+using JPH::CollideShapeResult;
+using JPH::ContactListener;
+using JPH::ContactManifold;
+using JPH::ContactSettings;
+using JPH::PhysicsMaterial;
+using JPH::RVec3Arg;
+using JPH::SubShapeID;
+using JPH::SubShapeIDPair;
+using JPH::ValidateResult;
+using JPH::Vec3;
+using JPH::Vec3Arg;
+using JPH::uint64;
 
 class FBodyActivationListener : public BodyActivationListener
 {

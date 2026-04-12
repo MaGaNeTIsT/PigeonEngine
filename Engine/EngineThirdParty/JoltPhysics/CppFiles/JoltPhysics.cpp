@@ -3,6 +3,8 @@
 
 namespace PigeonEngine
 {
+	using namespace JPH;
+
 	void FPhysics_Jolt::InitPhysics()
 	{
 		// Register allocation hook
@@ -27,11 +29,12 @@ namespace PigeonEngine
 		//an example implementation for jobsystem
 		//used for multiple threads
 		PhysicsData->JobSystem = New<JobSystemThreadPool>(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
+		const FPhysicsLayerConfig& PhysicsLayerConfig = GetLayerConfig();
 		// Create mapping table from object layer to broadphase layer
-		PhysicsData->BPLayerInterface = New<CBPLayerInterfaceImpl>();
+		PhysicsData->BPLayerInterface = New<CBPLayerInterfaceImpl>(PhysicsLayerConfig);
 
-		PhysicsData->ObjectLayerPairFilterImpl = New<CObjectLayerPairFilterImpl>();
-		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = New<CObjectVsBroadPhaseLayerFilterImpl>();
+		PhysicsData->ObjectLayerPairFilterImpl = New<CObjectLayerPairFilterImpl>(PhysicsLayerConfig);
+		PhysicsData->ObjectVsBroadPhaseLayerFilterImpl = New<CObjectVsBroadPhaseLayerFilterImpl>(PhysicsLayerConfig);
 
 		PhysicsData->PhysicsSystem = New<PhysicsSystem>();
 		PhysicsData->PhysicsSystem->Init(CommonSettings->PHYSICS_MAX_BODIES, CommonSettings->PHYSICS_NUM_BODY_MUTEXES, CommonSettings->PHYSICS_MAX_BODY_PAIRS, CommonSettings->PHYSICS_MAX_CONTACT_CONSTRAINTS, *PhysicsData->BPLayerInterface, *PhysicsData->ObjectVsBroadPhaseLayerFilterImpl, *PhysicsData->ObjectLayerPairFilterImpl);
@@ -133,9 +136,9 @@ namespace PigeonEngine
 		m_Characters.Remove(Character);
 	}
 
-	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, FPhysicsBodyId& outBodyID)
+	BOOL32 FPhysics_Jolt::TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, FPhysicsObjectLayer inLayer, FPhysicsBodyId& outBodyID)
 	{
-		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer));
+		Body* body = PhysicsData->BodyInterface->CreateBody(BodyCreationSettings(inShape->CreateShapeSettings(CreateNew), PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), GetMotionType(inMotionType), inLayer.ToJolt()));
 		if (body)
 		{
 			outBodyID.ID = body->GetID();
@@ -231,5 +234,15 @@ namespace PigeonEngine
 	void FPhysics_Jolt::SetGravity(Vector3 inGravity)
 	{
 		PhysicsData->PhysicsSystem->SetGravity(PhysicsUtility::Convert2Meter(inGravity));
+	}
+
+	void FPhysics_Jolt::SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig)
+	{
+		LayerConfig = &InLayerConfig;
+	}
+
+	const FPhysicsLayerConfig& FPhysics_Jolt::GetLayerConfig() const
+	{
+		return LayerConfig ? *LayerConfig : FDefaultPhysicsLayerConfig::Get();
 	}
 }

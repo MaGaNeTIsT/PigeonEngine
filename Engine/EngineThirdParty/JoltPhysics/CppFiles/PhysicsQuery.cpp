@@ -3,6 +3,8 @@
 
 namespace PigeonEngine
 {
+	using namespace JPH;
+
 	static void FillHitObjectIdentity(FRayCastHit& InOutHit)
 	{
 		InOutHit.ObjectId = 0u;
@@ -142,8 +144,8 @@ namespace PigeonEngine
 		const Vector3&					InDirection,
 		FLOAT							InLength,
 		FRayCastHit&					OutHit,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -171,8 +173,8 @@ namespace PigeonEngine
 		FLOAT							InLength,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -207,8 +209,8 @@ namespace PigeonEngine
 		FLOAT							InLength,
 		FLOAT							InRadius,
 		FRayCastHit&					OutHit,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -242,8 +244,8 @@ namespace PigeonEngine
 		FLOAT							InRadius,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -282,8 +284,8 @@ namespace PigeonEngine
 		const Vector3&					InHalfExtents,
 		const Quaternion&				InRotation,
 		FRayCastHit&					OutHit,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -317,8 +319,8 @@ namespace PigeonEngine
 		const Quaternion&				InRotation,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -357,8 +359,8 @@ namespace PigeonEngine
 		FLOAT							InHalfHeight,
 		const Quaternion&				InRotation,
 		FRayCastHit&					OutHit,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -396,8 +398,8 @@ namespace PigeonEngine
 		const Quaternion&				InRotation,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -436,8 +438,8 @@ namespace PigeonEngine
 		FLOAT							InRadius,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -474,8 +476,8 @@ namespace PigeonEngine
 		const Quaternion&				InRotation,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -512,8 +514,8 @@ namespace PigeonEngine
 		const Quaternion&				InRotation,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
@@ -550,8 +552,8 @@ namespace PigeonEngine
 		const Vector3&					InPoint,
 		TArray<FRayCastHit>&			OutHits,
 		UINT32							InMaxHits,
-		const BroadPhaseLayerFilter&	InBPLayerFilter,
-		const ObjectLayerFilter&		InObjLayerFilter)
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
 		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)

@@ -5,7 +5,6 @@
 #include "JoltPhysics.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
-using namespace JPH;
 
 // ============================================================
 //  Query type enum
@@ -78,8 +77,8 @@ struct FRayCastHit
 
 /// Physics query helpers.
 /// All positions / directions / sizes must be in engine units (centimeters).
-/// Layer filtering defaults to ALL layers (pass a custom BroadPhaseLayerFilter /
-/// ObjectLayerFilter to restrict the query).
+/// Layer filtering defaults to ALL layers (pass custom engine layer filters to
+/// restrict the query).
 class FPhysicsQuery
 {
 public:
@@ -96,12 +95,12 @@ public:
 	/// @param InObjLayerFilter Optional object-layer filter.
 	/// @return TRUE if any geometry was hit.
 	static BOOL32 RaycastSingle(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		FRayCastHit&						OutHit,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		FRayCastHit& OutHit,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Cast a ray and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Ray origin in centimeters.
@@ -113,13 +112,13 @@ public:
 	/// @param InObjLayerFilter Optional object-layer filter.
 	/// @return TRUE if at least one hit was found.
 	static BOOL32 RaycastMulti(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Sphere Cast (swept sphere)
@@ -132,13 +131,13 @@ public:
 	/// @param InRadius         Sphere radius in centimeters.
 	/// @param OutHit           Filled when the function returns TRUE.
 	static BOOL32 SphereCastSingle(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		FLOAT								InRadius,
-		FRayCastHit&						OutHit,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		FLOAT InRadius,
+		FRayCastHit& OutHit,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Sweep a sphere along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Sphere center origin in centimeters.
@@ -148,14 +147,14 @@ public:
 	/// @param OutHits          Sorted nearest-first.
 	/// @param InMaxHits        Maximum number of hits to collect.
 	static BOOL32 SphereCastMulti(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		FLOAT								InRadius,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		FLOAT InRadius,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Box Cast (swept box)
@@ -169,14 +168,14 @@ public:
 	/// @param InRotation       Box orientation at the start of the sweep.
 	/// @param OutHit           Filled when the function returns TRUE.
 	static BOOL32 BoxCastSingle(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		const Vector3&						InHalfExtents,
-		const Quaternion&					InRotation,
-		FRayCastHit&						OutHit,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		const Vector3& InHalfExtents,
+		const Quaternion& InRotation,
+		FRayCastHit& OutHit,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Sweep a box along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Box center origin in centimeters.
@@ -187,15 +186,15 @@ public:
 	/// @param OutHits          Sorted nearest-first.
 	/// @param InMaxHits        Maximum number of hits to collect.
 	static BOOL32 BoxCastMulti(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		const Vector3&						InHalfExtents,
-		const Quaternion&					InRotation,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		const Vector3& InHalfExtents,
+		const Quaternion& InRotation,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Capsule Cast (swept capsule)
@@ -210,15 +209,15 @@ public:
 	/// @param InRotation       Capsule orientation at the start of the sweep.
 	/// @param OutHit           Filled when the function returns TRUE.
 	static BOOL32 CapsuleCastSingle(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		FLOAT								InRadius,
-		FLOAT								InHalfHeight,
-		const Quaternion&					InRotation,
-		FRayCastHit&						OutHit,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		FLOAT InRadius,
+		FLOAT InHalfHeight,
+		const Quaternion& InRotation,
+		FRayCastHit& OutHit,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Sweep a capsule along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Capsule center origin in centimeters.
@@ -230,16 +229,16 @@ public:
 	/// @param OutHits          Sorted nearest-first.
 	/// @param InMaxHits        Maximum number of hits to collect.
 	static BOOL32 CapsuleCastMulti(
-		const Vector3&						InOrigin,
-		const Vector3&						InDirection,
-		FLOAT								InLength,
-		FLOAT								InRadius,
-		FLOAT								InHalfHeight,
-		const Quaternion&					InRotation,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InOrigin,
+		const Vector3& InDirection,
+		FLOAT InLength,
+		FLOAT InRadius,
+		FLOAT InHalfHeight,
+		const Quaternion& InRotation,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Overlap (static shape test, no sweep)
@@ -252,12 +251,12 @@ public:
 	/// @param InMaxHits        Maximum number of overlaps to collect.
 	/// @return TRUE if at least one overlap was found.
 	static BOOL32 OverlapSphere(
-		const Vector3&						InCenter,
-		FLOAT								InRadius,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InCenter,
+		FLOAT InRadius,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Test a box for overlapping bodies.
 	/// @param InCenter         Box center in centimeters.
@@ -267,13 +266,13 @@ public:
 	/// @param InMaxHits        Maximum number of overlaps to collect.
 	/// @return TRUE if at least one overlap was found.
 	static BOOL32 OverlapBox(
-		const Vector3&						InCenter,
-		const Vector3&						InHalfExtents,
-		const Quaternion&					InRotation,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InCenter,
+		const Vector3& InHalfExtents,
+		const Quaternion& InRotation,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	/// Test a capsule for overlapping bodies.
 	/// @param InCenter         Capsule center in centimeters.
@@ -284,14 +283,14 @@ public:
 	/// @param InMaxHits        Maximum number of overlaps to collect.
 	/// @return TRUE if at least one overlap was found.
 	static BOOL32 OverlapCapsule(
-		const Vector3&						InCenter,
-		FLOAT								InRadius,
-		FLOAT								InHalfHeight,
-		const Quaternion&					InRotation,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InCenter,
+		FLOAT InRadius,
+		FLOAT InHalfHeight,
+		const Quaternion& InRotation,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Point Overlap
@@ -303,11 +302,11 @@ public:
 	/// @param InMaxHits        Maximum number of results to collect.
 	/// @return TRUE if the point is inside at least one body.
 	static BOOL32 OverlapPoint(
-		const Vector3&						InPoint,
-		TArray<FRayCastHit>&				OutHits,
-		UINT32								InMaxHits		 = 16u,
-		const BroadPhaseLayerFilter&		InBPLayerFilter  = BroadPhaseLayerFilter(),
-		const ObjectLayerFilter&			InObjLayerFilter = ObjectLayerFilter());
+		const Vector3& InPoint,
+		TArray<FRayCastHit>& OutHits,
+		UINT32 InMaxHits = 16u,
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
 };
 
 PIGEONENGINE_NAMESPACE_END

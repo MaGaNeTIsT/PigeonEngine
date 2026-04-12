@@ -13,7 +13,7 @@ public:
 
 	Vector3	Up = Vector3::YVector();
 
-	FLOAT MaxSlopeAngle = DegreesToRadians(50.0f);
+	FLOAT MaxSlopeAngle = EMath::DegreesToRadians(50.0f);
 
 	FShape* Shape = nullptr;
 

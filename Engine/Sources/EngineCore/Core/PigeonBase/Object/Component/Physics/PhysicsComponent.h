@@ -6,19 +6,18 @@
 
 namespace PigeonEngine 
 {
-
 	class PPhysicsComponent : public PActorComponent
 	{
 	public:
-		PPhysicsComponent() :m_Shape(nullptr) 
-		{ 
+		PPhysicsComponent() : m_Shape(nullptr)
+		{
 			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
 		}
-		PPhysicsComponent(FShape* InShape) :m_Shape(InShape) 
+		PPhysicsComponent(FShape* InShape) : m_Shape(InShape)
 		{
 			POBJ_DEBUGNAME_SET(this, "PhysicsComponent");
 			//InitPhysicsComponent();
-		};
+		}
 		virtual ~PPhysicsComponent();
 
 		virtual void Init() override;
@@ -27,7 +26,7 @@ namespace PigeonEngine
 		virtual void Destroy() override;
 
 #if _EDITOR_ONLY
-		virtual void EditorTick(FLOAT deltaTime)override;
+		virtual void EditorTick(FLOAT deltaTime) override;
 
 		virtual void DrawPrimitive();
 #endif
@@ -45,11 +44,13 @@ namespace PigeonEngine
 		void RemoveShape();
 		void AddForce(Vector3 InForce);
 		void AddImpluse(Vector3 InImpluse);
+		void SetLayer(FPhysicsObjectLayer InLayer);
+		FPhysicsObjectLayer GetLayer() const;
 	public:
 		PhysicsUtility::EMotionType MotionType = PhysicsUtility::EMotionType::Static;
-		UINT16						Layer = Layers::NON_MOVING;
+		FPhysicsObjectLayer Layer = Layers::NON_MOVING;
 	private:
 		FShape* m_Shape = nullptr;
-		FPhysicsBodyId				m_BodyId;
+		FPhysicsBodyId m_BodyId;
 	};
 }
