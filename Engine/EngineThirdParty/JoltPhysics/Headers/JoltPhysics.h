@@ -1,6 +1,7 @@
 #pragma once
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Container/Map.h>
+#include <Base/DataStructure/Container/Array.h>
 #include <PigeonBase/Object/Component/Primitive/PrimitiveComponent.h>
 #include "PhysicsUtility.h"
 #include "JoltIncludes.h"
@@ -104,6 +105,7 @@ public:
 public:
 	BOOL32 TryCreateBody(FShape* inShape, BOOL32 CreateNew, Vector3 inPosition, Quaternion inRotation, PhysicsUtility::EMotionType inMotionType, UINT16 inLayer, FPhysicsBodyId& outBodyID);
 	void AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode = EActivate::DontActivate);
+	BOOL32 FindObjectIdentityByBodyId(const FPhysicsBodyId& inBodyID, ObjectIdentityType& outGameObjectId) const;
 	/// <summary>
 	/// remove a rigid body by a GameObjectId.
 	/// </summary>
@@ -122,7 +124,8 @@ public:
 
 	void SetGravity(Vector3 inGravity);
 private:
-	TMap<ObjectIdentityType, FPhysicsBodyId>					m_Bodys;
+	TMap<ObjectIdentityType, TArray<FPhysicsBodyId>>		m_Bodys;
+	TMap<FPhysicsBodyId, ObjectIdentityType>				m_BodyToObjectIds;
 	TMap<FPhysicsBodyId, FShape*>							m_Shapes;
 	TSet<class FCharacter*>									m_Characters;
 private:

@@ -6,27 +6,41 @@
 
 JPH_SUPPRESS_WARNINGS_STD_BEGIN
 #include <mutex>
-#include <chrono>
 JPH_SUPPRESS_WARNINGS_STD_END
 
 #include <Jolt/Core/NonCopyable.h>
 #include <Jolt/Core/TickCounter.h>
-#include <Jolt/Core/UnorderedMap.h>
+#include <Jolt/Core/UnorderedMapFwd.h>
 
 #if defined(JPH_EXTERNAL_PROFILE)
 
 JPH_NAMESPACE_BEGIN
 
+#ifdef JPH_SHARED_LIBRARY
+/// Functions called when a profiler measurement starts or stops, need to be overridden by the user.
+using ProfileStartMeasurementFunction = void (*)(const char *inName, uint32 inColor, uint8 *ioUserData);
+using ProfileEndMeasurementFunction = void (*)(uint8 *ioUserData);
+
+JPH_EXPORT extern ProfileStartMeasurementFunction ProfileStartMeasurement;
+JPH_EXPORT extern ProfileEndMeasurementFunction ProfileEndMeasurement;
+#endif // JPH_SHARED_LIBRARY
+
 /// Create this class on the stack to start sampling timing information of a particular scope.
 ///
-/// Left unimplemented intentionally. Needs to be implemented by the user of the library.
+/// For statically linked builds, this is left unimplemented intentionally. Needs to be implemented by the user of the library.
 /// On construction a measurement should start, on destruction it should be stopped.
+/// For dynamically linked builds, the user should override the ProfileStartMeasurement and ProfileEndMeasurement functions.
 class alignas(16) ExternalProfileMeasurement : public NonCopyable
 {
 public:
 	/// Constructor
+#ifdef JPH_SHARED_LIBRARY
+	JPH_INLINE						ExternalProfileMeasurement(const char *inName, uint32 inColor = 0) { ProfileStartMeasurement(inName, inColor, mUserData); }
+	JPH_INLINE						~ExternalProfileMeasurement() { ProfileEndMeasurement(mUserData); }
+#else
 									ExternalProfileMeasurement(const char *inName, uint32 inColor = 0);
 									~ExternalProfileMeasurement();
+#endif
 
 private:
 	uint8							mUserData[64];
@@ -42,6 +56,8 @@ JPH_SUPPRESS_WARNING_PUSH
 JPH_CLANG_SUPPRESS_WARNING("-Wc++98-compat-pedantic")
 
 // Dummy implementations
+#define JPH_PROFILE_START(name)
+#define JPH_PROFILE_END()
 #define JPH_PROFILE_THREAD_START(name)
 #define JPH_PROFILE_THREAD_END()
 #define JPH_PROFILE_NEXTFRAME()
@@ -96,6 +112,9 @@ public:
 	/// Remove a thread from being instrumented
 	void						RemoveThread(ProfileThread *inThread);
 
+	/// Get the amount of ticks per second, note that this number will never be fully accurate as the amount of ticks per second may vary with CPU load, so this number is only to be used to give an indication of time for profiling purposes
+	uint64						GetProcessorTicksPerSecond() const;
+
 	/// Singleton instance
 	static Profiler *			sInstance;
 
@@ -116,11 +135,10 @@ private:
 								Aggregator(const char *inName)										: mName(inName) { }
 
 		/// Accumulate results for a measurement
-		void					AccumulateMeasurement(uint64 inCyclesInCallWithChildren, uint64 inCyclesInChildren)
+		void					AccumulateMeasurement(uint64 inCyclesInCallWithChildren)
 		{
 			mCallCounter++;
 			mTotalCyclesInCallWithChildren += inCyclesInCallWithChildren;
-			mTotalCyclesInChildren += inCyclesInChildren;
 			mMinCyclesInCallWithChildren = min(inCyclesInCallWithChildren, mMinCyclesInCallWithChildren);
 			mMaxCyclesInCallWithChildren = max(inCyclesInCallWithChildren, mMaxCyclesInCallWithChildren);
 		}
@@ -137,7 +155,6 @@ private:
 		/// Statistics
 		uint32					mCallCounter = 0;													///< Number of times AccumulateMeasurement was called
 		uint64					mTotalCyclesInCallWithChildren = 0;									///< Total amount of cycles spent in this scope
-		uint64					mTotalCyclesInChildren = 0;											///< Total amount of cycles spent in children of this scope
 		uint64					mMinCyclesInCallWithChildren = 0xffffffffffffffffUL;				///< Minimum amount of cycles spent per call
 		uint64					mMaxCyclesInCallWithChildren = 0;									///< Maximum amount of cycles spent per call
 	};
@@ -152,24 +169,20 @@ private:
 	/// We measure the amount of ticks per second, this function resets the reference time point
 	void						UpdateReferenceTime();
 
-	/// Get the amount of ticks per second, note that this number will never be fully accurate as the amound of ticks per second may vary with CPU load, so this number is only to be used to give an indication of time for profiling purposes
-	uint64						GetProcessorTicksPerSecond() const;
-
 	/// Dump profiling statistics
 	void						DumpInternal();
-	void						DumpList(const char *inTag, const Aggregators &inAggregators);
 	void						DumpChart(const char *inTag, const Threads &inThreads, const KeyToAggregator &inKeyToAggregators, const Aggregators &inAggregators);
 
 	std::mutex					mLock;																///< Lock that protects mThreads
 	uint64						mReferenceTick;														///< Tick count at the start of the frame
-	std::chrono::high_resolution_clock::time_point mReferenceTime;									///< Time at the start of the frame
+	uint64						mReferenceTime;														///< Time at the start of the frame in microseconds
 	Array<ProfileThread *>		mThreads;															///< List of all active threads
 	bool						mDump = false;														///< When true, the samples are dumped next frame
 	String						mDumpTag;															///< When not empty, this overrides the auto incrementing number of the dump filename
 };
 
 // Class that contains the information of a single scoped measurement
-class alignas(16) JPH_EXPORT ProfileSample : public NonCopyable
+class alignas(16) JPH_EXPORT_GCC_BUG_WORKAROUND ProfileSample : public NonCopyable
 {
 public:
 	JPH_OVERRIDE_NEW_DELETE

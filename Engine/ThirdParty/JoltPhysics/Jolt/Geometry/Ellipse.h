@@ -18,7 +18,7 @@ public:
 	/// Construct ellipse with radius A along the X-axis and B along the Y-axis
 					Ellipse(float inA, float inB) : mA(inA), mB(inB) { JPH_ASSERT(inA > 0.0f); JPH_ASSERT(inB > 0.0f); }
 
-	/// Check if inPoint is inside the ellipsse
+	/// Check if inPoint is inside the ellipse
 	bool			IsInside(const Float2 &inPoint) const
 	{
 		return Square(inPoint.x / mA) + Square(inPoint.y / mB) <= 1.0f;
@@ -26,7 +26,7 @@ public:
 
 	/// Get the closest point on the ellipse to inPoint
 	/// Assumes inPoint is outside the ellipse
-	/// @see Rotation Joint Limits in Quaterion Space by Gino van den Bergen, section 10.1 in Game Engine Gems 3.
+	/// @see Rotation Joint Limits in Quaternion Space by Gino van den Bergen, section 10.1 in Game Engine Gems 3.
 	Float2			GetClosestPoint(const Float2 &inPoint) const
 	{
 		float a_sq = Square(mA);
@@ -38,7 +38,7 @@ public:
 		// <=> (x', y') = (a^2 x / (t + a^2), b^2 y / (t + b^2))
 		// Requiring point to be on ellipse (substituting into [1]): g(t) = (a x / (t + a^2))^2 + (b y / (t + b^2))^2 - 1 = 0
 
-		// Newton raphson iteration, starting at t = 0
+		// Newton Raphson iteration, starting at t = 0
 		float t = 0.0f;
 		for (;;)
 		{

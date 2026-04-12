@@ -60,10 +60,13 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::UninitPhysics()
 	{
-		for (const auto& body : m_Bodys)
+		for (const auto& bodyGroup : m_Bodys)
 		{
-			PhysicsData->BodyInterface->RemoveBody(body.second.ID);
-			PhysicsData->BodyInterface->DestroyBody(body.second.ID);
+			for (const auto& bodyId : bodyGroup.second)
+			{
+				PhysicsData->BodyInterface->RemoveBody(bodyId.ID);
+				PhysicsData->BodyInterface->DestroyBody(bodyId.ID);
+			}
 		}
 
 		for (const auto& shape : m_Shapes)
@@ -92,6 +95,9 @@ namespace PigeonEngine
 		// Destroy the factory
 		Delete(Factory::sInstance);
 		Factory::sInstance = nullptr;
+		m_Bodys.Empty();
+		m_BodyToObjectIds.Empty();
+		m_Shapes.Empty();
 		Delete(PhysicsData);
 		PhysicsData = nullptr;
 	}
@@ -142,23 +148,46 @@ namespace PigeonEngine
 	void FPhysics_Jolt::AddBody(const ObjectIdentityType& GameObjectId, const FPhysicsBodyId& inBodyID, EActivate inActivationMode)
 	{
 		PhysicsData->BodyInterface->AddBody(inBodyID.ID, inActivationMode == EActivate::Activate? EActivation::Activate : EActivation::DontActivate);
-		m_Bodys.Add(GameObjectId, inBodyID);
+
+		TArray<FPhysicsBodyId>* BodyIds = m_Bodys.FindValueAsPtr(GameObjectId);
+		if (!BodyIds)
+		{
+			TArray<FPhysicsBodyId> NewBodyIds;
+			NewBodyIds.Add(inBodyID);
+			m_Bodys.Add(GameObjectId, NewBodyIds);
+		}
+		else if (!BodyIds->Contains(inBodyID))
+		{
+			BodyIds->Add(inBodyID);
+		}
+
+		m_BodyToObjectIds.Add(inBodyID, GameObjectId);
+	}
+
+	BOOL32 FPhysics_Jolt::FindObjectIdentityByBodyId(const FPhysicsBodyId& inBodyID, ObjectIdentityType& outGameObjectId) const
+	{
+		return m_BodyToObjectIds.FindValue(inBodyID, outGameObjectId);
 	}
 
 	void FPhysics_Jolt::RemoveBody(const ObjectIdentityType& GameObjectId, BOOL32 bDeleteShape/* = TRUE*/)
 	{
-		FPhysicsBodyId ID;
-		if (m_Bodys.FindValue(GameObjectId, ID))
+		TArray<FPhysicsBodyId> BodyIds;
+		if (m_Bodys.FindValue(GameObjectId, BodyIds))
 		{
-			PhysicsData->BodyInterface->RemoveBody(ID.ID);
-			m_Bodys.Remove(GameObjectId);
-			FShape* Shape;
-			if (m_Shapes.FindValue(ID, Shape))
+			for (const auto& ID : BodyIds)
 			{
-				m_Shapes.Remove(ID);
-				if(bDeleteShape)
-					Delete(Shape);
+				PhysicsData->BodyInterface->RemoveBody(ID.ID);
+				m_BodyToObjectIds.Remove(ID);
+				FShape* Shape;
+				if (m_Shapes.FindValue(ID, Shape))
+				{
+					m_Shapes.Remove(ID);
+					if (bDeleteShape)
+						Delete(Shape);
+				}
 			}
+
+			m_Bodys.Remove(GameObjectId);
 		}
 	}
 

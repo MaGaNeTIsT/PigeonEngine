@@ -11,6 +11,7 @@
 //#define JPH_EPA_CONVEX_BUILDER_DRAW
 
 #include <Jolt/Core/NonCopyable.h>
+#include <Jolt/Core/BinaryHeap.h>
 
 #ifdef JPH_EPA_CONVEX_BUILDER_DRAW
 	#include <Jolt/Renderer/DebugRenderer.h>
@@ -152,7 +153,7 @@ public:
 		{
 			// Destruct triangle
 			inT->~Triangle();
-#ifdef _DEBUG
+#ifdef JPH_DEBUG
 			memset(inT, 0xcd, sizeof(Triangle));
 #endif
 
@@ -197,7 +198,7 @@ public:
 			inT->mInQueue = true;
 
 			// Resort heap
-			std::push_heap(begin(), end(), sTriangleSorter);
+			BinaryHeapPush(begin(), end(), sTriangleSorter);
 		}
 
 		/// Peek the next closest triangle without removing it
@@ -209,8 +210,8 @@ public:
 		/// Get next closest triangle
 		Triangle *		PopClosest()
 		{
-			// Move largest to end
-			std::pop_heap(begin(), end(), sTriangleSorter);
+			// Move closest to end
+			BinaryHeapPop(begin(), end(), sTriangleSorter);
 
 			// Remove last triangle
 			Triangle *t = back();
@@ -567,7 +568,7 @@ private:
 	{
 		if (inT->mRemoved)
 		{
-			// Valdiate that removed triangles are not connected to anything
+			// Validate that removed triangles are not connected to anything
 			for (const Edge &my_edge : inT->mEdge)
 				JPH_ASSERT(my_edge.mNeighbourTriangle == nullptr);
 		}
@@ -692,9 +693,9 @@ public:
 #endif
 
 private:
-	TriangleFactory 	mFactory;							///< Factory to create new triangles and remove old ones
+	TriangleFactory		mFactory;							///< Factory to create new triangles and remove old ones
 	const Points &		mPositions;							///< List of positions (some of them are part of the hull)
-	TriangleQueue 		mTriangleQueue;						///< List of triangles that are part of the hull that still need to be checked (if !mRemoved)
+	TriangleQueue		mTriangleQueue;						///< List of triangles that are part of the hull that still need to be checked (if !mRemoved)
 
 #if defined(JPH_EPA_CONVEX_BUILDER_VALIDATE) || defined(JPH_EPA_CONVEX_BUILDER_DRAW)
 	Triangles			mTriangles;							///< The list of all triangles in this hull (for debug purposes)

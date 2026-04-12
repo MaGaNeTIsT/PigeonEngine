@@ -161,9 +161,9 @@ void RotatedTranslatedShape::CollidePoint(Vec3Arg inPoint, const SubShapeIDCreat
 	mInnerShape->CollidePoint(transform * inPoint, inSubShapeIDCreator, ioCollector, inShapeFilter);
 }
 
-void RotatedTranslatedShape::CollideSoftBodyVertices(Mat44Arg inCenterOfMassTransform, Vec3Arg inScale, Array<SoftBodyVertex> &ioVertices, float inDeltaTime, Vec3Arg inDisplacementDueToGravity, int inCollidingShapeIndex) const
+void RotatedTranslatedShape::CollideSoftBodyVertices(Mat44Arg inCenterOfMassTransform, Vec3Arg inScale, const CollideSoftBodyVertexIterator &inVertices, uint inNumVertices, int inCollidingShapeIndex) const
 {
-	mInnerShape->CollideSoftBodyVertices(inCenterOfMassTransform * Mat44::sRotation(mRotation), inScale, ioVertices, inDeltaTime, inDisplacementDueToGravity, inCollidingShapeIndex);
+	mInnerShape->CollideSoftBodyVertices(inCenterOfMassTransform * Mat44::sRotation(mRotation), inScale, inVertices, inNumVertices, inCollidingShapeIndex);
 }
 
 void RotatedTranslatedShape::CollectTransformedShapes(const AABox &inBox, Vec3Arg inPositionCOM, QuatArg inRotation, Vec3Arg inScale, const SubShapeIDCreator &inSubShapeIDCreator, TransformedShapeCollector &ioCollector, const ShapeFilter &inShapeFilter) const
@@ -202,6 +202,20 @@ void RotatedTranslatedShape::sCollideShapeVsRotatedTranslated(const Shape *inSha
 	CollisionDispatch::sCollideShapeVsShape(inShape1, shape2->mInnerShape, inScale1, shape2->TransformScale(inScale2), inCenterOfMassTransform1, transform2, inSubShapeIDCreator1, inSubShapeIDCreator2, inCollideShapeSettings, ioCollector, inShapeFilter);
 }
 
+void RotatedTranslatedShape::sCollideRotatedTranslatedVsRotatedTranslated(const Shape *inShape1, const Shape *inShape2, Vec3Arg inScale1, Vec3Arg inScale2, Mat44Arg inCenterOfMassTransform1, Mat44Arg inCenterOfMassTransform2, const SubShapeIDCreator &inSubShapeIDCreator1, const SubShapeIDCreator &inSubShapeIDCreator2, const CollideShapeSettings &inCollideShapeSettings, CollideShapeCollector &ioCollector, const ShapeFilter &inShapeFilter)
+{
+	JPH_ASSERT(inShape1->GetSubType() == EShapeSubType::RotatedTranslated);
+	const RotatedTranslatedShape *shape1 = static_cast<const RotatedTranslatedShape *>(inShape1);
+	JPH_ASSERT(inShape2->GetSubType() == EShapeSubType::RotatedTranslated);
+	const RotatedTranslatedShape *shape2 = static_cast<const RotatedTranslatedShape *>(inShape2);
+
+	// Get world transform of 1 and 2
+	Mat44 transform1 = inCenterOfMassTransform1 * Mat44::sRotation(shape1->mRotation);
+	Mat44 transform2 = inCenterOfMassTransform2 * Mat44::sRotation(shape2->mRotation);
+
+	CollisionDispatch::sCollideShapeVsShape(shape1->mInnerShape, shape2->mInnerShape, shape1->TransformScale(inScale1), shape2->TransformScale(inScale2), transform1, transform2, inSubShapeIDCreator1, inSubShapeIDCreator2, inCollideShapeSettings, ioCollector, inShapeFilter);
+}
+
 void RotatedTranslatedShape::sCastRotatedTranslatedVsShape(const ShapeCast &inShapeCast, const ShapeCastSettings &inShapeCastSettings, const Shape *inShape, Vec3Arg inScale, const ShapeFilter &inShapeFilter, Mat44Arg inCenterOfMassTransform2, const SubShapeIDCreator &inSubShapeIDCreator1, const SubShapeIDCreator &inSubShapeIDCreator2, CastShapeCollector &ioCollector)
 {
 	// Fetch rotated translated shape from cast shape
@@ -230,6 +244,25 @@ void RotatedTranslatedShape::sCastShapeVsRotatedTranslated(const ShapeCast &inSh
 	CollisionDispatch::sCastShapeVsShapeLocalSpace(shape_cast, inShapeCastSettings, shape->mInnerShape, shape->TransformScale(inScale), inShapeFilter, inCenterOfMassTransform2 * local_transform, inSubShapeIDCreator1, inSubShapeIDCreator2, ioCollector);
 }
 
+void RotatedTranslatedShape::sCastRotatedTranslatedVsRotatedTranslated(const ShapeCast &inShapeCast, const ShapeCastSettings &inShapeCastSettings, const Shape *inShape, Vec3Arg inScale, const ShapeFilter &inShapeFilter, Mat44Arg inCenterOfMassTransform2, const SubShapeIDCreator &inSubShapeIDCreator1, const SubShapeIDCreator &inSubShapeIDCreator2, CastShapeCollector &ioCollector)
+{
+	JPH_ASSERT(inShapeCast.mShape->GetSubType() == EShapeSubType::RotatedTranslated);
+	const RotatedTranslatedShape *shape1 = static_cast<const RotatedTranslatedShape *>(inShapeCast.mShape);
+	JPH_ASSERT(inShape->GetSubType() == EShapeSubType::RotatedTranslated);
+	const RotatedTranslatedShape *shape2 = static_cast<const RotatedTranslatedShape *>(inShape);
+
+	// Determine the local transform of shape 2
+	Mat44 local_transform2 = Mat44::sRotation(shape2->mRotation);
+	Mat44 local_transform2_transposed = local_transform2.Transposed3x3();
+
+	// Transform the shape cast and update the shape
+	Mat44 transform = (local_transform2_transposed * inShapeCast.mCenterOfMassStart) * Mat44::sRotation(shape1->mRotation);
+	Vec3 scale = shape1->TransformScale(inShapeCast.mScale);
+	ShapeCast shape_cast(shape1->mInnerShape, scale, transform, local_transform2_transposed.Multiply3x3(inShapeCast.mDirection));
+
+	CollisionDispatch::sCastShapeVsShapeLocalSpace(shape_cast, inShapeCastSettings, shape2->mInnerShape, shape2->TransformScale(inScale), inShapeFilter, inCenterOfMassTransform2 * local_transform2, inSubShapeIDCreator1, inSubShapeIDCreator2, ioCollector);
+}
+
 void RotatedTranslatedShape::SaveBinaryState(StreamOut &inStream) const
 {
 	DecoratedShape::SaveBinaryState(inStream);
@@ -249,7 +282,7 @@ void RotatedTranslatedShape::RestoreBinaryState(StreamIn &inStream)
 
 bool RotatedTranslatedShape::IsValidScale(Vec3Arg inScale) const
 {
-	if (!DecoratedShape::IsValidScale(inScale))
+	if (!Shape::IsValidScale(inScale))
 		return false;
 
 	if (mIsRotationIdentity || ScaleHelpers::IsUniformScale(inScale))
@@ -259,6 +292,24 @@ bool RotatedTranslatedShape::IsValidScale(Vec3Arg inScale) const
 		return false;
 
 	return mInnerShape->IsValidScale(ScaleHelpers::RotateScale(mRotation, inScale));
+}
+
+Vec3 RotatedTranslatedShape::MakeScaleValid(Vec3Arg inScale) const
+{
+	Vec3 scale = ScaleHelpers::MakeNonZeroScale(inScale);
+
+	if (mIsRotationIdentity || ScaleHelpers::IsUniformScale(scale))
+		return mInnerShape->MakeScaleValid(scale);
+
+	if (ScaleHelpers::CanScaleBeRotated(mRotation, scale))
+		return ScaleHelpers::RotateScale(mRotation.Conjugated(), mInnerShape->MakeScaleValid(ScaleHelpers::RotateScale(mRotation, scale)));
+
+	Vec3 abs_uniform_scale = ScaleHelpers::MakeUniformScale(scale.Abs());
+	Vec3 uniform_scale = scale.GetSign() * abs_uniform_scale;
+	if (ScaleHelpers::CanScaleBeRotated(mRotation, uniform_scale))
+		return uniform_scale;
+
+	return Sign(scale.GetX()) * abs_uniform_scale;
 }
 
 void RotatedTranslatedShape::sRegister()
@@ -274,6 +325,9 @@ void RotatedTranslatedShape::sRegister()
 		CollisionDispatch::sRegisterCastShape(EShapeSubType::RotatedTranslated, s, sCastRotatedTranslatedVsShape);
 		CollisionDispatch::sRegisterCastShape(s, EShapeSubType::RotatedTranslated, sCastShapeVsRotatedTranslated);
 	}
+
+	CollisionDispatch::sRegisterCollideShape(EShapeSubType::RotatedTranslated, EShapeSubType::RotatedTranslated, sCollideRotatedTranslatedVsRotatedTranslated);
+	CollisionDispatch::sRegisterCastShape(EShapeSubType::RotatedTranslated, EShapeSubType::RotatedTranslated, sCastRotatedTranslatedVsRotatedTranslated);
 }
 
 JPH_NAMESPACE_END

@@ -9,7 +9,7 @@
 JPH_NAMESPACE_BEGIN
 
 /// Holds a 4x4 matrix of floats with the last column consisting of doubles
-class [[nodiscard]] alignas(JPH_DVECTOR_ALIGNMENT) DMat44
+class [[nodiscard]] alignas(max(JPH_VECTOR_ALIGNMENT, JPH_DVECTOR_ALIGNMENT)) DMat44
 {
 public:
 	JPH_OVERRIDE_NEW_DELETE
@@ -55,7 +55,7 @@ public:
 	/// Convert to Mat44 rounding to nearest
 	JPH_INLINE Mat44			ToMat44() const											{ return Mat44(mCol[0], mCol[1], mCol[2], Vec3(mCol3)); }
 
-	/// Comparsion
+	/// Comparison
 	JPH_INLINE bool				operator == (DMat44Arg inM2) const;
 	JPH_INLINE bool				operator != (DMat44Arg inM2) const						{ return !(*this == inM2); }
 
@@ -151,7 +151,7 @@ private:
 	DVec3						mCol3;													///< Translation column, 4th element is assumed to be 1
 };
 
-static_assert(is_trivial<DMat44>(), "Is supposed to be a trivial type!");
+static_assert(std::is_trivial<DMat44>(), "Is supposed to be a trivial type!");
 
 JPH_NAMESPACE_END
 

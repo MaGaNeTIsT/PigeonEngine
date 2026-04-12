@@ -8,7 +8,11 @@
 
 JPH_NAMESPACE_BEGIN
 
-#ifdef JPH_USE_SSE
+#if defined(JPH_CPU_WASM)
+
+// Not supported
+
+#elif defined(JPH_USE_SSE)
 
 /// Helper class that needs to be put on the stack to update the state of the floating point control word.
 /// This state is kept per thread.
@@ -71,11 +75,11 @@ public:
 				FPControlWord()
 	{
 		uint64 val;
-	    asm volatile("mrs %0, fpcr" : "=r" (val));
+		asm volatile("mrs %0, fpcr" : "=r" (val));
 		mPrevState = val;
 		val &= ~Mask;
 		val |= Value;
-	    asm volatile("msr fpcr, %0" : /* no output */ : "r" (val));
+		asm volatile("msr fpcr, %0" : /* no output */ : "r" (val));
 	}
 
 				~FPControlWord()
@@ -122,9 +126,13 @@ private:
 	uint32		mPrevState;
 };
 
-#elif defined(JPH_CPU_WASM)
+#elif defined(JPH_CPU_RISCV)
 
-// Not supported
+// RISC-V only implements manually checking if exceptions occurred by reading the fcsr register. It doesn't generate exceptions.
+
+#elif defined(JPH_CPU_PPC) || defined(JPH_CPU_LOONGARCH)
+
+// Not implemented right now
 
 #else
 

@@ -20,17 +20,20 @@
 #include <Jolt/Physics/Collision/ActiveEdges.h>
 #include <Jolt/Physics/Collision/CollisionDispatch.h>
 #include <Jolt/Physics/Collision/SortReverseAndStore.h>
+#include <Jolt/Physics/Collision/CollideSoftBodyVerticesVsTriangles.h>
 #include <Jolt/Core/StringTools.h>
 #include <Jolt/Core/StreamIn.h>
 #include <Jolt/Core/StreamOut.h>
 #include <Jolt/Core/Profiler.h>
 #include <Jolt/Core/UnorderedMap.h>
+#include <Jolt/Core/UnorderedSet.h>
 #include <Jolt/Geometry/AABox4.h>
 #include <Jolt/Geometry/RayAABox.h>
 #include <Jolt/Geometry/Indexify.h>
 #include <Jolt/Geometry/Plane.h>
 #include <Jolt/Geometry/OrientedBox.h>
 #include <Jolt/TriangleSplitter/TriangleSplitterBinning.h>
+#include <Jolt/TriangleSplitter/TriangleSplitterMean.h>
 #include <Jolt/AABBTree/AABBTreeBuilder.h>
 #include <Jolt/AABBTree/AABBTreeToBuffer.h>
 #include <Jolt/AABBTree/TriangleCodec/TriangleCodecIndexed8BitPackSOA4Flags.h>
@@ -53,11 +56,13 @@ JPH_IMPLEMENT_SERIALIZABLE_VIRTUAL(MeshShapeSettings)
 	JPH_ADD_ATTRIBUTE(MeshShapeSettings, mMaterials)
 	JPH_ADD_ATTRIBUTE(MeshShapeSettings, mMaxTrianglesPerLeaf)
 	JPH_ADD_ATTRIBUTE(MeshShapeSettings, mActiveEdgeCosThresholdAngle)
+	JPH_ADD_ATTRIBUTE(MeshShapeSettings, mPerTriangleUserData)
+	JPH_ADD_ENUM_ATTRIBUTE(MeshShapeSettings, mBuildQuality)
 }
 
 // Codecs this mesh shape is using
 using TriangleCodec = TriangleCodecIndexed8BitPackSOA4Flags;
-using NodeCodec = NodeCodecQuadTreeHalfFloat<1>;
+using NodeCodec = NodeCodecQuadTreeHalfFloat;
 
 // Get header for tree
 static JPH_INLINE const NodeCodec::Header *sGetNodeHeader(const ByteBuffer &inTree)
@@ -91,12 +96,14 @@ void MeshShapeSettings::Sanitize()
 {
 	// Remove degenerate and duplicate triangles
 	UnorderedSet<IndexedTriangle> triangles;
-	triangles.reserve(mIndexedTriangles.size());
+	triangles.reserve(UnorderedSet<IndexedTriangle>::size_type(mIndexedTriangles.size()));
+	TriangleCodec::ValidationContext validation_ctx(mIndexedTriangles, mTriangleVertices);
 	for (int t = (int)mIndexedTriangles.size() - 1; t >= 0; --t)
 	{
 		const IndexedTriangle &tri = mIndexedTriangles[t];
 
 		if (tri.IsDegenerate(mTriangleVertices)						// Degenerate triangle
+			|| validation_ctx.IsDegenerate(tri)						// Triangle is degenerate in the quantized space
 			|| !triangles.insert(tri.GetLowestIndexFirst()).second) // Duplicate triangle
 		{
 			// The order of triangles doesn't matter (gets reordered while building the tree), so we can just swap the last triangle into this slot
@@ -124,10 +131,12 @@ MeshShape::MeshShape(const MeshShapeSettings &inSettings, ShapeResult &outResult
 	}
 
 	// Check triangles
+	TriangleCodec::ValidationContext validation_ctx(inSettings.mIndexedTriangles, inSettings.mTriangleVertices);
 	for (int t = (int)inSettings.mIndexedTriangles.size() - 1; t >= 0; --t)
 	{
 		const IndexedTriangle &triangle = inSettings.mIndexedTriangles[t];
-		if (triangle.IsDegenerate(inSettings.mTriangleVertices))
+		if (triangle.IsDegenerate(inSettings.mTriangleVertices)
+			|| validation_ctx.IsDegenerate(triangle))
 		{
 			outResult.SetError(StringFormat("Triangle %d is degenerate!", t));
 			return;
@@ -184,25 +193,45 @@ MeshShape::MeshShape(const MeshShapeSettings &inSettings, ShapeResult &outResult
 	sFindActiveEdges(inSettings, indexed_triangles);
 
 	// Create triangle splitter
-	TriangleSplitterBinning splitter(inSettings.mTriangleVertices, indexed_triangles);
+	union Storage
+	{
+									Storage() { }
+									~Storage() { }
+
+		TriangleSplitterBinning		mBinning;
+		TriangleSplitterMean		mMean;
+	};
+	Storage storage;
+	TriangleSplitter *splitter = nullptr;
+	switch (inSettings.mBuildQuality)
+	{
+	case MeshShapeSettings::EBuildQuality::FavorRuntimePerformance:
+		splitter = new (&storage.mBinning) TriangleSplitterBinning(inSettings.mTriangleVertices, indexed_triangles);
+		break;
+
+	case MeshShapeSettings::EBuildQuality::FavorBuildSpeed:
+		splitter = new (&storage.mMean) TriangleSplitterMean(inSettings.mTriangleVertices, indexed_triangles);
+		break;
+
+	default:
+		JPH_ASSERT(false);
+		break;
+	}
 
 	// Build tree
-	AABBTreeBuilder builder(splitter, inSettings.mMaxTrianglesPerLeaf);
+	AABBTreeBuilder builder(*splitter, inSettings.mMaxTrianglesPerLeaf);
 	AABBTreeBuilderStats builder_stats;
-	AABBTreeBuilder::Node *root = builder.Build(builder_stats);
+	const AABBTreeBuilder::Node *root = builder.Build(builder_stats);
+	splitter->~TriangleSplitter();
 
 	// Convert to buffer
 	AABBTreeToBuffer<TriangleCodec, NodeCodec> buffer;
 	const char *error = nullptr;
-	if (!buffer.Convert(inSettings.mTriangleVertices, root, error))
+	if (!buffer.Convert(builder.GetTriangles(), builder.GetNodes(), inSettings.mTriangleVertices, root, inSettings.mPerTriangleUserData, error))
 	{
 		outResult.SetError(error);
-		delete root;
 		return;
 	}
-
-	// Kill tree
-	delete root;
 
 	// Move data to this class
 	mTree.swap(buffer.GetBuffer());
@@ -219,6 +248,14 @@ MeshShape::MeshShape(const MeshShapeSettings &inSettings, ShapeResult &outResult
 
 void MeshShape::sFindActiveEdges(const MeshShapeSettings &inSettings, IndexedTriangleList &ioIndices)
 {
+	// Check if we're requested to make all edges active
+	if (inSettings.mActiveEdgeCosThresholdAngle < 0.0f)
+	{
+		for (IndexedTriangle &triangle : ioIndices)
+			triangle.mMaterialIndex |= 0b111 << FLAGS_ACTIVE_EGDE_SHIFT;
+		return;
+	}
+
 	// A struct to hold the two vertex indices of an edge
 	struct Edge
 	{
@@ -242,11 +279,15 @@ void MeshShape::sFindActiveEdges(const MeshShapeSettings &inSettings, IndexedTri
 			return mIdx1 == inRHS.mIdx1 && mIdx2 == inRHS.mIdx2;
 		}
 
+		uint64	GetHash() const
+		{
+			static_assert(sizeof(*this) == 2 * sizeof(int), "No padding expected");
+			return HashBytes(this, sizeof(*this));
+		}
+
 		int		mIdx1;
 		int		mIdx2;
 	};
-
-	JPH_MAKE_HASH_STRUCT(Edge, EdgeHash, t.mIdx1, t.mIdx2)
 
 	// A struct to hold the triangles that are connected to an edge
 	struct TriangleIndices
@@ -256,16 +297,17 @@ void MeshShape::sFindActiveEdges(const MeshShapeSettings &inSettings, IndexedTri
 	};
 
 	// Build a list of edge to triangles
-	using EdgeToTriangle = UnorderedMap<Edge, TriangleIndices, EdgeHash>;
+	using EdgeToTriangle = UnorderedMap<Edge, TriangleIndices>;
 	EdgeToTriangle edge_to_triangle;
-	edge_to_triangle.reserve(ioIndices.size() * 3);
+	edge_to_triangle.reserve(EdgeToTriangle::size_type(ioIndices.size() * 3));
 	for (uint triangle_idx = 0; triangle_idx < ioIndices.size(); ++triangle_idx)
 	{
 		IndexedTriangle &triangle = ioIndices[triangle_idx];
 		for (uint edge_idx = 0; edge_idx < 3; ++edge_idx)
 		{
 			Edge edge(triangle.mIdx[edge_idx], triangle.mIdx[(edge_idx + 1) % 3]);
-			TriangleIndices &indices = edge_to_triangle[edge];
+			EdgeToTriangle::iterator edge_to_triangle_it = edge_to_triangle.try_emplace(edge, TriangleIndices()).first;
+			TriangleIndices &indices = edge_to_triangle_it->second;
 			if (indices.mNumTriangles < 2)
 			{
 				// Store index of triangle that connects to this edge
@@ -278,6 +320,7 @@ void MeshShape::sFindActiveEdges(const MeshShapeSettings &inSettings, IndexedTri
 				uint32 mask = 1 << (edge_idx + FLAGS_ACTIVE_EGDE_SHIFT);
 				JPH_ASSERT((triangle.mMaterialIndex & mask) == 0);
 				triangle.mMaterialIndex |= mask;
+				indices.mNumTriangles = 3; // Indicate that we have 3 or more triangles
 			}
 		}
 	}
@@ -337,7 +380,15 @@ void MeshShape::sFindActiveEdges(const MeshShapeSettings &inSettings, IndexedTri
 
 MassProperties MeshShape::GetMassProperties() const
 {
-	// Object should always be static, return default mass properties
+	// We cannot calculate the volume for an arbitrary mesh, so we return invalid mass properties.
+	// If you want your mesh to be dynamic, then you should provide the mass properties yourself when
+	// creating a Body:
+	//
+	// BodyCreationSettings::mOverrideMassProperties = EOverrideMassProperties::MassAndInertiaProvided;
+	// BodyCreationSettings::mMassPropertiesOverride.SetMassAndInertiaOfSolidBox(Vec3::sOne(), 1000.0f);
+	//
+	// Note that for a mesh shape to simulate properly, it is best if the mesh is manifold
+	// (i.e. closed, all edges shared by only two triangles, consistent winding order).
 	return MassProperties();
 }
 
@@ -345,7 +396,7 @@ void MeshShape::DecodeSubShapeID(const SubShapeID &inSubShapeID, const void *&ou
 {
 	// Get block
 	SubShapeID triangle_idx_subshape_id;
-	uint32 block_id = inSubShapeID.PopID(NodeCodec::DecodingContext::sTriangleBlockIDBits(mTree), triangle_idx_subshape_id);
+	uint32 block_id = inSubShapeID.PopID(NodeCodec::DecodingContext::sTriangleBlockIDBits(sGetNodeHeader(mTree)), triangle_idx_subshape_id);
 	outTriangleBlock = NodeCodec::DecodingContext::sGetTriangleBlockStart(&mTree[0], block_id);
 
 	// Fetch the triangle index
@@ -387,7 +438,7 @@ Vec3 MeshShape::GetSurfaceNormal(const SubShapeID &inSubShapeID, Vec3Arg inLocal
 	const TriangleCodec::DecodingContext triangle_ctx(sGetTriangleHeader(mTree));
 	triangle_ctx.GetTriangle(block_start, triangle_idx, v1, v2, v3);
 
-	//  Calculate normal
+	// Calculate normal
 	return (v3 - v2).Cross(v1 - v2).Normalized();
 }
 
@@ -405,7 +456,7 @@ void MeshShape::GetSupportingFace(const SubShapeID &inSubShapeID, Vec3Arg inDire
 
 	// Flip triangle if scaled inside out
 	if (ScaleHelpers::IsInsideOut(inScale))
-		swap(outVertices[1], outVertices[2]);
+		std::swap(outVertices[1], outVertices[2]);
 
 	// Calculate transform with scale
 	Mat44 transform = inCenterOfMassTransform.PreScaled(inScale);
@@ -423,7 +474,7 @@ AABox MeshShape::GetLocalBounds() const
 
 uint MeshShape::GetSubShapeIDBitsRecursive() const
 {
-	return NodeCodec::DecodingContext::sTriangleBlockIDBits(mTree) + NumTriangleBits;
+	return NodeCodec::DecodingContext::sTriangleBlockIDBits(sGetNodeHeader(mTree)) + NumTriangleBits;
 }
 
 template <class Visitor>
@@ -497,7 +548,7 @@ JPH_INLINE void MeshShape::WalkTreePerTriangle(const SubShapeIDCreator &inSubSha
 		uint				mTriangleBlockIDBits;
 	};
 
-	ChainedVisitor visitor(ioVisitor, inSubShapeIDCreator2, NodeCodec::DecodingContext::sTriangleBlockIDBits(mTree));
+	ChainedVisitor visitor(ioVisitor, inSubShapeIDCreator2, NodeCodec::DecodingContext::sTriangleBlockIDBits(sGetNodeHeader(mTree)));
 	WalkTree(visitor);
 }
 
@@ -583,7 +634,7 @@ void MeshShape::Draw(DebugRenderer *inRenderer, RMat44Arg inCenterOfMassTransfor
 	{
 		struct Visitor
 		{
-			JPH_INLINE 			Visitor(DebugRenderer *inRenderer, RMat44Arg inTransform) :
+			JPH_INLINE			Visitor(DebugRenderer *inRenderer, RMat44Arg inTransform) :
 				mRenderer(inRenderer),
 				mTransform(inTransform)
 			{
@@ -699,7 +750,7 @@ bool MeshShape::CastRay(const RayCast &inRay, const SubShapeIDCreator &inSubShap
 	visitor.mRayOrigin = inRay.mOrigin;
 	visitor.mRayDirection = inRay.mDirection;
 	visitor.mRayInvDirection.Set(inRay.mDirection);
-	visitor.mTriangleBlockIDBits = NodeCodec::DecodingContext::sTriangleBlockIDBits(mTree);
+	visitor.mTriangleBlockIDBits = NodeCodec::DecodingContext::sTriangleBlockIDBits(sGetNodeHeader(mTree));
 	visitor.mSubShapeIDCreator = inSubShapeIDCreator;
 	WalkTree(visitor);
 
@@ -767,7 +818,7 @@ void MeshShape::CastRay(const RayCast &inRay, const RayCastSettings &inRayCastSe
 	};
 
 	Visitor visitor(ioCollector);
-	visitor.mBackFaceMode = inRayCastSettings.mBackFaceMode;
+	visitor.mBackFaceMode = inRayCastSettings.mBackFaceModeTriangles;
 	visitor.mRayOrigin = inRay.mOrigin;
 	visitor.mRayDirection = inRay.mDirection;
 	visitor.mRayInvDirection.Set(inRay.mDirection);
@@ -779,9 +830,54 @@ void MeshShape::CollidePoint(Vec3Arg inPoint, const SubShapeIDCreator &inSubShap
 	sCollidePointUsingRayCast(*this, inPoint, inSubShapeIDCreator, ioCollector, inShapeFilter);
 }
 
-void MeshShape::CollideSoftBodyVertices(Mat44Arg inCenterOfMassTransform, Vec3Arg inScale, Array<SoftBodyVertex> &ioVertices, float inDeltaTime, Vec3Arg inDisplacementDueToGravity, int inCollidingShapeIndex) const
+void MeshShape::CollideSoftBodyVertices(Mat44Arg inCenterOfMassTransform, Vec3Arg inScale, const CollideSoftBodyVertexIterator &inVertices, uint inNumVertices, int inCollidingShapeIndex) const
 {
-	sCollideSoftBodyVerticesUsingRayCast(*this, inCenterOfMassTransform, inScale, ioVertices, inDeltaTime, inDisplacementDueToGravity, inCollidingShapeIndex);
+	JPH_PROFILE_FUNCTION();
+
+	struct Visitor : public CollideSoftBodyVerticesVsTriangles
+	{
+		using CollideSoftBodyVerticesVsTriangles::CollideSoftBodyVerticesVsTriangles;
+
+		JPH_INLINE bool	ShouldAbort() const
+		{
+			return false;
+		}
+
+		JPH_INLINE bool	ShouldVisitNode([[maybe_unused]] int inStackTop) const
+		{
+			return mDistanceStack[inStackTop] < mClosestDistanceSq;
+		}
+
+		JPH_INLINE int	VisitNodes(Vec4Arg inBoundsMinX, Vec4Arg inBoundsMinY, Vec4Arg inBoundsMinZ, Vec4Arg inBoundsMaxX, Vec4Arg inBoundsMaxY, Vec4Arg inBoundsMaxZ, UVec4 &ioProperties, int inStackTop)
+		{
+			// Scale the bounding boxes of this node
+			Vec4 bounds_min_x, bounds_min_y, bounds_min_z, bounds_max_x, bounds_max_y, bounds_max_z;
+			AABox4Scale(mScale, inBoundsMinX, inBoundsMinY, inBoundsMinZ, inBoundsMaxX, inBoundsMaxY, inBoundsMaxZ, bounds_min_x, bounds_min_y, bounds_min_z, bounds_max_x, bounds_max_y, bounds_max_z);
+
+			// Get distance to vertex
+			Vec4 dist_sq = AABox4DistanceSqToPoint(mLocalPosition, bounds_min_x, bounds_min_y, bounds_min_z, bounds_max_x, bounds_max_y, bounds_max_z);
+
+			// Sort so that highest values are first (we want to first process closer hits and we process stack top to bottom)
+			return SortReverseAndStore(dist_sq, mClosestDistanceSq, ioProperties, &mDistanceStack[inStackTop]);
+		}
+
+		JPH_INLINE void	VisitTriangle(Vec3Arg inV0, Vec3Arg inV1, Vec3Arg inV2, [[maybe_unused]] uint8 inActiveEdges, [[maybe_unused]] SubShapeID inSubShapeID2)
+		{
+			ProcessTriangle(inV0, inV1, inV2);
+		}
+
+		float			mDistanceStack[NodeCodec::StackSize];
+	};
+
+	Visitor visitor(inCenterOfMassTransform, inScale);
+
+	for (CollideSoftBodyVertexIterator v = inVertices, sbv_end = inVertices + inNumVertices; v != sbv_end; ++v)
+		if (v.GetInvMass() > 0.0f)
+		{
+			visitor.StartVertex(v);
+			WalkTreePerTriangle(SubShapeIDCreator(), visitor);
+			visitor.FinishVertex(v, inCollidingShapeIndex);
+		}
 }
 
 void MeshShape::sCastConvexVsMesh(const ShapeCast &inShapeCast, const ShapeCastSettings &inShapeCastSettings, const Shape *inShape, Vec3Arg inScale, [[maybe_unused]] const ShapeFilter &inShapeFilter, Mat44Arg inCenterOfMassTransform2, const SubShapeIDCreator &inSubShapeIDCreator1, const SubShapeIDCreator &inSubShapeIDCreator2, CastShapeCollector &ioCollector)
@@ -892,7 +988,7 @@ void MeshShape::sCastSphereVsMesh(const ShapeCast &inShapeCast, const ShapeCastS
 
 struct MeshShape::MSGetTrianglesContext
 {
-	JPH_INLINE 		MSGetTrianglesContext(const MeshShape *inShape, const AABox &inBox, Vec3Arg inPositionCOM, QuatArg inRotation, Vec3Arg inScale) :
+	JPH_INLINE		MSGetTrianglesContext(const MeshShape *inShape, const AABox &inBox, Vec3Arg inPositionCOM, QuatArg inRotation, Vec3Arg inScale) :
 		mDecodeCtx(sGetNodeHeader(inShape->mTree)),
 		mShape(inShape),
 		mLocalBox(Mat44::sInverseRotationTranslation(inRotation, inPositionCOM), inBox),
@@ -1173,6 +1269,18 @@ Shape::Stats MeshShape::GetStats() const
 	WalkTree(visitor);
 
 	return Stats(sizeof(*this) + mMaterials.size() * sizeof(Ref<PhysicsMaterial>) + mTree.size() * sizeof(uint8), visitor.mNumTriangles);
+}
+
+uint32 MeshShape::GetTriangleUserData(const SubShapeID &inSubShapeID) const
+{
+	// Decode ID
+	const void *block_start;
+	uint32 triangle_idx;
+	DecodeSubShapeID(inSubShapeID, block_start, triangle_idx);
+
+	// Decode triangle
+	const TriangleCodec::DecodingContext triangle_ctx(sGetTriangleHeader(mTree));
+	return triangle_ctx.GetUserData(block_start, triangle_idx);
 }
 
 void MeshShape::sRegister()

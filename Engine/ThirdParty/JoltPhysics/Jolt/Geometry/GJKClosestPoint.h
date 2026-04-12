@@ -5,7 +5,6 @@
 #pragma once
 
 #include <Jolt/Core/NonCopyable.h>
-#include <Jolt/Core/FPException.h>
 #include <Jolt/Geometry/ClosestPoint.h>
 #include <Jolt/Geometry/ConvexSupport.h>
 
@@ -73,7 +72,7 @@ private:
 		}
 
 #ifdef JPH_GJK_DEBUG
- 		Trace("GetClosest: set = 0b%s, v = [%s], |v| = %g", NibbleToBinary(set), ConvertToString(v).c_str(), (double)v.Length());
+		Trace("GetClosest: set = 0b%s, v = [%s], |v| = %g", NibbleToBinary(set), ConvertToString(v).c_str(), (double)v.Length());
 #endif
 
 		float v_len_sq = v.LengthSq();
@@ -114,10 +113,6 @@ private:
 			}
 		mNumPoints = num_points;
 	}
-
-	// GCC 11.3 thinks the assignments to mP, mQ and mY below may use uninitialized variables
-	JPH_SUPPRESS_WARNING_PUSH
-	JPH_GCC_SUPPRESS_WARNING("-Wmaybe-uninitialized")
 
 	// Remove points that are not in the set, only updates mP
 	void		UpdatePointSetP(uint32 inSet)
@@ -161,8 +156,6 @@ private:
 		mNumPoints = num_points;
 	}
 
-	JPH_SUPPRESS_WARNING_POP
-
 	// Calculate closest points on A and B
 	void		CalculatePointAAndB(Vec3 &outPointA, Vec3 &outPointB) const
 	{
@@ -192,7 +185,7 @@ private:
 			break;
 
 		case 4:
-		#ifdef _DEBUG
+		#ifdef JPH_DEBUG
 			memset(&outPointA, 0xcd, sizeof(outPointA));
 			memset(&outPointB, 0xcd, sizeof(outPointB));
 		#endif
@@ -244,7 +237,7 @@ public:
 			{
 				// Separating axis found
 #ifdef JPH_GJK_DEBUG
-				Trace("Seperating axis");
+				Trace("Separating axis");
 #endif
 				return false;
 			}
@@ -293,7 +286,7 @@ public:
 				return true;
 			}
 
-			// The next seperation axis to test is the negative of the closest point of the Minkowski sum to the origin
+			// The next separation axis to test is the negative of the closest point of the Minkowski sum to the origin
 			// Note: This must be done before terminating as converged since the separating axis is -v
 			ioV = -ioV;
 
@@ -393,7 +386,7 @@ public:
 #ifdef JPH_GJK_DEBUG
 				Trace("Distance bigger than max");
 #endif
-#ifdef _DEBUG
+#ifdef JPH_DEBUG
 				memset(&outPointA, 0xcd, sizeof(outPointA));
 				memset(&outPointB, 0xcd, sizeof(outPointB));
 #endif
@@ -456,7 +449,7 @@ public:
 				break;
 			}
 
-			// The next seperation axis to test is the negative of the closest point of the Minkowski sum to the origin
+			// The next separation axis to test is the negative of the closest point of the Minkowski sum to the origin
 			// Note: This must be done before terminating as converged since the separating axis is -v
 			ioV = -ioV;
 
@@ -508,7 +501,7 @@ public:
 		outNumPoints = mNumPoints;
 	}
 
-	/// Test if a ray inRayOrigin + lambda * inRayDirection for lambda e [0, ioLambda> instersects inA
+	/// Test if a ray inRayOrigin + lambda * inRayDirection for lambda e [0, ioLambda> intersects inA
 	///
 	/// Code based upon: Ray Casting against General Convex Objects with Application to Continuous Collision Detection - Gino van den Bergen
 	///
@@ -558,7 +551,7 @@ public:
 #ifdef JPH_GJK_DEBUG
 				Trace("v . r = %g", (double)v_dot_r);
 #endif
-				if (v_dot_r >= 0.0f)
+				if (v_dot_r >= -1.0e-18f) // Instead of checking >= 0, check with epsilon as we don't want the division below to overflow to infinity as it can cause a float exception
 					return false;
 
 				// Update the lower bound for lambda
@@ -598,7 +591,6 @@ public:
 				mY[i] = x - mP[i];
 
 			// Determine the new closest point from Y to origin
-			bool needs_restart = false;
 			uint32 set;						// Set of points that form the new simplex
 			if (!GetClosest<false>(v_len_sq, v, v_len_sq, set))
 			{
@@ -606,26 +598,6 @@ public:
 				Trace("Failed to converge");
 #endif
 
-				// We failed to converge, restart
-				needs_restart = true;
-			}
-			else if (set == 0xf)
-			{
-#ifdef JPH_GJK_DEBUG
-				Trace("Full simplex");
-#endif
-
-				// If there are 4 points, x is inside the tetrahedron and we've found a hit
-				// Double check if this is indeed the case
-				if (v_len_sq <= tolerance_sq)
-					break;
-
-				// We failed to converge, restart
-				needs_restart = true;
-			}
-
-			if (needs_restart)
-			{
 				// Only allow 1 restart, if we still can't get a closest point
 				// we're so close that we return this as a hit
 				if (!allow_restart)
@@ -641,6 +613,16 @@ public:
 				v = x - p;
 				v_len_sq = FLT_MAX;
 				continue;
+			}
+			else if (set == 0xf)
+			{
+#ifdef JPH_GJK_DEBUG
+				Trace("Full simplex");
+#endif
+
+				// We're inside the tetrahedron, we have a hit (verify that length of v is 0)
+				JPH_ASSERT(v_len_sq == 0.0f);
+				break;
 			}
 
 			// Update the points P to form the new simplex
@@ -662,7 +644,7 @@ public:
 		return true;
 	}
 
-	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> instersects inB
+	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> intersects inB
 	///
 	/// @param inStart Start position and orientation of the convex object
 	/// @param inDirection Direction of the sweep (ioLambda * inDirection determines length)
@@ -686,7 +668,7 @@ public:
 		return CastRay(Vec3::sZero(), inDirection, inTolerance, difference, ioLambda);
 	}
 
-	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> instersects inB
+	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> intersects inB
 	///
 	/// @param inStart Start position and orientation of the convex object
 	/// @param inDirection Direction of the sweep (ioLambda * inDirection determines length)
@@ -708,7 +690,7 @@ public:
 	{
 		float tolerance_sq = Square(inTolerance);
 
-		// Calculate how close A and B (without their convex radius) need to be to eachother in order for us to consider this a collision
+		// Calculate how close A and B (without their convex radius) need to be to each other in order for us to consider this a collision
 		float sum_convex_radius = inConvexRadiusA + inConvexRadiusB;
 
 		// Transform the shape to be cast to the starting position
@@ -762,7 +744,7 @@ public:
 #ifdef JPH_GJK_DEBUG
 				Trace("v . r = %g", (double)v_dot_r);
 #endif
-				if (v_dot_r >= 0.0f)
+				if (v_dot_r >= -1.0e-18f) // Instead of checking >= 0, check with epsilon as we don't want the division below to overflow to infinity as it can cause a float exception
 					return false;
 
 				// Update the lower bound for lambda
@@ -807,7 +789,6 @@ public:
 				mY[i] = x - (mQ[i] - mP[i]);
 
 			// Determine the new closest point from Y to origin
-			bool needs_restart = false;
 			uint32 set;						// Set of points that form the new simplex
 			if (!GetClosest<false>(v_len_sq, v, v_len_sq, set))
 			{
@@ -815,26 +796,6 @@ public:
 				Trace("Failed to converge");
 #endif
 
-				// We failed to converge, restart
-				needs_restart = true;
-			}
-			else if (set == 0xf)
-			{
-#ifdef JPH_GJK_DEBUG
-				Trace("Full simplex");
-#endif
-
-				// If there are 4 points, x is inside the tetrahedron and we've found a hit
-				// Double check that A and B are indeed touching according to our tolerance
-				if (v_len_sq <= tolerance_sq)
-					break;
-
-				// We failed to converge, restart
-				needs_restart = true;
-			}
-
-			if (needs_restart)
-			{
 				// Only allow 1 restart, if we still can't get a closest point
 				// we're so close that we return this as a hit
 				if (!allow_restart)
@@ -851,6 +812,16 @@ public:
 				v = x - q;
 				v_len_sq = FLT_MAX;
 				continue;
+			}
+			else if (set == 0xf)
+			{
+#ifdef JPH_GJK_DEBUG
+				Trace("Full simplex");
+#endif
+
+				// We're inside the tetrahedron, we have a hit (verify that length of v is 0)
+				JPH_ASSERT(v_len_sq == 0.0f);
+				break;
 			}
 
 			// Update the points P and Q to form the new simplex

@@ -47,6 +47,11 @@ private:
 	/// The GJK algorithm, used to start the EPA algorithm
 	GJKClosestPoint		mGJK;
 
+#ifdef JPH_ENABLE_ASSERTS
+	/// Tolerance as passed to the GJK algorithm, used for asserting.
+	float				mGJKTolerance = 0.0f;
+#endif // JPH_ENABLE_ASSERTS
+
 	/// A list of support points for the EPA algorithm
 	class SupportPoints
 	{
@@ -98,9 +103,13 @@ public:
 	template <typename AE, typename BE>
 	EStatus				GetPenetrationDepthStepGJK(const AE &inAExcludingConvexRadius, float inConvexRadiusA, const BE &inBExcludingConvexRadius, float inConvexRadiusB, float inTolerance, Vec3 &ioV, Vec3 &outPointA, Vec3 &outPointB)
 	{
-		JPH_PROFILE_FUNCTION();
+		JPH_IF_ENABLE_ASSERTS(mGJKTolerance = inTolerance;)
 
-		// Don't supply a zero ioV, we only want to get points on the hull of the Minkowsky sum and not internal points
+		// Don't supply a zero ioV, we only want to get points on the hull of the Minkowsky sum and not internal points.
+		//
+		// Note that if the assert below triggers, it is very likely that you have a MeshShape that contains a degenerate triangle (e.g. a sliver).
+		// Go up a couple of levels in the call stack to see if we're indeed testing a triangle and if it is degenerate.
+		// If this is the case then fix the triangles you supply to the MeshShape.
 		JPH_ASSERT(!ioV.IsNearZero());
 
 		// Get closest points
@@ -154,7 +163,7 @@ public:
 		case 1:
 			{
 				// 1 vertex, which must be at the origin, which is useless for our purpose
-				JPH_ASSERT(support_points.mY[0].IsNearZero(1.0e-8f));
+				JPH_ASSERT(support_points.mY[0].IsNearZero(Square(mGJKTolerance)));
 				support_points.mY.pop_back();
 
 				// Add support points in 4 directions to form a tetrahedron around the origin
@@ -201,7 +210,7 @@ public:
 		hull.DrawLabel("Build initial hull");
 #endif
 #ifdef JPH_EPA_PENETRATION_DEPTH_DEBUG
-		Trace("Init: num_points = %d", support_points.mY.size());
+		Trace("Init: num_points = %u", (uint)support_points.mY.size());
 #endif
 		hull.Initialize(0, 1, 2);
 		for (typename Points::size_type i = 3; i < support_points.mY.size(); ++i)
@@ -284,9 +293,9 @@ public:
 			if (!t->IsFacing(w) || !hull.AddPoint(t, new_index, FLT_MAX, new_triangles))
 				return false;
 
-			// If the triangle was removed we can free it now
-			if (t->mRemoved)
-				hull.FreeTriangle(t);
+			// The triangle is facing the support point "w" and can now be safely removed
+			JPH_ASSERT(t->mRemoved);
+			hull.FreeTriangle(t);
 
 			// If we run out of triangles or points, we couldn't include the origin in the hull so there must be very little penetration and we report no collision.
 			if (!hull.HasNextTriangle() || support_points.mY.size() >= cMaxPointsToIncludeOriginInHull)
@@ -494,7 +503,7 @@ public:
 		return false;
 	}
 
-	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> instersects inB
+	/// Test if a cast shape inA moving from inStart to lambda * inStart.GetTranslation() + inDirection where lambda e [0, ioLambda> intersects inB
 	///
 	/// @param inStart Start position and orientation of the convex object
 	/// @param inDirection Direction of the sweep (ioLambda * inDirection determines length)
@@ -504,7 +513,7 @@ public:
 	/// @param inB The convex object B, must support the GetSupport(Vec3) function.
 	/// @param inConvexRadiusA The convex radius of A, this will be added on all sides to pad A.
 	/// @param inConvexRadiusB The convex radius of B, this will be added on all sides to pad B.
-	/// @param inReturnDeepestPoint If the shapes are initially interesecting this determines if the EPA algorithm will run to find the deepest point
+	/// @param inReturnDeepestPoint If the shapes are initially intersecting this determines if the EPA algorithm will run to find the deepest point
 	/// @param ioLambda The max fraction along the sweep, on output updated with the actual collision fraction.
 	///	@param outPointA is the contact point on A
 	///	@param outPointB is the contact point on B
@@ -514,6 +523,8 @@ public:
 	template <typename A, typename B>
 	bool				CastShape(Mat44Arg inStart, Vec3Arg inDirection, float inCollisionTolerance, float inPenetrationTolerance, const A &inA, const B &inB, float inConvexRadiusA, float inConvexRadiusB, bool inReturnDeepestPoint, float &ioLambda, Vec3 &outPointA, Vec3 &outPointB, Vec3 &outContactNormal)
 	{
+		JPH_IF_ENABLE_ASSERTS(mGJKTolerance = inCollisionTolerance;)
+
 		// First determine if there's a collision at all
 		if (!mGJK.CastShape(inStart, inDirection, inCollisionTolerance, inA, inB, inConvexRadiusA, inConvexRadiusB, ioLambda, outPointA, outPointB, outContactNormal))
 			return false;
@@ -527,11 +538,11 @@ public:
 				|| contact_normal_invalid))
 		{
 			// If we're initially intersecting, we need to run the EPA algorithm in order to find the deepest contact point
-			AddConvexRadius<A> add_convex_a(inA, inConvexRadiusA);
-			AddConvexRadius<B> add_convex_b(inB, inConvexRadiusB);
-			TransformedConvexObject<AddConvexRadius<A>> transformed_a(inStart, add_convex_a);
+			AddConvexRadius add_convex_a(inA, inConvexRadiusA);
+			AddConvexRadius add_convex_b(inB, inConvexRadiusB);
+			TransformedConvexObject transformed_a(inStart, add_convex_a);
 			if (!GetPenetrationDepthStepEPA(transformed_a, add_convex_b, inPenetrationTolerance, outContactNormal, outPointA, outPointB))
-				return false;
+				outContactNormal = inDirection; // Failed to get the deepest point, use points returned by GJK and use cast direction as normal
 		}
 		else if (contact_normal_invalid)
 		{

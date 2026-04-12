@@ -22,7 +22,7 @@ JPH_NAMESPACE_BEGIN
 /// \f[J = \begin{bmatrix}0 & -E & 0 & E\end{bmatrix}\f]
 ///
 /// Used terms (here and below, everything in world space):\n
-/// delta_theta_* = difference in rotation between initial rotation of bodyies 1 and 2.\n
+/// delta_theta_* = difference in rotation between initial rotation of bodies 1 and 2.\n
 /// x1, x2 = center of mass for the bodies.\n
 /// v = [v1, w1, v2, w2].\n
 /// v1, v2 = linear velocity of body 1 and 2.\n
@@ -70,7 +70,7 @@ public:
 		//
 		// q20 = initial orientation of body 2
 		// q10 = initial orientation of body 1
-		// r0 = initial rotation rotation from body 1 to body 2
+		// r0 = initial rotation from body 1 to body 2
 		return inBody2.GetRotation().Conjugated() * inBody1.GetRotation();
 	}
 
@@ -90,7 +90,7 @@ public:
 		// where:
 		//
 		// q10, q20 = world space initial orientation of body 1 and 2
-		// r0 = initial rotation rotation from body 1 to body 2 in local space of body 1
+		// r0 = initial rotation from body 1 to body 2 in local space of body 1
 		//
 		// We can also write this in terms of the constraint matrices:
 		//
@@ -143,8 +143,21 @@ public:
 		mInvI2 = inBody2.IsDynamic()? inBody2.GetMotionProperties()->GetInverseInertiaForRotation(inRotation2) : Mat44::sZero();
 
 		// Calculate effective mass: K^-1 = (J M^-1 J^T)^-1
-		if (!mEffectiveMass.SetInversed3x3(mInvI1 + mInvI2))
-			Deactivate();
+		Mat44 inertia_sum = mInvI1 + mInvI2;
+		if (!mEffectiveMass.SetInversed3x3(inertia_sum))
+		{
+			// If a column is zero, the axis is locked and we set the column to identity.
+			// This does not matter because any impulse will always be multiplied with mInvI1 or mInvI2 which will result in zero for the locked coordinate.
+			Vec4 zero = Vec4::sZero();
+			if (inertia_sum.GetColumn4(0) == zero)
+				inertia_sum.SetColumn4(0, Vec4(1, 0, 0, 0));
+			if (inertia_sum.GetColumn4(1) == zero)
+				inertia_sum.SetColumn4(1, Vec4(0, 1, 0, 0));
+			if (inertia_sum.GetColumn4(2) == zero)
+				inertia_sum.SetColumn4(2, Vec4(0, 0, 1, 0));
+			if (!mEffectiveMass.SetInversed3x3(inertia_sum))
+				Deactivate();
+		}
 	}
 
 	/// Deactivate this constraint
@@ -243,7 +256,7 @@ public:
 	}
 
 	/// Return lagrange multiplier
-	Vec3		 				GetTotalLambda() const
+	Vec3						GetTotalLambda() const
 	{
 		return mTotalLambda;
 	}
