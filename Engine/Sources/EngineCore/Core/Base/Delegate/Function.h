@@ -27,12 +27,21 @@ namespace PigeonEngine
         BOOL32                   operator==(const TFunction<Ret(Args ...)>& Other);
         
     private:
+        static ULONGLONG AllocFunctionID()
+        {
+            static ULONGLONG FunctionIDGenerator = 0u;
+            FunctionIDGenerator += 1u;
+            return FunctionIDGenerator;
+        }
+
         std::function<Ret(Args...)> Operation = nullptr;
+        ULONGLONG FunctionID = 0u;
     };
 
     template <typename Ret, typename ... Args>
     TFunction<Ret(Args...)>::TFunction()
     {
+        FunctionID = AllocFunctionID();
     }
 
     template <typename Ret, typename ... Args>
@@ -40,7 +49,7 @@ namespace PigeonEngine
     {}
 
     template <typename Ret, typename ... Args>
-    TFunction<Ret(Args...)>::TFunction(const TFunction<Ret(Args...)>& Other):Operation(Other.Operation)
+    TFunction<Ret(Args...)>::TFunction(const TFunction<Ret(Args...)>& Other):Operation(Other.Operation), FunctionID(Other.FunctionID)
     {
     }
 
@@ -52,6 +61,7 @@ namespace PigeonEngine
     TFunction<Ret(Args...)>& TFunction<Ret(Args...)>::operator=(const TFunction<Ret(Args...)>& Other)
     {
         this->Operation = Other.Operation;
+        this->FunctionID = Other.FunctionID;
         return *this;
     }
 
@@ -59,6 +69,7 @@ namespace PigeonEngine
     TFunction<Ret(Args...)>& TFunction<Ret(Args...)>::operator=(std::function<Ret(Args...)> Other)
     {
         this->Operation = std::move(Other);
+        this->FunctionID = AllocFunctionID();
         return *this;
     }
 
@@ -71,7 +82,7 @@ namespace PigeonEngine
     template <typename Ret, typename ... Args>
     BOOL32 TFunction<Ret(Args...)>::operator==(const TFunction<Ret(Args...)>& Other)
     {
-        return this->Operation == Other.Operation;
+        return this->FunctionID == Other.FunctionID;
     }
 
 #endif

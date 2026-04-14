@@ -30,6 +30,7 @@ namespace PigeonEngine
 	protected:
 		// for frame, 
 		void BeginAddedToScene(PWorld* World) override;
+		void RemovedFromScene() override;
 
 		// for users
 		virtual void UserBeginPlay();

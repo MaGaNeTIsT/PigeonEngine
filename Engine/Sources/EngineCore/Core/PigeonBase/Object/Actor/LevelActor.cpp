@@ -35,13 +35,12 @@ namespace PigeonEngine
 	
 	void PLevelActor::BeginAddedToScene(PWorld* World)
 	{
-		this->SetWorld(World);
-    	UserBeginPlay();
+		PActor::BeginAddedToScene(World);
 	}
 
 	void PLevelActor::RemovedFromScene()
 	{
-
+		PActor::RemovedFromScene();
 	}
 
 	void PLevelActor::UserBeginPlay()
@@ -217,7 +216,6 @@ namespace PigeonEngine
 			FBoxShape* Shape = new FBoxShape(PlaneHalfExtent, 0.f);
 			PPhysicsComponent* PhysicsComponent = new PPhysicsComponent(Shape);
 			PhysicsComponent->SetOwnerActor(New);
-			PhysicsComponent->InitPhysicsComponent();
 
 			New->AddComponent(PhysicsComponent);
 
@@ -287,9 +285,6 @@ namespace PigeonEngine
 			New->SetActorLocation(Vector3(250.0f, 50.0f, 0.0f));
 			New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
 		}
-
-		this->GetWorld()->GetController()->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-		this->GetWorld()->GetController()->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
     }
 
 	void PLevelActor::UserEndPlay()

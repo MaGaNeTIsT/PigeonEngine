@@ -34,6 +34,10 @@ namespace PigeonEngine
 
 	void PObject::Destroy()
 	{
+		if (IsInitialized())
+		{
+			Uninit();
+		}
 		delete this;
 	}
 
@@ -57,18 +61,42 @@ namespace PigeonEngine
 		this->MyWorld = NewWorld;
 	}
 
+	void PObject::SetInitialized(const BOOL32& bInInitialized)
+	{
+		bInitialized = bInInitialized;
+	}
+
+	void PObject::SetAddedToScene(const BOOL32& bInAddedToScene)
+	{
+		bAddedToScene = bInAddedToScene;
+	}
+
 	void PObject::BeginAddedToScene(PWorld* World)
 	{
 		this->SetWorld(World);
+		SetAddedToScene(TRUE);
 	}
 
 	void PObject::RemovedFromScene()
 	{
+		SetAddedToScene(FALSE);
+		SetWorld(nullptr);
 	}
 
 	void PObject::Uninit()
 	{
+		bInitialized = FALSE;
 		// Destroy();
+	}
+
+	BOOL32 PObject::IsInitialized() const
+	{
+		return bInitialized;
+	}
+
+	BOOL32 PObject::IsAddedToScene() const
+	{
+		return bAddedToScene;
 	}
 
 	BOOL32 PObject::IsActive()const

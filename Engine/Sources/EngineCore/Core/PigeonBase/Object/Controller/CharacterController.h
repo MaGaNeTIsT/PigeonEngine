@@ -1,19 +1,10 @@
 ﻿#pragma once
-#include "Input/InputType.h"
+#pragma once
 #include "PigeonBase/Object/Controller/Controller.h"
 #include "PigeonBase/Object/Actor/LevelCharacter.h"
 namespace PigeonEngine
 {
-    struct ECharacterMoveInput
-    {
-        FLOAT XInput;
-        FLOAT YInput;
-        BOOL8 bJump;
-        BOOL8 bJumpPressed;
-        BOOL8 bRun;
-        BOOL8 bCrouch;
-        BOOL8 bCrouchPressed;
-    };
+	class PCharacterInputComponent;
     class PCharacter;
     class PCharacterController : public PController
     {
@@ -27,19 +18,15 @@ namespace PigeonEngine
         void UserBeginPlay() override;
         void UserTick(FLOAT deltaTime) override;
         void UserEndPlay() override;
-
-        void HandleInput(IKeyboard::Event::EType InType, const EKey& InKey);
-    private:
-        const TFunction<void(IKeyboard::Event::EType Type, BYTE KeyCode)> OnKeyDown;
     public:
         void SetCharacter(PCharacter* InCharacter);
-		PE_NODISCARD ECharacterMoveInput ConsumeMoveInput();
+        PE_NODISCARD PCharacterInputComponent* GetInputComponent() const;
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PCharacterController)
 
     private:
         PCharacter* Character = NULL;
-        ECharacterMoveInput CharacterMoveInput;
+		PCharacterInputComponent* InputComponent = nullptr;
     };
     
 }

@@ -5,7 +5,6 @@
 
 namespace PigeonEngine
 {
-	class PCharacterController;
 	class PCharacter : public PPawn, public FCharacterContactEventListenerInterface
 	{
 		friend class PWorld;
@@ -18,8 +17,6 @@ namespace PigeonEngine
 		class FShape* GetCrouchingShape();
 		class FCharacterVirtual* GetPhysicsCharacter();
 		class PMovementComponent* GetMovementComponent();
-		void SetCharacterController(PCharacterController* InController);
-		PE_NODISCARD PCharacterController* GetCharacterController() const;
 
 #if _EDITOR_ONLY
 		void EditorTick(FLOAT deltaTime) override;
@@ -56,7 +53,6 @@ namespace PigeonEngine
 
 	protected:
 		class PMovementComponent* MovementComponent = nullptr;
-		PCharacterController* CharacterController = nullptr;
 		class FCharacterVirtual* Character = nullptr;
 		class FShape* StandingShape = nullptr;
 		class FShape* CrouchingShape = nullptr;

@@ -28,8 +28,12 @@ namespace PigeonEngine
 	public:
 		void SetIsTickable(const BOOL32& bTickable);
 		BOOL32 IsTickable() const;
+		BOOL32 IsInitialized() const;
+		BOOL32 IsAddedToScene() const;
 	private:
 		BOOL32 bCanTick = FALSE;
+		BOOL32 bInitialized = FALSE;
+		BOOL32 bAddedToScene = FALSE;
 	public:
 		virtual void Destroy();
 
@@ -41,6 +45,8 @@ namespace PigeonEngine
 		virtual PWorld* GetWorld() const;
 	protected:
 		virtual void SetWorld(PWorld* NewWorld);
+		void SetInitialized(const BOOL32& bInInitialized);
+		void SetAddedToScene(const BOOL32& bInAddedToScene);
 	private:
 		PWorld* MyWorld = nullptr;
 

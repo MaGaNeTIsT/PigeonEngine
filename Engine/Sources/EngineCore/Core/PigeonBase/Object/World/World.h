@@ -8,7 +8,6 @@
 
 namespace PigeonEngine
 {
-
     class PScene;
     class EGameTimer;
     class PActorComponent;
@@ -36,10 +35,8 @@ namespace PigeonEngine
         void	Init() override;
         void	Uninit() override;
         void	Tick(FLOAT deltaTime) override;
+        void	FixedTick(FLOAT deltaTime);
         
-    protected:
-
-        void FixTick(FLOAT deltaTime);
     public:
         void Destroy() override; 
     // End PObject Interface
@@ -86,6 +83,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
         // IMGUI
     public:
+        void EditorTick(FLOAT deltaTime) override;
         void SetSelectedActor(PActor* Selected);
         void SetSelectedComponent(PActorComponent* Selected);
     public:
@@ -94,8 +92,6 @@ namespace PigeonEngine
     private:
         PActor* ImguiSelectedActor = nullptr;
         PActorComponent* ImguiSelectedComponent = nullptr;
-    protected:
-        void EditorTick(FLOAT deltaTime) override;
     private:
         class PEditorController* EditorController = nullptr;
 #endif

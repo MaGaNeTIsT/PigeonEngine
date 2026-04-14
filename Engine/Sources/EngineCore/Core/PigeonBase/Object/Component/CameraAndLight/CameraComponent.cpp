@@ -139,19 +139,37 @@ namespace PigeonEngine
 		PSceneComponent::CreateRenderState();
 		if (ShouldRender())
 		{
-			this->GetWorld()->GetRenderScene()->AddCamera(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->AddCamera(this);
+				}
+			}
 		}
 	}
 	void PCameraComponent::DestroyRenderState()
 	{
-		this->GetWorld()->GetRenderScene()->RemoveCamera(this);
+		if (PWorld* World = this->GetWorld())
+		{
+			if (RSceneInterface* RenderScene = World->GetRenderScene())
+			{
+				RenderScene->RemoveCamera(this);
+			}
+		}
 		PSceneComponent::DestroyRenderState();
 	}
 	void PCameraComponent::SendUpdateRenderState()
 	{
 		if (ShouldRender() && IsRenderStateDirty())
 		{
-			this->GetWorld()->GetRenderScene()->UpdateCamera(this);
+			if (PWorld* World = this->GetWorld())
+			{
+				if (RSceneInterface* RenderScene = World->GetRenderScene())
+				{
+					RenderScene->UpdateCamera(this);
+				}
+			}
 		}
 		PSceneComponent::SendUpdateRenderState();
 	}

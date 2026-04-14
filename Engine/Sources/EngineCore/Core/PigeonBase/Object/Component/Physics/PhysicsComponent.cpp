@@ -1,5 +1,7 @@
 #include "PhysicsComponent.h"
 #include <PigeonBase/Object/Actor.h>
+#include <PigeonBase/Object/World/World.h>
+#include <PigeonBase/Object/World/WorldTickManager.h>
 #include <PhysicsConfig/PhysicsConfig.h>
 #if _EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
@@ -30,6 +32,52 @@ namespace PigeonEngine
 		InitPhysicsComponent();
 	}
 
+	void PPhysicsComponent::BeginAddedToScene(PWorld* World)
+	{
+		PActorComponent::BeginAddedToScene(World);
+		TryRegisterPostPhysicsTick();
+	}
+
+	void PPhysicsComponent::RemovedFromScene()
+	{
+		TryUnregisterPostPhysicsTick();
+		PActorComponent::RemovedFromScene();
+	}
+
+	void PPhysicsComponent::TryRegisterPostPhysicsTick()
+	{
+		if (GetWorld() && !bPostPhysicsTickRegistered)
+		{
+			PWorld* World = GetWorld();
+			const ObjectIdentityType ComponentID = GetUniqueID();
+			PostPhysicsTickHandler = TFunction<void(FLOAT)>([World, ComponentID](FLOAT deltaTime)
+			{
+				if (!World)
+				{
+					return;
+				}
+
+				const PActorComponent* FoundComponent = World->GetComponentByUniqueID(ComponentID, TRUE);
+				PPhysicsComponent* PhysicsComponent = dynamic_cast<PPhysicsComponent*>(const_cast<PActorComponent*>(FoundComponent));
+				if (PhysicsComponent)
+				{
+					PhysicsComponent->HandlePostPhysicsTick(deltaTime);
+				}
+			});
+            EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
+			bPostPhysicsTickRegistered = TRUE;
+		}
+	}
+
+	void PPhysicsComponent::TryUnregisterPostPhysicsTick()
+	{
+		if (bPostPhysicsTickRegistered)
+		{
+			EWorldTickManager::GetManagerSingleton()->UnregisterPostPhysicsTick(PostPhysicsTickHandler);
+			bPostPhysicsTickRegistered = FALSE;
+		}
+	}
+
 	void PPhysicsComponent::Uninit()
 	{
 		FPhysicsManager::GetSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
@@ -40,9 +88,25 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::Destroy()
 	{
-		PActorComponent::Destroy();
 		if (m_Shape)
 			RemoveShape();
+		RemoveShape();
+		PActorComponent::Destroy();
+	}
+
+	void PPhysicsComponent::HandlePostPhysicsTick(FLOAT deltaTime)
+	{
+		(void)deltaTime;
+		if (m_BodyId.IsInvalid() || !GetOwnerActor())
+		{
+			return;
+		}
+
+		if (MotionType != PhysicsUtility::EMotionType::Static)
+		{
+			GetOwnerActor()->SetActorLocation(FPhysicsManager::GetSingleton()->GetPosition(m_BodyId));
+			GetOwnerActor()->SetActorRotation(FPhysicsManager::GetSingleton()->GetRotation(m_BodyId));
+		}
 	}
 #if _EDITOR_ONLY
 	void PPhysicsComponent::EditorTick(FLOAT deltaTime)

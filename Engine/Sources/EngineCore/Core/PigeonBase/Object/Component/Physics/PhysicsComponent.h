@@ -57,6 +57,8 @@ namespace PigeonEngine
 		virtual void OnContactRemoved(const FPhysicsSubShapePair& inSubShapePair) override;
 
 	protected:
+        virtual void BeginAddedToScene(PWorld* World) override;
+        virtual void RemovedFromScene() override;
 		virtual void OnPhysicsBodyActivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
 		virtual void OnPhysicsBodyDeactivated(const FPhysicsBodyId& inBodyID, const ObjectIdentityType& inObjectID) {}
 		virtual EPhysicsContactValidateResult OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID1, const FPhysicsBodyId& inBodyID2, const Vector3& inBaseOffset, const FPhysicsContactValidateResult& inCollisionResult)
@@ -72,7 +74,12 @@ namespace PigeonEngine
 	private:
 		BOOL32 ContainsBody(const FPhysicsBodyId& InBodyID) const;
 		BOOL32 ContainsAnyBody(const FPhysicsBodyId& InBodyID1, const FPhysicsBodyId& InBodyID2) const;
+        void TryRegisterPostPhysicsTick();
+        void TryUnregisterPostPhysicsTick();
+		void HandlePostPhysicsTick(FLOAT deltaTime);
 		FShape* m_Shape = nullptr;
 		FPhysicsBodyId m_BodyId;
+		TFunction<void(FLOAT)> PostPhysicsTickHandler;
+		BOOL32 bPostPhysicsTickRegistered = FALSE;
 	};
 }

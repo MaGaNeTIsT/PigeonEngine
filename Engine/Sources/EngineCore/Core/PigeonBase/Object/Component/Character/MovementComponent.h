@@ -2,7 +2,7 @@
 #include "../Component.h"
 #include "../ActorComponent.h"
 #include "../../Actor/LevelCharacter.h"
-#include "PigeonBase/Object/Controller/CharacterController.h"
+#include "CharacterInputTypes.h"
 
 
 namespace PigeonEngine 
@@ -36,12 +36,19 @@ namespace PigeonEngine
 		void HandleInput(const ECharacterMoveInput& Input);
 
 	private:
+        virtual void BeginAddedToScene(PWorld* World) override;
+        virtual void RemovedFromScene() override;
 		virtual void HandleInputInternal(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 InSwitchStance, BOOL32 InRun);
+        void TryRegisterPostPhysicsTick();
+        void TryUnregisterPostPhysicsTick();
+		void HandlePostPhysicsTick(FLOAT deltaTime);
 
 	public:
 
 
 	private:
 		PCharacter* m_Character = nullptr;
+		TFunction<void(FLOAT)> PostPhysicsTickHandler;
+		BOOL32 bPostPhysicsTickRegistered = FALSE;
 	};
 }

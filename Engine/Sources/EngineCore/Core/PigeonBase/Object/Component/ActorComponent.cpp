@@ -31,6 +31,22 @@ namespace PigeonEngine
 		Owner = nullptr;
 	}
 
+	void PActorComponent::OnAddedToScene(PWorld* World)
+	{
+		if (!IsAddedToScene())
+		{
+			BeginAddedToScene(World);
+		}
+	}
+
+	void PActorComponent::OnRemovedFromScene()
+	{
+		if (IsAddedToScene())
+		{
+			RemovedFromScene();
+		}
+	}
+
 	void PActorComponent::SetOwnerActor(PActor* NewOwner)
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "You are setting this component's owner actor to a nullptr. ", NewOwner != nullptr);
@@ -40,6 +56,10 @@ namespace PigeonEngine
 
 	void PActorComponent::Destroy()
 	{
+		if (GetWorld())
+		{
+			OnRemovedFromScene();
+		}
 		RemoveFromOwnerActor();
 		PComponent::Destroy();
 	}

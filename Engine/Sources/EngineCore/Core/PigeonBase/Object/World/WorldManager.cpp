@@ -54,7 +54,7 @@ namespace PigeonEngine
     {
         if(this->World)
         {
-            this->World->Uninit();
+            this->World->Destroy();
             this->World = nullptr;
         }
     }

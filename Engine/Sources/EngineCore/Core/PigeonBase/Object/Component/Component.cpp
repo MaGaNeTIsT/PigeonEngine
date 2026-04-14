@@ -27,6 +27,7 @@ namespace PigeonEngine
 
 	void PComponent::Init()
 	{
+		SetInitialized(TRUE);
 	}
 
 	void PComponent::Uninit()
@@ -37,11 +38,7 @@ namespace PigeonEngine
 
 	void PComponent::Tick(FLOAT deltaTime)
 	{
-#if _EDITOR_ONLY
-		EditorTick(deltaTime);
-#else
-		FixedTick(deltaTime);
-#endif
+		(void)deltaTime;
 	}
 	void PComponent::FixedTick(FLOAT deltaTime)
 	{

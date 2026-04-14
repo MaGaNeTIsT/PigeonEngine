@@ -1,4 +1,5 @@
 #include "MainManager.h"
+#include "PigeonBase/Object/World/WorldTickManager.h"
 #include <CoreMinimal.h>
 #include <Config/EngineConfig.h>
 #include <RenderDevice/DeviceD3D11.h>
@@ -48,6 +49,18 @@ namespace PigeonEngine
 		m_ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
 
 		m_WorldManager = EWorldManager::GetManagerSingleton();
+        m_WorldTickManager = EWorldTickManager::GetManagerSingleton();
+		m_WorldFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		{
+			if (m_WorldManager && m_WorldManager->GetWorld())
+			{
+				m_WorldManager->GetWorld()->FixedTick(InDeltaTime);
+			}
+		});
+		m_PhysicsFixedTickHandler = TFunction<void(FLOAT)>([](FLOAT InDeltaTime)
+		{
+			FPhysicsManager::FixedUpdate(InDeltaTime);
+		});
 		
 	}
 	EMainManager::~EMainManager()
@@ -86,6 +99,7 @@ namespace PigeonEngine
 #endif
 		
 		m_WindowTimer.Init();
+        m_WorldTickManager->Initialize();
 		m_WorldManager->Initialize();
 
 		m_PhysicsManager->Initialize();
@@ -94,6 +108,7 @@ namespace PigeonEngine
 	{
 		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
+		m_WorldTickManager->ShutDown();
 
 #if _EDITOR_ONLY
 		m_EditorManager->ShutDown();
@@ -132,6 +147,9 @@ namespace PigeonEngine
 		RenderScene->Init();
 
 		m_GameTimer->Reset();
+        m_WorldTickManager->Init();
+		m_WorldTickManager->RegisterPrePhysicsTick(m_WorldFixedTickHandler);
+		m_WorldTickManager->RegisterPhysicsTick(m_PhysicsFixedTickHandler);
 
 		//need Init before world manager.
 		m_PhysicsManager->Init();
@@ -145,8 +163,11 @@ namespace PigeonEngine
 	}
 	void EMainManager::Uninit()
 	{
+        m_WorldTickManager->UnregisterPrePhysicsTick(m_WorldFixedTickHandler);
+		m_WorldTickManager->UnregisterPhysicsTick(m_PhysicsFixedTickHandler);
 		m_PhysicsManager->Uninit();
 		m_WorldManager->Uninit();
+        m_WorldTickManager->Uninit();
 		RenderScene->Uninit();
 
 		if (m_GameTimer)
@@ -162,6 +183,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		m_ImGUIManager->Update();
 		EditorUpdate();
+		m_WorldManager->GetWorld()->EditorTick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 #endif
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 
@@ -185,7 +207,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::FixedUpdate()
 	{
-		m_PhysicsManager->FixedUpdate(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+        m_WorldTickManager->Tick(static_cast <DOUBLE>(1) / static_cast<DOUBLE>(PigeonEngine::EEngineSettings::ENGINE_FIXED_UPDATE_FRAME));
 	}
 	void EMainManager::Draw()
 	{

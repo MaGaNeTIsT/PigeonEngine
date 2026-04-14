@@ -334,7 +334,7 @@ namespace PigeonEngine
 	void RDebugWireframePrimitiveManager::ShutDown()
 	{
 	}
-	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
+    void RDebugWireframePrimitiveManager::InitNewFrame()
 	{
 		{
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
@@ -366,6 +366,9 @@ namespace PigeonEngine
 			Check(CustomPrimitiveTransforms.Num() == CustomPrimitiveColors.Num());
 #endif
 		}
+	}
+	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
+	{
 
 		{
 			constexpr UINT32 TransformSize = sizeof(Matrix4x4) * PrimitiveDrawableMaxNum;

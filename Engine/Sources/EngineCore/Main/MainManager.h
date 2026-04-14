@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/BaseType.h>
@@ -58,6 +57,9 @@ namespace PigeonEngine
 		class EClassFactoryRegisterManager*	m_ClassFactoryRegisterManager	= nullptr;
 
 		class EWorldManager*                m_WorldManager					= nullptr;
+		class EWorldTickManager*			m_WorldTickManager				= nullptr;
+		TFunction<void(FLOAT)>				m_WorldFixedTickHandler;
+		TFunction<void(FLOAT)>				m_PhysicsFixedTickHandler;
 		
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);

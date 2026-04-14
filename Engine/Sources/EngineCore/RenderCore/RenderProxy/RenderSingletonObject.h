@@ -64,6 +64,7 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+		void			InitNewFrame();
 		void			RenderPrimitives_RenderThread(const class RViewProxy* InView);
 	public:
 		void			DrawSingleLine(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor = Color4::Black());

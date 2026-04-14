@@ -1,6 +1,5 @@
 #include "LevelCharacter.h"
 #include "../Component/Character/MovementComponent.h"
-#include "../Controller/CharacterController.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Shapes.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/Character/CharacterVirtual.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
@@ -45,11 +44,6 @@ void PigeonEngine::PCharacter::UninitCharacter()
 		Delete(CrouchingShape);
 		CrouchingShape = nullptr;
 	}
-	if (MovementComponent)
-	{
-		Delete(MovementComponent);
-		MovementComponent = nullptr;
-	}
 }
 
 PigeonEngine::FShape* PigeonEngine::PCharacter::GetStandingShape()
@@ -70,16 +64,6 @@ PigeonEngine::FCharacterVirtual* PigeonEngine::PCharacter::GetPhysicsCharacter()
 PigeonEngine::PMovementComponent* PigeonEngine::PCharacter::GetMovementComponent()
 {
 	return MovementComponent;
-}
-
-void PigeonEngine::PCharacter::SetCharacterController(PCharacterController* InController)
-{
-	CharacterController = InController;
-}
-
-PigeonEngine::PCharacterController* PigeonEngine::PCharacter::GetCharacterController() const
-{
-	return CharacterController;
 }
 
 #if _EDITOR_ONLY
@@ -118,10 +102,6 @@ void PigeonEngine::PCharacter::UserBeginPlay()
 void PigeonEngine::PCharacter::UserTick(FLOAT deltaTime)
 {
 	PPawn::UserTick(deltaTime);
-	if (MovementComponent && CharacterController)
-	{
-		MovementComponent->HandleInput(CharacterController->ConsumeMoveInput());
-	}
 }
 
 void PigeonEngine::PCharacter::UserEndPlay()

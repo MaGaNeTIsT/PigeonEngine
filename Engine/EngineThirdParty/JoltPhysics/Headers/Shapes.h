@@ -39,8 +39,8 @@ public:
 #endif
 	virtual AABBBox GetWorldSpaceBounds(Quaternion Rotation, Vector3 Scale) { return AABBBox(); }
 protected:
-	Shape* m_Shape;
-	ShapeSettings* m_ShapeSettings;
+	Shape* m_Shape = nullptr;
+	ShapeSettings* m_ShapeSettings = nullptr;
 protected:
 	virtual Shape* CreateShapeInternal() = 0;
 	virtual ShapeSettings* CreateShapeSettingsInternal() = 0;

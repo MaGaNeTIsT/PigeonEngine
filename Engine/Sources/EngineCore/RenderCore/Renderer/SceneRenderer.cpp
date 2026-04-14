@@ -260,6 +260,9 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitNewFrame()
 	{
+ #if _EDITOR_ONLY
+		DebugWireframePrimitiveManager->InitNewFrame();
+	#endif
 		InitRendererSettings();
 
 		InitViews();

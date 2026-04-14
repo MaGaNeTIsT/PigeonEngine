@@ -60,6 +60,7 @@ namespace PigeonEngine
 		{
 			child->Init();
 		}
+		SetInitialized(TRUE);
 	}
 
 	void PActor::Uninit()
@@ -69,17 +70,13 @@ namespace PigeonEngine
 
 	void PActor::Tick(FLOAT deltaTime)
 	{
-#if _EDITOR_ONLY
-		EditorTick(deltaTime);
-		//return;
-#endif
-		FixedTick(deltaTime);
+		UserTick(deltaTime);
 	}
 
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
-		this->RootComponent->TickRender();
-		if(!IsTickable())
+		this->RootComponent->TickRender();//something went wrong when tick render in tick.
+		if (!IsTickable())// if actor is not tickable will skip tick and fixed tick of components and child actors.
 		{
 			return;
 		}
@@ -92,7 +89,6 @@ namespace PigeonEngine
 		{
 			child->FixedTick(deltaTime);
 		}
-		UserTick(deltaTime);
 	}
 
 #if _EDITOR_ONLY
@@ -127,6 +123,7 @@ namespace PigeonEngine
 		if(this->AttachedParentActor)
 		{
 			this->AttachedParentActor->ChildrenActors.Remove(this);
+			AttachedParentActor = nullptr;
 		}
 		this->RootComponent->DetachFromParentComponent();
 		this->GetWorld()->AddActor(this);
@@ -150,8 +147,15 @@ namespace PigeonEngine
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
 		
+		if(Child->AttachedParentActor)
+		{
+			Child->AttachedParentActor->ChildrenActors.Remove(Child);
+		}
 		PSceneComponent::AttachComponentToComponent(Child->GetRootComponent(), Parent->GetRootComponent(), RelativeTransform);
-		Parent->ChildrenActors.Add(Child);
+		if(!Parent->ChildrenActors.Contains(Child))
+		{
+			Parent->ChildrenActors.Add(Child);
+		}
 		Child->AttachedParentActor = Parent;
 	}
 
@@ -203,12 +207,18 @@ namespace PigeonEngine
 
 	void PActor::DestroyActorsAttached()
 	{
-		// TSet<PActor*> ActorsAttached = this->ChildrenActors;
-
 		TArray<PActor*> ActorsAttached(this->ChildrenActors);
+		this->ChildrenActors.Empty();
 		for(auto& elem : ActorsAttached)
 		{
-			elem->DestroyActorsAttached();
+			if(!elem)
+			{
+				continue;
+			}
+			if(elem->AttachedParentActor == this)
+			{
+				elem->AttachedParentActor = nullptr;
+			}
 			elem->Destroy();
 		}
 	}
@@ -240,7 +250,11 @@ namespace PigeonEngine
 
 		if(this->GetWorld())
 		{
-			this->RootComponent->BeginAddedToScene(this->GetWorld());
+			if (!this->RootComponent->IsInitialized())
+			{
+				this->RootComponent->Init();
+			}
+			this->RootComponent->OnAddedToScene(this->GetWorld());
 		}
 		
 	}
@@ -336,12 +350,16 @@ namespace PigeonEngine
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
 		{
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
-			if (this->GetWorld())
-			{
-				SceneComp->BeginAddedToScene(this->GetWorld());
-			}
 		}
 		this->Components.Add(NewComponent);
+		if (this->GetWorld())
+		{
+			if (!NewComponent->IsInitialized())
+			{
+				NewComponent->Init();
+			}
+			NewComponent->OnAddedToScene(this->GetWorld());
+		}
 		
 	}
 
@@ -372,7 +390,19 @@ namespace PigeonEngine
 
 	void PActor::ClearComponents()
 	{
-		RootComponent->Destroy();
+		for (const auto& Component : Components)
+		{
+			if (Component)
+			{
+				Component->Destroy();
+			}
+		}
+		Components.Empty();
+		if (RootComponent)
+		{
+			RootComponent->Destroy();
+			RootComponent = nullptr;
+		}
 	}
 
 	EBoundAABB PActor::GetBounds()const
@@ -383,17 +413,63 @@ namespace PigeonEngine
 
 	void PActor::Destroy()
 	{
-		// RemoveFromScene
-		this->UserEndPlay();
+		if(AttachedParentActor)
+		{
+			AttachedParentActor->ChildrenActors.Remove(this);
+			AttachedParentActor = nullptr;
+		}
+
+		DestroyActorsAttached();
 		ClearComponents();
+		if (GetWorld())
+		{
+			RemovedFromScene();
+		}
 		PObject::Destroy();
 	}
 
 	void PActor::BeginAddedToScene(PWorld* World)
 	{
-		this->SetWorld(World);
-		this->RootComponent->BeginAddedToScene(this->GetWorld());
-		this->UserBeginPlay();
+		const BOOL32 bWasAddedToScene = IsAddedToScene();
+		PObject::BeginAddedToScene(World);
+		if (RootComponent)
+		{
+			RootComponent->OnAddedToScene(this->GetWorld());
+		}
+		for (const auto& Component : Components)
+		{
+			Component->OnAddedToScene(this->GetWorld());
+		}
+		for (const auto& Child : ChildrenActors)
+		{
+			Child->BeginAddedToScene(this->GetWorld());
+		}
+		if (!bWasAddedToScene)
+		{
+			this->UserBeginPlay();
+		}
+	}
+
+	void PActor::RemovedFromScene()
+	{
+		if (!IsAddedToScene())
+		{
+			return;
+		}
+		if (RootComponent)
+		{
+			RootComponent->OnRemovedFromScene();
+		}
+		for (const auto& Component : Components)
+		{
+			Component->OnRemovedFromScene();
+		}
+		for (const auto& Child : ChildrenActors)
+		{
+			Child->RemovedFromScene();
+		}
+		UserEndPlay();
+		PObject::RemovedFromScene();
 	}
 	
 
@@ -409,6 +485,7 @@ namespace PigeonEngine
 	{
 
 	}
+
 
 
 	PSceneComponent* PActor::GetRootComponent() const

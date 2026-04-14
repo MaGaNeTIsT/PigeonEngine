@@ -99,13 +99,13 @@ namespace PigeonEngine
     template <typename T>
     T& TSet<T>::operator[](const UINT32& Index)
     {
-        return Get(Index);
+        return GetRef(Index);
     }
 
     template <typename T>
     const T& TSet<T>::operator[](const UINT32& Index)const
     {
-        return Get(Index);
+        return GetRef(Index);
     }
 
     template <typename T>
@@ -117,8 +117,17 @@ namespace PigeonEngine
     template <typename T>
     T& TSet<T>::GetRef(const UINT32& Index) const
     {
-        PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index > Length());
-        return Elements[Index];
+        PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index < Num<UINT32>());
+
+        auto it = Elements.begin();
+        UINT32 iIndex = 0;
+        while (iIndex < Index && it != Elements.end())
+        {
+            ++it;
+            ++iIndex;
+        }
+
+        return const_cast<T&>(*it);
     }
 
     template <typename T>
@@ -132,6 +141,7 @@ namespace PigeonEngine
             {
                 return iIndex;
             }
+            ++it;
             iIndex++;
         }
         return ((UINT32)(-1));
@@ -153,17 +163,21 @@ namespace PigeonEngine
     template <typename T>
     void TSet<T>::RemoveAt(const UINT32& Index)
     {
-        if (Index > Num<UINT32>())
+        if (Index >= Num<UINT32>())
         {
             return;
         }
         UINT32 iIndex = 0;
         auto it = Elements.begin();
-        while(iIndex < Index)
+        while(iIndex < Index && it != Elements.end())
         {
             ++it;
+            ++iIndex;
         }
-        this->Elements.erase(it);
+        if (it != Elements.end())
+        {
+            this->Elements.erase(it);
+        }
     }
 
     template <typename T>
@@ -191,6 +205,6 @@ namespace PigeonEngine
     template <typename T>
     UINT32 TSet<T>::Last() const
     {
-        return Length() > 0 ? Length() - 1 : 0;
+        return Num<UINT32>() > 0 ? Num<UINT32>() - 1 : 0;
     }
 };

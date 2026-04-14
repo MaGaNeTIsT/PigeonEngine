@@ -21,6 +21,8 @@ namespace PigeonEngine
 	public:
 		PActor* GetOwnerActor()const;
 		void    RemoveFromOwnerActor();
+		void	OnAddedToScene(PWorld* World);
+		void	OnRemovedFromScene();
 	//protected: //Phyiscs Test note : Time 23/11/5
 		void    SetOwnerActor(PActor* NewOwner);
 	private:

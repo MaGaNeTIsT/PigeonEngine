@@ -190,10 +190,11 @@ namespace PigeonEngine
 	void PSceneComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
+		MyWolrd = World;
 		this->CreateRenderState();
 		for(const auto& child : this->ChildrenComponents)
 		{
-			child->BeginAddedToScene(MyWolrd);
+			child->BeginAddedToScene(World);
 		}
 	}
 

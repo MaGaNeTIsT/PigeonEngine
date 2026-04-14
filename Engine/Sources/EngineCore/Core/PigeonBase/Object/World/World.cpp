@@ -1,5 +1,7 @@
 ﻿#include "World.h"
+#include "World.h"
 #include "../../../../Main/MainManager.h"
+#include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include "PigeonBase/Object/Actor/LevelActor.h"
@@ -26,66 +28,76 @@ namespace PigeonEngine
 
     void PWorld::Init()
     {
-        if(Controller)
-        {
-            Controller->Destroy();
-            Controller = nullptr;
-        }
-       
-        if(RootActor)
+#if _EDITOR_ONLY
+		EditorController = nullptr;
+#endif
+        Controller = nullptr;
+
+        if (RootActor)
         {
             RootActor->Destroy();
             RootActor = nullptr;
         }
+
 		this->RootActor = new PLevelActor();
-        this->RootActor->SetActorScale(Vector3(1,1,1));
+		this->RootActor->SetActorScale(Vector3(1,1,1));
+		this->RootActor->SetIsTickable(TRUE);
+		if (!this->RootActor->IsInitialized())
+		{
+			this->RootActor->Init();
+		}
+		this->RootActor->BeginAddedToScene(this);
+
 #if _EDITOR_ONLY
         this->EditorController = new PEditorController();
         this->EditorController->SetIsTickable(TRUE);
         POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
         this->AddActor(EditorController);
+        this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+        this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
 #else
 
         this->Controller = new PController();
         this->Controller->SetIsTickable(TRUE);
         POBJ_DEBUGNAME_SET(this->Controller, "Controller");
         this->AddActor(Controller);
+        this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+        this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
 #endif
-        
-       
-        // this->Controller->BeginAddedToScene(this);
 
-        
-        this->RootActor->Init();
-        this->RootActor->BeginAddedToScene(this);
+		SetInitialized(TRUE);
     }
 
     void PWorld::Uninit()
     {
-        // PObject::Uninit();
-        this->Destroy();
+        PObject::Uninit();
     }
 
     void PWorld::Tick(FLOAT deltaTime)
     {
-#if _EDITOR_ONLY
-        EditorTick(deltaTime);
-        //return;
-#endif
-        FixTick(deltaTime);
+		if (RootActor)
+		{
+			RootActor->Tick(deltaTime);
+		}
         
     }
 
-    void PWorld::FixTick(FLOAT deltaTime)
+    void PWorld::FixedTick(FLOAT deltaTime)
     {
-        RootActor->FixedTick(deltaTime);
-    }
+		if (RootActor)
+		{
+			RootActor->FixedTick(deltaTime);
+		}
+	}
 
     void PWorld::Destroy()
     {
+#if _EDITOR_ONLY
+		EditorController = nullptr;
+#endif
+		Controller = nullptr;
         if(RootActor)
         {
-            // RootActor->DestroyActorsAttached();
             RootActor->Destroy();
             RootActor = nullptr;
         }
@@ -135,6 +147,10 @@ namespace PigeonEngine
         
         NewActor->AttachToActor(RootActor);
         NewActor->GetRootComponent()->SetComponentWorldTransform(Trans);
+		if (!NewActor->IsInitialized())
+		{
+			NewActor->Init();
+		}
         NewActor->BeginAddedToScene(this);
         // AllActors.Add(NewActor);
     }
