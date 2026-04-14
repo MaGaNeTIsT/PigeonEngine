@@ -50,5 +50,8 @@ namespace PigeonEngine
 		PCharacter* m_Character = nullptr;
 		TFunction<void(FLOAT)> PostPhysicsTickHandler;
 		BOOL32 bPostPhysicsTickRegistered = FALSE;
+        BOOL32 bHasSyncedTransform = FALSE;
+		Vector3 LastSyncedPosition = Vector3::Zero();
+		Quaternion LastSyncedRotation = Quaternion::Identity();
 	};
 }

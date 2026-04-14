@@ -112,23 +112,10 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::PrePhysicsUpdate()
 	{
-		//for (auto body = m_Bodys.Begin(); body != m_Bodys.End(); ++body)
-		//{
-		//	EGameObject* gameObject = GetScene()->GetGameObjectById(body->first);
-
-		//	SetPosition(obj.second, PhysicsUtility::Convert2Meter(gameObject->GetWorldPosition()));
-		//	SetRoation(obj.second, PhysicsUtility::Convert(gameObject->GetWorldRotation()));
-		//}
 	}
 
 	void FPhysics_Jolt::PostPhysicsUpdate()
 	{
-		//for (const auto& obj : m_Bodys)
-		//{
-		//	CGameObject* gameObject = CManager::GetScene()->GetGameObjectById(obj.first);
-		//	gameObject->SetWorldPosition(PhysicsUtility::Convert2Centimeter(GetPosition(obj.second)));
-		//	gameObject->SetWorldRotation(PhysicsUtility::Convert(GetRotation(obj.second)));
-		//}
 	}
 
 	void FPhysics_Jolt::AddCharacter(FCharacterVirtual* Character)

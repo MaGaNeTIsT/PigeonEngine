@@ -80,6 +80,11 @@ namespace PigeonEngine
 		FShape* m_Shape = nullptr;
 		FPhysicsBodyId m_BodyId;
 		TFunction<void(FLOAT)> PostPhysicsTickHandler;
+	private:
 		BOOL32 bPostPhysicsTickRegistered = FALSE;
+        BOOL32 bBodyActive = FALSE;
+		BOOL32 bHasSyncedTransform = FALSE;
+		Vector3 LastSyncedPosition = Vector3::Zero();
+		Quaternion LastSyncedRotation = Quaternion::Identity();
 	};
 }

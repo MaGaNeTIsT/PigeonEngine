@@ -71,6 +71,23 @@ JPH_INLINE JPH::Quat Convert(Quaternion Vec)
 	return JPH::Quat(Vec.x, Vec.y, Vec.z, Vec.w);
 }
 
+JPH_INLINE BOOL32 HasTransformChanged(
+	const Vector3& InPositionA,
+	const Quaternion& InRotationA,
+	const Vector3& InPositionB,
+	const Quaternion& InRotationB,
+	FLOAT InPositionTolerance = PE_KINDA_SMALL_NUMBER,
+	FLOAT InRotationTolerance = PE_SMALL_NUMBER)
+{
+	if (Vector3::DistanceSquare(InPositionA, InPositionB) > InPositionTolerance * InPositionTolerance)
+	{
+		return TRUE;
+	}
+
+	const FLOAT RotationDot = EMath::Abs(InRotationA.x * InRotationB.x + InRotationA.y * InRotationB.y + InRotationA.z * InRotationB.z + InRotationA.w * InRotationB.w);
+	return (1.0f - RotationDot) > InRotationTolerance;
+}
+
 JPH_INLINE float Convert2Meter(FLOAT centimeter)
 {
 	return centimeter * 0.01f;

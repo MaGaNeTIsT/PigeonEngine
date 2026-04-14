@@ -21,12 +21,21 @@ namespace PigeonEngine
 	void PMovementComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
+        if (m_Character)
+		{
+			LastSyncedPosition = m_Character->GetActorLocation();
+			LastSyncedRotation = m_Character->GetActorRotation();
+			bHasSyncedTransform = TRUE;
+		}
 		TryRegisterPostPhysicsTick();
 	}
 
 	void PMovementComponent::RemovedFromScene()
 	{
 		TryUnregisterPostPhysicsTick();
+        bHasSyncedTransform = FALSE;
+		LastSyncedPosition = Vector3::Zero();
+		LastSyncedRotation = Quaternion::Identity();
 		PActorComponent::RemovedFromScene();
 	}
 
@@ -79,8 +88,16 @@ namespace PigeonEngine
 
 		if (FCharacterVirtual* Character = m_Character->GetPhysicsCharacter())
 		{
-			m_Character->SetActorLocation(Character->GetPosition());
-			m_Character->SetActorRotation(Character->GetRotation());
+            const Vector3 NewPosition = Character->GetPosition();
+			const Quaternion NewRotation = Character->GetRotation();
+          if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
+			{
+				m_Character->SetActorLocation(NewPosition);
+				m_Character->SetActorRotation(NewRotation);
+				LastSyncedPosition = NewPosition;
+				LastSyncedRotation = NewRotation;
+				bHasSyncedTransform = TRUE;
+			}
 		}
 	}
 

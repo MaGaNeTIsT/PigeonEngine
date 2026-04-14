@@ -9,7 +9,6 @@
 
 namespace PigeonEngine 
 {
-
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<PPhysicsComponent, PActorComponent>();
@@ -97,15 +96,25 @@ namespace PigeonEngine
 	void PPhysicsComponent::HandlePostPhysicsTick(FLOAT deltaTime)
 	{
 		(void)deltaTime;
-		if (m_BodyId.IsInvalid() || !GetOwnerActor())
+        if (m_BodyId.IsInvalid() || !GetOwnerActor() || MotionType == PhysicsUtility::EMotionType::Static)
 		{
 			return;
 		}
 
-		if (MotionType != PhysicsUtility::EMotionType::Static)
+        if (!bBodyActive && bHasSyncedTransform)
 		{
-			GetOwnerActor()->SetActorLocation(FPhysicsManager::GetSingleton()->GetPosition(m_BodyId));
-			GetOwnerActor()->SetActorRotation(FPhysicsManager::GetSingleton()->GetRotation(m_BodyId));
+          return;
+		}
+
+		const Vector3 NewPosition = FPhysicsManager::GetSingleton()->GetPosition(m_BodyId);
+		const Quaternion NewRotation = FPhysicsManager::GetSingleton()->GetRotation(m_BodyId);
+        if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
+		{
+			GetOwnerActor()->SetActorLocation(NewPosition);
+			GetOwnerActor()->SetActorRotation(NewRotation);
+			LastSyncedPosition = NewPosition;
+			LastSyncedRotation = NewRotation;
+			bHasSyncedTransform = TRUE;
 		}
 	}
 #if _EDITOR_ONLY
@@ -144,6 +153,10 @@ namespace PigeonEngine
 		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
 		{
 			FPhysicsManager::GetSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
+            LastSyncedPosition = pos;
+			LastSyncedRotation = rot;
+			bHasSyncedTransform = TRUE;
+			bBodyActive = FALSE;
 		}
 	}
 
@@ -162,6 +175,10 @@ namespace PigeonEngine
 		FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
 		m_BodyId = FPhysicsBodyId();
 		m_Shape = nullptr;
+        bBodyActive = FALSE;
+		bHasSyncedTransform = FALSE;
+		LastSyncedPosition = Vector3::Zero();
+		LastSyncedRotation = Quaternion::Identity();
 	}
 
 	void PPhysicsComponent::AddForce(Vector3 InForce)
@@ -193,6 +210,7 @@ namespace PigeonEngine
 	{
 		if (ContainsBody(inBodyID))
 		{
+            bBodyActive = TRUE;
 			OnPhysicsBodyActivated(inBodyID, inObjectID);
 		}
 	}
@@ -201,6 +219,7 @@ namespace PigeonEngine
 	{
 		if (ContainsBody(inBodyID))
 		{
+            bBodyActive = FALSE;
 			OnPhysicsBodyDeactivated(inBodyID, inObjectID);
 		}
 	}

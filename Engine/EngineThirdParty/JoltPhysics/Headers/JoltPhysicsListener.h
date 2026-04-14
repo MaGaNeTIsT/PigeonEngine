@@ -385,7 +385,7 @@ public:
 		}
 	}
 
-	virtual void		OnBodyActivated(const BodyID& inBodyID, uint64 inBodyUserData) override
+	virtual void OnBodyActivated(const BodyID& inBodyID, uint64 inBodyUserData) override
 	{
 		FPhysicsBodyId PhysicsBodyId;
 		PhysicsBodyId.ID = inBodyID;
@@ -399,7 +399,7 @@ public:
 		}
 	}
 
-	virtual void		OnBodyDeactivated(const BodyID& inBodyID, uint64 inBodyUserData) override
+	virtual void OnBodyDeactivated(const BodyID& inBodyID, uint64 inBodyUserData) override
 	{
 		FPhysicsBodyId PhysicsBodyId;
 		PhysicsBodyId.ID = inBodyID;
@@ -437,7 +437,7 @@ public:
 	}
 
 	// See: ContactListener
-	virtual ValidateResult	OnContactValidate(const Body& inBody1, const Body& inBody2, RVec3Arg inBaseOffset, const CollideShapeResult& inCollisionResult) override
+	virtual ValidateResult OnContactValidate(const Body& inBody1, const Body& inBody2, RVec3Arg inBaseOffset, const CollideShapeResult& inCollisionResult) override
 	{
 		FPhysicsBodyId BodyId1;
 		BodyId1.ID = inBody1.GetID();
