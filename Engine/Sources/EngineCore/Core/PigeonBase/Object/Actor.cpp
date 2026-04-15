@@ -51,7 +51,6 @@ namespace PigeonEngine
 	
 	void PActor::Init()
 	{
-		this->RootComponent->Init();
 		for(const auto& Component : Components)
 		{
 			Component->Init();
@@ -70,24 +69,47 @@ namespace PigeonEngine
 
 	void PActor::Tick(FLOAT deltaTime)
 	{
+		this->RootComponent->TickRender();
+		if (!IsTickable())// if actor is not tickable will skip tick and fixed tick of components and child actors.
+		{
+			return;
+		}
+		for (const auto& Component : Components)
+		{
+			if (Component && Component->IsTickable())
+			{
+				Component->Tick(deltaTime);
+			}
+		}
+		for (const auto& child : ChildrenActors)
+		{
+			if(child && child->IsTickable())
+			{
+				child->Tick(deltaTime);
+			}
+		}
 		UserTick(deltaTime);
 	}
 
 	void PActor::FixedTick(FLOAT deltaTime)
 	{
-		this->RootComponent->TickRender();//something went wrong when tick render in tick.
 		if (!IsTickable())// if actor is not tickable will skip tick and fixed tick of components and child actors.
 		{
 			return;
 		}
 		for(const auto& Component : Components)
 		{
-			Component->FixedTick(deltaTime);
+			if (Component && Component->IsTickable())
+			{
+				Component->FixedTick(deltaTime);
+			}
 		}
-		RootComponent->FixedTick(deltaTime);
 		for(const auto& child : ChildrenActors)
 		{
-			child->FixedTick(deltaTime);
+			if (child && child->IsTickable())
+			{
+				child->FixedTick(deltaTime);
+			}
 		}
 	}
 
@@ -101,12 +123,17 @@ namespace PigeonEngine
 		}
 		for(const auto& Component : Components)
 		{
-			Component->EditorTick(deltaTime);
+			if (Component && Component->IsTickable())
+			{
+				Component->EditorTick(deltaTime);
+			}
 		}
-		RootComponent->EditorTick(deltaTime);
 		for(const auto& child : ChildrenActors)
 		{
-			child->EditorTick(deltaTime);
+			if (child && child->IsTickable())
+			{
+				child->EditorTick(deltaTime);
+			}
 		}
 	}
 #endif
@@ -229,6 +256,10 @@ namespace PigeonEngine
 
 		ETransform trans;
 		NewRoot->SetOwnerActor(this);
+      if (!Components.Contains(NewRoot))
+		{
+			Components.Add(NewRoot);
+		}
 		if (RootComponent)
 		{
 			trans = RootComponent->Transform;
@@ -392,17 +423,17 @@ namespace PigeonEngine
 	{
 		for (const auto& Component : Components)
 		{
-			if (Component)
+          if (Component && Component != RootComponent)
 			{
 				Component->Destroy();
 			}
 		}
-		Components.Empty();
 		if (RootComponent)
 		{
 			RootComponent->Destroy();
 			RootComponent = nullptr;
 		}
+       Components.Empty();
 	}
 
 	EBoundAABB PActor::GetBounds()const
@@ -432,10 +463,6 @@ namespace PigeonEngine
 	{
 		const BOOL32 bWasAddedToScene = IsAddedToScene();
 		PObject::BeginAddedToScene(World);
-		if (RootComponent)
-		{
-			RootComponent->OnAddedToScene(this->GetWorld());
-		}
 		for (const auto& Component : Components)
 		{
 			Component->OnAddedToScene(this->GetWorld());
@@ -455,10 +482,6 @@ namespace PigeonEngine
 		if (!IsAddedToScene())
 		{
 			return;
-		}
-		if (RootComponent)
-		{
-			RootComponent->OnRemovedFromScene();
 		}
 		for (const auto& Component : Components)
 		{

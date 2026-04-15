@@ -26,8 +26,8 @@ namespace PigeonEngine
 	void PPhysicsComponent::Init()
 	{
 		PActorComponent::Init();
-		FPhysicsManager::GetSingleton()->AddPhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
-		FPhysicsManager::GetSingleton()->AddPhysicsListener(static_cast<FContactEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->AddPhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		InitPhysicsComponent();
 	}
 
@@ -79,8 +79,8 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::Uninit()
 	{
-		FPhysicsManager::GetSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
-		FPhysicsManager::GetSingleton()->RemovePhysicsListener(static_cast<FContactEventListenerInterface*>(this));
+      FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		PActorComponent::Uninit();
 		UninitPhysicsComponent();
 	}
@@ -106,8 +106,8 @@ namespace PigeonEngine
           return;
 		}
 
-		const Vector3 NewPosition = FPhysicsManager::GetSingleton()->GetPosition(m_BodyId);
-		const Quaternion NewRotation = FPhysicsManager::GetSingleton()->GetRotation(m_BodyId);
+     const Vector3 NewPosition = FPhysicsManager::GetManagerSingleton()->GetPosition(m_BodyId);
+		const Quaternion NewRotation = FPhysicsManager::GetManagerSingleton()->GetRotation(m_BodyId);
         if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
 		{
 			GetOwnerActor()->SetActorLocation(NewPosition);
@@ -150,9 +150,9 @@ namespace PigeonEngine
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-		if (FPhysicsManager::GetSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
+      if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
 		{
-			FPhysicsManager::GetSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
+         FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
             LastSyncedPosition = pos;
 			LastSyncedRotation = rot;
 			bHasSyncedTransform = TRUE;
@@ -172,7 +172,7 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::RemoveShape()
 	{
-		FPhysicsManager::GetSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
+      FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
 		m_BodyId = FPhysicsBodyId();
 		m_Shape = nullptr;
         bBodyActive = FALSE;
@@ -183,12 +183,12 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::AddForce(Vector3 InForce)
 	{
-		FPhysicsManager::GetSingleton()->AddForce(m_BodyId, InForce);
+       FPhysicsManager::GetManagerSingleton()->AddForce(m_BodyId, InForce);
 	}
 
 	void PPhysicsComponent::AddImpluse(Vector3 InImpluse)
 	{
-		FPhysicsManager::GetSingleton()->AddImpulse(m_BodyId, InImpluse);
+       FPhysicsManager::GetManagerSingleton()->AddImpulse(m_BodyId, InImpluse);
 	}
 
 	void PPhysicsComponent::SetLayer(FPhysicsObjectLayer InLayer)

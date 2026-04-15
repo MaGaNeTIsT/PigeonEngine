@@ -1,30 +1,25 @@
 #pragma once
+#pragma once
+
 #include <CoreMinimal.h>
+#include <Base/DataStructure/ObjectBase.h>
 #include "JoltPhysics.h"
 #include "PhysicsQuery.h"
 
 PIGEONENGINE_NAMESPACE_BEGIN
-typedef FPhysics_Jolt FPhysicsInterface;
+using FPhysicsInterface = FPhysics_Jolt;
 
-class FPhysicsManager final : public FPhysicsInterface
+class FPhysicsManager final : public EManagerBase, public FPhysicsInterface
 {
-	CLASS_SINGLETON_BODY(FPhysicsManager)
+	CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(FPhysicsManager)
 public:
-	static void Initialize() {}
-	static void ShutDown() {}
-	static void StaticUpdate() {}
-public:
-	static void Init() { GetSingleton()->InitPhysics(); }
-	static void Uninit() { GetSingleton()->UninitPhysics(); }
-	static void Update() {}
-	static void SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig) { GetSingleton()->SetLayerConfig(InLayerConfig); }
-	static void FixedUpdate(FLOAT DeltaTime)
-	{
-		GetSingleton()->PrePhysicsUpdate();
-		GetSingleton()->PhysicsUpdate(DeltaTime);
-		GetSingleton()->PostPhysicsUpdate();
-	}
-	static void Draw() {}
+	void Initialize() override;
+	void ShutDown() override;
+	void Init();
+	void Uninit();
+	void Update();
+	void FixedUpdate(FLOAT DeltaTime);
+	void Draw();
 
 	// ---- Raycast ----
 
@@ -187,12 +182,6 @@ public:
 	{
 		return FPhysicsQuery::OverlapPoint(InPoint, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
-#if _EDITOR_ONLY
-public:
-	static void EditorUpdate() {}
-private:
-	BOOL32 m_EditorOpen = FALSE;
-#endif
 };
 
 PIGEONENGINE_NAMESPACE_END

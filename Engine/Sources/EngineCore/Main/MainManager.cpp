@@ -39,7 +39,7 @@ namespace PigeonEngine
 		
 		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
 
-		m_PhysicsManager	= FPhysicsManager::GetSingleton();
+		m_PhysicsManager	= FPhysicsManager::GetManagerSingleton();
 #if _EDITOR_ONLY
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
@@ -50,16 +50,30 @@ namespace PigeonEngine
 
 		m_WorldManager = EWorldManager::GetManagerSingleton();
         m_WorldTickManager = EWorldTickManager::GetManagerSingleton();
-		m_WorldFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		m_PrePhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
 		{
 			if (m_WorldManager && m_WorldManager->GetWorld())
 			{
 				m_WorldManager->GetWorld()->FixedTick(InDeltaTime);
 			}
+			if (m_PhysicsManager)
+			{
+				m_PhysicsManager->PrePhysicsUpdate(InDeltaTime);
+			}
 		});
-		m_PhysicsFixedTickHandler = TFunction<void(FLOAT)>([](FLOAT InDeltaTime)
+        m_PhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
 		{
-			FPhysicsManager::FixedUpdate(InDeltaTime);
+			if (m_PhysicsManager)
+			{
+				m_PhysicsManager->FixedUpdate(InDeltaTime);
+			}
+		});
+		m_PostPhysicsFixedTickHandler = TFunction<void(FLOAT)>([this](FLOAT InDeltaTime)
+		{
+			if (m_PhysicsManager)
+			{
+				m_PhysicsManager->PostPhysicsUpdate(InDeltaTime);
+			}
 		});
 		
 	}
@@ -148,8 +162,9 @@ namespace PigeonEngine
 
 		m_GameTimer->Reset();
         m_WorldTickManager->Init();
-		m_WorldTickManager->RegisterPrePhysicsTick(m_WorldFixedTickHandler);
+		m_WorldTickManager->RegisterPrePhysicsTick(m_PrePhysicsFixedTickHandler);
 		m_WorldTickManager->RegisterPhysicsTick(m_PhysicsFixedTickHandler);
+		m_WorldTickManager->RegisterPostPhysicsTick(m_PostPhysicsFixedTickHandler);
 
 		//need Init before world manager.
 		m_PhysicsManager->Init();
@@ -163,8 +178,9 @@ namespace PigeonEngine
 	}
 	void EMainManager::Uninit()
 	{
-        m_WorldTickManager->UnregisterPrePhysicsTick(m_WorldFixedTickHandler);
+        m_WorldTickManager->UnregisterPrePhysicsTick(m_PrePhysicsFixedTickHandler);
 		m_WorldTickManager->UnregisterPhysicsTick(m_PhysicsFixedTickHandler);
+		m_WorldTickManager->UnregisterPostPhysicsTick(m_PostPhysicsFixedTickHandler);
 		m_PhysicsManager->Uninit();
 		m_WorldManager->Uninit();
         m_WorldTickManager->Uninit();
@@ -187,6 +203,7 @@ namespace PigeonEngine
 #endif
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
 
+		m_PhysicsManager->Update();
 #if _EDITOR_ONLY
 		{
 			RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();

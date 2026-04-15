@@ -31,7 +31,7 @@ FCharacter::~FCharacter()
 }
 void FCharacter::AddToPhysicsSystem(PhysicsUtility::EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies)
 {
-	m_Character = New<Character>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem);
+	m_Character = New<Character>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
 	m_Character->AddToPhysicsSystem(inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 	CharacterBase = m_Character;
 }

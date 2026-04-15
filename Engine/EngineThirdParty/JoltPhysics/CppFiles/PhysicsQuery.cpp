@@ -8,7 +8,7 @@ namespace PigeonEngine
 	static void FillHitObjectIdentity(FRayCastHit& InOutHit)
 	{
 		InOutHit.ObjectId = 0u;
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (Manager)
 		{
 			Manager->FindObjectIdentityByBodyId(InOutHit.BodyId, InOutHit.ObjectId);
@@ -43,9 +43,7 @@ namespace PigeonEngine
 
 		Hit.BodyId.ID = InResult.mBodyID;
 
-		BodyLockRead Lock(
-			FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem->GetBodyLockInterfaceNoLock(),
-			InResult.mBodyID);
+		BodyLockRead Lock(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetBodyLockInterfaceNoLock(), InResult.mBodyID);
 		if (Lock.Succeeded())
 		{
 			const Body& HitBody = Lock.GetBody();
@@ -147,7 +145,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 
@@ -176,7 +174,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 
@@ -212,7 +210,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -247,7 +245,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -287,7 +285,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 
@@ -322,7 +320,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 
@@ -362,7 +360,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -401,7 +399,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -441,7 +439,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -479,7 +477,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 
@@ -517,7 +515,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 		if (InRadius <= 0.f)
@@ -555,7 +553,7 @@ namespace PigeonEngine
 		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter,
 		const FPhysicsQueryLayerFilterBase& InObjLayerFilter)
 	{
-		FPhysicsManager* Manager = FPhysicsManager::GetSingleton();
+		FPhysicsManager* Manager = FPhysicsManager::GetManagerSingleton();
 		if (!Manager || !Manager->GetPhysicsData() || !Manager->GetPhysicsData()->PhysicsSystem)
 			return FALSE;
 

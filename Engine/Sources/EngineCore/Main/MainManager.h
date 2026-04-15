@@ -58,8 +58,9 @@ namespace PigeonEngine
 
 		class EWorldManager*                m_WorldManager					= nullptr;
 		class EWorldTickManager*			m_WorldTickManager				= nullptr;
-		TFunction<void(FLOAT)>				m_WorldFixedTickHandler;
+		TFunction<void(FLOAT)>				m_PrePhysicsFixedTickHandler;
 		TFunction<void(FLOAT)>				m_PhysicsFixedTickHandler;
+		TFunction<void(FLOAT)>				m_PostPhysicsFixedTickHandler;
 		
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);

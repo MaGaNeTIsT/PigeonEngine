@@ -38,22 +38,16 @@ namespace PigeonEngine
 
 	void PComponent::Tick(FLOAT deltaTime)
 	{
-		(void)deltaTime;
+
 	}
 	void PComponent::FixedTick(FLOAT deltaTime)
 	{
-		if(!IsTickable())
-		{
-			return;
-		}
+
 	}
 #if _EDITOR_ONLY
 	void PComponent::EditorTick(FLOAT deltaTime)
 	{
-		if(!IsTickable())
-		{
-			return;
-		}
+
 	}
 #endif
 

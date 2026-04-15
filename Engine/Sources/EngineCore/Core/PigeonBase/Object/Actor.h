@@ -75,7 +75,7 @@ namespace PigeonEngine
 	protected:
 		static void AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform = ETransform());
 	private:
-		// contains components not scene component
+		// contains all actor components, including RootComponent
 		TSet<PActorComponent*> Components;
 
 	public:

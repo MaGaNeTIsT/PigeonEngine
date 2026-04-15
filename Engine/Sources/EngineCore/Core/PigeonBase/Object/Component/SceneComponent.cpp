@@ -144,16 +144,14 @@ namespace PigeonEngine
 		PActorComponent::Destroy();
 	}
 
+	void PSceneComponent::Tick(FLOAT deltaTime)
+	{
+		PActorComponent::Tick(deltaTime);
+	}
+
 	void PSceneComponent::FixedTick(FLOAT deltaTime)
 	{
 		PActorComponent::FixedTick(deltaTime);
-		for(const auto& elem : ChildrenComponents)
-		{
-			if(elem->GetOwnerActor() == this->GetOwnerActor())
-			{
-				elem->FixedTick(deltaTime);
-			}
-		}
 		// this->TickRender();
 	}
 
@@ -161,13 +159,6 @@ namespace PigeonEngine
 	void PSceneComponent::EditorTick(FLOAT deltaTime)
 	{
 		PActorComponent::EditorTick(deltaTime);
-		for(const auto& elem : ChildrenComponents)
-        {
-			if(elem->GetOwnerActor() == this->GetOwnerActor())
-			{
-				elem->EditorTick(deltaTime);
-			}
-        }
 		// this->TickRender();
 	}
 #endif

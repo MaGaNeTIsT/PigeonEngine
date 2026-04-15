@@ -1,6 +1,4 @@
 #pragma once
-#pragma once
-
 #include <CoreMinimal.h>
 #include "Base/Delegate/Delegate.h"
 #include "Base/DataStructure/ObjectBase.h"
@@ -19,42 +17,19 @@ namespace PigeonEngine
 		void Init();
 		void Uninit();
 
-		void Tick(FLOAT deltaTime)
-		{
-			OnPrePhysicsTick.Broadcast(deltaTime);
-			OnPhysicsTick.Broadcast(deltaTime);
-			OnPostPhysicsTick.Broadcast(deltaTime);
-		}
+		void Tick(FLOAT deltaTime);
 
-		void RegisterPrePhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPrePhysicsTick.Add(InHandler);
-		}
+		void RegisterPrePhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
-		void UnregisterPrePhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPrePhysicsTick.Remove(InHandler);
-		}
+		void UnregisterPrePhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
-		void RegisterPhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPhysicsTick.Add(InHandler);
-		}
+		void RegisterPhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
-		void UnregisterPhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPhysicsTick.Remove(InHandler);
-		}
+		void UnregisterPhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
-		void RegisterPostPhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPostPhysicsTick.Add(InHandler);
-		}
+		void RegisterPostPhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
-		void UnregisterPostPhysicsTick(const TFunction<void(FLOAT)>& InHandler)
-		{
-			OnPostPhysicsTick.Remove(InHandler);
-		}
+		void UnregisterPostPhysicsTick(const TFunction<void(FLOAT)>& InHandler);
 
 		FOnWorldPrePhysicsTick OnPrePhysicsTick;
 		FOnWorldPhysicsTick OnPhysicsTick;
@@ -63,31 +38,4 @@ namespace PigeonEngine
  private:
 		CLASS_MANAGER_SINGLETON_BODY(EWorldTickManager)
 	};
-
-	inline EWorldTickManager::EWorldTickManager()
-	{
-	}
-
-	inline EWorldTickManager::~EWorldTickManager()
-	{
-	}
-
-	inline void EWorldTickManager::Initialize()
-	{
-	}
-
-	inline void EWorldTickManager::ShutDown()
-	{
-		OnPrePhysicsTick.RemoveAll();
-		OnPhysicsTick.RemoveAll();
-		OnPostPhysicsTick.RemoveAll();
-	}
-
-	inline void EWorldTickManager::Init()
-	{
-	}
-
-	inline void EWorldTickManager::Uninit()
-	{
-	}
 }

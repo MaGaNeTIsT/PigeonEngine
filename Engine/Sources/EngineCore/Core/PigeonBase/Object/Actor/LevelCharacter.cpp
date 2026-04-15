@@ -23,14 +23,14 @@ void PigeonEngine::PCharacter::InitCharacter(FCharacterVirtualSettings& InCharac
 	Character = New<FCharacterVirtual>(InCharacterSettings);
 	MovementComponent = New<PMovementComponent>(this);
 	this->AddComponent(MovementComponent);
-	FPhysicsManager::GetSingleton()->AddCharacter(Character);
+	FPhysicsManager::GetManagerSingleton()->AddCharacter(Character);
 }
 
 void PigeonEngine::PCharacter::UninitCharacter()
 {
 	if (Character)
 	{
-		FPhysicsManager::GetSingleton()->RemoveCharacter(Character);
+        FPhysicsManager::GetManagerSingleton()->RemoveCharacter(Character);
 		Delete(Character);
 		Character = nullptr;
 	}

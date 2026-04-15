@@ -110,11 +110,11 @@ namespace PigeonEngine
 		PhysicsData = nullptr;
 	}
 
-	void FPhysics_Jolt::PrePhysicsUpdate()
+	void FPhysics_Jolt::PrePhysicsUpdate(FLOAT InDeltaTime)
 	{
 	}
 
-	void FPhysics_Jolt::PostPhysicsUpdate()
+	void FPhysics_Jolt::PostPhysicsUpdate(FLOAT InDeltaTime)
 	{
 	}
 

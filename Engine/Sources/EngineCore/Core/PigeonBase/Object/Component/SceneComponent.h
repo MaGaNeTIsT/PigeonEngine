@@ -49,6 +49,7 @@ namespace PigeonEngine
         virtual void Init() override;
         virtual void Uninit() override;
         virtual void Destroy() override;
+        void    Tick(FLOAT deltaTime) override;
         void	FixedTick(FLOAT deltaTime) override;
 #if _EDITOR_ONLY
         void	EditorTick(FLOAT deltaTime) override;

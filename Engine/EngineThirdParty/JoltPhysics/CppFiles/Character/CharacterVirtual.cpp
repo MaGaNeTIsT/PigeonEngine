@@ -8,12 +8,12 @@ namespace
 {
 	static auto GetBroadPhaseLayerFilter(const FCharacterVirtualSettings& InSettings)
 	{
-		return FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultBroadPhaseLayerFilter(InSettings.Layer.ToJolt());
+        return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultBroadPhaseLayerFilter(InSettings.Layer.ToJolt());
 	}
 
 	static auto GetObjectLayerFilter(const FCharacterVirtualSettings& InSettings)
 	{
-		return FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultLayerFilter(InSettings.Layer.ToJolt());
+      return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultLayerFilter(InSettings.Layer.ToJolt());
 	}
 }
 
@@ -60,7 +60,7 @@ void FCharacterVirtual::AddToPhysicsSystem(PhysicsUtility::EActivate inActivatio
 		RemoveFromPhysicsSystem();
 	}
 
-	m_Character = New<CharacterVirtual>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem);
+    m_Character = New<CharacterVirtual>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
 	m_Character->SetListener(&m_CharacterContactListener);
 	CharacterBase = m_Character;
 }
@@ -170,7 +170,7 @@ BOOL32 FCharacterVirtual::SetShape(FShape* inShape, FLOAT inMaxPenetrationDepth,
 	const auto ObjectLayerFilter = GetObjectLayerFilter(m_CharacterCreateSettings);
 	IgnoreSingleBodyFilter BodyFilter(m_Character->GetInnerBodyID());
 	ShapeFilter ShapeFilter;
-	if (m_Character->SetShape(inShape->CreateShape(), PhysicsUtility::Convert2Meter(inMaxPenetrationDepth), BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetSingleton()->GetPhysicsData()->TempAllocator))
+	if (m_Character->SetShape(inShape->CreateShape(), PhysicsUtility::Convert2Meter(inMaxPenetrationDepth), BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator))
 	{
 		Shape = inShape;
 		return TRUE;
@@ -183,7 +183,7 @@ void FCharacterVirtual::PostSimulation(FLOAT inDeltaTime, BOOL32 inLockBodies)
 	(void)inLockBodies;
 	if (inDeltaTime > 0.0f)
 	{
-		const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * m_CharacterCreateSettings.GravityFactor;
+      const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * m_CharacterCreateSettings.GravityFactor;
 		m_Character->SetLinearVelocity(m_Character->GetLinearVelocity() + PhysicsUtility::Convert(Gravity * inDeltaTime));
 	}
 
@@ -192,7 +192,7 @@ void FCharacterVirtual::PostSimulation(FLOAT inDeltaTime, BOOL32 inLockBodies)
 	IgnoreSingleBodyFilter BodyFilter(m_Character->GetInnerBodyID());
 	ShapeFilter ShapeFilter;
 	CharacterVirtual::ExtendedUpdateSettings UpdateSettings;
-	m_Character->ExtendedUpdate(inDeltaTime, FPhysicsManager::GetSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity(), UpdateSettings, BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetSingleton()->GetPhysicsData()->TempAllocator);
+	m_Character->ExtendedUpdate(inDeltaTime, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity(), UpdateSettings, BroadPhaseLayerFilter, ObjectLayerFilter, BodyFilter, ShapeFilter, *FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->TempAllocator);
 }
 
 void FCharacterVirtual::AddListener(FCharacterContactEventListenerInterface* InListener)

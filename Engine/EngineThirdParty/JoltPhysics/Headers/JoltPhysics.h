@@ -29,12 +29,11 @@ public:
 	FPhysics_Jolt() : PhysicsData(nullptr), LayerConfig(nullptr) {}
 	virtual ~FPhysics_Jolt() {}
 public:
-	virtual void InitPhysics();
-	virtual void UninitPhysics();
-	virtual void PrePhysicsUpdate();
-	virtual void PhysicsUpdate(FLOAT DeltaTime);
-	virtual void PostPhysicsUpdate();
-
+	virtual void InitPhysics() override;
+	virtual void UninitPhysics() override;
+	virtual void PrePhysicsUpdate(FLOAT InDeltaTime) override;
+	virtual void PhysicsUpdate(FLOAT DeltaTime) override;
+	virtual void PostPhysicsUpdate(FLOAT InDeltaTime) override;
 	FPhysicsData* GetPhysicsData() { return PhysicsData; }
 
 	void AddCharacter(class FCharacterVirtual* Character);
