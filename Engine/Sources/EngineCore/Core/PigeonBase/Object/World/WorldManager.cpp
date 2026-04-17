@@ -1,5 +1,4 @@
 ﻿#include "WorldManager.h"
-#include "WorldManager.h"
 
 #include "World.h"
 #include "../../Development/Message/Message.h"
