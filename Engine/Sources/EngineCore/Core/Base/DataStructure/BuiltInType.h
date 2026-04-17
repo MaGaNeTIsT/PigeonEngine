@@ -141,10 +141,28 @@ namespace PigeonEngine
 	using TRemoveRefType = std::remove_reference_t<_Ty>;
 
 	template<typename _Ty>
+	using TRemoveCV = std::remove_cv<_Ty>;
+
+	template<typename _Ty>
+	using TRemoveCVType = std::remove_cv_t<_Ty>;
+
+	template<typename _Ty>
+	using TRemovePointer = std::remove_pointer<_Ty>;
+
+	template<typename _Ty>
+	using TRemovePointerType = std::remove_pointer_t<_Ty>;
+
+	template<typename _Ty>
 	using TRemoveExtent = std::remove_extent<_Ty>;
 
 	template<typename _Ty>
 	using TRemoveExtentType = std::remove_extent_t<_Ty>;
+
+	template<typename _Ty>
+	using TDecay = std::decay<_Ty>;
+
+	template<typename _Ty>
+	using TDecayType = std::decay_t<_Ty>;
 
 	template<typename _Ty1, typename _Ty2>
 	using TIsSame = std::is_same<_Ty1, _Ty2>;

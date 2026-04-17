@@ -1,7 +1,9 @@
 ﻿#include "WorldManager.h"
+#include "WorldManager.h"
 
 #include "World.h"
-
+#include "../../Development/Message/Message.h"
+#include <Editor/EditorLogManager.h>
 #if _EDITOR_ONLY
 #include <imgui.h>
 #endif
@@ -11,6 +13,11 @@ namespace PigeonEngine
     static void RegisterClassTypes()
     {
         RegisterClassType<EWorldManager, EManagerBase>();
+    }
+
+    static void LogTestMessage(const EString& InMessage)
+    {
+        PE_LOG_LOG(EString("[TestMessage] ") + InMessage);
     }
 
     PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);

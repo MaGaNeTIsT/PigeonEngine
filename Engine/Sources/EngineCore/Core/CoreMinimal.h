@@ -17,6 +17,7 @@
 #include <Base/DataStructure/Container/HashMap.h>
 #include <Base/DataStructure/Container/Map.h>
 #include <Base/DataStructure/Container/Set.h>
+#include <Base/DataStructure/Tuple.h>
 
 #include <Base/DataStructure/Transform.h>
 #include <Config/EngineConfig.h>

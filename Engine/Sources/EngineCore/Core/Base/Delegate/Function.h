@@ -12,6 +12,12 @@ namespace PigeonEngine
     template <typename FuncType>
     class TFunction;
 
+    template<typename FuncType>
+    using TFunctionStorage = std::function<FuncType>;
+
+    template<typename FuncType, typename CallableType>
+    using TIsFunctionConstructible = std::is_constructible<TFunctionStorage<FuncType>, CallableType>;
+
     template <typename Ret, typename... Args>
     class TFunction<Ret (Args...)>
     {
