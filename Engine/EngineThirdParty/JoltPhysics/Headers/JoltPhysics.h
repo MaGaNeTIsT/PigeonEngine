@@ -34,6 +34,8 @@ public:
 	virtual void PrePhysicsUpdate(FLOAT InDeltaTime) override;
 	virtual void PhysicsUpdate(FLOAT DeltaTime) override;
 	virtual void PostPhysicsUpdate(FLOAT InDeltaTime) override;
+    virtual void SetGravity(Vector3 inGravity) override;
+	virtual Vector3 GetGravity() const override;
 	FPhysicsData* GetPhysicsData() { return PhysicsData; }
 
 	void AddCharacter(class FCharacterVirtual* Character);
@@ -60,7 +62,6 @@ public:
 	void AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse);
 	void AddImpulse(const FPhysicsBodyId& inPhysicsBodyId, Vector3 inImpulse, Vector3 inPoint);
 
-	void SetGravity(Vector3 inGravity);
 	void SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig);
 	const FPhysicsLayerConfig& GetLayerConfig() const;
 private:

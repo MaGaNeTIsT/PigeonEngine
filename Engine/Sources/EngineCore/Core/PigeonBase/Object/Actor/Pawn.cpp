@@ -3,6 +3,13 @@
 
 namespace PigeonEngine
 {
+    static void RegisterClassTypes()
+    {
+        RegisterClassType<PPawn, PActor>();
+    }
+
+    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
     PPawn::PPawn()
     {
         POBJ_DEBUGNAME_SET(this, "Pawn");

@@ -275,7 +275,20 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::SetGravity(Vector3 inGravity)
 	{
-		PhysicsData->PhysicsSystem->SetGravity(PhysicsUtility::Convert2Meter(inGravity));
+        if (PhysicsData && PhysicsData->PhysicsSystem)
+		{
+			PhysicsData->PhysicsSystem->SetGravity(PhysicsUtility::Convert2Meter(inGravity));
+		}
+	}
+
+	Vector3 FPhysics_Jolt::GetGravity() const
+	{
+		if (PhysicsData && PhysicsData->PhysicsSystem)
+		{
+			return PhysicsUtility::Convert2Centimeter(PhysicsData->PhysicsSystem->GetGravity());
+		}
+
+		return Vector3(0.f, -981.f, 0.f);
 	}
 
 	void FPhysics_Jolt::SetLayerConfig(const FPhysicsLayerConfig& InLayerConfig)

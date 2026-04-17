@@ -9,6 +9,18 @@
 
 namespace PigeonEngine
 {
+    namespace
+    {
+        Vector3 NormalizeOrDefault(const Vector3& InVector, const Vector3& InDefaultVector)
+        {
+            if (InVector.LengthSquare() <= PE_SMALL_NUMBER)
+            {
+                return InDefaultVector;
+            }
+
+            return Vector3::Normalize(InVector);
+        }
+    }
 
     static void RegisterClassTypes()
     {
@@ -64,6 +76,8 @@ namespace PigeonEngine
         this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
         this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
 #endif
+
+        ApplyGravitySettings();
 
 		SetInitialized(TRUE);
     }
@@ -188,6 +202,74 @@ namespace PigeonEngine
         return this->Controller;
 #endif
 	}
+
+    const Vector3& PWorld::GetUpVector() const
+    {
+        return UpVector;
+    }
+
+    void PWorld::SetUpVector(const Vector3& InUpVector)
+    {
+        UpVector = NormalizeOrDefault(InUpVector, Vector3::YVector());
+        OnUpVectorChanged.Broadcast(UpVector);
+        if (GravitySettings.bUseUpVector)
+        {
+            ApplyGravitySettings();
+        }
+    }
+
+    Vector3 PWorld::GetGravity() const
+    {
+        const Vector3 WorldUp = NormalizeOrDefault(UpVector, Vector3::YVector());
+        const FLOAT GravityStrength = EMath::Abs(GravitySettings.GravityStrength);
+
+        if (GravitySettings.bUseUpVector)
+        {
+            return -WorldUp * GravityStrength;
+        }
+
+        const Vector3 GravityDirection = NormalizeOrDefault(GravitySettings.GravityDirection, -WorldUp);
+        return GravityDirection * GravityStrength;
+    }
+
+    const FWorldGravitySettings& PWorld::GetGravitySettings() const
+    {
+        return GravitySettings;
+    }
+
+    void PWorld::SetGravity(const Vector3& InGravity)
+    {
+        GravitySettings.bUseUpVector = FALSE;
+        GravitySettings.GravityStrength = Vector3::Length(InGravity);
+        GravitySettings.GravityDirection = GravitySettings.GravityStrength <= PE_SMALL_NUMBER ? -GetUpVector() : Vector3::Normalize(InGravity);
+        ApplyGravitySettings();
+    }
+
+    void PWorld::SetGravitySettings(const FWorldGravitySettings& InGravitySettings)
+    {
+        GravitySettings = InGravitySettings;
+        GravitySettings.GravityStrength = EMath::Abs(GravitySettings.GravityStrength);
+        GravitySettings.GravityDirection = NormalizeOrDefault(GravitySettings.GravityDirection, -GetUpVector());
+        ApplyGravitySettings();
+    }
+
+    BOOL32 PWorld::IsGravityUsingUpVector() const
+    {
+        return GravitySettings.bUseUpVector;
+    }
+
+    void PWorld::SetGravityUseUpVector(BOOL32 bInUseUpVector)
+    {
+        GravitySettings.bUseUpVector = bInUseUpVector;
+        ApplyGravitySettings();
+    }
+
+    void PWorld::ApplyGravitySettings()
+    {
+        const Vector3 WorldGravity = GetGravity();
+        FPhysicsManager::GetManagerSingleton()->SetGravity(WorldGravity);
+        OnGravityChanged.Broadcast(WorldGravity);
+    }
 
     const EGameTimer* PWorld::GetGameTimer() const
     {

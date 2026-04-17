@@ -3,6 +3,7 @@
 #include "../../../../Editor/EditorLogManager.h"
 #include "../../../../HID/Input/InputType.h"
 #include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
+#include "PigeonBase/Object/World/World.h"
 
 #if _EDITOR_ONLY
 #include <imgui.h>
@@ -157,7 +158,7 @@ namespace PigeonEngine
             
             Quaternion CurrentRotation = this->GetActorRotation();
             
-            const Vector3 WorldUpDir    = Vector3(0.f, 1.f, 0.f);
+            const Vector3 WorldUpDir    = this->GetWorld() ? this->GetWorld()->GetUpVector() : Vector3::YVector();
             const Vector3 ActorRightDir = this->GetActorRightVector();
             Quaternion A = MakeQuaternion(ActorRightDir, DeltaMouse.y * RotationSpeed * deltaTime);
             Quaternion B = MakeQuaternion(WorldUpDir,    DeltaMouse.x * RotationSpeed * deltaTime);
@@ -183,7 +184,8 @@ namespace PigeonEngine
             MovingDirection.y = bQPressed ? (bEPressed ? 0.0f :  1.0f) : (bEPressed ? -1.0f : 0.0f);
             
             Vector3 CurrentLoc = this->GetActorLocation();
-            this->SetActorLocation(CurrentLoc + (MovingDirection.x * this->GetActorRightVector() + MovingDirection.y * this->GetActorUpVector() + MovingDirection.z * this->GetActorForwardVector()) * MovingSpeed * deltaTime );
+			Vector3 WorldUpDir = this->GetWorld() ? this->GetWorld()->GetUpVector() : Vector3::YVector();
+            this->SetActorLocation(CurrentLoc + (MovingDirection.x * this->GetActorRightVector() + MovingDirection.y * WorldUpDir + MovingDirection.z * this->GetActorForwardVector()) * MovingSpeed * deltaTime);
         }
     }
 

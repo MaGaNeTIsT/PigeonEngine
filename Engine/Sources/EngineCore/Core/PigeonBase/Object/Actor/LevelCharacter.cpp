@@ -5,6 +5,17 @@
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 
 #include <PhysicsConfig/PhysicsConfig.h>
+#include <PigeonBase/Object/World/World.h>
+
+namespace PigeonEngine
+{
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PCharacter, PPawn>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+}
 
 PigeonEngine::PCharacter::PCharacter()
 {
@@ -46,6 +57,20 @@ void PigeonEngine::PCharacter::UninitCharacter()
 	}
 }
 
+void PigeonEngine::PCharacter::SetUp(Vector3 UpVector)
+{
+	FCharacterVirtual* PhysicsCharacter = GetPhysicsCharacter();
+	if (PhysicsCharacter)
+	{
+		PhysicsCharacter->SetUp(UpVector);
+	}
+}
+
+void PigeonEngine::PCharacter::HandleWorldUpVectorChanged(const Vector3& InUpVector)
+{
+	SetUp(InUpVector);
+}
+
 PigeonEngine::FShape* PigeonEngine::PCharacter::GetStandingShape()
 {
 	return StandingShape;
@@ -82,13 +107,29 @@ void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)
 void PigeonEngine::PCharacter::BeginAddedToScene(PWorld* World)
 {
 	PPawn::BeginAddedToScene(World);
+    OnWorldUpVectorChangedHandler = [this](const Vector3& InUpVector)
+	{
+		HandleWorldUpVectorChanged(InUpVector);
+	};
+	if (World)
+	{
+		World->OnUpVectorChanged.Add(OnWorldUpVectorChangedHandler);
+	}
 	Character->AddToPhysicsSystem(EActivate::Activate, GetActorLocation(), GetActorRotation(), GetUniqueID());
 	Character->AddListener(this);
 	Character->Activate();
+	if (World && Character)
+	{
+        HandleWorldUpVectorChanged(World->GetUpVector());
+	}
 }
 
 void PigeonEngine::PCharacter::RemovedFromScene()
 {
+    if (PWorld* World = GetWorld())
+	{
+		World->OnUpVectorChanged.Remove(OnWorldUpVectorChangedHandler);
+	}
 	PPawn::RemovedFromScene();
 	Character->RemoveListener(this);
 	Character->RemoveFromPhysicsSystem();

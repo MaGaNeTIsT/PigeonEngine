@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <CoreMinimal.h>
+#include <Base/Delegate/Delegate.h>
 #include <Base/DataStructure/Pointer/SharedPtr.h>
 #include <EngineCommon.h>
 #include <PigeonBase/Object/Object.h>
@@ -21,6 +22,21 @@ namespace PigeonEngine
         EWT_EDITOR,
         EWT_RUN_IN_EDITOR, // maybe useless
     };
+
+    class FWorldGravitySettings
+    {
+    public:
+        Vector3 GravityDirection = -Vector3::YVector();
+        FLOAT GravityStrength = 981.f;
+#if _EDITOR_ONLY
+        BOOL32 bUseUpVector = TRUE;
+#else
+        BOOL32 bUseUpVector = FALSE;
+#endif
+    };
+
+    MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldUpVectorChanged, const Vector3&)
+    MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldGravityChanged, const Vector3&)
     
     /*
      * actual world in runtime
@@ -66,8 +82,22 @@ namespace PigeonEngine
 
     public:
         class PController* GetController()const;
+        PE_NODISCARD const Vector3& GetUpVector() const;
+        void SetUpVector(const Vector3& InUpVector);
+        PE_NODISCARD Vector3 GetGravity() const;
+        PE_NODISCARD const FWorldGravitySettings& GetGravitySettings() const;
+        void SetGravity(const Vector3& InGravity);
+        void SetGravitySettings(const FWorldGravitySettings& InGravitySettings);
+        PE_NODISCARD BOOL32 IsGravityUsingUpVector() const;
+        void SetGravityUseUpVector(BOOL32 bInUseUpVector);
+        FOnWorldUpVectorChanged OnUpVectorChanged;
+        FOnWorldGravityChanged OnGravityChanged;
     private:
         class PController* Controller = nullptr;
+        Vector3 UpVector = Vector3::YVector();
+        FWorldGravitySettings GravitySettings;
+    private:
+        void ApplyGravitySettings();
     public:
         const EGameTimer* GetGameTimer() const;
   

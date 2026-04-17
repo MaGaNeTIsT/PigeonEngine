@@ -9,6 +9,19 @@
 
 namespace PigeonEngine
 {
+   namespace
+	{
+		Vector3 GetCharacterWorldUp(const PCharacter* InCharacter)
+		{
+			if (InCharacter && InCharacter->GetWorld())
+			{
+				return InCharacter->GetWorld()->GetUpVector();
+			}
+
+			return Vector3::YVector();
+		}
+	}
+
 	PMovementComponent::~PMovementComponent()
 	{
 	}
@@ -111,15 +124,16 @@ namespace PigeonEngine
 	void PMovementComponent::HandleInputInternal(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 InSwitchStance, BOOL32 InRun)
 	{
 		FCharacterVirtual* Character = m_Character->GetPhysicsCharacter();
+		const Vector3 WorldUp = GetCharacterWorldUp(m_Character);
 		//character->SetPositionAndRotation(m_Character->GetActorLocation(), m_Character->GetActorRotation());
 		FCharacterBase::EGroundState GroundState = Character->GetGroundState();
 		if (GroundState == FCharacterBase::EGroundState::OnSteepGround
 			|| GroundState == FCharacterBase::EGroundState::NotSupported)
 		{
 			Vector3 Normal = Character->GetGroundNormal();
-			Normal.y = (0.0f);
+			Normal -= WorldUp * Vector3::Dot(Normal, WorldUp);
 			float Dot = Normal.Dot(InMovementDirection);
-			if (Dot < 0.0f)
+         if (Dot < 0.0f && Normal.LengthSquare() > PE_SMALL_NUMBER)
 				InMovementDirection -= (Dot * Normal) / Normal.LengthSquare();
 		}
 
@@ -131,13 +145,13 @@ namespace PigeonEngine
 		{
 			// Update velocity
 			Vector3 CurrentVelocity = Character->GetLinearVelocity();
-			Vector3 DesiredVelocity = InRun ? m_Character->CharacterRunSpeed : m_Character->CharacterSpeed * InMovementDirection;
-			DesiredVelocity.y = CurrentVelocity.y;
+            Vector3 DesiredVelocity = (InRun ? m_Character->CharacterRunSpeed : m_Character->CharacterSpeed) * InMovementDirection;
+			DesiredVelocity += WorldUp * Vector3::Dot(CurrentVelocity, WorldUp);
 			Vector3 NewVelocity = 0.75f * CurrentVelocity + 0.25f * DesiredVelocity;
 
 			// Jump
 			if (InJump && Character->IsSupported())
-				NewVelocity.y = m_Character->JumpSpeed;
+             NewVelocity += WorldUp * (m_Character->JumpSpeed - Vector3::Dot(NewVelocity, WorldUp));
 
 			// Update the velocity
 			Character->SetLinearVelocity(NewVelocity);

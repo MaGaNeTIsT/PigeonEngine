@@ -13,6 +13,8 @@ namespace PigeonEngine
 		virtual void InitCharacter(class FCharacterVirtualSettings& InCharacterSettings);
 		virtual void UninitCharacter();
 
+		virtual void SetUp(Vector3 UpVector);
+
 		class FShape* GetStandingShape();
 		class FShape* GetCrouchingShape();
 		class FCharacterVirtual* GetPhysicsCharacter();
@@ -36,6 +38,7 @@ namespace PigeonEngine
 		virtual void OnPhysicsContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) {}
 
 	private:
+        void HandleWorldUpVectorChanged(const Vector3& InUpVector);
 		virtual void OnAdjustBodyVelocity(const FPhysicsBodyId& inBodyID2, Vector3& ioLinearVelocity, Vector3& ioAngularVelocity) override;
 		virtual bool OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) override;
 		virtual void OnContactAdded(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, FPhysicsCharacterContactSettings& ioSettings) override;
@@ -56,5 +59,6 @@ namespace PigeonEngine
 		class FCharacterVirtual* Character = nullptr;
 		class FShape* StandingShape = nullptr;
 		class FShape* CrouchingShape = nullptr;
+        TFunction<void(const Vector3&)> OnWorldUpVectorChangedHandler;
 	};
 }
