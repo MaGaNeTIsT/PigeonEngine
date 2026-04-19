@@ -3,6 +3,7 @@
 #include "../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Config/EngineConfig.h>
+#include <Base/DataStructure/Container/Array.h>
 #include "Mouse.h"
 #include "Keyboard.h"
 #include "Base/Delegate/Delegate.h"
@@ -22,8 +23,8 @@ namespace PigeonEngine
 		HWND hWnd = NULL;
 
 		/*Mouse part start*/
-	public:
-		std::pair<INT32, INT32> GetMousePosition() const;
+ public:
+		TPair<INT32, INT32> GetMousePosition() const;
 
 		void EnableCursor();
 		void DisableCursor();
@@ -38,26 +39,26 @@ namespace PigeonEngine
 		void DisableMouseRaw();
 		BOOL32 IsMouseRawEnabled() const;
 
-		BOOL32 IsLeftMouseButtonDown()const;
+        BOOL32 IsLeftMouseButtonDown()const;
 		BOOL32 IsRightMouseButtonDown()const;
-		std::optional<IMouse::RawDelta> ReadRawDelta();
+		TOptional<IMouse::RawDelta> ReadRawDelta();
 
 	private:
 		IMouse Mouse;
 		BOOL32 bCursorEnabled = TRUE;
-		std::vector<BYTE> rawBuffer;
+        TArray<BYTE> rawBuffer;
 
 		/*Mouse part end*/
 
 		/*Keyboard Part Start*/
 	public:
 		// key event stuff
-		BOOL32 IsKeyPressed(BYTE keycode) const;
-		std::optional<IKeyboard::Event> ReadKey();
+        BOOL32 IsKeyPressed(BYTE keycode) const;
+		TOptional<IKeyboard::Event> ReadKey();
 		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
-		// char event stuff
-		std::optional<char> ReadChar();
+        // text event stuff
+		TOptional<WCHAR> ReadChar();
 		BOOL32 IsCharEmpty() const;
 		void FlushChar();
 		void Flush();
@@ -65,8 +66,13 @@ namespace PigeonEngine
 		void EnableAutorepeat();
 		void DisableAutorepeat();
 		BOOL32 IsAutorepeatEnabled() const;
+     void EnableTextInput();
+		void DisableTextInput();
+		BOOL32 IsTextInputEnabled() const;
 	private:
 		IKeyboard Keyboard;
+		BOOL32 bTextInputEnabled = FALSE;
+		void ApplyTextInputState();
 
 		/*Keyboard Part End*/
 
@@ -87,8 +93,14 @@ namespace PigeonEngine
 		//private:
 		//	static BYTE		m_OldKeyState[256];
 		//	static BYTE		m_KeyState[256];
-	public:
-		static std::optional<IMouse::RawDelta>	ReadRawDelta();
+ public:
+		static TOptional<IMouse::RawDelta>	ReadRawDelta();
+		static TOptional<WCHAR>				ReadChar();
+		static BOOL32						IsCharEmpty();
+        static void							FlushChar();
+		static void							EnableTextInput();
+		static void							DisableTextInput();
+		static BOOL32						IsTextInputEnabled();
 	public:
 		// WIndow message handler
 		static LRESULT	HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);

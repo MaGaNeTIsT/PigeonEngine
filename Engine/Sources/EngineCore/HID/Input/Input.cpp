@@ -24,9 +24,33 @@ namespace PigeonEngine
 		
 	}
 	
-	std::optional<IMouse::RawDelta> EInput::ReadRawDelta()
+	TOptional<IMouse::RawDelta> EInput::ReadRawDelta()
 	{
 		return Controller.ReadRawDelta();
+	}
+	TOptional<WCHAR> EInput::ReadChar()
+	{
+		return Controller.ReadChar();
+	}
+	BOOL32 EInput::IsCharEmpty()
+	{
+		return Controller.IsCharEmpty();
+	}
+	void EInput::FlushChar()
+	{
+		Controller.FlushChar();
+	}
+	void EInput::EnableTextInput()
+	{
+		Controller.EnableTextInput();
+	}
+	void EInput::DisableTextInput()
+	{
+		Controller.DisableTextInput();
+	}
+	BOOL32 EInput::IsTextInputEnabled()
+	{
+		return Controller.IsTextInputEnabled();
 	}
 	LRESULT EInput::HandleMsg(HWND InhWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
 	{
@@ -37,8 +61,17 @@ namespace PigeonEngine
 		hWnd = InhWnd;
 		WindowSizeX = InWindowSizeX;
 		WindowSizeY = InWindowSizeY;
+       bTextInputEnabled = FALSE;
+		ApplyTextInputState();
 	}
-	std::pair<INT32, INT32> IController::GetMousePosition() const
+	void IController::ApplyTextInputState()
+	{
+		if (!bTextInputEnabled)
+		{
+			Keyboard.FlushChar();
+		}
+	}
+	TPair<INT32, INT32> IController::GetMousePosition() const
 	{
 		return Mouse.GetPos();
 	}
@@ -97,7 +130,7 @@ namespace PigeonEngine
 	{
 		return Mouse.RightIsPressed();
 	}
-	std::optional<IMouse::RawDelta> IController::ReadRawDelta()
+	TOptional<IMouse::RawDelta> IController::ReadRawDelta()
 	{
 		return Mouse.ReadRawDelta();
 	}
@@ -107,27 +140,29 @@ namespace PigeonEngine
 		{
 		case WM_KILLFOCUS:
 			Keyboard.ClearState();
+           Keyboard.FlushChar();
 			break;
 
 		case WM_ACTIVATE:
-			OutputDebugString("activeate\n");
 			// confine/free cursor on window to foreground/background if cursor disabled
 			if (!IsCursorEnabled())
 			{
 				if (wParam & WA_ACTIVE)
 				{
-					OutputDebugString("activeate => confine\n");
 					ConfineCursor();
 					HideCursor();
 
 				}
 				else
 				{
-					OutputDebugString("activeate => free\n");
 					FreeCursor();
 					ShowCursor();
 
 				}
+			}
+			if (LOWORD(wParam) == WA_INACTIVE)
+			{
+				Keyboard.FlushChar();
 			}
 			break;
 			/*********** KEYBOARD MESSAGES ***********/
@@ -152,12 +187,11 @@ namespace PigeonEngine
 			Keyboard.OnKeyReleased(static_cast<BYTE>(wParam));
 			break;
 		case WM_CHAR:
-			/*if (imio.WantCaptureKeyboard)
+            if (bTextInputEnabled)
 			{
-				break;
-			}*/
-			Keyboard.OnChar(static_cast<BYTE>(wParam));
-			break;
+				Keyboard.OnChar(static_cast<WCHAR>(wParam));
+			}
+			return 0;
 			/*********** END KEYBOARD MESSAGES ***********/
 			/************* MOUSE MESSAGES ****************/
 		case WM_MOUSEMOVE:
@@ -285,12 +319,12 @@ namespace PigeonEngine
 				// bail msg processing if error
 				break;
 			}
-			rawBuffer.resize(size);
+			rawBuffer.SetNum(size);
 			// read in the input data
 			if (GetRawInputData(
 				reinterpret_cast<HRAWINPUT>(lParam),
 				RID_INPUT,
-				rawBuffer.data(),
+               rawBuffer.GetData(),
 				&size,
 				sizeof(RAWINPUTHEADER)) != size)
 			{
@@ -298,7 +332,7 @@ namespace PigeonEngine
 				break;
 			}
 			// process the raw input data
-			auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+            auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.GetData());
 			if (ri.header.dwType == RIM_TYPEMOUSE &&
 				(ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
 			{
@@ -315,7 +349,7 @@ namespace PigeonEngine
 	{
 		return Keyboard.IsKeyPressed(keycode);
 	}
-	std::optional<IKeyboard::Event> IController::ReadKey()
+	TOptional<IKeyboard::Event> IController::ReadKey()
 	{
 		return Keyboard.ReadKey();
 	}
@@ -327,7 +361,7 @@ namespace PigeonEngine
 	{
 		Keyboard.FlushKey();
 	}
-	std::optional<char> IController::ReadChar()
+    TOptional<WCHAR> IController::ReadChar()
 	{
 		return Keyboard.ReadChar();
 	}
@@ -354,6 +388,26 @@ namespace PigeonEngine
 	BOOL32 IController::IsAutorepeatEnabled() const
 	{
 		return Keyboard.IsAutorepeatEnabled();
+	}
+	void IController::EnableTextInput()
+	{
+		if (!bTextInputEnabled)
+		{
+			bTextInputEnabled = TRUE;
+			ApplyTextInputState();
+		}
+	}
+	void IController::DisableTextInput()
+	{
+		if (bTextInputEnabled)
+		{
+			bTextInputEnabled = FALSE;
+			ApplyTextInputState();
+		}
+	}
+	BOOL32 IController::IsTextInputEnabled() const
+	{
+		return bTextInputEnabled;
 	}
 
 };

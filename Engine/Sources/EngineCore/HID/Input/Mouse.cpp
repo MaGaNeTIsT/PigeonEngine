@@ -5,15 +5,15 @@
 namespace PigeonEngine
 {
 
-	std::pair<INT32, INT32> IMouse::GetPos() const
+	TPair<INT32, INT32> IMouse::GetPos() const
 	{
 		return { x,y };
 	}
-	std::optional<IMouse::RawDelta> IMouse::ReadRawDelta()
+	TOptional<IMouse::RawDelta> IMouse::ReadRawDelta()
 	{
 		if (RawDeltaBuffer.empty())
 		{
-			return std::nullopt;
+            return {};
 		}
 		const RawDelta d = RawDeltaBuffer.front();
 		RawDeltaBuffer.pop();
@@ -39,7 +39,7 @@ namespace PigeonEngine
 	{
 		return bRightIsPressed;
 	}
-	std::optional<IMouse::Event> IMouse::Read()
+	TOptional<IMouse::Event> IMouse::Read()
 	{
 		if (Buffer.size() > 0u)
 		{
@@ -51,7 +51,7 @@ namespace PigeonEngine
 	}
 	void IMouse::Flush()
 	{
-		Buffer = std::queue<Event>();
+        Buffer = TQueue<Event>();
 	}
 	void IMouse::EnableRaw()
 	{
@@ -88,7 +88,7 @@ namespace PigeonEngine
 	void IMouse::OnRawDelta(INT32 dx, INT32 dy)
 	{
 		RawDeltaBuffer.push({ dx,dy });
-		TrimBuffer();
+		TrimRawInputBuffer();
 	}
 	void IMouse::OnLeftPressed(INT32 InX, INT32 InY)
 	{

@@ -10,11 +10,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
 INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
-	const CHAR* CLASS_NAME	= "PigeonEngine";
-	const CHAR* WINDOW_NAME	= "PigeonEngineWindow";
-	HWND windowHandle; WNDCLASSEX wcex = {};
+    const WCHAR* CLASS_NAME	= L"PigeonEngine";
+	const WCHAR* WINDOW_NAME	= L"PigeonEngineWindow";
+	HWND windowHandle; WNDCLASSEXW wcex = {};
 	{
-		wcex.cbSize			= sizeof(WNDCLASSEX);
+        wcex.cbSize			= sizeof(WNDCLASSEXW);
 		wcex.style			= CS_HREDRAW | CS_VREDRAW;
 		wcex.lpfnWndProc	= WndProc;
 		wcex.cbClsExtra		= 0;
@@ -26,14 +26,14 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 		wcex.lpszMenuName	= NULL;
 		wcex.lpszClassName	= CLASS_NAME;
 		wcex.hIconSm		= NULL;
-		if (!::RegisterClassEx(&wcex))
+        if (!::RegisterClassExW(&wcex))
 		{
 			return TRUE;
 		}
 		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT) };
 		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
 		::AdjustWindowRect(&clientRect, style, FALSE);
-		windowHandle = ::CreateWindowEx(
+        windowHandle = ::CreateWindowExW(
 			0,
 			CLASS_NAME,
 			WINDOW_NAME,
@@ -105,7 +105,7 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 
 	MainManager->Uninit();
 
-	::UnregisterClass(CLASS_NAME, wcex.hInstance);
+    ::UnregisterClassW(CLASS_NAME, wcex.hInstance);
 
 	MainManager->ShutDown();
 

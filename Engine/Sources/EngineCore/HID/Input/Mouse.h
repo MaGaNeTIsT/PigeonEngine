@@ -3,8 +3,6 @@
 #include "../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/BaseType.h>
-#include <queue>
-#include <optional>
 #include "Base/Delegate/Delegate.h"
 namespace PigeonEngine
 {
@@ -51,7 +49,7 @@ namespace PigeonEngine
 			{
 				return Type;
 			}
-			std::pair<INT32, INT32> GetPos() const
+            TPair<INT32, INT32> GetPos() const
 			{
 				return{ x,y };
 			}
@@ -77,14 +75,14 @@ namespace PigeonEngine
 		IMouse() = default;
 		IMouse(const IMouse&) = delete;
 		IMouse& operator=(const IMouse&) = delete;
-		std::pair<INT32, INT32> GetPos() const;
-		std::optional<RawDelta> ReadRawDelta();
+		TPair<INT32, INT32> GetPos() const;
+		TOptional<RawDelta> ReadRawDelta();
 		INT32 GetPosX() const;
 		INT32 GetPosY() const;
 		BOOL32 IsInWindow() const;
 		BOOL32 LeftIsPressed() const;
 		BOOL32 RightIsPressed() const;
-		std::optional<IMouse::Event> Read();
+		TOptional<IMouse::Event> Read();
 		BOOL32 IsEmpty() const
 		{
 			return Buffer.empty();
@@ -119,8 +117,8 @@ namespace PigeonEngine
 		BOOL32 bIsInWindow = FALSE;
 		INT32 WheelDeltaCarry = 0;
 		BOOL32 RawEnabled = TRUE;
-		std::queue<Event> Buffer;
-		std::queue<RawDelta> RawDeltaBuffer;
+        TQueue<Event> Buffer;
+		TQueue<RawDelta> RawDeltaBuffer;
 	};
 
 };

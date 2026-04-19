@@ -1,8 +1,12 @@
 #pragma once
 
 #include <Base/BuiltInLanguage.h>
+#include <bitset>
+#include <optional>
+#include <queue>
 #include <type_traits>
 #include <initializer_list>
+#include <utility>
 //#include <functional>
 
 namespace PigeonEngine
@@ -209,9 +213,6 @@ namespace PigeonEngine
 	template<typename _Ty>
 	using TIsFunction = std::is_function<_Ty>;
 
-	template<typename _Ty>
-	using TInitializerList = std::initializer_list<_Ty>;
-
 	template<typename _Ty,class... _TArgs>
 	using TIsConstructible = std::is_constructible<_Ty, _TArgs...>;
 
@@ -307,6 +308,22 @@ namespace PigeonEngine
 
 	template<typename _From, typename _To>
 	using TIsConvertible = std::is_convertible<_From, _To>;
+
+	//Containers Temp
+	template<typename _Ty>
+	using TOptional = std::optional<_Ty>;
+
+	template<typename _Ty1, typename _Ty2>
+	using TPair = std::pair<_Ty1, _Ty2>;
+
+	template<typename _Ty, typename _TContainer = std::deque<_Ty>>
+	using TQueue = std::queue<_Ty, _TContainer>;
+
+	template<SIZE_T _Num>
+	using TBitSet = std::bitset<_Num>;
+
+	template<typename _Ty>
+	using TInitializerList = std::initializer_list<_Ty>;
 
 #ifdef _FORCE_INTEGRAL_BOOL
 
