@@ -266,32 +266,32 @@ private:
 	TArray<FPhysicsBroadPhaseLayer> AllowedLayers;
 };
 
-class FDefaultPhysicsBroadPhaseLayerFilter final : public FPhysicsBroadPhaseLayerFilter
+class FPhysicsDefaultBroadPhaseLayerFilter final : public FPhysicsBroadPhaseLayerFilter
 {
 public:
-	static const FDefaultPhysicsBroadPhaseLayerFilter& Get()
+    static const FPhysicsDefaultBroadPhaseLayerFilter& Get()
 	{
-		static FDefaultPhysicsBroadPhaseLayerFilter Instance;
+        static FPhysicsDefaultBroadPhaseLayerFilter Instance;
 		return Instance;
 	}
 };
 
-class FDefaultPhysicsLayerConfig final : public FPhysicsLayerConfig
+class FPhysicsDefaultLayerConfig final : public FPhysicsLayerConfig
 {
 public:
-	static const FDefaultPhysicsLayerConfig& Get()
+    static const FPhysicsDefaultLayerConfig& Get()
 	{
-		static FDefaultPhysicsLayerConfig Instance;
+        static FPhysicsDefaultLayerConfig Instance;
 		return Instance;
 	}
 };
 
 // BroadPhaseLayerInterface implementation
 // This defines a mapping between object and broadphase layers.
-class CBPLayerInterfaceImpl final : public BroadPhaseLayerInterface
+class FPhysicsBroadPhaseLayerMapper final : public BroadPhaseLayerInterface
 {
 public:
-	explicit CBPLayerInterfaceImpl(const FPhysicsLayerConfig& InLayerConfig)
+    explicit FPhysicsBroadPhaseLayerMapper(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 		mObjectToBroadPhase.SetNum(mLayerConfig.GetNumObjectLayers());
@@ -325,10 +325,10 @@ private:
 };
 
 /// Class that determines if an object layer can collide with a broadphase layer
-class CObjectVsBroadPhaseLayerFilterImpl : public ObjectVsBroadPhaseLayerFilter
+class FPhysicsObjectVsBroadPhaseLayerCollisionFilter final : public ObjectVsBroadPhaseLayerFilter
 {
 public:
-	explicit CObjectVsBroadPhaseLayerFilterImpl(const FPhysicsLayerConfig& InLayerConfig)
+    explicit FPhysicsObjectVsBroadPhaseLayerCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 	}
@@ -343,10 +343,10 @@ private:
 };
 
 /// Class that determines if two object layers can collide
-class CObjectLayerPairFilterImpl : public ObjectLayerPairFilter
+class FPhysicsObjectLayerPairCollisionFilter final : public ObjectLayerPairFilter
 {
 public:
-	explicit CObjectLayerPairFilterImpl(const FPhysicsLayerConfig& InLayerConfig)
+    explicit FPhysicsObjectLayerPairCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 	}
@@ -425,12 +425,12 @@ private:
 	TArray<FPhysicsObjectLayer> AllowedLayers;
 };
 
-class FDefaultPhysicsQueryLayerFilter final : public FPhysicsQueryLayerFilter
+class FPhysicsDefaultQueryLayerFilter final : public FPhysicsQueryLayerFilter
 {
 public:
-	static const FDefaultPhysicsQueryLayerFilter& Get()
+	static const FPhysicsDefaultQueryLayerFilter& Get()
 	{
-		static FDefaultPhysicsQueryLayerFilter Instance;
+        static FPhysicsDefaultQueryLayerFilter Instance;
 		return Instance;
 	}
 };

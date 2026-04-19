@@ -28,8 +28,8 @@ public:
 		const Vector3& InDirection,
 		FLOAT InLength,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::RaycastSingle(InOrigin, InDirection, InLength, OutHit, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -40,8 +40,8 @@ public:
 		FLOAT InLength,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::RaycastMulti(InOrigin, InDirection, InLength, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -54,8 +54,8 @@ public:
 		FLOAT InLength,
 		FLOAT InRadius,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::SphereCastSingle(InOrigin, InDirection, InLength, InRadius, OutHit, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -67,8 +67,8 @@ public:
 		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::SphereCastMulti(InOrigin, InDirection, InLength, InRadius, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -82,8 +82,8 @@ public:
 		const Vector3& InHalfExtents,
 		const Quaternion& InRotation,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::BoxCastSingle(InOrigin, InDirection, InLength, InHalfExtents, InRotation, OutHit, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -96,8 +96,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::BoxCastMulti(InOrigin, InDirection, InLength, InHalfExtents, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -112,8 +112,8 @@ public:
 		FLOAT InHalfHeight,
 		const Quaternion& InRotation,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::CapsuleCastSingle(InOrigin, InDirection, InLength, InRadius, InHalfHeight, InRotation, OutHit, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -127,8 +127,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::CapsuleCastMulti(InOrigin, InDirection, InLength, InRadius, InHalfHeight, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -140,8 +140,8 @@ public:
 		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::OverlapSphere(InCenter, InRadius, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -152,8 +152,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::OverlapBox(InCenter, InHalfExtents, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -165,8 +165,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::OverlapCapsule(InCenter, InRadius, InHalfHeight, InRotation, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}
@@ -177,8 +177,8 @@ public:
 		const Vector3& InPoint,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get())
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get())
 	{
 		return FPhysicsQuery::OverlapPoint(InPoint, OutHits, InMaxHits, InBPLayerFilter, InObjLayerFilter);
 	}

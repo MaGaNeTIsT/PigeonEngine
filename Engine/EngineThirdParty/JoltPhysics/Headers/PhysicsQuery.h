@@ -99,8 +99,8 @@ public:
 		const Vector3& InDirection,
 		FLOAT InLength,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Cast a ray and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Ray origin in centimeters.
@@ -117,8 +117,8 @@ public:
 		FLOAT InLength,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Sphere Cast (swept sphere)
@@ -136,8 +136,8 @@ public:
 		FLOAT InLength,
 		FLOAT InRadius,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Sweep a sphere along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Sphere center origin in centimeters.
@@ -153,8 +153,8 @@ public:
 		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Box Cast (swept box)
@@ -174,8 +174,8 @@ public:
 		const Vector3& InHalfExtents,
 		const Quaternion& InRotation,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Sweep a box along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Box center origin in centimeters.
@@ -193,8 +193,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Capsule Cast (swept capsule)
@@ -216,8 +216,8 @@ public:
 		FLOAT InHalfHeight,
 		const Quaternion& InRotation,
 		FRayCastHit& OutHit,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Sweep a capsule along a direction and collect ALL hits up to MaxHits.
 	/// @param InOrigin         Capsule center origin in centimeters.
@@ -237,8 +237,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Overlap (static shape test, no sweep)
@@ -255,8 +255,8 @@ public:
 		FLOAT InRadius,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Test a box for overlapping bodies.
 	/// @param InCenter         Box center in centimeters.
@@ -271,8 +271,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	/// Test a capsule for overlapping bodies.
 	/// @param InCenter         Capsule center in centimeters.
@@ -289,8 +289,8 @@ public:
 		const Quaternion& InRotation,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 
 	// ------------------------------------------------------------
 	//  Point Overlap
@@ -305,8 +305,8 @@ public:
 		const Vector3& InPoint,
 		TArray<FRayCastHit>& OutHits,
 		UINT32 InMaxHits = 16u,
-		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FDefaultPhysicsBroadPhaseLayerFilter::Get(),
-		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FDefaultPhysicsQueryLayerFilter::Get());
+		const FPhysicsBroadPhaseLayerFilterBase& InBPLayerFilter = FPhysicsDefaultBroadPhaseLayerFilter::Get(),
+		const FPhysicsQueryLayerFilterBase& InObjLayerFilter = FPhysicsDefaultQueryLayerFilter::Get());
 };
 
 PIGEONENGINE_NAMESPACE_END

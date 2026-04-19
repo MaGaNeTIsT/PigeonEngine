@@ -54,21 +54,11 @@ namespace PigeonEngine
 
     public:
         template<typename... TForwardArgs>
-        TMessageArgs(const EName& InMessageName, TForwardArgs&&... InArgs)
-            : EMessageBase(InMessageName)
-            , Arguments(EMemory::Forward<TForwardArgs>(InArgs)...)
-        {
-        }
+        TMessageArgs(const EName& InMessageName, TForwardArgs&&... InArgs);
 
-        const FArgumentTuple& GetArguments()const
-        {
-            return Arguments;
-        }
+        const FArgumentTuple& GetArguments()const;
 
-        static SIZE_T GetStaticMessageTypeID()
-        {
-            return GetClassHashCode<TMessageArgs<TArgs...>>();
-        }
+        static SIZE_T GetStaticMessageTypeID();
 
     private:
         FArgumentTuple Arguments;
@@ -82,21 +72,11 @@ namespace PigeonEngine
 
     public:
         template<typename... TForwardArgs>
-        TObjectMessageArgs(const EName& InMessageName, const EObjectBase* InObject, TForwardArgs&&... InArgs)
-            : EObjectMessageBase(InMessageName, InObject)
-            , Arguments(EMemory::Forward<TForwardArgs>(InArgs)...)
-        {
-        }
+        TObjectMessageArgs(const EName& InMessageName, const EObjectBase* InObject, TForwardArgs&&... InArgs);
 
-        const FArgumentTuple& GetArguments()const
-        {
-            return Arguments;
-        }
+        const FArgumentTuple& GetArguments()const;
 
-        static SIZE_T GetStaticMessageTypeID()
-        {
-            return GetClassHashCode<TObjectMessageArgs<TArgs...>>();
-        }
+        static SIZE_T GetStaticMessageTypeID();
 
     private:
         FArgumentTuple Arguments;
@@ -160,177 +140,37 @@ namespace PigeonEngine
         }
 
         template<typename TObjectType>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(void))
-        {
-            using FCleanObjectType = TRemoveCVType<TRemoveRefType<TObjectType>>;
-            Check((TIsBaseOf<EObjectBase, FCleanObjectType>::value), "TObjectType must derive from EObjectBase.");
-            Check((InObject != nullptr), "InObject is null.");
-            Check((InFunction != nullptr), "InFunction is null.");
-
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [InObject, InFunction](const EMessageBase&) mutable
-                {
-                    (InObject->*InFunction)();
-                };
-
-            return SubscribeObjectMessage(InMessageName, static_cast<const EObjectBase*>(InObject), WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(void));
 
         template<typename TObjectType>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const EObjectMessageBase&))
-        {
-            using FCleanObjectType = TRemoveCVType<TRemoveRefType<TObjectType>>;
-            Check((TIsBaseOf<EObjectBase, FCleanObjectType>::value), "TObjectType must derive from EObjectBase.");
-            Check((InObject != nullptr), "InObject is null.");
-            Check((InFunction != nullptr), "InFunction is null.");
-
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [InObject, InFunction](const EMessageBase& InMessage) mutable
-                {
-                    Check((InMessage.IsObjectMessage()), "Message must be an object message.");
-                    (InObject->*InFunction)(static_cast<const EObjectMessageBase&>(InMessage));
-                };
-
-            return SubscribeObjectMessage(InMessageName, static_cast<const EObjectBase*>(InObject), WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const EObjectMessageBase&));
 
         template<typename TObjectType, typename TMessageType>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const TMessageType&))
-        {
-            using FCleanObjectType = TRemoveCVType<TRemoveRefType<TObjectType>>;
-            using FCleanMessageType = TRemoveCVType<TRemoveRefType<TMessageType>>;
-            Check((TIsBaseOf<EObjectBase, FCleanObjectType>::value), "TObjectType must derive from EObjectBase.");
-            Check((TIsBaseOf<EObjectMessageBase, FCleanMessageType>::value), "TMessageType must derive from EObjectMessageBase.");
-            Check((InObject != nullptr), "InObject is null.");
-            Check((InFunction != nullptr), "InFunction is null.");
-
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [InObject, InFunction](const EMessageBase& InMessage) mutable
-                {
-                    Check((InMessage.IsObjectMessage()), "Message must be an object message.");
-                    (InObject->*InFunction)(static_cast<const FCleanMessageType&>(InMessage));
-                };
-
-            return SubscribeObjectMessage(InMessageName, static_cast<const EObjectBase*>(InObject), WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const TMessageType&));
 
         template<typename TObjectType, typename... TArgs>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(TArgs...))
-        {
-            using FCleanObjectType = TRemoveCVType<TRemoveRefType<TObjectType>>;
-            using FArgsMessage = TObjectMessageArgs<TDecayType<TArgs>...>;
-            Check((TIsBaseOf<EObjectBase, FCleanObjectType>::value), "TObjectType must derive from EObjectBase.");
-            Check((InObject != nullptr), "InObject is null.");
-            Check((InFunction != nullptr), "InFunction is null.");
-
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [InObject, InFunction](const EMessageBase& InMessage) mutable
-                {
-                    Check((InMessage.IsObjectMessage()), "Message must be an object message.");
-                    Check((InMessage.GetMessageTypeID() == FArgsMessage::GetStaticMessageTypeID()), "Object message arguments type mismatch.");
-                    const FArgsMessage& ArgsMessage = static_cast<const FArgsMessage&>(InMessage);
-                    auto BoundInvoke = [InObject, InFunction](TArgs... InArgs)
-                        {
-                            (InObject->*InFunction)(InArgs...);
-                        };
-                    TupleApply(BoundInvoke, ArgsMessage.GetArguments());
-                };
-
-            return SubscribeObjectMessage(InMessageName, static_cast<const EObjectBase*>(InObject), WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(TArgs...));
 
         template<typename TObjectType, typename... TArgs>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const EObjectBase*, TArgs...))
-        {
-            using FCleanObjectType = TRemoveCVType<TRemoveRefType<TObjectType>>;
-            using FArgsMessage = TObjectMessageArgs<TDecayType<TArgs>...>;
-            Check((TIsBaseOf<EObjectBase, FCleanObjectType>::value), "TObjectType must derive from EObjectBase.");
-            Check((InObject != nullptr), "InObject is null.");
-            Check((InFunction != nullptr), "InFunction is null.");
-
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [InObject, InFunction](const EMessageBase& InMessage) mutable
-                {
-                    Check((InMessage.IsObjectMessage()), "Message must be an object message.");
-                    Check((InMessage.GetMessageTypeID() == FArgsMessage::GetStaticMessageTypeID()), "Object message arguments type mismatch.");
-                    const FArgsMessage& ArgsMessage = static_cast<const FArgsMessage&>(InMessage);
-                    auto BoundInvoke = [InObject, InFunction, &ArgsMessage](TArgs... InArgs)
-                        {
-                            (InObject->*InFunction)(ArgsMessage.GetObject(), InArgs...);
-                        };
-                    TupleApply(BoundInvoke, ArgsMessage.GetArguments());
-                };
-
-            return SubscribeObjectMessage(InMessageName, static_cast<const EObjectBase*>(InObject), WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TObjectType* InObject, void(TObjectType::*InFunction)(const EObjectBase*, TArgs...));
 
         template<typename TCallableType, TEnableIfType<TIsFunctionConstructible<void(void), TCallableType>::value, INT32> = 0>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback)
-        {
-            TFunction<void(void)> TypedCallback;
-            TypedCallback = EMemory::Forward<TCallableType>(InCallback);
-            return (this->*static_cast<FMessageListenerHandle(EMessageManager::*)(const EName&, const TFunction<void(void)>&)>(&EMessageManager::Subscribe))(InMessageName, TypedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback);
 
         template<typename TCallableType, TEnableIfType<TIsFunctionConstructible<void(const EMessageBase&), TCallableType>::value, INT32> = 0>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback)
-        {
-            FMessageCallback TypedCallback;
-            TypedCallback = EMemory::Forward<TCallableType>(InCallback);
-            return SubscribeMessage(InMessageName, TypedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback);
 
         template<typename TMessageType>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, const TFunction<void(const TMessageType&)>& InCallback)
-        {
-            using FCleanMessageType = TRemoveCVType<TRemoveRefType<TMessageType>>;
-            Check((TIsBaseOf<EMessageBase, FCleanMessageType>::value), "TMessageType must derive from EMessageBase.");
-
-            TFunction<void(const FCleanMessageType&)> Callback = InCallback;
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [Callback](const EMessageBase& InMessage) mutable
-                {
-                    Callback(static_cast<const FCleanMessageType&>(InMessage));
-                };
-
-            return SubscribeMessage(InMessageName, WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, const TFunction<void(const TMessageType&)>& InCallback);
 
         template<typename... TArgs>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, const TFunction<void(TArgs...)>& InCallback)
-        {
-            using FArgsMessage = TMessageArgs<TDecayType<TArgs>...>;
-
-            TFunction<void(TArgs...)> Callback = InCallback;
-            FMessageCallback WrappedCallback;
-            WrappedCallback = [Callback](const EMessageBase& InMessage) mutable
-                {
-                    Check((InMessage.GetMessageTypeID() == FArgsMessage::GetStaticMessageTypeID()), "Message arguments type mismatch.");
-                    const FArgsMessage& ArgsMessage = static_cast<const FArgsMessage&>(InMessage);
-                    TupleApply(Callback, ArgsMessage.GetArguments());
-                };
-
-            return SubscribeMessage(InMessageName, WrappedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, const TFunction<void(TArgs...)>& InCallback);
 
         template<typename TMessageType, typename TCallableType>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback)
-        {
-            using FCleanMessageType = TRemoveCVType<TRemoveRefType<TMessageType>>;
-            Check((TIsBaseOf<EMessageBase, FCleanMessageType>::value), "TMessageType must derive from EMessageBase.");
-
-            TFunction<void(const FCleanMessageType&)> TypedCallback;
-            TypedCallback = EMemory::Forward<TCallableType>(InCallback);
-            return (this->*static_cast<FMessageListenerHandle(EMessageManager::*)(const EName&, const TFunction<void(const FCleanMessageType&)>&)>(&EMessageManager::template Subscribe<FCleanMessageType>))(InMessageName, TypedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback);
 
         template<typename... TArgs, typename TCallableType, TEnableIfType<((sizeof...(TArgs) > 0) && (!TMessageSubscribeArgsHelper<TArgs...>::IsSingleMessageType)), INT32> = 0>
-        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback)
-        {
-            TFunction<void(TArgs...)> TypedCallback;
-            TypedCallback = EMemory::Forward<TCallableType>(InCallback);
-            return (this->*static_cast<FMessageListenerHandle(EMessageManager::*)(const EName&, const TFunction<void(TArgs...)>&)>(&EMessageManager::template Subscribe<TArgs...>))(InMessageName, TypedCallback);
-        }
+        FMessageListenerHandle Subscribe(const EName& InMessageName, TCallableType&& InCallback);
 
         BOOL32 Unsubscribe(const FMessageListenerHandle& InHandle)
         {
@@ -350,25 +190,13 @@ namespace PigeonEngine
         UINT32 Broadcast(const EObjectMessageBase& InMessage);
 
         template<typename... TArgs, TEnableIfType<!TMessageSendArgsHelper<TArgs...>::IsObjectMessageArgs, INT32> = 0>
-        UINT32 Send(const EName& InMessageName, TArgs&&... InArgs)
-        {
-            using FArgsMessage = TMessageArgs<TDecayType<TArgs>...>;
-            return Broadcast(FArgsMessage(InMessageName, EMemory::Forward<TArgs>(InArgs)...));
-        }
+        UINT32 Send(const EName& InMessageName, TArgs&&... InArgs);
 
         template<typename... TArgs>
-        UINT32 Send(const EName& InMessageName, const EObjectBase* InObject, TArgs&&... InArgs)
-        {
-            using FArgsMessage = TObjectMessageArgs<TDecayType<TArgs>...>;
-            return Broadcast(FArgsMessage(InMessageName, InObject, EMemory::Forward<TArgs>(InArgs)...));
-        }
+        UINT32 Send(const EName& InMessageName, const EObjectBase* InObject, TArgs&&... InArgs);
 
         template<typename TMessageType>
-        UINT32 Broadcast(const TMessageType& InMessage)
-        {
-            Check((TIsBaseOf<EMessageBase, TMessageType>::value), "TMessageType must derive from EMessageBase.");
-            return Broadcast(static_cast<const EMessageBase&>(InMessage));
-        }
+        UINT32 Broadcast(const TMessageType& InMessage);
 
         BOOL32 HasMessage(const EName& InMessageName)const;
         UINT32 GetListenerNum(const EName& InMessageName)const;
@@ -396,4 +224,6 @@ namespace PigeonEngine
 
         CLASS_MANAGER_SINGLETON_BODY(EMessageManager)
     };
+
+#include "Message.inl"
 };
