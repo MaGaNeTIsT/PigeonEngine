@@ -25,6 +25,8 @@ namespace PigeonEngine
 		if(EFileHelper::ReadFirstNumberOfBytesInFile(Path, TempType, 4))
 		{
 			this->Type = *static_cast<EAssetType*>(TempType);
+            delete[] static_cast<CHAR*>(TempType);
+			TempType = nullptr;
 		}
 		
 	}

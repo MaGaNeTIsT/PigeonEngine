@@ -154,12 +154,12 @@ namespace PigeonEngine
 			if (!EFileHelper::SaveBytesToFile(NewFilePath, FileData, Size))
 			{
 				PE_CHECK((ENGINE_ASSET_ERROR), ("EFileHelper::CopyFileToNewPath : save file error!"), (FALSE));
-				delete FileData;
+                delete[] static_cast<CHAR*>(FileData);
 				return FALSE;
 			}
 			else
 			{
-				delete FileData;
+                delete[] static_cast<CHAR*>(FileData);
 				return TRUE;
 			}
 		}

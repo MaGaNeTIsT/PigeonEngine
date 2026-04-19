@@ -61,6 +61,8 @@ namespace PigeonEngine
 		TFunction<void(FLOAT)>				m_PrePhysicsFixedTickHandler;
 		TFunction<void(FLOAT)>				m_PhysicsFixedTickHandler;
 		TFunction<void(FLOAT)>				m_PostPhysicsFixedTickHandler;
+
+		class EMessageManager*				m_MessageManager = nullptr;
 		
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);

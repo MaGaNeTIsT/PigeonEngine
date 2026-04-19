@@ -10,6 +10,8 @@
 #include "PigeonBase/Object/World/World.h"
 #include "PigeonBase/Object/World/WorldManager.h"
 
+#include "Development/Message/Message.h"
+
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
@@ -75,7 +77,8 @@ namespace PigeonEngine
 				m_PhysicsManager->PostPhysicsUpdate(InDeltaTime);
 			}
 		});
-		
+
+		m_MessageManager = EMessageManager::GetManagerSingleton();
 	}
 	EMainManager::~EMainManager()
 	{
@@ -93,6 +96,8 @@ namespace PigeonEngine
 	{
 		m_ClassTypeRegisterManager->DoRegister();
 		m_ClassFactoryRegisterManager->DoRegister();
+
+		m_MessageManager->Initialize();
 
 		EInput::Initialize(m_HWND);
 
@@ -139,6 +144,8 @@ namespace PigeonEngine
 
 		m_RenderDeviceD3D11->ShutDown();
 		EInput::ShutDown();
+
+		m_MessageManager->ShutDown();
 	}
 	void EMainManager::SetInitializer(HWND hWnd)
 	{
