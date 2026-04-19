@@ -1,7 +1,35 @@
 #include "Input.h"
 
+#include <imm.h>
+
+#pragma comment(lib, "Imm32.lib")
+
 namespace PigeonEngine
 {
+    namespace
+	{
+        UINT32 ResolveKeycodeForInputLogic(HWND InhWnd, WPARAM InKeycode, BOOL32 bTextInputEnabled)
+		{
+			if (InKeycode == VK_PROCESSKEY)
+			{
+                if (bTextInputEnabled)
+				{
+					return 0u;
+				}
+
+				const UINT32 OriginalVirtualKey = static_cast<UINT32>(::ImmGetVirtualKey(InhWnd));
+				if (OriginalVirtualKey != 0u && OriginalVirtualKey != VK_PROCESSKEY)
+				{
+					return OriginalVirtualKey;
+				}
+
+				return 0u;
+			}
+
+            return static_cast<UINT32>(InKeycode);
+		}
+	}
+
 	OnMyMouseEvent EInput::MouseEvent;
 	OnMyKeyEvent   EInput::KeyEvent;
 	IController    EInput::Controller;
@@ -66,7 +94,7 @@ namespace PigeonEngine
 	}
 	void IController::ApplyTextInputState()
 	{
-		if (!bTextInputEnabled)
+        if (!bTextInputEnabled)
 		{
 			Keyboard.FlushChar();
 		}
@@ -147,7 +175,7 @@ namespace PigeonEngine
 			// confine/free cursor on window to foreground/background if cursor disabled
 			if (!IsCursorEnabled())
 			{
-				if (wParam & WA_ACTIVE)
+                if (LOWORD(wParam) != WA_INACTIVE)
 				{
 					ConfineCursor();
 					HideCursor();
@@ -169,25 +197,45 @@ namespace PigeonEngine
 		case WM_KEYDOWN:
 			// syskey commands need to be handled to track ALT key (VK_MENU) and F10
 		case WM_SYSKEYDOWN:
+		{
+			const UINT32 Keycode = ResolveKeycodeForInputLogic(InhWnd, wParam, bTextInputEnabled);
+			if (Keycode == 0u)
+			{
+				return 0;
+			}
 			/*if (imio.WantCaptureKeyboard)
 			{
 				break;
 			}*/
 			if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
 			{
-				Keyboard.OnKeyPressed(static_cast<BYTE>(wParam));
+               Keyboard.OnKeyPressed(static_cast<BYTE>(Keycode));
 			}
 			break;
+		}
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
+		{
+			const UINT32 Keycode = ResolveKeycodeForInputLogic(InhWnd, wParam, bTextInputEnabled);
+			if (Keycode == 0u)
+			{
+				return 0;
+			}
 			/*if (imio.WantCaptureKeyboard)
 			{
 				break;
 			}*/
-			Keyboard.OnKeyReleased(static_cast<BYTE>(wParam));
+			Keyboard.OnKeyReleased(static_cast<BYTE>(Keycode));
 			break;
+		}
 		case WM_CHAR:
             if (bTextInputEnabled)
+			{
+				Keyboard.OnChar(static_cast<WCHAR>(wParam));
+			}
+			return 0;
+		case WM_IME_CHAR:
+			if (bTextInputEnabled)
 			{
 				Keyboard.OnChar(static_cast<WCHAR>(wParam));
 			}

@@ -81,7 +81,14 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 			}
 			else
 			{
-				::TranslateMessage(&msg);
+				const BOOL bShouldTranslateMessage =
+					(msg.wParam != VK_PROCESSKEY) ||
+					(msg.message != WM_KEYDOWN && msg.message != WM_SYSKEYDOWN && msg.message != WM_KEYUP && msg.message != WM_SYSKEYUP) ||
+					PigeonEngine::EInput::IsTextInputEnabled();
+				if (bShouldTranslateMessage)
+				{
+					::TranslateMessage(&msg);
+				}
 				::DispatchMessage(&msg);
 			}
 		}
