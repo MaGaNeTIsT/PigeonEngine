@@ -54,8 +54,10 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+	#if _EDITOR_ONLY
 		void			SetManageDebugWireframe(BOOL32 InManageDebugWireframe) { bManageDebugWireframe = InManageDebugWireframe; }
 		void			SetRenderDebugWireframe(BOOL32 InRenderDebugWireframe) { bRenderDebugWireframe = InRenderDebugWireframe; }
+	#endif
 	public:
 		RScene*			GetRenderScene();
 		void			InitNewFrame();
