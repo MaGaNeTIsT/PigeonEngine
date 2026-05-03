@@ -279,7 +279,7 @@ namespace PigeonEngine
 #endif
 		{
 			Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
-			const UINT32 TempSize = static_cast<UINT32>(RawData.Size) * ElementNum;
+			const UINT32 TempSize = static_cast<UINT32>(RawData.Size);
 			RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(StructuredBuffer.Buffer, RawData.Datas, TempSize, TempSize);
 		}
 #if _EDITOR_ONLY

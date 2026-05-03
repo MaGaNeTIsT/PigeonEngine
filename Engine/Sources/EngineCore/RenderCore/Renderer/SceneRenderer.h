@@ -54,6 +54,8 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+		void			SetManageDebugWireframe(BOOL32 InManageDebugWireframe) { bManageDebugWireframe = InManageDebugWireframe; }
+		void			SetRenderDebugWireframe(BOOL32 InRenderDebugWireframe) { bRenderDebugWireframe = InRenderDebugWireframe; }
 	public:
 		RScene*			GetRenderScene();
 		void			InitNewFrame();
@@ -117,6 +119,8 @@ namespace PigeonEngine
 		RFullScreenTriangle			FullScreenTriangle;
 #if _EDITOR_ONLY
 		RDebugWireframePrimitiveManager* DebugWireframePrimitiveManager;
+		BOOL32					bManageDebugWireframe = TRUE;
+		BOOL32					bRenderDebugWireframe = TRUE;
 #endif
 	protected:
 		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];

@@ -1,6 +1,8 @@
 #include "AssetManager.h"
 #if _EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
+#include "Editor/AnimationEditor/AnimationEditor.h"
+#include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
 
 #include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
@@ -173,6 +175,16 @@ namespace PigeonEngine
 
 	void EAssetManager::ShutDown()
 	{
+		if (AnimationEditor)
+		{
+			delete AnimationEditor;
+			AnimationEditor = nullptr;
+		}
+		if (MeshEditor)
+		{
+			delete MeshEditor;
+			MeshEditor = nullptr;
+		}
 
 	}
 
@@ -205,6 +217,17 @@ namespace PigeonEngine
 	
 	void EAssetManager::EditorInit()
 	{
+		if (!AnimationEditor)
+		{
+			AnimationEditor = new EAnimationEditor();
+			AnimationEditor->EditorInit();
+		}
+		if (!MeshEditor)
+		{
+			MeshEditor = new EMeshEditor();
+			MeshEditor->EditorInit();
+		}
+
 		EngineAssetRoot  = EMemory::MakeShared<EFolderTreeNode>(nullptr, EBaseSettings::ENGINE_CONTENT_PATH);
 		ProjectAssetRoot = EMemory::MakeShared<EFolderTreeNode>(nullptr, EEngineSettings::PROJECT_CONTENT_PATH);
 		if(!ScanFolder(EngineAssetRoot))
@@ -315,6 +338,14 @@ namespace PigeonEngine
 	void EAssetManager::EditorUpdate()
 	{
 		GenerateContentBrowser();
+		if (AnimationEditor)
+		{
+			AnimationEditor->EditorUpdate();
+		}
+		if (MeshEditor)
+		{
+			MeshEditor->EditorUpdate();
+		}
 	}
 
 	void EAssetManager::GenerateContentBrowser()
@@ -347,6 +378,30 @@ namespace PigeonEngine
 				ImGui::BeginChild("Content", ImVec2(700, 0), TRUE);
 				if (EMemory::GetPtr(Current))
 				{
+					if (EMemory::GetPtr(SelectedFile))
+					{
+						ImGui::Text("Selected Asset: %s", *SelectedFile->GetDisplayName());
+						ImGui::SameLine();
+						ImGui::TextDisabled("(%s)", *AssetTypeAsString(SelectedFile->GetType()));
+						if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Animation Editor"))
+							{
+								AnimationEditor->OpenAnimationAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Mesh Editor"))
+							{
+								MeshEditor->OpenMeshAsset(SelectedFile->GetPath());
+							}
+						}
+						ImGui::Separator();
+					}
+
 					ImVec2 button_sz(100, 100);
 					auto ChildrenFolder = Current->GetChildrenFolder();
 					FLOAT window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
@@ -355,7 +410,7 @@ namespace PigeonEngine
 					{
 						ImGui::PushID(i);
 						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
-						if(ImGui::ImageButton(FolderTextureId, button_sz))
+						if(ImGui::ImageButton("##Folder", FolderTextureId, button_sz))
 						{
 							Current = ChildrenFolder[i];
 						}
@@ -374,9 +429,9 @@ namespace PigeonEngine
 					{
 						ImGui::PushID(i);
 						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
+						ImGui::SetNextItemAllowOverlap();
 						const BOOL8 bSelected = ImGui::Selectable(*(EString("##") + elem->GetDisplayName()), elem == SelectedFile, 0, ImVec2(120, 150));
 						const ImTextureID id = GetThumbNail(elem->GetType(), elem);
-						ImGui::SetItemAllowOverlap();
 						ImGui::SetCursorPos(ImVec2(0,0));
 						ImGui::Image(id, button_sz);
 						ImGui::SetCursorPos(ImVec2(0, button_sz.y + 10));
@@ -388,6 +443,14 @@ namespace PigeonEngine
 						if(bSelected)
 						{
 							SelectedFile = elem;
+							if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								AnimationEditor->OpenAnimationAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								MeshEditor->OpenMeshAsset(elem->GetPath());
+							}
 							PE_LOG_LOG(EString("ContentBrowser:Select ") + elem->GetDisplayName());
 						}
 						if ( next_button_x2 < window_visible_x2)

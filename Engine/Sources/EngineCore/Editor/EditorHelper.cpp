@@ -1,11 +1,12 @@
 #include "EditorHelper.h"
+
+#if _EDITOR_ONLY
+
 #include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <PigeonBase/Object/Component/CameraAndLight/CameraComponent.h>
 #include <RenderConfig/RenderConfig.h>
-#if _EDITOR_ONLY
 #include <RenderProxy/RenderSingletonObject.h>
-#endif
 
 namespace PigeonEngine
 {
@@ -307,8 +308,6 @@ namespace PigeonEngine
 		return Result;
 	}
 
-#if _EDITOR_ONLY
-
 	// ---- Gizmo constants ----
 	static constexpr FLOAT GIZMO_ARROW_LENGTH   = 80.0f;   // world units
 	static constexpr FLOAT GIZMO_ARROW_RADIUS   = 3.0f;    // cone base radius
@@ -508,6 +507,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-#endif
 
 };
+
+#endif

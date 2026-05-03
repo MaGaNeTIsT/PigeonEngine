@@ -153,6 +153,8 @@ namespace PigeonEngine
 
     void EEditorManager::EditorUpdate()
     {
+        ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
         m_WorldManager->EditorUpdate();
         m_AssetManager->EditorUpdate();
         m_LogsManager->EditorUpdate();

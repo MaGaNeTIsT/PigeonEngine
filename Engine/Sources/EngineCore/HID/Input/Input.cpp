@@ -89,7 +89,7 @@ namespace PigeonEngine
 		hWnd = InhWnd;
 		WindowSizeX = InWindowSizeX;
 		WindowSizeY = InWindowSizeY;
-       bTextInputEnabled = FALSE;
+        bTextInputEnabled = FALSE;
 		ApplyTextInputState();
 	}
 	void IController::ApplyTextInputState()

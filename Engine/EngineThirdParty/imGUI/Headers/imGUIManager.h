@@ -21,6 +21,7 @@ namespace PigeonEngine
             ImGuiMouseCursor        LastMouseCursor;
             BOOL32                  HasGamepad;
             BOOL32                  WantUpdateHasGamepad;
+            BOOL32                  WantUpdateMonitors;
         };
         struct D3DData
         {
@@ -57,6 +58,24 @@ namespace PigeonEngine
         void                    WndProcessKeyEventsWorkarounds();
         void                    WndUpdateKeyModifiers();
         ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
+        static ImGuiViewport*   WndFindViewportByWindowHandle(HWND hWnd);
+        static void             WndUpdateMouseData();
+        static void             WndUpdateMonitors();
+        static BOOL CALLBACK    WndUpdateMonitorsEnumProc(HMONITOR monitor, HDC, LPRECT rect, LPARAM data);
+        static void             InitWndViewportSupport();
+        static void             ShutDownWndViewportSupport();
+        static LRESULT CALLBACK WndProcHandlerPlatformWindow(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+        static void             PlatformCreateWindow(ImGuiViewport* viewport);
+        static void             PlatformDestroyWindow(ImGuiViewport* viewport);
+        static void             PlatformShowWindow(ImGuiViewport* viewport);
+        static void             PlatformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos);
+        static ImVec2           PlatformGetWindowPos(ImGuiViewport* viewport);
+        static void             PlatformSetWindowSize(ImGuiViewport* viewport, ImVec2 size);
+        static ImVec2           PlatformGetWindowSize(ImGuiViewport* viewport);
+        static void             PlatformSetWindowFocus(ImGuiViewport* viewport);
+        static bool             PlatformGetWindowFocus(ImGuiViewport* viewport);
+        static bool             PlatformGetWindowMinimized(ImGuiViewport* viewport);
+        static void             PlatformSetWindowTitle(ImGuiViewport* viewport, const char* title);
     private:
         void                    InitD3D();
         void                    D3DSetupRenderState(ImDrawData* drawData);
@@ -64,6 +83,15 @@ namespace PigeonEngine
         void                    D3DCreateFontsTexture();
         BOOL32                  D3DCreateDeviceObjects();
         void                    D3DInvalidateDeviceObjects();
+        static void             InitD3DViewportSupport();
+        static void             ShutDownD3DViewportSupport();
+        static void             CreateViewportRenderTarget(ImGuiViewport* viewport);
+        static void             DestroyViewportRenderTarget(ImGuiViewport* viewport);
+        static void             RendererCreateWindow(ImGuiViewport* viewport);
+        static void             RendererDestroyWindow(ImGuiViewport* viewport);
+        static void             RendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size);
+        static void             RendererRenderWindow(ImGuiViewport* viewport, void* render_arg);
+        static void             RendererSwapBuffers(ImGuiViewport* viewport, void* render_arg);
     private:
         WndData                 m_WndData;
         D3DData                 m_D3DData;

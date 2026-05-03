@@ -4,6 +4,7 @@
 #include <RenderDevice/DeviceD3D11.h>
 #include <Config/EngineConfig.h>
 #include <TextureAsset/TextureAsset.h>
+#include <cstddef>
 
 namespace PigeonEngine
 {
@@ -17,9 +18,69 @@ namespace PigeonEngine
 #ifndef DBT_DEVNODES_CHANGED
 #define DBT_DEVNODES_CHANGED        0x0007
 #endif
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED               0x02E0
+#endif
 
 #define IMGUI_VS_FILE_NAME_PATH     ("imGUI_PEVS.cso")
 #define IMGUI_PS_FILE_NAME_PATH     ("imGUI_PEPS.cso")
+
+    static const WCHAR* GImGuiPlatformWindowClassName = L"PigeonEngineImGuiPlatform";
+
+    struct ImGuiPlatformViewportData
+    {
+        HWND    Hwnd;
+        HWND    HwndParent;
+        BOOL32  HwndOwned;
+        DWORD   Style;
+        DWORD   ExStyle;
+
+        ImGuiPlatformViewportData()
+            : Hwnd(nullptr)
+            , HwndParent(nullptr)
+            , HwndOwned(FALSE)
+            , Style(0u)
+            , ExStyle(0u)
+        {
+        }
+    };
+
+    struct ImGuiRendererViewportData
+    {
+        IDXGISwapChain*          SwapChain;
+        ID3D11RenderTargetView*  RenderTargetView;
+
+        ImGuiRendererViewportData()
+            : SwapChain(nullptr)
+            , RenderTargetView(nullptr)
+        {
+        }
+    };
+
+    static void GetWin32WindowStyleFromViewportFlags(ImGuiViewportFlags Flags, DWORD& OutStyle, DWORD& OutExStyle)
+    {
+        OutStyle = (Flags & ImGuiViewportFlags_NoDecoration) ? WS_POPUP : WS_OVERLAPPEDWINDOW;
+        OutExStyle = (Flags & ImGuiViewportFlags_NoTaskBarIcon) ? WS_EX_TOOLWINDOW : WS_EX_APPWINDOW;
+        if (Flags & ImGuiViewportFlags_TopMost)
+        {
+            OutExStyle |= WS_EX_TOPMOST;
+        }
+    }
+
+    static HWND GetViewportWindowHandle(ImGuiViewport* Viewport)
+    {
+        if (!Viewport)
+        {
+            return nullptr;
+        }
+        return Viewport->PlatformHandleRaw ? static_cast<HWND>(Viewport->PlatformHandleRaw) : static_cast<HWND>(Viewport->PlatformHandle);
+    }
+
+    static void AdjustViewportWindowRect(const ImGuiViewport* Viewport, RECT& InOutRect, DWORD Style, DWORD ExStyle)
+    {
+        IM_UNUSED(Viewport);
+        ::AdjustWindowRectEx(&InOutRect, Style, FALSE, ExStyle);
+    }
 
     static void RegisterClassTypes()
     {
@@ -42,7 +103,15 @@ namespace PigeonEngine
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         ImGui::StyleColorsDark();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGuiStyle& style = ImGui::GetStyle();
+            style.WindowRounding = 0.0f;
+            style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+        }
 
         io.IniFilename = "./Engine/Configs/ImGUIEngine.ini";
         io.LogFilename = "./Engine/Configs/ImGUIEngineLog.txt";
@@ -59,6 +128,9 @@ namespace PigeonEngine
     {
         ImGuiIO& io = ImGui::GetIO();
 
+        ShutDownWndViewportSupport();
+        ShutDownD3DViewportSupport();
+
         D3DInvalidateDeviceObjects();
         io.BackendRendererName = nullptr;
         io.BackendRendererUserData = nullptr;
@@ -71,6 +143,13 @@ namespace PigeonEngine
         ImGuiIO& io = ImGui::GetIO();
         const EGameTimer* GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
         io.DeltaTime = static_cast<FLOAT>(GameTimer->GetDeltaTime());
+
+        if (m_WndData.WantUpdateMonitors)
+        {
+            WndUpdateMonitors();
+        }
+
+        WndUpdateMouseData();
 
         WndProcessKeyEventsWorkarounds();
 
@@ -92,6 +171,13 @@ namespace PigeonEngine
     {
         ImGui::Render();
         D3DRenderDrawData(ImGui::GetDrawData());
+
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
     void CImGUIManager::InitWnd()
     {
@@ -103,13 +189,24 @@ namespace PigeonEngine
         io.BackendPlatformUserData = (void*)(&m_WndData);
         io.BackendPlatformName = "imgui_impl_win32";
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
+        io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
+        io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+        io.BackendFlags |= ImGuiBackendFlags_HasMouseHoveredViewport;
+        io.BackendFlags |= ImGuiBackendFlags_HasParentViewport;
 
         HWND hWnd = EMainManager::GetManagerSingleton()->GetWindowHandle();
         m_WndData.hWnd = hWnd;
         m_WndData.WantUpdateHasGamepad = FALSE;
+        m_WndData.WantUpdateMonitors = TRUE;
         m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;
 
-        ImGui::GetMainViewport()->PlatformHandleRaw = (void*)hWnd;
+        ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+        MainViewport->PlatformHandle = (void*)hWnd;
+        MainViewport->PlatformHandleRaw = (void*)hWnd;
+
+        ::SetPropA(hWnd, "IMGUI_CONTEXT", ImGui::GetCurrentContext());
+
+        InitWndViewportSupport();
     }
     IMGUI_IMPL_API LRESULT CImGUIManager::WndProcHandler(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam)
     {
@@ -128,7 +225,14 @@ namespace PigeonEngine
                 ::TrackMouseEvent(&tme);
                 m_WndData.MouseTracked = TRUE;
             }
-            io.AddMousePosEvent((FLOAT)GET_X_LPARAM(lParam), (FLOAT)GET_Y_LPARAM(lParam));
+            {
+                POINT mouse_pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+                if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+                {
+                    ::ClientToScreen(hWnd, &mouse_pos);
+                }
+                io.AddMousePosEvent((FLOAT)mouse_pos.x, (FLOAT)mouse_pos.y);
+            }
             break;
         case WM_MOUSELEAVE:
             if (m_WndData.MouseHwnd == hWnd)
@@ -243,6 +347,20 @@ namespace PigeonEngine
                 m_WndData.WantUpdateHasGamepad = TRUE;
             }
             return 0;
+        case WM_DISPLAYCHANGE:
+            m_WndData.WantUpdateMonitors = TRUE;
+            return 0;
+        case WM_SETTINGCHANGE:
+            m_WndData.WantUpdateMonitors = TRUE;
+            return 0;
+        case WM_DPICHANGED:
+            m_WndData.WantUpdateMonitors = TRUE;
+            if (io.ConfigDpiScaleViewports)
+            {
+                const RECT* suggested_rect = (const RECT*)lParam;
+                ::SetWindowPos(hWnd, nullptr, suggested_rect->left, suggested_rect->top, suggested_rect->right - suggested_rect->left, suggested_rect->bottom - suggested_rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
+            }
+            return 0;
         }
         return 0;
     }
@@ -311,10 +429,10 @@ namespace PigeonEngine
     void CImGUIManager::WndUpdateKeyModifiers()
     {
         ImGuiIO& io = ImGui::GetIO();
-        io.AddKeyEvent(ImGuiKey_ModCtrl, CImGUIManager::WndIsVkDown(VK_CONTROL));
-        io.AddKeyEvent(ImGuiKey_ModShift, CImGUIManager::WndIsVkDown(VK_SHIFT));
-        io.AddKeyEvent(ImGuiKey_ModAlt, CImGUIManager::WndIsVkDown(VK_MENU));
-        io.AddKeyEvent(ImGuiKey_ModSuper, CImGUIManager::WndIsVkDown(VK_APPS));
+        io.AddKeyEvent(ImGuiMod_Ctrl, CImGUIManager::WndIsVkDown(VK_CONTROL));
+        io.AddKeyEvent(ImGuiMod_Shift, CImGUIManager::WndIsVkDown(VK_SHIFT));
+        io.AddKeyEvent(ImGuiMod_Alt, CImGUIManager::WndIsVkDown(VK_MENU));
+        io.AddKeyEvent(ImGuiMod_Super, CImGUIManager::WndIsVkDown(VK_LWIN) || CImGUIManager::WndIsVkDown(VK_RWIN));
     }
     ImGuiKey CImGUIManager::WndVirtualKeyToImGuiKey(WPARAM wParam)
     {
@@ -427,6 +545,321 @@ namespace PigeonEngine
         default: return ImGuiKey_None;
         }
     }
+    ImGuiViewport* CImGUIManager::WndFindViewportByWindowHandle(HWND hWnd)
+    {
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        for (INT32 Index = 0; Index < PlatformIO.Viewports.Size; ++Index)
+        {
+            ImGuiViewport* Viewport = PlatformIO.Viewports[Index];
+            if (GetViewportWindowHandle(Viewport) == hWnd)
+            {
+                return Viewport;
+            }
+        }
+        return nullptr;
+    }
+    void CImGUIManager::WndUpdateMouseData()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        if (!(io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+        {
+            return;
+        }
+
+        POINT ScreenPos;
+        if (::GetCursorPos(&ScreenPos))
+        {
+            io.AddMouseViewportEvent(0);
+            if (HWND HoveredWindow = ::WindowFromPoint(ScreenPos))
+            {
+                if (ImGuiViewport* HoveredViewport = WndFindViewportByWindowHandle(HoveredWindow))
+                {
+                    io.AddMouseViewportEvent(HoveredViewport->ID);
+                }
+            }
+        }
+
+        if (io.WantSetMousePos)
+        {
+            ::SetCursorPos((INT32)io.MousePos.x, (INT32)io.MousePos.y);
+        }
+    }
+    BOOL CALLBACK CImGUIManager::WndUpdateMonitorsEnumProc(HMONITOR monitor, HDC, LPRECT, LPARAM)
+    {
+        MONITORINFO MonitorInfo = {};
+        MonitorInfo.cbSize = sizeof(MONITORINFO);
+        if (!::GetMonitorInfo(monitor, &MonitorInfo))
+        {
+            return TRUE;
+        }
+
+        ImGuiPlatformMonitor ImGuiMonitor;
+        ImGuiMonitor.MainPos = ImVec2((FLOAT)MonitorInfo.rcMonitor.left, (FLOAT)MonitorInfo.rcMonitor.top);
+        ImGuiMonitor.MainSize = ImVec2((FLOAT)(MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left), (FLOAT)(MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top));
+        ImGuiMonitor.WorkPos = ImVec2((FLOAT)MonitorInfo.rcWork.left, (FLOAT)MonitorInfo.rcWork.top);
+        ImGuiMonitor.WorkSize = ImVec2((FLOAT)(MonitorInfo.rcWork.right - MonitorInfo.rcWork.left), (FLOAT)(MonitorInfo.rcWork.bottom - MonitorInfo.rcWork.top));
+        ImGuiMonitor.DpiScale = 1.0f;
+        ImGuiMonitor.PlatformHandle = (void*)monitor;
+
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        if (MonitorInfo.dwFlags & MONITORINFOF_PRIMARY)
+        {
+            PlatformIO.Monitors.push_front(ImGuiMonitor);
+        }
+        else
+        {
+            PlatformIO.Monitors.push_back(ImGuiMonitor);
+        }
+        return TRUE;
+    }
+    void CImGUIManager::WndUpdateMonitors()
+    {
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        PlatformIO.Monitors.resize(0);
+        ::EnumDisplayMonitors(nullptr, nullptr, WndUpdateMonitorsEnumProc, 0);
+        GetManagerSingleton()->m_WndData.WantUpdateMonitors = FALSE;
+    }
+    void CImGUIManager::InitWndViewportSupport()
+    {
+        WNDCLASSEXW WindowClass = {};
+        WindowClass.cbSize = sizeof(WNDCLASSEXW);
+        WindowClass.style = CS_HREDRAW | CS_VREDRAW;
+        WindowClass.lpfnWndProc = WndProcHandlerPlatformWindow;
+        WindowClass.cbClsExtra = 0;
+        WindowClass.cbWndExtra = 0;
+        WindowClass.hInstance = ::GetModuleHandle(nullptr);
+        WindowClass.hIcon = nullptr;
+        WindowClass.hCursor = nullptr;
+        WindowClass.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+        WindowClass.lpszMenuName = nullptr;
+        WindowClass.lpszClassName = GImGuiPlatformWindowClassName;
+        WindowClass.hIconSm = nullptr;
+        ::RegisterClassExW(&WindowClass);
+
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        PlatformIO.Platform_CreateWindow = PlatformCreateWindow;
+        PlatformIO.Platform_DestroyWindow = PlatformDestroyWindow;
+        PlatformIO.Platform_ShowWindow = PlatformShowWindow;
+        PlatformIO.Platform_SetWindowPos = PlatformSetWindowPos;
+        PlatformIO.Platform_GetWindowPos = PlatformGetWindowPos;
+        PlatformIO.Platform_SetWindowSize = PlatformSetWindowSize;
+        PlatformIO.Platform_GetWindowSize = PlatformGetWindowSize;
+        PlatformIO.Platform_SetWindowFocus = PlatformSetWindowFocus;
+        PlatformIO.Platform_GetWindowFocus = PlatformGetWindowFocus;
+        PlatformIO.Platform_GetWindowMinimized = PlatformGetWindowMinimized;
+        PlatformIO.Platform_SetWindowTitle = PlatformSetWindowTitle;
+
+        ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+        ImGuiPlatformViewportData* ViewportData = IM_NEW(ImGuiPlatformViewportData)();
+        ViewportData->Hwnd = GetManagerSingleton()->m_WndData.hWnd;
+        ViewportData->HwndOwned = FALSE;
+        MainViewport->PlatformUserData = ViewportData;
+
+        WndUpdateMonitors();
+    }
+    void CImGUIManager::ShutDownWndViewportSupport()
+    {
+        if (ImGui::GetCurrentContext())
+        {
+            ImGui::DestroyPlatformWindows();
+        }
+
+        if (GetManagerSingleton()->m_WndData.hWnd)
+        {
+            ::SetPropA(GetManagerSingleton()->m_WndData.hWnd, "IMGUI_CONTEXT", nullptr);
+        }
+
+        ::UnregisterClassW(GImGuiPlatformWindowClassName, ::GetModuleHandle(nullptr));
+    }
+    LRESULT CALLBACK CImGUIManager::WndProcHandlerPlatformWindow(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        ImGuiContext* WindowContext = (ImGuiContext*)::GetPropA(hWnd, "IMGUI_CONTEXT");
+        if (!WindowContext)
+        {
+            return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+        }
+
+        ImGuiContext* PreviousContext = ImGui::GetCurrentContext();
+        if (PreviousContext != WindowContext)
+        {
+            ImGui::SetCurrentContext(WindowContext);
+        }
+
+        LRESULT Result = 0;
+        if (GetManagerSingleton()->WndProcHandler(hWnd, msg, wParam, lParam))
+        {
+            Result = 1;
+        }
+        else if (ImGuiViewport* Viewport = WndFindViewportByWindowHandle(hWnd))
+        {
+            switch (msg)
+            {
+            case WM_CLOSE:
+                Viewport->PlatformRequestClose = true;
+                Result = 0;
+                break;
+            case WM_MOVE:
+                Viewport->PlatformRequestMove = true;
+                break;
+            case WM_SIZE:
+                Viewport->PlatformRequestResize = true;
+                break;
+            case WM_MOUSEACTIVATE:
+                if (Viewport->Flags & ImGuiViewportFlags_NoFocusOnClick)
+                {
+                    Result = MA_NOACTIVATE;
+                }
+                break;
+            case WM_NCHITTEST:
+                if (Viewport->Flags & ImGuiViewportFlags_NoInputs)
+                {
+                    Result = HTTRANSPARENT;
+                }
+                break;
+            }
+        }
+
+        if (PreviousContext != WindowContext)
+        {
+            ImGui::SetCurrentContext(PreviousContext);
+        }
+
+        if (Result != 0)
+        {
+            return Result;
+        }
+        return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+    void CImGUIManager::PlatformCreateWindow(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = IM_NEW(ImGuiPlatformViewportData)();
+        viewport->PlatformUserData = ViewportData;
+
+        GetWin32WindowStyleFromViewportFlags(viewport->Flags, ViewportData->Style, ViewportData->ExStyle);
+        ViewportData->HwndParent = GetViewportWindowHandle(viewport->ParentViewport);
+
+        RECT WindowRect = { (LONG)viewport->Pos.x, (LONG)viewport->Pos.y, (LONG)(viewport->Pos.x + viewport->Size.x), (LONG)(viewport->Pos.y + viewport->Size.y) };
+        AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
+
+        ViewportData->Hwnd = ::CreateWindowExW(
+            ViewportData->ExStyle,
+            GImGuiPlatformWindowClassName,
+            L"PigeonEngine ImGui Viewport",
+            ViewportData->Style,
+            WindowRect.left,
+            WindowRect.top,
+            WindowRect.right - WindowRect.left,
+            WindowRect.bottom - WindowRect.top,
+            ViewportData->HwndParent,
+            nullptr,
+            ::GetModuleHandle(nullptr),
+            nullptr);
+        ViewportData->HwndOwned = TRUE;
+        viewport->PlatformHandle = (void*)ViewportData->Hwnd;
+        viewport->PlatformHandleRaw = (void*)ViewportData->Hwnd;
+
+        ::SetPropA(ViewportData->Hwnd, "IMGUI_CONTEXT", ImGui::GetCurrentContext());
+    }
+    void CImGUIManager::PlatformDestroyWindow(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (ViewportData)
+        {
+            if (ViewportData->Hwnd)
+            {
+                ::SetPropA(ViewportData->Hwnd, "IMGUI_CONTEXT", nullptr);
+                if (ViewportData->HwndOwned)
+                {
+                    ::DestroyWindow(ViewportData->Hwnd);
+                }
+            }
+            IM_DELETE(ViewportData);
+        }
+
+        viewport->PlatformUserData = nullptr;
+        viewport->PlatformHandle = nullptr;
+        viewport->PlatformHandleRaw = nullptr;
+    }
+    void CImGUIManager::PlatformShowWindow(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (ViewportData && ViewportData->Hwnd)
+        {
+            ::ShowWindow(ViewportData->Hwnd, (viewport->Flags & ImGuiViewportFlags_NoFocusOnAppearing) ? SW_SHOWNA : SW_SHOW);
+        }
+    }
+    void CImGUIManager::PlatformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (!ViewportData || !ViewportData->Hwnd)
+        {
+            return;
+        }
+        RECT WindowRect = { (LONG)pos.x, (LONG)pos.y, (LONG)pos.x, (LONG)pos.y };
+        AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
+        ::SetWindowPos(ViewportData->Hwnd, nullptr, WindowRect.left, WindowRect.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+    ImVec2 CImGUIManager::PlatformGetWindowPos(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (!ViewportData || !ViewportData->Hwnd)
+        {
+            return ImVec2(0.0f, 0.0f);
+        }
+        POINT Position = { 0, 0 };
+        ::ClientToScreen(ViewportData->Hwnd, &Position);
+        return ImVec2((FLOAT)Position.x, (FLOAT)Position.y);
+    }
+    void CImGUIManager::PlatformSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (!ViewportData || !ViewportData->Hwnd)
+        {
+            return;
+        }
+        RECT WindowRect = { 0, 0, (LONG)size.x, (LONG)size.y };
+        AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
+        ::SetWindowPos(ViewportData->Hwnd, nullptr, 0, 0, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
+    }
+    ImVec2 CImGUIManager::PlatformGetWindowSize(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (!ViewportData || !ViewportData->Hwnd)
+        {
+            return ImVec2(0.0f, 0.0f);
+        }
+        RECT ClientRect = {};
+        ::GetClientRect(ViewportData->Hwnd, &ClientRect);
+        return ImVec2((FLOAT)(ClientRect.right - ClientRect.left), (FLOAT)(ClientRect.bottom - ClientRect.top));
+    }
+    void CImGUIManager::PlatformSetWindowFocus(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (ViewportData && ViewportData->Hwnd)
+        {
+            ::BringWindowToTop(ViewportData->Hwnd);
+            ::SetForegroundWindow(ViewportData->Hwnd);
+            ::SetFocus(ViewportData->Hwnd);
+        }
+    }
+    bool CImGUIManager::PlatformGetWindowFocus(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        return (ViewportData && ViewportData->Hwnd && ::GetForegroundWindow() == ViewportData->Hwnd);
+    }
+    bool CImGUIManager::PlatformGetWindowMinimized(ImGuiViewport* viewport)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        return (ViewportData && ViewportData->Hwnd && ::IsIconic(ViewportData->Hwnd) != 0);
+    }
+    void CImGUIManager::PlatformSetWindowTitle(ImGuiViewport* viewport, const char* title)
+    {
+        ImGuiPlatformViewportData* ViewportData = (ImGuiPlatformViewportData*)viewport->PlatformUserData;
+        if (ViewportData && ViewportData->Hwnd)
+        {
+            ::SetWindowTextA(ViewportData->Hwnd, title);
+        }
+    }
     void CImGUIManager::InitD3D()
     {
         ImGuiIO& io = ImGui::GetIO();
@@ -435,6 +868,9 @@ namespace PigeonEngine
         io.BackendRendererUserData = (void*)(&m_D3DData);
         io.BackendRendererName = "imgui_impl_dx11";
         io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+        io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
+
+        InitD3DViewportSupport();
     }
     void CImGUIManager::D3DSetupRenderState(ImDrawData* drawData)
     {
@@ -769,9 +1205,9 @@ namespace PigeonEngine
             {
                 D3D11_INPUT_ELEMENT_DESC tempLayout[3] =
                 {
-                    { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT32)IM_OFFSETOF(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0u },
-                    { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT32)IM_OFFSETOF(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u },
-                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT32)IM_OFFSETOF(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u }
+                    { "POSITION", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT32)offsetof(ImDrawVert, pos), D3D11_INPUT_PER_VERTEX_DATA, 0u },
+                    { "TEXCOORD", 0u, DXGI_FORMAT_R32G32_FLOAT,   0u, (UINT32)offsetof(ImDrawVert, uv),  D3D11_INPUT_PER_VERTEX_DATA, 0u },
+                    { "COLOR",    0u, DXGI_FORMAT_R8G8B8A8_UNORM, 0u, (UINT32)offsetof(ImDrawVert, col), D3D11_INPUT_PER_VERTEX_DATA, 0u }
                 };
                 HRESULT hr = dvc->CreateInputLayout(tempLayout, 3u, static_cast<void*>(buffer), fsize, &m_D3DData.InputLayout);
                 if (FAILED(hr))
@@ -880,6 +1316,149 @@ namespace PigeonEngine
         if (m_D3DData.InputLayout) { m_D3DData.InputLayout->Release(); m_D3DData.InputLayout = nullptr; }
         if (m_D3DData.VertexShader) { m_D3DData.VertexShader->Release(); m_D3DData.VertexShader = nullptr; }
     }
+    void CImGUIManager::InitD3DViewportSupport()
+    {
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        PlatformIO.Renderer_CreateWindow = RendererCreateWindow;
+        PlatformIO.Renderer_DestroyWindow = RendererDestroyWindow;
+        PlatformIO.Renderer_SetWindowSize = RendererSetWindowSize;
+        PlatformIO.Renderer_RenderWindow = RendererRenderWindow;
+        PlatformIO.Renderer_SwapBuffers = RendererSwapBuffers;
+    }
+    void CImGUIManager::ShutDownD3DViewportSupport()
+    {
+        ImGuiPlatformIO& PlatformIO = ImGui::GetPlatformIO();
+        PlatformIO.Renderer_CreateWindow = nullptr;
+        PlatformIO.Renderer_DestroyWindow = nullptr;
+        PlatformIO.Renderer_SetWindowSize = nullptr;
+        PlatformIO.Renderer_RenderWindow = nullptr;
+        PlatformIO.Renderer_SwapBuffers = nullptr;
+    }
+    void CImGUIManager::CreateViewportRenderTarget(ImGuiViewport* viewport)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (!ViewportData || !ViewportData->SwapChain)
+        {
+            return;
+        }
+
+        ID3D11Texture2D* BackBuffer = nullptr;
+        if (FAILED(ViewportData->SwapChain->GetBuffer(0u, __uuidof(ID3D11Texture2D), (void**)(&BackBuffer))) || !BackBuffer)
+        {
+            return;
+        }
+
+        Microsoft::WRL::ComPtr<ID3D11Device> Device = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();
+        Device->CreateRenderTargetView(BackBuffer, nullptr, &ViewportData->RenderTargetView);
+        BackBuffer->Release();
+    }
+    void CImGUIManager::DestroyViewportRenderTarget(ImGuiViewport* viewport)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (ViewportData && ViewportData->RenderTargetView)
+        {
+            ViewportData->RenderTargetView->Release();
+            ViewportData->RenderTargetView = nullptr;
+        }
+    }
+    void CImGUIManager::RendererCreateWindow(ImGuiViewport* viewport)
+    {
+        ImGuiRendererViewportData* ViewportData = IM_NEW(ImGuiRendererViewportData)();
+        viewport->RendererUserData = ViewportData;
+
+        HWND hWnd = GetViewportWindowHandle(viewport);
+        IM_ASSERT(hWnd != nullptr);
+
+        Microsoft::WRL::ComPtr<ID3D11Device> Device = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();
+        Microsoft::WRL::ComPtr<IDXGIDevice> DxgiDevice;
+        Microsoft::WRL::ComPtr<IDXGIAdapter> DxgiAdapter;
+        Microsoft::WRL::ComPtr<IDXGIFactory> DxgiFactory;
+        if (FAILED(Device->QueryInterface(IID_PPV_ARGS(DxgiDevice.ReleaseAndGetAddressOf()))))
+        {
+            return;
+        }
+        if (FAILED(DxgiDevice->GetParent(IID_PPV_ARGS(DxgiAdapter.ReleaseAndGetAddressOf()))))
+        {
+            return;
+        }
+        if (FAILED(DxgiAdapter->GetParent(IID_PPV_ARGS(DxgiFactory.ReleaseAndGetAddressOf()))))
+        {
+            return;
+        }
+
+        DXGI_SWAP_CHAIN_DESC SwapChainDesc = {};
+        SwapChainDesc.BufferDesc.Width = (UINT)viewport->Size.x;
+        SwapChainDesc.BufferDesc.Height = (UINT)viewport->Size.y;
+        SwapChainDesc.BufferDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+        SwapChainDesc.SampleDesc.Count = 1u;
+        SwapChainDesc.SampleDesc.Quality = 0u;
+        SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        SwapChainDesc.BufferCount = 1u;
+        SwapChainDesc.OutputWindow = hWnd;
+        SwapChainDesc.Windowed = TRUE;
+        SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        SwapChainDesc.Flags = 0u;
+
+        if (FAILED(DxgiFactory->CreateSwapChain(Device.Get(), &SwapChainDesc, &ViewportData->SwapChain)))
+        {
+            return;
+        }
+
+        DxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
+        CreateViewportRenderTarget(viewport);
+    }
+    void CImGUIManager::RendererDestroyWindow(ImGuiViewport* viewport)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (ViewportData)
+        {
+            DestroyViewportRenderTarget(viewport);
+            if (ViewportData->SwapChain)
+            {
+                ViewportData->SwapChain->Release();
+                ViewportData->SwapChain = nullptr;
+            }
+            IM_DELETE(ViewportData);
+        }
+        viewport->RendererUserData = nullptr;
+    }
+    void CImGUIManager::RendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (!ViewportData || !ViewportData->SwapChain)
+        {
+            return;
+        }
+        DestroyViewportRenderTarget(viewport);
+        ViewportData->SwapChain->ResizeBuffers(0u, (UINT)size.x, (UINT)size.y, DXGI_FORMAT_UNKNOWN, 0u);
+        CreateViewportRenderTarget(viewport);
+    }
+    void CImGUIManager::RendererRenderWindow(ImGuiViewport* viewport, void*)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (!ViewportData || !ViewportData->RenderTargetView)
+        {
+            return;
+        }
+
+        Microsoft::WRL::ComPtr<ID3D11DeviceContext> Context = RDeviceD3D11::GetDeviceSingleton()->GetRenderDeviceContext();
+        ID3D11RenderTargetView* RenderTarget = ViewportData->RenderTargetView;
+        Context->OMSetRenderTargets(1u, &RenderTarget, nullptr);
+        if (!(viewport->Flags & ImGuiViewportFlags_NoRendererClear))
+        {
+            const FLOAT ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+            Context->ClearRenderTargetView(RenderTarget, ClearColor);
+        }
+        GetManagerSingleton()->D3DRenderDrawData(viewport->DrawData);
+    }
+    void CImGUIManager::RendererSwapBuffers(ImGuiViewport* viewport, void*)
+    {
+        ImGuiRendererViewportData* ViewportData = (ImGuiRendererViewportData*)viewport->RendererUserData;
+        if (ViewportData && ViewportData->SwapChain)
+        {
+            ViewportData->SwapChain->Present(0u, 0u);
+        }
+    }
 
     PE_INLINE ImTextureID EngineTextureToImgui(const ETexture2DAsset* InAsset)
     {
@@ -891,7 +1470,7 @@ namespace PigeonEngine
                 return ((ImTextureID)(RenderResource->ShaderResourceView.Get()));
             }
         }
-        return nullptr;
+        return ImTextureID_Invalid;
     }
 
 #endif

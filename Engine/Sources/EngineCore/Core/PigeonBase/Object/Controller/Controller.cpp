@@ -181,7 +181,7 @@ namespace PigeonEngine
             
             MovingDirection.z = bWPressed ? (bSPressed ? 0.0f :  1.0f) : (bSPressed ? -1.0f : 0.0f);
             MovingDirection.x = bAPressed ? (bDPressed ? 0.0f : -1.0f) : (bDPressed ?  1.0f : 0.0f);
-            MovingDirection.y = bQPressed ? (bEPressed ? 0.0f :  1.0f) : (bEPressed ? -1.0f : 0.0f);
+            MovingDirection.y = bQPressed ? (bEPressed ? 0.0f : -1.0f) : (bEPressed ?  1.0f : 0.0f);
             
             Vector3 CurrentLoc = this->GetActorLocation();
 			Vector3 WorldUpDir = this->GetWorld() ? this->GetWorld()->GetUpVector() : Vector3::YVector();

@@ -1,5 +1,4 @@
 ﻿#include "World.h"
-#include "World.h"
 #include "../../../../Main/MainManager.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
@@ -51,7 +50,7 @@ namespace PigeonEngine
             RootActor = nullptr;
         }
 
-		this->RootActor = new PLevelActor();
+        this->RootActor = CreateRootActor();
 		this->RootActor->SetActorScale(Vector3(1,1,1));
 		this->RootActor->SetIsTickable(TRUE);
 		if (!this->RootActor->IsInitialized())
@@ -60,22 +59,7 @@ namespace PigeonEngine
 		}
 		this->RootActor->BeginAddedToScene(this);
 
-#if _EDITOR_ONLY
-        this->EditorController = new PEditorController();
-        this->EditorController->SetIsTickable(TRUE);
-        POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
-        this->AddActor(EditorController);
-        this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-        this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
-#else
-
-        this->Controller = new PController();
-        this->Controller->SetIsTickable(TRUE);
-        POBJ_DEBUGNAME_SET(this->Controller, "Controller");
-        this->AddActor(Controller);
-        this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-        this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
-#endif
+        CreateDefaultController();
 
         ApplyGravitySettings();
 
@@ -103,6 +87,35 @@ namespace PigeonEngine
 			RootActor->FixedTick(deltaTime);
 		}
 	}
+
+    PActor* PWorld::CreateRootActor()
+    {
+        return new PLevelActor();
+    }
+
+    void PWorld::CreateDefaultController()
+    {
+#if _EDITOR_ONLY
+        this->EditorController = new PEditorController();
+        this->EditorController->SetIsTickable(TRUE);
+        POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
+        this->AddActor(EditorController);
+        this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+        this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
+#else
+        this->Controller = new PController();
+        this->Controller->SetIsTickable(TRUE);
+        POBJ_DEBUGNAME_SET(this->Controller, "Controller");
+        this->AddActor(Controller);
+        this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+        this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
+#endif
+    }
+
+    BOOL32 PWorld::ShouldAffectGlobalPhysics() const
+    {
+        return TRUE;
+    }
 
     void PWorld::Destroy()
     {
@@ -267,7 +280,10 @@ namespace PigeonEngine
     void PWorld::ApplyGravitySettings()
     {
         const Vector3 WorldGravity = GetGravity();
-        FPhysicsManager::GetManagerSingleton()->SetGravity(WorldGravity);
+        if (ShouldAffectGlobalPhysics())
+        {
+            FPhysicsManager::GetManagerSingleton()->SetGravity(WorldGravity);
+        }
         OnGravityChanged.Broadcast(WorldGravity);
     }
 
@@ -321,7 +337,6 @@ namespace PigeonEngine
 
         this->SetSelectedComponent(DefaultComp);
 	}
-
 	void PWorld::SetSelectedComponent(PActorComponent* Selected)
 	{
         this->ImguiSelectedComponent = Selected;

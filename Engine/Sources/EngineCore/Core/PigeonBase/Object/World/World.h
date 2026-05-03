@@ -41,7 +41,7 @@ namespace PigeonEngine
     /*
      * actual world in runtime
      */
-    class PWorld final : public PObject
+    class PWorld : public PObject
     {
     public:
         CLASS_VIRTUAL_NOCOPY_BODY(PWorld)
@@ -65,7 +65,7 @@ namespace PigeonEngine
         void AddActor(PActor* NewActor, const ETransform& Trans = ETransform());
         //void DestroyActor();
     private:
-        PLevelActor* RootActor = nullptr;
+        PActor* RootActor = nullptr;
         TSet<PActor*> AllActors;
 #if _EDITOR_ONLY
     public:
@@ -92,6 +92,10 @@ namespace PigeonEngine
         void SetGravityUseUpVector(BOOL32 bInUseUpVector);
         FOnWorldUpVectorChanged OnUpVectorChanged;
         FOnWorldGravityChanged OnGravityChanged;
+    protected:
+        virtual PActor* CreateRootActor();
+        virtual void CreateDefaultController();
+        virtual BOOL32 ShouldAffectGlobalPhysics() const;
     private:
         class PController* Controller = nullptr;
         Vector3 UpVector = Vector3::YVector();
@@ -128,5 +132,4 @@ namespace PigeonEngine
         
     };
 
-   
 };

@@ -65,7 +65,10 @@ namespace PigeonEngine
 	{
 #if _EDITOR_ONLY
 		{
-			DebugWireframePrimitiveManager->Initialize();
+			if (bManageDebugWireframe && DebugWireframePrimitiveManager)
+			{
+				DebugWireframePrimitiveManager->Initialize();
+			}
 		}
 #endif
 		{
@@ -250,7 +253,10 @@ namespace PigeonEngine
 
 #if _EDITOR_ONLY
 		{
-			DebugWireframePrimitiveManager->ShutDown();
+			if (bManageDebugWireframe && DebugWireframePrimitiveManager)
+			{
+				DebugWireframePrimitiveManager->ShutDown();
+			}
 		}
 #endif
 	}
@@ -261,7 +267,10 @@ namespace PigeonEngine
 	void RSceneRenderer::InitNewFrame()
 	{
  #if _EDITOR_ONLY
-		DebugWireframePrimitiveManager->InitNewFrame();
+		if (bRenderDebugWireframe && DebugWireframePrimitiveManager)
+		{
+			DebugWireframePrimitiveManager->InitNewFrame();
+		}
 	#endif
 		InitRendererSettings();
 
@@ -574,11 +583,14 @@ namespace PigeonEngine
 		RenderDevice->SetRenderTarget(InSceneTextures->SceneColor, InSceneTextures->SceneDepthStencil);
 #if _EDITOR_ONLY
 		{
-			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
+			if (bRenderDebugWireframe && DebugWireframePrimitiveManager)
+			{
+				RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
 
-			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
+				DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
 
-			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			}
 		}
 #endif
 	}
