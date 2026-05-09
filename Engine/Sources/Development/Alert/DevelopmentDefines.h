@@ -32,7 +32,7 @@ namespace PigeonEngine
 		struct _DDummyArgument {};
 
 		template<typename TExpressionLambdaType>
-		static bool __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
+		static BOOL8 __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
 			const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption, const CHAR* InMessage, _DDummyArgument)
 		{
 			if (!(InExpressionFunction()))
@@ -44,7 +44,7 @@ namespace PigeonEngine
 		}
 
 		template<typename TExpressionLambdaType>
-		static bool __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
+		static BOOL8 __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
 			const CHAR* InFile, const UINT32 InLine, const CHAR* InCaption, _DDummyArgument)
 		{
 			if (!(InExpressionFunction()))
@@ -56,7 +56,7 @@ namespace PigeonEngine
 		}
 
 		template<typename TExpressionLambdaType>
-		static bool __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
+		static BOOL8 __Check_(const TExpressionLambdaType& InExpressionFunction, const CHAR* InExpressionString,
 			const CHAR* InFile, const UINT32 InLine, _DDummyArgument)
 		{
 			if (!(InExpressionFunction()))

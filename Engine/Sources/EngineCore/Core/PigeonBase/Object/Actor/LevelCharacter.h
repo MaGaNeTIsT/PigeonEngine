@@ -33,14 +33,14 @@ namespace PigeonEngine
 		virtual void UserEndPlay();
 
 		virtual void OnPhysicsAdjustBodyVelocity(const FPhysicsBodyId& inBodyID2, Vector3& ioLinearVelocity, Vector3& ioAngularVelocity) {}
-		virtual bool OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) { return TRUE; }
+		virtual BOOL8 OnPhysicsContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) { return TRUE; }
 		virtual void OnPhysicsContactAdded(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, FPhysicsCharacterContactSettings& ioSettings) {}
 		virtual void OnPhysicsContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) {}
 
 	private:
         void HandleWorldUpVectorChanged(const Vector3& InUpVector);
 		virtual void OnAdjustBodyVelocity(const FPhysicsBodyId& inBodyID2, Vector3& ioLinearVelocity, Vector3& ioAngularVelocity) override;
-		virtual bool OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) override;
+		virtual BOOL8 OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2) override;
 		virtual void OnContactAdded(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, FPhysicsCharacterContactSettings& ioSettings) override;
 		virtual void OnContactSolve(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2, const Vector3& inContactPosition, const Vector3& inContactNormal, const Vector3& inContactVelocity, const Vector3& inCharacterVelocity, Vector3& ioNewCharacterVelocity) override;
 

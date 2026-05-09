@@ -43,9 +43,10 @@ namespace PigeonEngine
 		class FPhysicsManager*				m_PhysicsManager				= nullptr;
 
 		// Render region START
-		class RDeviceD3D11*					m_RenderDeviceD3D11				= nullptr;
+		class IRRHIDevice*					RenderDevice					= nullptr;
 		class RScene*						RenderScene						= nullptr;
 		class RSceneRenderer*				SceneRenderer					= nullptr;
+		class RRenderThread*				RenderThread					= nullptr;
 		// Render region END
 
 #if _EDITOR_ONLY

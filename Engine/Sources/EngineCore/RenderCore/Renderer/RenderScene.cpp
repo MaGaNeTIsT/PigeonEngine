@@ -32,6 +32,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RScene::RScene()
+		: BackSlotIndex(0u), FrontSlotIndex(1u)
 	{
 	}
 	RScene::~RScene()
@@ -50,12 +51,16 @@ namespace PigeonEngine
 	{
 		RenderSceneOctree.ClearPrimitives();
 
-		RenderAddCommands.DoCommands();
-		RenderAddCommands.EmptyQueue();
-		RenderUpdateCommands.DoCommands();
-		RenderUpdateCommands.EmptyQueue();
-		RenderRemoveCommands.DoCommands();
-		RenderRemoveCommands.EmptyQueue();
+		// Drain both slots so any pending lambda is replayed and freed.
+		for (UINT32 SlotIndex = 0u; SlotIndex < 2u; SlotIndex++)
+		{
+			RenderAddCommands[SlotIndex].DoCommands();
+			RenderAddCommands[SlotIndex].EmptyQueue();
+			RenderUpdateCommands[SlotIndex].DoCommands();
+			RenderUpdateCommands[SlotIndex].EmptyQueue();
+			RenderRemoveCommands[SlotIndex].DoCommands();
+			RenderRemoveCommands[SlotIndex].EmptyQueue();
+		}
 
 		UnbindErrorCheck();
 	}
@@ -87,7 +92,7 @@ namespace PigeonEngine
 			InComponent->GetCameraMatrix());
 		ERenderViewParams* TempParams = new ERenderViewParams(InComponent->GetCameraFrustum(), InComponent->GetCameraViewInfo());
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
 				SceneProxy->SetupProxy(TempIsMainCamera, *TempMatrices, *TempParams);
@@ -101,7 +106,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RViewProxy* SceneProxy = InComponent->ViewProxy;
 		InComponent->ViewProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveCamera_RenderThread(SceneProxy, FALSE);
@@ -137,7 +142,7 @@ namespace PigeonEngine
 		}
 #endif
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
 				SceneProxy->UpdateViewSettings(TempIsMainCamera);
@@ -173,7 +178,7 @@ namespace PigeonEngine
 		ERenderSkyLightParams* TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity());
 		const ETextureCubeAsset* TempCubeMapAsset = InComponent->GetCubeMapAsset();
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempCubeMapAsset]()->void
 			{
 				SceneProxy->SetupProxy(*TempMatrices, *TempParams, TempCubeMapAsset);
@@ -187,7 +192,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RSkyLightSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveSkyLight_RenderThread(SceneProxy, FALSE);
@@ -220,7 +225,7 @@ namespace PigeonEngine
 			TempCubeMapAsset = InComponent->GetCubeMapAsset();
 		}
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempCubeMapAsset]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
@@ -266,7 +271,7 @@ namespace PigeonEngine
 			TempUsedCascadeShadowData = new ECascadeShadowData(*TempCascadeShadowData);
 		}
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempUsedCascadeShadowData]()->void
 			{
 				SceneProxy->SetupProxy(*TempMatrices, *TempParams, TempUsedCascadeShadowData);
@@ -281,7 +286,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RDirectionalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveDirectionalLight_RenderThread(SceneProxy, FALSE);
@@ -321,7 +326,7 @@ namespace PigeonEngine
 			}
 		}
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempUsedCascadeShadowData]()->void
 			{
 				BOOL32 NeedUpdateParams = FALSE;
@@ -364,7 +369,7 @@ namespace PigeonEngine
 		const EStaticMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
 		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMeshAsset, TempMatAsset]()->void
 			{
 				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMeshAsset, TempMatAsset);
@@ -377,7 +382,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, FALSE);
@@ -421,7 +426,7 @@ namespace PigeonEngine
 			InComponent->GetMaterialTextureBySlot(0u, *TempTexs);
 		}
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene
 			, SceneProxy
 			, bMovable
@@ -483,7 +488,7 @@ namespace PigeonEngine
 		const ESkeletonAsset* TempSkeletonAsset = InComponent->GetSkeletonAsset();
 		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
 			TempMatrices, TempMeshAsset, TempSkeletonAsset,
 			TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
@@ -512,7 +517,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RSkeletalMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, FALSE);
@@ -550,7 +555,7 @@ namespace PigeonEngine
 		BOOL32 TempUpdateBoneData = (UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_BONE_DATA) != 0u;
 		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
 			TempMatrices, TempMeshAsset, TempSkeletonAsset,
 			TempUpdateBoneData, TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
@@ -613,7 +618,7 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldScale());
 		EBezierGrassProperty* TempProperty = new EBezierGrassProperty(InComponent->Property);
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempProperty]()->void
 			{
 				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices);
@@ -631,7 +636,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RBezierGrassSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveBezierGrass_RenderThread(SceneProxy, FALSE);
@@ -676,7 +681,7 @@ namespace PigeonEngine
 			TempWindStrength = InComponent->WindStrength;
 		}
 
-		RenderUpdateCommands.EnqueueCommand(
+		EnqueueUpdateCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempProperty, TempLayerData, TempTileAnchor, TempTileSize, TempNumTilesX, TempNumTilesZ, TempWindDirection, TempWindStrength]()->void
 			{
 				BOOL32 NeedUpdateRenderResource = FALSE;
@@ -715,29 +720,35 @@ namespace PigeonEngine
 				}
 			});
 	}
-	RCommand& RScene::GetAddCommands()
+	RCommand& RScene::GetAddCommandsForRender()
 	{
-		return RenderAddCommands;
+		return RenderAddCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetAddCommands()const
+	const RCommand& RScene::GetAddCommandsForRender()const
 	{
-		return RenderAddCommands;
+		return RenderAddCommands[FrontSlotIndex];
 	}
-	RCommand& RScene::GetRemoveCommands()
+	RCommand& RScene::GetRemoveCommandsForRender()
 	{
-		return RenderRemoveCommands;
+		return RenderRemoveCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetRemoveCommands()const
+	const RCommand& RScene::GetRemoveCommandsForRender()const
 	{
-		return RenderRemoveCommands;
+		return RenderRemoveCommands[FrontSlotIndex];
 	}
-	RCommand& RScene::GetUpdateCommands()
+	RCommand& RScene::GetUpdateCommandsForRender()
 	{
-		return RenderUpdateCommands;
+		return RenderUpdateCommands[FrontSlotIndex];
 	}
-	const RCommand& RScene::GetUpdateCommands()const
+	const RCommand& RScene::GetUpdateCommandsForRender()const
 	{
-		return RenderUpdateCommands;
+		return RenderUpdateCommands[FrontSlotIndex];
+	}
+	void RScene::SwapCommandSlots()
+	{
+		const UINT32 NewBack = FrontSlotIndex;
+		FrontSlotIndex = BackSlotIndex;
+		BackSlotIndex = NewBack;
 	}
 	ROctree& RScene::GetSceneOctree()
 	{
@@ -884,7 +895,7 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldScale());
 		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
 
-		RenderAddCommands.EnqueueCommand(
+		EnqueueAddCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMatAsset]()->void
 			{
 				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMatAsset);
@@ -898,7 +909,7 @@ namespace PigeonEngine
 		RScene* Scene = this;
 		RFluidWaterSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
-		RenderRemoveCommands.EnqueueCommand(
+		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
 				Scene->AddOrRemoveFluidWater_RenderThread(SceneProxy, FALSE);

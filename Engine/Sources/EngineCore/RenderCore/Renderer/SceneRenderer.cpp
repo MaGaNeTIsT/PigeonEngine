@@ -51,6 +51,10 @@ namespace PigeonEngine
 	RSceneRenderer::RSceneRenderer()
 		: Scene(nullptr), SimpleFullScreenVertexShader(nullptr), SimpleFullScreenPixelShader(nullptr), SceneLightingPixelShader(nullptr), FinalOutputView(0u), NeedStencil(FALSE)
 	{
+		for (UINT32 i = 0u; i < RPipelineStateType::PIPELINE_STATE_COUNT; i++)
+		{
+			PipelineStates[i] = nullptr;
+		}
 #if _EDITOR_ONLY
 		{
 			DebugWireframePrimitiveManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
@@ -68,116 +72,35 @@ namespace PigeonEngine
 			DebugWireframePrimitiveManager->Initialize();
 		}
 #endif
+		// Samplers stay as legacy RSamplerResource entries; they are not
+		// part of any PSO (samplers are bound separately via SetSampler).
 		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
-				RSamplerState(
-					RFilterType::FILTER_POINT,
+			RDeviceD3D11* LegacyDevice = RDeviceD3D11::GetDeviceSingleton();
+			LegacyDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState,
+				RSamplerState(RFilterType::FILTER_POINT,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
-			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState,
-				RSamplerState(
-					RFilterType::FILTER_POINT,
+			LegacyDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState,
+				RSamplerState(RFilterType::FILTER_POINT,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
-			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState,
-				RSamplerState(
-					RFilterType::FILTER_LINEAR,
+			LegacyDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState,
+				RSamplerState(RFilterType::FILTER_LINEAR,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP));
-			RenderDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState,
-				RSamplerState(
-					RFilterType::FILTER_LINEAR,
+			LegacyDevice->CreateSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState,
+				RSamplerState(RFilterType::FILTER_LINEAR,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP,
 					RTextureAddressModeType::TEXTURE_ADDRESS_WRAP));
 		}
 
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_WIREFRAME].RasterizerState,
-				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_WIREFRAME));
-			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_NONE].RasterizerState,
-				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID));
-			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState,
-				RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID));
-			RenderDevice->CreateRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_FRONT].RasterizerState,
-				RRasterizerState(RCullModeType::CULL_FRONT, RFillModeType::FILL_SOLID));
-		}
-
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			{
-				const RBlendState BlendStates[] =
-				{
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
-				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
-			}
-			{
-				const RBlendState BlendStates[] =
-				{
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE)
-				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
-			}
-			{
-				const RBlendState BlendStates[] =
-				{
-					RBlendState(RBlendOptionType::BLEND_SRC_COLOR, RBlendOptionType::BLEND_DEST_COLOR, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, TRUE)
-				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
-			}
-			{
-				const RBlendState BlendStates[] =
-				{
-					RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
-								RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE)
-				};
-				RenderDevice->CreateBlendState(Blend[RBlendType::BLEND_TYPE_FORWARD].BlendState, BlendStates, PE_ARRAYSIZE(BlendStates));
-			}
-		}
-
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-
-			RStencilState TempNopStencilState(
-				0xffu, 0xffu, RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP)
-				, RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE);
-
-			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState,
-				RDepthState(RComparisonFunctionType::COMPARISON_ALWAYS, RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL, FALSE),
-				&TempNopStencilState);
-			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_STENCIL_NOP].DepthStencilState,
-				RDepthState(RComparisonFunctionType::COMPARISON_LESS),
-				&TempNopStencilState);
-			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState,
-				RDepthState(RComparisonFunctionType::COMPARISON_LESS_EQUAL),
-				&TempNopStencilState);
-			RenderDevice->CreateDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_EQUAL_STENCIL_NOP].DepthStencilState,
-				RDepthState(RComparisonFunctionType::COMPARISON_EQUAL),
-				&TempNopStencilState);
-		}
-
+		// Shader assets need to load before pipeline state assembly so that
+		// the full-screen lighting / output PSOs can pick up the shader
+		// handles.
 		{
 			const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
 			const EString ImportVSName = EString("FullScreenTriangle") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
@@ -201,6 +124,154 @@ namespace PigeonEngine
 				SceneLightingPixelShader,
 				&ImportPath, &ImportSceneLightingPSName);
 		}
+
+		// Build pipeline states. Each PSO bakes (raster + blend + depth-
+		// stencil + topology). Environment PSOs leave VS/PS empty; mesh
+		// proxies running through them bind their own shaders inline.
+		{
+			IRRHIDevice* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+			const RStencilState NopStencil(
+				0xffu, 0xffu,
+				RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP),
+				RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP),
+				FALSE);
+
+			const RBlendState BlendOff(
+				RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+				RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+				RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE);
+			const RBlendState BlendLighting(
+				RBlendOptionType::BLEND_SRC_COLOR, RBlendOptionType::BLEND_DEST_COLOR, RBlendOperationType::BLEND_OP_ADD,
+				RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+				RColorWriteMaskType::COLOR_WRITE_MASK_ALL, TRUE);
+
+			const RDepthState DepthLessEqual(RComparisonFunctionType::COMPARISON_LESS_EQUAL);
+			const RDepthState DepthNop(RComparisonFunctionType::COMPARISON_ALWAYS, RDepthWriteMaskType::DEPTH_WRITE_MASK_ALL, FALSE);
+
+			IRRHIShader* FullScreenVS = nullptr;
+			IRRHIShader* FullScreenPS = nullptr;
+			IRRHIShader* LightingPS = nullptr;
+			if (SimpleFullScreenVertexShader)
+			{
+				// Reuse the already-loaded RVertexShaderResource; its IRD3D11Shader
+				// virtual getters expose the native ID3D11VertexShader and
+				// pre-built ID3D11InputLayout.
+				FullScreenVS = const_cast<RVertexShaderResource*>(SimpleFullScreenVertexShader->GetRenderResource());
+			}
+			if (SimpleFullScreenPixelShader)
+			{
+				FullScreenPS = const_cast<RPixelShaderResource*>(SimpleFullScreenPixelShader->GetRenderResource());
+			}
+			if (SceneLightingPixelShader)
+			{
+				LightingPS = const_cast<RPixelShaderResource*>(SceneLightingPixelShader->GetRenderResource());
+			}
+
+			// PIPELINE_STATE_BASE_PASS_MRT (env) - MRT into 4 GBuffers + depth, cull back, no blend, depth less-equal
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthLessEqual;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 4u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;	// SceneColor
+				Desc.RenderTargetFormats[1]	= RFormatType::FORMAT_R8G8B8A8_UNORM;	// GBufferA
+				Desc.RenderTargetFormats[2]	= RFormatType::FORMAT_R10G10B10A2_UNORM;// GBufferB
+				Desc.RenderTargetFormats[3]	= RFormatType::FORMAT_R8G8B8A8_UNORM;	// GBufferC
+				Desc.DepthStencilFormat		= RFormatType::FORMAT_R24G8_TYPELESS;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_BASE_PASS_MRT]);
+			}
+			// PIPELINE_STATE_BASE_PASS_GRASS_SOLID (env) - cull none
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthLessEqual;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 4u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;
+				Desc.RenderTargetFormats[1]	= RFormatType::FORMAT_R8G8B8A8_UNORM;
+				Desc.RenderTargetFormats[2]	= RFormatType::FORMAT_R10G10B10A2_UNORM;
+				Desc.RenderTargetFormats[3]	= RFormatType::FORMAT_R8G8B8A8_UNORM;
+				Desc.DepthStencilFormat		= RFormatType::FORMAT_R24G8_TYPELESS;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_SOLID]);
+			}
+			// PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME (env)
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_WIREFRAME);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthLessEqual;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 4u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;
+				Desc.RenderTargetFormats[1]	= RFormatType::FORMAT_R8G8B8A8_UNORM;
+				Desc.RenderTargetFormats[2]	= RFormatType::FORMAT_R10G10B10A2_UNORM;
+				Desc.RenderTargetFormats[3]	= RFormatType::FORMAT_R8G8B8A8_UNORM;
+				Desc.DepthStencilFormat		= RFormatType::FORMAT_R24G8_TYPELESS;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME]);
+			}
+			// PIPELINE_STATE_LIGHTING (full) - additive full-screen pass
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.VertexShader			= FullScreenVS;
+				Desc.PixelShader			= LightingPS;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendLighting;
+				Desc.Depth					= DepthNop;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 1u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_LIGHTING]);
+			}
+			// PIPELINE_STATE_SKY (env) - cull front for sky dome
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_FRONT, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthLessEqual;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 1u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;
+				Desc.DepthStencilFormat		= RFormatType::FORMAT_R24G8_TYPELESS;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_SKY]);
+			}
+			// PIPELINE_STATE_FORWARD (env) - forward-rendered geometry / debug primitives
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthLessEqual;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 1u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R11G11B10_FLOAT;
+				Desc.DepthStencilFormat		= RFormatType::FORMAT_R24G8_TYPELESS;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_FORWARD]);
+			}
+			// PIPELINE_STATE_FINAL_OUTPUT (full) - blit to back buffer
+			{
+				RRHIGraphicsPipelineDesc Desc;
+				Desc.VertexShader			= FullScreenVS;
+				Desc.PixelShader			= FullScreenPS;
+				Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_BACK, RFillModeType::FILL_SOLID);
+				Desc.Blend					= BlendOff;
+				Desc.Depth					= DepthNop;
+				Desc.Stencil				= NopStencil;
+				Desc.PrimitiveTopology		= RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				Desc.RenderTargetCount		= 1u;
+				Desc.RenderTargetFormats[0]	= RFormatType::FORMAT_R8G8B8A8_UNORM;
+				RenderDevice->CreateGraphicsPipelineState(Desc, &PipelineStates[PIPELINE_STATE_FINAL_OUTPUT]);
+			}
+		}
+
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
 		Scene = new RScene();
 	}
@@ -243,6 +314,19 @@ namespace PigeonEngine
 			ViewSceneTextures.Empty();
 		}
 
+		// Release pipeline states.
+		{
+			IRRHIDevice* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			for (UINT32 i = 0u; i < RPipelineStateType::PIPELINE_STATE_COUNT; i++)
+			{
+				if (PipelineStates[i])
+				{
+					RenderDevice->DestroyResource(PipelineStates[i]);
+					PipelineStates[i] = nullptr;
+				}
+			}
+		}
+
 		{
 			delete Scene;
 			Scene = nullptr;
@@ -260,43 +344,307 @@ namespace PigeonEngine
 	}
 	void RSceneRenderer::InitNewFrame()
 	{
- #if _EDITOR_ONLY
+		// SwapCommandSlots is called by the GameThread at frame boundary
+		// (between WaitForRenderIdle and KickRender) so that here we are
+		// guaranteed the front slot is the freshly-published GameThread
+		// payload and BackSlot is reserved for the next GameThread tick.
+
+#if _EDITOR_ONLY
 		DebugWireframePrimitiveManager->InitNewFrame();
-	#endif
+#endif
 		InitRendererSettings();
 
 		InitViews();
 	}
 	void RSceneRenderer::Render()
 	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-		RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
-		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-		RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-		RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
+		IRRHIDevice* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+		CurrentCommandList = RenderDevice->AcquireCommandList();
 
-		RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
+		// Bind global samplers across stages. Sampler slots 0..3 are fixed
+		// engine-wide (point clamp / point wrap / linear clamp / linear wrap).
+		for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
+		{
+			IRRHISampler* SamplerPtr = &Samplers[SamplerIndex];
+			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_VERTEX, SamplerIndex, SamplerPtr);
+			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, SamplerIndex, SamplerPtr);
+			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, SamplerIndex, SamplerPtr);
+		}
 
 		BasePass();
 
 		FinalOutputPass();
+
+		RenderDevice->SubmitCommandList(CurrentCommandList);
+		CurrentCommandList = nullptr;
+	}
+	void RSceneRenderer::BasePass()
+	{
+		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
+		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+#if _EDITOR_ONLY
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			if (!ViewProxy)
+			{
+				continue;
+			}
+#endif
+			const EViewport& Viewport = ViewProxy->GetRenderViewport();
+			const RRHIViewport NewViewport(Viewport.TopLeftX, Viewport.TopLeftY, Viewport.Width, Viewport.Height, Viewport.MinDepth, Viewport.MaxDepth);
+			CurrentCommandList->SetViewports(&NewViewport, 1u);
+
+			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
+			ViewProxy->UpdateRenderResource();
+			ViewProxy->BindRenderResource(0u);
+
+			RenderBasePass(SceneTextures);
+
+			RenderSky(ViewProxy);
+
+			RenderLighting(ViewProxy, SceneTextures);
+
+			RenderForward(ViewProxy, SceneTextures);
+		}
+	}
+	void RSceneRenderer::FinalOutputPass()
+	{
+		IRRHIDevice* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+
+		// Backbuffer pass: clear to dark grey, blit SceneColor.
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount				= 1u;
+		Pass.RenderTargets[0].Target		= RenderDevice->GetCurrentBackBuffer();
+		Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.RenderTargets[0].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.RenderTargets[0].ClearColor	= Color4(0.5f, 0.5f, 0.5f, 1.f);
+		Pass.DepthStencil.Target			= nullptr;
+		CurrentCommandList->BeginRenderPass(Pass);
+
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_FINAL_OUTPUT]);
+
+		FullScreenTriangle.BindPrimitiveBuffers();
+		if (FinalOutputView != 0u)
+		{
+			CurrentCommandList->SetShaderResourceView(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, 0u, &(ViewSceneTextures[FinalOutputView]->SceneColor));
+		}
+		CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+
+		CurrentCommandList->EndRenderPass();
+	}
+	void RSceneRenderer::RenderBasePass(RSceneTextures* InSceneTextures)
+	{
+		// MRT pass: 4 colour render targets + depth-stencil. LoadOp=CLEAR
+		// replaces the legacy InSceneTextures->ClearResources() call.
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount				= 4u;
+		Pass.RenderTargets[0].Target		= &(InSceneTextures->SceneColor);
+		Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.RenderTargets[0].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
+		Pass.RenderTargets[1].Target		= &(InSceneTextures->GBufferA);
+		Pass.RenderTargets[1].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.RenderTargets[1].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
+		Pass.RenderTargets[2].Target		= &(InSceneTextures->GBufferB);
+		Pass.RenderTargets[2].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.RenderTargets[2].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
+		Pass.RenderTargets[3].Target		= &(InSceneTextures->GBufferC);
+		Pass.RenderTargets[3].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.RenderTargets[3].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
+		Pass.DepthStencil.Target			= &(InSceneTextures->SceneDepthStencil);
+		Pass.DepthStencil.DepthLoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.DepthStencil.StencilLoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		Pass.DepthStencil.ClearDepth		= 1.f;
+		Pass.DepthStencil.ClearStencil		= 0u;
+		CurrentCommandList->BeginRenderPass(Pass);
+
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_MRT]);
+
+		// Static mesh part - mesh proxy binds its own VS/PS/IB/VB and Draws.
+		RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
+		for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.GetSceneProxyCount(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
+		{
+			RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
+#if _EDITOR_ONLY
+			if (!StaticMesh)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null static mesh proxy."));
+				continue;
+			}
+			if (!(StaticMesh->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid static mesh proxy."));
+				continue;
+			}
+#endif
+			StaticMesh->BindRenderResource();
+			StaticMesh->Draw();
+		}
+
+		// BezierGrass - swaps in its own pipeline (wireframe / solid-none) per
+		// proxy. Restore base PSO afterwards so subsequent meshes get the
+		// expected raster mode back.
+		RSceneProxyMapping<RBezierGrassSceneProxy>& BezierGrasses = Scene->GetBezierGrassSceneProxies();
+		for (UINT32 BezierGrassIndex = 0u, NumBezierGrasses = BezierGrasses.GetSceneProxyCount(); BezierGrassIndex < NumBezierGrasses; BezierGrassIndex++)
+		{
+			RBezierGrassSceneProxy* BezierGrass = BezierGrasses.SceneProxies[BezierGrassIndex];
+#if _EDITOR_ONLY
+			if (!BezierGrass)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null bezier grass proxy."));
+				continue;
+			}
+			if (!(BezierGrass->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid bezier grass proxy."));
+				continue;
+			}
+#endif
+			if (BezierGrass->Property.bWireframe)
+			{
+				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME]);
+			}
+			else
+			{
+				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_SOLID]);
+			}
+			BezierGrass->DispatchComputeShader();
+			BezierGrass->BindRenderResource();
+			BezierGrass->Draw();
+		}
+		// Restore MRT pipeline for skeletal meshes.
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_MRT]);
+
+		// Skeletal mesh part
+		RSceneProxyMapping<RSkeletalMeshSceneProxy>& SkeletalMeshes = Scene->GetSkeletalMeshSceneProxies();
+		for (UINT32 SkeletalMeshIndex = 0u, SkeletalMeshNum = SkeletalMeshes.GetSceneProxyCount(); SkeletalMeshIndex < SkeletalMeshNum; SkeletalMeshIndex++)
+		{
+			RSkeletalMeshSceneProxy* SkeletalMesh = SkeletalMeshes.SceneProxies[SkeletalMeshIndex];
+#if _EDITOR_ONLY
+			if (!SkeletalMesh)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null skeletal mesh proxy."));
+				continue;
+			}
+			if (!(SkeletalMesh->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid skeletal mesh proxy."));
+				continue;
+			}
+#endif
+			SkeletalMesh->BindRenderResource();
+			SkeletalMesh->Draw();
+		}
+
+		CurrentCommandList->EndRenderPass();
+	}
+	void RSceneRenderer::RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(InViewProxy->GetUniqueID());
+		Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
+		// Light count CB binds at slot 1 across stages (matches the legacy
+		// RootIndex semantics broadcast by RCommandListD3D11).
+		CurrentCommandList->SetGraphicsRootConstantBuffer(1u, const_cast<RBufferResource*>(&(LightCommonParams->GetConstantBuffer())));
+
+		const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(InViewProxy->GetUniqueID());
+		if (!DLightParams)
+		{
+			return;
+		}
+
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount			= 1u;
+		Pass.RenderTargets[0].Target	= &(InSceneTextures->SceneColor);
+		Pass.RenderTargets[0].LoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;	// additive blend onto base pass colour
+		Pass.RenderTargets[0].StoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.DepthStencil.Target		= nullptr;
+		CurrentCommandList->BeginRenderPass(Pass);
+
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_LIGHTING]);
+
+		FullScreenTriangle.BindPrimitiveBuffers();
+
+		CurrentCommandList->SetShaderResourceView(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, 0u, &(InSceneTextures->GBufferA));
+		CurrentCommandList->SetShaderResourceView(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, 1u, &(InSceneTextures->GBufferB));
+		CurrentCommandList->SetShaderResourceView(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, 2u, &(InSceneTextures->GBufferC));
+		// Directional light parameter buffer lives in an RStructuredBuffer.
+		IRRHIBuffer* DLightBuffer = const_cast<RStructuredBuffer*>(&(DLightParams->GetStructBuffer()));
+		CurrentCommandList->SetShaderResourceView(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, 3u, DLightBuffer);
+
+		CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+
+		CurrentCommandList->EndRenderPass();
+	}
+	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
+	{
+		RSceneProxyMapping<RSkyLightSceneProxy>& SkyLights = Scene->GetSkyLightProxies();
+		const UINT32 SkyLightNum = SkyLights.GetSceneProxyCount();
+		if (SkyLightNum == 0u)
+		{
+			return;
+		}
+
+		// Sky writes back to the same MRT bound by RenderBasePass; the only
+		// difference is rasterizer state (cull FRONT for inside-the-dome).
+		// We rebind the same render targets explicitly so the pass is
+		// self-contained on D3D12 in Phase 3.
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_SKY]);
+
+		for (UINT32 SkyLightIndex = 0u; SkyLightIndex < SkyLightNum; SkyLightIndex++)
+		{
+			RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
+#if _EDITOR_ONLY
+			if (!SkyLight)
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
+				continue;
+			}
+			if (!(SkyLight->IsRenderValid()))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
+				continue;
+			}
+#endif
+			SkyLight->BindRenderResource();
+			SkyLight->Draw();
+#if _EDITOR_ONLY
+			break;
+#endif
+		}
+	}
+	void RSceneRenderer::RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount			= 1u;
+		Pass.RenderTargets[0].Target	= &(InSceneTextures->SceneColor);
+		Pass.RenderTargets[0].LoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+		Pass.RenderTargets[0].StoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.DepthStencil.Target		= &(InSceneTextures->SceneDepthStencil);
+		Pass.DepthStencil.DepthLoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+		Pass.DepthStencil.DepthStoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.DepthStencil.StencilLoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+		Pass.DepthStencil.StencilStoreOp= ERHIStoreOp::RHI_STORE_OP_STORE;
+		CurrentCommandList->BeginRenderPass(Pass);
+
+		CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_FORWARD]);
+
+#if _EDITOR_ONLY
+		{
+			CurrentCommandList->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
+			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
+			CurrentCommandList->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		}
+#endif
+
+		CurrentCommandList->EndRenderPass();
 	}
 	void RSceneRenderer::InitViews()
 	{
 		// Add, Update, Remove requires
 		{
-			RCommand& AddCommands = Scene->GetAddCommands();
-			RCommand& UpdateCommands = Scene->GetUpdateCommands();
-			RCommand& RemoveCommands = Scene->GetRemoveCommands();
+			RCommand& AddCommands = Scene->GetAddCommandsForRender();
+			RCommand& UpdateCommands = Scene->GetUpdateCommandsForRender();
+			RCommand& RemoveCommands = Scene->GetRemoveCommandsForRender();
 
 			AddCommands.DoCommands();
 			AddCommands.EmptyQueue();
@@ -364,223 +712,6 @@ namespace PigeonEngine
 				InitRenderPasses(ViewProxy);
 			}
 		}
-	}
-	void RSceneRenderer::BasePass()
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-
-		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
-		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
-		{
-			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
-#if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
-			if (!ViewProxy)
-			{
-				continue;
-			}
-#endif
-			RenderDevice->SetViewport(ViewProxy->GetRenderViewport());
-
-			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
-			ViewProxy->UpdateRenderResource();
-			ViewProxy->BindRenderResource(0u);
-
-			RenderBasePass(SceneTextures);
-
-			RenderSky(ViewProxy);
-
-			RenderLighting(ViewProxy, SceneTextures);
-
-			RenderForward(ViewProxy, SceneTextures);
-		}
-	}
-	void RSceneRenderer::FinalOutputPass()
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-
-		RenderDevice->ClearFinalOutput();
-
-		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
-		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_BLEND_OFF].BlendState);
-		RenderDevice->SetFinalOutput();
-
-		FullScreenTriangle.BindPrimitiveBuffers();
-		RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
-		RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
-		RenderDevice->SetPSShader(SimpleFullScreenPixelShader->GetRenderResource()->Shader);
-		if (FinalOutputView != 0u)
-		{
-			RenderDevice->BindPSShaderResourceView(ViewSceneTextures[FinalOutputView]->SceneColor.ShaderResourceView, 0u);
-		}
-		RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
-	}
-	void RSceneRenderer::RenderBasePass(RSceneTextures* InSceneTextures)
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-
-		RRenderTexture2D RenderTargets[4] =
-		{
-			InSceneTextures->SceneColor,
-			InSceneTextures->GBufferA,
-			InSceneTextures->GBufferB,
-			InSceneTextures->GBufferC
-		};
-
-		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
-		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_OPAQUE_BASEPASS].BlendState);
-		InSceneTextures->ClearResources();
-		RenderDevice->SetRenderTargets(RenderTargets, 4u, InSceneTextures->SceneDepthStencil);
-
-		// Static mesh part
-		RSceneProxyMapping<RStaticMeshSceneProxy>& StaticMeshes = Scene->GetStaticMeshSceneProxies();
-		for (UINT32 StaticMeshIndex = 0u, StaticMeshNum = StaticMeshes.GetSceneProxyCount(); StaticMeshIndex < StaticMeshNum; StaticMeshIndex++)
-		{
-			RStaticMeshSceneProxy* StaticMesh = StaticMeshes.SceneProxies[StaticMeshIndex];
-#if _EDITOR_ONLY
-			if (!StaticMesh)
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null static mesh proxy."));
-				continue;
-			}
-			if (!(StaticMesh->IsRenderValid()))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid static mesh proxy."));
-				continue;
-			}
-#endif
-			StaticMesh->BindRenderResource();
-			StaticMesh->Draw();
-		}
-
-		// BezierGrass
-		RSceneProxyMapping<RBezierGrassSceneProxy>& BezierGrasses = Scene->GetBezierGrassSceneProxies();
-		for (UINT32 BezierGrassIndex = 0u, NumBezierGrasses = BezierGrasses.GetSceneProxyCount(); BezierGrassIndex < NumBezierGrasses; BezierGrassIndex++)
-		{
-			RBezierGrassSceneProxy* BezierGrass = BezierGrasses.SceneProxies[BezierGrassIndex];
-#if _EDITOR_ONLY
-			if (!BezierGrass)
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null bezier grass proxy."));
-				continue;
-			}
-			if (!(BezierGrass->IsRenderValid()))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid bezier grass proxy."));
-				continue;
-			}
-#endif
-			if (BezierGrass->Property.bWireframe)
-			{
-				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_WIREFRAME].RasterizerState);
-			}
-			else
-			{
-				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_NONE].RasterizerState);
-			}
-			BezierGrass->DispatchComputeShader();
-			BezierGrass->BindRenderResource();
-			BezierGrass->Draw();
-			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
-		}
-
-		// Skeletal mesh part
-		RSceneProxyMapping<RSkeletalMeshSceneProxy>& SkeletalMeshes = Scene->GetSkeletalMeshSceneProxies();
-		for (UINT32 SkeletalMeshIndex = 0u, SkeletalMeshNum = SkeletalMeshes.GetSceneProxyCount(); SkeletalMeshIndex < SkeletalMeshNum; SkeletalMeshIndex++)
-		{
-			RSkeletalMeshSceneProxy* SkeletalMesh = SkeletalMeshes.SceneProxies[SkeletalMeshIndex];
-#if _EDITOR_ONLY
-			if (!SkeletalMesh)
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null skeletal mesh proxy."));
-				continue;
-			}
-			if (!(SkeletalMesh->IsRenderValid()))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid skeletal mesh proxy."));
-				continue;
-			}
-#endif
-			SkeletalMesh->BindRenderResource();
-			SkeletalMesh->Draw();
-		}
-	}
-	void RSceneRenderer::RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-
-		const RViewLightCommonMaterialParameter* LightCommonParams = ViewLightCommonParams.FindValueAsPtr(InViewProxy->GetUniqueID());
-		Check((!!LightCommonParams), (ENGINE_RENDER_CORE_ERROR));
-		RenderDevice->BindPSConstantBuffer(LightCommonParams->GetConstantBuffer().Buffer, 1u);
-
-		if (const RDirectionalLightMaterialParameter* DLightParams = ViewDLightParams.FindValueAsPtr(InViewProxy->GetUniqueID()); !!DLightParams)
-		{
-			RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP].DepthStencilState);
-			RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_LIGHTING].BlendState);
-			RenderDevice->SetRenderTargetOnly(InSceneTextures->SceneColor);
-
-			FullScreenTriangle.BindPrimitiveBuffers();
-			RenderDevice->SetInputLayout(SimpleFullScreenVertexShader->GetRenderResource()->InputLayout);
-			RenderDevice->SetVSShader(SimpleFullScreenVertexShader->GetRenderResource()->Shader);
-			RenderDevice->SetPSShader(SceneLightingPixelShader->GetRenderResource()->Shader);
-
-			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferA.ShaderResourceView, 0u);
-			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferB.ShaderResourceView, 1u);
-			RenderDevice->BindPSShaderResourceView(InSceneTextures->GBufferC.ShaderResourceView, 2u);
-
-			RenderDevice->BindPSShaderResourceView(DLightParams->GetStructBuffer().ShaderResourceView, 3u);
-
-			RenderDevice->DrawIndexed(FullScreenTriangle.GetIndexCount());
-		}
-	}
-	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
-	{
-		RSceneProxyMapping<RSkyLightSceneProxy>& SkyLights = Scene->GetSkyLightProxies();
-		if (const UINT32 SkyLightNum = SkyLights.GetSceneProxyCount(); SkyLightNum > 0u)
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_FRONT].RasterizerState);
-			for (UINT32 SkyLightIndex = 0u; SkyLightIndex < SkyLightNum; SkyLightIndex++)
-			{
-				RSkyLightSceneProxy* SkyLight = SkyLights.SceneProxies[SkyLightIndex];
-#if _EDITOR_ONLY
-				if (!SkyLight)
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
-					continue;
-				}
-				if (!(SkyLight->IsRenderValid()))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
-					continue;
-				}
-#endif
-				{
-					SkyLight->BindRenderResource();
-					SkyLight->Draw();
-#if _EDITOR_ONLY
-					break;
-#endif
-				}
-			}
-			RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
-		}
-	}
-	void RSceneRenderer::RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
-	{
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->SetDepthStencilState(DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP].DepthStencilState);
-		RenderDevice->SetBlendState(Blend[RBlendType::BLEND_TYPE_FORWARD].BlendState);
-		RenderDevice->SetRenderTarget(InSceneTextures->SceneColor, InSceneTextures->SceneDepthStencil);
-#if _EDITOR_ONLY
-		{
-			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
-
-			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
-
-			RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		}
-#endif
 	}
 	void RSceneRenderer::InitLights(RViewProxy* InViewProxy)
 	{

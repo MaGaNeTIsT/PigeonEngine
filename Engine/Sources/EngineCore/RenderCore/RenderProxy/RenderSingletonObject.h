@@ -65,6 +65,7 @@ namespace PigeonEngine
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
 		void			InitNewFrame();
+		void			SwapCommandSlots();
 		void			RenderPrimitives_RenderThread(const class RViewProxy* InView);
 	public:
 		void			DrawSingleLine(const Vector3& InPos0, const Vector3& InPos1, const Color4& InDebugColor = Color4::Black());
@@ -110,7 +111,9 @@ namespace PigeonEngine
 		TMap<EString, RDebugWireframePrimitive>	DebugWireframeCustomPrimitives;
 	private:
 		RCommand							RequireCreateCustomCommands;
-		RCommand							RequireCommands;
+		RCommand							RequireCommands[2];
+		UINT32								BackSlotIndex  = 0u;
+		UINT32								FrontSlotIndex = 1u;
 		RStructuredBuffer					PrimitiveTransformsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		RStructuredBuffer					PrimitiveColorsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		TMap<EString, RStructuredBuffer>	CustomPrimitiveTransformsBuffer;

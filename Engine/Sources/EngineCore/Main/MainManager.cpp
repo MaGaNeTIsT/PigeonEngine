@@ -1,4 +1,5 @@
 #include "MainManager.h"
+#include "RenderThread.h"
 #include "PigeonBase/Object/World/WorldTickManager.h"
 #include <CoreMinimal.h>
 #include <Config/EngineConfig.h>
@@ -39,7 +40,7 @@ namespace PigeonEngine
 		m_FrameRate		= static_cast<UINT32>(EEngineSettings::ENGINE_UPDATE_FRAME);
 		m_Windowed		= EEngineSettings::ENGINE_WINDOWED;
 		
-		m_RenderDeviceD3D11	= RDeviceD3D11::GetDeviceSingleton();
+		RenderDevice = RDeviceD3D11::GetDeviceSingleton();
 
 		m_PhysicsManager	= FPhysicsManager::GetManagerSingleton();
 #if _EDITOR_ONLY
@@ -101,14 +102,43 @@ namespace PigeonEngine
 
 		EInput::Initialize(m_HWND);
 
-		m_RenderDeviceD3D11->SetInitializeData(m_HWND, m_WindowSize, m_GraphicDepth, m_FrameRate, m_Windowed);
-		m_RenderDeviceD3D11->Initialize();
+		{
+			RRHIDeviceInitDesc DeviceInitDesc;
+			DeviceInitDesc.WindowHandle		= m_HWND;
+			DeviceInitDesc.BackBufferWidth	= static_cast<UINT32>(m_WindowSize.x);
+			DeviceInitDesc.BackBufferHeight	= static_cast<UINT32>(m_WindowSize.y);
+			DeviceInitDesc.BackBufferCount	= 2u;
+			DeviceInitDesc.RefreshRateHz	= m_FrameRate;
+			DeviceInitDesc.Backend			= ERHIBackendType::RHI_BACKEND_D3D11;
+			DeviceInitDesc.bIsWindowed		= (m_Windowed != FALSE);
+			RenderDevice->Initialize(DeviceInitDesc);
+		}
 
 		{
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check scene renderer is not null."), (!SceneRenderer));
 			SceneRenderer = new RSceneRenderer();
 			SceneRenderer->Initialize();
 			RenderScene = SceneRenderer->GetRenderScene();
+		}
+
+		// Spawn the RenderThread worker now that all render-side state
+		// (device, scene, renderer) is constructed. The worker will sit
+		// idle on GameDoneEvent until the first frame's KickRender.
+		{
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("RenderThread already created."), (!RenderThread));
+			RenderThread = new RRenderThread(RenderDevice, RenderScene, SceneRenderer);
+#if _EDITOR_ONLY
+			RenderThread->SetAfterRenderCallback([this]() -> void
+			{
+				// PrepareDrawData (ImGui::Render) is invoked on the main thread
+				// during Update() Phase 3 so the GameThread can finalize ImGui
+				// frame state while we wait on the previous frame. Here on the
+				// RenderThread we only replay the produced ImDrawData against
+				// the D3D11 immediate context.
+				m_ImGUIManager->RenderDrawData();
+			});
+#endif
+			RenderThread->Start();
 		}
 
 #if _EDITOR_ONLY
@@ -125,6 +155,16 @@ namespace PigeonEngine
 	}
 	void EMainManager::ShutDown()
 	{
+		// Stop the RenderThread first so its WorkerEntry can no longer fire
+		// AfterRenderCallback (which dereferences m_ImGUIManager) or touch
+		// SceneRenderer / RenderDevice while we tear them down below.
+		if (RenderThread)
+		{
+			RenderThread->Stop();
+			delete RenderThread;
+			RenderThread = nullptr;
+		}
+
 		m_PhysicsManager->ShutDown();
 		m_WorldManager->ShutDown();
 		m_WorldTickManager->ShutDown();
@@ -136,13 +176,14 @@ namespace PigeonEngine
 #endif
 
 		{
+			// RenderThread has already been stopped at the top of ShutDown.
 			RenderScene = nullptr;
 			SceneRenderer->ShutDown();
 			delete SceneRenderer;
 			SceneRenderer = nullptr;
 		}
 
-		m_RenderDeviceD3D11->ShutDown();
+		RenderDevice->Shutdown();
 		EInput::ShutDown();
 
 		m_MessageManager->ShutDown();
@@ -202,16 +243,17 @@ namespace PigeonEngine
 	}
 	void EMainManager::Update()
 	{
+		// Async with render thread
 		m_GameTimer->Update();
+		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
+		m_PhysicsManager->Update();
+
+		RenderThread->WaitForRenderIdle();
+
 #if _EDITOR_ONLY
-		m_ImGUIManager->Update();
+		m_ImGUIManager->Update();				// ImGui::NewFrame
 		EditorUpdate();
 		m_WorldManager->GetWorld()->EditorTick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
-#endif
-		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
-
-		m_PhysicsManager->Update();
-#if _EDITOR_ONLY
 		{
 			RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
 			const Vector3 TempPos(-500.f, 100.f, 500.f);
@@ -224,10 +266,15 @@ namespace PigeonEngine
 			Manager->DrawCapsule(TempPos + Vector3(700.f, -50.f, 0.f), TempPos + Vector3(700.f, -50.f, 0.f) + Vector3(0.f, 100.f, 0.f), 40.f, 40.f, Color4::White());
 			Manager->DrawSphere(TempPos + Vector3(800.f, 0.f, 0.f), 40.f, Color4::White(), Quaternion::Identity());
 		}
+		m_ImGUIManager->PrepareDrawData();		// ImGui::Render — DrawData ready for the worker
 #endif
 
-		// In this time we can start to rendering a scene
-		SceneRenderer->InitNewFrame();
+		// Swap double buffer
+#if _EDITOR_ONLY
+		RDebugWireframePrimitiveManager::GetManagerSingleton()->SwapCommandSlots();
+#endif
+		RenderScene->SwapCommandSlots();
+		RenderThread->KickRender();
 	}
 	void EMainManager::FixedUpdate()
 	{
@@ -235,13 +282,7 @@ namespace PigeonEngine
 	}
 	void EMainManager::Draw()
 	{
-		SceneRenderer->Render();
 
-#if _EDITOR_ONLY
-		m_ImGUIManager->Draw();
-#endif
-
-		m_RenderDeviceD3D11->Present();
 	}
 
 #if _EDITOR_ONLY

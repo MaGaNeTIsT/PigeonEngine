@@ -334,6 +334,12 @@ namespace PigeonEngine
 	void RDebugWireframePrimitiveManager::ShutDown()
 	{
 	}
+	void RDebugWireframePrimitiveManager::SwapCommandSlots()
+	{
+		const UINT32 NewBack = FrontSlotIndex;
+		FrontSlotIndex       = BackSlotIndex;
+		BackSlotIndex        = NewBack;
+	}
     void RDebugWireframePrimitiveManager::InitNewFrame()
 	{
 		{
@@ -355,8 +361,8 @@ namespace PigeonEngine
 		{
 			RequireCreateCustomCommands.DoCommands();
 			RequireCreateCustomCommands.EmptyQueue();
-			RequireCommands.DoCommands();
-			RequireCommands.EmptyQueue();
+			RequireCommands[FrontSlotIndex].DoCommands();
+			RequireCommands[FrontSlotIndex].EmptyQueue();
 
 #if _DEBUG_MODE
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
@@ -490,7 +496,7 @@ namespace PigeonEngine
 			Direction = Direction / DirectionLength;
 		}
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InPos0, MakeQuaternion(Vector3::YVector(), Direction), Vector3(1.f, DirectionLength, 1.f)))]()->void
@@ -506,7 +512,7 @@ namespace PigeonEngine
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
 		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InWidthX, InHeightY, 1.f)))]()->void
@@ -522,7 +528,7 @@ namespace PigeonEngine
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
 		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InRadius, InRadius, 1.f)))]()->void
@@ -538,7 +544,7 @@ namespace PigeonEngine
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
 		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InWidthX, InHeightY, InLengthZ)))]()->void
@@ -554,7 +560,7 @@ namespace PigeonEngine
 		TArray<Matrix4x4>& TargetTransforms = PrimitiveTransforms[TargetIndex];
 		TArray<Color4>& TargetColors = PrimitiveColors[TargetIndex];
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InLocation, InRotation, Vector3(InRadius, InRadius, InRadius)))]()->void
@@ -582,7 +588,7 @@ namespace PigeonEngine
 			Direction = Direction / DirectionLength;
 		}
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetTransforms, &TargetColors,
 			DebugColor = InDebugColor,
 			LocalToWorld = TranslateUploadMatrixType(MakeMatrix4x4(InBottomCenterLocation, MakeQuaternion(Vector3::YVector(), Direction), Vector3(InRadius, DirectionLength, InRadius)))]()->void
@@ -622,7 +628,7 @@ namespace PigeonEngine
 		TMap<EString, TArray<Matrix4x4>>& TargetTransforms = CustomPrimitiveTransforms;
 		TMap<EString, TArray<Color4>>& TargetColors = CustomPrimitiveColors;
 
-		RequireCommands.EnqueueCommand(
+		RequireCommands[BackSlotIndex].EnqueueCommand(
 			[&TargetPrimitives, &TargetTransforms, &TargetColors,
 			CustomName = InCustomName,
 			DebugColor = InDebugColor,

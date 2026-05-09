@@ -47,7 +47,17 @@ namespace PigeonEngine
         virtual void            Initialize()override;
         virtual void            ShutDown()override;
         void                    Update();
+        // Backwards-compatible single-call form (NewFrame must already be done).
+        // Internally just chains PrepareDrawData + RenderDrawData. Prefer the
+        // split form when you want main-thread/render-thread overlap.
         void                    Draw();
+        // Main-thread step: finalize ImGui frame and produce ImDrawData. Must
+        // be called between NewFrame (in Update()) and the next Update().
+        void                    PrepareDrawData();
+        // Render-thread step: consume the ImDrawData produced above. Touches
+        // the D3D11 immediate context, so the caller must own it (i.e. call
+        // from the RenderThread between SceneRenderer.Render and Present).
+        void                    RenderDrawData();
         IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
     private:
         void                    InitWnd();

@@ -141,14 +141,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 		::DestroyWindow(hWnd);
 		::PostQuitMessage(0);
 		break;
+#if 0
 	case WM_KEYDOWN:
-		//switch(wParam)
-		//{
-		//case VK_ESCAPE:
-		//	::DestroyWindow(hWnd);
-		//	break;
-		//}
+		switch(wParam)
+		{
+		case VK_ESCAPE:
+			::DestroyWindow(hWnd);
+			break;
+		}
 		break;
+#endif
 	default:
 		break;
 	}

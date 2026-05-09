@@ -1,4 +1,5 @@
 #include "DeviceD3D11.h"
+#include "PipelineStateD3D11.h"
 
 namespace PigeonEngine
 {
@@ -205,7 +206,14 @@ namespace PigeonEngine
 	}
 	BOOL32 RDeviceD3D11::CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
 	{
-		return CreateBuffer(buffer.Buffer, bufferDesc, subData);
+		const BOOL32 Result = CreateBuffer(buffer.Buffer, bufferDesc, subData);
+		if (Result)
+		{
+			buffer.ByteSize				= bufferDesc.ByteWidth;
+			buffer.StructureByteStride	= bufferDesc.StructureByteStride;
+			buffer.BindFlags			= bufferDesc.BindFlags;
+		}
+		return Result;
 	}
 	BOOL32 RDeviceD3D11::CreateStructuredBuffer(RStructuredBuffer& output, const RStructuredBufferDesc& structuredBufferDesc, const RSubresourceDataDesc* subData)
 	{
@@ -302,6 +310,10 @@ namespace PigeonEngine
 				}
 			}
 		}
+		output.ByteSize				= structuredBufferDesc.StructureSize * structuredBufferDesc.NumElements;
+		output.StructureByteStride	= structuredBufferDesc.StructureSize;
+		output.BindFlags			= static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE) |
+			(structuredBufferDesc.GPUWritable ? static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS) : 0u);
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc)
@@ -481,6 +493,12 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
+		output.Width		= textureDesc.Width;
+		output.Height		= textureDesc.Height;
+		output.MipLevels	= textureDesc.MipLevels;
+		output.ArraySize	= textureDesc.ArraySize;
+		output.Format		= textureDesc.BufferFormat;
+		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc)
@@ -570,6 +588,12 @@ namespace PigeonEngine
 				}
 			}
 		}
+		output.Width		= textureDesc.Width;
+		output.Height		= textureDesc.Height;
+		output.Depth		= textureDesc.Depth;
+		output.MipLevels	= textureDesc.MipLevels;
+		output.Format		= textureDesc.BufferFormat;
+		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
@@ -623,6 +647,12 @@ namespace PigeonEngine
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture2D resource SRV failed."));
 			return FALSE;
 		}
+		output.Width		= textureDesc.Width;
+		output.Height		= textureDesc.Height;
+		output.MipLevels	= textureDesc.MipLevels;
+		output.ArraySize	= textureDesc.ArraySize;
+		output.Format		= textureDesc.BufferFormat;
+		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::CreateTextureCube(RTextureCubeResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
@@ -692,6 +722,11 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
+		output.Width		= textureDesc.Width;
+		output.Height		= textureDesc.Height;
+		output.MipLevels	= textureDesc.MipLevels;
+		output.Format		= textureDesc.BufferFormat;
+		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT32& inLayoutNum)
@@ -887,9 +922,9 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
-	void RDeviceD3D11::Present(const UINT32& syncInterval)
+	void RDeviceD3D11::Present(UINT32 InSyncInterval)
 	{
-		/*HRESULT hr =*/ m_SwapChain->Present(syncInterval, 0u);	//DXGI_PRESENT
+		/*HRESULT hr =*/ m_SwapChain->Present(InSyncInterval, 0u);	//DXGI_PRESENT
 	}
 	void RDeviceD3D11::SetDefaultDepthStencilState()
 	{
@@ -2257,4 +2292,484 @@ namespace PigeonEngine
 		m_ImmediateContext->OMSetRenderTargets(1u, m_RenderTargetView.GetAddressOf(), m_DepthStencilView.Get());
 		m_ImmediateContext->RSSetViewports(1u, &(m_Viewport));
 	}
- };
+
+	// ============================================================
+	// IRRHIDevice interface implementation
+	//
+	// Most methods delegate to the legacy direct-device APIs above.
+	// Resource-creating methods heap-allocate the appropriate
+	// concrete D3D11 resource class (which inherits IRD3D11xxx) and
+	// return it through the abstract IRRHIxxx out parameter.
+	// ============================================================
+
+	BOOL8 RDeviceD3D11::Initialize(const RRHIDeviceInitDesc& InDesc)
+	{
+		SetInitializeData(InDesc.WindowHandle, Vector2Int(static_cast<INT32>(InDesc.BackBufferWidth), static_cast<INT32>(InDesc.BackBufferHeight)),
+			24u, InDesc.RefreshRateHz, InDesc.bIsWindowed);
+		// Call the legacy no-arg Initialize override (resolved via overload).
+		this->RDeviceD3D11::Initialize();
+
+		FrameInFlightCount	= (InDesc.BackBufferCount > 0u) ? InDesc.BackBufferCount : 2u;
+		CurrentFrameIndex	= 0u;
+
+		// Populate the engine-side backbuffer wrapper from the swapchain.
+		if (m_SwapChain)
+		{
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBufferTex;
+			HRESULT hr = m_SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
+			if (SUCCEEDED(hr))
+			{
+				BackBufferWrapper.Buffer			= BackBufferTex;
+				BackBufferWrapper.RenderTargetView	= m_RenderTargetView;
+				BackBufferWrapper.Width				= InDesc.BackBufferWidth;
+				BackBufferWrapper.Height			= InDesc.BackBufferHeight;
+				BackBufferWrapper.MipLevels			= 1u;
+				BackBufferWrapper.ArraySize			= 1u;
+				BackBufferWrapper.Format			= InDesc.BackBufferFormat;
+				BackBufferWrapper.BindFlags			= static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET);
+			}
+		}
+		return TRUE;
+	}
+
+	void RDeviceD3D11::Shutdown()
+	{
+		WaitForGPUIdle();
+		CommandListFreeList.Empty();
+		CommandListPool.Empty();		// TUniquePtr destructors release each command list
+		BindlessSRVTable.Empty();
+		BindlessUAVTable.Empty();
+		BindlessSRVFreeIndices.Empty();
+		BindlessUAVFreeIndices.Empty();
+		BackBufferWrapper.ReleaseRenderResource();
+		this->ShutDown();
+	}
+
+	void RDeviceD3D11::BeginFrame()
+	{
+		// D3D11 has no per-frame fence wait; nothing to do.
+	}
+
+	void RDeviceD3D11::EndFrame()
+	{
+		CurrentFrameIndex = (CurrentFrameIndex + 1u) % ((FrameInFlightCount > 0u) ? FrameInFlightCount : 1u);
+	}
+
+	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 /*InWidth*/, UINT32 /*InHeight*/)
+	{
+		// Phase 1 stub - SceneRenderer does not currently resize at runtime
+		// on the D3D11 path. Implement when window-resize is plumbed in.
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain not implemented yet."));
+		return FALSE;
+	}
+
+	void RDeviceD3D11::WaitForGPUIdle()
+	{
+		if (m_ImmediateContext)
+		{
+			m_ImmediateContext->Flush();
+		}
+	}
+
+	// ----- Resource creation -----
+
+	BOOL8 RDeviceD3D11::CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData* InInitialData, IRRHIBuffer** OutBuffer)
+	{
+		if (!OutBuffer)
+		{
+			return FALSE;
+		}
+		*OutBuffer = nullptr;
+
+		RSubresourceDataDesc Legacy;
+		const RSubresourceDataDesc* LegacyPtr = nullptr;
+		if (InInitialData)
+		{
+			Legacy.pSysMem			= InInitialData->Data;
+			Legacy.SysMemPitch		= InInitialData->RowPitch;
+			Legacy.SysMemSlicePitch	= InInitialData->SlicePitch;
+			LegacyPtr = &Legacy;
+		}
+
+		auto* NewBuffer = new RBufferResource();
+		if (!CreateBuffer(*NewBuffer, InDesc, LegacyPtr))
+		{
+			delete NewBuffer;
+			return FALSE;
+		}
+		*OutBuffer = NewBuffer;
+		return TRUE;
+	}
+
+	BOOL8 RDeviceD3D11::CreateTexture(const RTextureDesc& InDesc, const RRHISubresourceData* InInitialSubresources, UINT32 InSubresourceCount, IRRHITexture** OutTexture)
+	{
+		if (!OutTexture)
+		{
+			return FALSE;
+		}
+		*OutTexture = nullptr;
+
+		// Convert first subresource only; multi-mip / array uploads go through
+		// the dedicated UploadTexture path.
+		RSubresourceDataDesc Legacy;
+		const RSubresourceDataDesc* LegacyPtr = nullptr;
+		if (InInitialSubresources && InSubresourceCount > 0u)
+		{
+			Legacy.pSysMem			= InInitialSubresources[0].Data;
+			Legacy.SysMemPitch		= InInitialSubresources[0].RowPitch;
+			Legacy.SysMemSlicePitch	= InInitialSubresources[0].SlicePitch;
+			LegacyPtr = &Legacy;
+		}
+
+		const BOOL8 IsCube = (static_cast<UINT8>(InDesc.MiscFlags) & static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE)) != 0u;
+		if (IsCube)
+		{
+			auto* Tex = new RTextureCubeResource();
+			if (!CreateTextureCube(*Tex, InDesc, LegacyPtr))
+			{
+				delete Tex;
+				return FALSE;
+			}
+			*OutTexture = Tex;
+			return TRUE;
+		}
+
+		const UINT8 BindFlags = InDesc.BindFlags;
+		const UINT8 RTorDSorUAVMask = static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET) |
+			static_cast<UINT8>(RBindFlagType::BIND_DEPTH_STENCIL) |
+			static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS);
+		if ((BindFlags & RTorDSorUAVMask) != 0u)
+		{
+			auto* Tex = new RRenderTexture2D();
+			if (!CreateRenderTexture2D(*Tex, InDesc))
+			{
+				delete Tex;
+				return FALSE;
+			}
+			*OutTexture = Tex;
+			return TRUE;
+		}
+
+		auto* Tex = new RTexture2DResource();
+		if (!CreateTexture2D(*Tex, InDesc, LegacyPtr))
+		{
+			delete Tex;
+			return FALSE;
+		}
+		*OutTexture = Tex;
+		return TRUE;
+	}
+
+	BOOL8 RDeviceD3D11::CreateShader(const RRHIShaderDesc& InDesc, IRRHIShader** OutShader)
+	{
+		if (!OutShader || !InDesc.ByteCode || InDesc.ByteCodeSize == 0u)
+		{
+			return FALSE;
+		}
+		*OutShader = nullptr;
+
+		const ULONG ByteCodeSize = static_cast<ULONG>(InDesc.ByteCodeSize);
+		switch (InDesc.Stage)
+		{
+		case ERHIShaderStage::RHI_SHADER_STAGE_VERTEX:
+		{
+			auto* Shader = new RVertexShaderResource();
+			// Vertex shader created without InputLayout; PSO creation
+			// later in CreateGraphicsPipelineState attaches the layout.
+			HRESULT hr = m_Device->CreateVertexShader(InDesc.ByteCode, InDesc.ByteCodeSize, nullptr, Shader->Shader.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				delete Shader;
+				return FALSE;
+			}
+			*OutShader = Shader;
+			return TRUE;
+		}
+		case ERHIShaderStage::RHI_SHADER_STAGE_PIXEL:
+		{
+			auto* Shader = new RPixelShaderResource();
+			if (!CreatePixelShaderResource(InDesc.ByteCode, ByteCodeSize, *Shader))
+			{
+				delete Shader;
+				return FALSE;
+			}
+			*OutShader = Shader;
+			return TRUE;
+		}
+		case ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE:
+		{
+			auto* Shader = new RComputeShaderResource();
+			if (!CreateComputeShaderResource(InDesc.ByteCode, ByteCodeSize, *Shader))
+			{
+				delete Shader;
+				return FALSE;
+			}
+			*OutShader = Shader;
+			return TRUE;
+		}
+		default:
+			return FALSE;
+		}
+	}
+
+	BOOL8 RDeviceD3D11::CreateGraphicsPipelineState(const RRHIGraphicsPipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState)
+	{
+		if (!OutPipelineState)
+		{
+			return FALSE;
+		}
+		*OutPipelineState = nullptr;
+
+		auto* PSO = new RPipelineStateD3D11();
+		PSO->bIsCompute			= FALSE;
+		PSO->PrimitiveTopology	= InDesc.PrimitiveTopology;
+
+		if (InDesc.VertexShader)
+		{
+			auto* VS = static_cast<IRD3D11Shader*>(InDesc.VertexShader);
+			PSO->VertexShader = VS->GetD3D11VS();
+			if (auto* BakedInputLayout = VS->GetD3D11InputLayout())
+			{
+				PSO->InputLayout = BakedInputLayout;
+			}
+		}
+		if (InDesc.PixelShader)
+		{
+			auto* PS = static_cast<IRD3D11Shader*>(InDesc.PixelShader);
+			PSO->PixelShader = PS->GetD3D11PS();
+		}
+
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> RS;
+		if (CreateRasterizerState(RS, InDesc.Rasterizer))
+		{
+			PSO->RasterizerState = RS;
+		}
+		Microsoft::WRL::ComPtr<ID3D11BlendState> BS;
+		if (CreateBlendState(BS, &InDesc.Blend, 1u))
+		{
+			PSO->BlendState = BS;
+		}
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DSS;
+		if (CreateDepthStencilState(DSS, InDesc.Depth, &InDesc.Stencil))
+		{
+			PSO->DepthStencilState = DSS;
+		}
+
+		*OutPipelineState = PSO;
+		return TRUE;
+	}
+
+	BOOL8 RDeviceD3D11::CreateComputePipelineState(const RRHIComputePipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState)
+	{
+		if (!OutPipelineState || !InDesc.ComputeShader)
+		{
+			return FALSE;
+		}
+		*OutPipelineState = nullptr;
+
+		auto* PSO = new RPipelineStateD3D11();
+		PSO->bIsCompute = TRUE;
+		auto* CS = static_cast<IRD3D11Shader*>(InDesc.ComputeShader);
+		PSO->ComputeShader = CS->GetD3D11CS();
+		*OutPipelineState = PSO;
+		return TRUE;
+	}
+
+	BOOL8 RDeviceD3D11::CreateSampler(const RSamplerState& InDesc, IRRHISampler** OutSampler)
+	{
+		if (!OutSampler)
+		{
+			return FALSE;
+		}
+		*OutSampler = nullptr;
+
+		auto* Sampler = new RSamplerResource();
+		if (!CreateSamplerState(Sampler->SamplerState, InDesc))
+		{
+			delete Sampler;
+			return FALSE;
+		}
+		*OutSampler = Sampler;
+		return TRUE;
+	}
+
+	void RDeviceD3D11::DestroyResource(IRRHIResource* InResource)
+	{
+		// Resource pointers handed out by Create* are heap-allocated; delete
+		// transitively releases ComPtrs and bindless slots through the
+		// derived classes' destructors. D3D11 has no GPU-side latency to
+		// worry about here because all rendering is synchronous.
+		delete InResource;
+	}
+
+	// ----- Bindless virtual handle tables -----
+
+	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHITexture* InTexture)
+	{
+		if (BindlessSRVFreeIndices.Num() > 0)
+		{
+			const UINT32 Idx = BindlessSRVFreeIndices[BindlessSRVFreeIndices.Num() - 1];
+			BindlessSRVFreeIndices.Pop();
+			BindlessSRVTable[Idx] = InTexture;
+			return Idx;
+		}
+		const UINT32 Idx = BindlessSRVTable.Num<UINT32>();
+		BindlessSRVTable.Add(InTexture);
+		return Idx;
+	}
+
+	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHIBuffer* InBuffer)
+	{
+		if (BindlessSRVFreeIndices.Num() > 0)
+		{
+			const UINT32 Idx = BindlessSRVFreeIndices[BindlessSRVFreeIndices.Num() - 1];
+			BindlessSRVFreeIndices.Pop();
+			BindlessSRVTable[Idx] = InBuffer;
+			return Idx;
+		}
+		const UINT32 Idx = BindlessSRVTable.Num<UINT32>();
+		BindlessSRVTable.Add(InBuffer);
+		return Idx;
+	}
+
+	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHITexture* InTexture)
+	{
+		if (BindlessUAVFreeIndices.Num() > 0)
+		{
+			const UINT32 Idx = BindlessUAVFreeIndices[BindlessUAVFreeIndices.Num() - 1];
+			BindlessUAVFreeIndices.Pop();
+			BindlessUAVTable[Idx] = InTexture;
+			return Idx;
+		}
+		const UINT32 Idx = BindlessUAVTable.Num<UINT32>();
+		BindlessUAVTable.Add(InTexture);
+		return Idx;
+	}
+
+	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHIBuffer* InBuffer)
+	{
+		if (BindlessUAVFreeIndices.Num() > 0)
+		{
+			const UINT32 Idx = BindlessUAVFreeIndices[BindlessUAVFreeIndices.Num() - 1];
+			BindlessUAVFreeIndices.Pop();
+			BindlessUAVTable[Idx] = InBuffer;
+			return Idx;
+		}
+		const UINT32 Idx = BindlessUAVTable.Num<UINT32>();
+		BindlessUAVTable.Add(InBuffer);
+		return Idx;
+	}
+
+	void RDeviceD3D11::ReleaseBindlessIndex(UINT32 InIndex)
+	{
+		// We don't know whether the index was an SRV or UAV; try both tables.
+		if (InIndex < BindlessSRVTable.Num<UINT32>() && BindlessSRVTable[InIndex])
+		{
+			BindlessSRVTable[InIndex] = nullptr;
+			BindlessSRVFreeIndices.Add(InIndex);
+		}
+		if (InIndex < BindlessUAVTable.Num<UINT32>() && BindlessUAVTable[InIndex])
+		{
+			BindlessUAVTable[InIndex] = nullptr;
+			BindlessUAVFreeIndices.Add(InIndex);
+		}
+	}
+
+	// ----- Upload -----
+
+	void RDeviceD3D11::UploadBuffer(IRRHIBuffer* InDest, const void* InData, SIZE_T InSize, SIZE_T InDestOffset)
+	{
+		if (!InDest || !InData || InSize == 0u)
+		{
+			return;
+		}
+		auto* NativeBuffer = static_cast<IRD3D11Buffer*>(InDest)->GetD3D11Buffer();
+		if (!NativeBuffer)
+		{
+			return;
+		}
+		D3D11_BOX Box;
+		Box.left	= static_cast<UINT>(InDestOffset);
+		Box.top		= 0u;
+		Box.front	= 0u;
+		Box.right	= static_cast<UINT>(InDestOffset + InSize);
+		Box.bottom	= 1u;
+		Box.back	= 1u;
+		m_ImmediateContext->UpdateSubresource(NativeBuffer, 0u, &Box, InData, 0u, 0u);
+	}
+
+	void RDeviceD3D11::UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource)
+	{
+		if (!InDest || !InSubresources || InSubresourceCount == 0u)
+		{
+			return;
+		}
+		auto* NativeResource = static_cast<IRD3D11Texture*>(InDest)->GetD3D11Resource();
+		if (!NativeResource)
+		{
+			return;
+		}
+		for (UINT32 i = 0u; i < InSubresourceCount; i++)
+		{
+			m_ImmediateContext->UpdateSubresource(NativeResource, InFirstSubresource + i, nullptr,
+				InSubresources[i].Data, InSubresources[i].RowPitch, InSubresources[i].SlicePitch);
+		}
+	}
+
+	// ----- Command lists -----
+
+	IRCommandList* RDeviceD3D11::AcquireCommandList()
+	{
+		RCommandListD3D11* CommandList = nullptr;
+		if (CommandListFreeList.Num() > 0)
+		{
+			CommandList = CommandListFreeList[CommandListFreeList.Num() - 1];
+			CommandListFreeList.Pop();
+		}
+		else
+		{
+			TUniquePtr<RCommandListD3D11> NewCommandList = EMemory::MakeUnique<RCommandListD3D11>(this, m_Device);
+			CommandList = NewCommandList.get();
+			CommandListPool.Add(EMemory::Move(NewCommandList));
+		}
+		CommandList->Reset();
+		return CommandList;
+	}
+
+	void RDeviceD3D11::SubmitCommandList(IRCommandList* InCommandList)
+	{
+		if (!InCommandList)
+		{
+			return;
+		}
+		// Immediate-mode wrapper on D3D11: every IRCommandList call has
+		// already executed on the shared immediate context, so submit
+		// just retires the command list back to the pool.
+		auto* D3D11List = static_cast<RCommandListD3D11*>(InCommandList);
+		D3D11List->Close();
+		CommandListFreeList.Add(D3D11List);
+	}
+
+	void RDeviceD3D11::SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount)
+	{
+		if (!InCommandLists)
+		{
+			return;
+		}
+		for (UINT32 i = 0u; i < InCount; i++)
+		{
+			SubmitCommandList(InCommandLists[i]);
+		}
+	}
+
+	// ----- Backbuffer access -----
+
+	IRRHITexture* RDeviceD3D11::GetCurrentBackBuffer()const
+	{
+		// const_cast: BackBufferWrapper is logically owned by the device and
+		// always returned as a writable handle; the const-ness here is only
+		// because GetCurrentBackBuffer is part of the IRRHIDevice contract.
+		return const_cast<RRenderTexture2D*>(&BackBufferWrapper);
+	}
+
+};

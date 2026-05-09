@@ -155,7 +155,7 @@ namespace PigeonEngine
 			ReleaseRenderResourceInternal();
 		}
 	public:
-		BOOL32 IsRenderResourceValid()const
+		BOOL8 IsRenderResourceValid()const
 		{
 #if _EDITOR_ONLY
 			if (RenderResourceData)

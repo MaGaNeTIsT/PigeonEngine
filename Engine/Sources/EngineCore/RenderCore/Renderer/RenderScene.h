@@ -152,12 +152,36 @@ namespace PigeonEngine
 		virtual void	RemoveFluidWater(PFluidWaterComponent* InComponent)override;
 		virtual void	UpdateFluidWater(PFluidWaterComponent* InComponent)override;
 	public:
-		RCommand&		GetAddCommands();
-		const RCommand&	GetAddCommands()const;
-		RCommand&		GetRemoveCommands();
-		const RCommand&	GetRemoveCommands()const;
-		RCommand&		GetUpdateCommands();
-		const RCommand&	GetUpdateCommands()const;
+		// GameThread-side enqueue helpers - write into the back slot.
+		// Templated so callers do not need to know about the slot index.
+		template<typename _TFunctionType>
+		void EnqueueAddCommand(_TFunctionType InFunction)
+		{
+			RenderAddCommands[BackSlotIndex].EnqueueCommand(InFunction);
+		}
+		template<typename _TFunctionType>
+		void EnqueueRemoveCommand(_TFunctionType InFunction)
+		{
+			RenderRemoveCommands[BackSlotIndex].EnqueueCommand(InFunction);
+		}
+		template<typename _TFunctionType>
+		void EnqueueUpdateCommand(_TFunctionType InFunction)
+		{
+			RenderUpdateCommands[BackSlotIndex].EnqueueCommand(InFunction);
+		}
+
+		// RenderThread-side accessors - drain the front slot.
+		RCommand&		GetAddCommandsForRender();
+		const RCommand&	GetAddCommandsForRender()const;
+		RCommand&		GetRemoveCommandsForRender();
+		const RCommand&	GetRemoveCommandsForRender()const;
+		RCommand&		GetUpdateCommandsForRender();
+		const RCommand&	GetUpdateCommandsForRender()const;
+
+		// Main-thread frame boundary: must be called between RenderThread
+		// finishing the previous frame and GameThread emitting the next.
+		void			SwapCommandSlots();
+
 		ROctree&		GetSceneOctree();
 		const ROctree&	GetSceneOctree()const;
 
@@ -194,9 +218,16 @@ namespace PigeonEngine
 		RSceneProxyMapping<RBezierGrassSceneProxy>		BezierGrassSceneProxies;
 		RSceneProxyMapping<RFluidWaterSceneProxy>		FluidWaterSceneProxies;
 	protected:
-		RCommand	RenderAddCommands;
-		RCommand	RenderRemoveCommands;
-		RCommand	RenderUpdateCommands;
+		// Double-buffered render-command queues. GameThread writes into
+		// RenderXxxCommands[BackSlotIndex]; RenderThread drains
+		// RenderXxxCommands[FrontSlotIndex]. SwapCommandSlots flips the
+		// indices at the frame boundary, while no thread is touching either
+		// queue.
+		RCommand	RenderAddCommands[2];
+		RCommand	RenderRemoveCommands[2];
+		RCommand	RenderUpdateCommands[2];
+		UINT32		BackSlotIndex;
+		UINT32		FrontSlotIndex;
 	public:
 		RScene();
 		virtual ~RScene();

@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include "RenderScene.h"
 #include <RenderResource.h>
+#include <RHI/IRRHIDevice.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include <RenderProxy/LightSceneProxy.h>
 
@@ -88,29 +89,22 @@ namespace PigeonEngine
 			SAMPLER_TYPE_LINEAR_WRAP,
 			SAMPLER_TYPE_COUNT
 		};
-		enum RRasterizerType : UINT8
+		// Pre-built pipeline states. Each one bundles (raster + blend + depth-
+		// stencil + render-target formats + topology) for a specific render
+		// pass. PSOs marked "(env)" leave VS/PS empty; the mesh proxy that
+		// runs in that pass binds its own shaders. PSOs marked "(full)"
+		// include shaders too because the pass is fixed-function (full-screen
+		// lighting / final blit).
+		enum RPipelineStateType : UINT8
 		{
-			RASTERIZER_TYPE_WIREFRAME	= 0,
-			RASTERIZER_TYPE_SOLID_NONE,
-			RASTERIZER_TYPE_SOLID_BACK,
-			RASTERIZER_TYPE_SOLID_FRONT,
-			RASTERIZER_TYPE_COUNT
-		};
-		enum RBlendType : UINT8
-		{
-			BLEND_TYPE_BLEND_OFF		= 0,
-			BLEND_TYPE_OPAQUE_BASEPASS,
-			BLEND_TYPE_LIGHTING,
-			BLEND_TYPE_FORWARD,
-			BLEND_TYPE_COUNT
-		};
-		enum RDepthStencilType : UINT8
-		{
-			DEPTH_STENCIL_TYPE_DEPTH_NOP_STENCIL_NOP = 0,
-			DEPTH_STENCIL_TYPE_DEPTH_LESS_STENCIL_NOP,
-			DEPTH_STENCIL_TYPE_DEPTH_LESS_EQUAL_STENCIL_NOP,
-			DEPTH_STENCIL_TYPE_DEPTH_EQUAL_STENCIL_NOP,
-			DEPTH_STENCIL_TYPE_COUNT
+			PIPELINE_STATE_BASE_PASS_MRT			= 0,	// (env) Static / skeletal mesh into 4x GBuffer + DSV
+			PIPELINE_STATE_BASE_PASS_GRASS_SOLID,			// (env) BezierGrass solid (cull NONE)
+			PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME,		// (env) BezierGrass wireframe
+			PIPELINE_STATE_LIGHTING,						// (full) Full-screen lighting
+			PIPELINE_STATE_SKY,								// (env) Sky (cull FRONT, depth LESS_EQUAL)
+			PIPELINE_STATE_FORWARD,							// (env) Forward / debug primitives
+			PIPELINE_STATE_FINAL_OUTPUT,					// (full) Full-screen blit to back buffer
+			PIPELINE_STATE_COUNT
 		};
 	protected:
 		RScene*						Scene;
@@ -120,9 +114,10 @@ namespace PigeonEngine
 #endif
 	protected:
 		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];
-		RRasterizerResource			Rasterizer[RRasterizerType::RASTERIZER_TYPE_COUNT];
-		RBlendResource				Blend[RBlendType::BLEND_TYPE_COUNT];
-		RDepthStencilResource		DepthStencil[RDepthStencilType::DEPTH_STENCIL_TYPE_COUNT];
+		IRRHIPipelineState*			PipelineStates[RPipelineStateType::PIPELINE_STATE_COUNT];
+		// Active command list for the frame currently being recorded.
+		// Acquired in Render() and submitted at the end; sub-passes share it.
+		IRCommandList*				CurrentCommandList;
 		const EVertexShaderAsset*	SimpleFullScreenVertexShader;
 		const EPixelShaderAsset*	SimpleFullScreenPixelShader;
 		const EPixelShaderAsset*	SceneLightingPixelShader;

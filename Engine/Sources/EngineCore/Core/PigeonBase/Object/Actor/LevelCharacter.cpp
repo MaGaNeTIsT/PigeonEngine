@@ -155,7 +155,7 @@ void PigeonEngine::PCharacter::OnAdjustBodyVelocity(const FPhysicsBodyId& inBody
 	OnPhysicsAdjustBodyVelocity(inBodyID2, ioLinearVelocity, ioAngularVelocity);
 }
 
-bool PigeonEngine::PCharacter::OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2)
+PigeonEngine::BOOL8 PigeonEngine::PCharacter::OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2)
 {
 	return OnPhysicsContactValidate(inBodyID2, inSubShapeID2);
 }

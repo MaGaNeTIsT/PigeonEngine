@@ -90,7 +90,18 @@ namespace PigeonEngine
     }
     void CImGUIManager::Draw()
     {
+        PrepareDrawData();
+        RenderDrawData();
+    }
+    void CImGUIManager::PrepareDrawData()
+    {
+        // Finalize ImGui frame on the main thread. After this returns,
+        // ImGui::GetDrawData() is valid and stable until the next ImGui::NewFrame.
         ImGui::Render();
+    }
+    void CImGUIManager::RenderDrawData()
+    {
+        // Replay the prepared draw data on the immediate context.
         D3DRenderDrawData(ImGui::GetDrawData());
     }
     void CImGUIManager::InitWnd()
@@ -472,7 +483,9 @@ namespace PigeonEngine
     void CImGUIManager::D3DRenderDrawData(ImDrawData* drawData)
     {
         if (drawData->DisplaySize.x <= 0.f || drawData->DisplaySize.y <= 0.f)
+        {
             return;
+        }
 
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> ctx = RDeviceD3D11::GetDeviceSingleton()->GetRenderDeviceContext();
         Microsoft::WRL::ComPtr<ID3D11Device> dvc = RDeviceD3D11::GetDeviceSingleton()->GetRenderDevice();

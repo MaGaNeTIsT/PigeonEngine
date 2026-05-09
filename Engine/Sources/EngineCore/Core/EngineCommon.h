@@ -129,7 +129,7 @@ namespace PigeonEngine
 			if (IsValid)
 			{
 				AABBMin = Vector3(EMath::Min(AABBMin.x, Other.AABBMin.x), EMath::Min(AABBMin.y, Other.AABBMin.y), EMath::Min(AABBMin.z, Other.AABBMin.z));
-				AABBMax = Vector3(EMath::Max(AABBMin.x, Other.AABBMin.x), EMath::Max(AABBMin.y, Other.AABBMin.y), EMath::Max(AABBMin.z, Other.AABBMin.z));
+				AABBMax = Vector3(EMath::Max(AABBMax.x, Other.AABBMax.x), EMath::Max(AABBMax.y, Other.AABBMax.y), EMath::Max(AABBMax.z, Other.AABBMax.z));
 			}
 			else if (Other.IsValid)
 			{

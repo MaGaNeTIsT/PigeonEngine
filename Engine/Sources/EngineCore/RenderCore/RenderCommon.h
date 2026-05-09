@@ -15,8 +15,8 @@ namespace PigeonEngine
 		virtual ~RRenderResourceInterface() = default;
 		RRenderResourceInterface& operator=(const RRenderResourceInterface&) = default;
 	public:
-		virtual BOOL32 IsRenderResourceValid()const = 0;
-		virtual BOOL32 InitRenderResource() = 0;
+		virtual BOOL8 IsRenderResourceValid()const = 0;
+		virtual BOOL8 InitRenderResource() = 0;
 		virtual void ReleaseRenderResource() = 0;
 	};
 	enum RShaderFrequencyType : UINT8
@@ -68,7 +68,6 @@ namespace PigeonEngine
 	};
 	struct RRasterizerState
 	{
-		RRasterizerState()noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
 		RRasterizerState(const RRasterizerState& Other)noexcept : CullMode(Other.CullMode), FillMode(Other.FillMode) {}
 		constexpr RRasterizerState(RCullModeType InCullMode = RCullModeType::CULL_BACK
 			, RFillModeType InFillMode = RFillModeType::FILL_SOLID)noexcept : CullMode(InCullMode), FillMode(InFillMode) {}

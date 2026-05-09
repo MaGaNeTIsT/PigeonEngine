@@ -9,10 +9,12 @@
 #include <RenderCommon.h>
 #include <RenderResource.h>
 #include <EngineCommon.h>
+#include <RHI/IRRHIDevice.h>
+#include "CommandListD3D11.h"
 
 namespace PigeonEngine
 {
-	class RDeviceD3D11 : public EManagerBase
+	class RDeviceD3D11 : public EManagerBase, public IRRHIDevice
 	{
 	public:
 		void			SetInitializeData(HWND hWnd, const Vector2Int& bufferSize, UINT32 bufferDepth = 24u, UINT32 frameNum = 60u, BOOL32 windowed = TRUE);
@@ -36,7 +38,6 @@ namespace PigeonEngine
 		void	UploadBuffer(const Microsoft::WRL::ComPtr<ID3D11Buffer>& dstResource, const void* srcData, UINT32 srcRowPitch = 0u, UINT32 srcDepthPitch = 0u, UINT32 dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 		void	UploadResource(const Microsoft::WRL::ComPtr<ID3D11Texture2D>& dstResource, const void* srcData, UINT32 srcRowPitch, UINT32 srcDepthPitch, UINT32 dstSubresource = 0u, const D3D11_BOX* dstBox = nullptr);
 	public:
-		void	Present(const UINT32& syncInterval = 0u);
 		void	SetDefaultDepthStencilState();
 		void	SetDepthStencilState(const Microsoft::WRL::ComPtr<ID3D11DepthStencilState>& dss, const UINT32& stencilRef = 0x0u);
 		void	SetDefaultBlendState();
@@ -138,6 +139,56 @@ namespace PigeonEngine
 	public:
 		D3D11_VIEWPORT		GetViewport() const { return m_Viewport; }
 		D3D_FEATURE_LEVEL	GetFeatureLevel() const { return m_FeatureLevel; }
+
+		// ========================================================
+		// IRRHIDevice interface
+		//
+		// Most methods delegate to the legacy direct-device APIs
+		// above. New state (BackBufferWrapper, CommandList pool,
+		// bindless virtual-handle tables) lives in the second
+		// private block below.
+		// ========================================================
+	public:
+		// Lifecycle
+		virtual BOOL8           Initialize(const RRHIDeviceInitDesc& InDesc) override;
+		virtual void            Shutdown() override;
+		virtual ERHIBackendType GetBackendType()const override { return ERHIBackendType::RHI_BACKEND_D3D11; }
+		virtual void            BeginFrame() override;
+		virtual void            EndFrame() override;
+		virtual void            Present(UINT32 InSyncInterval) override;
+		virtual BOOL8           ResizeSwapChain(UINT32 InWidth, UINT32 InHeight) override;
+		virtual void            WaitForGPUIdle() override;
+
+		// Resource creation
+		virtual BOOL8 CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData* InInitialData, IRRHIBuffer** OutBuffer) override;
+		virtual BOOL8 CreateTexture(const RTextureDesc& InDesc, const RRHISubresourceData* InInitialSubresources, UINT32 InSubresourceCount, IRRHITexture** OutTexture) override;
+		virtual BOOL8 CreateShader(const RRHIShaderDesc& InDesc, IRRHIShader** OutShader) override;
+		virtual BOOL8 CreateGraphicsPipelineState(const RRHIGraphicsPipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState) override;
+		virtual BOOL8 CreateComputePipelineState(const RRHIComputePipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState) override;
+		virtual BOOL8 CreateSampler(const RSamplerState& InDesc, IRRHISampler** OutSampler) override;
+		virtual void  DestroyResource(IRRHIResource* InResource) override;
+
+		// Bindless (D3D11 maintains virtual handle tables; the actual
+		// descriptor heap exists only on D3D12.)
+		virtual UINT32 RegisterBindlessSRV(IRRHITexture* InTexture) override;
+		virtual UINT32 RegisterBindlessSRV(IRRHIBuffer* InBuffer) override;
+		virtual UINT32 RegisterBindlessUAV(IRRHITexture* InTexture) override;
+		virtual UINT32 RegisterBindlessUAV(IRRHIBuffer* InBuffer) override;
+		virtual void   ReleaseBindlessIndex(UINT32 InIndex) override;
+
+		// Upload
+		virtual void UploadBuffer(IRRHIBuffer* InDest, const void* InData, SIZE_T InSize, SIZE_T InDestOffset = 0) override;
+		virtual void UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource = 0u) override;
+
+		// Command lists
+		virtual IRCommandList*  AcquireCommandList() override;
+		virtual void            SubmitCommandList(IRCommandList* InCommandList) override;
+		virtual void            SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) override;
+
+		// Backbuffer access
+		virtual IRRHITexture*   GetCurrentBackBuffer()const override;
+		virtual UINT32          GetCurrentFrameIndex()const override { return CurrentFrameIndex; }
+		virtual UINT32          GetFrameInFlightCount()const override { return FrameInFlightCount; }
 	private:
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetRenderDeviceContext() const { return m_ImmediateContext; }
 		Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice() const { return m_Device; }
@@ -152,7 +203,22 @@ namespace PigeonEngine
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		m_ImmediateContext;
 		Microsoft::WRL::ComPtr<ID3D11Device>			m_Device;
 	private:
-		RDeviceD3D11() : m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr), m_DepthStencilView(nullptr), m_RenderTargetView(nullptr), m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT()) {}
+		// New IRRHIDevice state (Pascal names, no m_ prefix per current style)
+		RRenderTexture2D								BackBufferWrapper;
+		TArray<TUniquePtr<RCommandListD3D11>>			CommandListPool;
+		TArray<RCommandListD3D11*>						CommandListFreeList;
+		TArray<IRRHIResource*>							BindlessSRVTable;
+		TArray<IRRHIResource*>							BindlessUAVTable;
+		TArray<UINT32>									BindlessSRVFreeIndices;
+		TArray<UINT32>									BindlessUAVFreeIndices;
+		UINT32											CurrentFrameIndex;
+		UINT32											FrameInFlightCount;
+	private:
+		RDeviceD3D11()
+			: m_Device(nullptr), m_ImmediateContext(nullptr), m_SwapChain(nullptr), m_DepthTexture(nullptr)
+			, m_DepthStencilView(nullptr), m_RenderTargetView(nullptr)
+			, m_FeatureLevel(D3D_FEATURE_LEVEL::D3D_FEATURE_LEVEL_11_1), m_Viewport(D3D11_VIEWPORT())
+			, CurrentFrameIndex(0u), FrameInFlightCount(2u) {}
 		~RDeviceD3D11() {}
 		RDeviceD3D11(const RDeviceD3D11&) = delete;
 		RDeviceD3D11& operator=(const RDeviceD3D11&) = delete;
