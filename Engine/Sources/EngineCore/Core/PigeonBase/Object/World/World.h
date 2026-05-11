@@ -106,6 +106,7 @@ namespace PigeonEngine
         void                    BindRenderScene(RSceneInterface* InScene);
         RSceneInterface*        GetRenderScene();
         const RSceneInterface*  GetRenderScene()const;
+        void                    UpdateCameraViewports(UINT32 InWidth, UINT32 InHeight);
     private:
         RSceneInterface*    RenderScene = nullptr;
         //Render scene state END

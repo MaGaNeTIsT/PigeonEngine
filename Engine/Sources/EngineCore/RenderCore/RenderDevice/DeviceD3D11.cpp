@@ -111,6 +111,17 @@ namespace PigeonEngine
 				return;
 			}
 		}
+
+		// Prevent DXGI from intercepting Alt+Enter and monitoring window size/style changes.
+		// Without this, DXGI may react to programmatic SetWindowPos/SetWindowLongPtr calls
+		// (e.g., our borderless fullscreen toggle) by sending unexpected window messages.
+		{
+			Microsoft::WRL::ComPtr<IDXGIFactory> DxgiFactory;
+			if (SUCCEEDED(m_SwapChain->GetParent(IID_PPV_ARGS(DxgiFactory.GetAddressOf()))) && DxgiFactory)
+			{
+				DxgiFactory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
+			}
+		}
 	}
 	void RDeviceD3D11::Initialize()
 	{
@@ -924,7 +935,7 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::Present(UINT32 InSyncInterval)
 	{
-		/*HRESULT hr =*/ m_SwapChain->Present(InSyncInterval, 0u);	//DXGI_PRESENT
+		m_SwapChain->Present(InSyncInterval, 0u);
 	}
 	void RDeviceD3D11::SetDefaultDepthStencilState()
 	{
@@ -2355,12 +2366,98 @@ namespace PigeonEngine
 		CurrentFrameIndex = (CurrentFrameIndex + 1u) % ((FrameInFlightCount > 0u) ? FrameInFlightCount : 1u);
 	}
 
-	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 /*InWidth*/, UINT32 /*InHeight*/)
+	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 InWidth, UINT32 InHeight)
 	{
-		// Phase 1 stub - SceneRenderer does not currently resize at runtime
-		// on the D3D11 path. Implement when window-resize is plumbed in.
-		PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain not implemented yet."));
-		return FALSE;
+		if (!m_SwapChain || !m_Device || !m_ImmediateContext || InWidth == 0u || InHeight == 0u)
+		{
+			return FALSE;
+		}
+
+		// Flush any pending GPU work, then reset ALL context state to release
+		// every internal COM AddRef (RTVs, DSV, SRVs, etc.) before ResizeBuffers.
+		m_ImmediateContext->Flush();
+		m_ImmediateContext->ClearState();
+
+		// Release all references to back-buffer resources
+		BackBufferWrapper.ReleaseRenderResource();
+		BackBufferWrapper.Buffer.Reset();   // must release the back-buffer texture itself before ResizeBuffers
+		m_RenderTargetView.Reset();
+		m_DepthStencilView.Reset();
+		m_DepthTexture.Reset();
+
+		// Resize swap-chain buffers (0 = keep existing count and format)
+		HRESULT hr = m_SwapChain->ResizeBuffers(0, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0u);
+		if (FAILED(hr))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain - ResizeBuffers failed."));
+			return FALSE;
+		}
+
+		// Re-acquire back buffer and recreate RTV
+		{
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBufferTex;
+			hr = m_SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTex.GetAddressOf()));
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain - GetBuffer failed."));
+				return FALSE;
+			}
+			hr = m_Device->CreateRenderTargetView(BackBufferTex.Get(), nullptr, m_RenderTargetView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain - CreateRenderTargetView failed."));
+				return FALSE;
+			}
+			BackBufferWrapper.Buffer			= BackBufferTex;
+			BackBufferWrapper.RenderTargetView	= m_RenderTargetView;
+			BackBufferWrapper.Width				= InWidth;
+			BackBufferWrapper.Height			= InHeight;
+			BackBufferWrapper.MipLevels			= 1u;
+			BackBufferWrapper.ArraySize			= 1u;
+			BackBufferWrapper.BindFlags			= static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET);
+		}
+
+		// Recreate depth texture and DSV at new size
+		{
+			D3D11_TEXTURE2D_DESC DepthDesc = {};
+			DepthDesc.Width          = InWidth;
+			DepthDesc.Height         = InHeight;
+			DepthDesc.MipLevels      = 1u;
+			DepthDesc.ArraySize      = 1u;
+			DepthDesc.Format         = DXGI_FORMAT_R24G8_TYPELESS;
+			DepthDesc.SampleDesc     = { 1u, 0u };
+			DepthDesc.Usage          = D3D11_USAGE_DEFAULT;
+			DepthDesc.BindFlags      = D3D11_BIND_DEPTH_STENCIL;
+			DepthDesc.CPUAccessFlags = 0u;
+			DepthDesc.MiscFlags      = 0u;
+			hr = m_Device->CreateTexture2D(&DepthDesc, nullptr, m_DepthTexture.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain - CreateTexture2D (depth) failed."));
+				return FALSE;
+			}
+
+			D3D11_DEPTH_STENCIL_VIEW_DESC DsvDesc = {};
+			DsvDesc.Format        = DXGI_FORMAT_D24_UNORM_S8_UINT;
+			DsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+			DsvDesc.Flags         = 0u;
+			hr = m_Device->CreateDepthStencilView(m_DepthTexture.Get(), &DsvDesc, m_DepthStencilView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::ResizeSwapChain - CreateDepthStencilView failed."));
+				return FALSE;
+			}
+		}
+
+		// Update the viewport to match the new dimensions
+		m_Viewport.TopLeftX = 0.f;
+		m_Viewport.TopLeftY = 0.f;
+		m_Viewport.Width    = static_cast<FLOAT>(InWidth);
+		m_Viewport.Height   = static_cast<FLOAT>(InHeight);
+		m_Viewport.MinDepth = 0.f;
+		m_Viewport.MaxDepth = 1.f;
+
+		return TRUE;
 	}
 
 	void RDeviceD3D11::WaitForGPUIdle()

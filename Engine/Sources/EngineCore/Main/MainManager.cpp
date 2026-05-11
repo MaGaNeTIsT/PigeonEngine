@@ -17,6 +17,7 @@
 #include "../../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #include "../Editor/EditorManager.h"
+#include "../Editor/EditorGlobalPanel.h"
 #endif
 
 #if _EDITOR_ONLY
@@ -47,6 +48,7 @@ namespace PigeonEngine
 		m_ImGUIManager		= CImGUIManager::GetManagerSingleton();
 		m_AssimpManager		= CAssimpManager::GetManagerSingleton();
 		m_EditorManager     = EEditorManager::GetManagerSingleton();
+		m_EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
 #endif
 		m_ClassTypeRegisterManager = EClassTypeRegisterManager::GetManagerSingleton();
 		m_ClassFactoryRegisterManager = EClassFactoryRegisterManager::GetManagerSingleton();
@@ -114,6 +116,8 @@ namespace PigeonEngine
 			RenderDevice->Initialize(DeviceInitDesc);
 		}
 
+		GatherSupportedResolutions();
+
 		{
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check scene renderer is not null."), (!SceneRenderer));
 			SceneRenderer = new RSceneRenderer();
@@ -145,6 +149,7 @@ namespace PigeonEngine
 		m_ImGUIManager->Initialize();
 		m_AssimpManager->Initialize();
 		m_EditorManager->Initialize();
+		m_EditorGlobalPanel->Initialize();
 #endif
 		
 		m_WindowTimer.Init();
@@ -173,6 +178,7 @@ namespace PigeonEngine
 		m_EditorManager->ShutDown();
 		m_AssimpManager->ShutDown();
 		m_ImGUIManager->ShutDown();
+		m_EditorGlobalPanel->ShutDown();
 #endif
 
 		{
@@ -250,6 +256,17 @@ namespace PigeonEngine
 
 		RenderThread->WaitForRenderIdle();
 
+		if (m_bPendingResize)
+		{
+			m_bPendingResize = FALSE;
+			if (RenderDevice->ResizeSwapChain(m_PendingResizeWidth, m_PendingResizeHeight))
+			{
+				SceneRenderer->ResizeRenderTargets(m_PendingResizeWidth, m_PendingResizeHeight);
+				m_WorldManager->GetWorld()->UpdateCameraViewports(m_PendingResizeWidth, m_PendingResizeHeight);
+				m_WindowSize = Vector2Int(static_cast<INT32>(m_PendingResizeWidth), static_cast<INT32>(m_PendingResizeHeight));
+			}
+		}
+
 #if _EDITOR_ONLY
 		m_ImGUIManager->Update();				// ImGui::NewFrame
 		EditorUpdate();
@@ -309,5 +326,116 @@ namespace PigeonEngine
 	const EGameTimer* EMainManager::GetGameTimer()
 	{
 		return (m_GameTimer);
+	}
+
+	void EMainManager::GatherSupportedResolutions()
+	{
+		m_SupportedResolutions.Empty();
+		DEVMODEW DevMode = {};
+		DevMode.dmSize   = sizeof(DevMode);
+		DWORD ModeIndex  = 0u;
+		while (::EnumDisplaySettingsW(nullptr, ModeIndex, &DevMode) != FALSE)
+		{
+			RResolutionItem Item;
+			Item.Width  = static_cast<UINT32>(DevMode.dmPelsWidth);
+			Item.Height = static_cast<UINT32>(DevMode.dmPelsHeight);
+			BOOL32 bFound = FALSE;
+			for (const RResolutionItem& Existing : m_SupportedResolutions)
+			{
+				if (Existing == Item)
+				{
+					bFound = TRUE;
+					break;
+				}
+			}
+			if (!bFound)
+			{
+				m_SupportedResolutions.Add(Item);
+			}
+			++ModeIndex;
+		}
+		// Sort ascending by Width, then Height
+		const INT32 Count = static_cast<INT32>(m_SupportedResolutions.Num());
+		for (INT32 i = 0; i < Count - 1; ++i)
+		{
+			for (INT32 j = 0; j < Count - 1 - i; ++j)
+			{
+				const RResolutionItem& A = m_SupportedResolutions[j];
+				const RResolutionItem& B = m_SupportedResolutions[j + 1];
+				if (A.Width > B.Width || (A.Width == B.Width && A.Height > B.Height))
+				{
+					RResolutionItem Temp    = m_SupportedResolutions[j];
+					m_SupportedResolutions[j]     = m_SupportedResolutions[j + 1];
+					m_SupportedResolutions[j + 1] = Temp;
+				}
+			}
+		}
+	}
+
+	void EMainManager::ApplyResolution(UINT32 InWidth, UINT32 InHeight, BOOL32 InIsFullscreen)
+	{
+		m_bIsFullscreen = InIsFullscreen;
+		if (InIsFullscreen)
+		{
+			HMONITOR Monitor    = ::MonitorFromWindow(m_HWND, MONITOR_DEFAULTTONEAREST);
+			MONITORINFO MonInfo = {};
+			MonInfo.cbSize      = sizeof(MonInfo);
+			::GetMonitorInfoW(Monitor, &MonInfo);
+			::SetWindowLongPtrW(m_HWND, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+			::SetWindowPos(
+				m_HWND,
+				HWND_TOP,
+				MonInfo.rcMonitor.left,
+				MonInfo.rcMonitor.top,
+				MonInfo.rcMonitor.right  - MonInfo.rcMonitor.left,
+				MonInfo.rcMonitor.bottom - MonInfo.rcMonitor.top,
+				SWP_FRAMECHANGED | SWP_NOACTIVATE);
+			m_PendingResizeWidth  = static_cast<UINT32>(MonInfo.rcMonitor.right  - MonInfo.rcMonitor.left);
+			m_PendingResizeHeight = static_cast<UINT32>(MonInfo.rcMonitor.bottom - MonInfo.rcMonitor.top);
+		}
+		else
+		{
+			RECT ClientRect = { 0, 0, static_cast<LONG>(InWidth), static_cast<LONG>(InHeight) };
+#if _EDITOR_ONLY
+			constexpr DWORD WindowStyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+#else
+			constexpr DWORD WindowStyle = WS_VISIBLE | (WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME));
+#endif
+			::AdjustWindowRect(&ClientRect, WS_OVERLAPPEDWINDOW, FALSE);
+			::SetWindowLongPtrW(m_HWND, GWL_STYLE, WindowStyle);
+			::SetWindowPos(
+				m_HWND,
+				HWND_TOP,
+				CW_USEDEFAULT,
+				CW_USEDEFAULT,
+				ClientRect.right  - ClientRect.left,
+				ClientRect.bottom - ClientRect.top,
+				SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOMOVE | SWP_SHOWWINDOW);
+			m_PendingResizeWidth  = InWidth;
+			m_PendingResizeHeight = InHeight;
+		}
+		m_bPendingResize = TRUE;
+	}
+
+	void EMainManager::OnWindowResized(UINT32 InNewWidth, UINT32 InNewHeight)
+	{
+		if (InNewWidth == 0u || InNewHeight == 0u)
+		{
+			return;
+		}
+		m_bPendingResize      = TRUE;
+		m_PendingResizeWidth  = InNewWidth;
+		m_PendingResizeHeight = InNewHeight;
+		m_bIsFullscreen       = FALSE;
+	}
+
+	const TArray<RResolutionItem>& EMainManager::GetSupportedResolutions() const
+	{
+		return m_SupportedResolutions;
+	}
+
+	BOOL32 EMainManager::GetIsFullscreen() const
+	{
+		return m_bIsFullscreen;
 	}
 };

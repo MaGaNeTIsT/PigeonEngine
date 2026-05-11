@@ -1,4 +1,5 @@
 #include "EditorManager.h"
+#include "EditorGlobalPanel.h"
 #include <Base/RTTI/RTTIManager.h>
 #include "PigeonBase/Object/World/WorldManager.h"
 #include "AssetManager.h"
@@ -50,10 +51,11 @@ namespace PigeonEngine
 
     void EEditorManager::EditorInit()
     {
-        m_WorldManager  = EWorldManager::GetManagerSingleton();
-        m_AssetManager  = EAssetManager::GetManagerSingleton();
-        m_LogsManager   = EEditorLogManager::GetManagerSingleton();
-        m_ImportManager = EImportManager::GetManagerSingleton();
+        m_WorldManager     = EWorldManager::GetManagerSingleton();
+        m_AssetManager     = EAssetManager::GetManagerSingleton();
+        m_LogsManager      = EEditorLogManager::GetManagerSingleton();
+        m_ImportManager    = EImportManager::GetManagerSingleton();
+        m_EditorGlobalPanel = EEditorGlobalPanel::GetManagerSingleton();
         m_LogsManager->EditorInit();
         m_AssetManager->EditorInit();
         m_WorldManager->EditorInit();
@@ -157,6 +159,10 @@ namespace PigeonEngine
         m_AssetManager->EditorUpdate();
         m_LogsManager->EditorUpdate();
         m_ImportManager->EditorUpdate();
+        if (m_EditorGlobalPanel)
+        {
+            m_EditorGlobalPanel->DrawResolutionPanel();
+        }
 
         // Draw bounds for all actors
         TArray<PActor*> AllActors = m_WorldManager->GetWorld()->GetAllActors();

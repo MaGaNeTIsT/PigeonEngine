@@ -6,6 +6,7 @@
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include "PigeonBase/Object/Actor/LevelActor.h"
 #include "PigeonBase/Object/Controller/Controller.h"
+#include "PigeonBase/Object/Component/CameraAndLight/CameraComponent.h"
 
 namespace PigeonEngine
 {
@@ -293,6 +294,20 @@ namespace PigeonEngine
     const RSceneInterface* PWorld::GetRenderScene()const
     {
         return RenderScene;
+    }
+    void PWorld::UpdateCameraViewports(UINT32 InWidth, UINT32 InHeight)
+    {
+        PController* ActiveController = GetController();
+        if (!ActiveController)
+        {
+            return;
+        }
+        PCameraComponent* Camera = ActiveController->GetCamera();
+        if (!Camera)
+        {
+            return;
+        }
+        Camera->SetViewport(0.f, 0.f, static_cast<FLOAT>(InWidth), static_cast<FLOAT>(InHeight));
     }
 #if _EDITOR_ONLY
   

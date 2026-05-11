@@ -10,7 +10,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
 INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
-    const WCHAR* CLASS_NAME	= L"PigeonEngine";
+    const WCHAR* CLASS_NAME		= L"PigeonEngine";
 	const WCHAR* WINDOW_NAME	= L"PigeonEngineWindow";
 	HWND windowHandle; WNDCLASSEXW wcex = {};
 	{
@@ -31,13 +31,17 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 			return TRUE;
 		}
 		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT) };
-		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
-		::AdjustWindowRect(&clientRect, style, FALSE);
-        windowHandle = ::CreateWindowExW(
+#if _EDITOR_ONLY
+		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW;
+#else
+		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
+#endif
+		::AdjustWindowRect(&clientRect, WindowStyle, FALSE);
+		windowHandle = ::CreateWindowExW(
 			0,
 			CLASS_NAME,
 			WINDOW_NAME,
-			style,
+			WindowStyle,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			clientRect.right - clientRect.left,
@@ -67,8 +71,23 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	rid.hwndTarget	= nullptr;
 	::RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
+#if _EDITOR_ONLY
+	::ShowWindow(windowHandle, SW_SHOWMAXIMIZED);
+	::UpdateWindow(windowHandle);
+	{
+		RECT ClientRect = {};
+		::GetClientRect(windowHandle, &ClientRect);
+		const UINT32 MaxWidth  = static_cast<UINT32>(ClientRect.right);
+		const UINT32 MaxHeight = static_cast<UINT32>(ClientRect.bottom);
+		if (MaxWidth > 0u && MaxHeight > 0u)
+		{
+			PigeonEngine::EMainManager::GetManagerSingleton()->OnWindowResized(MaxWidth, MaxHeight);
+		}
+	}
+#else
 	::ShowWindow(windowHandle, nCmdShow);
 	::UpdateWindow(windowHandle);
+#endif
 
 	MSG msg;
 	while (TRUE)
@@ -138,9 +157,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 	switch(uMsg)
 	{
 	case WM_DESTROY:
-		::DestroyWindow(hWnd);
 		::PostQuitMessage(0);
 		break;
+#if _EDITOR_ONLY
+	case WM_EXITSIZEMOVE:
+	{
+		RECT ClientRect = {};
+		::GetClientRect(hWnd, &ClientRect);
+		const UINT32 NewWidth  = static_cast<UINT32>(ClientRect.right  - ClientRect.left);
+		const UINT32 NewHeight = static_cast<UINT32>(ClientRect.bottom - ClientRect.top);
+		PigeonEngine::EMainManager::GetManagerSingleton()->OnWindowResized(NewWidth, NewHeight);
+		break;
+	}
+#endif
 #if 0
 	case WM_KEYDOWN:
 		switch(wParam)

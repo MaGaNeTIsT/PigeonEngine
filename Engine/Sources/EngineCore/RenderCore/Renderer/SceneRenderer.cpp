@@ -342,6 +342,18 @@ namespace PigeonEngine
 	{
 		return Scene;
 	}
+	void RSceneRenderer::ResizeRenderTargets(UINT32 InWidth, UINT32 InHeight)
+	{
+		const Vector2Int NewSize(static_cast<INT32>(InWidth), static_cast<INT32>(InHeight));
+		for (auto It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
+		{
+			RSceneTextures* SceneTextures = It->second;
+			if (SceneTextures)
+			{
+				SceneTextures->InitResources(NewSize, NeedStencil);
+			}
+		}
+	}
 	void RSceneRenderer::InitNewFrame()
 	{
 		// SwapCommandSlots is called by the GameThread at frame boundary

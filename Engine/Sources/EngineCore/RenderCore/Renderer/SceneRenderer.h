@@ -59,6 +59,7 @@ namespace PigeonEngine
 		RScene*			GetRenderScene();
 		void			InitNewFrame();
 		void			Render();
+		void			ResizeRenderTargets(UINT32 InWidth, UINT32 InHeight);
 	protected:
 		void			InitViews();
 		void			BasePass();
