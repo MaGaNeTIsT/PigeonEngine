@@ -12,7 +12,33 @@ namespace PigeonEngine
 	class EStaticMeshAsset;
 	class EVertexShaderAsset;
 	class EPixelShaderAsset;
-
+#if 0
+	struct EBezierGrassGlobalProxyData
+	{
+		float4          GlobalWindDirectionStrength;
+		float4          WindStrengthRange;
+		float4          CurrentTimeParams;
+		float4          PreviousTimeParams;
+		uint4           NumAllocatedLODMaxNumInstances;
+		float4          TileAnchorSize;
+		uint4           TileXYNumTiles;
+		float4          SubTileSizeBorderSize;
+		uint4           SubTileXYNumSubTiles;
+		uint4           MaskXYNumInstances;
+		float4          DensityScale;
+		uint4           HeightMapWorldScaleOffsetBorderPixelSize;
+		uint4           LayerBorderPixelSizeDensityBorderPixelSize;
+		uint4           LayerTypeElemsBaseCustomTotalNumTypes;
+		uint4           LODBodyPart1;
+		uint4           LODBodyPart2;
+		uint4           IndexOffset1;
+		uint4           IndexOffset2;
+		uint4           VertexOffset1;
+		uint4           VertexOffset2;
+		float4          LODDistancesSq1;
+		float4          LODDistancesSq2;
+	};
+#endif
 	class RBezierGrassMaterialParameter : public RPrimitiveMaterialParameter
 	{
 	public:
@@ -54,13 +80,14 @@ namespace PigeonEngine
 		const EVertexShaderAsset*			VertexShader;
 		const EPixelShaderAsset*			PixelShader;
 		const EComputeShaderAsset*			ComputeShader;
-#if _EDITOR_ONLY
-		const EComputeShaderAsset*			DebugComputeShader;
-		const EComputeShaderAsset*			DebugScreenComputeShader;
-#endif
+		BOOL32								bSplitBentPart;
+		TArray<UINT32>						BodyParts;
+		TArray<FLOAT>						BentBezierTs;
+#if 0
 		UINT32								VertexOffset[BEZIER_GRASS_LOD_NUM];
 		UINT32								IndexOffset[BEZIER_GRASS_LOD_NUM];
 		UINT32								IndexCount[BEZIER_GRASS_LOD_NUM];
+#endif
 		RVertexBufferResource				VertexBuffer;
 		RIndexBufferResource				IndexBuffer;
 		RBezierGrassMaterialParameter		MaterialParameter;

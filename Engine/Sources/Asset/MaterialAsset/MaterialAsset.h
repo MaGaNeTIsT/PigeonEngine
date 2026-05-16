@@ -116,21 +116,6 @@ namespace PigeonEngine
             const EString& InLoadName,
             const EMaterialAsset*& OutMaterial);
 
-#if _EDITOR_ONLY
-        // Like LoadMaterialAsset but triggers MaterialCompiler if the manifest is missing.
-        // InOutputDir        : compiled shader output dir,  e.g. EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR
-        // InLoadName         : material name,               e.g. "M_Rock"
-        // InSourceDir        : material source dir,         e.g. EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR
-        // InShaderIncludeDir : engine shader include root   e.g. EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR
-        BOOL32 LoadOrCompileMaterialAsset(
-            const EString& InOutputDir,
-            const EString& InLoadName,
-            const EString& InSourceDir,
-            const EString& InShaderIncludeDir,
-            const EMaterialAsset*& OutMaterial,
-            BOOL32         bEmitDebugInfo = FALSE);
-#endif
-
     private:
         BOOL32 ParseReflection(const EString& ReflJsonPath, EMaterialReflection& Out);
 
@@ -141,5 +126,11 @@ namespace PigeonEngine
         CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EMaterialAssetManager)
 
     };
+
+    // Try to load a material; in editor mode, compiles it first if the manifest is missing.
+    extern BOOL32 TryLoadMaterialAsset(const EString& InOutputDir, const EString& InLoadName,
+        const EString& InSourceDir, const EString& InShaderIncludeDir, BOOL32 bEmitDebugInfo,
+        const EMaterialAsset*& OutMaterial
+    );
 
 } // namespace PigeonEngine

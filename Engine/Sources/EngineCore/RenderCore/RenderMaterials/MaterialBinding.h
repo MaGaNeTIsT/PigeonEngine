@@ -29,6 +29,12 @@ namespace PigeonEngine
     // Key = slot number, Value = SRV ComPtr
     using EMaterialTextureMap = TMap<UINT32, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>>;
 
+    struct RMaterialTextureSRV
+    {
+        UINT32                                          Slot;
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+    };
+
     class EMaterialBinding
     {
     public:

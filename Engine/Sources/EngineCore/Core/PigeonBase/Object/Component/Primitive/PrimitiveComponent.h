@@ -3,15 +3,10 @@
 #include "EngineCommon.h"
 #include <PigeonBase/Object/Component/SceneComponent.h>
 #include <RenderMaterials/MaterialBinding.h>
+#include <MaterialAsset/MaterialHelper.h>
 
 namespace PigeonEngine
 {
-
-    class EMaterialAsset;
-
-#if _EDITOR_ONLY
-    class ETexture2DAsset;
-#endif
 
     struct ERenderPrimitiveMatrices : public ERenderTransformInfo
     {
@@ -82,6 +77,9 @@ namespace PigeonEngine
         BOOL32                              bReceiveShadow;
         TArray<const EMaterialAsset*>       MaterialSlots;
         TArray<EMaterialSlotStanding>       MaterialStandings;
+#if _EDITOR_ONLY
+        BOOL8                               bEmitShaderDebug = FALSE;
+#endif
 
     };
 

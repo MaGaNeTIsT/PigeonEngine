@@ -1,0 +1,19 @@
+{
+  "name": "CS_IntegrateHeight",
+  "constant_buffer": {
+    "name": "IntegrateHeightParams",
+    "fields": [
+      { "name": "Brightness", "type": "float", "default": [ 1.0 ] },
+      { "name": "Contrast", "type": "float", "default": [ 1.0 ] }
+    ] },
+  "textures": [
+    { "name": "WaterMaskTexture", "type": "Texture2D", "sampler": "PointClamp" }
+  ],
+  "samplers": [
+    { "name": "PointClamp", "filter": "POINT", "address": "CLAMP" }
+  ],
+  "defines": [],
+  "cs": {
+    "hlsl_surface": "SWEIntegrateHeight.hlsl"
+  }
+}

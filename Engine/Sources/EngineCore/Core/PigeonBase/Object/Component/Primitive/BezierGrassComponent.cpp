@@ -24,30 +24,36 @@ namespace PigeonEngine
         , UpdateState(PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_NONE)
         , MaterialAsset(nullptr)
         , ComputeMaterialAsset(nullptr)
+#if 0
         , TileAnchor(Vector2::Zero())
         , TileSize(100.f, 100.f)
         , NumTilesX(1)
         , NumTilesZ(1)
         , WindDirection(1.f, 0.f, 0.f)
         , WindStrength(2.f)
+#endif
     {
         POBJ_DEBUGNAME_SET(this, "BezierGrassComponent");
         SetProperty(bWireframe, 0.f, 0.5f, Color4(0.2f, 0.4f, 0.1f, 1.f), Color4(0.4f, 0.8f, 0.2f, 1.f), 0.5f, 0.8f, 0.0f);
         LayerTypeData = EBezierGrassLayerTypeData();
 
-        EMaterialAssetManager::GetManagerSingleton()->LoadOrCompileMaterialAsset(
+        TryLoadMaterialAsset(
             EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR,
             EString("M_BezierGrass"),
             EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
             EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-            MaterialAsset);
+            TRUE,
+            MaterialAsset
+        );
 
-        EMaterialAssetManager::GetManagerSingleton()->LoadOrCompileMaterialAsset(
+        TryLoadMaterialAsset(
             EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR,
             EString("CS_BezierGrassConstruct"),
             EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
             EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-            ComputeMaterialAsset);
+            TRUE,
+            ComputeMaterialAsset
+        );
     }
     PBezierGrassComponent::~PBezierGrassComponent()
     {
@@ -55,6 +61,7 @@ namespace PigeonEngine
     }
     void PBezierGrassComponent::SetProperty(BOOL8 InIsWireframe, FLOAT InLOD, FLOAT InLeafWidth, Color4 InRootColor, Color4 InTipColor, FLOAT InBentBezierT, FLOAT InRoughness, FLOAT InMetallic)
     {
+#if 0
         Property.bWireframe = InIsWireframe;
         Property.LOD        = InLOD;
         Property.LeafWidth  = InLeafWidth;
@@ -63,7 +70,7 @@ namespace PigeonEngine
         Property.BentBezierT = InBentBezierT;
         Property.Roughness  = InRoughness;
         Property.Metallic   = InMetallic;
-
+#endif
         MarkAsDirty(PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_ASSET);
     }
     void PBezierGrassComponent::SetLayerTypeData(const EBezierGrassLayerTypeData& InLayerData)
@@ -73,16 +80,20 @@ namespace PigeonEngine
     }
     void PBezierGrassComponent::SetTileParams(const Vector2& InTileAnchor, const Vector2& InTileSize, UINT32 InNumTilesX, UINT32 InNumTilesZ)
     {
+#if 0
         TileAnchor = InTileAnchor;
         TileSize = InTileSize;
         NumTilesX = InNumTilesX;
         NumTilesZ = InNumTilesZ;
+#endif
         MarkAsDirty(PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_ASSET);
     }
     void PBezierGrassComponent::SetWindParams(const Vector3& InWindDirection, FLOAT InWindStrength)
     {
+#if 0
         WindDirection = InWindDirection;
         WindStrength = InWindStrength;
+#endif
         MarkAsDirty(PBezierGrassUpdateState::BEZIER_GRASS_UPDATE_STATE_ASSET);
     }
     void PBezierGrassComponent::GenerateInstanceData(const Vector3& InOrigin, FLOAT InBaseHeight, FLOAT InOffsetHeight, FLOAT InLengthX, FLOAT InLengthZ, UINT32 InNumX, UINT32 InNumZ)
@@ -433,6 +444,7 @@ namespace PigeonEngine
     {
         PPrimitiveComponent::GenerateComponentDetail();
 
+#if 0
         const BOOL8 bBezierGrassExpand = ImGui::TreeNodeEx("BezierGrass");
         if (bBezierGrassExpand)
         {
@@ -518,6 +530,7 @@ namespace PigeonEngine
 
             ImGui::TreePop();
         }
+#endif
     }
     void PBezierGrassComponent::OnSelectedByImGui()
     {

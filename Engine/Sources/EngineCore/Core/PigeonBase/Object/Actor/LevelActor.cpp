@@ -262,19 +262,14 @@ namespace PigeonEngine
 
 			// Load and assign material
 			const EMaterialAsset* MatAsset = nullptr;
-#if _EDITOR_ONLY
-			EMaterialAssetManager::GetManagerSingleton()->LoadOrCompileMaterialAsset(
+			TryLoadMaterialAsset(
 				EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR,
 				"M_DefaultLit",
 				EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
 				EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-				MatAsset, TRUE);
-#else
-			EMaterialAssetManager::GetManagerSingleton()->LoadMaterialAsset(
-				EString(EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR) + "M_DefaultLit/",
-				"M_DefaultLit",
-				MatAsset);
-#endif
+				TRUE,
+				MatAsset
+			);
 			if (MatAsset)
 			{
 				NewStaticMeshComp->SetMaterialAsset(MatAsset);

@@ -512,11 +512,13 @@ namespace PigeonEngine
 				continue;
 			}
 #endif
+#if 0
 			if (BezierGrass->Property.bWireframe)
 			{
 				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME]);
 			}
 			else
+#endif
 			{
 				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_SOLID]);
 			}

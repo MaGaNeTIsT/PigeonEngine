@@ -27,19 +27,34 @@ namespace PigeonEngine
 	}
 	void RBezierGrassMaterialParameter::AddBezierGrassMaterialParameter()
 	{
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassRootColor"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassTipColor"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_BezierGrassParams")); // BentBezierT, Roughness, Metallic, _pad
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("CurrentTimeParams"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("PreviousTimeParams"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("NumAllocatedLODMaxNumInstances"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("TileAnchorSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("TileXYNumTiles"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("SubTileSizeBorderSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("SubTileXYNumSubTiles"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("MaskXYNumInstances"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("DensityScale"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("HeightMapWorldScaleOffsetBorderPixelSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LayerBorderPixelSizeDensityBorderPixelSize"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LayerTypeElemsBaseCustomTotalNumTypes"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LODBodyPart1"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LODBodyPart2"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("IndexOffset1"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("IndexOffset2"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("VertexOffset1"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("VertexOffset2"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("LODDistancesSq1"));
+		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("LODDistancesSq2"));
 	}
 
+	PE_STATIC_CONSTEXPR UINT32 BEZIER_GRASS_LOD_NUM         = 5u;
+	PE_STATIC_CONSTEXPR UINT32 BEZIER_GRASS_MAX_LOD_INDEX   = 4u;
+	PE_STATIC_CONSTEXPR UINT32 BEZIER_GRASS_MIN_BODY_PARTS  = 2u;
+
 	typedef UINT16 BEZIER_GRASS_INDEX_TYPE;
-	struct BEZIER_GRASS_VERTEX_TYPE
-	{
-		UINT8 X;
-		UINT8 Y;
-		UINT8 Z;
-		UINT8 W;
-	};
+	typedef UINT32 BEZIER_GRASS_VERTEX_TYPE;
 #if 0
 	// @intellisense_off
 	template<UINT32 _LODIndex>
@@ -291,22 +306,16 @@ namespace PigeonEngine
 	// @intellisense_on
 #endif
 
-#define SET_BEZIER_GRASS_BUFFER_OFFSET(__LODIndex) \
-	VertexOffset[__LODIndex] = RBezierGrassLODData<__LODIndex>::VertexOffset;\
-	IndexOffset[__LODIndex] = RBezierGrassLODData<__LODIndex>::IndexOffset;\
-	IndexCount[__LODIndex] = RBezierGrassLODData<__LODIndex>::NumIndices;\
 
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy(PBezierGrassComponent* InComponent)
 		: VertexShader(nullptr)
 		, PixelShader(nullptr)
 		, ComputeShader(nullptr)
-#if _EDITOR_ONLY
-		, DebugComputeShader(nullptr)
-		, DebugScreenComputeShader(nullptr)
-#endif
+		, bSplitBentPart(FALSE)
 		, Component(InComponent)
 		, Property(InComponent->Property)
 		, LayerTypeData(InComponent->LayerTypeData)
+#if 0
 		, TileAnchor(InComponent->TileAnchor)
 		, TileSize(InComponent->TileSize)
 		, NumTilesX(InComponent->NumTilesX)
@@ -316,12 +325,16 @@ namespace PigeonEngine
 		, LandscapeHeightTexture(nullptr)
 		, LayerIndexTexture(nullptr)
 		, DensityTexture(nullptr)
+#endif
 	{
-		for (UINT32 LODIndex = 0, NumLODs = BEZIER_GRASS_LOD_NUM; LODIndex < NumLODs; LODIndex++)
+		for (UINT32 LODIndex = 0; LODIndex < BEZIER_GRASS_LOD_NUM; LODIndex++)
 		{
+			BodyParts.Add(BEZIER_GRASS_MIN_BODY_PARTS + LODIndex);
+#if 0
 			VertexOffset[LODIndex] = 0;
 			IndexOffset[LODIndex] = 0;
 			IndexCount[LODIndex] = 0;
+#endif
 		}
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create bezier grass scene proxy failed"), (!!Component));
 	}
@@ -354,7 +367,9 @@ namespace PigeonEngine
 	void RBezierGrassSceneProxy::UpdateProperty(const EBezierGrassProperty& InProperty)
 	{
 		Property = InProperty;
+#if 0
 		Property.LOD = BEZIER_GRASS_MAX_LOD_INDEX - InProperty.LOD;
+#endif
 	}
 	void RBezierGrassSceneProxy::UpdateLayerTypeData(const EBezierGrassLayerTypeData& InLayerData)
 	{
@@ -391,11 +406,11 @@ namespace PigeonEngine
 		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
 		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
 		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
-
+#if 0
 		MaterialParameter["_BezierGrassRootColor"] = &TranslateUploadVectorType(Vector4(Property.RootColor.r, Property.RootColor.g, Property.RootColor.b, Property.RootColor.a));
 		MaterialParameter["_BezierGrassTipColor"] = &TranslateUploadVectorType(Vector4(Property.TipColor.r, Property.TipColor.g, Property.TipColor.b, Property.TipColor.a));
 		MaterialParameter["_BezierGrassParams"] = &TranslateUploadVectorType(Vector4(Property.BentBezierT, Property.Roughness, Property.Metallic, 0.f));
-
+#endif
 		MaterialParameter.UploadBuffer();
 	}
 	void RBezierGrassSceneProxy::BindRenderResource()const
@@ -410,113 +425,196 @@ namespace PigeonEngine
 		VertexBuffer.ReleaseRenderResource();
 		IndexBuffer.ReleaseRenderResource();
 
-#if 0
-		static_assert(BEZIER_GRASS_LOD_NUM > (0));
-		static_assert(BEZIER_GRASS_MAX_LOD_INDEX == (4));
-		constexpr UINT32 NumTotalVertices = RBezierGrassLODData<4>::NumTotalVertices;
-		constexpr UINT32 NumTotalIndices = RBezierGrassLODData<4>::NumTotalIndices;
-		constexpr auto VertexData = RBezierGrassVertexData<4>::Value;
-		constexpr auto IndexData = RBezierGrassIndexData<4>::Value;
+		const UINT32 NumLODs = BodyParts.Num();
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("BodyParts must not be empty"), (NumLODs > 0));
 
-		SET_BEZIER_GRASS_BUFFER_OFFSET(0)
-		SET_BEZIER_GRASS_BUFFER_OFFSET(1)
-		SET_BEZIER_GRASS_BUFFER_OFFSET(2)
-		SET_BEZIER_GRASS_BUFFER_OFFSET(3)
-		SET_BEZIER_GRASS_BUFFER_OFFSET(4)
-#else
-		TArray<BEZIER_GRASS_VERTEX_TYPE> LODVertices[BEZIER_GRASS_LOD_NUM];
-		TArray<BEZIER_GRASS_INDEX_TYPE> LODIndices[BEZIER_GRASS_LOD_NUM];
-		UINT32 LODNumVertices[BEZIER_GRASS_LOD_NUM];
-		UINT32 LODNumIndices[BEZIER_GRASS_LOD_NUM];
-		auto GenerateLODIndices = [&LODNumIndices, &LODIndices](UINT32 InLODIndex)->void
+		auto BuildLODIndices = [this](UINT32 InLODIndex, TArray<BEZIER_GRASS_INDEX_TYPE>& OutIndices, UINT32& OutNumIndices) -> void
 		{
-			const UINT32 NumParts = InLODIndex + (BEZIER_GRASS_START_BODY_PARTS);
-			const UINT32 NumTriangles = NumParts * 2 + 1;
+			const UINT32 UsedBodyParts  = BodyParts[InLODIndex];
+			const UINT32 NumFirstParts  = bSplitBentPart ? ((UsedBodyParts + 1) / 2) : UsedBodyParts;
+			const UINT32 NumSecondParts = UsedBodyParts - NumFirstParts;
+			const UINT32 NumTriangles   = UsedBodyParts * 2 + 1;
 
-			LODNumIndices[InLODIndex] = NumTriangles * 3;
-			LODIndices[InLODIndex].Reset();
-			LODIndices[InLODIndex].Reserve(NumTriangles * 3);
+			OutNumIndices = NumTriangles * 3;
+			OutIndices.Reset();
+			OutIndices.Reserve(OutNumIndices);
 
-			for (UINT32 PartIndex = 0; PartIndex < NumParts; PartIndex++)
+			for (UINT32 PartIndex = 0; PartIndex < NumFirstParts; PartIndex++)
 			{
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 0));
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0));
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1));
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0));
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 1));
-				LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 0));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 1));
+				OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1));
 			}
-			LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(NumTriangles - 1));
-			LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(NumTriangles + 1));
-			LODIndices[InLODIndex].Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(NumTriangles + 0));
-		};
-		auto GenerateLODVertices = [&LODNumVertices, &LODVertices](UINT32 InLODIndex)->void
-		{
-			const UINT32 NumParts = InLODIndex + (BEZIER_GRASS_START_BODY_PARTS);
-			const UINT32 NumVertices = NumParts * 2 + 2 + 1;
 
-			LODNumVertices[InLODIndex] = NumVertices;
-			LODVertices[InLODIndex].Reset();
-			LODVertices[InLODIndex].Reserve(NumVertices);
-
-			LODVertices[InLODIndex].Add(BEZIER_GRASS_VERTEX_TYPE{ 0, 0, 255, 0 });
-			LODVertices[InLODIndex].Add(BEZIER_GRASS_VERTEX_TYPE{ 0, 255, 0, 0 });
-			for (UINT32 PartIndex = 0; PartIndex < NumParts; PartIndex++)
+			if (NumSecondParts > 0)
 			{
-				FLOAT TParam = (1.f / (NumParts + 1)) * (PartIndex + 1);
-				UINT8 T = static_cast<UINT8>(TParam * 255.f);
-				UINT8 W = (PartIndex < (NumParts - 1)) ? 255 : 192;
-				UINT8 PrevLODT = T;
-				if (PartIndex < (NumParts - 2))
+				const UINT32 StartVertexIndex = NumFirstParts * 2 + 2;
+				for (UINT32 PartIndex = 0; PartIndex < NumSecondParts; PartIndex++)
 				{
-					if (PartIndex >= (NumParts - 1) / 2)
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 0 + StartVertexIndex));
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0 + StartVertexIndex));
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1 + StartVertexIndex));
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 0 + StartVertexIndex));
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>((PartIndex + 1) * 2 + 1 + StartVertexIndex));
+					OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(PartIndex * 2 + 1 + StartVertexIndex));
+				}
+			}
+
+			const UINT32 UsedNumVertices = bSplitBentPart ? (UsedBodyParts * 2 + 5) : (UsedBodyParts * 2 + 3);
+			OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(UsedNumVertices - 3));
+			OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(UsedNumVertices - 1));
+			OutIndices.Add(static_cast<BEZIER_GRASS_INDEX_TYPE>(UsedNumVertices - 2));
+		};
+
+		auto BuildLODVertices = [this](UINT32 InLODIndex, TArray<BEZIER_GRASS_VERTEX_TYPE>& OutVertices, UINT32& OutNumVertices, FLOAT& OutMidT) -> void
+		{
+#if 0
+			const UINT32 UsedBodyParts  = BodyParts[InLODIndex];
+			const UINT32 NumFirstParts  = bSplitBentPart ? ((UsedBodyParts + 1) / 2) : UsedBodyParts;
+			const UINT32 NumSecondParts = UsedBodyParts - NumFirstParts;
+			const UINT32 UsedNumVertices = bSplitBentPart ? (UsedBodyParts * 2 + 5) : (UsedBodyParts * 2 + 3);
+			const BOOL32 bGeneratePrevT = (InLODIndex < (NumLODs - 1)) && (UsedBodyParts > BEZIER_GRASS_MIN_BODY_PARTS);
+
+			PE_STATIC_CONSTEXPR FLOAT T15BitFloat = static_cast<FLOAT>(0x7fffu);
+			PE_STATIC_CONSTEXPR FLOAT T14BitFloat = static_cast<FLOAT>(0x3fffu);
+
+			OutNumVertices = UsedNumVertices;
+			OutMidT = 0.f;
+
+			// Build prev-T lookup tables for next LOD
+			TArray<FLOAT> PrevTFirst, PrevTSecond;
+			if (bGeneratePrevT)
+			{
+				const UINT32 NextBodyParts    = BodyParts[InLODIndex + 1];
+				const UINT32 NextNumTs        = NextBodyParts + 2;
+				const UINT32 NextFirstParts   = bSplitBentPart ? ((NextBodyParts + 1) / 2) : NextBodyParts;
+				const UINT32 NextSecondParts  = NextBodyParts - NextFirstParts;
+
+				PrevTFirst.Reserve(NextFirstParts + 1);
+				for (UINT32 PartIndex = 0; PartIndex <= NextFirstParts; PartIndex++)
+				{
+					PrevTFirst.Add(static_cast<FLOAT>(PartIndex) / static_cast<FLOAT>(NextNumTs - 1));
+				}
+				PrevTSecond.Reserve(NextSecondParts + 1);
+				for (UINT32 PartIndex = 0; PartIndex <= NextSecondParts; PartIndex++)
+				{
+					PrevTSecond.Add(static_cast<FLOAT>(PartIndex + NextFirstParts) / static_cast<FLOAT>(NextNumTs - 1));
+				}
+			}
+
+			auto FindClosestT = [](const TArray<FLOAT>& InTable, FLOAT InT) -> FLOAT
+			{
+				FLOAT ClosestDist = 1.f;
+				FLOAT ClosestT = InT;
+				for (UINT32 Index = 0, Num = InTable.Num(); Index < Num; Index++)
+				{
+					const FLOAT Dist = EMath::Abs(InT - InTable[Index]);
+					if (Dist < ClosestDist)
 					{
-						FLOAT NextT = (1.f / (NumParts + 1)) * (PartIndex + 2);
-						PrevLODT = static_cast<UINT8>(NextT * 255.f);
-					}
-					else
-					{
-						FLOAT PrevT = (1.f / (NumParts + 1)) * PartIndex;
-						PrevLODT = static_cast<UINT8>(PrevT * 255.f);
+						ClosestDist = Dist;
+						ClosestT = InTable[Index];
 					}
 				}
-				LODVertices[InLODIndex].Add(BEZIER_GRASS_VERTEX_TYPE{ T, 0, W, PrevLODT });
-				LODVertices[InLODIndex].Add(BEZIER_GRASS_VERTEX_TYPE{ T, W, 0, PrevLODT });
-			}
-			LODVertices[InLODIndex].Add(BEZIER_GRASS_VERTEX_TYPE{ 255, 0, 0, 255 });
-		};
-		UINT32 TempNumVertices = 0;
-		UINT32 TempNumIndices = 0;
-		for (UINT32 LODIndex = 0, NumLODs = BEZIER_GRASS_LOD_NUM; LODIndex < NumLODs; LODIndex++)
-		{
-			GenerateLODIndices(LODIndex);
-			GenerateLODVertices(LODIndex);
+				return ClosestT;
+			};
 
-			VertexOffset[LODIndex] = TempNumVertices;
-			IndexOffset[LODIndex] = TempNumIndices;
-			IndexCount[LODIndex] = LODNumIndices[LODIndex];
+			auto PackVertex = [&T15BitFloat, &T14BitFloat](FLOAT InTargetT, FLOAT InPrevT, BOOL32 InbSecondPart, BOOL32 InbPosiOffset) -> BEZIER_GRASS_VERTEX_TYPE
+			{
+				return (static_cast<UINT32>(InTargetT * T15BitFloat) << 17u)
+					| (static_cast<UINT32>(InPrevT * T14BitFloat) << 3u)
+					| (InbSecondPart ? 0x4u : 0x0u)
+					| (InbPosiOffset ? 0x2u : 0x0u);
+			};
 
-			TempNumVertices += LODNumVertices[LODIndex];
-			TempNumIndices += LODNumIndices[LODIndex];
-		}
-		TArray<BEZIER_GRASS_VERTEX_TYPE> VertexData;
-		TArray<BEZIER_GRASS_INDEX_TYPE> IndexData;
-		VertexData.Reserve(TempNumVertices);
-		IndexData.Reserve(TempNumIndices);
-		for (UINT32 LODIndex = 0, NumLODs = BEZIER_GRASS_LOD_NUM; LODIndex < NumLODs; LODIndex++)
-		{
-			for (UINT32 LODVertexIndex = 0; LODVertexIndex < LODNumVertices[LODIndex]; LODVertexIndex++)
+			OutVertices.Reset();
+			OutVertices.Reserve(UsedNumVertices);
+
+			// Root (first part start)
+			OutVertices.Add(PackVertex(0.f, 0.f, FALSE, TRUE));
+			OutVertices.Add(PackVertex(0.f, 0.f, FALSE, FALSE));
+
+			for (UINT32 PartIndex = 0; PartIndex < NumFirstParts; PartIndex++)
 			{
-				VertexData.Add((LODVertices[LODIndex])[LODVertexIndex]);
+				const FLOAT TargetT = static_cast<FLOAT>(PartIndex + 1) / static_cast<FLOAT>(UsedBodyParts + 1);
+				const FLOAT PrevT   = (bGeneratePrevT && (PartIndex != (NumFirstParts - 1))) ? FindClosestT(PrevTFirst, TargetT) : TargetT;
+				OutVertices.Add(PackVertex(TargetT, PrevT, FALSE, TRUE));
+				OutVertices.Add(PackVertex(TargetT, PrevT, FALSE, FALSE));
 			}
-			for (UINT32 LODIndexIndex = 0; LODIndexIndex < LODNumIndices[LODIndex]; LODIndexIndex++)
+
+			if (NumSecondParts > 0)
 			{
-				IndexData.Add((LODIndices[LODIndex])[LODIndexIndex]);
+				const FLOAT MidTargetT = static_cast<FLOAT>(OutVertices.Last() >> 17u) / T15BitFloat;
+				OutMidT = EMath::FloorToFloat(MidTargetT * T15BitFloat) / T15BitFloat;
+
+				OutVertices.Add(PackVertex(MidTargetT, MidTargetT, TRUE, TRUE));
+				OutVertices.Add(PackVertex(MidTargetT, MidTargetT, TRUE, FALSE));
+
+				for (UINT32 PartIndex = 0; PartIndex < NumSecondParts; PartIndex++)
+				{
+					const FLOAT TargetT = static_cast<FLOAT>(PartIndex + NumFirstParts + 1) / static_cast<FLOAT>(UsedBodyParts + 1);
+					const FLOAT PrevT   = (bGeneratePrevT && (PartIndex != (NumSecondParts - 1))) ? FindClosestT(PrevTSecond, TargetT) : TargetT;
+					OutVertices.Add(PackVertex(TargetT, PrevT, TRUE, TRUE));
+					OutVertices.Add(PackVertex(TargetT, PrevT, TRUE, FALSE));
+				}
 			}
-		}
-		const UINT32 NumTotalVertices = TempNumVertices;
-		const UINT32 NumTotalIndices = TempNumIndices;
+
+			// Tip — mark with bit 0
+			BEZIER_GRASS_VERTEX_TYPE TipVertex = PackVertex(1.f, 1.f, TRUE, FALSE);
+			TipVertex = ((TipVertex >> 2u) << 2u) | 0x1u;
+			OutVertices.Add(TipVertex);
 #endif
+		};
+
+		TArray<TArray<BEZIER_GRASS_VERTEX_TYPE>> LODVertices;
+		TArray<TArray<BEZIER_GRASS_INDEX_TYPE>>  LODIndices;
+		TArray<UINT32> LODNumVertices, LODNumIndices;
+		LODVertices.Reserve(NumLODs);
+		LODIndices.Reserve(NumLODs);
+		LODNumVertices.Reserve(NumLODs);
+		LODNumIndices.Reserve(NumLODs);
+		BentBezierTs.Reset();
+		BentBezierTs.Reserve(NumLODs);
+
+		UINT32 TotalNumVertices = 0;
+		UINT32 TotalNumIndices  = 0;
+		for (UINT32 LODIndex = 0; LODIndex < NumLODs; LODIndex++)
+		{
+			TArray<BEZIER_GRASS_INDEX_TYPE>& Indices  = LODIndices.AddDefaultGetRef();
+			TArray<BEZIER_GRASS_VERTEX_TYPE>& Vertices = LODVertices.AddDefaultGetRef();
+			UINT32 CurrentNumIndices  = 0;
+			UINT32 CurrentNumVertices = 0;
+			FLOAT  CurrentMidT        = 0.f;
+
+			BuildLODIndices(LODIndex, Indices, CurrentNumIndices);
+			BuildLODVertices(LODIndex, Vertices, CurrentNumVertices, CurrentMidT);
+
+			LODNumIndices.Add(CurrentNumIndices);
+			LODNumVertices.Add(CurrentNumVertices);
+			BentBezierTs.Add(CurrentMidT);
+#if 0
+			VertexOffset[LODIndex] = TotalNumVertices;
+			IndexOffset[LODIndex]  = TotalNumIndices;
+			IndexCount[LODIndex]   = CurrentNumIndices;
+#endif
+			TotalNumVertices += CurrentNumVertices;
+			TotalNumIndices  += CurrentNumIndices;
+		}
+
+		TArray<BEZIER_GRASS_VERTEX_TYPE> VertexData;
+		TArray<BEZIER_GRASS_INDEX_TYPE>  IndexData;
+		VertexData.Reserve(TotalNumVertices);
+		IndexData.Reserve(TotalNumIndices);
+		for (UINT32 LODIndex = 0; LODIndex < NumLODs; LODIndex++)
+		{
+			VertexData.Append(LODVertices[LODIndex]);
+			IndexData.Append(LODIndices[LODIndex]);
+		}
+
+		const UINT32 NumTotalVertices = TotalNumVertices;
+		const UINT32 NumTotalIndices  = TotalNumIndices;
 		RSubresourceDataDesc SubresDesc;
 		SubresDesc.pSysMem = &(VertexData[0]);
 		RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer,
@@ -772,18 +870,20 @@ namespace PigeonEngine
 		Params.MaskXYNumInstances[1] = 1;
 		Params.MaskXYNumInstances[2] = 16;
 		Params.MaskXYNumInstances[3] = 16;
-		Params.LODBodyPart1[0] = 2;
-		Params.LODBodyPart1[1] = 3;
-		Params.LODBodyPart1[2] = 4;
-		Params.LODBodyPart1[3] = 5;
-		Params.LODBodyPart2[0] = 6;
-		Params.LODBodyPart2[1] = 6;
-		Params.LODBodyPart2[2] = 6;
-		Params.LODBodyPart2[3] = 6;
+		for (UINT32 LODIndex = 0; LODIndex < 4; LODIndex++)
+		{
+			Params.LODBodyPart1[LODIndex] = (LODIndex < (UINT32)BodyParts.Num()) ? BodyParts[LODIndex] : BodyParts.LastRef();
+		}
+		for (UINT32 LODIndex = 0; LODIndex < 4; LODIndex++)
+		{
+			Params.LODBodyPart2[LODIndex] = BodyParts.LastRef();
+		}
 		for (UINT32 i = 0; i < BEZIER_GRASS_LOD_NUM; i++)
 		{
+#if 0
 			Params.IndexOffset1[i] = IndexOffset[i];
 			Params.VertexOffset1[i] = VertexOffset[i];
+#endif
 		}
 		Params.LODDistancesSq1 = Vector4(10000.f, 40000.f, 90000.f, 160000.f);
 		Params.LODDistancesSq2 = Vector4(250000.f, 360000.f, 490000.f, 640000.f);
@@ -904,12 +1004,14 @@ namespace PigeonEngine
 		if (IndexRenderResource.IsRenderResourceValid())
 #endif
 		{
+#if 0
 			const UINT32 UsedLOD = EMath::Clamp((UINT32)(EMath::CeilToInt32(Property.LOD)), 0u, (UINT32)(BEZIER_GRASS_MAX_LOD_INDEX));
 			const UINT32 UsedIndexOffset = IndexOffset[UsedLOD];
 			const UINT32 UsedIndexCount = IndexCount[UsedLOD];
 			const UINT32 UsedVertexOffset = VertexOffset[UsedLOD];
 			const UINT32 NumInstances = 256;
 			RDeviceD3D11::GetDeviceSingleton()->DrawIndexedInstance(NumInstances, UsedIndexCount, 0, UsedIndexOffset, UsedVertexOffset);
+#endif
 		}
 #if _EDITOR_ONLY
 		else

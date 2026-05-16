@@ -673,12 +673,14 @@ namespace PigeonEngine
 		{
 			TempProperty = new EBezierGrassProperty(InComponent->Property);
 			TempLayerData = new EBezierGrassLayerTypeData(InComponent->LayerTypeData);
+#if 0
 			TempTileAnchor = new Vector2(InComponent->TileAnchor);
 			TempTileSize = new Vector2(InComponent->TileSize);
 			TempNumTilesX = InComponent->NumTilesX;
 			TempNumTilesZ = InComponent->NumTilesZ;
 			TempWindDirection = new Vector3(InComponent->WindDirection);
 			TempWindStrength = InComponent->WindStrength;
+#endif
 		}
 
 		EnqueueUpdateCommand(

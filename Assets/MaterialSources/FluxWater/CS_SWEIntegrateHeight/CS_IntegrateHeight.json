@@ -1,0 +1,13 @@
+{
+  "name": "CS_IntegrateHeight",
+  "stage": "CS",
+  "material": "Material.json",
+  "template_cs": "Assets/MaterialSources/Common/Templates/ComputePass_CS.tmpl.hlsl",
+  "defines": [
+    { "name": "THREAD_GROUP_SIZE_X", "value": 8 },
+    { "name": "THREAD_GROUP_SIZE_Y", "value": 8 }
+  ],
+  "variants": [
+    { "name": "default" }
+  ]
+}

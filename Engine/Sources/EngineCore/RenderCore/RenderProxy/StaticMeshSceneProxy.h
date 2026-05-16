@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include "MeshSceneProxy.h"
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
+#include <RenderMaterials/MaterialBinding.h>
 
 namespace PigeonEngine
 {
@@ -18,12 +19,6 @@ namespace PigeonEngine
 		virtual void	SetupParameters()override;
 
 		CLASS_MATERIAL_PARAMETER(RStaticMeshMaterialParameter)
-	};
-
-	struct RMaterialTextureSRV
-	{
-		UINT32												Slot;
-		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	SRV;
 	};
 
 	class RStaticMeshSceneProxy : public RMeshSceneProxy

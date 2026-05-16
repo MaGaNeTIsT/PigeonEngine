@@ -27,7 +27,7 @@ namespace PigeonEngine
     }
     const EMaterialVariant* EMaterialAsset::GetFirstVariant() const
     {
-        return Variants.Num<UINT32>() > 0u ? &Variants[0] : nullptr;
+        return ((Variants.Num<UINT32>() > 0u) ? (&Variants[0]) : nullptr);
     }
     const EMaterialVariant* EMaterialAsset::FindVariant(const EString& PassName, UINT32 VariantIndex) const
     {
@@ -46,14 +46,37 @@ namespace PigeonEngine
     // Translate HLSL semantic name string to engine enum value.
     static RShaderSemanticType SemanticTypeFromName(const EString& Name)
     {
-        if (Name == EString("POSITION"))     return RShaderSemanticType::SHADER_SEMANTIC_POSITION;
-        if (Name == EString("TEXCOORD"))     return RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD;
-        if (Name == EString("NORMAL"))       return RShaderSemanticType::SHADER_SEMANTIC_NORMAL;
-        if (Name == EString("TANGENT"))      return RShaderSemanticType::SHADER_SEMANTIC_TANGENT;
-        if (Name == EString("COLOR"))        return RShaderSemanticType::SHADER_SEMANTIC_COLOR;
-        if (Name == EString("BINORMAL"))     return RShaderSemanticType::SHADER_SEMANTIC_BINORMAL;
-        if (Name == EString("BLENDWEIGHT"))  return RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT;
-        if (Name == EString("BLENDINDICES")) return RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES;
+        if (Name == EString("POSITION"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_POSITION;
+        }
+        if (Name == EString("TEXCOORD"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD;
+        }
+        if (Name == EString("NORMAL"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_NORMAL;
+        }
+        if (Name == EString("TANGENT"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_TANGENT;
+        }
+        if (Name == EString("COLOR"))
+        { return RShaderSemanticType::SHADER_SEMANTIC_COLOR;
+        }
+        if (Name == EString("BINORMAL"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_BINORMAL;
+        }
+        if (Name == EString("BLENDWEIGHT"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT;
+        }
+        if (Name == EString("BLENDINDICES"))
+        {
+            return RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES;
+        }
         return RShaderSemanticType::SHADER_SEMANTIC_NONE;
     }
 
@@ -168,7 +191,9 @@ namespace PigeonEngine
                 S->GetStringField("address", Samp.Address);
                 BOOL8 bEG = FALSE;
                 if (S->GetBoolField("engine_global", bEG))
+                {
                     Samp.bEngineGlobal = static_cast<BOOL32>(bEG);
+                }
                 Out.Samplers.Add(std::move(Samp));
                 delete S;
             }
@@ -408,71 +433,34 @@ namespace PigeonEngine
         return TRUE;
     }
 
-#if _EDITOR_ONLY
-    BOOL32 EMaterialAssetManager::LoadOrCompileMaterialAsset(
+    BOOL32 TryLoadMaterialAsset(
         const EString& InOutputDir,
         const EString& InLoadName,
         const EString& InSourceDir,
         const EString& InShaderIncludeDir,
-        const EMaterialAsset*& OutMaterial,
-        BOOL32         bEmitDebugInfo)
+        BOOL32 bEmitDebugInfo,
+        const EMaterialAsset*& OutMaterial)
     {
-        // Output path for this material's manifest: <OutputDir>/<Name>/<Name>.mat.json
+        EMaterialAssetManager* Manager = EMaterialAssetManager::GetManagerSingleton();
+
         EString MatOutputDir = InOutputDir + InLoadName + "/";
-        EString ManifestPath = MatOutputDir + InLoadName + ".mat.json";
 
-        PE_LOG_LOG(EString("[MaterialCompiler] LoadOrCompile '") + InLoadName + "'");
-        PE_LOG_LOG(EString("[MaterialCompiler]   OutputDir  : ") + MatOutputDir);
-        PE_LOG_LOG(EString("[MaterialCompiler]   SourceDir  : ") + InSourceDir);
-        PE_LOG_LOG(EString("[MaterialCompiler]   IncludeDir : ") + InShaderIncludeDir);
-        PE_LOG_LOG(EString("[MaterialCompiler]   Manifest   : ") + ManifestPath);
-
-        // Also check that at least the first compiled refl file exists alongside the manifest.
-        // If the manifest was created but compilation failed (shader files missing), force recompile.
-        BOOL32 bManifestExists = EFileHelper::IsFileExists(ManifestPath);
-        if (bManifestExists)
+        // Try load first
+        if (Manager->LoadMaterialAsset(MatOutputDir, InLoadName, OutMaterial))
         {
-            PE_LOG_LOG(EString("[MaterialCompiler] Manifest exists, checking shader files..."));
-            EString ManifestStr;
-            if (EFileHelper::ReadFileAsString(ManifestPath, ManifestStr))
-            {
-                CJsonObject Manifest(ManifestStr);
-                TArray<CJsonObject*> Passes;
-                if (Manifest.GetObjectArrayField("passes", Passes) && Passes.Num() > 0)
-                {
-                    TArray<CJsonObject*> Variants;
-                    if (Passes[0]->GetObjectArrayField("variants", Variants) && Variants.Num() > 0)
-                    {
-                        EString ReflFile;
-                        Variants[0]->GetStringField("refl", ReflFile);
-                        if (ReflFile.Length() > 0 && !EFileHelper::IsFileExists(MatOutputDir + ReflFile))
-                        {
-                            PE_LOG_WARN(EString("[MaterialCompiler] Refl file missing (") + ReflFile + "), forcing recompile.");
-                            bManifestExists = FALSE; // shader files missing, force recompile
-                        }
-                        else
-                        {
-                            PE_LOG_LOG(EString("[MaterialCompiler] Shader files OK (refl: ") + ReflFile + "), skipping compile.");
-                        }
-                        for (INT32 i = 0; i < Variants.Num<INT32>(); i++) delete Variants[i];
-                    }
-                    for (INT32 i = 0; i < Passes.Num<INT32>(); i++) delete Passes[i];
-                }
-            }
-        }
-        else
-        {
-            PE_LOG_LOG(EString("[MaterialCompiler] Manifest not found, will compile."));
+            return TRUE;
         }
 
-        if (!bManifestExists)
+#if _EDITOR_ONLY
+        PE_LOG_LOG(EString("[MaterialCompiler] Load failed, attempting compile for '") + InLoadName + "'");
+
         {
             // Pre-check: material source sub-directory must exist
             EString MatSourceDir = InSourceDir + InLoadName + "/";
             if (!EFileHelper::IsDirectoryExists(MatSourceDir))
             {
                 PE_LOG_ERROR(EString("[MaterialCompiler] Source directory not found: ") + MatSourceDir);
-                PE_FAILED((ENGINE_ASSET_ERROR), ("LoadOrCompileMaterialAsset: material source directory not found"));
+                PE_FAILED((ENGINE_ASSET_ERROR), ("TryLoadMaterialAsset: material source directory not found"));
                 return FALSE;
             }
             PE_LOG_LOG(EString("[MaterialCompiler] Source directory OK: ") + MatSourceDir);
@@ -482,7 +470,7 @@ namespace PigeonEngine
             if (!EFileHelper::IsFileExists(CompilerExe))
             {
                 PE_LOG_ERROR(EString("[MaterialCompiler] MaterialCompiler.exe not found at: ") + CompilerExe);
-                PE_FAILED((ENGINE_ASSET_ERROR), ("LoadOrCompileMaterialAsset: MaterialCompiler.exe not found"));
+                PE_FAILED((ENGINE_ASSET_ERROR), ("TryLoadMaterialAsset: MaterialCompiler.exe not found"));
                 return FALSE;
             }
             PE_LOG_LOG(EString("[MaterialCompiler] Compiler exe found: ") + CompilerExe);
@@ -498,7 +486,9 @@ namespace PigeonEngine
                 "--material \"" + InLoadName + "\" " +
                 "--dx11";
             if (bEmitDebugInfo)
+            {
                 CmdLine += " --debug";
+            }
 
             PE_LOG_LOG(EString("[MaterialCompiler] Running: ") + CmdLine);
 
@@ -509,7 +499,7 @@ namespace PigeonEngine
             PipeAttr.nLength        = sizeof(PipeAttr);
             PipeAttr.bInheritHandle = TRUE; // write end must be inheritable by child
 
-            BOOL bPipeOk = ::CreatePipe(&hReadPipe, &hWritePipe, &PipeAttr, 0);
+            BOOL8 bPipeOk = ::CreatePipe(&hReadPipe, &hWritePipe, &PipeAttr, 0);
             if (bPipeOk)
             {
                 // Read end must NOT be inherited so the child doesn't hold it open
@@ -535,7 +525,7 @@ namespace PigeonEngine
             CHAR* CmdBuf = new CHAR[CmdLen];
             ::memcpy_s(CmdBuf, CmdLen, *CmdLine, CmdLen);
 
-            BOOL bOk = ::CreateProcessA(
+            BOOL8 bOk = ::CreateProcessA(
                 nullptr,    // lpApplicationName — let Windows parse from CmdBuf
                 CmdBuf,
                 nullptr, nullptr,
@@ -555,7 +545,7 @@ namespace PigeonEngine
                 DWORD WinErr = ::GetLastError();
                 if (bPipeOk) { ::CloseHandle(hReadPipe); }
                 PE_LOG_ERROR(EString("[MaterialCompiler] CreateProcess FAILED. WinError=") + ToString(static_cast<UINT32>(WinErr)));
-                PE_FAILED((ENGINE_ASSET_ERROR), ("LoadOrCompileMaterialAsset: CreateProcess failed for MaterialCompiler"));
+                PE_FAILED((ENGINE_ASSET_ERROR), ("TryLoadMaterialAsset: CreateProcess failed for MaterialCompiler"));
                 return FALSE;
             }
 
@@ -620,7 +610,7 @@ namespace PigeonEngine
             if (ExitCode != 0)
             {
                 PE_LOG_ERROR(EString("[MaterialCompiler] MaterialCompiler.exe exited with code ") + ToString(static_cast<UINT32>(ExitCode)));
-                PE_FAILED((ENGINE_ASSET_ERROR), ("LoadOrCompileMaterialAsset: MaterialCompiler exited with error"));
+                PE_FAILED((ENGINE_ASSET_ERROR), ("TryLoadMaterialAsset: MaterialCompiler exited with error"));
                 return FALSE;
             }
 
@@ -628,7 +618,7 @@ namespace PigeonEngine
         }
 
         PE_LOG_LOG(EString("[MaterialCompiler] Proceeding to load compiled asset from: ") + MatOutputDir);
-        return LoadMaterialAsset(MatOutputDir, InLoadName, OutMaterial);
+        return (Manager->LoadMaterialAsset(MatOutputDir, InLoadName, OutMaterial));
     }
 #endif
 

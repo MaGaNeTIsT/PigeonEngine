@@ -1,0 +1,26 @@
+{
+    "name": "CS_ColorGrade",
+    "constant_buffer": {
+        "name": "ColorGradeParams",
+        "fields": [
+            { "name": "Brightness", "type": "float", "default": [1.0] },
+            { "name": "Contrast", "type": "float", "default": [1.0] },
+            { "name": "Saturation", "type": "float", "default": [1.0] },
+            { "name": "Gamma", "type": "float", "default": [2.2] },
+            { "name": "ColorTint", "type": "color3", "default": [1, 1, 1] },
+            { "name": "_pad0", "type": "float", "default": [0.0] }
+        ]
+    },
+    "textures": [
+        { "name": "InputTexture", "type": "Texture2D", "sampler": "PointClamp" },
+        { "name": "OutputTexture", "type": "RWTexture2D", "sampler": "" }
+    ],
+    "samplers": [
+        { "name": "PointClamp", "filter": "POINT", "address": "CLAMP" }
+    ],
+    "defines": [],
+    "cs": {
+        "hlsl_functions": "ColorGradeFunctions.hlsl",
+        "hlsl_surface": "ColorGrade.hlsl"
+    }
+}

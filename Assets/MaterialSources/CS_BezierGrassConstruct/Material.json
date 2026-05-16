@@ -8,8 +8,6 @@
     "defines": [
         { "name": "BEZIER_GRASS_CONSTRUCT_TILE_SIZE", "value": 64 },
         { "name": "SHADER_USE_VIEW_INPUT", "value": 1 },
-        { "name": "SHADER_USE_PERDRAW_INPUT", "value": 1 },
-        { "name": "SHADER_USE_TRANSFORM_INPUT", "value": 1 },
         { "name": "SHADER_USE_SAMPLER_INPUT", "value": 1 },
         { "name": "BEZIER_GRASS_INDIRECT_ARGS_NUM_WORDS", "value": 5 },
         { "name": "BEZIER_GRASS_BLADE_CURVE_POINTS_MAX_NUM", "value": 16 },
@@ -23,28 +21,8 @@
     "constant_buffer": {
         "name": "BezierGrassConstructParams",
         "fields": [
-            { "name": "CurrentTimeParams", "type": "float4", "default": [0, 0, 0, 0] },
-            { "name": "PreviousTimeParams", "type": "float4", "default": [0, 0, 0, 0] },
-            { "name": "RandomSeedParams", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "RandomSeedNumAllocatedLODMaxNumInstances", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "TileAnchorSize", "type": "float4", "default": [0, 0, 100, 100] },
-            { "name": "TileXYNumTiles", "type": "uint4", "default": [0, 0, 1, 1] },
-            { "name": "SubTileSizeBorderSize", "type": "float4", "default": [100, 100, 5, 5] },
-            { "name": "SubTileXYNumSubTiles", "type": "uint4", "default": [0, 0, 1, 1] },
-            { "name": "GlobalWindDirectionStrength", "type": "float4", "default": [1, 0, 0, 0] },
-            { "name": "MaskXYNumInstances", "type": "uint4", "default": [0, 1, 16, 16] },
-            { "name": "DensityScaleWindStrengthRange", "type": "float4", "default": [1, 0, 10, 0] },
-            { "name": "HeightMapWorldScaleOffsetBorderPixelSize", "type": "uint4", "default": [0, 0, 8, 256] },
-            { "name": "LayerBorderPixelSizeDensityBorderPixelSize", "type": "uint4", "default": [8, 256, 8, 256] },
-            { "name": "LayerTypeElemsBaseCustomTotalNumTypes", "type": "uint4", "default": [19, 0, 19, 1] },
-            { "name": "LODBodyPart1", "type": "uint4", "default": [2, 3, 4, 5] },
-            { "name": "LODBodyPart2", "type": "uint4", "default": [6, 6, 6, 6] },
-            { "name": "IndexOffset1", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "IndexOffset2", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "VertexOffset1", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "VertexOffset2", "type": "uint4", "default": [0, 0, 0, 0] },
-            { "name": "LODDistancesSq1", "type": "float4", "default": [10000, 40000, 90000, 160000] },
-            { "name": "LODDistancesSq2", "type": "float4", "default": [250000, 360000, 490000, 640000] }
+            { "name": "RandomSeedParams", "type": "uint4", "default": [41256161, 766136, 8822111, 114456612] },
+            { "name": "RandomSeed", "type": "uint4", "default": [61264783, 152516383, 8361546, 26834521] }
         ]
     },
     "textures": [

@@ -2,6 +2,35 @@
 #define BezierGrassPackedInstanceBinding    PackedInstanceDatas
 #define BezierGrassDispatchBinding          DispatchDatas
 
+cbuffer ConstantBufferBezierGrassLOD : register(b1)
+{
+    float4x4        _WorldMatrix;
+	float4x4        _WorldInvMatrix;
+	float4x4        _WorldInvTransposeMatrix;
+    float4          GlobalWindDirectionStrength;
+    float4          WindStrengthRange;
+    float4          CurrentTimeParams;
+    float4          PreviousTimeParams;
+    uint4           NumAllocatedLODMaxNumInstances;
+    float4          TileAnchorSize;
+    uint4           TileXYNumTiles;
+    float4          SubTileSizeBorderSize;
+    uint4           SubTileXYNumSubTiles;
+    uint4           MaskXYNumInstances;
+    float4          DensityScale;
+    uint4           HeightMapWorldScaleOffsetBorderPixelSize;
+    uint4           LayerBorderPixelSizeDensityBorderPixelSize;
+    uint4           LayerTypeElemsBaseCustomTotalNumTypes;
+	uint4           LODBodyPart1;
+	uint4           LODBodyPart2;
+	uint4           IndexOffset1;
+	uint4           IndexOffset2;
+	uint4           VertexOffset1;
+	uint4           VertexOffset2;
+	float4          LODDistancesSq1;
+	float4          LODDistancesSq2;
+};
+
 #include "Public/ShaderVariables.hlsl"
 #include "Public/ShaderSpaceTransform.hlsl"
 #include "../Common/BezierGrassCommon.hlsl"
@@ -13,9 +42,9 @@ FBezierGrassConstructParameter InitBezierGrassConstructParameter()
     Result.CurrentTimeParams                = CurrentTimeParams.xyzw;
     Result.PreviousTimeParams               = PreviousTimeParams.xyzw;
     Result.RandomSeedParams                 = RandomSeedParams.xyzw;
-    Result.RandomSeed                       = RandomSeedNumAllocatedLODMaxNumInstances.x;
-    Result.NumAllocatedInstances            = RandomSeedNumAllocatedLODMaxNumInstances.y;
-    Result.LODMinMax                        = uint2(0, RandomSeedNumAllocatedLODMaxNumInstances.z);
+    Result.RandomSeed                       = RandomSeed.x;
+    Result.NumAllocatedInstances            = NumAllocatedLODMaxNumInstances.x;
+    Result.LODMinMax                        = uint2(NumAllocatedLODMaxNumInstances.y, NumAllocatedLODMaxNumInstances.z);
     Result.TileAnchor                       = TileAnchorSize.xy;
     Result.TileSize                         = TileAnchorSize.zw;
     Result.TileXY                           = TileXYNumTiles.xy;
@@ -28,10 +57,10 @@ FBezierGrassConstructParameter InitBezierGrassConstructParameter()
     Result.Mask                             = MaskXYNumInstances.y;
     Result.XNumInstances                    = MaskXYNumInstances.z;
     Result.YNumInstances                    = MaskXYNumInstances.w;
-    Result.NumInstances                     = RandomSeedNumAllocatedLODMaxNumInstances.w;
-    Result.DensityScale                     = DensityScaleWindStrengthRange.x;
+    Result.NumInstances                     = NumAllocatedLODMaxNumInstances.w;
+    Result.DensityScale                     = DensityScale.x;
     Result.WindDirectionStrength            = GlobalWindDirectionStrength.xyzw;
-    Result.WindStrengthRange                = DensityScaleWindStrengthRange.yz;
+    Result.WindStrengthRange                = WindStrengthRange.xy;
     Result.HeightMapWorldScaleOffset        = asfloat(HeightMapWorldScaleOffsetBorderPixelSize.xy);
     Result.HeightMapPixelBorder             = HeightMapWorldScaleOffsetBorderPixelSize.z;
     Result.HeightMapPixelSize               = HeightMapWorldScaleOffsetBorderPixelSize.w;
