@@ -263,7 +263,10 @@ namespace PigeonEngine
 			{
 				SceneRenderer->ResizeRenderTargets(m_PendingResizeWidth, m_PendingResizeHeight);
 				m_WorldManager->GetWorld()->UpdateCameraViewports(m_PendingResizeWidth, m_PendingResizeHeight);
-				m_WindowSize = Vector2Int(static_cast<INT32>(m_PendingResizeWidth), static_cast<INT32>(m_PendingResizeHeight));
+				const INT32 NewWidth  = static_cast<INT32>(m_PendingResizeWidth);
+				const INT32 NewHeight = static_cast<INT32>(m_PendingResizeHeight);
+				m_WindowSize = Vector2Int(NewWidth, NewHeight);
+				EInput::Controller.UpdateWindowSize(NewWidth, NewHeight);
 			}
 		}
 
@@ -318,6 +321,10 @@ namespace PigeonEngine
 	HWND EMainManager::GetWindowHandle()
 	{
 		return (m_HWND);
+	}
+	const Vector2Int& EMainManager::GetWindowSize() const
+	{
+		return m_WindowSize;
 	}
 	const EBaseTimer& EMainManager::GetWindowTimer()
 	{

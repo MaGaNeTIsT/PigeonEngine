@@ -16,6 +16,7 @@ namespace PigeonEngine
 	{
 	public:
 		void Initialize(HWND InhWnd, INT32 WindowSizeX, INT32 WindowSizeY);
+		void UpdateWindowSize(INT32 InWindowSizeX, INT32 InWindowSizeY);
 
 	private:
 		INT32 WindowSizeX = static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH);

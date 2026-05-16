@@ -39,6 +39,7 @@ namespace PigeonEngine
 
 	public:
 		HWND						GetWindowHandle();
+		const Vector2Int&			GetWindowSize() const;
 		const EBaseTimer&			GetWindowTimer();
 		const EGameTimer*			GetGameTimer();
 

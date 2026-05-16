@@ -72,6 +72,11 @@ namespace PigeonEngine
         const EGameTimer* GameTimer = EMainManager::GetManagerSingleton()->GetGameTimer();
         io.DeltaTime = static_cast<FLOAT>(GameTimer->GetDeltaTime());
 
+        {
+            const Vector2Int& WindowSize = EMainManager::GetManagerSingleton()->GetWindowSize();
+            io.DisplaySize = ImVec2(static_cast<FLOAT>(WindowSize.x), static_cast<FLOAT>(WindowSize.y));
+        }
+
         WndProcessKeyEventsWorkarounds();
 
         ImGuiMouseCursor mouse_cursor = io.MouseDrawCursor ? ImGuiMouseCursor_None : ImGui::GetMouseCursor();
