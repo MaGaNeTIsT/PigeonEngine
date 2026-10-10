@@ -42,7 +42,7 @@ CustomStruct::CCullingFrustumInfo CCamera::PrepareTempFrustumInfo()const
 		result.CameraProjectNear = CustomType::Vector3::Dot(tempNear, result.CameraForwardVec);
 		result.CameraProjectFar = CustomType::Vector3::Dot(tempFar, -result.CameraForwardVec);
 	}
-	
+
 	return result;
 }
 void CCamera::TransformPointFromWorldToView(const CustomType::Vector3& input, CustomType::Vector3& output)const
@@ -418,7 +418,7 @@ void CCamera::Update()
 		CInput::Controller.EnableCursor();
 		CInput::Controller.DisableMouseRaw();
 	}
-	
+
 	if (!CInput::Controller.IsCursorEnabled())
 	{
 		while (const auto delta = CInput::ReadRawDelta())

@@ -1,4 +1,4 @@
-﻿#include "FileHelper.h"
+#include "FileHelper.h"
 #include <CoreMinimal.h>
 #include <fstream>
 #include <filesystem>
@@ -14,19 +14,19 @@ namespace PigeonEngine
 			file.close();
 			return FALSE;
 		}
-		// 获取文件长度
+		// Get the file length
 		file.seekg(0, std::ios::end);
 		Size = static_cast<ULONG>(file.tellg());
 		file.seekg(0, std::ios::beg);
 
-		// 分配内存并读取文件数据
+		// Allocate the buffer and read the file data
 		Return = new char[Size];
 		file.read(static_cast<char*>(Return), Size);
 
 		file.close();
 		return TRUE;
 	}
-	
+
 	BOOL8 EFileHelper::ReadFileAsString(const EString& FilePath, EString& Return)
 	{
 		std::ifstream file(*FilePath);
@@ -35,7 +35,7 @@ namespace PigeonEngine
 			file.close();
 			return FALSE;
 		}
-		// 使用流操作符将文件内容读取到字符串中
+		// Read the file contents into the string with the stream operator
 		std::string line;
 		Return = "";
 		while (std::getline(file, line)) {
@@ -44,7 +44,7 @@ namespace PigeonEngine
 		file.close();
 		return TRUE;
 	}
-	
+
 	BOOL8 EFileHelper::SaveStringToFile(const EString& FilePath, const EString& Str, const BOOL8& bCreateDirectory, const BOOL8& bAppend)
 	{
 		std::filesystem::path directoryPath = std::filesystem::path(*FilePath).parent_path();
@@ -59,20 +59,20 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
-		
+
 		std::ios_base::openmode mode = std::ios::out;
 		if (bAppend)
 		{
 			mode |= std::ios::app;
 		}
-		
+
 		std::ofstream out(*FilePath, mode);
 		PE_CHECK(ENGINE_FILE_ERROR, "EFileHelper::SaveStringToFile : save string to file failed", out.is_open())
 		out << (*Str);
 		out.close();
 		return TRUE;
 	}
-	
+
 	BOOL8 EFileHelper::SaveBytesToFile(const EString& FilePath, const void* Bytes, const ULONG& Size, const BOOL8& bCreateDirectory)
 	{
 		std::filesystem::path directoryPath = std::filesystem::path(*FilePath).parent_path();
@@ -87,14 +87,14 @@ namespace PigeonEngine
 				return FALSE;
 			}
 		}
-		
+
 		std::ofstream out(*FilePath, std::ios::binary);
 		PE_CHECK(ENGINE_FILE_ERROR, "EFileHelper::SaveBytesToFile : Save bytes to file failed", out.is_open())
 		out.write(static_cast<const CHAR*>(Bytes), Size);
 		out.close();
 		return TRUE;
 	}
-	
+
 	BOOL8 EFileHelper::IsFileExists(const EString& FilePath)
 	{
 		return static_cast<BOOL8>(std::filesystem::exists(*FilePath));
@@ -107,7 +107,22 @@ namespace PigeonEngine
 
 	BOOL8 EFileHelper::MakeDirectory(const EString& DirectoryPath)
 	{
-		return static_cast<BOOL8>(std::filesystem::create_directories(*DirectoryPath));
+		if (IsDirectoryExists(DirectoryPath))
+		{
+			// Already there, which is what the caller asked for. std::filesystem reports
+			// FALSE for a directory that already exists, so returning that straight through
+			// turned every later request into a failure.
+			return TRUE;
+		}
+		// The return value is not the answer either. For a path that ends in a separator the
+		// parent path resolves to the same directory, so the recursive step creates it and the
+		// final create_directory finds it already there: create_directories reports "nothing was
+		// created" for a directory it just created. A caller that read that as a failure gave up
+		// on a directory that was there - which is how the first compile job of a cold shader
+		// build lost its shader. What was asked for is the directory being there, so that is what
+		// is reported, and a creation that really failed still comes back FALSE.
+		std::filesystem::create_directories(*DirectoryPath);
+		return IsDirectoryExists(DirectoryPath);
 	}
 
 	BOOL8 EFileHelper::ScanDirectory(const EString& DirectoryPath, TArray<EString>& OutFolders,
@@ -154,12 +169,12 @@ namespace PigeonEngine
 			if (!EFileHelper::SaveBytesToFile(NewFilePath, FileData, Size))
 			{
 				PE_CHECK((ENGINE_ASSET_ERROR), ("EFileHelper::CopyFileToNewPath : save file error!"), (FALSE));
-                delete[] static_cast<CHAR*>(FileData);
+				delete[] static_cast<CHAR*>(FileData);
 				return FALSE;
 			}
 			else
 			{
-                delete[] static_cast<CHAR*>(FileData);
+				delete[] static_cast<CHAR*>(FileData);
 				return TRUE;
 			}
 		}

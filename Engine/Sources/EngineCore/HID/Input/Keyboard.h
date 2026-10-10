@@ -49,11 +49,11 @@ namespace PigeonEngine
 
 	public:
 		// key event stuff
-        BOOL32 IsKeyPressed(BYTE keycode) const;
+		BOOL32 IsKeyPressed(BYTE keycode) const;
 		TOptional<Event> ReadKey();
 		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
-        // text event stuff
+		// text event stuff
 		TOptional<WCHAR> ReadChar();
 		BOOL32 IsCharEmpty() const;
 		void FlushChar();
@@ -66,19 +66,19 @@ namespace PigeonEngine
 	private:
 		void OnKeyPressed(BYTE keycode);
 		void OnKeyReleased(BYTE keycode);
-        void OnChar(WCHAR character);
+		void OnChar(WCHAR character);
 		void ClearState();
 		template<typename T>
-        static void TrimBuffer(TQueue<T>& buffer);
+		static void TrimBuffer(TQueue<T>& buffer);
 	public:
 
 	private:
 		static constexpr UINT32 nKeys = 256u;
 		static constexpr UINT32 BufferSize = 16u;
 		BOOL32 bAutorepeatEnabled = FALSE;
-        TBitSet<nKeys> KeyStates;
+		TBitSet<nKeys> KeyStates;
 		TQueue<Event> KeyBuffer;
 		TQueue<WCHAR> CharBuffer;
 	};
-	
+
 };

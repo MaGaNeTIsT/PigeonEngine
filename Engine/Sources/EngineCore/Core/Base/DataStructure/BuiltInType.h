@@ -21,6 +21,8 @@ namespace PigeonEngine
 	typedef	short						SHORT;
 	typedef	unsigned short				USHORT;
 	typedef	unsigned short				WORD;
+	typedef	short						INT16;
+	typedef	unsigned short				UINT16;
 	typedef	int							INT32;
 	typedef	unsigned int				UINT32;
 	typedef	long						LONG;
@@ -33,7 +35,35 @@ namespace PigeonEngine
 	typedef	float						FLOAT;
 	typedef	double						DOUBLE;
 
+	union EBaseTypeTranslator16Bit
+	{
+		WCHAR		TWCharVal;
+		SHORT		TShortVal;
+		USHORT		TUShortVal;
+		WORD		TWordVal;
+		INT16		TInt16Val;
+		UINT16		TUInt16Val;
+	};
+
+	union EBaseTypeTranslator32Bit
+	{
+		INT32		TInt32Val;
+		UINT32		TUInt32Val;
+		FLOAT		TFloatVal;
+	};
+
+	union EBaseTypeTranslator64Bit
+	{
+		INT64		TInt64Val;
+		UINT64		TUInt64Val;
+		FLOAT		TFloat32Val;
+		size_t		Tsize_tVal;
+		SIZE_T		TSIZE_TVal;
+		DOUBLE		TDoubleVal;
+	};
+
 #define PE_TEXT(__S)					__S
+#define PE_WTEXT(__S)					L##__S
 
 #ifdef _FORCE_INTEGRAL_BOOL
 
@@ -123,9 +153,9 @@ namespace PigeonEngine
 #define PE_DOUBLE_DELTA					(0.00001)
 
 /**
- * Lengths of normalized vectors (These are half their maximum values
- * to assure that dot products with normalized vectors don't overflow).
- */
+* Lengths of normalized vectors (These are half their maximum values
+* to assure that dot products with normalized vectors don't overflow).
+*/
 #define PE_FLOAT_NORMAL_THRESH			(0.0001f)
 #define PE_DOUBLE_NORMAL_THRESH			(0.0001)
 

@@ -1,0 +1,21 @@
+{
+	"Name": "IndirectLighting",
+	"Template": "Components/C_IndirectLighting.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "IndirectLightingParams",
+			"Slot": 3,
+			"Fields": [
+				{ "Name": "SkyLightColorLuminance", "Format": "float4" }
+			]
+		}
+	],
+	"Resources": [
+		{
+			"Name": "EnvironmentSH",
+			"Type": "StructuredBuffer",
+			"ElementType": "float4",
+			"Slot": 3
+		}
+	]
+}

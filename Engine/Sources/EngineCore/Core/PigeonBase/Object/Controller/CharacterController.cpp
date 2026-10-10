@@ -1,4 +1,4 @@
-﻿#include "CharacterController.h"
+#include "CharacterController.h"
 
 #include "../../../../Editor/EditorLogManager.h"
 #include "../../../../HID/Input/InputType.h"
@@ -12,52 +12,52 @@
 
 namespace PigeonEngine
 {
-    void PCharacterController::BeginAddedToScene(PWorld* World)
-    {
-        PController::BeginAddedToScene(World);
-    }
+	void PCharacterController::BeginAddedToScene(PWorld* World)
+	{
+		PController::BeginAddedToScene(World);
+	}
 
-    void PCharacterController::RemovedFromScene()
-    {
-        PController::RemovedFromScene();
-    }
+	void PCharacterController::RemovedFromScene()
+	{
+		PController::RemovedFromScene();
+	}
 
-    void PCharacterController::UserBeginPlay()
-    {
-        PController::UserBeginPlay();
-    }
+	void PCharacterController::UserBeginPlay()
+	{
+		PController::UserBeginPlay();
+	}
 
-    void PCharacterController::UserTick(FLOAT deltaTime)
-    {
-        PController::UserTick(deltaTime);
-    }
+	void PCharacterController::UserTick(FLOAT deltaTime)
+	{
+		PController::UserTick(deltaTime);
+	}
 
-    void PCharacterController::UserEndPlay()
-    {
-        PController::UserEndPlay();
-    }
+	void PCharacterController::UserEndPlay()
+	{
+		PController::UserEndPlay();
+	}
 
-    void PCharacterController::SetCharacter(PCharacter* InCharacter)
-    {
-        Character = InCharacter;
+	void PCharacterController::SetCharacter(PCharacter* InCharacter)
+	{
+		Character = InCharacter;
 		if (InputComponent)
 		{
 			InputComponent->SetCharacter(Character);
 		}
-    }
+	}
 
 	PCharacterInputComponent* PCharacterController::GetInputComponent() const
 	{
 		return InputComponent;
 	}
 
-    PCharacterController::PCharacterController()
-    {
+	PCharacterController::PCharacterController()
+	{
 		InputComponent = new PCharacterInputComponent(nullptr, this);
 		InputComponent->SetIsTickable(TRUE);
 		this->AddComponent(InputComponent);
-    }
-    PCharacterController::~PCharacterController()
-    {
-    }
+	}
+	PCharacterController::~PCharacterController()
+	{
+	}
 }

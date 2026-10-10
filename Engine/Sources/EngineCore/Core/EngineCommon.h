@@ -129,7 +129,7 @@ namespace PigeonEngine
 			if (IsValid)
 			{
 				AABBMin = Vector3(EMath::Min(AABBMin.x, Other.AABBMin.x), EMath::Min(AABBMin.y, Other.AABBMin.y), EMath::Min(AABBMin.z, Other.AABBMin.z));
-				AABBMax = Vector3(EMath::Max(AABBMin.x, Other.AABBMin.x), EMath::Max(AABBMin.y, Other.AABBMin.y), EMath::Max(AABBMin.z, Other.AABBMin.z));
+				AABBMax = Vector3(EMath::Max(AABBMax.x, Other.AABBMax.x), EMath::Max(AABBMax.y, Other.AABBMax.y), EMath::Max(AABBMax.z, Other.AABBMax.z));
 			}
 			else if (Other.IsValid)
 			{
@@ -457,9 +457,10 @@ namespace PigeonEngine
 
 	struct EViewport
 	{
-		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RCommonSettings::RENDER_DEPTH_MIN), MaxDepth(RCommonSettings::RENDER_DEPTH_MAX) {}
+		EViewport() noexcept : TopLeftX(0.f), TopLeftY(0.f), Width(0.f), Height(0.f), MinDepth(RCommonSettings::RENDER_DEPTH_NEAR), MaxDepth(RCommonSettings::RENDER_DEPTH_FAR) {}
 		EViewport(const EViewport& Other) noexcept : TopLeftX(Other.TopLeftX), TopLeftY(Other.TopLeftY), Width(Other.Width), Height(Other.Height), MinDepth(Other.MinDepth), MaxDepth(Other.MaxDepth) {}
 		constexpr EViewport(const Vector2& startPos, const Vector2& rectSize, const Vector2& depthSize) noexcept : TopLeftX(startPos.x), TopLeftY(startPos.y), Width(rectSize.x), Height(rectSize.y), MinDepth(depthSize.x), MaxDepth(depthSize.y) {}
+		constexpr EViewport(const FLOAT InTopLeftX, const FLOAT InTopLeftY, const FLOAT InWidth, const FLOAT InHeight, const FLOAT InMinDepth, const FLOAT InMaxDepth) noexcept : TopLeftX(InTopLeftX), TopLeftY(InTopLeftY), Width(InWidth), Height(InHeight), MinDepth(InMinDepth), MaxDepth(InMaxDepth) {}
 		EViewport& operator=(const EViewport& Other)
 		{
 			TopLeftX	= Other.TopLeftX;
@@ -546,8 +547,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
 
 			FLOAT ScreenCoordX = EMath::Clamp(TempPoint.x / TempPoint.w, -1.f, 1.f);
 			FLOAT ScreenCoordY = EMath::Clamp(TempPoint.y / TempPoint.w, -1.f, 1.f);
@@ -578,8 +579,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
 
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
@@ -605,8 +606,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
 
 			FLOAT ScreenCoordX = EMath::Clamp(TempPoint.x / TempPoint.w, -1.f, 1.f);
 			FLOAT ScreenCoordY = EMath::Clamp(TempPoint.y / TempPoint.w, -1.f, 1.f);
@@ -637,8 +638,8 @@ namespace PigeonEngine
 				(TempPoint.x > 1.f) ||
 				(TempPoint.y < -1.f) ||
 				(TempPoint.y > 1.f) ||
-				(TempPoint.z < RCommonSettings::RENDER_DEPTH_MIN) ||
-				(TempPoint.z > RCommonSettings::RENDER_DEPTH_MAX);
+				(TempPoint.z < RCommonSettings::RENDER_DEPTH_NEAR) ||
+				(TempPoint.z > RCommonSettings::RENDER_DEPTH_FAR);
 
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointScl(PointScl.x, PointScl.y, 1.f);
 			PE_CONSTEXPR_STATIC Vector3 _StaticPointAdd(PointAdd.x, PointAdd.y, 0.f);
@@ -670,7 +671,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
-				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX), 1.f);
+				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_NEAR, RCommonSettings::RENDER_DEPTH_FAR), 1.f);
 			TempPoint = Matrix4x4TransformVector(InverseViewProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
 			OutPositionWS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
@@ -690,7 +691,7 @@ namespace PigeonEngine
 			Vector4 TempPoint(
 				((InPositionSS.x - InViewport.TopLeftX) / InViewport.Width - 0.5f) * 2.f,
 				((InPositionSS.y - InViewport.TopLeftY) / InViewport.Height - 0.5f) * -2.f,
-				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX), 1.f);
+				EMath::Clamp(InPositionSS.z, RCommonSettings::RENDER_DEPTH_NEAR, RCommonSettings::RENDER_DEPTH_FAR), 1.f);
 			TempPoint = Matrix4x4TransformVector(ProjectionPart.InverseProjectionMatrix, TempPoint);
 			TempPoint /= TempPoint.w;
 			OutPositionVS = Vector3(TempPoint.x, TempPoint.y, TempPoint.z);
@@ -767,24 +768,72 @@ namespace PigeonEngine
 	};
 	struct ELightData
 	{
-		ELightData()noexcept : LightType(ELightType::LIGHT_TYPE_COUNT), LightColor(Color3::Black()), LightIntensity(1.f), CastShadow(FALSE), ShadowMapSize(Vector2Int(2, 2)) {}
-		ELightData(const ELightData& Other)noexcept : LightType(Other.LightType), LightColor(Other.LightColor), LightIntensity(Other.LightIntensity), CastShadow(Other.CastShadow), ShadowMapSize(Other.ShadowMapSize) {}
-		ELightData(ELightType	InLightType, FLOAT InColorR, FLOAT InColorG, FLOAT InColorB, FLOAT InIntensity, BOOL32 InCastShadow, INT32 InShadowMapWidth, INT32 InShadowMapHeight)noexcept : LightType(InLightType), LightColor(Color3(InColorR, InColorG, InColorB)), LightIntensity(InIntensity), CastShadow(InCastShadow), ShadowMapSize(Vector2Int(InShadowMapWidth, InShadowMapHeight)) {}
+		ELightData() noexcept
+			: LightType(ELightType::LIGHT_TYPE_COUNT), LightColor(Color3::Black()), CastShadow(FALSE), ShadowMapSize(Vector2Int(2, 2))
+			, IlluminanceLux(EEngineSettings::ENGINE_DEFAULT_ILLUMINANCE_LUX)
+			, SourceAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SOURCE_ANGLE_DEGREES)
+			, LuminousIntensityCandela(EEngineSettings::ENGINE_DEFAULT_LUMINOUS_INTENSITY_CANDELA)
+			, AttenuationRadiusMeters(EEngineSettings::ENGINE_DEFAULT_ATTENUATION_RADIUS_METERS)
+			, SourceRadiusMeters(0.f)
+			, SpotInnerAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SPOT_INNER_ANGLE_DEGREES)
+			, SpotOuterAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SPOT_OUTER_ANGLE_DEGREES)
+		{
+		}
+		ELightData(const ELightType InLightType, const Color3& InLightColor, const BOOL32 InCastShadow, const Vector2Int& InShadowMapSize) noexcept
+			: LightType(InLightType), LightColor(InLightColor), CastShadow(InCastShadow), ShadowMapSize(InShadowMapSize)
+			, IlluminanceLux(EEngineSettings::ENGINE_DEFAULT_ILLUMINANCE_LUX)
+			, SourceAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SOURCE_ANGLE_DEGREES)
+			, LuminousIntensityCandela(EEngineSettings::ENGINE_DEFAULT_LUMINOUS_INTENSITY_CANDELA)
+			, AttenuationRadiusMeters(EEngineSettings::ENGINE_DEFAULT_ATTENUATION_RADIUS_METERS)
+			, SourceRadiusMeters(0.f)
+			, SpotInnerAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SPOT_INNER_ANGLE_DEGREES)
+			, SpotOuterAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SPOT_OUTER_ANGLE_DEGREES)
+		{
+		}
+		ELightData(const ELightData& Other) noexcept
+			: LightType(Other.LightType), LightColor(Other.LightColor), CastShadow(Other.CastShadow), ShadowMapSize(Other.ShadowMapSize)
+			, IlluminanceLux(Other.IlluminanceLux), SourceAngleDegrees(Other.SourceAngleDegrees)
+			, LuminousIntensityCandela(Other.LuminousIntensityCandela), AttenuationRadiusMeters(Other.AttenuationRadiusMeters)
+			, SourceRadiusMeters(Other.SourceRadiusMeters)
+			, SpotInnerAngleDegrees(Other.SpotInnerAngleDegrees), SpotOuterAngleDegrees(Other.SpotOuterAngleDegrees)
+		{
+		}
 		ELightData& operator=(const ELightData& Other)
 		{
-			LightType		= Other.LightType;
-			LightColor		= Other.LightColor;
-			LightIntensity	= Other.LightIntensity;
-			CastShadow		= Other.CastShadow;
-			ShadowMapSize	= Other.ShadowMapSize;
+			LightType				= Other.LightType;
+			LightColor				= Other.LightColor;
+			CastShadow				= Other.CastShadow;
+			ShadowMapSize			= Other.ShadowMapSize;
+			IlluminanceLux			= Other.IlluminanceLux;
+			SourceAngleDegrees		= Other.SourceAngleDegrees;
+			LuminousIntensityCandela = Other.LuminousIntensityCandela;
+			AttenuationRadiusMeters	= Other.AttenuationRadiusMeters;
+			SourceRadiusMeters		= Other.SourceRadiusMeters;
+			SpotInnerAngleDegrees	= Other.SpotInnerAngleDegrees;
+			SpotOuterAngleDegrees	= Other.SpotOuterAngleDegrees;
 			return (*this);
 		}
 
 		ELightType	LightType;
+		// Normalized chromaticity, shared by every light type. The magnitude is the physical
+		// field for the type, so recolouring a light never changes how bright it is.
 		Color3		LightColor;
-		FLOAT		LightIntensity;
 		BOOL32		CastShadow;
 		Vector2Int	ShadowMapSize;
+
+		// Directional lights. Illuminance is measured perpendicular to the light, which is what
+		// a light meter held facing the sun reads; the surface then takes the cosine.
+		FLOAT		IlluminanceLux;			// [lux]
+		FLOAT		SourceAngleDegrees;		// angular diameter of the disc; 0 = a delta light
+
+		// Local lights. Intensity is held in candela because that is the quantity the inverse
+		// square law consumes: I/d^2 is [cd/m2], which is [lux], so a local light reaches the
+		// BRDF in the same unit a directional one does.
+		FLOAT		LuminousIntensityCandela;	// [candela]
+		FLOAT		AttenuationRadiusMeters;	// cutoff that bounds the shading cost [m]
+		FLOAT		SourceRadiusMeters;			// emitter radius, 0 = an ideal point [m]
+		FLOAT		SpotInnerAngleDegrees;		// cone half angles, from the axis [deg]
+		FLOAT		SpotOuterAngleDegrees;
 	};
 	struct ECascadeShadowData
 	{

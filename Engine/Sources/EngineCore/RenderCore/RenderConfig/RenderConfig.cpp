@@ -77,6 +77,25 @@ namespace PigeonEngine
 		UINT32 SemanticType = input;
 		return (SemanticType & 0xffu);
 	}
+	PE_INLINE const CHAR* GetShaderSemanticNameString(const RShaderSemanticType input)
+	{
+		// Same names the two back-ends hand to their APIs, kept as literals because the API
+		// compares them literally.
+		switch (GetShaderSemanticBaseType(static_cast<UINT16>(input)))
+		{
+		case RShaderSemanticType::SHADER_SEMANTIC_POSITION:		return "POSITION";
+		case RShaderSemanticType::SHADER_SEMANTIC_POSITIONT:	return "POSITIONT";
+		case RShaderSemanticType::SHADER_SEMANTIC_NORMAL:		return "NORMAL";
+		case RShaderSemanticType::SHADER_SEMANTIC_TANGENT:		return "TANGENT";
+		case RShaderSemanticType::SHADER_SEMANTIC_BINORMAL:		return "BINORMAL";
+		case RShaderSemanticType::SHADER_SEMANTIC_COLOR:		return "COLOR";
+		case RShaderSemanticType::SHADER_SEMANTIC_TEXCOORD:		return "TEXCOORD";
+		case RShaderSemanticType::SHADER_SEMANTIC_BLENDWEIGHT:	return "BLENDWEIGHT";
+		case RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES:	return "BLENDINDICES";
+		case RShaderSemanticType::SHADER_SEMANTIC_PSIZE:		return "PSIZE";
+		default:												return "NONE";
+		}
+	}
 	PE_INLINE void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum)
 	{
 		PE_CONSTEXPR_STATIC RShaderSemanticType _EngineDefaultMeshInputLayout[7u] =

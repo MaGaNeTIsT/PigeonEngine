@@ -9,7 +9,7 @@
 
 namespace PigeonEngine
 {
-   namespace
+	namespace
 	{
 		Vector3 GetCharacterWorldUp(const PCharacter* InCharacter)
 		{
@@ -34,7 +34,7 @@ namespace PigeonEngine
 	void PMovementComponent::BeginAddedToScene(PWorld* World)
 	{
 		PActorComponent::BeginAddedToScene(World);
-        if (m_Character)
+		if (m_Character)
 		{
 			LastSyncedPosition = m_Character->GetActorLocation();
 			LastSyncedRotation = m_Character->GetActorRotation();
@@ -46,7 +46,7 @@ namespace PigeonEngine
 	void PMovementComponent::RemovedFromScene()
 	{
 		TryUnregisterPostPhysicsTick();
-        bHasSyncedTransform = FALSE;
+		bHasSyncedTransform = FALSE;
 		LastSyncedPosition = Vector3::Zero();
 		LastSyncedRotation = Quaternion::Identity();
 		PActorComponent::RemovedFromScene();
@@ -72,7 +72,7 @@ namespace PigeonEngine
 					MovementComponent->HandlePostPhysicsTick(deltaTime);
 				}
 			});
-            EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
+			EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
 			bPostPhysicsTickRegistered = TRUE;
 		}
 	}
@@ -101,9 +101,9 @@ namespace PigeonEngine
 
 		if (FCharacterVirtual* Character = m_Character->GetPhysicsCharacter())
 		{
-            const Vector3 NewPosition = Character->GetPosition();
+			const Vector3 NewPosition = Character->GetPosition();
 			const Quaternion NewRotation = Character->GetRotation();
-          if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
+			if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
 			{
 				m_Character->SetActorLocation(NewPosition);
 				m_Character->SetActorRotation(NewRotation);
@@ -133,7 +133,7 @@ namespace PigeonEngine
 			Vector3 Normal = Character->GetGroundNormal();
 			Normal -= WorldUp * Vector3::Dot(Normal, WorldUp);
 			float Dot = Normal.Dot(InMovementDirection);
-         if (Dot < 0.0f && Normal.LengthSquare() > PE_SMALL_NUMBER)
+		if (Dot < 0.0f && Normal.LengthSquare() > PE_SMALL_NUMBER)
 				InMovementDirection -= (Dot * Normal) / Normal.LengthSquare();
 		}
 
@@ -145,13 +145,13 @@ namespace PigeonEngine
 		{
 			// Update velocity
 			Vector3 CurrentVelocity = Character->GetLinearVelocity();
-            Vector3 DesiredVelocity = (InRun ? m_Character->CharacterRunSpeed : m_Character->CharacterSpeed) * InMovementDirection;
+			Vector3 DesiredVelocity = (InRun ? m_Character->CharacterRunSpeed : m_Character->CharacterSpeed) * InMovementDirection;
 			DesiredVelocity += WorldUp * Vector3::Dot(CurrentVelocity, WorldUp);
 			Vector3 NewVelocity = 0.75f * CurrentVelocity + 0.25f * DesiredVelocity;
 
 			// Jump
 			if (InJump && Character->IsSupported())
-             NewVelocity += WorldUp * (m_Character->JumpSpeed - Vector3::Dot(NewVelocity, WorldUp));
+			NewVelocity += WorldUp * (m_Character->JumpSpeed - Vector3::Dot(NewVelocity, WorldUp));
 
 			// Update the velocity
 			Character->SetLinearVelocity(NewVelocity);

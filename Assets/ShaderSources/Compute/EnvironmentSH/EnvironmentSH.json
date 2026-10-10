@@ -1,0 +1,18 @@
+{
+	"Name": "EnvironmentSH",
+	"Template": "Compute/EnvironmentSH/EnvironmentSH.hlsl",
+	"Textures": [
+		{ "Name": "EnvironmentCube", "Type": "Cube", "Format": "float4", "SamplerName": "SamplerMaterialCube", "Slot": 0 }
+	],
+	"RWResources": [
+		{
+			"Name": "EnvironmentSHOutput",
+			"Type": "StructuredBuffer",
+			"ElementType": "float4",
+			"Slot": 0
+		}
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/EnvironmentSH/EnvironmentSH.hlsl\"" }
+	]
+}

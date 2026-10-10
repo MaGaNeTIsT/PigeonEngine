@@ -1,7 +1,7 @@
-﻿#pragma once
+#pragma once
 
 class ItemManager
 {
 public:
-    
+
 };

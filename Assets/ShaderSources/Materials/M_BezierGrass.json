@@ -1,0 +1,56 @@
+{
+	"Name": "M_BezierGrass",
+	"Template": "Materials/M_BezierGrass.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "RootColor",
+					"Format": "color4",
+					"Default": [
+						0.2,
+						0.4,
+						0.1,
+						1.0
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "TipColor",
+					"Format": "color4",
+					"Default": [
+						0.4,
+						0.8,
+						0.2,
+						1.0
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "Roughness",
+					"Format": "float",
+					"Default": [
+						0.8
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "Metallic",
+					"Format": "float",
+					"Default": [
+						0.0
+					],
+					"Exposure": true
+				}
+			]
+		}
+	],
+	"PEMaterial": {
+		"Domain": "DefaultLit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

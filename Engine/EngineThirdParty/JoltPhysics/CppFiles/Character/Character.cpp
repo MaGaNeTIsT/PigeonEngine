@@ -10,7 +10,7 @@ FCharacter::FCharacter(const FCharacterSettings& inSettings)
 {
 	m_MaxSeparationDistance = inSettings.MaxSeparationDistance;
 
-	m_CharacterSettings = New<CharacterSettings>();
+	m_CharacterSettings = new CharacterSettings();
 	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings.Up);
 	m_CharacterSettings->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
 	if(inSettings.Shape)
@@ -24,21 +24,21 @@ FCharacter::FCharacter(const FCharacterSettings& inSettings)
 
 FCharacter::~FCharacter()
 {
-	Delete(m_CharacterSettings);
+	delete m_CharacterSettings;
 	m_CharacterSettings = nullptr;
 	if (m_Character)
 		RemoveFromPhysicsSystem();
 }
 void FCharacter::AddToPhysicsSystem(PhysicsUtility::EActivate inActivationMode, Vector3 inPosition, Quaternion inRotation, UINT64 inUserData, BOOL32 inLockBodies)
 {
-	m_Character = New<Character>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
+	m_Character = new Character(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation),inUserData, FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
 	m_Character->AddToPhysicsSystem(inActivationMode == EActivate::Activate ? EActivation::Activate : EActivation::DontActivate, inLockBodies);
 	CharacterBase = m_Character;
 }
 void FCharacter::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
 	m_Character->RemoveFromPhysicsSystem(inLockBodies);
-	Delete(m_Character);
+	delete m_Character;
 	m_Character = nullptr;
 }
 void FCharacter::Activate(BOOL32 inLockBodies)

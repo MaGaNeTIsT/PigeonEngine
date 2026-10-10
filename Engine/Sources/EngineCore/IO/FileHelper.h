@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <CoreMinimal.h>
 #include <Base/DataStructure/Text/String.h>

@@ -11,11 +11,11 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PMaterial::PMaterial()
-		: VertexShader(nullptr), PixelShader(nullptr)
+		: MaterialInstance(nullptr)
 	{
 	}
 	PMaterial::PMaterial(const PMaterial& Other)
-		: VertexShader(Other.VertexShader), PixelShader(Other.PixelShader)
+		: MaterialInstance(Other.MaterialInstance)
 	{
 	}
 	PMaterial::~PMaterial()
@@ -23,10 +23,16 @@ namespace PigeonEngine
 	}
 	PMaterial& PMaterial::operator=(const PMaterial& Other)
 	{
-		MaterialParameter.ClearParameter();
-		VertexShader				= Other.VertexShader;
-		PixelShader					= Other.PixelShader;
+		MaterialInstance			= Other.MaterialInstance;
 		return (*this);
+	}
+	EShaderInstance* PMaterial::GetMaterialInstance() const
+	{
+		return MaterialInstance;
+	}
+	void PMaterial::SetMaterialInstance(EShaderInstance* InMaterialInstance)
+	{
+		MaterialInstance = InMaterialInstance;
 	}
 
 };

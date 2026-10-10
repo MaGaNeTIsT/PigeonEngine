@@ -3,11 +3,17 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
-#include <MaterialAsset/MaterialAsset.h>
+#include <ShaderAsset/ShaderAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
+#include <Shader/ShaderAssetBinding.h>
+#include <Shader/EngineShaderInstanceCache.h>
 #include "../Component/SceneComponent.h"
 #include "../World/World.h"
 #include "../Controller/Controller.h"
 #include <PigeonBase/Object/Component/CameraAndLight/DirectionalLightComponent.h>
+#include <PigeonBase/Object/Component/CameraAndLight/PointLightComponent.h>
+#include <PigeonBase/Object/Component/CameraAndLight/SpotLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkyLightComponent.h>
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
@@ -23,16 +29,104 @@
 
 namespace PigeonEngine
 {
-    PLevelActor::PLevelActor()
-    {
-        this->SetIsTickable(TRUE);
-    }
-	
-    PLevelActor::~PLevelActor()
-    {
-        // this->Destroy();
-    }
-	
+	/*
+	* The MaterialDemo material. The job builder generates and compiles the stage sources of
+	* (material x program x vertex axis), then the instance holds the values; the component keeps
+	* a non owning pointer, so the instance has to outlive every component that references it -
+	* which is what the process wide cache is for. The editor will call exactly this function later.
+	*
+	* The axis comes from the mesh's own layout, so the request cannot be named before the mesh
+	* exists: the caller asks for the mesh first and builds the request from it.
+	*/
+	static BOOL32 MakeMaterialDemoRequest(const EStaticMeshAsset* InMeshAsset, EShaderAssemblyRequest& OutRequest)
+	{
+		EShaderVertexFactoryType VertexFactory = EShaderVertexFactoryType::ENGINE_MESH;
+		EShaderVertexProfile Profile;
+		if (!EShaderJobBuilder::ResolveVertexAxis((InMeshAsset ? InMeshAsset->GetStoragedResource() : nullptr), VertexFactory, Profile))
+		{
+			return FALSE;
+		}
+
+		OutRequest = EShaderAssemblyRequest();
+		OutRequest.ShaderName = EName(PE_TEXT("M_EngineDefaultLit"));
+		OutRequest.MaterialName = EString(PE_TEXT("M_EngineDefaultLit"));
+		OutRequest.ProgramName = EName(PE_TEXT("BasePass"));
+		OutRequest.VertexFactory = VertexFactory;
+		OutRequest.Profile = Profile;
+		return TRUE;
+	}
+	/*
+	* Any thread: the instance for the demo material when it is already assembled, otherwise null
+	* after recording one assembly request for the load thread - the caller asks again on its next
+	* tick. Resolved as a material rather than as a plain assembly, so that a material this mesh
+	* asked for and did not get comes back as the error material: the mesh stays in the frame
+	* wearing the marker, which can be found and fixed, where a null instance would leave it
+	* invisible and indistinguishable from a mesh that was never assigned anything.
+	*/
+	static const EShaderInstance* RequireMaterialDemoShaderInstance(const EStaticMeshAsset* InMeshAsset)
+	{
+		EShaderAssemblyRequest Request;
+		if (!MakeMaterialDemoRequest(InMeshAsset, Request))
+		{
+			return nullptr;
+		}
+		return REngineShaderInstanceCache::GetManagerSingleton()->RequireMaterialInstance(Request);
+	}
+
+	/*
+	* The raw file an asset is imported from when its PAsset is not on disk yet. The load thread runs
+	* that import as part of serving the request, so nothing here touches the disk on a frame - which
+	* is the whole reason the demo asks for its assets instead of loading them.
+	*/
+	static FAssetImportSource MakeImportSource(const EString& InImportPath, const EString& InImportName, const EString& InImportFileType)
+	{
+		FAssetImportSource ImportSource;
+		ImportSource.ImportPath = InImportPath;
+		ImportSource.ImportName = InImportName;
+		ImportSource.ImportFileType = InImportFileType;
+		return ImportSource;
+	}
+
+	/*
+	* The demo's sky box: the six faces of the engine's default sky, in the order the cube importer
+	* expects. The data lives here because it is demo data - the component it is handed to knows only
+	* that it was given an import source.
+	*/
+	static FAssetImportCubeSource MakeSkyCubeMapImportSource()
+	{
+		constexpr UINT32 SkyFaceNum = 6u;
+		const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+		const EString ImportPath(AssetBasePath + EString(PE_TEXT("EngineTextures/DefaultSkyBox/Sky_001/")));
+
+		FAssetImportCubeSource ImportSource;
+		for (UINT32 FaceIndex = 0u; FaceIndex < SkyFaceNum; FaceIndex++)
+		{
+			ImportSource.ImportPaths.Add(ImportPath);
+			ImportSource.ImportFileTypes.Add(EString(PE_TEXT("png")));
+		}
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Right")));
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Left")));
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Top")));
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Bottom")));
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Forward")));
+		ImportSource.ImportNames.Add(EString(PE_TEXT("Sky_001_Back")));
+		// A sky box is colour, and these faces are 8 bit PNGs: when a face declares its own
+		// colour space that statement decides, and this fallback answers for the ones that
+		// declare nothing (the .tga siblings in the same folder carry no colour information).
+		ImportSource.bFallbackSRGB = TRUE;
+		return ImportSource;
+	}
+
+	PLevelActor::PLevelActor()
+	{
+		this->SetIsTickable(TRUE);
+	}
+
+	PLevelActor::~PLevelActor()
+	{
+		// this->Destroy();
+	}
+
 	void PLevelActor::BeginAddedToScene(PWorld* World)
 	{
 		PActor::BeginAddedToScene(World);
@@ -44,7 +138,8 @@ namespace PigeonEngine
 	}
 
 	void PLevelActor::UserBeginPlay()
-    {
+	{
+#if 0
 		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
@@ -53,14 +148,30 @@ namespace PigeonEngine
 			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 			NewStaticMeshComp->SetIsTickable(TRUE);
 			New->AddComponent(NewStaticMeshComp);
-			const EStaticMeshAsset* Asset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/Robot/");
-			EString ImportName("Robot");
-			EString ImportFileType("obj");
-			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Robot", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/Sponza/"))
+				, EString(PE_TEXT("sponza")), EString(PE_TEXT("obj")));
+			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Sponza")), &ImportSource);
 
-			NewStaticMeshComp->SetMeshAsset(Asset);
+			New->SetActorScale(Vector3(1.0f, 1.0f, 1.0f));
+		}
+#endif	// 0
+
+		{
+			PActor* New = new PActor();
+			New->SetIsTickable(TRUE);
+			POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
+			this->GetWorld()->AddActor(New);
+			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
+			NewStaticMeshComp->SetIsTickable(TRUE);
+			New->AddComponent(NewStaticMeshComp);
+
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/Robot/"))
+				, EString(PE_TEXT("Robot")), EString(PE_TEXT("obj")));
+			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Robot")), &ImportSource);
 
 			New->SetActorLocation(Vector3(-500.0f, 100.0f, 0.0f));
 		}
@@ -74,25 +185,15 @@ namespace PigeonEngine
 			NewSkeletalMeshComp->SetIsTickable(TRUE);
 			New->AddComponent(NewSkeletalMeshComp);
 
-			const ESkinnedMeshAsset* MeshAsset = nullptr;
-			const ESkeletonAsset* SkeletonAsset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/UnrealCharacter/");
-			EString ImportName("SK_Mannequin_UE4_WithWeapon");
-			EString ImportFileType("FBX");
-			EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
-			EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-			TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			TryLoadSkeleton(EBaseSettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon")), EString(PE_TEXT("FBX")));
+			NewSkeletalMeshComp->RequestSkeletalMeshAssets(EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Mesh"))
+				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Skeleton")), &ImportSource);
 
-			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
-			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
-			{
-				NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), Quaternion::Identity(), Vector3::One());
-				NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
-				Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
-				NewSkeletalMeshComp->SetComponentRotation(DefaultRot);
-			}
+			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
+			NewSkeletalMeshComp->SetComponentRotation(DefaultRot);
 
 			New->SetActorLocation(Vector3(500.0f, 0.0f, 0.0f));
 		}
@@ -105,11 +206,58 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
 			LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
-			LightComp->SetLightIntensity(1.5f);
+			// Perpendicular illuminance in lux: a clear noon sun. It pairs with the default
+			// exposure, which is Sunny-16 outdoors.
+			LightComp->SetIlluminanceLux(EEngineSettings::ENGINE_DEFAULT_ILLUMINANCE_LUX);
+			LightComp->SetSourceAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SOURCE_ANGLE_DEGREES);
 			New->AddComponent(LightComp);
 			Quaternion Quat = Quaternion(0.5f, 0.5f, 0.0f, 1.0f);
 			Quat.Normalize();
 			New->SetActorRotation(Quat);
+		}
+
+		{
+			PActor* New = new PActor();
+			POBJ_DEBUGNAME_SET(New, "PointLightActor");
+
+			New->SetIsTickable(TRUE);
+			this->GetWorld()->AddActor(New);
+			PPointLightComponent* PointLightComp = new PPointLightComponent();
+			PointLightComp->SetLightColor(Color3(1.0f, 0.85f, 0.6f));
+			// Authored the way a lamp is sold, in lumen. Against the default exposure this is a
+			// small contribution next to a sun, which is the physical answer rather than a bug:
+			// indoor and outdoor light are about five stops apart. Lower the camera's EV100 to
+			// see it on its own.
+			PointLightComp->SetLuminousFluxLumen(12566.0f);
+			// The cutoff that bounds the shading cost. It is not the light's size: the falloff
+			// is inverse square out to here and zero past it.
+			PointLightComp->SetAttenuationRadiusMeters(600.f);
+			// A real emitter has a size, which is what gives its specular highlight a size
+			// rather than a point.
+			PointLightComp->SetSourceRadiusMeters(0.05f);
+			New->AddComponent(PointLightComp);
+			New->SetActorLocation(Vector3(400.0f, 200.0f, 200.0f));
+		}
+
+		{
+			PActor* New = new PActor();
+			POBJ_DEBUGNAME_SET(New, "SpotLightActor");
+
+			New->SetIsTickable(TRUE);
+			this->GetWorld()->AddActor(New);
+			PSpotLightComponent* SpotLightComp = new PSpotLightComponent();
+			SpotLightComp->SetLightColor(Color3(0.7f, 0.85f, 1.0f));
+			SpotLightComp->SetLuminousFluxLumen(12566.0f);
+			// Full intensity inside 20 degrees, falling to nothing at 30. The pair is what makes
+			// the cone's edge a penumbra rather than a step.
+			SpotLightComp->SetSpotConeAnglesDegrees(20.f, 30.f);
+			SpotLightComp->SetAttenuationRadiusMeters(600.f);
+			New->AddComponent(SpotLightComp);
+			// The aim is the component's forward axis, so the rotation is the aim. Left at the
+			// identity here, which points the cone along whatever the engine's forward is - the
+			// point of the actor is to have a spot in the scene to look at, not to aim it at
+			// something in particular.
+			New->SetActorLocation(Vector3(-400.0f, -200.0f, 300.0f));
 		}
 
 		{
@@ -120,27 +268,15 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(New);
 			PSkyLightComponent* SkyLightComp = new PSkyLightComponent();
 
-			const ETextureCubeAsset* CubeMap = nullptr;
-			TArray<EString> ImportPaths;
-			TArray<EString> ImportNames;
-			TArray<EString> ImportFileTypes;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			for (UINT32 i = 0u; i < 6u; i++)
-			{
-				ImportPaths.Add(AssetBasePath + "EngineTextures/DefaultSkyBox/Sky_001/");
-				ImportFileTypes.Add("png");
-			}
-			ImportNames.Add("Sky_001_Right");
-			ImportNames.Add("Sky_001_Left");
-			ImportNames.Add("Sky_001_Top");
-			ImportNames.Add("Sky_001_Bottom");
-			ImportNames.Add("Sky_001_Forward");
-			ImportNames.Add("Sky_001_Back");
-			TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, "SkyBox001", CubeMap, &ImportPaths, &ImportNames, &ImportFileTypes);
+			// The cube map arrives through a binding like every other demo asset: the sky is drawn
+			// without it until it does, and nothing on this thread reads or imports a file.
+			const FAssetImportCubeSource CubeMapImportSource = MakeSkyCubeMapImportSource();
+			SkyLightComp->RequestCubeMapAsset(EString(PE_TEXT("SkyBox001")), &CubeMapImportSource);
 
-			SkyLightComp->SetCubeMapAsset(CubeMap);
 			SkyLightComp->SetLightAdjust(Color3(1.0f, 1.0f, 1.0f));
-			SkyLightComp->SetIntensity(1.0f);
+			// The sky's luminance in cd/m2: the cube carries the shape of the sky, this is what
+			// puts it on the same physical scale as the lights.
+			SkyLightComp->SetIntensity(EEngineSettings::ENGINE_SKY_LUMINANCE);
 			New->AddComponent(SkyLightComp);
 			New->SetActorScale(Vector3(5000.0f, 5000.0f, 5000.0f));
 		}
@@ -158,23 +294,12 @@ namespace PigeonEngine
 			PSkeletalMeshComponent* NewSkeletalMeshComp = new PSkeletalMeshComponent();
 			NewSkeletalMeshComp->SetIsTickable(TRUE);
 
-			const ESkinnedMeshAsset* MeshAsset = nullptr;
-			const ESkeletonAsset* SkeletonAsset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/SceneModels/UnrealCharacter/");
-			EString ImportName("SK_Mannequin_UE4_WithWeapon");
-			EString ImportFileType("FBX");
-			EString MeshAssetName("SK_Mannequin_UE4_WithWeapon_Mesh");
-			EString SkeletonAssetName("SK_Mannequin_UE4_WithWeapon_Skeleton");
-			TryLoadSkinnedMesh(EBaseSettings::ENGINE_MESH_PATH, MeshAssetName, MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			TryLoadSkeleton(EBaseSettings::ENGINE_SKELETON_PATH, SkeletonAssetName, SkeletonAsset, &ImportPath, &ImportName, &ImportFileType);
-
-			NewSkeletalMeshComp->SetMeshAsset(MeshAsset);
-			NewSkeletalMeshComp->SetSkeletonAsset(SkeletonAsset);
-			{
-				NewSkeletalMeshComp->GetBoneMemoryPool().SetRootTransform(Vector3::Zero(), Quaternion::Identity(), Vector3::One());
-				NewSkeletalMeshComp->GetBoneMemoryPool().GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
-			}
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon")), EString(PE_TEXT("FBX")));
+			NewSkeletalMeshComp->RequestSkeletalMeshAssets(EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Mesh"))
+				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Skeleton")), &ImportSource);
 
 			New->SkeletalMeshComponent = NewSkeletalMeshComp;
 
@@ -203,13 +328,11 @@ namespace PigeonEngine
 
 			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 			NewStaticMeshComp->SetIsTickable(TRUE);
-			const EStaticMeshAsset* Asset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/BaseShapes/");
-			EString ImportName("Cube");
-			EString ImportFileType("obj");
-			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Cube", Asset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			NewStaticMeshComp->SetMeshAsset(Asset);
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
+				, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
+			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
 
 			New->AddComponent(NewStaticMeshComp);
 
@@ -251,41 +374,37 @@ namespace PigeonEngine
 			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
 			NewStaticMeshComp->SetIsTickable(TRUE);
 
-			// Load mesh
-			const EStaticMeshAsset* MeshAsset = nullptr;
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/BaseShapes/");
-			EString ImportName("Cube");
-			EString ImportFileType("obj");
-			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "Cube", MeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
-			NewStaticMeshComp->SetMeshAsset(MeshAsset);
-
-			// Load and assign material
-			const EMaterialAsset* MatAsset = nullptr;
-#if _EDITOR_ONLY
-			EMaterialAssetManager::GetManagerSingleton()->LoadOrCompileMaterialAsset(
-				EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR,
-				"M_DefaultLit",
-				EEngineSettings::ENGINE_MATERIAL_SOURCE_DIR,
-				EEngineSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR,
-				MatAsset, TRUE);
-#else
-			EMaterialAssetManager::GetManagerSingleton()->LoadMaterialAsset(
-				EString(EEngineSettings::ENGINE_MATERIAL_OUTPUT_DIR) + "M_DefaultLit/",
-				"M_DefaultLit",
-				MatAsset);
-#endif
-			if (MatAsset)
+			// The mesh and the material it is demoed with, as two bindings. The material waits for the
+			// mesh because its request is named after the mesh's vertex axis: it asks for the mesh
+			// itself and reports not-done until that exists.
+			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
+			const FAssetImportSource ImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/BaseShapes/"))
+				, EString(PE_TEXT("Cube")), EString(PE_TEXT("obj")));
+			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Cube")), &ImportSource);
+			NewStaticMeshComp->AddDeferredApply([NewStaticMeshComp, ImportSource]() -> BOOL32
 			{
-				NewStaticMeshComp->SetMaterialAsset(MatAsset);
-			}
+				const EStaticMeshAsset* MeshAsset = nullptr;
+				if (!EMeshAssetManager::GetManagerSingleton()->RequireLoadStaticMeshAsset(
+					EBaseSettings::ENGINE_MESH_PATH, EString(PE_TEXT("Cube")), MeshAsset, &ImportSource))
+				{
+					return FALSE;
+				}
+				const EShaderInstance* MatInstance = RequireMaterialDemoShaderInstance(MeshAsset);
+				if (!MatInstance)
+				{
+					return FALSE;	// not assembled yet: the component asks again on its next tick
+				}
+				NewStaticMeshComp->SetMaterialInstance(MatInstance);
+				return TRUE;
+			});
 
-			New->AddComponent(NewStaticMeshComp);		// TODO : Fix this that BeginAddToScene need later than material asset setting otherwise will be null for proxy
+			New->AddComponent(NewStaticMeshComp);		// The proxy snapshots the material slots when it is added and re-snapshots them on the next update tick, so this order is a convenience rather than a requirement.
 
 			New->SetActorLocation(Vector3(250.0f, 50.0f, 0.0f));
 			New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
 		}
-    }
+	}
 
 	void PLevelActor::UserEndPlay()
 	{
@@ -294,7 +413,10 @@ namespace PigeonEngine
 
 	void PLevelActor::UserTick(FLOAT deltaTime)
 	{
-
+		// Nothing to do here: the demo's assets are bound to its components, and each component retries
+		// its own pending bindings on its own tick (PSceneComponent::AddDeferredApply). That is also
+		// what keeps the scene setup above free of per-actor bookkeeping.
+		(void)deltaTime;
 	}
 
 

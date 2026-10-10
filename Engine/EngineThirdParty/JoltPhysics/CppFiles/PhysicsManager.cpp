@@ -5,7 +5,7 @@ PIGEONENGINE_NAMESPACE_BEGIN
 
 static void RegisterClassTypes()
 {
-    RegisterClassType<FPhysicsManager, EManagerBase>();
+	RegisterClassType<FPhysicsManager, EManagerBase>();
 }
 
 PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
@@ -16,22 +16,22 @@ FPhysicsManager::~FPhysicsManager() {}
 
 void FPhysicsManager::Initialize()
 {
-    EManagerBase::Initialize();
+	EManagerBase::Initialize();
 }
 
 void FPhysicsManager::ShutDown()
 {
-    EManagerBase::ShutDown();
+	EManagerBase::ShutDown();
 }
 
 void FPhysicsManager::Init()
 {
-    InitPhysics();
+	InitPhysics();
 }
 
 void FPhysicsManager::Uninit()
 {
-    UninitPhysics();
+	UninitPhysics();
 }
 
 void FPhysicsManager::Update()
@@ -40,7 +40,7 @@ void FPhysicsManager::Update()
 
 void FPhysicsManager::FixedUpdate(FLOAT DeltaTime)
 {
-    PhysicsUpdate(DeltaTime);
+	PhysicsUpdate(DeltaTime);
 }
 
 void FPhysicsManager::Draw()

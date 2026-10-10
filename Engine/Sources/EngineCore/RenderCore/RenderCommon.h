@@ -15,9 +15,9 @@ namespace PigeonEngine
 		virtual ~RRenderResourceInterface() = default;
 		RRenderResourceInterface& operator=(const RRenderResourceInterface&) = default;
 	public:
-		virtual BOOL32 IsRenderResourceValid()const = 0;
-		virtual BOOL32 InitRenderResource() = 0;
-		virtual void ReleaseRenderResource() = 0;
+		virtual BOOL8 IsRenderResourceValid() const noexcept = 0;
+		virtual BOOL8 InitRenderResource() noexcept = 0;
+		virtual void ReleaseRenderResource() noexcept = 0;
 	};
 	enum RShaderFrequencyType : UINT8
 	{
@@ -68,7 +68,6 @@ namespace PigeonEngine
 	};
 	struct RRasterizerState
 	{
-		RRasterizerState()noexcept : CullMode(RCullModeType::CULL_BACK), FillMode(RFillModeType::FILL_SOLID) {}
 		RRasterizerState(const RRasterizerState& Other)noexcept : CullMode(Other.CullMode), FillMode(Other.FillMode) {}
 		constexpr RRasterizerState(RCullModeType InCullMode = RCullModeType::CULL_BACK
 			, RFillModeType InFillMode = RFillModeType::FILL_SOLID)noexcept : CullMode(InCullMode), FillMode(InFillMode) {}
@@ -214,6 +213,36 @@ namespace PigeonEngine
 		RBlendOperationType		BlendOpAlpha;
 		UINT8					RenderTargetWriteMask;
 	};
+	struct RBlendDesc
+	{
+		RBlendDesc() noexcept
+			: AlphaToCoverageEnable{ FALSE }
+			, IndependentBlendEnable{ FALSE }
+			, BlendStates{}
+		{
+		}
+		// Single-state form: call sites hand the pipeline one blend state and the
+		// back-ends reject a desc whose BlendStates is empty. Independent blending
+		// stays off, so RenderTarget[0] applies to every bound target.
+		RBlendDesc(const RBlendState& InBlendState)
+			: AlphaToCoverageEnable{ FALSE }
+			, IndependentBlendEnable{ FALSE }
+			, BlendStates{}
+		{
+			BlendStates.Add(InBlendState);
+		}
+		RBlendDesc& operator=(const RBlendState& InBlendState)
+		{
+			AlphaToCoverageEnable	= FALSE;
+			IndependentBlendEnable	= FALSE;
+			BlendStates.Empty();
+			BlendStates.Add(InBlendState);
+			return (*this);
+		}
+		BOOL8					AlphaToCoverageEnable;
+		BOOL8					IndependentBlendEnable;
+		TArray<RBlendState>		BlendStates;
+	};
 	enum RFilterType : UINT8
 	{
 		FILTER_POINT		= 1,
@@ -230,12 +259,14 @@ namespace PigeonEngine
 	};
 	struct RSamplerState
 	{
+		// ComparisonFunc defaults to NEVER: the engine filter enum has no comparison variant,
+		// so any other value would be dropped by the backend without effect.
 		RSamplerState()noexcept
 			: Filter(RFilterType::FILTER_LINEAR)
 			, AddressU(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP)
 			, AddressV(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP)
 			, AddressW(RTextureAddressModeType::TEXTURE_ADDRESS_CLAMP)
-			, MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_ALWAYS)
+			, MipLODBias(0.f), MaxAnisotropy(1u), ComparisonFunc(RComparisonFunctionType::COMPARISON_NEVER)
 			, BorderColor(Color4(0.f, 0.f, 0.f, 0.f)), MinLOD(0.f), MaxLOD(PE_FLOAT32_MAX) {}
 		RSamplerState(const RSamplerState& Other)noexcept
 			: Filter(Other.Filter), AddressU(Other.AddressU), AddressV(Other.AddressV)
@@ -246,7 +277,7 @@ namespace PigeonEngine
 			, RTextureAddressModeType InWMode, const FLOAT InMaxLOD = PE_FLOAT32_MAX
 			, const FLOAT InMinLOD = 0.f, const UINT32 InMaxAnisotropy = 1u, const FLOAT InMipLODBias = 0.f
 			, const Color4& InBorderColor = Color4(0.f, 0.f, 0.f, 0.f)
-			, RComparisonFunctionType InComparisonFunction = RComparisonFunctionType::COMPARISON_ALWAYS)noexcept
+			, RComparisonFunctionType InComparisonFunction = RComparisonFunctionType::COMPARISON_NEVER)noexcept
 			: Filter(InFilter), AddressU(InUMode), AddressV(InVMode), AddressW(InWMode)
 			, MipLODBias(InMipLODBias), MaxAnisotropy(InMaxAnisotropy), ComparisonFunc(InComparisonFunction)
 			, BorderColor(InBorderColor), MinLOD(InMinLOD), MaxLOD(InMaxLOD) {}
@@ -313,14 +344,14 @@ namespace PigeonEngine
 			: ByteWidth(Other.ByteWidth), Usage(Other.Usage), BindFlags(Other.BindFlags)
 			, CPUAccessFlags(Other.CPUAccessFlags), MiscFlags(Other.MiscFlags)
 			, StructureByteStride(Other.StructureByteStride) {}
-		constexpr RBufferDesc(const UINT32 InByteWidth, UINT8 InBindFlags, const UINT32 InStructureByteStride
+		constexpr RBufferDesc(const UINT64 InByteWidth, UINT8 InBindFlags, const UINT32 InStructureByteStride
 			, RResourceMiscFlagType InMiscFlag = RResourceMiscFlagType::RESOURCE_MISC_NONE
 			, RUsageFlagType InUsageFlag = RUsageFlagType::USAGE_DEFAULT
 			, RCPUAccessFlagType InCPUAccessFlag = RCPUAccessFlagType::CPU_ACCESS_DEFAULT)noexcept
 			: ByteWidth(InByteWidth), Usage(InUsageFlag), BindFlags(InBindFlags), CPUAccessFlags(InCPUAccessFlag)
 			, MiscFlags(InMiscFlag), StructureByteStride(InStructureByteStride) {}
 
-		UINT32					ByteWidth;
+		UINT64					ByteWidth;
 		RUsageFlagType			Usage;
 		UINT8					BindFlags;
 		RCPUAccessFlagType		CPUAccessFlags;
@@ -341,6 +372,24 @@ namespace PigeonEngine
 		UINT32			SysMemPitch;
 		UINT32			SysMemSlicePitch;
 	};
+	// -------------------------------------------------------------------------
+	// RFormatType - the engine's pixel format enumeration.
+	//
+	// The members are a mirror of DXGI_FORMAT: entries carry the same names and the
+	// same numeric values as their DXGI counterparts, so a back-end that targets
+	// DXGI can translate without guessing. Two rules keep that mirror useful:
+	//
+	//   1. A new member is added here with its DXGI value. RFormatTraits (RHI) then
+	//      owns everything the engine knows about it - which family it belongs to,
+	//      whether it has an sRGB variant, its typeless counterpart - and
+	//      RFormatTraits.h carries the name list that RFormatTraits itself and the
+	//      shared DXGI translation table are both built from.
+	//   2. A member that is not in that name list still compiles, but every format
+	//      lookup reports it as unsupported instead of failing silently.
+	//
+	// sRGB members (FORMAT_*_UNORM_SRGB) describe how data is ENCODED, not where it
+	// is stored: a resource is never created with one. See RTextureDesc.
+	// -------------------------------------------------------------------------
 	enum RFormatType : UINT32
 	{
 		FORMAT_UNKNOWN						= 0,
@@ -362,6 +411,10 @@ namespace PigeonEngine
 		FORMAT_R32G32_FLOAT					= 16,
 		FORMAT_R32G32_UINT					= 17,
 		FORMAT_R32G32_SINT					= 18,
+		FORMAT_R32G8X24_TYPELESS			= 19,
+		FORMAT_D32_FLOAT_S8X24_UINT			= 20,
+		FORMAT_R32_FLOAT_X8X24_TYPELESS		= 21,
+		FORMAT_X32_TYPELESS_G8X24_UINT		= 22,
 		FORMAT_R10G10B10A2_TYPELESS			= 23,
 		FORMAT_R10G10B10A2_UNORM			= 24,
 		FORMAT_R10G10B10A2_UINT				= 25,
@@ -379,10 +432,14 @@ namespace PigeonEngine
 		FORMAT_R16G16_SNORM					= 37,
 		FORMAT_R16G16_SINT					= 38,
 		FORMAT_R32_TYPELESS					= 39,
+		FORMAT_D32_FLOAT					= 40,
 		FORMAT_R32_FLOAT					= 41,
 		FORMAT_R32_UINT						= 42,
 		FORMAT_R32_SINT						= 43,
 		FORMAT_R24G8_TYPELESS				= 44,
+		FORMAT_D24_UNORM_S8_UINT			= 45,
+		FORMAT_R24_UNORM_X8_TYPELESS		= 46,
+		FORMAT_X24_TYPELESS_G8_UINT			= 47,
 		FORMAT_R8G8_TYPELESS				= 48,
 		FORMAT_R8G8_UNORM					= 49,
 		FORMAT_R8G8_UINT					= 50,
@@ -390,6 +447,7 @@ namespace PigeonEngine
 		FORMAT_R8G8_SINT					= 52,
 		FORMAT_R16_TYPELESS					= 53,
 		FORMAT_R16_FLOAT					= 54,
+		FORMAT_D16_UNORM					= 55,
 		FORMAT_R16_UNORM					= 56,
 		FORMAT_R16_UINT						= 57,
 		FORMAT_R16_SNORM					= 58,
@@ -464,6 +522,38 @@ namespace PigeonEngine
 		UINT32	Count;
 		UINT32	Quality;
 	};
+	// -------------------------------------------------------------------------
+	// RTextureDesc - how a texture resource and its views are created.
+	//
+	// The four formats are two different things, and confusing them is what makes an
+	// sRGB texture unusable once it reaches a compute pass or an off-screen target:
+	//
+	//   BufferFormat  describes the CONTENT. It may name an sRGB format, which is the
+	//                 caller saying "the bytes stored here are sRGB encoded". It does
+	//                 not decide how the resource is created.
+	//   SRV/RTV/UAV   are the VIEW formats. A view is where storage becomes meaning,
+	//                 so the linear-to-sRGB decode of an sRGB texture happens here.
+	//                 They default to BufferFormat, so a caller that wants no
+	//                 divergence passes four arguments and is done.
+	//
+	// RFormatTraits::ResolveTextureFormats turns this desc into the set of formats the
+	// back-end creates the resource and its views with. It applies two rules that come
+	// from the APIs, not from preference:
+	//
+	//   - A resource is never created with an sRGB format. sRGB UAVs do not exist
+	//     (D3D11 and D3D12 both refuse one), and an sRGB-typed resource cannot be
+	//     viewed linearly on D3D11, which needs a TYPELESS resource for that.
+	//   - When a view format differs from the content format, the resource is created
+	//     with the typeless format of the same family. D3D* only accepts a view whose
+	//     format differs from the resource's when the resource is typeless (D3D12 is
+	//     also wider here; D3D11 is not), and a typeless resource is what lets one
+	//     texture be sampled as sRGB in one place and as linear data in another.
+	//
+	// Depth textures keep their existing convention: BufferFormat is FORMAT_UNKNOWN and
+	// Depth carries the bit count (16 / 24 / 32) instead of a slice depth. The same
+	// resolver maps that onto the typeless resource format plus the typed DSV / SRV
+	// formats, so both back-ends derive them from one table.
+	// -------------------------------------------------------------------------
 	struct RTextureDesc
 	{
 		RTextureDesc(const UINT32 InWidth, const UINT32 InHeight, UINT8 InBindFlags
@@ -510,8 +600,8 @@ namespace PigeonEngine
 		RTextureSampleDesc		SampleDesc;
 		RUsageFlagType			UsageFlag;
 		UINT8					BindFlags;
-		RCPUAccessFlagType		CPUAccessFlags;
-		RResourceMiscFlagType	MiscFlags;
+		UINT8					CPUAccessFlags;
+		UINT8					MiscFlags;
 	};
 	struct RStructuredBufferDesc
 	{
@@ -591,49 +681,93 @@ namespace PigeonEngine
 		INPUT_LAYOUT_FORMAT_FLOAT = 0,
 		INPUT_LAYOUT_FORMAT_INT,
 		INPUT_LAYOUT_FORMAT_UINT,
+		INPUT_LAYOUT_FORMAT_UNORM,
 		INPUT_LAYOUT_FORMAT_COUNT
 	};
 
+	// AlignedByteOffset sentinel: the element starts where the previous element of its stream
+	// slot ended, which is what both back-ends pass through as their own APPEND_ALIGNED_ELEMENT.
+	// It is the default because the engine's vertex streams carry one attribute per slot.
+	// The value is the API's own APPEND constant on purpose, so the translation is a copy.
+	PE_CONSTEXPR_STATIC UINT32 INPUT_LAYOUT_APPEND_OFFSET = 0xffffffffu;
+
+	/*
+	* One vertex input element.
+	*
+	* It describes the DATA side, not the shader's wish list: the format fields (MemberStride /
+	* MemberNum / MemberFormat) say how the bytes in the vertex buffer are laid out, which is
+	* what the back-ends have to declare so the input assembler reads them right. What the shader
+	* declared is the constraint the data has to satisfy, and the two do not have to be equal:
+	* a float4 shader input is fed just as well by UNORM8x4 data. Pairing the two is what
+	* RenderCore/Pipeline/RInputLayoutCompatibility.h checks.
+	*
+	* MemberStride is the byte size of one scalar (1 / 2 / 4), MemberNum the component count
+	* (1..4; matrix attributes are not expressible). Together they pick the API format, e.g.
+	* (1, 4, UNORM) is an R8G8B8A8_UNORM element and (2, 4, FLOAT) an R16G16B16A16_FLOAT one.
+	* A combination the API has no format for is refused when the pipeline is created (8 bit
+	* FLOAT, 3 channel 8 / 16 bit, 32 bit UNORM); both back-ends report it there rather than
+	* reading the wrong bytes.
+	*/
 	struct RInputLayoutDesc
 	{
 		RInputLayoutDesc()noexcept
-			: SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE), SemanticIndex(0u)
+			: SemanticName(RShaderSemanticType::SHADER_SEMANTIC_NONE)
 			, InputSlot(0u), InputSlotClass(RInputClassificationType::INPUT_PER_VERTEX_DATA), InstanceDataStepRate(0u)
-			, MemberStride(0u), MemberNum(0u), MemberFormat(RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_COUNT) {}
+			, MemberStride(0u), MemberNum(0u), MemberFormat(RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_COUNT)
+			, AlignedByteOffset(INPUT_LAYOUT_APPEND_OFFSET) {}
 		RInputLayoutDesc(const RInputLayoutDesc& Other)noexcept
-			: SemanticName(Other.SemanticName), SemanticIndex(Other.SemanticIndex)
+			: SemanticName(Other.SemanticName)
 			, InputSlot(Other.InputSlot), InputSlotClass(Other.InputSlotClass)
 			, InstanceDataStepRate(Other.InstanceDataStepRate), MemberStride(Other.MemberStride)
-			, MemberNum(Other.MemberNum), MemberFormat(Other.MemberFormat) {}
+			, MemberNum(Other.MemberNum), MemberFormat(Other.MemberFormat)
+			, AlignedByteOffset(Other.AlignedByteOffset) {}
+		// The semantic index is encoded in the low 4 bits of RShaderSemanticType
+		// (SHADER_SEMANTIC_TEXCOORD1 == SHADER_SEMANTIC_TEXCOORD + 1), which is what both
+		// back-ends read back: D3D11 does (SemanticName & 0xfu) and D3D12 calls
+		// GetSemanticIndex(). Folding InSemanticIndex into the value here is therefore
+		// what carries the index; a SHADER_SEMANTIC_NONE stays none regardless.
 		constexpr RInputLayoutDesc(RShaderSemanticType InSemanticName
 			, const UINT32 InMemberStride, const UINT32 InMemberNum, RInputLayoutFormatType InMemberFormat
 			, const UINT32 InSemanticIndex = 0u, const UINT32 InInputSlot = 0u
 			, RInputClassificationType InInputSlotClass = RInputClassificationType::INPUT_PER_VERTEX_DATA
-			, const UINT32 InInstanceDataStepRate = 0u)noexcept
-			: SemanticName(InSemanticName), SemanticIndex(InSemanticIndex), InputSlot(InInputSlot)
+			, const UINT32 InInstanceDataStepRate = 0u
+			, const UINT32 InAlignedByteOffset = INPUT_LAYOUT_APPEND_OFFSET)noexcept
+			: SemanticName((InSemanticName == RShaderSemanticType::SHADER_SEMANTIC_NONE)
+				? RShaderSemanticType::SHADER_SEMANTIC_NONE
+				: static_cast<RShaderSemanticType>(static_cast<UINT32>(InSemanticName) + InSemanticIndex))
+			, InputSlot(InInputSlot)
 			, InputSlotClass(InInputSlotClass), InstanceDataStepRate(InInstanceDataStepRate)
-			, MemberStride(InMemberStride), MemberNum(InMemberNum), MemberFormat(InMemberFormat) {}
+			, MemberStride(InMemberStride), MemberNum(InMemberNum), MemberFormat(InMemberFormat)
+			, AlignedByteOffset(InAlignedByteOffset) {}
 		RInputLayoutDesc& operator=(const RInputLayoutDesc& Other)
 		{
 			SemanticName			= Other.SemanticName;
-			SemanticIndex			= Other.SemanticIndex;
 			InputSlot				= Other.InputSlot;
 			InputSlotClass			= Other.InputSlotClass;
 			InstanceDataStepRate	= Other.InstanceDataStepRate;
 			MemberStride			= Other.MemberStride;
 			MemberNum				= Other.MemberNum;
 			MemberFormat			= Other.MemberFormat;
+			AlignedByteOffset		= Other.AlignedByteOffset;
 			return (*this);
 		}
 
+		PE_NODISCARD BOOL32 UsesAppendOffset()const noexcept
+		{
+			return ((AlignedByteOffset == INPUT_LAYOUT_APPEND_OFFSET) ? TRUE : FALSE);
+		}
+
 		RShaderSemanticType			SemanticName;
-		UINT32						SemanticIndex;
 		UINT32						InputSlot;
 		RInputClassificationType	InputSlotClass;
 		UINT32						InstanceDataStepRate;
 		UINT32						MemberStride;
 		UINT32						MemberNum;
 		RInputLayoutFormatType		MemberFormat;
+		// Byte offset of the element inside its stream slot's vertex, or INPUT_LAYOUT_APPEND_OFFSET
+		// to follow the previous element of the same slot. An explicit offset is what lets a caller
+		// describe an interleaved or padded vertex buffer.
+		UINT32						AlignedByteOffset;
 	};
 	enum RResourceMapType : UINT8
 	{
@@ -733,6 +867,10 @@ namespace PigeonEngine
 	extern PE_INLINE UINT32 GetShaderSemanticSizeBy32Bits(const RInputLayoutDesc& input);
 	extern PE_INLINE RShaderSemanticType GetShaderSemanticBaseType(const UINT16 input);
 	extern PE_INLINE UINT32 GetShaderSemanticTypeSlot(const UINT16 input);
+	// Base semantic as its standard upper case name ("POSITION", "TEXCOORD", ...), or "NONE" for
+	// an unset semantic. For diagnostics: an input layout mismatch has to name the element it is
+	// about, and the semantic is the only part of an element a human recognizes.
+	extern PE_INLINE const CHAR* GetShaderSemanticNameString(const RShaderSemanticType input);
 	extern PE_INLINE void GetEngineDefaultMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 	extern PE_INLINE void GetEngineDefaultSkeletalMeshInputLayouts(const RShaderSemanticType*& OutLayouts, UINT32& OutLayoutNum);
 

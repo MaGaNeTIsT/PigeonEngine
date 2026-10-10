@@ -6,13 +6,13 @@
 
 namespace PigeonEngine
 {
-    namespace
+	namespace
 	{
-        UINT32 ResolveKeycodeForInputLogic(HWND InhWnd, WPARAM InKeycode, BOOL32 bTextInputEnabled)
+		UINT32 ResolveKeycodeForInputLogic(HWND InhWnd, WPARAM InKeycode, BOOL32 bTextInputEnabled)
 		{
 			if (InKeycode == VK_PROCESSKEY)
 			{
-                if (bTextInputEnabled)
+				if (bTextInputEnabled)
 				{
 					return 0u;
 				}
@@ -26,7 +26,7 @@ namespace PigeonEngine
 				return 0u;
 			}
 
-            return static_cast<UINT32>(InKeycode);
+			return static_cast<UINT32>(InKeycode);
 		}
 	}
 
@@ -49,9 +49,9 @@ namespace PigeonEngine
 	}
 	void EInput::Update()
 	{
-		
+
 	}
-	
+
 	TOptional<IMouse::RawDelta> EInput::ReadRawDelta()
 	{
 		return Controller.ReadRawDelta();
@@ -89,12 +89,17 @@ namespace PigeonEngine
 		hWnd = InhWnd;
 		WindowSizeX = InWindowSizeX;
 		WindowSizeY = InWindowSizeY;
-        bTextInputEnabled = FALSE;
+		bTextInputEnabled = FALSE;
 		ApplyTextInputState();
+	}
+	void IController::UpdateWindowSize(INT32 InWindowSizeX, INT32 InWindowSizeY)
+	{
+		WindowSizeX = InWindowSizeX;
+		WindowSizeY = InWindowSizeY;
 	}
 	void IController::ApplyTextInputState()
 	{
-        if (!bTextInputEnabled)
+		if (!bTextInputEnabled)
 		{
 			Keyboard.FlushChar();
 		}
@@ -168,14 +173,14 @@ namespace PigeonEngine
 		{
 		case WM_KILLFOCUS:
 			Keyboard.ClearState();
-           Keyboard.FlushChar();
+			Keyboard.FlushChar();
 			break;
 
 		case WM_ACTIVATE:
 			// confine/free cursor on window to foreground/background if cursor disabled
 			if (!IsCursorEnabled())
 			{
-                if (LOWORD(wParam) != WA_INACTIVE)
+				if (LOWORD(wParam) != WA_INACTIVE)
 				{
 					ConfineCursor();
 					HideCursor();
@@ -209,7 +214,7 @@ namespace PigeonEngine
 			}*/
 			if (!(lParam & 0x40000000) || Keyboard.IsAutorepeatEnabled()) // filter autorepeat
 			{
-               Keyboard.OnKeyPressed(static_cast<BYTE>(Keycode));
+				Keyboard.OnKeyPressed(static_cast<BYTE>(Keycode));
 			}
 			break;
 		}
@@ -229,7 +234,7 @@ namespace PigeonEngine
 			break;
 		}
 		case WM_CHAR:
-            if (bTextInputEnabled)
+			if (bTextInputEnabled)
 			{
 				Keyboard.OnChar(static_cast<WCHAR>(wParam));
 			}
@@ -372,7 +377,7 @@ namespace PigeonEngine
 			if (GetRawInputData(
 				reinterpret_cast<HRAWINPUT>(lParam),
 				RID_INPUT,
-               rawBuffer.GetData(),
+				rawBuffer.GetData(),
 				&size,
 				sizeof(RAWINPUTHEADER)) != size)
 			{
@@ -380,7 +385,7 @@ namespace PigeonEngine
 				break;
 			}
 			// process the raw input data
-            auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.GetData());
+			auto& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.GetData());
 			if (ri.header.dwType == RIM_TYPEMOUSE &&
 				(ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
 			{
@@ -409,7 +414,7 @@ namespace PigeonEngine
 	{
 		Keyboard.FlushKey();
 	}
-    TOptional<WCHAR> IController::ReadChar()
+	TOptional<WCHAR> IController::ReadChar()
 	{
 		return Keyboard.ReadChar();
 	}

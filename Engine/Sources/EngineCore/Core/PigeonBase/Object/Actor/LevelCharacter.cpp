@@ -28,11 +28,11 @@ PigeonEngine::PCharacter::~PCharacter()
 
 void PigeonEngine::PCharacter::InitCharacter(FCharacterVirtualSettings& InCharacterSettings)
 {
-	StandingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightStanding, CharacterRadiusStanding));
-	CrouchingShape = New<FRotatedTranslatedShape>(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), New<FCapsuleShape>(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
+	StandingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightStanding + CharacterRadiusStanding, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightStanding, CharacterRadiusStanding));
+	CrouchingShape = new FRotatedTranslatedShape(Vector3(0.f, 0.5f * CharacterHeightCrouching + CharacterRadiusCrouching, 0.f), Quaternion::Identity(), new FCapsuleShape(0.5f * CharacterHeightCrouching, CharacterRadiusCrouching));
 	InCharacterSettings.Shape = StandingShape;
-	Character = New<FCharacterVirtual>(InCharacterSettings);
-	MovementComponent = New<PMovementComponent>(this);
+	Character = new FCharacterVirtual(InCharacterSettings);
+	MovementComponent = new PMovementComponent(this);
 	this->AddComponent(MovementComponent);
 	FPhysicsManager::GetManagerSingleton()->AddCharacter(Character);
 }
@@ -41,18 +41,18 @@ void PigeonEngine::PCharacter::UninitCharacter()
 {
 	if (Character)
 	{
-        FPhysicsManager::GetManagerSingleton()->RemoveCharacter(Character);
-		Delete(Character);
+		FPhysicsManager::GetManagerSingleton()->RemoveCharacter(Character);
+		delete Character;
 		Character = nullptr;
 	}
 	if (StandingShape)
 	{
-		Delete(StandingShape);
+		delete StandingShape;
 		StandingShape = nullptr;
 	}
 	if (CrouchingShape)
 	{
-		Delete(CrouchingShape);
+		delete CrouchingShape;
 		CrouchingShape = nullptr;
 	}
 }
@@ -107,7 +107,7 @@ void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)
 void PigeonEngine::PCharacter::BeginAddedToScene(PWorld* World)
 {
 	PPawn::BeginAddedToScene(World);
-    OnWorldUpVectorChangedHandler = [this](const Vector3& InUpVector)
+	OnWorldUpVectorChangedHandler = [this](const Vector3& InUpVector)
 	{
 		HandleWorldUpVectorChanged(InUpVector);
 	};
@@ -120,13 +120,13 @@ void PigeonEngine::PCharacter::BeginAddedToScene(PWorld* World)
 	Character->Activate();
 	if (World && Character)
 	{
-        HandleWorldUpVectorChanged(World->GetUpVector());
+		HandleWorldUpVectorChanged(World->GetUpVector());
 	}
 }
 
 void PigeonEngine::PCharacter::RemovedFromScene()
 {
-    if (PWorld* World = GetWorld())
+	if (PWorld* World = GetWorld())
 	{
 		World->OnUpVectorChanged.Remove(OnWorldUpVectorChangedHandler);
 	}
@@ -155,7 +155,7 @@ void PigeonEngine::PCharacter::OnAdjustBodyVelocity(const FPhysicsBodyId& inBody
 	OnPhysicsAdjustBodyVelocity(inBodyID2, ioLinearVelocity, ioAngularVelocity);
 }
 
-bool PigeonEngine::PCharacter::OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2)
+PigeonEngine::BOOL8 PigeonEngine::PCharacter::OnContactValidate(const FPhysicsBodyId& inBodyID2, UINT32 inSubShapeID2)
 {
 	return OnPhysicsContactValidate(inBodyID2, inSubShapeID2);
 }

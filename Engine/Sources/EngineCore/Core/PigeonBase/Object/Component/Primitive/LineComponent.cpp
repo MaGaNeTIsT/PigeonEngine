@@ -1,49 +1,49 @@
-﻿#include "LineComponent.h"
+#include "LineComponent.h"
 namespace PigeonEngine
 {
-    static void RegisterClassTypes()
-    {
-        RegisterClassType<PLineComponent, PPrimitiveComponent>();
-    }
+	static void RegisterClassTypes()
+	{
+		RegisterClassType<PLineComponent, PPrimitiveComponent>();
+	}
 
-    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-    PLineComponent::PLineComponent()
-    {
-        POBJ_DEBUGNAME_SET(this, "LineComponent");
-    }
-    PLineComponent::~PLineComponent()
-    {
-        
-    }
+	PLineComponent::PLineComponent()
+	{
+		POBJ_DEBUGNAME_SET(this, "LineComponent");
+	}
+	PLineComponent::~PLineComponent()
+	{
 
-    void PLineComponent::CreateRenderState()
-    {
-        PPrimitiveComponent::CreateRenderState();
-    }
+	}
 
-    void PLineComponent::DestroyRenderState()
-    {
-        PPrimitiveComponent::DestroyRenderState();
-    }
+	void PLineComponent::CreateRenderState()
+	{
+		PPrimitiveComponent::CreateRenderState();
+	}
 
-    void PLineComponent::SendUpdateRenderState()
-    {
-        PPrimitiveComponent::SendUpdateRenderState();
-    }
+	void PLineComponent::DestroyRenderState()
+	{
+		PPrimitiveComponent::DestroyRenderState();
+	}
 
-    void PLineComponent::MarkRenderTransformAsDirty()
-    {
-        PPrimitiveComponent::MarkRenderTransformAsDirty();
-    }
+	void PLineComponent::SendUpdateRenderState()
+	{
+		PPrimitiveComponent::SendUpdateRenderState();
+	}
 
-    void PLineComponent::MarkRenderStateAsDirty()
-    {
-        PPrimitiveComponent::MarkRenderStateAsDirty();
-    }
+	void PLineComponent::MarkRenderTransformAsDirty()
+	{
+		PPrimitiveComponent::MarkRenderTransformAsDirty();
+	}
 
-    void PLineComponent::CleanMarkRenderStateDirty()
-    {
-        PPrimitiveComponent::CleanMarkRenderStateDirty();
-    }
+	void PLineComponent::MarkRenderStateAsDirty()
+	{
+		PPrimitiveComponent::MarkRenderStateAsDirty();
+	}
+
+	void PLineComponent::CleanMarkRenderStateDirty()
+	{
+		PPrimitiveComponent::CleanMarkRenderStateDirty();
+	}
 }

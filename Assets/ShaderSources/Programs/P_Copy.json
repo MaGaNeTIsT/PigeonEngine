@@ -1,0 +1,33 @@
+{
+	"Name": "Copy",
+	"Stages": [
+		{
+			"Stage": "VS",
+			"Entry": "VSMain",
+			"Template": "Templates/FullScreen_VS.tmpl.hlsl",
+			"Defines": [
+				{ "Name": "SHADER_STAGE_VERTEX", "Value": 1 }
+			],
+			"Components": [
+				{ "Index": 0, "Type": "General", "Name": "EngineSystem", "Replace": "SYSTEM_MACROS", "JsonFile": "Components/C_EngineSystem.json" },
+				{ "Index": 1, "Type": "VertexFactory", "Name": "VertexFactory", "Replace": "VF_VERTEX_FACTORY", "JsonFile": "FullScreen/C_FullScreenVertexFactory.json" },
+				{ "Index": 2, "Type": "General", "Name": "Programmable", "Replace": "PROGRAMMABLE", "JsonFile": "Surfaces/ProgrammableShaderTemplate.json" }
+			]
+		},
+		{
+			"Stage": "PS",
+			"Entry": "PSMain",
+			"Template": "Templates/Copy_PS.tmpl.hlsl",
+			"Defines": [
+				{ "Name": "SHADER_STAGE_PIXEL", "Value": 1 }
+			],
+			"Textures": [
+				{ "Name": "CopySourceTexture", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 0 }
+			],
+			"Components": [
+				{ "Index": 0, "Type": "General", "Name": "EngineSystem", "Replace": "SYSTEM_MACROS", "JsonFile": "Components/C_EngineSystem.json" },
+				{ "Index": 1, "Type": "VertexFactory", "Name": "VertexFactory", "Replace": "VF_VERTEX_FACTORY", "JsonFile": "FullScreen/C_FullScreenVertexFactory.json" }
+			]
+		}
+	]
+}

@@ -6,6 +6,10 @@ set EngineBuildFolder=%~dp0Build
 
 set DecompressLauncher=%~dp0ExtraTools\7z\x64\7za.exe
 
+:: Profiler instrumentation toggle — defaults ON. Flip to OFF for clean
+:: perf-baseline builds. Shipping config always forces it off regardless.
+set EnableProfiler=ON
+
 set AssimpLibFolder=%~dp0Engine\ThirdParty\assimp\lib
 set AssimpLibDebugZip=%~dp0Engine\ThirdParty\assimp\lib\Debug.zip
 set AssimpLibDebugFolder=%~dp0Engine\ThirdParty\assimp\lib\Debug
@@ -39,7 +43,7 @@ if exist "%EngineBuildFolder%" (
 )
 
 echo Build Pigeon Engine...Start
-cmake -B "%EngineBuildFolder%" -DENABLED_WARNING_AS_ERROR=ON -DPLATFORM_WINDOWS=ON -DENABLED_HLSL_DEBUG=ON
+cmake -B "%EngineBuildFolder%" -DENABLED_WARNING_AS_ERROR=ON -DPLATFORM_WINDOWS=ON -DENABLED_HLSL_DEBUG=ON -DPIGEON_ENABLE_PROFILER=%EnableProfiler%
 echo Build Pigeon Engine...End
 
 pause

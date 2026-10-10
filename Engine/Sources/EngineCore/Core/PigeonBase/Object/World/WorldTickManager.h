@@ -9,7 +9,7 @@ namespace PigeonEngine
 	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldPhysicsTick, FLOAT)
 	MAKE_DELEGATE_MULTI_ONE_PARAM(FOnWorldPostPhysicsTick, FLOAT)
 
-    class EWorldTickManager final : public EManagerBase
+	class EWorldTickManager final : public EManagerBase
 	{
 	public:
 		void Initialize() override;
@@ -35,7 +35,7 @@ namespace PigeonEngine
 		FOnWorldPhysicsTick OnPhysicsTick;
 		FOnWorldPostPhysicsTick OnPostPhysicsTick;
 
- private:
+private:
 		CLASS_MANAGER_SINGLETON_BODY(EWorldTickManager)
 	};
 }

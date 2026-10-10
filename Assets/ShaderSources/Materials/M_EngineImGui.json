@@ -1,0 +1,19 @@
+{
+	"Name": "M_EngineImGui",
+	"Template": "Materials/M_EngineImGui.hlsl",
+	"Textures": [
+		{
+			"Name": "FontTexture",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerLinearClamp",
+			"Slot": 0
+		}
+	],
+	"PEMaterial": {
+		"Domain": "Unlit",
+		"SurfaceMode": "Translucent",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

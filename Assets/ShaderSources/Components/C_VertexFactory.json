@@ -1,0 +1,42 @@
+{
+	"Name": "VertexFactory",
+	"Template": "Components/C_VertexFactory.hlsl",
+	"Inputs": [
+		{ "Name": "Position", "Semantic": "POSITION", "SemanticIdx": 0, "Format": "float3", "Slot": 0, "Define": "VF_TYPE", "DefineOp": "==", "DefineRef": 0 },
+		{ "Name": "Position", "Semantic": "POSITION", "SemanticIdx": 0, "Format": "uint", "Slot": 0, "Define": "VF_TYPE", "DefineOp": "==", "DefineRef": 3 },
+		{ "Name": "Normal", "Semantic": "NORMAL", "SemanticIdx": 0, "Format": "float3", "Slot": 1, "Define": "VF_HAS_NORMAL", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "Tangent", "Semantic": "TANGENT", "SemanticIdx": 0, "Format": "float4", "Slot": 2, "Define": "VF_HAS_TANGENT", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "UV0", "Semantic": "TEXCOORD", "SemanticIdx": 0, "Format": "float2", "Slot": 3, "Define": "VF_HAS_UV0", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "UV1", "Semantic": "TEXCOORD", "SemanticIdx": 1, "Format": "float2", "Slot": 4, "Define": "VF_HAS_UV1", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "Color", "Semantic": "COLOR", "SemanticIdx": 0, "Format": "float4", "Slot": 5, "Define": "VF_HAS_COLOR", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "SkinIndex", "Semantic": "BLENDINDICES", "SemanticIdx": 0, "Format": "uint4", "Slot": 6, "Define": "VF_HAS_SKIN_INDEX", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "SkinWeight", "Semantic": "BLENDWEIGHT", "SemanticIdx": 0, "Format": "float4", "Slot": 7, "Define": "VF_HAS_SKIN_WEIGHT", "DefineOp": "==", "DefineRef": 1 }
+	],
+	"ConstantBuffers": [
+		{
+			"Name": "BezierGrassRenderParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "NumAllocatedLODMaxNumInstances", "Format": "uint4" },
+				{ "Name": "CurrentLODIndex", "Format": "uint" },
+				{ "Name": "LayerTypeElemsBaseCustomTotalNumTypes", "Format": "uint4" },
+				{ "Name": "TileAnchorSize", "Format": "float4" },
+				{ "Name": "TileXYNumTiles", "Format": "uint4" },
+				{ "Name": "SubTileSizeBorderSize", "Format": "float4" },
+				{ "Name": "SubTileXYNumSubTiles", "Format": "uint4" },
+				{ "Name": "BentBezierT", "Format": "float" }
+			]
+		}
+	],
+	"Resources": [
+		{ "Name": "PackedInstanceDatas", "Type": "StructuredBuffer", "ElementType": "uint", "Slot": 0 },
+		{ "Name": "DispatchDatas", "Type": "StructuredBuffer", "ElementType": "uint", "Slot": 1 },
+		{ "Name": "LayerTypeDatas", "Type": "StructuredBuffer", "ElementType": "float", "Slot": 2 },
+		{ "Name": "BoneMatrices", "Type": "StructuredBuffer", "ElementType": "float4x4", "Slot": 3, "Define": "VF_HAS_SKIN_WEIGHT", "DefineOp": "==", "DefineRef": 1 },
+		{ "Name": "BoneInverseTransposeMatrices", "Type": "StructuredBuffer", "ElementType": "float4x4", "Slot": 4, "Define": "VF_HAS_SKIN_WEIGHT", "DefineOp": "==", "DefineRef": 1 }
+	],
+	"Replaces": [
+		{ "Name": "VF_VARYING_STRUCT", "Element": "#include \"Public/VertexFactory/VertexFactoryTypes.hlsl\"\nstruct VFVarying\n{\n#if VF_TYPE == VF_TYPE_ENGINE_MESH\n#include \"Public/VertexFactory/EngineMeshVarying.hlsl\"\n#endif\n#if VF_TYPE == VF_TYPE_PROCEDURAL_GRASS\n#include \"Public/VertexFactory/ProceduralGrassVarying.hlsl\"\n#endif\n#if MATERIAL_HAS_CUSTOM_VARYING\n{MATERIAL_VARYING_STRUCT}\n#endif\n};\n" },
+		{ "Name": "VF_VS_BODY", "Element": "ExecuteMaterialVertex(InAttributes, Context, OutVarying);" }
+	]
+}

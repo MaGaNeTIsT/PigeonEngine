@@ -7,7 +7,7 @@ namespace PigeonEngine
 	{
 		return KeyStates[keycode];;
 	}
-    TOptional<IKeyboard::Event> IKeyboard::ReadKey()
+	TOptional<IKeyboard::Event> IKeyboard::ReadKey()
 	{
 		if (KeyBuffer.size() > 0u)
 		{
@@ -29,7 +29,7 @@ namespace PigeonEngine
 	{
 		if (CharBuffer.size() > 0u)
 		{
-         WCHAR charcode = CharBuffer.front();
+		WCHAR charcode = CharBuffer.front();
 			CharBuffer.pop();
 			return charcode;
 		}
@@ -41,7 +41,7 @@ namespace PigeonEngine
 	}
 	void IKeyboard::FlushChar()
 	{
-       CharBuffer = TQueue<WCHAR>();
+		CharBuffer = TQueue<WCHAR>();
 	}
 	void IKeyboard::Flush()
 	{
@@ -74,7 +74,7 @@ namespace PigeonEngine
 		TrimBuffer(KeyBuffer);
 		EInput::KeyEvent.Broadcast(IKeyboard::Event::EType::Release, keycode);
 	}
-    void IKeyboard::OnChar(WCHAR character)
+	void IKeyboard::OnChar(WCHAR character)
 	{
 		CharBuffer.push(character);
 		TrimBuffer(CharBuffer);
@@ -84,7 +84,7 @@ namespace PigeonEngine
 		KeyStates.reset();
 	}
 	template<typename T>
-    inline void IKeyboard::TrimBuffer(TQueue<T>& buffer)
+	inline void IKeyboard::TrimBuffer(TQueue<T>& buffer)
 	{
 		while (buffer.size() > BufferSize)
 		{

@@ -7,6 +7,16 @@
 
 namespace PigeonEngine
 {
+	struct RResolutionItem
+	{
+		UINT32 Width;
+		UINT32 Height;
+		BOOL32 operator==(const RResolutionItem& InOther) const
+		{
+			return (Width == InOther.Width && Height == InOther.Height);
+		}
+	};
+
 	class EMainManager : public EManagerBase
 	{
 	public:
@@ -14,6 +24,25 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 		void			SetInitializer(HWND hWnd);
 		void			UpdateManager();
+	public:
+		/*
+		* Asset manager registration. A registered manager is initialized during
+		* EMainManager::Initialize and shut down in reverse registration order during
+		* ShutDown, which is what gives every asset an owner that is torn down before the
+		* device goes away.
+		*
+		* Registration is explicit rather than done by the manager's own constructor: it keeps
+		* the construction of every manager inside the engine lifetime, so a manager can never
+		* be built - and therefore never create shared state - before Main starts.
+		*/
+		void			RegisterAssetManager(EManagerBase* InManager);
+		void			UnregisterAssetManager(EManagerBase* InManager);
+		/*
+		* TRUE between Initialize and the end of ShutDown. Render resources assert on it: a
+		* resource may not outlive EMainManager. This is an assertion only, it never changes
+		* behaviour - releasing a resource is the same call inside and outside the window.
+		*/
+		PE_NODISCARD BOOL32	IsEngineLifetimeActive() const { return m_bEngineLifetimeActive; }
 	public:
 		void			Init();
 		void			Uninit();
@@ -26,11 +55,31 @@ namespace PigeonEngine
 		void            EditorInit();
 		void            EditorUpdate();
 #endif
-		
+
 	public:
 		HWND						GetWindowHandle();
+		const Vector2Int&			GetWindowSize() const;
 		const EBaseTimer&			GetWindowTimer();
 		const EGameTimer*			GetGameTimer();
+		// Active RHI device (D3D11 or D3D12 depending on ENGINE_GRAPHICS_API).
+		class IRRHIDevice*			GetRenderDevice() const { return RenderDevice; }
+		// The frame renderer. Proxies reach the pipeline state cache and the per frame
+		// parameter block through it, so neither has to be a singleton of its own.
+		class RSceneRenderer*		GetSceneRenderer() const { return SceneRenderer; }
+
+		// Phase 2 transition: the per-frame command list set by SceneRenderer
+		// at the start of Render() and cleared at the end. Proxies pick it up
+		// during their Bind / Draw without changing all signatures.
+		class IRCommandList*		GetActiveCommandList() const { return ActiveCommandList; }
+		void						SetActiveCommandList(class IRCommandList* InCmdList) { ActiveCommandList = InCmdList; }
+
+	public:
+		void							GatherSupportedResolutions();
+		void							ApplyResolution(UINT32 InWidth, UINT32 InHeight, BOOL32 InIsFullscreen);
+		void							OnWindowResized(UINT32 InNewWidth, UINT32 InNewHeight);
+		const TArray<RResolutionItem>&	GetSupportedResolutions() const;
+		BOOL32							GetIsFullscreen() const;
+
 	private:
 		HWND						m_HWND;
 		Vector2Int					m_WindowSize;
@@ -40,18 +89,28 @@ namespace PigeonEngine
 		BOOL32						m_Windowed;
 		EGameTimer*					m_GameTimer			= nullptr;
 	private:
+		TArray<RResolutionItem>		m_SupportedResolutions;
+		BOOL32						m_bPendingResize      = FALSE;
+		UINT32						m_PendingResizeWidth  = 0u;
+		UINT32						m_PendingResizeHeight = 0u;
+		BOOL32						m_bIsFullscreen       = FALSE;
+	private:
 		class FPhysicsManager*				m_PhysicsManager				= nullptr;
 
 		// Render region START
-		class RDeviceD3D11*					m_RenderDeviceD3D11				= nullptr;
+		class IRRHIDevice*					RenderDevice					= nullptr;
+		class IRCommandList*				ActiveCommandList				= nullptr;
 		class RScene*						RenderScene						= nullptr;
 		class RSceneRenderer*				SceneRenderer					= nullptr;
+		class RRenderThread*				RenderThread					= nullptr;
 		// Render region END
 
 #if _EDITOR_ONLY
 		class CImGUIManager*				m_ImGUIManager					= nullptr;
 		class CAssimpManager*				m_AssimpManager					= nullptr;
 		class EEditorManager*               m_EditorManager					= nullptr;
+		class EEditorGlobalPanel*			m_EditorGlobalPanel				= nullptr;
+		class EEditorProfilerPanel*			m_EditorProfilerPanel			= nullptr;
 #endif
 		class EClassTypeRegisterManager*	m_ClassTypeRegisterManager		= nullptr;
 		class EClassFactoryRegisterManager*	m_ClassFactoryRegisterManager	= nullptr;
@@ -63,7 +122,18 @@ namespace PigeonEngine
 		TFunction<void(FLOAT)>				m_PostPhysicsFixedTickHandler;
 
 		class EMessageManager*				m_MessageManager = nullptr;
-		
+
+		/*
+		* Asset managers, in registration order. Shut down in reverse: a manager registered
+		* later may hold references into one registered earlier.
+		*/
+		TArray<class EManagerBase*>			m_AssetManagers;
+		BOOL32								m_bEngineLifetimeActive = FALSE;
+
+		// Releases every registered manager. Split out so Initialize's failure path and
+		// ShutDown run the same teardown.
+		void			ShutDownAssetManagers();
+
 	public:
 		static LRESULT HandleMsg(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 

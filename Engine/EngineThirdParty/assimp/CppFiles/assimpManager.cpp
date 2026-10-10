@@ -1612,7 +1612,7 @@ namespace PigeonEngine
 				}
 			}
 		}
-		
+
 		if ((ResultBound.AABBMax - ResultBound.AABBMin).Length() <= EEngineSettings::ENGINE_BOUND_MINIMUM)
 		{
 			Vector3 TempOrigin = (ResultBound.AABBMax + ResultBound.AABBMin) * 0.5f;

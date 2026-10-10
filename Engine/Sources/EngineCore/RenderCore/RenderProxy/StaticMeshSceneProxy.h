@@ -8,57 +8,28 @@ namespace PigeonEngine
 {
 
 	class EStaticMeshAsset;
-	class EVertexShaderAsset;
-	class EPixelShaderAsset;
-	class EMaterialAsset;
 
-	class RStaticMeshMaterialParameter : public RMeshMaterialParameter
-	{
-	public:
-		virtual void	SetupParameters()override;
-
-		CLASS_MATERIAL_PARAMETER(RStaticMeshMaterialParameter)
-	};
-
-	struct RMaterialTextureSRV
-	{
-		UINT32												Slot;
-		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	SRV;
-	};
-
+	/*
+	* The static mesh primitive. Everything it does not state here comes from the mesh base
+	* and the primitive base: the fallback material, the vertex and index streams resolved
+	* from the shader's input layout, the submesh walk, the engine blocks and the draw
+	* sequence. What is left is the one asset handle it resolved from the report.
+	*/
 	class RStaticMeshSceneProxy : public RMeshSceneProxy
 	{
 	public:
-		RStaticMeshSceneProxy(PStaticMeshComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EStaticMeshAsset* InMeshAsset, const EMaterialAsset* InMaterialAsset);
+		RStaticMeshSceneProxy(const PStaticMeshComponent* InComponent);
 	public:
 		virtual BOOL32	IsRenderValid()const override;
-		void			UpdateMeshAsset(const EStaticMeshAsset* InMeshAsset);
-		void			UpdateMaterialAsset(const EMaterialAsset* InMaterialAsset);
-		void			UpdateMaterialCBData(const TArray<TArray<BYTE>>& InCBDatas);
-		void			UpdateMaterialTextures(const TArray<RMaterialTextureSRV>& InSRVs);
-		void			UpdateRenderResource();
-		void			BindRenderResource()const;
-		void			Draw()const;
+	public:
+		// Installs the reported assets and caches the typed handle the mesh hooks answer with.
+		// The base half stores the report itself and rebuilds the pass slots.
+		virtual void	ApplyAssets(const FPrimitiveRenderAssetReport& InAssets) override;
 	protected:
-		void			SetupShaders();
-		void			SetupMaterialResources();
-		void			BindVertexShader()const;
-		void			BindPixelShader()const;
-		void			BindMeshResource()const;
-		void			BindMaterialParameter(const UINT32 InSlot)const;
-		void			BindMaterialCBs()const;
-		void			BindMaterialTextures()const;
+		virtual const EMesh*				GetMeshColdData()const override;
+		virtual const EMeshRenderResource*	GetMeshRenderResource()const override;
 	protected:
-		const EVertexShaderAsset*		VertexShader;
-		const EPixelShaderAsset*		PixelShader;
-		const EStaticMeshAsset*			MeshAsset;
-		const EMaterialAsset*			MaterialAsset;
-		RStaticMeshMaterialParameter	MaterialParameter;
-		TArray<RBufferResource>			MaterialCBBuffers;
-		TArray<RMaterialTextureSRV>		MaterialSRVs;
-	protected:
-		const PStaticMeshComponent*		Component;
+		const EStaticMeshAsset*	MeshAsset;
 
 		RENDER_PROXY_CLASS_BODY(RStaticMeshSceneProxy)
 

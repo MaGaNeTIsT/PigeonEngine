@@ -10,17 +10,47 @@ namespace PigeonEngine
 {
 
 	class EStaticMeshAsset;
-	class EVertexShaderAsset;
-	class EPixelShaderAsset;
-
-	class RBezierGrassMaterialParameter : public RPrimitiveMaterialParameter
+	class EShaderProgram;
+#if 0
+	struct EBezierGrassGlobalProxyData
+	{
+		float4          GlobalWindDirectionStrength;
+		float4          WindStrengthRange;
+		float4          CurrentTimeParams;
+		float4          PreviousTimeParams;
+		uint4           NumAllocatedLODMaxNumInstances;
+		float4          TileAnchorSize;
+		uint4           TileXYNumTiles;
+		float4          SubTileSizeBorderSize;
+		uint4           SubTileXYNumSubTiles;
+		uint4           MaskXYNumInstances;
+		float4          DensityScale;
+		uint4           HeightMapWorldScaleOffsetBorderPixelSize;
+		uint4           LayerBorderPixelSizeDensityBorderPixelSize;
+		uint4           LayerTypeElemsBaseCustomTotalNumTypes;
+		uint4           LODBodyPart1;
+		uint4           LODBodyPart2;
+		uint4           IndexOffset1;
+		uint4           IndexOffset2;
+		uint4           VertexOffset1;
+		uint4           VertexOffset2;
+		float4          LODDistancesSq1;
+		float4          LODDistancesSq2;
+	};
+#endif
+	class RBezierGrassCBufferParameter : public EConstantBufferParameter
 	{
 	public:
-		virtual void	SetupParameters()override;
+		// The three world matrices a primitive block starts with. Declared here rather than
+		// inherited: the shared primitive block base is gone, and this block is on its own until
+		// the grass is rebuilt on the new shader system.
+		void			AddPrimitiveMaterialParameter() noexcept;
 
-		void			AddBezierGrassMaterialParameter();
+		virtual void	DoSetupVariable() noexcept override;
 
-		CLASS_MATERIAL_PARAMETER(RBezierGrassMaterialParameter)
+		void			AddBezierGrassMaterialParameter() noexcept;
+
+		CLASS_SHADER_PARAMETER(RBezierGrassCBufferParameter)
 	};
 
 	class RBezierGrassSceneProxy : public RPrimitiveSceneProxy
@@ -49,21 +79,24 @@ namespace PigeonEngine
 		void			BindVertexShader()const;
 		void			BindPixelShader()const;
 		void			BindMeshAndInstanceResource()const;
-		void			BindMaterialParameter(const UINT32 InSlot)const;
+		void			BindPrimitiveParameter()const;
 	protected:
-		const EVertexShaderAsset*			VertexShader;
-		const EPixelShaderAsset*			PixelShader;
-		const EComputeShaderAsset*			ComputeShader;
-#if _EDITOR_ONLY
-		const EComputeShaderAsset*			DebugComputeShader;
-		const EComputeShaderAsset*			DebugScreenComputeShader;
-#endif
+		// Resolved from the grass material instance, or from the engine fallback while
+		// the component carries none. One program drives the vertex and the pixel stage.
+		const EShaderProgram*				GraphicsProgram;
+		// The construct pass is a different shader asset than the blade pass.
+		const EShaderProgram*				ComputeProgram;
+		BOOL32								bSplitBentPart;
+		TArray<UINT32>						BodyParts;
+		TArray<FLOAT>						BentBezierTs;
+#if 0
 		UINT32								VertexOffset[BEZIER_GRASS_LOD_NUM];
 		UINT32								IndexOffset[BEZIER_GRASS_LOD_NUM];
 		UINT32								IndexCount[BEZIER_GRASS_LOD_NUM];
+#endif
 		RVertexBufferResource				VertexBuffer;
 		RIndexBufferResource				IndexBuffer;
-		RBezierGrassMaterialParameter		MaterialParameter;
+		RBezierGrassCBufferParameter		CBufferParameter;
 		EBezierGrassProperty				Property;
 		EBezierGrassLayerTypeData			LayerTypeData;
 		Vector2								TileAnchor;

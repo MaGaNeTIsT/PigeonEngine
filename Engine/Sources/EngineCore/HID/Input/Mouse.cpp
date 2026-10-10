@@ -13,7 +13,7 @@ namespace PigeonEngine
 	{
 		if (RawDeltaBuffer.empty())
 		{
-            return {};
+			return {};
 		}
 		const RawDelta d = RawDeltaBuffer.front();
 		RawDeltaBuffer.pop();
@@ -51,7 +51,7 @@ namespace PigeonEngine
 	}
 	void IMouse::Flush()
 	{
-        Buffer = TQueue<Event>();
+		Buffer = TQueue<Event>();
 	}
 	void IMouse::EnableRaw()
 	{

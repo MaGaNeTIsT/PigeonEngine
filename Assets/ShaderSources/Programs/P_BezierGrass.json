@@ -1,0 +1,136 @@
+{
+	"Name": "BezierGrass",
+	"Stages": [
+		{
+			"Stage": "VS",
+			"Entry": "VSMain",
+			"Template": "Templates/BasePass_VS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_VERTEX",
+					"Value": 1
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "General",
+					"Name": "Domain",
+					"Replace": "DOMAIN_FUNCTIONS",
+					"JsonFile": "$Domain"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "DrawParams",
+					"Replace": "DRAW_PARAMS",
+					"JsonFile": "Components/C_DrawParams.json"
+				},
+				{
+					"Index": 3,
+					"Type": "General",
+					"Name": "MaterialVertex",
+					"Replace": "MATERIAL_FUNCTIONS",
+					"JsonFile": "$MaterialVertex"
+				},
+				{
+					"Index": 4,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "Components/C_VertexFactory.json"
+				},
+				{
+					"Index": 5,
+					"Type": "General",
+					"Name": "Programmable",
+					"Replace": "PROGRAMMABLE",
+					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				}
+			]
+		},
+		{
+			"Stage": "PS",
+			"Entry": "PSMain",
+			"Template": "Templates/BasePass_PS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_PIXEL",
+					"Value": 1
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "General",
+					"Name": "MaterialSamplers",
+					"Replace": "MATERIAL_SAMPLERS",
+					"JsonFile": "$GeneratedComponents/C_MaterialSamplers.json"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "Domain",
+					"Replace": "DOMAIN_FUNCTIONS",
+					"JsonFile": "$Domain"
+				},
+				{
+					"Index": 3,
+					"Type": "General",
+					"Name": "DrawParams",
+					"Replace": "DRAW_PARAMS",
+					"JsonFile": "Components/C_DrawParams.json"
+				},
+				{
+					"Index": 4,
+					"Type": "General",
+					"Name": "Material",
+					"Replace": "MATERIAL_FUNCTIONS",
+					"JsonFile": "$Material"
+				},
+				{
+					"Index": 5,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "Components/C_VertexFactory.json"
+				},
+				{
+					"Index": 6,
+					"Type": "General",
+					"Name": "Lighting",
+					"Replace": "LIGHTING",
+					"JsonFile": "Components/C_Lighting.json"
+				},
+				{
+					"Index": 7,
+					"Type": "General",
+					"Name": "IndirectLighting",
+					"Replace": "INDIRECT_LIGHTING",
+					"JsonFile": "Components/C_IndirectLighting.json"
+				},
+				{
+					"Index": 8,
+					"Type": "General",
+					"Name": "Programmable",
+					"Replace": "PROGRAMMABLE",
+					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				}
+			]
+		}
+	]
+}

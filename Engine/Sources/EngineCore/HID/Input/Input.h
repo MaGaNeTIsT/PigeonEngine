@@ -16,6 +16,7 @@ namespace PigeonEngine
 	{
 	public:
 		void Initialize(HWND InhWnd, INT32 WindowSizeX, INT32 WindowSizeY);
+		void UpdateWindowSize(INT32 InWindowSizeX, INT32 InWindowSizeY);
 
 	private:
 		INT32 WindowSizeX = static_cast<INT32>(EEngineSettings::ENGINE_SCREEN_WIDTH);
@@ -23,7 +24,7 @@ namespace PigeonEngine
 		HWND hWnd = NULL;
 
 		/*Mouse part start*/
- public:
+public:
 		TPair<INT32, INT32> GetMousePosition() const;
 
 		void EnableCursor();
@@ -39,25 +40,25 @@ namespace PigeonEngine
 		void DisableMouseRaw();
 		BOOL32 IsMouseRawEnabled() const;
 
-        BOOL32 IsLeftMouseButtonDown()const;
+		BOOL32 IsLeftMouseButtonDown()const;
 		BOOL32 IsRightMouseButtonDown()const;
 		TOptional<IMouse::RawDelta> ReadRawDelta();
 
 	private:
 		IMouse Mouse;
 		BOOL32 bCursorEnabled = TRUE;
-        TArray<BYTE> rawBuffer;
+		TArray<BYTE> rawBuffer;
 
 		/*Mouse part end*/
 
 		/*Keyboard Part Start*/
 	public:
 		// key event stuff
-        BOOL32 IsKeyPressed(BYTE keycode) const;
+		BOOL32 IsKeyPressed(BYTE keycode) const;
 		TOptional<IKeyboard::Event> ReadKey();
 		BOOL32 IsKeyEmpty() const;
 		void FlushKey();
-        // text event stuff
+		// text event stuff
 		TOptional<WCHAR> ReadChar();
 		BOOL32 IsCharEmpty() const;
 		void FlushChar();
@@ -66,7 +67,7 @@ namespace PigeonEngine
 		void EnableAutorepeat();
 		void DisableAutorepeat();
 		BOOL32 IsAutorepeatEnabled() const;
-     void EnableTextInput();
+	void EnableTextInput();
 		void DisableTextInput();
 		BOOL32 IsTextInputEnabled() const;
 	private:
@@ -93,11 +94,11 @@ namespace PigeonEngine
 		//private:
 		//	static BYTE		m_OldKeyState[256];
 		//	static BYTE		m_KeyState[256];
- public:
+public:
 		static TOptional<IMouse::RawDelta>	ReadRawDelta();
 		static TOptional<WCHAR>				ReadChar();
 		static BOOL32						IsCharEmpty();
-        static void							FlushChar();
+		static void							FlushChar();
 		static void							EnableTextInput();
 		static void							DisableTextInput();
 		static BOOL32						IsTextInputEnabled();

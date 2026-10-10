@@ -46,11 +46,22 @@ namespace PigeonEngine
 #define POBJ_DEBUGNAME_SET(__Ptr, __Name)	{}
 #endif
 
+	/*
+	* Manager lifecycle. The four hooks are two different frequencies and must not be mixed:
+	*   Initialize / ShutDown   engine lifetime, called once each by EMainManager.
+	*   Init / Uninit           repeatable: an Uninit + Init pair re-initializes a manager
+	*                           without restarting the engine.
+	* A manager with nothing to do per run leaves Init / Uninit empty. The pair exists so that
+	* per run work never ends up in Initialize, which is what would break the "once" contract
+	* the engine relies on.
+	*/
 	class EManagerBase : public EObjectBase
 	{
 	public:
 		virtual void Initialize() {}
 		virtual void ShutDown() {}
+		virtual void Init() {}
+		virtual void Uninit() {}
 
 		CLASS_VIRTUAL_NOCOPY_BODY(EManagerBase)
 

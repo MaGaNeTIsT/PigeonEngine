@@ -1,0 +1,251 @@
+{
+	"Name": "BezierGrassConstruct",
+	"Template": "Compute/BezierGrass/BezierGrassConstruct.hlsl",
+	"Defines": [
+		{
+			"Name": "BEZIER_GRASS_INDIRECT_ARGS_NUM_WORDS",
+			"Value": 5
+		},
+		{
+			"Name": "BEZIER_GRASS_COMBINE_CONSTRUCT_ENABLE",
+			"Value": 0
+		},
+		{
+			"Name": "BEZIER_GRASS_BLADE_CURVE_POINTS_MAX_NUM",
+			"Value": 16
+		},
+		{
+			"Name": "BEZIER_GRASS_BLADE_LODS_MAX_NUM",
+			"Value": 8
+		},
+		{
+			"Name": "BEZIER_GRASS_LAYER_TYPE_BASE_NUM_MEMBERS",
+			"Value": 19
+		},
+		{
+			"Name": "BEZIER_GRASS_LAYER_TYPE_CUSTOM_TEXTURE_NUM_ARRAYS",
+			"Value": 0
+		},
+		{
+			"Name": "BEZIER_GRASS_PACKED_INSTANCE_BASE_NUM_MEMBERS",
+			"Value": 6
+		},
+		{
+			"Name": "BEZIER_GRASS_PACKED_INSTANCE_TIME_RELEVANCE_NUM_MEMBERS",
+			"Value": 2
+		},
+		{
+			"Name": "BEZIER_GRASS_PACKED_INSTANCE_NUM_MEMBERS",
+			"Value": 10
+		}
+	],
+	"ConstantBuffers": [
+		{
+			"Name": "BezierGrassLODParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "GlobalWindDirectionStrength",
+					"Format": "float4"
+				},
+				{
+					"Name": "WindStrengthRange",
+					"Format": "float4"
+				},
+				{
+					"Name": "CurrentTimeParams",
+					"Format": "float4"
+				},
+				{
+					"Name": "PreviousTimeParams",
+					"Format": "float4"
+				},
+				{
+					"Name": "NumAllocatedLODMaxNumInstances",
+					"Format": "uint4"
+				},
+				{
+					"Name": "TileAnchorSize",
+					"Format": "float4"
+				},
+				{
+					"Name": "TileXYNumTiles",
+					"Format": "uint4"
+				},
+				{
+					"Name": "SubTileSizeBorderSize",
+					"Format": "float4"
+				},
+				{
+					"Name": "SubTileXYNumSubTiles",
+					"Format": "uint4"
+				},
+				{
+					"Name": "MaskXYNumInstances",
+					"Format": "uint4"
+				},
+				{
+					"Name": "DensityScale",
+					"Format": "float4"
+				},
+				{
+					"Name": "HeightMapWorldScaleOffsetBorderPixelSize",
+					"Format": "uint4"
+				},
+				{
+					"Name": "LayerBorderPixelSizeDensityBorderPixelSize",
+					"Format": "uint4"
+				},
+				{
+					"Name": "LayerTypeElemsBaseCustomTotalNumTypes",
+					"Format": "uint4"
+				},
+				{
+					"Name": "LODBodyPart1",
+					"Format": "uint4"
+				},
+				{
+					"Name": "LODBodyPart2",
+					"Format": "uint4"
+				},
+				{
+					"Name": "IndexOffset1",
+					"Format": "uint4"
+				},
+				{
+					"Name": "IndexOffset2",
+					"Format": "uint4"
+				},
+				{
+					"Name": "VertexOffset1",
+					"Format": "uint4"
+				},
+				{
+					"Name": "VertexOffset2",
+					"Format": "uint4"
+				},
+				{
+					"Name": "LODDistancesSq1",
+					"Format": "float4"
+				},
+				{
+					"Name": "LODDistancesSq2",
+					"Format": "float4"
+				},
+				{
+					"Name": "PreViewTranslation",
+					"Format": "float3"
+				},
+				{
+					"Name": "ViewFrustumPlane0",
+					"Format": "float4"
+				},
+				{
+					"Name": "ViewFrustumPlane1",
+					"Format": "float4"
+				},
+				{
+					"Name": "ViewFrustumPlane2",
+					"Format": "float4"
+				},
+				{
+					"Name": "ViewFrustumPlane3",
+					"Format": "float4"
+				},
+				{
+					"Name": "ViewFrustumPlane4",
+					"Format": "float4"
+				}
+			]
+		},
+		{
+			"Name": "BezierGrassConstructParams",
+			"Slot": 1,
+			"Fields": [
+				{
+					"Name": "RandomSeedParams",
+					"Format": "uint4",
+					"Default": [
+						41256161,
+						766136,
+						8822111,
+						114456612
+					]
+				},
+				{
+					"Name": "RandomSeed",
+					"Format": "uint4",
+					"Default": [
+						61264783,
+						152516383,
+						8361546,
+						26834521
+					]
+				}
+			]
+		}
+	],
+	"Textures": [
+		{
+			"Name": "LandscapeHeightTexture",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerLinearClamp",
+			"Slot": 0
+		},
+		{
+			"Name": "BezierGrassLayerIndexTexture",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerLinearClamp",
+			"Slot": 1
+		},
+		{
+			"Name": "BezierGrassDensityTexture",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerLinearClamp",
+			"Slot": 2
+		}
+	],
+	"Resources": [
+		{
+			"Name": "TileShuffleBuffer",
+			"Type": "StructuredBuffer",
+			"ElementType": "uint",
+			"Slot": 0
+		},
+		{
+			"Name": "LayerTypeDatas",
+			"Type": "StructuredBuffer",
+			"ElementType": "float",
+			"Slot": 1
+		}
+	],
+	"RWResources": [
+		{
+			"Name": "PackedInstanceDatas",
+			"Type": "StructuredBuffer",
+			"ElementType": "uint",
+			"Slot": 0
+		},
+		{
+			"Name": "DispatchDatas",
+			"Type": "StructuredBuffer",
+			"ElementType": "uint",
+			"Slot": 1
+		},
+		{
+			"Name": "DrawIndirectDatas",
+			"Type": "Buffer",
+			"ElementType": "uint",
+			"Slot": 2
+		}
+	],
+	"Replaces": [
+		{
+			"Name": "COMPUTE_BODY",
+			"Element": "#include \"Compute/BezierGrass/BezierGrassConstruct.hlsl\""
+		}
+	]
+}

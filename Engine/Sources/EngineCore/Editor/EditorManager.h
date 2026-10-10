@@ -30,6 +30,8 @@ namespace PigeonEngine
 		class EAssetManager*		m_AssetManager		= nullptr;
 		class EEditorLogManager*	m_LogsManager		= nullptr;
 		class EImportManager*		m_ImportManager		= nullptr;
+		class EEditorGlobalPanel*	m_EditorGlobalPanel	= nullptr;
+		class EEditorProfilerPanel*	m_EditorProfilerPanel = nullptr;
 
 		// Currently selected component (gizmo target)
 		class PSceneComponent* m_SelectedComponent = nullptr;

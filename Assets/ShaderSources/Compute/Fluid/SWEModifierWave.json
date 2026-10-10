@@ -1,0 +1,56 @@
+{
+	"Name": "SWEModifierWave",
+	"Template": "Compute/Fluid/SWEModifierWave.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "SWEParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "InvResX", "Format": "float", "Default": [0.0] },
+				{ "Name": "InvResY", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResX", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResY", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaLocX", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaLocY", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaSizeX", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaSizeY", "Format": "float", "Default": [0.0] },
+				{ "Name": "SimulationDeltaTime", "Format": "float", "Default": [0.0] },
+				{ "Name": "CaptureHeight", "Format": "float", "Default": [0.0] },
+				{ "Name": "FoamFadeSpeed", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamShallowDepth", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamShallowGenerate", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamWaveGenerate", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FluidTransportMax", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "AdvectFoam", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "EvaporationHeight", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FluxEnergy", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "PixelAnchor", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "PixelSize", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "VelocityScale", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "WaveCalming", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "SurfaceHeight", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "InvBorderXNeg", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "InvBorderYNeg", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "InvBorderXPos", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "InvBorderYPos", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "WaveLength", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "WaveSpeed", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "Amplitude", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "Steepness", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "ActiveTime", "Format": "float", "Default": [0.0] },
+				{ "Name": "DirectionAngle", "Format": "float", "Default": [0.0], "Exposure": true }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "VelocityTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 0 },
+		{ "Name": "HeightFoamTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 1 }
+	],
+	"RWTextures": [
+		{ "Name": "OutVelocity", "Type": "2D", "Format": "float4", "Slot": 0 },
+		{ "Name": "OutHeight", "Type": "2D", "Format": "float4", "Slot": 1 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/Fluid/SWEModifierWave.hlsl\"" }
+	]
+}

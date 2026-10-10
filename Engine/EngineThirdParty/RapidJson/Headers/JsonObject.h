@@ -30,7 +30,7 @@ namespace PigeonEngine
 		void SetDocument(rapidjson::Document* const InDoc);
 
 	public:
-		
+
 		/*Field query*/
 		BOOL8 HasField(const EString& FieldName);
 		void RemoveField(const EString& FieldName);

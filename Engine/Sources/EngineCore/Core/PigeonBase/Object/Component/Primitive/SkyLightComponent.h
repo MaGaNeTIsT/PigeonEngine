@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreMinimal.h>
+#include <Config/EngineConfig.h>
 #include <TextureAsset/TextureAsset.h>
 #include <PigeonBase/Object/Component/SceneComponent.h>
 
@@ -58,11 +59,21 @@ namespace PigeonEngine
 	public:
 		const ETextureCubeAsset*	GetCubeMapAsset()const;
 		const Color3&				GetLightAdjust()const;
+		// The sky's luminance in cd/m2, which is the scale that puts the environment cube on the
+		// same physical footing as the lights. A clear sky is around 8000 and an overcast one
+		// around 2000; the cube itself only carries the shape of the sky.
 		FLOAT						GetIntensity()const;
 	public:
 		void	SetCubeMapAsset(const ETextureCubeAsset* InCubeMapAsset);
+		/*
+		* Game thread: binds an environment cube to this sky light without waiting for it. The asset is
+		* asked for now, applied before this call returns when it is already loaded, and retried every
+		* frame until it is; InImportSource is the editor's raw source, six faces in the order the
+		* importer expects.
+		*/
+		void	RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource = nullptr);
 		void	SetLightAdjust(const Color3& InColor);
-		void	SetIntensity(const FLOAT InIntensity);
+		void	SetIntensity(const FLOAT InLuminanceInCandelaPerSquareMeter);
 	protected:
 		const ETextureCubeAsset*	CubeMapAsset;
 		Color3						LightAdjust;

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "../../../../Main/Main.h"
 #include <Base/DataStructure/BuiltInType.h>
@@ -7,204 +7,204 @@
 namespace PigeonEngine
 {
 
-    // -------------------   Declarations   -----------------------------
-    template <typename T>
-    class TSet
-    {
-    public:
-        using TIterator         = typename std::set<T>::iterator;
-        using TConstIterator    = typename std::set<T>::const_iterator;
-    public:
-        TSet();
-        TSet(const TSet<T>& Other);
-        explicit TSet(const std::set<T>& Other);
-        ~TSet();
-        
-        T&          operator[](const UINT32& Index);
-        const T&    operator[](const UINT32& Index)const;
+	// -------------------   Declarations   -----------------------------
+	template <typename T>
+	class TSet
+	{
+	public:
+		using TIterator         = typename std::set<T>::iterator;
+		using TConstIterator    = typename std::set<T>::const_iterator;
+	public:
+		TSet();
+		TSet(const TSet<T>& Other);
+		explicit TSet(const std::set<T>& Other);
+		~TSet();
 
-        BOOL32 Add     (const T& Element);
-        T&   GetRef     (const UINT32& Index) const;
-        // Find the index of given Element, return set's Length if the Element doesn't exist.
-        UINT32 Find    (const T& Element) const;
-        BOOL32 Contains(const T& Element) const;
-        void RemoveAt(const UINT32& Index);
-        void Remove  (const T& Element);
-        void Empty   ();
-        void Append(const TSet<T>& Other);
-        
-        typename TIterator Begin()
-        {
-            return Elements.begin();
-        }
-        typename TConstIterator Begin() const
-        {
-            return Elements.begin();
-        }
-        typename TIterator End()
-        {
-            return Elements.end();
-        }
-        typename TConstIterator End() const
-        {
-            return Elements.end();
-        }
+		T&          operator[](const UINT32& Index);
+		const T&    operator[](const UINT32& Index)const;
 
-        /**
-         * DO NOT USE DIRECTLY
-         * STL-like iterators to enable range-based for loop support.
-         */
-        typename TConstIterator begin()const{return Elements.begin();}
-        typename TConstIterator end()const{return Elements.end();}
-        typename TIterator      begin(){return Elements.begin();}
-        typename TIterator      end(){return Elements.end();}
-        
-        template<typename _TOtherSizeType = INT32, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
-        PE_NODISCARD _TOtherSizeType Num()const
-        {
-            return static_cast<_TOtherSizeType>(Elements.size());
-        }
-        UINT32 Last    ()const;
+		BOOL32 Add     (const T& Element);
+		T&   GetRef     (const UINT32& Index) const;
+		// Find the index of given Element, return set's Length if the Element doesn't exist.
+		UINT32 Find    (const T& Element) const;
+		BOOL32 Contains(const T& Element) const;
+		void RemoveAt(const UINT32& Index);
+		void Remove  (const T& Element);
+		void Empty   ();
+		void Append(const TSet<T>& Other);
 
-        
-    private:
-        class std::set<T> Elements;
-    };
+		typename TIterator Begin()
+		{
+			return Elements.begin();
+		}
+		typename TConstIterator Begin() const
+		{
+			return Elements.begin();
+		}
+		typename TIterator End()
+		{
+			return Elements.end();
+		}
+		typename TConstIterator End() const
+		{
+			return Elements.end();
+		}
 
-    // -------------------   Implementations   -----------------------------
-    template <typename T>
-    TSet<T>::TSet()
-    {
-    }
+		/**
+		* DO NOT USE DIRECTLY
+		* STL-like iterators to enable range-based for loop support.
+		*/
+		typename TConstIterator begin()const{return Elements.begin();}
+		typename TConstIterator end()const{return Elements.end();}
+		typename TIterator      begin(){return Elements.begin();}
+		typename TIterator      end(){return Elements.end();}
 
-    template <typename T>
-    TSet<T>::TSet(const TSet<T>& Other)
-        :
-    Elements(Other.Elements)
-    {
-    }
+		template<typename _TOtherSizeType = INT32, TEnableIfType<TIsIntegral<_TOtherSizeType>::value, _TOtherSizeType> = 0>
+		PE_NODISCARD _TOtherSizeType Num()const
+		{
+			return static_cast<_TOtherSizeType>(Elements.size());
+		}
+		UINT32 Last    ()const;
 
-    template <typename T>
-    TSet<T>::TSet(const std::set<T>& Other)
-        :
-    Elements(Other)
-    {
-    }
 
-    template <typename T>
-    TSet<T>::~TSet()
-    {
-    }
+	private:
+		class std::set<T> Elements;
+	};
 
-    template <typename T>
-    T& TSet<T>::operator[](const UINT32& Index)
-    {
-        return GetRef(Index);
-    }
+	// -------------------   Implementations   -----------------------------
+	template <typename T>
+	TSet<T>::TSet()
+	{
+	}
 
-    template <typename T>
-    const T& TSet<T>::operator[](const UINT32& Index)const
-    {
-        return GetRef(Index);
-    }
+	template <typename T>
+	TSet<T>::TSet(const TSet<T>& Other)
+		:
+	Elements(Other.Elements)
+	{
+	}
 
-    template <typename T>
-    BOOL32 TSet<T>::Add(const T& Element)
-    {
-        return Elements.insert(Element).second;
-    }
+	template <typename T>
+	TSet<T>::TSet(const std::set<T>& Other)
+		:
+	Elements(Other)
+	{
+	}
 
-    template <typename T>
-    T& TSet<T>::GetRef(const UINT32& Index) const
-    {
-        PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index < Num<UINT32>());
+	template <typename T>
+	TSet<T>::~TSet()
+	{
+	}
 
-        auto it = Elements.begin();
-        UINT32 iIndex = 0;
-        while (iIndex < Index && it != Elements.end())
-        {
-            ++it;
-            ++iIndex;
-        }
+	template <typename T>
+	T& TSet<T>::operator[](const UINT32& Index)
+	{
+		return GetRef(Index);
+	}
 
-        return const_cast<T&>(*it);
-    }
+	template <typename T>
+	const T& TSet<T>::operator[](const UINT32& Index)const
+	{
+		return GetRef(Index);
+	}
 
-    template <typename T>
-    UINT32 TSet<T>::Find(const T& Element) const
-    {
-        UINT32 iIndex = 0;
-        auto it = Elements.begin();
-        while(it!=Elements.end())
-        {
-            if(*it == Element)
-            {
-                return iIndex;
-            }
-            ++it;
-            iIndex++;
-        }
-        return ((UINT32)(-1));
-    }
+	template <typename T>
+	BOOL32 TSet<T>::Add(const T& Element)
+	{
+		return Elements.insert(Element).second;
+	}
 
-    template <typename T>
-    BOOL32 TSet<T>::Contains(const T& Element) const
-    {
-        for(const auto& elem : Elements)
-        {
-            if(elem == Element)
-            {
-                return TRUE;
-            }
-        }
-        return FALSE;
-    }
+	template <typename T>
+	T& TSet<T>::GetRef(const UINT32& Index) const
+	{
+		PE_CHECK(ENGINE_SET_ERROR, "Set has no such index", Index < Num<UINT32>());
 
-    template <typename T>
-    void TSet<T>::RemoveAt(const UINT32& Index)
-    {
-        if (Index >= Num<UINT32>())
-        {
-            return;
-        }
-        UINT32 iIndex = 0;
-        auto it = Elements.begin();
-        while(iIndex < Index && it != Elements.end())
-        {
-            ++it;
-            ++iIndex;
-        }
-        if (it != Elements.end())
-        {
-            this->Elements.erase(it);
-        }
-    }
+		auto it = Elements.begin();
+		UINT32 iIndex = 0;
+		while (iIndex < Index && it != Elements.end())
+		{
+			++it;
+			++iIndex;
+		}
 
-    template <typename T>
-    void TSet<T>::Remove(const T& Element)
-    {
-        const UINT32& Index = Find(Element);
-        RemoveAt(Index);
-    }
+		return const_cast<T&>(*it);
+	}
 
-    template <typename T>
-    void TSet<T>::Empty()
-    {
-        Elements.clear();
-    }
+	template <typename T>
+	UINT32 TSet<T>::Find(const T& Element) const
+	{
+		UINT32 iIndex = 0;
+		auto it = Elements.begin();
+		while(it!=Elements.end())
+		{
+			if(*it == Element)
+			{
+				return iIndex;
+			}
+			++it;
+			iIndex++;
+		}
+		return ((UINT32)(-1));
+	}
 
-    template <typename T>
-    void TSet<T>::Append(const TSet<T>& Other)
-    {
-        for(const auto& elem: Other)
-        {
-            Add(elem);
-        }
-    }
+	template <typename T>
+	BOOL32 TSet<T>::Contains(const T& Element) const
+	{
+		for(const auto& elem : Elements)
+		{
+			if(elem == Element)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
 
-    template <typename T>
-    UINT32 TSet<T>::Last() const
-    {
-        return Num<UINT32>() > 0 ? Num<UINT32>() - 1 : 0;
-    }
+	template <typename T>
+	void TSet<T>::RemoveAt(const UINT32& Index)
+	{
+		if (Index >= Num<UINT32>())
+		{
+			return;
+		}
+		UINT32 iIndex = 0;
+		auto it = Elements.begin();
+		while(iIndex < Index && it != Elements.end())
+		{
+			++it;
+			++iIndex;
+		}
+		if (it != Elements.end())
+		{
+			this->Elements.erase(it);
+		}
+	}
+
+	template <typename T>
+	void TSet<T>::Remove(const T& Element)
+	{
+		const UINT32& Index = Find(Element);
+		RemoveAt(Index);
+	}
+
+	template <typename T>
+	void TSet<T>::Empty()
+	{
+		Elements.clear();
+	}
+
+	template <typename T>
+	void TSet<T>::Append(const TSet<T>& Other)
+	{
+		for(const auto& elem: Other)
+		{
+			Add(elem);
+		}
+	}
+
+	template <typename T>
+	UINT32 TSet<T>::Last() const
+	{
+		return Num<UINT32>() > 0 ? Num<UINT32>() - 1 : 0;
+	}
 };

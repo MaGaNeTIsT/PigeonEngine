@@ -1,0 +1,19 @@
+{
+	"Name": "SWEModifierWave",
+	"Stages": [
+		{
+			"Stage": "CS",
+			"Entry": "CSMain",
+			"Template": "Templates/ComputePass_CS.tmpl.hlsl",
+			"Defines": [
+				{ "Name": "SHADER_STAGE_COMPUTE", "Value": 1 },
+				{ "Name": "SHADER_THREAD_GROUP_X", "Value": 8 },
+				{ "Name": "SHADER_THREAD_GROUP_Y", "Value": 8 }
+			],
+			"Components": [
+				{ "Index": 0, "Type": "General", "Name": "EngineSystem", "Replace": "SYSTEM_MACROS", "JsonFile": "Components/C_EngineSystem.json" },
+				{ "Index": 1, "Type": "General", "Name": "SWEModifierWave", "Replace": "COMPUTE_BODY", "JsonFile": "Compute/Fluid/SWEModifierWave.json" }
+			]
+		}
+	]
+}

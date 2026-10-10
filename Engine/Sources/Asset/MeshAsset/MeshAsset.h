@@ -5,6 +5,7 @@
 #include <RenderCommon.h>
 #include <RenderResource.h>
 #include <BaseAsset.h>
+#include <AssetLoadManager.h>
 
 namespace PigeonEngine
 {
@@ -452,8 +453,8 @@ namespace PigeonEngine
 	public:
 		using TVertexResourceType = TMap<UINT8, TArray<RVertexBufferResource*>>;
 	public:
-		virtual BOOL32	IsRenderResourceValid()const override;
-		virtual void	ReleaseRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual void	ReleaseRenderResource()noexcept override;
 		const RIndexBufferResource*				GetIndexRenderResource()const;
 		const TArray<RVertexBufferResource*>*	GetVertexRenderResource(const UINT8 InType)const;
 	public:
@@ -472,9 +473,9 @@ namespace PigeonEngine
 	class EStaticMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL32	IsRenderResourceValid()const override;
-		virtual BOOL32	InitRenderResource()override;
-		virtual void	ReleaseRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	InitRenderResource()noexcept override;
+		virtual void	ReleaseRenderResource()noexcept override;
 	public:
 		EStaticMeshRenderResource& operator=(const EStaticMeshRenderResource& Other);
 	public:
@@ -489,9 +490,9 @@ namespace PigeonEngine
 	class ESkinnedMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL32	IsRenderResourceValid()const override;
-		virtual BOOL32	InitRenderResource()override;
-		virtual void	ReleaseRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	InitRenderResource()noexcept override;
+		virtual void	ReleaseRenderResource()noexcept override;
 		const TArray<RVertexBufferResource>&	GetSkinRenderResource()const;
 	public:
 		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
@@ -509,14 +510,14 @@ namespace PigeonEngine
 	};
 
 	template<EMeshType _MeshType, typename TMeshResourceType, typename TMeshRenderResourceType>
-	class TMeshBaseAsset : public TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>
+	class TMeshBaseAsset : public TBaseAsset<TMeshResourceType>
 	{
 	public:
 		TMeshBaseAsset(const EString& InMeshPath, const EString& InMeshName
 #if _EDITOR_ONLY
 			, const EString& InDebugName
 #endif
-		) : TRenderBaseAsset<TMeshResourceType, TMeshRenderResourceType>(InMeshPath, InMeshName
+		) : TBaseAsset<TMeshResourceType>(InMeshPath, InMeshName
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
@@ -528,8 +529,27 @@ namespace PigeonEngine
 		}
 	public:
 		EMeshType	GetMeshType()const { return MeshType; }
+	public:
+		// Render thread only: the proxy this asset's cold data was turned into, or null while
+		// the creation command is still queued.
+		PE_NODISCARD const TMeshRenderResourceType*	GetRenderResource()const
+		{
+			return static_cast<const TMeshRenderResourceType*>(RenderBinding.Resolve());
+		}
+		PE_NODISCARD BOOL32	IsRenderResourceValid()const
+		{
+			const TMeshRenderResourceType* Resource = GetRenderResource();
+			return ((!!Resource) && (Resource->IsRenderResourceValid()));
+		}
+		virtual void	UninitResource()override
+		{
+			TBaseAsset<TMeshResourceType>::UninitResource();
+			RenderBinding.Release();
+		}
 	protected:
 		EMeshType	MeshType;
+		// The single connection between this asset and its render side proxy.
+		RAssetRenderBinding	RenderBinding;
 	public:
 		TMeshBaseAsset() = delete;
 
@@ -590,23 +610,42 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+		virtual void	Uninit()override;
 	public:
 #if _EDITOR_ONLY
 		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
 		BOOL32	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
 #endif
-		BOOL32	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset);
-		BOOL32	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset);
+		BOOL32	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset, const BOOL32 bTryLoad = FALSE);
+		BOOL32	LoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset, const BOOL32 bTryLoad = FALSE);
+		/*
+		* Any thread: the mesh when it is already loaded, otherwise FALSE and a null output after
+		* recording one load request for the load thread (EAssetLoadManager). It never blocks and
+		* never reads the disk on the calling thread; ask again next frame and it will be there.
+		* Load* above is the load thread's synchronous half.
+		*
+		* InImportSource is the editor's fallback for a mesh that was never imported: the load
+		* thread imports from the raw source and loads again, which is the pair TryLoad* performs.
+		* InOnLoadComplete runs on the load thread once the request is done; see
+		* EAssetLoadCompleteType for what a completion may touch.
+		*/
+		BOOL32	RequireLoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset
+			, const FAssetImportSource* InImportSource = nullptr, EAssetLoadCompleteType InOnLoadComplete = nullptr);
+		BOOL32	RequireLoadSkinnedMeshAsset(const EString& InLoadPath, const EString& InLoadName, const ESkinnedMeshAsset*& OutSkinnedMeshAsset
+			, const FAssetImportSource* InImportSource = nullptr, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 	private:
 		void	ClearStaticMeshes();
 		void	ClearSkinnedMeshes();
+		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
+		// paths cannot drift apart.
+		void	ReleaseAllAssets();
 	private:
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
-		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName);
+		_TMeshAssetType* LoadMeshAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		template<typename _TMeshAssetType, typename _TMeshResourceType>
 		BOOL32 SaveMeshAsset(const EString& InSavePath, const EString& InSaveName, const _TMeshAssetType* InMeshAsset);
 		template<typename _TMeshResourceType>
-		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath, const EString& InLoadName);
+		_TMeshResourceType* LoadMeshResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		template<typename _TMeshResourceType>
 		BOOL32 SaveMeshResource(const EString& InSavePath, const EString& InSaveName, const _TMeshResourceType* InMeshResource);
 	private:

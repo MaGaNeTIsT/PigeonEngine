@@ -1,0 +1,20 @@
+{
+	"Name": "EnvironmentSH",
+	"Stages": [
+		{
+			"Stage": "CS",
+			"Entry": "CSMain",
+			"Template": "Templates/PostProcess_CS.tmpl.hlsl",
+			"Defines": [
+				{ "Name": "SHADER_STAGE_COMPUTE", "Value": 1 },
+				{ "Name": "ENVIRONMENT_SH_THREAD_GROUP_SIZE", "Value": 32 },
+				{ "Name": "ENVIRONMENT_SH_SAMPLE_COUNT", "Value": 4096 }
+			],
+			"Components": [
+				{ "Index": 0, "Type": "General", "Name": "EngineSystem", "Replace": "SYSTEM_MACROS", "JsonFile": "Components/C_EngineSystem.json" },
+				{ "Index": 1, "Type": "General", "Name": "MaterialSamplers", "Replace": "MATERIAL_SAMPLERS", "JsonFile": "$GeneratedComponents/C_MaterialSamplers.json" },
+				{ "Index": 2, "Type": "General", "Name": "EnvironmentSH", "Replace": "COMPUTE_BODY", "JsonFile": "Compute/EnvironmentSH/EnvironmentSH.json" }
+			]
+		}
+	]
+}

@@ -1,0 +1,145 @@
+{
+	"Name": "SceneLighting",
+	"Stages": [
+		{
+			"Stage": "VS",
+			"Entry": "VSMain",
+			"Template": "Templates/FullScreen_VS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_VERTEX",
+					"Value": 1
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "FullScreen/C_FullScreenVertexFactory.json"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "Programmable",
+					"Replace": "PROGRAMMABLE",
+					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				}
+			]
+		},
+		{
+			"Stage": "PS",
+			"Entry": "PSMain",
+			"Template": "Templates/SceneLighting_PS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_PIXEL",
+					"Value": 1
+				}
+			],
+			"Textures": [
+				{
+					"Name": "DepthTexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 0
+				},
+				{
+					"Name": "GBufferATexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 1
+				},
+				{
+					"Name": "GBufferBTexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 2
+				},
+				{
+					"Name": "GBufferCTexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 3
+				},
+				{
+					"Name": "GBufferDTexture",
+					"Type": "2D",
+					"Format": "uint4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 4
+				},
+				{
+					"Name": "GBufferETexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerMaterial2D",
+					"Slot": 5
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "General",
+					"Name": "MaterialSamplers",
+					"Replace": "MATERIAL_SAMPLERS",
+					"JsonFile": "$GeneratedComponents/C_MaterialSamplers.json"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "Domain",
+					"Replace": "DOMAIN_FUNCTIONS",
+					"JsonFile": "$Domain"
+				},
+				{
+					"Index": 3,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "FullScreen/C_FullScreenVertexFactory.json"
+				},
+				{
+					"Index": 4,
+					"Type": "General",
+					"Name": "Lighting",
+					"Replace": "LIGHTING",
+					"JsonFile": "Components/C_Lighting.json"
+				},
+				{
+					"Index": 5,
+					"Type": "General",
+					"Name": "IndirectLighting",
+					"Replace": "INDIRECT_LIGHTING",
+					"JsonFile": "Components/C_IndirectLighting.json"
+				},
+				{
+					"Index": 6,
+					"Type": "General",
+					"Name": "Programmable",
+					"Replace": "PROGRAMMABLE",
+					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				}
+			]
+		}
+	]
+}

@@ -44,7 +44,7 @@ void CGPUCulling::Init(std::shared_ptr<CHZBPass> hzb, const UINT32& waitingFrame
 			sizeof(CullingConstantBufferData),
 			CustomStruct::CRenderBindFlag::BIND_CONSTANT_BUFFER,
 			sizeof(FLOAT)));
-	
+
 }
 void CGPUCulling::Uninit()
 {

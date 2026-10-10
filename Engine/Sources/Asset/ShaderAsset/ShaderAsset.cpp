@@ -1,940 +1,1110 @@
 #include "ShaderAsset.h"
-#include <RenderDevice/DeviceD3D11.h>
+#include <Asset/AssetLoadManager.h>
+
+#include <RapidJson/Headers/JsonObject.h>
+#include <IO/FileHelper.h>
+#include <Editor/EditorLogManager.h>
+#include <Config/ErrorCaption.h>
+#include <Shader/EngineShaderInstanceCache.h>
 
 namespace PigeonEngine
 {
 
-	template <typename _TAssetRenderResourceType, RShaderFrequencyType _ShaderFrequency, typename _AssetType>
-	static void RegisterShaderClassTypes()
+	// ---------------------------------------------------------------------------
+	// Path helpers - artifact names inside a manifest are relative to the manifest
+	// itself, so the engine never rebuilds a file name.
+	// ---------------------------------------------------------------------------
+
+	static EString ParentDirectoryOf(const EString& InFilePath)
 	{
-		RegisterClassType<TRenderBaseAsset<EShaderResource, _TAssetRenderResourceType>, TBaseAsset<EShaderResource>>();
-		RegisterClassType<TShaderBaseAsset<_ShaderFrequency, _TAssetRenderResourceType>, TRenderBaseAsset<EShaderResource, _TAssetRenderResourceType>>();
-		RegisterClassType<_AssetType, TShaderBaseAsset<_ShaderFrequency, _TAssetRenderResourceType>>();
+		const INT32 SlashPos = InFilePath.RightFind(EString("/"));
+		if (SlashPos >= 0)
+		{
+			return InFilePath.Left(static_cast<UINT32>(SlashPos) + 1u);
+		}
+		return EString();
 	}
 
+	static EString FileNameStemOf(const EString& InFileName)
+	{
+		const INT32 DotPos = InFileName.RightFind(EString("."));
+		if (DotPos > 0)
+		{
+			return InFileName.Left(static_cast<UINT32>(DotPos));
+		}
+		return InFileName;
+	}
+
+	// A shader asset derives from the game side asset base, so it registers like any other
+	// asset: the shared TBaseAsset link first, then its own entry in the chain.
 	static void RegisterClassTypes()
 	{
-		RegisterClassType<EShaderResource, ERTTIObject, EResourceInterface>();
-
-		RegisterClassType<TBaseAsset<EShaderResource>, EObjectBase>();
-
-		RegisterShaderClassTypes<RVertexShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, EVertexShaderAsset>();
-		RegisterShaderClassTypes<RPixelShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, EPixelShaderAsset>();
-		RegisterShaderClassTypes<RComputeShaderResource, RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, EComputeShaderAsset>();
-
-		RegisterClassType<EShaderAssetManager, EManagerBase>();
+		RegisterBaseAssetClassTypes<EShaderAssetData>();
+		RegisterClassType<EShaderAsset, TBaseAsset<EShaderAssetData>>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	EVertexShaderAsset::EVertexShaderAsset(const EString& InAssetPath, const EString& InAssetName
+	// ---------------------------------------------------------------------------
+	// Manifest
+	// ---------------------------------------------------------------------------
+
+	const EShaderManifestVariant* EShaderManifest::FindVariant(const EName& InVariantName) const
+	{
+		for (UINT32 VariantIdx = 0u, VariantNum = Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			if (Variants[VariantIdx].Name == InVariantName)
+			{
+				return (&(Variants[VariantIdx]));
+			}
+		}
+		return nullptr;
+	}
+
+	static BOOL32 ParseManifestVariants(CJsonObject& InJson, EShaderManifest& OutManifest);
+
+	BOOL32 ParseShaderManifestText(const EString& InManifestJsonText, EShaderManifest& OutManifest)
+	{
+		if (InManifestJsonText.Length() == 0u)
+		{
+			return FALSE;
+		}
+
+		OutManifest = EShaderManifest();
+		CJsonObject ManifestJson(InManifestJsonText);
+
+		EString ValueStr;
+		if (ManifestJson.GetStringField(EString("Name"), ValueStr))
+		{
+			OutManifest.ShaderName = EName(ValueStr);
+		}
+		else
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] The manifest does not declare a shader name."));
+			return FALSE;
+		}
+		if (ManifestJson.GetStringField(EString("Entry"), ValueStr))
+		{
+			OutManifest.EntryPoint = EName(ValueStr);
+		}
+		if (!ManifestJson.GetStringField(EString("Stage"), ValueStr))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] The manifest does not declare a stage."));
+			return FALSE;
+		}
+		if (!ParseShaderStageFromString(ValueStr, OutManifest.Stage))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] Unknown stage '") + ValueStr + EString("'."));
+			return FALSE;
+		}
+		ManifestJson.GetStringField(EString("StageSuffix"), OutManifest.StageSuffix);
+		ManifestJson.GetStringField(EString("EntryJson"), OutManifest.EntryJsonPath);
+		if (!ManifestJson.GetStringField(EString("ShaderModel"), ValueStr))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] The manifest does not declare a shader model."));
+			return FALSE;
+		}
+		if (!ParseShaderModelFromString(ValueStr, OutManifest.ShaderModel))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] Unknown shader model '") + ValueStr + EString("'."));
+			return FALSE;
+		}
+
+		return ParseManifestVariants(ManifestJson, OutManifest);
+	}
+
+	static BOOL32 ParseManifestVariants(CJsonObject& InJson, EShaderManifest& OutManifest)
+	{
+		TArray<CJsonObject*> VariantArray;
+		if (!InJson.GetObjectArrayField(EString("Variants"), VariantArray))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] The manifest declares no variants."));
+			return FALSE;
+		}
+
+		for (UINT32 VariantIdx = 0u, VariantNum = VariantArray.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			CJsonObject* VariantJson = VariantArray[VariantIdx];
+			if (!VariantJson)
+			{
+				continue;
+			}
+			EShaderManifestVariant Variant;
+
+			EString VariantName;
+			if (!VariantJson->GetStringField(EString("Name"), VariantName))
+			{
+				PE_LOG_ERROR(EString("[ShaderManifest] A variant entry has no name, it is skipped."));
+				delete VariantJson;
+				continue;
+			}
+			Variant.Name = EName(VariantName);
+
+			VariantJson->GetUIntField(EString("Index"), Variant.Index);
+			VariantJson->GetStringField(EString("DefHash"), Variant.DefineHash);
+			VariantJson->GetStringField(EString("RplHash"), Variant.ReplaceHash);
+			VariantJson->GetStringField(EString("Binary"), Variant.BinaryFile);
+			VariantJson->GetStringField(EString("Reflection"), Variant.ReflectionFile);
+			VariantJson->GetStringField(EString("Pdb"), Variant.PdbFile);
+			VariantJson->GetStringField(EString("Errors"), Variant.Errors);
+
+			BOOL8 bSuccess = FALSE;
+			if (VariantJson->GetBoolField(EString("Success"), bSuccess))
+			{
+				Variant.bSuccess = (bSuccess ? TRUE : FALSE);
+			}
+
+			TArray<CJsonObject*> DefineArray;
+			if (VariantJson->GetObjectArrayField(EString("Defines"), DefineArray))
+			{
+				for (UINT32 DefIdx = 0u, DefNum = DefineArray.Num<UINT32>(); DefIdx < DefNum; DefIdx++)
+				{
+					CJsonObject* DefineJson = DefineArray[DefIdx];
+					if (!DefineJson)
+					{
+						continue;
+					}
+					EShaderVariantDefine Define;
+					EString DefineName;
+					if (DefineJson->GetStringField(EString("Name"), DefineName))
+					{
+						Define.Name = EName(DefineName);
+						DefineJson->GetIntField(EString("Value"), Define.Value);
+						Variant.Defines.Add(Define);
+					}
+					delete DefineJson;
+				}
+			}
+
+			OutManifest.Variants.Add(Variant);
+			delete VariantJson;
+		}
+		return TRUE;
+	}
+
+	BOOL32 ParseShaderManifestJson(const EString& InManifestJsonPath, EShaderManifest& OutManifest)
+	{
+		EString ManifestText;
+		if (!EFileHelper::ReadFileAsString(InManifestJsonPath, ManifestText))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] Cannot read manifest: ") + InManifestJsonPath);
+			return FALSE;
+		}
+		if (!ParseShaderManifestText(ManifestText, OutManifest))
+		{
+			PE_LOG_ERROR(EString("[ShaderManifest] Cannot parse manifest: ") + InManifestJsonPath);
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Cold backup
+	// ---------------------------------------------------------------------------
+
+	const EShaderAssetStageRef* EShaderAssetVariantData::FindStageRef(const EShaderStageType InStage) const
+	{
+		for (UINT32 RefIdx = 0u, RefNum = StageRefs.Num<UINT32>(); RefIdx < RefNum; RefIdx++)
+		{
+			if (StageRefs[RefIdx].Stage == InStage)
+			{
+				return (&(StageRefs[RefIdx]));
+			}
+		}
+		return nullptr;
+	}
+
+	EShaderAssetVariantData* EShaderAssetData::FindVariant(const EName& InVariantName)
+	{
+		for (UINT32 VariantIdx = 0u, VariantNum = Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			if (Variants[VariantIdx].Name == InVariantName)
+			{
+				return (&(Variants[VariantIdx]));
+			}
+		}
+		return nullptr;
+	}
+
+	const EShaderAssetVariantData* EShaderAssetData::FindVariant(const EName& InVariantName) const
+	{
+		for (UINT32 VariantIdx = 0u, VariantNum = Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			if (Variants[VariantIdx].Name == InVariantName)
+			{
+				return (&(Variants[VariantIdx]));
+			}
+		}
+		return nullptr;
+	}
+
+	// A cold backup carries no GPU payload, so "valid" only means the read produced a named
+	// asset; there is nothing to build and nothing to release beyond dropping the copy.
+	BOOL32 EShaderAssetData::IsResourceValid() const
+	{
+		return ((!ShaderName.IsNone()) ? TRUE : FALSE);
+	}
+
+	BOOL32 EShaderAssetData::InitResource()
+	{
+		return TRUE;
+	}
+
+	void EShaderAssetData::ReleaseResource()
+	{
+		if (Variants.Num<UINT32>() > 0u)
+		{
+			Variants.Empty();
+		}
+	}
+
+	// ---------------------------------------------------------------------------
+	// EShaderAsset
+	// ---------------------------------------------------------------------------
+
+	EShaderAsset::EShaderAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
 #endif
-		, const RInputLayoutDesc* InInputLayouts
-		, const UINT32& InInputLayoutNum)
-		: TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, RVertexShaderResource>(InAssetPath, InAssetName
+	)
+		: TBaseAsset<EShaderAssetData>(InAssetPath, InAssetName
 #if _EDITOR_ONLY
 			, InDebugName
 #endif
-		), ShaderInputLayouts(nullptr), ShaderInputLayoutNum(0u)
+		)
+		, Name(InAssetName)
+		, EntryJsonPath()
+		, Revision(1u)
+		, Programs{}
+		, DefaultParameterSets{}
 	{
-		if (InInputLayouts && InInputLayoutNum > 0u)
+	}
+
+	EShaderAsset::~EShaderAsset()
+	{
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
 		{
-			ShaderInputLayouts = new RInputLayoutDesc[InInputLayoutNum];
-			for (UINT32 i = 0u; i < InInputLayoutNum; i++)
+			if (Programs[ProgramIdx])
 			{
-				ShaderInputLayouts[i] = InInputLayouts[i];
+				delete Programs[ProgramIdx];
+				Programs[ProgramIdx] = nullptr;
 			}
-			ShaderInputLayoutNum = InInputLayoutNum;
+		}
+		if (Programs.Num<UINT32>() > 0u)
+		{
+			Programs.Empty();
+		}
+
+		// Default parameter sets are owned here; instances only point their parent at
+		// them, so they must be gone before the asset is.
+		TArray<EShaderParameterSet*> ParameterSets;
+		DefaultParameterSets.GenerateValueArray(ParameterSets);
+		for (UINT32 SetIdx = 0u, SetNum = ParameterSets.Num<UINT32>(); SetIdx < SetNum; SetIdx++)
+		{
+			if (ParameterSets[SetIdx])
+			{
+				delete ParameterSets[SetIdx];
+				ParameterSets[SetIdx] = nullptr;
+			}
+		}
+		if (DefaultParameterSets.Num<UINT32>() > 0u)
+		{
+			DefaultParameterSets.Empty();
 		}
 	}
-	EVertexShaderAsset::~EVertexShaderAsset()
+
+	BOOL32 EShaderAsset::InitResource()
 	{
-		if (ShaderInputLayouts)
+		if (!ResourceData)
 		{
-			delete[]ShaderInputLayouts;
-			ShaderInputLayouts = nullptr;
-		}
-	}
-	BOOL32 EVertexShaderAsset::InitResource()
-	{
-		if (!ShaderInputLayouts || ShaderInputLayoutNum == 0u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] does not contain input layouts when init resource.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
+			PE_LOG_ERROR(EString("[ShaderAsset] '") + Name.ToString() + EString("' has no cold backup to restore."));
 			return FALSE;
 		}
-		if (IsInitialized())
+		if (!ComposeFromData(*ResourceData, GetAssetPath(), FALSE))
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			return TRUE;
+			return FALSE;
 		}
-		if (CreateRenderResourceInternal(
-			[this](EShaderResource* InResource)->RVertexShaderResource*
-			{
-				return (this->CreateShaderRenderResource(InResource));
-			}, FALSE, [this](EShaderResource* InResource)->void
-			{
-				this->ReleaseResourceInternal();
-			}))
-		{
-			bIsInitialized = TRUE;
-			return TRUE;
-		}
-		return FALSE;
+		bIsInitialized = TRUE;
+		return TRUE;
 	}
-	RVertexShaderResource* EVertexShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
+
+	UINT32 EShaderAsset::GetStageMask() const
 	{
-		RVertexShaderResource* Result = nullptr;
-		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
+		UINT32 StageMaskValue = SHADER_STAGE_MASK_NONE;
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
 		{
-			RDeviceD3D11* DeviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			Result = new RVertexShaderResource();
-#if _EDITOR_ONLY
-			if (ShaderInputLayoutNum > 0u)
-#endif
+			if (Programs[ProgramIdx])
 			{
-				Result->RawLayouts = new RInputLayoutDesc[ShaderInputLayoutNum];
-				Result->LayoutNum = ShaderInputLayoutNum;
-				for (UINT32 LayoutIndex = 0u; LayoutIndex < ShaderInputLayoutNum; LayoutIndex++)
+				StageMaskValue |= Programs[ProgramIdx]->GetStageMask();
+			}
+		}
+		return StageMaskValue;
+	}
+
+	BOOL32 EShaderAsset::HasStage(const EShaderStageType InStage) const
+	{
+		UINT32 StageMaskBit = SHADER_STAGE_MASK_NONE;
+		if (!GetShaderStageMaskBit(InStage, StageMaskBit))
+		{
+			return FALSE;
+		}
+		return (((GetStageMask() & StageMaskBit) != 0u) ? TRUE : FALSE);
+	}
+
+	UINT32 EShaderAsset::GetCulledFieldNum() const
+	{
+		UINT32 CulledNum = 0u;
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
+		{
+			if (Programs[ProgramIdx])
+			{
+				CulledNum += Programs[ProgramIdx]->GetCulledFieldNum();
+			}
+		}
+		return CulledNum;
+	}
+
+	UINT32 EShaderAsset::GetExposedFieldNum() const
+	{
+		UINT32 ExposedNum = 0u;
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
+		{
+			if (Programs[ProgramIdx])
+			{
+				ExposedNum += Programs[ProgramIdx]->GetExposedFieldNum();
+			}
+		}
+		return ExposedNum;
+	}
+
+	EShaderProgram* EShaderAsset::FindProgram(const EName& InVariantName)
+	{
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
+		{
+			if (Programs[ProgramIdx] && (Programs[ProgramIdx]->GetVariantName() == InVariantName))
+			{
+				return Programs[ProgramIdx];
+			}
+		}
+		return nullptr;
+	}
+
+	const EShaderProgram* EShaderAsset::FindProgram(const EName& InVariantName) const
+	{
+		for (UINT32 ProgramIdx = 0u, ProgramNum = Programs.Num<UINT32>(); ProgramIdx < ProgramNum; ProgramIdx++)
+		{
+			if (Programs[ProgramIdx] && (Programs[ProgramIdx]->GetVariantName() == InVariantName))
+			{
+				return Programs[ProgramIdx];
+			}
+		}
+		return nullptr;
+	}
+
+	const EShaderProgram* EShaderAsset::GetProgramByIndex(const UINT32 InIndex) const
+	{
+		if (InIndex >= Programs.Num<UINT32>())
+		{
+			return nullptr;
+		}
+		return Programs[InIndex];
+	}
+
+	EShaderProgram* EShaderAsset::EnsureProgram(const EName& InVariantName, const UINT32 InVariantIndex)
+	{
+		EShaderProgram* ExistingProgram = FindProgram(InVariantName);
+		if (ExistingProgram)
+		{
+			return ExistingProgram;
+		}
+		EShaderProgram* NewProgram = new EShaderProgram(Name, InVariantName, InVariantIndex);
+		Programs.Add(NewProgram);
+		return NewProgram;
+	}
+
+	BOOL32 EShaderAsset::ComposeFromData(const EShaderAssetData& InAssetData, const EString& InAssetDirectory, const BOOL32 InIsReload)
+	{
+		// The entry json path travels inside the backup, and both entry points pass data that
+		// carries it, so this covers a cold start and an import alike.
+		EntryJsonPath = InAssetData.EntryJsonPath;
+
+		EShaderStageAssetManager* StageAssetManager = EShaderStageAssetManager::GetManagerSingleton();
+
+		UINT32 ComposedStageNum = 0u;
+		for (UINT32 VariantIdx = 0u, VariantNum = InAssetData.Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			const EShaderAssetVariantData& VariantData = InAssetData.Variants[VariantIdx];
+			EShaderProgram* Program = EnsureProgram(VariantData.Name, VariantData.VariantIndex);
+			if (!Program)
+			{
+				continue;
+			}
+			Program->SetVariantSource(VariantData.Defines, VariantData.DefineHash, VariantData.ReplaceHash);
+
+			for (UINT32 RefIdx = 0u, RefNum = VariantData.StageRefs.Num<UINT32>(); RefIdx < RefNum; RefIdx++)
+			{
+				const EShaderAssetStageRef& StageRef = VariantData.StageRefs[RefIdx];
+				const EShaderStageAsset* StageAsset = nullptr;
+				if (!StageAssetManager->LoadShaderStageAsset(InAssetDirectory, StageRef.StageAssetName, StageAsset, InIsReload))
 				{
-					Result->RawLayouts[LayoutIndex] = ShaderInputLayouts[LayoutIndex];
+					PE_LOG_ERROR(EString("[ShaderAsset] Variant '") + VariantData.Name.ToString()
+						+ EString("': cannot load the stage asset '") + StageRef.StageAssetName + EString("'."));
+					continue;
+				}
+
+				EShaderStageEntry* StageEntry = Program->EnsureStageEntry(StageRef.Stage);
+				if (!StageEntry)
+				{
+					continue;
+				}
+				StageEntry->StageAsset = StageAsset;
+				// Copied while the asset is alive, because it is the borrowed half of the entry: a
+				// report of "this stage has no render resource" runs in the state where the object
+				// behind the pointer may already have been replaced and released (see
+				// EShaderStageEntry::StageAssetName).
+				StageEntry->StageAssetName = StageAsset->GetAssetName();
+				// The reflection (and with it the input layout) travels inside the stage
+				// asset, so composing a stage is copying it into the entry.
+				StageEntry->Reflection = StageAsset->GetReflection();
+				StageEntry->BindingPlan.BuildFromReflection(StageEntry->Reflection, Program->IsBindlessVariant());
+				StageEntry->bValid = ((StageAsset->IsValid()) ? TRUE : FALSE);
+				if (StageEntry->bValid)
+				{
+					ComposedStageNum++;
 				}
 			}
-			if (!DeviceD3D11->CreateVertexShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result, ShaderInputLayouts, ShaderInputLayoutNum))
-			{
-				delete Result;
-				Result = nullptr;
-			}
 		}
-		return Result;
+
+		BumpRevision();
+		if (ComposedStageNum == 0u)
+		{
+			PE_LOG_WARN(EString("[ShaderAsset] '") + Name.ToString() + EString("' composed no usable stage."));
+		}
+		return TRUE;
 	}
 
-	EPixelShaderAsset::EPixelShaderAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
-		, const EString& InDebugName
-#endif
-	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_PIXEL, RPixelShaderResource>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
-		, InDebugName
-#endif
-	)
+	EShaderParameterSet* EShaderAsset::GetOrCreateDefaultParameterSet(const EName& InVariantName)
 	{
-	}
-	EPixelShaderAsset::~EPixelShaderAsset()
-	{
-	}
-	BOOL32 EPixelShaderAsset::InitResource()
-	{
-		if (IsInitialized())
+		EShaderParameterSet* ExistingSet = nullptr;
+		if (DefaultParameterSets.FindValue(InVariantName, ExistingSet))
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			return TRUE;
+			return ExistingSet;
 		}
-		if (CreateRenderResourceInternal(
-			[this](EShaderResource* InResource)->RPixelShaderResource*
-			{
-				return (this->CreateShaderRenderResource(InResource));
-			}, FALSE, [this](EShaderResource* InResource)->void
-			{
-				this->ReleaseResourceInternal();
-			}))
+
+		const EShaderProgram* Program = FindProgram(InVariantName);
+		if (!Program)
 		{
-			bIsInitialized = TRUE;
-			return TRUE;
+			return nullptr;
 		}
-		return FALSE;
-	}
-	RPixelShaderResource* EPixelShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
-	{
-		RPixelShaderResource* Result = nullptr;
-		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
-		{
-			RDeviceD3D11* DeviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			Result = new RPixelShaderResource();
-			if (!DeviceD3D11->CreatePixelShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result))
-			{
-				delete Result;
-				Result = nullptr;
-			}
-		}
-		return Result;
+
+		EShaderParameterSet* NewSet = new EShaderParameterSet();
+		NewSet->InitializeFromProgram(*Program);
+		DefaultParameterSets.Add(InVariantName, NewSet);
+		return NewSet;
 	}
 
-	EComputeShaderAsset::EComputeShaderAsset(const EString& InAssetPath, const EString& InAssetName
-#if _EDITOR_ONLY
-		, const EString& InDebugName
-#endif
-	) : TShaderBaseAsset<RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE, RComputeShaderResource>(InAssetPath, InAssetName
-#if _EDITOR_ONLY
-		, InDebugName
-#endif
-	)
+	const EShaderParameterSet* EShaderAsset::FindDefaultParameterSet(const EName& InVariantName) const
 	{
-	}
-	EComputeShaderAsset::~EComputeShaderAsset()
-	{
-	}
-	BOOL32 EComputeShaderAsset::InitResource()
-	{
-		if (IsInitialized())
+		EShaderParameterSet* FoundSet = nullptr;
+		EShaderAsset* MutableThis = const_cast<EShaderAsset*>(this);
+		if (MutableThis->DefaultParameterSets.FindValue(InVariantName, FoundSet))
 		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Vertex shader name=[") + GetAssetName() + "] path = [" + GetAssetPath() + "] has been Initialized.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			return TRUE;
+			return FoundSet;
 		}
-		if (CreateRenderResourceInternal(
-			[this](EShaderResource* InResource)->RComputeShaderResource*
-			{
-				return (this->CreateShaderRenderResource(InResource));
-			}, FALSE, [this](EShaderResource* InResource)->void
-			{
-				this->ReleaseResourceInternal();
-			}))
-		{
-			bIsInitialized = TRUE;
-			return TRUE;
-		}
-		return FALSE;
+		return nullptr;
 	}
-	RComputeShaderResource* EComputeShaderAsset::CreateShaderRenderResource(EShaderResource* InResource)
-	{
-		RComputeShaderResource* Result = nullptr;
-		if (InResource && InResource->ShaderByteCode && (InResource->ShaderByteCodeSize > 0u))
-		{
-			RDeviceD3D11* DeviceD3D11 = RDeviceD3D11::GetDeviceSingleton();
-			Result = new RComputeShaderResource();
-			if (!DeviceD3D11->CreateComputeShaderResource(InResource->ShaderByteCode, InResource->ShaderByteCodeSize, *Result))
-			{
-				delete Result;
-				Result = nullptr;
-			}
-		}
-		return Result;
-	}
+
+	// ---------------------------------------------------------------------------
+	// EShaderAssetManager - cold backup IO
+	// ---------------------------------------------------------------------------
 
 	EShaderAssetManager::EShaderAssetManager()
+		: ShaderAssets{}
 	{
-#if _EDITOR_ONLY
-		DebugName = ENGINE_SHADER_ASSET_MANAGER_NAME;
-#endif
 	}
+
 	EShaderAssetManager::~EShaderAssetManager()
 	{
+		ShutDown();
 	}
+
 	void EShaderAssetManager::Initialize()
 	{
 	}
+
 	void EShaderAssetManager::ShutDown()
 	{
-		ClearVertexShaders();
-		ClearPixelShaders();
-		ClearComputeShaders();
+		ReleaseAllAssets();
 	}
-#if _EDITOR_ONLY
-	BOOL32 EShaderAssetManager::ImportVertexShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
-	{
-		if ((!InShaderInputLayouts) || (!InShaderInputLayoutNum) || ((*InShaderInputLayoutNum) < 1u))
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to import vertex shader without input layouts."));
-			return FALSE;
-		}
-		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Import shader asset error (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EString ImportPathName; EString ImportFileType;
-		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file path for shader importer (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
-			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file type for shader importer (import shader name type : ");
-				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EShaderResource* OutResource = new EShaderResource();
-		if (!EFileHelper::ReadFileAsBinary(InImportFullPathName, OutResource->ShaderByteCode, OutResource->ShaderByteCodeSize))
-		{
-			OutResource->ReleaseResource();
-			delete OutResource;
-			return FALSE;
-		}
 
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, InShaderInputLayouts, InShaderInputLayoutNum);
+	void EShaderAssetManager::Uninit()
+	{
+		ReleaseAllAssets();
+	}
 
-		OutResource->ReleaseResource();
-		delete OutResource;
-		return Result;
-	}
-	BOOL32 EShaderAssetManager::ImportPixelShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	void EShaderAssetManager::ReleaseAllAssets()
 	{
-		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Import shader asset error (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EString ImportPathName; EString ImportFileType;
-		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file path for shader importer (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
-			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file type for shader importer (import shader name type : ");
-				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EShaderResource* OutResource = new EShaderResource();
-		if (!EFileHelper::ReadFileAsBinary(InImportFullPathName, OutResource->ShaderByteCode, OutResource->ShaderByteCodeSize))
-		{
-			OutResource->ReleaseResource();
-			delete OutResource;
-			return FALSE;
-		}
+		ShaderAssets.Clear();
+	}
 
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_PIXEL);
-
-		OutResource->ReleaseResource();
-		delete OutResource;
-		return Result;
-	}
-	BOOL32 EShaderAssetManager::ImportComputeShader(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EShaderAssetManager::SaveShaderAssetData(const EString& InFullPathName, const EShaderAssetData& InAssetData)
 	{
-		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if ((InImportFullPathName.Length() < 3u) || (TempFullSavePathName.Length() < 10u))
+		EShaderPAssetWriter PAssetWriter;
+		if (!WriteShaderPAssetHeader(PAssetWriter, static_cast<UINT32>(EShaderPAssetKindType::SHADER_PASSET_KIND_SHADER)))
 		{
-#if _EDITOR_ONLY
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot write the shader asset header: ") + InFullPathName);
+			return FALSE;
+		}
+		PAssetWriter.WriteString(InAssetData.ShaderName.ToString());
+		PAssetWriter.WriteString(InAssetData.EntryJsonPath);
+		PAssetWriter.WriteUInt32(InAssetData.Variants.Num<UINT32>());
+		for (UINT32 VariantIdx = 0u, VariantNum = InAssetData.Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			const EShaderAssetVariantData& VariantData = InAssetData.Variants[VariantIdx];
+			PAssetWriter.WriteString(VariantData.Name.ToString());
+			PAssetWriter.WriteUInt32(VariantData.VariantIndex);
+			PAssetWriter.WriteString(VariantData.DefineHash);
+			PAssetWriter.WriteString(VariantData.ReplaceHash);
+			PAssetWriter.WriteUInt32(VariantData.Defines.Num<UINT32>());
+			for (UINT32 DefIdx = 0u, DefNum = VariantData.Defines.Num<UINT32>(); DefIdx < DefNum; DefIdx++)
 			{
-				EString ErrorData("Import shader asset error (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				PAssetWriter.WriteString(VariantData.Defines[DefIdx].Name.ToString());
+				PAssetWriter.WriteInt32(VariantData.Defines[DefIdx].Value);
 			}
-#endif
-			return FALSE;
-		}
-		EString ImportPathName; EString ImportFileType;
-		if (!(SplitByLastSign('.', InImportFullPathName, ImportPathName, ImportFileType)))
-		{
-#if _EDITOR_ONLY
+			PAssetWriter.WriteUInt32(VariantData.StageRefs.Num<UINT32>());
+			for (UINT32 RefIdx = 0u, RefNum = VariantData.StageRefs.Num<UINT32>(); RefIdx < RefNum; RefIdx++)
 			{
-				EString ErrorData("Error file path for shader importer (import file path : ");
-				ErrorData = ErrorData + InImportFullPathName + ", save assset path : " + TempFullSavePathName + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				const EShaderAssetStageRef& StageRef = VariantData.StageRefs[RefIdx];
+				PAssetWriter.WriteUInt32(static_cast<UINT32>(StageRef.Stage));
+				PAssetWriter.WriteUInt32(static_cast<UINT32>(StageRef.ShaderModel));
+				PAssetWriter.WriteString(StageRef.StageAssetName);
 			}
-#endif
+		}
+		if (!PAssetWriter.SaveToFile(InFullPathName))
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot write the shader asset: ") + InFullPathName);
 			return FALSE;
 		}
-		if (EString TempShaderNameType = ImportPathName.Substring(ImportPathName.Length() - 5u, 5u);
-			((EString(".") + ImportFileType) != EString(EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE)) ||
-			(TempShaderNameType != EString(EEngineSettings::ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE)))
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Error file type for shader importer (import shader name type : ");
-				ErrorData = ErrorData + TempShaderNameType + ", import file type : " + ImportFileType + ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		EShaderResource* OutResource = new EShaderResource();
-		if (!EFileHelper::ReadFileAsBinary(InImportFullPathName, OutResource->ShaderByteCode, OutResource->ShaderByteCodeSize))
-		{
-			OutResource->ReleaseResource();
-			delete OutResource;
-			return FALSE;
-		}
-
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, OutResource, RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE);
-
-		OutResource->ReleaseResource();
-		delete OutResource;
-		return Result;
-	}
-	BOOL32 EShaderAssetManager::ImportVertexShaderFromBytes(
-		const EString& InAssetName, const EString& InSavePath,
-		const void* InBytes, ULONG InByteSize,
-		const RInputLayoutDesc* InInputLayouts, UINT32 InInputLayoutNum)
-	{
-		if (!InBytes || InByteSize == 0u || !InInputLayouts || InInputLayoutNum == 0u)
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportVertexShaderFromBytes: invalid arguments"));
-			return FALSE;
-		}
-		EShaderResource* Resource = new EShaderResource();
-		Resource->ShaderByteCode = new BYTE[InByteSize];
-		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
-		Resource->ShaderByteCodeSize = InByteSize;
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
-			RShaderFrequencyType::SHADER_FREQUENCY_VERTEX, InInputLayouts, &InInputLayoutNum);
-		Resource->ReleaseResource();
-		delete Resource;
-		return Result;
-	}
-	BOOL32 EShaderAssetManager::ImportPixelShaderFromBytes(
-		const EString& InAssetName, const EString& InSavePath,
-		const void* InBytes, ULONG InByteSize)
-	{
-		if (!InBytes || InByteSize == 0u)
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportPixelShaderFromBytes: invalid arguments"));
-			return FALSE;
-		}
-		EShaderResource* Resource = new EShaderResource();
-		Resource->ShaderByteCode = new BYTE[InByteSize];
-		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
-		Resource->ShaderByteCodeSize = InByteSize;
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
-			RShaderFrequencyType::SHADER_FREQUENCY_PIXEL);
-		Resource->ReleaseResource();
-		delete Resource;
-		return Result;
-	}
-	BOOL32 EShaderAssetManager::ImportComputeShaderFromBytes(
-		const EString& InAssetName, const EString& InSavePath,
-		const void* InBytes, ULONG InByteSize)
-	{
-		if (!InBytes || InByteSize == 0u)
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("ImportComputeShaderFromBytes: invalid arguments"));
-			return FALSE;
-		}
-		EShaderResource* Resource = new EShaderResource();
-		Resource->ShaderByteCode = new BYTE[InByteSize];
-		::memcpy_s(Resource->ShaderByteCode, InByteSize, InBytes, InByteSize);
-		Resource->ShaderByteCodeSize = InByteSize;
-		BOOL32 Result = SaveShaderResource(InSavePath, InAssetName, Resource,
-			RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE);
-		Resource->ReleaseResource();
-		delete Resource;
-		return Result;
-	}
-#endif
-	BOOL32 EShaderAssetManager::LoadVertexShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset)
-	{
-		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		EVertexShaderAsset* ResultShaderAsset = VertexShaderManager.Find(TempFullLoadPathName);
-		if (ResultShaderAsset)
-		{
-			OutShaderAsset = ResultShaderAsset;
-			return TRUE;
-		}
-		ResultShaderAsset = LoadShaderAsset<EVertexShaderAsset>(InLoadPath, InLoadName);
-		if (!ResultShaderAsset)
-		{
-			return FALSE;
-		}
-		if (!ResultShaderAsset->InitResource())
-		{
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		if (VertexShaderManager.Add(TempFullLoadPathName, ResultShaderAsset, TRUE) == 0u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Vertex shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		OutShaderAsset = ResultShaderAsset;
 		return TRUE;
 	}
-	BOOL32 EShaderAssetManager::LoadPixelShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset)
-	{
-		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		EPixelShaderAsset* ResultShaderAsset = PixelShaderManager.Find(TempFullLoadPathName);
-		if (ResultShaderAsset)
-		{
-			OutShaderAsset = ResultShaderAsset;
-			return TRUE;
-		}
-		ResultShaderAsset = LoadShaderAsset<EPixelShaderAsset>(InLoadPath, InLoadName);
-		if (!ResultShaderAsset)
-		{
-			return FALSE;
-		}
-		if (!ResultShaderAsset->InitResource())
-		{
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		if (PixelShaderManager.Add(TempFullLoadPathName, ResultShaderAsset, TRUE) == 0u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Pixel shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		OutShaderAsset = ResultShaderAsset;
-		return TRUE;
-	}
-	BOOL32 EShaderAssetManager::LoadComputeShaderAsset(const EString& InLoadPath, const EString& InLoadName, const EComputeShaderAsset*& OutShaderAsset)
-	{
-		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		EComputeShaderAsset* ResultShaderAsset = ComputeShaderManager.Find(TempFullLoadPathName);
-		if (ResultShaderAsset)
-		{
-			OutShaderAsset = ResultShaderAsset;
-			return TRUE;
-		}
-		ResultShaderAsset = LoadShaderAsset<EComputeShaderAsset>(InLoadPath, InLoadName);
-		if (!ResultShaderAsset)
-		{
-			return FALSE;
-		}
-		if (!ResultShaderAsset->InitResource())
-		{
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		if (ComputeShaderManager.Add(TempFullLoadPathName, ResultShaderAsset, TRUE) == 0u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorInfo = EString("Pixel shader path = [") + TempFullLoadPathName + "] add into manager list failed.";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorInfo));
-			}
-#endif
-			delete ResultShaderAsset;
-			return FALSE;
-		}
-		OutShaderAsset = ResultShaderAsset;
-		return TRUE;
-	}
-	void EShaderAssetManager::ClearVertexShaders()
-	{
-		VertexShaderManager.Clear();
-	}
-	void EShaderAssetManager::ClearPixelShaders()
-	{
-		PixelShaderManager.Clear();
-	}
-	void EShaderAssetManager::ClearComputeShaders()
-	{
-		ComputeShaderManager.Clear();
-	}
-	template<class TShaderAssetType>
-	TShaderAssetType* EShaderAssetManager::LoadShaderAsset(const EString& InLoadPath, const EString& InLoadName)
-	{
-		EString TempFullLoadPathName(InLoadPath);
-		TempFullLoadPathName = TempFullLoadPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if (TempFullLoadPathName.Length() < 10u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Load shader asset path name check failed (load file path : ");
-				ErrorData += InLoadPath;
-				ErrorData += ", load file name : ";
-				ErrorData += InLoadName;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return nullptr;
-		}
-		void* ReadFileMem = nullptr; ULONG ReadFileSize = 0u;
-		if (!EFileHelper::ReadFileAsBinary(TempFullLoadPathName, ReadFileMem, ReadFileSize))
-		{
-			if (ReadFileMem)
-			{
-				delete[]ReadFileMem;
-			}
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Load shader asset failed (load file path : ");
-				ErrorData += TempFullLoadPathName;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return nullptr;
-		}
-		PE_CHECK((ENGINE_ASSET_ERROR), ("Error read shader asset file size are too small."), (ReadFileSize > (sizeof(UINT32) * 3u)));
-		void* TempPtr = ReadFileMem;
-		ULONG RstSize = ReadFileSize;
-		EAssetType ReadAssetType = EAssetType::ASSET_TYPE_UNKNOWN;
-		RShaderFrequencyType ReadShaderFrequencyType = RShaderFrequencyType::SHADER_FREQUENCY_COUNT;
-		UINT32 ReadInputLayoutNum = 0u;
-		{
-			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-			ReadAssetType = static_cast<EAssetType>(SavedAssetTypePtr[0]);
-			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-			RstSize = RstSize - sizeof(UINT32);
-		}
-		{
-			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-			UINT8 TempType = static_cast<UINT8>(SavedAssetTypePtr[0]);
-			ReadShaderFrequencyType = static_cast<RShaderFrequencyType>(TempType);
-			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-			RstSize = RstSize - sizeof(UINT32);
-		}
-		{
-			UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-			ReadInputLayoutNum = SavedAssetTypePtr[0];
-			TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-			RstSize = RstSize - sizeof(UINT32);
-		}
-		TShaderAssetType* OutShaderAsset = nullptr;
-		if ((ReadAssetType == EAssetType::ASSET_TYPE_SHADER) &&
-			(ReadShaderFrequencyType < RShaderFrequencyType::SHADER_FREQUENCY_COUNT) &&
-			(RstSize > 0u))
-		{
-			TArray<RInputLayoutDesc> TempInputLayouts;
-			if (ReadInputLayoutNum > 0u)
-			{
-				TempInputLayouts.SetNum(ReadInputLayoutNum);
-				for (UINT32 LayoutIndex = 0u; LayoutIndex < ReadInputLayoutNum; LayoutIndex++)
-				{
-					RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
-					TempInputLayouts[LayoutIndex] = SavedAssetTypePtr[0];
-					TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-					RstSize = RstSize - sizeof(RInputLayoutDesc);
-				}
-			}
-			if (ReadShaderFrequencyType == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
-			{
-				EVertexShaderAsset* TempShaderAsset = new EVertexShaderAsset(InLoadPath, InLoadName
-#if _EDITOR_ONLY
-					, InLoadName
-#endif
-					, TempInputLayouts.GetData(), ReadInputLayoutNum);
-				OutShaderAsset = TempShaderAsset->AsType<TShaderAssetType>();
-				if (!OutShaderAsset)
-				{
-					TempShaderAsset->UninitResource();
-					delete TempShaderAsset;
-					TempShaderAsset = nullptr;
-				}
-			}
-			else
-			{
-				OutShaderAsset = new TShaderAssetType(InLoadPath, InLoadName
-#if _EDITOR_ONLY
-					, InLoadPath
-#endif
-				);
-			}
-			if (OutShaderAsset)
-			{
-				EShaderResource* StoragedResource = nullptr;
-				if (!(OutShaderAsset->StorageResourceInternal(
-					[TempPtr, RstSize, &StoragedResource]()->EShaderResource*
-					{
-						void* TempShaderCSO = new BYTE[RstSize];
-						::memcpy_s(TempShaderCSO, RstSize, TempPtr, RstSize);
-						StoragedResource = new EShaderResource();
-						StoragedResource->ShaderByteCode = TempShaderCSO;
-						StoragedResource->ShaderByteCodeSize = RstSize;
-						return StoragedResource;
-					})))
-				{
-					//TODO
-				}
-			}
-		}
-		delete[]ReadFileMem;
-		return OutShaderAsset;
-	}
-	BOOL32 EShaderAssetManager::SaveShaderResource(const EString& InSavePath, const EString& InSaveName, const EShaderResource* InShaderResource, RShaderFrequencyType InShaderFrequency, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
-	{
-		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if (TempFullSavePathName.Length() < 10u)
-		{
-#if _EDITOR_ONLY
-			{
-				EString ErrorData("Save shader asset path name check failed (save file path : ");
-				ErrorData += InSavePath;
-				ErrorData += ", save file name : ";
-				ErrorData += InSaveName;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		if (InShaderResource && InShaderResource->ShaderByteCode && (InShaderResource->ShaderByteCodeSize > 0u))
-		{
-			const UINT32 ShaderFrequency = static_cast<UINT32>(InShaderFrequency);
-			UINT32 ShaderInputLayoutNum = 0u;
-			ULONG ShaderSaveSize = sizeof(UINT32) + sizeof(UINT32) + sizeof(UINT32) + InShaderResource->ShaderByteCodeSize;	// EAssetType + RShaderFrequencyType + ShaderInputLayoutNum + ShaderByteCodeSize
-			switch (InShaderFrequency)
-			{
-			case RShaderFrequencyType::SHADER_FREQUENCY_PIXEL:
-			{
-				//TODO We do not separate pixel & compute shader save and load for now.
-			}
-			break;
-			case RShaderFrequencyType::SHADER_FREQUENCY_VERTEX:
-			{
-				if (!InShaderInputLayouts || !InShaderInputLayoutNum)
-				{
-					PE_FAILED((ENGINE_ASSET_ERROR), ("Try to save vertex shader asset, but do not contain input layouts."));
-					return FALSE;
-				}
-				ShaderInputLayoutNum = static_cast<UINT32>(*InShaderInputLayoutNum);
-				ShaderSaveSize += sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
-			}
-			break;
-			case RShaderFrequencyType::SHADER_FREQUENCY_COMPUTE:
-			{
-				//TODO We do not separate pixel & compute shader save and load for now.
-			}
-			break;
-			default:
-			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Not support type for shader import or save"));
-			}
-			break;
-			}
 
-			//TODO We copy whole cso memory into a new memory that only for header info. So we could change save code for reduce cost.
-			void* SaveMem = new BYTE[ShaderSaveSize];
-			void* TempPtr = SaveMem;
-			ULONG RstSize = ShaderSaveSize;
-			{
-				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-				SavedAssetTypePtr[0] = EAssetType::ASSET_TYPE_SHADER;
-				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-				RstSize = RstSize - sizeof(UINT32);
-			}
-			{
-				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-				SavedAssetTypePtr[0] = ShaderFrequency;
-				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-				RstSize = RstSize - sizeof(UINT32);
-			}
-			{
-				UINT32* SavedAssetTypePtr = (UINT32*)TempPtr;
-				SavedAssetTypePtr[0] = ShaderInputLayoutNum;
-				TempPtr = (void*)(&(SavedAssetTypePtr[1]));
-				RstSize = RstSize - sizeof(UINT32);
-			}
-			if (ShaderInputLayoutNum > 0u)
-			{
-				const UINT32 ShaderInputLayoutDescSize = sizeof(RInputLayoutDesc) * static_cast<ULONG>(ShaderInputLayoutNum);
-				::memcpy_s(TempPtr, RstSize, InShaderInputLayouts, ShaderInputLayoutDescSize);
-				RInputLayoutDesc* SavedAssetTypePtr = (RInputLayoutDesc*)TempPtr;
-				TempPtr = (void*)(&(SavedAssetTypePtr[ShaderInputLayoutNum]));
-				RstSize = RstSize - ShaderInputLayoutDescSize;
-			}
-			PE_CHECK((ENGINE_ASSET_ERROR), ("New copy buffer can not contain shader code."), (RstSize == InShaderResource->ShaderByteCodeSize));
-			::memcpy_s(TempPtr, RstSize, InShaderResource->ShaderByteCode, InShaderResource->ShaderByteCodeSize);
-
-			if (EFileHelper::SaveBytesToFile(TempFullSavePathName, SaveMem, ShaderSaveSize))
-			{
-				delete[]SaveMem;
-				return TRUE;
-			}
-
-			delete[]SaveMem;
+	BOOL32 EShaderAssetManager::LoadShaderAssetData(const EString& InFullPathName, EShaderAssetData& OutAssetData)
+	{
+		EShaderPAssetReader PAssetReader;
+		if (!PAssetReader.OpenFromFile(InFullPathName))
+		{
+			return FALSE;
+		}
+		UINT32 PAssetKind = 0u;
+		if (!ReadShaderPAssetHeader(PAssetReader, PAssetKind))
+		{
+			return FALSE;
+		}
+		if (PAssetKind != static_cast<UINT32>(EShaderPAssetKindType::SHADER_PASSET_KIND_SHADER))
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] '") + InFullPathName + EString("' does not hold a shader asset."));
+			return FALSE;
 		}
 
-#if _EDITOR_ONLY
+		EString ShaderNameStr;
+		UINT32 VariantNum = 0u;
+		if ((!PAssetReader.ReadString(ShaderNameStr))
+			|| (!PAssetReader.ReadString(OutAssetData.EntryJsonPath))
+			|| (!PAssetReader.ReadUInt32(VariantNum)))
 		{
-			EString ErrorData("Save shader asset failed (output file path : ");
-			ErrorData = ErrorData + TempFullSavePathName + ").";
-			PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+			PE_LOG_ERROR(EString("[ShaderAssetManager] The shader asset header is truncated: ") + InFullPathName);
+			return FALSE;
 		}
-#endif
-		return FALSE;
-	}
-	template<class TShaderAssetType>
-	BOOL32 EShaderAssetManager::SaveShaderAsset(const EString& InSavePath, const EString& InSaveName, const TShaderAssetType* InShaderAsset)
-	{
-		EString TempFullSavePathName(InSavePath);
-		TempFullSavePathName = TempFullSavePathName + InSaveName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
-		if (TempFullSavePathName.Length() < 10u)
+		OutAssetData.ShaderName = EName(ShaderNameStr);
+
+		for (UINT32 VariantIdx = 0u; VariantIdx < VariantNum; VariantIdx++)
 		{
-#if _EDITOR_ONLY
+			EShaderAssetVariantData VariantData;
+			EString VariantNameStr;
+			UINT32 DefineNum = 0u;
+			UINT32 StageRefNum = 0u;
+			if ((!PAssetReader.ReadString(VariantNameStr))
+				|| (!PAssetReader.ReadUInt32(VariantData.VariantIndex))
+				|| (!PAssetReader.ReadString(VariantData.DefineHash))
+				|| (!PAssetReader.ReadString(VariantData.ReplaceHash))
+				|| (!PAssetReader.ReadUInt32(DefineNum)))
 			{
-				EString ErrorData("Save shader asset path name check failed (save file path : ");
-				ErrorData += InSavePath;
-				ErrorData += ", save file name : ";
-				ErrorData += InSaveName;
-				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
-			}
-#endif
-			return FALSE;
-		}
-		if (!InShaderAsset)
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to save a null shader asset."));
-			return FALSE;
-		}
-		const EShaderResource* SaveShaderResource = InShaderAsset->GetStoragedResource();
-		if ((!SaveShaderResource) || (!(SaveShaderResource->IsResourceValid())))
-		{
-			PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to save a shader asset without resource."));
-			return FALSE;
-		}
-		RShaderFrequencyType SaveShaderFrequency = InShaderAsset->GetShaderFrequency();
-		const RInputLayoutDesc* SaveShaderInputLayouts = nullptr;
-		UINT32 SaveShaderInputLayoutNum = 0u;
-		if (SaveShaderFrequency == RShaderFrequencyType::SHADER_FREQUENCY_VERTEX)
-		{
-			const EVertexShaderAsset* TempVertexShaderAsset = InShaderAsset->AsType<EVertexShaderAsset>();
-			if (!TempVertexShaderAsset)
-			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Error try to saving a shader asset frequency is vertex, but actually is not vertex shader asset."));
+				PE_LOG_ERROR(EString("[ShaderAssetManager] A variant entry is truncated: ") + InFullPathName);
 				return FALSE;
 			}
-			SaveShaderInputLayouts = TempVertexShaderAsset->GetShaderInputLayouts();
-			SaveShaderInputLayoutNum = TempVertexShaderAsset->GetShaderInputLayoutNum();
+			VariantData.Name = EName(VariantNameStr);
+			for (UINT32 DefIdx = 0u; DefIdx < DefineNum; DefIdx++)
+			{
+				EShaderVariantDefine Define;
+				EString DefineNameStr;
+				if ((!PAssetReader.ReadString(DefineNameStr)) || (!PAssetReader.ReadInt32(Define.Value)))
+				{
+					PE_LOG_ERROR(EString("[ShaderAssetManager] A variant define is truncated: ") + InFullPathName);
+					return FALSE;
+				}
+				Define.Name = EName(DefineNameStr);
+				VariantData.Defines.Add(Define);
+			}
+			if (!PAssetReader.ReadUInt32(StageRefNum))
+			{
+				PE_LOG_ERROR(EString("[ShaderAssetManager] A variant stage list is truncated: ") + InFullPathName);
+				return FALSE;
+			}
+			for (UINT32 RefIdx = 0u; RefIdx < StageRefNum; RefIdx++)
+			{
+				EShaderAssetStageRef StageRef;
+				UINT32 StageValue = 0u;
+				UINT32 ShaderModelValue = 0u;
+				if ((!PAssetReader.ReadUInt32(StageValue))
+					|| (!PAssetReader.ReadUInt32(ShaderModelValue))
+					|| (!PAssetReader.ReadString(StageRef.StageAssetName)))
+				{
+					PE_LOG_ERROR(EString("[ShaderAssetManager] A stage reference is truncated: ") + InFullPathName);
+					return FALSE;
+				}
+				StageRef.Stage = static_cast<EShaderStageType>(static_cast<UINT8>(StageValue));
+				StageRef.ShaderModel = static_cast<EShaderModelType>(static_cast<UINT8>(ShaderModelValue));
+				VariantData.StageRefs.Add(StageRef);
+			}
+			OutAssetData.Variants.Add(VariantData);
 		}
-		return (SaveShaderAsset(InSavePath, InSaveName, SaveShaderResource, SaveShaderFrequency, SaveShaderInputLayouts, &SaveShaderInputLayoutNum));
+		return TRUE;
 	}
 
-	void TryLoadVertexShader(const EString& InLoadPath, const EString& InLoadName, const EVertexShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName, const RInputLayoutDesc* InShaderInputLayouts, const UINT32* InShaderInputLayoutNum)
+	// ---------------------------------------------------------------------------
+	// EShaderAssetManager - load
+	// ---------------------------------------------------------------------------
+
+	BOOL32 EShaderAssetManager::LoadShaderAsset(const EString& InLoadPath, const EString& InLoadName
+		, const EShaderAsset*& OutAsset, const BOOL32 InIsReload)
 	{
-		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
-		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
-		if (ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
+		OutAsset = nullptr;
+		const EName AssetName(InLoadName);
+		if (AssetName.IsNone())
 		{
-			return;
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot load a shader asset without a name."));
+			return FALSE;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Load vertex shader asset failed."));
+
+		if (!InIsReload)
+		{
+			EShaderAsset* CachedAsset = ShaderAssets.Find(AssetName);
+			if (CachedAsset)
+			{
+				OutAsset = CachedAsset;
+				return TRUE;
+			}
+		}
+
+		const EString FullPathName = InLoadPath + InLoadName + EString(EEngineSettings::ENGINE_ASSET_NAME_TYPE);
+		EShaderAssetData AssetData;
+		if (!LoadShaderAssetData(FullPathName, AssetData))
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot read the shader asset: ") + FullPathName);
+			return FALSE;
+		}
+
+		EShaderAsset* Asset = new EShaderAsset(InLoadPath, InLoadName
 #if _EDITOR_ONLY
-		if ((!!InImportPath) && (!!InImportName) && (!!InShaderInputLayouts) && (!!InShaderInputLayoutNum) && ((*InShaderInputLayoutNum) > 0u))
-		{
-			TArray<RInputLayoutDesc> UsedShaderInputLayouts;
-			for (UINT32 i = 0u, n = (*InShaderInputLayoutNum); i < n; i++)
-			{
-				RInputLayoutDesc& TempDesc = UsedShaderInputLayouts.AddDefaultGetRef();
-				TempDesc = InShaderInputLayouts[i];
-			}
-			const UINT32 UsedShaderInputLayoutNum = UsedShaderInputLayouts.Num<UINT32>();
-			EString TempImportFullPath(*InImportPath);
-			TempImportFullPath = TempImportFullPath + (*InImportName) + EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE;
-			BOOL32 Result = ShaderAssetManager->ImportVertexShader(
-				InLoadName,
-				TempImportFullPath,
-				InLoadPath,
-				UsedShaderInputLayouts.GetData(), &UsedShaderInputLayoutNum);
-			if (Result)
-			{
-				if (!(ShaderAssetManager->LoadVertexShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
-				{
-					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
-				}
-			}
-			else
-			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import vertex shader asset failed."));
-			}
-		}
+			, EString(PE_TEXT("ShaderAsset")) + InLoadName
 #endif
-	}
-	void TryLoadPixelShader(const EString& InLoadPath, const EString& InLoadName, const EPixelShaderAsset*& OutShaderAsset, const EString* InImportPath, const EString* InImportName)
-	{
-		EShaderAssetManager* ShaderAssetManager = EShaderAssetManager::GetManagerSingleton();
-		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output shader asset pointer is initialized failed."), (!OutShaderAsset));
-		if (ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset))
+		);
+		// Keep the cold backup: it is what InitResource restores from, and keeping it also means a
+		// hot reload can re-compose later without re-reading the file.
+		auto StoreColdBackup = [&AssetData]() -> EShaderAssetData*
 		{
-			return;
+			return (new EShaderAssetData(AssetData));
+		};
+		if (!Asset->StorageResourceInternal(StoreColdBackup))
+		{
+			delete Asset;
+			return FALSE;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Load vertex shader asset failed."));
+		/*
+		* A new object every time, on purpose, and this is where that decision lives.
+		*
+		* A published asset belongs to every reader that holds a pointer into it: a draw walks its
+		* programs, their stage entries, their binding plans and the reflection inside them. A
+		* reload that rewrote any of that in place would rewrite it while a draw is walking it,
+		* which is a race no lock fixes without turning every read into a locked read. Building a
+		* new object and publishing it instead makes a reload a pointer swap: whoever is told about
+		* it moves to the new object, whoever is still inside the old one finishes against the old
+		* one, and the old one is freed by the retirement once the render thread has drained a
+		* frame that started after the swap.
+		*
+		* InIsReload belongs to the call rather than to the asset: a cold start restores from the
+		* backup it just stored, a reload composes from the same data and reloads the stage assets
+		* it references, because the import that got here rewrote those too.
+		*/
+		const BOOL32 bComposed = (InIsReload
+			? Asset->ComposeFromData(AssetData, InLoadPath, TRUE)
+			: Asset->InitResource());
+		if (!bComposed)
+		{
+			Asset->UninitResource();
+			delete Asset;
+			return FALSE;
+		}
+		// Published last, so a reader that finds it in the table finds a finished asset. An asset
+		// this replaces leaves the table here and is parked by the table, not freed.
+		if (ShaderAssets.Add(AssetName, Asset, (InIsReload ? TRUE : FALSE)) == 0u)
+		{
 #if _EDITOR_ONLY
-		if ((!!InImportPath) && (!!InImportName))
+			PE_FAILED((ENGINE_ASSET_ERROR), (PE_TEXT("[ShaderAssetManager] The loaded shader could not be added to the cache.")));
+#endif
+			Asset->UninitResource();
+			delete Asset;
+			return FALSE;
+		}
+
+		OutAsset = Asset;
+
+		if (InIsReload)
 		{
-			EString TempImportFullPath(*InImportPath);
-			TempImportFullPath = TempImportFullPath + (*InImportName) + EEngineSettings::ENGINE_IMPORT_SHADER_NAME_TYPE;
-			BOOL32 Result = ShaderAssetManager->ImportPixelShader(
-				InLoadName,
-				TempImportFullPath,
-				InLoadPath);
-			if (Result)
+			/*
+			* The compose above reloaded the stage assets this shader references, and a stage asset is
+			* shared: replacing one under its own name leaves every other shader asset that references it
+			* composed against a released object. Moving those onto the new objects is this call's job -
+			* it is the one that replaced them - and it has to happen now, before the retirement frees
+			* what they point at. A reload that replaced nothing (the compiled content was unchanged)
+			* drains an empty list and does nothing.
+			*/
+			TArray<EString> ReplacedStageAssets;
+			EShaderStageAssetManager::GetManagerSingleton()->TakeReplacedStageAssetNames(ReplacedStageAssets);
+			if ((ReplacedStageAssets.Num<UINT32>() > 0u)
+				&& (!RepublishShadersReferencingStages(ReplacedStageAssets, AssetName)))
 			{
-				if (!(ShaderAssetManager->LoadPixelShaderAsset(InLoadPath, InLoadName, OutShaderAsset)))
-				{
-					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load vertex shader asset failed."));
-				}
-			}
-			else
-			{
-				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import vertex shader asset failed."));
+				// The load itself succeeded, so the asset stays published; what failed is the move of a
+				// reader onto the new stage objects, and that reader keeps pointers the retirement is
+				// about to free. Per asset reasons are in the log above - this is the break.
+				PE_FAILED((ENGINE_ASSET_ERROR), (PE_TEXT("[ShaderAssetManager] A shader asset referencing a replaced stage asset could not be republished.")));
 			}
 		}
-#endif
+#if _EDITOR_ONLY
+		PE_LOG_LOG(EString("[ShaderAssetManager] Loaded '") + InLoadName
+			+ EString("' (revision ") + ToString(Asset->GetRevision())
+			+ EString(", variants ") + ToString(Asset->GetProgramNum())
+			+ EString(", culled fields ") + ToString(Asset->GetCulledFieldNum())
+			+ EString(", exposed fields ") + ToString(Asset->GetExposedFieldNum()) + EString(")."));
+#endif	// _EDITOR_ONLY
+		return TRUE;
 	}
 
-};
+	// Does this asset's cold backup reference any of the names? The backup is what a compose reads, so
+	// it is also what decides whether a replacement behind one of those names concerns this asset. The
+	// reference is by name there on purpose: a stage asset's identity is its name, and the pointer an
+	// entry holds is resolved while composing, never stored in the backup.
+	static BOOL32 DoesShaderReferenceStageAssets(const EShaderAsset& InAsset, const TArray<EString>& InStageAssetNames)
+	{
+		const EShaderAssetData* AssetData = InAsset.GetStoragedResource();
+		if (!AssetData)
+		{
+			return FALSE;
+		}
+		for (UINT32 VariantIndex = 0u, VariantNum = AssetData->Variants.Num<UINT32>(); VariantIndex < VariantNum; VariantIndex++)
+		{
+			const TArray<EShaderAssetStageRef>& StageRefs = AssetData->Variants[VariantIndex].StageRefs;
+			for (UINT32 RefIndex = 0u, RefNum = StageRefs.Num<UINT32>(); RefIndex < RefNum; RefIndex++)
+			{
+				if (InStageAssetNames.Contains(StageRefs[RefIndex].StageAssetName))
+				{
+					return TRUE;
+				}
+			}
+		}
+		return FALSE;
+	}
+
+	BOOL32 EShaderAssetManager::RepublishShadersReferencingStages(const TArray<EString>& InReplacedStageAssets, const EName& InSkipAssetName)
+	{
+		// Snapshot the table before rebuilding: a rebuild publishes into it, so the walk must not read
+		// a table this loop writes.
+		TArray<EShaderAsset*> CachedAssets;
+		ShaderAssets.GenerateValueArray(CachedAssets);
+
+		BOOL32 bAllRepublished = TRUE;
+		TArray<EName> RepublishedNames;
+		for (UINT32 AssetIndex = 0u, AssetNum = CachedAssets.Num<UINT32>(); AssetIndex < AssetNum; AssetIndex++)
+		{
+			EShaderAsset* CachedAsset = CachedAssets[AssetIndex];
+			if ((!CachedAsset) || (CachedAsset->GetName() == InSkipAssetName))
+			{
+				continue;
+			}
+			if (!DoesShaderReferenceStageAssets(*CachedAsset, InReplacedStageAssets))
+			{
+				continue;
+			}
+			// One asset can reference two of the replaced names, and it only has to be rebuilt once.
+			const EName CachedName = CachedAsset->GetName();
+			if (RepublishedNames.Contains(CachedName))
+			{
+				continue;
+			}
+			RepublishedNames.Add(CachedName);
+			if (!RebuildAndRepublishShaderAsset(*CachedAsset))
+			{
+				bAllRepublished = FALSE;
+			}
+		}
+		return bAllRepublished;
+	}
+
+	BOOL32 EShaderAssetManager::RebuildAndRepublishShaderAsset(EShaderAsset& InAsset)
+	{
+		const EName AssetName = InAsset.GetName();
+		const EString AssetNameString = AssetName.ToString();
+		const EShaderAssetData* ColdData = InAsset.GetStoragedResource();
+		if (!ColdData)
+		{
+			// Cannot happen for a published shader asset, which stores its backup before it publishes.
+			// Reported rather than skipped, because the state it leaves is the one this step exists to
+			// prevent: the asset keeps a pointer to a stage object that was replaced.
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot republish '") + AssetNameString
+				+ EString("': it has no cold backup to rebuild from."));
+			return FALSE;
+		}
+
+		// The backup is copied for the new object, while the published one still holds it: a rebuild is
+		// a new asset rather than a re-read, so nothing here touches the disk.
+		auto StoreColdBackup = [ColdData]() -> EShaderAssetData*
+		{
+			return (new EShaderAssetData(*ColdData));
+		};
+		EShaderAsset* NewAsset = new EShaderAsset(InAsset.GetAssetPath(), AssetNameString
+#if _EDITOR_ONLY
+			, EString(PE_TEXT("ShaderAsset")) + AssetNameString
+#endif
+		);
+		if (!NewAsset->StorageResourceInternal(StoreColdBackup))
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot store the rebuilt cold backup of '") + AssetNameString + EString("'."));
+			delete NewAsset;
+			NewAsset = nullptr;
+			return FALSE;
+		}
+		// Composed through InitResource, which restores from the backup just stored and does not reload
+		// the stage assets: this compose resolves them from the cache, so the objects it picks up are
+		// the current ones and nothing is replaced here - which is also what keeps this from cascading
+		// into another republish.
+		if (!NewAsset->InitResource())
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot compose the rebuild of '") + AssetNameString + EString("'."));
+			NewAsset->UninitResource();
+			delete NewAsset;
+			NewAsset = nullptr;
+			return FALSE;
+		}
+		if (ShaderAssets.Add(AssetName, NewAsset, TRUE) == 0u)
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] The rebuild of '") + AssetNameString + EString("' could not be published."));
+			NewAsset->UninitResource();
+			delete NewAsset;
+			NewAsset = nullptr;
+			return FALSE;
+		}
+
+		// The readers of the name that was just published: re-pointing the instances and telling the
+		// render thread to drop what it derived from the previous object is exactly the step a reload of
+		// this name runs. Leaving it out would leave the pointers this rebuild exists to move.
+		REngineShaderInstanceCache::GetManagerSingleton()->PublishShaderAssetSwap(AssetName);
+#if _EDITOR_ONLY
+		PE_LOG_LOG(EString("[ShaderAssetManager] Republished '") + AssetNameString
+			+ EString("': a stage asset it references was replaced."));
+#endif	// _EDITOR_ONLY
+		return TRUE;
+	}
+	BOOL32 EShaderAssetManager::RequireLoadShaderAsset(const EString& InLoadPath, const EString& InLoadName
+		, const EShaderAsset*& OutAsset, EAssetLoadCompleteType InOnLoadComplete)
+	{
+		OutAsset = nullptr;
+		const EName AssetName(InLoadName);
+		if (AssetName.IsNone())
+		{
+			return FALSE;
+		}
+		if (EShaderAsset* CachedAsset = ShaderAssets.Find(AssetName))
+		{
+			OutAsset = CachedAsset;
+			return TRUE;
+		}
+		// The cache is keyed by name alone, but the request is keyed by the full path: two shader
+		// assets of the same name in different directories are different files, and only one of
+		// them can be the cached one.
+		const EString FullPathName = InLoadPath + InLoadName + EString(EEngineSettings::ENGINE_ASSET_NAME_TYPE);
+		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
+			MakeAssetLoadRequestKey(PE_TEXT("Shader"), FullPathName),
+			[InLoadPath, InLoadName]() -> BOOL32
+			{
+				const EShaderAsset* LoadedAsset = nullptr;
+				return EShaderAssetManager::GetManagerSingleton()->LoadShaderAsset(InLoadPath, InLoadName, LoadedAsset, FALSE);
+			},
+			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
+		return FALSE;
+	}
+
+	EShaderAsset* EShaderAssetManager::FindShaderAsset(const EName& InAssetName)
+	{
+		return ShaderAssets.Find(InAssetName);
+	}
+
+	const EShaderAsset* EShaderAssetManager::FindShaderAsset(const EName& InAssetName) const
+	{
+		EShaderAsset* TempAsset = const_cast<EShaderAssetManager*>(this)->ShaderAssets.Find(InAssetName);
+		return TempAsset;
+	}
+
+	UINT32 EShaderAssetManager::GetShaderAssetNum() const
+	{
+		return ShaderAssets.Size();
+	}
+
+	const EShaderProgram* EShaderAssetManager::FindProgram(const EName& InAssetName, const EName& InVariantName) const
+	{
+		const EShaderAsset* Asset = FindShaderAsset(InAssetName);
+		if (!Asset)
+		{
+			return nullptr;
+		}
+		return Asset->FindProgram(InVariantName);
+	}
+
+#if _EDITOR_ONLY
+
+	BOOL32 EShaderAssetManager::ImportStageRefs(const EString& InArtifactDirectory, const EShaderManifest& InManifest
+		, const EShaderManifestVariant& InVariant, const EString& InSavePath, EShaderAssetStageRef& OutStageRef)
+	{
+		if ((InVariant.BinaryFile.Length() == 0u) || (InVariant.ReflectionFile.Length() == 0u))
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Variant '") + InVariant.Name.ToString()
+				+ EString("' carries no binary / reflection name."));
+			return FALSE;
+		}
+
+		// The stage asset name is the artifact stem: the binary and its reflection share
+		// it, which is what makes one stage asset per (variant, stage) enough.
+		const EString StageAssetNameStr = FileNameStemOf(InVariant.BinaryFile);
+		const EString BytecodeFullPath = InArtifactDirectory + InVariant.BinaryFile;
+		const EString ReflectionFullPath = InArtifactDirectory + InVariant.ReflectionFile;
+		if (!EShaderStageAssetManager::GetManagerSingleton()->ImportShaderStageAsset(StageAssetNameStr
+			, BytecodeFullPath, ReflectionFullPath, InManifest.Stage, InManifest.ShaderModel, InSavePath))
+		{
+			return FALSE;
+		}
+
+		OutStageRef.Stage = InManifest.Stage;
+		OutStageRef.ShaderModel = InManifest.ShaderModel;
+		OutStageRef.StageAssetName = StageAssetNameStr;
+		return TRUE;
+	}
+
+	BOOL32 EShaderAssetManager::ImportShaderAssetFromManifest(const EString& InManifestFullPath
+		, const EString& InSavePath, const EString& InSaveName)
+	{
+		EShaderManifest Manifest;
+		if (!ParseShaderManifestJson(InManifestFullPath, Manifest))
+		{
+			return FALSE;
+		}
+		if (Manifest.ShaderName.IsNone())
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] The manifest declares an empty shader name: ") + InManifestFullPath);
+			return FALSE;
+		}
+
+		const EString ArtifactDirectory = ParentDirectoryOf(InManifestFullPath);
+		if (ArtifactDirectory.Length() == 0u)
+		{
+			PE_LOG_ERROR(EString("[ShaderAssetManager] Cannot resolve the artifact directory: ") + InManifestFullPath);
+			return FALSE;
+		}
+
+		// Folding: read the existing cold backup first so earlier stages survive this
+		// import. The compiler writes one manifest per stage.
+		const EString PAssetFullPath = InSavePath + InSaveName + EString(EEngineSettings::ENGINE_ASSET_NAME_TYPE);
+		EShaderAssetData AssetData;
+		if (EFileHelper::IsFileExists(PAssetFullPath))
+		{
+			if (!LoadShaderAssetData(PAssetFullPath, AssetData))
+			{
+				PE_LOG_ERROR(EString("[ShaderAssetManager] The existing shader asset cannot be read, importing from scratch: ") + PAssetFullPath);
+				AssetData = EShaderAssetData();
+			}
+		}
+		if (AssetData.ShaderName.IsNone())
+		{
+			AssetData.ShaderName = Manifest.ShaderName;
+		}
+		if (AssetData.EntryJsonPath.Length() == 0u)
+		{
+			AssetData.EntryJsonPath = Manifest.EntryJsonPath;
+		}
+
+		UINT32 ImportedVariantNum = 0u;
+		for (UINT32 VariantIdx = 0u, VariantNum = Manifest.Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
+		{
+			const EShaderManifestVariant& Variant = Manifest.Variants[VariantIdx];
+			if (!Variant.bSuccess)
+			{
+				// A failed variant is not imported; the caller sees it in the compiler log.
+				PE_LOG_WARN(EString("[ShaderAssetManager] Variant '") + Variant.Name.ToString()
+					+ EString("' of '") + Manifest.ShaderName.ToString() + EString("' is not imported: ") + Variant.Errors);
+				continue;
+			}
+
+			EShaderAssetVariantData* VariantData = AssetData.FindVariant(Variant.Name);
+			if (!VariantData)
+			{
+				EShaderAssetVariantData NewVariantData;
+				NewVariantData.Name = Variant.Name;
+				NewVariantData.VariantIndex = Variant.Index;
+				AssetData.Variants.Add(NewVariantData);
+				VariantData = AssetData.FindVariant(Variant.Name);
+			}
+			if (!VariantData)
+			{
+				continue;
+			}
+			VariantData->VariantIndex = Variant.Index;
+			VariantData->DefineHash = Variant.DefineHash;
+			VariantData->ReplaceHash = Variant.ReplaceHash;
+			VariantData->Defines = Variant.Defines;
+
+			EShaderAssetStageRef StageRef;
+			if (!ImportStageRefs(ArtifactDirectory, Manifest, Variant, InSavePath, StageRef))
+			{
+				continue;
+			}
+
+			// Replace the stage this manifest carries, keep the other stages.
+			BOOL32 bReplaced = FALSE;
+			for (UINT32 RefIdx = 0u, RefNum = VariantData->StageRefs.Num<UINT32>(); RefIdx < RefNum; RefIdx++)
+			{
+				if (VariantData->StageRefs[RefIdx].Stage == StageRef.Stage)
+				{
+					VariantData->StageRefs[RefIdx] = StageRef;
+					bReplaced = TRUE;
+					break;
+				}
+			}
+			if (!bReplaced)
+			{
+				VariantData->StageRefs.Add(StageRef);
+			}
+			ImportedVariantNum++;
+		}
+
+		if (!SaveShaderAssetData(PAssetFullPath, AssetData))
+		{
+			return FALSE;
+		}
+
+		PE_LOG_LOG(EString("[ShaderAssetManager] Imported '") + Manifest.ShaderName.ToString()
+			+ EString("' stage ") + Manifest.StageSuffix
+			+ EString(" (") + ToString(ImportedVariantNum) + EString(" variants)."));
+		return TRUE;
+	}
+
+#endif	// _EDITOR_ONLY
+
+} // namespace PigeonEngine

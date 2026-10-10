@@ -1,31 +1,31 @@
-﻿#pragma once
+#pragma once
 #include "Base/DataStructure/Text/String.h"
 
 namespace PigeonEngine
 {
-    enum EKeyStateType : UINT8
-    {
-        PRESSED,
-        REALEASED,
-    };
+	enum EKeyStateType : UINT8
+	{
+		PRESSED,
+		REALEASED,
+	};
 
-	
-    struct EKey
-    {
-        EKey() = default;
-        EKey(EString InKeyName, const UINT8& InKeyCode) : KeyName(std::move(InKeyName)), KeyCode(InKeyCode){}
 
-        PE_NODISCARD const EString& GetKeyName()const{return this->KeyName;}
-        PE_NODISCARD const UINT8&   GetKeyCode()const{return this->KeyCode;}
+	struct EKey
+	{
+		EKey() = default;
+		EKey(EString InKeyName, const UINT8& InKeyCode) : KeyName(std::move(InKeyName)), KeyCode(InKeyCode){}
 
-    private:
-        EString KeyName;
+		PE_NODISCARD const EString& GetKeyName()const{return this->KeyName;}
+		PE_NODISCARD const UINT8&   GetKeyCode()const{return this->KeyCode;}
+
+	private:
+		EString KeyName;
 		UINT8   KeyCode = ((UINT8)(-1));
-    };
+	};
 
-    struct EKeysBuiltIn
-    {
-        static const EKey AnyKey;
+	struct EKeysBuiltIn
+	{
+		static const EKey AnyKey;
 
 		// static const EKey MouseX;
 		// static const EKey MouseY;
@@ -171,9 +171,9 @@ namespace PigeonEngine
 		// static const EKey C_Cedille;
 		// static const EKey Section;
 
-    	static const EKey& GetKeyByKeyCode(const UINT8& KeyCode);
-    	
-    };
+		static const EKey& GetKeyByKeyCode(const UINT8& KeyCode);
+
+	};
 }
 
 

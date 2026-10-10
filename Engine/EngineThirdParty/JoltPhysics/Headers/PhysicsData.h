@@ -18,7 +18,7 @@ struct FPhysicsData
 	BodyInterface* BodyInterface;
 	TempAllocatorImpl* TempAllocator;
 	JobSystemThreadPool* JobSystem;
-    FPhysicsBroadPhaseLayerMapper* BroadPhaseLayerMapper;
+	FPhysicsBroadPhaseLayerMapper* BroadPhaseLayerMapper;
 	FPhysicsObjectLayerPairCollisionFilter* ObjectLayerPairCollisionFilter;
 	FPhysicsObjectVsBroadPhaseLayerCollisionFilter* ObjectVsBroadPhaseLayerCollisionFilter;
 	FBodyActivationListener* BodyActivationListener;

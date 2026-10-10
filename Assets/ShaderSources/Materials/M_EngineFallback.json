@@ -1,0 +1,61 @@
+{
+	"Name": "M_EngineFallback",
+	"Template": "Materials/M_EngineFallback.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "BaseColor",
+					"Format": "color4",
+					"Default": [
+						0.5,
+						0.5,
+						0.5,
+						1.0
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "Roughness",
+					"Format": "float",
+					"Default": [
+						0.6
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "Metallic",
+					"Format": "float",
+					"Default": [
+						0.0
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "Reflectance",
+					"Format": "float",
+					"Default": [
+						0.5
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "AmbientOcclusion",
+					"Format": "float",
+					"Default": [
+						1.0
+					],
+					"Exposure": true
+				}
+			]
+		}
+	],
+	"PEMaterial": {
+		"Domain": "DefaultLit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

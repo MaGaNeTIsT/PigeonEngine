@@ -4,6 +4,11 @@
 #include <DirectXMath.h>
 #include "BuiltInType.h"
 #include "../Math/Math.h"
+#include "../Memory/Memory.h"
+#include "../RegisterBase.h"
+#include "./Container/Map.h"
+#include "./Text/Name.h"
+#include "./Container/STLType.h"
 
 namespace PigeonEngine
 {
@@ -343,7 +348,7 @@ namespace PigeonEngine
 			FLOAT v[3];
 		};
 	};
-	
+
 	struct Vector2
 	{
 		constexpr Vector2(const DirectX::XMFLOAT2& xv)noexcept : x(xv.x), y(xv.y) {}
@@ -2062,5 +2067,266 @@ namespace PigeonEngine
 	extern PE_INLINE Vector4Int MaxVector4Int(const Vector4Int& A, const Vector4Int& B);
 	extern PE_INLINE Matrix4x4 LookAtTargetMatrixRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
 	extern PE_INLINE Quaternion LookAtTargetQuaternionRotation(const Vector3& InTargetLocation, const Vector3& InViewLocation, const Vector3& InViewUpDirection);
+
+	enum EVariableFormatPrefixType : UINT8
+	{
+		VARIABLE_FORMAT_PREFIX_UNKNOWN = 0u,
+		VARIABLE_FORMAT_PREFIX_MATRIX,
+		VARIABLE_FORMAT_PREFIX_FLOAT,
+		VARIABLE_FORMAT_PREFIX_INT,
+		VARIABLE_FORMAT_PREFIX_UINT,
+		VARIABLE_FORMAT_PREFIX_COUNT
+	};
+
+	enum EVariableFormatSuffixType : UINT8
+	{
+		VARIABLE_FORMAT_SUFFIX_UNKNOWN = 0u,
+		VARIABLE_FORMAT_SUFFIX_1,
+		VARIABLE_FORMAT_SUFFIX_2,
+		VARIABLE_FORMAT_SUFFIX_3,
+		VARIABLE_FORMAT_SUFFIX_4,
+		VARIABLE_FORMAT_SUFFIX_2x2,
+		VARIABLE_FORMAT_SUFFIX_3x2,
+		VARIABLE_FORMAT_SUFFIX_2x3,
+		VARIABLE_FORMAT_SUFFIX_3x3,
+		VARIABLE_FORMAT_SUFFIX_4x2,
+		VARIABLE_FORMAT_SUFFIX_2x4,
+		VARIABLE_FORMAT_SUFFIX_4x3,
+		VARIABLE_FORMAT_SUFFIX_3x4,
+		VARIABLE_FORMAT_SUFFIX_4x4,
+		VARIABLE_FORMAT_SUFFIX_COUNT
+	};
+
+	struct EVariableFormat
+	{
+		EVariableFormatPrefixType		Prefix		= EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_UNKNOWN;
+		EVariableFormatSuffixType		Suffix		= EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_UNKNOWN;
+	};
+
+	extern UINT32 GetVariableFormatStride(const EVariableFormat& InFormat);
+	extern UINT32 GetVariableFormatElements(const EVariableFormat& InFormat);
+	extern UINT32 GetVariableFormatSize(const EVariableFormat& InFormat);
+
+	struct EStructVariableInfo
+	{
+	public:
+		UINT32		Size;
+		UINT32		ElementStride;
+		UINT32		NumElements;
+		UINT32		MemberSize;
+		UINT32		NumMembers;
+
+		EStructVariableInfo() noexcept;
+		EStructVariableInfo(const EStructVariableInfo& Other) noexcept;
+		EStructVariableInfo(EStructVariableInfo&& Other) noexcept;
+		EStructVariableInfo& operator=(const EStructVariableInfo& Other) noexcept;
+		EStructVariableInfo& operator=(EStructVariableInfo&& Other) noexcept;
+		void		CopyFromOther(const EStructVariableInfo& Other) noexcept;
+		void		AnalysisFormat(const EVariableFormat& InFormat, UINT32 InNumMembers = 1u) noexcept;
+	};
+
+	using EStructAllocator = TDefaultAllocator<UINT8, UINT32, sizeof(UINT32) * 4u>;
+
+	struct EStructDataReference
+	{
+	public:
+		TWeakPtr<EStructAllocator>		DataRef;
+		UINT32							MemOffset;
+		UINT32							MemSize;
+
+		EStructDataReference() noexcept;
+		EStructDataReference(TSharedPtr<EStructAllocator>& InData, UINT32 InOffset, UINT32 InSize) noexcept;
+		EStructDataReference(const EStructDataReference& Other) noexcept;
+		EStructDataReference(EStructDataReference&& Other) noexcept;
+		EStructDataReference& operator=(const EStructDataReference& Other) noexcept;
+		EStructDataReference& operator=(EStructDataReference&& Other) noexcept;
+		void		Reset() noexcept;
+		void		CopyFromOther(const EStructDataReference& Other) noexcept;
+		BOOL8		IsValid() const noexcept;
+		UINT8*		GetData() noexcept;
+		UINT32		GetOffset() noexcept;
+		UINT32		GetSize() noexcept;
+	};
+
+	struct EStructVariable
+	{
+	public:
+		TWeakPtr<EStructDataReference>		StructData;
+		EStructVariableInfo					Info;
+		UINT32								MemOffset;
+		EVariableFormat						Format;
+
+		EStructVariable() noexcept;
+		EStructVariable(const EStructVariable& Other) noexcept;
+		EStructVariable(EStructVariable&& Other) noexcept;
+		EStructVariable& operator=(const EStructVariable& Other) noexcept;
+		EStructVariable& operator=(EStructVariable&& Other) noexcept;
+		BOOL8		IsValid() const noexcept;
+		void		Setup(TSharedPtr<EStructDataReference>& InStructData, UINT32 InMemOffset, const EVariableFormat& InFormat, UINT32 InNumArrayMembers) noexcept;
+		void		SetValue(const UINT8* InValuePtr, UINT32 InValueSize) noexcept;
+		void		SetupWithInitValue(TSharedPtr<EStructDataReference>& InStructData, UINT32 InMemOffset, const EVariableFormat& InFormat, UINT32 InNumArrayMembers, const UINT8* InInitValuePtr, UINT32 InInitMemSize) noexcept;
+	};
+
+	class EStructCommand final
+	{
+	public:
+		template<typename _TFunctionType>
+		void EnqueueCommand(_TFunctionType InFunction) noexcept
+		{
+			RawCommands.AddRegisterFunction<_TFunctionType>(InFunction);
+		}
+		void DoCommands() noexcept
+		{
+			RawCommands.DoRegister();
+		}
+		void EmptyQueue() noexcept
+		{
+			RawCommands.ClearRegister();
+		}
+		UINT32 GetQueueCount() const noexcept
+		{
+			return (RawCommands.GetRegisterNum());
+		}
+	private:
+		ERegisterBase<EVoidFunctionType>		RawCommands;
+	public:
+		EStructCommand() noexcept {}
+		~EStructCommand() noexcept {}
+		EStructCommand(const EStructCommand&)					= delete;
+		EStructCommand(EStructCommand&&)						= delete;
+		EStructCommand& operator=(const EStructCommand&)		= delete;
+		EStructCommand& operator=(EStructCommand&&)				= delete;
+	};
+
+	class EExclusiveStruct
+	{
+	public:
+		UINT32				GetMemSize() const noexcept;
+		UINT8*				GetData() noexcept;
+		const UINT8*		GetData() const noexcept;
+		void				SetupStruct() noexcept;
+		void				ClearStruct() noexcept;
+		virtual void		BeginSetupVariable() noexcept;
+		virtual void		DoSetupVariable() noexcept		= 0;
+		virtual void		EndSetupVariable(UINT32& OutHeapSize) noexcept;
+	protected:
+		void AddStructVariable(
+			const EName& InVarName,
+			const EVariableFormat& InFormat,
+			UINT32 InNumArrayMembers,
+			UINT32 InInitMemSize = 0u,
+			const UINT8* InInitValuePtr = nullptr) noexcept;
+
+		BOOL8 FindVariable(const EName& InVarName, EStructVariable& OutVar) const noexcept;
+		void CopyFromOther(const EExclusiveStruct& Other) noexcept;
+		void MoveFromOther(EExclusiveStruct&& Other) noexcept;
+	protected:
+		EStructCommand							AddStructVariableCommands;
+		TMap<EName, UINT32>						StructVariableNames;
+		TArray<EStructVariable, UINT32>			StructVariables;
+		TSharedPtr<EStructDataReference>		StructDataRef;
+		TSharedPtr<EStructAllocator>			RawData;
+		UINT32									InitStructSize;
+	public:
+		EExclusiveStruct() noexcept;
+		virtual ~EExclusiveStruct() noexcept;
+		EExclusiveStruct(const EExclusiveStruct& Other) noexcept;
+		EExclusiveStruct(EExclusiveStruct&& Other) noexcept;
+		EExclusiveStruct& operator=(const EExclusiveStruct& Other) noexcept;
+		EExclusiveStruct& operator=(EExclusiveStruct&& Other) noexcept;
+	};
+
+	class ESharedStruct
+	{
+	public:
+		struct ESingleStruct
+		{
+			EStructCommand							AddStructVariableCommands		= {};
+			TMap<EName, UINT32>						StructVariableNames				= {};
+			TArray<EStructVariable, UINT32>			StructVariables					= {};
+			TSharedPtr<EStructDataReference>		StructDataRef					= {};
+			UINT32									InitStructSize					= 0u;
+
+			ESingleStruct() noexcept;
+			~ESingleStruct() noexcept;
+		};
+	public:
+		UINT32				GetMemSize() const noexcept;
+		UINT8*				GetData() noexcept;
+		const UINT8*		GetData() const noexcept;
+		UINT32				GetMemSize(const EName& InStructName) const noexcept;
+		UINT8*				GetData(const EName& InStructName) noexcept;
+		const UINT8*		GetData(const EName& InStructName) const noexcept;
+		void				SetupStruct() noexcept;
+		void				ClearStruct() noexcept;
+		virtual void		BeginSetupVariable() noexcept;
+		virtual void		DoSetupVariable() noexcept		= 0;
+		virtual void		EndSetupVariable(UINT32& OutHeapSize) noexcept;
+	protected:
+		void AddStructVariable(
+			const EName& InStructName,
+			const EName& InVarName,
+			const EVariableFormat& InFormat,
+			UINT32 InNumArrayMembers,
+			UINT32 InInitMemSize = 0u,
+			const UINT8* InInitValuePtr = nullptr) noexcept;
+
+		BOOL8 FindVariable(const EName& InStructName, const EName& InVarName, EStructVariable& OutVar) const noexcept;
+		void CopyFromOther(const ESharedStruct& Other) noexcept;
+		void MoveFromOther(ESharedStruct&& Other) noexcept;
+	protected:
+		TMap<EName, UINT32>					StructNames;
+		TArray<ESingleStruct, UINT32>		Structs;
+		TSharedPtr<EStructAllocator>		RawData;
+		UINT32								InitHeapSize;
+	public:
+		ESharedStruct() noexcept;
+		virtual ~ESharedStruct() noexcept;
+		ESharedStruct(const ESharedStruct& Other) noexcept;
+		ESharedStruct(ESharedStruct&& Other) noexcept;
+		ESharedStruct& operator=(const ESharedStruct& Other) noexcept;
+		ESharedStruct& operator=(ESharedStruct&& Other) noexcept;
+	};
+
+	class EStructArray
+	{
+	public:
+		UINT32				GetNumElements() const noexcept;
+		UINT32				GetMemSize() const noexcept;
+		UINT8*				GetData() noexcept;
+		const UINT8*		GetData() const noexcept;
+		UINT32				GetMemSize(UINT32 InElementIndex) const noexcept;
+		UINT8*				GetData(UINT32 InElementIndex) noexcept;
+		const UINT8*		GetData(UINT32 InElementIndex) const noexcept;
+		void				Resize();
+		void				SetupStruct() noexcept;
+		void				ClearStruct() noexcept;
+		virtual void		BeginSetupVariable() noexcept;
+		virtual void		DoSetupVariable() noexcept = 0;
+		virtual void		EndSetupVariable(UINT32& OutHeapSize) noexcept;
+	protected:
+		void AddStructVariable(
+			const EName& InVarName,
+			const EVariableFormat& InFormat,
+			UINT32 InNumArrayMembers) noexcept;
+
+		BOOL8 FindVariable(UINT32 InElementIndex, const EName& InVarName, EStructVariable& OutVar) const noexcept;
+		void CopyFromOther(const EStructArray& Other) noexcept;
+		void MoveFromOther(EStructArray&& Other) noexcept;
+	protected:
+		TMap<EName, UINT32>								StructVariableNames;
+		TArray<EStructVariable, UINT32>					StructVariables;
+		TArray<TSharedPtr<EStructDataReference>>		StructDataRefs;
+		TSharedPtr<EStructAllocator>					RawData;
+		UINT32											InitStructSize;
+		UINT32											NumElements;
+	public:
+		EStructArray() noexcept;
+		virtual ~EStructArray() noexcept;
+		EStructArray(const EStructArray& Other) noexcept;
+		EStructArray(EStructArray&& Other) noexcept;
+		EStructArray& operator=(const EStructArray& Other) noexcept;
+		EStructArray& operator=(EStructArray&& Other) noexcept;
+	};
 
 };

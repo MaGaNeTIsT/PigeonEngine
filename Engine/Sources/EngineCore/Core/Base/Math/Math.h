@@ -121,10 +121,10 @@ namespace PigeonEngine
 		static PE_FORCEINLINE FLOAT					TruncToFloat(const FLOAT InFloat) { return truncf(InFloat); }
 
 		/**
-		 * Converts a double to an integer value with truncation towards zero.
-		 * @param InDouble	Floating point value to convert
-		 * @return			Truncated integer value.
-		 */
+		* Converts a double to an integer value with truncation towards zero.
+		* @param InDouble	Floating point value to convert
+		* @return			Truncated integer value.
+		*/
 		static PE_FORCEINLINE DOUBLE				TruncToDouble(const DOUBLE InDouble) { return trunc(InDouble); }
 		static PE_FORCEINLINE DOUBLE				TruncToFloat(const DOUBLE InDouble) { return TruncToDouble(InDouble); }	//TODO
 
@@ -182,10 +182,10 @@ namespace PigeonEngine
 		static PE_FORCEINLINE DOUBLE	FloorToFloat(const DOUBLE InDouble) { return FloorToDouble(InDouble); }	//TODO
 
 		/**
-		 * Converts a float to the nearest integer. Rounds up when the fraction is .5
-		 * @param InValue	Floating point value to convert
-		 * @return			The nearest integer to 'InValue'.
-		 */
+		* Converts a float to the nearest integer. Rounds up when the fraction is .5
+		* @param InValue	Floating point value to convert
+		* @return			The nearest integer to 'InValue'.
+		*/
 		static PE_FORCEINLINE INT32		RoundToInt32(const FLOAT InFloat) { return FloorToInt32(InFloat + 0.5f); }
 		static PE_FORCEINLINE INT32		RoundToInt32(const DOUBLE InDouble) { return FloorToInt32(InDouble + 0.5); }
 		static PE_FORCEINLINE INT64		RoundToInt64(const DOUBLE InDouble) { return FloorToInt64(InDouble + 0.5); }
@@ -306,12 +306,12 @@ namespace PigeonEngine
 		}
 
 		/**
-		 * Computes the base 2 logarithm for a 64-bit value.
-		 * The result is rounded down to the nearest integer.
-		 *
-		 * @param InValue	The value to compute the log of
-		 * @return			Log2 of InValue. 0 if InValue is 0.
-		 */
+		* Computes the base 2 logarithm for a 64-bit value.
+		* The result is rounded down to the nearest integer.
+		*
+		* @param InValue	The value to compute the log of
+		* @return			Log2 of InValue. 0 if InValue is 0.
+		*/
 		static PE_FORCEINLINE UINT64 FloorLog2_64(UINT64 InValue)
 		{
 			UINT64 pos = 0;
@@ -325,12 +325,12 @@ namespace PigeonEngine
 		}
 
 		/**
-		 * Counts the number of leading zeros in the bit representation of the 32-bit value
-		 *
-		 * @param InValue the value to determine the number of leading zeros for
-		 *
-		 * @return the number of zeros before the first "on" bit
-		 */
+		* Counts the number of leading zeros in the bit representation of the 32-bit value
+		*
+		* @param InValue the value to determine the number of leading zeros for
+		*
+		* @return the number of zeros before the first "on" bit
+		*/
 		static PE_FORCEINLINE UINT32 CountLeadingZeros(const UINT32 InValue)
 		{
 			if (InValue == 0u)
@@ -341,12 +341,12 @@ namespace PigeonEngine
 		}
 
 		/**
-		 * Counts the number of leading zeros in the bit representation of the 64-bit value
-		 *
-		 * @param InValue the value to determine the number of leading zeros for
-		 *
-		 * @return the number of zeros before the first "on" bit
-		 */
+		* Counts the number of leading zeros in the bit representation of the 64-bit value
+		*
+		* @param InValue the value to determine the number of leading zeros for
+		*
+		* @return the number of zeros before the first "on" bit
+		*/
 		static PE_FORCEINLINE UINT64 CountLeadingZeros64(const UINT64 InValue)
 		{
 			if (InValue == 0u)
@@ -357,9 +357,9 @@ namespace PigeonEngine
 		}
 
 		/**
-		 * Returns smallest N such that (1<<N)>=Arg.
-		 * Note: CeilLogTwo(0)=0
-		 */
+		* Returns smallest N such that (1<<N)>=Arg.
+		* Note: CeilLogTwo(0)=0
+		*/
 		static PE_FORCEINLINE UINT32 CeilLogTwo(UINT32 InArg)
 		{
 			// if Arg is 0, change it to 1 so that we return 0

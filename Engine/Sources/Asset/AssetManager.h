@@ -26,7 +26,7 @@ namespace PigeonEngine
 		EString Path;
 		EAssetType Type;
 	};
-	
+
 	class EFolderTreeNode
 	{
 	public:
@@ -46,7 +46,7 @@ namespace PigeonEngine
 
 		PE_NODISCARD const EString& GetPath() const;
 		PE_NODISCARD EString GetDisplayName() const;
-		
+
 	private:
 		EString Path;
 		TSharedPtr<EFolderTreeNode> Parent = nullptr;
@@ -54,10 +54,10 @@ namespace PigeonEngine
 		TArray<TSharedPtr<EAssetFile>> ChildrenFile;
 	};
 
-	
 
-	
-	
+
+
+
 	class EAssetManager : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EAssetManager)

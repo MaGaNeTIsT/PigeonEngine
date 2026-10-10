@@ -18,7 +18,7 @@ void PigeonEngine::EMeshImporter::UpdateImportEditor()
 {
 	//Combo Item
 	static const CHAR* type_items[] = { "Static Mesh", "Skeletal Mesh" };
-	
+
 	//Initialize Data
 	static INT32 type_item_current_idx = 0;
 	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";

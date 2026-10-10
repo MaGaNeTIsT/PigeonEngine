@@ -1,0 +1,13 @@
+{
+	"Name": "ImGuiVertexFactory",
+	"Template": "ImGui/C_ImGuiVertexFactory.hlsl",
+	"Inputs": [
+		{ "Name": "Position", "Semantic": "POSITION", "SemanticIdx": 0, "Format": "float2", "Slot": 0 },
+		{ "Name": "UV0", "Semantic": "TEXCOORD", "SemanticIdx": 0, "Format": "float2", "Slot": 0 },
+		{ "Name": "Color", "Semantic": "COLOR", "SemanticIdx": 0, "Format": "float4", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "VF_VARYING_STRUCT", "Element": "#include \"Public/VertexFactory/VertexFactoryTypes.hlsl\"\nstruct VFVarying\n{\n#include \"Public/VertexFactory/ImGuiVarying.hlsl\"\n#if MATERIAL_HAS_CUSTOM_VARYING\n{MATERIAL_VARYING_STRUCT}\n#endif\n};\n" },
+		{ "Name": "VF_VS_BODY", "Element": "ExecuteMaterialVertex(InAttributes, Context, OutVarying);" }
+	]
+}

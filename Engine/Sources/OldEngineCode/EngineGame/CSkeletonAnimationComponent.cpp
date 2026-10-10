@@ -69,7 +69,7 @@ void CSkeletonAnimationComponent::Update()
 	}
 
 	this->m_PlayTime += this->m_GameTimer->GetDeltaTime();
-	
+
 	DOUBLE currentPlayTime = this->m_PlayTime;
 	currentPlayTime = (this->m_CurrentPlayAnimation->TicksPerSecond < 1e-2) ? currentPlayTime * static_cast<DOUBLE>(30) : currentPlayTime * this->m_CurrentPlayAnimation->TicksPerSecond;
 	if (this->m_PlayState & SkeletonAnimationPlayState::SkeletonAnimationPlayState_Repeat)

@@ -1,8 +1,11 @@
 #include "SkeletonAsset.h"
-#include <RenderDevice/DeviceD3D11.h>
+#include <Asset/AssetLoadManager.h>
+#include <RHI/IRRHIDevice.h>
+#include <Main/MainManager.h>
 #include <Config/EngineConfig.h>
 #include <RenderConfig/RenderConfig.h>
 #if _EDITOR_ONLY
+#include <Editor/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 #include <Shader/ShaderParameter.h>
@@ -425,16 +428,16 @@ namespace PigeonEngine
 				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX])[i] = TranslateUploadTransposeMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i].Inverse());
 				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i] = TranslateUploadMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i]);
 			}
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 			{
-				RenderDevice->UploadBuffer(RenderResource[i].Buffer, NewMatrices[i], MatrixSize, MatrixSize);
+				RenderResource[i].UploadDataViaRHI(RenderDevice, NewMatrices[i], MatrixSize, 0u);
 			}
 			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX]);
 			delete[](NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX]);
 		}
 	}
-	BOOL32 ESkeletonRenderResource::IsRenderResourceValid()const
+	BOOL32 ESkeletonRenderResource::IsRenderResourceValid()const noexcept
 	{
 		BOOL32 Result = (BoneNum > 0u) && (BoneNum <= RCommonSettings::RENDER_MESH_BONE_NUM_MAX);
 		if (Result)
@@ -446,7 +449,7 @@ namespace PigeonEngine
 		}
 		return Result;
 	}
-	BOOL32 ESkeletonRenderResource::InitRenderResource()
+	BOOL32 ESkeletonRenderResource::InitRenderResource() noexcept
 	{
 		for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 		{
@@ -461,21 +464,27 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		const UINT32 SkeletonBoneNum = BoneNum;
+		const UINT32 SkeletonMatrixSize = sizeof(Matrix4x4) * SkeletonBoneNum;
+		Matrix4x4* SkeletonMatrices = new Matrix4x4[SkeletonBoneNum];
+		{
+			for (UINT32 j = 0u; j < SkeletonBoneNum; j++)
+			{
+				SkeletonMatrices[j] = Matrix4x4::Identity();
+			}
+		}
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		// The element stride together with the structured misc flag is what makes this a
+		// structured resource on either back-end, so both ride in the buffer description
+		// instead of in a back-end specific create call.
+		const RBufferDesc SkeletonBufferDesc(SkeletonMatrixSize
+			, RBindFlagType::BIND_SHADER_RESOURCE
+			, sizeof(Matrix4x4)
+			, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED);
+		const RRHISubresourceData SkeletonSubresourceData(
+			reinterpret_cast<const UINT8*>(SkeletonMatrices), SkeletonMatrixSize, 0u, 0u);
 		for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
 		{
-			Matrix4x4* SkeletonMatrices = new Matrix4x4[SkeletonBoneNum];
-			{
-				for (UINT32 j = 0u; j < SkeletonBoneNum; j++)
-				{
-					SkeletonMatrices[j] = Matrix4x4::Identity();
-				}
-			}
-			RSubresourceDataDesc SubresourceDataDesc;
-			SubresourceDataDesc.pSysMem = SkeletonMatrices;
-			if (!(RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(
-				(RenderResource[i]),
-				RStructuredBufferDesc(sizeof(Matrix4x4), SkeletonBoneNum, FALSE),
-				(&SubresourceDataDesc))))
+			if (!(RenderResource[i].InitFromRHI(RenderDevice, SkeletonBufferDesc, &SkeletonSubresourceData)))
 			{
 #if _EDITOR_ONLY
 				EString ErrorInfo("Create skeleton resource bones buffer [num = ");
@@ -486,11 +495,11 @@ namespace PigeonEngine
 				delete[]SkeletonMatrices;
 				return FALSE;
 			}
-			delete[]SkeletonMatrices;
 		}
+		delete[]SkeletonMatrices;
 		return TRUE;
 	}
-	void ESkeletonRenderResource::ReleaseRenderResource()
+	void ESkeletonRenderResource::ReleaseRenderResource() noexcept
 	{
 		BoneNum = 0u;
 		for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
@@ -934,6 +943,14 @@ namespace PigeonEngine
 	}
 	void ESkeletonAssetManager::ShutDown()
 	{
+		ReleaseAllAssets();
+	}
+	void ESkeletonAssetManager::Uninit()
+	{
+		ReleaseAllAssets();
+	}
+	void ESkeletonAssetManager::ReleaseAllAssets()
+	{
 		ClearSkeletons();
 	}
 #if _EDITOR_ONLY
@@ -1005,7 +1022,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 #endif
-	BOOL32 ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset)
+	BOOL32 ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -1015,7 +1032,7 @@ namespace PigeonEngine
 			OutSkeletonAsset = ResultSkeletonAsset;
 			return TRUE;
 		}
-		ResultSkeletonAsset = LoadSkeletonAsset(InLoadPath, InLoadName);
+		ResultSkeletonAsset = LoadSkeletonAsset(InLoadPath, InLoadName, bTryLoad);
 		if (!ResultSkeletonAsset)
 		{
 			return FALSE;
@@ -1039,14 +1056,52 @@ namespace PigeonEngine
 		OutSkeletonAsset = ResultSkeletonAsset;
 		return TRUE;
 	}
+	BOOL32 ESkeletonAssetManager::RequireLoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAsset*& OutSkeletonAsset, const FAssetImportSource* InImportSource, EAssetLoadCompleteType InOnLoadComplete)
+	{
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+		if (ESkeletonAsset* LoadedAsset = SkeletonAssetDataManager.Find(FullPathName))
+		{
+			OutSkeletonAsset = LoadedAsset;
+			return TRUE;
+		}
+		OutSkeletonAsset = nullptr;
+		// The import source is copied into the request: a request outlives the frame that made it,
+		// so it may not read the caller's strings.
+		FAssetImportSource ImportSource;
+		if (InImportSource)
+		{
+			ImportSource = *InImportSource;
+		}
+		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
+			MakeAssetLoadRequestKey(PE_TEXT("Skeleton"), FullPathName),
+			[InLoadPath, InLoadName, ImportSource]() -> BOOL32
+			{
+				const ESkeletonAsset* LoadedAsset = nullptr;
+				if (ImportSource.IsValid())
+				{
+					// The editor form: load, and when the PAsset is not on disk yet, import from the
+					// raw source and load again. Both halves run here, on the load thread.
+					TryLoadSkeleton(InLoadPath, InLoadName, LoadedAsset, &ImportSource.ImportPath
+						, &ImportSource.ImportName, &ImportSource.ImportFileType);
+				}
+				else
+				{
+					ESkeletonAssetManager::GetManagerSingleton()->LoadSkeletonAsset(InLoadPath, InLoadName, LoadedAsset, TRUE);
+				}
+				return ((LoadedAsset != nullptr) ? TRUE : FALSE);
+			},
+			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
+		return FALSE;
+	}
 	void ESkeletonAssetManager::ClearSkeletons()
 	{
 		SkeletonAssetDataManager.Clear();
 	}
-	ESkeletonAsset* ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName)
+	ESkeletonAsset* ESkeletonAssetManager::LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		ESkeletonAsset* NewSkeletonAsset = nullptr;
-		ESkeleton* LoadedSkeletonResource = LoadSkeletonResource(InLoadPath, InLoadName);
+		ESkeleton* LoadedSkeletonResource = LoadSkeletonResource(InLoadPath, InLoadName, bTryLoad);
 		if ((!LoadedSkeletonResource) || (!(LoadedSkeletonResource->IsResourceValid())))
 		{
 			return NewSkeletonAsset;
@@ -1117,7 +1172,7 @@ namespace PigeonEngine
 		}
 		return (SaveSkeletonResource(InSavePath, InSaveName, SavedSkeletonResource));
 	}
-	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName)
+	ESkeleton* ESkeletonAssetManager::LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -1148,7 +1203,8 @@ namespace PigeonEngine
 				EString ErrorData("Load skeleton asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				if (bTryLoad) { PE_LOG_WARN(ErrorData); }
+				else          { PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData)); }
 			}
 #endif
 			return LoadedSkeletonResource;
@@ -1438,13 +1494,21 @@ namespace PigeonEngine
 	{
 		ESkeletonAssetManager* SkeletonAssetManager = ESkeletonAssetManager::GetManagerSingleton();
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skeleton asset pointer is initialized failed."), (!OutAsset));
-		if (SkeletonAssetManager->LoadSkeletonAsset(InLoadPath, InLoadName, OutAsset))
+		if (SkeletonAssetManager->LoadSkeletonAsset(InLoadPath, InLoadName, OutAsset, TRUE))
 		{
 			return;
 		}
-		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton asset failed."));
 #if _EDITOR_ONLY
-		if ((!!InImportPath) && (!!InImportName) && (!!InImportFileType))
+		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
+		if (bHasImport)
+		{
+			PE_LOG_WARN(EString("Skeleton '") + InLoadName + "' not yet on disk; will attempt import.");
+		}
+		else
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton asset failed."));
+		}
+		if (bHasImport)
 		{
 			EString TempImportFullPath(*InImportPath);
 			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
@@ -1464,6 +1528,8 @@ namespace PigeonEngine
 				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import skeleton asset failed."));
 			}
 		}
+#else
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton asset failed."));
 #endif
 	}
 

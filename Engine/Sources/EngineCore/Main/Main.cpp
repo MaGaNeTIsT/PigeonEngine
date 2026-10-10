@@ -10,11 +10,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
 INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
-    const WCHAR* CLASS_NAME	= L"PigeonEngine";
-	const WCHAR* WINDOW_NAME	= L"PigeonEngineWindow";
-	HWND windowHandle; WNDCLASSEXW wcex = {};
+	HWND windowHandle; WNDCLASSEX wcex = {};
 	{
-        wcex.cbSize			= sizeof(WNDCLASSEXW);
+		wcex.cbSize			= sizeof(WNDCLASSEXW);
 		wcex.style			= CS_HREDRAW | CS_VREDRAW;
 		wcex.lpfnWndProc	= WndProc;
 		wcex.cbClsExtra		= 0;
@@ -24,20 +22,24 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 		wcex.hbrBackground	= (HBRUSH)(COLOR_BACKGROUND + 1);
 		wcex.lpszMenuName	= NULL;
-		wcex.lpszClassName	= CLASS_NAME;
+		wcex.lpszClassName	= PE_TEXT("PigeonEngine");
 		wcex.hIconSm		= NULL;
-        if (!::RegisterClassExW(&wcex))
+		if (!::RegisterClassEx(&wcex))
 		{
 			return TRUE;
 		}
 		RECT clientRect = { 0, 0, static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_WIDTH), static_cast<LONG>(PigeonEngine::EEngineSettings::ENGINE_SCREEN_HEIGHT) };
-		DWORD style = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
-		::AdjustWindowRect(&clientRect, style, FALSE);
-        windowHandle = ::CreateWindowExW(
+#if _EDITOR_ONLY
+		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW;
+#else
+		constexpr DWORD WindowStyle = WS_OVERLAPPEDWINDOW ^ (WS_MAXIMIZEBOX | WS_THICKFRAME);
+#endif
+		::AdjustWindowRect(&clientRect, WindowStyle, FALSE);
+		windowHandle = ::CreateWindowEx(
 			0,
-			CLASS_NAME,
-			WINDOW_NAME,
-			style,
+			PE_TEXT("PigeonEngine"),
+			PE_TEXT("PigeonEngineWindow"),
+			WindowStyle,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
 			clientRect.right - clientRect.left,
@@ -67,8 +69,23 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	rid.hwndTarget	= nullptr;
 	::RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
+#if _EDITOR_ONLY
+	::ShowWindow(windowHandle, SW_SHOWMAXIMIZED);
+	::UpdateWindow(windowHandle);
+	{
+		RECT ClientRect = {};
+		::GetClientRect(windowHandle, &ClientRect);
+		const UINT32 MaxWidth  = static_cast<UINT32>(ClientRect.right);
+		const UINT32 MaxHeight = static_cast<UINT32>(ClientRect.bottom);
+		if (MaxWidth > 0u && MaxHeight > 0u)
+		{
+			PigeonEngine::EMainManager::GetManagerSingleton()->OnWindowResized(MaxWidth, MaxHeight);
+		}
+	}
+#else
 	::ShowWindow(windowHandle, nCmdShow);
 	::UpdateWindow(windowHandle);
+#endif
 
 	MSG msg;
 	while (TRUE)
@@ -112,7 +129,7 @@ INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 
 	MainManager->Uninit();
 
-    ::UnregisterClassW(CLASS_NAME, wcex.hInstance);
+	::UnregisterClass(PE_TEXT("PigeonEngine"), wcex.hInstance);
 
 	MainManager->ShutDown();
 
@@ -138,17 +155,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam)
 	switch(uMsg)
 	{
 	case WM_DESTROY:
-		::DestroyWindow(hWnd);
 		::PostQuitMessage(0);
 		break;
-	case WM_KEYDOWN:
-		//switch(wParam)
-		//{
-		//case VK_ESCAPE:
-		//	::DestroyWindow(hWnd);
-		//	break;
-		//}
+#if _EDITOR_ONLY
+	case WM_EXITSIZEMOVE:
+	{
+		RECT ClientRect = {};
+		::GetClientRect(hWnd, &ClientRect);
+		const UINT32 NewWidth  = static_cast<UINT32>(ClientRect.right  - ClientRect.left);
+		const UINT32 NewHeight = static_cast<UINT32>(ClientRect.bottom - ClientRect.top);
+		PigeonEngine::EMainManager::GetManagerSingleton()->OnWindowResized(NewWidth, NewHeight);
 		break;
+	}
+#endif
+#if 0
+	case WM_KEYDOWN:
+		switch(wParam)
+		{
+		case VK_ESCAPE:
+			::DestroyWindow(hWnd);
+			break;
+		}
+		break;
+#endif
 	default:
 		break;
 	}

@@ -49,7 +49,7 @@ namespace PigeonEngine
 			{
 				return Type;
 			}
-            TPair<INT32, INT32> GetPos() const
+			TPair<INT32, INT32> GetPos() const
 			{
 				return{ x,y };
 			}
@@ -106,8 +106,8 @@ namespace PigeonEngine
 		void TrimBuffer();
 		void TrimRawInputBuffer();
 		void OnWheelDelta(INT32 InX, INT32 InY, INT32 delta);
-		
-	
+
+
 	private:
 		const UINT32 BufferSize = 16u;
 		INT32 x = 0;
@@ -117,7 +117,7 @@ namespace PigeonEngine
 		BOOL32 bIsInWindow = FALSE;
 		INT32 WheelDeltaCarry = 0;
 		BOOL32 RawEnabled = TRUE;
-        TQueue<Event> Buffer;
+		TQueue<Event> Buffer;
 		TQueue<RawDelta> RawDeltaBuffer;
 	};
 

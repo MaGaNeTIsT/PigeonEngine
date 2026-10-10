@@ -36,11 +36,11 @@ namespace PigeonEngine
 		void HandleInput(const ECharacterMoveInput& Input);
 
 	private:
-        virtual void BeginAddedToScene(PWorld* World) override;
-        virtual void RemovedFromScene() override;
+		virtual void BeginAddedToScene(PWorld* World) override;
+		virtual void RemovedFromScene() override;
 		virtual void HandleInputInternal(Vector3 InMovementDirection, BOOL32 InJump, BOOL32 InSwitchStance, BOOL32 InRun);
-        void TryRegisterPostPhysicsTick();
-        void TryUnregisterPostPhysicsTick();
+		void TryRegisterPostPhysicsTick();
+		void TryUnregisterPostPhysicsTick();
 		void HandlePostPhysicsTick(FLOAT deltaTime);
 
 	public:
@@ -50,7 +50,7 @@ namespace PigeonEngine
 		PCharacter* m_Character = nullptr;
 		TFunction<void(FLOAT)> PostPhysicsTickHandler;
 		BOOL32 bPostPhysicsTickRegistered = FALSE;
-        BOOL32 bHasSyncedTransform = FALSE;
+		BOOL32 bHasSyncedTransform = FALSE;
 		Vector3 LastSyncedPosition = Vector3::Zero();
 		Quaternion LastSyncedRotation = Quaternion::Identity();
 	};

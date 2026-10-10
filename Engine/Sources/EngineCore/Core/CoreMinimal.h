@@ -2,6 +2,7 @@
 
 #include "../Main/Main.h"
 
+#include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
 
 #include <Base/RTTI/RTTIManager.h>
@@ -18,6 +19,7 @@
 #include <Base/DataStructure/Container/Map.h>
 #include <Base/DataStructure/Container/Set.h>
 #include <Base/DataStructure/Tuple.h>
+#include <Base/DataStructure/Text/Name.h>
 
 #include <Base/DataStructure/Transform.h>
 #include <Config/EngineConfig.h>
