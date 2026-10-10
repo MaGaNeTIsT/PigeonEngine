@@ -145,7 +145,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			// Surface D3D12 validation messages in the VS Output window so
 			// PSO / resource creation failures are diagnosable.
-			DeviceInitDesc.bEnableDebugLayer = TRUE;
+			DeviceInitDesc.bEnableDebugLayer = FALSE;
 #endif
 			RenderDevice->Initialize(DeviceInitDesc);
 		}
