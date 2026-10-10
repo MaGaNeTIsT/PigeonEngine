@@ -1,0 +1,17 @@
+{
+	"Name": "DrawParams",
+	"Template": "Components/C_DrawParams.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "DrawParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "WorldMatrix", "Format": "float4x4" },
+				{ "Name": "WorldInvMatrix", "Format": "float4x4" },
+				{ "Name": "WorldInvTransposeMatrix", "Format": "float4x4" },
+				{ "Name": "PrimitiveIndex", "Format": "uint" },
+				{ "Name": "InstanceCount", "Format": "uint" }
+			]
+		}
+	]
+}

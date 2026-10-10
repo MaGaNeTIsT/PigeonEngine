@@ -1,10 +1,19 @@
 #include "RenderSingletonObject.h"
 #include <RenderResource.h>
-#include <RenderDevice/DeviceD3D11.h>
+#include <RHI/IRRHIDevice.h>
+#include <RHI/IRCommandList.h>
+#include <Pipeline/RPipelineStateCache.h>
+#include <Renderer/ScenePass.h>
+#include <Renderer/SceneRenderer.h>
+#include <Main/MainManager.h>
 #if _EDITOR_ONLY
 #include <RenderConfig/RenderConfig.h>
 #include <Shader/ShaderParameter.h>
 #include <ShaderAsset/ShaderAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
+#include <Shader/ShaderAssetBinding.h>
+#include <Shader/EngineShaderInstanceCache.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
 #include "../../Editor/EditorLogManager.h"
 #include <RenderProxy/ViewProxy.h>
 #endif
@@ -18,6 +27,8 @@ namespace PigeonEngine
 	{
 		if (!(_GFullScreenTriangleVertexBuffer.IsRenderResourceValid()))
 		{
+			// The four corners of the quad in UV space, origin top left: (0,1) (1,1) (0,0) (1,0).
+			// The index buffer below decides which way the triangles wind.
 			FLOAT FullScreenTriangleVertex[] =
 			{
 				0.f, 1.f,
@@ -25,19 +36,18 @@ namespace PigeonEngine
 				0.f, 0.f,
 				1.f, 0.f
 			};
-			RSubresourceDataDesc SubresourceDataDesc;
-			SubresourceDataDesc.pSysMem = FullScreenTriangleVertex;
-#if _EDITOR_ONLY
-			BOOL32 Result =
-#endif
-				RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(_GFullScreenTriangleVertexBuffer.Buffer,
-					RBufferDesc((sizeof(FLOAT) * 2u * 4u), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
-					(&SubresourceDataDesc));
+			RRHISubresourceData SubData(reinterpret_cast<const UINT8*>(FullScreenTriangleVertex), sizeof(FLOAT) * 2u * 4u, 0u, 0u);
+			const BOOL8 Result = _GFullScreenTriangleVertexBuffer.InitFromRHI(
+				EMainManager::GetManagerSingleton()->GetRenderDevice(),
+				RBufferDesc((sizeof(FLOAT) * 2u * 4u), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
+				&SubData);
 #if _EDITOR_ONLY
 			if (!Result)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create full screen triangle vertex buffer failed."));
 			}
+#else
+			(void)Result;
 #endif
 		}
 	}
@@ -45,24 +55,29 @@ namespace PigeonEngine
 	{
 		if (!(_GFullScreenTriangleIndexBuffer.IsRenderResourceValid()))
 		{
+			// Clockwise on the render target, which is what a front face is on a back-end with
+			// FrontCounterClockwise = FALSE (both of them are). The quad's clip space mapping
+			// (UV * 2 - 1 with y negated, see FullScreenVF.hlsl) turns the UV order into that
+			// screen space order, so the winding is decided here: winding the other way makes
+			// every pass that culls back faces drop the whole full screen draw, which is a pass
+			// that renders nothing with no error anywhere.
 			USHORT FullScreenTriangleIndex[] =
 			{
-				0, 1, 2,
-				2, 1, 3
+				0, 2, 1,
+				2, 3, 1
 			};
-			RSubresourceDataDesc SubresourceDataDesc;
-			SubresourceDataDesc.pSysMem = FullScreenTriangleIndex;
-#if _EDITOR_ONLY
-			BOOL32 Result =
-#endif
-				RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(_GFullScreenTriangleIndexBuffer.Buffer,
-					RBufferDesc((2u * 6u), RBindFlagType::BIND_INDEX_BUFFER, 2u),
-					(&SubresourceDataDesc));
+			RRHISubresourceData SubData(reinterpret_cast<const UINT8*>(FullScreenTriangleIndex), 2u * 6u, 0u, 0u);
+			const BOOL8 Result = _GFullScreenTriangleIndexBuffer.InitFromRHI(
+				EMainManager::GetManagerSingleton()->GetRenderDevice(),
+				RBufferDesc((2u * 6u), RBindFlagType::BIND_INDEX_BUFFER, 2u),
+				&SubData);
 #if _EDITOR_ONLY
 			if (!Result)
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create full screen triangle index buffer failed."));
 			}
+#else
+			(void)Result;
 #endif
 		}
 	}
@@ -91,20 +106,74 @@ namespace PigeonEngine
 	{
 		return 6u;	//TODO
 	}
-	void RFullScreenTriangle::BindPrimitiveBuffers()
+	void RFullScreenTriangle::BindPrimitiveBuffers(IRCommandList* InCommandList, const EShaderProgram& InProgram)const
 	{
+		// Phase 4.3.e fix: previously this hard-gated on D3D11 backend and
+		// returned early under D3D12 - so FinalOutputPass's DrawIndexed had no
+		// vertex / index buffer bound and only the cleared back-buffer color
+		// was visible. Route both backends through the IRCommandList API so
+		// the dual-mode buffer wrapper does the right thing on either path.
+		if (!InCommandList)
+		{
+			return;
+		}
 #if _DEBUG_MODE
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check full screen triangle vertex buffer is invalid."), (_GFullScreenTriangleVertexBuffer.IsRenderResourceValid()));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check full screen triangle index buffer is invalid."), (_GFullScreenTriangleIndexBuffer.IsRenderResourceValid()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check full screen triangle vertex buffer is invalid.")), (_GFullScreenTriangleVertexBuffer.IsRenderResourceValid()));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check full screen triangle index buffer is invalid.")), (_GFullScreenTriangleIndexBuffer.IsRenderResourceValid()));
 #endif
-		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		RenderDevice->SetIndexBuffer(_GFullScreenTriangleIndexBuffer.Buffer, 0u, RFormatType::FORMAT_R16_UINT);
-		RenderDevice->SetVertexBuffer(_GFullScreenTriangleVertexBuffer.Buffer, (sizeof(FLOAT) * 2u), 0u, 0u);
+		// Where the stream goes is the shader's answer, read from the reflection the pipeline's
+		// input layout is built from: the factory declares one input and its slot, so binding
+		// anywhere else leaves that input unbound - and this factory reconstructs its clip space
+		// position from that input, so the draw would produce nothing at all rather than
+		// something wrong. A program with no declared input gets slot 0, which is where a stream
+		// nobody reads may as well sit.
+		UINT32 InputSlot = 0u;
+		const RShaderStageResource* VertexStage = ResolveShaderStageResource(InProgram, EShaderStageType::SHADER_STAGE_VERTEX);
+		if (VertexStage)
+		{
+			const TArray<RInputLayoutDesc>& InputLayouts = VertexStage->GetInputLayouts();
+			if (InputLayouts.Num<UINT32>() > 0u)
+			{
+				InputSlot = InputLayouts[0].InputSlot;
+			}
+		}
+
+		IRRHIBuffer* VB = _GFullScreenTriangleVertexBuffer.GetResolvedRHIBuffer();
+		IRRHIBuffer* IB = _GFullScreenTriangleIndexBuffer.GetResolvedRHIBuffer();
+		// The triangle's own layout: four float2 coordinates. It is this class's data, so its
+		// stride is stated here rather than derived from the input element.
+		const UINT32 Stride = sizeof(FLOAT) * 2u;
+		const UINT32 Offset = 0u;
+		InCommandList->SetVertexBuffers(InputSlot, 1u, &VB, &Stride, &Offset);
+		InCommandList->SetIndexBuffer(IB, ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16, 0u);
 	}
 
 #if _EDITOR_ONLY
-	const EVertexShaderAsset* _GDebugWireframePrimitiveVS = nullptr;
-	const EPixelShaderAsset* _GDebugWireframePrimitivePS = nullptr;
+	// The engine debug wireframe program. Loaded once per process and shared: the manager
+	// keeps only the resolved program, which is what the debug pass builds its pipeline state
+	// from.
+	const EShaderProgram* _GDebugWireframePrimitiveProgram = nullptr;
+	// The instance the program came from. The overlay's colour is a material parameter, so the
+	// pass has to be able to reach the instance's parameter buffers - the program alone cannot
+	// answer for values.
+	const EShaderInstance* _GDebugWireframePrimitiveInstance = nullptr;
+
+	static const EShaderInstance* GetDebugWireframeProgramInstance()
+	{
+		// The debug wireframe pass states its own source: the DebugWireframe program,
+		// its Unlit material and a mesh shaped vertex axis. The wireframe stream carries
+		// positions only, so the factory's required UV0 has no buffer behind it; the draw
+		// skips that stream, which leaves the shader reading a slot nothing is bound to.
+		EShaderAssemblyRequest Request;
+		Request.ShaderName = EName(PE_TEXT("M_EngineDebugWireframe"));
+		Request.MaterialName = EString(PE_TEXT("M_EngineDebugWireframe"));
+		Request.ProgramName = EName(PE_TEXT("DebugWireframe"));
+		Request.VertexFactory = EShaderVertexFactoryType::ENGINE_MESH;
+		Request.Profile.StreamProfile = (SHADER_VERTEX_ATTRIBUTE_POSITION | SHADER_VERTEX_ATTRIBUTE_UV0);
+		Request.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
+
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+	}
 
 	RDebugWireframePrimitive::RDebugWireframePrimitive()
 		: UseShortIndex(FALSE), IndexCount(0u)
@@ -177,18 +246,19 @@ namespace PigeonEngine
 			}
 		}
 
-		RSubresourceDataDesc SubresourceDataDesc;
-		SubresourceDataDesc.pSysMem = InVertexDatas;
+		RRHISubresourceData VertexSubData(reinterpret_cast<const UINT8*>(InVertexDatas), sizeof(Vector3) * InVertexNum, 0u, 0u);
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 
-		BOOL32 Result = RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer.Buffer,
+		BOOL32 Result = VertexBuffer.InitFromRHI(RenderDevice,
 			RBufferDesc((sizeof(Vector3) * InVertexNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
-			(&SubresourceDataDesc));
+			&VertexSubData);
 
-		SubresourceDataDesc.pSysMem = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)UintIndices);
+		const void* IndexBytes = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)UintIndices);
+		RRHISubresourceData IndexSubData(static_cast<const UINT8*>(IndexBytes), (UseShortIndex ? 2u : 4u) * IndexCount, 0u, 0u);
 
-		Result = Result && RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(IndexBuffer.Buffer,
+		Result = Result && IndexBuffer.InitFromRHI(RenderDevice,
 			RBufferDesc(((UseShortIndex ? 2u : 4u) * IndexCount), RBindFlagType::BIND_INDEX_BUFFER, (UseShortIndex ? 2u : 4u)),
-			(&SubresourceDataDesc));
+			&IndexSubData);
 
 		if (!!UintIndices)
 		{
@@ -241,18 +311,19 @@ namespace PigeonEngine
 			}
 		}
 
-		RSubresourceDataDesc SubresourceDataDesc;
-		SubresourceDataDesc.pSysMem = InVertexDatas;
+		RRHISubresourceData VertexSubData(reinterpret_cast<const UINT8*>(InVertexDatas), sizeof(Vector3) * InVertexNum, 0u, 0u);
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 
-		BOOL32 Result = RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(VertexBuffer.Buffer,
+		BOOL32 Result = VertexBuffer.InitFromRHI(RenderDevice,
 			RBufferDesc((sizeof(Vector3) * InVertexNum), RBindFlagType::BIND_VERTEX_BUFFER, 4u),
-			(&SubresourceDataDesc));
+			&VertexSubData);
 
-		SubresourceDataDesc.pSysMem = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)InIndexDatas);
+		const void* IndexBytes = UseShortIndex ? ((const void*)UshortIndices) : ((const void*)InIndexDatas);
+		RRHISubresourceData IndexSubData(static_cast<const UINT8*>(IndexBytes), (UseShortIndex ? 2u : 4u) * IndexCount, 0u, 0u);
 
-		Result = Result && RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(IndexBuffer.Buffer,
+		Result = Result && IndexBuffer.InitFromRHI(RenderDevice,
 			RBufferDesc(((UseShortIndex ? 2u : 4u) * IndexCount), RBindFlagType::BIND_INDEX_BUFFER, (UseShortIndex ? 2u : 4u)),
-			(&SubresourceDataDesc));
+			&IndexSubData);
 
 		if (!!UshortIndices)
 		{
@@ -308,28 +379,36 @@ namespace PigeonEngine
 		CreatePrimitive(RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_CONE);
 
 		{
-			const EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-			if (!_GDebugWireframePrimitiveVS)
+			// Phase 4.3.0.4: the debug wireframe shader is sourced from the engine
+			// shader asset M_EngineDebugWireframe. The instance is loaded once per
+			// process; VS, PS and the input layout all come from that one program.
+			if (!_GDebugWireframePrimitiveProgram)
 			{
-				const EString ImportVSName = EString("DebugWireFramePrimitive") + EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
-				const RInputLayoutDesc TempShaderInputLayouts[] =
+				const EShaderInstance* DebugWireframeInstance = GetDebugWireframeProgramInstance();
+				if (DebugWireframeInstance)
 				{
-					RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 3u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT)
-				};
-				constexpr UINT32 TempShaderInputLayoutNum = PE_ARRAYSIZE(TempShaderInputLayouts);
-				TryLoadVertexShader(EString(EBaseSettings::ENGINE_SHADER_PATH), ImportVSName,
-					_GDebugWireframePrimitiveVS,
-					&ImportPath, &ImportVSName,
-					TempShaderInputLayouts, &TempShaderInputLayoutNum);
-			}
-			if (!_GDebugWireframePrimitivePS)
-			{
-				const EString ImportPSName = EString("DebugWireFramePrimitive") + EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-				TryLoadPixelShader(EString(EBaseSettings::ENGINE_SHADER_PATH), ImportPSName,
-					_GDebugWireframePrimitivePS,
-					&ImportPath, &ImportPSName);
+					_GDebugWireframePrimitiveProgram = DebugWireframeInstance->GetProgram();
+					// The instance is kept as well, not only its program: the pass binds the
+					// material's parameter block (the overlay's WireframeColor) through it, and
+					// that block belongs to the instance.
+					_GDebugWireframePrimitiveInstance = DebugWireframeInstance;
+				}
 			}
 		}
+	}
+	void RDebugWireframePrimitiveManager::OnShaderAssetReplaced()
+	{
+		if (_GDebugWireframePrimitiveInstance)
+		{
+			// The instance is the stable handle: the process wide cache owns it and re-pointed it to
+			// the new asset before this ran, so re-reading its program is what makes the overlay
+			// current. The pipeline state needs nothing here - it is derived from the pipeline state
+			// cache on every frame, and that cache dropped the states built for this shader.
+			_GDebugWireframePrimitiveProgram = _GDebugWireframePrimitiveInstance->GetProgram();
+		}
+		// The draw block had its layout read from the previous program's reflection, so it is
+		// dropped and rebuilt from the current one by its next user.
+		DrawParameterBlock.ReleaseRenderResources();
 	}
 	void RDebugWireframePrimitiveManager::ShutDown()
 	{
@@ -340,7 +419,7 @@ namespace PigeonEngine
 		FrontSlotIndex       = BackSlotIndex;
 		BackSlotIndex        = NewBack;
 	}
-    void RDebugWireframePrimitiveManager::InitNewFrame()
+	void RDebugWireframePrimitiveManager::InitNewFrame()
 	{
 		{
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
@@ -373,28 +452,174 @@ namespace PigeonEngine
 #endif
 		}
 	}
+	// The instance data of the debug wireframe pass: one structured buffer of transforms and
+	// one of colors per primitive shape. Both are read only, which is what the element stride
+	// plus the structured misc flag describes on either back-end.
+	static void CreateDebugStructuredBuffer(RStructuredBuffer& OutBuffer, const UINT32 InStride, const UINT32 InElementNum)
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return;
+		}
+		OutBuffer.InitFromRHI(RenderDevice,
+			RBufferDesc(static_cast<UINT64>(InStride) * InElementNum
+				, RBindFlagType::BIND_SHADER_RESOURCE
+				, InStride
+				, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED));
+	}
+	// The state the debug pass draws with. The pass borrows the forward shape (one target, no
+	// GBuffer) and states the line topology itself, because the renderer draws it as a list of
+	// line primitives rather than as a triangle list.
+	static IRRHIPipelineState* ResolveDebugWireframePipelineState()
+	{
+		if (!_GDebugWireframePrimitiveProgram)
+		{
+			return nullptr;
+		}
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		if (!Renderer)
+		{
+			return nullptr;
+		}
+		RGraphicsPipelineStateDesc Desc;
+		FRenderPassRegistry::FillPipelineStateDesc(
+			FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_FORWARD), _GDebugWireframePrimitiveProgram, Desc);
+		Desc.Topology = RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST;
+		return Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
+	}
+	// Binds one debug primitive with the instance data of this frame and draws it. The vertex
+	// stage reads its two instance buffers and the geometry is a position only stream, so its
+	// stride is the one Vector3 gives. The two buffers land at the registers the vertex stage's
+	// plan reports rather than at a number written here: the program declares them by name, and
+	// the register the compiler assigned them is what the plan carries - a component list that
+	// grows a binding in front of them moves them without this draw knowing, and a draw that
+	// wrote down t0 and t1 would then feed the wrong buffer into a lookup that indexes it.
+	static void DrawDebugPrimitive(IRCommandList* InCommandList
+		, const RDebugWireframePrimitive& InPrimitive
+		, RStructuredBuffer& InTransformsBuffer, RStructuredBuffer& InColorsBuffer
+		, const UINT32 InInstanceNum
+		, const EShaderBindingPlan& InVertexPlan)
+	{
+		IRRHIBuffer* VertexBuffer = const_cast<RBufferResource&>(InPrimitive.GetPrimitiveVertexBuffer()).GetResolvedRHIBuffer();
+		IRRHIBuffer* IndexBuffer = const_cast<RBufferResource&>(InPrimitive.GetPrimitiveIndexBuffer()).GetResolvedRHIBuffer();
+		if ((!VertexBuffer) || (!IndexBuffer))
+		{
+			return;
+		}
+
+		// The same route a material's textures take: a value keyed by the resource name, bound
+		// through the plan of the stage that declared it.
+		EShaderParameterSet InstanceParameters;
+		InstanceParameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DebugPrimitiveTransforms")), &InTransformsBuffer);
+		InstanceParameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DebugPrimitiveColors")), &InColorsBuffer);
+		BindShaderParameterResources(InCommandList, InstanceParameters, InVertexPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX);
+
+		const UINT32 Stride = sizeof(FLOAT) * 3u;
+		const UINT32 Offset = 0u;
+		InCommandList->SetVertexBuffers(0u, 1u, &VertexBuffer, &Stride, &Offset);
+		InCommandList->SetIndexBuffer(IndexBuffer
+			, InPrimitive.IsUseShortIndex() ? ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16 : ERHIIndexFormat::RHI_INDEX_FORMAT_UINT32
+			, 0u);
+		InCommandList->DrawIndexed(InPrimitive.GetIndexCount(), InInstanceNum, 0u, 0, 0u);
+	}
+
 	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
 	{
+		(void)InView;
+		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if ((!CmdList) || (!RenderDevice))
+		{
+			return;
+		}
+		IRRHIPipelineState* PipelineState = ResolveDebugWireframePipelineState();
+		if (!PipelineState)
+		{
+			// The overlay is a whole pass of its own, so nothing draws when its state is missing and
+			// the only symptom is the absence. It stays quiet once the program is assembled, which
+			// is why this line means something if it is still there after the load.
+			ReportSkippedDraw(EString(PE_TEXT("the debug wireframe overlay")), EString(PE_TEXT("its pipeline state could not be built for program '"))
+				+ ((_GDebugWireframePrimitiveProgram) ? _GDebugWireframePrimitiveProgram->GetShaderName().ToString() : EString(PE_TEXT("<none>")))
+				+ EString(PE_TEXT("'")));
+			return;
+		}
+
+		// The vertex stage's plan, resolved once for the frame: it is what the two instance
+		// buffers are bound through, so a draw never names a register.
+		const EShaderStageEntry* VertexEntry = ResolveShaderStageEntry(*_GDebugWireframePrimitiveProgram, EShaderStageType::SHADER_STAGE_VERTEX);
+		if (!VertexEntry)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the debug wireframe overlay")), EString(PE_TEXT("its program has no vertex stage to bind the primitives through")));
+			return;
+		}
+		const EShaderBindingPlan& VertexPlan = VertexEntry->BindingPlan;
 
 		{
 			constexpr UINT32 TransformSize = sizeof(Matrix4x4) * PrimitiveDrawableMaxNum;
 			constexpr UINT32 ColorSize = sizeof(Color4) * PrimitiveDrawableMaxNum;
 
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
+			// The pipeline state goes first: it brings the root signature, and switching a root
+			// signature voids every root binding made before it.
+			CmdList->SetPipelineState(PipelineState);
 
-			RenderDevice->SetVSShader(_GDebugWireframePrimitiveVS->GetRenderResource()->Shader);
-			RenderDevice->SetInputLayout(_GDebugWireframePrimitiveVS->GetRenderResource()->InputLayout);
-			RenderDevice->SetPSShader(_GDebugWireframePrimitivePS->GetRenderResource()->Shader);
+			// Then the blocks the pass's program reads, because the state above voided whatever an
+			// earlier pass had left bound: the renderer's shared blocks (the wireframe vertex stage
+			// transforms through ViewParams.ViewProjectionMatrix), and this pass's own draw block.
+			// A draw whose roots are left unset reads zeros, which for a transform means every
+			// vertex collapses into one point - the overlay silently disappears instead of drawing
+			// something wrong.
+			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+			if (PassRenderer)
+			{
+				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram);
+			}
+			if (!DrawParameterBlock.IsInitialized())
+			{
+				if (!DrawParameterBlock.EnsureInitialized(RenderDevice, *_GDebugWireframePrimitiveProgram))
+				{
+					// The program cannot describe the block, so the state that is already set
+					// cannot be drawn into correctly. Skipping the overlay is the honest answer,
+					// and saying so is what keeps the skip from being an unexplained absence.
+					ReportSkippedDraw(EString(PE_TEXT("the debug wireframe overlay")), EString(PE_TEXT("the program cannot describe its per draw block")));
+					return;
+				}
+				FLOAT Identity[16] = {};
+				FlattenShaderMatrix(Matrix4x4::Identity(), Identity);
+				EShaderParameterSet& Parameters = DrawParameterBlock.GetParameters();
+				const EName& BlockName = DrawParameterBlock.GetBlockName();
+				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_MATRIX), Identity, 16u);
+				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_MATRIX), Identity, 16u);
+				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_TRANSPOSE_MATRIX), Identity, 16u);
+			}
+			DrawParameterBlock.Upload(RenderDevice);
+			DrawParameterBlock.Bind(CmdList, *_GDebugWireframePrimitiveProgram);
+
+			// The overlay's own block: the material's WireframeColor. The same three steps a scene
+			// material goes through - evaluate the cpu side, upload the mirrors that moved, bind
+			// through the program's plan - so a material parameter behaves here exactly as it does
+			// in a mesh draw, and the pass never carries a register of its own for it.
+			if (_GDebugWireframePrimitiveInstance)
+			{
+				_GDebugWireframePrimitiveInstance->Prepare();
+				RShaderParameterBuffers* MaterialBuffers = ResolveShaderParameterBuffers(*_GDebugWireframePrimitiveInstance);
+				if (MaterialBuffers)
+				{
+					MaterialBuffers->UploadFromParameterSet(RenderDevice, _GDebugWireframePrimitiveInstance->GetParameters());
+					BindShaderParameterBuffers(CmdList, *MaterialBuffers, *_GDebugWireframePrimitiveProgram
+						, EShaderStageType::SHADER_STAGE_PIXEL, FALSE);
+				}
+			}
 
 			for (UINT32 i = 0u, n = RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u; i < n; i++)
 			{
 				if (!(PrimitiveTransformsBuffer[i].IsRenderResourceValid()))
 				{
-					RenderDevice->CreateStructuredBuffer(PrimitiveTransformsBuffer[i], RStructuredBufferDesc(sizeof(Matrix4x4), PrimitiveDrawableMaxNum));
+					CreateDebugStructuredBuffer(PrimitiveTransformsBuffer[i], sizeof(Matrix4x4), PrimitiveDrawableMaxNum);
 				}
 				if (!(PrimitiveColorsBuffer[i].IsRenderResourceValid()))
 				{
-					RenderDevice->CreateStructuredBuffer(PrimitiveColorsBuffer[i], RStructuredBufferDesc(sizeof(Color4), PrimitiveDrawableMaxNum));
+					CreateDebugStructuredBuffer(PrimitiveColorsBuffer[i], sizeof(Color4), PrimitiveDrawableMaxNum);
 				}
 
 				const TArray<Matrix4x4>& TempTransforms = PrimitiveTransforms[i];
@@ -412,17 +637,14 @@ namespace PigeonEngine
 						TempDataColor4s[Index] = TempColors[Index];
 					}
 
-					RenderDevice->UploadBuffer(PrimitiveTransformsBuffer[i].Buffer, TempDataTransforms, TransformSize, TransformSize);
-					RenderDevice->UploadBuffer(PrimitiveColorsBuffer[i].Buffer, TempDataColor4s, ColorSize, ColorSize);
+					PrimitiveTransformsBuffer[i].UploadDataViaRHI(RenderDevice, TempDataTransforms, TransformSize, 0u);
+					PrimitiveColorsBuffer[i].UploadDataViaRHI(RenderDevice, TempDataColor4s, ColorSize, 0u);
 
 					delete[]TempDataTransforms;
 					delete[]TempDataColor4s;
 
-					RenderDevice->SetVertexBuffer(DebugWireframePrimitives[i].GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 3u, 0u, 0u);
-					RenderDevice->SetIndexBuffer(DebugWireframePrimitives[i].GetPrimitiveIndexBuffer().Buffer, 0u, (DebugWireframePrimitives[i].IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
-					RenderDevice->BindVSShaderResourceView(PrimitiveTransformsBuffer[i].ShaderResourceView, 0u);
-					RenderDevice->BindVSShaderResourceView(PrimitiveColorsBuffer[i].ShaderResourceView, 1u);
-					RenderDevice->DrawIndexedInstance(InstanceNum, DebugWireframePrimitives[i].GetIndexCount());
+					DrawDebugPrimitive(CmdList, DebugWireframePrimitives[i]
+						, PrimitiveTransformsBuffer[i], PrimitiveColorsBuffer[i], InstanceNum, VertexPlan);
 				}
 			}
 
@@ -437,21 +659,28 @@ namespace PigeonEngine
 				if (!(CustomPrimitiveTransformsBuffer.ContainsKey(Name)))
 				{
 					CustomPrimitiveTransformsBuffer.Add(Name, RStructuredBuffer());
-					RStructuredBuffer* Buffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
-					RenderDevice->CreateStructuredBuffer((*Buffer), RStructuredBufferDesc(sizeof(Matrix4x4), PrimitiveDrawableMaxNum));
 				}
 				if (!(CustomPrimitiveColorsBuffer.ContainsKey(Name)))
 				{
 					CustomPrimitiveColorsBuffer.Add(Name, RStructuredBuffer());
-					RStructuredBuffer* Buffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
-					RenderDevice->CreateStructuredBuffer((*Buffer), RStructuredBufferDesc(sizeof(Color4), PrimitiveDrawableMaxNum));
+				}
+				RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
+				RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
+				if ((!TransformsBuffer) || (!ColorsBuffer))
+				{
+					continue;
+				}
+				if (!(TransformsBuffer->IsRenderResourceValid()))
+				{
+					CreateDebugStructuredBuffer((*TransformsBuffer), sizeof(Matrix4x4), PrimitiveDrawableMaxNum);
+				}
+				if (!(ColorsBuffer->IsRenderResourceValid()))
+				{
+					CreateDebugStructuredBuffer((*ColorsBuffer), sizeof(Color4), PrimitiveDrawableMaxNum);
 				}
 
 				if (const UINT32 InstanceNum = CustomTransforms.Num<UINT32>(); InstanceNum > 0u)
 				{
-					RStructuredBuffer* TransformsBuffer = CustomPrimitiveTransformsBuffer.FindValueAsPtr(Name);
-					RStructuredBuffer* ColorsBuffer = CustomPrimitiveColorsBuffer.FindValueAsPtr(Name);
-
 					Matrix4x4* TempDataTransforms = new Matrix4x4[PrimitiveDrawableMaxNum];
 					Color4* TempDataColor4s = new Color4[PrimitiveDrawableMaxNum];
 
@@ -461,19 +690,17 @@ namespace PigeonEngine
 						TempDataColor4s[Index] = (*CustomColors)[Index];
 					}
 
-					RenderDevice->UploadBuffer(TransformsBuffer->Buffer, TempDataTransforms, TransformSize, TransformSize);
-					RenderDevice->UploadBuffer(ColorsBuffer->Buffer, TempDataColor4s, ColorSize, ColorSize);
+					TransformsBuffer->UploadDataViaRHI(RenderDevice, TempDataTransforms, TransformSize, 0u);
+					ColorsBuffer->UploadDataViaRHI(RenderDevice, TempDataColor4s, ColorSize, 0u);
 
 					delete[]TempDataTransforms;
 					delete[]TempDataColor4s;
 
 					RDebugWireframePrimitive* Primitive = DebugWireframeCustomPrimitives.FindValueAsPtr(Name);
-
-					RenderDevice->SetVertexBuffer(Primitive->GetPrimitiveVertexBuffer().Buffer, sizeof(FLOAT) * 3u, 0u, 0u);
-					RenderDevice->SetIndexBuffer(Primitive->GetPrimitiveIndexBuffer().Buffer, 0u, (Primitive->IsUseShortIndex()) ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT);
-					RenderDevice->BindVSShaderResourceView(TransformsBuffer->ShaderResourceView, 0u);
-					RenderDevice->BindVSShaderResourceView(ColorsBuffer->ShaderResourceView, 1u);
-					RenderDevice->DrawIndexedInstance(InstanceNum, Primitive->GetIndexCount());
+					if (Primitive)
+					{
+						DrawDebugPrimitive(CmdList, (*Primitive), (*TransformsBuffer), (*ColorsBuffer), InstanceNum, VertexPlan);
+					}
 				}
 			}
 		}

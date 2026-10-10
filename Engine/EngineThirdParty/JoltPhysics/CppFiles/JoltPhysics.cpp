@@ -13,39 +13,39 @@ namespace PigeonEngine
 		Trace = TraceImpl;
 
 		// Create a factory
-		Factory::sInstance = New<Factory>();
+		Factory::sInstance = new Factory();
 
 		// Register all Jolt physics types
 		RegisterTypes();
 
 		//create PhysicsData
-		PhysicsData = New<FPhysicsData>();
+		PhysicsData = new FPhysicsData();
 
 		FPhysicsCommonSettings* CommonSettings = FPhysicsCommonSettings::GetSingleton();
 
 		//pre-allocated memory for simulation.
-		PhysicsData->TempAllocator = New<TempAllocatorImpl>(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
+		PhysicsData->TempAllocator = new TempAllocatorImpl(CommonSettings->PHYSICS_PRE_ALLOCATED_SIZE);
 
 		//an example implementation for jobsystem
 		//used for multiple threads
-		PhysicsData->JobSystem = New<JobSystemThreadPool>(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
+		PhysicsData->JobSystem = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, EMath::Clamp(EMath::Max(thread::hardware_concurrency(), 1u) - 1u, 1u, 4u));
 		const FPhysicsLayerConfig& PhysicsLayerConfig = GetLayerConfig();
 		// Create mapping table from object layer to broadphase layer
-		PhysicsData->BroadPhaseLayerMapper = New<FPhysicsBroadPhaseLayerMapper>(PhysicsLayerConfig);
+		PhysicsData->BroadPhaseLayerMapper = new FPhysicsBroadPhaseLayerMapper(PhysicsLayerConfig);
 
-        PhysicsData->ObjectLayerPairCollisionFilter = New<FPhysicsObjectLayerPairCollisionFilter>(PhysicsLayerConfig);
-		PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter = New<FPhysicsObjectVsBroadPhaseLayerCollisionFilter>(PhysicsLayerConfig);
+		PhysicsData->ObjectLayerPairCollisionFilter = new FPhysicsObjectLayerPairCollisionFilter(PhysicsLayerConfig);
+		PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter = new FPhysicsObjectVsBroadPhaseLayerCollisionFilter(PhysicsLayerConfig);
 
-		PhysicsData->PhysicsSystem = New<PhysicsSystem>();
+		PhysicsData->PhysicsSystem = new PhysicsSystem();
 		PhysicsData->PhysicsSystem->Init(CommonSettings->PHYSICS_MAX_BODIES, CommonSettings->PHYSICS_NUM_BODY_MUTEXES, CommonSettings->PHYSICS_MAX_BODY_PAIRS, CommonSettings->PHYSICS_MAX_CONTACT_CONSTRAINTS, *PhysicsData->BroadPhaseLayerMapper, *PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter, *PhysicsData->ObjectLayerPairCollisionFilter);
 
-		PhysicsData->BodyActivationListener = New<FBodyActivationListener>();
+		PhysicsData->BodyActivationListener = new FBodyActivationListener();
 		PhysicsData->PhysicsSystem->SetBodyActivationListener(PhysicsData->BodyActivationListener);
 
-		PhysicsData->ContactListener = New<FContactListener>();
+		PhysicsData->ContactListener = new FContactListener();
 		PhysicsData->PhysicsSystem->SetContactListener(PhysicsData->ContactListener);
 
-		PhysicsData->SoftBodyContactListener = New<FSoftBodyContactListener>();
+		PhysicsData->SoftBodyContactListener = new FSoftBodyContactListener();
 		PhysicsData->PhysicsSystem->SetSoftBodyContactListener(PhysicsData->SoftBodyContactListener);
 
 		PhysicsData->BodyInterface = &PhysicsData->PhysicsSystem->GetBodyInterface();
@@ -77,36 +77,36 @@ namespace PigeonEngine
 
 		for (const auto& shape : m_Shapes)
 		{
-			Delete(shape.second);
+			delete shape.second;
 		}
 
 		PhysicsData->BodyInterface = nullptr;
-		Delete(PhysicsData->PhysicsSystem);
+		delete PhysicsData->PhysicsSystem;
 		PhysicsData->PhysicsSystem = nullptr;
-		Delete(PhysicsData->TempAllocator);
+		delete PhysicsData->TempAllocator;
 		PhysicsData->TempAllocator = nullptr;
-		Delete(PhysicsData->JobSystem);
+		delete PhysicsData->JobSystem;
 		PhysicsData->JobSystem = nullptr;
-		Delete(PhysicsData->BroadPhaseLayerMapper);
+		delete PhysicsData->BroadPhaseLayerMapper;
 		PhysicsData->BroadPhaseLayerMapper = nullptr;
-		Delete(PhysicsData->BodyActivationListener);
+		delete PhysicsData->BodyActivationListener;
 		PhysicsData->BodyActivationListener = nullptr;
-		Delete(PhysicsData->ContactListener);
+		delete PhysicsData->ContactListener;
 		PhysicsData->ContactListener = nullptr;
-		Delete(PhysicsData->SoftBodyContactListener);
+		delete PhysicsData->SoftBodyContactListener;
 		PhysicsData->SoftBodyContactListener = nullptr;
-		Delete(PhysicsData->ObjectLayerPairCollisionFilter);
+		delete PhysicsData->ObjectLayerPairCollisionFilter;
 		PhysicsData->ObjectLayerPairCollisionFilter = nullptr;
-		Delete(PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter);
+		delete PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter;
 		PhysicsData->ObjectVsBroadPhaseLayerCollisionFilter = nullptr;
 
 		// Destroy the factory
-		Delete(Factory::sInstance);
+		delete Factory::sInstance;
 		Factory::sInstance = nullptr;
 		m_Bodys.Empty();
 		m_BodyToObjectIds.Empty();
 		m_Shapes.Empty();
-		Delete(PhysicsData);
+		delete PhysicsData;
 		PhysicsData = nullptr;
 	}
 
@@ -228,7 +228,7 @@ namespace PigeonEngine
 				{
 					m_Shapes.Remove(ID);
 					if (bDeleteShape)
-						Delete(Shape);
+						delete Shape;
 				}
 			}
 
@@ -275,7 +275,7 @@ namespace PigeonEngine
 
 	void FPhysics_Jolt::SetGravity(Vector3 inGravity)
 	{
-        if (PhysicsData && PhysicsData->PhysicsSystem)
+		if (PhysicsData && PhysicsData->PhysicsSystem)
 		{
 			PhysicsData->PhysicsSystem->SetGravity(PhysicsUtility::Convert2Meter(inGravity));
 		}
@@ -298,6 +298,6 @@ namespace PigeonEngine
 
 	const FPhysicsLayerConfig& FPhysics_Jolt::GetLayerConfig() const
 	{
-        return LayerConfig ? *LayerConfig : FPhysicsDefaultLayerConfig::Get();
+		return LayerConfig ? *LayerConfig : FPhysicsDefaultLayerConfig::Get();
 	}
 }

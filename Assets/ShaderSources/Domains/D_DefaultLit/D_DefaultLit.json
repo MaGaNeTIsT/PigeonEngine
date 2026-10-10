@@ -1,0 +1,9 @@
+{
+	"Name": "DomainDefaultLit",
+	"Template": "Domains/D_DefaultLit/D_DefaultLit.hlsl",
+	"Defines": [
+		{ "Name": "MATERIAL_DOMAIN", "Value": 1 },
+		{ "Name": "DOMAIN_HAS_SURFACE_DERIVE", "Value": 1 },
+		{ "Name": "DOMAIN_HAS_SURFACE_SHADING", "Value": 1 }
+	]
+}

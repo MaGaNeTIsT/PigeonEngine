@@ -4,6 +4,7 @@
 #include <RenderResource.h>
 #include <EngineCommon.h>
 #include <BaseAsset.h>
+#include <AssetLoadManager.h>
 
 namespace PigeonEngine
 {
@@ -159,9 +160,9 @@ namespace PigeonEngine
 		const RStructuredBuffer&	GetRenderResource(ESkeletonRenderResourceType InType)const;
 		void						UpdateRenderResource(const TArray<Matrix4x4>& InMatrices);
 	public:
-		virtual BOOL32	IsRenderResourceValid()const override;
-		virtual BOOL32	InitRenderResource()override;
-		virtual void	ReleaseRenderResource()override;
+		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	InitRenderResource()noexcept override;
+		virtual void	ReleaseRenderResource()noexcept override;
 	protected:
 		UINT32				BoneNum;
 		RStructuredBuffer	RenderResource[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT];
@@ -390,17 +391,33 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+		virtual void	Uninit()override;
 	public:
 #if _EDITOR_ONLY
 		BOOL32	ImportSkeleton(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
-		BOOL32	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset);
+		BOOL32	LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset, const BOOL32 bTryLoad = FALSE);
+		/*
+		* Any thread: the skeleton when it is already loaded, otherwise FALSE and a null output
+		* after recording one load request for the load thread (EAssetLoadManager). Never blocks
+		* and never reads the disk on the calling thread; ask again next frame. Load* above is the
+		* load thread's synchronous half.
+		*
+		* InImportSource is the editor's fallback for a skeleton that was never imported: the load
+		* thread imports from the raw source and loads again. InOnLoadComplete runs on the load
+		* thread once the request is done; see EAssetLoadCompleteType.
+		*/
+		BOOL32	RequireLoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset
+			, const FAssetImportSource* InImportSource = nullptr, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 	private:
 		void	ClearSkeletons();
+		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
+		// paths cannot drift apart.
+		void	ReleaseAllAssets();
 	private:
-		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName);
+		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
-		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName);
+		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
 	private:
 		ESkeletonAssetDataManager SkeletonAssetDataManager;

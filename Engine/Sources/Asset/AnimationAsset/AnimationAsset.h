@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include <BaseAsset.h>
+#include <AssetLoadManager.h>
 
 namespace PigeonEngine
 {
@@ -163,13 +164,26 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+		virtual void	Uninit()override;
 	public:
 #if _EDITOR_ONLY
 		BOOL32	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
 #endif
 		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset);
+		/*
+		* Any thread: the animation when it is already loaded, otherwise FALSE and a null output
+		* after recording one load request for the load thread (EAssetLoadManager). Never blocks
+		* and never reads the disk on the calling thread; ask again next frame. Load* above is the
+		* load thread's synchronous half. InOnLoadComplete runs on the load thread once the
+		* request is done; see EAssetLoadCompleteType.
+		*/
+		BOOL32	RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+			, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 	private:
 		void	ClearSkeletonAnimations();
+		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
+		// paths cannot drift apart.
+		void	ReleaseAllAssets();
 	private:
 		ESkeletonAnimationAsset* LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName);
 		BOOL32 SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset);

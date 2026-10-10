@@ -1,5 +1,7 @@
 #include "SkyLightComponent.h"
+#include <Asset/AssetLoadManager.h>
 #include <RenderProxy/SkyLightProxy.h>
+#include <TextureAsset/TextureAsset.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
@@ -14,7 +16,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PSkyLightComponent::PSkyLightComponent()
-		: CubeMapAsset(nullptr), LightAdjust(Color3::White()), Intensity(1.f), SceneProxy(nullptr), UpdateState(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_NONE)
+		: CubeMapAsset(nullptr), LightAdjust(Color3::White()), Intensity(EEngineSettings::ENGINE_SKY_LUMINANCE), SceneProxy(nullptr), UpdateState(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_NONE)
 	{
 		POBJ_DEBUGNAME_SET(this, "SkyLightComponent");
 	}
@@ -39,14 +41,41 @@ namespace PigeonEngine
 		CubeMapAsset = InCubeMapAsset;
 		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_TEXTURE);
 	}
+	void PSkyLightComponent::RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource)
+	{
+		// Copied by value: the binding outlives this call.
+		FAssetImportCubeSource ImportSource;
+		if (InImportSource)
+		{
+			ImportSource = *InImportSource;
+		}
+		PSkyLightComponent* Component = this;
+		TFunction<BOOL32()> Step = [Component, InAssetName, ImportSource]() -> BOOL32
+		{
+			const ETextureCubeAsset* CubeMapAsset = nullptr;
+			if (!ETextureAssetManager::GetManagerSingleton()->RequireLoadTextureCubeAsset(
+				EBaseSettings::ENGINE_TEXTURE_PATH, InAssetName, CubeMapAsset, &ImportSource))
+			{
+				return FALSE;	// not loaded yet: the component retries on its next tick
+			}
+			Component->SetCubeMapAsset(CubeMapAsset);
+			return TRUE;
+		};
+		// Tried once here as well, so an already loaded cube is applied - and the proxy told about it -
+		// before this call returns rather than a frame later.
+		if (Step() == FALSE)
+		{
+			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
+		}
+	}
 	void PSkyLightComponent::SetLightAdjust(const Color3& InColor)
 	{
 		LightAdjust = InColor;
 		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS);
 	}
-	void PSkyLightComponent::SetIntensity(const FLOAT InIntensity)
+	void PSkyLightComponent::SetIntensity(const FLOAT InLuminanceInCandelaPerSquareMeter)
 	{
-		Intensity = EMath::Max(0.001f, InIntensity);
+		Intensity = EMath::Max(0.001f, InLuminanceInCandelaPerSquareMeter);
 		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS);
 	}
 

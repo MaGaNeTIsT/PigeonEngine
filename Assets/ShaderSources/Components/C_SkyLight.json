@@ -1,0 +1,14 @@
+{
+	"Name": "SkyLight",
+	"Template": "Components/C_SkyLight.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "SkyLightParams",
+			"Slot": 2,
+			"Fields": [
+				{ "Name": "LightAdjustColor", "Format": "float4" },
+				{ "Name": "LightAdjustIntensity", "Format": "float" }
+			]
+		}
+	]
+}

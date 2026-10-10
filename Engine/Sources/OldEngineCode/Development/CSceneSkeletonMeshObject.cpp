@@ -17,7 +17,7 @@ CSceneSkeletonMeshObject::CSceneSkeletonMeshObject(const BOOL32& active, const C
 	this->AddNewTransform();
 	{
 		std::string skeletonMeshPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/SK_Mannequin_UE4_WithWeapon.FBX";
-		
+
 		//std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/Boss_Idle.FBX";
 		std::string skeletonAnimationPath = "./Engine/Assets/EngineModels/SceneModels/UnrealCharacter/Boss_ReactionHit_F.FBX";
 

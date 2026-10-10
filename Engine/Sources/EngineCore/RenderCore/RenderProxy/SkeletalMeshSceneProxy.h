@@ -10,47 +10,49 @@ namespace PigeonEngine
 
 	class ESkinnedMeshAsset;
 	class ESkeletonAsset;
-	class EVertexShaderAsset;
-	class EPixelShaderAsset;
 
-	class RSkeletalMeshMaterialParameter : public RMeshMaterialParameter
-	{
-	public:
-		virtual void	SetupParameters()override;
-
-		CLASS_MATERIAL_PARAMETER(RSkeletalMeshMaterialParameter)
-	};
-
+	/*
+	* The skinned mesh primitive. Everything it does not state here comes from the mesh base and
+	* the primitive base: the fallback material, the index buffer and the vertex streams resolved
+	* from the shader's input layout, the submesh walk, the engine blocks and the draw sequence.
+	*
+	* What is left is the two asset handles it resolved from the report, the skin streams it adds
+	* to the shared vertex binding, and the bones - the one kind of state that is neither an asset
+	* nor a shader value, which is why it travels as snapshot payload.
+	*/
 	class RSkeletalMeshSceneProxy : public RMeshSceneProxy
 	{
 	public:
-		RSkeletalMeshSceneProxy(PSkeletalMeshComponent* InComponent);
-		void			SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const ESkinnedMeshAsset* InMeshAsset, const ESkeletonAsset* InSkeletonAsset, const TArray<Matrix4x4>& InBoneToRootMatrices);
+		RSkeletalMeshSceneProxy(const PSkeletalMeshComponent* InComponent);
 	public:
 		virtual BOOL32	IsRenderValid()const override;
-		void			UpdateMeshAsset(const ESkinnedMeshAsset* InMeshAsset);
-		void			UpdateSkeletonAsset(const ESkeletonAsset* InSkeletonAsset);
+	public:
+		// Caches the typed handles the mesh hooks answer with, and sizes the bone buffers from
+		// the mesh's bind pose count, which is an asset level fact rather than a per frame one.
+		virtual void	ApplyAssets(const FPrimitiveRenderAssetReport& InAssets) override;
+		// Recomputes the bone matrices from the reported bone to root matrices and uploads them.
 		void			UpdateSkeletonRenderResource(const TArray<Matrix4x4>& InBoneToRootMatrices);
-		void			UpdateRenderResource();
-		void			BindRenderResource()const;
-		void			Draw()const;
 	protected:
-		void			SetupShaders();
-		void			BindVertexShader()const;
-		void			BindPixelShader()const;
-		void			BindMeshResource()const;
-		void			BindMaterialParameter(const UINT32 InSlot)const;
-		void			BindSkeletonRenderResource(const UINT32 InMatrixSlot, const UINT32 InInvTranMatrixSlot)const;
+		// The two asset handles the shared mesh draw path needs, plus the skin pair it binds in
+		// addition to the attribute streams.
+		virtual const EMesh*				GetMeshColdData()const override;
+		virtual const EMeshRenderResource*	GetMeshRenderResource()const override;
+		virtual const RVertexBufferResource*	GetSkinVertexStream(const BOOL32 InIsIndexStream)const override;
+		virtual BOOL32	HasSkinVertexStreams()const override;
+		// The bones are bound here, after the shared material and geometry bindings. They live in
+		// this proxy's own parameter set rather than in the material's: two proxies may share one
+		// material instance, and two skeletons sharing one bone buffer would overwrite each
+		// other's matrices.
+		virtual void	BindExtraResources(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const override;
+		// The bone matrices arrive as snapshot payload rather than as an asset or a value.
+		virtual void	ApplyRuntimePayload(const FPrimitiveRenderSnapshot& InSnapshot) override;
 	protected:
-		const EVertexShaderAsset*		VertexShader;
-		const EPixelShaderAsset*		PixelShader;
 		const ESkinnedMeshAsset*		MeshAsset;
 		const ESkeletonAsset*			SkeletonAsset;
 		ESkeletonRenderResource			SkeletonRenderResource;
-		RSkeletalMeshMaterialParameter	MaterialParameter;
 		TArray<Matrix4x4>				BoneValues;
-	protected:
-		const PSkeletalMeshComponent*	Component;
+		// The bone streams as named values.
+		EShaderParameterSet				SkeletonParameters;
 
 		RENDER_PROXY_CLASS_BODY(RSkeletalMeshSceneProxy)
 

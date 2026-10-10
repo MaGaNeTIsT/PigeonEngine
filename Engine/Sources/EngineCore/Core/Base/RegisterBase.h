@@ -50,8 +50,8 @@ namespace PigeonEngine
 	};
 
 #define PE_REGISTER_CLASS_DECLARE(__ClassName, __FunctionType) \
-    class __ClassName final : public ERegisterBase<__FunctionType>\
-    {\
+	class __ClassName final : public ERegisterBase<__FunctionType>\
+	{\
 	public:\
 		class ERegisterObject final\
 		{\

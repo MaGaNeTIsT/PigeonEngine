@@ -1,9 +1,18 @@
 #include "SkyLightProxy.h"
 #include <ShaderAsset/ShaderAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
+#include <Shader/ShaderAssetBinding.h>
+#include <Shader/EngineShaderInstanceCache.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
-#include <RenderDevice/DeviceD3D11.h>
+#include <RHI/IRCommandList.h>
+#include <Pipeline/RPipelineStateCache.h>
+#include <Renderer/SceneRenderer.h>
+#include <Renderer/ScenePass.h>
+#include <Main/MainManager.h>
 #include "MeshSceneProxy.h"
+#include <Development/Profiler.h>
 
 namespace PigeonEngine
 {
@@ -15,65 +24,101 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	void RSkyLightMaterialParameter::SetupParameters()
+	const EShaderProgram*		RSkyLightSceneProxy::SkyProgram	= nullptr;
+
+	/*
+	* The engine sky shader. Shared process wide through the instance cache; the proxy keeps only
+	* the resolved program, so no sky light carries per instance state.
+	*
+	* The request is built once: resolving it is pure computation, but the two callers below have
+	* to name the same assembly, and one shared request is what keeps them from drifting apart.
+	*/
+	static const EShaderAssemblyRequest& GetSkyShaderRequest()
 	{
-		ClearParameter();
-		BeginSetupParameter();
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_WorldInvMatrix"));
-		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_LightAdjustColor"));
-		AddParameter<FLOAT, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT1>(("_LightAdjustIntensity"));
-		EndSetupParameter();
-		CreateBuffer();
+		static const EShaderAssemblyRequest Request = []() -> EShaderAssemblyRequest
+		{
+			// The sky pass states its own source: the Sky program, no material (it shades
+			// nothing), the Unlit domain, the fullscreen vertex axis and both stages.
+			EShaderAssemblyRequest Built;
+			Built.ShaderName = EName(PE_TEXT("M_EngineSkyLight"));
+			Built.ProgramName = EName(PE_TEXT("Sky"));
+			Built.DomainName = EString(PE_TEXT("Unlit"));
+			Built.VertexFactory = EShaderVertexFactoryType::FULLSCREEN;
+			Built.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_UV0;
+			Built.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
+			return Built;
+		}();
+		return Request;
+	}
+	// Load thread: resolves the sky shader for the caller that creates a sky proxy.
+	static const EShaderInstance* GetSkyShaderInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(GetSkyShaderRequest());
+	}
+	// Any thread: the same instance, asked for rather than resolved - null while it is not
+	// assembled yet, and a cache hit once it is. This is what the reload refresh uses, because it
+	// runs on the render thread where a load may not happen.
+	static const EShaderInstance* RequireSkyShaderInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(GetSkyShaderRequest());
 	}
 
-	const EStaticMeshAsset*		RSkyLightSceneProxy::SkyDomeMeshAsset		= nullptr;
-	const EVertexShaderAsset*	RSkyLightSceneProxy::SkyDomeVertexShader	= nullptr;
-	const EPixelShaderAsset*	RSkyLightSceneProxy::SkyDomePixelShader		= nullptr;
-
-	void RSkyLightSceneProxy::CreateSkyDomeAsset()
+	void RSkyLightSceneProxy::CreateSkyAssets()
 	{
-		if (!(RSkyLightSceneProxy::SkyDomeMeshAsset))
+		// Only the program: the geometry is the engine's fullscreen triangle, which the shared
+		// draw path owns, so a sky light carries no mesh of its own any more.
+		if (!(RSkyLightSceneProxy::SkyProgram))
 		{
-			EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			EString ImportPath(AssetBasePath + "EngineModels/BaseShapes/");
-			EString ImportName("SphereUV");
-			EString ImportFileType("obj");
-			TryLoadStaticMesh(EBaseSettings::ENGINE_MESH_PATH, "SkyDome", RSkyLightSceneProxy::SkyDomeMeshAsset, &ImportPath, &ImportName, &ImportFileType, TRUE);
+			const EShaderInstance* SkyInstance = GetSkyShaderInstance();
+			if (SkyInstance)
+			{
+				RSkyLightSceneProxy::SkyProgram = SkyInstance->GetProgram();
+			}
 		}
-		if (!(RSkyLightSceneProxy::SkyDomeVertexShader))
+	}
+
+	void RSkyLightSceneProxy::OnShaderAssetReplaced()
+	{
+		// The instance is the stable handle and was re-pointed to the new object before this ran,
+		// so re-reading its program is what makes the process wide pointer current. The proxies
+		// themselves drop what they built from the previous program - each one notices the swap by
+		// comparing its own PipelineStateProgram against this pointer.
+		const EShaderInstance* SkyInstance = RequireSkyShaderInstance();
+		RSkyLightSceneProxy::SkyProgram = (SkyInstance ? SkyInstance->GetProgram() : nullptr);
+	}
+
+	void RSkyLightSceneProxy::DropStateForReplacedProgram()
+	{
+		if (PipelineStateProgram == RSkyLightSceneProxy::SkyProgram)
 		{
-			EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-			EString VSName("SkyLight");
-			VSName += EEngineSettings::ENGINE_IMPORT_VERTEX_SHADER_NAME_TYPE;
-			RInputLayoutDesc VSInputLayout[] = { RInputLayoutDesc(RShaderSemanticType::SHADER_SEMANTIC_POSITION0, sizeof(FLOAT), 4u, RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_FLOAT) };
-			constexpr UINT32 VSInputLayoutNum = PE_ARRAYSIZE(VSInputLayout);
-			TryLoadVertexShader(EBaseSettings::ENGINE_SHADER_PATH, VSName, RSkyLightSceneProxy::SkyDomeVertexShader, &ImportPath, &VSName, VSInputLayout, &VSInputLayoutNum);
+			return;
 		}
-		if (!(RSkyLightSceneProxy::SkyDomePixelShader))
-		{
-			EString ImportPath(EBaseSettings::ENGINE_RAW_SHADER_OUTPUT_PATH);
-			EString PSName("SkyLight");
-			PSName += EEngineSettings::ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE;
-			TryLoadPixelShader(EBaseSettings::ENGINE_SHADER_PATH, PSName, RSkyLightSceneProxy::SkyDomePixelShader, &ImportPath, &PSName);
-		}
+		// The pipeline state carries the root signature of the program it was created for, and the
+		// parameter block had its layout read from that program's reflection. Both are re-derived
+		// from the current program by their next user, so dropping is all this has to do.
+		PipelineState = nullptr;
+		PipelineStateProgram = nullptr;
+		SkyLightParameterBlock.ReleaseRenderResources();
 	}
 
 	RSkyLightSceneProxy::RSkyLightSceneProxy(PSkyLightComponent* InComponent)
-		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f), Component(InComponent)
+		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f)
+		, PipelineState(nullptr), Component(InComponent)
 	{
-		CreateSkyDomeAsset();
+		CreateSkyAssets();
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create directional light scene proxy failed"), (!!Component));
 	}
 	RSkyLightSceneProxy::RSkyLightSceneProxy()
-		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f), Component(nullptr)
+		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f)
+		, PipelineState(nullptr), Component(nullptr)
 	{
-		CreateSkyDomeAsset();
+		CreateSkyAssets();
 	}
 	RSkyLightSceneProxy::RSkyLightSceneProxy(const RSkyLightSceneProxy& Other)
-		: RBaseSceneProxy(Other), TextureCubeAsset(Other.TextureCubeAsset), AdjustColor(Other.AdjustColor), AdjustIntensity(Other.AdjustIntensity), Component(Other.Component)
+		: RBaseSceneProxy(Other), TextureCubeAsset(Other.TextureCubeAsset), AdjustColor(Other.AdjustColor)
+		, AdjustIntensity(Other.AdjustIntensity), PipelineState(Other.PipelineState), Component(Other.Component)
 	{
-		CreateSkyDomeAsset();
+		CreateSkyAssets();
 	}
 	RSkyLightSceneProxy::~RSkyLightSceneProxy()
 	{
@@ -84,13 +129,32 @@ namespace PigeonEngine
 		UpdateSkyLightParams(InSkyLightParams);
 		UpdateMatrices(InMatrices);
 
-		SkyLightMaterialParameter.SetupParameters();
-
 		UpdateRenderResource();
 	}
 	void RSkyLightSceneProxy::UpdateTextureCubeAsset(const ETextureCubeAsset* InTextureCubeAsset)
 	{
 		TextureCubeAsset = InTextureCubeAsset;
+	}
+	const IRRHITexture* RSkyLightSceneProxy::GetEnvironmentTexture() const noexcept
+	{
+		if (!TextureCubeAsset)
+		{
+			return nullptr;
+		}
+		const RTextureCubeResource* CubeRenderResource = TextureCubeAsset->GetRenderResource();
+		if (!CubeRenderResource)
+		{
+			return nullptr;
+		}
+		return CubeRenderResource->GetResolvedRHITexture();
+	}
+	const Color3& RSkyLightSceneProxy::GetAdjustColor() const noexcept
+	{
+		return AdjustColor;
+	}
+	FLOAT RSkyLightSceneProxy::GetAdjustIntensity() const noexcept
+	{
+		return AdjustIntensity;
 	}
 	void RSkyLightSceneProxy::UpdateSkyLightParams(const ERenderSkyLightParams& InSkyLightParams)
 	{
@@ -103,25 +167,42 @@ namespace PigeonEngine
 	}
 	void RSkyLightSceneProxy::UpdateRenderResource()
 	{
-		FLOAT LightAdjustIntensity = TranslateUploadBaseType(AdjustIntensity);
-		SkyLightMaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
-		SkyLightMaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix().Inverse());
-		SkyLightMaterialParameter["_LightAdjustColor"] = &TranslateUploadColorType(AdjustColor);
-		SkyLightMaterialParameter["_LightAdjustIntensity"] = &LightAdjustIntensity;
-		SkyLightMaterialParameter.UploadBuffer();
+		// Before anything reads the program: a replaced one leaves the block below holding a layout
+		// that came from it.
+		DropStateForReplacedProgram();
+
+		// The values the shader reads go through the block the sky program's own source declares,
+		// so they land on the register the plan reports rather than on a slot written down here.
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if ((!SkyProgram) || (!RenderDevice))
+		{
+			return;
+		}
+		if (!SkyLightParameterBlock.EnsureInitialized(RenderDevice, *SkyProgram))
+		{
+			return;
+		}
+		const EName BlockName(SHADER_BLOCK_SKY_LIGHT_PARAMS);
+		EShaderParameterSet& Parameters = SkyLightParameterBlock.GetParameters();
+		WriteShaderVector4(Parameters, BlockName, EName(SHADER_FIELD_LIGHT_ADJUST_COLOR)
+			, Vector4(AdjustColor.r, AdjustColor.g, AdjustColor.b, 1.f));
+		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_LIGHT_ADJUST_INTENSITY), AdjustIntensity);
+		SkyLightParameterBlock.Upload(RenderDevice);
 	}
 	BOOL32 RSkyLightSceneProxy::IsRenderValid()const
 	{
+		// No mesh in this test any more: the geometry is the engine's fullscreen triangle.
 #if _EDITOR_ONLY
-		BOOL32 IsValid = (!!(RSkyLightSceneProxy::SkyDomeVertexShader)) && (!!(RSkyLightSceneProxy::SkyDomePixelShader)) && (!!(RSkyLightSceneProxy::SkyDomeMeshAsset));
+		BOOL32 IsValid = (!!(RSkyLightSceneProxy::SkyProgram));
 		if (IsValid)
 		{
-			IsValid = (RSkyLightSceneProxy::SkyDomeVertexShader->IsRenderResourceValid()) && (RSkyLightSceneProxy::SkyDomePixelShader->IsRenderResourceValid()) && (RSkyLightSceneProxy::SkyDomeMeshAsset->IsRenderResourceValid());
+			IsValid = (!!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_VERTEX))
+				&& (!!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_PIXEL));
 		}
 #else
 		BOOL32 IsValid = TRUE;
 #endif
-		IsValid = IsValid && SkyLightMaterialParameter.GetConstantBuffer().IsRenderResourceValid() && (!!TextureCubeAsset);
+		IsValid = IsValid && (!!TextureCubeAsset);
 		if (IsValid)
 		{
 			IsValid = TextureCubeAsset->IsRenderResourceValid() && (AdjustIntensity >= 0.001f);
@@ -130,229 +211,116 @@ namespace PigeonEngine
 	}
 	void RSkyLightSceneProxy::BindRenderResource()const
 	{
-		BindVertexShader();
-		BindPixelShader();
-		BindMeshResource();
-		BindMaterialParameter(1u);
-		RDeviceD3D11::GetDeviceSingleton()->BindPSShaderResourceView(TextureCubeAsset->GetRenderResource()->ShaderResourceView, 0u);
+		// Everything the sky binds is bound inside Draw, right after the pipeline state that
+		// would otherwise void it. The hook stays because the renderer calls it first.
 	}
-	void RSkyLightSceneProxy::Draw()const
+	BOOL32 RSkyLightSceneProxy::EnsurePipelineState()
 	{
-#if _EDITOR_ONLY
-		if (!!(RSkyLightSceneProxy::SkyDomeMeshAsset))
-#endif
+		DropStateForReplacedProgram();
+		if (PipelineState)
 		{
-#if _EDITOR_ONLY
-			if (RSkyLightSceneProxy::SkyDomeMeshAsset->IsRenderResourceValid())
-#endif
-			{
-				const EStaticMeshRenderResource* MeshRenderResource = RSkyLightSceneProxy::SkyDomeMeshAsset->GetRenderResource();
-				const RIndexBufferResource* IndexRenderResource = MeshRenderResource->GetIndexRenderResource();
-#if _EDITOR_ONLY
-				if (!!IndexRenderResource)
-#endif
-				{
-#if _EDITOR_ONLY
-					if (IndexRenderResource->IsRenderResourceValid())
-#endif
-					{
-						RDeviceD3D11::GetDeviceSingleton()->DrawIndexed(IndexRenderResource->IndexCount);
-					}
-#if _EDITOR_ONLY
-					else
-					{
-						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome draw indexed is invalid."));
-					}
-#endif
-				}
-#if _EDITOR_ONLY
-				else
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome draw indexed is invalid."));
-				}
-#endif
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh asset is invalid."));
-			}
-#endif
+			return TRUE;
 		}
-#if _EDITOR_ONLY
-		else
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		if ((!Renderer) || (!SkyProgram))
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh asset is invalid."));
+			return FALSE;
 		}
-#endif
+		// The pass the sky draws in is engine driven, so it carries no shaders of its own:
+		// the fixed function state comes from the pass, the two stages and the roots they
+		// read come from the program. The cache keys the result on both, which is what lets
+		// every sky light in the frame share one state.
+		RGraphicsPipelineStateDesc Desc;
+		FRenderPassRegistry::FillPipelineStateDesc(
+			FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_SKY), SkyProgram, Desc);
+		PipelineState = Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
+		PipelineStateProgram = (PipelineState ? SkyProgram : nullptr);
+		if (PipelineState)
+		{
+			// The drop above took the parameter block with the state it was derived beside, and
+			// nothing else is coming to rebuild it: a component update is not sent when only the
+			// program moved, and the cube's arrival sends a texture update, which does not refresh
+			// the render resources either. A block that is never rebuilt binds nothing at all -
+			// not zeroes - so the sky's own values would read as zero and the pass would multiply
+			// its radiance away, which is why the draw path rebuilds what it dropped here.
+			UpdateRenderResource();
+		}
+		return (PipelineState != nullptr) ? TRUE : FALSE;
 	}
-	void RSkyLightSceneProxy::BindVertexShader()const
+	void RSkyLightSceneProxy::Draw()
 	{
-#if _EDITOR_ONLY
-		if (!!(RSkyLightSceneProxy::SkyDomeVertexShader))
-#endif
+		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
+		if (!CmdList) { return; }
+		if (!EnsurePipelineState())
 		{
-#if _EDITOR_ONLY
-			if (RSkyLightSceneProxy::SkyDomeVertexShader->IsRenderResourceValid())
-#endif
-			{
-				const RVertexShaderResource* VSResource = RSkyLightSceneProxy::SkyDomeVertexShader->GetRenderResource();
-				{
-					RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-					RenderDevice->SetInputLayout(VSResource->InputLayout);
-					RenderDevice->SetVSShader(VSResource->Shader);
-				}
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome vertex shader is invalid."));
-			}
-#endif
+			// The sky has one draw and no substitute: a state that cannot be built means the pass
+			// renders nothing, which reads as a missing sky rather than as a broken shader. It is
+			// expected for the first frames of a cold start, while the program is still assembling.
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its pipeline state could not be built for program '"))
+				+ ((SkyProgram) ? SkyProgram->GetShaderName().ToString() : EString(PE_TEXT("<none>")))
+				+ EString(PE_TEXT("'")));
+			return;
 		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome vertex shader is invalid."));
-		}
-#endif
-	}
-	void RSkyLightSceneProxy::BindPixelShader()const
-	{
-#if _EDITOR_ONLY
-		if (!!(RSkyLightSceneProxy::SkyDomePixelShader))
-#endif
-		{
-#if _EDITOR_ONLY
-			if (RSkyLightSceneProxy::SkyDomePixelShader->IsRenderResourceValid())
-#endif
-			{
-				const RPixelShaderResource* PSResource = RSkyLightSceneProxy::SkyDomePixelShader->GetRenderResource();
-				{
-					RDeviceD3D11::GetDeviceSingleton()->SetPSShader(PSResource->Shader);
-				}
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome pixel shader is invalid."));
-			}
-#endif
-		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome pixel shader is invalid."));
-		}
-#endif
-	}
-	void RSkyLightSceneProxy::BindMeshResource()const
-	{
-#if _EDITOR_ONLY
-		BOOL32 IsValid = (!!(RSkyLightSceneProxy::SkyDomeVertexShader)) && (!!(RSkyLightSceneProxy::SkyDomePixelShader)) && (!!(RSkyLightSceneProxy::SkyDomeMeshAsset));
-		if (IsValid)
-		{
-			IsValid = (RSkyLightSceneProxy::SkyDomeVertexShader->IsRenderResourceValid()) && (RSkyLightSceneProxy::SkyDomePixelShader->IsRenderResourceValid()) && (RSkyLightSceneProxy::SkyDomeMeshAsset->IsRenderResourceValid());
-		}
-		if (IsValid)
-#endif
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			const EStaticMeshRenderResource*	MeshRenderResource	= RSkyLightSceneProxy::SkyDomeMeshAsset->GetRenderResource();
-			const UINT32						LayoutNum			= RSkyLightSceneProxy::SkyDomeVertexShader->GetShaderInputLayoutNum();
-			const RInputLayoutDesc*				Layouts				= RSkyLightSceneProxy::SkyDomeVertexShader->GetShaderInputLayouts();
-			const RIndexBufferResource*			IndexRenderResource	= MeshRenderResource->GetIndexRenderResource();
-#if _EDITOR_ONLY
-			if (!!IndexRenderResource)
-#endif
-			{
-#if _EDITOR_ONLY
-				if (IndexRenderResource->IsRenderResourceValid())
-#endif
-				{
-					RFormatType IndexFormat = IndexRenderResource->UseShort ? RFormatType::FORMAT_R16_UINT : RFormatType::FORMAT_R32_UINT;
-					RenderDevice->SetIndexBuffer(IndexRenderResource->Buffer, 0u, IndexFormat);
-				}
-#if _EDITOR_ONLY
-				else
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh index buffer is invalid."));
-				}
-#endif
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh index buffer is invalid."));
-			}
-#endif
-			for (UINT32 LayoutIndex = 0u; LayoutIndex < LayoutNum; LayoutIndex++)
-			{
-				const RInputLayoutDesc&					Layout					= Layouts[LayoutIndex];
-				UINT32									ShaderSemanticSlot		= 0u;
-				EVertexResourceType						VertexResource			= TranslateInputLayoutToVertexResource(Layout, ShaderSemanticSlot);
-				const TArray<RVertexBufferResource*>*	VertexRenderResources	= MeshRenderResource->GetVertexRenderResource(VertexResource);
-#if _EDITOR_ONLY
-				if ((!!VertexRenderResources) && (ShaderSemanticSlot < VertexRenderResources->Num<UINT32>()))
-#endif
-				{
-					const RVertexBufferResource* VertexRenderResource = (*VertexRenderResources)[ShaderSemanticSlot];
-#if _EDITOR_ONLY
-					if (!!VertexRenderResource)
-#endif
-					{
-#if _EDITOR_ONLY
-						if (VertexRenderResource->IsRenderResourceValid())
-#endif
-						{
-							RenderDevice->SetVertexBuffer(VertexRenderResource->Buffer, VertexRenderResource->Stride, 0u, LayoutIndex);
-						}
-#if _EDITOR_ONLY
-						else
-						{
-							PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh vertex buffer is invalid."));
-						}
-#endif
-					}
-#if _EDITOR_ONLY
-					else
-					{
-						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome mesh vertex buffer is invalid."));
-					}
-#endif
-				}
-#if _EDITOR_ONLY
-				else
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check sky dome mesh scene proxy vertex render resource is invalid."));
-				}
-#endif
-			}
-		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check sky dome mesh scene proxy is invalid."));
-		}
-#endif
-	}
-	void RSkyLightSceneProxy::BindMaterialParameter(const UINT32 InSlot)const
-	{
-		const RBufferResource& ConstantBuffer = SkyLightMaterialParameter.GetConstantBuffer();
-#if _EDITOR_ONLY
-		if (((InSlot >= 0u) && (InSlot < 16u)) && (ConstantBuffer.IsRenderResourceValid()))
-#endif
-		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
-			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
-		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Sky dome constant buffer is invalid."));
-		}
-#endif
-	}
 
+		PE_GPU_EVENT_SCOPE(CmdList, EString(PE_TEXT("SkyLight")));
+
+		// Order matters: the pipeline state voids every root binding made before it, so it goes
+		// first, then the blocks the shader reads, and the geometry last.
+		CmdList->SetPipelineState(PipelineState);
+
+		// The shared blocks belong to this draw: the state above switched the signature, which
+		// voided whatever the pass before had bound.
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		if (Renderer)
+		{
+			Renderer->BindEngineParameters(CmdList, *SkyProgram);
+		}
+
+		// The sky's own block is bound here rather than by the renderer because it belongs to
+		// this pass and no other. Same rule as the shared ones: after the pipeline state, which
+		// would have voided an earlier binding.
+		SkyLightParameterBlock.Bind(CmdList, *SkyProgram);
+
+		BindEnvironmentCube(CmdList);
+
+		// The geometry is the fullscreen triangle: the program's vertex stage is the fullscreen
+		// factory, which builds its clip position from the triangle's UV coordinate and reads no
+		// mesh stream. It sits on the far plane (see Sky_VS.tmpl.hlsl), so the depth test against
+		// the base pass's depth buffer is what keeps the sky behind everything else.
+		FullScreenTriangle.BindPrimitiveBuffers(CmdList, *SkyProgram);
+		CmdList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+	}
+	void RSkyLightSceneProxy::BindEnvironmentCube(IRCommandList* InCommandList)const
+	{
+		if ((!InCommandList) || (!SkyProgram))
+		{
+			return;
+		}
+		if (!TextureCubeAsset)
+		{
+			// Quiet: the cube is asked for when the sky light appears and may simply not be there
+			// yet, which is what every sky looks like for its first frames.
+			return;
+		}
+		const RTextureCubeResource* CubeRenderResource = TextureCubeAsset->GetRenderResource();
+		if (!CubeRenderResource)
+		{
+			// Not quiet, for the same reason the mesh path is not: the asset is held and its device
+			// side is missing, so the sky draws without its cube rather than waiting for one.
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its environment cube has no render resource")));
+			return;
+		}
+		const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*SkyProgram, EShaderStageType::SHADER_STAGE_PIXEL);
+		if (!PixelEntry)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its program has no pixel stage to bind the environment cube through")));
+			return;
+		}
+		// The environment cube is a reflected resource of the pixel stage (the lighting
+		// component declares it), so it is bound through that stage's own plan and lands on
+		// the register the compiler assigned rather than on a literal slot.
+		EShaderParameterSet Parameters;
+		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), CubeRenderResource->GetResolvedRHITexture());
+		BindShaderParameterResources(InCommandList, Parameters, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+	}
 };

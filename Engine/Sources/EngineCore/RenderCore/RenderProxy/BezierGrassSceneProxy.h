@@ -10,8 +10,7 @@ namespace PigeonEngine
 {
 
 	class EStaticMeshAsset;
-	class EVertexShaderAsset;
-	class EPixelShaderAsset;
+	class EShaderProgram;
 #if 0
 	struct EBezierGrassGlobalProxyData
 	{
@@ -39,14 +38,19 @@ namespace PigeonEngine
 		float4          LODDistancesSq2;
 	};
 #endif
-	class RBezierGrassMaterialParameter : public RPrimitiveMaterialParameter
+	class RBezierGrassCBufferParameter : public EConstantBufferParameter
 	{
 	public:
-		virtual void	SetupParameters()override;
+		// The three world matrices a primitive block starts with. Declared here rather than
+		// inherited: the shared primitive block base is gone, and this block is on its own until
+		// the grass is rebuilt on the new shader system.
+		void			AddPrimitiveMaterialParameter() noexcept;
 
-		void			AddBezierGrassMaterialParameter();
+		virtual void	DoSetupVariable() noexcept override;
 
-		CLASS_MATERIAL_PARAMETER(RBezierGrassMaterialParameter)
+		void			AddBezierGrassMaterialParameter() noexcept;
+
+		CLASS_SHADER_PARAMETER(RBezierGrassCBufferParameter)
 	};
 
 	class RBezierGrassSceneProxy : public RPrimitiveSceneProxy
@@ -75,11 +79,13 @@ namespace PigeonEngine
 		void			BindVertexShader()const;
 		void			BindPixelShader()const;
 		void			BindMeshAndInstanceResource()const;
-		void			BindMaterialParameter(const UINT32 InSlot)const;
+		void			BindPrimitiveParameter()const;
 	protected:
-		const EVertexShaderAsset*			VertexShader;
-		const EPixelShaderAsset*			PixelShader;
-		const EComputeShaderAsset*			ComputeShader;
+		// Resolved from the grass material instance, or from the engine fallback while
+		// the component carries none. One program drives the vertex and the pixel stage.
+		const EShaderProgram*				GraphicsProgram;
+		// The construct pass is a different shader asset than the blade pass.
+		const EShaderProgram*				ComputeProgram;
 		BOOL32								bSplitBentPart;
 		TArray<UINT32>						BodyParts;
 		TArray<FLOAT>						BentBezierTs;
@@ -90,7 +96,7 @@ namespace PigeonEngine
 #endif
 		RVertexBufferResource				VertexBuffer;
 		RIndexBufferResource				IndexBuffer;
-		RBezierGrassMaterialParameter		MaterialParameter;
+		RBezierGrassCBufferParameter		CBufferParameter;
 		EBezierGrassProperty				Property;
 		EBezierGrassLayerTypeData			LayerTypeData;
 		Vector2								TileAnchor;

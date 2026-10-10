@@ -1,4 +1,4 @@
-﻿#include "Path.h"
+#include "Path.h"
 #include <Config/ErrorCaption.h>
 #include <Base/Math/Math.h>
 #include <Config/EngineConfig.h>

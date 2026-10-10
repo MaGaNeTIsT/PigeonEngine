@@ -37,15 +37,15 @@ public:
 
 	/// Destructor
 	virtual ~FCharacterBase() = default;
-		    
+
 	void SetMaxSlopeAngle(FLOAT inMaxSlopeAngle) { return CharacterBase->SetMaxSlopeAngle(inMaxSlopeAngle); }
-		    
+
 	FLOAT GetCosMaxSlopeAngle() const { return CharacterBase->GetCosMaxSlopeAngle(); }
-		    
+
 	void SetUp(Vector3 inUp) { return CharacterBase->SetUp(PhysicsUtility::Convert(inUp)); }
-		    
+
 	Vector3 GetUp() const { return PhysicsUtility::Convert(CharacterBase->GetUp()); }
-		    
+
 	BOOL32 IsSlopeTooSteep(Vector3 inNormal) const
 	{
 		return CharacterBase->IsSlopeTooSteep(PhysicsUtility::Convert(inNormal));

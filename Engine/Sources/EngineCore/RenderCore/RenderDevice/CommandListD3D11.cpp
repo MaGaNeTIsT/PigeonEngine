@@ -3,6 +3,7 @@
 #include "PipelineStateD3D11.h"
 #include "D3D11Native.h"
 #include <RenderResource.h>
+#include <Development/GPUProfiler.h>
 
 namespace PigeonEngine
 {
@@ -174,9 +175,17 @@ namespace PigeonEngine
 			return;
 		}
 
-		// Collect RTVs.
+		// GPU profiler: open event + first timestamp for this pass. No-op
+		// when PassName is null or _GPU_ENABLE_PROFILER is off.
+		PE_GPU_PROFILER_PASS_BEGIN(this, InDesc.PassName);
+
+		// Collect RTVs. OMSetRenderTargets binds at most
+		// D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT views, while the RHI desc allows
+		// RHI_MAX_RENDER_TARGETS entries; clamp to the native limit.
 		ID3D11RenderTargetView* RawRTVs[RHI_MAX_RENDER_TARGETS] = { nullptr };
-		const UINT32 RenderTargetCount = (InDesc.RenderTargetCount < RHI_MAX_RENDER_TARGETS) ? InDesc.RenderTargetCount : RHI_MAX_RENDER_TARGETS;
+		const UINT32 RenderTargetCount = (InDesc.RenderTargetCount < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT) ? InDesc.RenderTargetCount : static_cast<UINT32>(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT);
+		// The clamp would silently serve fewer targets than the caller asked for.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: RenderTargetCount exceeds the simultaneous render-target limit."), (InDesc.RenderTargetCount <= D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT));
 		for (UINT32 i = 0u; i < RenderTargetCount; i++)
 		{
 			RawRTVs[i] = ExtractD3D11RTV(InDesc.RenderTargets[i].Target);
@@ -217,6 +226,10 @@ namespace PigeonEngine
 		// D3D11 has no explicit end-of-pass hook; deferred-mode store ops are
 		// implicit. Phase 3 (D3D12) will use this to insert resource state
 		// transitions back to whatever the next pass declared.
+
+		// GPU profiler: close event + second timestamp. No-op when this
+		// pass wasn't auto-instrumented or _GPU_ENABLE_PROFILER is off.
+		PE_GPU_PROFILER_PASS_END(this);
 	}
 
 	// --------------------------------------------------------
@@ -283,7 +296,7 @@ namespace PigeonEngine
 		}
 	}
 
-	void RCommandListD3D11::SetViewports(const RRHIViewport* InViewports, UINT32 InCount)
+	void RCommandListD3D11::SetViewports(const EViewport* InViewports, UINT32 InCount)
 	{
 		if (!ImmediateContext || !InViewports || InCount == 0u)
 		{
@@ -303,7 +316,7 @@ namespace PigeonEngine
 		ImmediateContext->RSSetViewports(ClampedCount, NativeViewports);
 	}
 
-	void RCommandListD3D11::SetScissorRects(const RRHIRect* InRects, UINT32 InCount)
+	void RCommandListD3D11::SetScissorRects(const ERect* InRects, UINT32 InCount)
 	{
 		if (!ImmediateContext || !InRects || InCount == 0u)
 		{
@@ -313,10 +326,10 @@ namespace PigeonEngine
 		const UINT32 ClampedCount = (InCount > D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE) ? D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE : InCount;
 		for (UINT32 i = 0u; i < ClampedCount; i++)
 		{
-			NativeRects[i].left = InRects[i].Left;
-			NativeRects[i].top = InRects[i].Top;
-			NativeRects[i].right = InRects[i].Right;
-			NativeRects[i].bottom = InRects[i].Bottom;
+			NativeRects[i].left = static_cast<LONG>(InRects[i].Left);
+			NativeRects[i].top = static_cast<LONG>(InRects[i].Top);
+			NativeRects[i].right = static_cast<LONG>(InRects[i].Right);
+			NativeRects[i].bottom = static_cast<LONG>(InRects[i].Bottom);
 		}
 		ImmediateContext->RSSetScissorRects(ClampedCount, NativeRects);
 	}
@@ -351,10 +364,17 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// IASetVertexBuffers requires StartSlot + NumBuffers <= RHI_MAX_VERTEX_BUFFERS,
+		// while the caller's count is unbounded; clamp both ends.
+		if (InStartSlot >= RHI_MAX_VERTEX_BUFFERS)
+		{
+			return;
+		}
 		ID3D11Buffer* NativeBuffers[RHI_MAX_VERTEX_BUFFERS] = { nullptr };
 		UINT			NativeStrides[RHI_MAX_VERTEX_BUFFERS] = { 0u };
 		UINT			NativeOffsets[RHI_MAX_VERTEX_BUFFERS] = { 0u };
-		const UINT32	ClampedCount = (InCount > RHI_MAX_VERTEX_BUFFERS) ? RHI_MAX_VERTEX_BUFFERS : InCount;
+		const UINT32	MaxBufferCount = RHI_MAX_VERTEX_BUFFERS - InStartSlot;
+		const UINT32	ClampedCount = (InCount > MaxBufferCount) ? MaxBufferCount : InCount;
 		for (UINT32 i = 0u; i < ClampedCount; i++)
 		{
 			NativeBuffers[i] = InBuffers ? ExtractD3D11Buffer(InBuffers[i]) : nullptr;
@@ -392,6 +412,13 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// D3D11 has no root indices: the RHI interprets InRootIndex as a constant-buffer
+		// slot here, so the bound is the API's CB slot count.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: constant-buffer slot exceeds the API's CB slot count."), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
+		if (InRootIndex >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
+		{
+			return;
+		}
 		ID3D11Buffer* NativeBuffer = ExtractD3D11Buffer(InBuffer);
 		ImmediateContext->VSSetConstantBuffers(InRootIndex, 1u, &NativeBuffer);
 		ImmediateContext->PSSetConstantBuffers(InRootIndex, 1u, &NativeBuffer);
@@ -408,6 +435,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// Same API bound as the graphics variant above (slot, not root index).
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: constant-buffer slot exceeds the API's CB slot count."), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
+		if (InRootIndex >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
+		{
+			return;
+		}
 		ID3D11Buffer* NativeBuffer = ExtractD3D11Buffer(InBuffer);
 		ImmediateContext->CSSetConstantBuffers(InRootIndex, 1u, &NativeBuffer);
 	}
@@ -421,9 +454,21 @@ namespace PigeonEngine
 	// Slot-based bindings
 	// --------------------------------------------------------
 
+	void RCommandListD3D11::BeginResourceTable()
+	{
+		// D3D11 has no descriptor tables: a slot binding goes straight to the API's
+		// register slot and takes effect immediately, so there is nothing to open.
+	}
+
 	void RCommandListD3D11::SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)
 	{
 		if (!ImmediateContext)
+		{
+			return;
+		}
+		// API-level bound: D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT SRVs per shader stage.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 		{
 			return;
 		}
@@ -443,6 +488,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// Same API bound as the texture overload above.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
+		{
+			return;
+		}
 		ID3D11ShaderResourceView* NativeSRV = ExtractD3D11SRV(InBuffer);
 		switch (InStage)
 		{
@@ -456,6 +507,12 @@ namespace PigeonEngine
 	void RCommandListD3D11::ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot)
 	{
 		if (!ImmediateContext)
+		{
+			return;
+		}
+		// Same API bound as the bind path: the clear names the same slot register.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 		{
 			return;
 		}
@@ -475,6 +532,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// API-level bound: D3D11_PS_CS_UAV_REGISTER_COUNT UAVs per shader stage.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
+		{
+			return;
+		}
 		ID3D11UnorderedAccessView* NativeUAV = ExtractD3D11UAV(InTexture);
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NativeUAV, &InitialCount);
@@ -483,6 +546,12 @@ namespace PigeonEngine
 	void RCommandListD3D11::SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)
 	{
 		if (!ImmediateContext || InStage != ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE)
+		{
+			return;
+		}
+		// Same API bound as the texture overload above.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
 		{
 			return;
 		}
@@ -497,6 +566,12 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// Same API bound as the bind path: the clear names the same UAV register.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
+		{
+			return;
+		}
 		ID3D11UnorderedAccessView* NullUAV = nullptr;
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NullUAV, &InitialCount);
@@ -505,6 +580,12 @@ namespace PigeonEngine
 	void RCommandListD3D11::SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler)
 	{
 		if (!ImmediateContext)
+		{
+			return;
+		}
+		// API-level bound: D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT samplers per shader stage.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: sampler slot exceeds the API's sampler slot count."), (InSlot < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT));
+		if (InSlot >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
 		{
 			return;
 		}
@@ -711,6 +792,31 @@ namespace PigeonEngine
 		{
 			Annotation->EndEvent();
 		}
+	}
+
+	// --------------------------------------------------------
+	// GPU timestamp queries (Phase P.c)
+	// --------------------------------------------------------
+
+	void RCommandListD3D11::WriteTimestamp(RRHITimestampHeap* InHeap, UINT32 InSlot)
+	{
+		// D3D11 TIMESTAMP queries are "End-only": calling End() at this point
+		// snapshots the current pipeline tick. The disjoint heap query is
+		// owned by the device and framed via Begin/EndTimestampFrame, not
+		// by per-call-site bracketing.
+		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
+		if (!Heap || !ImmediateContext) { return; }
+		if (InSlot >= Heap->Capacity) { return; }
+		ID3D11Query* Q = Heap->TimestampQueries ? Heap->TimestampQueries[InSlot] : nullptr;
+		if (!Q) { return; }
+		ImmediateContext->End(Q);
+	}
+
+	void RCommandListD3D11::ResolveTimestampHeap(RRHITimestampHeap* /*InHeap*/, UINT32 /*InBeginSlot*/, UINT32 /*InCount*/)
+	{
+		// D3D11 has no GPU-side resolve step - individual timestamp queries
+		// are read CPU-side via ID3D11DeviceContext::GetData polling inside
+		// RDeviceD3D11::ResolveTimestamps.
 	}
 
 };

@@ -13,8 +13,8 @@ public:
 	CGPUQuery(const CGPUQuery& input);
 	virtual ~CGPUQuery();
 protected:
-    std::string							m_Name;
-    CustomStruct::CRenderQueryDesc		m_QueryDesc;
+	std::string							m_Name;
+	CustomStruct::CRenderQueryDesc		m_QueryDesc;
 	Microsoft::WRL::ComPtr<ID3D11Query>	m_Query;
 };
 */

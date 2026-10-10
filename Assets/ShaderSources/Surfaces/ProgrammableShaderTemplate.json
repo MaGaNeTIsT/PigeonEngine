@@ -1,0 +1,4 @@
+{
+	"Name": "ProgrammableShaderTemplate",
+	"Template": "Surfaces/ProgrammableShaderTemplate.hlsl"
+}

@@ -44,11 +44,11 @@ namespace PigeonEngine
 			SetRootComponent(new PSceneComponent());
 		}
 	}
-	
+
 	PActor::~PActor()
 	{
 	}
-	
+
 	void PActor::Init()
 	{
 		for(const auto& Component : Components)
@@ -173,7 +173,7 @@ namespace PigeonEngine
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "You are attaching an actor to itself", Child != Parent);
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching actor to actor", Child && Parent && Child->GetRootComponent() && Parent->GetRootComponent());
-		
+
 		if(Child->AttachedParentActor)
 		{
 			Child->AttachedParentActor->ChildrenActors.Remove(Child);
@@ -210,7 +210,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		
+
 		for(auto& elem : ChildrenActors)
 		{
 			const PActor* Ret = elem->GetActorByUniqueID(InUniqueID, bIncludeChildActor);
@@ -218,7 +218,7 @@ namespace PigeonEngine
 			{
 				return Ret;
 			}
-			
+
 		}
 		return nullptr;
 	}
@@ -256,7 +256,7 @@ namespace PigeonEngine
 
 		ETransform trans;
 		NewRoot->SetOwnerActor(this);
-      if (!Components.Contains(NewRoot))
+		if (!Components.Contains(NewRoot))
 		{
 			Components.Add(NewRoot);
 		}
@@ -273,7 +273,7 @@ namespace PigeonEngine
 			this->RootComponent->SetComponentTransform(ETransform());
 			this->RootComponent = nullptr;
 		}
-		
+
 		this->RootComponent = NewRoot;
 		this->RootComponent->SetOwnerActor(this);
 		POBJ_DEBUGNAME_SET(this->RootComponent, (POBJ_DEBUGNAME_GET(this->RootComponent)) + "(Root)");
@@ -287,7 +287,7 @@ namespace PigeonEngine
 			}
 			this->RootComponent->OnAddedToScene(this->GetWorld());
 		}
-		
+
 	}
 
 	Vector3 PActor::GetActorLocation() const
@@ -365,19 +365,19 @@ namespace PigeonEngine
 		return RootComponent->GetMobility();
 	}
 
-	
+
 	void PActor::AttachComponentToActor(PSceneComponent* Component, PActor* Actor, const ETransform& RelativeTransform )
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Something is nullptr when attaching", !(!Component || !Actor || !Actor->GetRootComponent()));
 		PSceneComponent::AttachComponentToComponent(Component, Actor->GetRootComponent(), RelativeTransform);
-		
+
 	}
 
 	void PActor::AddComponent(PActorComponent* NewComponent, const ETransform& RelativeTransform)
 	{
 		PE_CHECK(ENGINE_ACTOR_ERROR, "Adding null component", NewComponent != nullptr );
-		
-		
+
+
 		if(PSceneComponent* SceneComp = dynamic_cast<PSceneComponent*>(NewComponent))
 		{
 			AttachComponentToActor(SceneComp, this, RelativeTransform);
@@ -391,18 +391,18 @@ namespace PigeonEngine
 			}
 			NewComponent->OnAddedToScene(this->GetWorld());
 		}
-		
+
 	}
 
 	const PActorComponent* PActor::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID, const BOOL8& bIncludeChildComponent) const
 	{
 		const PActorComponent* Ret = RootComponent->GetComponentByUniqueID(InUniqueID, bIncludeChildComponent);
-		
+
 		if(Ret)
 		{
 			return Ret;
 		}
-		
+
 		for(auto& elem : Components)
 		{
 			if(elem->GetUniqueID() == InUniqueID)
@@ -423,7 +423,7 @@ namespace PigeonEngine
 	{
 		for (const auto& Component : Components)
 		{
-          if (Component && Component != RootComponent)
+			if (Component && Component != RootComponent)
 			{
 				Component->Destroy();
 			}
@@ -433,7 +433,7 @@ namespace PigeonEngine
 			RootComponent->Destroy();
 			RootComponent = nullptr;
 		}
-       Components.Empty();
+		Components.Empty();
 	}
 
 	EBoundAABB PActor::GetBounds()const
@@ -494,7 +494,7 @@ namespace PigeonEngine
 		UserEndPlay();
 		PObject::RemovedFromScene();
 	}
-	
+
 
 	void PActor::UserBeginPlay()
 	{
@@ -517,7 +517,7 @@ namespace PigeonEngine
 	}
 
 #if _EDITOR_ONLY
-	
+
 	void PActor::GenerateWorldOutline(const PActor* WorldCurrentSelectedActor)
 	{
 		BOOL8 bSelectedActor	= WorldCurrentSelectedActor == this;
@@ -558,5 +558,5 @@ namespace PigeonEngine
 		}
 	}
 #endif
-	
+
 };

@@ -24,7 +24,7 @@ namespace PigeonEngine
 		BOOL32			m_Active;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PObject)
-	
+
 	public:
 		void SetIsTickable(const BOOL32& bTickable);
 		BOOL32 IsTickable() const;
@@ -39,7 +39,7 @@ namespace PigeonEngine
 
 	public:
 		virtual TSharedPtr<CJsonObject> Serialize();
-		
+
 
 	public:
 		virtual PWorld* GetWorld() const;

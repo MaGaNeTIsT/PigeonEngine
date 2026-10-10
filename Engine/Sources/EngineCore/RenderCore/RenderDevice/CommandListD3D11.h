@@ -50,8 +50,8 @@ namespace PigeonEngine
 		// IRCommandList pipeline / fixed-function ------------------------------
 		virtual void SetPipelineState(IRRHIPipelineState* InPipelineState)override;
 		virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology)override;
-		virtual void SetViewports(const RRHIViewport* InViewports, UINT32 InCount)override;
-		virtual void SetScissorRects(const RRHIRect* InRects, UINT32 InCount)override;
+		virtual void SetViewports(const EViewport* InViewports, UINT32 InCount)override;
+		virtual void SetScissorRects(const ERect* InRects, UINT32 InCount)override;
 		virtual void SetBlendFactor(const Color4& InBlendFactor)override;
 		virtual void SetStencilRef(UINT32 InStencilRef)override;
 
@@ -68,6 +68,7 @@ namespace PigeonEngine
 		virtual void SetComputeRoot32BitConstants(UINT32 InRootIndex, const void* InData, UINT32 InNum32BitValues, UINT32 InOffsetIn32BitValues = 0)override;
 
 		// IRCommandList slot-based bindings -----------------------------------
+		virtual void BeginResourceTable()override;
 		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)override;
 		virtual void SetShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)override;
 		virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot)override;
@@ -95,6 +96,10 @@ namespace PigeonEngine
 		// IRCommandList debug markers -----------------------------------------
 		virtual void BeginDebugMarker(const EString& InName)override;
 		virtual void EndDebugMarker()override;
+
+		// IRCommandList GPU timestamp -----------------------------------------
+		virtual void WriteTimestamp(RRHITimestampHeap* InHeap, UINT32 InSlot)override;
+		virtual void ResolveTimestampHeap(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount)override;
 
 		// Native access (used by RDeviceD3D11::SubmitCommandList) -------------
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetImmediateContext()const { return ImmediateContext; }

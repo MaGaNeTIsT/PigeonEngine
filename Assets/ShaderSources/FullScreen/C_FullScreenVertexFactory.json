@@ -1,0 +1,11 @@
+{
+	"Name": "FullScreenVertexFactory",
+	"Template": "FullScreen/C_FullScreenVertexFactory.hlsl",
+	"Inputs": [
+		{ "Name": "UV0", "Semantic": "TEXCOORD", "SemanticIdx": 0, "Format": "float2", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "VF_VARYING_STRUCT", "Element": "#include \"Public/VertexFactory/VertexFactoryTypes.hlsl\"\nstruct VFVarying\n{\n#include \"Public/VertexFactory/FullScreenVarying.hlsl\"\n#if MATERIAL_HAS_CUSTOM_VARYING\n{MATERIAL_VARYING_STRUCT}\n#endif\n};\n" },
+		{ "Name": "VF_VS_BODY", "Element": "ExecuteMaterialVertex(InAttributes, Context, OutVarying);" }
+	]
+}

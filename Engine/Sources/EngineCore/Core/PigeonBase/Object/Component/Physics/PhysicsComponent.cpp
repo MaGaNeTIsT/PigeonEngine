@@ -63,7 +63,7 @@ namespace PigeonEngine
 					PhysicsComponent->HandlePostPhysicsTick(deltaTime);
 				}
 			});
-            EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
+			EWorldTickManager::GetManagerSingleton()->RegisterPostPhysicsTick(PostPhysicsTickHandler);
 			bPostPhysicsTickRegistered = TRUE;
 		}
 	}
@@ -79,7 +79,7 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::Uninit()
 	{
-      FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
+		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FBodyActivationEventListenerInterface*>(this));
 		FPhysicsManager::GetManagerSingleton()->RemovePhysicsListener(static_cast<FContactEventListenerInterface*>(this));
 		PActorComponent::Uninit();
 		UninitPhysicsComponent();
@@ -96,19 +96,19 @@ namespace PigeonEngine
 	void PPhysicsComponent::HandlePostPhysicsTick(FLOAT deltaTime)
 	{
 		(void)deltaTime;
-        if (m_BodyId.IsInvalid() || !GetOwnerActor() || MotionType == PhysicsUtility::EMotionType::Static)
+		if (m_BodyId.IsInvalid() || !GetOwnerActor() || MotionType == PhysicsUtility::EMotionType::Static)
 		{
 			return;
 		}
 
-        if (!bBodyActive && bHasSyncedTransform)
+		if (!bBodyActive && bHasSyncedTransform)
 		{
-          return;
+			return;
 		}
 
-     const Vector3 NewPosition = FPhysicsManager::GetManagerSingleton()->GetPosition(m_BodyId);
+	const Vector3 NewPosition = FPhysicsManager::GetManagerSingleton()->GetPosition(m_BodyId);
 		const Quaternion NewRotation = FPhysicsManager::GetManagerSingleton()->GetRotation(m_BodyId);
-        if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
+		if (!bHasSyncedTransform || PhysicsUtility::HasTransformChanged(NewPosition, NewRotation, LastSyncedPosition, LastSyncedRotation))
 		{
 			GetOwnerActor()->SetActorLocation(NewPosition);
 			GetOwnerActor()->SetActorRotation(NewRotation);
@@ -150,10 +150,10 @@ namespace PigeonEngine
 	{
 		Vector3 pos = GetOwnerActor()->GetRootComponent()->GetComponentWorldLocation();
 		Quaternion rot = GetOwnerActor()->GetRootComponent()->GetComponentWorldRotation();
-      if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
+		if (FPhysicsManager::GetManagerSingleton()->TryCreateBody(m_Shape, FALSE, pos, rot, MotionType, Layer, GetOwnerActor()->GetUniqueID(), m_BodyId))
 		{
-         FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
-            LastSyncedPosition = pos;
+		FPhysicsManager::GetManagerSingleton()->AddBody(GetOwnerActor()->GetUniqueID(), m_BodyId);
+			LastSyncedPosition = pos;
 			LastSyncedRotation = rot;
 			bHasSyncedTransform = TRUE;
 			bBodyActive = FALSE;
@@ -172,10 +172,10 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::RemoveShape()
 	{
-      FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
+		FPhysicsManager::GetManagerSingleton()->RemoveBody(GetOwnerActor()->GetUniqueID(), TRUE);
 		m_BodyId = FPhysicsBodyId();
 		m_Shape = nullptr;
-        bBodyActive = FALSE;
+		bBodyActive = FALSE;
 		bHasSyncedTransform = FALSE;
 		LastSyncedPosition = Vector3::Zero();
 		LastSyncedRotation = Quaternion::Identity();
@@ -183,12 +183,12 @@ namespace PigeonEngine
 
 	void PPhysicsComponent::AddForce(Vector3 InForce)
 	{
-       FPhysicsManager::GetManagerSingleton()->AddForce(m_BodyId, InForce);
+		FPhysicsManager::GetManagerSingleton()->AddForce(m_BodyId, InForce);
 	}
 
 	void PPhysicsComponent::AddImpluse(Vector3 InImpluse)
 	{
-       FPhysicsManager::GetManagerSingleton()->AddImpulse(m_BodyId, InImpluse);
+		FPhysicsManager::GetManagerSingleton()->AddImpulse(m_BodyId, InImpluse);
 	}
 
 	void PPhysicsComponent::SetLayer(FPhysicsObjectLayer InLayer)
@@ -210,7 +210,7 @@ namespace PigeonEngine
 	{
 		if (ContainsBody(inBodyID))
 		{
-            bBodyActive = TRUE;
+			bBodyActive = TRUE;
 			OnPhysicsBodyActivated(inBodyID, inObjectID);
 		}
 	}
@@ -219,7 +219,7 @@ namespace PigeonEngine
 	{
 		if (ContainsBody(inBodyID))
 		{
-            bBodyActive = FALSE;
+			bBodyActive = FALSE;
 			OnPhysicsBodyDeactivated(inBodyID, inObjectID);
 		}
 	}

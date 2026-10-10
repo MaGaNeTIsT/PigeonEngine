@@ -1,0 +1,10 @@
+{
+	"Name": "M_EngineNeutralVertex",
+	"Template": "Materials/M_EngineNeutralVertex.hlsl",
+	"PEMaterial": {
+		"Domain": "DefaultLit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

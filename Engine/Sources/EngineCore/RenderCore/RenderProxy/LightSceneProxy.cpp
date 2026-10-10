@@ -8,38 +8,53 @@ namespace PigeonEngine
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<RDirectionalLightSceneProxy, RBaseSceneProxy>();
+		RegisterClassType<RLocalLightSceneProxy, RBaseSceneProxy>();
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
-	void RDirectionalLightMaterialParameter::SetupParameters()
+	void EncodeDirectionalLight(const ELightData& InData, const Quaternion& InWorldRotation, EDirectionalLightsGPU& OutElement) noexcept
 	{
+		// A light aims down its own forward axis, so the direction it travels is the negation of
+		// that axis. Storing the direction of travel rather than the direction to the light is
+		// what lets the shading side negate once, and it is the same convention the shadow view
+		// setup used.
+		const Vector3 TravelDirection = -SplitForwardVector(InWorldRotation);
+
+		OutElement.DirectionAndIlluminanceLux = Vector4(
+			TravelDirection.x, TravelDirection.y, TravelDirection.z, InData.IlluminanceLux);
+		OutElement.ColorAndSourceAngleDegrees = Vector4(
+			InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.SourceAngleDegrees);
+		// Shadow map index 0 means "casts no shadow", so real indices start at 1. Nothing reads
+		// this yet - the shadow terms are stubs - but the addressing is settled here so the
+		// shading side does not have to change when the algorithms land.
+		OutElement.ShadowAddressing = Vector4Int(
+			static_cast<INT32>(InData.CastShadow ? 1u : 0u), 0, 0, 0);
 	}
-	void RDirectionalLightMaterialParameter::AddLightParameters()
+	void EncodeLocalLight(const ELightData& InData, const Vector3& InWorldLocation, const Quaternion& InWorldRotation, ELocalLightsGPU& OutElement) noexcept
 	{
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewInvMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ProjectionMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ProjectionInvMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewProjectionMatrix"));
-		AddParameter<Matrix4x4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_MATRIX44>(("_ViewProjectionInvMatrix"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("_LightColorIntensity"));
-		AddParameter<Vector2Int, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT2>(("_LightShadowMapSize"));
-		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT3>(("_LightWorldPosition"));
-		AddParameter<Vector3, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT3>(("_LightWorldDirection"));
-	}
-	void RDirectionalLightMaterialParameter::UpdateParameterValue(const UINT32 InIndex, const Quaternion& InWorldRotation, const EViewDomainInfo& InInfo, const ELightData& InData)
-	{
-		FindParameter(InIndex, "_ViewMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.ViewMatrix);
-		FindParameter(InIndex, "_ViewInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewPart.InverseViewMatrix);
-		FindParameter(InIndex, "_ProjectionMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ProjectionPart.ProjectionMatrix);
-		FindParameter(InIndex, "_ProjectionInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ProjectionPart.InverseProjectionMatrix);
-		FindParameter(InIndex, "_ViewProjectionMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.ViewProjectionMatrix);
-		FindParameter(InIndex, "_ViewProjectionInvMatrix") = &TranslateUploadMatrixType(InInfo.ViewMatrix.InverseViewProjectionMatrix);
-		FindParameter(InIndex, "_LightColorIntensity") = &TranslateUploadVectorType(Vector4(InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.LightIntensity));
-		FindParameter(InIndex, "_LightShadowMapSize") = &TranslateUploadVectorType(InData.ShadowMapSize);
-		FindParameter(InIndex, "_LightWorldPosition") = &TranslateUploadVectorType(Vector3::Zero());
-		FindParameter(InIndex, "_LightWorldDirection") = &TranslateUploadVectorType(-SplitForwardVector(InWorldRotation));
+		const BOOL32 bIsSpot = ((InData.LightType == ELightType::LIGHT_TYPE_SPOT) ? TRUE : FALSE);
+		const Vector3 SpotAxis = SplitForwardVector(InWorldRotation);
+
+		// The cone travels as cosines, because a cosine is what the shader compares a direction
+		// against and computing it here costs one transcendental per light instead of one per
+		// light per pixel. Inner is clamped to no wider than outer so a misauthored pair cannot
+		// invert the penumbra, and a point light stores zeros in both: nothing reads them,
+		// because the type field is what selects the cone.
+		const FLOAT InnerCos = EMath::Cos(EMath::DegreesToRadians(InData.SpotInnerAngleDegrees));
+		const FLOAT OuterCos = EMath::Cos(EMath::DegreesToRadians(InData.SpotOuterAngleDegrees));
+
+		OutElement.WorldPositionAndAttenuationRadiusMeters = Vector4(
+			InWorldLocation.x, InWorldLocation.y, InWorldLocation.z, InData.AttenuationRadiusMeters);
+		OutElement.ColorAndLuminousIntensityCandela = Vector4(
+			InData.LightColor.r, InData.LightColor.g, InData.LightColor.b, InData.LuminousIntensityCandela);
+		OutElement.WorldDirectionAndSourceRadiusMeters = Vector4(
+			SpotAxis.x, SpotAxis.y, SpotAxis.z, InData.SourceRadiusMeters);
+		OutElement.SpotAndTypeParams = Vector4Int(
+			static_cast<INT32>(InData.LightType)
+			, static_cast<INT32>(EMath::AsUint32(bIsSpot ? EMath::Min(InnerCos, OuterCos) : 0.f))
+			, static_cast<INT32>(EMath::AsUint32(bIsSpot ? OuterCos : 0.f))
+			, static_cast<INT32>(InData.CastShadow ? 1u : 0u));
 	}
 
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent)
@@ -48,7 +63,7 @@ namespace PigeonEngine
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create directional light scene proxy failed"), (!!Component));
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy()
-		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, 1.f, 1.f, 1.f, 1.f, FALSE, 2, 2)), CascadeShadowData(nullptr), IsCascadeShadow(FALSE), Component(nullptr)
+		: LightData(ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL, Color3::White(), FALSE, Vector2Int(2, 2))), CascadeShadowData(nullptr), IsCascadeShadow(FALSE), Component(nullptr)
 	{
 	}
 	RDirectionalLightSceneProxy::RDirectionalLightSceneProxy(const RDirectionalLightSceneProxy& Other)
@@ -102,8 +117,8 @@ namespace PigeonEngine
 				DomainInfo.RenderViewport.TopLeftY	= 0.f;
 				DomainInfo.RenderViewport.Width		= EMath::TruncToFloat(ShadowMapSize.x);
 				DomainInfo.RenderViewport.Height	= EMath::TruncToFloat(ShadowMapSize.y);
-				DomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
-				DomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
+				DomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_NEAR;
+				DomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_FAR;
 
 				DomainInfo.ViewMatrix.GenerateViewPart(Vector3::Zero(), WorldRotation);
 			}
@@ -117,8 +132,8 @@ namespace PigeonEngine
 					DomainInfo.RenderViewport.TopLeftY	= 0.f;
 					DomainInfo.RenderViewport.Width		= EMath::TruncToFloat(EMath::Max(1, (ShadowMapSize.x) >> (i + 1)));
 					DomainInfo.RenderViewport.Height	= EMath::TruncToFloat(EMath::Max(1, (ShadowMapSize.y) >> (i + 1)));
-					DomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
-					DomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
+					DomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_NEAR;
+					DomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_FAR;
 
 					DomainInfo.ViewMatrix.GenerateViewPart(Vector3::Zero(), WorldRotation);
 				}
@@ -165,7 +180,7 @@ namespace PigeonEngine
 					EViewport(
 						Vector2(TempViewMin.x, TempViewMax.y),
 						Vector2(TempViewMax.x - TempViewMin.x, TempViewMin.y - TempViewMax.y),
-						Vector2(RCommonSettings::RENDER_DEPTH_MIN, RCommonSettings::RENDER_DEPTH_MAX)),
+						Vector2(RCommonSettings::RENDER_DEPTH_NEAR, RCommonSettings::RENDER_DEPTH_FAR)),
 					TempViewMin.z,
 					TempViewMax.z);
 				DomainInfo.ViewMatrix.GenerateFinalMatrix();
@@ -242,12 +257,12 @@ namespace PigeonEngine
 	}
 	void RDirectionalLightSceneProxy::UpdateLightParams(const ERenderLightParams& InParams)
 	{
-		const Color3&		LightColor		= InParams.LightColor;
-		const Vector2Int&	ShadowMapSize	= InParams.ShadowMapSize;
-		LightData = ELightData(ELightType::LIGHT_TYPE_DIRECTIONAL
-			, LightColor.r, LightColor.g, LightColor.b
-			, InParams.LightIntensity, InParams.CastShadow
-			, ShadowMapSize.x, ShadowMapSize.y);
+		LightData.LightType				= ELightType::LIGHT_TYPE_DIRECTIONAL;
+		LightData.LightColor			= InParams.LightColor;
+		LightData.IlluminanceLux		= InParams.IlluminanceLux;
+		LightData.SourceAngleDegrees	= InParams.SourceAngleDegrees;
+		LightData.CastShadow			= InParams.CastShadow;
+		LightData.ShadowMapSize			= InParams.ShadowMapSize;
 	}
 	void RDirectionalLightSceneProxy::UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData)
 	{
@@ -279,6 +294,56 @@ namespace PigeonEngine
 				CascadeShadowData->IsUseShadow = FALSE;
 			}
 		}
+	}
+
+	RLocalLightSceneProxy::RLocalLightSceneProxy(const PLocalLightComponent* InComponent)
+		: bNeedUpdateParams(TRUE), Component(InComponent)
+	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create local light scene proxy failed")), (!!Component));
+	}
+	RLocalLightSceneProxy::RLocalLightSceneProxy()
+		: bNeedUpdateParams(TRUE), Component(nullptr)
+	{
+	}
+	RLocalLightSceneProxy::RLocalLightSceneProxy(const RLocalLightSceneProxy& Other)
+		: RBaseSceneProxy(Other), bNeedUpdateParams(TRUE), LightData(Other.LightData), Component(Other.Component)
+	{
+	}
+	RLocalLightSceneProxy::~RLocalLightSceneProxy()
+	{
+	}
+	void RLocalLightSceneProxy::SetupProxy(const ERenderTransformInfo& InTransform, const ELightData& InData)
+	{
+		UpdateTransform(InTransform);
+		UpdateLightParams(InData);
+	}
+	const ELightData& RLocalLightSceneProxy::GetLightData() const
+	{
+		return LightData;
+	}
+	void RLocalLightSceneProxy::MarkNeedUpdateParams() const
+	{
+		bNeedUpdateParams = TRUE;
+	}
+	BOOL32 RLocalLightSceneProxy::IsNeedUpdateParams() const
+	{
+		BOOL32 Result = bNeedUpdateParams;
+		bNeedUpdateParams = FALSE;
+		return Result;
+	}
+	void RLocalLightSceneProxy::UpdateTransform(const ERenderTransformInfo& InTransform)
+	{
+		// The scaling is deliberately dropped for the direction and the position alike: a light
+		// has a size and an aim, both of which are authored, and a scaled parent transform would
+		// otherwise stretch a cone or move a light away from where its position says it is.
+		SetProxyWorldTransform(InTransform.WorldLocation, InTransform.WorldRotation, Vector3::One());
+	}
+	void RLocalLightSceneProxy::UpdateLightParams(const ELightData& InData)
+	{
+		// A whole struct copy rather than field by field: the light data is the unit of an
+		// update, and every field a light type does not use is already at its default in the
+		// component's copy.
+		LightData = InData;
 	}
 
 };

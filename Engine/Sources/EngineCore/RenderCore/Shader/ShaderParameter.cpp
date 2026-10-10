@@ -1,5 +1,12 @@
 #include "ShaderParameter.h"
 #include <RenderDevice/DeviceD3D11.h>
+#include <RHI/IRRHIDevice.h>
+#include <RHI/IRCommandList.h>
+#include <Main/MainManager.h>
+#include <TextureAsset/TextureAsset.h>
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
 
 namespace PigeonEngine
 {
@@ -25,7 +32,11 @@ namespace PigeonEngine
 	}
 	PE_INLINE Matrix4x4	TranslateUploadMatrixType(const Matrix4x4& InData)
 	{
+#if 0
 		return Matrix4x4(InData.GetDirectXTransposeValue4x4());
+#else
+		return InData;
+#endif
 	}
 	PE_INLINE Matrix4x4 TranslateUploadTransposeMatrixType(const Matrix4x4& InData)
 	{
@@ -56,361 +67,203 @@ namespace PigeonEngine
 		return Vector4(InData.r, InData.g, InData.b, InData.a);
 	}
 
-	EShaderStruct::EShaderStruct()
+	// The default constructor and the destructor come from CLASS_SHADER_PARAMETER; the
+	// destructor releases the GPU buffer it owns, which the macro's empty body cannot do,
+	// so releasing stays in ReleaseRenderResource paths of the owning block.
+	void EConstantBufferParameter::BeginSetupVariable() noexcept
 	{
+		bHasPaddings = FALSE;
+		BeginSetupCBuffer();
 	}
-	EShaderStruct::EShaderStruct(const EShaderStruct& Other)
+	void EConstantBufferParameter::EndSetupVariable(UINT32& OutHeapSize) noexcept
 	{
-	}
-	EShaderStruct::~EShaderStruct()
-	{
-		ClearParameter();
-	}
-	void EShaderStruct::ClearParameter()
-	{
-		InitCommands.DoCommands();
-		InitCommands.EmptyQueue();
-		RawData.Release();
-		ShaderParameterNames.Empty();
-		ShaderParameters.Empty();
-	}
-	EShaderParameter* EShaderStruct::FindParameter(const EString& InParamName)
-	{
+		EndSetupCBuffer();
+		OutHeapSize = InitStructSize;
 #if _EDITOR_ONLY
-		if (UINT32 ParamIndex = (UINT32)(-1); ShaderParameterNames.FindValue(InParamName, ParamIndex))
-#else
-		const UINT32 ParamIndex = ShaderParameterNames[InParamName];
-#endif
+		// Only a block that declared no field at all is a mistake. The queued init commands
+		// are NOT part of this test: AddStructVariable only enqueues when the caller passed an
+		// initial value, so a block whose fields are all written by hand through SetFieldValue
+		// leaves the queue empty - which is the normal case for every engine block. Testing the
+		// queue length here rejected exactly those blocks and tripped this Check.
+		Check((InitStructSize > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::EndSetupVariable] Invalid Empty Struct")));
+#endif	// _EDITOR_ONLY
+		// A constant buffer is read in 16 byte registers, so the allocation is rounded up the
+		// way the reflection layout rounds a block. This runs in every build on purpose: an
+		// editor build that returned early would size its buffers differently from a shipping
+		// one, and the two would disagree about the block the shader reads.
+		const UINT32 AlignedSize = (InitStructSize + 15u) & (~15u);
+		if (AlignedSize != InitStructSize)
 		{
-#if _EDITOR_ONLY
-			if (ParamIndex < ShaderParameters.Num<UINT32>())
-#endif
-			{
-				return (&(ShaderParameters[ParamIndex]));
-			}
+			bHasPaddings = TRUE;
 		}
-#if _EDITOR_ONLY
-		EString ErrorInfo("Could not find name[");
-		ErrorInfo = ErrorInfo + InParamName + "] parameter.";
-		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
-		return nullptr;
-#endif
+		OutHeapSize = AlignedSize;
 	}
-	void EShaderStruct::BeginSetupParameter()
+	void EConstantBufferParameter::SetupParameters() noexcept
 	{
+		SetupStruct();
+		CreateBuffer();
 	}
-	void EShaderStruct::EndSetupParameter()
+	void EConstantBufferParameter::CreateBuffer() noexcept
 	{
-	}
-
-	EMaterialParameter::EMaterialParameter()
-		: HasPaddings(FALSE)
-	{
-	}
-	EMaterialParameter::EMaterialParameter(const EMaterialParameter& Other)
-		: HasPaddings(FALSE)
-	{
-	}
-	EMaterialParameter::~EMaterialParameter()
-	{
-#if _EDITOR_ONLY
-		if (ConstantBuffer.IsRenderResourceValid())
-#endif
-		{
-			ClearBuffer();
-		}
-	}
-	void EMaterialParameter::ClearParameter()
-	{
-		EShaderStruct::ClearParameter();
-		HasPaddings = FALSE;
-	}
-	void EMaterialParameter::CreateBuffer()
-	{
-#if _EDITOR_ONLY
-		if (RawData.Size == 0u)
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(size is zero)."));
-			return;
-		}
-		if (ConstantBuffer.IsRenderResourceValid())
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(already created)."));
-			return;
-		}
-#endif
+		Check((GetMemSize() > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Create constant buffer failed(size is zero).")));
+		Check((!(Buffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Forgot release old constant buffer.")));
 #if _EDITOR_ONLY
 		BOOL32 Result =
-#endif
-			RDeviceD3D11::GetDeviceSingleton()->CreateBuffer(ConstantBuffer.Buffer,
-				RBufferDesc(static_cast<UINT32>(RawData.Size), RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(FLOAT)));
+#endif	// _EDITOR_ONLY
+			Buffer.InitFromRHI(EMainManager::GetManagerSingleton()->GetRenderDevice(),
+				RBufferDesc(GetMemSize(), RBindFlagType::BIND_CONSTANT_BUFFER, 0u));
 #if _EDITOR_ONLY
 		if (!Result)
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material parameter create constant buffer failed(render resource create failed)."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::CreateBuffer] Create constant buffer failed(render resource create failed).")));
 		}
-#endif
+#endif	// _EDITOR_ONLY
 	}
-	void EMaterialParameter::UploadBuffer()
+	void EConstantBufferParameter::UploadBuffer() noexcept
+	{
+		Check((GetMemSize() > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::UploadBuffer] Check constant buffer failed(size is zero).")));
+		Check((Buffer.IsRenderResourceValid()), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EConstantBufferParameter::UploadBuffer] Check constant buffer failed(buffer is null).")));
+		Buffer.UploadDataViaRHI(EMainManager::GetManagerSingleton()->GetRenderDevice(), GetData(), GetMemSize());
+	}
+	void EConstantBufferParameter::ReleaseBuffer() noexcept
 	{
 #if _EDITOR_ONLY
-		if ((RawData.Size == 0u) || (!(RawData.Datas)))
+		if (Buffer.IsRenderResourceValid())
+#endif	// _EDITOR_ONLY
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check material parameter constant buffer failed(size is zero)."));
-			return;
+			Buffer.ReleaseRenderResource();
 		}
-		if (!(ConstantBuffer.IsRenderResourceValid()))
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Check material parameter constant buffer failed(buffer is null)."));
-			return;
-		}
-#endif
-		RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(ConstantBuffer.Buffer, RawData.Datas);
 	}
-	void EMaterialParameter::ClearBuffer()
+	RBufferResource& EConstantBufferParameter::GetBuffer() noexcept
 	{
-#if _EDITOR_ONLY
-		if (ConstantBuffer.IsRenderResourceValid())
-#endif
-		{
-			ConstantBuffer.ReleaseRenderResource();
-		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to clear a not init constant buffer."));
-		}
-#endif
+		return Buffer;
 	}
-	EShaderParameter& EMaterialParameter::operator[](const EString& InParamName)
+	const RBufferResource& EConstantBufferParameter::GetBuffer() const noexcept
 	{
-		if (EShaderParameter* Parameter = FindParameter(InParamName); !!Parameter)
-		{
-			return (*Parameter);
-		}
-		static EShaderParameter _FailedParameter;
-		return _FailedParameter;
+		return Buffer;
 	}
-	RBufferResource& EMaterialParameter::GetConstantBuffer()
+	BOOL32 EConstantBufferParameter::IsHasPaddings() const noexcept
 	{
-		return ConstantBuffer;
+		return bHasPaddings;
 	}
-	const RBufferResource& EMaterialParameter::GetConstantBuffer()const
-	{
-		return ConstantBuffer;
-	}
-	BOOL32 EMaterialParameter::IsHasPaddings()const
-	{
-		return HasPaddings;
-	}
-	void EMaterialParameter::BeginSetupParameter()
+	void EConstantBufferParameter::BeginSetupCBuffer() noexcept
 	{
 	}
-	void EMaterialParameter::EndSetupParameter()
+	void EConstantBufferParameter::EndSetupCBuffer() noexcept
 	{
-		ULONGLONG UsedSize = RawData.Size;
-#if _EDITOR_ONLY
-		if (UsedSize == 0u || InitCommands.GetQueueCount() == 0u)
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error shader parameter try to allocating 0 size buffer."));
-			return;
-		}
-#endif
-		if ((UsedSize % 2u) != 0u)
-		{
-			HasPaddings = TRUE;
-			UsedSize = UsedSize + 1u;
-		}
-		RawData.Resize(UsedSize);
-
-		InitCommands.DoCommands();
-		InitCommands.EmptyQueue();
 	}
 
-	EMaterialStructParameter::EMaterialStructParameter()
-		: ElementNum(0u)
+	EStructuredBufferParameter::EStructuredBufferParameter(UINT32 InNumElements) noexcept
+		: EStructArray{}
+		, Buffer{}
+		, ElementCount(InNumElements)
 	{
 	}
-	EMaterialStructParameter::EMaterialStructParameter(const EMaterialStructParameter& Other)
-		: ElementNum(Other.ElementNum)
+	void EStructuredBufferParameter::BeginSetupVariable() noexcept
 	{
+		// ClearStruct (run by SetupStruct before this) resets the base class element count,
+		// so the requested count is restored here. Resize then gets a non zero count and
+		// allocates one sub struct per element.
+		NumElements = ElementCount;
+		BeginSetupStructuredBuffer();
 	}
-	EMaterialStructParameter::~EMaterialStructParameter()
+	void EStructuredBufferParameter::EndSetupVariable(UINT32& OutHeapSize) noexcept
 	{
-		ClearBuffer();
+		EndSetupStructuredBuffer();
+		Check(((GetMemSize(0u) % 4u) == 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::EndSetupVariable] StructuredBuffer MUST be aligned with 4 bytes.")));
+		OutHeapSize = GetNumElements() * GetMemSize(0u);
 	}
-	void EMaterialStructParameter::ClearParameter()
+	void EStructuredBufferParameter::CreateBuffer() noexcept
 	{
-		EShaderStruct::ClearParameter();
-		ElementNum = 0u;
-	}
-	void EMaterialStructParameter::CreateBuffer()
-	{
+		const UINT32 TotalMemSize = GetMemSize();
+		Check((TotalMemSize > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Check structured buffer failed(size is zero).")));
+		Check((((TotalMemSize % GetNumElements()) == 0u) && ((TotalMemSize % 4u) == 0u)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Invalid Memory Size")));
+		Check((!(Buffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Forgot release old constant buffer.")));
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 #if _EDITOR_ONLY
-		if ((ElementNum > 0u) && (ElementNum <= 65536u) && (RawData.Size > 0u))
-#endif
+		if (RenderDevice)
+#endif	// _EDITOR_ONLY
 		{
-			Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
-			Check(((RawData.Size % ElementNum) == 0u), (ENGINE_RENDER_CORE_ERROR));
-			Check((!(StructuredBuffer.IsRenderResourceValid())), (ENGINE_RENDER_CORE_ERROR));
+			// The element stride is what makes this a structured resource on both
+			// back-ends, so it rides in the buffer description instead of in a
+			// back-end specific create call.
+			const UINT32 ElementSize = TotalMemSize / GetNumElements();
+
 #if _EDITOR_ONLY
 			BOOL32 Result =
-#endif
-				RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(StructuredBuffer,
-					RStructuredBufferDesc(static_cast<UINT32>(RawData.Size) / ElementNum, ElementNum));
+#endif	// _EDITOR_ONLY
+				Buffer.InitFromRHI(RenderDevice, RBufferDesc(TotalMemSize
+					, RBindFlagType::BIND_SHADER_RESOURCE | RBindFlagType::BIND_UNORDERED_ACCESS
+					, ElementSize, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED));
 #if _EDITOR_ONLY
 			if (!Result)
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Material struct parameter create buffer failed(render resource create failed)."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] Structured buffer create buffer failed(render resource create failed).")));
 			}
-#endif
+#endif	// _EDITOR_ONLY
 		}
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to create a error memory size struct buffer."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::CreateBuffer] RenderDevice is null.")));
 		}
-#endif
+#endif	// _EDITOR_ONLY
 	}
-	void EMaterialStructParameter::UploadBuffer()
+	void EStructuredBufferParameter::UploadBuffer() noexcept
 	{
+		const UINT32 TotalMemSize = GetMemSize();
+		Check((TotalMemSize > 0u), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] Check structured buffer failed(size is zero).")));
+		Check((((TotalMemSize % GetNumElements()) == 0u) && ((TotalMemSize % 4u) == 0u)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] Invalid Memory Size")));
+		Check((Buffer.IsRenderResourceValid()), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] Check constant buffer failed(buffer is null).")));
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 #if _EDITOR_ONLY
-		if ((StructuredBuffer.IsRenderResourceValid()) && (RawData.Size > 0u) && (!!(RawData.Datas)))
-#endif
+		if (RenderDevice)
+#endif	// _EDITOR_ONLY
 		{
-			Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
-			const UINT32 TempSize = static_cast<UINT32>(RawData.Size) * ElementNum;
-			RDeviceD3D11::GetDeviceSingleton()->UploadBuffer(StructuredBuffer.Buffer, RawData.Datas, TempSize, TempSize);
+			Buffer.UploadDataViaRHI(RenderDevice, GetData(), TotalMemSize);
 		}
 #if _EDITOR_ONLY
 		else
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try to create a error memory size struct buffer."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[EStructuredBufferParameter::UploadBuffer] RenderDevice is null.")));
 		}
-#endif
+#endif	// _EDITOR_ONLY
 	}
-	void EMaterialStructParameter::ClearBuffer()
+	void EStructuredBufferParameter::ReleaseBuffer() noexcept
 	{
 #if _EDITOR_ONLY
-		if (StructuredBuffer.IsRenderResourceValid())
-#endif
+		if (Buffer.IsRenderResourceValid())
+#endif	// _EDITOR_ONLY
 		{
-			StructuredBuffer.ReleaseRenderResource();
+			Buffer.ReleaseRenderResource();
 		}
 	}
-	EShaderParameter* EMaterialStructParameter::FindParameter(const EString& InParamName)
+	void EStructuredBufferParameter::ResizeElement(const UINT32 InNumElements) noexcept
 	{
-		return nullptr;
-	}
-	EShaderParameter EMaterialStructParameter::FindParameter(const UINT32 InStructIndex, const EString& InParamName)
-	{
-		EShaderParameter Result;
-#if _EDITOR_ONLY
-		if (InStructIndex < ElementNum && (!!(RawData.Datas)) && (RawData.Size > 0u))
-#endif
+		ElementCount = InNumElements;
+		NumElements = InNumElements;
+		Resize();
+		ReleaseBuffer();
+		if (GetNumElements() > 0u)
 		{
-#if _EDITOR_ONLY
-			if (UINT32 ParamIndex = (UINT32)(-1); ShaderParameterNames.FindValue(InParamName, ParamIndex))
-#else
-			const UINT32 ParamIndex = ShaderParameterNames[InParamName];
-#endif
-			{
-#if _EDITOR_ONLY
-				if (ParamIndex < ShaderParameters.Num<UINT32>())
-#endif
-				{
-					Check((RawData.Size < ((ULONGLONG)((UINT32)(-1)))));
-					const UINT32 StructElementIndex = (static_cast<UINT32>(RawData.Size) / ElementNum) * InStructIndex;
-					Result.ValuePtr			= &(RawData.Datas[StructElementIndex]);
-					Result.ValueType		= ShaderParameters[ParamIndex].ValueType;
-					Result.ParameterInfo	= ShaderParameters[ParamIndex].ParameterInfo;
-				}
-#if _EDITOR_ONLY
-				else
-				{
-					EString ErrorInfo("Could not find parameter by index[");
-					ErrorInfo = ErrorInfo + ToString(ParamIndex) + "].";
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
-				}
-#endif
-			}
-#if _EDITOR_ONLY
-			else
-			{
-				EString ErrorInfo("Could not find name[");
-				ErrorInfo = ErrorInfo + InParamName + "] parameter.";
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
-			}
-#endif
+			CreateBuffer();
 		}
-#if _EDITOR_ONLY
-		else
-		{
-			EString ErrorInfo("Material struct parameter does not contain this index[");
-			ErrorInfo += ToString(InStructIndex);
-			ErrorInfo += "].";
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*ErrorInfo));
-		}
-#endif
-		return Result;
 	}
-	void EMaterialStructParameter::SetElementNum(const UINT32 InElementNum)
+	RStructuredBuffer& EStructuredBufferParameter::GetBuffer() noexcept
 	{
-#if _EDITOR_ONLY
-		if ((InElementNum == 0u) || (InElementNum > 65536u))
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try set 0 to material struct parameter."));
-		}
-#endif
-		if (ElementNum != 0u)
-		{
-			ClearBuffer();
-		}
-		ElementNum = InElementNum;
+		return Buffer;
 	}
-	UINT32 EMaterialStructParameter::GetElementNum()const
+	const RStructuredBuffer& EStructuredBufferParameter::GetBuffer() const noexcept
 	{
-		Check((ElementNum <= 65536u), (ENGINE_RENDER_CORE_ERROR));
-		return ElementNum;
+		return Buffer;
 	}
-	RStructuredBuffer& EMaterialStructParameter::GetStructBuffer()
+	void EStructuredBufferParameter::BeginSetupStructuredBuffer() noexcept
 	{
-		return StructuredBuffer;
-	}
-	const RStructuredBuffer& EMaterialStructParameter::GetStructBuffer()const
-	{
-		return StructuredBuffer;
-	}
-	void EMaterialStructParameter::BeginSetupStructParameter(const UINT32 InElementNum)
-	{
-		SetElementNum(InElementNum);
-		BeginSetupParameter();
-	}
-	void EMaterialStructParameter::EndSetupStructParameter()
-	{
-		EndSetupParameter();
-	}
-	void EMaterialStructParameter::BeginSetupParameter()
-	{
-	}
-	void EMaterialStructParameter::EndSetupParameter()
-	{
-		ULONGLONG UsedSize = RawData.Size * ElementNum;
-#if _EDITOR_ONLY
-		if ((ElementNum == 0u) || (ElementNum > 65536u))
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Try setup 0 element material struct parameter."));
-		}
-		if (UsedSize == 0u || InitCommands.GetQueueCount() == 0u)
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error shader parameter try to allocating 0 size buffer."));
-			return;
-		}
-#endif
-		RawData.Resize(UsedSize);
 
-		InitCommands.DoCommands();
-		InitCommands.EmptyQueue();
+	}
+	void EStructuredBufferParameter::EndSetupStructuredBuffer() noexcept
+	{
+
 	}
 
 };

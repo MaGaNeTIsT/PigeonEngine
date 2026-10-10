@@ -34,7 +34,7 @@ public:
 	virtual void PrePhysicsUpdate(FLOAT InDeltaTime) override;
 	virtual void PhysicsUpdate(FLOAT DeltaTime) override;
 	virtual void PostPhysicsUpdate(FLOAT InDeltaTime) override;
-    virtual void SetGravity(Vector3 inGravity) override;
+	virtual void SetGravity(Vector3 inGravity) override;
 	virtual Vector3 GetGravity() const override;
 	FPhysicsData* GetPhysicsData() { return PhysicsData; }
 

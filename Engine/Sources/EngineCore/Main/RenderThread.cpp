@@ -2,6 +2,7 @@
 #include <RHI/IRRHIDevice.h>
 #include <Renderer/RenderScene.h>
 #include <Renderer/SceneRenderer.h>
+#include <RenderResourceLifetime.h>
 
 namespace PigeonEngine
 {
@@ -84,8 +85,14 @@ namespace PigeonEngine
 				break;
 			}
 
+			// Render tier resources are created and destroyed here, before the scene
+			// commands run: a proxy added in the same frame then finds the resource its
+			// asset asked for already built.
+			RRenderResourceManager::GetManagerSingleton()->DoCommands();
+
 			// SceneRenderer drains FrontSlot commands, builds passes,
 			// records draws via the IRCommandList, and presents.
+			RenderDevice->BeginFrame();
 			SceneRenderer->InitNewFrame();
 			SceneRenderer->Render();
 			if (AfterRenderCallback.IsValid())
@@ -93,6 +100,7 @@ namespace PigeonEngine
 				AfterRenderCallback();
 			}
 			RenderDevice->Present(0u);
+			RenderDevice->EndFrame();
 
 			RenderDoneEvent.Signal();
 		}

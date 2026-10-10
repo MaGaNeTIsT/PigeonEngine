@@ -1,52 +1,140 @@
 #include "BezierGrassSceneProxy.h"
 #include <ShaderAsset/ShaderAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
+#include <Shader/ShaderAssetBinding.h>
+#include <ShaderAsset/ShaderJobBuilder.h>
+#include <Shader/EngineShaderInstanceCache.h>
 #include <RenderDevice/DeviceD3D11.h>
+#include <RenderDevice/D3D11Native.h>
+#include <RHI/IRCommandList.h>
+#include <RHI/IRRHIDevice.h>
 #include <TextureAsset/TextureAsset.h>
 #include <RenderCommon.h>
+#include <Main/MainManager.h>
 #include <array>
 #include <algorithm>
 
+// ---------------------------------------------------------------------------
+// Parked. The bezier grass render path is going to be rebuilt from its shader
+// sources (P_BezierGrass and P_BezierGrassConstruct and the templates they
+// assemble), so everything below is kept for reference only: nothing here is
+// compiled, no proxy of this class is created, and the renderer no longer calls
+// it. Read the shaders, not this file, when the rebuild starts.
+// ---------------------------------------------------------------------------
+#if 0
 namespace PigeonEngine
 {
 
-    static void RegisterClassTypes()
-    {
-        RegisterClassType<RBezierGrassSceneProxy, RPrimitiveSceneProxy>();
-    }
-
-    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-
-	void RBezierGrassMaterialParameter::SetupParameters()
+	static void RegisterClassTypes()
 	{
-		ClearParameter();
-		BeginSetupParameter();
+		RegisterClassType<RBezierGrassSceneProxy, RPrimitiveSceneProxy>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+	// The setup and binding routines of this proxy still lift the native objects of the
+	// stage resources and hand them to RDeviceD3D11 directly instead of going through
+	// IRCommandList, so they only run while the D3D11 back-end is the active device. The
+	// predicate lives with those routines and goes away with them once the pass is ported
+	// to the RHI.
+	static BOOL8 IsLegacyD3D11PathActive()
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		return ((RenderDevice != nullptr) && (RenderDevice->GetBackendType() == ERHIBackendType::RHI_BACKEND_D3D11)) ? TRUE : FALSE;
+	}
+
+	/*
+	* The engine fallback shaders of the bezier grass proxy: the blade pass and its
+	* construct pass. A proxy whose component carries no material instance resolves to
+	* these, so geometry and the construct dispatch are never dropped merely because
+	* nothing was authored. Both state their own source; neither carries per-object state.
+	*
+	* The process wide instance cache owns what these hand out, which is what makes a shader reload
+	* reach the grass: the cache re-points the instance to the rebuilt asset, so this keeps the stable
+	* handle rather than a private copy. Asked for, not resolved - this is reached from the proxy's
+	* draw side, where a load may not happen. Null means the assembly is still pending, and the caller
+	* asks again the next time it runs.
+	*/
+	static const EShaderInstance* GetFallbackBezierGrassShader()
+	{
+		static const EShaderInstance* FallbackInstance = nullptr;
+		if (!FallbackInstance)
+		{
+			EShaderAssemblyRequest Request;
+			Request.ShaderName = EName(PE_TEXT("M_BezierGrass"));
+			Request.MaterialName = EString(PE_TEXT("M_BezierGrass"));
+			Request.ProgramName = EName(PE_TEXT("BezierGrass"));
+			Request.VertexFactory = EShaderVertexFactoryType::PROCEDURAL_GRASS;
+			// The grass factory takes the blade handle in attribute 0.
+			Request.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_POSITION;
+			Request.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
+
+			FallbackInstance = REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(Request);
+		}
+		return FallbackInstance;
+	}
+
+	static const EShaderInstance* GetFallbackBezierGrassConstructShader()
+	{
+		static const EShaderInstance* FallbackInstance = nullptr;
+		if (!FallbackInstance)
+		{
+			EShaderAssemblyRequest Request;
+			Request.ShaderName = EName(PE_TEXT("CS_BezierGrassConstruct"));
+			Request.ProgramName = EName(PE_TEXT("BezierGrassConstruct"));
+			// The construct pass belongs to the grass pipeline, so it carries the grass
+			// axis; it declares no vertex factory of its own, so the axis only shapes the
+			// variant it is cached under.
+			Request.VertexFactory = EShaderVertexFactoryType::PROCEDURAL_GRASS;
+			Request.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_POSITION;
+			Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
+
+			FallbackInstance = REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(Request);
+		}
+		return FallbackInstance;
+	}
+
+	void RBezierGrassCBufferParameter::AddPrimitiveMaterialParameter() noexcept
+	{
+		const EVariableFormat MatrixFormat = MakeShaderVariableFormat(
+			EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_MATRIX, EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_4x4);
+		AddStructVariable(PE_TEXT("_WorldMatrix"), MatrixFormat, 1u);
+		AddStructVariable(PE_TEXT("_WorldInvMatrix"), MatrixFormat, 1u);
+		AddStructVariable(PE_TEXT("_WorldInvTransposeMatrix"), MatrixFormat, 1u);
+	}
+	void RBezierGrassCBufferParameter::DoSetupVariable() noexcept
+	{
 		AddPrimitiveMaterialParameter();
 		AddBezierGrassMaterialParameter();
-		EndSetupParameter();
-		CreateBuffer();
 	}
-	void RBezierGrassMaterialParameter::AddBezierGrassMaterialParameter()
+	void RBezierGrassCBufferParameter::AddBezierGrassMaterialParameter() noexcept
 	{
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("CurrentTimeParams"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("PreviousTimeParams"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("NumAllocatedLODMaxNumInstances"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("TileAnchorSize"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("TileXYNumTiles"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("SubTileSizeBorderSize"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("SubTileXYNumSubTiles"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("MaskXYNumInstances"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("DensityScale"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("HeightMapWorldScaleOffsetBorderPixelSize"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LayerBorderPixelSizeDensityBorderPixelSize"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LayerTypeElemsBaseCustomTotalNumTypes"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LODBodyPart1"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("LODBodyPart2"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("IndexOffset1"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("IndexOffset2"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("VertexOffset1"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_UINT4>(("VertexOffset2"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("LODDistancesSq1"));
-		AddParameter<Vector4, EShaderParameterValueType::SHADER_PARAMETER_TYPE_FLOAT4>(("LODDistancesSq2"));
+		// The field order and the field formats are the GPU layout of the blade pass
+		// constant buffer; they must stay aligned with the shader declaration.
+		const EVariableFormat Float4Format = MakeShaderVariableFormat(
+			EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_FLOAT, EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_4);
+		const EVariableFormat Uint4Format = MakeShaderVariableFormat(
+			EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_UINT, EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_4);
+		AddStructVariable(PE_TEXT("CurrentTimeParams"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("PreviousTimeParams"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("NumAllocatedLODMaxNumInstances"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("TileAnchorSize"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("TileXYNumTiles"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("SubTileSizeBorderSize"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("SubTileXYNumSubTiles"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("MaskXYNumInstances"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("DensityScale"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("HeightMapWorldScaleOffsetBorderPixelSize"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("LayerBorderPixelSizeDensityBorderPixelSize"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("LayerTypeElemsBaseCustomTotalNumTypes"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("LODBodyPart1"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("LODBodyPart2"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("IndexOffset1"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("IndexOffset2"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("VertexOffset1"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("VertexOffset2"), Uint4Format, 1u);
+		AddStructVariable(PE_TEXT("LODDistancesSq1"), Float4Format, 1u);
+		AddStructVariable(PE_TEXT("LODDistancesSq2"), Float4Format, 1u);
 	}
 
 	PE_STATIC_CONSTEXPR UINT32 BEZIER_GRASS_LOD_NUM         = 5u;
@@ -308,9 +396,8 @@ namespace PigeonEngine
 
 
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy(PBezierGrassComponent* InComponent)
-		: VertexShader(nullptr)
-		, PixelShader(nullptr)
-		, ComputeShader(nullptr)
+		: GraphicsProgram(nullptr)
+		, ComputeProgram(nullptr)
 		, bSplitBentPart(FALSE)
 		, Component(InComponent)
 		, Property(InComponent->Property)
@@ -339,11 +426,11 @@ namespace PigeonEngine
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create bezier grass scene proxy failed"), (!!Component));
 	}
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy()
-		: VertexShader(nullptr), PixelShader(nullptr), Component(nullptr)
+		: GraphicsProgram(nullptr), ComputeProgram(nullptr), Component(nullptr)
 	{
 	}
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy(const RBezierGrassSceneProxy& Other)
-		: RPrimitiveSceneProxy(Other), VertexShader(Other.VertexShader), PixelShader(Other.PixelShader), Component(Other.Component)
+		: RPrimitiveSceneProxy(Other), GraphicsProgram(Other.GraphicsProgram), ComputeProgram(Other.ComputeProgram), Component(Other.Component)
 	{
 	}
 	RBezierGrassSceneProxy::~RBezierGrassSceneProxy()
@@ -356,7 +443,7 @@ namespace PigeonEngine
 		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 
-		MaterialParameter.SetupParameters();
+		CBufferParameter.SetupParameters();
 
 		UpdateRenderResource();
 		SetupVertexIndexBuffer();
@@ -403,25 +490,29 @@ namespace PigeonEngine
 	void RBezierGrassSceneProxy::UpdateRenderResource()
 	{
 		Matrix4x4 InvMat(GetLocalToWorldMatrix().Inverse());
-		MaterialParameter["_WorldMatrix"] = &TranslateUploadMatrixType(GetLocalToWorldMatrix());
-		MaterialParameter["_WorldInvMatrix"] = &TranslateUploadMatrixType(InvMat);
-		MaterialParameter["_WorldInvTransposeMatrix"] = &TranslateUploadTransposeMatrixType(InvMat);
+		CBufferParameter.SetFieldValue(EName(PE_TEXT("_WorldMatrix")), TranslateUploadMatrixType(GetLocalToWorldMatrix()));
+		CBufferParameter.SetFieldValue(EName(PE_TEXT("_WorldInvMatrix")), TranslateUploadMatrixType(InvMat));
+		CBufferParameter.SetFieldValue(EName(PE_TEXT("_WorldInvTransposeMatrix")), TranslateUploadTransposeMatrixType(InvMat));
 #if 0
-		MaterialParameter["_BezierGrassRootColor"] = &TranslateUploadVectorType(Vector4(Property.RootColor.r, Property.RootColor.g, Property.RootColor.b, Property.RootColor.a));
-		MaterialParameter["_BezierGrassTipColor"] = &TranslateUploadVectorType(Vector4(Property.TipColor.r, Property.TipColor.g, Property.TipColor.b, Property.TipColor.a));
-		MaterialParameter["_BezierGrassParams"] = &TranslateUploadVectorType(Vector4(Property.BentBezierT, Property.Roughness, Property.Metallic, 0.f));
+		CBufferParameter["_BezierGrassRootColor"] = &TranslateUploadVectorType(Vector4(Property.RootColor.r, Property.RootColor.g, Property.RootColor.b, Property.RootColor.a));
+		CBufferParameter["_BezierGrassTipColor"] = &TranslateUploadVectorType(Vector4(Property.TipColor.r, Property.TipColor.g, Property.TipColor.b, Property.TipColor.a));
+		CBufferParameter["_BezierGrassParams"] = &TranslateUploadVectorType(Vector4(Property.BentBezierT, Property.Roughness, Property.Metallic, 0.f));
 #endif
-		MaterialParameter.UploadBuffer();
+		CBufferParameter.UploadBuffer();
 	}
 	void RBezierGrassSceneProxy::BindRenderResource()const
 	{
 		BindVertexShader();
 		BindPixelShader();
 		BindMeshAndInstanceResource();
-		BindMaterialParameter(1u);
+		BindPrimitiveParameter();
 	}
 	void RBezierGrassSceneProxy::SetupVertexIndexBuffer()
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 		VertexBuffer.ReleaseRenderResource();
 		IndexBuffer.ReleaseRenderResource();
 
@@ -561,7 +652,7 @@ namespace PigeonEngine
 				}
 			}
 
-			// Tip — mark with bit 0
+			// Tip - mark with bit 0
 			BEZIER_GRASS_VERTEX_TYPE TipVertex = PackVertex(1.f, 1.f, TRUE, FALSE);
 			TipVertex = ((TipVertex >> 2u) << 2u) | 0x1u;
 			OutVertices.Add(TipVertex);
@@ -633,44 +724,43 @@ namespace PigeonEngine
 	}
 	void RBezierGrassSceneProxy::SetupShaders()
 	{
-		if (!VertexShader && Component->MaterialAsset)
+		// The instances the component carries win; the shared engine fallbacks keep the
+		// blade pass and the construct dispatch alive when it carries none. GetProgram()
+		// caches its resolution per instance, so this stays a lookup, not a rebuild.
+		const EShaderInstance* GrassShader = (Component ? Component->GetMaterialInstance() : nullptr);
+		if (!GrassShader)
 		{
-			const EMaterialVariant* Variant = Component->MaterialAsset->GetFirstVariant();
-			if (Variant && Variant->VS)
-			{
-				VertexShader = Variant->VS;
-			}
+			GrassShader = GetFallbackBezierGrassShader();
 		}
+		GraphicsProgram = (GrassShader ? GrassShader->GetProgram() : nullptr);
 
-		if (!PixelShader && Component->MaterialAsset)
+		const EShaderInstance* GrassConstructShader = (Component ? Component->GetComputeMaterialInstance() : nullptr);
+		if (!GrassConstructShader)
 		{
-			const EMaterialVariant* Variant = Component->MaterialAsset->GetFirstVariant();
-			if (Variant && Variant->PS)
-			{
-				PixelShader = Variant->PS;
-			}
+			GrassConstructShader = GetFallbackBezierGrassConstructShader();
 		}
-
-		if (!ComputeShader && Component->ComputeMaterialAsset)
-		{
-			const EMaterialVariant* Variant = Component->ComputeMaterialAsset->GetFirstVariant();
-			if (Variant && Variant->CS)
-			{
-				ComputeShader = Variant->CS;
-			}
-		}
+		ComputeProgram = (GrassConstructShader ? GrassConstructShader->GetProgram() : nullptr);
 	}
 	void RBezierGrassSceneProxy::BindVertexShader()const
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
+		const RShaderStageResource* VertexStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_VERTEX) : nullptr);
 #if _EDITOR_ONLY
-		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()))
+		if (VertexStage)
 #endif
 		{
-			const RVertexShaderResource* VSResource = VertexShader->GetRenderResource();
+			// This legacy direct path binds the native objects of the stage resource, which
+			// is why it only runs on the D3D11 back-end.
+			const IRD3D11Shader*						NativeShader		= static_cast<const IRD3D11Shader*>(VertexStage->GetRHIShader());
+			Microsoft::WRL::ComPtr<ID3D11InputLayout>	InputLayout(NativeShader->GetD3D11InputLayout());
+			Microsoft::WRL::ComPtr<ID3D11VertexShader>	NativeVertexShader(NativeShader->GetD3D11VS());
 			{
 				RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-				RenderDevice->SetInputLayout(VSResource->InputLayout);
-				RenderDevice->SetVSShader(VSResource->Shader);
+				RenderDevice->SetInputLayout(InputLayout);
+				RenderDevice->SetVSShader(NativeVertexShader);
 			}
 		}
 #if _EDITOR_ONLY
@@ -682,13 +772,19 @@ namespace PigeonEngine
 	}
 	void RBezierGrassSceneProxy::BindPixelShader()const
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
+		const RShaderStageResource* PixelStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_PIXEL) : nullptr);
 #if _EDITOR_ONLY
-		if ((!!PixelShader) && (PixelShader->IsRenderResourceValid()))
+		if (PixelStage)
 #endif
 		{
-			const RPixelShaderResource* PSResource = PixelShader->GetRenderResource();
+			const IRD3D11Shader*						NativeShader		= static_cast<const IRD3D11Shader*>(PixelStage->GetRHIShader());
+			Microsoft::WRL::ComPtr<ID3D11PixelShader>	NativePixelShader(NativeShader->GetD3D11PS());
 			{
-				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(PSResource->Shader);
+				RDeviceD3D11::GetDeviceSingleton()->SetPSShader(NativePixelShader);
 			}
 		}
 #if _EDITOR_ONLY
@@ -700,8 +796,14 @@ namespace PigeonEngine
 	}
 	void RBezierGrassSceneProxy::BindMeshAndInstanceResource()const
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 #if _EDITOR_ONLY
-		if ((!!VertexShader) && (VertexShader->IsRenderResourceValid()) && (!!PixelShader) && (PixelShader->IsRenderResourceValid()))
+		const RShaderStageResource* VertexStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_VERTEX) : nullptr);
+		const RShaderStageResource* PixelStage = (GraphicsProgram ? ResolveShaderStageResource(*GraphicsProgram, EShaderStageType::SHADER_STAGE_PIXEL) : nullptr);
+		if ((!!VertexStage) && (!!PixelStage))
 #endif
 		{
 			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
@@ -733,26 +835,24 @@ namespace PigeonEngine
 		}
 #endif
 	}
-	void RBezierGrassSceneProxy::BindMaterialParameter(const UINT32 InSlot)const
+	void RBezierGrassSceneProxy::BindPrimitiveParameter()const
 	{
-		const RBufferResource& ConstantBuffer = MaterialParameter.GetConstantBuffer();
-#if _EDITOR_ONLY
-		if (((InSlot >= 0u) && (InSlot < 8u)) && (ConstantBuffer.IsRenderResourceValid()))
-#endif
+		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
+		if (!CmdList) { return; }
+		// The instance block keeps the engine wide convention of living at root 1.
+		const RBufferResource& ConstantBuffer = CBufferParameter.GetBuffer();
+		if (ConstantBuffer.IsRenderResourceValid())
 		{
-			RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-			RenderDevice->BindVSConstantBuffer(ConstantBuffer.Buffer, InSlot);
-			RenderDevice->BindPSConstantBuffer(ConstantBuffer.Buffer, InSlot);
+			IRRHIBuffer* CBPtr = const_cast<RBufferResource&>(ConstantBuffer).GetResolvedRHIBuffer();
+			CmdList->SetGraphicsRootConstantBuffer(1u, CBPtr);
 		}
-#if _EDITOR_ONLY
-		else
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Static mesh constant buffer is invalid."));
-		}
-#endif
 	}
 	void RBezierGrassSceneProxy::SetupLayerTypeBuffer()
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 		TArray<FLOAT> LayerData;
 		LayerData.Reserve(27);
 
@@ -816,6 +916,10 @@ namespace PigeonEngine
 	}
 	void RBezierGrassSceneProxy::SetupComputeConstantBuffer()
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 		if (ComputeConstantBuffer.IsRenderResourceValid())
 		{
 			ComputeConstantBuffer.ReleaseRenderResource();
@@ -910,6 +1014,10 @@ namespace PigeonEngine
 
 	void RBezierGrassSceneProxy::SetupComputeBuffers()
 	{
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 		const UINT32 MaxInstances = 1024;
 
 		if (!PackedInstanceBuffer.IsRenderResourceValid())
@@ -949,23 +1057,29 @@ namespace PigeonEngine
 
 	void RBezierGrassSceneProxy::DispatchComputeShader()
 	{
-		if (!ComputeShader || !ComputeShader->IsRenderResourceValid())
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
+		const RShaderStageResource* ComputeStage = (ComputeProgram ? ResolveShaderStageResource(*ComputeProgram, EShaderStageType::SHADER_STAGE_COMPUTE) : nullptr);
+		if (!ComputeStage)
 		{
 			return;
 		}
 
 		RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-		const RComputeShaderResource* CSResource = ComputeShader->GetRenderResource();
+		const IRD3D11Shader*						NativeShader		= static_cast<const IRD3D11Shader*>(ComputeStage->GetRHIShader());
+		Microsoft::WRL::ComPtr<ID3D11ComputeShader>	NativeComputeShader(NativeShader->GetD3D11CS());
 
-		RenderDevice->SetCSShader(CSResource->Shader);
+		RenderDevice->SetCSShader(NativeComputeShader);
 
-		// 问题4：绑定ConstantBuffer (slot 0)
+		// Issue 4: bind the constant buffer (slot 0)
 		if (ComputeConstantBuffer.IsRenderResourceValid())
 		{
 			RenderDevice->BindCSConstantBuffer(ComputeConstantBuffer.Buffer, 0);
 		}
 
-		// 问题2：绑定纹理 (slot 0,1,2)
+		// Issue 2: bind textures (slot 0, 1, 2)
 		if (LandscapeHeightTexture && LandscapeHeightTexture->IsRenderResourceValid())
 		{
 			RenderDevice->BindCSShaderResourceView(LandscapeHeightTexture->GetRenderResource()->ShaderResourceView, 0);
@@ -979,26 +1093,37 @@ namespace PigeonEngine
 			RenderDevice->BindCSShaderResourceView(DensityTexture->GetRenderResource()->ShaderResourceView, 2);
 		}
 
-		// 绑定Buffers
+		// Bind buffers
 		RenderDevice->BindCSUnorderedAccessView(PackedInstanceBuffer.UnorderedAccessView, 0);
 		RenderDevice->BindCSUnorderedAccessView(DispatchBuffer.UnorderedAccessView, 1);
 		RenderDevice->BindCSUnorderedAccessView(DrawIndirectBuffer.UnorderedAccessView, 2);
 		RenderDevice->BindCSShaderResourceView(LayerTypeBuffer.ShaderResourceView, 5);
 		RenderDevice->BindCSShaderResourceView(TileShuffleBuffer.ShaderResourceView, 6);
 
-		// 问题1：根据实际instance数量计算Dispatch
+		// Issue 1: derive the dispatch size from the actual instance count
 		const UINT32 NumInstances = 16 * 16;
 		const UINT32 ThreadGroupSize = 256;
 		const UINT32 ThreadGroupX = (NumInstances + ThreadGroupSize - 1) / ThreadGroupSize;
 		RenderDevice->Dispatch(ThreadGroupX, 1, 1);
 
-		// 清理绑定
+		// Clear the bindings
 		RenderDevice->BindNoCSUnorderedAccessView(0);
 		RenderDevice->BindNoCSUnorderedAccessView(1);
 		RenderDevice->BindNoCSUnorderedAccessView(2);
 	}
 	void RBezierGrassSceneProxy::Draw()const
 	{
+		// The engine fallbacks are asked for rather than resolved, so the first frames of a cold start
+		// may legitimately have none. Re-running the resolution here is what makes the grass appear
+		// once it is assembled; it is a lookup once both instances are held.
+		if ((!GraphicsProgram) || (!ComputeProgram))
+		{
+			const_cast<RBezierGrassSceneProxy*>(this)->SetupShaders();
+		}
+		if (!IsLegacyD3D11PathActive())
+		{
+			return;
+		}
 #if _EDITOR_ONLY
 		const RIndexBufferResource& IndexRenderResource = IndexBuffer;
 		if (IndexRenderResource.IsRenderResourceValid())
@@ -1022,3 +1147,4 @@ namespace PigeonEngine
 	}
 
 };
+#endif

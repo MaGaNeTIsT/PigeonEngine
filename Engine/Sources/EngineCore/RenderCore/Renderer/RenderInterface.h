@@ -8,6 +8,7 @@ namespace PigeonEngine
 	class PCameraComponent;
 	class PSkyLightComponent;
 	class PDirectionalLightComponent;
+	class PLocalLightComponent;
 	class PStaticMeshComponent;
 	class PSkeletalMeshComponent;
 	class PBezierGrassComponent;
@@ -30,6 +31,13 @@ namespace PigeonEngine
 		virtual void	AddDirectionalLight(PDirectionalLightComponent* InComponent)	= 0;
 		virtual void	RemoveDirectionalLight(PDirectionalLightComponent* InComponent)	= 0;
 		virtual void	UpdateDirectionalLight(PDirectionalLightComponent* InComponent)	= 0;
+
+		// A point light and a spot light are one entry point each way, because they share one
+		// render list: the element carries its type, so nothing above the shading has to know
+		// which of the two it is moving around.
+		virtual void	AddLocalLight(PLocalLightComponent* InComponent)				= 0;
+		virtual void	RemoveLocalLight(PLocalLightComponent* InComponent)				= 0;
+		virtual void	UpdateLocalLight(PLocalLightComponent* InComponent)				= 0;
 
 		virtual void	AddStaticMesh(PStaticMeshComponent* InComponent)				= 0;
 		virtual void	RemoveStaticMesh(PStaticMeshComponent* InComponent)				= 0;

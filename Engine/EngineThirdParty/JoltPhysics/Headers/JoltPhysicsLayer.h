@@ -269,9 +269,9 @@ private:
 class FPhysicsDefaultBroadPhaseLayerFilter final : public FPhysicsBroadPhaseLayerFilter
 {
 public:
-    static const FPhysicsDefaultBroadPhaseLayerFilter& Get()
+	static const FPhysicsDefaultBroadPhaseLayerFilter& Get()
 	{
-        static FPhysicsDefaultBroadPhaseLayerFilter Instance;
+		static FPhysicsDefaultBroadPhaseLayerFilter Instance;
 		return Instance;
 	}
 };
@@ -279,9 +279,9 @@ public:
 class FPhysicsDefaultLayerConfig final : public FPhysicsLayerConfig
 {
 public:
-    static const FPhysicsDefaultLayerConfig& Get()
+	static const FPhysicsDefaultLayerConfig& Get()
 	{
-        static FPhysicsDefaultLayerConfig Instance;
+		static FPhysicsDefaultLayerConfig Instance;
 		return Instance;
 	}
 };
@@ -291,7 +291,7 @@ public:
 class FPhysicsBroadPhaseLayerMapper final : public BroadPhaseLayerInterface
 {
 public:
-    explicit FPhysicsBroadPhaseLayerMapper(const FPhysicsLayerConfig& InLayerConfig)
+	explicit FPhysicsBroadPhaseLayerMapper(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 		mObjectToBroadPhase.SetNum(mLayerConfig.GetNumObjectLayers());
@@ -328,7 +328,7 @@ private:
 class FPhysicsObjectVsBroadPhaseLayerCollisionFilter final : public ObjectVsBroadPhaseLayerFilter
 {
 public:
-    explicit FPhysicsObjectVsBroadPhaseLayerCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
+	explicit FPhysicsObjectVsBroadPhaseLayerCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 	}
@@ -346,7 +346,7 @@ private:
 class FPhysicsObjectLayerPairCollisionFilter final : public ObjectLayerPairFilter
 {
 public:
-    explicit FPhysicsObjectLayerPairCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
+	explicit FPhysicsObjectLayerPairCollisionFilter(const FPhysicsLayerConfig& InLayerConfig)
 		: mLayerConfig(InLayerConfig)
 	{
 	}
@@ -430,7 +430,7 @@ class FPhysicsDefaultQueryLayerFilter final : public FPhysicsQueryLayerFilter
 public:
 	static const FPhysicsDefaultQueryLayerFilter& Get()
 	{
-        static FPhysicsDefaultQueryLayerFilter Instance;
+		static FPhysicsDefaultQueryLayerFilter Instance;
 		return Instance;
 	}
 };

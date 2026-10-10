@@ -18,13 +18,13 @@ namespace PigeonEngine
 	* Frame layout (executed each engine update tick):
 	*   GameThread (main):                      RenderThread (worker):
 	*     World.Tick - emit lambdas to BackSlot
-	*     RenderThread.WaitForRenderIdle()  ← waits for RenderDoneEvent
+	*     RenderThread.WaitForRenderIdle()  <- waits for RenderDoneEvent
 	*     RScene.SwapCommandSlots()
-	*     RenderThread.KickRender()          ─→ signals GameDoneEvent
+	*     RenderThread.KickRender()          -> signals GameDoneEvent
 	*                                            SceneRenderer.InitNewFrame
 	*                                            SceneRenderer.Render
 	*                                            Device.Present
-	*                                            ← signals RenderDoneEvent
+	*                                            <- signals RenderDoneEvent
 	*
 	* The first call to WaitForRenderIdle returns immediately because
 	* RenderDoneEvent is constructed in the signaled state.
@@ -54,11 +54,11 @@ namespace PigeonEngine
 		// also called automatically by the destructor.
 		void Stop();
 
-		// GameThread → RenderThread: signal that BackSlot/FrontSlot have
+		// GameThread -> RenderThread: signal that BackSlot/FrontSlot have
 		// been swapped and the worker can render the freshly-published frame.
 		void KickRender();
 
-		// GameThread → RenderThread: block until the previous frame's
+		// GameThread -> RenderThread: block until the previous frame's
 		// Present has retired. Must be called once per frame before
 		// SwapCommandSlots so that the RenderThread is no longer reading
 		// the FrontSlot when GameThread reuses it as the next BackSlot.

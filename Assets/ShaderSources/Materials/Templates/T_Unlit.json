@@ -1,0 +1,40 @@
+{
+	"Name": "T_Unlit",
+	"Template": "Materials/Templates/T_Unlit.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "BaseColor",
+					"Format": "color4",
+					"Default": [
+						1.0,
+						1.0,
+						1.0,
+						1.0
+					],
+					"Exposure": true
+				},
+				{
+					"Name": "EmissiveColor",
+					"Format": "color4",
+					"Default": [
+						0.0,
+						0.0,
+						0.0,
+						1.0
+					],
+					"Exposure": true
+				}
+			]
+		}
+	],
+	"PEMaterial": {
+		"Domain": "Unlit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": true,
+		"VariantDefines": []
+	}
+}

@@ -2,7 +2,7 @@
 
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
-#include <PigeonBase/Object/Component/SceneComponent.h>
+#include "LightComponent.h"
 
 namespace PigeonEngine
 {
@@ -33,76 +33,75 @@ namespace PigeonEngine
 	struct ERenderLightParams
 	{
 	public:
-		Color3		LightColor;
-		FLOAT		LightIntensity;
+		Color3		LightColor;				// normalized chromaticity, not a magnitude
+		FLOAT		IlluminanceLux;			// perpendicular illuminance [lux]
+		FLOAT		SourceAngleDegrees;		// angular diameter of the disc, 0 = a delta light
 		BOOL32		CastShadow;
 		Vector2Int	ShadowMapSize;
 	public:
-		ERenderLightParams(const Color3& InLightColor, const FLOAT InLightIntensity
+		ERenderLightParams(const Color3& InLightColor, const FLOAT InIlluminanceLux, const FLOAT InSourceAngleDegrees
 			, const BOOL32 InCastShadow, const Vector2Int& InShadowMapSize)
-			: LightColor(InLightColor), LightIntensity(InLightIntensity)
+			: LightColor(InLightColor), IlluminanceLux(InIlluminanceLux)
+			, SourceAngleDegrees(InSourceAngleDegrees)
 			, CastShadow(InCastShadow), ShadowMapSize(InShadowMapSize)
 		{
 		}
 		ERenderLightParams() = default;
 		ERenderLightParams(const ERenderLightParams& Other)
-			: LightColor(Other.LightColor), LightIntensity(Other.LightIntensity)
+			: LightColor(Other.LightColor), IlluminanceLux(Other.IlluminanceLux)
+			, SourceAngleDegrees(Other.SourceAngleDegrees)
 			, CastShadow(Other.CastShadow), ShadowMapSize(Other.ShadowMapSize)
 		{
 		}
 		ERenderLightParams& operator=(const ERenderLightParams& Other)
 		{
-			LightColor		= Other.LightColor;
-			LightIntensity	= Other.LightIntensity;
-			CastShadow		= Other.CastShadow;
-			ShadowMapSize	= Other.ShadowMapSize;
+			LightColor			= Other.LightColor;
+			IlluminanceLux		= Other.IlluminanceLux;
+			SourceAngleDegrees	= Other.SourceAngleDegrees;
+			CastShadow			= Other.CastShadow;
+			ShadowMapSize		= Other.ShadowMapSize;
 			return (*this);
 		}
 	};
 
-	class PDirectionalLightComponent : public PSceneComponent
+	/*
+	* A directional light: a light so far away that its rays are parallel and its distance does
+	* not change its brightness. Its direction is the component's forward axis, so aiming it is
+	* rotating it.
+	*
+	* What it adds over the base is the two physical values that only a directional light has -
+	* the illuminance perpendicular to it, and the angular size of the disc it stands for - plus
+	* the cascade shadow settings. Its direction is not a separate field: it comes from the
+	* transform like a local light's does.
+	*/
+	class PDirectionalLightComponent : public PLightComponent
 	{
 	public:
-		ELightType					GetLightType()const;
-		const Color3&				GetLightColor()const;
-		FLOAT						GetLightIntensity()const;
-		BOOL32						IsLightCastShadow()const;
-		const Vector2Int&			GetShadowMapSize()const;
-		ECascadeShadowData*			GetCascadeShadowData();
-		const ECascadeShadowData*	GetCascadeShadowData()const;
+		// Perpendicular illuminance in lux. Daylight values: 100000 in direct sun, 10000 under
+		// overcast, 0.25 in full moonlight.
+		FLOAT						GetIlluminanceLux() const noexcept;
+		// Angular diameter of the light's disc, which is the input both to the specular lobe's
+		// width and to the penumbra a soft shadow will have. The sun is 0.53 degrees across;
+		// zero means a delta light, which is what a dome light or a distant moon wants.
+		FLOAT						GetSourceAngleDegrees() const noexcept;
+		ECascadeShadowData*			GetCascadeShadowData() noexcept;
+		const ECascadeShadowData*	GetCascadeShadowData() const noexcept;
 	public:
-		void	SetLightColor(const Color3& InColor);
-		void	SetLightIntensity(const FLOAT InIntensity);
-		void	SetShadowMapSize(const BOOL32 InIsCastShadow,const Vector2Int& InShadowMapSize);
-	protected:
-		ELightData			LightData;
-		ECascadeShadowData*	CascadeShadowData;
-
+		void	SetIlluminanceLux(const FLOAT InIlluminanceLux);
+		void	SetSourceAngleDegrees(const FLOAT InSourceAngleDegrees);
+	public:
 		// Render proxy functions START
-	public:
-		enum PLightUpdateState : UINT8
-		{
-			LIGHT_UPDATE_STATE_NONE		= 0,
-			LIGHT_UPDATE_STATE_MATRIX	= (1 << 0),
-			LIGHT_UPDATE_STATE_DATA		= (1 << 1),
-			LIGHT_UPDATE_STATE_CASCADE	= (1 << 2)
-		};
 	public:
 		RDirectionalLightSceneProxy*	SceneProxy;	// ONLY render thread could use this proxy pointer.
 	public:
-		UINT8							GetUpdateRenderState()const;
 		RDirectionalLightSceneProxy*	CreateSceneProxy();
-		virtual void					CreateRenderState()override;
-		virtual void					DestroyRenderState()override;
-		virtual void					SendUpdateRenderState()override;
 	protected:
-		void			MarkAsDirty(PLightUpdateState InState);
-		virtual void	MarkRenderTransformAsDirty()override;
-		virtual void	MarkRenderStateAsDirty()override;
-		virtual void	CleanMarkRenderStateDirty()override;
-	protected:
-		UINT8							UpdateState;
+		virtual void	AddToRenderScene()override;
+		virtual void	RemoveFromRenderScene()override;
+		virtual void	UpdateInRenderScene()override;
 		// Render proxy functions END
+	protected:
+		ECascadeShadowData*	CascadeShadowData;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PDirectionalLightComponent)
 	};

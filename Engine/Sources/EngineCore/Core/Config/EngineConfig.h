@@ -2,7 +2,7 @@
 
 #include <BaseConfig.h>
 #include <Base/DataStructure/BuiltInType.h>
-#include <Config/EngineShaderNaming.h>
+#include <Config/EngineShaderConfig.h>
 
 namespace PigeonEngine
 {
@@ -15,6 +15,9 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_FIXED_UPDATE_FRAME											= 60.f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_UPDATE_FRAME													= 90.f;
 		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_WINDOWED														= TRUE;
+
+		// 1 = D3D11, 2 = D3D12 (matches ERHIBackendType enum)
+		PE_CONSTEXPR_STATIC		UINT8			ENGINE_GRAPHICS_API													= 2u;
 
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM												= 1.0f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_HALF											= ENGINE_BOUND_MINIMUM * 0.5f;
@@ -32,6 +35,34 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_VISIBLE_CULLING_DISTANCE										= 200000.f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_FOV													= 60.f;
 
+		// Physical exposure. EV100 is the exposure value at ISO 100 and it is what collapses
+		// aperture, shutter and sensitivity into one number; Sunny-16 outdoors is EV100 14.64,
+		// which puts display white at a scene luminance of about 25 320 cd/m2. Exposure
+		// compensation is in stops and shifts the result by 2^compensation.
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_EV100													= 14.64f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_ISO													= 100.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_EXPOSURE_COMPENSATION									= 0.f;
+
+		// Sky luminance in cd/m2. The environment cube is sampled as radiance, so this is what
+		// puts it on the same physical scale as the lights: a clear sky is around 8000 cd/m2
+		// and an overcast one around 2000.
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SKY_LUMINANCE												= 8000.f;
+
+		// Light defaults. These are physical quantities and not multipliers, so a light and a
+		// camera only look right together: the default exposure is Sunny-16 outdoors, which is
+		// why the default directional light is a sun and the default local light is a strong
+		// studio lamp rather than something you would put in a room.
+		//
+		// The sun's disc is 0.53 degrees across. It is what gives a specular highlight its real
+		// width - a mirror reflecting the sun returns a disc, not a point - and it becomes the
+		// penumbra size when soft shadows land.
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_ILLUMINANCE_LUX										= 100000.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_SOURCE_ANGLE_DEGREES									= 0.53f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_LUMINOUS_INTENSITY_CANDELA							= 1000.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_ATTENUATION_RADIUS_METERS							= 1000.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_SPOT_INNER_ANGLE_DEGREES								= 20.f;
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_DEFAULT_SPOT_OUTER_ANGLE_DEGREES								= 30.f;
+
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_DEFAULT_NAME													= "PE_DEFAULT_NAME";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_ASSET_NAME_TYPE												= ".PAsset";
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_SHADER_NAME_TYPE										= ".cso";
@@ -39,10 +70,11 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_PIXEL_SHADER_NAME_TYPE								= MC_SHADER_PS_SUFFIX;
 		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_IMPORT_COMPUTE_SHADER_NAME_TYPE								= MC_SHADER_CS_SUFFIX;
 
-		PE_CONSTEXPR_STATIC		UINT32			ENGINE_MATERIAL_NAME_LENGTH_MAX										= 1024u;
-		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_OUTPUT_DIR											= EBaseSettings::ENGINE_MATERIAL_OUTPUT_DIR;
-		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_SOURCE_DIR											= EBaseSettings::ENGINE_MATERIAL_SOURCE_DIR;
-		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_MATERIAL_SHADER_INCLUDE_DIR									= EBaseSettings::ENGINE_MATERIAL_SHADER_INCLUDE_DIR;
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SHADER_NAME_LENGTH_MAX										= 1024u;
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_ROOT_DIR														= EBaseSettings::ENGINE_ROOT_DIRECTORY;
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_OUTPUT_ROOT_DIR										= EBaseSettings::ENGINE_SHADER_BUILD_DIRECTORY;
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_SOURCE_DIR											= EBaseSettings::ENGINE_SHADER_SOURCE_DIRECTORY;
+		PE_CONSTEXPR_STATIC		const CHAR*		ENGINE_SHADER_GENERATED_ROOT_DIR									= EBaseSettings::ENGINE_SHADER_GENERATED_DIRECTORY;
 
 		PE_CONSTEXPR_STATIC		const CHAR*     PROJECT_CONTENT_PATH                                                = "UNDEFINED";
 

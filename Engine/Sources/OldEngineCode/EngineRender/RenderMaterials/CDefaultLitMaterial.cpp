@@ -278,7 +278,7 @@ FLOAT CDefaultLitMaterial::GetAmbientOcclusion()const
 CustomStruct::CColor CDefaultLitMaterial::GetBaseColor()const
 {
 	CDefaultLitMaterial::RenderParams* renderParams = static_cast<CDefaultLitMaterial::RenderParams*>(this->m_RenderParams);
-	 return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
+	return (CustomStruct::CColor(renderParams->BaseColorRoughness.x, renderParams->BaseColorRoughness.y, renderParams->BaseColorRoughness.z));
 }
 CustomStruct::CColor CDefaultLitMaterial::GetEmissiveColor()const
 {

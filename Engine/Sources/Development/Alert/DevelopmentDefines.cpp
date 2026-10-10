@@ -59,7 +59,7 @@ namespace PigeonEngine
 
 		SymInitialize(process, NULL, TRUE);
 		WORD frames = CaptureStackBackTrace(0, MaxFrames, stack, NULL);
-		
+
 		SYMBOL_INFO* symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
 		if (symbol)
 		{
@@ -70,11 +70,11 @@ namespace PigeonEngine
 			for (int i = 1; i < frames; i++)//1 start, skip self.
 			{
 				SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
-				
+
 				IMAGEHLP_LINE64 line;
 				line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 				DWORD displacement = 0;
-				
+
 				if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &displacement, &line))
 				{
 					PE_LOG_ERROR(*EString(EString::FromInt(frames - i - 1) + ": " + symbol->Name + " - " + line.FileName + ":" + EString::FromInt((UINT32)line.LineNumber)));

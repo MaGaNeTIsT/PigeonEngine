@@ -8,12 +8,12 @@ namespace
 {
 	static auto GetBroadPhaseLayerFilter(const FCharacterVirtualSettings& InSettings)
 	{
-        return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultBroadPhaseLayerFilter(InSettings.Layer.ToJolt());
+		return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultBroadPhaseLayerFilter(InSettings.Layer.ToJolt());
 	}
 
 	static auto GetObjectLayerFilter(const FCharacterVirtualSettings& InSettings)
 	{
-      return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultLayerFilter(InSettings.Layer.ToJolt());
+		return FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetDefaultLayerFilter(InSettings.Layer.ToJolt());
 	}
 }
 
@@ -21,7 +21,7 @@ FCharacterVirtual::FCharacterVirtual(const FCharacterVirtualSettings& inSettings
 	: m_CharacterCreateSettings(inSettings)
 	, FCharacterBase(inSettings)
 {
-	m_CharacterSettings = New<CharacterVirtualSettings>();
+	m_CharacterSettings = new CharacterVirtualSettings();
 	m_CharacterSettings->mUp = PhysicsUtility::Convert(inSettings.Up);
 	m_CharacterSettings->mSupportingVolume = Plane(PhysicsUtility::Convert(inSettings.PlaneVector), inSettings.CharacterRadiusStanding);
 	m_CharacterSettings->mMaxSlopeAngle = inSettings.MaxSlopeAngle;
@@ -47,7 +47,7 @@ FCharacterVirtual::~FCharacterVirtual()
 {
 	if (m_Character)
 		RemoveFromPhysicsSystem();
-	Delete(m_CharacterSettings);
+	delete m_CharacterSettings;
 	m_CharacterSettings = nullptr;
 }
 
@@ -60,7 +60,7 @@ void FCharacterVirtual::AddToPhysicsSystem(PhysicsUtility::EActivate inActivatio
 		RemoveFromPhysicsSystem();
 	}
 
-    m_Character = New<CharacterVirtual>(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
+	m_Character = new CharacterVirtual(m_CharacterSettings, PhysicsUtility::Convert2Meter(inPosition), PhysicsUtility::Convert(inRotation), static_cast<uint64>(InObjectID), FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem);
 	m_Character->SetListener(&m_CharacterContactListener);
 	CharacterBase = m_Character;
 }
@@ -68,7 +68,7 @@ void FCharacterVirtual::AddToPhysicsSystem(PhysicsUtility::EActivate inActivatio
 void FCharacterVirtual::RemoveFromPhysicsSystem(BOOL32 inLockBodies)
 {
 	(void)inLockBodies;
-	Delete(m_Character);
+	delete m_Character;
 	m_Character = nullptr;
 	CharacterBase = nullptr;
 }
@@ -183,7 +183,7 @@ void FCharacterVirtual::PostSimulation(FLOAT inDeltaTime, BOOL32 inLockBodies)
 	(void)inLockBodies;
 	if (inDeltaTime > 0.0f)
 	{
-      const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * m_CharacterCreateSettings.GravityFactor;
+		const Vector3 Gravity = PhysicsUtility::Convert(FPhysicsManager::GetManagerSingleton()->GetPhysicsData()->PhysicsSystem->GetGravity()) * m_CharacterCreateSettings.GravityFactor;
 		m_Character->SetLinearVelocity(m_Character->GetLinearVelocity() + PhysicsUtility::Convert(Gravity * inDeltaTime));
 	}
 

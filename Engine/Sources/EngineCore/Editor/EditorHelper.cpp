@@ -100,15 +100,15 @@ namespace PigeonEngine
 				}
 				Vector3 ActorScreenAABB[2] =
 				{
-					Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_MAX),
-					Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_MIN)
+					Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_FAR),
+					Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_NEAR)
 				};
 				for (UINT32 BoundPointIndex = 0u; BoundPointIndex < 8u; BoundPointIndex++)
 				{
 					Vector3 TempScreenCoord;
 					if (!(InCamera->TransformWorldToScreen(TempBoundPoints[BoundPointIndex], TempScreenCoord)))
 					{
-						TempScreenCoord.z = RCommonSettings::RENDER_DEPTH_MAX;
+						TempScreenCoord.z = RCommonSettings::RENDER_DEPTH_FAR;
 						if (TempScreenCoord.x < UsedViewport.TopLeftX)
 						{
 							TempScreenCoord.x = UsedViewport.TopLeftX;
@@ -144,7 +144,7 @@ namespace PigeonEngine
 		if (const UINT32 TargetActorNum = TargetActors.Num<UINT32>(); TargetActorNum > 0u)
 		{
 			Result = TargetActors[0];
-			FLOAT CurrentDepth = RCommonSettings::RENDER_DEPTH_MAX;
+			FLOAT CurrentDepth = RCommonSettings::RENDER_DEPTH_FAR;
 			for (UINT32 TargetActorIndex = 0u; TargetActorIndex < TargetActorNum; TargetActorIndex++)
 			{
 				if (TargetDepths[TargetActorIndex] < CurrentDepth)
@@ -163,7 +163,7 @@ namespace PigeonEngine
 		const UINT32 ComponentNum = InComponents.Num<UINT32>();
 		const FLOAT UsedMouseX = InMouseX;
 		const FLOAT UsedMouseY = InMouseY;
-		
+
 		if ((!InCamera) || (ComponentNum == 0u) || (InScreenRect.Right <= InScreenRect.Left) || (InScreenRect.Bottom <= InScreenRect.Top))
 		{
 			return nullptr;
@@ -249,15 +249,15 @@ namespace PigeonEngine
 				}
 				Vector3 ComponentScreenAABB[2] =
 				{
-					Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_MAX),
-					Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_MIN)
+					Vector3(PE_FLOAT32_MAX, PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_FAR),
+					Vector3(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, RCommonSettings::RENDER_DEPTH_NEAR)
 				};
 				for (UINT32 BoundPointIndex = 0u; BoundPointIndex < 8u; BoundPointIndex++)
 				{
 					Vector3 TempScreenCoord;
 					if (!(InCamera->TransformWorldToScreen(TempBoundPoints[BoundPointIndex], TempScreenCoord)))
 					{
-						TempScreenCoord.z = RCommonSettings::RENDER_DEPTH_MAX;
+						TempScreenCoord.z = RCommonSettings::RENDER_DEPTH_FAR;
 						if (TempScreenCoord.x < UsedViewport.TopLeftX)
 						{
 							TempScreenCoord.x = UsedViewport.TopLeftX;
@@ -293,7 +293,7 @@ namespace PigeonEngine
 		if (const UINT32 TargetComponentNum = TargetComponents.Num<UINT32>(); TargetComponentNum > 0u)
 		{
 			Result = TargetComponents[0];
-			FLOAT CurrentDepth = RCommonSettings::RENDER_DEPTH_MAX;
+			FLOAT CurrentDepth = RCommonSettings::RENDER_DEPTH_FAR;
 			for (UINT32 TargetComponentIndex = 0u; TargetComponentIndex < TargetComponentNum; TargetComponentIndex++)
 			{
 				if (TargetDepths[TargetComponentIndex] < CurrentDepth)
@@ -346,19 +346,19 @@ namespace PigeonEngine
 		RDebugWireframePrimitiveManager* DbgMgr = RDebugWireframePrimitiveManager::GetManagerSingleton();
 		const Vector3 Origin = InComponent->GetComponentWorldLocation();
 
-		// X axis – red
+		// X axis - red
 		{
 			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_X);
 			DbgMgr->DrawSingleLine(Origin, Tip, Color4(1.f, 0.f, 0.f, 1.f));
 			DbgMgr->DrawCone(Tip - Vector3(GIZMO_ARROW_RADIUS * 2.f, 0.f, 0.f), Tip, GIZMO_ARROW_RADIUS, Color4(1.f, 0.f, 0.f, 1.f));
 		}
-		// Y axis – green
+		// Y axis - green
 		{
 			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_Y);
 			DbgMgr->DrawSingleLine(Origin, Tip, Color4(0.f, 1.f, 0.f, 1.f));
 			DbgMgr->DrawCone(Tip - Vector3(0.f, GIZMO_ARROW_RADIUS * 2.f, 0.f), Tip, GIZMO_ARROW_RADIUS, Color4(0.f, 1.f, 0.f, 1.f));
 		}
-		// Z axis – blue
+		// Z axis - blue
 		{
 			const Vector3 Tip = GetGizmoAxisTip(InComponent, EGizmoAxis::AXIS_Z);
 			DbgMgr->DrawSingleLine(Origin, Tip, Color4(0.f, 0.f, 1.f, 1.f));

@@ -1,4 +1,4 @@
-﻿#include "Level.h"
+#include "Level.h"
 
 namespace PigeonEngine
 {
@@ -9,5 +9,12 @@ namespace PigeonEngine
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+	PLevel::PLevel()
+	{
+	}
+	PLevel::~PLevel()
+	{
+	}
 
 };

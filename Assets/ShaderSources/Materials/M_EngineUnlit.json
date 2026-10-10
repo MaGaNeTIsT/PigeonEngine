@@ -1,0 +1,29 @@
+{
+	"Name": "M_EngineUnlit",
+	"Template": "Materials/M_EngineUnlit.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "BaseColor",
+					"Format": "color4",
+					"Default": [
+						1.0,
+						1.0,
+						1.0,
+						1.0
+					],
+					"Exposure": true
+				}
+			]
+		}
+	],
+	"PEMaterial": {
+		"Domain": "Unlit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

@@ -1,4 +1,4 @@
-﻿#include "./SceneComponent.h"
+#include "./SceneComponent.h"
 
 #include <PigeonBase/Object/Actor.h>
 #include "../../../../IO/SerializationHelper.h"
@@ -23,11 +23,11 @@ namespace PigeonEngine
 	{
 		POBJ_DEBUGNAME_SET(this, "SceneComponent");
 	}
-	
+
 	PSceneComponent::~PSceneComponent()
 	{
 	}
-	
+
 
 	void PSceneComponent::AttachToComponent(PSceneComponent* Parent, const ETransform& RelativeTransform)
 	{
@@ -54,28 +54,36 @@ namespace PigeonEngine
 		// Remove from current parent
 		Child->DetachFromParentComponent();
 		Child->ParentComponent = Parent;
-		
+
 		Parent->ChildrenComponents.Add(Child);
 
 		if(!Child->GetOwnerActor())
 		{
 			Child->SetOwnerActor(Parent->GetOwnerActor());
 		}
-		
-		Child->SetComponentTransform(RelativeTransform);
-		
+
+		// NOTE: previously this unconditionally called
+		//     Child->SetComponentTransform(RelativeTransform);
+		// with the default-arg identity ETransform, so every attach (e.g.
+		// PWorld::AddActor -> AttachToActor) silently snapped the child's
+		// local transform back to (0,0,0)+identity, wiping out anything
+		// the caller had set via SetActorLocation right before AddActor.
+		// "Keep-current-transform-on-attach" is the safer default; callers
+		// that genuinely want to override the child's relative transform
+		// should call SetComponentTransform themselves after the attach.
+		(void)RelativeTransform;
 	}
 
 	PSceneComponent* PSceneComponent::GetParentComponent() const
 	{
 		return this->ParentComponent;
 	}
-	
+
 	void PSceneComponent::ClearChildren()
 	{
 		for (auto elem = ChildrenComponents.Begin(); elem != ChildrenComponents.End(); elem++)
 		{
-			
+
 			(*elem)->ParentComponent = nullptr;
 			(*elem)->Destroy();
 		}
@@ -85,7 +93,7 @@ namespace PigeonEngine
 	TSharedPtr<CJsonObject> PSceneComponent::Serialize()
 	{
 		TSharedPtr<CJsonObject> JsonObj =  PActorComponent::Serialize();
-		
+
 		TSharedPtr<CJsonObject> TransFormJson = ESerializationHelper::SerializeTransform(Transform);
 		JsonObj->SetObjectField("Transform", EMemory::GetPtr(TransFormJson));
 		return JsonObj;
@@ -95,7 +103,7 @@ namespace PigeonEngine
 	{
 		ChildrenComponents.Remove(NewChild);
 		NewChild->ParentComponent = nullptr;
-		
+
 	}
 
 	const PSceneComponent* PSceneComponent::GetComponentByUniqueID(const ObjectIdentityType& InUniqueID,
@@ -163,7 +171,37 @@ namespace PigeonEngine
 	}
 #endif
 
+	void PSceneComponent::AddDeferredApply(TFunction<BOOL32()> InStep)
+	{
+		if (!InStep.IsValid())
+		{
+			return;
+		}
+		DeferredApplies.Add(static_cast<TFunction<BOOL32()>&&>(InStep));
+	}
+	void PSceneComponent::RunDeferredApplies()
+	{
+		// Walked backwards so a step that finishes and removes itself does not shift the ones after it.
+		for (INT32 StepIndex = static_cast<INT32>(DeferredApplies.Num<UINT32>()) - 1; StepIndex >= 0; StepIndex--)
+		{
+			if (DeferredApplies[static_cast<UINT32>(StepIndex)]())
+			{
+				DeferredApplies.RemoveAt(static_cast<UINT32>(StepIndex));
+			}
+		}
+	}
+
 	void PSceneComponent::TickRender()
+	{
+		// Deferred applies first: a step that resolves its asset sets it on this component, and the
+		// dirty mark that follows is what the implementation below then sends.
+		if (DeferredApplies.Num<UINT32>() > 0u)
+		{
+			RunDeferredApplies();
+		}
+		TickRenderImpl();
+	}
+	void PSceneComponent::TickRenderImpl()
 	{
 		if(IsRenderStateDirty())
 		{
@@ -217,7 +255,7 @@ namespace PigeonEngine
 	{
 		PE_CHECK(ENGINE_COMPONENT_ERROR, "PSceneComponent::SetComponentLocation : this is not a dynamic component.", GetMobility() == EMobilityType::EMT_DYNAMIC);
 		Transform.SetLocation_Local(Location);
-		
+
 		MarkRenderTransformAsDirty();
 		for (const auto& elem : ChildrenComponents)
 		{
@@ -295,7 +333,7 @@ namespace PigeonEngine
 		SetComponentWorldLocation(Trans.GetLocation_Local());
 		SetComponentWorldRotation(Trans.GetRotation_Local());
 		SetComponentWorldScale(Trans.GetScaling_Local());
-		
+
 	}
 
 	Vector3 PSceneComponent::GetComponentLocalLocation() const
@@ -411,7 +449,7 @@ namespace PigeonEngine
 	{
 		RenderTransformDirty = TRUE;
 		MarkRenderStateAsDirty();
-		
+
 	}
 	void PSceneComponent::MarkRenderStateAsDirty()
 	{
@@ -484,7 +522,7 @@ namespace PigeonEngine
 			{
 				const FLOAT Min = -180.0f;
 				const FLOAT Max = 180.0f;
-				
+
 				const BOOL8 bChangedPitch = ImGui::DragScalar("##Pitch", ImGuiDataType_Float, &Rotation.Pitch, 0.05f, &Min, &Max, "Pitch : %.6f");
 				const BOOL8 bChangedYaw   = ImGui::DragScalar("##Yaw",   ImGuiDataType_Float, &Rotation.Yaw,   0.05f, &Min, &Max, "Yaw   : %.6f");
 				const BOOL8 bChangedRoll  = ImGui::DragScalar("##Roll",  ImGuiDataType_Float, &Rotation.Roll,  0.05f, &Min, &Max, "Roll  : %.6f");
@@ -493,7 +531,7 @@ namespace PigeonEngine
 				{
 					this->SetComponentRotation(MakeQuaternion(Rotation));
 				}
-				
+
 				if(bRest)
 				{
 					Rotation = Euler::Zero();
@@ -508,7 +546,7 @@ namespace PigeonEngine
 				const BOOL8 bChangedY = ImGui::DragScalar("##ScaleY", ImGuiDataType_Float, &Scale.y, 0.05f, NULL, NULL, "Y : %.6f");
 				const BOOL8 bChangedZ = ImGui::DragScalar("##ScaleZ", ImGuiDataType_Float, &Scale.z, 0.05f, NULL, NULL, "Z : %.6f");
 				const BOOL8 bRest     = ImGui::Button("Reset");
-				
+
 				if (bChangedX || bChangedY || bChangedZ)
 				{
 					this->SetComponentScale(Scale);

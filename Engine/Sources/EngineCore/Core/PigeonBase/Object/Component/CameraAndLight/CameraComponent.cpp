@@ -2,6 +2,10 @@
 #include <RenderProxy/ViewProxy.h>
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
+#if _EDITOR_ONLY
+#include <Editor/EditorLogManager.h>
+#endif
+
 
 namespace PigeonEngine
 {
@@ -14,7 +18,7 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 
-	void PCameraComponent::TickRender()
+	void PCameraComponent::TickRenderImpl()
 	{
 		if(IsRenderStateDirty())
 		{
@@ -47,8 +51,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY	= InTopLeftY;
 		CameraViewInfo.Viewport.Width		= InWidth;
 		CameraViewInfo.Viewport.Height		= InHeight;
-		CameraViewInfo.Viewport.MinDepth	= RCommonSettings::RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth	= RCommonSettings::RENDER_DEPTH_NEAR;
+		CameraViewInfo.Viewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_FAR;
 		CameraViewInfo.FovAngleY	= InFovAngleY;
 		CameraViewInfo.FarDist		= InFarDist;
 		CameraViewInfo.NearDist		= InNearDist;
@@ -65,8 +69,8 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.TopLeftY	= InTopLeftY;
 		CameraViewInfo.Viewport.Width		= InWidth;
 		CameraViewInfo.Viewport.Height		= InHeight;
-		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_MIN;
-		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_MAX;
+		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_NEAR;
+		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_FAR;
 
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
@@ -83,6 +87,26 @@ namespace PigeonEngine
 
 		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
 		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_MATRIX);
+	}
+	void PCameraComponent::SetExposureValue100(FLOAT InExposureValue100)
+	{
+		CameraViewInfo.ExposureValue100 = InExposureValue100;
+
+		// Exposure is a view parameter, not a matrix input: the projection is unchanged, only
+		// the scalar the display pipeline applies moves.
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+	}
+	void PCameraComponent::SetISO(FLOAT InISO)
+	{
+		CameraViewInfo.ISO = InISO;
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
+	}
+	void PCameraComponent::SetExposureCompensation(FLOAT InStops)
+	{
+		CameraViewInfo.ExposureCompensation = InStops;
+
+		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
 	}
 	Vector3 PCameraComponent::TransformScreenToWorld(const Vector3& InScreenCoordWithZ)const
 	{
@@ -143,6 +167,14 @@ namespace PigeonEngine
 			{
 				if (RSceneInterface* RenderScene = World->GetRenderScene())
 				{
+					// Refresh CameraMatrix from the component's current
+					// world transform before AddCamera builds the initial
+					// ERenderViewMatrices. Without this, the proxy's first
+					// SetupProxy snapshots the ctor-time identity ViewPart
+					// (PCameraComponent ctor ran before the owner actor had
+					// a transform), and the first frame's view CB is identity
+					// until the next UpdateCamera lambda is drained.
+					UpdateCameraMatrix();
 					RenderScene->AddCamera(this);
 				}
 			}

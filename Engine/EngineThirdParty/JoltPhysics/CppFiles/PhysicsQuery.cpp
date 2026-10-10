@@ -16,7 +16,7 @@ namespace PigeonEngine
 	}
 
 	// -----------------------------------------------------------------------
-	// Internal helpers – Raycast
+	// Internal helpers - Raycast
 	// -----------------------------------------------------------------------
 
 	/// Build a Jolt world-space ray in meters from engine-unit (cm) inputs.
@@ -56,7 +56,7 @@ namespace PigeonEngine
 	}
 
 	// -----------------------------------------------------------------------
-	// Internal helpers – Shape Cast
+	// Internal helpers - Shape Cast
 	// -----------------------------------------------------------------------
 
 	/// Build a Jolt RShapeCast from engine-unit inputs.
@@ -100,7 +100,7 @@ namespace PigeonEngine
 	}
 
 	// -----------------------------------------------------------------------
-	// Internal helpers – Overlap / CollideShape
+	// Internal helpers - Overlap / CollideShape
 	// -----------------------------------------------------------------------
 
 	/// Build a Jolt CollideShape center-of-mass transform (in meters) from engine-unit inputs.
@@ -116,7 +116,7 @@ namespace PigeonEngine
 	{
 		FRayCastHit Hit;
 		Hit.QueryType = EQueryType::Overlap;
-		// Contact points relative to base offset Vec3::sZero → world space.
+		// Contact points relative to base offset Vec3::sZero -> world space.
 		Hit.HitPosition      = PhysicsUtility::Convert(InResult.mContactPointOn1) * 100.f;
 		Hit.ContactOnHit     = PhysicsUtility::Convert(InResult.mContactPointOn2) * 100.f;
 		Hit.HitNormal        = PhysicsUtility::Convert(InResult.mPenetrationAxis);

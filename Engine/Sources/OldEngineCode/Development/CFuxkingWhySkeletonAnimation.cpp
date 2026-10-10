@@ -541,7 +541,7 @@ void CFuxkingWhySkeletonAnimation::Draw()
 			DirectX::XMMATRIX meshInvMat = DirectX::XMMATRIX(&(this->m_AssimpScene->mRootNode->mTransformation.Inverse().a1));
 			//DirectX::XMMATRIX meshInvMat = DirectX::XMMatrixInverse(nullptr, DirectX::XMMatrixRotationAxis(DirectX::XMVectorSet(1.f, 0.f, 0.f, 0.f), 90.f * CustomType::CMath::GetDegToRad()));
 			//DirectX::XMMATRIX meshInvMat = DirectX::XMMatrixRotationAxis(DirectX::XMVectorSet(1.f, 0.f, 0.f, 0.f), 90.f * CustomType::CMath::GetDegToRad());
-			
+
 			//aiMatrix4x4 tempBP = tempBone.BindPoseMatrix; aiMatrix4x4 tempB = tempBone.BoneMatrix;
 			//tempBP = tempB * tempBP;
 			//DirectX::XMMATRIX boneMat = DirectX::XMMATRIX(&(tempBP.a1));

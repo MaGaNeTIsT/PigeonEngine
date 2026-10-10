@@ -29,7 +29,20 @@ namespace PigeonEngine
 		RPipelineStateD3D11& operator=(const RPipelineStateD3D11&) = delete;
 
 		// IRRHIPipelineState
-		virtual BOOL8 IsCompute()const override { return bIsCompute; }
+		virtual BOOL8 IsCompute()const noexcept override { return bIsCompute; }
+		virtual IRRHIRootSignature* GetRootSignature()const noexcept override { return RootSignature; }
+		virtual const RRHIPipelineLayoutInfo& GetLayoutInfo()const noexcept override { return LayoutInfo; }
+
+		// Root signature the PSO was created with. D3D11 has no root signature concept, so
+		// the object carries only the layout hash and this pointer is informational: the
+		// binding side reads a "root index" as a constant buffer slot on this back-end.
+		// The device refuses a desc that names none, so a created state always has one.
+		IRRHIRootSignature*			RootSignature	= nullptr;
+		// Always default-constructed here: RRHIPipelineLayoutInfo describes root tables,
+		// and D3D11 binds straight to the API's register slots instead. Every table root
+		// stays RHI_INVALID_ROOT_INDEX and ParameterCount is zero, which the binding side
+		// reads as "this back-end has no root signature" (see the struct's comment).
+		RRHIPipelineLayoutInfo		LayoutInfo;
 
 		// Graphics state (only valid if bIsCompute == FALSE)
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>		VertexShader;

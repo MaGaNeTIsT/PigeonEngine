@@ -29,12 +29,18 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 	static CHAR CopyFileFolder[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
 	static CHAR CubeMapName[PigeonEngine::EPath::MAX_PATH_LENGTH] = "";
 	static BOOL8 CheckCopyFile = FALSE;
+	// Answers for images that declare no colour space of their own (TGA and friends): an image that
+	// does declare one is imported by its own statement regardless of this box. Checked by default
+	// because the files that need it are colour textures far more often than data textures; a
+	// normal map or a mask is the case to untick it for.
+	static BOOL8 CheckFallbackSRGB = TRUE;
 	if (!InitializeEditor)
 	{
 		type_item_current_idx = 0;
 		::memset(CopyFileFolder, 0, EPath::MAX_PATH_LENGTH);
 		::memset(CubeMapName, 0, EPath::MAX_PATH_LENGTH);
 		CheckCopyFile = FALSE;
+		CheckFallbackSRGB = TRUE;
 		CubeMap.Empty();
 		//TODO : does this necessary?
 		//const CHAR* cube_items[] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
@@ -111,6 +117,10 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 			}
 		}
 		ImGui::Checkbox("CopyFile", &CheckCopyFile);
+		// Untick this for data images (normal maps, masks, height fields) whose files carry no
+		// colour space: with no declaration of their own they would otherwise be read as sRGB
+		// colour and decoded.
+		ImGui::Checkbox("Fallback sRGB (when the file declares no colour space)", &CheckFallbackSRGB);
 		if (CheckCopyFile)
 		{
 			ImGui::PushItemWidth(250);
@@ -131,7 +141,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 					const ETexture2DAsset* Asset = NULL;
 					EString FileName = EPath::GetFileNameWithoutExtension(m_Paths[i]);
 					EString FilePath = EPath::GetFileFolderPath(m_Paths[i]) + "/";
-					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(m_Paths[i]));
+					TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, FileName, Asset, &FilePath, &FileName, &EPath::GetExtension(m_Paths[i]), CheckFallbackSRGB);
 
 					//CopyFile
 					if (Asset && CheckCopyFile)
@@ -190,7 +200,7 @@ void PigeonEngine::ETextureImporter::UpdateImportEditor()
 					FileNames.Add(EPath::GetFileNameWithoutExtension(CubeMapPath));
 					Extensions.Add(EPath::GetExtension(CubeMapPath));
 				}
-				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, CubeMapName, Asset, &Paths, &FileNames, &Extensions);
+				TryLoadTextureCube(EBaseSettings::ENGINE_TEXTURE_PATH, CubeMapName, Asset, &Paths, &FileNames, &Extensions, CheckFallbackSRGB);
 
 				//CopyFile
 				if (Asset && CheckCopyFile)

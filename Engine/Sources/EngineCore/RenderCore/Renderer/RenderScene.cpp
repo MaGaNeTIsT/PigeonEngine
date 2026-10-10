@@ -2,11 +2,12 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
-#include <MaterialAsset/MaterialAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
 #include <RenderProxy/ViewProxy.h>
 #include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/LightSceneProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
+#include <RenderProxy/PrimitiveSceneProxyFactory.h>
 #include <RenderProxy/MeshSceneProxy.h>
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
@@ -19,6 +20,10 @@
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/BezierGrassComponent.h>
 #include <PigeonBase/Object/Component/Primitive/FluidWaterComponent.h>
+#if _EDITOR_ONLY
+#include <Editor/EditorLogManager.h>
+#endif
+
 
 namespace PigeonEngine
 {
@@ -62,6 +67,11 @@ namespace PigeonEngine
 			RenderRemoveCommands[SlotIndex].EmptyQueue();
 		}
 
+		// The drained commands deleted every proxy whose remove was still queued. What is left
+		// here belongs to a primitive that was never removed, so the mapping is dropped with it.
+		PrimitiveProxyMapping.Empty();
+		Primitives.Empty();
+
 		UnbindErrorCheck();
 	}
 	void RScene::UnbindErrorCheck()
@@ -72,10 +82,8 @@ namespace PigeonEngine
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all sky lights failed"), (SkyLightProxies.SceneProxies.Num() == 0));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights' mapping failed"), (DirectionalLightSceneProxies.SceneProxyMapping.Num() == 0));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all directional lights failed"), (DirectionalLightSceneProxies.SceneProxies.Num() == 0));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes' mapping failed"), (StaticMeshSceneProxies.SceneProxyMapping.Num() == 0));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all static meshes failed"), (StaticMeshSceneProxies.SceneProxies.Num() == 0));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes' mapping failed"), (SkeletalMeshSceneProxies.SceneProxyMapping.Num() == 0));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all skeletal meshes failed"), (SkeletalMeshSceneProxies.SceneProxies.Num() == 0));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all primitives' mapping failed"), (PrimitiveProxyMapping.Num() == 0));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all primitives failed"), (Primitives.Num() == 0));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all bezier grasses' mapping failed"), (BezierGrassSceneProxies.SceneProxyMapping.Num() == 0));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene clear all bezier grasses failed"), (BezierGrassSceneProxies.SceneProxies.Num() == 0));
 	}
@@ -262,7 +270,8 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldScale());
 		ERenderLightParams* TempParams = new ERenderLightParams(
 			InComponent->GetLightColor(),
-			InComponent->GetLightIntensity(),
+			InComponent->GetIlluminanceLux(),
+			InComponent->GetSourceAngleDegrees(),
 			InComponent->IsLightCastShadow(),
 			InComponent->GetShadowMapSize());
 		ECascadeShadowData* TempUsedCascadeShadowData = nullptr;
@@ -313,7 +322,8 @@ namespace PigeonEngine
 		{
 			TempParams = new ERenderLightParams(
 				InComponent->GetLightColor(),
-				InComponent->GetLightIntensity(),
+				InComponent->GetIlluminanceLux(),
+				InComponent->GetSourceAngleDegrees(),
 				InComponent->IsLightCastShadow(),
 				InComponent->GetShadowMapSize());
 		}
@@ -356,256 +366,187 @@ namespace PigeonEngine
 	}
 	void RScene::AddStaticMesh(PStaticMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RStaticMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-
-		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
-		const BOOL32 bCastShadow = InComponent->IsCastShadow();
-		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
-		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
-			InComponent->GetComponentWorldLocation(),
-			InComponent->GetComponentWorldRotation(),
-			InComponent->GetComponentWorldScale());
-		const EStaticMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
-		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
-
-		EnqueueAddCommand(
-			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMeshAsset, TempMatAsset]()->void
-			{
-				SceneProxy->SetupProxy(bMovable, bCastShadow, bReceiveShadow, *TempMatrices, TempMeshAsset, TempMatAsset);
-				delete TempMatrices;
-				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, TRUE);
-			});
+		// Forwarded onto the generic path: the component reports what it is made of, the proxy
+		// class is looked up by the name it states, and the proxy itself is built on the render
+		// thread. There is nothing static-mesh specific left to do here.
+		AddPrimitive(InComponent);
 	}
 	void RScene::RemoveStaticMesh(PStaticMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
-		InComponent->SceneProxy = nullptr;
-		EnqueueRemoveCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveStaticMesh_RenderThread(SceneProxy, FALSE);
-				delete SceneProxy;
-			});
+		// Forwarded onto the generic path: the proxy is found by the component's identity, since
+		// the component itself holds no proxy pointer any more.
+		RemovePrimitive(InComponent);
 	}
 	void RScene::UpdateStaticMesh(PStaticMeshComponent* InComponent)
 	{
+		// Forwarded onto the generic path: the component states which of its channels moved
+		// while it builds the snapshot, and the render side rebuilds only what changed.
+		UpdatePrimitive(InComponent);
+	}
+	// ---------------------------------------------------------------------------
+	// The generic primitive path
+	// ---------------------------------------------------------------------------
+
+	void RScene::AddPrimitive(PPrimitiveComponent* InComponent)
+	{
+		if (!InComponent)
+		{
+			return;
+		}
 		RScene* Scene = this;
-		RStaticMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
-
-		UINT8 UpdateState = InComponent->GetUpdateRenderState();
-
-		const BOOL32 bMovable = InComponent->GetMobility() != EMobilityType::EMT_STATIC;
-		const BOOL32 bCastShadow = InComponent->IsCastShadow();
-		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
-		ERenderPrimitiveMatrices* TempMatrices = nullptr;
-		if ((UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATRIX) != 0u)
+		// What crosses to the render thread is a value snapshot. The proxy is built from it on
+		// the render thread, so the game thread never hands one of its own objects over.
+		FPrimitiveRenderSnapshot* Snapshot = new FPrimitiveRenderSnapshot();
+		if (!(InComponent->BuildRenderSnapshot(*Snapshot)))
 		{
-			TempMatrices = new ERenderPrimitiveMatrices(
-				InComponent->GetComponentWorldLocation(),
-				InComponent->GetComponentWorldRotation(),
-				InComponent->GetComponentWorldScale());
+			delete Snapshot;
+			return;
 		}
-		const EStaticMeshAsset* TempMeshAsset = nullptr;
-		if ((UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_ASSET) != 0u)
-		{
-			TempMeshAsset = InComponent->GetMeshAsset();
-		}
-		const BOOL32 bMatAssetUpdated = (UpdateState & PStaticMeshComponent::PStaticMeshUpdateState::STATIC_MESH_UPDATE_STATE_MATERIAL) != 0u;
-		const EMaterialAsset* TempMatAsset = bMatAssetUpdated ? InComponent->GetMaterialAsset(0u) : nullptr;
+		// The create snapshot carries every channel, so nothing is left pending afterwards.
+		InComponent->ClearRenderChannels(PRIMITIVE_UPDATE_TRANSFORM | PRIMITIVE_UPDATE_VALUES | PRIMITIVE_UPDATE_ASSETS);
 
-		TArray<TArray<BYTE>>* TempCBDatas = nullptr;
-		TArray<RMaterialTextureSRV>* TempTexs = nullptr;
-		if (InComponent->IsMaterialDirty())
+		EnqueueAddCommand(
+			[Scene, Snapshot]()->void
+			{
+				RPrimitiveSceneProxy* SceneProxy = RPrimitiveSceneProxyFactory::Create(Snapshot->ProxyTypeName);
+				if (SceneProxy)
+				{
+					SceneProxy->SetupProxy(*Snapshot);
+					Scene->AddPrimitive_RenderThread(SceneProxy);
+				}
+				delete Snapshot;
+			});
+	}
+	void RScene::UpdatePrimitive(PPrimitiveComponent* InComponent)
+	{
+		if (!InComponent)
 		{
-			TempCBDatas = new TArray<TArray<BYTE>>();
-			InComponent->GetMaterialConstantBufferDataBySlot(0u, *TempCBDatas);
-
-			TempTexs = new TArray<RMaterialTextureSRV>();
-			InComponent->GetMaterialTextureBySlot(0u, *TempTexs);
+			return;
 		}
+		const ObjectIdentityType Identity = InComponent->GetUniqueID();
+		// Only the channels that moved are carried, and only those are cleared once the command
+		// is enqueued: a change made while the snapshot was being built keeps its channel.
+		FPrimitiveRenderSnapshot* Snapshot = new FPrimitiveRenderSnapshot();
+		if (!(InComponent->BuildRenderSnapshot(*Snapshot)))
+		{
+			delete Snapshot;
+			return;
+		}
+		InComponent->ClearRenderChannels(Snapshot->DirtyChannels);
 
 		EnqueueUpdateCommand(
-			[Scene
-			, SceneProxy
-			, bMovable
-			, bCastShadow
-			, bReceiveShadow
-			, TempMatrices
-			, TempMeshAsset
-			, bMatAssetUpdated
-			, TempMatAsset
-			, TempCBDatas
-			, TempTexs
-			]()->void
+			[this, Identity, Snapshot]()->void
 			{
-				BOOL32 NeedUpdateRenderResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(bMovable, bCastShadow, bReceiveShadow);
-				if (TempMatrices)
+				RPrimitiveSceneProxy* SceneProxy = FindPrimitiveProxy(Identity);
+				if (SceneProxy)
 				{
-					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
-					delete TempMatrices;
-					NeedUpdateRenderResource = TRUE;
+					SceneProxy->SetPrimitiveSettings(Snapshot->bMovable, Snapshot->bCastShadow, Snapshot->bReceiveShadow);
+					if ((Snapshot->DirtyChannels & PRIMITIVE_UPDATE_TRANSFORM) != 0u)
+					{
+						SceneProxy->UpdatePrimitiveMatrices(ERenderPrimitiveMatrices(
+							Snapshot->WorldLocation, Snapshot->WorldRotation, Snapshot->WorldScaling));
+					}
+					if ((Snapshot->DirtyChannels & PRIMITIVE_UPDATE_ASSETS) != 0u)
+					{
+						SceneProxy->ApplyAssets(Snapshot->Assets);
+					}
+					if ((Snapshot->DirtyChannels & (PRIMITIVE_UPDATE_TRANSFORM | PRIMITIVE_UPDATE_VALUES)) != 0u)
+					{
+						SceneProxy->ApplyValues(Snapshot->Values);
+						SceneProxy->ApplyRuntimePayload(*Snapshot);
+					}
 				}
-				if (TempMeshAsset)
+				delete Snapshot;
+			});
+	}
+	void RScene::RemovePrimitive(PPrimitiveComponent* InComponent)
+	{
+		if (!InComponent)
+		{
+			return;
+		}
+		RScene* Scene = this;
+		const ObjectIdentityType Identity = InComponent->GetUniqueID();
+		EnqueueRemoveCommand(
+			[Scene, Identity]()->void
+			{
+				RPrimitiveSceneProxy* SceneProxy = Scene->FindPrimitiveProxy(Identity);
+				if (SceneProxy)
 				{
-					SceneProxy->UpdateMeshAsset(TempMeshAsset);
-				}
-				if (bMatAssetUpdated)
-				{
-					SceneProxy->UpdateMaterialAsset(TempMatAsset);
-				}
-				if (TempCBDatas)
-				{
-					SceneProxy->UpdateMaterialCBData(*TempCBDatas);
-					delete TempCBDatas;
-				}
-				if(TempTexs)
-				{
-					SceneProxy->UpdateMaterialTextures(*TempTexs);
-					delete TempTexs;
-				}
-				if (NeedUpdateRenderResource)
-				{
-					SceneProxy->UpdateRenderResource();
+					Scene->RemovePrimitive_RenderThread(SceneProxy);
+					delete SceneProxy;
 				}
 			});
+	}
+	RPrimitiveSceneProxy* RScene::FindPrimitiveProxy(const ObjectIdentityType& InIdentity)const
+	{
+		RPrimitiveSceneProxy* const* Found = PrimitiveProxyMapping.FindValueAsPtr(InIdentity);
+		return (Found ? (*Found) : nullptr);
+	}
+	const TArray<RPrimitiveSceneProxy*>& RScene::GetPrimitives()const
+	{
+		return Primitives;
+	}
+	void RScene::AddPrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy)
+	{
+		if (!InSceneProxy)
+		{
+			return;
+		}
+		const ObjectIdentityType& Identity = InSceneProxy->GetPrimitiveIdentity();
+		if (PrimitiveProxyMapping.FindValueAsPtr(Identity) != nullptr)
+		{
+			// Two proxies under one identity would make every later lookup ambiguous, so the
+			// second is refused rather than silently replacing the first.
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("A primitive scene proxy is already registered under that identity."));
+			return;
+		}
+		PrimitiveProxyMapping.Add(Identity, InSceneProxy);
+		Primitives.Add(InSceneProxy);
+	}
+	void RScene::RemovePrimitive_RenderThread(RPrimitiveSceneProxy* InSceneProxy)
+	{
+		if (!InSceneProxy)
+		{
+			return;
+		}
+		PrimitiveProxyMapping.Remove(InSceneProxy->GetPrimitiveIdentity());
+		for (UINT32 Index = 0u, Num = Primitives.Num<UINT32>(); Index < Num; Index++)
+		{
+			if (Primitives[Index] == InSceneProxy)
+			{
+				// Swap remove: the list is walked whole every frame and nothing outside it holds
+				// an index into it.
+				Primitives[Index] = Primitives[Num - 1u];
+				Primitives.Pop();
+				break;
+			}
+		}
 	}
 	void RScene::AddSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
-
 		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
-		const BOOL32 bCastShadow = InComponent->IsCastShadow();
-		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
-		ERenderPrimitiveMatrices* TempMatrices = new ERenderPrimitiveMatrices(
-			InComponent->GetComponentWorldLocation(),
-			InComponent->GetComponentWorldRotation(),
-			InComponent->GetComponentWorldScale());
-		const ESkinnedMeshAsset* TempMeshAsset = InComponent->GetMeshAsset();
-		const ESkeletonAsset* TempSkeletonAsset = InComponent->GetSkeletonAsset();
-		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
-
-		EnqueueAddCommand(
-			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
-			TempMatrices, TempMeshAsset, TempSkeletonAsset,
-			TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
-			]()->void
-			{
-				TArray<Matrix4x4> TempBoneToRootMatrices;
-				if (const UINT32 MatrixNum = TempBoneToRootTransforms.Num<UINT32>(); MatrixNum > 0u)
-				{
-					TempBoneToRootMatrices.SetNum(MatrixNum);
-					for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
-					{
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
-						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex];
-#else
-						TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex].ToMatrix4x4();
-#endif
-					}
-				}
-				SceneProxy->SetupProxy(TRUE, bCastShadow, bReceiveShadow, *TempMatrices, TempMeshAsset, TempSkeletonAsset, TempBoneToRootMatrices);
-				delete TempMatrices;
-				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, TRUE);
-			});
+		// Forwarded onto the generic path: the snapshot the component builds carries the mesh,
+		// the skeleton and this frame's bone matrices, and the proxy is built on the render
+		// thread from it.
+		AddPrimitive(InComponent);
 	}
 	void RScene::RemoveSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
-		InComponent->SceneProxy = nullptr;
-		EnqueueRemoveCommand(
-			[Scene, SceneProxy]()->void
-			{
-				Scene->AddOrRemoveSkeletalMesh_RenderThread(SceneProxy, FALSE);
-				delete SceneProxy;
-			});
+		RemovePrimitive(InComponent);
 	}
 	void RScene::UpdateSkeletalMesh(PSkeletalMeshComponent* InComponent)
 	{
-		RScene* Scene = this;
-		RSkeletalMeshSceneProxy* SceneProxy = InComponent->SceneProxy;
-
-		UINT8 UpdateState = InComponent->GetUpdateRenderState();
-
 		Check((InComponent->GetMobility() == EMobilityType::EMT_DYNAMIC));
-		const BOOL32 bCastShadow = InComponent->IsCastShadow();
-		const BOOL32 bReceiveShadow = InComponent->IsReceiveShadow();
-		ERenderPrimitiveMatrices* TempMatrices = nullptr;
-		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MATRIX) != 0u)
-		{
-			TempMatrices = new ERenderPrimitiveMatrices(
-				InComponent->GetComponentWorldLocation(),
-				InComponent->GetComponentWorldRotation(),
-				InComponent->GetComponentWorldScale());
-		}
-		const ESkinnedMeshAsset* TempMeshAsset = nullptr;
-		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_MESHASSET) != 0u)
-		{
-			TempMeshAsset = InComponent->GetMeshAsset();
-		}
-		const ESkeletonAsset* TempSkeletonAsset = nullptr;
-		if ((UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_SKELETONASSET) != 0u)
-		{
-			TempSkeletonAsset = InComponent->GetSkeletonAsset();
-		}
-		BOOL32 TempUpdateBoneData = (UpdateState & PSkeletalMeshComponent::PSkeletalMeshUpdateState::SKELETAL_MESH_UPDATE_STATE_BONE_DATA) != 0u;
-		const ESkeletonBoneMemoryPool& TempBoneMemoryPool = InComponent->GetBoneMemoryPool();
-
-		EnqueueUpdateCommand(
-			[Scene, SceneProxy, bCastShadow, bReceiveShadow,
-			TempMatrices, TempMeshAsset, TempSkeletonAsset,
-			TempUpdateBoneData, TempBoneToRootTransforms = TempBoneMemoryPool.GetBoneToRootTransforms()
-			]()->void
-			{
-				BOOL32 NeedUpdateRenderResource = FALSE;
-				SceneProxy->SetPrimitiveSettings(TRUE, bCastShadow, bReceiveShadow);
-				if (TempMatrices)
-				{
-					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
-					delete TempMatrices;
-					NeedUpdateRenderResource = TRUE;
-				}
-				if (TempMeshAsset)
-				{
-					SceneProxy->UpdateMeshAsset(TempMeshAsset);
-					NeedUpdateRenderResource = TRUE;
-				}
-				if (TempSkeletonAsset)
-				{
-					SceneProxy->UpdateSkeletonAsset(TempSkeletonAsset);
-				}
-				if (TempUpdateBoneData)
-				{
-					NeedUpdateRenderResource = TRUE;
-				}
-				if (NeedUpdateRenderResource)
-				{
-					SceneProxy->UpdateRenderResource();
-					{
-						TArray<Matrix4x4> TempBoneToRootMatrices;
-						if (const UINT32 MatrixNum = TempBoneToRootTransforms.Num<UINT32>(); MatrixNum > 0u)
-						{
-							TempBoneToRootMatrices.SetNum(MatrixNum);
-							for (UINT32 MatrixIndex = 0u; MatrixIndex < MatrixNum; MatrixIndex++)
-							{
-#if (_USE_MATRIX_FOR_BONE_TO_ROOT)
-								TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex];
-#else
-								TempBoneToRootMatrices[MatrixIndex] = TempBoneToRootTransforms[MatrixIndex].ToMatrix4x4();
-#endif
-							}
-						}
-						SceneProxy->UpdateSkeletonRenderResource(TempBoneToRootMatrices);
-					}
-				}
-			});
+		// The bone matrices travel as snapshot payload, which is what makes a skinned primitive
+		// the one kind whose update has to reach past the assets and the values.
+		UpdatePrimitive(InComponent);
 	}
 	void RScene::AddBezierGrass(PBezierGrassComponent* InComponent)
 	{
+		// Parked with the proxy: the grass render path is being rebuilt from its shaders.
+		(void)InComponent;
+#if 0
 		RScene* Scene = this;
 		RBezierGrassSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
 
@@ -630,21 +571,29 @@ namespace PigeonEngine
 				}
 				Scene->AddOrRemoveBezierGrass_RenderThread(SceneProxy, TRUE);
 			});
+#endif
 	}
 	void RScene::RemoveBezierGrass(PBezierGrassComponent* InComponent)
 	{
+		// Parked with the proxy: the grass render path is being rebuilt from its shaders.
+		(void)InComponent;
+#if 0
 		RScene* Scene = this;
 		RBezierGrassSceneProxy* SceneProxy = InComponent->SceneProxy;
 		InComponent->SceneProxy = nullptr;
 		EnqueueRemoveCommand(
 			[Scene, SceneProxy]()->void
 			{
-				Scene->AddOrRemoveBezierGrass_RenderThread(SceneProxy, FALSE);
-				delete SceneProxy;
-			});
+					Scene->AddOrRemoveBezierGrass_RenderThread(SceneProxy, FALSE);
+					delete SceneProxy;
+				});
+#endif
 	}
 	void RScene::UpdateBezierGrass(PBezierGrassComponent* InComponent)
 	{
+		// Parked with the proxy: the grass render path is being rebuilt from its shaders.
+		(void)InComponent;
+#if 0
 		RScene* Scene = this;
 		RBezierGrassSceneProxy* SceneProxy = InComponent->SceneProxy;
 
@@ -721,6 +670,7 @@ namespace PigeonEngine
 					SceneProxy->UpdateRenderResource();
 				}
 			});
+#endif
 	}
 	RCommand& RScene::GetAddCommandsForRender()
 	{
@@ -784,21 +734,13 @@ namespace PigeonEngine
 	{
 		return DirectionalLightSceneProxies;
 	}
-	RSceneProxyMapping<RStaticMeshSceneProxy>& RScene::GetStaticMeshSceneProxies()
+	RSceneProxyMapping<RLocalLightSceneProxy>& RScene::GetLocalLightSceneProxies()
 	{
-		return StaticMeshSceneProxies;
+		return LocalLightSceneProxies;
 	}
-	const RSceneProxyMapping<RStaticMeshSceneProxy>& RScene::GetStaticMeshSceneProxies()const
+	const RSceneProxyMapping<RLocalLightSceneProxy>& RScene::GetLocalLightSceneProxies() const
 	{
-		return StaticMeshSceneProxies;
-	}
-	RSceneProxyMapping<RSkeletalMeshSceneProxy>& RScene::GetSkeletalMeshSceneProxies()
-	{
-		return SkeletalMeshSceneProxies;
-	}
-	const RSceneProxyMapping<RSkeletalMeshSceneProxy>& RScene::GetSkeletalMeshSceneProxies()const
-	{
-		return SkeletalMeshSceneProxies;
+		return LocalLightSceneProxies;
 	}
 	RSceneProxyMapping<RBezierGrassSceneProxy>& RScene::GetBezierGrassSceneProxies()
 	{
@@ -849,30 +791,91 @@ namespace PigeonEngine
 			DirectionalLightSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
-	void RScene::AddOrRemoveStaticMesh_RenderThread(RStaticMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	void RScene::AddLocalLight(PLocalLightComponent* InComponent)
 	{
-		if (InIsAdd)
-		{
-			StaticMeshSceneProxies.AddSceneProxy(InSceneProxy);
-		}
-		else
-		{
-			StaticMeshSceneProxies.RemoveSceneProxy(InSceneProxy);
-		}
+		RScene* Scene = this;
+		RLocalLightSceneProxy* SceneProxy = InComponent->CreateSceneProxy();
+
+		// The marshal is a value copy of everything the render side needs, taken here on the
+		// game thread: the proxy is built on the render thread and must not read the component,
+		// which the game thread is free to change in the meantime.
+		ERenderTransformInfo* TempTransform = new ERenderTransformInfo(
+			InComponent->GetComponentWorldLocation(),
+			InComponent->GetComponentWorldRotation(),
+			InComponent->GetComponentWorldScale());
+		ELightData* TempData = new ELightData(InComponent->GetLightData());
+
+		EnqueueAddCommand(
+			[Scene, SceneProxy, TempTransform, TempData]()->void
+			{
+				SceneProxy->SetupProxy(*TempTransform, *TempData);
+				delete TempTransform;
+				delete TempData;
+				Scene->AddOrRemoveLocalLight_RenderThread(SceneProxy, TRUE);
+			});
 	}
-	void RScene::AddOrRemoveSkeletalMesh_RenderThread(RSkeletalMeshSceneProxy* InSceneProxy, BOOL32 InIsAdd)
+	void RScene::RemoveLocalLight(PLocalLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RLocalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
+		InComponent->SceneProxy = nullptr;
+		EnqueueRemoveCommand(
+			[Scene, SceneProxy]()->void
+			{
+				Scene->AddOrRemoveLocalLight_RenderThread(SceneProxy, FALSE);
+				delete SceneProxy;
+			});
+	}
+	void RScene::UpdateLocalLight(PLocalLightComponent* InComponent)
+	{
+		RScene* Scene = this;
+		RLocalLightSceneProxy* SceneProxy = InComponent->SceneProxy;
+
+		UINT8 UpdateState = InComponent->GetUpdateRenderState();
+
+		ERenderTransformInfo* TempTransform = nullptr;
+		if ((UpdateState & PLightComponent::PLightUpdateState::LIGHT_UPDATE_STATE_MATRIX) != 0u)
+		{
+			TempTransform = new ERenderTransformInfo(
+				InComponent->GetComponentWorldLocation(),
+				InComponent->GetComponentWorldRotation(),
+				InComponent->GetComponentWorldScale());
+		}
+		ELightData* TempData = nullptr;
+		if ((UpdateState & PLightComponent::PLightUpdateState::LIGHT_UPDATE_STATE_DATA) != 0u)
+		{
+			TempData = new ELightData(InComponent->GetLightData());
+		}
+
+		EnqueueUpdateCommand(
+			[Scene, SceneProxy, TempTransform, TempData]()->void
+			{
+				if (TempTransform)
+				{
+					SceneProxy->UpdateTransform(*TempTransform);
+					delete TempTransform;
+				}
+				if (TempData)
+				{
+					SceneProxy->UpdateLightParams(*TempData);
+					delete TempData;
+				}
+			});
+	}
+	void RScene::AddOrRemoveLocalLight_RenderThread(RLocalLightSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
 		if (InIsAdd)
 		{
-			SkeletalMeshSceneProxies.AddSceneProxy(InSceneProxy);
+			LocalLightSceneProxies.AddSceneProxy(InSceneProxy);
 		}
 		else
 		{
-			SkeletalMeshSceneProxies.RemoveSceneProxy(InSceneProxy);
+			LocalLightSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
 	}
 	void RScene::AddOrRemoveBezierGrass_RenderThread(RBezierGrassSceneProxy* InSceneProxy, BOOL32 InIsAdd)
 	{
+#if 0
 		if (InIsAdd)
 		{
 			BezierGrassSceneProxies.AddSceneProxy(InSceneProxy);
@@ -881,6 +884,9 @@ namespace PigeonEngine
 		{
 			BezierGrassSceneProxies.RemoveSceneProxy(InSceneProxy);
 		}
+#endif
+		(void)InSceneProxy;
+		(void)InIsAdd;
 	}
 
 	void RScene::AddFluidWater(PFluidWaterComponent* InComponent)
@@ -895,7 +901,7 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
 			InComponent->GetComponentWorldScale());
-		const EMaterialAsset* TempMatAsset = InComponent->GetMaterialAsset(0u);
+		const EShaderInstance* TempMatAsset = InComponent->GetMaterialInstance();
 
 		EnqueueAddCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempMatAsset]()->void

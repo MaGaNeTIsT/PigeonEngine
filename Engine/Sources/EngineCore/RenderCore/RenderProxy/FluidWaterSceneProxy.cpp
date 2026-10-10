@@ -1,40 +1,45 @@
 #include "FluidWaterSceneProxy.h"
 #include <ShaderAsset/ShaderAsset.h>
-#include <MaterialAsset/MaterialAsset.h>
+#include <ShaderAsset/ShaderInstance.h>
+#include <Shader/ShaderAssetBinding.h>
 #include <RenderDevice/DeviceD3D11.h>
 
 namespace PigeonEngine
 {
 
-    static void RegisterClassTypes()
-    {
-        RegisterClassType<RFluidWaterSceneProxy, RPrimitiveSceneProxy>();
-    }
-
-    PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
-
-	void RFluidWaterMaterialParameter::SetupParameters()
+	static void RegisterClassTypes()
 	{
-		ClearParameter();
-		BeginSetupParameter();
-		AddPrimitiveMaterialParameter();
-		EndSetupParameter();
-		CreateBuffer();
+		RegisterClassType<RFluidWaterSceneProxy, RPrimitiveSceneProxy>();
+	}
+
+	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
+
+	void RFluidWaterCBufferParameter::AddPrimitiveMaterialParameter() noexcept
+	{
+		const EVariableFormat MatrixFormat = MakeShaderVariableFormat(
+			EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_MATRIX, EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_4x4);
+		AddStructVariable(PE_TEXT("_WorldMatrix"), MatrixFormat, 1u);
+		AddStructVariable(PE_TEXT("_WorldInvMatrix"), MatrixFormat, 1u);
+		AddStructVariable(PE_TEXT("_WorldInvTransposeMatrix"), MatrixFormat, 1u);
+	}
+	void RFluidWaterCBufferParameter::DoSetupVariable() noexcept
+	{
+	AddPrimitiveMaterialParameter();
 	}
 
 	RFluidWaterSceneProxy::RFluidWaterSceneProxy(PFluidWaterComponent* InComponent)
-		: VertexShader(nullptr), PixelShader(nullptr), MaterialAsset(nullptr), Component(InComponent)
+	: MaterialAsset(nullptr), Component(InComponent)
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create fluid water scene proxy failed"), (!!Component));
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create fluid water scene proxy failed"), (!!Component));
 	}
 
 	RFluidWaterSceneProxy::RFluidWaterSceneProxy()
-		: VertexShader(nullptr), PixelShader(nullptr), MaterialAsset(nullptr), Component(nullptr)
+	: MaterialAsset(nullptr), Component(nullptr)
 	{
 	}
 
 	RFluidWaterSceneProxy::RFluidWaterSceneProxy(const RFluidWaterSceneProxy& Other)
-		: RPrimitiveSceneProxy(Other), VertexShader(Other.VertexShader), PixelShader(Other.PixelShader), MaterialAsset(Other.MaterialAsset), Component(Other.Component)
+		: RPrimitiveSceneProxy(Other), MaterialAsset(Other.MaterialAsset), Component(Other.Component)
 	{
 	}
 
@@ -42,16 +47,14 @@ namespace PigeonEngine
 	{
 	}
 
-	void RFluidWaterSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EMaterialAsset* InMaterialAsset)
+	void RFluidWaterSceneProxy::SetupProxy(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow, const ERenderPrimitiveMatrices& InMatrices, const EShaderInstance* InMaterialAsset)
 	{
-		MaterialAsset = InMaterialAsset;
-		SetupShaders();
-		SetupMaterialResources();
+		UpdateMaterialAsset(InMaterialAsset);
 
 		SetPrimitiveSettings(InIsMovable, InIsCastShadow, InIsReceiveShadow);
 		UpdatePrimitiveMatrices(InMatrices);
 
-		MaterialParameter.SetupParameters();
+		CBufferParameter.SetupParameters();
 
 	}
 
@@ -60,18 +63,20 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void RFluidWaterSceneProxy::UpdateMaterialAsset(const EMaterialAsset* InMaterialAsset)
+	void RFluidWaterSceneProxy::UpdateMaterialAsset(const EShaderInstance* InMaterialAsset)
 	{
 		MaterialAsset = InMaterialAsset;
-		VertexShader = nullptr;
-		PixelShader = nullptr;
+		// The program is not cached here any more: it is read through the instance, so a shader
+		// reload re-points the instance and this proxy follows it without a refresh entry point.
 		SetupShaders();
 		SetupMaterialResources();
 	}
 
-	void RFluidWaterSceneProxy::UpdateMaterialCBData(const TArray<TArray<BYTE>>& InCBDatas)
+	const EShaderProgram* RFluidWaterSceneProxy::GetMaterialProgram()const
 	{
-
+		// const_cast for the same reason EShaderInstance::GetProgram() const does it: the resolution
+		// is a cache inside the instance, not observable state of this proxy.
+		return (MaterialAsset ? const_cast<EShaderInstance*>(MaterialAsset)->GetProgram() : nullptr);
 	}
 
 	void RFluidWaterSceneProxy::BindRenderResource()const

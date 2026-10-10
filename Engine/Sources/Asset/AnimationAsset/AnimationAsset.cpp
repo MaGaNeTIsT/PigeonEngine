@@ -1,4 +1,5 @@
 #include "AnimationAsset.h"
+#include <Asset/AssetLoadManager.h>
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
@@ -185,6 +186,14 @@ namespace PigeonEngine
 	}
 	void EAnimationManager::ShutDown()
 	{
+		ReleaseAllAssets();
+	}
+	void EAnimationManager::Uninit()
+	{
+		ReleaseAllAssets();
+	}
+	void EAnimationManager::ReleaseAllAssets()
+	{
 		ClearSkeletonAnimations();
 	}
 #if _EDITOR_ONLY
@@ -290,6 +299,26 @@ namespace PigeonEngine
 		}
 		OutSkeletonAnimationAsset = ResultAsset;
 		return TRUE;
+	}
+	BOOL32 EAnimationManager::RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EAssetLoadCompleteType InOnLoadComplete)
+	{
+		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
+		if (ESkeletonAnimationAsset* LoadedAsset = SkeletonAnimationAssetManager.Find(FullPathName))
+		{
+			OutSkeletonAnimationAsset = LoadedAsset;
+			return TRUE;
+		}
+		OutSkeletonAnimationAsset = nullptr;
+		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
+			MakeAssetLoadRequestKey(PE_TEXT("SkeletonAnimation"), FullPathName),
+			[InLoadPath, InLoadName]() -> BOOL32
+			{
+				const ESkeletonAnimationAsset* LoadedAsset = nullptr;
+				return EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, LoadedAsset);
+			},
+			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
+		return FALSE;
 	}
 	void EAnimationManager::ClearSkeletonAnimations()
 	{

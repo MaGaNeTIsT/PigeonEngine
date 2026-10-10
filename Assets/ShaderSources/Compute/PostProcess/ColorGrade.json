@@ -1,0 +1,26 @@
+{
+	"Name": "ColorGrade",
+	"Template": "Compute/PostProcess/ColorGrade.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "ColorGradeParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "Brightness", "Format": "float", "Default": [1.0], "Exposure": true },
+				{ "Name": "Contrast", "Format": "float", "Default": [1.0], "Exposure": true },
+				{ "Name": "Saturation", "Format": "float", "Default": [1.0], "Exposure": true },
+				{ "Name": "Gamma", "Format": "float", "Default": [1.0], "Exposure": true },
+				{ "Name": "ColorTint", "Format": "color4", "Default": [1.0, 1.0, 1.0, 1.0], "Exposure": true }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "InputTexture", "Type": "2D", "Format": "float4", "SamplerName": "SamplerMaterial2D", "Slot": 0 }
+	],
+	"RWTextures": [
+		{ "Name": "OutputTexture", "Type": "2D", "Format": "float4", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/PostProcess/ColorGrade.hlsl\"" }
+	]
+}

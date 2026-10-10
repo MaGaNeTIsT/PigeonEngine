@@ -1,9 +1,0 @@
-{
-    "name": "CS_BezierGrassConstruct",
-    "stage": "CS",
-    "material": "Material.json",
-    "template_cs": "Assets/MaterialSources/Common/Templates/ComputePass_CS.tmpl.hlsl",
-    "variants": [
-        { "name": "default" }
-    ]
-}

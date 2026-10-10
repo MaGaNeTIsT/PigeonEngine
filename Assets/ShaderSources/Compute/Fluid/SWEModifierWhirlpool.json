@@ -1,0 +1,52 @@
+{
+	"Name": "SWEModifierWhirlpool",
+	"Template": "Compute/Fluid/SWEModifierWhirlpool.hlsl",
+	"Defines": [
+		{ "Name": "SWE_ENABLE_EARLY_EXIT", "Value": 0 }
+	],
+	"ConstantBuffers": [
+		{
+			"Name": "SWEParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "InvResX", "Format": "float", "Default": [0.0] },
+				{ "Name": "InvResY", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResX", "Format": "float", "Default": [0.0] },
+				{ "Name": "ResY", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaLocX", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaLocY", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaSizeX", "Format": "float", "Default": [0.0] },
+				{ "Name": "AreaSizeY", "Format": "float", "Default": [0.0] },
+				{ "Name": "SimulationDeltaTime", "Format": "float", "Default": [0.0] },
+				{ "Name": "CaptureHeight", "Format": "float", "Default": [0.0] },
+				{ "Name": "FoamFadeSpeed", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamShallowDepth", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamShallowGenerate", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FoamWaveGenerate", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FluidTransportMax", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "AdvectFoam", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "EvaporationHeight", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "FluxEnergy", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "PixelAnchor", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "PixelSize", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "ModLocation", "Format": "float2", "Default": [0.0, 0.0] },
+				{ "Name": "ModRadius", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "ModRadial", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "ModSuction", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "Translucent", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "Time", "Format": "float", "Default": [0.0] }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "VelocityHeightFoamTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 0 },
+		{ "Name": "GroundTex", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 1 },
+		{ "Name": "WaterMask", "Type": "2D", "Format": "float4", "SamplerName": "SamplerLinearClamp", "Slot": 2 }
+	],
+	"RWTextures": [
+		{ "Name": "OutVelocityHeightFoamTex", "Type": "2D", "Format": "float4", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/Fluid/SWEModifierWhirlpool.hlsl\"" }
+	]
+}

@@ -1,88 +1,88 @@
 #pragma once
 
 #include <CoreMinimal.h>
-#include <RenderDevice/DeviceD3D11.h>
 #include <imgui.h>
+#include "EImGuiRenderer.h"
 
 namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
-    class CImGUIManager : public EManagerBase
-    {
-    public:
-        struct WndData
-        {
-            WndData() { ::ZeroMemory(this, sizeof(*this)); }
-            HWND                    hWnd;
-            HWND                    MouseHwnd;
-            BOOL32                  MouseTracked;
-            INT32                   MouseButtonsDown;
-            ImGuiMouseCursor        LastMouseCursor;
-            BOOL32                  HasGamepad;
-            BOOL32                  WantUpdateHasGamepad;
-        };
-        struct D3DData
-        {
-            D3DData() { ::ZeroMemory(this, sizeof(*this)); this->VertexBufferSize = 5000; this->IndexBufferSize = 10000; }
-            ID3D11VertexShader*         VertexShader;
-            ID3D11InputLayout*          InputLayout;
-            ID3D11Buffer*               ConstantBuffer;
-            ID3D11PixelShader*          PixelShader;
-            ID3D11SamplerState*         FontSampler;
-            ID3D11ShaderResourceView*   FontTextureView;
-            ID3D11RasterizerState*      RasterizerState;
-            ID3D11BlendState*           BlendState;
-            ID3D11DepthStencilState*    DepthStencilState;
-            ID3D11Buffer*               VertexBuffer;
-            ID3D11Buffer*               IndexBuffer;
-            INT32                       VertexBufferSize;
-            INT32                       IndexBufferSize;
-        };
-        struct D3DConstantBuffer
-        {
-            FLOAT MVP[4][4];
-        };
-    public:
-        virtual void            Initialize()override;
-        virtual void            ShutDown()override;
-        void                    Update();
-        // Backwards-compatible single-call form (NewFrame must already be done).
-        // Internally just chains PrepareDrawData + RenderDrawData. Prefer the
-        // split form when you want main-thread/render-thread overlap.
-        void                    Draw();
-        // Main-thread step: finalize ImGui frame and produce ImDrawData. Must
-        // be called between NewFrame (in Update()) and the next Update().
-        void                    PrepareDrawData();
-        // Render-thread step: consume the ImDrawData produced above. Touches
-        // the D3D11 immediate context, so the caller must own it (i.e. call
-        // from the RenderThread between SceneRenderer.Render and Present).
-        void                    RenderDrawData();
-        IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
-    private:
-        void                    InitWnd();
-        BOOL32                  WndUpdateMouseCursor();
-        BOOL32                  WndIsVkDown(INT32 vk);
-        void                    WndAddKeyEvent(ImGuiKey key, BOOL32 down, INT32 native_keycode, INT32 native_scancode = -1);
-        void                    WndProcessKeyEventsWorkarounds();
-        void                    WndUpdateKeyModifiers();
-        ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
-    private:
-        void                    InitD3D();
-        void                    D3DSetupRenderState(ImDrawData* drawData);
-        void                    D3DRenderDrawData(ImDrawData* drawData);
-        void                    D3DCreateFontsTexture();
-        BOOL32                  D3DCreateDeviceObjects();
-        void                    D3DInvalidateDeviceObjects();
-    private:
-        WndData                 m_WndData;
-        D3DData                 m_D3DData;
+	/*
+	* Backend-agnostic ImGui manager. Owns:
+	*   * The Win32 platform binding (HWND, mouse/keyboard event pump).
+	*   * The per-frame ImGui lifecycle (Update / PrepareDrawData / RenderDrawData).
+	*
+	* GPU rendering is delegated entirely to EImGuiRenderer, which talks to
+	* IRRHIDevice + IRCommandList - no D3D11/D3D12 types appear here. To
+	* swap backends just relink the engine; the manager carries no
+	* backend-specific state.
+	*/
+	class CImGUIManager : public EManagerBase
+	{
+	public:
+		struct WndData
+		{
+			WndData() { ::ZeroMemory(this, sizeof(*this)); }
+			HWND                    hWnd;
+			HWND                    MouseHwnd;
+			BOOL32                  MouseTracked;
+			INT32                   MouseButtonsDown;
+			ImGuiMouseCursor        LastMouseCursor;
+			BOOL32                  HasGamepad;
+			BOOL32                  WantUpdateHasGamepad;
+		};
+	public:
+		virtual void            Initialize()override;
+		virtual void            ShutDown()override;
+		void                    Update();
+		// Backwards-compatible single-call form (NewFrame must already be done).
+		// Internally just chains PrepareDrawData + RenderDrawData. Prefer the
+		// split form when you want main-thread/render-thread overlap.
+		void                    Draw();
+		// Main-thread step: finalize ImGui frame and produce ImDrawData. Must
+		// be called between NewFrame (in Update()) and the next Update().
+		void                    PrepareDrawData();
+		// Render-thread step: replay the prepared ImDrawData through the
+		// active IRCommandList. Caller (SceneRenderer::ImGuiPass) is
+		// responsible for BeginRenderPass / EndRenderPass.
+		void                    RenderDrawData();
 
-        CLASS_MANAGER_SINGLETON_BODY(CImGUIManager)
+		// Render thread: a shader the renderer draws with was replaced. It records a game thread command
+		// that tears the renderer down, and the lazy initialization in Update() rebuilds it from the
+		// current asset - see the comment there for why the rebuild happens on that thread.
+		void                    OnShaderAssetReplaced();
+		IMGUI_IMPL_API LRESULT  WndProcHandler(HWND hWnd, UINT32 msg, WPARAM wParam, LPARAM lParam);
 
-    };
+		// Accessor for code that wants to map an engine texture asset's
+		// bindless index into ImTextureID (see EngineTextureToImgui).
+		const EImGuiRenderer&   GetRenderer()const { return Renderer; }
+		EImGuiRenderer&         GetRenderer()      { return Renderer; }
 
-    extern PE_INLINE ImTextureID EngineTextureToImgui(const class ETexture2DAsset* InAsset);
+	private:
+		void                    InitWnd();
+		BOOL32                  WndUpdateMouseCursor();
+		BOOL32                  WndIsVkDown(INT32 vk);
+		void                    WndAddKeyEvent(ImGuiKey key, BOOL32 down, INT32 native_keycode, INT32 native_scancode = -1);
+		void                    WndProcessKeyEventsWorkarounds();
+		void                    WndUpdateKeyModifiers();
+		ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
+	private:
+		WndData                 m_WndData;
+		EImGuiRenderer          Renderer;
+
+		CLASS_MANAGER_SINGLETON_BODY(CImGUIManager)
+
+	};
+
+	// Convert an engine texture asset to an ImTextureID suitable for ImGui::Image() etc.
+	// Returns ImTextureID_Invalid if the asset has no valid bindless SRV.
+	extern PE_INLINE ImTextureID EngineTextureToImgui(const class ETexture2DAsset* InAsset);
+
+	// Convert a raw IRRHITexture* (render textures, manually created textures, etc.)
+	// to an ImTextureID. Registers a bindless SRV if one doesn't exist yet.
+	// Returns ImTextureID_Invalid if InTexture is null or registration fails.
+	extern PE_INLINE ImTextureID EngineTextureToImgui(class IRRHITexture* InTexture);
 
 #endif
 };

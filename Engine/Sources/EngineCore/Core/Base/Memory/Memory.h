@@ -6,6 +6,7 @@
 #include "../../../../Development/Alert/DevelopmentDefines.h"
 #include "Base/Math/Math.h"
 #include <memory>
+#include <cstddef>
 
 namespace PigeonEngine
 {
@@ -142,7 +143,7 @@ namespace PigeonEngine
 			return std::make_unique<_Ty, _TArguments...>(std::forward<_TArguments>(_InArgs)...);
 		}
 
-		template <typename _Ty, typename _TSizeType = UINT32>
+		template <typename _Ty, typename _TSizeType = UINT32, TEnableIfType<TIsIntegral<_TSizeType>::value, _TSizeType> = 0>
 		static PE_NODISCARD PE_FORCEINLINE TUniquePtr<_Ty> MakeUnique(const _TSizeType _InSize)
 		{
 			return std::make_unique<_Ty>(static_cast<size_t>(_InSize));
@@ -173,6 +174,32 @@ namespace PigeonEngine
 		}
 	};
 
+#if 1	// new/delete operator
+};
+
+void* operator new(std::size_t InSize);
+void* operator new[](std::size_t InSize);
+void operator delete(void* InPtr) noexcept;
+void operator delete[](void* InPtr) noexcept;
+
+void* operator new(std::size_t InSize, std::align_val_t InAlign);
+void* operator new[](std::size_t InSize, std::align_val_t InAlign);
+void operator delete(void* InPtr, std::align_val_t InAlign) noexcept;
+void operator delete[](void* InPtr, std::align_val_t InAlign) noexcept;
+
+void* operator new(std::size_t InSize, const std::nothrow_t&) noexcept;
+void* operator new[](std::size_t InSize, const std::nothrow_t&) noexcept;
+void operator delete(void* InPtr, const std::nothrow_t&) noexcept;
+void operator delete[](void* InPtr, const std::nothrow_t&) noexcept;
+
+void* operator new(std::size_t InSize, std::align_val_t InAlign, const std::nothrow_t&) noexcept;
+void* operator new[](std::size_t InSize, std::align_val_t InAlign, const std::nothrow_t&) noexcept;
+void operator delete(void* InPtr, std::align_val_t InAlign, const std::nothrow_t&) noexcept;
+void operator delete[](void* InPtr, std::align_val_t InAlign, const std::nothrow_t&) noexcept;
+
+namespace PigeonEngine
+{
+#else	// We do not use custom New/Delete directly cause deleter can not deal with destructor of polymorphism
 	// New
 	template<typename _Ty, typename... _TArgs>
 	TEnableIfType<TIsConstructible<_Ty, _TArgs&&...>::value, _Ty*>
@@ -194,7 +221,11 @@ namespace PigeonEngine
 		// Construct each element in the array
 		for (size_t i = 0; i < _InCount; ++i)
 		{
-			::new (&Array[i]) _Ty();
+			// Pointer arithmetic instead of `&Array[i]` so the placement-new
+			// address never goes through an overloaded operator& (matches
+			// EMemory::New's slot-via-void* style above).
+			_Ty* Slot = Array + i;
+			::new (Slot) _Ty();
 		}
 
 		return Array;
@@ -224,6 +255,7 @@ namespace PigeonEngine
 			EMemory::Deallocate(_InPtr);
 		}
 	}
+#endif	// new/delete operator
 
 	using THeapArrayType = UINT8[];
 

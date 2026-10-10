@@ -14,16 +14,16 @@ namespace PigeonEngine
 
 
 	/*
-	 * used for serialization and deserializaition to a scene.
-	 */
+	* used for serialization and deserializaition to a scene.
+	*/
 	class PScene : public PObject
 	{
 	public:
-		
+
 		CLASS_VIRTUAL_NOCOPY_BODY(PScene)
-		
+
 	protected:
-		
+
 
 
 	};

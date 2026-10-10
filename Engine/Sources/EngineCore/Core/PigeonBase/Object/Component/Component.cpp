@@ -33,7 +33,7 @@ namespace PigeonEngine
 	void PComponent::Uninit()
 	{
 		PObject::Uninit();
-		
+
 	}
 
 	void PComponent::Tick(FLOAT deltaTime)

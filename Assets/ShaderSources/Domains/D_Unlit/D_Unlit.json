@@ -1,0 +1,9 @@
+{
+	"Name": "DomainUnlit",
+	"Template": "Domains/D_Unlit/D_Unlit.hlsl",
+	"Defines": [
+		{ "Name": "MATERIAL_DOMAIN", "Value": 0 },
+		{ "Name": "DOMAIN_HAS_SURFACE_DERIVE", "Value": 1 },
+		{ "Name": "DOMAIN_HAS_SURFACE_SHADING", "Value": 1 }
+	]
+}

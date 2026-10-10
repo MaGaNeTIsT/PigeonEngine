@@ -1,5 +1,6 @@
 #include "DeviceD3D11.h"
 #include "PipelineStateD3D11.h"
+#include "DXGIFormatTranslate.h"
 
 namespace PigeonEngine
 {
@@ -159,60 +160,84 @@ namespace PigeonEngine
 		//	m_Device = nullptr;
 		//}
 	}
-	BOOL32 RDeviceD3D11::CreateVertexShaderResource(const void* inCSO, const ULONG& inSize, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT32& inLayoutNum)
+	BOOL32 RDeviceD3D11::CreateShaderObject(const RRHIShaderDesc& InDesc, RD3D11Shader& OutShader)
 	{
+		if ((!InDesc.ByteCode) || (InDesc.ByteCodeSize == 0u))
 		{
-			HRESULT hr = m_Device->CreateVertexShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create shader object failed (empty byte code)."));
+			return FALSE;
+		}
+		const void* ByteCode = InDesc.ByteCode.get();
+		const ULONG ByteCodeSize = static_cast<ULONG>(InDesc.ByteCodeSize);
+		// Keep a copy: a pipeline state that declares its own vertex data layout needs the vertex
+		// shader's signature to bake one against (see CreateGraphicsPipelineState).
+		OutShader.ByteCode.Empty();
+		OutShader.ByteCode.SetNum(static_cast<UINT32>(InDesc.ByteCodeSize));
+		{
+			const UINT8* SourceBytes = static_cast<const UINT8*>(ByteCode);
+			UINT8* DestBytes = OutShader.ByteCode.GetData();
+			for (UINT32 ByteIndex = 0u; (DestBytes != nullptr) && (ByteIndex < static_cast<UINT32>(InDesc.ByteCodeSize)); ByteIndex++)
+			{
+				DestBytes[ByteIndex] = SourceBytes[ByteIndex];
+			}
+		}
+		switch (InDesc.Stage)
+		{
+		case ERHIShaderStage::RHI_SHADER_STAGE_VERTEX:
+		{
+			HRESULT hr = m_Device->CreateVertexShader(ByteCode, ByteCodeSize, nullptr, OutShader.VertexShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader resource failed."));
 				return FALSE;
 			}
-		}
-		{
-			if (inLayouts == nullptr)
+			if ((InDesc.InputLayouts.Num<UINT32>() == 0u) || (!InDesc.InputLayouts.GetData()))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader which needs fitted input layouts."));
 				return FALSE;
 			}
-			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
-			tempLayouts.SetNum(inLayoutNum);
-			for (UINT32 i = 0u; i < inLayoutNum; i++)
+			const UINT32 LayoutNum = InDesc.InputLayouts.Num<UINT32>();
+			TArray<D3D11_INPUT_ELEMENT_DESC> TempLayouts;
+			TempLayouts.SetNum(LayoutNum);
+			for (UINT32 i = 0u; i < LayoutNum; i++)
 			{
-				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
+				RDeviceD3D11::TranslateInputLayoutDesc(TempLayouts[i], InDesc.InputLayouts[i]);
 			}
-			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.GetData(), inLayoutNum, inCSO, inSize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
+			hr = m_Device->CreateInputLayout(TempLayouts.GetData(), LayoutNum, ByteCode, ByteCodeSize, OutShader.InputLayout.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader input layout failed."));
 				return FALSE;
 			}
+			break;
 		}
-		return TRUE;
-	}
-	BOOL32 RDeviceD3D11::CreatePixelShaderResource(const void* inCSO, const ULONG& inSize, RPixelShaderResource& outShaderResource)
-	{
+		case ERHIShaderStage::RHI_SHADER_STAGE_PIXEL:
 		{
-			HRESULT hr = m_Device->CreatePixelShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			const HRESULT hr = m_Device->CreatePixelShader(ByteCode, ByteCodeSize, nullptr, OutShader.PixelShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
-
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create pixel shader resource failed."));
 				return FALSE;
 			}
+			break;
 		}
-		return TRUE;
-	}
-	BOOL32 RDeviceD3D11::CreateComputeShaderResource(const void* inCSO, const ULONG& inSize, RComputeShaderResource& outShaderResource)
-	{
+		case ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE:
 		{
-			HRESULT hr = m_Device->CreateComputeShader(inCSO, inSize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
+			const HRESULT hr = m_Device->CreateComputeShader(ByteCode, ByteCodeSize, nullptr, OutShader.ComputeShader.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
 			{
 				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create compute shader resource failed."));
 				return FALSE;
 			}
+			break;
 		}
+		default:
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create shader object failed (unsupported stage)."));
+			return FALSE;
+		}
+		}
+		OutShader.Stage = InDesc.Stage;
 		return TRUE;
 	}
 	BOOL32 RDeviceD3D11::CreateBuffer(RBufferResource& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
@@ -321,54 +346,42 @@ namespace PigeonEngine
 				}
 			}
 		}
-		output.ByteSize				= structuredBufferDesc.StructureSize * structuredBufferDesc.NumElements;
+		output.ByteSize				= static_cast<UINT64>(structuredBufferDesc.StructureSize) * structuredBufferDesc.NumElements;
 		output.StructureByteStride	= structuredBufferDesc.StructureSize;
 		output.BindFlags			= static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE) |
 			(structuredBufferDesc.GPUWritable ? static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS) : 0u);
 		return TRUE;
 	}
-	BOOL32 RDeviceD3D11::CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc)
+	BOOL32 RDeviceD3D11::CreateRenderTexture2D(RRenderTexture2D& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
 	{
-		BOOL32 isDepthFormat = textureDesc.Depth == 16u || textureDesc.Depth == 24u || textureDesc.Depth == 32u;
-		if (!isDepthFormat && textureDesc.Depth != 0u)
+		// This factory builds a 2D texture. A depth texture states its bit count in Depth - a
+		// reading the resolver below recognises - while any other non-zero Depth would be a
+		// volume, which a 2D texture has no meaning for.
+		if ((RFormatTraits::IsDepthBitCountDesc(textureDesc) == FALSE) && (textureDesc.Depth != 0u))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D depth check failed (wrong depth format used)."));
 			return FALSE;
 		}
 		output.ReleaseRenderResource();
+
+		// The same resolution the D3D12 back-end uses: the resource format and one format per
+		// view, so an sRGB texture means the same thing on either API. In particular the
+		// resource itself is created linear or typeless - D3D11 only accepts a differently
+		// formatted view over a typeless resource, and no API has an sRGB unordered access
+		// view - while the sRGB reading lives on the SRV.
+		RTextureFormatSet FormatSet;
+		if (RFormatTraits::ResolveTextureFormats(textureDesc, FormatSet) == FALSE)
+		{
+			return FALSE;
+		}
+		output.ViewFormats = FormatSet;
+		const BOOL32 isDepthFormat = (FormatSet.DSV != RFormatType::FORMAT_UNKNOWN) ? TRUE : FALSE;
+
 		D3D11_TEXTURE2D_DESC td;
 		{
 			UINT32 tBindFlags = 0u;
-			DXGI_FORMAT tFormat = DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-			if (isDepthFormat)
-			{
-				if (textureDesc.Depth == 16u)
-				{
-					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Depth texture with 16 bits can not hold stencil buffer."), (!(textureDesc.HasStencil)));
-					tFormat = DXGI_FORMAT::DXGI_FORMAT_R16_TYPELESS;
-				}
-				else if (textureDesc.Depth == 24u)
-				{
-					tFormat = DXGI_FORMAT::DXGI_FORMAT_R24G8_TYPELESS;
-				}
-				else if (textureDesc.Depth == 32u)
-				{
-					if (textureDesc.HasStencil)
-					{
-						tFormat = DXGI_FORMAT::DXGI_FORMAT_R32G8X24_TYPELESS;
-					}
-					else
-					{
-						tFormat = DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS;
-					}
-				}
-				tBindFlags = D3D11_BIND_FLAG::D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
-			}
-			else
-			{
-				RDeviceD3D11::TranslateResourceFormat(tFormat, textureDesc.BufferFormat);
-				RDeviceD3D11::TranslateBindFlag(tBindFlags, textureDesc.BindFlags);
-			}
+			DXGI_FORMAT tFormat = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.Resource);
+			RDeviceD3D11::TranslateBindFlag(tBindFlags, textureDesc.BindFlags);
 			::ZeroMemory(&td, sizeof(td));
 			td.Width = textureDesc.Width;
 			td.Height = textureDesc.Height;
@@ -379,94 +392,74 @@ namespace PigeonEngine
 			td.SampleDesc.Quality = textureDesc.SampleDesc.Quality;
 			td.BindFlags = tBindFlags;
 			RDeviceD3D11::TranslateUsageFlag(td.Usage, textureDesc.UsageFlag);
-			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
-			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
+			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, static_cast<RCPUAccessFlagType>(textureDesc.CPUAccessFlags));
+			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, static_cast<RResourceMiscFlagType>(textureDesc.MiscFlags));
 		}
-		HRESULT hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+		HRESULT hr = S_FALSE;
+		// Same single-subresource contract as CreateTexture2D: only a single-mip texture
+		// can be seeded here.
+		if ((subData != nullptr) && (textureDesc.MipLevels == 1u))
+		{
+			D3D11_SUBRESOURCE_DATA subresourceData;
+			subresourceData.pSysMem = subData->pSysMem;
+			subresourceData.SysMemPitch = subData->SysMemPitch;
+			subresourceData.SysMemSlicePitch = subData->SysMemSlicePitch;
+			hr = m_Device->CreateTexture2D(&td, &subresourceData, output.Buffer.ReleaseAndGetAddressOf());
+		}
+		else
+		{
+			hr = m_Device->CreateTexture2D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
+		}
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource failed."));
 			return FALSE;
 		}
+		if (FormatSet.SRV != RFormatType::FORMAT_UNKNOWN)
 		{
-			BOOL32 needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
-			if (needSRV || isDepthFormat)
+			D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
 			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
-				{
-					::ZeroMemory(&srvd, sizeof(srvd));
-					if (isDepthFormat)
-					{
-						if (textureDesc.Depth == 16u)
-						{
-							srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R16_FLOAT;
-						}
-						else if (textureDesc.Depth == 24u)
-						{
-							srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-						}
-						else if (textureDesc.Depth == 32u)
-						{
-							if (textureDesc.HasStencil)
-							{
-								srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS;
-							}
-							else
-							{
-								srvd.Format = DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT;
-							}
-						}
-					}
-					else
-					{
-						RDeviceD3D11::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
-					}
-					srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURE2D;
-					srvd.Texture2D.MostDetailedMip = 0u;
-					srvd.Texture2D.MipLevels = td.MipLevels;
-				}
-				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource SRV failed."));
-					return FALSE;
-				}
+				::ZeroMemory(&srvd, sizeof(srvd));
+				srvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.SRV);
+				srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURE2D;
+				srvd.Texture2D.MostDetailedMip = 0u;
+				srvd.Texture2D.MipLevels = td.MipLevels;
+			}
+			hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource SRV failed."));
+				return FALSE;
 			}
 		}
+		if ((FormatSet.UAV != RFormatType::FORMAT_UNKNOWN) && (!isDepthFormat))
 		{
-			BOOL32 needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
-			if (needUAV && !isDepthFormat)
+			D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
+			::ZeroMemory(&uavd, sizeof(uavd));
+			uavd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.UAV);
+			uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE2D;
+			uavd.Texture2D.MipSlice = 0u;
+			hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
 			{
-				D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
-				::ZeroMemory(&uavd, sizeof(uavd));
-				RDeviceD3D11::TranslateResourceFormat(uavd.Format, textureDesc.UAVFormat);
-				uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE2D;
-				uavd.Texture2D.MipSlice = 0u;
-				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource UAV failed."));
-					return FALSE;
-				}
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource UAV failed."));
+				return FALSE;
 			}
 		}
+		if ((FormatSet.RTV != RFormatType::FORMAT_UNKNOWN) && (!isDepthFormat))
 		{
-			BOOL32 needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
-			if (needRTV && !isDepthFormat)
+			D3D11_RENDER_TARGET_VIEW_DESC rtvd;
 			{
-				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
-				{
-					::ZeroMemory(&rtvd, sizeof(rtvd));
-					RDeviceD3D11::TranslateResourceFormat(rtvd.Format, textureDesc.RTVFormat);
-					rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
-					rtvd.Texture2D.MipSlice = 0u;
-				}
-				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource RTV failed."));
-					return FALSE;
-				}
+				::ZeroMemory(&rtvd, sizeof(rtvd));
+				rtvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.RTV);
+				rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE2D;
+				rtvd.Texture2D.MipSlice = 0u;
+			}
+			hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
+			if (FAILED(hr))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture2D resource RTV failed."));
+				return FALSE;
 			}
 		}
 		if (isDepthFormat)
@@ -474,25 +467,7 @@ namespace PigeonEngine
 			D3D11_DEPTH_STENCIL_VIEW_DESC dsvd;
 			{
 				::ZeroMemory(&dsvd, sizeof(dsvd));
-				if (textureDesc.Depth == 16u)
-				{
-					dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
-				}
-				else if (textureDesc.Depth == 24u)
-				{
-					dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
-				}
-				else if (textureDesc.Depth == 32u)
-				{
-					if (textureDesc.HasStencil)
-					{
-						dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-					}
-					else
-					{
-						dsvd.Format = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
-					}
-				}
+				dsvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.DSV);
 				dsvd.ViewDimension = D3D11_DSV_DIMENSION::D3D11_DSV_DIMENSION_TEXTURE2D;
 				dsvd.Flags = 0u;	//D3D11_DSV_FLAG
 				dsvd.Texture2D.MipSlice = 0u;
@@ -512,104 +487,24 @@ namespace PigeonEngine
 		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
-	BOOL32 RDeviceD3D11::CreateRenderTexture3D(RRenderTexture3D& output, const RTextureDesc& textureDesc)
-	{
-		if (textureDesc.Width < 1u || textureDesc.Height < 1u || textureDesc.Depth < 1u)
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D check failed (wrong size used)."));
-			return FALSE;
-		}
-		output.ReleaseRenderResource();
-		D3D11_TEXTURE3D_DESC td;
-		{
-			::ZeroMemory(&td, sizeof(td));
-			td.Width = textureDesc.Width;
-			td.Height = textureDesc.Height;
-			td.Depth = textureDesc.Depth;
-			td.MipLevels = textureDesc.MipLevels;
-			RDeviceD3D11::TranslateResourceFormat(td.Format, textureDesc.BufferFormat);
-			RDeviceD3D11::TranslateUsageFlag(td.Usage, textureDesc.UsageFlag);
-			RDeviceD3D11::TranslateBindFlag(td.BindFlags, textureDesc.BindFlags);
-			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
-			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
-		}
-		HRESULT hr = m_Device->CreateTexture3D(&td, nullptr, output.Buffer.ReleaseAndGetAddressOf());
-		if (FAILED(hr))
-		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource failed."));
-			return FALSE;
-		}
-		{
-			BOOL32 needSRV = (textureDesc.BindFlags & RBindFlagType::BIND_SHADER_RESOURCE) != 0;
-			if (needSRV)
-			{
-				D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
-				{
-					::ZeroMemory(&srvd, sizeof(srvd));
-					RDeviceD3D11::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
-					srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURE3D;
-					srvd.Texture3D.MostDetailedMip = 0u;
-					srvd.Texture3D.MipLevels = td.MipLevels;
-				}
-				hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource SRV failed."));
-					return FALSE;
-				}
-			}
-		}
-		{
-			BOOL32 needUAV = (textureDesc.BindFlags & RBindFlagType::BIND_UNORDERED_ACCESS) != 0;
-			if (needUAV)
-			{
-				D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
-				::ZeroMemory(&uavd, sizeof(uavd));
-				RDeviceD3D11::TranslateResourceFormat(uavd.Format, textureDesc.UAVFormat);
-				uavd.ViewDimension = D3D11_UAV_DIMENSION::D3D11_UAV_DIMENSION_TEXTURE3D;
-				uavd.Texture3D.MipSlice = 0u;
-				uavd.Texture3D.FirstWSlice = 0u;
-				uavd.Texture3D.WSize = textureDesc.Depth;
-				hr = m_Device->CreateUnorderedAccessView(output.Buffer.Get(), &uavd, output.UnorderedAccessView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource UAV failed."));
-					return FALSE;
-				}
-			}
-		}
-		{
-			BOOL32 needRTV = (textureDesc.BindFlags & RBindFlagType::BIND_RENDER_TARGET) != 0;
-			if (needRTV)
-			{
-				D3D11_RENDER_TARGET_VIEW_DESC rtvd;
-				{
-					::ZeroMemory(&rtvd, sizeof(rtvd));
-					RDeviceD3D11::TranslateResourceFormat(rtvd.Format, textureDesc.RTVFormat);
-					rtvd.ViewDimension = D3D11_RTV_DIMENSION::D3D11_RTV_DIMENSION_TEXTURE3D;
-					rtvd.Texture3D.MipSlice = 0u;
-					rtvd.Texture3D.FirstWSlice = 0u;
-					rtvd.Texture3D.WSize = textureDesc.Depth;
-				}
-				hr = m_Device->CreateRenderTargetView(output.Buffer.Get(), &rtvd, output.RenderTargetView.ReleaseAndGetAddressOf());
-				if (FAILED(hr))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create render texture3D resource RTV failed."));
-					return FALSE;
-				}
-			}
-		}
-		output.Width		= textureDesc.Width;
-		output.Height		= textureDesc.Height;
-		output.Depth		= textureDesc.Depth;
-		output.MipLevels	= textureDesc.MipLevels;
-		output.Format		= textureDesc.BufferFormat;
-		output.BindFlags	= textureDesc.BindFlags;
-		return TRUE;
-	}
 	BOOL32 RDeviceD3D11::CreateTexture2D(RTexture2DResource& output, const RTextureDesc& textureDesc, const RSubresourceDataDesc* subData)
 	{
 		output.ReleaseRenderResource();
+		// The resource format and the SRV format come from the same resolution the D3D12
+		// back-end uses, so an sRGB texture is stored linear/typeless here too and read
+		// through an sRGB view.
+		RTextureFormatSet FormatSet;
+		if (RFormatTraits::ResolveTextureFormats(textureDesc, FormatSet) == FALSE)
+		{
+			return FALSE;
+		}
+		if (FormatSet.SRV == RFormatType::FORMAT_UNKNOWN)
+		{
+			// This factory exists to produce a sampled texture: a desc that binds no SRV has
+			// no view for it to create.
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture2D called for a desc that binds no shader resource view."));
+			return FALSE;
+		}
 		D3D11_TEXTURE2D_DESC td;
 		{
 			::ZeroMemory(&td, sizeof(td));
@@ -617,16 +512,19 @@ namespace PigeonEngine
 			td.Height = textureDesc.Height;
 			td.MipLevels = textureDesc.MipLevels;
 			td.ArraySize = textureDesc.ArraySize;
-			RDeviceD3D11::TranslateResourceFormat(td.Format, textureDesc.BufferFormat);
+			td.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.Resource);
 			td.SampleDesc.Count = textureDesc.SampleDesc.Count;
 			td.SampleDesc.Quality = textureDesc.SampleDesc.Quality;
 			td.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
 			RDeviceD3D11::TranslateUsageFlag(td.Usage, textureDesc.UsageFlag);
-			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
-			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, textureDesc.MiscFlags);
+			RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, static_cast<RCPUAccessFlagType>(textureDesc.CPUAccessFlags));
+			RDeviceD3D11::TranslateResourceMiscFlag(td.MiscFlags, static_cast<RResourceMiscFlagType>(textureDesc.MiscFlags));
 		}
 		HRESULT hr = S_FALSE;
-		if (subData)
+		// D3D11 reads MipLevels * ArraySize entries out of pInitialData, while the RHI hands
+		// over one subresource: the payload only covers a single-mip texture, deeper chains
+		// have to come through IRRHIDevice::UploadTexture.
+		if (subData && textureDesc.MipLevels == 1u)
 		{
 			D3D11_SUBRESOURCE_DATA subresourceData;
 			subresourceData.pSysMem = subData->pSysMem;
@@ -647,7 +545,7 @@ namespace PigeonEngine
 		D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
 		{
 			::ZeroMemory(&srvd, sizeof(srvd));
-			RDeviceD3D11::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
+			srvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.SRV);
 			srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURE2D;
 			srvd.Texture2D.MostDetailedMip = 0u;
 			srvd.Texture2D.MipLevels = td.MipLevels;
@@ -674,6 +572,18 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		output.ReleaseRenderResource();
+		// Same resolution as every other creation path; a cube's sRGB reading is an SRV
+		// property like any other texture's.
+		RTextureFormatSet FormatSet;
+		if (RFormatTraits::ResolveTextureFormats(textureDesc, FormatSet) == FALSE)
+		{
+			return FALSE;
+		}
+		if (FormatSet.SRV == RFormatType::FORMAT_UNKNOWN)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create texture cube called for a desc that binds no shader resource view."));
+			return FALSE;
+		}
 		{
 			D3D11_TEXTURE2D_DESC td;
 			{
@@ -682,12 +592,12 @@ namespace PigeonEngine
 				td.Height = textureDesc.Height;
 				td.MipLevels = textureDesc.MipLevels;
 				td.ArraySize = 6u;	//Texture cube has fixed number(6) of textures.
-				RDeviceD3D11::TranslateResourceFormat(td.Format, textureDesc.BufferFormat);
+				td.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.Resource);
 				td.SampleDesc.Count = textureDesc.SampleDesc.Count;
 				td.SampleDesc.Quality = textureDesc.SampleDesc.Quality;
 				RDeviceD3D11::TranslateUsageFlag(td.Usage, textureDesc.UsageFlag);
 				td.BindFlags = D3D11_BIND_FLAG::D3D11_BIND_SHADER_RESOURCE;
-				RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, textureDesc.CPUAccessFlags);
+				RDeviceD3D11::TranslateCPUAccessFlag(td.CPUAccessFlags, static_cast<RCPUAccessFlagType>(textureDesc.CPUAccessFlags));
 				td.MiscFlags = D3D11_RESOURCE_MISC_FLAG::D3D11_RESOURCE_MISC_TEXTURECUBE;
 				if (textureDesc.MipLevels == 0u || textureDesc.MipLevels > 1u)
 				{
@@ -695,7 +605,9 @@ namespace PigeonEngine
 				}
 			}
 			HRESULT hr = S_FALSE;
-			if (subData != nullptr)
+			// One entry per face covers a single-mip cube; a full chain would need
+			// 6 * MipLevels entries, which the single-subresource RHI path cannot supply.
+			if ((subData != nullptr) && (textureDesc.MipLevels == 1u))
 			{
 				D3D11_SUBRESOURCE_DATA sd[6u];
 				for (UINT32 i = 0u; i < 6u; i++)
@@ -721,7 +633,7 @@ namespace PigeonEngine
 			D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
 			{
 				::ZeroMemory(&srvd, sizeof(srvd));
-				RDeviceD3D11::TranslateResourceFormat(srvd.Format, textureDesc.SRVFormat);
+				srvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.SRV);
 				srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURECUBE;
 				srvd.Texture2D.MostDetailedMip = 0u;
 				srvd.Texture2D.MipLevels = textureDesc.MipLevels;
@@ -740,162 +652,12 @@ namespace PigeonEngine
 		output.BindFlags	= textureDesc.BindFlags;
 		return TRUE;
 	}
-	BOOL32 RDeviceD3D11::LoadVertexShader(const EString& name, RVertexShaderResource& outShaderResource, const RInputLayoutDesc* inLayouts, const UINT32& inLayoutNum)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, *name, "rb");
-			if (!file)
-			{
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Can not open file path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = m_Device->CreateVertexShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Create vertex shader resource failed. path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-		}
-		{
-			if (inLayouts == nullptr)
-			{
-				delete[]buffer;
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create vertex shader which needs fitted input layouts."));
-				return FALSE;
-			}
-			TArray<D3D11_INPUT_ELEMENT_DESC> tempLayouts;
-			tempLayouts.SetNum(inLayoutNum);
-			for (UINT32 i = 0u; i < inLayoutNum; i++)
-			{
-				RDeviceD3D11::TranslateInputLayoutDesc(tempLayouts[i], inLayouts[i]);
-			}
-			HRESULT hr = m_Device->CreateInputLayout(tempLayouts.GetData(), inLayoutNum, static_cast<void*>(buffer), fsize, outShaderResource.InputLayout.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Create vertex shader input layout failed. path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
-	}
-	BOOL32 RDeviceD3D11::LoadPixelShader(const EString& name, RPixelShaderResource& outShaderResource)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, *name, "rb");
-			if (!file)
-			{
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Can not open file path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = m_Device->CreatePixelShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Create pixel shader resource failed. path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
-	}
-	BOOL32 RDeviceD3D11::LoadComputeShader(const EString& name, RComputeShaderResource& outShaderResource)
-	{
-		LONG fsize;
-		BYTE* buffer;
-		FILE* file = nullptr;
-		{
-			fopen_s(&file, *name, "rb");
-			if (!file)
-			{
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Can not open file path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-			fsize = _filelength(_fileno(file));
-			buffer = new BYTE[fsize];
-			fread_s(buffer, fsize, fsize, 1u, file);
-			fclose(file);
-		}
-		{
-			HRESULT hr = m_Device->CreateComputeShader(static_cast<void*>(buffer), fsize, nullptr, outShaderResource.Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete[]buffer;
-#if _EDITOR_ONLY
-				{
-					EString debugInfo("Create compute shader resource failed. path : ");
-					debugInfo = debugInfo + name;
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (*debugInfo));
-				}
-#endif
-				return FALSE;
-			}
-		}
-		delete[]buffer;
-		return TRUE;
-	}
 	BOOL32 RDeviceD3D11::CreateBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer>& buffer, const RBufferDesc& bufferDesc, const RSubresourceDataDesc* subData)
 	{
 		D3D11_BUFFER_DESC bd;
 		{
 			::ZeroMemory(&bd, sizeof(bd));
-			bd.ByteWidth = bufferDesc.ByteWidth;
+			bd.ByteWidth = static_cast<UINT>(bufferDesc.ByteWidth);
 			RDeviceD3D11::TranslateUsageFlag(bd.Usage, bufferDesc.Usage);
 			RDeviceD3D11::TranslateBindFlag(bd.BindFlags, bufferDesc.BindFlags);
 			RDeviceD3D11::TranslateCPUAccessFlag(bd.CPUAccessFlags, bufferDesc.CPUAccessFlags);
@@ -933,7 +695,7 @@ namespace PigeonEngine
 	{
 		m_ImmediateContext->UpdateSubresource(dstResource.Get(), dstSubresource, dstBox, srcData, srcRowPitch, srcDepthPitch);
 	}
-	void RDeviceD3D11::Present(UINT32 InSyncInterval)
+	void RDeviceD3D11::Present(UINT32 InSyncInterval) noexcept
 	{
 		m_SwapChain->Present(InSyncInterval, 0u);
 	}
@@ -1290,28 +1052,29 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	BOOL32 RDeviceD3D11::CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& bs, const RBlendState* blendStates, const UINT32& blendStateNum)
+	BOOL32 RDeviceD3D11::CreateBlendState(Microsoft::WRL::ComPtr<ID3D11BlendState>& OutBlendState, const RBlendDesc& InBlendDesc)
 	{
-		if (!blendStates || blendStateNum == 0u)
+		const INT32 BlendStateNum = InBlendDesc.BlendStates.Num<INT32>();
+		if ((BlendStateNum <= 0) || (BlendStateNum > 8))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create blend state check failed."));
 			return FALSE;
 		}
-		D3D11_BLEND_DESC bd;
+		D3D11_BLEND_DESC D3DBlendDesc;
 		{
-			::ZeroMemory(&bd, sizeof(bd));
-			bd.AlphaToCoverageEnable = FALSE;
-			bd.IndependentBlendEnable = FALSE;
-			if (blendStateNum > 1u)
+			::ZeroMemory(&D3DBlendDesc, sizeof(D3DBlendDesc));
+			D3DBlendDesc.AlphaToCoverageEnable = InBlendDesc.AlphaToCoverageEnable;
+			D3DBlendDesc.IndependentBlendEnable = InBlendDesc.IndependentBlendEnable;
+			RDeviceD3D11::TranslateBlendState(D3DBlendDesc.RenderTarget[0], InBlendDesc.BlendStates[0]);
+			if (D3DBlendDesc.IndependentBlendEnable)
 			{
-				bd.IndependentBlendEnable = TRUE;
-			}
-			for (UINT32 i = 0u; i < blendStateNum && i < 8u; i++)
-			{
-				RDeviceD3D11::TranslateBlendState(bd.RenderTarget[i], blendStates[i]);
+				for (INT32 i = 1; i < BlendStateNum; i++)
+				{
+					RDeviceD3D11::TranslateBlendState(D3DBlendDesc.RenderTarget[i], InBlendDesc.BlendStates[i]);
+				}
 			}
 		}
-		HRESULT hr = m_Device->CreateBlendState(&bd, bs.ReleaseAndGetAddressOf());
+		HRESULT hr = m_Device->CreateBlendState(&D3DBlendDesc, OutBlendState.ReleaseAndGetAddressOf());
 		if (FAILED(hr))
 		{
 			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create blend state failed."));
@@ -1536,121 +1299,11 @@ namespace PigeonEngine
 	}
 	void RDeviceD3D11::TranslateResourceFormat(DXGI_FORMAT& output, RFormatType input)
 	{
-		static TMap<RFormatType, DXGI_FORMAT> formatMap =
-		{
-			{ RFormatType::FORMAT_UNKNOWN						, DXGI_FORMAT::DXGI_FORMAT_UNKNOWN						},
-			{ RFormatType::FORMAT_R32G32B32A32_TYPELESS			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_TYPELESS		},
-			{ RFormatType::FORMAT_R32G32B32A32_FLOAT			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT			},
-			{ RFormatType::FORMAT_R32G32B32A32_UINT 			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_UINT			},
-			{ RFormatType::FORMAT_R32G32B32A32_SINT 			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_SINT			},
-			{ RFormatType::FORMAT_R32G32B32_TYPELESS			, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_TYPELESS			},
-			{ RFormatType::FORMAT_R32G32B32_FLOAT				, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT				},
-			{ RFormatType::FORMAT_R32G32B32_UINT				, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_UINT				},
-			{ RFormatType::FORMAT_R32G32B32_SINT				, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_SINT				},
-			{ RFormatType::FORMAT_R16G16B16A16_TYPELESS			, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_TYPELESS		},
-			{ RFormatType::FORMAT_R16G16B16A16_FLOAT			, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT			},
-			{ RFormatType::FORMAT_R16G16B16A16_UNORM			, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UNORM			},
-			{ RFormatType::FORMAT_R16G16B16A16_UINT				, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT			},
-			{ RFormatType::FORMAT_R16G16B16A16_SNORM			, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_SNORM			},
-			{ RFormatType::FORMAT_R16G16B16A16_SINT				, DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_SINT			},
-			{ RFormatType::FORMAT_R32G32_TYPELESS				, DXGI_FORMAT::DXGI_FORMAT_R32G32_TYPELESS				},
-			{ RFormatType::FORMAT_R32G32_FLOAT					, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT					},
-			{ RFormatType::FORMAT_R32G32_UINT					, DXGI_FORMAT::DXGI_FORMAT_R32G32_UINT					},
-			{ RFormatType::FORMAT_R32G32_SINT					, DXGI_FORMAT::DXGI_FORMAT_R32G32_SINT					},
-			{ RFormatType::FORMAT_R10G10B10A2_TYPELESS			, DXGI_FORMAT::DXGI_FORMAT_R10G10B10A2_TYPELESS			},
-			{ RFormatType::FORMAT_R10G10B10A2_UNORM				, DXGI_FORMAT::DXGI_FORMAT_R10G10B10A2_UNORM     		},
-			{ RFormatType::FORMAT_R10G10B10A2_UINT				, DXGI_FORMAT::DXGI_FORMAT_R10G10B10A2_UINT      		},
-			{ RFormatType::FORMAT_R11G11B10_FLOAT				, DXGI_FORMAT::DXGI_FORMAT_R11G11B10_FLOAT       		},
-			{ RFormatType::FORMAT_R8G8B8A8_TYPELESS				, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_TYPELESS     		},
-			{ RFormatType::FORMAT_R8G8B8A8_UNORM				, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM        		},
-			{ RFormatType::FORMAT_R8G8B8A8_UNORM_SRGB			, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB   		},
-			{ RFormatType::FORMAT_R8G8B8A8_UINT					, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UINT         		},
-			{ RFormatType::FORMAT_R8G8B8A8_SNORM				, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_SNORM        		},
-			{ RFormatType::FORMAT_R8G8B8A8_SINT					, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_SINT         		},
-			{ RFormatType::FORMAT_R16G16_TYPELESS				, DXGI_FORMAT::DXGI_FORMAT_R16G16_TYPELESS       		},
-			{ RFormatType::FORMAT_R16G16_FLOAT					, DXGI_FORMAT::DXGI_FORMAT_R16G16_FLOAT          		},
-			{ RFormatType::FORMAT_R16G16_UNORM					, DXGI_FORMAT::DXGI_FORMAT_R16G16_UNORM          		},
-			{ RFormatType::FORMAT_R16G16_UINT 					, DXGI_FORMAT::DXGI_FORMAT_R16G16_UINT           		},
-			{ RFormatType::FORMAT_R16G16_SNORM					, DXGI_FORMAT::DXGI_FORMAT_R16G16_SNORM          		},
-			{ RFormatType::FORMAT_R16G16_SINT 					, DXGI_FORMAT::DXGI_FORMAT_R16G16_SINT           		},
-			{ RFormatType::FORMAT_R32_TYPELESS					, DXGI_FORMAT::DXGI_FORMAT_R32_TYPELESS          		},
-			{ RFormatType::FORMAT_R32_FLOAT						, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT             		},
-			{ RFormatType::FORMAT_R32_UINT 						, DXGI_FORMAT::DXGI_FORMAT_R32_UINT              		},
-			{ RFormatType::FORMAT_R32_SINT 						, DXGI_FORMAT::DXGI_FORMAT_R32_SINT              		},
-			{ RFormatType::FORMAT_R24G8_TYPELESS 				, DXGI_FORMAT::DXGI_FORMAT_R24G8_TYPELESS        		},
-			{ RFormatType::FORMAT_R8G8_TYPELESS 				, DXGI_FORMAT::DXGI_FORMAT_R8G8_TYPELESS     			},
-			{ RFormatType::FORMAT_R8G8_UNORM					, DXGI_FORMAT::DXGI_FORMAT_R8G8_UNORM        			},
-			{ RFormatType::FORMAT_R8G8_UINT 					, DXGI_FORMAT::DXGI_FORMAT_R8G8_UINT         			},
-			{ RFormatType::FORMAT_R8G8_SNORM					, DXGI_FORMAT::DXGI_FORMAT_R8G8_SNORM        			},
-			{ RFormatType::FORMAT_R8G8_SINT 					, DXGI_FORMAT::DXGI_FORMAT_R8G8_SINT         			},
-			{ RFormatType::FORMAT_R16_TYPELESS					, DXGI_FORMAT::DXGI_FORMAT_R16_TYPELESS      			},
-			{ RFormatType::FORMAT_R16_FLOAT						, DXGI_FORMAT::DXGI_FORMAT_R16_FLOAT         			},
-			{ RFormatType::FORMAT_R16_UNORM						, DXGI_FORMAT::DXGI_FORMAT_R16_UNORM         			},
-			{ RFormatType::FORMAT_R16_UINT 						, DXGI_FORMAT::DXGI_FORMAT_R16_UINT          			},
-			{ RFormatType::FORMAT_R16_SNORM						, DXGI_FORMAT::DXGI_FORMAT_R16_SNORM         			},
-			{ RFormatType::FORMAT_R16_SINT 						, DXGI_FORMAT::DXGI_FORMAT_R16_SINT          			},
-			{ RFormatType::FORMAT_R8_TYPELESS					, DXGI_FORMAT::DXGI_FORMAT_R8_TYPELESS       			},
-			{ RFormatType::FORMAT_R8_UNORM						, DXGI_FORMAT::DXGI_FORMAT_R8_UNORM          			},
-			{ RFormatType::FORMAT_R8_UINT 						, DXGI_FORMAT::DXGI_FORMAT_R8_UINT           			},
-			{ RFormatType::FORMAT_R8_SNORM						, DXGI_FORMAT::DXGI_FORMAT_R8_SNORM          			},
-			{ RFormatType::FORMAT_R8_SINT 						, DXGI_FORMAT::DXGI_FORMAT_R8_SINT           			},
-			{ RFormatType::FORMAT_A8_UNORM						, DXGI_FORMAT::DXGI_FORMAT_A8_UNORM          			},
-			{ RFormatType::FORMAT_R1_UNORM						, DXGI_FORMAT::DXGI_FORMAT_R1_UNORM          			},
-			{ RFormatType::FORMAT_R9G9B9E5_SHAREDEXP			, DXGI_FORMAT::DXGI_FORMAT_R9G9B9E5_SHAREDEXP			},
-			{ RFormatType::FORMAT_R8G8_B8G8_UNORM				, DXGI_FORMAT::DXGI_FORMAT_R8G8_B8G8_UNORM				},
-			{ RFormatType::FORMAT_G8R8_G8B8_UNORM				, DXGI_FORMAT::DXGI_FORMAT_G8R8_G8B8_UNORM				},
-			{ RFormatType::FORMAT_BC1_TYPELESS 					, DXGI_FORMAT::DXGI_FORMAT_BC1_TYPELESS					},
-			{ RFormatType::FORMAT_BC1_UNORM						, DXGI_FORMAT::DXGI_FORMAT_BC1_UNORM					},
-			{ RFormatType::FORMAT_BC1_UNORM_SRGB 				, DXGI_FORMAT::DXGI_FORMAT_BC1_UNORM_SRGB				},
-			{ RFormatType::FORMAT_BC2_TYPELESS					, DXGI_FORMAT::DXGI_FORMAT_BC2_TYPELESS					},
-			{ RFormatType::FORMAT_BC2_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC2_UNORM					},
-			{ RFormatType::FORMAT_BC2_UNORM_SRGB 				, DXGI_FORMAT::DXGI_FORMAT_BC2_UNORM_SRGB				},
-			{ RFormatType::FORMAT_BC3_TYPELESS					, DXGI_FORMAT::DXGI_FORMAT_BC3_TYPELESS					},
-			{ RFormatType::FORMAT_BC3_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC3_UNORM					},
-			{ RFormatType::FORMAT_BC3_UNORM_SRGB 				, DXGI_FORMAT::DXGI_FORMAT_BC3_UNORM_SRGB				},
-			{ RFormatType::FORMAT_BC4_TYPELESS 					, DXGI_FORMAT::DXGI_FORMAT_BC4_TYPELESS					},
-			{ RFormatType::FORMAT_BC4_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC4_UNORM					},
-			{ RFormatType::FORMAT_BC4_SNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC4_SNORM					},
-			{ RFormatType::FORMAT_BC5_TYPELESS 					, DXGI_FORMAT::DXGI_FORMAT_BC5_TYPELESS					},
-			{ RFormatType::FORMAT_BC5_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC5_UNORM					},
-			{ RFormatType::FORMAT_BC5_SNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC5_SNORM					},
-			{ RFormatType::FORMAT_B5G6R5_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_B5G6R5_UNORM					},
-			{ RFormatType::FORMAT_B5G5R5A1_UNORM				, DXGI_FORMAT::DXGI_FORMAT_B5G5R5A1_UNORM				},
-			{ RFormatType::FORMAT_B8G8R8A8_UNORM				, DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM				},
-			{ RFormatType::FORMAT_B8G8R8X8_UNORM				, DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM				},
-			{ RFormatType::FORMAT_R10G10B10_XR_BIAS_A2_UNORM	, DXGI_FORMAT::DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM	},
-			{ RFormatType::FORMAT_B8G8R8A8_TYPELESS				, DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_TYPELESS  			},
-			{ RFormatType::FORMAT_B8G8R8A8_UNORM_SRGB 			, DXGI_FORMAT::DXGI_FORMAT_B8G8R8A8_UNORM_SRGB			},
-			{ RFormatType::FORMAT_B8G8R8X8_TYPELESS 			, DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_TYPELESS  			},
-			{ RFormatType::FORMAT_B8G8R8X8_UNORM_SRGB 			, DXGI_FORMAT::DXGI_FORMAT_B8G8R8X8_UNORM_SRGB			},
-			{ RFormatType::FORMAT_BC6H_TYPELESS 				, DXGI_FORMAT::DXGI_FORMAT_BC6H_TYPELESS      			},
-			{ RFormatType::FORMAT_BC6H_UF16						, DXGI_FORMAT::DXGI_FORMAT_BC6H_UF16          			},
-			{ RFormatType::FORMAT_BC6H_SF16						, DXGI_FORMAT::DXGI_FORMAT_BC6H_SF16          			},
-			{ RFormatType::FORMAT_BC7_TYPELESS 					, DXGI_FORMAT::DXGI_FORMAT_BC7_TYPELESS       			},
-			{ RFormatType::FORMAT_BC7_UNORM 					, DXGI_FORMAT::DXGI_FORMAT_BC7_UNORM          			},
-			{ RFormatType::FORMAT_BC7_UNORM_SRGB 				, DXGI_FORMAT::DXGI_FORMAT_BC7_UNORM_SRGB     			},
-			{ RFormatType::FORMAT_AYUV 							, DXGI_FORMAT::DXGI_FORMAT_AYUV               			},
-			{ RFormatType::FORMAT_Y410 							, DXGI_FORMAT::DXGI_FORMAT_Y410               			},
-			{ RFormatType::FORMAT_Y416 							, DXGI_FORMAT::DXGI_FORMAT_Y416               			},
-			{ RFormatType::FORMAT_NV12 							, DXGI_FORMAT::DXGI_FORMAT_NV12               			},
-			{ RFormatType::FORMAT_P010 							, DXGI_FORMAT::DXGI_FORMAT_P010               			},
-			{ RFormatType::FORMAT_P016 							, DXGI_FORMAT::DXGI_FORMAT_P016               			},
-			{ RFormatType::FORMAT_420_OPAQUE 					, DXGI_FORMAT::DXGI_FORMAT_420_OPAQUE         			},
-			{ RFormatType::FORMAT_YUY2 							, DXGI_FORMAT::DXGI_FORMAT_YUY2               			},
-			{ RFormatType::FORMAT_Y210 							, DXGI_FORMAT::DXGI_FORMAT_Y210               			},
-			{ RFormatType::FORMAT_Y216 							, DXGI_FORMAT::DXGI_FORMAT_Y216               			},
-			{ RFormatType::FORMAT_NV11 							, DXGI_FORMAT::DXGI_FORMAT_NV11               			},
-			{ RFormatType::FORMAT_AI44 							, DXGI_FORMAT::DXGI_FORMAT_AI44               			},
-			{ RFormatType::FORMAT_IA44 							, DXGI_FORMAT::DXGI_FORMAT_IA44               			},
-			{ RFormatType::FORMAT_P8							, DXGI_FORMAT::DXGI_FORMAT_P8                 			},
-			{ RFormatType::FORMAT_A8P8 							, DXGI_FORMAT::DXGI_FORMAT_A8P8               			},
-			{ RFormatType::FORMAT_B4G4R4A4_UNORM				, DXGI_FORMAT::DXGI_FORMAT_B4G4R4A4_UNORM     			},
-			{ RFormatType::FORMAT_P208							, DXGI_FORMAT::DXGI_FORMAT_P208							},
-			{ RFormatType::FORMAT_V208							, DXGI_FORMAT::DXGI_FORMAT_V208							},
-			{ RFormatType::FORMAT_V408							, DXGI_FORMAT::DXGI_FORMAT_V408							},
-			{ RFormatType::FORMAT_FORCE_UINT					, DXGI_FORMAT::DXGI_FORMAT_FORCE_UINT					}
-		};
-		output = formatMap[input];
+		// The table is not in this file: it is shared with the D3D12 back-end
+		// (RenderDevice/DXGIFormatTranslate), so the two APIs cannot drift apart on which
+		// format they think a format is. A format the table does not carry is reported
+		// there instead of turning into DXGI_FORMAT_UNKNOWN in silence.
+		RDXGIFormatTranslate::TranslateToDXGI(output, input);
 	}
 	void RDeviceD3D11::TranslateUAVFlag(UINT32& output, RUAVFlagType input)
 	{
@@ -1833,6 +1486,13 @@ namespace PigeonEngine
 		output.AddressW = textureAddressModeMap[input.AddressW];
 		output.MipLODBias = input.MipLODBias;
 		output.MaxAnisotropy = input.MaxAnisotropy;
+		// D3D11 honors a comparison function only for the comparison filter variants, and the
+		// engine filter enum has none, so a non-NEVER function would be dropped silently here
+		// (the D3D11 debug layer reports the same ignored ComparisonFunc). The desc is the
+		// caller's to get right.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+			(PE_TEXT("Sampler comparison function is set on a filter without a comparison variant.")),
+			(input.ComparisonFunc == RComparisonFunctionType::COMPARISON_NEVER));
 		RDeviceD3D11::TranslateComparisonFunction(output.ComparisonFunc, input.ComparisonFunc);
 		output.BorderColor[0] = input.BorderColor.r;
 		output.BorderColor[1] = input.BorderColor.g;
@@ -2026,6 +1686,10 @@ namespace PigeonEngine
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R8_UINT;
 						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8_UNORM;
+						}
 					}
 				}
 				else if (InDesc.MemberStride == 2u)
@@ -2043,6 +1707,10 @@ namespace PigeonEngine
 					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R16_UINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16_UNORM;
 						}
 					}
 				}
@@ -2083,6 +1751,10 @@ namespace PigeonEngine
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R8G8_UINT;
 						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8_UNORM;
+						}
 					}
 				}
 				else if (InDesc.MemberStride == 2u)
@@ -2100,6 +1772,10 @@ namespace PigeonEngine
 					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R16G16_UINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16_UNORM;
 						}
 					}
 				}
@@ -2169,6 +1845,10 @@ namespace PigeonEngine
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UINT;
 						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+						}
 					}
 				}
 				else if (InDesc.MemberStride == 2u)
@@ -2186,6 +1866,10 @@ namespace PigeonEngine
 					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UINT:
 						{
 							return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UINT;
+						}
+					case RInputLayoutFormatType::INPUT_LAYOUT_FORMAT_UNORM:
+						{
+							return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_UNORM;
 						}
 					}
 				}
@@ -2289,7 +1973,10 @@ namespace PigeonEngine
 			}
 		}
 		output.InputSlot = input.InputSlot;
-		output.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	//0u
+		// The caller may declare where the element sits inside its vertex, which is what an
+		// interleaved or padded stream needs; the sentinel means the API's own appending rule.
+		output.AlignedByteOffset = ((input.UsesAppendOffset() != FALSE)
+			? D3D11_APPEND_ALIGNED_ELEMENT : static_cast<UINT>(input.AlignedByteOffset));
 		output.InputSlotClass = classificationMap[input.InputSlotClass];
 		output.InstanceDataStepRate = input.InstanceDataStepRate;
 	}
@@ -2313,7 +2000,7 @@ namespace PigeonEngine
 	// return it through the abstract IRRHIxxx out parameter.
 	// ============================================================
 
-	BOOL8 RDeviceD3D11::Initialize(const RRHIDeviceInitDesc& InDesc)
+	BOOL8 RDeviceD3D11::Initialize(const RRHIDeviceInitDesc& InDesc) noexcept
 	{
 		SetInitializeData(InDesc.WindowHandle, Vector2Int(static_cast<INT32>(InDesc.BackBufferWidth), static_cast<INT32>(InDesc.BackBufferHeight)),
 			24u, InDesc.RefreshRateHz, InDesc.bIsWindowed);
@@ -2343,7 +2030,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void RDeviceD3D11::Shutdown()
+	void RDeviceD3D11::Shutdown() noexcept
 	{
 		WaitForGPUIdle();
 		CommandListFreeList.Empty();
@@ -2352,21 +2039,29 @@ namespace PigeonEngine
 		BindlessUAVTable.Empty();
 		BindlessSRVFreeIndices.Empty();
 		BindlessUAVFreeIndices.Empty();
+		// Root signatures are back-end objects with no native counterpart here, so they are
+		// simply released.
+		for (RD3D11RootSignature* Signature : RootSignaturePool)
+		{
+			delete Signature;
+		}
+		RootSignaturePool.Empty();
+		RootSignatureCache.Empty();
 		BackBufferWrapper.ReleaseRenderResource();
 		this->ShutDown();
 	}
 
-	void RDeviceD3D11::BeginFrame()
+	void RDeviceD3D11::BeginFrame() noexcept
 	{
 		// D3D11 has no per-frame fence wait; nothing to do.
 	}
 
-	void RDeviceD3D11::EndFrame()
+	void RDeviceD3D11::EndFrame() noexcept
 	{
 		CurrentFrameIndex = (CurrentFrameIndex + 1u) % ((FrameInFlightCount > 0u) ? FrameInFlightCount : 1u);
 	}
 
-	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 InWidth, UINT32 InHeight)
+	BOOL8 RDeviceD3D11::ResizeSwapChain(UINT32 InWidth, UINT32 InHeight) noexcept
 	{
 		if (!m_SwapChain || !m_Device || !m_ImmediateContext || InWidth == 0u || InHeight == 0u)
 		{
@@ -2460,7 +2155,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void RDeviceD3D11::WaitForGPUIdle()
+	void RDeviceD3D11::WaitForGPUIdle() noexcept
 	{
 		if (m_ImmediateContext)
 		{
@@ -2470,7 +2165,7 @@ namespace PigeonEngine
 
 	// ----- Resource creation -----
 
-	BOOL8 RDeviceD3D11::CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData* InInitialData, IRRHIBuffer** OutBuffer)
+	BOOL8 RDeviceD3D11::CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData& InInitialData, IRRHIBuffer** OutBuffer) noexcept
 	{
 		if (!OutBuffer)
 		{
@@ -2478,13 +2173,16 @@ namespace PigeonEngine
 		}
 		*OutBuffer = nullptr;
 
+		// The RHI expresses "no initial data" by leaving RRHISubresourceData::Data
+		// null (same convention the D3D12 back-end uses); the legacy D3D11 factory
+		// takes a nullable RSubresourceDataDesc* instead.
 		RSubresourceDataDesc Legacy;
 		const RSubresourceDataDesc* LegacyPtr = nullptr;
-		if (InInitialData)
+		if (InInitialData.Data)
 		{
-			Legacy.pSysMem			= InInitialData->Data;
-			Legacy.SysMemPitch		= InInitialData->RowPitch;
-			Legacy.SysMemSlicePitch	= InInitialData->SlicePitch;
+			Legacy.pSysMem			= InInitialData.Data;
+			Legacy.SysMemPitch		= InInitialData.RowPitch;
+			Legacy.SysMemSlicePitch	= InInitialData.SlicePitch;
 			LegacyPtr = &Legacy;
 		}
 
@@ -2498,7 +2196,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL8 RDeviceD3D11::CreateTexture(const RTextureDesc& InDesc, const RRHISubresourceData* InInitialSubresources, UINT32 InSubresourceCount, IRRHITexture** OutTexture)
+	BOOL8 RDeviceD3D11::CreateTexture(const RTextureDesc& InDesc, const Color4& /*InClearColor*/, const RRHISubresourceData& InInitialSubresources, IRRHITexture** OutTexture) noexcept
 	{
 		if (!OutTexture)
 		{
@@ -2506,29 +2204,47 @@ namespace PigeonEngine
 		}
 		*OutTexture = nullptr;
 
-		// Convert first subresource only; multi-mip / array uploads go through
-		// the dedicated UploadTexture path.
-		RSubresourceDataDesc Legacy;
-		const RSubresourceDataDesc* LegacyPtr = nullptr;
-		if (InInitialSubresources && InSubresourceCount > 0u)
-		{
-			Legacy.pSysMem			= InInitialSubresources[0].Data;
-			Legacy.SysMemPitch		= InInitialSubresources[0].RowPitch;
-			Legacy.SysMemSlicePitch	= InInitialSubresources[0].SlicePitch;
-			LegacyPtr = &Legacy;
-		}
+		// InClearColor only matters to the D3D12 back-end, which bakes it into the
+		// resource's clear-value hint. D3D11 has no per-resource clear value, so the
+		// engine's explicit ClearRenderTargetView calls stay authoritative.
 
 		const BOOL8 IsCube = (static_cast<UINT8>(InDesc.MiscFlags) & static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE)) != 0u;
 		if (IsCube)
 		{
+			// The RHI hands over a single subresource, while the legacy cube factory
+			// wants one desc per face. The provided payload seeds face 0; the
+			// remaining faces stay uninitialized and have to be filled through
+			// IRRHIDevice::UploadTexture.
+			RSubresourceDataDesc LegacyArray[6] = {};
+			const RSubresourceDataDesc* LegacyArrayPtr = nullptr;
+			if (InInitialSubresources.Data)
+			{
+				LegacyArray[0].pSysMem			= InInitialSubresources.Data;
+				LegacyArray[0].SysMemPitch		= InInitialSubresources.RowPitch;
+				LegacyArray[0].SysMemSlicePitch	= InInitialSubresources.SlicePitch;
+				LegacyArrayPtr = LegacyArray;
+			}
 			auto* Tex = new RTextureCubeResource();
-			if (!CreateTextureCube(*Tex, InDesc, LegacyPtr))
+			if (!CreateTextureCube(*Tex, InDesc, LegacyArrayPtr))
 			{
 				delete Tex;
 				return FALSE;
 			}
 			*OutTexture = Tex;
 			return TRUE;
+		}
+
+		// Non-cube paths: the RHI carries a single subresource per creation call, so
+		// only that one is forwarded; mip / array uploads go through UploadTexture
+		// (legacy CreateTexture2D handles a single subresource).
+		RSubresourceDataDesc Legacy;
+		const RSubresourceDataDesc* LegacyPtr = nullptr;
+		if (InInitialSubresources.Data)
+		{
+			Legacy.pSysMem			= InInitialSubresources.Data;
+			Legacy.SysMemPitch		= InInitialSubresources.RowPitch;
+			Legacy.SysMemSlicePitch	= InInitialSubresources.SlicePitch;
+			LegacyPtr = &Legacy;
 		}
 
 		const UINT8 BindFlags = InDesc.BindFlags;
@@ -2538,7 +2254,7 @@ namespace PigeonEngine
 		if ((BindFlags & RTorDSorUAVMask) != 0u)
 		{
 			auto* Tex = new RRenderTexture2D();
-			if (!CreateRenderTexture2D(*Tex, InDesc))
+			if (!CreateRenderTexture2D(*Tex, InDesc, LegacyPtr))
 			{
 				delete Tex;
 				return FALSE;
@@ -2557,59 +2273,77 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL8 RDeviceD3D11::CreateShader(const RRHIShaderDesc& InDesc, IRRHIShader** OutShader)
+	BOOL8 RDeviceD3D11::CreateShader(const RRHIShaderDesc& InDesc, IRRHIShader** OutShader) noexcept
 	{
-		if (!OutShader || !InDesc.ByteCode || InDesc.ByteCodeSize == 0u)
+		if (!OutShader)
 		{
 			return FALSE;
 		}
 		*OutShader = nullptr;
 
-		const ULONG ByteCodeSize = static_cast<ULONG>(InDesc.ByteCodeSize);
-		switch (InDesc.Stage)
+		auto* Shader = new RD3D11Shader();
+		if (!CreateShaderObject(InDesc, *Shader))
 		{
-		case ERHIShaderStage::RHI_SHADER_STAGE_VERTEX:
-		{
-			auto* Shader = new RVertexShaderResource();
-			// Vertex shader created without InputLayout; PSO creation
-			// later in CreateGraphicsPipelineState attaches the layout.
-			HRESULT hr = m_Device->CreateVertexShader(InDesc.ByteCode, InDesc.ByteCodeSize, nullptr, Shader->Shader.ReleaseAndGetAddressOf());
-			if (FAILED(hr))
-			{
-				delete Shader;
-				return FALSE;
-			}
-			*OutShader = Shader;
-			return TRUE;
-		}
-		case ERHIShaderStage::RHI_SHADER_STAGE_PIXEL:
-		{
-			auto* Shader = new RPixelShaderResource();
-			if (!CreatePixelShaderResource(InDesc.ByteCode, ByteCodeSize, *Shader))
-			{
-				delete Shader;
-				return FALSE;
-			}
-			*OutShader = Shader;
-			return TRUE;
-		}
-		case ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE:
-		{
-			auto* Shader = new RComputeShaderResource();
-			if (!CreateComputeShaderResource(InDesc.ByteCode, ByteCodeSize, *Shader))
-			{
-				delete Shader;
-				return FALSE;
-			}
-			*OutShader = Shader;
-			return TRUE;
-		}
-		default:
+			delete Shader;
 			return FALSE;
+		}
+		*OutShader = Shader;
+		return TRUE;
+	}
+
+	BOOL8 RDeviceD3D11::CreateRootSignature(const RRHIRootSignatureDesc& InDesc, IRRHIRootSignature** OutSignature) noexcept
+	{
+		if (!OutSignature)
+		{
+			return FALSE;
+		}
+
+		const UINT64 LayoutHash = ((InDesc.LayoutHash != 0ull) ? InDesc.LayoutHash : HashRHIRootSignatureDesc(InDesc));
+
+		// Signatures are shared by layout, exactly as on D3D12: an equal desc hands back
+		// the object that is already live. There is no native object to build here - the
+		// back-end binds constant buffers straight to register slots and has no descriptor
+		// tables - so the desc is used for its identity alone.
+		RD3D11RootSignature* Cached = nullptr;
+		RootSignatureCache.FindValue(LayoutHash, Cached);
+		if (Cached != nullptr)
+		{
+			*OutSignature = Cached;
+			return TRUE;
+		}
+
+		RD3D11RootSignature* Signature = new RD3D11RootSignature();
+		Signature->LayoutHash = LayoutHash;
+		RootSignaturePool.Add(Signature);
+		RootSignatureCache.Add(LayoutHash, Signature);
+		*OutSignature = Signature;
+		return TRUE;
+	}
+
+	void RDeviceD3D11::DestroyRootSignature(IRRHIRootSignature* InSignature) noexcept
+	{
+		if (!InSignature)
+		{
+			return;
+		}
+
+		RD3D11RootSignature* Signature = static_cast<RD3D11RootSignature*>(InSignature);
+		RootSignatureCache.Remove(Signature->LayoutHash);
+		for (INT32 i = static_cast<INT32>(RootSignaturePool.Num()) - 1; i >= 0; i--)
+		{
+			if (RootSignaturePool[i] == Signature)
+			{
+				RootSignaturePool.RemoveAt(i);
+				// The wrapper is the caller's to release (see the interface contract: it
+				// must not be called while live PSOs still reference the layout). Nothing
+				// native hangs off it here, so the delete is the whole release.
+				delete Signature;
+				break;
+			}
 		}
 	}
 
-	BOOL8 RDeviceD3D11::CreateGraphicsPipelineState(const RRHIGraphicsPipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState)
+	BOOL8 RDeviceD3D11::CreateGraphicsPipelineState(const RRHIGraphicsPipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState) noexcept
 	{
 		if (!OutPipelineState)
 		{
@@ -2620,6 +2354,19 @@ namespace PigeonEngine
 		auto* PSO = new RPipelineStateD3D11();
 		PSO->bIsCompute			= FALSE;
 		PSO->PrimitiveTopology	= InDesc.PrimitiveTopology;
+		// Every caller takes its signature from the pipeline state cache, which derives it from
+		// the program's reflection. This back-end has no root signature concept, so the object
+		// only records which one the program was laid out with and the layout stays empty: a
+		// root index is a register slot here, which is what the binding side reads the zero
+		// layout as (see RRHIPipelineLayoutInfo). A desc without one is refused rather than
+		// filled in, so no state can end up claiming a layout it was not built for.
+		if (InDesc.RootSignature == nullptr)
+		{
+			delete PSO;
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11 PSO: the desc names no root signature; build it through RPipelineStateCache so it carries its program's layout."));
+			return FALSE;
+		}
+		PSO->RootSignature		= InDesc.RootSignature;
 
 		if (InDesc.VertexShader)
 		{
@@ -2628,6 +2375,39 @@ namespace PigeonEngine
 			if (auto* BakedInputLayout = VS->GetD3D11InputLayout())
 			{
 				PSO->InputLayout = BakedInputLayout;
+			}
+
+			// A desc always carries an input layout (the render layer fills in the vertex stage's own
+			// one), so this rebuilds an equivalent layout for the default path too. That is a
+			// deliberate trade: the check is exact only for a layout that differs, and comparing
+			// arrays here would mean carrying the shader's own layout around for the one caller that
+			// declares a different vertex format. The rebuilt layout is byte for byte what the baked
+			// one describes, so nothing about the pipeline changes; the pass layer that owns pipeline
+			// creation can tighten this once it knows which declarations are overrides.
+			if (InDesc.InputLayouts && (InDesc.InputLayoutCount > 0u))
+			{
+				if ((VS->GetByteCode() == nullptr) || (VS->GetByteCodeSize() == 0ull))
+				{
+					delete PSO;
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create input layout for a declared vertex data layout failed (no vertex shader byte code)."));
+					return FALSE;
+				}
+				TArray<D3D11_INPUT_ELEMENT_DESC> DataLayouts;
+				DataLayouts.SetNum(InDesc.InputLayoutCount);
+				for (UINT32 LayoutIndex = 0u; LayoutIndex < InDesc.InputLayoutCount; LayoutIndex++)
+				{
+					RDeviceD3D11::TranslateInputLayoutDesc(DataLayouts[LayoutIndex], InDesc.InputLayouts[LayoutIndex]);
+				}
+				Microsoft::WRL::ComPtr<ID3D11InputLayout> DeclaredInputLayout;
+				if (FAILED(m_Device->CreateInputLayout(DataLayouts.GetData(), InDesc.InputLayoutCount
+					, VS->GetByteCode(), static_cast<ULONG>(VS->GetByteCodeSize())
+					, DeclaredInputLayout.ReleaseAndGetAddressOf())))
+				{
+					delete PSO;
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create input layout for a declared vertex data layout failed."));
+					return FALSE;
+				}
+				PSO->InputLayout = DeclaredInputLayout;
 			}
 		}
 		if (InDesc.PixelShader)
@@ -2642,7 +2422,7 @@ namespace PigeonEngine
 			PSO->RasterizerState = RS;
 		}
 		Microsoft::WRL::ComPtr<ID3D11BlendState> BS;
-		if (CreateBlendState(BS, &InDesc.Blend, 1u))
+		if (CreateBlendState(BS, InDesc.Blend))
 		{
 			PSO->BlendState = BS;
 		}
@@ -2656,7 +2436,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL8 RDeviceD3D11::CreateComputePipelineState(const RRHIComputePipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState)
+	BOOL8 RDeviceD3D11::CreateComputePipelineState(const RRHIComputePipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState) noexcept
 	{
 		if (!OutPipelineState || !InDesc.ComputeShader)
 		{
@@ -2668,11 +2448,19 @@ namespace PigeonEngine
 		PSO->bIsCompute = TRUE;
 		auto* CS = static_cast<IRD3D11Shader*>(InDesc.ComputeShader);
 		PSO->ComputeShader = CS->GetD3D11CS();
+		// Same signature rule as the graphics factory above.
+		if (InDesc.RootSignature == nullptr)
+		{
+			delete PSO;
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11 PSO: the desc names no root signature; build it through RPipelineStateCache so it carries its program's layout."));
+			return FALSE;
+		}
+		PSO->RootSignature = InDesc.RootSignature;
 		*OutPipelineState = PSO;
 		return TRUE;
 	}
 
-	BOOL8 RDeviceD3D11::CreateSampler(const RSamplerState& InDesc, IRRHISampler** OutSampler)
+	BOOL8 RDeviceD3D11::CreateSampler(const RSamplerState& InDesc, IRRHISampler** OutSampler) noexcept
 	{
 		if (!OutSampler)
 		{
@@ -2690,7 +2478,7 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	void RDeviceD3D11::DestroyResource(IRRHIResource* InResource)
+	void RDeviceD3D11::DestroyResource(IRRHIResource* InResource) noexcept
 	{
 		// Resource pointers handed out by Create* are heap-allocated; delete
 		// transitively releases ComPtrs and bindless slots through the
@@ -2701,7 +2489,7 @@ namespace PigeonEngine
 
 	// ----- Bindless virtual handle tables -----
 
-	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHITexture* InTexture)
+	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHITexture* InTexture) noexcept
 	{
 		if (BindlessSRVFreeIndices.Num() > 0)
 		{
@@ -2715,7 +2503,7 @@ namespace PigeonEngine
 		return Idx;
 	}
 
-	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHIBuffer* InBuffer)
+	UINT32 RDeviceD3D11::RegisterBindlessSRV(IRRHIBuffer* InBuffer) noexcept
 	{
 		if (BindlessSRVFreeIndices.Num() > 0)
 		{
@@ -2729,7 +2517,7 @@ namespace PigeonEngine
 		return Idx;
 	}
 
-	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHITexture* InTexture)
+	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHITexture* InTexture) noexcept
 	{
 		if (BindlessUAVFreeIndices.Num() > 0)
 		{
@@ -2743,7 +2531,7 @@ namespace PigeonEngine
 		return Idx;
 	}
 
-	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHIBuffer* InBuffer)
+	UINT32 RDeviceD3D11::RegisterBindlessUAV(IRRHIBuffer* InBuffer) noexcept
 	{
 		if (BindlessUAVFreeIndices.Num() > 0)
 		{
@@ -2757,7 +2545,7 @@ namespace PigeonEngine
 		return Idx;
 	}
 
-	void RDeviceD3D11::ReleaseBindlessIndex(UINT32 InIndex)
+	void RDeviceD3D11::ReleaseBindlessIndex(UINT32 InIndex) noexcept
 	{
 		// We don't know whether the index was an SRV or UAV; try both tables.
 		if (InIndex < BindlessSRVTable.Num<UINT32>() && BindlessSRVTable[InIndex])
@@ -2772,9 +2560,22 @@ namespace PigeonEngine
 		}
 	}
 
+	IRRHIResource* RDeviceD3D11::GetBindlessResource(UINT32 InIndex)const noexcept
+	{
+		if (InIndex < BindlessSRVTable.Num<UINT32>() && BindlessSRVTable[InIndex])
+		{
+			return BindlessSRVTable[InIndex];
+		}
+		if (InIndex < BindlessUAVTable.Num<UINT32>() && BindlessUAVTable[InIndex])
+		{
+			return BindlessUAVTable[InIndex];
+		}
+		return nullptr;
+	}
+
 	// ----- Upload -----
 
-	void RDeviceD3D11::UploadBuffer(IRRHIBuffer* InDest, const void* InData, SIZE_T InSize, SIZE_T InDestOffset)
+	void RDeviceD3D11::UploadBuffer(IRRHIBuffer* InDest, const UINT8* InData, UINT64 InSize, UINT64 InDestOffset) noexcept
 	{
 		if (!InDest || !InData || InSize == 0u)
 		{
@@ -2783,6 +2584,18 @@ namespace PigeonEngine
 		auto* NativeBuffer = static_cast<IRD3D11Buffer*>(InDest)->GetD3D11Buffer();
 		if (!NativeBuffer)
 		{
+			return;
+		}
+		// D3D11 forbids a non-null pDstBox for shader-constant buffers
+		// (UpdateSubresource silently no-ops or warns, leaving the CB stale).
+		// When the caller requests a full-buffer write (offset 0, size matches
+		// the resource), pass nullptr so CBs and ordinary buffers both work.
+		const UINT8 BindFlags = InDest->GetBindFlags();
+		const BOOL8 bIsConstantBuffer = !!(BindFlags & static_cast<UINT8>(RBindFlagType::BIND_CONSTANT_BUFFER));
+		const BOOL8 bFullUpdate = (InDestOffset == 0u) && (InSize == InDest->GetByteSize());
+		if (bIsConstantBuffer || bFullUpdate)
+		{
+			m_ImmediateContext->UpdateSubresource(NativeBuffer, 0u, nullptr, InData, 0u, 0u);
 			return;
 		}
 		D3D11_BOX Box;
@@ -2795,7 +2608,7 @@ namespace PigeonEngine
 		m_ImmediateContext->UpdateSubresource(NativeBuffer, 0u, &Box, InData, 0u, 0u);
 	}
 
-	void RDeviceD3D11::UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource)
+	void RDeviceD3D11::UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource) noexcept
 	{
 		if (!InDest || !InSubresources || InSubresourceCount == 0u)
 		{
@@ -2833,7 +2646,7 @@ namespace PigeonEngine
 		return CommandList;
 	}
 
-	void RDeviceD3D11::SubmitCommandList(IRCommandList* InCommandList)
+	void RDeviceD3D11::SubmitCommandList(IRCommandList* InCommandList) noexcept
 	{
 		if (!InCommandList)
 		{
@@ -2847,7 +2660,7 @@ namespace PigeonEngine
 		CommandListFreeList.Add(D3D11List);
 	}
 
-	void RDeviceD3D11::SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount)
+	void RDeviceD3D11::SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept
 	{
 		if (!InCommandLists)
 		{
@@ -2861,12 +2674,128 @@ namespace PigeonEngine
 
 	// ----- Backbuffer access -----
 
-	IRRHITexture* RDeviceD3D11::GetCurrentBackBuffer()const
+	IRRHITexture* RDeviceD3D11::GetCurrentBackBuffer()const noexcept
 	{
 		// const_cast: BackBufferWrapper is logically owned by the device and
 		// always returned as a writable handle; the const-ness here is only
 		// because GetCurrentBackBuffer is part of the IRRHIDevice contract.
 		return const_cast<RRenderTexture2D*>(&BackBufferWrapper);
+	}
+
+	// ----- GPU timestamp queries (Phase P.c) -----
+
+	// Backend-specific heap layout lives in DeviceD3D11.h so CommandListD3D11
+	// can reach TimestampQueries[] directly. Disjoint state is used both as
+	// a validity flag for the latched ticks and as the source of truth for
+	// GPU frequency - under D3D11 the frequency CAN change between frames
+	// if the GPU clock-throttles, so we re-read it each EndTimestampFrame.
+
+	BOOL8 RDeviceD3D11::CreateTimestampHeap(UINT32 InCapacity, RRHITimestampHeap** OutHeap) noexcept
+	{
+		if (!OutHeap || InCapacity == 0u) { return FALSE; }
+		*OutHeap = nullptr;
+		if (!m_Device) { return FALSE; }
+
+		RRHITimestampHeapD3D11* Heap = new RRHITimestampHeapD3D11();
+		Heap->Capacity = InCapacity;
+
+		RQueryDesc DisjointDesc;
+		DisjointDesc.QueryType	= RQueryType::QUERY_TIMESTAMP_DISJOINT;
+		DisjointDesc.MiscFlags	= RQueryMiscFlagType::QUERY_MISC_DEFAULT;
+		if (!CreateQuery(Heap->DisjointQuery, DisjointDesc))
+		{
+			delete Heap;
+			return FALSE;
+		}
+
+		// Zero-init the raw pointer array so the dtor's cleanup loop is
+		// always well-defined (even if a CreateQuery partway through fails).
+		Heap->TimestampQueries = new ID3D11Query*[InCapacity]();
+
+		RQueryDesc TimestampDesc;
+		TimestampDesc.QueryType	= RQueryType::QUERY_TIMESTAMP;
+		TimestampDesc.MiscFlags	= RQueryMiscFlagType::QUERY_MISC_DEFAULT;
+		for (UINT32 i = 0u; i < InCapacity; i++)
+		{
+			Microsoft::WRL::ComPtr<ID3D11Query> Q;
+			if (!CreateQuery(Q, TimestampDesc))
+			{
+				// Heap dtor releases the slots we've populated so far.
+				delete Heap;
+				return FALSE;
+			}
+			Heap->TimestampQueries[i] = Q.Detach();   // transfer to raw pointer
+		}
+
+		*OutHeap = Heap;
+		return TRUE;
+	}
+
+	void RDeviceD3D11::DestroyTimestampHeap(RRHITimestampHeap* InHeap) noexcept
+	{
+		if (!InHeap) { return; }
+		// All ComPtr members release their underlying ID3D11Query interfaces
+		// through the heap's dtor - nothing else to teardown.
+		delete InHeap;
+	}
+
+	void RDeviceD3D11::BeginTimestampFrame(RRHITimestampHeap* InHeap) noexcept
+	{
+		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
+		if (!Heap || !Heap->DisjointQuery || !m_ImmediateContext) { return; }
+		if (Heap->DisjointOpen) { return; }
+		m_ImmediateContext->Begin(Heap->DisjointQuery.Get());
+		Heap->DisjointOpen = TRUE;
+	}
+
+	void RDeviceD3D11::EndTimestampFrame(RRHITimestampHeap* InHeap) noexcept
+	{
+		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
+		if (!Heap || !Heap->DisjointQuery || !m_ImmediateContext) { return; }
+		if (!Heap->DisjointOpen) { return; }
+		m_ImmediateContext->End(Heap->DisjointQuery.Get());
+		Heap->DisjointOpen     = FALSE;
+		Heap->DisjointLatched  = TRUE;
+		// LastFrameValid / LastFrequency get refreshed inside ResolveTimestamps
+		// once the GPU has drained - keep them stale here so a too-eager
+		// caller can't read pre-resolve data.
+	}
+
+	BOOL8 RDeviceD3D11::ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept
+	{
+		RRHITimestampHeapD3D11* Heap = static_cast<RRHITimestampHeapD3D11*>(InHeap);
+		if (!Heap || !OutTicks || InCount == 0u) { return FALSE; }
+		if (!Heap->DisjointLatched) { return FALSE; }
+		if ((InBeginSlot + InCount) > Heap->Capacity) { return FALSE; }
+		if (!m_ImmediateContext) { return FALSE; }
+
+		// Pull the disjoint payload first. Both the validity flag and the
+		// frequency live here; bailing if Disjoint == TRUE means we refuse
+		// to emit ticks the GPU itself has flagged as untrustworthy.
+		D3D11_QUERY_DATA_TIMESTAMP_DISJOINT DisjointData = {};
+		HRESULT Hr = m_ImmediateContext->GetData(Heap->DisjointQuery.Get(), &DisjointData, sizeof(DisjointData), 0u);
+		if (Hr != S_OK) { return FALSE; }
+		Heap->LastFrequency  = static_cast<UINT64>(DisjointData.Frequency);
+		Heap->LastFrameValid = (DisjointData.Disjoint == FALSE) ? TRUE : FALSE;
+		if (!Heap->LastFrameValid) { return FALSE; }
+
+		for (UINT32 i = 0u; i < InCount; i++)
+		{
+			ID3D11Query* Q = Heap->TimestampQueries[InBeginSlot + i];
+			if (!Q) { OutTicks[i] = 0u; continue; }
+			UINT64 Tick = 0u;
+			Hr = m_ImmediateContext->GetData(Q, &Tick, sizeof(Tick), 0u);
+			if (Hr != S_OK) { return FALSE; }
+			OutTicks[i] = Tick;
+		}
+		return TRUE;
+	}
+
+	UINT64 RDeviceD3D11::GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap)const noexcept
+	{
+		const RRHITimestampHeapD3D11* Heap = static_cast<const RRHITimestampHeapD3D11*>(InHeap);
+		if (!Heap) { return 0u; }
+		return Heap->LastFrequency;
 	}
 
 };

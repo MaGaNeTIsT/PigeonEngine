@@ -25,7 +25,7 @@ namespace PigeonEngine
 		return this->Owner;
 	}
 
-	
+
 	void PActorComponent::RemoveFromOwnerActor()
 	{
 		Owner = nullptr;

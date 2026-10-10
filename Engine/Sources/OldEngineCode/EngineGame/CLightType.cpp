@@ -299,7 +299,7 @@ void CLightDirectional::GenerateCascadeMatrices(CCamera* camera, CLightDirection
 					tempPoints[i * 8u + 2u], tempPoints[i * 8u + 3u],
 					tempPoints[i * 8u + 4u], tempPoints[i * 8u + 5u],
 					tempPoints[i * 8u + 6u], tempPoints[i * 8u + 7u] };
-				
+
 				{
 					FLOAT tempBoundExtentSq = CustomType::Vector3::DistanceSquare(layerPoints[4], layerPoints[5]);
 					tempBoundExtentSq = CustomType::CMath::Min(CustomType::Vector3::DistanceSquare(layerPoints[4], layerPoints[6]), tempBoundExtentSq);

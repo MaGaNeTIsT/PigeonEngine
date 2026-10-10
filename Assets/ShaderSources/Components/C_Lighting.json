@@ -1,0 +1,30 @@
+{
+	"Name": "Lighting",
+	"Template": "Components/C_Lighting.hlsl",
+	"Textures": [
+		{ "Name": "EnvironmentCube", "Type": "Cube", "Format": "float4", "SamplerName": "SamplerMaterialCube", "Slot": 0 }
+	],
+	"Resources": [
+		{
+			"Name": "DirectionalLights",
+			"Type": "StructuredBuffer",
+			"Slot": 1,
+			"Struct": [
+				{ "Name": "DirectionAndIlluminanceLux", "Format": "float4" },
+				{ "Name": "ColorAndSourceAngleDegrees", "Format": "float4" },
+				{ "Name": "ShadowAddressing", "Format": "uint4" }
+			]
+		},
+		{
+			"Name": "LocalLights",
+			"Type": "StructuredBuffer",
+			"Slot": 2,
+			"Struct": [
+				{ "Name": "WorldPositionAndAttenuationRadiusMeters", "Format": "float4" },
+				{ "Name": "ColorAndLuminousIntensityCandela", "Format": "float4" },
+				{ "Name": "WorldDirectionAndSourceRadiusMeters", "Format": "float4" },
+				{ "Name": "SpotAndTypeParams", "Format": "uint4" }
+			]
+		}
+	]
+}

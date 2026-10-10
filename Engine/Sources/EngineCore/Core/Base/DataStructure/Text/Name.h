@@ -1,11 +1,17 @@
 #pragma once
 
-#include "../../../../Main/Main.h"
+#include "../../../Config/ErrorCaption.h"
+#include "../../BuiltInLanguage.h"
+#include "../BuiltInType.h"
+#include "../../Development/Alert/DevelopmentDefines.h"
 #include "String.h"
+#include "../Container/Array.h"
 #include "../Container/HashMap.h"
+#include <functional>
 
 namespace PigeonEngine
 {
+
 	class EName
 	{
 	private:
@@ -22,7 +28,17 @@ namespace PigeonEngine
 
 				if (HashToIndex.ContainsKey(Hash))
 				{
-					return HashToIndex[Hash];
+					const SIZE_T ExistingIdx = HashToIndex[Hash];
+					// djb2 -> SIZE_T collision: two distinct strings hashing
+					// to the same bucket would silently merge here. Trip the
+					// debug-only check so we catch the offender at the call
+					// site instead of chasing phantom aggregated profile
+					// rows or aliased EName identities later.
+					PE_CHECK(
+						(ENGINE_STRING_ERROR),
+						("EName hash collision: distinct strings produced the same hash. Rename one of them."),
+						(Strings[ExistingIdx] == InString));
+					return ExistingIdx;
 				}
 
 				const SIZE_T TempIndex = Strings.Num<SIZE_T>();
@@ -154,4 +170,17 @@ namespace PigeonEngine
 			return EName();
 		}
 	};
-} // namespace PigeonEngine
+
+};	// namespace PigeonEngine
+
+namespace std
+{
+	template<>
+	struct hash<PigeonEngine::EName>
+	{
+		std::size_t operator()(const PigeonEngine::EName& InVal) const noexcept
+		{
+			return (InVal.GetIndex());
+		}
+	};
+};	// namespace std

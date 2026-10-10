@@ -16,7 +16,7 @@ namespace PigeonEngine
 		friend class PWorld;
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PActor)
-		
+
 	public:
 		void    Init() override;
 		void    Uninit() override;
@@ -26,7 +26,7 @@ namespace PigeonEngine
 		void	EditorTick(FLOAT deltaTime) override;
 #endif
 		void    Destroy() override;
-	
+
 	protected:
 		// for frame, 
 		void BeginAddedToScene(PWorld* World) override;
@@ -44,7 +44,7 @@ namespace PigeonEngine
 		PE_NODISCARD virtual Vector3    GetActorLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorRotation() const;
 		PE_NODISCARD virtual Vector3    GetActorScale() const;
-		
+
 		PE_NODISCARD virtual Vector3    GetActorWorldLocation() const;
 		PE_NODISCARD virtual Quaternion GetActorWorldRotation() const;
 		PE_NODISCARD virtual Vector3    GetActorWorldScale() const;
@@ -55,7 +55,7 @@ namespace PigeonEngine
 		virtual void SetActorLocation (const Vector3& Location);
 		virtual void SetActorRotation (const Quaternion& Rotation);
 		virtual void SetActorScale    (const Vector3& Scale);
-		
+
 		PE_NODISCARD virtual Vector3 GetActorForwardVector()const;
 		PE_NODISCARD virtual Vector3 GetActorRightVector()const;
 		PE_NODISCARD virtual Vector3 GetActorUpVector()const;
@@ -65,7 +65,7 @@ namespace PigeonEngine
 	private:
 		// a root component is a root component.
 		PSceneComponent* RootComponent = nullptr;
-	
+
 	public:
 		virtual void AddComponent     (PActorComponent* NewComponent, const ETransform& RelativeTransform = ETransform());
 		PE_NODISCARD const PActorComponent* GetComponentByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildComponent) const ;
@@ -81,9 +81,9 @@ namespace PigeonEngine
 	public:
 
 		PE_NODISCARD EBoundAABB GetBounds()const;
-		
+
 	public:
-		 
+
 		PE_NODISCARD virtual PActor* GetAttachedParentActor() const;
 
 		virtual void DetachFromParentActor();
@@ -94,7 +94,7 @@ namespace PigeonEngine
 		static void AttachActorToActor(PActor* Child, PActor* Parent, const ETransform& RelativeTransform = ETransform());
 
 		PE_NODISCARD TArray<PActor*> GetAllActorsAttached(BOOL8 bRecursive = FALSE) const;
-		
+
 		PE_NODISCARD const PActor* GetActorByUniqueID(const ObjectIdentityType& UniqueID, const BOOL8& bIncludeChildActor) const ;
 		void DetachActorsAttached();
 		void DestroyActorsAttached();

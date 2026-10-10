@@ -25,10 +25,10 @@ namespace PigeonEngine
 		if(EFileHelper::ReadFirstNumberOfBytesInFile(Path, TempType, 4))
 		{
 			this->Type = *static_cast<EAssetType*>(TempType);
-            delete[] static_cast<CHAR*>(TempType);
+			delete[] static_cast<CHAR*>(TempType);
 			TempType = nullptr;
 		}
-		
+
 	}
 
 	EString EAssetFile::GetDisplayName() const
@@ -41,7 +41,7 @@ namespace PigeonEngine
 			index = target.RightFind("/");
 		}
 		EString Name =  target.Substring(index + 1, Path.Length() - index - 1);
-		
+
 		Name = Name.Replace(".PAsset", "");
 		return Name;
 	}
@@ -75,7 +75,7 @@ namespace PigeonEngine
 			return;
 		}
 		BOOL8 bSelectedFolder= CurrentSelectedFolder == Node;
-		
+
 		const ImGuiTreeNodeFlags TreeNodeFlag = (Node->GetChildrenFolder().Num() > 0 ? ImGuiTreeNodeFlags_None : ImGuiTreeNodeFlags_Leaf);
 		const BOOL8 bMenuOpened = ImGui::TreeNodeEx(*(EString("##") + Node->GetDisplayName() + EString("_FolderTreeNode")), TreeNodeFlag);
 		ImGui::SameLine();
@@ -88,7 +88,7 @@ namespace PigeonEngine
 			}
 			ImGui::TreePop();
 		}
-		
+
 		if(bSelected)
 		{
 			CurrentSelectedFolder = Node;
@@ -108,7 +108,7 @@ namespace PigeonEngine
 			ChildrenFolder.Add(EMemory::MakeShared<EFolderTreeNode>(elem));
 		}
 	}
-	
+
 	void EFolderTreeNode::SetChildrenFiles(const TArray<EString>& Paths)
 	{
 		ChildrenFile.Empty();
@@ -120,7 +120,7 @@ namespace PigeonEngine
 			}
 		}
 	}
-	
+
 	const TArray<TSharedPtr<EFolderTreeNode>>& EFolderTreeNode::GetChildrenFolder() const
 	{
 		return this->ChildrenFolder;
@@ -135,7 +135,7 @@ namespace PigeonEngine
 	{
 		ChildrenFolder.Empty();
 		ChildrenFile.Empty();
-		
+
 	}
 
 	const EString& EFolderTreeNode::GetPath() const
@@ -178,7 +178,7 @@ namespace PigeonEngine
 
 	void EAssetManager::Init()
 	{
-		
+
 	}
 
 	void EAssetManager::Uninit()
@@ -202,7 +202,7 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	
+
 	void EAssetManager::EditorInit()
 	{
 		EngineAssetRoot  = EMemory::MakeShared<EFolderTreeNode>(nullptr, EBaseSettings::ENGINE_CONTENT_PATH);
@@ -222,7 +222,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_Folder");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Folder",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -237,7 +237,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_Mesh");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Mesh",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -253,7 +253,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_Shader");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Shader",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -269,7 +269,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_Skeleton");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Skeleton",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -285,7 +285,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_Animation");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_Animation",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -301,7 +301,7 @@ namespace PigeonEngine
 			EString ImportPath(AssetBasePath + "EngineTextures/Editor/");
 			EString ImportName("Icon_ContentBrowser_No");
 			EString ImportFileType("PNG");
-		
+
 			const ETexture2DAsset* Asset = nullptr;
 			TryLoadTexture2D(EBaseSettings::ENGINE_TEXTURE_PATH, "Icon_ContentBrowser_No",Asset, &ImportPath, &ImportName, &ImportFileType);
 			if(Asset)
@@ -338,7 +338,7 @@ namespace PigeonEngine
 					EFolderTreeNode::TraverseFolder(EngineAssetRoot, Current);
 					ImGui::EndChild();
 				}
-		
+
 				ImGui::EndChild();
 			}
 
@@ -355,7 +355,11 @@ namespace PigeonEngine
 					{
 						ImGui::PushID(i);
 						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
-						if(ImGui::ImageButton(FolderTextureId, button_sz))
+						// imgui 1.91+ ImageButton requires a str_id first argument
+						// (was inferred from texture id before). Use the loop index
+						// stringified - already inside a PushID(i) so collisions are
+						// fine within the parent ID scope.
+						if(ImGui::ImageButton("##folder", FolderTextureId, button_sz))
 						{
 							Current = ChildrenFolder[i];
 						}
@@ -367,16 +371,20 @@ namespace PigeonEngine
 						if ( next_button_x2 < window_visible_x2)
 							ImGui::SameLine();
 						ImGui::PopID();
-						
+
 					}
 
 					for(auto& elem : Current->GetChildrenFile())
 					{
 						ImGui::PushID(i);
 						ImGui::BeginChild("asdas", ImVec2(120, 150), FALSE);
+						// imgui 1.91+ removed SetItemAllowOverlap(); replaced with
+						// SetNextItemAllowOverlap() declared BEFORE the underlying
+						// Selectable so a subsequent overlay Image+Text doesn't
+						// hijack the click.
+						ImGui::SetNextItemAllowOverlap();
 						const BOOL8 bSelected = ImGui::Selectable(*(EString("##") + elem->GetDisplayName()), elem == SelectedFile, 0, ImVec2(120, 150));
 						const ImTextureID id = GetThumbNail(elem->GetType(), elem);
-						ImGui::SetItemAllowOverlap();
 						ImGui::SetCursorPos(ImVec2(0,0));
 						ImGui::Image(id, button_sz);
 						ImGui::SetCursorPos(ImVec2(0, button_sz.y + 10));
@@ -395,13 +403,13 @@ namespace PigeonEngine
 						++i;
 						ImGui::PopID();
 					}
-					
+
 				}
-				
+
 				ImGui::EndChild();
 			}
 		}
-		
+
 		ImGui::End();
 	}
 
@@ -411,7 +419,7 @@ namespace PigeonEngine
 		{
 			return TypeThumbNails[Type];
 		}
-		
+
 		if(!File)
 		{
 			return TypeThumbNails[EAssetType::ASSET_TYPE_UNKNOWN];
@@ -471,7 +479,7 @@ namespace PigeonEngine
 			{
 				return "Count";
 			}
-		
+
 		}
 		return "Invalid";
 	}

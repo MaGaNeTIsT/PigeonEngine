@@ -1,6 +1,7 @@
 #include "BaseType.h"
 
 #include "Text/String.h"
+#include "Container/BitArray.h"
 
 namespace PigeonEngine
 {
@@ -377,5 +378,980 @@ namespace PigeonEngine
 	Color3 operator/(const Vector3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
 	Color3 operator/(const Color4& lv, const Color3& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
 	Color3 operator/(const Color3& lv, const Color4& rv) { return (Color3(lv.x / rv.x, lv.y / rv.y, lv.z / rv.z)); }
+
+	UINT32 GetVariableFormatStride(const EVariableFormat& InFormat)
+	{
+		UINT32 Result = 0u;
+		if ((InFormat.Prefix <= EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_UNKNOWN) || (InFormat.Prefix >= EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_COUNT))
+		{
+			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[GetVariableFormatStride] Invalid VariableFormat")));
+		}
+		else
+		{
+			constexpr UINT32 StrideArray[EVariableFormatPrefixType::VARIABLE_FORMAT_PREFIX_COUNT] = {
+				0u,
+				sizeof(FLOAT),
+				sizeof(FLOAT),
+				sizeof(INT32),
+				sizeof(UINT32),
+			};
+			Result = StrideArray[InFormat.Prefix];
+		}
+		return Result;
+	}
+	UINT32 GetVariableFormatElements(const EVariableFormat& InFormat)
+	{
+		UINT32 Result = 0u;
+		if ((InFormat.Suffix <= EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_UNKNOWN) || (InFormat.Suffix >= EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_COUNT))
+		{
+			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[GetVariableFormatElements] Invalid VariableFormat")));
+		}
+		else
+		{
+			constexpr UINT32 ElementArray[EVariableFormatSuffixType::VARIABLE_FORMAT_SUFFIX_COUNT] = {
+				0u,
+				1u, 2u, 3u, 4u,		// 1, 2, 3, 4
+				4u,					// 2x2
+				6u, 6u,				// 3x2, 2x3
+				9u,					// 3x3
+				8u, 8u,				// 4x2, 2x4
+				12u, 12u,			// 4x3, 3x4
+				16u					// 4x4
+			};
+			Result = ElementArray[InFormat.Suffix];
+		}
+		return Result;
+	}
+	UINT32 GetVariableFormatSize(const EVariableFormat& InFormat)
+	{
+		return (GetVariableFormatStride(InFormat) * GetVariableFormatElements(InFormat));
+	}
+
+	EStructVariableInfo::EStructVariableInfo() noexcept
+		: Size{ 0u }
+		, ElementStride{ 0u }
+		, NumElements{ 0u }
+		, MemberSize{ 0u }
+		, NumMembers{ 0u }
+	{
+	}
+	EStructVariableInfo::EStructVariableInfo(const EStructVariableInfo& Other) noexcept
+		: Size{ Other.Size }
+		, ElementStride{ Other.ElementStride }
+		, NumElements{ Other.NumElements }
+		, MemberSize{ Other.MemberSize }
+		, NumMembers{ Other.NumMembers }
+	{
+	}
+	EStructVariableInfo::EStructVariableInfo(EStructVariableInfo&& Other) noexcept
+		: Size{ Other.Size }
+		, ElementStride{ Other.ElementStride }
+		, NumElements{ Other.NumElements }
+		, MemberSize{ Other.MemberSize }
+		, NumMembers{ Other.NumMembers }
+	{
+	}
+	EStructVariableInfo& EStructVariableInfo::operator=(const EStructVariableInfo& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	EStructVariableInfo& EStructVariableInfo::operator=(EStructVariableInfo&& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	void EStructVariableInfo::CopyFromOther(const EStructVariableInfo& Other) noexcept
+	{
+		Size = Other.Size;
+		ElementStride = Other.ElementStride;
+		NumElements = Other.NumElements;
+		MemberSize = Other.MemberSize;
+		NumMembers = Other.NumMembers;
+	}
+	void EStructVariableInfo::AnalysisFormat(const EVariableFormat& InFormat, UINT32 InNumMembers) noexcept
+	{
+		ElementStride = GetVariableFormatStride(InFormat);
+		NumElements = GetVariableFormatElements(InFormat);
+		MemberSize = GetVariableFormatSize(InFormat);
+		Check(((MemberSize > 0u) && (InNumMembers > 0u)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariableInfo::AnalysisFormat] Invalid Memory Size")));
+		NumMembers = InNumMembers;
+		Size = NumMembers * MemberSize;
+	}
+
+	EStructDataReference::EStructDataReference() noexcept
+		: DataRef{}
+		, MemOffset{ 0u }
+		, MemSize{ 0u }
+	{
+	}
+	EStructDataReference::EStructDataReference(TSharedPtr<EStructAllocator>& InData, UINT32 InOffset, UINT32 InSize) noexcept
+		: DataRef{ InData }
+		, MemOffset{ InOffset }
+		, MemSize{ InSize }
+	{
+	}
+	EStructDataReference::EStructDataReference(const EStructDataReference& Other) noexcept
+		: DataRef{ Other.DataRef }
+		, MemOffset{ Other.MemOffset }
+		, MemSize{ Other.MemSize }
+	{
+	}
+	EStructDataReference::EStructDataReference(EStructDataReference&& Other) noexcept
+		: DataRef{ Other.DataRef }
+		, MemOffset{ Other.MemOffset }
+		, MemSize{ Other.MemSize }
+	{
+	}
+	EStructDataReference& EStructDataReference::operator=(const EStructDataReference& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	EStructDataReference& EStructDataReference::operator=(EStructDataReference&& Other) noexcept
+	{
+		CopyFromOther(Other);		// May not need move?
+		return (*this);
+	}
+	void EStructDataReference::Reset() noexcept
+	{
+		DataRef.reset();
+		MemOffset = 0u;
+		MemSize = 0u;
+	}
+	void EStructDataReference::CopyFromOther(const EStructDataReference& Other) noexcept
+	{
+		DataRef = Other.DataRef;
+		MemOffset = Other.MemOffset;
+		MemSize = Other.MemSize;
+	}
+	BOOL8 EStructDataReference::IsValid() const noexcept
+	{
+		if (auto DataPtr = DataRef.lock(); DataPtr)
+		{
+			return ((MemSize > 0u) && ((MemOffset + MemSize) <= (DataPtr->HeapSize())));
+		}
+		return FALSE;
+	}
+	UINT8* EStructDataReference::GetData() noexcept
+	{
+		if (auto DataPtr = DataRef.lock(); DataPtr && (MemSize > 0u) && ((MemOffset + MemSize) <= (DataPtr->HeapSize())))
+		{
+			return (DataPtr->HeapData());
+		}
+		return nullptr;
+	}
+	UINT32 EStructDataReference::GetOffset() noexcept
+	{
+		return MemOffset;
+	}
+	UINT32 EStructDataReference::GetSize() noexcept
+	{
+		return MemSize;
+	}
+
+	EStructVariable::EStructVariable() noexcept
+		: StructData{}
+		, Info{}
+		, MemOffset{ 0u }
+		, Format{}
+	{
+	}
+	EStructVariable::EStructVariable(const EStructVariable& Other) noexcept
+		: StructData{ Other.StructData }
+		, Info{ Other.Info }
+		, MemOffset{ Other.MemOffset }
+		, Format{ Other.Format }
+	{
+	}
+	EStructVariable::EStructVariable(EStructVariable&& Other) noexcept
+		: StructData{ Other.StructData }
+		, Info{ Other.Info }
+		, MemOffset{ Other.MemOffset }
+		, Format{ Other.Format }
+	{
+	}
+	EStructVariable& EStructVariable::operator=(const EStructVariable& Other) noexcept
+	{
+		StructData = Other.StructData;
+		Info = Other.Info;
+		MemOffset = Other.MemOffset;
+		Format = Other.Format;
+		return (*this);
+	}
+	EStructVariable& EStructVariable::operator=(EStructVariable&& Other) noexcept
+	{
+		StructData = Other.StructData;
+		Info = Other.Info;
+		MemOffset = Other.MemOffset;
+		Format = Other.Format;
+		return (*this);
+	}
+	BOOL8 EStructVariable::IsValid() const noexcept
+	{
+		if (auto StructDataPtr = StructData.lock(); StructDataPtr)
+		{
+			return ((StructDataPtr->MemSize > 0u) && (Info.Size > 0u) && ((MemOffset + Info.Size) <= (StructDataPtr->MemSize)));
+		}
+		return FALSE;
+	}
+	void EStructVariable::Setup(TSharedPtr<EStructDataReference>& InStructData, UINT32 InMemOffset, const EVariableFormat& InFormat, UINT32 InNumArrayMembers) noexcept
+	{
+		if (!InStructData)
+		{
+			return;
+		}
+		StructData = InStructData;
+		Info.AnalysisFormat(InFormat, InNumArrayMembers);
+		MemOffset = InMemOffset;
+		Format = InFormat;
+	}
+	void EStructVariable::SetValue(const UINT8* InValuePtr, UINT32 InValueSize) noexcept
+	{
+		if ((!!InValuePtr) && (InValueSize > 0u))
+		{
+			if (auto StructDataPtr = StructData.lock(); StructDataPtr)
+			{
+				Check((InValueSize == Info.Size), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Value Size")));
+				Check((StructDataPtr->IsValid()), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Struct")));
+				Check(((Info.Size > 0) && ((MemOffset + Info.Size) <= (StructDataPtr->MemSize))), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructVariable::SetValue] Invalid Struct Variable")));
+				if (auto HeapPtr = StructDataPtr->DataRef.lock(); HeapPtr)
+				{
+					UINT8* DstPtr = HeapPtr->HeapData();
+					DstPtr = DstPtr + (StructDataPtr->GetOffset());
+					DstPtr = DstPtr + MemOffset;
+					EMemory::Memcpy(DstPtr, InValuePtr,
+#if _EDITOR_ONLY
+						EMath::Min(Info.Size, InValueSize)
+#else	// !_EDITOR_ONLY
+						Info.Size
+#endif	// _EDITOR_ONLY
+					);
+				}
+			}
+		}
+	}
+	void EStructVariable::SetupWithInitValue(TSharedPtr<EStructDataReference>& InStructData, UINT32 InMemOffset, const EVariableFormat& InFormat, UINT32 InNumArrayMembers, const UINT8* InInitValuePtr, UINT32 InInitMemSize) noexcept
+	{
+		Setup(InStructData, InMemOffset, InFormat, InNumArrayMembers);
+		SetValue(InInitValuePtr, InInitMemSize);
+	}
+
+	EExclusiveStruct::EExclusiveStruct() noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		StructDataRef = EMemory::MakeShared<EStructDataReference>();
+		ClearStruct();
+	}
+	EExclusiveStruct::~EExclusiveStruct() noexcept
+	{
+		ClearStruct();
+	}
+	EExclusiveStruct::EExclusiveStruct(const EExclusiveStruct& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		StructDataRef = EMemory::MakeShared<EStructDataReference>();
+		CopyFromOther(Other);
+	}
+	EExclusiveStruct::EExclusiveStruct(EExclusiveStruct&& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		StructDataRef = EMemory::MakeShared<EStructDataReference>();
+		MoveFromOther(EMemory::Forward<EExclusiveStruct>(Other));
+	}
+	EExclusiveStruct& EExclusiveStruct::operator=(const EExclusiveStruct& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	EExclusiveStruct& EExclusiveStruct::operator=(EExclusiveStruct&& Other) noexcept
+	{
+		MoveFromOther(EMemory::Forward<EExclusiveStruct>(Other));
+		return (*this);
+	}
+	UINT32 EExclusiveStruct::GetMemSize() const noexcept
+	{
+		return (RawData->HeapSize());
+	}
+	UINT8* EExclusiveStruct::GetData() noexcept
+	{
+		return (RawData->HeapData());
+	}
+	const UINT8* EExclusiveStruct::GetData() const noexcept
+	{
+		return (RawData->HeapData());
+	}
+	void EExclusiveStruct::SetupStruct() noexcept
+	{
+		ClearStruct();
+		BeginSetupVariable();
+		DoSetupVariable();
+		StructDataRef->DataRef = RawData;
+		StructDataRef->MemOffset = 0u;
+		StructDataRef->MemSize = InitStructSize;
+		UINT32 HeapSize = 0u;
+		EndSetupVariable(HeapSize);
+		Check(((HeapSize > 0u) && (HeapSize >= InitStructSize)), (ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::SetupStruct] Invalid Heap Size")));
+		if (HeapSize > 0u)
+		{
+			RawData->Reallocate(HeapSize);
+			RawData->ZeroHeapMemory();
+		}
+		AddStructVariableCommands.DoCommands();
+		AddStructVariableCommands.EmptyQueue();
+	}
+	void EExclusiveStruct::ClearStruct() noexcept
+	{
+		AddStructVariableCommands.DoCommands();
+		AddStructVariableCommands.EmptyQueue();
+		StructVariableNames.Empty();
+		StructVariables.Empty();
+		StructDataRef->Reset();
+		RawData->Release();
+		InitStructSize = 0;
+	}
+	void EExclusiveStruct::BeginSetupVariable() noexcept
+	{
+	}
+	void EExclusiveStruct::EndSetupVariable(UINT32& OutHeapSize) noexcept
+	{
+		OutHeapSize = InitStructSize;
+	}
+	void EExclusiveStruct::AddStructVariable(const EName& InVarName, const EVariableFormat& InFormat, UINT32 InNumArrayMembers, UINT32 InInitMemSize, const UINT8* InInitValuePtr) noexcept
+	{
+		Check((InNumArrayMembers > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::AddStructVariable] Invalid NumMembers")));
+#if _EDITOR_ONLY
+		if (StructVariableNames.ContainsKey(InVarName))
+		{
+			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::AddStructVariable] Struct variable is exist, so can not add same value.")));
+			return;
+		}
+#endif	// _EDITOR_ONLY
+		const UINT32 MemOffset = InitStructSize;
+		InitStructSize += GetVariableFormatSize(InFormat) * InNumArrayMembers;
+		StructVariableNames.Add(InVarName, StructVariables.Num());
+		EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
+		NewVar.Setup(StructDataRef, MemOffset, InFormat, InNumArrayMembers);
+		if ((!!InInitValuePtr) && (InInitMemSize > 0u))
+		{
+			EStructVariable* NewVarPtr = &NewVar;
+			AddStructVariableCommands.EnqueueCommand([InInitValuePtr, InInitMemSize, NewVarPtr]()->void
+			{
+				NewVarPtr->SetValue(InInitValuePtr, InInitMemSize);
+			});
+		}
+	}
+	BOOL8 EExclusiveStruct::FindVariable(const EName& InVarName, EStructVariable& OutVar) const noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
+#else	// !_EDITOR_ONLY
+		const UINT32 VarIndex = StructVariableNames[InVarName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (VarIndex < StructVariables.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				OutVar = StructVariables.GetRef(VarIndex);
+				return TRUE;
+			}
+		}
+#if _EDITOR_ONLY
+		EString ErrorInfo(PE_TEXT("[EExclusiveStruct::FindVariable] Could not find name["));
+		ErrorInfo = ErrorInfo + InVarName.ToString() + PE_TEXT("] variable.");
+		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
+#endif	// _EDITOR_ONLY
+		return FALSE;
+	}
+	void EExclusiveStruct::CopyFromOther(const EExclusiveStruct& Other) noexcept
+	{
+		ClearStruct();
+		RawData->Reallocate(Other.RawData->HeapSize());
+		if (Other.RawData->HeapSize() > 0u)
+		{
+			EMemory::Memcpy(RawData->HeapData(), Other.RawData->HeapData(), Other.RawData->HeapSize());
+		}
+		StructDataRef->CopyFromOther(*(Other.StructDataRef));
+		StructDataRef->DataRef = RawData;
+		for (const auto& IterVar : Other.StructVariableNames)
+		{
+			StructVariableNames.Add(IterVar.first, IterVar.second);
+		}
+		for (const auto& Var : Other.StructVariables)
+		{
+			EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
+			NewVar.StructData = StructDataRef;
+			NewVar.Info = Var.Info;
+			NewVar.MemOffset = Var.MemOffset;
+			NewVar.Format = Var.Format;
+		}
+		InitStructSize = Other.InitStructSize;
+	}
+	void EExclusiveStruct::MoveFromOther(EExclusiveStruct&& Other) noexcept
+	{
+		ClearStruct();
+		StructVariableNames = EMemory::Move(Other.StructVariableNames);
+		StructVariables = EMemory::Move(Other.StructVariables);
+		StructDataRef = EMemory::Move(Other.StructDataRef);
+		RawData = EMemory::Move(Other.RawData);
+		InitStructSize = Other.InitStructSize;
+	}
+
+	ESharedStruct::ESingleStruct::ESingleStruct() noexcept
+		: AddStructVariableCommands{}
+		, StructVariableNames{}
+		, StructVariables{}
+		, StructDataRef{ nullptr }
+		, InitStructSize{ 0u }
+	{
+	}
+	ESharedStruct::ESingleStruct::~ESingleStruct() noexcept
+	{
+		AddStructVariableCommands.DoCommands();
+		AddStructVariableCommands.EmptyQueue();
+	}
+	ESharedStruct::ESharedStruct() noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		ClearStruct();
+	}
+	ESharedStruct::~ESharedStruct() noexcept
+	{
+		ClearStruct();
+	}
+	ESharedStruct::ESharedStruct(const ESharedStruct& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		CopyFromOther(Other);
+	}
+	ESharedStruct::ESharedStruct(ESharedStruct&& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		MoveFromOther(EMemory::Forward<ESharedStruct>(Other));
+	}
+	ESharedStruct& ESharedStruct::operator=(const ESharedStruct& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	ESharedStruct& ESharedStruct::operator=(ESharedStruct&& Other) noexcept
+	{
+		MoveFromOther(EMemory::Forward<ESharedStruct>(Other));
+		return (*this);
+	}
+	UINT32 ESharedStruct::GetMemSize() const noexcept
+	{
+		return (RawData->HeapSize());
+	}
+	UINT8* ESharedStruct::GetData() noexcept
+	{
+		return (RawData->HeapData());
+	}
+	const UINT8* ESharedStruct::GetData() const noexcept
+	{
+		return (RawData->HeapData());
+	}
+	UINT32 ESharedStruct::GetMemSize(const EName& InStructName) const noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
+#else	// !_EDITOR_ONLY
+		const UINT32 StIdx = StructNames[InStructName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (StIdx < Structs.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				const ESingleStruct& St = Structs[StIdx];
+				return (St.StructDataRef->MemSize);
+			}
+		}
+		return 0u;
+	}
+	UINT8* ESharedStruct::GetData(const EName& InStructName) noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
+#else	// !_EDITOR_ONLY
+		const UINT32 StIdx = StructNames[InStructName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (StIdx < Structs.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				const ESingleStruct& St = Structs[StIdx];
+				UINT8* HeapData = GetData();
+				HeapData += St.StructDataRef->MemOffset;
+				return HeapData;
+			}
+		}
+		return nullptr;
+	}
+	const UINT8* ESharedStruct::GetData(const EName& InStructName) const noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
+#else	// !_EDITOR_ONLY
+		const UINT32 StIdx = StructNames[InStructName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (StIdx < Structs.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				const ESingleStruct& St = Structs[StIdx];
+				const UINT8* HeapData = GetData();
+				HeapData += St.StructDataRef->MemOffset;
+				return HeapData;
+			}
+		}
+		return nullptr;
+	}
+	void ESharedStruct::SetupStruct() noexcept
+	{
+		ClearStruct();
+		BeginSetupVariable();
+		DoSetupVariable();
+		for (UINT32 StructIdx = 0u, NumStructs = Structs.Num(); StructIdx < NumStructs; StructIdx++)
+		{
+			ESingleStruct& St = Structs[StructIdx];
+			const UINT32 StMemOffset = InitHeapSize;
+			InitHeapSize += St.InitStructSize;
+			St.StructDataRef->MemOffset = StMemOffset;
+			St.StructDataRef->MemSize = St.InitStructSize;
+		}
+		UINT32 HeapSize = 0u;
+		EndSetupVariable(HeapSize);
+		Check(((HeapSize > 0u) && (HeapSize >= InitHeapSize)), (ENGINE_CORE_ERROR), (PE_TEXT("[ESharedStruct::SetupStruct] Invalid Heap Size")));
+		if (HeapSize > 0u)
+		{
+			RawData->Reallocate(HeapSize);
+			RawData->ZeroHeapMemory();
+		}
+		for (UINT32 StructIdx = 0u, NumStructs = Structs.Num(); StructIdx < NumStructs; StructIdx++)
+		{
+			ESingleStruct& St = Structs[StructIdx];
+			St.AddStructVariableCommands.DoCommands();
+			St.AddStructVariableCommands.EmptyQueue();
+		}
+	}
+	void ESharedStruct::ClearStruct() noexcept
+	{
+		StructNames.Empty();
+		Structs.Empty();
+		RawData->Release();
+		InitHeapSize = 0u;
+	}
+	void ESharedStruct::BeginSetupVariable() noexcept
+	{
+
+	}
+	void ESharedStruct::EndSetupVariable(UINT32& OutHeapSize) noexcept
+	{
+		OutHeapSize = InitHeapSize;
+	}
+	void ESharedStruct::AddStructVariable(const EName& InStructName, const EName& InVarName, const EVariableFormat& InFormat, UINT32 InNumArrayMembers, UINT32 InInitMemSize, const UINT8* InInitValuePtr) noexcept
+	{
+		Check((InNumArrayMembers > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EExclusiveStruct::AddStructVariable] Invalid NumMembers")));
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+		UINT32 StIdx = MaxUint32;
+		if (!StructNames.FindValue(InStructName, StIdx))
+		{
+			StIdx = Structs.Num();
+			StructNames.Add(InStructName, StIdx);
+			ESingleStruct& NewSt = Structs.AddDefaultGetRef();
+			NewSt.StructDataRef = EMemory::MakeShared<EStructDataReference>();
+			NewSt.StructDataRef->DataRef = RawData;
+		}
+		Check((StIdx < Structs.Num()), (ENGINE_CORE_ERROR), (PE_TEXT("[ESharedStruct::AddStructVariable] Invalid Struct Index")));
+		ESingleStruct& St = Structs[StIdx];
+#if _EDITOR_ONLY
+		if (St.StructVariableNames.ContainsKey(InVarName))
+		{
+			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[ESharedStruct::AddStructVariable] Struct variable is exist, so can not add same value.")));
+			return;
+		}
+#endif	// _EDITOR_ONLY
+		const UINT32 MemOffset = St.InitStructSize;
+		St.InitStructSize += GetVariableFormatSize(InFormat) * InNumArrayMembers;
+		St.StructVariableNames.Add(InVarName, St.StructVariables.Num());
+		EStructVariable& NewVar = St.StructVariables.AddDefaultGetRef();
+		NewVar.Setup(St.StructDataRef, MemOffset, InFormat, InNumArrayMembers);
+		if ((!!InInitValuePtr) && (InInitMemSize > 0u))
+		{
+			EStructVariable* NewVarPtr = &NewVar;
+			St.AddStructVariableCommands.EnqueueCommand([InInitValuePtr, InInitMemSize, NewVarPtr]()->void
+			{
+				NewVarPtr->SetValue(InInitValuePtr, InInitMemSize);
+			});
+		}
+	}
+	BOOL8 ESharedStruct::FindVariable(const EName& InStructName, const EName& InVarName, EStructVariable& OutVar) const noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
+#else	// !_EDITOR_ONLY
+		const UINT32 StIdx = StructNames[InStructName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (StIdx < Structs.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				const ESingleStruct& St = Structs[StIdx];
+#if _EDITOR_ONLY
+				if (UINT32 VarIdx = MaxUint32; St.StructVariableNames.FindValue(InVarName, VarIdx))
+#else	// !_EDITOR_ONLY
+				const UINT32 VarIdx = St.StructVariableNames[InVarName];
+#endif	// _EDITOR_ONLY
+				{
+#if _EDITOR_ONLY
+					if (VarIdx < St.StructVariables.Num())
+#endif	/// _EDITOR_ONLY
+					{
+						OutVar = St.StructVariables[VarIdx];
+						return TRUE;
+					}
+				}
+			}
+		}
+#if _EDITOR_ONLY
+		EString ErrorInfo(PE_TEXT("[ESharedStruct::FindVariable] Could not find name[Struct:"));
+		ErrorInfo = ErrorInfo + InStructName.ToString() + PE_TEXT(" Variable:") + InVarName.ToString() + PE_TEXT("] variable.");
+		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
+#endif	// _EDITOR_ONLY
+		return FALSE;
+	}
+	void ESharedStruct::CopyFromOther(const ESharedStruct& Other) noexcept
+	{
+		ClearStruct();
+		for (const auto& IterVar : Other.StructNames)
+		{
+			StructNames.Add(IterVar.first, IterVar.second);
+		}
+		RawData->Reallocate(Other.RawData->HeapSize());
+		if (Other.RawData->HeapSize() > 0u)
+		{
+			EMemory::Memcpy(RawData->HeapData(), Other.RawData->HeapData(), Other.RawData->HeapSize());
+		}
+		for (const auto& St : Other.Structs)
+		{
+			ESingleStruct& NewSt = Structs.AddDefaultGetRef();
+			NewSt.StructVariableNames = St.StructVariableNames;
+			NewSt.StructDataRef = EMemory::MakeShared<EStructDataReference>();
+			NewSt.StructDataRef->CopyFromOther(*(St.StructDataRef));
+			NewSt.StructDataRef->DataRef = RawData;
+			NewSt.InitStructSize = St.InitStructSize;
+			for (const auto& StVar : St.StructVariables)
+			{
+				EStructVariable& NewVar = NewSt.StructVariables.AddDefaultGetRef();
+				NewVar.StructData = NewSt.StructDataRef;
+				NewVar.Info = StVar.Info;
+				NewVar.MemOffset = StVar.MemOffset;
+				NewVar.Format = StVar.Format;
+			}
+		}
+		InitHeapSize = Other.InitHeapSize;
+	}
+	void ESharedStruct::MoveFromOther(ESharedStruct&& Other) noexcept
+	{
+		ClearStruct();
+		StructNames = EMemory::Move(Other.StructNames);
+		Structs = EMemory::Move(Other.Structs);
+		RawData = EMemory::Move(Other.RawData);
+		InitHeapSize = Other.InitHeapSize;
+	}
+
+	EStructArray::EStructArray() noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		ClearStruct();
+	}
+	EStructArray::~EStructArray() noexcept
+	{
+		ClearStruct();
+	}
+	EStructArray::EStructArray(const EStructArray& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		CopyFromOther(Other);
+	}
+	EStructArray::EStructArray(EStructArray&& Other) noexcept
+	{
+		RawData = EMemory::MakeShared<EStructAllocator>();
+		MoveFromOther(EMemory::Forward<EStructArray>(Other));
+	}
+	EStructArray& EStructArray::operator=(const EStructArray& Other) noexcept
+	{
+		CopyFromOther(Other);
+		return (*this);
+	}
+	EStructArray& EStructArray::operator=(EStructArray&& Other) noexcept
+	{
+		MoveFromOther(EMemory::Forward<EStructArray>(Other));
+		return (*this);
+	}
+	UINT32 EStructArray::GetNumElements() const noexcept
+	{
+		return NumElements;
+	}
+	UINT32 EStructArray::GetMemSize() const noexcept
+	{
+		Check((StructDataRefs.Num<UINT32>() == NumElements), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::GetMemSize] Invalid NumElements")));
+		return ((StructDataRefs.IsEmpty() || (NumElements == 0u)) ? (StructDataRefs[0]->GetSize() * NumElements) : 0u);
+	}
+	UINT8* EStructArray::GetData() noexcept
+	{
+		return (RawData->HeapData());
+	}
+	const UINT8* EStructArray::GetData() const noexcept
+	{
+		return (RawData->HeapData());
+	}
+	UINT32 EStructArray::GetMemSize(UINT32 InElementIndex) const noexcept
+	{
+		Check(((InElementIndex < NumElements) && (StructDataRefs.Num<UINT32>() == NumElements)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::GetMemSize(ElementIndex)] Invalid Element Index")));
+		return (StructDataRefs[InElementIndex]->GetSize());
+	}
+	UINT8* EStructArray::GetData(UINT32 InElementIndex) noexcept
+	{
+		Check(((InElementIndex < NumElements) && (StructDataRefs.Num<UINT32>() == NumElements)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::GetMemSize(ElementIndex)] Invalid Element Index")));
+		UINT8* DataPtr = GetData();
+		DataPtr = DataPtr + (StructDataRefs[InElementIndex]->GetOffset());
+		return DataPtr;
+	}
+	const UINT8* EStructArray::GetData(UINT32 InElementIndex) const noexcept
+	{
+		Check(((InElementIndex < NumElements) && (StructDataRefs.Num<UINT32>() == NumElements)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::GetMemSize(ElementIndex)] Invalid Element Index")));
+		const UINT8* DataPtr = GetData();
+		DataPtr = DataPtr + (StructDataRefs[InElementIndex]->GetOffset());
+		return DataPtr;
+	}
+	void EStructArray::Resize()
+	{
+		Check(((NumElements > 0u) && (StructDataRefs.Num() > 0u) && (StructDataRefs[0]) && (StructDataRefs[0]->GetSize() > 0u)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::Resize] Invalid Base Struct")));
+		TSharedPtr<EStructDataReference> BaseStData = StructDataRefs[0];
+		const UINT32 StMemSize = BaseStData->GetSize();
+		StructDataRefs.Empty(EMath::Max(1u, NumElements));
+		if (NumElements > 0u)
+		{
+			RawData->Reallocate(StMemSize * NumElements);
+			RawData->ZeroHeapMemory();
+			for (UINT32 Index = 0u; Index < NumElements; Index++)
+			{
+				TSharedPtr<EStructDataReference> NewStData = EMemory::MakeShared<EStructDataReference>();
+				NewStData->CopyFromOther(*(BaseStData));
+				NewStData->MemOffset = Index * StMemSize;
+				StructDataRefs.Add(NewStData);
+			}
+		}
+		else
+		{
+			RawData->Release();
+			StructDataRefs.Add(BaseStData);
+		}
+	}
+	void EStructArray::SetupStruct() noexcept
+	{
+		ClearStruct();
+		BeginSetupVariable();
+		DoSetupVariable();
+		UINT32 HeapSize = 0u;
+		EndSetupVariable(HeapSize);
+		Check(((HeapSize > 0u) && (HeapSize >= InitStructSize)), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::SetupStruct] Invalid Heap Size")));
+		Check((StructDataRefs.Num() > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::SetupStruct] Invalid NumMembers")));
+		StructDataRefs[0]->MemSize = HeapSize;
+		Resize();
+	}
+	void EStructArray::ClearStruct() noexcept
+	{
+		StructVariableNames.Empty();
+		StructVariables.Empty();
+		StructDataRefs.Empty();
+		RawData->Release();
+		InitStructSize = 0;
+		NumElements = 0;
+	}
+	void EStructArray::BeginSetupVariable() noexcept
+	{
+
+	}
+	void EStructArray::EndSetupVariable(UINT32& OutHeapSize) noexcept
+	{
+		OutHeapSize = InitStructSize;
+	}
+	void EStructArray::AddStructVariable(const EName& InVarName, const EVariableFormat& InFormat, UINT32 InNumArrayMembers) noexcept
+	{
+		Check((InNumArrayMembers > 0u), (ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::AddStructVariable] Invalid NumMembers")));
+#if _EDITOR_ONLY
+		if (StructVariableNames.ContainsKey(InVarName))
+		{
+			PE_FAILED((ENGINE_CORE_ERROR), (PE_TEXT("[EStructArray::AddStructVariable] Struct variable is exist, so can not add same value.")));
+			return;
+		}
+#endif	// _EDITOR_ONLY
+		if (StructDataRefs.Num() == 0u)
+		{
+			TSharedPtr<EStructDataReference> NewData = EMemory::MakeShared<EStructDataReference>();
+			NewData->DataRef = RawData;
+			NewData->MemOffset = 0u;
+			NewData->MemSize = 0u;
+			StructDataRefs.Add(NewData);
+		}
+		const UINT32 MemOffset = InitStructSize;
+		InitStructSize += GetVariableFormatSize(InFormat) * InNumArrayMembers;
+		StructVariableNames.Add(InVarName, StructVariables.Num());
+		EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
+		NewVar.Setup(StructDataRefs[0], MemOffset, InFormat, InNumArrayMembers);
+	}
+	BOOL8 EStructArray::FindVariable(UINT32 InElementIndex, const EName& InVarName, EStructVariable& OutVar) const noexcept
+	{
+		constexpr UINT32 MaxUint32 = (UINT32)(-1);
+#if _EDITOR_ONLY
+		if (InElementIndex >= StructDataRefs.Num<UINT32>())
+		{
+			return FALSE;
+		}
+		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
+#else	// !_EDITOR_ONLY
+		const UINT32 VarIndex = StructVariableNames[InVarName];
+#endif	// _EDITOR_ONLY
+		{
+#if _EDITOR_ONLY
+			if (VarIndex < StructVariables.Num())
+#endif	/// _EDITOR_ONLY
+			{
+				const EStructVariable& StVar = StructVariables.GetRef(VarIndex);
+				OutVar = StVar;
+				OutVar.StructData = StructDataRefs[InElementIndex];
+				return TRUE;
+			}
+		}
+#if _EDITOR_ONLY
+		EString ErrorInfo(PE_TEXT("[EStructArray::FindVariable] Could not find name["));
+		ErrorInfo = ErrorInfo + InVarName.ToString() + PE_TEXT("] variable.");
+		PE_FAILED((ENGINE_CORE_ERROR), (*ErrorInfo));
+#endif	// _EDITOR_ONLY
+		return FALSE;
+	}
+	void EStructArray::CopyFromOther(const EStructArray& Other) noexcept
+	{
+		ClearStruct();
+		RawData->Reallocate(Other.RawData->HeapSize());
+		if (Other.RawData->HeapSize() > 0u)
+		{
+			EMemory::Memcpy(RawData->HeapData(), Other.RawData->HeapData(), Other.RawData->HeapSize());
+		}
+		for (const auto& StDataRef : Other.StructDataRefs)
+		{
+			TSharedPtr<EStructDataReference> NewStDataRef = EMemory::MakeShared<EStructDataReference>();
+			NewStDataRef->CopyFromOther(*(StDataRef));
+			NewStDataRef->DataRef = RawData;
+			StructDataRefs.Add(NewStDataRef);
+		}
+		for (const auto& IterVar : Other.StructVariableNames)
+		{
+			StructVariableNames.Add(IterVar.first, IterVar.second);
+		}
+		for (const auto& Var : Other.StructVariables)
+		{
+			EStructVariable& NewVar = StructVariables.AddDefaultGetRef();
+			NewVar.StructData.reset();
+			NewVar.Info = Var.Info;
+			NewVar.MemOffset = Var.MemOffset;
+			NewVar.Format = Var.Format;
+		}
+		InitStructSize = Other.InitStructSize;
+		NumElements = Other.NumElements;
+	}
+	void EStructArray::MoveFromOther(EStructArray&& Other) noexcept
+	{
+		ClearStruct();
+		StructVariableNames = EMemory::Move(Other.StructVariableNames);
+		StructVariables = EMemory::Move(Other.StructVariables);
+		StructDataRefs = EMemory::Move(Other.StructDataRefs);
+		RawData = EMemory::Move(Other.RawData);
+		InitStructSize = Other.InitStructSize;
+		NumElements = Other.NumElements;
+	}
+
+	// ---------------------------------------------------------------------------
+	// Container compile probe.
+	//
+	// TBitArray is a header with no translation unit of its own, so nothing instantiated it and
+	// its member templates were never read by a compiler. It had drifted into a copy of TArray's
+	// API that could not build at all, and no build said so.
+	//
+	// The probe below is what keeps that from happening again: it is instantiated, never called,
+	// and it exists so a bit array that stops compiling stops compiling here, where the error
+	// names the line, instead of inside whatever feature uses it first.
+	// ---------------------------------------------------------------------------
+	template<typename _TSizeType>
+	void BitArrayCompileProbe()
+	{
+		TBitArray<_TSizeType> Bits;
+		Bits.Add(TRUE);
+		Bits.AddDefaultGetRef() = TRUE;
+		Bits.SetNum((_TSizeType)70);
+		Bits.Reserve((_TSizeType)256);
+		Bits[0] = FALSE;
+		Bits.Swap(0, 1);
+		Bits.RemoveAtSwap((_TSizeType)0);
+		Bits.Pop();
+		Bits.FirstRef() = TRUE;
+		Bits.LastRef() = FALSE;
+		Bits.GetRef(0) = TRUE;
+		INT32 FoundIndex = 0;
+		(void)Bits.FindFirst(TRUE, FoundIndex);
+		(void)Bits.FindFirst(TRUE);
+		(void)Bits.Contains(TRUE);
+
+		TBitArray<_TSizeType> Copy(Bits);
+		Copy = Bits;
+		Copy.Append(Bits);
+		Copy.Append(EMemory::Move(Bits));
+		Copy.Empty();
+		Copy.Empty((_TSizeType)64);
+		Copy.Reset();
+		Copy.SetNum((_TSizeType)0);
+		Copy.Shrink();
+
+		TBitArray<_TSizeType> Moved(EMemory::Move(Copy));
+		Moved = EMemory::Move(Copy);
+
+		const TBitArray<_TSizeType>& ConstBits = Moved;
+		(void)ConstBits.Num<UINT32>();
+		(void)ConstBits.ElementNum<UINT32>();
+		(void)ConstBits.Capacity<UINT32>();
+		(void)ConstBits.ElementCapacity<UINT32>();
+		(void)ConstBits.AllocateSize<UINT32>();
+		(void)ConstBits.IsEmpty();
+		(void)ConstBits.IsValidIndex(0);
+		(void)ConstBits.GetData();
+		for (auto It = ConstBits.begin(); It; ++It)
+		{
+			(void)((BOOL8)(*It));
+		}
+		for (auto It = ConstBits.rbegin(); It; ++It)
+		{
+			(void)((BOOL8)(*It));
+		}
+		for (auto It = Moved.begin(); It; ++It)
+		{
+			(*It) = TRUE;
+		}
+	}
+	// Reading the class and reading the probe are the two halves of the check: the first reads
+	// every non template member, the second every template one.
+	template class TBitArray<INT32>;
+	template void BitArrayCompileProbe<INT32>();
 
 };

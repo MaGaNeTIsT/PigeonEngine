@@ -1,0 +1,50 @@
+{
+	"Name": "EngineSystem",
+	"Template": "Components/C_EngineSystem.hlsl",
+	"Defines": [
+		{ "Name": "PE_SHADER_BINDLESS", "Value": 0 },
+		{ "Name": "PE_PLATFORM_D3D12", "Value": 1 },
+		{ "Name": "PE_SHADER_QUALITY_LEVEL", "Value": 15 },
+		{ "Name": "PE_WITH_EDITOR", "Value": 1 },
+		{ "Name": "PE_EDITOR_CHECKER_GRID_CM", "Value": 2000 }
+	],
+	"ConstantBuffers": [
+		{
+			"Name": "GlobalParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "TimeParams", "Format": "float4" },
+				{ "Name": "DeltaTime", "Format": "float" },
+				{ "Name": "FrameIndex", "Format": "uint" },
+				{ "Name": "RenderFlags", "Format": "uint4" },
+				{ "Name": "DirectionalLightCount", "Format": "uint" },
+				{ "Name": "LocalLightCount", "Format": "uint" }
+			]
+		},
+		{
+			"Name": "ViewParams",
+			"Slot": 1,
+			"Fields": [
+				{ "Name": "ViewMatrix", "Format": "float4x4" },
+				{ "Name": "ViewInvMatrix", "Format": "float4x4" },
+				{ "Name": "ProjectionMatrix", "Format": "float4x4" },
+				{ "Name": "ProjectionInvMatrix", "Format": "float4x4" },
+				{ "Name": "ViewProjectionMatrix", "Format": "float4x4" },
+				{ "Name": "ViewProjectionInvMatrix", "Format": "float4x4" },
+				{ "Name": "ViewPosition", "Format": "float4" },
+				{ "Name": "ViewDirection", "Format": "float4" },
+				{ "Name": "ScreenSize", "Format": "float2" },
+				{ "Name": "InvScreenSize", "Format": "float2" },
+				{ "Name": "NearFarParams", "Format": "float4" },
+				{ "Name": "ViewportRect", "Format": "float4" },
+				{ "Name": "ExposureParams", "Format": "float4" }
+			]
+		}
+	],
+	"Samplers": [
+		{ "Name": "SamplerLinearWrap", "Filter": "MinMagMipLinear", "AddressU": "Wrap", "AddressV": "Wrap", "AddressW": "Wrap", "Slot": 0 },
+		{ "Name": "SamplerLinearClamp", "Filter": "MinMagMipLinear", "AddressU": "Clamp", "AddressV": "Clamp", "AddressW": "Clamp", "Slot": 1 },
+		{ "Name": "SamplerPointClamp", "Filter": "Point", "AddressU": "Clamp", "AddressV": "Clamp", "AddressW": "Clamp", "Slot": 2 },
+		{ "Name": "SamplerShadow", "Filter": "MinMagMipLinear", "AddressU": "Border", "AddressV": "Border", "AddressW": "Border", "Slot": 3, "ComparisonFunc": "LessEqual", "BorderColor": [1.0, 1.0, 1.0, 1.0] }
+	]
+}
