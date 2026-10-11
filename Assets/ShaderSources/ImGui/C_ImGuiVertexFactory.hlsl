@@ -80,6 +80,19 @@ void VFUnpackVertex(in VFAttributes InAttributes, in VFContext InContext, out VF
 	OutVertex.UV1 = float2(0.0, 0.0);
 	OutVertex.Color = InAttributes.Color;
 
+	// Instance and world spaces: VFTransformToWorld fills all six and runs right after this.
+	// They are written here because FXC requires an out parameter to be completely
+	// initialized by the callee (error X3508) and cannot see that the next call is what fills
+	// them. The values are the untransformed identity frame, so a UI vertex that skipped the
+	// transform reads as one at the origin rather than as arbitrary memory.
+	OutVertex.InstancePosition = OutVertex.ObjectPosition;
+	OutVertex.InstanceNormal = OutVertex.ObjectNormal;
+
+	OutVertex.WorldPosition = float3(0.0, 0.0, 0.0);
+	OutVertex.WorldNormal = float3(0.0, 0.0, 1.0);
+	OutVertex.WorldTangent = float3(1.0, 0.0, 0.0);
+	OutVertex.WorldBitangent = float3(0.0, 1.0, 0.0);
+
 	OutVertex.Custom[0] = float4(0.0, 0.0, 0.0, 0.0);
 	OutVertex.Custom[1] = float4(0.0, 0.0, 0.0, 0.0);
 }
@@ -100,7 +113,7 @@ void VFTransformToWorld(inout VFVertex InOutVertex, in VFContext InContext)
 		InOutVertex.WorldTangent, InOutVertex.WorldBitangent);
 }
 
-void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, out VFVarying OutVarying)
+void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, inout VFVarying OutVarying)
 {
 	// The offset is a world space displacement, so it is added before the view
 	// projection is applied. A UI material has no reason to displace, but it goes

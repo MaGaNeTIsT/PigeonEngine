@@ -67,14 +67,12 @@ namespace PigeonEngine
 	{
 		// Only the program: the geometry is the engine's fullscreen triangle, which the shared
 		// draw path owns, so a sky light carries no mesh of its own any more.
-		if (!(RSkyLightSceneProxy::SkyProgram))
-		{
-			const EShaderInstance* SkyInstance = GetSkyShaderInstance();
-			if (SkyInstance)
-			{
-				RSkyLightSceneProxy::SkyProgram = SkyInstance->GetProgram();
-			}
-		}
+		//
+		// Re-derived on every construction rather than only when the cached pointer is empty: the
+		// static outlives one engine lifetime inside a process that restarts the engine, and a
+		// program left over from the previous lifetime is a pointer into released assets.
+		const EShaderInstance* SkyInstance = GetSkyShaderInstance();
+		RSkyLightSceneProxy::SkyProgram = (SkyInstance ? SkyInstance->GetProgram() : nullptr);
 	}
 
 	void RSkyLightSceneProxy::OnShaderAssetReplaced()
@@ -192,22 +190,45 @@ namespace PigeonEngine
 	BOOL32 RSkyLightSceneProxy::IsRenderValid()const
 	{
 		// No mesh in this test any more: the geometry is the engine's fullscreen triangle.
+		//
+		// Each term says why it failed before returning, because this is the predicate RenderSky
+		// pauses on: "render invalid" on its own does not say whether the program, one of its
+		// stages, the cube asset or the cube's device object is what is missing - and on a back-end
+		// whose shaders have not been built yet it is the first of them. The report is deduplicated
+		// per reason, so a sky that stays broken costs one line rather than one per frame.
 #if _EDITOR_ONLY
-		BOOL32 IsValid = (!!(RSkyLightSceneProxy::SkyProgram));
-		if (IsValid)
+		if (!RSkyLightSceneProxy::SkyProgram)
 		{
-			IsValid = (!!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_VERTEX))
-				&& (!!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_PIXEL));
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its sky program is not resolved")));
+			return FALSE;
 		}
-#else
-		BOOL32 IsValid = TRUE;
+		if (!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_VERTEX))
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("the vertex stage of its sky program has no render resource")));
+			return FALSE;
+		}
+		if (!ResolveShaderStageResource(*RSkyLightSceneProxy::SkyProgram, EShaderStageType::SHADER_STAGE_PIXEL))
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("the pixel stage of its sky program has no render resource")));
+			return FALSE;
+		}
 #endif
-		IsValid = IsValid && (!!TextureCubeAsset);
-		if (IsValid)
+		if (!TextureCubeAsset)
 		{
-			IsValid = TextureCubeAsset->IsRenderResourceValid() && (AdjustIntensity >= 0.001f);
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("it has no environment cube")));
+			return FALSE;
 		}
-		return IsValid;
+		if (!TextureCubeAsset->IsRenderResourceValid())
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its environment cube has no render resource")));
+			return FALSE;
+		}
+		if (AdjustIntensity < 0.001f)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the sky dome")), EString(PE_TEXT("its adjust intensity is zero")));
+			return FALSE;
+		}
+		return TRUE;
 	}
 	void RSkyLightSceneProxy::BindRenderResource()const
 	{
@@ -216,6 +237,29 @@ namespace PigeonEngine
 	}
 	BOOL32 RSkyLightSceneProxy::EnsurePipelineState()
 	{
+		/*
+		* A program that is missing is asked for again, which is what makes a sky whose first
+		* resolution failed recover instead of staying without one for the session.
+		*
+		* The first resolution runs where the proxy is created, and that call is the load thread's
+		* synchronous form: if the sky shader could not be assembled then, nothing else would ever
+		* ask again, because the reload refresh only runs when a shader asset is replaced.
+		* RequireInstance is the any-thread form - it answers from the cache and otherwise records
+		* one request for the load thread, which is what every draw path does with a material that
+		* is not assembled yet. The load manager deduplicates the request, so asking every frame
+		* costs a table lookup for as long as the state lasts.
+		*
+		* It goes before the drop below on purpose: a program that arrives here is a different one
+		* than the pipeline state was built from, and the drop is what notices that.
+		*/
+		if (!SkyProgram)
+		{
+			const EShaderInstance* SkyInstance = RequireSkyShaderInstance();
+			if (SkyInstance)
+			{
+				RSkyLightSceneProxy::SkyProgram = SkyInstance->GetProgram();
+			}
+		}
 		DropStateForReplacedProgram();
 		if (PipelineState)
 		{

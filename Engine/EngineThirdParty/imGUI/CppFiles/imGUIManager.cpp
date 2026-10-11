@@ -63,6 +63,10 @@ namespace PigeonEngine
 	}
 	void CImGUIManager::ShutDown()
 	{
+		// The font atlas is session scoped, so it is released here rather than by ShutDown, which the
+		// shader replacement path also calls: this is the one point where nothing will be drawn again,
+		// and the renderer answers for the order (it owns the device object).
+		Renderer.ReleaseFontTexture();
 		Renderer.ShutDown();
 
 		ImGuiIO& io = ImGui::GetIO();

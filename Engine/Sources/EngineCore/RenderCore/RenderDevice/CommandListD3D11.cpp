@@ -3,6 +3,7 @@
 #include "PipelineStateD3D11.h"
 #include "D3D11Native.h"
 #include <RenderResource.h>
+#include <Editor/EditorLogManager.h>
 #include <Development/GPUProfiler.h>
 
 namespace PigeonEngine
@@ -127,6 +128,7 @@ namespace PigeonEngine
 		, CurrentBlendFactor(0.f, 0.f, 0.f, 0.f)
 		, CurrentSampleMask(0xffffffffu)
 		, CurrentStencilRef(0u)
+		, BoundComputeUAVs{}
 	{
 		// D3D11 path uses the device's shared immediate context so legacy
 		// proxy code that still calls RDeviceD3D11 directly stays in lockstep
@@ -233,11 +235,36 @@ namespace PigeonEngine
 	}
 
 	// --------------------------------------------------------
-	// Barriers (no-op on D3D11)
+	// Barriers (no state transition; releases the write binding)
 	// --------------------------------------------------------
 
-	void RCommandListD3D11::ResourceBarrier(IRRHIResource* /*InResource*/, ERHIResourceState /*InBefore*/, ERHIResourceState /*InAfter*/)
+	void RCommandListD3D11::ResourceBarrier(IRRHIResource* InResource, ERHIResourceState /*InBefore*/, ERHIResourceState InAfter)
 	{
+		if ((!ImmediateContext) || (!InResource))
+		{
+			return;
+		}
+		// D3D11 tracks hazards for the caller, but not this one: it never lets a resource be bound
+		// for write and for read at the same time, and the binding that loses is the read one. While
+		// the unordered access view still stands, binding the read view of the same resource leaves
+		// the slot holding nothing, with no error and no warning once the debug layer is off - which
+		// is how a resource the engine published and bound reads as absent. A barrier naming any
+		// state but unordered access is the transition out of that write binding, so the binding is
+		// released here, before whatever reads the resource is recorded.
+		if (InAfter == ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			return;
+		}
+		for (UINT32 Slot = 0u; Slot < D3D11_PS_CS_UAV_REGISTER_COUNT; Slot++)
+		{
+			if (BoundComputeUAVs[Slot] != InResource)
+			{
+				continue;
+			}
+			BoundComputeUAVs[Slot] = nullptr;
+			ID3D11UnorderedAccessView* NullUAV = nullptr;
+			ImmediateContext->CSSetUnorderedAccessViews(Slot, 1u, &NullUAV, nullptr);
+		}
 	}
 
 	// --------------------------------------------------------
@@ -539,8 +566,17 @@ namespace PigeonEngine
 			return;
 		}
 		ID3D11UnorderedAccessView* NativeUAV = ExtractD3D11UAV(InTexture);
+		if (!NativeUAV)
+		{
+			// Same trap as the buffer overload below: an unbound slot swallows the writes silently.
+			PE_LOG_ERROR(EString("[D3D11] A texture bound as a UAV at slot ") + ToString(InSlot)
+				+ EString(" has no unordered access view: the shader's writes through it go nowhere."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11: a texture bound as a UAV has no unordered access view."));
+			return;
+		}
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NativeUAV, &InitialCount);
+		BoundComputeUAVs[InSlot] = InTexture;
 	}
 
 	void RCommandListD3D11::SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)
@@ -556,8 +592,22 @@ namespace PigeonEngine
 			return;
 		}
 		ID3D11UnorderedAccessView* NativeUAV = ExtractD3D11UAV(InBuffer);
+		if (!NativeUAV)
+		{
+			// Binding nothing is not the same as not binding: the slot is left unbound, so a shader
+			// that writes through it writes nowhere, and the pass that ran looks exactly like a pass
+			// that produced zeroes - which is what a compute bake with no UAV looks like from the
+			// outside. The engine side only binds a UAV for a value its parameter set marked as one,
+			// so a resource without the view is a creation path that dropped the flag rather than a
+			// caller asking to clear the slot.
+			PE_LOG_ERROR(EString("[D3D11] A buffer bound as a UAV at slot ") + ToString(InSlot)
+				+ EString(" has no unordered access view: the shader's writes through it go nowhere."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11: a buffer bound as a UAV has no unordered access view."));
+			return;
+		}
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NativeUAV, &InitialCount);
+		BoundComputeUAVs[InSlot] = InBuffer;
 	}
 
 	void RCommandListD3D11::ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot)
@@ -575,6 +625,7 @@ namespace PigeonEngine
 		ID3D11UnorderedAccessView* NullUAV = nullptr;
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NullUAV, &InitialCount);
+		BoundComputeUAVs[InSlot] = nullptr;
 	}
 
 	void RCommandListD3D11::SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler)

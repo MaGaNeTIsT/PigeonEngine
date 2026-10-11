@@ -44,7 +44,7 @@ namespace PigeonEngine
 		virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc)override;
 		virtual void EndRenderPass()override;
 
-		// IRCommandList barriers (no-op on D3D11) -----------------------------
+		// IRCommandList barriers (releases a UAV write binding) ---------------
 		virtual void ResourceBarrier(IRRHIResource* InResource, ERHIResourceState InBefore, ERHIResourceState InAfter)override;
 
 		// IRCommandList pipeline / fixed-function ------------------------------
@@ -117,6 +117,13 @@ namespace PigeonEngine
 		Color4												CurrentBlendFactor;
 		UINT32												CurrentSampleMask;
 		UINT32												CurrentStencilRef;
+
+		// The compute unordered access view each slot currently holds, as this command list bound
+		// it. A resource bound for write may not be read while that binding stands - D3D11 drops the
+		// read view and leaves the slot holding nothing - so the barrier that takes a resource out of
+		// the unordered access state is where this binding is released (see ResourceBarrier). Unlike
+		// the state above, the slots mirror the immediate context, so Reset leaves them alone.
+		IRRHIResource*										BoundComputeUAVs[D3D11_PS_CS_UAV_REGISTER_COUNT];
 	};
 
 };

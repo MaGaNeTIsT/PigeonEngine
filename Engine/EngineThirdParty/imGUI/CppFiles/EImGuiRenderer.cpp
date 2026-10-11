@@ -59,10 +59,15 @@ namespace PigeonEngine
 
 		if (!LoadImGuiMaterial())
 		{
+			// The overlay is the editor's only output, so a renderer that never comes up is
+			// reported rather than left absent: this runs every frame until it succeeds, and the
+			// report is deduplicated per reason.
+			ReportSkippedDraw(EString(PE_TEXT("the ImGui overlay")), EString(PE_TEXT("its renderer could not load the ImGui material")));
 			return FALSE;
 		}
 		if (!BuildPipelineState())
 		{
+			ReportSkippedDraw(EString(PE_TEXT("the ImGui overlay")), EString(PE_TEXT("its renderer could not build the pipeline state")));
 			ReleaseImGuiMaterialInstance();
 			return FALSE;
 		}
@@ -76,9 +81,21 @@ namespace PigeonEngine
 		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if (Device)
 		{
-			ReleaseFontTexture();
 			ReleaseDynamicBuffers();
 		}
+		/*
+		* What this deliberately does not release: the font atlas and the bindless index it is
+		* registered under. The atlas is session scoped - ImGui builds it from its own IO once, and
+		* every reload reuses it - while this call runs on each shader replacement, where the only
+		* thing that went stale is what was derived from the program: the pipeline state, the two
+		* blocks and the slot the atlas is bound at, all released or re-derived below.
+		*
+		* Releasing the texture here would destroy a device object that ImGui's already recorded draw
+		* commands still name, and a backend cannot repair that mid frame: ImDrawCmd::GetTexID reads
+		* the texture data's id live at replay time, so an id cleared between recording and replay
+		* trips ImGui's own assertion (imgui.h) and binds nothing in a release build. The atlas goes
+		* with the device instead, through ReleaseFontTexture at engine shutdown.
+		*/
 		// The pass's blocks own gpu buffers and mirrors sized from a program of this session, so
 		// they go back with it: a later Initialize() rebuilds both from the program it finds then.
 		ViewBlock.ReleaseRenderResources();

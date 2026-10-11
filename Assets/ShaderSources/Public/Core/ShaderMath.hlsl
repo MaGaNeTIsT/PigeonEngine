@@ -17,99 +17,102 @@
 // ---------------------------------------------------------------------------
 // Component-wise select
 //
-// The legacy library spelled out 75 hand written overloads; the HLSL select()
-// intrinsic is the same operation, so the overloads below are one line each and
-// keep the original call shape (result is A where the condition holds).
+// The legacy library spelled out 75 hand written overloads; one line each is
+// enough, and the ternary is what every one of them ends in. Deliberately not
+// the HLSL select() intrinsic: that one belongs to HLSL 2021, and the D3D11
+// path compiles this library with FXC, which has no such function (error
+// X3004). The ternary is the same operation - component-wise for a vector
+// condition exactly as for a scalar one - and both compilers take it.
 // ---------------------------------------------------------------------------
 
 float	SelectInternal(bool InCondition, float InTrueValue, float InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float2	SelectInternal(bool InCondition, float2 InTrueValue, float2 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float3	SelectInternal(bool InCondition, float3 InTrueValue, float3 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float4	SelectInternal(bool InCondition, float4 InTrueValue, float4 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float2	SelectInternal(bool2 InCondition, float2 InTrueValue, float2 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float3	SelectInternal(bool3 InCondition, float3 InTrueValue, float3 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float4	SelectInternal(bool4 InCondition, float4 InTrueValue, float4 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float2	SelectInternal(bool2 InCondition, float InTrueValue, float InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float3	SelectInternal(bool3 InCondition, float InTrueValue, float InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 float4	SelectInternal(bool4 InCondition, float InTrueValue, float InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 int		SelectInternal(bool InCondition, int InTrueValue, int InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 int2	SelectInternal(bool2 InCondition, int2 InTrueValue, int2 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 int3	SelectInternal(bool3 InCondition, int3 InTrueValue, int3 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 int4	SelectInternal(bool4 InCondition, int4 InTrueValue, int4 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 uint	SelectInternal(bool InCondition, uint InTrueValue, uint InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 uint2	SelectInternal(bool2 InCondition, uint2 InTrueValue, uint2 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 uint3	SelectInternal(bool3 InCondition, uint3 InTrueValue, uint3 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 uint4	SelectInternal(bool4 InCondition, uint4 InTrueValue, uint4 InFalseValue)
 {
-	return select(InCondition, InTrueValue, InFalseValue);
+	return (InCondition ? InTrueValue : InFalseValue);
 }
 
 // ---------------------------------------------------------------------------

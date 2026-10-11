@@ -272,7 +272,7 @@ void VFTransformToWorld(inout VFVertex InOutVertex, in VFContext InContext)
 	BuildWorldTangentFrame(InOutVertex.ObjectNormal, InOutVertex.ObjectTangent, InOutVertex.WorldTangent, InOutVertex.WorldBitangent);
 }
 
-void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, out VFVarying OutVarying)
+void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, inout VFVarying OutVarying)
 {
 	// The material has had its say by now: the offset it returned is a world space
 	// one, and it is applied before the projection, which is what makes a blade a

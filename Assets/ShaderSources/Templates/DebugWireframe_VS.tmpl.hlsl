@@ -76,6 +76,10 @@ void VSMain(in VFAttributes InAttributes,
 	const float4 InstanceColor = DebugPrimitiveColors[InInstanceID].InstanceColor;
 	Vertex.Custom[0] = InstanceColor;
 
+	// Same reason as the programmable bridge: the varying goes into an inout parameter before
+	// anything has written it, and FXC requires the argument of one to be fully initialized.
+	OutVarying = (VFVarying)0;
+
 	MaterialVertexInput MatInput = BuildMaterialVertexInput(Vertex, Context);
 	float3 WorldPositionOffset = float3(0.0, 0.0, 0.0);
 #if MATERIAL_HAS_FUNCTIONS

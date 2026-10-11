@@ -255,6 +255,34 @@ namespace PigeonEngine
 		BindConstantBufferBindings(InCommandList, InOutBuffers, InProgram, InStage, InIsCompute, InBlockName);
 	}
 
+	// The (binding name, stage) pairs already reported as unbound, keyed as one string so a session
+	// that never publishes a resource costs one line rather than one per draw. Only ever grows, and
+	// it holds one entry per resource that is read but never bound, which is a handful in a session.
+	static TArray<EString>& GetReportedUnboundResources()
+	{
+		static TArray<EString> ReportedUnboundResources;
+		return ReportedUnboundResources;
+	}
+
+	// A plan entry only exists for a binding the compiled shader reads (the builder skips the culled
+	// ones), so an entry with no value published for it means a draw reads a slot nobody wrote:
+	// that reads as zeroes - or as whatever the previous draw left there - and looks exactly like a
+	// feature that ran and produced nothing. Named once per (resource, stage), because naming it per
+	// draw would bury the frame in the same line.
+	static void ReportUnboundShaderResource(const EName& InName, const ERHIShaderStage InStage)
+	{
+		const EString ReportKey = InName.ToString() + EString(PE_TEXT("|")) + ToString(static_cast<UINT32>(InStage));
+		TArray<EString>& ReportedUnboundResources = GetReportedUnboundResources();
+		if (ReportedUnboundResources.Contains(ReportKey))
+		{
+			return;
+		}
+		ReportedUnboundResources.Add(ReportKey);
+		PE_LOG_ERROR(EString(PE_TEXT("[ShaderAssetBinding] Stage ")) + ToString(static_cast<UINT32>(InStage))
+			+ EString(PE_TEXT(" reads '")) + InName.ToString()
+			+ EString(PE_TEXT("' but no value was published for it: the slot keeps whatever it held.")));
+	}
+
 	void BindShaderParameterResources(IRCommandList* InCommandList, const EShaderParameterSet& InParameters
 		, const EShaderBindingPlan& InBindingPlan, const ERHIShaderStage InStage)
 	{
@@ -269,9 +297,17 @@ namespace PigeonEngine
 			{
 				continue;
 			}
+			// A sampler carries no value in this model - the renderer binds its table once per frame -
+			// so only the resource kinds are the ones a caller has to publish.
+			const BOOL32 bNeedsValue = ((Binding->Kind == EShaderBindingKindType::SHADER_BINDING_KIND_SRV)
+				|| (Binding->Kind == EShaderBindingKindType::SHADER_BINDING_KIND_UAV)) ? TRUE : FALSE;
 			const EShaderParameterValue* Value = InParameters.FindResourceOverride(Binding->Name);
 			if (!Value)
 			{
+				if (bNeedsValue != FALSE)
+				{
+					ReportUnboundShaderResource(Binding->Name, InStage);
+				}
 				continue;
 			}
 			// Where the resource lands inside its table. Which table that is belongs to the
@@ -297,10 +333,18 @@ namespace PigeonEngine
 					{
 						InCommandList->SetShaderResourceView(InStage, Slot, ValueBuffer);
 					}
+					else
+					{
+						ReportUnboundShaderResource(Binding->Name, InStage);
+					}
 				}
 				else if (ValueTexture != nullptr)
 				{
 					InCommandList->SetShaderResourceView(InStage, Slot, ValueTexture);
+				}
+				else
+				{
+					ReportUnboundShaderResource(Binding->Name, InStage);
 				}
 				break;
 			case EShaderBindingKindType::SHADER_BINDING_KIND_UAV:
@@ -310,10 +354,18 @@ namespace PigeonEngine
 					{
 						InCommandList->SetUnorderedAccessView(InStage, Slot, ValueBuffer);
 					}
+					else
+					{
+						ReportUnboundShaderResource(Binding->Name, InStage);
+					}
 				}
 				else if (ValueTexture != nullptr)
 				{
 					InCommandList->SetUnorderedAccessView(InStage, Slot, ValueTexture);
+				}
+				else
+				{
+					ReportUnboundShaderResource(Binding->Name, InStage);
 				}
 				break;
 			case EShaderBindingKindType::SHADER_BINDING_KIND_SAMPLER:

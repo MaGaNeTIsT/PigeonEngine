@@ -34,10 +34,17 @@
 //       transform.
 //
 //   void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset,
-//       out VFVarying OutVarying);
+//       inout VFVarying OutVarying);
 //       Writes the system interpolants, including the clip space position, from
 //       the world position plus the material's offset. Called after the material
-//       has had its say, which is why the offset is a parameter.
+//       has had its say, which is why the offset is a parameter, and inout rather
+//       than out for that same reason: the material's own interpolants are in the
+//       struct already and this call completes it rather than replacing it. FXC
+//       reads the distinction literally - an out parameter has to be completely
+//       initialized by the callee (X3508), which no factory can do for members a
+//       material owns - so out would not compile on the D3D11 path. The caller
+//       therefore initializes the varying before the bridge runs, which is what an
+//       inout argument requires.
 //
 // The layout of VFVertex is fixed. A factory that has no data for a member fills
 // in the documented fallback instead of removing the member, which is what keeps
