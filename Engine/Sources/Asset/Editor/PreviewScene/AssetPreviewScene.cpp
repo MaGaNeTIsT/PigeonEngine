@@ -13,9 +13,16 @@
 #include <PigeonBase/Object/Component/Primitive/StaticMeshComponent.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <PigeonBase/Object/World/PreviewWorld.h>
-#include <RenderCore/RenderDevice/DeviceD3D11.h>
+#include <Main/MainManager.h>
+#include <Development/GPUProfiler.h>
+#include <RHI/IRRHIDevice.h>
+#include <RHI/IRCommandList.h>
 #include <RenderCore/Renderer/SceneRenderer.h>
 #include <RenderCore/RenderProxy/ViewProxy.h>
+#include <ShaderAsset/ShaderAsset.h>
+#include <Shader/ShaderAssetBinding.h>
+#include <Shader/ShaderParameter.h>
+#include <imGUI/Headers/imGUIManager.h>
 
 namespace PigeonEngine
 {
@@ -24,55 +31,204 @@ namespace PigeonEngine
 		class RAssetPreviewSceneRenderer final : public RSceneRenderer
 		{
 		public:
-			void RenderPreview()
+			// Records the preview's frame on the render thread.
+			//
+			// The main renderer owns the window, the final blit, the ImGui overlay and the
+			// frame's GPU profiling slice; this renderer owns one offscreen view. So it repeats
+			// the parts of RSceneRenderer::Render that build a view - drain the scene commands,
+			// build the targets, bind the frame wide state, record the base pass - and
+			// deliberately records none of the parts that belong to the window.
+			void RenderPreview_RenderThread()
 			{
-				RDeviceD3D11* RenderDevice = RDeviceD3D11::GetDeviceSingleton();
-				RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-				RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-				RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-				RenderDevice->BindVSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
-				RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-				RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-				RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-				RenderDevice->BindPSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
-				RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_CLAMP].SamplerState, 0u);
-				RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_POINT_WRAP].SamplerState, 1u);
-				RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_CLAMP].SamplerState, 2u);
-				RenderDevice->BindCSSamplerState(Samplers[RSamplerType::SAMPLER_TYPE_LINEAR_WRAP].SamplerState, 3u);
+				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+				if (!RenderDevice)
+				{
+					return;
+				}
 
-				RenderDevice->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				RenderDevice->SetRasterizerState(Rasterizer[RRasterizerType::RASTERIZER_TYPE_SOLID_BACK].RasterizerState);
+				CurrentCommandList = RenderDevice->AcquireCommandList();
+				EMainManager::GetManagerSingleton()->SetActiveCommandList(CurrentCommandList);
 
+				// The frame's timing slice was opened and closed by the main renderer, so this
+				// renderer's passes are not part of it and are dropped instead of charged to it.
+				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(FALSE);
+
+				// Publishes this frame's commands, culls against the preview camera, builds the
+				// per-view targets. A viewport change is picked up here.
+				InitNewFrame();
+				EnsureEnginePassPipelineStates();
+
+				BindSamplerTable(CurrentCommandList);
+				// A preview world has no sky, which is exactly what this publishes: no
+				// environment, so the indirect term contributes nothing.
+				RenderEnvironmentSH();
+				UpdateGlobalParameters();
 				BasePass();
+
+				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(TRUE);
+
+				// The base pass leaves the scene colour as a render target. The display copy
+				// reads it, so it has to be readable first - the main renderer makes the same
+				// transition in its final output pass.
+				if (RViewProxy* PreviewView = FindViewProxy(FinalOutputView))
+				{
+					RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
+					if (SceneTextures && (*SceneTextures))
+					{
+						TransitionToShaderReadable((*SceneTextures)->SceneColor.GetResolvedRHITexture());
+					}
+				}
+
+				// Scene colour is scene referred and its alpha is not a display alpha: the base
+				// pass writes the emissive with alpha 0 and the lighting pass preserves the
+				// destination alpha. The engine's final output pass is what turns that into
+				// something an image can show - exposure, tone mapping, alpha 1 - so the preview
+				// runs it into an offscreen target instead of into the window.
+				RenderDisplayTarget();
+
+				// Resolved once per recorded frame and read by the editor on the next one.
+				UpdateTextureId();
+
+				RenderDevice->SubmitCommandList(CurrentCommandList);
+				CurrentCommandList = nullptr;
+				EMainManager::GetManagerSingleton()->SetActiveCommandList(nullptr);
 			}
 
 			ImTextureID GetTextureId() const
 			{
-				if (!Scene)
-				{
-					return ImTextureID_Invalid;
-				}
-
-				const TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
-				if (ViewProxies.Num() <= 0)
-				{
-					return ImTextureID_Invalid;
-				}
-
-				RViewProxy* PreviewViewProxy = ViewProxies[0];
-				if (!PreviewViewProxy)
-				{
-					return ImTextureID_Invalid;
-				}
-
-				const RSceneTextures* const* SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewViewProxy->GetUniqueID());
-				if ((!SceneTextures) || (!(*SceneTextures)) || (!(*SceneTextures)->SceneColor.ShaderResourceView.Get()))
-				{
-					return ImTextureID_Invalid;
-				}
-
-				return reinterpret_cast<ImTextureID>((*SceneTextures)->SceneColor.ShaderResourceView.Get());
+				return PreviewTextureId;
 			}
+
+		private:
+			// The renderer wide sampler table, bound once per frame for the same reason the main
+			// renderer binds it there: the register is the array index and no draw changes it.
+			// This is the one piece of state the two renderers must agree on, because their
+			// shaders are the same shaders.
+			void BindSamplerTable(IRCommandList* InCommandList)
+			{
+				for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
+				{
+					IRRHISampler* SamplerPtr = Samplers[SamplerIndex].RHISampler
+						? Samplers[SamplerIndex].RHISampler
+						: static_cast<IRRHISampler*>(&Samplers[SamplerIndex]);
+					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_VERTEX, SamplerIndex, SamplerPtr);
+					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, SamplerIndex, SamplerPtr);
+					InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, SamplerIndex, SamplerPtr);
+				}
+			}
+
+			// The display-referred copy of the view: what ImGui can actually show.
+			//
+			// This is the engine's final output pass, recorded into an offscreen target instead
+			// of into the window: the same program (Copy), the same pipeline state, the same view
+			// exposure block, and therefore the same image the main window shows. It is not
+			// optional for a preview - scene colour is scene referred (cd/m2, 16F) and its alpha
+			// is not a display alpha, so handing it to ImGui directly is what made the panel
+			// look black while the geometry was drawing all along.
+			void RenderDisplayTarget()
+			{
+				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+				IRRHIPipelineState* DisplayState = PipelineStates[PIPELINE_STATE_FINAL_OUTPUT];
+				if ((!RenderDevice) || (!DisplayState) || (!FullScreenProgram))
+				{
+					return;
+				}
+
+				RViewProxy* PreviewView = FindViewProxy(FinalOutputView);
+				if (!PreviewView)
+				{
+					return;
+				}
+				RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
+				if ((!SceneTextures) || (!(*SceneTextures)) || (!(*SceneTextures)->SceneColor.IsRenderResourceValid()))
+				{
+					return;
+				}
+
+				const EViewport& Viewport = PreviewView->GetRenderViewport();
+				const UINT32 DisplayWidth = static_cast<UINT32>(EMath::Max(Viewport.Width, 2.f));
+				const UINT32 DisplayHeight = static_cast<UINT32>(EMath::Max(Viewport.Height, 2.f));
+				if ((PreviewDisplay.IsRenderResourceValid() == FALSE)
+					|| (PreviewDisplaySize.x != static_cast<INT32>(DisplayWidth))
+					|| (PreviewDisplaySize.y != static_cast<INT32>(DisplayHeight)))
+				{
+					PreviewDisplay.ReleaseRenderResource();
+					if (PreviewDisplay.InitFromRHI(RenderDevice,
+						RTextureDesc(DisplayWidth, DisplayHeight,
+							RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
+							RFormatType::FORMAT_R8G8B8A8_UNORM)) == FALSE)
+					{
+						return;
+					}
+					PreviewDisplaySize = Vector2Int(static_cast<INT32>(DisplayWidth), static_cast<INT32>(DisplayHeight));
+				}
+
+				// The pass table's final output row states R8G8B8A8_UNORM, so the target above is
+				// created with exactly that format and the pipeline state's render target matches.
+				RRHIRenderPassDesc Pass;
+				Pass.RenderTargetCount				= 1u;
+				Pass.RenderTargets[0].Target		= PreviewDisplay.GetResolvedRHITexture();
+				Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
+				Pass.RenderTargets[0].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
+				Pass.RenderTargets[0].ClearColor	= Color4(0.f, 0.f, 0.f, 1.f);
+				Pass.DepthStencil.Target			= nullptr;
+				Pass.PassName						= PE_TEXT("PreviewDisplay");
+				CurrentCommandList->BeginRenderPass(Pass);
+
+				// D3D12 has no implicit viewport or scissor from the render targets, and for a
+				// full target the two are simply its size.
+				const EViewport DisplayViewport(0.f, 0.f, static_cast<FLOAT>(DisplayWidth), static_cast<FLOAT>(DisplayHeight), 0.f, 1.f);
+				CurrentCommandList->SetViewports(&DisplayViewport, 1u);
+				const ERect DisplayScissor(0.f, 0.f, static_cast<FLOAT>(DisplayWidth), static_cast<FLOAT>(DisplayHeight));
+				CurrentCommandList->SetScissorRects(&DisplayScissor, 1u);
+
+				CurrentCommandList->SetPipelineState(DisplayState);
+
+				// The copy program reads the view's exposure, so the view block is published and
+				// bound after the state - the same order the main renderer uses, because switching
+				// a signature voids the roots.
+				CurrentViewProxy = PreviewView;
+				CurrentViewProxy->UpdateRenderResource();
+				BindEngineParameters(CurrentCommandList, *FullScreenProgram);
+				FullScreenTriangle.BindPrimitiveBuffers(CurrentCommandList, *FullScreenProgram);
+
+				const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*FullScreenProgram, EShaderStageType::SHADER_STAGE_PIXEL);
+				if (PixelEntry)
+				{
+					EShaderParameterSet Parameters;
+					Parameters.SetTexture(EName(), EName(PE_TEXT("CopySourceTexture")), (*SceneTextures)->SceneColor.GetResolvedRHITexture());
+					BindShaderParameterResources(CurrentCommandList, Parameters
+						, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+				}
+
+				CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+				CurrentViewProxy = nullptr;
+
+				CurrentCommandList->EndRenderPass();
+
+				// ImGui samples it later in this frame, so it has to be readable before the list
+				// is submitted.
+				TransitionToShaderReadable(PreviewDisplay.GetResolvedRHITexture());
+			}
+
+			// The id handed to ImGui is the bindless index the overlay resolves, not a native
+			// view: that is what keeps this code indifferent to the active back-end. It is
+			// recomputed when the display target is rebuilt, at which point the texture object
+			// (and with it the index) can be a new one.
+			void UpdateTextureId()
+			{
+				PreviewTextureId = ImTextureID_Invalid;
+				if (PreviewDisplay.IsRenderResourceValid())
+				{
+					PreviewTextureId = EngineTextureToImgui(PreviewDisplay.GetResolvedRHITexture());
+				}
+			}
+
+		private:
+			ImTextureID				PreviewTextureId = ImTextureID_Invalid;
+			// Display-referred copy of the view's scene colour, and the size it was built for.
+			RRenderTexture2D		PreviewDisplay;
+			Vector2Int				PreviewDisplaySize = Vector2Int::Zero();
 		};
 
 		template<typename TValueType, typename TKeyType, typename TLerpType>
@@ -150,10 +306,17 @@ namespace PigeonEngine
 		}
 		m_Initialized = TRUE;
 		EnsureCameraActor();
+		// From here on the render thread records this preview's frame. Registration is what
+		// puts it in the frame at all: nothing else knows the preview world exists.
+		EMainManager::GetManagerSingleton()->RegisterFrameRenderer(this);
 	}
 
 	void EAssetPreviewScene::Shutdown()
 	{
+		// Unregistered first, so the frame callbacks can never reach a renderer that is about
+		// to be deleted. The calls run either between frames (editor closing) or after the
+		// render thread stopped (engine shutdown), so neither can race this.
+		EMainManager::GetManagerSingleton()->UnregisterFrameRenderer(this);
 		DestroyPreviewActor();
 		if (m_CameraActor)
 		{
@@ -209,11 +372,36 @@ namespace PigeonEngine
 		{
 			m_PreviewWorld->Tick(InDeltaSeconds);
 		}
-		if (m_PreviewRenderer)
+		// The recording itself happens on the render thread; this only publishes that this
+		// frame has something to record. A panel that stops ticking (closed) costs one more
+		// frame, which RenderFrame consumes.
+		m_bRenderRequested = ((m_PreviewRenderer != nullptr) && (GetPreviewMeshResource() != nullptr)) ? TRUE : FALSE;
+	}
+
+	void EAssetPreviewScene::PublishFrameCommands()
+	{
+		if ((!m_bRenderRequested) || (!m_PreviewRenderer))
 		{
-			m_PreviewRenderer->InitNewFrame();
-			static_cast<RAssetPreviewSceneRenderer*>(m_PreviewRenderer)->RenderPreview();
+			return;
 		}
+		// The preview scene is double buffered like the main one, and this is the only reader
+		// it has: flipping at the same boundary is what makes what Tick queued visible to the
+		// render thread in this frame.
+		if (RScene* PreviewScene = m_PreviewRenderer->GetRenderScene())
+		{
+			PreviewScene->SwapCommandSlots();
+		}
+	}
+
+	void EAssetPreviewScene::RenderFrame()
+	{
+		if ((!m_bRenderRequested) || (!m_PreviewRenderer))
+		{
+			return;
+		}
+		// Cleared on this side: one published frame is one recorded frame.
+		m_bRenderRequested = FALSE;
+		static_cast<RAssetPreviewSceneRenderer*>(m_PreviewRenderer)->RenderPreview_RenderThread();
 	}
 
 	void EAssetPreviewScene::SetStaticMesh(const EStaticMeshAsset* InStaticMeshAsset)
@@ -284,7 +472,9 @@ namespace PigeonEngine
 
 	ImTextureID EAssetPreviewScene::GetTextureId() const
 	{
-		if (!m_PreviewRenderer)
+		// Nothing published means nothing recorded: no mesh selected, or the first frame after
+		// one was, whose image only exists once the render thread has recorded it.
+		if ((!m_PreviewRenderer) || (!m_bRenderRequested))
 		{
 			return ImTextureID_Invalid;
 		}
@@ -321,6 +511,10 @@ namespace PigeonEngine
 		PActor* NewCameraActor = new PActor();
 		NewCameraActor->SetIsTickable(TRUE);
 		m_CameraComponent = new PCameraComponent(0.0f, 0.0f, static_cast<FLOAT>(m_ViewportWidth), static_cast<FLOAT>(m_ViewportHeight));
+		// BasePass records only the view that is the main one: it exists to skip secondary
+		// editor cameras. This camera is the only view of the preview world, so it has to be
+		// marked before the actor is added - the flag is read when the proxy is created.
+		m_CameraComponent->SetIsMainCamera(TRUE);
 		NewCameraActor->SetRootComponent(m_CameraComponent);
 		m_PreviewWorld->AddActor(NewCameraActor);
 		m_CameraActor = NewCameraActor;

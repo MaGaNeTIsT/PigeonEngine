@@ -321,7 +321,12 @@ namespace PigeonEngine
 			const BOOL32 bKindIsBuffer = (((Value->Kind == EShaderParameterValueKindType::SHADER_PARAMETER_VALUE_KIND_BUFFER)
 				|| (Value->Kind == EShaderParameterValueKindType::SHADER_PARAMETER_VALUE_KIND_UAV)) ? TRUE : FALSE);
 			IRRHITexture* ValueTexture = const_cast<IRRHITexture*>(Value->Texture);
-			IRRHIBuffer* ValueBuffer = ((Value->StructuredBuffer != nullptr)
+			// A structured buffer that was declared but never created binds nothing. Without this
+			// test the wrapper would be handed to the command list as if it were the back-end
+			// object, which is a null native resource at best - and on D3D12 a cast to the wrong
+			// interface, because an uncreated buffer has no RD3D12Buffer behind it. A renderer
+			// with no sky is the case that reaches here: its environment buffer is never built.
+			IRRHIBuffer* ValueBuffer = (((Value->StructuredBuffer != nullptr) && (Value->StructuredBuffer->IsRenderResourceValid() != FALSE))
 				? const_cast<RStructuredBuffer*>(Value->StructuredBuffer)->GetResolvedRHIBuffer() : nullptr);
 			const BOOL32 bUseBuffer = (((bKindIsBuffer != FALSE) && (ValueBuffer != nullptr)) || (ValueTexture == nullptr)) ? TRUE : FALSE;
 			switch (Binding->Kind)

@@ -314,7 +314,7 @@ namespace PigeonEngine
 			}
 			else
 			{
-				ImGui::TextWrapped("Preview texture hookup is temporarily skipped. Mesh, skeleton and clip binding stay available for the next step.");
+				ImGui::TextWrapped("No preview to show yet.");
 			}
 		}
 		ImGui::End();

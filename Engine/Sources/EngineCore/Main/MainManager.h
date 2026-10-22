@@ -1,5 +1,6 @@
 #pragma once
 #include "Main.h"
+#include "FrameRenderer.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/BaseType.h>
 #include <Base/Timer/Timer.h>
@@ -37,6 +38,13 @@ namespace PigeonEngine
 		*/
 		void			RegisterAssetManager(EManagerBase* InManager);
 		void			UnregisterAssetManager(EManagerBase* InManager);
+		/*
+		* Secondary frame renderers. See IEngineFrameRenderer for what the two calls mean and
+		* when they run. The editor asset previews register here in Initialize and unregister
+		* in Shutdown, so the registry never outlives the renderer it names.
+		*/
+		void			RegisterFrameRenderer(IEngineFrameRenderer* InRenderer);
+		void			UnregisterFrameRenderer(IEngineFrameRenderer* InRenderer);
 		/*
 		* TRUE between Initialize and the end of ShutDown. Render resources assert on it: a
 		* resource may not outlive EMainManager. This is an assertion only, it never changes
@@ -128,6 +136,10 @@ namespace PigeonEngine
 		* later may hold references into one registered earlier.
 		*/
 		TArray<class EManagerBase*>			m_AssetManagers;
+		// Secondary frame renderers, in registration order. Read on the render thread inside
+		// the frame callbacks and written on the game thread between frames, never at the same
+		// time - the frame boundary is a handshake between the two threads.
+		TArray<IEngineFrameRenderer*>		m_FrameRenderers;
 		BOOL32								m_bEngineLifetimeActive = FALSE;
 
 		// Releases every registered manager. Split out so Initialize's failure path and

@@ -2176,6 +2176,155 @@ namespace PigeonEngine
 		}
 	}
 
+	/*
+	* A second swap chain for an ImGui platform window.
+	*
+	* The device's main chain stays where it is (m_SwapChain + BackBufferWrapper): this one
+	* only owns its own back buffer and RTV, so creating or resizing a viewport window can
+	* never disturb the main window's frame. The wrapper is the same RRenderTexture2D the
+	* main back buffer uses, which is also what IRCommandList::BeginRenderPass expects on
+	* this back-end - the RTV is reached through IRD3D11Texture.
+	*/
+	class RD3D11WindowSwapChain final : public IRRHISwapChain
+	{
+	public:
+		RD3D11WindowSwapChain(ID3D11Device* InDevice, const Microsoft::WRL::ComPtr<IDXGISwapChain>& InSwapChain, UINT32 InWidth, UINT32 InHeight)
+			: Device(InDevice), SwapChain(InSwapChain), Width(InWidth), Height(InHeight)
+		{
+			CreateBackBuffer();
+		}
+		RD3D11WindowSwapChain(const RD3D11WindowSwapChain&) = delete;
+		RD3D11WindowSwapChain& operator=(const RD3D11WindowSwapChain&) = delete;
+		virtual ~RD3D11WindowSwapChain() override
+		{
+			BackBuffer.ReleaseRenderResource();
+			SwapChain = nullptr;
+			Device = nullptr;
+		}
+
+	public:
+		virtual IRRHITexture* GetBackBuffer() override
+		{
+			return (BackBuffer.IsRenderResourceValid() != FALSE) ? static_cast<IRRHITexture*>(&BackBuffer) : nullptr;
+		}
+		virtual BOOL8 Resize(UINT32 InWidth, UINT32 InHeight) override
+		{
+			if ((!SwapChain) || (InWidth == 0u) || (InHeight == 0u))
+			{
+				return FALSE;
+			}
+			BackBuffer.ReleaseRenderResource();
+			if (FAILED(SwapChain->ResizeBuffers(0u, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0u)))
+			{
+				return FALSE;
+			}
+			Width = InWidth;
+			Height = InHeight;
+			CreateBackBuffer();
+			return BackBuffer.IsRenderResourceValid();
+		}
+		virtual void Present(UINT32 InSyncInterval) override
+		{
+			if (SwapChain)
+			{
+				SwapChain->Present(InSyncInterval, 0u);
+			}
+		}
+		BOOL8 IsValid() const
+		{
+			return BackBuffer.IsRenderResourceValid();
+		}
+
+	private:
+		void CreateBackBuffer()
+		{
+			if ((!Device) || (!SwapChain))
+			{
+				return;
+			}
+			Microsoft::WRL::ComPtr<ID3D11Texture2D> BackBufferTexture;
+			if (FAILED(SwapChain->GetBuffer(0u, IID_PPV_ARGS(BackBufferTexture.GetAddressOf()))))
+			{
+				return;
+			}
+			Microsoft::WRL::ComPtr<ID3D11RenderTargetView> RenderTargetView;
+			if (FAILED(Device->CreateRenderTargetView(BackBufferTexture.Get(), nullptr, RenderTargetView.GetAddressOf())))
+			{
+				return;
+			}
+			BackBuffer.Buffer				= BackBufferTexture;
+			BackBuffer.RenderTargetView		= RenderTargetView;
+			BackBuffer.Width				= Width;
+			BackBuffer.Height				= Height;
+			BackBuffer.MipLevels			= 1u;
+			BackBuffer.ArraySize			= 1u;
+			BackBuffer.Format				= RFormatType::FORMAT_R8G8B8A8_UNORM;
+			BackBuffer.BindFlags			= static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET);
+		}
+
+	private:
+		Microsoft::WRL::ComPtr<ID3D11Device>	Device;
+		Microsoft::WRL::ComPtr<IDXGISwapChain>	SwapChain;
+		RRenderTexture2D						BackBuffer;
+		UINT32									Width;
+		UINT32									Height;
+	};
+
+	IRRHISwapChain* RDeviceD3D11::CreateSwapChainForWindow(HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, RFormatType InFormat) noexcept
+	{
+		if ((!m_Device) || (!m_SwapChain) || (!InWindowHandle) || (InWidth == 0u) || (InHeight == 0u))
+		{
+			return nullptr;
+		}
+
+		// The factory that made the main chain already targets the adapter this device runs
+		// on, so a viewport chain made from it is on the same adapter by construction.
+		Microsoft::WRL::ComPtr<IDXGIFactory> Factory;
+		if (FAILED(m_SwapChain->GetParent(IID_PPV_ARGS(Factory.GetAddressOf()))) || (!Factory))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::CreateSwapChainForWindow - IDXGIFactory not found."));
+			return nullptr;
+		}
+
+		DXGI_FORMAT SwapChainFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TranslateResourceFormat(SwapChainFormat, InFormat);
+		if (SwapChainFormat == DXGI_FORMAT_UNKNOWN)
+		{
+			SwapChainFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+
+		DXGI_SWAP_CHAIN_DESC SwapChainDesc = {};
+		SwapChainDesc.BufferDesc.Width	= InWidth;
+		SwapChainDesc.BufferDesc.Height	= InHeight;
+		SwapChainDesc.BufferDesc.Format	= SwapChainFormat;
+		SwapChainDesc.SampleDesc.Count	= 1u;
+		SwapChainDesc.SampleDesc.Quality= 0u;
+		SwapChainDesc.BufferUsage		= DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		// One buffer is enough for a tool window: ImGui records and presents it in the same
+		// frame, and the flip-model bookkeeping a second buffer buys is not worth it there.
+		SwapChainDesc.BufferCount		= 1u;
+		SwapChainDesc.OutputWindow		= InWindowHandle;
+		SwapChainDesc.Windowed			= TRUE;
+		SwapChainDesc.SwapEffect		= DXGI_SWAP_EFFECT_DISCARD;
+		SwapChainDesc.Flags				= 0u;
+
+		Microsoft::WRL::ComPtr<IDXGISwapChain> WindowSwapChain;
+		if (FAILED(Factory->CreateSwapChain(m_Device.Get(), &SwapChainDesc, WindowSwapChain.GetAddressOf())) || (!WindowSwapChain))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("RDeviceD3D11::CreateSwapChainForWindow - CreateSwapChain failed."));
+			return nullptr;
+		}
+		Factory->MakeWindowAssociation(InWindowHandle, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
+
+		RD3D11WindowSwapChain* Chain = new RD3D11WindowSwapChain(m_Device.Get(), WindowSwapChain, InWidth, InHeight);
+		if (Chain->IsValid() == FALSE)
+		{
+			delete Chain;
+			return nullptr;
+		}
+		return Chain;
+	}
+
 	// ----- Resource creation -----
 
 	BOOL8 RDeviceD3D11::CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData& InInitialData, IRRHIBuffer** OutBuffer) noexcept

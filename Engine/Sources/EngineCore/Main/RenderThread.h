@@ -69,6 +69,11 @@ namespace PigeonEngine
 		// touching the immediate context from the GameThread.
 		void SetAfterRenderCallback(const FAfterRenderCallback& InCallback);
 
+		// Optional callback invoked after the device frame opened and before the main scene
+		// records, on the RenderThread. Secondary renderers use it to record their own frame
+		// inside the same device frame; see IEngineFrameRenderer.
+		void SetPreSceneRenderCallback(const FAfterRenderCallback& InCallback);
+
 		BOOL8 IsRunning()const;
 
 	private:
@@ -81,6 +86,7 @@ namespace PigeonEngine
 		EThread					Worker;
 		EEvent					GameDoneEvent;
 		EEvent					RenderDoneEvent;
+		FAfterRenderCallback	PreSceneRenderCallback;
 		FAfterRenderCallback	AfterRenderCallback;
 		TAtomic<BOOL8>			bStopRequested;
 		BOOL8					bStarted;

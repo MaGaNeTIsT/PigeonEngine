@@ -404,7 +404,8 @@ namespace PigeonEngine
 						D3D12_BLEND::D3D12_BLEND_BLEND_FACTOR,
 						D3D12_BLEND::D3D12_BLEND_INV_BLEND_FACTOR
 					};
-					constexpr UINT32 NumD3DBlends = PE_ARRAYSIZE(D3DBlend);
+					// Referenced by the Check below only, which compiles to nothing in Shipping.
+					[[maybe_unused]] constexpr UINT32 NumD3DBlends = PE_ARRAYSIZE(D3DBlend);
 					const UINT8 BlendOpt = static_cast<UINT8>(InOpt);
 					Check(((BlendOpt > 0u) && (BlendOpt < NumD3DBlends)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Unknown Blend Type")));
 					return (D3DBlend[BlendOpt]);
@@ -420,7 +421,8 @@ namespace PigeonEngine
 						D3D12_BLEND_OP::D3D12_BLEND_OP_MIN,
 						D3D12_BLEND_OP::D3D12_BLEND_OP_MAX
 					};
-					constexpr UINT32 NumD3DBlendOps = PE_ARRAYSIZE(D3DBlendOp);
+					// Referenced by the Check below only, which compiles to nothing in Shipping.
+					[[maybe_unused]] constexpr UINT32 NumD3DBlendOps = PE_ARRAYSIZE(D3DBlendOp);
 					const UINT8 BlendOp = static_cast<UINT8>(InOp);
 					Check(((BlendOp > 0u) && (BlendOp < NumD3DBlendOps)), (ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Unknown Blend Op Type")));
 					return (D3DBlendOp[BlendOp]);
@@ -1565,10 +1567,217 @@ namespace PigeonEngine
 		}
 	}
 
+	/*
+	* A second swap chain for an ImGui platform window.
+	*
+	* The device's main chain (SwapChain + BackBuffers) is untouched: this one creates its own
+	* fleet of back buffers, its own RTV descriptor heap and its own Present, so a viewport
+	* window can never resize or present the main window by accident. The back buffers are
+	* RD3D12Texture wrappers like the main ones, which is what lets the command list record
+	* the ImGui pass into them through the same BeginRenderPass path.
+	*/
+	class RD3D12WindowSwapChain final : public IRRHISwapChain
+	{
+	public:
+		RD3D12WindowSwapChain(ID3D12Device* InDevice, IDXGIFactory4* InFactory, ID3D12CommandQueue* InQueue
+			, HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, DXGI_FORMAT InFormat, RFormatType InFormatType)
+			: Device(InDevice), Width(InWidth), Height(InHeight), Format(InFormat), FormatType(InFormatType)
+		{
+			Create(InFactory, InQueue, InWindowHandle);
+		}
+		RD3D12WindowSwapChain(const RD3D12WindowSwapChain&) = delete;
+		RD3D12WindowSwapChain& operator=(const RD3D12WindowSwapChain&) = delete;
+		virtual ~RD3D12WindowSwapChain() override
+		{
+			ReleaseBuffers();
+			RTVHeap.Reset();
+			SwapChain.Reset();
+			Device = nullptr;
+		}
+
+	public:
+		virtual IRRHITexture* GetBackBuffer() override
+		{
+			if ((!SwapChain) || (Buffers.Num() <= 0))
+			{
+				return nullptr;
+			}
+			const UINT32 BufferIndex = SwapChain->GetCurrentBackBufferIndex();
+			if (BufferIndex >= static_cast<UINT32>(Buffers.Num()))
+			{
+				return nullptr;
+			}
+			return Buffers[static_cast<INT32>(BufferIndex)];
+		}
+		virtual BOOL8 Resize(UINT32 InWidth, UINT32 InHeight) override
+		{
+			if ((!SwapChain) || (InWidth == 0u) || (InHeight == 0u))
+			{
+				return FALSE;
+			}
+			ReleaseBuffers();
+			if (FAILED(SwapChain->ResizeBuffers(BufferCount, InWidth, InHeight, DXGI_FORMAT_UNKNOWN, 0u)))
+			{
+				return FALSE;
+			}
+			Width = InWidth;
+			Height = InHeight;
+			return CreateBuffers();
+		}
+		virtual void Present(UINT32 InSyncInterval) override
+		{
+			if (SwapChain)
+			{
+				SwapChain->Present(InSyncInterval, 0u);
+			}
+		}
+		BOOL8 IsValid() const
+		{
+			return (SwapChain != nullptr) && (Buffers.Num() > 0);
+		}
+
+	private:
+		BOOL8 Create(IDXGIFactory4* InFactory, ID3D12CommandQueue* InQueue, HWND InWindowHandle)
+		{
+			if ((!Device) || (!InFactory) || (!InQueue) || (!InWindowHandle))
+			{
+				return FALSE;
+			}
+
+			DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = {};
+			SwapChainDesc.Width					= Width;
+			SwapChainDesc.Height				= Height;
+			SwapChainDesc.Format				= Format;
+			SwapChainDesc.Stereo				= FALSE;
+			SwapChainDesc.SampleDesc.Count		= 1u;
+			SwapChainDesc.SampleDesc.Quality	= 0u;
+			SwapChainDesc.BufferUsage			= DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			SwapChainDesc.BufferCount			= BufferCount;
+			// STRETCH, not NONE: these windows are resized by dragging their frame, and the
+			// presentation has to follow the window while the resize is in flight.
+			SwapChainDesc.Scaling				= DXGI_SCALING_STRETCH;
+			SwapChainDesc.SwapEffect			= DXGI_SWAP_EFFECT_FLIP_DISCARD;
+			SwapChainDesc.AlphaMode				= DXGI_ALPHA_MODE_UNSPECIFIED;
+			SwapChainDesc.Flags					= 0u;
+
+			Microsoft::WRL::ComPtr<IDXGISwapChain1> SwapChain1;
+			if (FAILED(InFactory->CreateSwapChainForHwnd(InQueue, InWindowHandle, &SwapChainDesc, nullptr, nullptr, SwapChain1.GetAddressOf())))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D12: CreateSwapChainForHwnd (viewport) failed."));
+				return FALSE;
+			}
+			if (FAILED(SwapChain1.As(&SwapChain)))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D12: viewport swap chain is not an IDXGISwapChain3."));
+				return FALSE;
+			}
+			InFactory->MakeWindowAssociation(InWindowHandle, DXGI_MWA_NO_ALT_ENTER);
+
+			// A heap of its own, so the viewport's descriptors cannot collide with the main
+			// window's reserved RTV slots or with anything else the device allocates.
+			D3D12_DESCRIPTOR_HEAP_DESC HeapDesc = {};
+			HeapDesc.Type			= D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			HeapDesc.NumDescriptors	= BufferCount;
+			HeapDesc.Flags			= D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			if (FAILED(Device->CreateDescriptorHeap(&HeapDesc, IID_PPV_ARGS(RTVHeap.GetAddressOf()))))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D12: viewport RTV heap creation failed."));
+				return FALSE;
+			}
+			RTVDescriptorSize = Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+			return CreateBuffers();
+		}
+		BOOL8 CreateBuffers()
+		{
+			if ((!SwapChain) || (!RTVHeap) || (!Device))
+			{
+				return FALSE;
+			}
+			const D3D12_CPU_DESCRIPTOR_HANDLE RTVStart = RTVHeap->GetCPUDescriptorHandleForHeapStart();
+			for (UINT32 BufferIndex = 0u; BufferIndex < BufferCount; BufferIndex++)
+			{
+				RD3D12Texture* Buffer = new RD3D12Texture();
+				Buffer->Width		= Width;
+				Buffer->Height		= Height;
+				Buffer->Depth		= 1u;
+				Buffer->MipLevels	= 1u;
+				Buffer->ArraySize	= 1u;
+				Buffer->Format		= FormatType;
+				Buffer->BindFlags	= static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET);
+				Buffer->ViewFormats.Resource	= FormatType;
+				Buffer->ViewFormats.RTV			= FormatType;
+				Buffer->DefaultState = D3D12_RESOURCE_STATE_PRESENT;
+				Buffer->SetCurrentState(ERHIResourceState::RHI_RESOURCE_STATE_PRESENT);
+				Buffer->RTVHandle = OffsetCPUHandle(RTVStart, BufferIndex, RTVDescriptorSize);
+
+				if (FAILED(SwapChain->GetBuffer(BufferIndex, IID_PPV_ARGS(Buffer->Resource.ReleaseAndGetAddressOf()))))
+				{
+					delete Buffer;
+					ReleaseBuffers();
+					return FALSE;
+				}
+				Device->CreateRenderTargetView(Buffer->Resource.Get(), nullptr, Buffer->RTVHandle);
+				Buffers.Add(Buffer);
+			}
+			return TRUE;
+		}
+		void ReleaseBuffers()
+		{
+			for (INT32 BufferIndex = 0; BufferIndex < Buffers.Num(); BufferIndex++)
+			{
+				delete Buffers[BufferIndex];
+			}
+			Buffers.Empty();
+		}
+
+	private:
+		ID3D12Device*						Device;
+		Microsoft::WRL::ComPtr<IDXGISwapChain3>			SwapChain;
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>	RTVHeap;
+		UINT32								RTVDescriptorSize = 0u;
+		TArray<RD3D12Texture*>				Buffers;
+		UINT32								BufferCount = 2u;
+		UINT32								Width;
+		UINT32								Height;
+		DXGI_FORMAT							Format;
+		RFormatType							FormatType;
+	};
+
+	IRRHISwapChain* RDeviceD3D12::CreateSwapChainForWindow(HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, RFormatType InFormat) noexcept
+	{
+		if ((!Device) || (!CommandQueue) || (!InWindowHandle) || (InWidth == 0u) || (InHeight == 0u))
+		{
+			return nullptr;
+		}
+
+		Microsoft::WRL::ComPtr<IDXGIFactory4> Factory;
+		if (FAILED(CreateDXGIFactory2(0u, IID_PPV_ARGS(Factory.GetAddressOf()))) || (!Factory))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D12: CreateDXGIFactory2 (viewport) failed."));
+			return nullptr;
+		}
+
+		DXGI_FORMAT DXGIFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		TranslateResourceFormat(DXGIFormat, InFormat);
+		if (DXGIFormat == DXGI_FORMAT_UNKNOWN)
+		{
+			DXGIFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+		}
+
+		RD3D12WindowSwapChain* Chain = new RD3D12WindowSwapChain(Device.Get(), Factory.Get(), CommandQueue.Get()
+			, InWindowHandle, InWidth, InHeight, DXGIFormat, InFormat);
+		if (Chain->IsValid() == FALSE)
+		{
+			delete Chain;
+			return nullptr;
+		}
+		return Chain;
+	}
+
 	// =========================================================================
 	// IRRHIDevice - Resource creation
 	// =========================================================================
-
 	BOOL8 RDeviceD3D12::CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData& InInitialData, IRRHIBuffer** OutBuffer) noexcept
 	{
 		if (!OutBuffer)

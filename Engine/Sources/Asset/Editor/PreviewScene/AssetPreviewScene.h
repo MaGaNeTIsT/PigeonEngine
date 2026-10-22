@@ -7,6 +7,7 @@
 
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/Text/String.h>
+#include <Main/FrameRenderer.h>
 
 namespace PigeonEngine
 {
@@ -22,7 +23,7 @@ namespace PigeonEngine
 	class RSceneRenderer;
 	struct ESkeletonAnimationClip;
 
-	class EAssetPreviewScene
+	class EAssetPreviewScene final : public IEngineFrameRenderer
 	{
 	public:
 		EAssetPreviewScene() = default;
@@ -32,7 +33,13 @@ namespace PigeonEngine
 		void Shutdown();
 
 		void UpdateViewportSize(UINT32 InWidth, UINT32 InHeight);
+		// GameThread: the frame's game-side work - animation sampling, camera, scene tick. The
+		// image is recorded by RenderFrame, on the render thread, never here.
 		void Tick(FLOAT InDeltaSeconds);
+
+		// IEngineFrameRenderer
+		virtual void PublishFrameCommands() override;
+		virtual void RenderFrame() override;
 
 		void SetStaticMesh(const EStaticMeshAsset* InStaticMeshAsset);
 		void SetSkinnedMesh(const ESkinnedMeshAsset* InSkinnedMeshAsset, const ESkeletonAsset* InSkeletonAsset);
@@ -59,6 +66,9 @@ namespace PigeonEngine
 
 	private:
 		BOOL8					m_Initialized = FALSE;
+		// Set by Tick (GameThread) and cleared by RenderFrame (RenderThread): one published
+		// frame is one recorded frame, and a panel that stopped ticking stops rendering.
+		BOOL8					m_bRenderRequested = FALSE;
 		BOOL8					m_AutoRotate = TRUE;
 		BOOL8					m_PlayAnimation = TRUE;
 		UINT32				m_ViewportWidth = 512u;

@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <RHI/RHITypes.h>
 #include <RHI/IRRHIResource.h>
+#include <RHI/IRRHISwapChain.h>
 #include <RHI/IRCommandList.h>
 #include <RHI/RHIResources.h>
 #include <RHI/IRRHIRootSignature.h>
@@ -78,6 +79,12 @@ namespace PigeonEngine
 
 		virtual void		Present(UINT32 InSyncInterval) noexcept							= 0;
 		virtual BOOL8		ResizeSwapChain(UINT32 InWidth, UINT32 InHeight) noexcept		= 0;
+
+		// Creates a swap chain for a window other than the main one. ImGui's multi-viewport
+		// support is the caller: a panel dragged out of the main window becomes an OS window
+		// and records its own frame there. The returned chain is owned by the caller and
+		// released with delete; the device's main swap chain is not affected.
+		virtual IRRHISwapChain*	CreateSwapChainForWindow(HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, RFormatType InFormat) noexcept = 0;
 
 		// Block on GPU until everything submitted so far has retired.
 		// Use sparingly (shutdown, resize, hot-reload).

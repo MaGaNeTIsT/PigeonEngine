@@ -68,6 +68,11 @@ namespace PigeonEngine
 		AfterRenderCallback = InCallback;
 	}
 
+	void RRenderThread::SetPreSceneRenderCallback(const FAfterRenderCallback& InCallback)
+	{
+		PreSceneRenderCallback = InCallback;
+	}
+
 	BOOL8 RRenderThread::IsRunning()const
 	{
 		return bStarted;
@@ -93,6 +98,13 @@ namespace PigeonEngine
 			// SceneRenderer drains FrontSlot commands, builds passes,
 			// records draws via the IRCommandList, and presents.
 			RenderDevice->BeginFrame();
+			// Secondary renderers record into their own targets before the main scene does, in
+			// the same device frame, so the overlay the main pass submits this frame samples
+			// what they wrote this frame rather than the previous one.
+			if (PreSceneRenderCallback.IsValid())
+			{
+				PreSceneRenderCallback();
+			}
 			SceneRenderer->InitNewFrame();
 			SceneRenderer->Render();
 			if (AfterRenderCallback.IsValid())

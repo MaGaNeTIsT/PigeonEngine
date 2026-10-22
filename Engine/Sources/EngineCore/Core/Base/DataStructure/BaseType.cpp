@@ -744,16 +744,12 @@ namespace PigeonEngine
 	BOOL8 EExclusiveStruct::FindVariable(const EName& InVarName, EStructVariable& OutVar) const noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
+		// The name lookup runs in every configuration. The old non-editor branch read a const
+		// map through operator[], which does not exist on it, and the shortcut it stood for
+		// would have used element 0 for a missing name - a miss has to stay a miss.
 		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
-#else	// !_EDITOR_ONLY
-		UINT32 VarIndex = MaxUint32;
-		if (StructVariableNames.FindValue(InVarName, VarIndex))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (VarIndex < StructVariables.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				OutVar = StructVariables.GetRef(VarIndex);
 				return TRUE;
@@ -857,16 +853,9 @@ namespace PigeonEngine
 	UINT32 ESharedStruct::GetMemSize(const EName& InStructName) const noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
-#else	// !_EDITOR_ONLY
-		UINT32 StIdx = MaxUint32;
-		if (StructNames.FindValue(InStructName, StIdx))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (StIdx < Structs.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				const ESingleStruct& St = Structs[StIdx];
 				return (St.StructDataRef->MemSize);
@@ -877,16 +866,9 @@ namespace PigeonEngine
 	UINT8* ESharedStruct::GetData(const EName& InStructName) noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
-#else	// !_EDITOR_ONLY
-		UINT32 StIdx = MaxUint32;
-		if (StructNames.FindValue(InStructName, StIdx))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (StIdx < Structs.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				const ESingleStruct& St = Structs[StIdx];
 				UINT8* HeapData = GetData();
@@ -899,16 +881,9 @@ namespace PigeonEngine
 	const UINT8* ESharedStruct::GetData(const EName& InStructName) const noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
-#else	// !_EDITOR_ONLY
-		UINT32 StIdx = MaxUint32;
-		if (StructNames.FindValue(InStructName, StIdx))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (StIdx < Structs.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				const ESingleStruct& St = Structs[StIdx];
 				const UINT8* HeapData = GetData();
@@ -1000,28 +975,14 @@ namespace PigeonEngine
 	BOOL8 ESharedStruct::FindVariable(const EName& InStructName, const EName& InVarName, EStructVariable& OutVar) const noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
-#else	// !_EDITOR_ONLY
-		UINT32 StIdx = MaxUint32;
-		if (StructNames.FindValue(InStructName, StIdx))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (StIdx < Structs.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				const ESingleStruct& St = Structs[StIdx];
-#if _EDITOR_ONLY
 				if (UINT32 VarIdx = MaxUint32; St.StructVariableNames.FindValue(InVarName, VarIdx))
-#else	// !_EDITOR_ONLY
-				UINT32 VarIdx = MaxUint32;
-				if (St.StructVariableNames.FindValue(InVarName, VarIdx))
-#endif	// _EDITOR_ONLY
 				{
-#if _EDITOR_ONLY
 					if (VarIdx < St.StructVariables.Num())
-#endif	/// _EDITOR_ONLY
 					{
 						OutVar = St.StructVariables[VarIdx];
 						return TRUE;
@@ -1221,20 +1182,13 @@ namespace PigeonEngine
 	BOOL8 EStructArray::FindVariable(UINT32 InElementIndex, const EName& InVarName, EStructVariable& OutVar) const noexcept
 	{
 		constexpr UINT32 MaxUint32 = (UINT32)(-1);
-#if _EDITOR_ONLY
 		if (InElementIndex >= StructDataRefs.Num<UINT32>())
 		{
 			return FALSE;
 		}
 		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
-#else	// !_EDITOR_ONLY
-		UINT32 VarIndex = MaxUint32;
-		if (StructVariableNames.FindValue(InVarName, VarIndex))
-#endif	// _EDITOR_ONLY
 		{
-#if _EDITOR_ONLY
 			if (VarIndex < StructVariables.Num())
-#endif	/// _EDITOR_ONLY
 			{
 				const EStructVariable& StVar = StructVariables.GetRef(VarIndex);
 				OutVar = StVar;

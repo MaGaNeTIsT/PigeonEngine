@@ -39,7 +39,11 @@ namespace PigeonEngine
 
             PDirectionalLightComponent* LightComponent = new PDirectionalLightComponent();
             LightComponent->SetLightColor(InColor);
-            LightComponent->SetLightIntensity(InIntensity);
+            // The light API is physical: illuminance in lux, not a normalised multiplier. The
+            // old scale treated 1.5 as a full sun, so keep the authored ratios against it and
+            // let the engine's default illuminance decide what a sun is worth.
+            const FLOAT IlluminanceLux = InIntensity * (EEngineSettings::ENGINE_DEFAULT_ILLUMINANCE_LUX / 1.5f);
+            LightComponent->SetIlluminanceLux(IlluminanceLux);
             LightComponent->SetShadowMapSize(FALSE, Vector2Int(2, 2));
             LightActor->SetRootComponent(LightComponent);
 
@@ -68,11 +72,12 @@ namespace PigeonEngine
     {
         PWorld::Init();
 
+        // The frame keeps four directional lights, so the preview is authored to four: a fifth
+        // would be dropped by the gather and warn once per frame.
         AddPreviewDirectionalLight(this, "PreviewKeyLightActor", Color3(1.0f, 0.97f, 0.93f), 0.55f, Vector3(0.45f, 0.70f, 0.55f));
         AddPreviewDirectionalLight(this, "PreviewBackFillLightActor", Color3(0.92f, 0.95f, 1.0f), 0.18f, Vector3(-0.30f, 0.35f, -0.88f));
         AddPreviewDirectionalLight(this, "PreviewLeftFillLightActor", Color3(0.84f, 0.90f, 1.0f), 0.12f, Vector3(-0.92f, 0.22f, 0.10f));
-        AddPreviewDirectionalLight(this, "PreviewRightFillLightActor", Color3(1.0f, 0.95f, 0.90f), 0.10f, Vector3(0.92f, 0.18f, -0.12f));
-        AddPreviewDirectionalLight(this, "PreviewTopFillLightActor", Color3(0.98f, 0.99f, 1.0f), 0.08f, Vector3(0.0f, 1.0f, 0.0f));
+        AddPreviewDirectionalLight(this, "PreviewTopFillLightActor", Color3(0.98f, 0.99f, 1.0f), 0.10f, Vector3(0.0f, 1.0f, 0.0f));
     }
 
     PActor* PPreviewWorld::CreateRootActor()

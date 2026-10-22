@@ -17,15 +17,16 @@ namespace PigeonEngine
 	* IRRHIDevice + IRCommandList - no D3D11/D3D12 types appear here. To
 	* swap backends just relink the engine; the manager carries no
 	* backend-specific state.
+	*
+	* Multi-viewport: a panel dragged out of the main window becomes an OS window. The
+	* platform half (Win32 window class, monitor list, mouse routing) and the renderer half
+	* (one IRRHISwapChain per window) are both implemented here; the old D3D11-only backend
+	* was removed during the Main merge and has been restored on top of IRRHIDevice /
+	* IRCommandList. Docking itself is unaffected: this only adds "drag a panel out into its
+	* own window".
 	*/
-	// TODO(paidax): 本文件原带一套 Win32 多视口(multi-viewport)平台后端——
-	// PlatformCreateWindow/PlatformSetWindowPos/WndUpdateMonitors/WndUpdateMouseData/
-	// InitWndViewportSupport/RendererRenderWindow/RendererSwapBuffers/CreateViewportRenderTarget
-	// 等 27 个函数（纯 D3D11）。2026-10 与 Main 合并时，Main 已把 imgui 渲染改到
-	// EImGuiRenderer + IRRHIDevice/IRCommandList，这批回调未随之移植，暂时移除。
-	// 恢复办法：旧实现见 origin/Animation 的 Engine/EngineThirdParty/imGUI/，
-	// 需改写为走 RHI 后再重新注册到 ImGui::GetPlatformIO()。
-	// 注意：停靠(docking)本身不受影响，只少了“把面板拖成独立 OS 窗口”。
+	class IRRHISwapChain;
+
 	class CImGUIManager : public EManagerBase
 	{
 	public:
@@ -39,6 +40,34 @@ namespace PigeonEngine
 			ImGuiMouseCursor        LastMouseCursor;
 			BOOL32                  HasGamepad;
 			BOOL32                  WantUpdateHasGamepad;
+			BOOL32                  WantUpdateMonitors;
+			UINT32                  Tick;
+			UINT32                  LastMouseMoveTick;
+		};
+	private:
+		// State of one platform window this backend owns (or borrowed, for the main window).
+		struct PlatformViewportData
+		{
+			HWND	Hwnd;
+			HWND	HwndParent;
+			BOOL32	HwndOwned;
+			DWORD	Style;
+			DWORD	ExStyle;
+
+			PlatformViewportData()
+				: Hwnd(nullptr), HwndParent(nullptr), HwndOwned(FALSE), Style(0u), ExStyle(0u)
+			{
+			}
+		};
+		// Render state of one platform window: the chain its draw data is recorded into.
+		struct RendererViewportData
+		{
+			IRRHISwapChain*	SwapChain;
+
+			RendererViewportData()
+				: SwapChain(nullptr)
+			{
+			}
 		};
 	public:
 		virtual void            Initialize()override;
@@ -55,6 +84,14 @@ namespace PigeonEngine
 		// active IRCommandList. Caller (SceneRenderer::ImGuiPass) is
 		// responsible for BeginRenderPass / EndRenderPass.
 		void                    RenderDrawData();
+		// Render-thread step: draw and present the platform windows (windows a panel was
+		// dragged out into). The main window's overlay is part of SceneRenderer::ImGuiPass;
+		// this covers the extra ones, each into its own swap chain.
+		void                    RenderPlatformWindows();
+		// Game thread, after the main window changes size: keeps the floating windows that
+		// fit in the old size inside the new one, so a resize does not detach them into
+		// platform windows of their own.
+		void                    ClampWindowsToMainViewport(UINT32 InNewWidth, UINT32 InNewHeight);
 
 		// Render thread: a shader the renderer draws with was replaced. It records a game thread command
 		// that tears the renderer down, and the lazy initialization in Update() rebuilds it from the
@@ -75,6 +112,35 @@ namespace PigeonEngine
 		void                    WndProcessKeyEventsWorkarounds();
 		void                    WndUpdateKeyModifiers();
 		ImGuiKey                WndVirtualKeyToImGuiKey(WPARAM wParam);
+	private:
+		// Platform-window backend (ImGui multi-viewport). A panel dragged out of the main
+		// window becomes an OS window of this class, with its own swap chain: these are the
+		// Platform_* / Renderer_* callbacks ImGui::GetPlatformIO() drives.
+		void                    InitWndViewportSupport();
+		void                    ShutDownWndViewportSupport();
+		void                    WndUpdateMouseData();
+		void                    WndPollMouseWhileButtonDown();
+		void                    WndUpdateMonitors();
+		static BOOL CALLBACK    WndUpdateMonitorsEnumProc(HMONITOR monitor, HDC, LPRECT, LPARAM);
+		static ImGuiViewport*   WndFindViewportByWindowHandle(HWND hWnd);
+		static LRESULT CALLBACK WndProcHandlerPlatformWindow(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+		static void             PlatformCreateWindow(ImGuiViewport* viewport);
+		static void             PlatformDestroyWindow(ImGuiViewport* viewport);
+		static void             PlatformShowWindow(ImGuiViewport* viewport);
+		static void             PlatformSetWindowPos(ImGuiViewport* viewport, ImVec2 pos);
+		static ImVec2           PlatformGetWindowPos(ImGuiViewport* viewport);
+		static void             PlatformSetWindowSize(ImGuiViewport* viewport, ImVec2 size);
+		static ImVec2           PlatformGetWindowSize(ImGuiViewport* viewport);
+		static void             PlatformSetWindowFocus(ImGuiViewport* viewport);
+		static bool             PlatformGetWindowFocus(ImGuiViewport* viewport);
+		static bool             PlatformGetWindowMinimized(ImGuiViewport* viewport);
+		static void             PlatformUpdateWindow(ImGuiViewport* viewport);
+		static void             PlatformSetWindowTitle(ImGuiViewport* viewport, const char* title);
+		static void             RendererCreateWindow(ImGuiViewport* viewport);
+		static void             RendererDestroyWindow(ImGuiViewport* viewport);
+		static void             RendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size);
+		static void             RendererRenderWindow(ImGuiViewport* viewport, void* render_arg);
+		static void             RendererSwapBuffers(ImGuiViewport* viewport, void* render_arg);
 	private:
 		WndData                 m_WndData;
 		EImGuiRenderer          Renderer;

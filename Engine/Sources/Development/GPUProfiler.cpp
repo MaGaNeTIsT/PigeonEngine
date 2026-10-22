@@ -130,6 +130,7 @@ namespace PigeonEngine
 	void EGPUProfiler::OnPassBegin(IRCommandList* InCmd, const CHAR* InName)
 	{
 		if (!InCmd || !InName || !Heap) { return; }
+		if (!bPassRecordingEnabled) { return; }
 
 		EFrameRecord& F = Frames[CurrentFrameSlot];
 		if ((F.NextSlotInFrame + 1u) > SLOTS_PER_FRAME) { return; }   // slice exhausted
@@ -150,6 +151,7 @@ namespace PigeonEngine
 	void EGPUProfiler::OnPassEnd(IRCommandList* InCmd)
 	{
 		if (!InCmd || !Heap) { return; }
+		if (!bPassRecordingEnabled) { return; }
 		const INT32 StackNum = PassStack.Num<INT32>();
 		if (StackNum <= 0) { return; }	// stray End - silently drop
 

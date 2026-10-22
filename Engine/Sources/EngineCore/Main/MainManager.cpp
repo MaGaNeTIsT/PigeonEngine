@@ -190,14 +190,23 @@ namespace PigeonEngine
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("RenderThread already created."), (!RenderThread));
 			RenderThread = new RRenderThread(RenderDevice, RenderScene, SceneRenderer);
 #if _EDITOR_ONLY
+			// Secondary renderers (the asset previews) record before the main scene does, so
+			// everything they write into their offscreen targets is already there when this
+			// frame's main pass submits the ImGui overlay that samples them.
+			RenderThread->SetPreSceneRenderCallback([this]() -> void
+			{
+				for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+				{
+					m_FrameRenderers[RendererIndex]->RenderFrame();
+				}
+			});
 			RenderThread->SetAfterRenderCallback([this]() -> void
 			{
-				// PrepareDrawData (ImGui::Render) is invoked on the main thread
-				// during Update() Phase 3 so the GameThread can finalize ImGui
-				// frame state while we wait on the previous frame. Here on the
-				// RenderThread we only replay the produced ImDrawData against
-				// the D3D11 immediate context.
-				m_ImGUIManager->RenderDrawData();
+				// The main window's overlay is drawn inside SceneRenderer::ImGuiPass, as part
+				// of the frame's command list. What is left here is the platform windows: a
+				// panel dragged out of the main window has its own swap chain, and ImGui
+				// records and presents each of them through the hooks the manager registered.
+				m_ImGUIManager->RenderPlatformWindows();
 			});
 #endif
 			RenderThread->Start();
@@ -303,6 +312,33 @@ namespace PigeonEngine
 			if (m_AssetManagers[ManagerIndex] == InManager)
 			{
 				m_AssetManagers.RemoveAt(ManagerIndex);
+				return;
+			}
+		}
+	}
+	void EMainManager::RegisterFrameRenderer(IEngineFrameRenderer* InRenderer)
+	{
+		if (!InRenderer)
+		{
+			return;
+		}
+#if _EDITOR_ONLY
+		Check((!m_FrameRenderers.Contains(InRenderer)), (ENGINE_CORE_ERROR)
+			, (PE_TEXT("[EMainManager::RegisterFrameRenderer] The renderer is already registered.")));
+#endif	// _EDITOR_ONLY
+		m_FrameRenderers.Add(InRenderer);
+	}
+	void EMainManager::UnregisterFrameRenderer(IEngineFrameRenderer* InRenderer)
+	{
+		if (!InRenderer)
+		{
+			return;
+		}
+		for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+		{
+			if (m_FrameRenderers[RendererIndex] == InRenderer)
+			{
+				m_FrameRenderers.RemoveAt(RendererIndex);
 				return;
 			}
 		}
@@ -416,6 +452,12 @@ namespace PigeonEngine
 				const INT32 NewHeight = static_cast<INT32>(m_PendingResizeHeight);
 				m_WindowSize = Vector2Int(NewWidth, NewHeight);
 				EInput::Controller.UpdateWindowSize(NewWidth, NewHeight);
+#if _EDITOR_ONLY
+				// A window that fits in the old size has to be kept inside the new one. Without
+				// this, shrinking the main window hands each panel its own platform window and
+				// the layout scatters; growing again does not bring them back.
+				m_ImGUIManager->ClampWindowsToMainViewport(m_PendingResizeWidth, m_PendingResizeHeight);
+#endif
 			}
 		}
 
@@ -443,6 +485,12 @@ namespace PigeonEngine
 		RDebugWireframePrimitiveManager::GetManagerSingleton()->SwapCommandSlots();
 #endif
 		RenderScene->SwapCommandSlots();
+		// Secondary renderers publish here for the same reason: their back slot is written by
+		// this thread and drained by the render thread, so it flips at the same boundary.
+		for (UINT32 RendererIndex = 0u, RendererNum = m_FrameRenderers.Num<UINT32>(); RendererIndex < RendererNum; RendererIndex++)
+		{
+			m_FrameRenderers[RendererIndex]->PublishFrameCommands();
+		}
 		// The render resource queue needs no flip of its own any more: it is a single lock free
 		// queue that any thread may write and the render thread drains at the top of the frame,
 		// so a create request recorded here is already in it when the frame it belongs to starts.

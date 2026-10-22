@@ -312,14 +312,10 @@ namespace PigeonEngine
 		RRHIRenderTargetBinding		RenderTargets[RHI_MAX_RENDER_TARGETS];
 		UINT32						RenderTargetCount;
 		RRHIDepthStencilBinding		DepthStencil;
-		// Optional GPU profiler tag. When non-null, BeginRenderPass /
-		// EndRenderPass auto-emit a GPU event scope and bracket the pass
-		// with a pair of timestamps via the active EGPUProfiler frame.
-		//
-		// Not guarded by _EDITOR_ONLY, because what reads it is not the editor: the profiler
-		// macros that name it are switched by _GPU_ENABLE_PROFILER, which the build system turns
-		// on for every Debug / Develop configuration and off for Shipping (Profiler.h). A build
-		// with the profiler on and the editor off is one the guard would have broken.
+		// Optional GPU profiler tag. When non-null, BeginRenderPass / EndRenderPass auto-emit
+		// a GPU event scope and bracket the pass with a pair of timestamps via the active
+		// EGPUProfiler frame. The profiler is compiled in every non-Shipping configuration,
+		// so the field cannot be editor-only: Shipping simply never sets it.
 		const CHAR*					PassName;
 
 		RRHIRenderPassDesc() noexcept

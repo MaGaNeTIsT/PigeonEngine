@@ -6,9 +6,8 @@
 #include <Renderer/ScenePass.h>
 #include <Renderer/SceneRenderer.h>
 #include <Main/MainManager.h>
-// The full screen triangle's input slot is read from the vertex stage's reflection, so this
-// header is part of the code every configuration compiles and not of the editor-only block
-// below.
+// The full screen triangle asks the program's reflection for its input slot in every
+// configuration, so the shader binding bridge is not editor-only.
 #include <Shader/ShaderAssetBinding.h>
 #if _EDITOR_ONLY
 #include <RenderConfig/RenderConfig.h>

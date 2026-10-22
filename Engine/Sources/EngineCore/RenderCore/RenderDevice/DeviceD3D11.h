@@ -253,6 +253,7 @@ namespace PigeonEngine
 		virtual void            EndFrame() noexcept override;
 		virtual void            Present(UINT32 InSyncInterval) noexcept override;
 		virtual BOOL8           ResizeSwapChain(UINT32 InWidth, UINT32 InHeight) noexcept override;
+		virtual IRRHISwapChain* CreateSwapChainForWindow(HWND InWindowHandle, UINT32 InWidth, UINT32 InHeight, RFormatType InFormat) noexcept override;
 		virtual void            WaitForGPUIdle() noexcept override;
 
 		// Resource creation
