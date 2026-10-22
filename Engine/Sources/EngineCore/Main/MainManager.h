@@ -74,6 +74,16 @@ namespace PigeonEngine
 		// The frame renderer. Proxies reach the pipeline state cache and the per frame
 		// parameter block through it, so neither has to be a singleton of its own.
 		class RSceneRenderer*		GetSceneRenderer() const { return SceneRenderer; }
+		// The renderer that is recording passes right now. The main scene and the editor's
+		// asset previews are recorded one after another on the render thread, and a proxy
+		// binds the blocks of whichever renderer is drawing it. Reading the main renderer
+		// unconditionally is wrong for a preview: the main renderer's current view is null
+		// until the main scene records, so the preview's ViewParams would never be bound and
+		// every vertex would collapse into one point - a black panel with nothing reported.
+		// Nothing published falls back to the main scene, which is the only renderer there is
+		// for the runtime build and for the frames before the first Render call.
+		class RSceneRenderer*		GetActiveSceneRenderer() const { return (ActiveSceneRenderer != nullptr) ? ActiveSceneRenderer : SceneRenderer; }
+		void						SetActiveSceneRenderer(class RSceneRenderer* InRenderer) { ActiveSceneRenderer = InRenderer; }
 
 		// Phase 2 transition: the per-frame command list set by SceneRenderer
 		// at the start of Render() and cleared at the end. Proxies pick it up
@@ -110,6 +120,7 @@ namespace PigeonEngine
 		class IRCommandList*				ActiveCommandList				= nullptr;
 		class RScene*						RenderScene						= nullptr;
 		class RSceneRenderer*				SceneRenderer					= nullptr;
+		class RSceneRenderer*				ActiveSceneRenderer				= nullptr;
 		class RRenderThread*				RenderThread					= nullptr;
 		// Render region END
 

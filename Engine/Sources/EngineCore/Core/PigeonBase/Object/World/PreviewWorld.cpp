@@ -46,10 +46,11 @@ namespace PigeonEngine
             LightComponent->SetIlluminanceLux(IlluminanceLux);
             LightComponent->SetShadowMapSize(FALSE, Vector2Int(2, 2));
             LightActor->SetRootComponent(LightComponent);
-
-            ETransform LightTransform;
-            LightTransform.SetRotation_Local(MakePreviewLightRotation(InWorldLightDirection));
-            InWorld->AddActor(LightActor, LightTransform);
+            // The rotation goes on the actor before it joins the world: CreateRenderState reads
+            // it while building the proxy, and PWorld::AddActor does not apply the transform it
+            // is handed, so a rotation passed there would be dropped.
+            LightActor->SetActorRotation(MakePreviewLightRotation(InWorldLightDirection));
+            InWorld->AddActor(LightActor);
         }
     }
 

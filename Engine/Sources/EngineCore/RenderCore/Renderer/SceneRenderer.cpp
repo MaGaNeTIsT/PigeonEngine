@@ -499,6 +499,15 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 
 		{
+			// The game side has destroyed its world by the time a renderer is shut down, so the
+			// Remove* commands those actors queued are still sitting in the scene's write slot:
+			// running them is what unregisters (and deletes) the proxies, and the render thread
+			// that would have drained them is gone. Draining both slots here is what makes the
+			// scene's own teardown check mean "a proxy nobody removed" instead of "shutdown
+			// itself left every proxy registered". The main scene happens to be drained earlier,
+			// through RScene::Uninit in EMainManager::Uninit; the asset previews have no such
+			// call, which is why this belongs to the renderer that owns the scene.
+			Scene->ClearAll();
 			delete Scene;
 			Scene = nullptr;
 		}
@@ -558,6 +567,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// Publish to MainManager so scene proxies and other render-thread
 		// callers can reach the active list without taking it as an arg.
 		EMainManager::GetManagerSingleton()->SetActiveCommandList(CurrentCommandList);
+		// The proxies this frame draws bind their engine blocks through the renderer that
+		// publishes itself here. The main scene records last, after every secondary renderer,
+		// so this is what makes the main view current again once a preview has finished.
+		EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(this);
 
 		// Open the GPU profile frame: lazy-init the timestamp heap on first
 		// call, resolve the slice this frame's slot is about to overwrite,
@@ -614,6 +627,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		RenderDevice->SubmitCommandList(CurrentCommandList);
 		CurrentCommandList = nullptr;
 		EMainManager::GetManagerSingleton()->SetActiveCommandList(nullptr);
+		// Back to the fallback: a draw that runs outside any recording pass (a release, a
+		// debug query) reaches the main renderer, never the one that happened to record last.
+		EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(nullptr);
 	}
 	BOOL32 RSceneRenderer::EnsureGlobalParameterBlock(IRRHIDevice* InRenderDevice, const EShaderProgram& InProgram)
 	{

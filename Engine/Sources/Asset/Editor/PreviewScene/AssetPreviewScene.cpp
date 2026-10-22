@@ -48,6 +48,15 @@ namespace PigeonEngine
 
 				CurrentCommandList = RenderDevice->AcquireCommandList();
 				EMainManager::GetManagerSingleton()->SetActiveCommandList(CurrentCommandList);
+				// The primitives this pass draws reach the engine blocks through whichever
+				// renderer publishes itself here, and they must reach this one: their
+				// BindEngineParameters binds the view of the renderer it finds, and this pass
+				// is the only place the preview's view is current. Falling back to the main
+				// renderer would read its current view, which is null until the main scene
+				// records - so the preview's ViewParams would never be bound, every vertex
+				// would collapse into one point, and the panel would be black with the
+				// geometry drawing all along.
+				EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(this);
 
 				// The frame's timing slice was opened and closed by the main renderer, so this
 				// renderer's passes are not part of it and are dropped instead of charged to it.
@@ -92,6 +101,7 @@ namespace PigeonEngine
 				RenderDevice->SubmitCommandList(CurrentCommandList);
 				CurrentCommandList = nullptr;
 				EMainManager::GetManagerSingleton()->SetActiveCommandList(nullptr);
+				EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(nullptr);
 			}
 
 			ImTextureID GetTextureId() const

@@ -479,7 +479,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if (!Renderer)
 		{
 			return nullptr;
@@ -571,7 +571,7 @@ namespace PigeonEngine
 			// A draw whose roots are left unset reads zeros, which for a transform means every
 			// vertex collapses into one point - the overlay silently disappears instead of drawing
 			// something wrong.
-			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 			if (PassRenderer)
 			{
 				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram);

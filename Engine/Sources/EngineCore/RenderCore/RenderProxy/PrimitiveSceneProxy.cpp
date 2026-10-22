@@ -263,9 +263,11 @@ RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
 		// Everything here runs after SetPipelineState on purpose: a pipeline state brings its
 		// own root signature, and switching a root signature voids every root binding made
 		// before it. Each block looks its root up in the program's binding plan, so none of
-		// these calls carries a root index of its own. The shared blocks are the renderer's, so
-		// the renderer binds them and this draw adds its own block on top.
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		// The shared blocks are the renderer's, so the renderer binds them and this draw adds
+		// its own block on top. It has to be the renderer recording this pass, not the main
+		// scene's one: an asset preview records before the main scene, whose current view is
+		// null at that point, so binding through it would leave ViewParams unset.
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if (Renderer)
 		{
 			Renderer->BindEngineParameters(InCommandList, InProgram);
@@ -364,7 +366,7 @@ RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
 			return nullptr;
 		}
 
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if ((!Renderer) || (!RenderDevice))
 		{
