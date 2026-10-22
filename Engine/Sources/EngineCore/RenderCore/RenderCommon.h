@@ -68,12 +68,18 @@ namespace PigeonEngine
 	};
 	struct RRasterizerState
 	{
-		RRasterizerState(const RRasterizerState& Other)noexcept : CullMode(Other.CullMode), FillMode(Other.FillMode) {}
+		RRasterizerState(const RRasterizerState& Other)noexcept : CullMode(Other.CullMode), FillMode(Other.FillMode), ScissorEnable(Other.ScissorEnable) {}
 		constexpr RRasterizerState(RCullModeType InCullMode = RCullModeType::CULL_BACK
-			, RFillModeType InFillMode = RFillModeType::FILL_SOLID)noexcept : CullMode(InCullMode), FillMode(InFillMode) {}
+			, RFillModeType InFillMode = RFillModeType::FILL_SOLID
+			, BOOL32 InScissorEnable = FALSE)noexcept : CullMode(InCullMode), FillMode(InFillMode), ScissorEnable(InScissorEnable) {}
 
 		RCullModeType	CullMode;
 		RFillModeType	FillMode;
+		// D3D11 keeps the scissor test off unless the rasterizer state asks for it; D3D12
+		// always applies it. A pass that relies on SetScissorRects (ImGui per-command
+		// clipping, for instance) must opt in. Off by default so existing pipelines keep
+		// their behaviour on D3D11.
+		BOOL32			ScissorEnable;
 	};
 	enum RDepthWriteMaskType : UINT8
 	{

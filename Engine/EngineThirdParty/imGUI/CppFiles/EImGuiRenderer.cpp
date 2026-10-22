@@ -328,7 +328,7 @@ namespace PigeonEngine
 		Desc.InputLayoutCount	= PE_ARRAYSIZE(ImGuiDeclaredElements);
 		// ImGui: no backface culling (UI quads may be CW or CCW depending on
 		// scissor-flip), wireframe disabled, scissor honored per draw.
-		Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID);
+		Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID, TRUE);
 		// Premultiplied-alpha-friendly straight-alpha blend, matches the
 		// reference imgui_impl_dx11/dx12 backend defaults.
 		Desc.Blend					= RBlendState(

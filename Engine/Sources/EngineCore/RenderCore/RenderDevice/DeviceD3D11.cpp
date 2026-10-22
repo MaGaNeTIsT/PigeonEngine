@@ -1106,7 +1106,7 @@ namespace PigeonEngine
 			rd.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
 			rd.SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
 			rd.DepthClipEnable = TRUE;
-			rd.ScissorEnable = FALSE;
+			rd.ScissorEnable = rasterizerState.ScissorEnable;
 			rd.MultisampleEnable = FALSE;
 			rd.AntialiasedLineEnable = FALSE;
 		}

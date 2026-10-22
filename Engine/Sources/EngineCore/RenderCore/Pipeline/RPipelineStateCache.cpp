@@ -116,6 +116,7 @@ namespace PigeonEngine
 
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.CullMode));
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.FillMode));
+		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.ScissorEnable));
 
 		HashCombine(((InDesc.Blend.AlphaToCoverageEnable ? 2ull : 1ull)
 			| (InDesc.Blend.IndependentBlendEnable ? 8ull : 4ull)));

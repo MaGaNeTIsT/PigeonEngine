@@ -631,6 +631,7 @@ namespace PigeonEngine
 		// Fixed-function state
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.CullMode));
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.FillMode));
+		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.ScissorEnable));
 		HashCombine(CombineHashBlendDesc(InDesc.Blend));
 		HashCombine(static_cast<UINT64>(InDesc.Depth.DepthEnable));
 		HashCombine(static_cast<UINT64>(InDesc.Depth.DepthWriteMask));
