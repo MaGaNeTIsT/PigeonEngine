@@ -58,6 +58,10 @@ namespace PigeonEngine
 		// don't need defensive checks.
 		void			OnPassBegin(IRCommandList* InCmd, const CHAR* InName);
 		void			OnPassEnd(IRCommandList* InCmd);
+		// FALSE while a renderer that is not the frame's main renderer is recording. Its passes
+		// are not part of the frame's timing slice - that slice is opened and closed by the main
+		// renderer - so they are dropped rather than charged to it.
+		void			SetPassRecordingEnabled(const BOOL8 InEnabled) { bPassRecordingEnabled = InEnabled; }
 
 		// Frames whose GPU samples were lost: a D3D11 slice reused while its
 		// readback was still pending, or a D3D12 readback that failed outright.
@@ -106,6 +110,7 @@ namespace PigeonEngine
 		EFrameRecord		Frames[MAX_FRAMES_IN_FLIGHT];
 		UINT32				CurrentFrameSlot	= 0u;
 		BOOL8				bAnyFrameStarted	= FALSE;
+		BOOL8				bPassRecordingEnabled = TRUE;
 		TArray<EPassRecord>	PassStack;
 		// Frames whose GPU samples were lost: D3D11 slices reused while still
 		// pending, and D3D12 frames whose readback failed outright. Reported in

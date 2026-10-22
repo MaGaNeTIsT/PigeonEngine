@@ -69,6 +69,11 @@ namespace PigeonEngine
 		AfterRenderCallback = InCallback;
 	}
 
+	void RRenderThread::SetPreSceneRenderCallback(const FAfterRenderCallback& InCallback)
+	{
+		PreSceneRenderCallback = InCallback;
+	}
+
 	BOOL8 RRenderThread::IsRunning()const
 	{
 		return bStarted;
@@ -109,6 +114,13 @@ namespace PigeonEngine
 				// GPU-bound frame shows up as this scope and not as CPU work.
 				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_BEGIN_FRAME);
 				RenderDevice->BeginFrame();
+			}
+			// Secondary renderers record into their own targets before the main scene does, in
+			// the same device frame, so the overlay the main pass submits this frame samples
+			// what they wrote this frame rather than the previous one.
+			if (PreSceneRenderCallback.IsValid())
+			{
+				PreSceneRenderCallback();
 			}
 			{
 				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_INIT_FRAME);

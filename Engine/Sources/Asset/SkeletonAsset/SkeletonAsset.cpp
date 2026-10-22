@@ -559,7 +559,8 @@ namespace PigeonEngine
 		RawSkeletonPtr = InRawSkeletonPtr;
 		if (!!RawSkeletonPtr)
 		{
-			const TMap<EString, USHORT>& BoneMappings = RawSkeletonPtr->GetBoneMapping();
+			// Referenced by the Check below only, which compiles to nothing in Shipping.
+			[[maybe_unused]] const TMap<EString, USHORT>& BoneMappings = RawSkeletonPtr->GetBoneMapping();
 			const ESkeleton::EBonePart& BonePart = RawSkeletonPtr->GetBonePart();
 			Check(((BoneMappings.Num() > 0) && (BoneMappings.Num() == BonePart.Num())));
 			const INT32 BoneNum = BonePart.Num();

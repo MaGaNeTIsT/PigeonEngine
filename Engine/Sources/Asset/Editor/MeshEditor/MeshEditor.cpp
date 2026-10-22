@@ -209,7 +209,7 @@ namespace PigeonEngine
 					}
 					else
 					{
-						ImGui::TextWrapped("Preview texture hookup is temporarily skipped. Preview scene state and skeleton selection remain in place.");
+						ImGui::TextWrapped("No preview to show yet.");
 					}
 				}
 				ImGui::EndChild();
@@ -391,13 +391,15 @@ namespace PigeonEngine
 		{
 			bRenderResourceValid = m_StaticMeshAsset->IsRenderResourceValid();
 			bAssetValid = m_StaticMeshAsset->IsValid();
-			bHoldResource = m_StaticMeshAsset->IsHoldResource();
+			// The asset lifecycle no longer carries a "holds cold data" flag: the stored
+			// resource is the cold data, so its presence is the answer.
+			bHoldResource = (m_StaticMeshAsset->GetStoragedResource() != nullptr);
 		}
 		else if (m_SkinnedMeshAsset)
 		{
 			bRenderResourceValid = m_SkinnedMeshAsset->IsRenderResourceValid();
 			bAssetValid = m_SkinnedMeshAsset->IsValid();
-			bHoldResource = m_SkinnedMeshAsset->IsHoldResource();
+			bHoldResource = (m_SkinnedMeshAsset->GetStoragedResource() != nullptr);
 		}
 
 		ImGui::Text("Mesh Name: %s", *m_MeshResource->GetMeshName());

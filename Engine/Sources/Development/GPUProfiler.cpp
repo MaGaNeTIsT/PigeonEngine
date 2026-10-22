@@ -232,6 +232,10 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		if (!bPassRecordingEnabled)
+		{
+			return;
+		}
 
 		EFrameRecord& Frame = Frames[CurrentFrameSlot];
 		if ((Frame.NextSlotInFrame + 1u) > SLOTS_PER_FRAME)
@@ -264,6 +268,10 @@ namespace PigeonEngine
 	void EGPUProfiler::OnPassEnd(IRCommandList* InCmd)
 	{
 		if ((!InCmd) || (!Heap))
+		{
+			return;
+		}
+		if (!bPassRecordingEnabled)
 		{
 			return;
 		}
