@@ -43,6 +43,10 @@ namespace PigeonEngine
 			BOOL32                  WantUpdateMonitors;
 			UINT32                  Tick;
 			UINT32                  LastMouseMoveTick;
+			// Physical pixels per ImGui unit, taken from the monitor the main window is on.
+			// ImGui's layout/style are global, so the whole application uses this single scale;
+			// the physical resolution is reached through DisplayFramebufferScale.
+			FLOAT                   DpiScale;
 		};
 	private:
 		// State of one platform window this backend owns (or borrowed, for the main window).
@@ -136,6 +140,10 @@ namespace PigeonEngine
 		static bool             PlatformGetWindowMinimized(ImGuiViewport* viewport);
 		static void             PlatformUpdateWindow(ImGuiViewport* viewport);
 		static void             PlatformSetWindowTitle(ImGuiViewport* viewport, const char* title);
+		static ImVec2           PlatformGetWindowFramebufferScale(ImGuiViewport* viewport);
+		static FLOAT            PlatformGetWindowDpiScale(ImGuiViewport* viewport);
+		// Physical pixels per ImGui unit. Always positive so callers can divide without a guard.
+		static FLOAT            GetDpiScale();
 		static void             RendererCreateWindow(ImGuiViewport* viewport);
 		static void             RendererDestroyWindow(ImGuiViewport* viewport);
 		static void             RendererSetWindowSize(ImGuiViewport* viewport, ImVec2 size);

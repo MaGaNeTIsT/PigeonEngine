@@ -10,6 +10,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT32 uMsg, WPARAM wParam, LPARAM lParam);
 
 INT32 APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT32 nCmdShow)
 {
+#if _EDITOR_ONLY
+	// The editor is expected to span monitors with different DPI settings. Without per-monitor
+	// awareness Windows virtualizes coordinates per monitor and the desktop is a discontinuous
+	// space for this process - a panel dragged between displays can land on a position that
+	// maps outside every monitor. Physical coordinates keep the space continuous. The UI keeps
+	// a single scale derived from the main window's monitor (see CImGUIManager::InitWnd).
+	if (!::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+	{
+		::SetProcessDPIAware();
+	}
+#endif
+
 	HWND windowHandle; WNDCLASSEX wcex = {};
 	{
 		wcex.cbSize			= sizeof(WNDCLASSEXW);

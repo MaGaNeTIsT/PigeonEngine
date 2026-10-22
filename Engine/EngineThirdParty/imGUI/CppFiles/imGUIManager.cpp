@@ -30,6 +30,9 @@ namespace PigeonEngine
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
+	// Windows reports DPI on a 96-DPI baseline; 1.0f means no extra scale.
+	static constexpr FLOAT GDpiBase = 96.0f;
+
 	CImGUIManager::CImGUIManager()
 	{
 #if _EDITOR_ONLY
@@ -83,6 +86,12 @@ namespace PigeonEngine
 		io.BackendPlatformName = nullptr;
 		io.BackendPlatformUserData = nullptr;
 	}
+	FLOAT CImGUIManager::GetDpiScale()
+	{
+		const FLOAT Scale = GetManagerSingleton()->m_WndData.DpiScale;
+		return (Scale > 0.0f) ? Scale : 1.0f;
+	}
+
 	void CImGUIManager::Update()
 	{
 		ImGuiIO& io = ImGui::GetIO();
@@ -92,7 +101,9 @@ namespace PigeonEngine
 
 		{
 			const Vector2Int& WindowSize = EMainManager::GetManagerSingleton()->GetWindowSize();
-			io.DisplaySize = ImVec2(static_cast<FLOAT>(WindowSize.x), static_cast<FLOAT>(WindowSize.y));
+			const FLOAT DpiScale = GetDpiScale();
+			io.DisplaySize = ImVec2(static_cast<FLOAT>(WindowSize.x) / DpiScale, static_cast<FLOAT>(WindowSize.y) / DpiScale);
+			io.DisplayFramebufferScale = ImVec2(DpiScale, DpiScale);
 		}
 
 		WndProcessKeyEventsWorkarounds();
@@ -197,8 +208,12 @@ namespace PigeonEngine
 		}
 		ImGuiViewportP* MainViewport = G.Viewports[0];
 		const ImVec2 MainPos = MainViewport->Pos;
+		// The caller reports the OS client size (physical); the viewport is in logical units.
+		const FLOAT DpiScale = GetDpiScale();
+		const FLOAT NewWidth = static_cast<FLOAT>(InNewWidth) / DpiScale;
+		const FLOAT NewHeight = static_cast<FLOAT>(InNewHeight) / DpiScale;
 		const ImVec2 OldMax(MainPos.x + MainViewport->Size.x, MainPos.y + MainViewport->Size.y);
-		const ImVec2 NewMax(MainPos.x + static_cast<FLOAT>(InNewWidth), MainPos.y + static_cast<FLOAT>(InNewHeight));
+		const ImVec2 NewMax(MainPos.x + NewWidth, MainPos.y + NewHeight);
 		constexpr FLOAT EdgeEpsilon = 1.0f;
 
 		for (INT32 WindowIndex = 0; WindowIndex < G.Windows.Size; WindowIndex++)
@@ -266,7 +281,8 @@ namespace PigeonEngine
 			POINT CursorPos = {};
 			if (::GetCursorPos(&CursorPos) != FALSE)
 			{
-				io.AddMousePosEvent(static_cast<FLOAT>(CursorPos.x), static_cast<FLOAT>(CursorPos.y));
+				const FLOAT DpiScale = GetDpiScale();
+				io.AddMousePosEvent(static_cast<FLOAT>(CursorPos.x) / DpiScale, static_cast<FLOAT>(CursorPos.y) / DpiScale);
 			}
 		}
 
@@ -341,6 +357,20 @@ namespace PigeonEngine
 		m_WndData.WantUpdateHasGamepad = FALSE;
 		m_WndData.WantUpdateMonitors = TRUE;
 		m_WndData.LastMouseCursor = ImGuiMouseCursor_COUNT;
+		// One UI scale for the whole application, taken from the monitor the main window is on.
+		// ImGui's style and layout are global, so a per-monitor UI scale cannot be expressed by
+		// the docking branch; a single scale keeps the saved logical layout valid on every
+		// monitor. The process is per-monitor DPI aware (Main.cpp), so window/mouse coordinates
+		// are physical and continuous across displays; DisplayFramebufferScale turns those
+		// logical units into physical pixels and is also what ImGui 1.92 uses to rasterize
+		// fonts at the right density. The scale is fixed for the lifetime of the context:
+		// moving the main window to another display keeps the same logical layout.
+		m_WndData.DpiScale = static_cast<FLOAT>(::GetDpiForWindow(hWnd)) / GDpiBase;
+		if (m_WndData.DpiScale <= 0.0f)
+		{
+			m_WndData.DpiScale = 1.0f;
+		}
+		io.DisplayFramebufferScale = ImVec2(m_WndData.DpiScale, m_WndData.DpiScale);
 
 		ImGuiViewport* MainViewport = ImGui::GetMainViewport();
 		MainViewport->PlatformHandle = (void*)hWnd;
@@ -373,12 +403,15 @@ namespace PigeonEngine
 				// renderer subtracts the viewport origin through ImDrawData::DisplayPos. A
 				// client-local position here would be off by the window's screen origin for
 				// every hit test - hovered windows, docking targets, buttons and sliders.
+				// The OS speaks physical pixels (the process is per-monitor DPI aware) while
+				// ImGui's layout is logical, so the position is divided by the UI scale.
 				POINT MousePos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 				{
 					::ClientToScreen(hWnd, &MousePos);
 				}
-				io.AddMousePosEvent((FLOAT)MousePos.x, (FLOAT)MousePos.y);
+				const FLOAT DpiScale = GetDpiScale();
+				io.AddMousePosEvent((FLOAT)MousePos.x / DpiScale, (FLOAT)MousePos.y / DpiScale);
 			}
 			break;
 		case WM_MOUSELEAVE:
@@ -841,6 +874,8 @@ namespace PigeonEngine
 		PlatformIO.Platform_GetWindowMinimized	= PlatformGetWindowMinimized;
 		PlatformIO.Platform_SetWindowTitle		= PlatformSetWindowTitle;
 		PlatformIO.Platform_UpdateWindow		= PlatformUpdateWindow;
+		PlatformIO.Platform_GetWindowFramebufferScale = PlatformGetWindowFramebufferScale;
+		PlatformIO.Platform_GetWindowDpiScale	= PlatformGetWindowDpiScale;
 
 		PlatformIO.Renderer_CreateWindow		= RendererCreateWindow;
 		PlatformIO.Renderer_DestroyWindow		= RendererDestroyWindow;
@@ -897,6 +932,8 @@ namespace PigeonEngine
 		PlatformIO.Platform_GetWindowFocus		= nullptr;
 		PlatformIO.Platform_GetWindowMinimized	= nullptr;
 		PlatformIO.Platform_SetWindowTitle		= nullptr;
+		PlatformIO.Platform_GetWindowFramebufferScale = nullptr;
+		PlatformIO.Platform_GetWindowDpiScale	= nullptr;
 		PlatformIO.Renderer_CreateWindow		= nullptr;
 		PlatformIO.Renderer_DestroyWindow		= nullptr;
 		PlatformIO.Renderer_SetWindowSize		= nullptr;
@@ -930,6 +967,7 @@ namespace PigeonEngine
 
 		POINT ScreenPos = { 0, 0 };
 		const BOOL32 bHasScreenPos = (::GetCursorPos(&ScreenPos) != FALSE) ? TRUE : FALSE;
+		const FLOAT DpiScale = GetDpiScale();
 
 		// Focus on any of our windows counts as the application being focused: a platform
 		// window a panel was dragged into is one of ours, not a foreign application.
@@ -947,16 +985,15 @@ namespace PigeonEngine
 			// instead of following it.
 			if (io.WantSetMousePos && (m_WndData.MouseButtonsDown == 0))
 			{
-				// MousePos is already in absolute OS coordinates in viewport mode, and
-				// SetCursorPos takes the same space.
-				::SetCursorPos((INT32)io.MousePos.x, (INT32)io.MousePos.y);
+				// ImGui's MousePos is in logical units; Win32's SetCursorPos takes physical pixels.
+				::SetCursorPos((INT32)(io.MousePos.x * DpiScale), (INT32)(io.MousePos.y * DpiScale));
 			}
 			else if ((m_WndData.MouseTracked == FALSE) && (bHasScreenPos != FALSE))
 			{
 				// Not inside any client area (over a frame, between windows, or before the
 				// first WM_MOUSEMOVE): publish the OS position so ImGui always has one while
 				// the application is focused. Same rule as the reference Win32 backend.
-				io.AddMousePosEvent((FLOAT)ScreenPos.x, (FLOAT)ScreenPos.y);
+				io.AddMousePosEvent((FLOAT)ScreenPos.x / DpiScale, (FLOAT)ScreenPos.y / DpiScale);
 			}
 		}
 
@@ -985,10 +1022,14 @@ namespace PigeonEngine
 		}
 
 		ImGuiPlatformMonitor ImGuiMonitor;
-		ImGuiMonitor.MainPos	= ImVec2((FLOAT)MonitorInfo.rcMonitor.left, (FLOAT)MonitorInfo.rcMonitor.top);
-		ImGuiMonitor.MainSize	= ImVec2((FLOAT)(MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left), (FLOAT)(MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top));
-		ImGuiMonitor.WorkPos	= ImVec2((FLOAT)MonitorInfo.rcWork.left, (FLOAT)MonitorInfo.rcWork.top);
-		ImGuiMonitor.WorkSize	= ImVec2((FLOAT)(MonitorInfo.rcWork.right - MonitorInfo.rcWork.left), (FLOAT)(MonitorInfo.rcWork.bottom - MonitorInfo.rcWork.top));
+		// The logical space is shared by every window and matches the mouse/ImGui units, so
+		// monitor rects are converted with the same UI scale. DpiScale stays 1.0f because the
+		// physical density is carried per viewport by Platform_GetWindowFramebufferScale.
+		const FLOAT DpiScale = GetDpiScale();
+		ImGuiMonitor.MainPos	= ImVec2((FLOAT)MonitorInfo.rcMonitor.left / DpiScale, (FLOAT)MonitorInfo.rcMonitor.top / DpiScale);
+		ImGuiMonitor.MainSize	= ImVec2((FLOAT)(MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left) / DpiScale, (FLOAT)(MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top) / DpiScale);
+		ImGuiMonitor.WorkPos	= ImVec2((FLOAT)MonitorInfo.rcWork.left / DpiScale, (FLOAT)MonitorInfo.rcWork.top / DpiScale);
+		ImGuiMonitor.WorkSize	= ImVec2((FLOAT)(MonitorInfo.rcWork.right - MonitorInfo.rcWork.left) / DpiScale, (FLOAT)(MonitorInfo.rcWork.bottom - MonitorInfo.rcWork.top) / DpiScale);
 		ImGuiMonitor.DpiScale	= 1.0f;
 		ImGuiMonitor.PlatformHandle = (void*)monitor;
 
@@ -1080,7 +1121,8 @@ namespace PigeonEngine
 		GetWin32WindowStyleFromViewportFlags(viewport->Flags, ViewportData->Style, ViewportData->ExStyle);
 		ViewportData->HwndParent = GetViewportWindowHandle(viewport->ParentViewport);
 
-		RECT WindowRect = { (LONG)viewport->Pos.x, (LONG)viewport->Pos.y, (LONG)(viewport->Pos.x + viewport->Size.x), (LONG)(viewport->Pos.y + viewport->Size.y) };
+		const FLOAT DpiScale = GetDpiScale();
+		RECT WindowRect = { (LONG)(viewport->Pos.x * DpiScale), (LONG)(viewport->Pos.y * DpiScale), (LONG)((viewport->Pos.x + viewport->Size.x) * DpiScale), (LONG)((viewport->Pos.y + viewport->Size.y) * DpiScale) };
 		AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
 		// Only rescue a position that no monitor contains at all (a layout entry written on a
 		// monitor that is gone). A window that is on any monitor - including a secondary one
@@ -1194,7 +1236,8 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		RECT WindowRect = { (LONG)pos.x, (LONG)pos.y, (LONG)(pos.x + viewport->Size.x), (LONG)(pos.y + viewport->Size.y) };
+		const FLOAT DpiScale = GetDpiScale();
+		RECT WindowRect = { (LONG)(pos.x * DpiScale), (LONG)(pos.y * DpiScale), (LONG)((pos.x + viewport->Size.x) * DpiScale), (LONG)((pos.y + viewport->Size.y) * DpiScale) };
 		AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
 		// No clamp while ImGui is moving the window: a window being dragged across displays
 		// legitimately passes through positions that are on no monitor (the gap some
@@ -1213,7 +1256,8 @@ namespace PigeonEngine
 		}
 		POINT Position = { 0, 0 };
 		::ClientToScreen(ViewportData->Hwnd, &Position);
-		return ImVec2((FLOAT)Position.x, (FLOAT)Position.y);
+		const FLOAT DpiScale = GetDpiScale();
+		return ImVec2((FLOAT)Position.x / DpiScale, (FLOAT)Position.y / DpiScale);
 	}
 
 	void CImGUIManager::PlatformSetWindowSize(ImGuiViewport* viewport, ImVec2 size)
@@ -1223,7 +1267,8 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		RECT WindowRect = { 0, 0, (LONG)size.x, (LONG)size.y };
+		const FLOAT DpiScale = GetDpiScale();
+		RECT WindowRect = { 0, 0, (LONG)(size.x * DpiScale), (LONG)(size.y * DpiScale) };
 		AdjustViewportWindowRect(viewport, WindowRect, ViewportData->Style, ViewportData->ExStyle);
 		::SetWindowPos(ViewportData->Hwnd, nullptr, 0, 0, WindowRect.right - WindowRect.left, WindowRect.bottom - WindowRect.top, SWP_NOZORDER | SWP_NOMOVE | SWP_NOACTIVATE);
 	}
@@ -1237,7 +1282,24 @@ namespace PigeonEngine
 		}
 		RECT ClientRect = {};
 		::GetClientRect(ViewportData->Hwnd, &ClientRect);
-		return ImVec2((FLOAT)(ClientRect.right - ClientRect.left), (FLOAT)(ClientRect.bottom - ClientRect.top));
+		const FLOAT DpiScale = GetDpiScale();
+		return ImVec2((FLOAT)(ClientRect.right - ClientRect.left) / DpiScale, (FLOAT)(ClientRect.bottom - ClientRect.top) / DpiScale);
+	}
+
+	ImVec2 CImGUIManager::PlatformGetWindowFramebufferScale(ImGuiViewport*)
+	{
+		// ImGui's layout is logical at 96 DPI; every window is rendered at the same physical
+		// density, which is what DisplayFramebufferScale carries. ImGui 1.92 uses this value
+		// to rasterize the font atlas at the matching density, so text stays crisp.
+		const FLOAT DpiScale = GetDpiScale();
+		return ImVec2(DpiScale, DpiScale);
+	}
+
+	FLOAT CImGUIManager::PlatformGetWindowDpiScale(ImGuiViewport*)
+	{
+		// The logical space is 96 DPI for all windows (see PlatformGetWindowFramebufferScale);
+		// returning a per-monitor scale here would make ImGui scale the layout a second time.
+		return 1.0f;
 	}
 
 	void CImGUIManager::PlatformSetWindowFocus(ImGuiViewport* viewport)
@@ -1285,9 +1347,11 @@ namespace PigeonEngine
 		}
 
 		// R8G8B8A8_UNORM: the format the ImGui pass's pipeline state declares, and therefore
-		// the one a target this backend records into has to carry.
+		// the one a target this backend records into has to carry. The swap chain is physical
+		// (the window's client size); ImGui's viewport size is logical.
+		const FLOAT DpiScale = GetDpiScale();
 		ViewportData->SwapChain = Device->CreateSwapChainForWindow(hWnd
-			, static_cast<UINT32>(viewport->Size.x), static_cast<UINT32>(viewport->Size.y)
+			, static_cast<UINT32>(viewport->Size.x * DpiScale), static_cast<UINT32>(viewport->Size.y * DpiScale)
 			, RFormatType::FORMAT_R8G8B8A8_UNORM);
 	}
 
@@ -1310,7 +1374,8 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		ViewportData->SwapChain->Resize(static_cast<UINT32>(size.x), static_cast<UINT32>(size.y));
+		const FLOAT DpiScale = GetDpiScale();
+		ViewportData->SwapChain->Resize(static_cast<UINT32>(size.x * DpiScale), static_cast<UINT32>(size.y * DpiScale));
 	}
 
 	void CImGUIManager::RendererRenderWindow(ImGuiViewport* viewport, void*)
