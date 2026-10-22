@@ -87,8 +87,14 @@ namespace PigeonEngine
 			const UINT32 ElementNum = (InDesc.StructureByteStride > 0u)
 				? static_cast<UINT32>(InDesc.ByteWidth / InDesc.StructureByteStride)
 				: 0u;
+			// Writable has to travel with the desc. The D3D11 helper builds the resource's views from
+			// this flag, and a structured buffer created without it is readable but has no UAV at all -
+			// a compute pass that writes one then dispatches into nothing, silently, which is how a
+			// bake ends up producing nothing but zeroes. The abstract desc states the same thing as
+			// BIND_UNORDERED_ACCESS, so the two descriptions of one resource cannot disagree.
+			const BOOL32 bGPUWritable = ((InDesc.BindFlags & static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS)) != 0u) ? TRUE : FALSE;
 			if (!RDeviceD3D11::GetDeviceSingleton()->CreateStructuredBuffer(*this
-				, RStructuredBufferDesc(static_cast<UINT32>(InDesc.StructureByteStride), ElementNum), LegacyPtr))
+				, RStructuredBufferDesc(static_cast<UINT32>(InDesc.StructureByteStride), ElementNum, bGPUWritable), LegacyPtr))
 			{
 				return FALSE;
 			}
@@ -185,19 +191,23 @@ namespace PigeonEngine
 			static_cast<UINT8>(Desc.MiscFlags) | static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE));
 		// A cube is a six-slice 2D array: the back-ends derive the resource slice count and
 		// the cube SRV dimension from the array size, and the face uploads below address
-		// subresources 1..5.
+		// subresources 0..5.
 		Desc.ArraySize = 6u;
 
 		IRRHITexture* OutTexture = nullptr;
-		// The RHI takes a single subresource per creation call, so only the first face
-		// of the caller's array reaches the back-end here; the remaining faces have to
-		// be uploaded through IRRHIDevice::UploadTexture.
-		RRHISubresourceData InitialFaceData;
-		if (InInitialFaceData)
-		{
-			InitialFaceData = *InInitialFaceData;
-		}
-		if (!InRenderDevice->CreateTexture(Desc, Color4(0.f, 0.f, 0.f, 0.f), InitialFaceData, &OutTexture) || !OutTexture)
+		/*
+		* The creation is asked for without any initial data, and every face reaches the back-end
+		* through the upload path below, face 0 included.
+		*
+		* The RHI takes a single subresource per creation call while a cube has six, so a creation
+		* time seed can only ever carry one of them - and the back-ends do not treat that the same
+		* way: D3D11 requires every entry of the initial data array it builds from it to have a
+		* payload and refuses the whole creation when one is missing, while a cube with mips drops
+		* the payload on the way in. Uploading them all keeps the faces of one cube on one path and
+		* makes the result the same on every back-end.
+		*/
+		const RRHISubresourceData NoInitialData;
+		if (!InRenderDevice->CreateTexture(Desc, Color4(0.f, 0.f, 0.f, 0.f), NoInitialData, &OutTexture) || !OutTexture)
 		{
 			return FALSE;
 		}
@@ -223,13 +233,11 @@ namespace PigeonEngine
 			BindFlags  = Desc.BindFlags;
 		}
 
-		// The RHI carries one subresource per creation call, so the faces after the
-		// first reach the back-end through the upload path. Face f's mip 0 sits at
-		// subresource f * MipLevels (mips vary fastest inside a face).
-		if (InInitialFaceData && InFaceCount > 1u)
+		// Face f's mip 0 sits at subresource f * MipLevels (mips vary fastest inside a face).
+		if (InInitialFaceData && InFaceCount > 0u)
 		{
 			IRRHITexture* UploadTarget = RHITexture ? RHITexture : static_cast<IRRHITexture*>(this);
-			for (UINT32 Face = 1u; Face < InFaceCount; Face++)
+			for (UINT32 Face = 0u; Face < InFaceCount; Face++)
 			{
 				InRenderDevice->UploadTexture(UploadTarget, &InInitialFaceData[Face], 1u, Face * Desc.MipLevels);
 			}

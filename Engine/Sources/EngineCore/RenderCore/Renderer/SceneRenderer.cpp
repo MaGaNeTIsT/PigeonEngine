@@ -17,8 +17,11 @@
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <RenderProxy/BezierGrassSceneProxy.h>
-#if _EDITOR_ONLY
+// The diagnostics this file reports are written from code that runs in every configuration, and
+// the header itself is a no-op under _SHIPPING_MODE, which is what keeps this include out of the
+// editor-only block below.
 #include <EngineCore/Editor/EditorLogManager.h>
+#if _EDITOR_ONLY
 #include <cstdio>
 #include <RenderDevice/D3D12Native.h>
 #include <imGUI/Headers/imGUIManager.h>
@@ -146,6 +149,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		: Scene(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr), SceneLightingProgram(nullptr)
 		, FinalOutputView(0u), NeedStencil(FALSE)
 		, EnvironmentSHPipelineState(nullptr), EnvironmentSHProgram(nullptr), EnvironmentSHBakedSource(nullptr)
+		, bIndirectLightingParamsReported(FALSE)
 	{
 		for (UINT32 i = 0u; i < RPipelineStateType::PIPELINE_STATE_COUNT; i++)
 		{
@@ -1388,8 +1392,16 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 	void RSceneRenderer::RenderEnvironmentSH()
 	{
-		if ((!Scene) || (!CurrentCommandList) || (!EnvironmentSHProgram))
+		if ((!Scene) || (!CurrentCommandList))
 		{
+			return;
+		}
+		if (!EnvironmentSHProgram)
+		{
+			// The whole indirect term is missing when this happens, and an absence is the hardest
+			// thing to attribute from the picture alone, so it is reported rather than skipped
+			// quietly. The report is deduplicated, so a session without the program costs one line.
+			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its compute program did not assemble")));
 			return;
 		}
 
@@ -1411,6 +1423,8 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		if (!EnsureEnvironmentSHPipelineState())
 		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its compute pipeline state could not be built for program '"))
+				+ EnvironmentSHProgram->GetShaderName().ToString() + EString(PE_TEXT("'")));
 			return;
 		}
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
@@ -1446,11 +1460,13 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		IRRHIBuffer* CoefficientBuffer = EnvironmentSHBuffer.GetResolvedRHIBuffer();
 		if (!CoefficientBuffer)
 		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its coefficient buffer has no render resource")));
 			return;
 		}
 		const EShaderStageEntry* ComputeEntry = ResolveShaderStageEntry(*EnvironmentSHProgram, EShaderStageType::SHADER_STAGE_COMPUTE);
 		if (!ComputeEntry)
 		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its compute program has no compute stage entry")));
 			return;
 		}
 
@@ -1481,6 +1497,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		CurrentCommandList->ResourceBarrier(CoefficientBuffer, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
 
 		EnvironmentSHBakedSource = SourceTexture;
+
+		// One line per bake and a bake only happens when the cube behind the sky changes, so this
+		// is the record that the dispatch ran rather than that the pass was skipped.
+#if _EDITOR_ONLY
+		PE_LOG_LOG(EString("[SceneRenderer] Baked the environment SH from the sky's cube."));
+#endif	// _EDITOR_ONLY
 	}
 	BOOL32 RSceneRenderer::EnsureEnvironmentSHPipelineState()
 	{
@@ -1542,6 +1564,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// without a sky looks like a scene without a sky.
 		const Color3 AdjustColor = ((SkyLight != nullptr) ? SkyLight->GetAdjustColor() : Color3::Black());
 		const FLOAT AdjustIntensity = ((SkyLight != nullptr) ? SkyLight->GetAdjustIntensity() : 0.f);
+
+		// Said once, because this pair is the number the whole indirect term is multiplied by: an
+		// environment that shades nothing is either zero coefficients (the bake wrote nothing) or a
+		// zero scale here, and the two are indistinguishable from the picture.
+		if ((bIndirectLightingParamsReported == FALSE) && (SkyLight != nullptr))
+		{
+			bIndirectLightingParamsReported = TRUE;
+			PE_LOG_LOG(EString("[SceneRenderer] The indirect term is scaled by the sky light's tint (")
+				+ ToString(AdjustColor.r) + EString(", ") + ToString(AdjustColor.g) + EString(", ")
+				+ ToString(AdjustColor.b) + EString(") times intensity ") + ToString(AdjustIntensity)
+				+ EString("."));
+		}
 
 		// Written every frame and uploaded only when something moved: the block reports which
 		// mirrors are stale, so a still sky costs a comparison rather than a copy.

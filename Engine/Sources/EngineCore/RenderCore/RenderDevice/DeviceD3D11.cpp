@@ -607,7 +607,20 @@ namespace PigeonEngine
 			HRESULT hr = S_FALSE;
 			// One entry per face covers a single-mip cube; a full chain would need
 			// 6 * MipLevels entries, which the single-subresource RHI path cannot supply.
-			if ((subData != nullptr) && (textureDesc.MipLevels == 1u))
+			//
+			// Only a complete set is handed over, and that is a rule of the runtime rather than a
+			// convenience: every entry of an initial data array has to carry a payload, so a partial
+			// one (the RHI's single subresource reaching only face 0) makes CreateTexture2D fail
+			// outright. A caller with faces to seed uploads them through UploadTexture instead.
+			BOOL8 bAllFacesSeeded = ((subData != nullptr) && (textureDesc.MipLevels == 1u)) ? TRUE : FALSE;
+			for (UINT32 i = 0u; (i < 6u) && (bAllFacesSeeded != FALSE); i++)
+			{
+				if (subData[i].pSysMem == nullptr)
+				{
+					bAllFacesSeeded = FALSE;
+				}
+			}
+			if (bAllFacesSeeded != FALSE)
 			{
 				D3D11_SUBRESOURCE_DATA sd[6u];
 				for (UINT32 i = 0u; i < 6u; i++)

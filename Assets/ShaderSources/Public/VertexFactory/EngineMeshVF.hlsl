@@ -177,6 +177,22 @@ void VFUnpackVertex(in VFAttributes InAttributes, in VFContext InContext, out VF
 		, OutVertex.ObjectPosition, OutVertex.ObjectNormal, OutVertex.ObjectTangent);
 #endif	//VF_HAS_SKIN_WEIGHT
 
+	// The instance and world spaces are VFTransformToWorld's to fill, and it runs next. They
+	// are written here anyway, because the contract at the top of this file is not a style
+	// note: FXC wants an out parameter to be completely initialized by the callee (error
+	// X3508) and cannot see that the transform which follows is what fills them. The instance
+	// values are the documented ones for a factory without an instance stream - the local
+	// values, which the transform copies - and the world ones are the untransformed identity
+	// frame, so a factory bug that skipped the transform shows as a vertex at the origin
+	// rather than as one with a plausible position.
+	OutVertex.InstancePosition = OutVertex.ObjectPosition;
+	OutVertex.InstanceNormal = OutVertex.ObjectNormal;
+
+	OutVertex.WorldPosition = float3(0.0, 0.0, 0.0);
+	OutVertex.WorldNormal = float3(0.0, 0.0, 1.0);
+	OutVertex.WorldTangent = float3(1.0, 0.0, 0.0);
+	OutVertex.WorldBitangent = float3(0.0, 1.0, 0.0);
+
 	// Free channels: this factory has nothing to put in them, and leaving them
 	// undefined would make a material that reads one read garbage.
 	OutVertex.Custom[0] = float4(0.0, 0.0, 0.0, 0.0);
@@ -204,7 +220,7 @@ void VFTransformToWorld(inout VFVertex InOutVertex, in VFContext InContext)
 		InOutVertex.WorldTangent, InOutVertex.WorldBitangent);
 }
 
-void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, out VFVarying OutVarying)
+void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, inout VFVarying OutVarying)
 {
 	// The offset is a world space displacement, so it is added before the view
 	// projection is applied. That ordering is the whole point of the material

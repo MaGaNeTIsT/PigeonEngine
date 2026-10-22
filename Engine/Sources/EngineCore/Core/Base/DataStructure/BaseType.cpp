@@ -747,7 +747,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
 #else	// !_EDITOR_ONLY
-		const UINT32 VarIndex = StructVariableNames[InVarName];
+		UINT32 VarIndex = MaxUint32;
+		if (StructVariableNames.FindValue(InVarName, VarIndex))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY
@@ -859,7 +860,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
 #else	// !_EDITOR_ONLY
-		const UINT32 StIdx = StructNames[InStructName];
+		UINT32 StIdx = MaxUint32;
+		if (StructNames.FindValue(InStructName, StIdx))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY
@@ -878,7 +880,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
 #else	// !_EDITOR_ONLY
-		const UINT32 StIdx = StructNames[InStructName];
+		UINT32 StIdx = MaxUint32;
+		if (StructNames.FindValue(InStructName, StIdx))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY
@@ -899,7 +902,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
 #else	// !_EDITOR_ONLY
-		const UINT32 StIdx = StructNames[InStructName];
+		UINT32 StIdx = MaxUint32;
+		if (StructNames.FindValue(InStructName, StIdx))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY
@@ -999,7 +1003,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		if (UINT32 StIdx = MaxUint32; StructNames.FindValue(InStructName, StIdx))
 #else	// !_EDITOR_ONLY
-		const UINT32 StIdx = StructNames[InStructName];
+		UINT32 StIdx = MaxUint32;
+		if (StructNames.FindValue(InStructName, StIdx))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY
@@ -1010,7 +1015,8 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 				if (UINT32 VarIdx = MaxUint32; St.StructVariableNames.FindValue(InVarName, VarIdx))
 #else	// !_EDITOR_ONLY
-				const UINT32 VarIdx = St.StructVariableNames[InVarName];
+				UINT32 VarIdx = MaxUint32;
+				if (St.StructVariableNames.FindValue(InVarName, VarIdx))
 #endif	// _EDITOR_ONLY
 				{
 #if _EDITOR_ONLY
@@ -1222,7 +1228,8 @@ namespace PigeonEngine
 		}
 		if (UINT32 VarIndex = MaxUint32; StructVariableNames.FindValue(InVarName, VarIndex))
 #else	// !_EDITOR_ONLY
-		const UINT32 VarIndex = StructVariableNames[InVarName];
+		UINT32 VarIndex = MaxUint32;
+		if (StructVariableNames.FindValue(InVarName, VarIndex))
 #endif	// _EDITOR_ONLY
 		{
 #if _EDITOR_ONLY

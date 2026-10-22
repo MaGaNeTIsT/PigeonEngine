@@ -285,6 +285,10 @@ namespace PigeonEngine
 		// renderer's own rather than the sky's: the sky publishes its pair for its own draw, and
 		// this one travels with the coefficients the renderer bakes and binds.
 		RShaderParameterBlock	IndirectLightingParameterBlock{ EName(SHADER_BLOCK_INDIRECT_LIGHTING_PARAMS) };
+		// Whether the pair above has been reported once. It answers "what is the indirect term
+		// multiplied by" for a session where the environment looks black, which is otherwise the
+		// hardest kind of question to answer from a picture.
+		BOOL32					bIndirectLightingParamsReported;
 	public:
 		RSceneRenderer();
 		virtual ~RSceneRenderer();

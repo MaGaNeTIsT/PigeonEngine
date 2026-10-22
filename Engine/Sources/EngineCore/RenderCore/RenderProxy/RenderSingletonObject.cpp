@@ -6,12 +6,15 @@
 #include <Renderer/ScenePass.h>
 #include <Renderer/SceneRenderer.h>
 #include <Main/MainManager.h>
+// The full screen triangle's input slot is read from the vertex stage's reflection, so this
+// header is part of the code every configuration compiles and not of the editor-only block
+// below.
+#include <Shader/ShaderAssetBinding.h>
 #if _EDITOR_ONLY
 #include <RenderConfig/RenderConfig.h>
 #include <Shader/ShaderParameter.h>
 #include <ShaderAsset/ShaderAsset.h>
 #include <ShaderAsset/ShaderInstance.h>
-#include <Shader/ShaderAssetBinding.h>
 #include <Shader/EngineShaderInstanceCache.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
 #include "../../Editor/EditorLogManager.h"

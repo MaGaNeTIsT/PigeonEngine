@@ -69,7 +69,7 @@ void VFTransformToWorld(inout VFVertex InOutVertex, in VFContext InContext)
 	// the world members, which is the documented behaviour for this factory.
 }
 
-void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, out VFVarying OutVarying)
+void VFTransformVertex(in VFVertex InVertex, in VFContext InContext, in float3 InWorldPositionOffset, inout VFVarying OutVarying)
 {
 	// InWorldPositionOffset is deliberately unused: see the header.
 	OutVarying.Position = float4(InVertex.ObjectPosition.xy, 0.0, 1.0);

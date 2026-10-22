@@ -67,6 +67,12 @@ namespace PigeonEngine
 		// "ImGui-side texture id".
 		UINT32	GetFontBindlessIndex()const { return FontBindlessSRVIndex; }
 
+		// Engine shutdown: releases the session scoped device objects - the font atlas texture and the
+		// bindless index it was registered under - and tells ImGui the texture is gone, which is what
+		// makes its re-create path work. It must not run while a recorded frame is still to be
+		// replayed (see the comment on ShutDown), which is why a shader replacement does not call it.
+		void	ReleaseFontTexture();
+
 	public:
 		EImGuiRenderer(const EImGuiRenderer&) = delete;
 		EImGuiRenderer& operator=(const EImGuiRenderer&) = delete;
@@ -82,12 +88,6 @@ namespace PigeonEngine
 		BOOL8	BuildPipelineState();
 		void	UpdateTexture(ImTextureData* Tex);
 		BOOL8	EnsureBuffers(UINT32 InVertexNum, UINT32 InIndexNum);
-		// Releases the font atlas texture and the bindless index it was registered under, and tells
-		// ImGui that the texture is gone: a texture ImGui believes is still uploaded is never uploaded
-		// again, so a device object that goes away without that notice leaves the atlas handing out an
-		// id whose index no longer names a texture. What it owns is the device object, so it is the one
-		// place the pair of them is released.
-		void	ReleaseFontTexture();
 		void	ReleaseDynamicBuffers();
 		void	UpdateViewParams(ImDrawData* InDrawData);
 

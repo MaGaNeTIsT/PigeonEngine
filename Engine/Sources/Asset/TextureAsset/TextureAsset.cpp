@@ -897,6 +897,35 @@ namespace PigeonEngine
 		{
 			ViewFormat = RFormatTraits::GetLinearCounterpart(InResource->ResourceProperties.Format);
 		}
+
+#if _EDITOR_ONLY
+		/*
+		* A payload of zeroes is worth saying out loud, because everything downstream of it looks like
+		* a different bug: the environment bake projects it into zero coefficients (a dispatch that ran
+		* and wrote zeros), the sky samples black, and the only symptom left is "the indirect term is
+		* missing". Checking the cold bytes here is the one place the answer is cheap - one pass over
+		* the data at creation, and it names the payload rather than the consumers.
+		*/
+		{
+			const UINT32 PayloadSize = SingleFaceMemSize * 6u;
+			const BYTE* Payload = InResource->ByteCode;
+			BOOL8 bAnyNonZeroByte = FALSE;
+			if (Payload != nullptr)
+			{
+				for (UINT32 ByteIdx = 0u; (ByteIdx < PayloadSize) && (bAnyNonZeroByte == FALSE); ByteIdx++)
+				{
+					bAnyNonZeroByte = ((Payload[ByteIdx] != 0u) ? TRUE : FALSE);
+				}
+			}
+			if ((Payload == nullptr) || (bAnyNonZeroByte == FALSE))
+			{
+				PE_LOG_ERROR(EString("[TextureCubeAsset] '") + GetAssetName()
+					+ EString("' carries an all-zero payload (") + ToString(PayloadSize)
+					+ EString(" bytes for six faces): the sky and the environment bake will both read black."));
+			}
+		}
+#endif	// _EDITOR_ONLY
+
 		Result = new RTextureCubeResource();
 		if (!(Result->InitFromRHI(RenderDevice,
 			RTextureDesc(

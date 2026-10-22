@@ -103,14 +103,21 @@ MaterialVertexInput BuildMaterialVertexInput(in VFVertex InVertex, in VFContext 
 // the two never collide because the factory writes last.
 void ExecuteMaterialVertex(in VFAttributes InAttributes, in VFContext InContext, out VFVarying OutVarying)
 {
+	// The varying is caller owned state: the material writes its own interpolants into it and
+	// the factory completes the system members afterwards, so it is initialized whole before
+	// either of them runs. That is also what the bridge's inout parameters require - FXC
+	// refuses a call whose inout argument is not completely initialized - and it keeps the
+	// members neither of them writes defined rather than whatever the stack held.
+	OutVarying = (VFVarying)0;
+
 	VFVertex Vertex;
 	VFUnpackVertex(InAttributes, InContext, Vertex);
 	VFTransformToWorld(Vertex, InContext);
 
 	MaterialVertexInput MatInput = BuildMaterialVertexInput(Vertex, InContext);
 
-	// The material writes its own interpolants into OutVarying; the system
-	// members are still undefined at this point and are filled in below.
+	// The material writes its own interpolants into OutVarying; the system members are still
+	// zero at this point and are filled in below.
 	//
 	// With no material there is nothing to call and nothing to displace: the
 	// offset stays zero and the factory writes the interpolants alone. That is the
