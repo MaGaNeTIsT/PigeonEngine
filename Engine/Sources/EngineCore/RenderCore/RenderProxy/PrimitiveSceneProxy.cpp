@@ -300,8 +300,11 @@ namespace PigeonEngine
 		}
 		// Everything here runs after SetPipelineState on purpose: a pipeline state brings its
 		// own root signature, and switching a root signature voids every root binding made
-		// before it.
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		// before it. The shared blocks are the renderer's, so the renderer binds them and this
+		// draw adds its own block on top. It has to be the renderer recording this pass, not the
+		// main scene's one: an asset preview records before the main scene, whose current view
+		// is null at that point, so binding through it would leave ViewParams unset.
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if ((Renderer) && (InBindSharedEngineBlocks != FALSE))
 		{
 			Renderer->BindGlobalParameters(InCommandList, InProgram);
@@ -450,7 +453,7 @@ namespace PigeonEngine
 			return nullptr;
 		}
 
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if ((!Renderer) || (!RenderDevice))
 		{

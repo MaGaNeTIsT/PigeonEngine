@@ -504,7 +504,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if (!Renderer)
 		{
 			return nullptr;
@@ -600,11 +600,11 @@ namespace PigeonEngine
 
 			// Then the blocks the pass's program reads, because the state above voided whatever an
 			// earlier pass had left bound: the renderer's shared blocks (the wireframe vertex stage
-			// transforms through ViewParams.ViewProjectionMatrix), and - when the program declares
-			// it - this pass's own draw block. A draw whose roots are left unset reads zeros, which
-			// for a transform means every vertex collapses into one point - the overlay silently
-			// disappears instead of drawing something wrong.
-			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+			// transforms through ViewParams.ViewProjectionMatrix), and this pass's own draw block.
+			// A draw whose roots are left unset reads zeros, which for a transform means every
+			// vertex collapses into one point - the overlay silently disappears instead of drawing
+			// something wrong.
+			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 			if (PassRenderer)
 			{
 				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram, InView);
