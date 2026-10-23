@@ -11,6 +11,8 @@ namespace PigeonEngine
 	class ESkeletonAsset;
 	class ESkeletonAnimationAsset;
 	class EAnimInstance;
+	class EAnimStateMachine;
+	class EAnimStateMachineInstance;
 	enum EAnimationLoopMode : UINT8;
 
 	/*
@@ -81,6 +83,15 @@ namespace PigeonEngine
 		PE_NODISCARD EAnimationLoopMode             GetAnimationLoopMode()const;
 		void                                        SetAnimationPositionSeconds(FLOAT InPositionSeconds);
 		// Animation END
+
+		// State machine START
+	public:
+		// Binds an already parsed state machine. Its clip names are resolved against the
+		// animation asset currently bound to this component.
+		BOOL32                                      SetStateMachine(const EAnimStateMachine* InMachine);
+		void                                        ClearStateMachine();
+		PE_NODISCARD EAnimStateMachineInstance*     GetStateMachineInstance()const;
+		// State machine END
 
 	protected:
 		const ESkinnedMeshAsset*        MeshAsset;

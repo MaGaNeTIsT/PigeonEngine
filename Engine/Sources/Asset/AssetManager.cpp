@@ -2,6 +2,7 @@
 #if _EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
 #include "Editor/AnimationEditor/AnimationEditor.h"
+#include "Editor/AnimationStateMachineEditor/AnimationStateMachineEditor.h"
 #include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
 
@@ -180,6 +181,11 @@ namespace PigeonEngine
 			delete AnimationEditor;
 			AnimationEditor = nullptr;
 		}
+		if (StateMachineEditor)
+		{
+			delete StateMachineEditor;
+			StateMachineEditor = nullptr;
+		}
 		if (MeshEditor)
 		{
 			delete MeshEditor;
@@ -221,6 +227,11 @@ namespace PigeonEngine
 		{
 			AnimationEditor = new EAnimationEditor();
 			AnimationEditor->EditorInit();
+		}
+		if (!StateMachineEditor)
+		{
+			StateMachineEditor = new EAnimStateMachineEditor();
+			StateMachineEditor->EditorInit();
 		}
 		if (!MeshEditor)
 		{
@@ -342,6 +353,10 @@ namespace PigeonEngine
 		{
 			AnimationEditor->EditorUpdate();
 		}
+		if (StateMachineEditor)
+		{
+			StateMachineEditor->EditorUpdate();
+		}
 		if (MeshEditor)
 		{
 			MeshEditor->EditorUpdate();
@@ -389,6 +404,14 @@ namespace PigeonEngine
 							if (ImGui::Button("Open Animation Editor"))
 							{
 								AnimationEditor->OpenAnimationAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open State Machine Editor"))
+							{
+								StateMachineEditor->OpenStateMachineAsset(SelectedFile->GetPath());
 							}
 						}
 						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
@@ -454,6 +477,10 @@ namespace PigeonEngine
 							if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
 								AnimationEditor->OpenAnimationAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								StateMachineEditor->OpenStateMachineAsset(elem->GetPath());
 							}
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
@@ -537,6 +564,10 @@ namespace PigeonEngine
 		case ASSET_TYPE_SHADER	:
 			{
 				return "Shader";
+			}
+		case ASSET_TYPE_ANIM_STATE_MACHINE	:
+			{
+				return "AnimStateMachine";
 			}
 		case ASSET_TYPE_COUNT	:
 			{

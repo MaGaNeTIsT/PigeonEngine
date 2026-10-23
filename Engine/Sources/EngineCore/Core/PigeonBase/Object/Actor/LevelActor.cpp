@@ -3,6 +3,9 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#if _EDITOR_ONLY
+#include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
+#endif
 #include <ShaderAsset/ShaderAsset.h>
 #include <ShaderAsset/ShaderInstance.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
@@ -199,6 +202,31 @@ namespace PigeonEngine
 				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
 				, EString(PE_TEXT("Boss_Idle")), EString(PE_TEXT("FBX")));
 			NewSkeletalMeshComp->RequestAnimationAsset(EString(PE_TEXT("Boss_Idle")), &AnimationImportSource, TRUE);
+
+#if _EDITOR_ONLY
+			// The state machine is authored as JSON under the source assets. Import it only
+			// when its PAsset is missing, so an editor-edited PAsset is not overwritten by
+			// the sample on every level load.
+			const EString StateMachineAssetName(PE_TEXT("Boss_StateMachine"));
+			const EAnimStateMachineAsset* StateMachineAsset = nullptr;
+			if (!(EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+				EBaseSettings::ENGINE_STATE_MACHINE_PATH, StateMachineAssetName, StateMachineAsset)))
+			{
+				const EString StateMachineJsonPath = AssetBasePath
+					+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/Boss_StateMachine.json"));
+				if (EAnimStateMachineManager::GetManagerSingleton()->ImportStateMachine(
+					StateMachineAssetName, StateMachineJsonPath, EBaseSettings::ENGINE_STATE_MACHINE_PATH))
+				{
+					StateMachineAsset = nullptr;
+					EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+						EBaseSettings::ENGINE_STATE_MACHINE_PATH, StateMachineAssetName, StateMachineAsset);
+				}
+			}
+			if (StateMachineAsset)
+			{
+				NewSkeletalMeshComp->SetStateMachine(StateMachineAsset->GetStoragedResource());
+			}
+#endif
 
 			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
 			NewSkeletalMeshComp->SetComponentRotation(DefaultRot);

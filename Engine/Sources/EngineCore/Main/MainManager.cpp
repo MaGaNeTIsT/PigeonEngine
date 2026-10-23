@@ -36,6 +36,7 @@
 #include <Asset/TextureAsset/TextureAsset.h>
 #include <Asset/SkeletonAsset/SkeletonAsset.h>
 #include <Asset/AnimationAsset/AnimationAsset.h>
+#include <Asset/AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #include <Asset/ShaderAsset/ShaderAsset.h>
 #include <Asset/ShaderAsset/ShaderStageAsset.h>
 #include <Asset/AssetLoadManager.h>
@@ -159,6 +160,7 @@ namespace PigeonEngine
 		RegisterAssetManager(ETextureAssetManager::GetManagerSingleton());
 		RegisterAssetManager(ESkeletonAssetManager::GetManagerSingleton());
 		RegisterAssetManager(EAnimationManager::GetManagerSingleton());
+		RegisterAssetManager(EAnimStateMachineManager::GetManagerSingleton());
 		RegisterAssetManager(EShaderStageAssetManager::GetManagerSingleton());
 		RegisterAssetManager(EShaderAssetManager::GetManagerSingleton());
 		// Registered last so it is torn down first: the instances it owns are released before

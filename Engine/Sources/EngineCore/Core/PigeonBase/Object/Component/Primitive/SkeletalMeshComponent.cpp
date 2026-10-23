@@ -295,6 +295,24 @@ namespace PigeonEngine
 	}
 	// Animation END
 
+	// State machine START
+	BOOL32 PSkeletalMeshComponent::SetStateMachine(const EAnimStateMachine* InMachine)
+	{
+		return (AnimInstance ? AnimInstance->SetStateMachine(InMachine) : FALSE);
+	}
+	void PSkeletalMeshComponent::ClearStateMachine()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->ClearStateMachine();
+		}
+	}
+	EAnimStateMachineInstance* PSkeletalMeshComponent::GetStateMachineInstance()const
+	{
+		return (AnimInstance ? AnimInstance->GetStateMachineInstance() : nullptr);
+	}
+	// State machine END
+
 	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
 	{
 		return BoneMemoryPool;

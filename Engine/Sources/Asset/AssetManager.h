@@ -9,6 +9,7 @@
 namespace PigeonEngine
 {
 	class EAnimationEditor;
+	class EAnimStateMachineEditor;
 	class EMeshEditor;
 
 
@@ -85,6 +86,7 @@ namespace PigeonEngine
 		TMap<EAssetType, ImTextureID> TypeThumbNails;
 		TMap<EString, ImTextureID>    TextureThumbNails;
 		EAnimationEditor*            AnimationEditor = nullptr;
+		EAnimStateMachineEditor*     StateMachineEditor = nullptr;
 		EMeshEditor*                 MeshEditor = nullptr;
 
 

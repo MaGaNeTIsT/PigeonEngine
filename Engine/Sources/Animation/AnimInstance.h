@@ -11,6 +11,8 @@ namespace PigeonEngine
 	class PSkeletalMeshComponent;
 	class ESkeleton;
 	class ESkeletonAnimationAsset;
+	class EAnimStateMachine;
+	class EAnimStateMachineInstance;
 	struct ESkeletonAnimationClip;
 
 	/*
@@ -53,6 +55,8 @@ namespace PigeonEngine
 		*/
 		BOOL32 Play(const EString& InClipName, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
 		BOOL32 Play(INT32 InClipIndex, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
+		// Exact loop mode; used by the state machine so PINGPONG/CLAMP survive a transition.
+		BOOL32 Play(const EString& InClipName, EAnimationLoopMode InLoopMode, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
 		void Pause();
 		void Resume();
 		void Stop();
@@ -70,6 +74,19 @@ namespace PigeonEngine
 		PE_NODISCARD BOOL32 IsPlaying()const;
 		PE_NODISCARD const ESkeletonAnimationClip* GetCurrentClip()const;
 		PE_NODISCARD INT32 GetCurrentClipIndex()const;
+
+		// State machine START
+	public:
+		/*
+		* Binds a parsed state machine. The machine controls which clip is played; its clip
+		* names are resolved against the animation asset already bound to this instance.
+		* Returns FALSE when the machine is invalid or the current animation asset does not
+		* contain its entry clip yet.
+		*/
+		BOOL32 SetStateMachine(const EAnimStateMachine* InMachine);
+		void ClearStateMachine();
+		PE_NODISCARD EAnimStateMachineInstance* GetStateMachineInstance()const;
+		// State machine END
 
 		/*
 		* Rebuilds the binding after the component's skeleton changed. When the previously
@@ -105,6 +122,10 @@ namespace PigeonEngine
 		const ESkeletonAnimationAsset*	AnimationAsset = nullptr;
 		ESkeletonBinding				Binding;
 		EAnimationClipPlayer			ClipPlayer;
+		// The runtime state for the optional asset-driven state machine. The machine data
+		// itself is owned by the asset manager; this object only holds parameters and the
+		// current state.
+		TUniquePtr<EAnimStateMachineInstance>	StateMachineInstance;
 		// The clip being blended out, and the pose it produced this frame. The pose array is
 		// only allocated while a crossfade is in progress.
 		EAnimationClipPlayer			PreviousClipPlayer;
