@@ -16,9 +16,13 @@ namespace PigeonEngine
 		Clip = nullptr;
 		ClipIndex = -1;
 		PositionSeconds = 0.0f;
+		PreviousPositionSeconds = 0.0f;
 		PlayRate = 1.0f;
 		LoopMode = ANIMATION_LOOP_REPEAT;
+		PlayDirection = 1;
 		bPlaying = FALSE;
+		bLoopedLastAdvance = FALSE;
+		bFirstAdvance = TRUE;
 	}
 
 	void EAnimationClipPlayer::SetClip(const ESkeletonAnimationClip* InClip, INT32 InClipIndex)
@@ -26,6 +30,10 @@ namespace PigeonEngine
 		Clip = InClip;
 		ClipIndex = InClipIndex;
 		PositionSeconds = 0.0f;
+		PreviousPositionSeconds = 0.0f;
+		PlayDirection = 1;
+		bLoopedLastAdvance = FALSE;
+		bFirstAdvance = TRUE;
 		if (!Clip)
 		{
 			bPlaying = FALSE;
@@ -68,6 +76,7 @@ namespace PigeonEngine
 	void EAnimationClipPlayer::SetLoopMode(EAnimationLoopMode InLoopMode)
 	{
 		LoopMode = InLoopMode;
+		PlayDirection = 1;
 	}
 
 	EAnimationLoopMode EAnimationClipPlayer::GetLoopMode()const
@@ -84,11 +93,27 @@ namespace PigeonEngine
 			return;
 		}
 		PositionSeconds = EMath::Clamp(InPositionSeconds, 0.0f, DurationSeconds);
+		// A seek is a jump, not playback; the next Advance must not treat the skipped span
+		// as crossed notify events.
+		PreviousPositionSeconds = PositionSeconds;
+		PlayDirection = 1;
+		bLoopedLastAdvance = FALSE;
+		bFirstAdvance = FALSE;
 	}
 
 	FLOAT EAnimationClipPlayer::GetPositionSeconds()const
 	{
 		return PositionSeconds;
+	}
+
+	FLOAT EAnimationClipPlayer::GetPreviousPositionSeconds()const
+	{
+		return PreviousPositionSeconds;
+	}
+
+	BOOL32 EAnimationClipPlayer::HasLoopedLastAdvance()const
+	{
+		return bLoopedLastAdvance;
 	}
 
 	void EAnimationClipPlayer::Advance(FLOAT InDeltaSeconds)
@@ -106,19 +131,59 @@ namespace PigeonEngine
 			return;
 		}
 
-		PositionSeconds += InDeltaSeconds * PlayRate;
-		if (LoopMode == ANIMATION_LOOP_REPEAT)
+		if (bFirstAdvance)
 		{
-			PositionSeconds = std::fmod(PositionSeconds, DurationSeconds);
+			// Start just before zero so a notify authored at exactly 0 fires on the first
+			// frame. After this frame the interval is the normal half-open (previous, current].
+			PreviousPositionSeconds = -1.0f;
+			bFirstAdvance = FALSE;
+		}
+		else
+		{
+			PreviousPositionSeconds = PositionSeconds;
+		}
+		bLoopedLastAdvance = FALSE;
+
+		const FLOAT Travel = InDeltaSeconds * PlayRate;
+		switch (LoopMode)
+		{
+		case ANIMATION_LOOP_REPEAT:
+		{
+			const FLOAT UnwrappedPosition = PositionSeconds + Travel;
+			bLoopedLastAdvance = ((UnwrappedPosition < 0.0f) || (UnwrappedPosition >= DurationSeconds)) ? TRUE : FALSE;
+			PositionSeconds = std::fmod(UnwrappedPosition, DurationSeconds);
 			if (PositionSeconds < 0.0f)
 			{
 				PositionSeconds += DurationSeconds;
 			}
+			break;
 		}
-		else
-		{
-			// One-shot playback clamps at both ends. Reaching either end stops the player,
-			// which is what lets a caller distinguish "finished" from "paused at the end".
+		case ANIMATION_LOOP_PINGPONG:
+			PositionSeconds += Travel * static_cast<FLOAT>(PlayDirection);
+			// Reflect at both ends. A normal frame crosses at most one end; the loop also
+			// handles a long delta after a stall without leaving the [0, Duration] range.
+			while ((PositionSeconds > DurationSeconds) || (PositionSeconds < 0.0f))
+			{
+				if (PositionSeconds > DurationSeconds)
+				{
+					PositionSeconds = DurationSeconds - (PositionSeconds - DurationSeconds);
+					PlayDirection = -PlayDirection;
+				}
+				else
+				{
+					PositionSeconds = -PositionSeconds;
+					PlayDirection = -PlayDirection;
+				}
+			}
+			break;
+		case ANIMATION_LOOP_CLAMP:
+			// Hold the first/last frame but stay in the playing state, so a caller can seek
+			// away from the end without treating the clip as finished.
+			PositionSeconds = EMath::Clamp(PositionSeconds + Travel, 0.0f, DurationSeconds);
+			break;
+		case ANIMATION_LOOP_ONCE:
+		default:
+			PositionSeconds += Travel;
 			if (PositionSeconds >= DurationSeconds)
 			{
 				PositionSeconds = DurationSeconds;
@@ -129,12 +194,13 @@ namespace PigeonEngine
 				PositionSeconds = 0.0f;
 				bPlaying = FALSE;
 			}
+			break;
 		}
 	}
 
-	BOOL32 EAnimationClipPlayer::Evaluate(const ESkeletonBinding& InBinding, ESkeletonBoneMemoryPool& InOutPose)const
+	BOOL32 EAnimationClipPlayer::Evaluate(const ESkeletonBinding& InBinding, TArray<EBoneTransform>& InOutPose)const
 	{
-		if ((!Clip) || (!InBinding.IsValid()) || (!InOutPose.IsValid()))
+		if ((!Clip) || (!InBinding.IsValid()) || (InOutPose.Num() <= 0))
 		{
 			return FALSE;
 		}
@@ -150,7 +216,7 @@ namespace PigeonEngine
 			KeyTime = EMath::Clamp(KeyTime, 0.0f, Clip->Duration);
 		}
 
-		TArray<EBoneTransform>& RelativeTransforms = InOutPose.GetBoneRelativeTransforms();
+		TArray<EBoneTransform>& RelativeTransforms = InOutPose;
 		auto VectorLerp = [](const Vector3& InValue0, const Vector3& InValue1, FLOAT InAlpha)->Vector3
 		{
 			return Vector3::Lerp(InValue0, InValue1, InAlpha);

@@ -22,6 +22,20 @@ namespace PigeonEngine
 		Skeleton = InSkeleton;
 		Animation = InAnimation;
 
+		// The recorded skeleton name is a compatibility hint, not a hard link: a retargeted or
+		// renamed skeleton can still serve the clip when the bone names line up. A mismatch is
+		// worth surfacing because it usually means the wrong skeleton was picked.
+		const EString& AuthoredSkeletonName = InAnimation->GetSkeletonName();
+		const EString& TargetSkeletonName = InSkeleton->GetSkeletonName();
+		if ((AuthoredSkeletonName.Length() > 0u)
+			&& (AuthoredSkeletonName != EString(EEngineSettings::ENGINE_DEFAULT_NAME))
+			&& (AuthoredSkeletonName != TargetSkeletonName))
+		{
+			PE_LOG_WARN(EString(PE_TEXT("Skeleton animation '")) + InAnimation->GetAnimationName()
+				+ EString(PE_TEXT("' was authored against skeleton '")) + AuthoredSkeletonName
+				+ EString(PE_TEXT("' but is bound to '")) + TargetSkeletonName + EString(PE_TEXT("'.")));
+		}
+
 		const TArray<ESkeletonAnimationClip>& AnimationClips = InAnimation->GetAnimationClips();
 		ClipCurveBoneIndices.SetNum(AnimationClips.Num());
 

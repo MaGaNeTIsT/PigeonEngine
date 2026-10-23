@@ -48,6 +48,11 @@ namespace PigeonEngine
 		void SetPlayAnimation(BOOL8 InPlayAnimation);
 		void SetPlaybackRate(FLOAT InPlaybackRate);
 		void ResetPlayback();
+		// The editor's timeline: the position is in seconds and is clamped to the selected
+		// clip. While playback is enabled the value still advances every Tick.
+		void SetPlaybackTimeSeconds(FLOAT InTimeSeconds);
+		PE_NODISCARD FLOAT GetPlaybackTimeSeconds()const;
+		PE_NODISCARD FLOAT GetClipDurationSeconds()const;
 		void ClearPreview();
 
 		ImTextureID GetTextureId() const;

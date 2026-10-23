@@ -424,6 +424,34 @@ namespace PigeonEngine
 		m_PlaybackTimeSeconds = 0.0f;
 	}
 
+	void EAssetPreviewScene::SetPlaybackTimeSeconds(FLOAT InTimeSeconds)
+	{
+		const FLOAT DurationSeconds = GetClipDurationSeconds();
+		if (DurationSeconds <= 0.0f)
+		{
+			m_PlaybackTimeSeconds = 0.0f;
+			return;
+		}
+		m_PlaybackTimeSeconds = EMath::Clamp(InTimeSeconds, 0.0f, DurationSeconds);
+	}
+
+	FLOAT EAssetPreviewScene::GetPlaybackTimeSeconds()const
+	{
+		return m_PlaybackTimeSeconds;
+	}
+
+	FLOAT EAssetPreviewScene::GetClipDurationSeconds()const
+	{
+		if ((!m_AnimationClip) || (m_AnimationClip->Duration <= 0.0f))
+		{
+			return 0.0f;
+		}
+		const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f)
+			? m_AnimationClip->TicksPerSecond
+			: EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
+		return ((TicksPerSecond > 0.0f) ? (m_AnimationClip->Duration / TicksPerSecond) : 0.0f);
+	}
+
 	void EAssetPreviewScene::ClearPreview()
 	{
 		m_StaticMeshAsset = nullptr;
