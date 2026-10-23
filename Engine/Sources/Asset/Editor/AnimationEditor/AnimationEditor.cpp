@@ -372,12 +372,20 @@ namespace PigeonEngine
 			return;
 		}
 
+		// Mesh and skeleton assets live in their own engine asset folders. The animation asset
+		// only names the skeleton it was authored against, so scanning the animation's own
+		// folder would only find animation assets and the preview would have nothing to draw.
 		TArray<EString> FolderPaths;
 		TArray<EString> FilePaths;
-		if (!(EFileHelper::ScanDirectory(NormalizeAssetDirectory(EPath::GetFileFolderPath(m_OpenedAssetFullPath)), FolderPaths, FilePaths, TRUE)))
 		{
-			m_PreviewScene.ClearPreview();
-			return;
+			TArray<EString> MeshFilePaths;
+			EFileHelper::ScanDirectory(NormalizeAssetDirectory(EBaseSettings::ENGINE_MESH_PATH), FolderPaths, MeshFilePaths, TRUE);
+			FilePaths.Append(MeshFilePaths);
+		}
+		{
+			TArray<EString> SkeletonFilePaths;
+			EFileHelper::ScanDirectory(NormalizeAssetDirectory(EBaseSettings::ENGINE_SKELETON_PATH), FolderPaths, SkeletonFilePaths, TRUE);
+			FilePaths.Append(SkeletonFilePaths);
 		}
 
 		for (INT32 FileIndex = 0, FileNum = FilePaths.Num(); FileIndex < FileNum; FileIndex++)
@@ -501,10 +509,12 @@ namespace PigeonEngine
 			TotalKeyNum += GetCurveKeyCount(InClip.AnimationCurves[CurveIndex]);
 		}
 
+		const FLOAT UsedTicksPerSecond = (InClip.TicksPerSecond > 1e-3f) ? InClip.TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
+
 		ImGui::Text("Clip Name: %s", *InClip.ClipName);
 		ImGui::Text("Duration: %.3f", InClip.Duration);
 		ImGui::Text("Ticks Per Second: %.3f", InClip.TicksPerSecond);
-		ImGui::Text("Length (Seconds): %.3f", InClip.TicksPerSecond > 0.0f ? (InClip.Duration / InClip.TicksPerSecond) : 0.0f);
+		ImGui::Text("Length (Seconds): %.3f", (UsedTicksPerSecond > 0.0f) ? (InClip.Duration / UsedTicksPerSecond) : 0.0f);
 		ImGui::Text("Curve Count: %d", InClip.AnimationCurves.Num());
 		ImGui::Text("Key Count: %u", TotalKeyNum);
 	}

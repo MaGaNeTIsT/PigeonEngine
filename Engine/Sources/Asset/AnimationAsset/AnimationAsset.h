@@ -87,7 +87,10 @@ namespace PigeonEngine
 		BOOL32 IsValid()const
 		{
 			const UINT32 AnimationCurveNum = AnimationCurves.Num();
-			BOOL32 Result = (Duration > 0.0f) && (TicksPerSecond > 0.0f) && (AnimationCurveNum > 0u);
+			// A tick rate of 0 is accepted here because some FBX files report it; the player
+			// substitutes EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND. A
+			// negative rate is not a valid source value.
+			BOOL32 Result = (Duration > 0.0f) && (TicksPerSecond >= 0.0f) && (AnimationCurveNum > 0u);
 			if (Result)
 			{
 				for (UINT32 i = 0u; i < AnimationCurveNum; i++)
@@ -174,11 +177,15 @@ namespace PigeonEngine
 		* Any thread: the animation when it is already loaded, otherwise FALSE and a null output
 		* after recording one load request for the load thread (EAssetLoadManager). Never blocks
 		* and never reads the disk on the calling thread; ask again next frame. Load* above is the
-		* load thread's synchronous half. InOnLoadComplete runs on the load thread once the
-		* request is done; see EAssetLoadCompleteType.
+		* load thread's synchronous half. InImportSource is the editor's fallback for an animation
+		* that was never imported: the load thread imports from the raw source and loads again.
+		* InOnLoadComplete runs on the load thread once the request is done; see
+		* EAssetLoadCompleteType.
 		*/
 		BOOL32	RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
-			, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EAssetLoadCompleteType InOnLoadComplete = nullptr);
+			, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset
+			, const FAssetImportSource* InImportSource = nullptr
+			, EAssetLoadCompleteType InOnLoadComplete = nullptr);
 	private:
 		void	ClearSkeletonAnimations();
 		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
@@ -195,5 +202,14 @@ namespace PigeonEngine
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EAnimationManager)
 
 	};
+
+	/*
+	* Loads an animation asset, and when the PAsset is not on disk yet and an import source
+	* is supplied, imports it from the raw file and loads again. This is the editor's fallback;
+	* a shipping build only performs the load.
+	*/
+	extern void TryLoadSkeletonAnimation(const EString& InLoadPath, const EString& InLoadName,
+		const ESkeletonAnimationAsset*& OutAsset,
+		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr);
 
 };

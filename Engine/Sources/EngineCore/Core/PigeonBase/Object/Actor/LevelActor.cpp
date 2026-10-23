@@ -192,6 +192,14 @@ namespace PigeonEngine
 			NewSkeletalMeshComp->RequestSkeletalMeshAssets(EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Mesh"))
 				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Skeleton")), &ImportSource);
 
+			// The demo plays the first clip of an animation authored against the same UE4
+			// mannequin skeleton. The request waits for both the animation and the skeleton,
+			// so it can be issued next to the mesh request.
+			const FAssetImportSource AnimationImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+				, EString(PE_TEXT("Boss_Idle")), EString(PE_TEXT("FBX")));
+			NewSkeletalMeshComp->RequestAnimationAsset(EString(PE_TEXT("Boss_Idle")), &AnimationImportSource, TRUE);
+
 			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
 			NewSkeletalMeshComp->SetComponentRotation(DefaultRot);
 
