@@ -31,6 +31,12 @@ namespace PigeonEngine
 
 	public:
 
+		/*Document query*/
+		// TRUE when the document parsed without an error and its root is an object.
+		PE_NODISCARD BOOL8 IsValid()const;
+		// Serializes the document back to compact JSON text.
+		PE_NODISCARD EString ToString()const;
+
 		/*Field query*/
 		BOOL8 HasField(const EString& FieldName);
 		void RemoveField(const EString& FieldName);

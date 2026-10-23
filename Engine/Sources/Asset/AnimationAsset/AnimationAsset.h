@@ -224,7 +224,7 @@ namespace PigeonEngine
 		BOOL32	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
 			, const EString& InSkeletonName = EString(), const EString& InRootBoneName = EString());
 #endif
-		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset);
+		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, const BOOL32 bTryLoad = FALSE);
 		// Editor save: writes the asset back to the path and name it was loaded from.
 		BOOL32	SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
 		/*
@@ -246,9 +246,9 @@ namespace PigeonEngine
 		// paths cannot drift apart.
 		void	ReleaseAllAssets();
 	private:
-		ESkeletonAnimationAsset* LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName);
+		ESkeletonAnimationAsset* LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonAnimationAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
-		ESkeletonAnimation* LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName);
+		ESkeletonAnimation* LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonAnimationResource(const EString& InSavePath, const EString& InSaveName, const ESkeletonAnimation* InSkeletonAnimationResource);
 	private:
 		ESkeletonAnimationAssetManager	SkeletonAnimationAssetManager;

@@ -309,7 +309,8 @@ namespace PigeonEngine
 		return (SaveSkeletonAnimationResource(InSavePath, InAssetName, (&(AssimpSkeletonAnimation))));
 	}
 #endif
-	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset)
+	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -319,7 +320,7 @@ namespace PigeonEngine
 			OutSkeletonAnimationAsset = ResultAsset;
 			return TRUE;
 		}
-		ResultAsset = LoadSkeletonAnimationAsset(InLoadPath, InLoadName);
+		ResultAsset = LoadSkeletonAnimationAsset(InLoadPath, InLoadName, bTryLoad);
 		if (!ResultAsset)
 		{
 			return FALSE;
@@ -396,10 +397,10 @@ namespace PigeonEngine
 	{
 		SkeletonAnimationAssetManager.Clear();
 	}
-	ESkeletonAnimationAsset* EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName)
+	ESkeletonAnimationAsset* EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		ESkeletonAnimationAsset* NewAsset = nullptr;
-		ESkeletonAnimation* LoadedResource = LoadSkeletonAnimationResource(InLoadPath, InLoadName);
+		ESkeletonAnimation* LoadedResource = LoadSkeletonAnimationResource(InLoadPath, InLoadName, bTryLoad);
 		if ((!LoadedResource) || (!(LoadedResource->IsResourceValid())))
 		{
 			return NewAsset;
@@ -437,7 +438,7 @@ namespace PigeonEngine
 		}
 		return (SaveSkeletonAnimationResource(InSavePath, InSaveName, SavedResource));
 	}
-	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName)
+	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -468,7 +469,14 @@ namespace PigeonEngine
 				EString ErrorData("Load skeleton animation asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				if (bTryLoad)
+				{
+					PE_LOG_WARN(ErrorData);
+				}
+				else
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				}
 			}
 #endif
 			return LoadedSkeletonAnimationResource;
@@ -878,7 +886,7 @@ namespace PigeonEngine
 	{
 		EAnimationManager* AnimationManager = EAnimationManager::GetManagerSingleton();
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skeleton animation asset pointer is initialized failed."), (!OutAsset));
-		if (AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset))
+		if (AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset, TRUE))
 		{
 			return;
 		}
@@ -898,7 +906,7 @@ namespace PigeonEngine
 			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
 			if (AnimationManager->ImportSkeletonAnimation(InLoadName, TempImportFullPath, InLoadPath))
 			{
-				if (!(AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset)))
+				if (!(AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset, TRUE)))
 				{
 					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load skeleton animation asset failed."));
 				}

@@ -1,0 +1,91 @@
+{
+  "name": "Boss_StateMachine",
+  "description": "Sample state machine. Import it with the State Machine Importer, then assign it to a skeletal mesh component.",
+  "skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton",
+  "animation": "Boss_Idle",
+  "entry": "Idle",
+  "parameters": [
+    {
+      "name": "Speed",
+      "type": "float",
+      "default": 0.0
+    },
+    {
+      "name": "Hit",
+      "type": "trigger",
+      "default": false
+    }
+  ],
+  "states": [
+    {
+      "name": "Idle",
+      "clip": "Unreal Take",
+      "loop": "Repeat",
+      "rate": 1.0,
+      "blend": 0.2
+    },
+    {
+      "name": "IdleAlt",
+      "clip": "Unreal Take",
+      "loop": "Repeat",
+      "rate": 1.0,
+      "blend": 0.2
+    },
+    {
+      "name": "Hit",
+      "clip": "Unreal Take",
+      "loop": "Once",
+      "rate": 1.0,
+      "blend": 0.1
+    }
+  ],
+  "transitions": [
+    {
+      "from": "Any",
+      "to": "Hit",
+      "priority": 10,
+      "blend": 0.1,
+      "conditions": [
+        {
+          "param": "Hit",
+          "op": "trigger",
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "from": "Idle",
+      "to": "IdleAlt",
+      "priority": 0,
+      "blend": 0.2,
+      "conditions": [
+        {
+          "param": "Speed",
+          "op": ">",
+          "value": 0.1
+        }
+      ]
+    },
+    {
+      "from": "IdleAlt",
+      "to": "Idle",
+      "priority": 0,
+      "blend": 0.2,
+      "conditions": [
+        {
+          "param": "Speed",
+          "op": "<=",
+          "value": 0.1
+        }
+      ]
+    },
+    {
+      "from": "Hit",
+      "to": "Idle",
+      "priority": 0,
+      "blend": 0.2,
+      "minTime": 0.5,
+      "conditions": []
+    }
+  ]
+}

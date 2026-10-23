@@ -1,8 +1,10 @@
 #include "AnimInstance.h"
 
 #include "AnimationNotify.h"
+#include "AnimationStateMachine.h"
 
 #include <AnimationAsset/AnimationAsset.h>
+#include <Editor/EditorLogManager.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
@@ -23,6 +25,7 @@ namespace PigeonEngine
 		Binding.Unbind();
 		ClipPlayer.Reset();
 		CancelCrossFade();
+		ClearStateMachine();
 		CurrentClipIndex = -1;
 		bPoseDirty = ((AnimationAsset != nullptr) ? TRUE : FALSE);
 	}
@@ -34,11 +37,40 @@ namespace PigeonEngine
 
 	BOOL32 EAnimInstance::SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset)
 	{
+		const EAnimStateMachine* ActiveMachine = (StateMachineInstance ? StateMachineInstance->GetMachine() : nullptr);
+		const BOOL32 bKeepStateMachine = ((ActiveMachine != nullptr) && (InAnimationAsset != nullptr)
+			&& ((ActiveMachine->AnimationAssetName.Length() <= 0u)
+				|| (ActiveMachine->AnimationAssetName == InAnimationAsset->GetAssetName()))) ? TRUE : FALSE;
+
 		AnimationAsset = InAnimationAsset;
 		CurrentClipIndex = -1;
 		ClipPlayer.Reset();
 		CancelCrossFade();
+		if (!bKeepStateMachine)
+		{
+			if (ActiveMachine)
+			{
+				PE_LOG_WARN(EString("State machine '") + ActiveMachine->Name
+					+ EString("' stopped because the animation asset changed."));
+			}
+			ClearStateMachine();
+		}
 		const BOOL32 bBound = BindAnimation();
+		if ((bBound) && (bKeepStateMachine) && (StateMachineInstance) && (ActiveMachine))
+		{
+			// The new asset is the one the machine was authored against; restart the state's
+			// clip so the player is not left empty until the next transition.
+			const INT32 StateIndex = StateMachineInstance->GetCurrentStateIndex();
+			if ((StateIndex >= 0) && (StateIndex < ActiveMachine->States.Num()))
+			{
+				const EAnimStateMachineState& State = ActiveMachine->States[StateIndex];
+				if (!Play(State.ClipName, State.LoopMode, State.PlayRate, 0.0f))
+				{
+					PE_LOG_WARN(EString("State machine '") + ActiveMachine->Name + EString("' could not restart state '")
+						+ State.Name + EString("'."));
+				}
+			}
+		}
 		bPoseDirty = TRUE;
 		return bBound;
 	}
@@ -67,6 +99,22 @@ namespace PigeonEngine
 	BOOL32 EAnimInstance::Play(INT32 InClipIndex, BOOL32 bInLoop, FLOAT InPlayRate, FLOAT InFadeSeconds)
 	{
 		return PlayInternal(InClipIndex, (bInLoop ? ANIMATION_LOOP_REPEAT : ANIMATION_LOOP_ONCE), InPlayRate, InFadeSeconds);
+	}
+
+	BOOL32 EAnimInstance::Play(const EString& InClipName, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds)
+	{
+		const ESkeletonAnimation* Animation = (Binding.IsValid() ? Binding.GetAnimation() : nullptr);
+		if (!Animation)
+		{
+			return FALSE;
+		}
+
+		INT32 ClipIndex = -1;
+		if (!(Animation->GetAnimationClipMapping().FindValue(InClipName, ClipIndex)))
+		{
+			return FALSE;
+		}
+		return PlayInternal(ClipIndex, InLoopMode, InPlayRate, InFadeSeconds);
 	}
 
 	BOOL32 EAnimInstance::PlayInternal(INT32 InClipIndex, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds)
@@ -195,6 +243,39 @@ namespace PigeonEngine
 		return CurrentClipIndex;
 	}
 
+	BOOL32 EAnimInstance::SetStateMachine(const EAnimStateMachine* InMachine)
+	{
+		ClearStateMachine();
+		if ((!InMachine) || (!InMachine->IsValid()))
+		{
+			return FALSE;
+		}
+
+		StateMachineInstance = EMemory::MakeUnique<EAnimStateMachineInstance>();
+		if (!StateMachineInstance)
+		{
+			return FALSE;
+		}
+		if (!StateMachineInstance->SetMachine(InMachine))
+		{
+			ClearStateMachine();
+			return FALSE;
+		}
+		// The entry clip is entered on the next Update, once the animation asset binding is
+		// available; if the clip is missing the instance logs once and retries.
+		return TRUE;
+	}
+
+	void EAnimInstance::ClearStateMachine()
+	{
+		StateMachineInstance.reset();
+	}
+
+	EAnimStateMachineInstance* EAnimInstance::GetStateMachineInstance()const
+	{
+		return StateMachineInstance.get();
+	}
+
 	void EAnimInstance::OnSkeletonChanged()
 	{
 		const BOOL32 bWasPlaying = ClipPlayer.IsPlaying();
@@ -256,6 +337,13 @@ namespace PigeonEngine
 				return TRUE;
 			}
 			return FALSE;
+		}
+
+		// A state transition may start a new clip, so the machine runs before the clip player
+		// is advanced and sampled this frame.
+		if (StateMachineInstance)
+		{
+			StateMachineInstance->Update(*this, InDeltaSeconds);
 		}
 
 		const BOOL32 bCrossFading = ((CrossFadeRemaining > 0.0f) && (PreviousClipPlayer.GetClip() != nullptr)) ? TRUE : FALSE;

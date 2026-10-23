@@ -1,4 +1,6 @@
 #include "../Headers/JsonObject.h"
+#include "../../../ThirdParty/rapidjson/writer.h"
+#include "../../../ThirdParty/rapidjson/stringbuffer.h"
 using namespace rapidjson;
 
 namespace PigeonEngine
@@ -54,6 +56,19 @@ namespace PigeonEngine
 	{
 		delete Doc;
 		Doc = InDoc;
+	}
+
+	BOOL8 CJsonObject::IsValid()const
+	{
+		return (((Doc != nullptr) && (!Doc->HasParseError()) && (Doc->IsObject())) ? TRUE : FALSE);
+	}
+
+	EString CJsonObject::ToString()const
+	{
+		rapidjson::StringBuffer Buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> Writer(Buffer);
+		Doc->Accept(Writer);
+		return EString(Buffer.GetString());
 	}
 
 	BOOL8 CJsonObject::HasField(const EString& FieldName)
