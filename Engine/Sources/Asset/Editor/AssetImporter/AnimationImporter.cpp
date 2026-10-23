@@ -48,7 +48,7 @@ void PigeonEngine::EAnimationImporter::UpdateImportEditor()
 			for (UINT32 i = 0, n = m_Paths.Num<UINT32>(); i < n; i++)
 			{
 				//Import Asset
-				EAnimationManager::GetManagerSingleton()->ImportSkeletonAnimation(EPath::GetFileNameWithoutExtension(m_Paths[i]), m_Paths[i], EBaseSettings::ENGINE_ASSET_DIRECTORY);
+				EAnimationManager::GetManagerSingleton()->ImportSkeletonAnimation(EPath::GetFileNameWithoutExtension(m_Paths[i]), m_Paths[i], EBaseSettings::ENGINE_ANIMATION_PATH);
 
 				//CopyFile
 				if (/*Asset &&*/ CheckCopyFile)

@@ -14,6 +14,10 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SCREEN_HEIGHT												= 900.f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_FIXED_UPDATE_FRAME											= 60.f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_UPDATE_FRAME													= 90.f;
+		// Tick rate assumed for an animation clip whose source did not declare one. Some FBX
+		// files report 0 in mTicksPerSecond; 30 is the convention the old animation component
+		// and the editor preview used, and it keeps the clip playable instead of rejected.
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND							= 30.f;
 		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_WINDOWED														= TRUE;
 
 		// 1 = D3D11, 2 = D3D12 (matches ERHIBackendType enum)

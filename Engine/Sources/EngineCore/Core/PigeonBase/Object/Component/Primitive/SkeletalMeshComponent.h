@@ -9,6 +9,8 @@ namespace PigeonEngine
 
 	class ESkinnedMeshAsset;
 	class ESkeletonAsset;
+	class ESkeletonAnimationAsset;
+	class EAnimInstance;
 
 	/*
 	* A skinned mesh primitive. Its material slots and its mesh handle live on the mesh base;
@@ -40,9 +42,44 @@ namespace PigeonEngine
 		*/
 		void                            RequestSkeletalMeshAssets(const EString& InMeshAssetName, const EString& InSkeletonAssetName
 			, const FAssetImportSource* InImportSource = nullptr);
+
+		// Animation START
+	public:
+		PE_NODISCARD const ESkeletonAnimationAsset* GetAnimationAsset()const;
+		PE_NODISCARD EAnimInstance*                 GetAnimInstance()const;
+		/*
+		* Game thread: binds an already loaded animation asset to this component's skeleton.
+		* Returns FALSE when either side is not loaded or no curve could be bound; the asset
+		* is still remembered, so a later skeleton change retries the bind.
+		*/
+		BOOL32                                      SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset);
+		/*
+		* Game thread: asks the animation manager for an asset without waiting. The request
+		* is retried every frame until the asset and this component's skeleton are both
+		* present, then the asset is applied. InImportSource is the editor fallback that
+		* imports the raw FBX when the PAsset is not on disk yet.
+		*
+		* bInAutoPlayFirstClip plays clip 0 once the bind succeeds, which is what a demo or
+		* a simple prop wants. A caller that selects its clip by name passes FALSE and calls
+		* PlayAnimation after the asset arrives.
+		*/
+		void                                        RequestAnimationAsset(const EString& InAnimationAssetName
+			, const FAssetImportSource* InImportSource = nullptr, BOOL32 bInAutoPlayFirstClip = FALSE);
+
+		BOOL32                                      PlayAnimation(const EString& InClipName, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f);
+		BOOL32                                      PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f);
+		void                                        PauseAnimation();
+		void                                        ResumeAnimation();
+		void                                        StopAnimation();
+		void                                        SetAnimationPlayRate(FLOAT InPlayRate);
+		void                                        SetAnimationLoop(BOOL32 bInLoop);
+		void                                        SetAnimationPositionSeconds(FLOAT InPositionSeconds);
+		// Animation END
+
 	protected:
 		const ESkinnedMeshAsset*        MeshAsset;
 		const ESkeletonAsset*           SkeletonAsset;
+		EAnimInstance*                  AnimInstance;
 		ESkeletonBoneMemoryPool         BoneMemoryPool;
 
 		// What this primitive reports to the render tier START

@@ -1,6 +1,7 @@
 #include "AnimationAsset.h"
 #include <Asset/AssetLoadManager.h>
 #if _EDITOR_ONLY
+#include <Editor/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 
@@ -301,7 +302,9 @@ namespace PigeonEngine
 		return TRUE;
 	}
 	BOOL32 EAnimationManager::RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
-		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EAssetLoadCompleteType InOnLoadComplete)
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset
+		, const FAssetImportSource* InImportSource
+		, EAssetLoadCompleteType InOnLoadComplete)
 	{
 		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
 		if (ESkeletonAnimationAsset* LoadedAsset = SkeletonAnimationAssetManager.Find(FullPathName))
@@ -310,12 +313,30 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		OutSkeletonAnimationAsset = nullptr;
+		// The import source is copied into the request: a request outlives the frame that made
+		// it, so it may not read the caller's strings.
+		FAssetImportSource ImportSource;
+		if (InImportSource)
+		{
+			ImportSource = *InImportSource;
+		}
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("SkeletonAnimation"), FullPathName),
-			[InLoadPath, InLoadName]() -> BOOL32
+			[InLoadPath, InLoadName, ImportSource]() -> BOOL32
 			{
 				const ESkeletonAnimationAsset* LoadedAsset = nullptr;
-				return EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, LoadedAsset);
+				if (ImportSource.IsValid())
+				{
+					// The editor form: load, and when the PAsset is not on disk yet, import from
+					// the raw source and load again. Both halves run here, on the load thread.
+					TryLoadSkeletonAnimation(InLoadPath, InLoadName, LoadedAsset, &ImportSource.ImportPath
+						, &ImportSource.ImportName, &ImportSource.ImportFileType);
+				}
+				else
+				{
+					EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, LoadedAsset);
+				}
+				return ((LoadedAsset != nullptr) ? TRUE : FALSE);
 			},
 			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
 		return FALSE;
@@ -743,6 +764,47 @@ namespace PigeonEngine
 		}
 		delete[]OutputMem;
 		return FALSE;
+	}
+
+	void TryLoadSkeletonAnimation(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutAsset
+		, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		EAnimationManager* AnimationManager = EAnimationManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skeleton animation asset pointer is initialized failed."), (!OutAsset));
+		if (AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset))
+		{
+			return;
+		}
+#if _EDITOR_ONLY
+		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
+		if (bHasImport)
+		{
+			PE_LOG_WARN(EString("Skeleton animation '") + InLoadName + "' not yet on disk; will attempt import.");
+		}
+		else
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton animation asset failed."));
+		}
+		if (bHasImport)
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			if (AnimationManager->ImportSkeletonAnimation(InLoadName, TempImportFullPath, InLoadPath))
+			{
+				if (!(AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load skeleton animation asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import skeleton animation asset failed."));
+			}
+		}
+#else
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton animation asset failed."));
+#endif
 	}
 
 };

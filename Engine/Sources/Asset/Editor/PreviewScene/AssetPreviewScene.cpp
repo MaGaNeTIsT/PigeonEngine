@@ -2,7 +2,8 @@
 
 #if _EDITOR_ONLY
 
-#include <algorithm>
+#include <Animation/AnimationSampler.h>
+
 #include <cmath>
 
 #include <AnimationAsset/AnimationAsset.h>
@@ -241,54 +242,6 @@ namespace PigeonEngine
 			Vector2Int				PreviewDisplaySize = Vector2Int::Zero();
 		};
 
-		template<typename TValueType, typename TKeyType, typename TLerpType>
-		BOOL8 SampleAnimationKey(FLOAT InKeyTime, const TArray<TKeyType>& InKeys, TValueType& OutValue, const TLerpType& InLerp)
-		{
-			const INT32 KeyNum = InKeys.Num();
-			if (KeyNum <= 0)
-			{
-				return FALSE;
-			}
-
-			if ((KeyNum == 1) || (InKeyTime <= static_cast<FLOAT>(InKeys[0].Time)))
-			{
-				OutValue = InKeys[0].Value;
-				return TRUE;
-			}
-
-			for (INT32 KeyIndex = 0; KeyIndex < (KeyNum - 1); KeyIndex++)
-			{
-				const FLOAT CurrentKeyTime = static_cast<FLOAT>(InKeys[KeyIndex].Time);
-				const FLOAT NextKeyTime = static_cast<FLOAT>(InKeys[KeyIndex + 1].Time);
-				if (InKeyTime < NextKeyTime)
-				{
-					const FLOAT TimeRange = NextKeyTime - CurrentKeyTime;
-					const FLOAT Alpha = (TimeRange > 1e-6f) ? ((InKeyTime - CurrentKeyTime) / TimeRange) : 0.0f;
-					OutValue = InLerp(InKeys[KeyIndex].Value, InKeys[KeyIndex + 1].Value, EMath::Clamp(Alpha, 0.0f, 1.0f));
-					return TRUE;
-				}
-			}
-
-			OutValue = InKeys[KeyNum - 1].Value;
-			return TRUE;
-		}
-
-		FLOAT GetClipKeyTime(const ESkeletonAnimationClip* InClip, FLOAT InPlaybackTimeSeconds)
-		{
-			if ((!InClip) || (InClip->Duration <= 0.0f))
-			{
-				return 0.0f;
-			}
-
-			const FLOAT TicksPerSecond = (InClip->TicksPerSecond > 1e-3f) ? InClip->TicksPerSecond : 30.0f;
-			FLOAT KeyTime = InPlaybackTimeSeconds * TicksPerSecond;
-			KeyTime = std::fmod(KeyTime, InClip->Duration);
-			if (KeyTime < 0.0f)
-			{
-				KeyTime += InClip->Duration;
-			}
-			return KeyTime;
-		}
 	}
 
 	EAssetPreviewScene::~EAssetPreviewScene()
@@ -635,7 +588,8 @@ namespace PigeonEngine
 				m_PlaybackTimeSeconds += InDeltaSeconds * m_PlaybackRate;
 			}
 
-			const FLOAT KeyTime = GetClipKeyTime(m_AnimationClip, m_PlaybackTimeSeconds);
+			const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f) ? m_AnimationClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
+			const FLOAT KeyTime = EAnimationSampler::WrapKeyTime(m_PlaybackTimeSeconds * TicksPerSecond, m_AnimationClip->Duration);
 			auto VectorLerp = [](const Vector3& InValue0, const Vector3& InValue1, FLOAT InAlpha)->Vector3
 			{
 				return Vector3::Lerp(InValue0, InValue1, InAlpha);
@@ -655,9 +609,9 @@ namespace PigeonEngine
 				}
 
 				EBoneTransform BoneTransform = BoneMemoryPool.GetBoneRelativeTransform(Curve.BoneName);
-				SampleAnimationKey(KeyTime, Curve.PositionKeys, BoneTransform.Position, VectorLerp);
-				SampleAnimationKey(KeyTime, Curve.RotationKeys, BoneTransform.Rotation, QuaternionLerp);
-				SampleAnimationKey(KeyTime, Curve.ScalingKeys, BoneTransform.Scaling, VectorLerp);
+				EAnimationSampler::SampleKey(KeyTime, Curve.PositionKeys, BoneTransform.Position, VectorLerp);
+				EAnimationSampler::SampleKey(KeyTime, Curve.RotationKeys, BoneTransform.Rotation, QuaternionLerp);
+				EAnimationSampler::SampleKey(KeyTime, Curve.ScalingKeys, BoneTransform.Scaling, VectorLerp);
 				BoneMemoryPool.SetBoneRelativeTransform(Curve.BoneName, BoneTransform);
 			}
 		}

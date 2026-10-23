@@ -1,5 +1,8 @@
 #include "SkeletalMeshComponent.h"
+#include <Animation/AnimInstance.h>
+#include <AnimationAsset/AnimationAsset.h>
 #include <Asset/AssetLoadManager.h>
+#include <Base/Timer/Timer.h>
 #include <MeshAsset/MeshAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <PigeonBase/Object/World/World.h>
@@ -16,14 +19,25 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PSkeletalMeshComponent::PSkeletalMeshComponent()
-		: MeshAsset(nullptr), SkeletonAsset(nullptr)
+		: MeshAsset(nullptr), SkeletonAsset(nullptr), AnimInstance(nullptr)
 	{
 		POBJ_DEBUGNAME_SET(this, "SkeletalMeshComponent");
+		// The instance is created with the component so the animation API is always safe to
+		// call, even before an asset is assigned. It is a plain runtime object, not a PObject,
+		// because it does not need the object graph or a tick of its own: the component drives
+		// its Update from TickRenderImpl.
+		AnimInstance = new EAnimInstance();
+		AnimInstance->SetSkeletalMeshComponent(this);
 	}
 	PSkeletalMeshComponent::~PSkeletalMeshComponent()
 	{
-		// Nothing to release here: the proxy belongs to the render scene and is deleted by the
-		// remove command, so the component never holds a pointer to it.
+		// The proxy belongs to the render scene and is deleted by the remove command, so the
+		// component never holds a pointer to it. The animation instance is owned here.
+		if (AnimInstance)
+		{
+			delete AnimInstance;
+			AnimInstance = nullptr;
+		}
 	}
 	const ESkinnedMeshAsset* PSkeletalMeshComponent::GetMeshAsset()const
 	{
@@ -95,15 +109,29 @@ namespace PigeonEngine
 	{
 		BOOL32 NeedRegenerate = (SkeletonAsset != InSkeletonAsset);
 		SkeletonAsset = InSkeletonAsset;
-		if ((!!SkeletonAsset) && NeedRegenerate)
+		if (NeedRegenerate)
 		{
-			if (!!MeshAsset)
+			if (!!SkeletonAsset)
 			{
-				MeshAsset->SetSkeleton(SkeletonAsset->GetStoragedResource());
+				if (!!MeshAsset)
+				{
+					MeshAsset->SetSkeleton(SkeletonAsset->GetStoragedResource());
+				}
+				if (SkeletonAsset->IsResourceValid())
+				{
+					BoneMemoryPool.GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+				}
 			}
-			if (SkeletonAsset->IsResourceValid())
+			else
 			{
-				BoneMemoryPool.GenerateFromSkeleton(SkeletonAsset->GetStoragedResource());
+				BoneMemoryPool.GenerateFromSkeleton(nullptr);
+			}
+			// The binding resolves curve names against this skeleton, so it has to be rebuilt
+			// whenever the skeleton changes, including when it is cleared. The instance keeps
+			// the current clip if the new skeleton can still serve it.
+			if (AnimInstance)
+			{
+				AnimInstance->OnSkeletonChanged();
 			}
 		}
 		MarkRenderChannelsDirty(PRIMITIVE_UPDATE_ASSETS);
@@ -145,6 +173,117 @@ namespace PigeonEngine
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
 	}
+
+	// Animation START
+	const ESkeletonAnimationAsset* PSkeletalMeshComponent::GetAnimationAsset()const
+	{
+		return (AnimInstance ? AnimInstance->GetAnimationAsset() : nullptr);
+	}
+	EAnimInstance* PSkeletalMeshComponent::GetAnimInstance()const
+	{
+		return AnimInstance;
+	}
+	BOOL32 PSkeletalMeshComponent::SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset)
+	{
+		return (AnimInstance ? AnimInstance->SetAnimationAsset(InAnimationAsset) : FALSE);
+	}
+	void PSkeletalMeshComponent::RequestAnimationAsset(const EString& InAnimationAssetName
+		, const FAssetImportSource* InImportSource, BOOL32 bInAutoPlayFirstClip)
+	{
+		// Copied by value: the request outlives this call.
+		FAssetImportSource ImportSource;
+		if (InImportSource)
+		{
+			ImportSource = *InImportSource;
+		}
+
+		PSkeletalMeshComponent* Component = this;
+		TFunction<BOOL32()> Step = [Component, InAnimationAssetName, ImportSource, bInAutoPlayFirstClip]() -> BOOL32
+		{
+			const ESkeletonAnimationAsset* LoadedAsset = nullptr;
+			const BOOL32 bHasAnimation = EAnimationManager::GetManagerSingleton()->RequireLoadSkeletonAnimationAsset(
+				EBaseSettings::ENGINE_ANIMATION_PATH, InAnimationAssetName, LoadedAsset, &ImportSource);
+			if (!bHasAnimation)
+			{
+				return FALSE;
+			}
+			// A binding needs both sides. The mesh/skeleton request is retried on its own, so
+			// waiting here is enough; this step simply runs again next frame.
+			if (!Component->GetSkeletonAsset())
+			{
+				return FALSE;
+			}
+			// The bind can still fail when the animation and the skeleton share no bone at all.
+			// The asset is remembered either way, so a later skeleton swap can retry it, but
+			// the deferred step is done: retrying an incompatible pair every frame would not
+			// change the answer.
+			const BOOL32 bBound = Component->SetAnimationAsset(LoadedAsset);
+			if ((bBound) && (bInAutoPlayFirstClip))
+			{
+				Component->PlayAnimation(0);
+			}
+			return TRUE;
+		};
+
+		// Tried once here as well, so an already loaded asset and skeleton bind before this
+		// call returns.
+		if (Step() == FALSE)
+		{
+			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
+		}
+	}
+	BOOL32 PSkeletalMeshComponent::PlayAnimation(const EString& InClipName, BOOL32 bInLoop, FLOAT InPlayRate)
+	{
+		return (AnimInstance ? AnimInstance->Play(InClipName, bInLoop, InPlayRate) : FALSE);
+	}
+	BOOL32 PSkeletalMeshComponent::PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop, FLOAT InPlayRate)
+	{
+		return (AnimInstance ? AnimInstance->Play(InClipIndex, bInLoop, InPlayRate) : FALSE);
+	}
+	void PSkeletalMeshComponent::PauseAnimation()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->Pause();
+		}
+	}
+	void PSkeletalMeshComponent::ResumeAnimation()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->Resume();
+		}
+	}
+	void PSkeletalMeshComponent::StopAnimation()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->Stop();
+		}
+	}
+	void PSkeletalMeshComponent::SetAnimationPlayRate(FLOAT InPlayRate)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetPlayRate(InPlayRate);
+		}
+	}
+	void PSkeletalMeshComponent::SetAnimationLoop(BOOL32 bInLoop)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetLoop(bInLoop);
+		}
+	}
+	void PSkeletalMeshComponent::SetAnimationPositionSeconds(FLOAT InPositionSeconds)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetPositionSeconds(InPositionSeconds);
+		}
+	}
+	// Animation END
+
 	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
 	{
 		return BoneMemoryPool;
@@ -163,6 +302,20 @@ namespace PigeonEngine
 
 	void PSkeletalMeshComponent::TickRenderImpl()
 	{
+		// Evaluate before the dirty check below. PActor::Tick calls TickRender before the
+		// component tick, so this is the last point in the frame where the bone pool can be
+		// written and still be sent with this frame's snapshot. The delta is the same one the
+		// world is ticking with; a non-tickable actor keeps its pose instead of advancing.
+		if ((AnimInstance) && (GetOwnerActor()) && (GetOwnerActor()->IsTickable()))
+		{
+			const PWorld* World = GetWorld();
+			const EGameTimer* GameTimer = (World ? World->GetGameTimer() : nullptr);
+			const FLOAT DeltaSeconds = (GameTimer ? static_cast<FLOAT>(GameTimer->GetDeltaTime()) : 0.0f);
+			if (AnimInstance->Update(DeltaSeconds))
+			{
+				MarkBoneMemoryPoolDirty();
+			}
+		}
 		if (IsRenderStateDirty())
 		{
 			SendUpdateRenderState();
