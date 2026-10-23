@@ -232,13 +232,13 @@ namespace PigeonEngine
 			AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(Step));
 		}
 	}
-	BOOL32 PSkeletalMeshComponent::PlayAnimation(const EString& InClipName, BOOL32 bInLoop, FLOAT InPlayRate)
+	BOOL32 PSkeletalMeshComponent::PlayAnimation(const EString& InClipName, BOOL32 bInLoop, FLOAT InPlayRate, FLOAT InFadeSeconds)
 	{
-		return (AnimInstance ? AnimInstance->Play(InClipName, bInLoop, InPlayRate) : FALSE);
+		return (AnimInstance ? AnimInstance->Play(InClipName, bInLoop, InPlayRate, InFadeSeconds) : FALSE);
 	}
-	BOOL32 PSkeletalMeshComponent::PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop, FLOAT InPlayRate)
+	BOOL32 PSkeletalMeshComponent::PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop, FLOAT InPlayRate, FLOAT InFadeSeconds)
 	{
-		return (AnimInstance ? AnimInstance->Play(InClipIndex, bInLoop, InPlayRate) : FALSE);
+		return (AnimInstance ? AnimInstance->Play(InClipIndex, bInLoop, InPlayRate, InFadeSeconds) : FALSE);
 	}
 	void PSkeletalMeshComponent::PauseAnimation()
 	{
@@ -274,6 +274,17 @@ namespace PigeonEngine
 		{
 			AnimInstance->SetLoop(bInLoop);
 		}
+	}
+	void PSkeletalMeshComponent::SetAnimationLoopMode(EAnimationLoopMode InLoopMode)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetLoopMode(InLoopMode);
+		}
+	}
+	EAnimationLoopMode PSkeletalMeshComponent::GetAnimationLoopMode()const
+	{
+		return (AnimInstance ? AnimInstance->GetLoopMode() : ANIMATION_LOOP_ONCE);
 	}
 	void PSkeletalMeshComponent::SetAnimationPositionSeconds(FLOAT InPositionSeconds)
 	{

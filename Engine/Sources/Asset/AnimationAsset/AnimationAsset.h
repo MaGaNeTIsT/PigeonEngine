@@ -4,9 +4,18 @@
 #include <EngineCommon.h>
 #include <BaseAsset.h>
 #include <AssetLoadManager.h>
+#include <Animation/AnimationNotify.h>
 
 namespace PigeonEngine
 {
+
+	/*
+	* The animation asset file starts with the asset type, which is the one field every
+	* PAsset shares because the content browser classifies files by it. The rest of the
+	* layout is deliberately unversioned for now: the asset system is expected to move to
+	* an Archive-based format, and during development an animation asset can simply be
+	* re-imported when this layout changes.
+	*/
 
 	enum EAnimationBehaviourType : UINT8
 	{
@@ -64,6 +73,13 @@ namespace PigeonEngine
 					AnimationCurves.Add(Other.AnimationCurves[i]);
 				}
 			}
+			if (const UINT32 NotifyNum = Other.Notifies.Num<UINT32>(); NotifyNum > 0u)
+			{
+				for (UINT32 i = 0u; i < NotifyNum; i++)
+				{
+					Notifies.Add(Other.Notifies[i]);
+				}
+			}
 		}
 		ESkeletonAnimationClip(const EString& InClipName)noexcept : ClipName(InClipName), Duration(0.f), TicksPerSecond(0.f) {}
 		ESkeletonAnimationClip& operator=(const ESkeletonAnimationClip& Other)noexcept
@@ -71,6 +87,10 @@ namespace PigeonEngine
 			if (AnimationCurves.Num() > 0)
 			{
 				AnimationCurves.Empty();
+			}
+			if (Notifies.Num() > 0)
+			{
+				Notifies.Empty();
 			}
 			ClipName = Other.ClipName;
 			Duration = Other.Duration;
@@ -80,6 +100,13 @@ namespace PigeonEngine
 				for (UINT32 i = 0u; i < AnimationCurveNum; i++)
 				{
 					AnimationCurves.Add(Other.AnimationCurves[i]);
+				}
+			}
+			if (const UINT32 NotifyNum = Other.Notifies.Num<UINT32>(); NotifyNum > 0u)
+			{
+				for (UINT32 i = 0u; i < NotifyNum; i++)
+				{
+					Notifies.Add(Other.Notifies[i]);
 				}
 			}
 			return (*this);
@@ -105,6 +132,7 @@ namespace PigeonEngine
 		FLOAT							Duration;
 		FLOAT							TicksPerSecond;
 		TArray<EBoneAnimationCurve>		AnimationCurves;
+		TArray<FAnimNotifyEvent>		Notifies;
 	};
 
 	class ESkeletonAnimation : public EObjectBase, public EResourceInterface
@@ -120,13 +148,30 @@ namespace PigeonEngine
 		const ESkeletonAnimationClip*			GetAnimationClip(const EString& InClipName)const;
 		const TArray<ESkeletonAnimationClip>&	GetAnimationClips()const;
 		const TMap<EString, INT32>&				GetAnimationClipMapping()const;
+		// Mutable access is for the editor, which edits the notify list in place before
+		// saving the asset. Runtime playback only reads the clips.
+		TArray<ESkeletonAnimationClip>&			GetAnimationClips();
+		ESkeletonAnimationClip*					GetAnimationClip(INT32 InIndex);
+		ESkeletonAnimationClip*					GetAnimationClip(const EString& InClipName);
+		PE_NODISCARD const EString&				GetSkeletonName()const;
+		PE_NODISCARD const EString&				GetRootBoneName()const;
 	public:
 		void	RebuildWholeMapping();
 		BOOL32	AddAnimationClip(const ESkeletonAnimationClip& InClip);
 		BOOL32	RemoveAnimationClip(INT32 InIndex);
 		BOOL32	RemoveAnimationClip(const EString& InClipName);
+		void	SetSkeletonName(const EString& InSkeletonName);
+		void	SetRootBoneName(const EString& InRootBoneName);
 	protected:
 		EString							AnimationName;
+		/*
+		* The skeleton the clip was authored against, when the source or the importer could
+		* name it. It is a compatibility hint rather than a hard reference: the runtime bind
+		* still resolves each curve by bone name, so a renamed or retargeted skeleton can be
+		* used, with a warning when the names differ.
+		*/
+		EString							SkeletonName;
+		EString							RootBoneName;
 		TArray<ESkeletonAnimationClip>	AnimationClips;
 		TMap<EString, INT32>			AnimationClipMapping;
 	public:
@@ -170,9 +215,18 @@ namespace PigeonEngine
 		virtual void	Uninit()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL32	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath);
+		/*
+		* Imports an animation asset from a raw source file. InSkeletonName and InRootBoneName
+		* are the skeleton the clips were authored against and the bone that carries root
+		* motion; both may be empty when the source or the importer cannot name them. They are
+		* written into the asset and used as compatibility hints, not as hard references.
+		*/
+		BOOL32	ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
+			, const EString& InSkeletonName = EString(), const EString& InRootBoneName = EString());
 #endif
 		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset);
+		// Editor save: writes the asset back to the path and name it was loaded from.
+		BOOL32	SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
 		/*
 		* Any thread: the animation when it is already loaded, otherwise FALSE and a null output
 		* after recording one load request for the load thread (EAssetLoadManager). Never blocks

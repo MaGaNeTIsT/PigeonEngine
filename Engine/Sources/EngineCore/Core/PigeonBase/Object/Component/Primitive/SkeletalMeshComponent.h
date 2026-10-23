@@ -11,6 +11,7 @@ namespace PigeonEngine
 	class ESkeletonAsset;
 	class ESkeletonAnimationAsset;
 	class EAnimInstance;
+	enum EAnimationLoopMode : UINT8;
 
 	/*
 	* A skinned mesh primitive. Its material slots and its mesh handle live on the mesh base;
@@ -66,13 +67,18 @@ namespace PigeonEngine
 		void                                        RequestAnimationAsset(const EString& InAnimationAssetName
 			, const FAssetImportSource* InImportSource = nullptr, BOOL32 bInAutoPlayFirstClip = FALSE);
 
-		BOOL32                                      PlayAnimation(const EString& InClipName, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f);
-		BOOL32                                      PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f);
+		// InFadeSeconds blends from the clip that is currently playing to the new one.
+		// Zero switches immediately; a positive value crossfades over that many seconds.
+		BOOL32                                      PlayAnimation(const EString& InClipName, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
+		BOOL32                                      PlayAnimation(INT32 InClipIndex, BOOL32 bInLoop = TRUE, FLOAT InPlayRate = 1.0f, FLOAT InFadeSeconds = 0.0f);
 		void                                        PauseAnimation();
 		void                                        ResumeAnimation();
 		void                                        StopAnimation();
 		void                                        SetAnimationPlayRate(FLOAT InPlayRate);
+		// Convenience form: TRUE maps to REPEAT, FALSE maps to ONCE.
 		void                                        SetAnimationLoop(BOOL32 bInLoop);
+		void                                        SetAnimationLoopMode(EAnimationLoopMode InLoopMode);
+		PE_NODISCARD EAnimationLoopMode             GetAnimationLoopMode()const;
 		void                                        SetAnimationPositionSeconds(FLOAT InPositionSeconds);
 		// Animation END
 
