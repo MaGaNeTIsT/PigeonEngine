@@ -3,20 +3,6 @@
   "description": "Sample montage: an upper-body BoneMask overlays Attack and chains into Recover.",
   "skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton",
   "animation": "Boss_Idle",
-  "slotGroups": [
-    {
-      "name": "Default",
-      "slots": [
-        "Default"
-      ]
-    },
-    {
-      "name": "UpperBody",
-      "slots": [
-        "UpperBody"
-      ]
-    }
-  ],
   "sections": [
     {
       "name": "Attack",
