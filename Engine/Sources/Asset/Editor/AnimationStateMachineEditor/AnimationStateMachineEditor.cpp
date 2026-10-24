@@ -195,6 +195,10 @@ namespace PigeonEngine
 			return;
 		}
 
+		// A state added by the JSON may not have a position yet; give it a slot before
+		// drawing or letting the user drag it.
+		AutoLayoutGraph(InMachine);
+
 		const ImVec2 Origin = ImGui::GetCursorScreenPos();
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		constexpr FLOAT NodeWidth = 190.0f;
