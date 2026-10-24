@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 
 #include "AnimationClipPlayer.h"
+#include "AnimationNotify.h"
 #include "SkeletonBinding.h"
 
 namespace PigeonEngine
@@ -125,6 +126,13 @@ namespace PigeonEngine
 		virtual BOOL32 Update(FLOAT InDeltaSeconds);
 
 	private:
+		// Runtime-only link from an active state event back to its authored data. The asset
+		// owns the event; this list only tracks which ones have received Begin.
+		struct FActiveAnimNotifyState
+		{
+			const FAnimNotifyEvent* Event = nullptr;
+		};
+
 		BOOL32 BindAnimation();
 		BOOL32 PlayInternal(INT32 InClipIndex, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds);
 		void CancelCrossFade();
@@ -132,6 +140,17 @@ namespace PigeonEngine
 		void DispatchNotifies(const EAnimationClipPlayer& InPlayer);
 		// Fires the current montage section's authored events over the same time window.
 		void DispatchMontageSectionNotifies();
+		/*
+		* Updates active state notifies by sampling the current playhead against each
+		* event's [Time, Time + StateDuration) interval. Begin fires on entry, Tick on each
+		* following advancing frame, End on exit or when the clip finishes. This works for
+		* forward, reverse and looping playback and keeps the first version free of a
+		* separate interval-crossing solver.
+		*/
+		void UpdateNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive
+			, const TArray<FAnimNotifyEvent>& InNotifies, const EAnimationClipPlayer& InPlayer
+			, BOOL32 bInAdvanced, FLOAT InDeltaSeconds);
+		void EndNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
@@ -152,6 +171,10 @@ namespace PigeonEngine
 		// only allocated while a crossfade is in progress.
 		EAnimationClipPlayer			PreviousClipPlayer;
 		TArray<EBoneTransform>			CrossFadePose;
+		// State notifies are tracked per timeline: the base clip and the active montage
+		// section reset independently when their clip changes.
+		TArray<FActiveAnimNotifyState>	ActiveBaseNotifyStates;
+		TArray<FActiveAnimNotifyState>	ActiveMontageNotifyStates;
 		FLOAT							CrossFadeDuration = 0.0f;
 		FLOAT							CrossFadeRemaining = 0.0f;
 		INT32							CurrentClipIndex = -1;

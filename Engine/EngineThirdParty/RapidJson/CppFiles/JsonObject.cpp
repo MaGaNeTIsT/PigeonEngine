@@ -122,9 +122,12 @@ namespace PigeonEngine
 	BOOL8 CJsonObject::GetFloatField(const EString& FieldName, FLOAT& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(*FieldName);
-		if (itr == Doc->MemberEnd() || !itr->value.IsFloat())
+		// RapidJSON parses an ordinary JSON number as int/double; IsFloat() only matches a
+		// value that was explicitly constructed with the float flag. Accept any number and
+		// convert, otherwise authored values such as 0.8 silently fall back to defaults.
+		if (itr == Doc->MemberEnd() || !itr->value.IsNumber())
 			return FALSE;
-		Out = itr->value.GetFloat();
+		Out = static_cast<FLOAT>(itr->value.GetDouble());
 		return TRUE;
 	}
 

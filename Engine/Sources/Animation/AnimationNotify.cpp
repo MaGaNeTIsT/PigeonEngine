@@ -29,11 +29,36 @@ namespace PigeonEngine
 			}
 		};
 
+		/*
+		* Default state notify used for authoring and for exercising Begin/End before
+		* game-specific windows exist. Tick is intentionally silent: logging every frame
+		* would drown the log, and Begin/End already prove the active range.
+		*/
+		class EAnimNotifyState_Log final : public EAnimNotifyState
+		{
+		public:
+			virtual void NotifyBegin(EAnimInstance& InAnimInstance, const FAnimNotifyEvent& InEvent) override
+			{
+				(void)InAnimInstance;
+				PE_LOG_LOG(EString("AnimNotifyState '") + InEvent.NotifyName
+					+ EString("' begin at ") + ToString(InEvent.Time) + EString("s."));
+			}
+			virtual void NotifyEnd(EAnimInstance& InAnimInstance, const FAnimNotifyEvent& InEvent) override
+			{
+				(void)InAnimInstance;
+				PE_LOG_LOG(EString("AnimNotifyState '") + InEvent.NotifyName + EString("' end."));
+			}
+		};
+
 		BOOL32 RegisterDefaultNotifies()
 		{
 			EAnimNotifyRegistry::Register(EString("Log"), []() -> EAnimNotify*
 				{
 					return new EAnimNotify_Log();
+				});
+			EAnimNotifyRegistry::Register(EString("LogState"), []() -> EAnimNotify*
+				{
+					return new EAnimNotifyState_Log();
 				});
 			return TRUE;
 		}
@@ -56,6 +81,16 @@ namespace PigeonEngine
 		{
 			PE_LOG_WARN(EString("AnimNotify '") + NotifyName + EString("' uses unregistered class '")
 				+ NotifyClassName + EString("'."));
+			return;
+		}
+		if (bIsState != CachedNotify->IsStateNotify())
+		{
+			// Mixing the two kinds would make the event silently do nothing (a state event
+			// with an instant class never gets Begin, or an instant event with a state class
+			// has no Notify implementation). Reject it at compile time instead.
+			PE_LOG_WARN(EString("AnimNotify '") + NotifyName + EString("' class '")
+				+ NotifyClassName + EString("' is ") + (bIsState ? EString("not a state notify.") : EString("a state notify but the event is instant.")));
+			CachedNotify.reset();
 		}
 	}
 

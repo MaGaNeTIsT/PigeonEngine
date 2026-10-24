@@ -21,6 +21,7 @@ namespace PigeonEngine
 		LoopMode = ANIMATION_LOOP_REPEAT;
 		PlayDirection = 1;
 		bPlaying = FALSE;
+		bFinished = FALSE;
 		bLoopedLastAdvance = FALSE;
 		bFirstAdvance = TRUE;
 	}
@@ -32,6 +33,7 @@ namespace PigeonEngine
 		PositionSeconds = 0.0f;
 		PreviousPositionSeconds = 0.0f;
 		PlayDirection = 1;
+		bFinished = FALSE;
 		bLoopedLastAdvance = FALSE;
 		bFirstAdvance = TRUE;
 		if (!Clip)
@@ -50,6 +52,7 @@ namespace PigeonEngine
 		if (Clip)
 		{
 			bPlaying = TRUE;
+			bFinished = FALSE;
 		}
 	}
 
@@ -61,6 +64,11 @@ namespace PigeonEngine
 	BOOL32 EAnimationClipPlayer::IsPlaying()const
 	{
 		return bPlaying;
+	}
+
+	BOOL32 EAnimationClipPlayer::HasFinished()const
+	{
+		return bFinished;
 	}
 
 	void EAnimationClipPlayer::SetPlayRate(FLOAT InPlayRate)
@@ -97,6 +105,7 @@ namespace PigeonEngine
 		// as crossed notify events.
 		PreviousPositionSeconds = PositionSeconds;
 		PlayDirection = 1;
+		bFinished = FALSE;
 		bLoopedLastAdvance = FALSE;
 		bFirstAdvance = FALSE;
 	}
@@ -128,6 +137,7 @@ namespace PigeonEngine
 		{
 			PositionSeconds = 0.0f;
 			bPlaying = FALSE;
+			bFinished = TRUE;
 			return;
 		}
 
@@ -188,11 +198,13 @@ namespace PigeonEngine
 			{
 				PositionSeconds = DurationSeconds;
 				bPlaying = FALSE;
+				bFinished = TRUE;
 			}
 			else if (PositionSeconds <= 0.0f)
 			{
 				PositionSeconds = 0.0f;
 				bPlaying = FALSE;
+				bFinished = TRUE;
 			}
 			break;
 		}
