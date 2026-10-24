@@ -43,6 +43,9 @@ namespace PigeonEngine
 		// Editor: parse into a temporary graph first, then replace the live one on success.
 		BOOL32	RebuildMontageAsset(const EAnimMontageAsset* InAsset, const EString& InJsonText, EString& OutError);
 		BOOL32	SaveMontageAsset(const EAnimMontageAsset* InAsset, const EString& InJsonText, EString& OutError);
+		// Re-applies standalone notify definitions to loaded montage events in place,
+		// preserving event addresses and any active state windows.
+		void	RefreshNotifyReferences();
 	private:
 		void	ClearMontages();
 		void	ReleaseAllAssets();
