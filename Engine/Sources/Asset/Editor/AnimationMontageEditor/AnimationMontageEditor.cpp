@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 
+#include <AnimationAsset/AnimationAsset.h>
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <Base/DataStructure/Text/Path.h>
 
@@ -32,12 +33,24 @@ namespace PigeonEngine
 				return "Unknown";
 			}
 		}
+
+		FLOAT GetClipDurationSeconds(const ESkeletonAnimationClip* InClip)
+		{
+			if ((!InClip) || (InClip->Duration <= 0.0f))
+			{
+				return 0.0f;
+			}
+			const FLOAT TicksPerSecond = ((InClip->TicksPerSecond > 0.001f)
+				? InClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND);
+			return (InClip->Duration / TicksPerSecond);
+		}
 	}
 
 	void EAnimMontageEditor::EditorInit()
 	{
 		m_ShowEditor = FALSE;
 		m_Asset = nullptr;
+		m_AnimationAsset = nullptr;
 		m_OpenedAssetFullPath = EString();
 		m_LastError = EString();
 		m_JsonBuffer.Empty();
@@ -71,6 +84,17 @@ namespace PigeonEngine
 
 		m_Asset = LoadedAsset;
 		m_OpenedAssetFullPath = NormalizedAssetPath;
+		m_AnimationAsset = nullptr;
+		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
+		if ((Montage) && (Montage->AnimationAssetName.Length() > 0u))
+		{
+			const ESkeletonAnimationAsset* LoadedAnimation = nullptr;
+			if (EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(
+				EBaseSettings::ENGINE_ANIMATION_PATH, Montage->AnimationAssetName, LoadedAnimation))
+			{
+				m_AnimationAsset = LoadedAnimation;
+			}
+		}
 		LoadJsonBufferFromAsset();
 	}
 
@@ -164,6 +188,11 @@ namespace PigeonEngine
 						}
 						ImGui::TreePop();
 					}
+
+					ImGui::Separator();
+					ImGui::BeginChild("MontageTimeline", ImVec2(0.0f, 210.0f), true);
+					DrawTimeline(*Montage);
+					ImGui::EndChild();
 				}
 			}
 
@@ -174,6 +203,85 @@ namespace PigeonEngine
 			}
 		}
 		ImGui::End();
+	}
+
+	void EAnimMontageEditor::DrawTimeline(const EAnimMontage& InMontage)
+	{
+		ImGui::TextDisabled("Timeline (read-only; edit the JSON below)");
+		ImGui::SameLine();
+		ImGui::TextDisabled("| blue = state range, orange = instant notify");
+		if (InMontage.Sections.Num() <= 0)
+		{
+			ImGui::TextDisabled("No sections.");
+			return;
+		}
+
+		const ESkeletonAnimation* Animation = (m_AnimationAsset ? m_AnimationAsset->GetStoragedResource() : nullptr);
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		constexpr FLOAT LabelWidth = 180.0f;
+		constexpr FLOAT RowHeight = 28.0f;
+
+		for (INT32 SectionIndex = 0; SectionIndex < InMontage.Sections.Num(); SectionIndex++)
+		{
+			const EAnimMontageSection& Section = InMontage.Sections[SectionIndex];
+			const ESkeletonAnimationClip* Clip = (Animation ? Animation->GetAnimationClip(Section.ClipName) : nullptr);
+			const FLOAT DurationSeconds = GetClipDurationSeconds(Clip);
+
+			ImGui::Text("%s", *Section.Name);
+			ImGui::SameLine(LabelWidth);
+
+			const ImVec2 BarMin = ImGui::GetCursorScreenPos();
+			const FLOAT BarWidth = EMath::Max(ImGui::GetContentRegionAvail().x - 70.0f, 80.0f);
+			const ImVec2 BarMax(BarMin.x + BarWidth, BarMin.y + 24.0f);
+			DrawList->AddRectFilled(BarMin, BarMax, IM_COL32(38, 40, 46, 255), 3.0f);
+			DrawList->AddRect(BarMin, BarMax, IM_COL32(90, 92, 100, 255), 3.0f);
+
+			if (DurationSeconds > 0.0f)
+			{
+				const FLOAT InvDuration = 1.0f / DurationSeconds;
+				for (const FAnimNotifyEvent& Notify : Section.Notifies)
+				{
+					if (!Notify.bIsState)
+					{
+						continue;
+					}
+					const FLOAT Start = EMath::Clamp(Notify.Time * InvDuration, 0.0f, 1.0f);
+					const FLOAT End = EMath::Clamp((Notify.Time + EMath::Max(Notify.StateDuration, 0.001f)) * InvDuration, 0.0f, 1.0f);
+					const FLOAT X0 = BarMin.x + Start * BarWidth;
+					const FLOAT X1 = BarMin.x + End * BarWidth;
+					if (X1 > X0)
+					{
+						DrawList->AddRectFilled(ImVec2(X0, BarMin.y + 3.0f), ImVec2(X1, BarMax.y - 3.0f)
+							, IM_COL32(70, 170, 255, 120), 2.0f);
+						DrawList->AddRect(ImVec2(X0, BarMin.y + 3.0f), ImVec2(X1, BarMax.y - 3.0f)
+							, IM_COL32(110, 200, 255, 220), 2.0f);
+					}
+				}
+				for (const FAnimNotifyEvent& Notify : Section.Notifies)
+				{
+					if (Notify.bIsState)
+					{
+						continue;
+					}
+					const FLOAT T = EMath::Clamp(Notify.Time * InvDuration, 0.0f, 1.0f);
+					const FLOAT X = BarMin.x + T * BarWidth;
+					DrawList->AddLine(ImVec2(X, BarMin.y + 2.0f), ImVec2(X, BarMax.y - 2.0f)
+						, IM_COL32(255, 190, 60, 255), 2.0f);
+					DrawList->AddCircleFilled(ImVec2(X, BarMin.y + 4.0f), 3.0f, IM_COL32(255, 210, 100, 255));
+				}
+
+				CHAR DurationText[64] = "";
+				::sprintf_s(DurationText, sizeof(DurationText), "%.2fs", DurationSeconds);
+				DrawList->AddText(ImVec2(BarMax.x + 6.0f, BarMin.y + 4.0f), IM_COL32(180, 180, 180, 255), DurationText);
+			}
+			else
+			{
+				DrawList->AddText(ImVec2(BarMin.x + 8.0f, BarMin.y + 5.0f)
+					, IM_COL32(220, 120, 120, 255), "clip duration unavailable");
+			}
+
+			ImGui::Dummy(ImVec2(0.0f, RowHeight));
+		}
 	}
 
 	void EAnimMontageEditor::LoadJsonBufferFromAsset()
