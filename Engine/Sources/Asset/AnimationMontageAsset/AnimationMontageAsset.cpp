@@ -246,6 +246,45 @@ namespace PigeonEngine
 		return SaveMontageResource(InAsset->GetAssetPath(), InAsset->GetAssetName(), InJsonText);
 	}
 
+	void EAnimMontageManager::RefreshNotifyReferences()
+	{
+		TArray<EAnimMontageAsset*> LoadedAssets;
+		MontageAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
+		{
+			EAnimMontage* Montage = (LoadedAssets[AssetIndex]
+				? const_cast<EAnimMontage*>(LoadedAssets[AssetIndex]->GetStoragedResource()) : nullptr);
+			if (!Montage)
+			{
+				continue;
+			}
+			for (INT32 SectionIndex = 0; SectionIndex < Montage->Sections.Num(); SectionIndex++)
+			{
+				TArray<FAnimNotifyEvent>& Notifies = Montage->Sections[SectionIndex].Notifies;
+				for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+				{
+					FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+					if (Notify.NotifyAssetName.Length() <= 0u)
+					{
+						continue;
+					}
+					const EAnimNotifyDefinition* Definition = nullptr;
+					if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
+						&& Definition)
+					{
+						ApplyNotifyDefinitionToEvent(Notify, *Definition);
+					}
+					else
+					{
+						PE_LOG_WARN(EString("Montage '") + Montage->Name + EString("' notify '")
+							+ Notify.NotifyName + EString("' could not resolve notify asset '")
+							+ Notify.NotifyAssetName + EString("'."));
+					}
+				}
+			}
+		}
+	}
+
 	EAnimMontageAsset* EAnimMontageManager::LoadMontageAsset(const EString& InLoadPath, const EString& InLoadName)
 	{
 		const EAnimMontageAsset* LoadedAsset = nullptr;
@@ -467,10 +506,27 @@ namespace PigeonEngine
 					NotifyObject->GetBoolField(PE_TEXT("state"), bIsState);
 					Notify.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
 					FLOAT StateDuration = 0.0f;
+					const BOOL32 bHasDuration = (NotifyObject->HasField(PE_TEXT("duration")) ? TRUE : FALSE);
 					if (NotifyObject->GetFloatField(PE_TEXT("duration"), StateDuration))
 					{
 						Notify.StateDuration = EMath::Max(StateDuration, 0.001f);
 					}
+					Notify.bStateDurationOverride = bHasDuration;
+
+					const BOOL32 bHasPayload = (NotifyObject->HasField(PE_TEXT("payload")) ? TRUE : FALSE);
+					if (bHasPayload)
+					{
+						if (!NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson))
+						{
+							CJsonObject PayloadObject;
+							if (NotifyObject->GetObjectField(PE_TEXT("payload"), PayloadObject))
+							{
+								Notify.PayloadJson = PayloadObject.ToString();
+							}
+						}
+					}
+					Notify.bPayloadOverride = bHasPayload;
+
 					// A standalone notify asset supplies class, state kind and default data.
 					// Per-event duration/payload stay as optional overrides.
 					if (Notify.NotifyAssetName.Length() > 0u)
@@ -479,17 +535,7 @@ namespace PigeonEngine
 						if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
 							&& Definition)
 						{
-							Notify.NotifyClassName = Definition->NotifyClassName;
-							Notify.bIsState = Definition->bIsState;
-							if (Notify.StateDuration <= 0.0f)
-							{
-								Notify.StateDuration = Definition->DefaultDuration;
-							}
-							if (Notify.PayloadJson.Length() <= 0u)
-							{
-								Notify.PayloadJson = Definition->PayloadJson;
-							}
-							Notify.CachedNotify = Definition->CachedNotify;
+							ApplyNotifyDefinitionToEvent(Notify, *Definition);
 						}
 						else
 						{

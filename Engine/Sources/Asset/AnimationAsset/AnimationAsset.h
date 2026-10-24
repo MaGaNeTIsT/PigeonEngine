@@ -227,6 +227,9 @@ namespace PigeonEngine
 		BOOL32	LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, const BOOL32 bTryLoad = FALSE);
 		// Editor save: writes the asset back to the path and name it was loaded from.
 		BOOL32	SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset);
+		// Re-applies every standalone notify asset to loaded clip events in place. Event
+		// addresses stay stable, so active notify-state windows remain valid.
+		void	RefreshNotifyReferences();
 		/*
 		* Any thread: the animation when it is already loaded, otherwise FALSE and a null output
 		* after recording one load request for the load thread (EAssetLoadManager). Never blocks

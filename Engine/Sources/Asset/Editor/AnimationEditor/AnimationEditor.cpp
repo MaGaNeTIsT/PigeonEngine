@@ -659,21 +659,21 @@ namespace PigeonEngine
 			if (ImGui::InputText("Notify Asset", NotifyAssetBuffer, static_cast<int>(sizeof(NotifyAssetBuffer))))
 			{
 				Notify.NotifyAssetName = EString(NotifyAssetBuffer);
+				Notify.bStateDurationOverride = FALSE;
+				Notify.bPayloadOverride = FALSE;
 			}
 			if (Notify.NotifyAssetName.Length() > 0u)
 			{
 				ImGui::SameLine();
-				if (ImGui::Button("Resolve"))
+				if (ImGui::Button("Resolve / Use Defaults"))
 				{
 					const EAnimNotifyDefinition* Definition = nullptr;
 					if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
 						&& Definition)
 					{
-						Notify.NotifyClassName = Definition->NotifyClassName;
-						Notify.bIsState = Definition->bIsState;
-						Notify.StateDuration = Definition->DefaultDuration;
-						Notify.PayloadJson = Definition->PayloadJson;
-						Notify.CachedNotify = Definition->CachedNotify;
+						Notify.bStateDurationOverride = FALSE;
+						Notify.bPayloadOverride = FALSE;
+						ApplyNotifyDefinitionToEvent(Notify, *Definition);
 					}
 					else
 					{
@@ -681,7 +681,10 @@ namespace PigeonEngine
 							+ Notify.NotifyAssetName + EString("'."));
 					}
 				}
-				ImGui::TextDisabled("The notify asset overrides class/state/payload; duration 0 uses its default.");
+				ImGui::TextDisabled("Asset supplies class/state/payload; editing duration or payload marks it as an event override.");
+				ImGui::TextDisabled("Duration: %s; Payload: %s"
+					, (Notify.bStateDurationOverride ? "event override" : "asset default")
+					, (Notify.bPayloadOverride ? "event override" : "asset default"));
 			}
 
 			const CHAR* CurrentClassLabel = ((Notify.NotifyClassName.Length() > 0u) ? *Notify.NotifyClassName : "None");
@@ -740,6 +743,7 @@ namespace PigeonEngine
 				if (ImGui::SliderFloat("State Duration", &StateDuration, 0.001f, MaxStateDuration, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 				{
 					Notify.StateDuration = StateDuration;
+					Notify.bStateDurationOverride = TRUE;
 				}
 				if ((Notify.NotifyClassName.Length() > 0u) && (!Notify.CachedNotify))
 				{
@@ -753,6 +757,7 @@ namespace PigeonEngine
 			if (ImGui::InputTextMultiline("Payload", PayloadBuffer, static_cast<int>(sizeof(PayloadBuffer)), ImVec2(-1.0f, 70.0f)))
 			{
 				Notify.PayloadJson = EString(PayloadBuffer);
+				Notify.bPayloadOverride = TRUE;
 				// A notify class may parse its payload when it is created; rebuild the cached
 				// object so the edit takes effect immediately.
 				Notify.ResetCompiledNotify();

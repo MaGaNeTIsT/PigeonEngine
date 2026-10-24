@@ -72,6 +72,10 @@ namespace PigeonEngine
 		// bIsState false and only use Time.
 		BOOL32					bIsState = FALSE;
 		FLOAT					StateDuration = 0.0f;
+		// TRUE when the event authored its own duration/payload instead of following the
+		// referenced notify asset's defaults. Refreshing a definition keeps overrides.
+		BOOL32					bStateDurationOverride = FALSE;
+		BOOL32					bPayloadOverride = FALSE;
 		TSharedPtr<EAnimNotify>	CachedNotify;
 
 	public:

@@ -4,6 +4,8 @@
 
 #include <imgui.h>
 
+#include <AnimationAsset/AnimationAsset.h>
+#include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Base/DataStructure/Text/Path.h>
 
@@ -80,6 +82,9 @@ namespace PigeonEngine
 					if (EAnimNotifyManager::GetManagerSingleton()->RebuildNotifyAsset(m_Asset, JsonText, Error))
 					{
 						m_LastError = EString();
+						// Re-apply the definition to loaded clips/montages in place.
+						EAnimationManager::GetManagerSingleton()->RefreshNotifyReferences();
+						EAnimMontageManager::GetManagerSingleton()->RefreshNotifyReferences();
 					}
 					else
 					{
@@ -97,6 +102,8 @@ namespace PigeonEngine
 					if (EAnimNotifyManager::GetManagerSingleton()->SaveNotifyAsset(m_Asset, JsonText, Error))
 					{
 						m_LastError = EString();
+						EAnimationManager::GetManagerSingleton()->RefreshNotifyReferences();
+						EAnimMontageManager::GetManagerSingleton()->RefreshNotifyReferences();
 					}
 					else
 					{

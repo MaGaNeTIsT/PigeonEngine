@@ -28,18 +28,47 @@ namespace PigeonEngine
 				+ EString("' could not resolve notify asset '") + InOutNotify.NotifyAssetName + EString("'."));
 			return FALSE;
 		}
-		InOutNotify.NotifyClassName = Definition->NotifyClassName;
-		InOutNotify.bIsState = Definition->bIsState;
-		if (InOutNotify.StateDuration <= 0.0f)
-		{
-			InOutNotify.StateDuration = Definition->DefaultDuration;
-		}
-		if (InOutNotify.PayloadJson.Length() <= 0u)
-		{
-			InOutNotify.PayloadJson = Definition->PayloadJson;
-		}
-		InOutNotify.CachedNotify = Definition->CachedNotify;
+		ApplyNotifyDefinitionToEvent(InOutNotify, *Definition);
 		return ((InOutNotify.CachedNotify != nullptr) ? TRUE : FALSE);
+	}
+
+	void EAnimationManager::RefreshNotifyReferences()
+	{
+		TArray<ESkeletonAnimationAsset*> LoadedAssets;
+		SkeletonAnimationAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
+		{
+			ESkeletonAnimation* Animation = (LoadedAssets[AssetIndex]
+				? const_cast<ESkeletonAnimation*>(LoadedAssets[AssetIndex]->GetStoragedResource()) : nullptr);
+			if (!Animation)
+			{
+				continue;
+			}
+			TArray<ESkeletonAnimationClip>& Clips = Animation->GetAnimationClips();
+			for (INT32 ClipIndex = 0; ClipIndex < Clips.Num(); ClipIndex++)
+			{
+				TArray<FAnimNotifyEvent>& Notifies = Clips[ClipIndex].Notifies;
+				for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+				{
+					FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+					if (Notify.NotifyAssetName.Length() <= 0u)
+					{
+						continue;
+					}
+					const EAnimNotifyDefinition* Definition = nullptr;
+					if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
+						&& Definition)
+					{
+						ApplyNotifyDefinitionToEvent(Notify, *Definition);
+					}
+					else
+					{
+						PE_LOG_WARN(EString("Clip notify '") + Notify.NotifyName
+							+ EString("' could not resolve notify asset '") + Notify.NotifyAssetName + EString("'."));
+					}
+				}
+			}
+		}
 	}
 
 	static void RegisterClassTypes()
@@ -668,6 +697,8 @@ namespace PigeonEngine
 						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX, TempNotifyPayload);
 						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyIsState);
 						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyStateDuration);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyDurationOverride);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyPayloadOverride);
 						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX, TempNotifyAssetName);
 
 						FAnimNotifyEvent& Notify = AnimationClip.Notifies.AddDefaultGetRef();
@@ -678,6 +709,8 @@ namespace PigeonEngine
 						Notify.PayloadJson = TempNotifyPayload;
 						Notify.bIsState = ((TempNotifyIsState != 0u) ? TRUE : FALSE);
 						Notify.StateDuration = TempNotifyStateDuration;
+						Notify.bStateDurationOverride = ((TempNotifyDurationOverride != 0u) ? TRUE : FALSE);
+						Notify.bPayloadOverride = ((TempNotifyPayloadOverride != 0u) ? TRUE : FALSE);
 						// Resolve the shared definition when possible; otherwise compile the
 						// inline fallback saved with the clip. Either way playback never
 						// allocates a notify object.
@@ -781,6 +814,8 @@ namespace PigeonEngine
 					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX;		// Notify payload
 					Result += sizeof(UINT32);																		// Notify is-state flag
 					Result += sizeof(FLOAT);																		// Notify state duration
+					Result += sizeof(UINT32);																		// Notify duration override flag
+					Result += sizeof(UINT32);																		// Notify payload override flag
 					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX;		// Notify asset name
 				}
 			}
@@ -912,6 +947,8 @@ namespace PigeonEngine
 					SAVE_ASSET_STRING_MEMORY(Notify.PayloadJson, EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX);
 					SAVE_ASSET_MEMORY(UINT32, (Notify.bIsState ? 1u : 0u));
 					SAVE_ASSET_MEMORY(FLOAT, Notify.StateDuration);
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bStateDurationOverride ? 1u : 0u));
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bPayloadOverride ? 1u : 0u));
 					SAVE_ASSET_STRING_MEMORY(Notify.NotifyAssetName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX);
 				}
 			}

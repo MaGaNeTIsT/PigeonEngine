@@ -39,6 +39,13 @@ namespace PigeonEngine
 		BOOL32	IsValid()const;
 	};
 
+	/*
+	* Copies a definition onto one event in place. The event keeps its time and any
+	* explicitly authored duration/payload overrides; existing pointers to the event stay
+	* valid, which is what makes runtime refresh safe.
+	*/
+	void ApplyNotifyDefinitionToEvent(FAnimNotifyEvent& InOutEvent, const EAnimNotifyDefinition& InDefinition);
+
 	class EAnimNotifyAsset : public TBaseAsset<EAnimNotifyDefinition>
 	{
 	public:

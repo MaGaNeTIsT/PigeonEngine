@@ -76,6 +76,21 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	void ApplyNotifyDefinitionToEvent(FAnimNotifyEvent& InOutEvent, const EAnimNotifyDefinition& InDefinition)
+	{
+		InOutEvent.NotifyClassName = InDefinition.NotifyClassName;
+		InOutEvent.bIsState = InDefinition.bIsState;
+		if (!InOutEvent.bStateDurationOverride)
+		{
+			InOutEvent.StateDuration = InDefinition.DefaultDuration;
+		}
+		if (!InOutEvent.bPayloadOverride)
+		{
+			InOutEvent.PayloadJson = InDefinition.PayloadJson;
+		}
+		InOutEvent.CachedNotify = InDefinition.CachedNotify;
+	}
+
 	EAnimNotifyAsset::EAnimNotifyAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
