@@ -29,6 +29,7 @@ namespace PigeonEngine
 		void LoadJsonBufferFromAsset();
 		void DrawGraph(const EAnimStateMachine& InMachine);
 		void DrawStructureControls(const EAnimStateMachine& InMachine);
+		void DrawTransitionConditions(const EAnimStateMachine& InMachine);
 		void LoadNodePositionsFromJson(const EAnimStateMachine& InMachine);
 		void AutoLayoutGraph(const EAnimStateMachine& InMachine);
 		// Serializes the current node positions into nodeX/nodeY fields before Apply/Save.
@@ -41,6 +42,10 @@ namespace PigeonEngine
 		BOOL32 AddTransition(const EString& InFromStateName, const EString& InToStateName);
 		BOOL32 DeleteTransition(INT32 InTransitionIndex);
 		BOOL32 SetEntryState(const EString& InStateName);
+		BOOL32 AddTransitionCondition(INT32 InTransitionIndex, INT32 InParameterIndex);
+		BOOL32 UpdateTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex
+			, INT32 InParameterIndex, const EString& InOp, FLOAT InValue);
+		BOOL32 RemoveTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex);
 		void ReplaceJsonBuffer(const EString& InJsonText);
 
 	private:
@@ -51,6 +56,7 @@ namespace PigeonEngine
 		TArray<CHAR>					m_JsonBuffer;
 		TMap<EString, ImVec2>			m_NodePositions;
 		INT32							m_SelectedStateIndex = 0;
+		INT32							m_SelectedTransitionIndex = -1;
 		// -1 means the "Any" pseudo state.
 		INT32							m_TransitionFromIndex = -1;
 		INT32							m_TransitionToIndex = 0;

@@ -12,6 +12,7 @@
 #include <rapidjson/writer.h>
 
 #include <cmath>
+#include <cstring>
 
 namespace PigeonEngine
 {
@@ -36,6 +37,42 @@ namespace PigeonEngine
 				return "Clamp";
 			default:
 				return "Unknown";
+			}
+		}
+
+		const CHAR* GetCompareOpText(const EAnimStateMachineCompareType InCompare)
+		{
+			switch (InCompare)
+			{
+			case ANIM_COMPARE_GREATER_EQUAL:
+				return ">=";
+			case ANIM_COMPARE_LESS:
+				return "<";
+			case ANIM_COMPARE_LESS_EQUAL:
+				return "<=";
+			case ANIM_COMPARE_EQUAL:
+				return "==";
+			case ANIM_COMPARE_NOT_EQUAL:
+				return "!=";
+			case ANIM_COMPARE_TRIGGER:
+				return "trigger";
+			case ANIM_COMPARE_GREATER:
+			default:
+				return ">";
+			}
+		}
+
+		const CHAR* GetDefaultConditionOp(const EAnimStateMachineParameterType InType)
+		{
+			switch (InType)
+			{
+			case ANIM_PARAM_BOOL:
+				return "==";
+			case ANIM_PARAM_TRIGGER:
+				return "trigger";
+			case ANIM_PARAM_FLOAT:
+			default:
+				return ">";
 			}
 		}
 
@@ -88,6 +125,7 @@ namespace PigeonEngine
 		m_JsonBuffer.Empty();
 		m_NodePositions.Empty();
 		m_SelectedStateIndex = 0;
+		m_SelectedTransitionIndex = -1;
 		m_TransitionFromIndex = -1;
 		m_TransitionToIndex = 0;
 	}
@@ -121,6 +159,7 @@ namespace PigeonEngine
 		m_Asset = LoadedAsset;
 		m_OpenedAssetFullPath = NormalizedAssetPath;
 		m_SelectedStateIndex = 0;
+		m_SelectedTransitionIndex = -1;
 		m_TransitionFromIndex = -1;
 		m_TransitionToIndex = 0;
 		LoadJsonBufferFromAsset();
@@ -653,6 +692,11 @@ namespace PigeonEngine
 			ImGui::Text("%s -> %s  | p%d | cond %d", *TransitionFrom, *TransitionTo
 				, Transition.Priority, Transition.Conditions.Num());
 			ImGui::SameLine();
+			if (ImGui::Button("Select"))
+			{
+				m_SelectedTransitionIndex = TransitionIndex;
+			}
+			ImGui::SameLine();
 			if (ImGui::Button("Remove"))
 			{
 				RemoveTransitionIndex = TransitionIndex;
@@ -663,7 +707,341 @@ namespace PigeonEngine
 		if (RemoveTransitionIndex >= 0)
 		{
 			DeleteTransition(RemoveTransitionIndex);
+			m_SelectedTransitionIndex = -1;
+			return;
 		}
+
+		DrawTransitionConditions(InMachine);
+	}
+
+	void EAnimStateMachineEditor::DrawTransitionConditions(const EAnimStateMachine& InMachine)
+	{
+		if (InMachine.Transitions.Num() <= 0)
+		{
+			return;
+		}
+		m_SelectedTransitionIndex = EMath::Clamp(m_SelectedTransitionIndex, -1, InMachine.Transitions.Num() - 1);
+		if (m_SelectedTransitionIndex < 0)
+		{
+			ImGui::TextDisabled("Select a transition above to edit its conditions.");
+			return;
+		}
+
+		const EAnimStateMachineTransition& Transition = InMachine.Transitions[m_SelectedTransitionIndex];
+		const EString FromName = ((Transition.FromStateIndex < 0)
+			? EString("Any") : InMachine.States[Transition.FromStateIndex].Name);
+		const EString ToName = ((Transition.ToStateIndex >= 0) && (Transition.ToStateIndex < InMachine.States.Num())
+			? InMachine.States[Transition.ToStateIndex].Name : EString("?"));
+		ImGui::Separator();
+		ImGui::Text("Conditions: %s -> %s", *FromName, *ToName);
+		if (InMachine.Parameters.Num() <= 0)
+		{
+			ImGui::TextDisabled("This machine has no parameters to test.");
+			return;
+		}
+		if (Transition.Conditions.Num() <= 0)
+		{
+			ImGui::TextDisabled("No conditions: this transition is unconditional.");
+		}
+
+		for (INT32 ConditionIndex = 0; ConditionIndex < Transition.Conditions.Num(); ConditionIndex++)
+		{
+			const EAnimStateMachineCondition& Condition = Transition.Conditions[ConditionIndex];
+			const EString ParameterName = ((Condition.ParameterIndex >= 0) && (Condition.ParameterIndex < InMachine.Parameters.Num())
+				? InMachine.Parameters[Condition.ParameterIndex].Name : EString("None"));
+			const CHAR* OpText = GetCompareOpText(Condition.Compare);
+			ImGui::PushID(ConditionIndex);
+
+			if (ImGui::BeginCombo("Param", *ParameterName))
+			{
+				INT32 NewParameterIndex = -1;
+				for (INT32 ParameterIndex = 0; ParameterIndex < InMachine.Parameters.Num(); ParameterIndex++)
+				{
+					const BOOL8 bSelected = (ParameterIndex == Condition.ParameterIndex);
+					if (ImGui::Selectable(*InMachine.Parameters[ParameterIndex].Name, bSelected))
+					{
+						NewParameterIndex = ParameterIndex;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+				if (NewParameterIndex >= 0)
+				{
+					UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex, NewParameterIndex
+						, EString(GetDefaultConditionOp(InMachine.Parameters[NewParameterIndex].Type)), 0.0f);
+					ImGui::PopID();
+					return;
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::BeginCombo("Op", OpText))
+			{
+				const CHAR* CompareOps[] = { ">", ">=", "<", "<=", "==", "!=", "trigger" };
+				EString NewOp;
+				for (const CHAR* CompareOp : CompareOps)
+				{
+					const BOOL8 bSelected = (EString(CompareOp) == EString(OpText));
+					if (ImGui::Selectable(CompareOp, bSelected))
+					{
+						NewOp = EString(CompareOp);
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+				if (NewOp.Length() > 0u)
+				{
+					UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex
+						, Condition.ParameterIndex, NewOp, Condition.Value);
+					ImGui::PopID();
+					return;
+				}
+			}
+			ImGui::SameLine();
+			FLOAT Value = Condition.Value;
+			ImGui::SetNextItemWidth(120.0f);
+			ImGui::InputFloat("Value", &Value, 0.0f, 0.0f, "%.3f");
+			if (ImGui::IsItemDeactivatedAfterEdit())
+			{
+				UpdateTransitionCondition(m_SelectedTransitionIndex, ConditionIndex
+					, Condition.ParameterIndex, EString(OpText), Value);
+				ImGui::PopID();
+				return;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Remove"))
+			{
+				RemoveTransitionCondition(m_SelectedTransitionIndex, ConditionIndex);
+				ImGui::PopID();
+				return;
+			}
+			ImGui::PopID();
+		}
+
+		if (ImGui::Button("Add Condition"))
+		{
+			AddTransitionCondition(m_SelectedTransitionIndex, 0);
+			return;
+		}
+	}
+
+	BOOL32 EAnimStateMachineEditor::AddTransitionCondition(INT32 InTransitionIndex, INT32 InParameterIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		if ((!Machine) || (InTransitionIndex < 0) || (InTransitionIndex >= Machine->Transitions.Num())
+			|| (InParameterIndex < 0) || (InParameterIndex >= Machine->Parameters.Num()))
+		{
+			m_LastError = EString("Transition or parameter index is invalid.");
+			return FALSE;
+		}
+
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
+			|| (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		{
+			m_LastError = EString("JSON transition index is invalid.");
+			return FALSE;
+		}
+		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
+		if (!Transition.IsObject())
+		{
+			m_LastError = EString("JSON transition is not an object.");
+			return FALSE;
+		}
+
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		auto ConditionsIt = Transition.FindMember("conditions");
+		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray()))
+		{
+			rapidjson::Value EmptyConditions(rapidjson::kArrayType);
+			if (ConditionsIt == Transition.MemberEnd())
+			{
+				Transition.AddMember("conditions", EmptyConditions, Allocator);
+			}
+			else
+			{
+				ConditionsIt->value.Swap(EmptyConditions);
+			}
+			ConditionsIt = Transition.FindMember("conditions");
+		}
+
+		const EAnimStateMachineParameter& Parameter = Machine->Parameters[InParameterIndex];
+		rapidjson::Value Condition(rapidjson::kObjectType);
+		Condition.AddMember("param", rapidjson::Value(*Parameter.Name, static_cast<rapidjson::SizeType>(Parameter.Name.Length()), Allocator), Allocator);
+		const CHAR* DefaultOp = GetDefaultConditionOp(Parameter.Type);
+		Condition.AddMember("op", rapidjson::Value(DefaultOp, static_cast<rapidjson::SizeType>(strlen(DefaultOp)), Allocator), Allocator);
+		Condition.AddMember("value", rapidjson::Value(0.0), Allocator);
+		ConditionsIt->value.PushBack(Condition, Allocator);
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::UpdateTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex
+		, INT32 InParameterIndex, const EString& InOp, FLOAT InValue)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		if ((!Machine) || (InTransitionIndex < 0) || (InTransitionIndex >= Machine->Transitions.Num())
+			|| (InParameterIndex < 0) || (InParameterIndex >= Machine->Parameters.Num()))
+		{
+			m_LastError = EString("Transition or parameter index is invalid.");
+			return FALSE;
+		}
+
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
+			|| (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		{
+			m_LastError = EString("JSON transition index is invalid.");
+			return FALSE;
+		}
+		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
+		auto ConditionsIt = Transition.FindMember("conditions");
+		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray())
+			|| (InConditionIndex < 0) || (InConditionIndex >= static_cast<INT32>(ConditionsIt->value.Size())))
+		{
+			m_LastError = EString("JSON condition index is invalid.");
+			return FALSE;
+		}
+		rapidjson::Value& Condition = ConditionsIt->value[InConditionIndex];
+		if (!Condition.IsObject())
+		{
+			m_LastError = EString("JSON condition is not an object.");
+			return FALSE;
+		}
+
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		const EString& ParameterName = Machine->Parameters[InParameterIndex].Name;
+		auto ParameterIt = Condition.FindMember("param");
+		if (ParameterIt == Condition.MemberEnd())
+		{
+			Condition.AddMember("param", rapidjson::Value(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator), Allocator);
+		}
+		else
+		{
+			ParameterIt->value.SetString(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator);
+		}
+		auto OpIt = Condition.FindMember("op");
+		if (OpIt == Condition.MemberEnd())
+		{
+			Condition.AddMember("op", rapidjson::Value(*InOp, static_cast<rapidjson::SizeType>(InOp.Length()), Allocator), Allocator);
+		}
+		else
+		{
+			OpIt->value.SetString(*InOp, static_cast<rapidjson::SizeType>(InOp.Length()), Allocator);
+		}
+		auto ValueIt = Condition.FindMember("value");
+		if (ValueIt == Condition.MemberEnd())
+		{
+			Condition.AddMember("value", rapidjson::Value(static_cast<double>(InValue)), Allocator);
+		}
+		else
+		{
+			ValueIt->value.SetDouble(static_cast<double>(InValue));
+		}
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::RemoveTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
+			|| (InTransitionIndex < 0) || (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		{
+			m_LastError = EString("JSON transition index is invalid.");
+			return FALSE;
+		}
+		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
+		auto ConditionsIt = Transition.FindMember("conditions");
+		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray())
+			|| (InConditionIndex < 0) || (InConditionIndex >= static_cast<INT32>(ConditionsIt->value.Size())))
+		{
+			m_LastError = EString("JSON condition index is invalid.");
+			return FALSE;
+		}
+
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		rapidjson::Value NewConditions(rapidjson::kArrayType);
+		rapidjson::Value& Conditions = ConditionsIt->value;
+		for (rapidjson::SizeType Index = 0; Index < Conditions.Size(); Index++)
+		{
+			if (static_cast<INT32>(Index) == InConditionIndex)
+			{
+				continue;
+			}
+			NewConditions.PushBack(Conditions[Index], Allocator);
+		}
+		ConditionsIt->value.Swap(NewConditions);
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = EString();
+		return TRUE;
 	}
 
 	BOOL32 EAnimStateMachineEditor::AddState(const EAnimStateMachine& InMachine)
@@ -829,6 +1207,7 @@ namespace PigeonEngine
 		ReplaceJsonBuffer(NewText);
 		m_NodePositions.Remove(DeletedStateName);
 		m_SelectedStateIndex = 0;
+		m_SelectedTransitionIndex = -1;
 		m_TransitionFromIndex = -1;
 		m_TransitionToIndex = 0;
 		m_LastError = EString();
