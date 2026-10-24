@@ -325,11 +325,25 @@ namespace PigeonEngine
 			AnimInstance->StopMontage(InBlendOutSeconds);
 		}
 	}
+	void PSkeletalMeshComponent::StopMontage(const EString& InSlotName, FLOAT InBlendOutSeconds)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->StopMontage(InSlotName, InBlendOutSeconds);
+		}
+	}
 	void PSkeletalMeshComponent::PauseMontage()
 	{
 		if (AnimInstance)
 		{
 			AnimInstance->PauseMontage();
+		}
+	}
+	void PSkeletalMeshComponent::PauseMontage(const EString& InSlotName)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->PauseMontage(InSlotName);
 		}
 	}
 	void PSkeletalMeshComponent::ResumeMontage()
@@ -339,13 +353,36 @@ namespace PigeonEngine
 			AnimInstance->ResumeMontage();
 		}
 	}
+	void PSkeletalMeshComponent::ResumeMontage(const EString& InSlotName)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->ResumeMontage(InSlotName);
+		}
+	}
 	BOOL32 PSkeletalMeshComponent::IsMontagePlaying()const
 	{
 		return (AnimInstance ? AnimInstance->IsMontagePlaying() : FALSE);
 	}
+	BOOL32 PSkeletalMeshComponent::IsMontagePlaying(const EString& InSlotName)const
+	{
+		return (AnimInstance ? AnimInstance->IsMontagePlaying(InSlotName) : FALSE);
+	}
 	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstance()const
 	{
 		return (AnimInstance ? AnimInstance->GetMontageInstance() : nullptr);
+	}
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceBySlot(const EString& InSlotName)const
+	{
+		return (AnimInstance ? AnimInstance->GetMontageInstanceBySlot(InSlotName) : nullptr);
+	}
+	INT32 PSkeletalMeshComponent::GetMontageInstanceCount()const
+	{
+		return (AnimInstance ? AnimInstance->GetMontageInstanceCount() : 0);
+	}
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstanceAt(INT32 InIndex)const
+	{
+		return (AnimInstance ? AnimInstance->GetMontageInstanceAt(InIndex) : nullptr);
 	}
 	// Montage END
 

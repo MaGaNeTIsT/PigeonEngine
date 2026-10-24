@@ -99,11 +99,22 @@ namespace PigeonEngine
 		* writes. A previously active montage is replaced.
 		*/
 		BOOL32 PlayMontage(const EAnimMontage* InMontage, const EString& InSectionName = EString(), FLOAT InPlayRate = 1.0f);
+		// Stops every active layer. Layers blend out over their section's configured time
+		// unless InBlendOutSeconds is supplied.
 		void StopMontage(FLOAT InBlendOutSeconds = -1.0f);
+		// Stops only the layer currently playing InSlotName.
+		void StopMontage(const EString& InSlotName, FLOAT InBlendOutSeconds = -1.0f);
 		void PauseMontage();
+		void PauseMontage(const EString& InSlotName);
 		void ResumeMontage();
+		void ResumeMontage(const EString& InSlotName);
 		PE_NODISCARD BOOL32 IsMontagePlaying()const;
+		PE_NODISCARD BOOL32 IsMontagePlaying(const EString& InSlotName)const;
+		// Returns the lowest-priority active layer; useful for callers that only expect one.
 		PE_NODISCARD EAnimMontageInstance* GetMontageInstance()const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceBySlot(const EString& InSlotName)const;
+		PE_NODISCARD INT32 GetMontageInstanceCount()const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceAt(INT32 InIndex)const;
 		// Montage END
 
 		/*
@@ -126,20 +137,13 @@ namespace PigeonEngine
 		virtual BOOL32 Update(FLOAT InDeltaSeconds);
 
 	private:
-		// Runtime-only link from an active state event back to its authored data. The asset
-		// owns the event; this list only tracks which ones have received Begin.
-		struct FActiveAnimNotifyState
-		{
-			const FAnimNotifyEvent* Event = nullptr;
-		};
-
 		BOOL32 BindAnimation();
 		BOOL32 PlayInternal(INT32 InClipIndex, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds);
 		void CancelCrossFade();
 		// Fires the notify events crossed by InPlayer's last Advance.
 		void DispatchNotifies(const EAnimationClipPlayer& InPlayer);
-		// Fires the current montage section's authored events over the same time window.
-		void DispatchMontageSectionNotifies();
+		// Fires a montage layer's authored section events over the same time window.
+		void DispatchMontageSectionNotifies(EAnimMontageInstance& InInstance);
 		/*
 		* Updates active state notifies by sampling the current playhead against each
 		* event's [Time, Time + StateDuration) interval. Begin fires on entry, Tick on each
@@ -151,6 +155,10 @@ namespace PigeonEngine
 			, const TArray<FAnimNotifyEvent>& InNotifies, const EAnimationClipPlayer& InPlayer
 			, BOOL32 bInAdvanced, FLOAT InDeltaSeconds);
 		void EndNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive);
+		// Ends active windows and drops every montage layer. Used by stop/asset/skeleton
+		// transitions, not by a normal blend-out.
+		void ClearAllMontages();
+		void SortMontagesByLayerPriority();
 		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
@@ -164,17 +172,15 @@ namespace PigeonEngine
 		// itself is owned by the asset manager; this object only holds parameters and the
 		// current state.
 		TUniquePtr<EAnimStateMachineInstance>	StateMachineInstance;
-		// Only one montage section is active at a time in this first version. The instance
-		// owns its clip player and compiled bone mask.
-		TUniquePtr<EAnimMontageInstance>		MontageInstance;
+		// Active montage layers, sorted by skeleton slot group priority. Each layer owns
+		// its clip player, compiled bone mask and state-window list.
+		TArray<TUniquePtr<EAnimMontageInstance>>	MontageInstances;
 		// The clip being blended out, and the pose it produced this frame. The pose array is
 		// only allocated while a crossfade is in progress.
 		EAnimationClipPlayer			PreviousClipPlayer;
 		TArray<EBoneTransform>			CrossFadePose;
-		// State notifies are tracked per timeline: the base clip and the active montage
-		// section reset independently when their clip changes.
+		// Base-clip state windows. Each montage layer owns its own list on its instance.
 		TArray<FActiveAnimNotifyState>	ActiveBaseNotifyStates;
-		TArray<FActiveAnimNotifyState>	ActiveMontageNotifyStates;
 		FLOAT							CrossFadeDuration = 0.0f;
 		FLOAT							CrossFadeRemaining = 0.0f;
 		INT32							CurrentClipIndex = -1;

@@ -115,6 +115,10 @@ namespace PigeonEngine
 		// Index of the current section's slot group in the skeleton. Higher values blend
 		// later and therefore override lower layers.
 		PE_NODISCARD INT32 GetLayerPriority()const;
+		// Per-layer state-window list. EAnimInstance owns dispatch; the instance only
+		// stores which events are open for its current timeline.
+		PE_NODISCARD TArray<FActiveAnimNotifyState>& GetActiveNotifyStates();
+		PE_NODISCARD const TArray<FActiveAnimNotifyState>& GetActiveNotifyStates()const;
 
 		// Section chaining: a finished one-shot section leaves a pending target. The caller
 		// dispatches notifies first, then applies the transition for the next advance.
@@ -136,6 +140,7 @@ namespace PigeonEngine
 		TArray<EBoneTransform>	LayerPose;
 		FLOAT					LayerWeight = 0.0f;
 		INT32					LayerPriority = 0;
+		TArray<FActiveAnimNotifyState> ActiveNotifyStates;
 		FLOAT					InstancePlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
 		FLOAT					BlendOutSeconds = 0.2f;

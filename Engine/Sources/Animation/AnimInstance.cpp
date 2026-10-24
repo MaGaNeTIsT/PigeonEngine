@@ -68,13 +68,12 @@ namespace PigeonEngine
 	void EAnimInstance::SetSkeletalMeshComponent(PSkeletalMeshComponent* InComponent)
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
-		EndNotifyStates(ActiveMontageNotifyStates);
+		ClearAllMontages();
 		Component = InComponent;
 		Binding.Unbind();
 		ClipPlayer.Reset();
 		CancelCrossFade();
 		ClearStateMachine();
-		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		bPoseDirty = ((AnimationAsset != nullptr) ? TRUE : FALSE);
 	}
@@ -87,7 +86,7 @@ namespace PigeonEngine
 	BOOL32 EAnimInstance::SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset)
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
-		EndNotifyStates(ActiveMontageNotifyStates);
+		ClearAllMontages();
 		const EAnimStateMachine* ActiveMachine = (StateMachineInstance ? StateMachineInstance->GetMachine() : nullptr);
 		const BOOL32 bKeepStateMachine = ((ActiveMachine != nullptr) && (InAnimationAsset != nullptr)
 			&& ((ActiveMachine->AnimationAssetName.Length() <= 0u)
@@ -97,7 +96,6 @@ namespace PigeonEngine
 		CurrentClipIndex = -1;
 		ClipPlayer.Reset();
 		CancelCrossFade();
-		MontageInstance.reset();
 		if (!bKeepStateMachine)
 		{
 			if (ActiveMachine)
@@ -234,10 +232,9 @@ namespace PigeonEngine
 	void EAnimInstance::Stop()
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
-		EndNotifyStates(ActiveMontageNotifyStates);
+		ClearAllMontages();
 		ClipPlayer.Reset();
 		CancelCrossFade();
-		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		bPoseDirty = TRUE;
 	}
@@ -352,62 +349,186 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		// Replacing a montage closes its open windows before the old instance is dropped.
-		EndNotifyStates(ActiveMontageNotifyStates);
-		MontageInstance = EMemory::MakeUnique<EAnimMontageInstance>();
-		if (!MontageInstance)
+		TUniquePtr<EAnimMontageInstance> NewInstance = EMemory::MakeUnique<EAnimMontageInstance>();
+		if (!NewInstance)
 		{
 			return FALSE;
 		}
-		if (!MontageInstance->SetMontage(InMontage, InSectionName, Binding.GetSkeleton(), Binding.GetAnimation(), InPlayRate))
+		if (!NewInstance->SetMontage(InMontage, InSectionName, Binding.GetSkeleton(), Binding.GetAnimation(), InPlayRate))
 		{
-			MontageInstance.reset();
 			return FALSE;
 		}
+		const EAnimMontageSection* NewSection = NewInstance->GetCurrentSection();
+		if (!NewSection)
+		{
+			return FALSE;
+		}
+
+		// A slot can only host one montage. Replace the layer with the same current slot;
+		// other slots remain stacked.
+		for (INT32 Index = MontageInstances.Num() - 1; Index >= 0; Index--)
+		{
+			EAnimMontageInstance* Existing = MontageInstances[Index].get();
+			const EAnimMontageSection* ExistingSection = (Existing ? Existing->GetCurrentSection() : nullptr);
+			if ((ExistingSection) && (ExistingSection->SlotName == NewSection->SlotName))
+			{
+				EndNotifyStates(Existing->GetActiveNotifyStates());
+				MontageInstances.RemoveAt(Index);
+			}
+		}
+
+		MontageInstances.Add(static_cast<TUniquePtr<EAnimMontageInstance>&&>(NewInstance));
+		SortMontagesByLayerPriority();
 		bPoseDirty = TRUE;
 		return TRUE;
 	}
 
 	void EAnimInstance::StopMontage(FLOAT InBlendOutSeconds)
 	{
-		if (MontageInstance)
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
-			// A stop closes the windows immediately; the pose can still blend out.
-			EndNotifyStates(ActiveMontageNotifyStates);
-			MontageInstance->Stop(InBlendOutSeconds);
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			if (Montage)
+			{
+				// A stop closes the windows immediately; the pose can still blend out.
+				EndNotifyStates(Montage->GetActiveNotifyStates());
+				Montage->Stop(InBlendOutSeconds);
+			}
+		}
+	}
+
+	void EAnimInstance::StopMontage(const EString& InSlotName, FLOAT InBlendOutSeconds)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			const EAnimMontageSection* Section = (Montage ? Montage->GetCurrentSection() : nullptr);
+			if ((Section) && (Section->SlotName == InSlotName))
+			{
+				EndNotifyStates(Montage->GetActiveNotifyStates());
+				Montage->Stop(InBlendOutSeconds);
+			}
 		}
 	}
 
 	void EAnimInstance::PauseMontage()
 	{
-		if (MontageInstance)
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
-			MontageInstance->Pause();
+			if (MontageInstances[Index])
+			{
+				MontageInstances[Index]->Pause();
+			}
+		}
+	}
+
+	void EAnimInstance::PauseMontage(const EString& InSlotName)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			const EAnimMontageSection* Section = (Montage ? Montage->GetCurrentSection() : nullptr);
+			if ((Section) && (Section->SlotName == InSlotName))
+			{
+				Montage->Pause();
+			}
 		}
 	}
 
 	void EAnimInstance::ResumeMontage()
 	{
-		if (MontageInstance)
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
-			MontageInstance->Resume();
+			if (MontageInstances[Index])
+			{
+				MontageInstances[Index]->Resume();
+			}
+		}
+	}
+
+	void EAnimInstance::ResumeMontage(const EString& InSlotName)
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			const EAnimMontageSection* Section = (Montage ? Montage->GetCurrentSection() : nullptr);
+			if ((Section) && (Section->SlotName == InSlotName))
+			{
+				Montage->Resume();
+			}
 		}
 	}
 
 	BOOL32 EAnimInstance::IsMontagePlaying()const
 	{
-		return ((MontageInstance && MontageInstance->IsPlaying()) ? TRUE : FALSE);
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if ((MontageInstances[Index]) && (MontageInstances[Index]->IsPlaying()))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	BOOL32 EAnimInstance::IsMontagePlaying(const EString& InSlotName)const
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			const EAnimMontageSection* Section = (Montage ? Montage->GetCurrentSection() : nullptr);
+			if ((Section) && (Section->SlotName == InSlotName) && (Montage->IsPlaying()))
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 
 	EAnimMontageInstance* EAnimInstance::GetMontageInstance()const
 	{
-		return MontageInstance.get();
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if (MontageInstances[Index])
+			{
+				return MontageInstances[Index].get();
+			}
+		}
+		return nullptr;
+	}
+
+	EAnimMontageInstance* EAnimInstance::GetMontageInstanceBySlot(const EString& InSlotName)const
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			const EAnimMontageSection* Section = (Montage ? Montage->GetCurrentSection() : nullptr);
+			if ((Section) && (Section->SlotName == InSlotName))
+			{
+				return Montage;
+			}
+		}
+		return nullptr;
+	}
+
+	INT32 EAnimInstance::GetMontageInstanceCount()const
+	{
+		return MontageInstances.Num();
+	}
+
+	EAnimMontageInstance* EAnimInstance::GetMontageInstanceAt(INT32 InIndex)const
+	{
+		if ((InIndex < 0) || (InIndex >= MontageInstances.Num()))
+		{
+			return nullptr;
+		}
+		return MontageInstances[InIndex].get();
 	}
 
 	void EAnimInstance::OnSkeletonChanged()
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
-		EndNotifyStates(ActiveMontageNotifyStates);
+		ClearAllMontages();
 		const BOOL32 bWasPlaying = ClipPlayer.IsPlaying();
 		const INT32 PreviousClipIndex = CurrentClipIndex;
 		const FLOAT PreviousPositionSeconds = ClipPlayer.GetPositionSeconds();
@@ -417,7 +538,6 @@ namespace PigeonEngine
 		Binding.Unbind();
 		ClipPlayer.Reset();
 		CancelCrossFade();
-		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		// A component that has no animation asset yet must not touch the bone pool: the
 		// editor preview writes its own pose into that pool, and an unconditional reset here
@@ -480,7 +600,7 @@ namespace PigeonEngine
 		const BOOL32 bCrossFading = ((CrossFadeRemaining > 0.0f) && (PreviousClipPlayer.GetClip() != nullptr)) ? TRUE : FALSE;
 		const BOOL32 bAdvancing = ((ClipPlayer.IsPlaying()) && (ClipPlayer.GetClip() != nullptr)) ? TRUE : FALSE;
 		const BOOL32 bPreviousAdvancing = ((bCrossFading) && (PreviousClipPlayer.IsPlaying())) ? TRUE : FALSE;
-		const BOOL32 bMontageActive = ((MontageInstance != nullptr) ? TRUE : FALSE);
+		const BOOL32 bMontageActive = ((!MontageInstances.IsEmpty()) ? TRUE : FALSE);
 		if ((!bAdvancing) && (!bPreviousAdvancing) && (!bMontageActive) && (!bPoseDirty))
 		{
 			return FALSE;
@@ -488,8 +608,15 @@ namespace PigeonEngine
 		// A zero delta cannot move a playing clip. Skip the resample unless something else
 		// already asked for a new pose (the first frame after Play, a seek, an asset swap).
 		// A queued montage section transition also has to run even on a zero-delta frame.
-		const BOOL32 bMontageTransitionPending = ((MontageInstance
-			&& MontageInstance->HasPendingSectionTransition()) ? TRUE : FALSE);
+		BOOL32 bMontageTransitionPending = FALSE;
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if ((MontageInstances[Index]) && (MontageInstances[Index]->HasPendingSectionTransition()))
+			{
+				bMontageTransitionPending = TRUE;
+				break;
+			}
+		}
 		if ((!bPoseDirty) && (InDeltaSeconds == 0.0f) && (!bMontageTransitionPending))
 		{
 			return FALSE;
@@ -547,15 +674,22 @@ namespace PigeonEngine
 			}
 		}
 
-		BOOL32 bMontageAlive = FALSE;
-		if (MontageInstance)
+		// Layers are ordered from base to highest; each Evaluate() blends its masked bones
+		// onto the pose produced by the previous layer.
+		TArray<BOOL32> MontageAliveFlags;
+		MontageAliveFlags.SetNum(MontageInstances.Num());
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
 		{
-			bMontageAlive = MontageInstance->Update(*this, InDeltaSeconds);
-			if (bMontageAlive)
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			if (!Montage)
 			{
-				// The montage layer is sampled from the current pose and blended back with its
-				// bone mask, so bones outside the mask keep the base/state-machine pose.
-				MontageInstance->Evaluate(*this, Binding, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
+				MontageAliveFlags[Index] = FALSE;
+				continue;
+			}
+			MontageAliveFlags[Index] = Montage->Update(*this, InDeltaSeconds);
+			if (MontageAliveFlags[Index])
+			{
+				Montage->Evaluate(*this, Binding, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
 			}
 		}
 
@@ -570,32 +704,55 @@ namespace PigeonEngine
 			}
 			DispatchNotifies(ClipPlayer);
 		}
-		if (MontageInstance)
+		BOOL32 bMontageOrderDirty = FALSE;
+		const INT32 NotifyPassCount = MontageAliveFlags.Num();
+		for (INT32 Index = 0; (Index < NotifyPassCount) && (Index < MontageInstances.Num()); Index++)
 		{
-			const EAnimMontageSection* MontageSection = MontageInstance->GetCurrentSection();
-			if ((!bMontageAlive) || (MontageInstance->IsStopping()))
+			EAnimMontageInstance* Montage = MontageInstances[Index].get();
+			if (!Montage)
 			{
-				EndNotifyStates(ActiveMontageNotifyStates);
+				continue;
 			}
-			else if ((MontageSection) && (MontageInstance->IsPlaying()))
+			const EAnimMontageSection* MontageSection = Montage->GetCurrentSection();
+			if ((!MontageAliveFlags[Index]) || (Montage->IsStopping()))
 			{
-				UpdateNotifyStates(ActiveMontageNotifyStates, MontageSection->Notifies
-					, MontageInstance->GetClipPlayer(), TRUE, InDeltaSeconds);
+				EndNotifyStates(Montage->GetActiveNotifyStates());
 			}
-			DispatchNotifies(MontageInstance->GetClipPlayer());
-			DispatchMontageSectionNotifies();
+			else if ((MontageSection) && (Montage->IsPlaying()))
+			{
+				UpdateNotifyStates(Montage->GetActiveNotifyStates(), MontageSection->Notifies
+					, Montage->GetClipPlayer(), TRUE, InDeltaSeconds);
+			}
+			DispatchNotifies(Montage->GetClipPlayer());
+			DispatchMontageSectionNotifies(*Montage);
 			// The section's final notify window is consumed above; only now is it safe to
 			// reset the clip time for the chained section.
-			if (MontageInstance->HasPendingSectionTransition())
+			if (Montage->HasPendingSectionTransition())
 			{
 				// The chained section has its own timeline; close the old windows first.
-				EndNotifyStates(ActiveMontageNotifyStates);
-				MontageInstance->ApplyPendingSectionTransition();
+				EndNotifyStates(Montage->GetActiveNotifyStates());
+				Montage->ApplyPendingSectionTransition();
+				bMontageOrderDirty = TRUE;
 			}
-			if (!bMontageAlive)
+		}
+		// Remove finished layers after every callback has seen this frame. A notify that
+		// starts or stops a montage can change the list; bounds checks keep the pass safe,
+		// and newly added layers are picked up next frame.
+		for (INT32 Index = NotifyPassCount - 1; Index >= 0; Index--)
+		{
+			if ((Index >= MontageInstances.Num()) || (MontageAliveFlags[Index]))
 			{
-				MontageInstance.reset();
+				continue;
 			}
+			if (MontageInstances[Index])
+			{
+				EndNotifyStates(MontageInstances[Index]->GetActiveNotifyStates());
+			}
+			MontageInstances.RemoveAt(Index);
+		}
+		if (bMontageOrderDirty)
+		{
+			SortMontagesByLayerPriority();
 		}
 		bPoseDirty = FALSE;
 		return TRUE;
@@ -613,21 +770,46 @@ namespace PigeonEngine
 			, InPlayer.GetClipDurationSeconds(), InPlayer.HasLoopedLastAdvance());
 	}
 
-	void EAnimInstance::DispatchMontageSectionNotifies()
+	void EAnimInstance::DispatchMontageSectionNotifies(EAnimMontageInstance& InInstance)
 	{
-		if (!MontageInstance)
-		{
-			return;
-		}
-		const EAnimMontageSection* Section = MontageInstance->GetCurrentSection();
+		const EAnimMontageSection* Section = InInstance.GetCurrentSection();
 		if ((!Section) || (Section->Notifies.Num() <= 0))
 		{
 			return;
 		}
-		const EAnimationClipPlayer& Player = MontageInstance->GetClipPlayer();
+		const EAnimationClipPlayer& Player = InInstance.GetClipPlayer();
 		DispatchNotifyEventList(*this, Section->Notifies
 			, Player.GetPreviousPositionSeconds(), Player.GetPositionSeconds()
 			, Player.GetClipDurationSeconds(), Player.HasLoopedLastAdvance());
+	}
+
+	void EAnimInstance::ClearAllMontages()
+	{
+		for (INT32 Index = 0; Index < MontageInstances.Num(); Index++)
+		{
+			if (MontageInstances[Index])
+			{
+				EndNotifyStates(MontageInstances[Index]->GetActiveNotifyStates());
+			}
+		}
+		MontageInstances.Empty();
+	}
+
+	void EAnimInstance::SortMontagesByLayerPriority()
+	{
+		// Stable so two montages in the same slot group keep their insertion order.
+		MontageInstances.StableSort([](const TUniquePtr<EAnimMontageInstance>& InA, const TUniquePtr<EAnimMontageInstance>& InB) -> bool
+			{
+				if (!InA)
+				{
+					return false;
+				}
+				if (!InB)
+				{
+					return true;
+				}
+				return (InA->GetLayerPriority() < InB->GetLayerPriority());
+			});
 	}
 
 	void EAnimInstance::UpdateNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive
