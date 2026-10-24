@@ -6,6 +6,7 @@
 
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #include <Base/DataStructure/Text/Path.h>
+#include <Editor/EditorLogManager.h>
 #include <RapidJson/Headers/JsonObject.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
@@ -37,6 +38,45 @@ namespace PigeonEngine
 				return "Unknown";
 			}
 		}
+
+		EString GetJsonStringField(const rapidjson::Value& InObject, const CHAR* InFieldName)
+		{
+			if (!InObject.IsObject())
+			{
+				return EString();
+			}
+			auto It = InObject.FindMember(InFieldName);
+			if ((It != InObject.MemberEnd()) && (It->value.IsString()))
+			{
+				return EString(It->value.GetString());
+			}
+			return EString();
+		}
+
+		BOOL32 JsonStateNameExists(const rapidjson::Value& InStates, const EString& InName)
+		{
+			if (!InStates.IsArray())
+			{
+				return FALSE;
+			}
+			for (auto& State : InStates.GetArray())
+			{
+				if (GetJsonStringField(State, "name") == InName)
+				{
+					return TRUE;
+				}
+			}
+			return FALSE;
+		}
+
+		BOOL32 SerializeJsonDocument(const rapidjson::Document& InDocument, EString& OutText)
+		{
+			rapidjson::StringBuffer Buffer;
+			rapidjson::Writer<rapidjson::StringBuffer> Writer(Buffer);
+			InDocument.Accept(Writer);
+			OutText = EString(Buffer.GetString());
+			return TRUE;
+		}
 	}
 
 	void EAnimStateMachineEditor::EditorInit()
@@ -47,6 +87,9 @@ namespace PigeonEngine
 		m_LastError = EString();
 		m_JsonBuffer.Empty();
 		m_NodePositions.Empty();
+		m_SelectedStateIndex = 0;
+		m_TransitionFromIndex = -1;
+		m_TransitionToIndex = 0;
 	}
 
 	void EAnimStateMachineEditor::OpenStateMachineAsset(const EString& InAssetFullPath)
@@ -77,6 +120,9 @@ namespace PigeonEngine
 
 		m_Asset = LoadedAsset;
 		m_OpenedAssetFullPath = NormalizedAssetPath;
+		m_SelectedStateIndex = 0;
+		m_TransitionFromIndex = -1;
+		m_TransitionToIndex = 0;
 		LoadJsonBufferFromAsset();
 		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
 		if (Machine)
@@ -170,6 +216,7 @@ namespace PigeonEngine
 					ImGui::Text("States: %d  Parameters: %d  Transitions: %d",
 						Machine->States.Num(), Machine->Parameters.Num(), Machine->Transitions.Num());
 
+					DrawStructureControls(*Machine);
 					ImGui::Separator();
 					ImGui::TextDisabled("Drag nodes to move them; Apply/Save writes nodeX/nodeY into the JSON.");
 					ImGui::BeginChild("StateMachineGraph", ImVec2(0.0f, 340.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -481,6 +528,480 @@ namespace PigeonEngine
 		if (Updated.Length() > 0u)
 		{
 			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(Length), *Updated, Updated.Length());
+		}
+	}
+
+	void EAnimStateMachineEditor::DrawStructureControls(const EAnimStateMachine& InMachine)
+	{
+		if (InMachine.States.Num() <= 0)
+		{
+			ImGui::TextDisabled("No states; fix the JSON before adding one.");
+			return;
+		}
+
+		m_SelectedStateIndex = EMath::Clamp(m_SelectedStateIndex, 0, InMachine.States.Num() - 1);
+		const EString& SelectedStateName = InMachine.States[m_SelectedStateIndex].Name;
+
+		if (ImGui::Button("Add State"))
+		{
+			AddState(InMachine);
+			// The live States array may have been rebuilt; stop using this frame's
+			// references and redraw from the new graph next frame.
+			return;
+		}
+		ImGui::SameLine();
+		if (ImGui::BeginCombo("Selected State", *SelectedStateName))
+		{
+			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
+			{
+				const BOOL8 bSelected = (StateIndex == m_SelectedStateIndex);
+				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
+				{
+					m_SelectedStateIndex = StateIndex;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Set Entry"))
+		{
+			SetEntryState(SelectedStateName);
+			return;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Delete State"))
+		{
+			if (InMachine.States.Num() <= 1)
+			{
+				m_LastError = EString("Cannot delete the last state.");
+			}
+			else
+			{
+				DeleteState(SelectedStateName);
+			}
+			return;
+		}
+
+		m_TransitionFromIndex = EMath::Clamp(m_TransitionFromIndex, -1, InMachine.States.Num() - 1);
+		m_TransitionToIndex = EMath::Clamp(m_TransitionToIndex, 0, InMachine.States.Num() - 1);
+		const EString FromLabel = ((m_TransitionFromIndex < 0) ? EString("Any") : InMachine.States[m_TransitionFromIndex].Name);
+		if (ImGui::BeginCombo("From", *FromLabel))
+		{
+			const BOOL8 bAnySelected = (m_TransitionFromIndex < 0);
+			if (ImGui::Selectable("Any", bAnySelected))
+			{
+				m_TransitionFromIndex = -1;
+			}
+			if (bAnySelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
+			{
+				const BOOL8 bSelected = (StateIndex == m_TransitionFromIndex);
+				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
+				{
+					m_TransitionFromIndex = StateIndex;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		const EString& ToLabel = InMachine.States[m_TransitionToIndex].Name;
+		if (ImGui::BeginCombo("To", *ToLabel))
+		{
+			for (INT32 StateIndex = 0; StateIndex < InMachine.States.Num(); StateIndex++)
+			{
+				const BOOL8 bSelected = (StateIndex == m_TransitionToIndex);
+				if (ImGui::Selectable(*InMachine.States[StateIndex].Name, bSelected))
+				{
+					m_TransitionToIndex = StateIndex;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Add Transition"))
+		{
+			const EString FromName = ((m_TransitionFromIndex < 0) ? EString() : InMachine.States[m_TransitionFromIndex].Name);
+			AddTransition(FromName, InMachine.States[m_TransitionToIndex].Name);
+			return;
+		}
+
+		ImGui::BeginChild("TransitionList", ImVec2(0.0f, 100.0f), true);
+		INT32 RemoveTransitionIndex = -1;
+		for (INT32 TransitionIndex = 0; TransitionIndex < InMachine.Transitions.Num(); TransitionIndex++)
+		{
+			const EAnimStateMachineTransition& Transition = InMachine.Transitions[TransitionIndex];
+			const EString TransitionFrom = ((Transition.FromStateIndex < 0)
+				? EString("Any") : InMachine.States[Transition.FromStateIndex].Name);
+			const EString TransitionTo = ((Transition.ToStateIndex >= 0) && (Transition.ToStateIndex < InMachine.States.Num())
+				? InMachine.States[Transition.ToStateIndex].Name : EString("?"));
+			ImGui::PushID(TransitionIndex);
+			ImGui::Text("%s -> %s  | p%d | cond %d", *TransitionFrom, *TransitionTo
+				, Transition.Priority, Transition.Conditions.Num());
+			ImGui::SameLine();
+			if (ImGui::Button("Remove"))
+			{
+				RemoveTransitionIndex = TransitionIndex;
+			}
+			ImGui::PopID();
+		}
+		ImGui::EndChild();
+		if (RemoveTransitionIndex >= 0)
+		{
+			DeleteTransition(RemoveTransitionIndex);
+		}
+	}
+
+	BOOL32 EAnimStateMachineEditor::AddState(const EAnimStateMachine& InMachine)
+	{
+		if ((!m_Asset) || (InMachine.States.Num() <= 0))
+		{
+			m_LastError = EString("Cannot add a state to an empty machine.");
+			return FALSE;
+		}
+
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto StatesIt = Doc.FindMember("states");
+		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		{
+			m_LastError = EString("JSON has no states array.");
+			return FALSE;
+		}
+		rapidjson::Value& States = StatesIt->value;
+		INT32 Suffix = static_cast<INT32>(States.Size());
+		EString NewName;
+		do
+		{
+			NewName = EString("State") + ToString(Suffix++);
+		} while (JsonStateNameExists(States, NewName));
+
+		EString ClipName;
+		if (States.Size() > 0)
+		{
+			ClipName = GetJsonStringField(States[0], "clip");
+		}
+
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		rapidjson::Value State(rapidjson::kObjectType);
+		State.AddMember("name", rapidjson::Value(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator), Allocator);
+		State.AddMember("clip", rapidjson::Value(*ClipName, static_cast<rapidjson::SizeType>(ClipName.Length()), Allocator), Allocator);
+		State.AddMember("loop", rapidjson::Value("Repeat", 6, Allocator), Allocator);
+		State.AddMember("rate", rapidjson::Value(1.0), Allocator);
+		State.AddMember("blend", rapidjson::Value(0.2), Allocator);
+		States.PushBack(State, Allocator);
+
+		auto EntryIt = Doc.FindMember("entry");
+		if ((States.Size() == 1) && ((EntryIt == Doc.MemberEnd()) || (GetJsonStringField(Doc, "entry").Length() == 0u)))
+		{
+			if (EntryIt == Doc.MemberEnd())
+			{
+				Doc.AddMember("entry", rapidjson::Value(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator), Allocator);
+			}
+			else
+			{
+				EntryIt->value.SetString(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator);
+			}
+		}
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		const EAnimStateMachine* Rebuilt = m_Asset->GetStoragedResource();
+		m_SelectedStateIndex = (Rebuilt ? Rebuilt->FindState(NewName) : 0);
+		m_TransitionFromIndex = -1;
+		m_TransitionToIndex = 0;
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::DeleteState(const EString& InStateName)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		if ((!Machine) || (Machine->States.Num() <= 1))
+		{
+			m_LastError = EString("Cannot delete the last state.");
+			return FALSE;
+		}
+		// The input may alias an element of Machine->States; keep a value copy because the
+		// rebuild replaces that array before we touch the name again.
+		const EString DeletedStateName = InStateName;
+
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto StatesIt = Doc.FindMember("states");
+		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		{
+			m_LastError = EString("JSON has no states array.");
+			return FALSE;
+		}
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		rapidjson::Value NewStates(rapidjson::kArrayType);
+		for (auto& State : StatesIt->value.GetArray())
+		{
+			if (GetJsonStringField(State, "name") != DeletedStateName)
+			{
+				NewStates.PushBack(State, Allocator);
+			}
+		}
+		StatesIt->value.Swap(NewStates);
+
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt != Doc.MemberEnd()) && (TransitionsIt->value.IsArray()))
+		{
+			rapidjson::Value NewTransitions(rapidjson::kArrayType);
+			for (auto& Transition : TransitionsIt->value.GetArray())
+			{
+				if ((GetJsonStringField(Transition, "from") == DeletedStateName)
+					|| (GetJsonStringField(Transition, "to") == DeletedStateName))
+				{
+					continue;
+				}
+				NewTransitions.PushBack(Transition, Allocator);
+			}
+			TransitionsIt->value.Swap(NewTransitions);
+		}
+
+		const EString EntryName = GetJsonStringField(Doc, "entry");
+		if ((EntryName == DeletedStateName) || (EntryName.Length() == 0u))
+		{
+			EString FirstStateName;
+			if ((StatesIt->value.IsArray()) && (StatesIt->value.Size() > 0))
+			{
+				FirstStateName = GetJsonStringField(StatesIt->value[0], "name");
+			}
+			auto EntryIt = Doc.FindMember("entry");
+			if (FirstStateName.Length() > 0u)
+			{
+				if (EntryIt == Doc.MemberEnd())
+				{
+					Doc.AddMember("entry", rapidjson::Value(*FirstStateName, static_cast<rapidjson::SizeType>(FirstStateName.Length()), Allocator), Allocator);
+				}
+				else
+				{
+					EntryIt->value.SetString(*FirstStateName, static_cast<rapidjson::SizeType>(FirstStateName.Length()), Allocator);
+				}
+			}
+		}
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_NodePositions.Remove(DeletedStateName);
+		m_SelectedStateIndex = 0;
+		m_TransitionFromIndex = -1;
+		m_TransitionToIndex = 0;
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::AddTransition(const EString& InFromStateName, const EString& InToStateName)
+	{
+		if ((!m_Asset) || (InToStateName.Length() <= 0u))
+		{
+			m_LastError = EString("A transition needs a target state.");
+			return FALSE;
+		}
+
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray()))
+		{
+			rapidjson::Value EmptyTransitions(rapidjson::kArrayType);
+			if (TransitionsIt == Doc.MemberEnd())
+			{
+				Doc.AddMember("transitions", EmptyTransitions, Allocator);
+			}
+			else
+			{
+				TransitionsIt->value.Swap(EmptyTransitions);
+			}
+			TransitionsIt = Doc.FindMember("transitions");
+		}
+
+		rapidjson::Value Conditions(rapidjson::kArrayType);
+		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
+		if (Machine)
+		{
+			for (INT32 ParameterIndex = 0; ParameterIndex < Machine->Parameters.Num(); ParameterIndex++)
+			{
+				if (Machine->Parameters[ParameterIndex].Type != ANIM_PARAM_FLOAT)
+				{
+					continue;
+				}
+				const EString& ParameterName = Machine->Parameters[ParameterIndex].Name;
+				rapidjson::Value Condition(rapidjson::kObjectType);
+				Condition.AddMember("param", rapidjson::Value(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator), Allocator);
+				Condition.AddMember("op", rapidjson::Value(">", 1, Allocator), Allocator);
+				Condition.AddMember("value", rapidjson::Value(1000000000.0), Allocator);
+				Conditions.PushBack(Condition, Allocator);
+				break;
+			}
+		}
+
+		const BOOL32 bHasDefaultCondition = ((Conditions.Size() > 0) ? TRUE : FALSE);
+		rapidjson::Value Transition(rapidjson::kObjectType);
+		Transition.AddMember("from", rapidjson::Value(*InFromStateName, static_cast<rapidjson::SizeType>(InFromStateName.Length()), Allocator), Allocator);
+		Transition.AddMember("to", rapidjson::Value(*InToStateName, static_cast<rapidjson::SizeType>(InToStateName.Length()), Allocator), Allocator);
+		Transition.AddMember("priority", rapidjson::Value(0), Allocator);
+		Transition.AddMember("blend", rapidjson::Value(0.2), Allocator);
+		Transition.AddMember("conditions", Conditions, Allocator);
+		TransitionsIt->value.PushBack(Transition, Allocator);
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = ((bHasDefaultCondition) ? EString() : EString("Transition added without conditions; edit the JSON before it runs."));
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::DeleteTransition(INT32 InTransitionIndex)
+	{
+		if (!m_Asset)
+		{
+			return FALSE;
+		}
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		auto TransitionsIt = Doc.FindMember("transitions");
+		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
+			|| (InTransitionIndex < 0) || (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		{
+			m_LastError = EString("Transition index is invalid.");
+			return FALSE;
+		}
+
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		rapidjson::Value NewTransitions(rapidjson::kArrayType);
+		rapidjson::Value& Transitions = TransitionsIt->value;
+		for (rapidjson::SizeType Index = 0; Index < Transitions.Size(); Index++)
+		{
+			if (static_cast<INT32>(Index) == InTransitionIndex)
+			{
+				continue;
+			}
+			NewTransitions.PushBack(Transitions[Index], Allocator);
+		}
+		TransitionsIt->value.Swap(NewTransitions);
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	BOOL32 EAnimStateMachineEditor::SetEntryState(const EString& InStateName)
+	{
+		if ((!m_Asset) || (InStateName.Length() <= 0u))
+		{
+			m_LastError = EString("No entry state selected.");
+			return FALSE;
+		}
+		rapidjson::Document Doc;
+		Doc.Parse(m_JsonBuffer.GetData());
+		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		{
+			m_LastError = EString("JSON cannot be parsed.");
+			return FALSE;
+		}
+		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
+		auto EntryIt = Doc.FindMember("entry");
+		if (EntryIt == Doc.MemberEnd())
+		{
+			Doc.AddMember("entry", rapidjson::Value(*InStateName, static_cast<rapidjson::SizeType>(InStateName.Length()), Allocator), Allocator);
+		}
+		else
+		{
+			EntryIt->value.SetString(*InStateName, static_cast<rapidjson::SizeType>(InStateName.Length()), Allocator);
+		}
+
+		EString NewText;
+		EString Error;
+		SerializeJsonDocument(Doc, NewText);
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		{
+			m_LastError = Error;
+			return FALSE;
+		}
+		ReplaceJsonBuffer(NewText);
+		m_LastError = EString();
+		return TRUE;
+	}
+
+	void EAnimStateMachineEditor::ReplaceJsonBuffer(const EString& InJsonText)
+	{
+		m_JsonBuffer.Empty();
+		const INT32 Length = static_cast<INT32>(InJsonText.Length()) + StateMachineEditorBufferHeadroom + 1;
+		m_JsonBuffer.SetNum(Length);
+		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(Length));
+		if (InJsonText.Length() > 0u)
+		{
+			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(Length), *InJsonText, InJsonText.Length());
 		}
 	}
 
