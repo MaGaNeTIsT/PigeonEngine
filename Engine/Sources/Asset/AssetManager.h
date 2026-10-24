@@ -12,6 +12,7 @@ namespace PigeonEngine
 	class EAnimStateMachineEditor;
 	class EAnimMontageEditor;
 	class EAnimNotifyEditor;
+	class ESkeletonSlotGroupEditor;
 	class EMeshEditor;
 
 
@@ -91,6 +92,7 @@ namespace PigeonEngine
 		EAnimStateMachineEditor*     StateMachineEditor = nullptr;
 		EAnimMontageEditor*          MontageEditor = nullptr;
 		EAnimNotifyEditor*           NotifyEditor = nullptr;
+		ESkeletonSlotGroupEditor*    SkeletonSlotEditor = nullptr;
 		EMeshEditor*                 MeshEditor = nullptr;
 
 
