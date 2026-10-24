@@ -9,7 +9,9 @@
 namespace PigeonEngine
 {
 
+	class EAnimMontage;
 	class EAnimMontageAsset;
+	class ESkeletonAnimationAsset;
 
 	/*
 	* First-pass montage editor: slot groups, sections, chaining and notifies are authored as
@@ -26,13 +28,16 @@ namespace PigeonEngine
 
 	private:
 		void LoadJsonBufferFromAsset();
+		void DrawTimeline(const EAnimMontage& InMontage);
 
 	private:
-		BOOL8						m_ShowEditor = FALSE;
-		const EAnimMontageAsset*	m_Asset = nullptr;
-		EString						m_OpenedAssetFullPath;
-		EString						m_LastError;
-		TArray<CHAR>				m_JsonBuffer;
+		BOOL8							m_ShowEditor = FALSE;
+		const EAnimMontageAsset*		m_Asset = nullptr;
+		// Loaded on demand for clip durations; the timeline still works without it.
+		const ESkeletonAnimationAsset*	m_AnimationAsset = nullptr;
+		EString							m_OpenedAssetFullPath;
+		EString							m_LastError;
+		TArray<CHAR>					m_JsonBuffer;
 	};
 
 }
