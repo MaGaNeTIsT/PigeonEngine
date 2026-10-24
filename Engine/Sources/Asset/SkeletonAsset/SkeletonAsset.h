@@ -427,6 +427,9 @@ namespace PigeonEngine
 		*/
 		BOOL32	RequireLoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAsset*& OutSkeletonAsset
 			, const FAssetImportSource* InImportSource = nullptr, EAssetLoadCompleteType InOnLoadComplete = nullptr);
+		// Editor: writes the live skeleton resource back to its PAsset after edits such as
+		// slot group changes.
+		BOOL32	SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
 	private:
 		void	ClearSkeletons();
 		// Releases every asset this manager caches. Shared by ShutDown and Uninit so the two
@@ -434,7 +437,6 @@ namespace PigeonEngine
 		void	ReleaseAllAssets();
 	private:
 		ESkeletonAsset* LoadSkeletonAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
-		BOOL32 SaveSkeletonAsset(const EString& InSavePath, const EString& InSaveName, const ESkeletonAsset* InSkeletonAsset);
 		ESkeleton* LoadSkeletonResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad = FALSE);
 		BOOL32 SaveSkeletonResource(const EString& InSavePath, const EString& InSaveName, const ESkeleton* InSkeletonResource);
 	private:

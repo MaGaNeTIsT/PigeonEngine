@@ -5,6 +5,7 @@
 #include "Editor/AnimationMontageEditor/AnimationMontageEditor.h"
 #include "Editor/AnimationNotifyEditor/AnimationNotifyEditor.h"
 #include "Editor/AnimationStateMachineEditor/AnimationStateMachineEditor.h"
+#include "Editor/SkeletonSlotGroupEditor/SkeletonSlotGroupEditor.h"
 #include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
 
@@ -198,6 +199,11 @@ namespace PigeonEngine
 			delete NotifyEditor;
 			NotifyEditor = nullptr;
 		}
+		if (SkeletonSlotEditor)
+		{
+			delete SkeletonSlotEditor;
+			SkeletonSlotEditor = nullptr;
+		}
 		if (MeshEditor)
 		{
 			delete MeshEditor;
@@ -254,6 +260,11 @@ namespace PigeonEngine
 		{
 			NotifyEditor = new EAnimNotifyEditor();
 			NotifyEditor->EditorInit();
+		}
+		if (!SkeletonSlotEditor)
+		{
+			SkeletonSlotEditor = new ESkeletonSlotGroupEditor();
+			SkeletonSlotEditor->EditorInit();
 		}
 		if (!MeshEditor)
 		{
@@ -387,6 +398,10 @@ namespace PigeonEngine
 		{
 			NotifyEditor->EditorUpdate();
 		}
+		if (SkeletonSlotEditor)
+		{
+			SkeletonSlotEditor->EditorUpdate();
+		}
 		if (MeshEditor)
 		{
 			MeshEditor->EditorUpdate();
@@ -458,6 +473,14 @@ namespace PigeonEngine
 							if (ImGui::Button("Open Notify Editor"))
 							{
 								NotifyEditor->OpenNotifyAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Edit Slot Groups"))
+							{
+								SkeletonSlotEditor->OpenSkeletonAsset(SelectedFile->GetPath());
 							}
 						}
 						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
@@ -535,6 +558,10 @@ namespace PigeonEngine
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
 								NotifyEditor->OpenNotifyAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								SkeletonSlotEditor->OpenSkeletonAsset(elem->GetPath());
 							}
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
