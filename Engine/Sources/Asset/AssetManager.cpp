@@ -569,6 +569,10 @@ namespace PigeonEngine
 			{
 				return "AnimStateMachine";
 			}
+		case ASSET_TYPE_ANIM_MONTAGE	:
+			{
+				return "AnimMontage";
+			}
 		case ASSET_TYPE_COUNT	:
 			{
 				return "Count";

@@ -313,6 +313,42 @@ namespace PigeonEngine
 	}
 	// State machine END
 
+	// Montage START
+	BOOL32 PSkeletalMeshComponent::PlayMontage(const EAnimMontage* InMontage, const EString& InSectionName, FLOAT InPlayRate)
+	{
+		return (AnimInstance ? AnimInstance->PlayMontage(InMontage, InSectionName, InPlayRate) : FALSE);
+	}
+	void PSkeletalMeshComponent::StopMontage(FLOAT InBlendOutSeconds)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->StopMontage(InBlendOutSeconds);
+		}
+	}
+	void PSkeletalMeshComponent::PauseMontage()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->PauseMontage();
+		}
+	}
+	void PSkeletalMeshComponent::ResumeMontage()
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->ResumeMontage();
+		}
+	}
+	BOOL32 PSkeletalMeshComponent::IsMontagePlaying()const
+	{
+		return (AnimInstance ? AnimInstance->IsMontagePlaying() : FALSE);
+	}
+	EAnimMontageInstance* PSkeletalMeshComponent::GetMontageInstance()const
+	{
+		return (AnimInstance ? AnimInstance->GetMontageInstance() : nullptr);
+	}
+	// Montage END
+
 	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
 	{
 		return BoneMemoryPool;

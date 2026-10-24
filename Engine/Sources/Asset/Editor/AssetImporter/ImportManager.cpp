@@ -9,6 +9,7 @@
 #include "SkeletonImporter.h"
 #include "AnimationImporter.h"
 #include "AnimationStateMachineImporter.h"
+#include "AnimationMontageImporter.h"
 
 namespace PigeonEngine
 {
@@ -57,6 +58,7 @@ void PigeonEngine::EImportManager::EditorInit()
 	AddImporter("Skeleton", new ESkeletonImporter());
 	AddImporter("Animation", new EAnimationImporter());
 	AddImporter("StateMachine", new EAnimStateMachineImporter());
+	AddImporter("Montage", new EAnimMontageImporter());
 }
 
 void PigeonEngine::EImportManager::EditorUpdate()

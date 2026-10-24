@@ -1,5 +1,6 @@
 #include "AnimInstance.h"
 
+#include "AnimationMontage.h"
 #include "AnimationNotify.h"
 #include "AnimationStateMachine.h"
 
@@ -26,6 +27,7 @@ namespace PigeonEngine
 		ClipPlayer.Reset();
 		CancelCrossFade();
 		ClearStateMachine();
+		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		bPoseDirty = ((AnimationAsset != nullptr) ? TRUE : FALSE);
 	}
@@ -46,6 +48,7 @@ namespace PigeonEngine
 		CurrentClipIndex = -1;
 		ClipPlayer.Reset();
 		CancelCrossFade();
+		MontageInstance.reset();
 		if (!bKeepStateMachine)
 		{
 			if (ActiveMachine)
@@ -179,6 +182,7 @@ namespace PigeonEngine
 	{
 		ClipPlayer.Reset();
 		CancelCrossFade();
+		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		bPoseDirty = TRUE;
 	}
@@ -276,6 +280,69 @@ namespace PigeonEngine
 		return StateMachineInstance.get();
 	}
 
+	BOOL32 EAnimInstance::PlayMontage(const EAnimMontage* InMontage, const EString& InSectionName, FLOAT InPlayRate)
+	{
+		if ((!Component) || (!Binding.IsValid()) || (!InMontage) || (!InMontage->IsValid()))
+		{
+			return FALSE;
+		}
+		if ((AnimationAsset) && (InMontage->AnimationAssetName.Length() > 0u)
+			&& (InMontage->AnimationAssetName != AnimationAsset->GetAssetName()))
+		{
+			PE_LOG_WARN(EString("Montage '") + InMontage->Name + EString("' expects animation asset '")
+				+ InMontage->AnimationAssetName + EString("' but the component has '")
+				+ AnimationAsset->GetAssetName() + EString("'."));
+			return FALSE;
+		}
+
+		MontageInstance = EMemory::MakeUnique<EAnimMontageInstance>();
+		if (!MontageInstance)
+		{
+			return FALSE;
+		}
+		if (!MontageInstance->SetMontage(InMontage, InSectionName, Binding.GetSkeleton(), Binding.GetAnimation(), InPlayRate))
+		{
+			MontageInstance.reset();
+			return FALSE;
+		}
+		bPoseDirty = TRUE;
+		return TRUE;
+	}
+
+	void EAnimInstance::StopMontage(FLOAT InBlendOutSeconds)
+	{
+		if (MontageInstance)
+		{
+			MontageInstance->Stop(InBlendOutSeconds);
+		}
+	}
+
+	void EAnimInstance::PauseMontage()
+	{
+		if (MontageInstance)
+		{
+			MontageInstance->Pause();
+		}
+	}
+
+	void EAnimInstance::ResumeMontage()
+	{
+		if (MontageInstance)
+		{
+			MontageInstance->Resume();
+		}
+	}
+
+	BOOL32 EAnimInstance::IsMontagePlaying()const
+	{
+		return ((MontageInstance && MontageInstance->IsPlaying()) ? TRUE : FALSE);
+	}
+
+	EAnimMontageInstance* EAnimInstance::GetMontageInstance()const
+	{
+		return MontageInstance.get();
+	}
+
 	void EAnimInstance::OnSkeletonChanged()
 	{
 		const BOOL32 bWasPlaying = ClipPlayer.IsPlaying();
@@ -287,6 +354,7 @@ namespace PigeonEngine
 		Binding.Unbind();
 		ClipPlayer.Reset();
 		CancelCrossFade();
+		MontageInstance.reset();
 		CurrentClipIndex = -1;
 		// A component that has no animation asset yet must not touch the bone pool: the
 		// editor preview writes its own pose into that pool, and an unconditional reset here
@@ -349,7 +417,8 @@ namespace PigeonEngine
 		const BOOL32 bCrossFading = ((CrossFadeRemaining > 0.0f) && (PreviousClipPlayer.GetClip() != nullptr)) ? TRUE : FALSE;
 		const BOOL32 bAdvancing = ((ClipPlayer.IsPlaying()) && (ClipPlayer.GetClip() != nullptr)) ? TRUE : FALSE;
 		const BOOL32 bPreviousAdvancing = ((bCrossFading) && (PreviousClipPlayer.IsPlaying())) ? TRUE : FALSE;
-		if ((!bAdvancing) && (!bPreviousAdvancing) && (!bPoseDirty))
+		const BOOL32 bMontageActive = ((MontageInstance != nullptr) ? TRUE : FALSE);
+		if ((!bAdvancing) && (!bPreviousAdvancing) && (!bMontageActive) && (!bPoseDirty))
 		{
 			return FALSE;
 		}
@@ -412,20 +481,40 @@ namespace PigeonEngine
 			}
 		}
 
+		BOOL32 bMontageAlive = FALSE;
+		if (MontageInstance)
+		{
+			bMontageAlive = MontageInstance->Update(*this, InDeltaSeconds);
+			if (bMontageAlive)
+			{
+				// The montage layer is sampled from the current pose and blended back with its
+				// bone mask, so bones outside the mask keep the base/state-machine pose.
+				MontageInstance->Evaluate(*this, Binding, Component->GetBoneMemoryPool().GetBoneRelativeTransforms());
+			}
+		}
+
 		Component->GetBoneMemoryPool().RecursionToRootTransforms();
 		if (bAdvancing)
 		{
 			// Notifies run after the pose and bone-to-root matrices are current, so a notify
 			// that spawns an effect at a socket sees this frame's pose.
-			DispatchNotifies();
+			DispatchNotifies(ClipPlayer);
+		}
+		if (MontageInstance)
+		{
+			DispatchNotifies(MontageInstance->GetClipPlayer());
+			if (!bMontageAlive)
+			{
+				MontageInstance.reset();
+			}
 		}
 		bPoseDirty = FALSE;
 		return TRUE;
 	}
 
-	void EAnimInstance::DispatchNotifies()
+	void EAnimInstance::DispatchNotifies(const EAnimationClipPlayer& InPlayer)
 	{
-		const ESkeletonAnimationClip* Clip = ClipPlayer.GetClip();
+		const ESkeletonAnimationClip* Clip = InPlayer.GetClip();
 		if (!Clip)
 		{
 			return;
@@ -436,10 +525,10 @@ namespace PigeonEngine
 			return;
 		}
 
-		const FLOAT PreviousTime = ClipPlayer.GetPreviousPositionSeconds();
-		const FLOAT CurrentTime = ClipPlayer.GetPositionSeconds();
-		const FLOAT DurationSeconds = ClipPlayer.GetClipDurationSeconds();
-		const BOOL32 bLooped = ClipPlayer.HasLoopedLastAdvance();
+		const FLOAT PreviousTime = InPlayer.GetPreviousPositionSeconds();
+		const FLOAT CurrentTime = InPlayer.GetPositionSeconds();
+		const FLOAT DurationSeconds = InPlayer.GetClipDurationSeconds();
+		const BOOL32 bLooped = InPlayer.HasLoopedLastAdvance();
 
 		for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
 		{

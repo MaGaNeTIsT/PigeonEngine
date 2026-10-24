@@ -13,6 +13,8 @@ namespace PigeonEngine
 	class EAnimInstance;
 	class EAnimStateMachine;
 	class EAnimStateMachineInstance;
+	class EAnimMontage;
+	class EAnimMontageInstance;
 	enum EAnimationLoopMode : UINT8;
 
 	/*
@@ -92,6 +94,17 @@ namespace PigeonEngine
 		void                                        ClearStateMachine();
 		PE_NODISCARD EAnimStateMachineInstance*     GetStateMachineInstance()const;
 		// State machine END
+
+		// Montage START
+	public:
+		BOOL32                                      PlayMontage(const EAnimMontage* InMontage
+			, const EString& InSectionName = EString(), FLOAT InPlayRate = 1.0f);
+		void                                        StopMontage(FLOAT InBlendOutSeconds = -1.0f);
+		void                                        PauseMontage();
+		void                                        ResumeMontage();
+		PE_NODISCARD BOOL32                         IsMontagePlaying()const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstance()const;
+		// Montage END
 
 	protected:
 		const ESkinnedMeshAsset*        MeshAsset;
