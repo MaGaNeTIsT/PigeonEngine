@@ -62,6 +62,10 @@ namespace PigeonEngine
 	public:
 		EString					NotifyName;
 		EString					NotifyClassName;
+		// Optional reference to a standalone notify asset. When set, the asset supplies
+		// class, state kind, default payload and duration; per-event duration/payload can
+		// still override them.
+		EString					NotifyAssetName;
 		FLOAT					Time = 0.0f;
 		EString					PayloadJson;
 		// State events are active over [Time, Time + StateDuration). Instant events leave

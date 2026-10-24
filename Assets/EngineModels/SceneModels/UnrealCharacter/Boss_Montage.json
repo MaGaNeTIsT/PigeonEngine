@@ -49,17 +49,13 @@
       "notifies": [
         {
           "name": "AttackWindow",
-          "class": "LogState",
-          "time": 0.0,
-          "duration": 0.8,
-          "state": true,
-          "payload": "{}"
+          "notifyAsset": "Boss_AttackWindow",
+          "time": 0.0
         },
         {
           "name": "AttackStarted",
-          "class": "Log",
-          "time": 0.1,
-          "payload": "{}"
+          "notifyAsset": "Boss_AttackStarted",
+          "time": 0.1
         }
       ]
     },

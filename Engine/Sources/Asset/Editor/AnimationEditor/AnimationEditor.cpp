@@ -5,6 +5,7 @@
 #include <imgui.h>
 
 #include <Animation/AnimationNotify.h>
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Animation/SkeletonBinding.h>
 #include <AnimationAsset/AnimationAsset.h>
 #include <BaseAsset.h>
@@ -651,6 +652,36 @@ namespace PigeonEngine
 			if (ImGui::InputText("Name", NameBuffer, static_cast<int>(sizeof(NameBuffer))))
 			{
 				Notify.NotifyName = EString(NameBuffer);
+			}
+
+			CHAR NotifyAssetBuffer[EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX] = "";
+			::strncpy_s(NotifyAssetBuffer, sizeof(NotifyAssetBuffer), *Notify.NotifyAssetName, _TRUNCATE);
+			if (ImGui::InputText("Notify Asset", NotifyAssetBuffer, static_cast<int>(sizeof(NotifyAssetBuffer))))
+			{
+				Notify.NotifyAssetName = EString(NotifyAssetBuffer);
+			}
+			if (Notify.NotifyAssetName.Length() > 0u)
+			{
+				ImGui::SameLine();
+				if (ImGui::Button("Resolve"))
+				{
+					const EAnimNotifyDefinition* Definition = nullptr;
+					if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
+						&& Definition)
+					{
+						Notify.NotifyClassName = Definition->NotifyClassName;
+						Notify.bIsState = Definition->bIsState;
+						Notify.StateDuration = Definition->DefaultDuration;
+						Notify.PayloadJson = Definition->PayloadJson;
+						Notify.CachedNotify = Definition->CachedNotify;
+					}
+					else
+					{
+						PE_LOG_WARN(EString("Animation editor could not resolve notify asset '")
+							+ Notify.NotifyAssetName + EString("'."));
+					}
+				}
+				ImGui::TextDisabled("The notify asset overrides class/state/payload; duration 0 uses its default.");
 			}
 
 			const CHAR* CurrentClassLabel = ((Notify.NotifyClassName.Length() > 0u) ? *Notify.NotifyClassName : "None");

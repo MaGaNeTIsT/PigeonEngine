@@ -20,6 +20,7 @@ namespace PigeonEngine
 		// existing PAssets keep their meaning.
 		ASSET_TYPE_ANIM_STATE_MACHINE,
 		ASSET_TYPE_ANIM_MONTAGE,
+		ASSET_TYPE_ANIM_NOTIFY,
 		ASSET_TYPE_COUNT,
 	};
 

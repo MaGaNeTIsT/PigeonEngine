@@ -1,12 +1,46 @@
 #include "AnimationAsset.h"
 #include <Asset/AssetLoadManager.h>
-#if _EDITOR_ONLY
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <Editor/EditorLogManager.h>
+#if _EDITOR_ONLY
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 
 namespace PigeonEngine
 {
+
+	/*
+	* A clip event may reference a standalone notify asset. The asset supplies the class,
+	* state kind and default data; the event's saved inline values are the fallback when the
+	* asset is missing, so a clip stays playable if only the shared definition was removed.
+	*/
+	static BOOL32 ResolveNotifyDefinitionReference(FAnimNotifyEvent& InOutNotify)
+	{
+		if (InOutNotify.NotifyAssetName.Length() <= 0u)
+		{
+			return FALSE;
+		}
+		const EAnimNotifyDefinition* Definition = nullptr;
+		if ((!EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(InOutNotify.NotifyAssetName, Definition))
+			|| (!Definition))
+		{
+			PE_LOG_WARN(EString("Clip notify '") + InOutNotify.NotifyName
+				+ EString("' could not resolve notify asset '") + InOutNotify.NotifyAssetName + EString("'."));
+			return FALSE;
+		}
+		InOutNotify.NotifyClassName = Definition->NotifyClassName;
+		InOutNotify.bIsState = Definition->bIsState;
+		if (InOutNotify.StateDuration <= 0.0f)
+		{
+			InOutNotify.StateDuration = Definition->DefaultDuration;
+		}
+		if (InOutNotify.PayloadJson.Length() <= 0u)
+		{
+			InOutNotify.PayloadJson = Definition->PayloadJson;
+		}
+		InOutNotify.CachedNotify = Definition->CachedNotify;
+		return ((InOutNotify.CachedNotify != nullptr) ? TRUE : FALSE);
+	}
 
 	static void RegisterClassTypes()
 	{
@@ -634,16 +668,23 @@ namespace PigeonEngine
 						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX, TempNotifyPayload);
 						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyIsState);
 						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyStateDuration);
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX, TempNotifyAssetName);
 
 						FAnimNotifyEvent& Notify = AnimationClip.Notifies.AddDefaultGetRef();
 						Notify.NotifyName = TempNotifyName;
 						Notify.NotifyClassName = TempNotifyClassName;
+						Notify.NotifyAssetName = TempNotifyAssetName;
 						Notify.Time = TempNotifyTime;
 						Notify.PayloadJson = TempNotifyPayload;
 						Notify.bIsState = ((TempNotifyIsState != 0u) ? TRUE : FALSE);
 						Notify.StateDuration = TempNotifyStateDuration;
-						// Build the cached notify object once, here, so playback never allocates.
-						Notify.Compile();
+						// Resolve the shared definition when possible; otherwise compile the
+						// inline fallback saved with the clip. Either way playback never
+						// allocates a notify object.
+						if (!ResolveNotifyDefinitionReference(Notify))
+						{
+							Notify.Compile();
+						}
 					}
 				}
 			}
@@ -740,6 +781,7 @@ namespace PigeonEngine
 					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX;		// Notify payload
 					Result += sizeof(UINT32);																		// Notify is-state flag
 					Result += sizeof(FLOAT);																		// Notify state duration
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX;		// Notify asset name
 				}
 			}
 
@@ -870,6 +912,7 @@ namespace PigeonEngine
 					SAVE_ASSET_STRING_MEMORY(Notify.PayloadJson, EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX);
 					SAVE_ASSET_MEMORY(UINT32, (Notify.bIsState ? 1u : 0u));
 					SAVE_ASSET_MEMORY(FLOAT, Notify.StateDuration);
+					SAVE_ASSET_STRING_MEMORY(Notify.NotifyAssetName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX);
 				}
 			}
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));

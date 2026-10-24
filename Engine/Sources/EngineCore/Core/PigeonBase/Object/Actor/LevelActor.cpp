@@ -5,6 +5,7 @@
 #include <SkeletonAsset/SkeletonAsset.h>
 #if _EDITOR_ONLY
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #endif
 #include <ShaderAsset/ShaderAsset.h>
@@ -226,6 +227,31 @@ namespace PigeonEngine
 			if (StateMachineAsset)
 			{
 				NewSkeletalMeshComp->SetStateMachine(StateMachineAsset->GetStoragedResource());
+			}
+
+			// Standalone notify definitions referenced by the montage. They must be on disk
+			// before the montage is imported so its event references can be resolved.
+			const EString NotifyAssetNames[2] = {
+				EString(PE_TEXT("Boss_AttackWindow")),
+				EString(PE_TEXT("Boss_AttackStarted"))
+			};
+			for (INT32 NotifyIndex = 0; NotifyIndex < 2; NotifyIndex++)
+			{
+				const EAnimNotifyAsset* NotifyAsset = nullptr;
+				if (!(EAnimNotifyManager::GetManagerSingleton()->LoadNotifyAsset(
+					EBaseSettings::ENGINE_NOTIFY_PATH, NotifyAssetNames[NotifyIndex], NotifyAsset)))
+				{
+					const EString NotifyJsonPath = AssetBasePath
+						+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+						+ NotifyAssetNames[NotifyIndex] + EString(PE_TEXT(".json"));
+					if (EAnimNotifyManager::GetManagerSingleton()->ImportNotify(
+						NotifyAssetNames[NotifyIndex], NotifyJsonPath, EBaseSettings::ENGINE_NOTIFY_PATH))
+					{
+						NotifyAsset = nullptr;
+						EAnimNotifyManager::GetManagerSingleton()->LoadNotifyAsset(
+							EBaseSettings::ENGINE_NOTIFY_PATH, NotifyAssetNames[NotifyIndex], NotifyAsset);
+					}
+				}
 			}
 
 			// Montage: the sample upper-body section is played once the animation asset is
