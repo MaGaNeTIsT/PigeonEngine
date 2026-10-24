@@ -3,6 +3,7 @@
 #include "../EngineCore/IO/FileHelper.h"
 #include "Editor/AnimationEditor/AnimationEditor.h"
 #include "Editor/AnimationMontageEditor/AnimationMontageEditor.h"
+#include "Editor/AnimationNotifyEditor/AnimationNotifyEditor.h"
 #include "Editor/AnimationStateMachineEditor/AnimationStateMachineEditor.h"
 #include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
@@ -192,6 +193,11 @@ namespace PigeonEngine
 			delete MontageEditor;
 			MontageEditor = nullptr;
 		}
+		if (NotifyEditor)
+		{
+			delete NotifyEditor;
+			NotifyEditor = nullptr;
+		}
 		if (MeshEditor)
 		{
 			delete MeshEditor;
@@ -243,6 +249,11 @@ namespace PigeonEngine
 		{
 			MontageEditor = new EAnimMontageEditor();
 			MontageEditor->EditorInit();
+		}
+		if (!NotifyEditor)
+		{
+			NotifyEditor = new EAnimNotifyEditor();
+			NotifyEditor->EditorInit();
 		}
 		if (!MeshEditor)
 		{
@@ -372,6 +383,10 @@ namespace PigeonEngine
 		{
 			MontageEditor->EditorUpdate();
 		}
+		if (NotifyEditor)
+		{
+			NotifyEditor->EditorUpdate();
+		}
 		if (MeshEditor)
 		{
 			MeshEditor->EditorUpdate();
@@ -435,6 +450,14 @@ namespace PigeonEngine
 							if (ImGui::Button("Open Montage Editor"))
 							{
 								MontageEditor->OpenMontageAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Notify Editor"))
+							{
+								NotifyEditor->OpenNotifyAsset(SelectedFile->GetPath());
 							}
 						}
 						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
@@ -508,6 +531,10 @@ namespace PigeonEngine
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
 								MontageEditor->OpenMontageAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								NotifyEditor->OpenNotifyAsset(elem->GetPath());
 							}
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
@@ -599,6 +626,10 @@ namespace PigeonEngine
 		case ASSET_TYPE_ANIM_MONTAGE	:
 			{
 				return "AnimMontage";
+			}
+		case ASSET_TYPE_ANIM_NOTIFY	:
+			{
+				return "AnimNotify";
 			}
 		case ASSET_TYPE_COUNT	:
 			{

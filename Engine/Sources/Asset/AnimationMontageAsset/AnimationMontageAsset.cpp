@@ -1,10 +1,9 @@
 #include "AnimationMontageAsset.h"
 
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
+#include <Editor/EditorLogManager.h>
 #include <IO/FileHelper.h>
 #include <RapidJson/Headers/JsonObject.h>
-#if _EDITOR_ONLY
-#include <Editor/EditorLogManager.h>
-#endif
 
 namespace PigeonEngine
 {
@@ -453,6 +452,7 @@ namespace PigeonEngine
 					Notify.NotifyName = EString(PE_TEXT("Notify")) + ToString(NotifyIndex);
 					NotifyObject->GetStringField(PE_TEXT("name"), Notify.NotifyName);
 					NotifyObject->GetStringField(PE_TEXT("class"), Notify.NotifyClassName);
+					NotifyObject->GetStringField(PE_TEXT("notifyAsset"), Notify.NotifyAssetName);
 					FLOAT NotifyTime = 0.0f;
 					if (NotifyObject->GetFloatField(PE_TEXT("time"), NotifyTime))
 					{
@@ -471,13 +471,44 @@ namespace PigeonEngine
 					{
 						Notify.StateDuration = EMath::Max(StateDuration, 0.001f);
 					}
+					// A standalone notify asset supplies class, state kind and default data.
+					// Per-event duration/payload stay as optional overrides.
+					if (Notify.NotifyAssetName.Length() > 0u)
+					{
+						const EAnimNotifyDefinition* Definition = nullptr;
+						if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
+							&& Definition)
+						{
+							Notify.NotifyClassName = Definition->NotifyClassName;
+							Notify.bIsState = Definition->bIsState;
+							if (Notify.StateDuration <= 0.0f)
+							{
+								Notify.StateDuration = Definition->DefaultDuration;
+							}
+							if (Notify.PayloadJson.Length() <= 0u)
+							{
+								Notify.PayloadJson = Definition->PayloadJson;
+							}
+							Notify.CachedNotify = Definition->CachedNotify;
+						}
+						else
+						{
+							PE_LOG_WARN(EString("Montage '") + OutMontage.Name + EString("' notify '")
+								+ Notify.NotifyName + EString("' could not resolve notify asset '")
+								+ Notify.NotifyAssetName + EString("'."));
+						}
+					}
+
 					if (Notify.bIsState && (Notify.StateDuration <= 0.0f))
 					{
 						// A state with no duration would only fire for the single frame the
 						// playhead lands exactly on it; use a visible default instead.
 						Notify.StateDuration = 0.2f;
 					}
-					// Compile here so playback never allocates a notify object.
+
+					// Compile here so playback never allocates a notify object. A resolved
+					// definition already provides the shared cached object, so Compile() is a
+					// no-op in that case.
 					Notify.Compile();
 					Section.Notifies.Add(Notify);
 				}
