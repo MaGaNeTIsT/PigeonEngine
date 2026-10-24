@@ -639,9 +639,76 @@ namespace PigeonEngine
 			return;
 		}
 
+		const FLOAT PreviousTime = InPlayer.GetPreviousPositionSeconds();
 		const FLOAT CurrentTime = InPlayer.GetPositionSeconds();
+		const FLOAT DurationSeconds = InPlayer.GetClipDurationSeconds();
+		const BOOL32 bLooped = InPlayer.HasLoopedLastAdvance();
 
-		// Close the windows the playhead has left, and tick the ones still open. Iterating
+		// Open windows the playhead entered this frame. Checking the swept interval, not
+		// only the current position, keeps a short window from disappearing when a long
+		// frame (or the first frame after an import stall) jumps over it. A window that was
+		// both entered and left in this frame still receives Begin, Tick and End.
+		for (INT32 NotifyIndex = 0; NotifyIndex < InNotifies.Num(); NotifyIndex++)
+		{
+			const FAnimNotifyEvent& Event = InNotifies[NotifyIndex];
+			if ((!Event.bIsState) || (!Event.CachedNotify))
+			{
+				continue;
+			}
+			BOOL32 bAlreadyActive = FALSE;
+			for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
+			{
+				if (InOutActive[ActiveIndex].Event == &Event)
+				{
+					bAlreadyActive = TRUE;
+					break;
+				}
+			}
+			if (bAlreadyActive)
+			{
+				continue;
+			}
+
+			const FLOAT StateEndTime = Event.Time + EMath::Max(Event.StateDuration, 0.001f);
+			const BOOL32 bInside = ((CurrentTime >= Event.Time) && (CurrentTime < StateEndTime)) ? TRUE : FALSE;
+			BOOL32 bEntered = FALSE;
+			if (bLooped)
+			{
+				// REPEAT crossed the end: the frame covered [PreviousTime, Duration] and
+				// [0, CurrentTime]. Check both segments instead of the complement between
+				// the two positions.
+				const BOOL32 bOverlapsTail = (((StateEndTime > PreviousTime) && (Event.Time <= DurationSeconds)) ? TRUE : FALSE);
+				const BOOL32 bOverlapsHead = (((StateEndTime > 0.0f) && (Event.Time <= CurrentTime)) ? TRUE : FALSE);
+				bEntered = ((bOverlapsTail || bOverlapsHead) ? TRUE : FALSE);
+			}
+			else
+			{
+				const FLOAT SweptMin = EMath::Min(PreviousTime, CurrentTime);
+				const FLOAT SweptMax = EMath::Max(PreviousTime, CurrentTime);
+				bEntered = (((SweptMax >= Event.Time) && (SweptMin < StateEndTime)) ? TRUE : FALSE);
+			}
+			if ((!bInside) && (!bEntered))
+			{
+				continue;
+			}
+
+			Event.CachedNotify->NotifyBegin(*this, Event);
+			if (bInside)
+			{
+				// The active loop below performs the first Tick, so Begin and Tick still
+				// happen on the same frame without ticking twice.
+				FActiveAnimNotifyState& ActiveState = InOutActive.AddDefaultGetRef();
+				ActiveState.Event = &Event;
+			}
+			else
+			{
+				// The playhead crossed the whole window in one frame.
+				Event.CachedNotify->NotifyTick(*this, Event, InDeltaSeconds);
+				Event.CachedNotify->NotifyEnd(*this, Event);
+			}
+		}
+
+		// Tick the windows still open, and close the ones the playhead has left. Iterating
 		// backwards makes removal safe.
 		for (INT32 ActiveIndex = InOutActive.Num() - 1; ActiveIndex >= 0; ActiveIndex--)
 		{
@@ -664,38 +731,6 @@ namespace PigeonEngine
 			else if (Event->CachedNotify)
 			{
 				Event->CachedNotify->NotifyTick(*this, *Event, InDeltaSeconds);
-			}
-		}
-
-		// Open windows the playhead has just entered. Begin and the first Tick happen on
-		// the same frame, which is what a gameplay window expects.
-		for (INT32 NotifyIndex = 0; NotifyIndex < InNotifies.Num(); NotifyIndex++)
-		{
-			const FAnimNotifyEvent& Event = InNotifies[NotifyIndex];
-			if ((!Event.bIsState) || (!Event.CachedNotify))
-			{
-				continue;
-			}
-			BOOL32 bAlreadyActive = FALSE;
-			for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
-			{
-				if (InOutActive[ActiveIndex].Event == &Event)
-				{
-					bAlreadyActive = TRUE;
-					break;
-				}
-			}
-			if (bAlreadyActive)
-			{
-				continue;
-			}
-			const FLOAT StateEndTime = Event.Time + EMath::Max(Event.StateDuration, 0.001f);
-			if ((CurrentTime >= Event.Time) && (CurrentTime < StateEndTime))
-			{
-				Event.CachedNotify->NotifyBegin(*this, Event);
-				Event.CachedNotify->NotifyTick(*this, Event, InDeltaSeconds);
-				FActiveAnimNotifyState& ActiveState = InOutActive.AddDefaultGetRef();
-				ActiveState.Event = &Event;
 			}
 		}
 
