@@ -83,6 +83,15 @@ namespace PigeonEngine
 	};
 
 	/*
+	* Runtime-only link from an active state event back to its authored data. The asset owns
+	* the event; each anim instance and montage layer keeps its own active list.
+	*/
+	struct FActiveAnimNotifyState
+	{
+		const FAnimNotifyEvent* Event = nullptr;
+	};
+
+	/*
 	* Class-name to factory table for notify types. Registration is explicit so an editor
 	* build can list the available classes and an asset only has to persist the class name.
 	*/

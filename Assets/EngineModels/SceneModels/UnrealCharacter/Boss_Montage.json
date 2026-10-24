@@ -80,6 +80,20 @@
           "payload": "{}"
         }
       ]
+    },
+    {
+      "name": "BaseIdle",
+      "clip": "Unreal Take",
+      "slot": "Default",
+      "loop": "Once",
+      "rate": 1.0,
+      "blendIn": 0.1,
+      "blendOut": 0.2,
+      "boneMask": {
+        "name": "FullBody",
+        "bones": [],
+        "weight": 1.0
+      }
     }
   ]
 }

@@ -100,10 +100,17 @@ namespace PigeonEngine
 		BOOL32                                      PlayMontage(const EAnimMontage* InMontage
 			, const EString& InSectionName = EString(), FLOAT InPlayRate = 1.0f);
 		void                                        StopMontage(FLOAT InBlendOutSeconds = -1.0f);
+		void                                        StopMontage(const EString& InSlotName, FLOAT InBlendOutSeconds = -1.0f);
 		void                                        PauseMontage();
+		void                                        PauseMontage(const EString& InSlotName);
 		void                                        ResumeMontage();
+		void                                        ResumeMontage(const EString& InSlotName);
 		PE_NODISCARD BOOL32                         IsMontagePlaying()const;
+		PE_NODISCARD BOOL32                         IsMontagePlaying(const EString& InSlotName)const;
 		PE_NODISCARD EAnimMontageInstance*          GetMontageInstance()const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceBySlot(const EString& InSlotName)const;
+		PE_NODISCARD INT32                          GetMontageInstanceCount()const;
+		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceAt(INT32 InIndex)const;
 		// Montage END
 
 	protected:

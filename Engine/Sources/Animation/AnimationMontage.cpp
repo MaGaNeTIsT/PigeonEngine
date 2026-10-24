@@ -182,6 +182,7 @@ namespace PigeonEngine
 		LayerPose.Empty();
 		LayerWeight = 0.0f;
 		LayerPriority = 0;
+		ActiveNotifyStates.Empty();
 		InstancePlayRate = 1.0f;
 		BlendInSeconds = 0.1f;
 		BlendOutSeconds = 0.2f;
@@ -415,6 +416,16 @@ namespace PigeonEngine
 	INT32 EAnimMontageInstance::GetLayerPriority()const
 	{
 		return LayerPriority;
+	}
+
+	TArray<FActiveAnimNotifyState>& EAnimMontageInstance::GetActiveNotifyStates()
+	{
+		return ActiveNotifyStates;
+	}
+
+	const TArray<FActiveAnimNotifyState>& EAnimMontageInstance::GetActiveNotifyStates()const
+	{
+		return ActiveNotifyStates;
 	}
 
 	BOOL32 EAnimMontageInstance::HasPendingSectionTransition()const

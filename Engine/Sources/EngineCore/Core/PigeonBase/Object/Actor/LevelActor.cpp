@@ -280,7 +280,11 @@ namespace PigeonEngine
 					{
 						return FALSE;
 					}
+					// Two different skeleton slots: Default is the base full-body layer,
+					// UpperBody is the attack overlay played on top of it.
+					Component->PlayMontage(MontageAsset->GetStoragedResource(), EString(PE_TEXT("BaseIdle")));
 					Component->PlayMontage(MontageAsset->GetStoragedResource(), EString(PE_TEXT("Attack")));
+					PE_LOG_LOG(EString("Active montage layers: ") + ToString(Component->GetMontageInstanceCount()));
 					return TRUE;
 				};
 				if (MontageStep() == FALSE)
