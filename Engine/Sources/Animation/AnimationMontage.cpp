@@ -80,7 +80,13 @@ namespace PigeonEngine
 		for (INT32 SectionIndex = 0; SectionIndex < Sections.Num(); SectionIndex++)
 		{
 			const EAnimMontageSection& Section = Sections[SectionIndex];
-			if ((Section.ClipName.Length() <= 0u) || (Section.SlotName.Length() <= 0u) || (!HasSlot(Section.SlotName)))
+			if ((Section.ClipName.Length() <= 0u) || (Section.SlotName.Length() <= 0u))
+			{
+				return FALSE;
+			}
+			// Slot groups may live on the montage (legacy) or on the skeleton. When the
+			// montage carries none, the skeleton validates the slot at bind time.
+			if ((SlotGroups.Num() > 0) && (!HasSlot(Section.SlotName)))
 			{
 				return FALSE;
 			}
@@ -175,6 +181,7 @@ namespace PigeonEngine
 		BoneMaskWeights.Empty();
 		LayerPose.Empty();
 		LayerWeight = 0.0f;
+		LayerPriority = 0;
 		InstancePlayRate = 1.0f;
 		BlendInSeconds = 0.1f;
 		BlendOutSeconds = 0.2f;
@@ -204,6 +211,14 @@ namespace PigeonEngine
 
 		SectionIndex = InSectionIndex;
 		PendingSectionIndex = -1;
+		// The skeleton owns the slot order so every montage agrees which layer is on top.
+		const INT32 SlotGroupIndex = BoundSkeleton->FindSlotGroup(Section.SlotName);
+		LayerPriority = ((SlotGroupIndex >= 0) ? SlotGroupIndex : 0);
+		if (SlotGroupIndex < 0)
+		{
+			PE_LOG_WARN(EString("Montage '") + Montage->Name + EString("' section '") + Section.Name
+				+ EString("' uses unknown slot '") + Section.SlotName + EString("'; treating it as the base layer."));
+		}
 		BlendInSeconds = EMath::Max(Section.BlendInSeconds, 0.001f);
 		BlendOutSeconds = EMath::Max(Section.BlendOutSeconds, 0.001f);
 		if (!bInKeepLayerWeight)
@@ -395,6 +410,11 @@ namespace PigeonEngine
 			return nullptr;
 		}
 		return &Montage->Sections[SectionIndex];
+	}
+
+	INT32 EAnimMontageInstance::GetLayerPriority()const
+	{
+		return LayerPriority;
 	}
 
 	BOOL32 EAnimMontageInstance::HasPendingSectionTransition()const

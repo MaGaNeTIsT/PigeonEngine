@@ -104,6 +104,17 @@ namespace PigeonEngine
 		Vector3			Scaling;
 	};
 
+	/*
+	* Ordered slot groups live on the skeleton so every montage agrees on layer priority.
+	* A montage section names a slot; the skeleton resolves that slot to its group index.
+	* Higher group indices blend later and therefore override lower ones.
+	*/
+	struct ESkeletonSlotGroup
+	{
+		EString			Name;
+		TArray<EString>	SlotNames;
+	};
+
 	class ESkeleton : public EObjectBase, public EResourceInterface
 	{
 	public:
@@ -121,6 +132,10 @@ namespace PigeonEngine
 		const TMap<EString, USHORT>&	GetBoneMapping()const;
 		INT32							GetBoneCount()const;
 		USHORT							GetBoneIndex(const EString& InBoneName)const;
+		TArray<ESkeletonSlotGroup>&		GetSlotGroups();
+		const TArray<ESkeletonSlotGroup>& GetSlotGroups()const;
+		// Returns the group index containing InSlotName, or -1 when the slot is not defined.
+		PE_NODISCARD INT32				FindSlotGroup(const EString& InSlotName)const;
 	public:
 		BOOL32	AddBoneElement(EBoneData* InIndexData);
 		BOOL32	RemoveBoneElement(const EString& InBoneName);
@@ -134,6 +149,9 @@ namespace PigeonEngine
 		EString					SkeletonName;
 		EBonePart				Bones;
 		TMap<EString, USHORT>	BoneMapping;
+		// Ordered by blend priority. The constructor seeds Default/UpperBody/FullBody so a
+		// freshly imported skeleton can already host the sample montages.
+		TArray<ESkeletonSlotGroup> SlotGroups;
 	public:
 		ESkeleton(const EString& InSkeletonName);
 		virtual ~ESkeleton();

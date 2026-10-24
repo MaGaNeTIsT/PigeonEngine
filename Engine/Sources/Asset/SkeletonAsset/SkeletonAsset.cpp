@@ -195,6 +195,15 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 		DebugName = InSkeletonName;
 #endif
+		// Seed the conventional layer order. A skeleton can carry more groups later; the
+		// order here is the blend order, from base to highest overlay.
+		const CHAR* DefaultGroupNames[] = { "Default", "UpperBody", "FullBody" };
+		for (const CHAR* GroupName : DefaultGroupNames)
+		{
+			ESkeletonSlotGroup& Group = SlotGroups.AddDefaultGetRef();
+			Group.Name = EString(GroupName);
+			Group.SlotNames.Add(EString(GroupName));
+		}
 	}
 	ESkeleton::~ESkeleton()
 	{
@@ -214,6 +223,7 @@ namespace PigeonEngine
 		SkeletonName = EEngineSettings::ENGINE_DEFAULT_NAME;
 		Bones.Empty();
 		BoneMapping.Empty();
+		SlotGroups.Empty();
 	}
 	ESkeletonType ESkeleton::GetSkeletonType()const
 	{
@@ -263,6 +273,29 @@ namespace PigeonEngine
 		}
 		return (static_cast<USHORT>(-1));
 #endif
+	}
+	TArray<ESkeletonSlotGroup>& ESkeleton::GetSlotGroups()
+	{
+		return SlotGroups;
+	}
+	const TArray<ESkeletonSlotGroup>& ESkeleton::GetSlotGroups()const
+	{
+		return SlotGroups;
+	}
+	INT32 ESkeleton::FindSlotGroup(const EString& InSlotName)const
+	{
+		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
+		{
+			const TArray<EString>& SlotNames = SlotGroups[GroupIndex].SlotNames;
+			for (INT32 SlotIndex = 0; SlotIndex < SlotNames.Num(); SlotIndex++)
+			{
+				if (SlotNames[SlotIndex] == InSlotName)
+				{
+					return GroupIndex;
+				}
+			}
+		}
+		return -1;
 	}
 	BOOL32 ESkeleton::AddBoneElement(EBoneData* InIndexData)
 	{
@@ -1331,6 +1364,26 @@ namespace PigeonEngine
 					BoneMapping.Add(TempBoneName, TempBoneIndex);
 				}
 			}
+			{
+				// The constructor seeds the conventional groups; the file is authoritative
+				// once it contains slot data.
+				LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempSlotGroupNum);
+				TArray<ESkeletonSlotGroup>& SlotGroups = LoadedSkeletonResource->GetSlotGroups();
+				SlotGroups.Empty();
+				for (USHORT GroupIndex = 0u; GroupIndex < TempSlotGroupNum; GroupIndex++)
+				{
+					LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_SLOT_GROUP_NAME_LENGTH_MAX, TempSlotGroupName);
+					LOAD_ASSET_MEMORY(USHORT, sizeof(USHORT), TempSlotNum);
+
+					ESkeletonSlotGroup& Group = SlotGroups.AddDefaultGetRef();
+					Group.Name = TempSlotGroupName;
+					for (USHORT SlotIndex = 0u; SlotIndex < TempSlotNum; SlotIndex++)
+					{
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_SLOT_NAME_LENGTH_MAX, TempSlotName);
+						Group.SlotNames.Add(TempSlotName);
+					}
+				}
+			}
 
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check read skeleton resource rest memory already failed."), (RstMemSize == 0));
 		}
@@ -1395,6 +1448,16 @@ namespace PigeonEngine
 				Result += sizeof(SHORT) * BoneData.Children.Num<UINT32>();	// Bone data children index
 			}
 			Result += (sizeof(CHAR) * EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX + sizeof(USHORT)) * BonePart.Num<UINT32>();	// Bone mapping datas
+
+			const TArray<ESkeletonSlotGroup>& SlotGroups = InSkeleton->GetSlotGroups();
+			Result += sizeof(USHORT);	// Slot group num
+			for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
+			{
+				const ESkeletonSlotGroup& Group = SlotGroups[GroupIndex];
+				Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_SLOT_GROUP_NAME_LENGTH_MAX;	// Group name
+				Result += sizeof(USHORT);																// Slot num
+				Result += (sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_SLOT_NAME_LENGTH_MAX) * Group.SlotNames.Num<UINT32>();	// Slot names
+			}
 
 			return Result;
 		};
@@ -1473,6 +1536,19 @@ namespace PigeonEngine
 			{
 				SAVE_ASSET_STRING_MEMORY(ItMapping->first, EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 				SAVE_ASSET_MEMORY(USHORT, ItMapping->second);
+			}
+
+			const TArray<ESkeletonSlotGroup>& SlotGroups = InSkeletonResource->GetSlotGroups();
+			SAVE_ASSET_MEMORY(USHORT, static_cast<USHORT>(SlotGroups.Num()));
+			for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
+			{
+				const ESkeletonSlotGroup& Group = SlotGroups[GroupIndex];
+				SAVE_ASSET_STRING_MEMORY(Group.Name, EEngineSettings::ENGINE_ANIMATION_SLOT_GROUP_NAME_LENGTH_MAX);
+				SAVE_ASSET_MEMORY(USHORT, static_cast<USHORT>(Group.SlotNames.Num()));
+				for (INT32 SlotIndex = 0; SlotIndex < Group.SlotNames.Num(); SlotIndex++)
+				{
+					SAVE_ASSET_STRING_MEMORY(Group.SlotNames[SlotIndex], EEngineSettings::ENGINE_ANIMATION_SLOT_NAME_LENGTH_MAX);
+				}
 			}
 
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton resource rest memory already failed."), (RstMemSize == 0));

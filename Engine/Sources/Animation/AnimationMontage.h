@@ -112,6 +112,9 @@ namespace PigeonEngine
 		PE_NODISCARD FLOAT GetLayerWeight()const;
 		PE_NODISCARD const EAnimationClipPlayer& GetClipPlayer()const;
 		PE_NODISCARD const EAnimMontageSection* GetCurrentSection()const;
+		// Index of the current section's slot group in the skeleton. Higher values blend
+		// later and therefore override lower layers.
+		PE_NODISCARD INT32 GetLayerPriority()const;
 
 		// Section chaining: a finished one-shot section leaves a pending target. The caller
 		// dispatches notifies first, then applies the transition for the next advance.
@@ -132,6 +135,7 @@ namespace PigeonEngine
 		TArray<FLOAT>			BoneMaskWeights;
 		TArray<EBoneTransform>	LayerPose;
 		FLOAT					LayerWeight = 0.0f;
+		INT32					LayerPriority = 0;
 		FLOAT					InstancePlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
 		FLOAT					BlendOutSeconds = 0.2f;
