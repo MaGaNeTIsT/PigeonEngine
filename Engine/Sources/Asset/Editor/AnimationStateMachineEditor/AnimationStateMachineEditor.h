@@ -28,10 +28,20 @@ namespace PigeonEngine
 	private:
 		void LoadJsonBufferFromAsset();
 		void DrawGraph(const EAnimStateMachine& InMachine);
+		void DrawStructureControls(const EAnimStateMachine& InMachine);
 		void LoadNodePositionsFromJson(const EAnimStateMachine& InMachine);
 		void AutoLayoutGraph(const EAnimStateMachine& InMachine);
 		// Serializes the current node positions into nodeX/nodeY fields before Apply/Save.
 		void WriteNodePositionsToJson();
+
+		// Structural edits rewrite the JSON and rebuild the live graph. They only commit
+		// when the manager accepts the new graph, so a failed edit leaves the buffer alone.
+		BOOL32 AddState(const EAnimStateMachine& InMachine);
+		BOOL32 DeleteState(const EString& InStateName);
+		BOOL32 AddTransition(const EString& InFromStateName, const EString& InToStateName);
+		BOOL32 DeleteTransition(INT32 InTransitionIndex);
+		BOOL32 SetEntryState(const EString& InStateName);
+		void ReplaceJsonBuffer(const EString& InJsonText);
 
 	private:
 		BOOL8							m_ShowEditor = FALSE;
@@ -40,6 +50,10 @@ namespace PigeonEngine
 		EString							m_LastError;
 		TArray<CHAR>					m_JsonBuffer;
 		TMap<EString, ImVec2>			m_NodePositions;
+		INT32							m_SelectedStateIndex = 0;
+		// -1 means the "Any" pseudo state.
+		INT32							m_TransitionFromIndex = -1;
+		INT32							m_TransitionToIndex = 0;
 	};
 
 }
