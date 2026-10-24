@@ -632,12 +632,16 @@ namespace PigeonEngine
 						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX, TempNotifyClassName);
 						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyTime);
 						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX, TempNotifyPayload);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyIsState);
+						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyStateDuration);
 
 						FAnimNotifyEvent& Notify = AnimationClip.Notifies.AddDefaultGetRef();
 						Notify.NotifyName = TempNotifyName;
 						Notify.NotifyClassName = TempNotifyClassName;
 						Notify.Time = TempNotifyTime;
 						Notify.PayloadJson = TempNotifyPayload;
+						Notify.bIsState = ((TempNotifyIsState != 0u) ? TRUE : FALSE);
+						Notify.StateDuration = TempNotifyStateDuration;
 						// Build the cached notify object once, here, so playback never allocates.
 						Notify.Compile();
 					}
@@ -734,6 +738,8 @@ namespace PigeonEngine
 					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX;	// Notify class name
 					Result += sizeof(FLOAT);																		// Notify time
 					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX;		// Notify payload
+					Result += sizeof(UINT32);																		// Notify is-state flag
+					Result += sizeof(FLOAT);																		// Notify state duration
 				}
 			}
 
@@ -862,6 +868,8 @@ namespace PigeonEngine
 					SAVE_ASSET_STRING_MEMORY(Notify.NotifyClassName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX);
 					SAVE_ASSET_MEMORY(FLOAT, Notify.Time);
 					SAVE_ASSET_STRING_MEMORY(Notify.PayloadJson, EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX);
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bIsState ? 1u : 0u));
+					SAVE_ASSET_MEMORY(FLOAT, Notify.StateDuration);
 				}
 			}
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));

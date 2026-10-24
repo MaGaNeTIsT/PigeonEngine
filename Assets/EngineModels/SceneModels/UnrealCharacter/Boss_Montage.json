@@ -48,6 +48,14 @@
       },
       "notifies": [
         {
+          "name": "AttackWindow",
+          "class": "LogState",
+          "time": 0.0,
+          "duration": 0.8,
+          "state": true,
+          "payload": "{}"
+        },
+        {
           "name": "AttackStarted",
           "class": "Log",
           "time": 0.1,

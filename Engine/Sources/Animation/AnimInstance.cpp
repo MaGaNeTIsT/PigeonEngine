@@ -67,6 +67,8 @@ namespace PigeonEngine
 
 	void EAnimInstance::SetSkeletalMeshComponent(PSkeletalMeshComponent* InComponent)
 	{
+		EndNotifyStates(ActiveBaseNotifyStates);
+		EndNotifyStates(ActiveMontageNotifyStates);
 		Component = InComponent;
 		Binding.Unbind();
 		ClipPlayer.Reset();
@@ -84,6 +86,8 @@ namespace PigeonEngine
 
 	BOOL32 EAnimInstance::SetAnimationAsset(const ESkeletonAnimationAsset* InAnimationAsset)
 	{
+		EndNotifyStates(ActiveBaseNotifyStates);
+		EndNotifyStates(ActiveMontageNotifyStates);
 		const EAnimStateMachine* ActiveMachine = (StateMachineInstance ? StateMachineInstance->GetMachine() : nullptr);
 		const BOOL32 bKeepStateMachine = ((ActiveMachine != nullptr) && (InAnimationAsset != nullptr)
 			&& ((ActiveMachine->AnimationAssetName.Length() <= 0u)
@@ -179,6 +183,10 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
+		// The outgoing clip's state windows end before its data stops being the active
+		// timeline. This also covers restarting the same clip.
+		EndNotifyStates(ActiveBaseNotifyStates);
+
 		// Hand the outgoing clip to the previous player before the new one takes over. A
 		// same-clip restart has nothing to blend, so it switches immediately.
 		if ((InFadeSeconds > 0.0f) && (ClipPlayer.GetClip() != nullptr) && (CurrentClipIndex != InClipIndex))
@@ -225,6 +233,8 @@ namespace PigeonEngine
 
 	void EAnimInstance::Stop()
 	{
+		EndNotifyStates(ActiveBaseNotifyStates);
+		EndNotifyStates(ActiveMontageNotifyStates);
 		ClipPlayer.Reset();
 		CancelCrossFade();
 		MontageInstance.reset();
@@ -266,8 +276,10 @@ namespace PigeonEngine
 	void EAnimInstance::SetPositionSeconds(FLOAT InPositionSeconds)
 	{
 		// A seek is an explicit jump; blending a jumped pose with the old clip would look
-		// wrong, so the crossfade is dropped.
+		// wrong, so the crossfade is dropped. Active windows are closed and can reopen if
+		// the new position is inside them.
 		CancelCrossFade();
+		EndNotifyStates(ActiveBaseNotifyStates);
 		ClipPlayer.SetPositionSeconds(InPositionSeconds);
 		bPoseDirty = TRUE;
 	}
@@ -340,6 +352,8 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
+		// Replacing a montage closes its open windows before the old instance is dropped.
+		EndNotifyStates(ActiveMontageNotifyStates);
 		MontageInstance = EMemory::MakeUnique<EAnimMontageInstance>();
 		if (!MontageInstance)
 		{
@@ -358,6 +372,8 @@ namespace PigeonEngine
 	{
 		if (MontageInstance)
 		{
+			// A stop closes the windows immediately; the pose can still blend out.
+			EndNotifyStates(ActiveMontageNotifyStates);
 			MontageInstance->Stop(InBlendOutSeconds);
 		}
 	}
@@ -390,6 +406,8 @@ namespace PigeonEngine
 
 	void EAnimInstance::OnSkeletonChanged()
 	{
+		EndNotifyStates(ActiveBaseNotifyStates);
+		EndNotifyStates(ActiveMontageNotifyStates);
 		const BOOL32 bWasPlaying = ClipPlayer.IsPlaying();
 		const INT32 PreviousClipIndex = CurrentClipIndex;
 		const FLOAT PreviousPositionSeconds = ClipPlayer.GetPositionSeconds();
@@ -544,18 +562,34 @@ namespace PigeonEngine
 		Component->GetBoneMemoryPool().RecursionToRootTransforms();
 		if (bAdvancing)
 		{
-			// Notifies run after the pose and bone-to-root matrices are current, so a notify
-			// that spawns an effect at a socket sees this frame's pose.
+			// Notify states and instant events run after the pose and bone-to-root matrices
+			// are current, so a notify that reads a socket sees this frame's pose.
+			if (const ESkeletonAnimationClip* BaseClip = ClipPlayer.GetClip())
+			{
+				UpdateNotifyStates(ActiveBaseNotifyStates, BaseClip->Notifies, ClipPlayer, TRUE, InDeltaSeconds);
+			}
 			DispatchNotifies(ClipPlayer);
 		}
 		if (MontageInstance)
 		{
+			const EAnimMontageSection* MontageSection = MontageInstance->GetCurrentSection();
+			if ((!bMontageAlive) || (MontageInstance->IsStopping()))
+			{
+				EndNotifyStates(ActiveMontageNotifyStates);
+			}
+			else if ((MontageSection) && (MontageInstance->IsPlaying()))
+			{
+				UpdateNotifyStates(ActiveMontageNotifyStates, MontageSection->Notifies
+					, MontageInstance->GetClipPlayer(), TRUE, InDeltaSeconds);
+			}
 			DispatchNotifies(MontageInstance->GetClipPlayer());
 			DispatchMontageSectionNotifies();
 			// The section's final notify window is consumed above; only now is it safe to
 			// reset the clip time for the chained section.
 			if (MontageInstance->HasPendingSectionTransition())
 			{
+				// The chained section has its own timeline; close the old windows first.
+				EndNotifyStates(ActiveMontageNotifyStates);
 				MontageInstance->ApplyPendingSectionTransition();
 			}
 			if (!bMontageAlive)
@@ -594,6 +628,95 @@ namespace PigeonEngine
 		DispatchNotifyEventList(*this, Section->Notifies
 			, Player.GetPreviousPositionSeconds(), Player.GetPositionSeconds()
 			, Player.GetClipDurationSeconds(), Player.HasLoopedLastAdvance());
+	}
+
+	void EAnimInstance::UpdateNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive
+		, const TArray<FAnimNotifyEvent>& InNotifies, const EAnimationClipPlayer& InPlayer
+		, BOOL32 bInAdvanced, FLOAT InDeltaSeconds)
+	{
+		if (!bInAdvanced)
+		{
+			return;
+		}
+
+		const FLOAT CurrentTime = InPlayer.GetPositionSeconds();
+
+		// Close the windows the playhead has left, and tick the ones still open. Iterating
+		// backwards makes removal safe.
+		for (INT32 ActiveIndex = InOutActive.Num() - 1; ActiveIndex >= 0; ActiveIndex--)
+		{
+			const FAnimNotifyEvent* Event = InOutActive[ActiveIndex].Event;
+			if (!Event)
+			{
+				InOutActive.RemoveAt(ActiveIndex);
+				continue;
+			}
+			const FLOAT StateEndTime = Event->Time + EMath::Max(Event->StateDuration, 0.001f);
+			const BOOL32 bInside = ((CurrentTime >= Event->Time) && (CurrentTime < StateEndTime)) ? TRUE : FALSE;
+			if (!bInside)
+			{
+				if (Event->CachedNotify)
+				{
+					Event->CachedNotify->NotifyEnd(*this, *Event);
+				}
+				InOutActive.RemoveAt(ActiveIndex);
+			}
+			else if (Event->CachedNotify)
+			{
+				Event->CachedNotify->NotifyTick(*this, *Event, InDeltaSeconds);
+			}
+		}
+
+		// Open windows the playhead has just entered. Begin and the first Tick happen on
+		// the same frame, which is what a gameplay window expects.
+		for (INT32 NotifyIndex = 0; NotifyIndex < InNotifies.Num(); NotifyIndex++)
+		{
+			const FAnimNotifyEvent& Event = InNotifies[NotifyIndex];
+			if ((!Event.bIsState) || (!Event.CachedNotify))
+			{
+				continue;
+			}
+			BOOL32 bAlreadyActive = FALSE;
+			for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
+			{
+				if (InOutActive[ActiveIndex].Event == &Event)
+				{
+					bAlreadyActive = TRUE;
+					break;
+				}
+			}
+			if (bAlreadyActive)
+			{
+				continue;
+			}
+			const FLOAT StateEndTime = Event.Time + EMath::Max(Event.StateDuration, 0.001f);
+			if ((CurrentTime >= Event.Time) && (CurrentTime < StateEndTime))
+			{
+				Event.CachedNotify->NotifyBegin(*this, Event);
+				Event.CachedNotify->NotifyTick(*this, Event, InDeltaSeconds);
+				FActiveAnimNotifyState& ActiveState = InOutActive.AddDefaultGetRef();
+				ActiveState.Event = &Event;
+			}
+		}
+
+		// A one-shot clip that reached its end must not leave a hit window open forever.
+		if (InPlayer.HasFinished())
+		{
+			EndNotifyStates(InOutActive);
+		}
+	}
+
+	void EAnimInstance::EndNotifyStates(TArray<FActiveAnimNotifyState>& InOutActive)
+	{
+		for (INT32 ActiveIndex = 0; ActiveIndex < InOutActive.Num(); ActiveIndex++)
+		{
+			const FAnimNotifyEvent* Event = InOutActive[ActiveIndex].Event;
+			if ((Event) && (Event->CachedNotify))
+			{
+				Event->CachedNotify->NotifyEnd(*this, *Event);
+			}
+		}
+		InOutActive.Empty();
 	}
 
 	BOOL32 EAnimInstance::BindAnimation()

@@ -35,6 +35,9 @@ namespace PigeonEngine
 		void Play();
 		void Pause();
 		PE_NODISCARD BOOL32 IsPlaying()const;
+		// TRUE after a one-shot clip reached its end and stopped. Pause() does not set it,
+		// so a paused clip can resume without being treated as finished.
+		PE_NODISCARD BOOL32 HasFinished()const;
 
 		void SetPlayRate(FLOAT InPlayRate);
 		PE_NODISCARD FLOAT GetPlayRate()const;
@@ -80,6 +83,7 @@ namespace PigeonEngine
 		// derive their direction from the sign of PlayRate.
 		INT32							PlayDirection = 1;
 		BOOL32							bPlaying = FALSE;
+		BOOL32							bFinished = FALSE;
 		// TRUE only when REPEAT wrapped around an end. Ping-pong reflections are handled as
 		// a normal forward/backward interval, which is the documented first-version policy.
 		BOOL32							bLoopedLastAdvance = FALSE;

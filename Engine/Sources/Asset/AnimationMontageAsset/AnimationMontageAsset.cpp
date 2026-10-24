@@ -463,6 +463,20 @@ namespace PigeonEngine
 					{
 						Notify.PayloadJson = EString(PE_TEXT("{}"));
 					}
+					BOOL8 bIsState = FALSE;
+					NotifyObject->GetBoolField(PE_TEXT("state"), bIsState);
+					Notify.bIsState = ((bIsState != FALSE) ? TRUE : FALSE);
+					FLOAT StateDuration = 0.0f;
+					if (NotifyObject->GetFloatField(PE_TEXT("duration"), StateDuration))
+					{
+						Notify.StateDuration = EMath::Max(StateDuration, 0.001f);
+					}
+					if (Notify.bIsState && (Notify.StateDuration <= 0.0f))
+					{
+						// A state with no duration would only fire for the single frame the
+						// playhead lands exactly on it; use a visible default instead.
+						Notify.StateDuration = 0.2f;
+					}
 					// Compile here so playback never allocates a notify object.
 					Notify.Compile();
 					Section.Notifies.Add(Notify);

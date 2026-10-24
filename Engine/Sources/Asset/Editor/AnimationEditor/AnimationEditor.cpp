@@ -627,6 +627,8 @@ namespace PigeonEngine
 			Notify.NotifyName = EString("Notify") + ToString(InClip.Notifies.Num());
 			Notify.NotifyClassName = ((RegisteredClassNames.Num() > 0) ? RegisteredClassNames[0] : EString());
 			Notify.PayloadJson = EString("{}");
+			Notify.bIsState = FALSE;
+			Notify.StateDuration = 0.2f;
 			Notify.Compile();
 			InClip.Notifies.Add(Notify);
 		}
@@ -687,6 +689,32 @@ namespace PigeonEngine
 			else
 			{
 				ImGui::TextDisabled("Clip has no duration.");
+			}
+
+			bool bStateNotify = (Notify.bIsState != FALSE);
+			if (ImGui::Checkbox("State Notify", &bStateNotify))
+			{
+				Notify.bIsState = (bStateNotify ? TRUE : FALSE);
+				if (Notify.bIsState && (Notify.StateDuration <= 0.0f))
+				{
+					Notify.StateDuration = 0.2f;
+				}
+				Notify.ResetCompiledNotify();
+				Notify.Compile();
+			}
+			if (Notify.bIsState)
+			{
+				const FLOAT MaxStateDuration = ((ClipDurationSeconds > 0.001f) ? ClipDurationSeconds : 1.0f);
+				FLOAT StateDuration = EMath::Clamp(Notify.StateDuration, 0.001f, MaxStateDuration);
+				if (ImGui::SliderFloat("State Duration", &StateDuration, 0.001f, MaxStateDuration, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+				{
+					Notify.StateDuration = StateDuration;
+				}
+				if ((Notify.NotifyClassName.Length() > 0u) && (!Notify.CachedNotify))
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.55f, 0.25f, 1.0f)
+						, "This class is not registered as a state notify; the event will not fire.");
+				}
 			}
 
 			CHAR PayloadBuffer[EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX] = "";
