@@ -4,6 +4,7 @@
 #include <EngineCommon.h>
 
 #include "AnimationClipPlayer.h"
+#include "AnimationNotify.h"
 #include "AnimationTypes.h"
 
 namespace PigeonEngine
@@ -33,19 +34,23 @@ namespace PigeonEngine
 
 	/*
 	* One playable montage section. The slot names the layer's identity; the bone mask is
-	* what decides which bones the layer actually writes. A section is a single clip for now;
-	* section chaining can be added without changing the runtime instance.
+	* what decides which bones the layer actually writes. NextSectionName chains a one-shot
+	* section into another section when it reaches its end; an empty name ends the montage.
+	* Notifies are authored on the section timeline and use the same event data as clip
+	* notifies, so gameplay code does not care which asset produced the event.
 	*/
 	struct EAnimMontageSection
 	{
 		EString					Name;
 		EString					ClipName;
 		EString					SlotName;
+		EString					NextSectionName;
 		EAnimationLoopMode		LoopMode = ANIMATION_LOOP_ONCE;
 		FLOAT					PlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
 		FLOAT					BlendOutSeconds = 0.2f;
 		ESkeletonBoneMask		BoneMask;
+		TArray<FAnimNotifyEvent>	Notifies;
 	};
 
 	class EAnimMontage : public EObjectBase, public EResourceInterface
@@ -80,6 +85,10 @@ namespace PigeonEngine
 	* Per-character playback state for one montage section. Update() advances time and the
 	* fade weight; Evaluate() samples the layer and blends it onto the pose the base clip has
 	* already produced, using the section's bone mask.
+	*
+	* When a one-shot section ends and names a next section, the transition is deferred until
+	* after the caller dispatches that section's final notifies. This keeps an event authored
+	* at the section end from being lost to the next section's time reset.
 	*/
 	class EAnimMontageInstance
 	{
@@ -102,17 +111,28 @@ namespace PigeonEngine
 		PE_NODISCARD INT32 GetSectionIndex()const;
 		PE_NODISCARD FLOAT GetLayerWeight()const;
 		PE_NODISCARD const EAnimationClipPlayer& GetClipPlayer()const;
+		PE_NODISCARD const EAnimMontageSection* GetCurrentSection()const;
+
+		// Section chaining: a finished one-shot section leaves a pending target. The caller
+		// dispatches notifies first, then applies the transition for the next advance.
+		PE_NODISCARD BOOL32 HasPendingSectionTransition()const;
+		BOOL32 ApplyPendingSectionTransition();
 
 	private:
+		BOOL32 StartSection(INT32 InSectionIndex, BOOL32 bInKeepLayerWeight);
 		BOOL32 CompileBoneMask(const ESkeleton* InSkeleton);
 
 	private:
-		const EAnimMontage*		Montage = nullptr;
-		INT32					SectionIndex = -1;
+		const EAnimMontage*			Montage = nullptr;
+		const ESkeleton*			BoundSkeleton = nullptr;
+		const ESkeletonAnimation*	BoundAnimation = nullptr;
+		INT32						SectionIndex = -1;
+		INT32					PendingSectionIndex = -1;
 		EAnimationClipPlayer	ClipPlayer;
 		TArray<FLOAT>			BoneMaskWeights;
 		TArray<EBoneTransform>	LayerPose;
 		FLOAT					LayerWeight = 0.0f;
+		FLOAT					InstancePlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
 		FLOAT					BlendOutSeconds = 0.2f;
 		BOOL32					bStopping = FALSE;

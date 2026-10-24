@@ -12,6 +12,51 @@
 namespace PigeonEngine
 {
 
+	namespace
+	{
+		/*
+		* Fires every event in InNotifies whose authored time lies in the interval the player
+		* just crossed. Clip notifies and montage section notifies share this path, so the
+		* timing policy (including a REPEAT wrap) is identical for both.
+		*/
+		void DispatchNotifyEventList(EAnimInstance& InInstance, const TArray<FAnimNotifyEvent>& InNotifies
+			, FLOAT InPreviousTime, FLOAT InCurrentTime, FLOAT InDurationSeconds, BOOL32 bInLooped)
+		{
+			for (INT32 NotifyIndex = 0; NotifyIndex < InNotifies.Num(); NotifyIndex++)
+			{
+				const FAnimNotifyEvent& Notify = InNotifies[NotifyIndex];
+				if (!Notify.CachedNotify)
+				{
+					continue;
+				}
+
+				const FLOAT NotifyTime = EMath::Clamp(Notify.Time, 0.0f, InDurationSeconds);
+				BOOL32 bFire = FALSE;
+				if (bInLooped)
+				{
+					// REPEAT crossed the end this frame: the first half runs from PreviousTime
+					// to the clip end, the second from the start to CurrentTime. The wrap
+					// segment includes 0 so an event authored there fires once per loop.
+					bFire = (((NotifyTime > InPreviousTime) && (NotifyTime <= InDurationSeconds))
+						|| ((NotifyTime >= 0.0f) && (NotifyTime <= InCurrentTime))) ? TRUE : FALSE;
+				}
+				else if (InCurrentTime >= InPreviousTime)
+				{
+					bFire = ((NotifyTime > InPreviousTime) && (NotifyTime <= InCurrentTime)) ? TRUE : FALSE;
+				}
+				else
+				{
+					bFire = ((NotifyTime < InPreviousTime) && (NotifyTime >= InCurrentTime)) ? TRUE : FALSE;
+				}
+
+				if (bFire)
+				{
+					Notify.CachedNotify->Notify(InInstance, Notify);
+				}
+			}
+		}
+	}
+
 	EAnimInstance::EAnimInstance()
 	{
 	}
@@ -424,7 +469,10 @@ namespace PigeonEngine
 		}
 		// A zero delta cannot move a playing clip. Skip the resample unless something else
 		// already asked for a new pose (the first frame after Play, a seek, an asset swap).
-		if ((!bPoseDirty) && (InDeltaSeconds == 0.0f))
+		// A queued montage section transition also has to run even on a zero-delta frame.
+		const BOOL32 bMontageTransitionPending = ((MontageInstance
+			&& MontageInstance->HasPendingSectionTransition()) ? TRUE : FALSE);
+		if ((!bPoseDirty) && (InDeltaSeconds == 0.0f) && (!bMontageTransitionPending))
 		{
 			return FALSE;
 		}
@@ -503,6 +551,13 @@ namespace PigeonEngine
 		if (MontageInstance)
 		{
 			DispatchNotifies(MontageInstance->GetClipPlayer());
+			DispatchMontageSectionNotifies();
+			// The section's final notify window is consumed above; only now is it safe to
+			// reset the clip time for the chained section.
+			if (MontageInstance->HasPendingSectionTransition())
+			{
+				MontageInstance->ApplyPendingSectionTransition();
+			}
 			if (!bMontageAlive)
 			{
 				MontageInstance.reset();
@@ -519,49 +574,26 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		const TArray<FAnimNotifyEvent>& Notifies = Clip->Notifies;
-		if (Notifies.Num() <= 0)
+		DispatchNotifyEventList(*this, Clip->Notifies
+			, InPlayer.GetPreviousPositionSeconds(), InPlayer.GetPositionSeconds()
+			, InPlayer.GetClipDurationSeconds(), InPlayer.HasLoopedLastAdvance());
+	}
+
+	void EAnimInstance::DispatchMontageSectionNotifies()
+	{
+		if (!MontageInstance)
 		{
 			return;
 		}
-
-		const FLOAT PreviousTime = InPlayer.GetPreviousPositionSeconds();
-		const FLOAT CurrentTime = InPlayer.GetPositionSeconds();
-		const FLOAT DurationSeconds = InPlayer.GetClipDurationSeconds();
-		const BOOL32 bLooped = InPlayer.HasLoopedLastAdvance();
-
-		for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+		const EAnimMontageSection* Section = MontageInstance->GetCurrentSection();
+		if ((!Section) || (Section->Notifies.Num() <= 0))
 		{
-			const FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
-			if (!Notify.CachedNotify)
-			{
-				continue;
-			}
-
-			const FLOAT NotifyTime = EMath::Clamp(Notify.Time, 0.0f, DurationSeconds);
-			BOOL32 bFire = FALSE;
-			if (bLooped)
-			{
-				// REPEAT crossed the end this frame: the first half runs from PreviousTime to
-				// the clip end, the second from the start to CurrentTime. The wrap segment
-				// includes 0 so an event authored there fires once per loop.
-				bFire = (((NotifyTime > PreviousTime) && (NotifyTime <= DurationSeconds))
-					|| ((NotifyTime >= 0.0f) && (NotifyTime <= CurrentTime))) ? TRUE : FALSE;
-			}
-			else if (CurrentTime >= PreviousTime)
-			{
-				bFire = ((NotifyTime > PreviousTime) && (NotifyTime <= CurrentTime)) ? TRUE : FALSE;
-			}
-			else
-			{
-				bFire = ((NotifyTime < PreviousTime) && (NotifyTime >= CurrentTime)) ? TRUE : FALSE;
-			}
-
-			if (bFire)
-			{
-				Notify.CachedNotify->Notify(*this, Notify);
-			}
+			return;
 		}
+		const EAnimationClipPlayer& Player = MontageInstance->GetClipPlayer();
+		DispatchNotifyEventList(*this, Section->Notifies
+			, Player.GetPreviousPositionSeconds(), Player.GetPositionSeconds()
+			, Player.GetClipDurationSeconds(), Player.HasLoopedLastAdvance());
 	}
 
 	BOOL32 EAnimInstance::BindAnimation()

@@ -402,6 +402,7 @@ namespace PigeonEngine
 				SectionObject->GetStringField(PE_TEXT("name"), Section.Name);
 				SectionObject->GetStringField(PE_TEXT("clip"), Section.ClipName);
 				SectionObject->GetStringField(PE_TEXT("slot"), Section.SlotName);
+				SectionObject->GetStringField(PE_TEXT("next"), Section.NextSectionName);
 				EString LoopText;
 				SectionObject->GetStringField(PE_TEXT("loop"), LoopText);
 				Section.LoopMode = ParseLoopMode(LoopText);
@@ -431,6 +432,40 @@ namespace PigeonEngine
 					{
 						Section.BoneMask.Weight = MaskWeight;
 					}
+				}
+
+				TArray<CJsonObject*> NotifyObjects;
+				const BOOL8 bHasNotifyArray = SectionObject->GetObjectArrayField(PE_TEXT("notifies"), NotifyObjects);
+				FJsonObjectArrayGuard NotifyGuard(NotifyObjects);
+				if ((!bHasNotifyArray) && (NotifyObjects.Num() > 0))
+				{
+					OutError = EString("Montage section 'notifies' must be an array of objects.");
+					return FALSE;
+				}
+				for (INT32 NotifyIndex = 0; NotifyIndex < NotifyObjects.Num(); NotifyIndex++)
+				{
+					CJsonObject* NotifyObject = NotifyObjects[NotifyIndex];
+					if (!NotifyObject)
+					{
+						continue;
+					}
+					FAnimNotifyEvent Notify;
+					Notify.NotifyName = EString(PE_TEXT("Notify")) + ToString(NotifyIndex);
+					NotifyObject->GetStringField(PE_TEXT("name"), Notify.NotifyName);
+					NotifyObject->GetStringField(PE_TEXT("class"), Notify.NotifyClassName);
+					FLOAT NotifyTime = 0.0f;
+					if (NotifyObject->GetFloatField(PE_TEXT("time"), NotifyTime))
+					{
+						Notify.Time = EMath::Max(NotifyTime, 0.0f);
+					}
+					NotifyObject->GetStringField(PE_TEXT("payload"), Notify.PayloadJson);
+					if (Notify.PayloadJson.Length() <= 0u)
+					{
+						Notify.PayloadJson = EString(PE_TEXT("{}"));
+					}
+					// Compile here so playback never allocates a notify object.
+					Notify.Compile();
+					Section.Notifies.Add(Notify);
 				}
 
 				if ((Section.Name.Length() <= 0u) || (Section.ClipName.Length() <= 0u) || (Section.SlotName.Length() <= 0u))
