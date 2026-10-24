@@ -29,6 +29,7 @@ namespace PigeonEngine
 	private:
 		void LoadJsonBufferFromAsset();
 		void DrawTimeline(const EAnimMontage& InMontage);
+		void DrawCurvePreview(const EAnimMontage& InMontage);
 
 	private:
 		BOOL8							m_ShowEditor = FALSE;
@@ -38,6 +39,8 @@ namespace PigeonEngine
 		EString							m_OpenedAssetFullPath;
 		EString							m_LastError;
 		TArray<CHAR>					m_JsonBuffer;
+		INT32							m_SelectedCurveSectionIndex = 0;
+		INT32							m_SelectedCurveIndex = 0;
 	};
 
 }

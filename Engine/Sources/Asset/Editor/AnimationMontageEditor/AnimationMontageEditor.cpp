@@ -8,6 +8,8 @@
 #include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <Base/DataStructure/Text/Path.h>
 
+#include <cfloat>
+
 namespace PigeonEngine
 {
 
@@ -44,6 +46,126 @@ namespace PigeonEngine
 				? InClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND);
 			return (InClip->Duration / TicksPerSecond);
 		}
+
+		void DrawVectorKeyPlot(const CHAR* InLabel, const TArray<EBoneAnimationCurve::TPositionKey>& InKeys
+			, FLOAT InTimeMax, FLOAT InWidth, FLOAT InHeight)
+		{
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			const ImVec2 Origin = ImGui::GetCursorScreenPos();
+			const ImVec2 Max(Origin.x + InWidth, Origin.y + InHeight);
+			DrawList->AddRectFilled(Origin, Max, IM_COL32(30, 32, 38, 255), 3.0f);
+			DrawList->AddRect(Origin, Max, IM_COL32(90, 92, 100, 255), 3.0f);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 3.0f), IM_COL32(220, 220, 225, 255), InLabel);
+			if (InKeys.Num() <= 0)
+			{
+				DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 20.0f), IM_COL32(150, 150, 155, 255), "No keys");
+				ImGui::Dummy(ImVec2(InWidth, InHeight));
+				return;
+			}
+
+			FLOAT Min = FLT_MAX;
+			FLOAT MaxValue = -FLT_MAX;
+			for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
+			{
+				const Vector3& Value = InKeys[KeyIndex].Value;
+				Min = EMath::Min(Min, EMath::Min(Value.x, EMath::Min(Value.y, Value.z)));
+				MaxValue = EMath::Max(MaxValue, EMath::Max(Value.x, EMath::Max(Value.y, Value.z)));
+			}
+			if (MaxValue - Min < 1e-4f)
+			{
+				Min -= 0.5f;
+				MaxValue += 0.5f;
+			}
+			const FLOAT SafeTimeMax = EMath::Max(InTimeMax, 0.001f);
+			const FLOAT Left = Origin.x + 80.0f;
+			const FLOAT Right = Max.x - 8.0f;
+			const FLOAT Top = Origin.y + 18.0f;
+			const FLOAT Bottom = Max.y - 6.0f;
+			const ImU32 Colors[3] = { IM_COL32(235, 90, 90, 255), IM_COL32(100, 210, 110, 255), IM_COL32(90, 150, 240, 255) };
+
+			for (INT32 Component = 0; Component < 3; Component++)
+			{
+				TArray<ImVec2> Points;
+				Points.SetNum(InKeys.Num());
+				for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
+				{
+					const Vector3& Value = InKeys[KeyIndex].Value;
+					const FLOAT ComponentValue = ((Component == 0) ? Value.x : ((Component == 1) ? Value.y : Value.z));
+					const FLOAT TimeRatio = EMath::Clamp(InKeys[KeyIndex].Time / SafeTimeMax, 0.0f, 1.0f);
+					const FLOAT ValueRatio = EMath::Clamp((ComponentValue - Min) / (MaxValue - Min), 0.0f, 1.0f);
+					Points[KeyIndex] = ImVec2(Left + TimeRatio * (Right - Left), Bottom - ValueRatio * (Bottom - Top));
+				}
+				DrawList->AddPolyline(Points.GetData(), Points.Num(), Colors[Component], 0, 1.5f);
+			}
+
+			CHAR RangeText[64] = "";
+			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", MaxValue);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Top), IM_COL32(160, 160, 165, 255), RangeText);
+			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", Min);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Bottom - 12.0f), IM_COL32(160, 160, 165, 255), RangeText);
+			ImGui::Dummy(ImVec2(InWidth, InHeight));
+		}
+
+		void DrawRotationKeyPlot(const TArray<EBoneAnimationCurve::TRotationKey>& InKeys
+			, FLOAT InTimeMax, FLOAT InWidth, FLOAT InHeight)
+		{
+			ImDrawList* DrawList = ImGui::GetWindowDrawList();
+			const ImVec2 Origin = ImGui::GetCursorScreenPos();
+			const ImVec2 Max(Origin.x + InWidth, Origin.y + InHeight);
+			DrawList->AddRectFilled(Origin, Max, IM_COL32(30, 32, 38, 255), 3.0f);
+			DrawList->AddRect(Origin, Max, IM_COL32(90, 92, 100, 255), 3.0f);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 3.0f), IM_COL32(220, 220, 225, 255), "Rotation");
+			if (InKeys.Num() <= 0)
+			{
+				DrawList->AddText(ImVec2(Origin.x + 6.0f, Origin.y + 20.0f), IM_COL32(150, 150, 155, 255), "No keys");
+				ImGui::Dummy(ImVec2(InWidth, InHeight));
+				return;
+			}
+
+			FLOAT Min = FLT_MAX;
+			FLOAT MaxValue = -FLT_MAX;
+			for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
+			{
+				const Quaternion& Value = InKeys[KeyIndex].Value;
+				Min = EMath::Min(Min, EMath::Min(Value.x, EMath::Min(Value.y, EMath::Min(Value.z, Value.w))));
+				MaxValue = EMath::Max(MaxValue, EMath::Max(Value.x, EMath::Max(Value.y, EMath::Max(Value.z, Value.w))));
+			}
+			if (MaxValue - Min < 1e-4f)
+			{
+				Min -= 0.5f;
+				MaxValue += 0.5f;
+			}
+			const FLOAT SafeTimeMax = EMath::Max(InTimeMax, 0.001f);
+			const FLOAT Left = Origin.x + 80.0f;
+			const FLOAT Right = Max.x - 8.0f;
+			const FLOAT Top = Origin.y + 18.0f;
+			const FLOAT Bottom = Max.y - 6.0f;
+			const ImU32 Colors[4] = { IM_COL32(235, 90, 90, 255), IM_COL32(100, 210, 110, 255)
+				, IM_COL32(90, 150, 240, 255), IM_COL32(235, 210, 90, 255) };
+
+			for (INT32 Component = 0; Component < 4; Component++)
+			{
+				TArray<ImVec2> Points;
+				Points.SetNum(InKeys.Num());
+				for (INT32 KeyIndex = 0; KeyIndex < InKeys.Num(); KeyIndex++)
+				{
+					const Quaternion& Value = InKeys[KeyIndex].Value;
+					const FLOAT ComponentValue = ((Component == 0) ? Value.x : ((Component == 1) ? Value.y
+						: ((Component == 2) ? Value.z : Value.w)));
+					const FLOAT TimeRatio = EMath::Clamp(InKeys[KeyIndex].Time / SafeTimeMax, 0.0f, 1.0f);
+					const FLOAT ValueRatio = EMath::Clamp((ComponentValue - Min) / (MaxValue - Min), 0.0f, 1.0f);
+					Points[KeyIndex] = ImVec2(Left + TimeRatio * (Right - Left), Bottom - ValueRatio * (Bottom - Top));
+				}
+				DrawList->AddPolyline(Points.GetData(), Points.Num(), Colors[Component], 0, 1.5f);
+			}
+
+			CHAR RangeText[64] = "";
+			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", MaxValue);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Top), IM_COL32(160, 160, 165, 255), RangeText);
+			::sprintf_s(RangeText, sizeof(RangeText), "%.2f", Min);
+			DrawList->AddText(ImVec2(Origin.x + 6.0f, Bottom - 12.0f), IM_COL32(160, 160, 165, 255), RangeText);
+			ImGui::Dummy(ImVec2(InWidth, InHeight));
+		}
 	}
 
 	void EAnimMontageEditor::EditorInit()
@@ -54,6 +176,8 @@ namespace PigeonEngine
 		m_OpenedAssetFullPath = EString();
 		m_LastError = EString();
 		m_JsonBuffer.Empty();
+		m_SelectedCurveSectionIndex = 0;
+		m_SelectedCurveIndex = 0;
 	}
 
 	void EAnimMontageEditor::OpenMontageAsset(const EString& InAssetFullPath)
@@ -84,6 +208,8 @@ namespace PigeonEngine
 
 		m_Asset = LoadedAsset;
 		m_OpenedAssetFullPath = NormalizedAssetPath;
+		m_SelectedCurveSectionIndex = 0;
+		m_SelectedCurveIndex = 0;
 		m_AnimationAsset = nullptr;
 		const EAnimMontage* Montage = m_Asset->GetStoragedResource();
 		if ((Montage) && (Montage->AnimationAssetName.Length() > 0u))
@@ -193,6 +319,11 @@ namespace PigeonEngine
 					ImGui::BeginChild("MontageTimeline", ImVec2(0.0f, 210.0f), true);
 					DrawTimeline(*Montage);
 					ImGui::EndChild();
+
+					ImGui::Separator();
+					ImGui::BeginChild("MontageCurvePreview", ImVec2(0.0f, 240.0f), true);
+					DrawCurvePreview(*Montage);
+					ImGui::EndChild();
 				}
 			}
 
@@ -282,6 +413,92 @@ namespace PigeonEngine
 
 			ImGui::Dummy(ImVec2(0.0f, RowHeight));
 		}
+	}
+
+	void EAnimMontageEditor::DrawCurvePreview(const EAnimMontage& InMontage)
+	{
+		ImGui::TextDisabled("Curve preview (read-only)");
+		if ((!m_AnimationAsset) || (!m_AnimationAsset->GetStoragedResource()) || (InMontage.Sections.Num() <= 0))
+		{
+			ImGui::TextDisabled("Animation asset or sections are unavailable.");
+			return;
+		}
+		const ESkeletonAnimation* Animation = m_AnimationAsset->GetStoragedResource();
+		m_SelectedCurveSectionIndex = EMath::Clamp(m_SelectedCurveSectionIndex, 0, InMontage.Sections.Num() - 1);
+		const EString CurrentSectionName = InMontage.Sections[m_SelectedCurveSectionIndex].Name;
+		if (ImGui::BeginCombo("Section", *CurrentSectionName))
+		{
+			for (INT32 SectionIndex = 0; SectionIndex < InMontage.Sections.Num(); SectionIndex++)
+			{
+				const BOOL8 bSelected = (SectionIndex == m_SelectedCurveSectionIndex);
+				if (ImGui::Selectable(*InMontage.Sections[SectionIndex].Name, bSelected))
+				{
+					m_SelectedCurveSectionIndex = SectionIndex;
+					m_SelectedCurveIndex = 0;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		const EAnimMontageSection& Section = InMontage.Sections[m_SelectedCurveSectionIndex];
+		const ESkeletonAnimationClip* Clip = Animation->GetAnimationClip(Section.ClipName);
+		if (!Clip)
+		{
+			ImGui::TextDisabled("Clip '%s' is unavailable.", *Section.ClipName);
+			return;
+		}
+		const INT32 CurveNum = Clip->AnimationCurves.Num();
+		if (CurveNum <= 0)
+		{
+			ImGui::TextDisabled("This clip has no bone curves.");
+			return;
+		}
+		m_SelectedCurveIndex = EMath::Clamp(m_SelectedCurveIndex, 0, CurveNum - 1);
+		const EString CurrentCurveName = Clip->AnimationCurves[m_SelectedCurveIndex].BoneName;
+		if (ImGui::BeginCombo("Bone Curve", *CurrentCurveName))
+		{
+			for (INT32 CurveIndex = 0; CurveIndex < CurveNum; CurveIndex++)
+			{
+				const BOOL8 bSelected = (CurveIndex == m_SelectedCurveIndex);
+				if (ImGui::Selectable(*Clip->AnimationCurves[CurveIndex].BoneName, bSelected))
+				{
+					m_SelectedCurveIndex = CurveIndex;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+
+		const EBoneAnimationCurve& Curve = Clip->AnimationCurves[m_SelectedCurveIndex];
+		FLOAT TimeMax = Clip->Duration;
+		for (INT32 KeyIndex = 0; KeyIndex < Curve.PositionKeys.Num(); KeyIndex++)
+		{
+			TimeMax = EMath::Max(TimeMax, Curve.PositionKeys[KeyIndex].Time);
+		}
+		for (INT32 KeyIndex = 0; KeyIndex < Curve.RotationKeys.Num(); KeyIndex++)
+		{
+			TimeMax = EMath::Max(TimeMax, Curve.RotationKeys[KeyIndex].Time);
+		}
+		for (INT32 KeyIndex = 0; KeyIndex < Curve.ScalingKeys.Num(); KeyIndex++)
+		{
+			TimeMax = EMath::Max(TimeMax, Curve.ScalingKeys[KeyIndex].Time);
+		}
+		if (TimeMax <= 0.0f)
+		{
+			TimeMax = 1.0f;
+		}
+
+		const FLOAT PlotWidth = EMath::Max(ImGui::GetContentRegionAvail().x, 120.0f);
+		DrawVectorKeyPlot("Position", Curve.PositionKeys, TimeMax, PlotWidth, 62.0f);
+		DrawRotationKeyPlot(Curve.RotationKeys, TimeMax, PlotWidth, 62.0f);
+		DrawVectorKeyPlot("Scaling", Curve.ScalingKeys, TimeMax, PlotWidth, 62.0f);
 	}
 
 	void EAnimMontageEditor::LoadJsonBufferFromAsset()
