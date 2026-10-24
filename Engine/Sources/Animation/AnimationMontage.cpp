@@ -84,6 +84,15 @@ namespace PigeonEngine
 			{
 				return FALSE;
 			}
+			if (Section.NextSectionName.Length() > 0u)
+			{
+				// A self-reference would restart a one-shot section forever, and a missing
+				// target would silently end the montage instead of playing the authored chain.
+				if ((Section.NextSectionName == Section.Name) || (FindSection(Section.NextSectionName) < 0))
+				{
+					return FALSE;
+				}
+			}
 		}
 		for (INT32 GroupIndex = 0; GroupIndex < SlotGroups.Num(); GroupIndex++)
 		{
@@ -134,57 +143,82 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		INT32 FoundSectionIndex = ((InSectionName.Length() > 0u) ? InMontage->FindSection(InSectionName) : 0);
+		const INT32 FoundSectionIndex = ((InSectionName.Length() > 0u) ? InMontage->FindSection(InSectionName) : 0);
 		if ((FoundSectionIndex < 0) || (FoundSectionIndex >= InMontage->Sections.Num()))
 		{
 			return FALSE;
 		}
-		const EAnimMontageSection& Section = InMontage->Sections[FoundSectionIndex];
-		const ESkeletonAnimationClip* Clip = InAnimation->GetAnimationClip(Section.ClipName);
-		if (!Clip)
-		{
-			PE_LOG_WARN(EString("Montage '") + InMontage->Name + EString("' could not find clip '") + Section.ClipName + EString("'."));
-			return FALSE;
-		}
-		INT32 ClipIndex = -1;
-		InAnimation->GetAnimationClipMapping().FindValue(Section.ClipName, ClipIndex);
 
 		Montage = InMontage;
-		SectionIndex = FoundSectionIndex;
-		BlendInSeconds = EMath::Max(Section.BlendInSeconds, 0.001f);
-		BlendOutSeconds = EMath::Max(Section.BlendOutSeconds, 0.001f);
-		LayerWeight = (Section.BlendInSeconds <= 0.001f) ? 1.0f : 0.0f;
-		bStopping = FALSE;
-		bPaused = FALSE;
-		bFinished = FALSE;
-
-		ClipPlayer.SetClip(Clip, ClipIndex);
-		ClipPlayer.SetLoopMode(Section.LoopMode);
-		ClipPlayer.SetPlayRate(Section.PlayRate * InPlayRate);
-		ClipPlayer.Play();
-		if (!CompileBoneMask(InSkeleton))
+		BoundSkeleton = InSkeleton;
+		BoundAnimation = InAnimation;
+		InstancePlayRate = InPlayRate;
+		if (!StartSection(FoundSectionIndex, FALSE))
 		{
 			Clear();
 			return FALSE;
 		}
 
-		PE_LOG_LOG(EString("Montage '") + InMontage->Name + EString("' started section '") + Section.Name + EString("'."));
+		PE_LOG_LOG(EString("Montage '") + InMontage->Name + EString("' started section '")
+			+ Montage->Sections[FoundSectionIndex].Name + EString("'."));
 		return TRUE;
 	}
 
 	void EAnimMontageInstance::Clear()
 	{
 		Montage = nullptr;
+		BoundSkeleton = nullptr;
+		BoundAnimation = nullptr;
 		SectionIndex = -1;
+		PendingSectionIndex = -1;
 		ClipPlayer.Reset();
 		BoneMaskWeights.Empty();
 		LayerPose.Empty();
 		LayerWeight = 0.0f;
+		InstancePlayRate = 1.0f;
 		BlendInSeconds = 0.1f;
 		BlendOutSeconds = 0.2f;
 		bStopping = FALSE;
 		bPaused = FALSE;
 		bFinished = FALSE;
+	}
+
+	BOOL32 EAnimMontageInstance::StartSection(INT32 InSectionIndex, BOOL32 bInKeepLayerWeight)
+	{
+		if ((!Montage) || (!BoundAnimation) || (!BoundSkeleton)
+			|| (InSectionIndex < 0) || (InSectionIndex >= Montage->Sections.Num()))
+		{
+			return FALSE;
+		}
+
+		const EAnimMontageSection& Section = Montage->Sections[InSectionIndex];
+		const ESkeletonAnimationClip* Clip = BoundAnimation->GetAnimationClip(Section.ClipName);
+		if (!Clip)
+		{
+			PE_LOG_WARN(EString("Montage '") + Montage->Name + EString("' could not find clip '")
+				+ Section.ClipName + EString("'."));
+			return FALSE;
+		}
+		INT32 ClipIndex = -1;
+		BoundAnimation->GetAnimationClipMapping().FindValue(Section.ClipName, ClipIndex);
+
+		SectionIndex = InSectionIndex;
+		PendingSectionIndex = -1;
+		BlendInSeconds = EMath::Max(Section.BlendInSeconds, 0.001f);
+		BlendOutSeconds = EMath::Max(Section.BlendOutSeconds, 0.001f);
+		if (!bInKeepLayerWeight)
+		{
+			LayerWeight = (Section.BlendInSeconds <= 0.001f) ? 1.0f : 0.0f;
+		}
+		bStopping = FALSE;
+		bPaused = FALSE;
+		bFinished = FALSE;
+
+		ClipPlayer.SetClip(Clip, ClipIndex);
+		ClipPlayer.SetLoopMode(Section.LoopMode);
+		ClipPlayer.SetPlayRate(Section.PlayRate * InstancePlayRate);
+		ClipPlayer.Play();
+		return CompileBoneMask(BoundSkeleton);
 	}
 
 	BOOL32 EAnimMontageInstance::Update(EAnimInstance& InAnimInstance, FLOAT InDeltaSeconds)
@@ -194,7 +228,15 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
+		// A paused montage keeps its current pose and pending transition; both continue on
+		// Resume().
 		if (bPaused)
+		{
+			return TRUE;
+		}
+		// The previous section ended last frame. Wait for the caller to dispatch its final
+		// notifies before resetting the clip time (see ApplyPendingSectionTransition).
+		if (PendingSectionIndex >= 0)
 		{
 			return TRUE;
 		}
@@ -217,7 +259,26 @@ namespace PigeonEngine
 		const EAnimMontageSection& Section = Montage->Sections[SectionIndex];
 		if ((!bStopping) && (Section.LoopMode == ANIMATION_LOOP_ONCE) && (!ClipPlayer.IsPlaying()))
 		{
-			Stop(Section.BlendOutSeconds);
+			if (Section.NextSectionName.Length() > 0u)
+			{
+				const INT32 NextSectionIndex = Montage->FindSection(Section.NextSectionName);
+				if ((NextSectionIndex >= 0) && (NextSectionIndex < Montage->Sections.Num())
+					&& (NextSectionIndex != SectionIndex))
+				{
+					PendingSectionIndex = NextSectionIndex;
+					// Hold the last pose (and its notify window) until the caller has
+					// dispatched this section's final events.
+					ClipPlayer.Pause();
+				}
+				else
+				{
+					Stop(Section.BlendOutSeconds);
+				}
+			}
+			else
+			{
+				Stop(Section.BlendOutSeconds);
+			}
 		}
 		return TRUE;
 	}
@@ -263,6 +324,9 @@ namespace PigeonEngine
 		{
 			return;
 		}
+		// A stop request overrides a section transition queued for the next frame.
+		PendingSectionIndex = -1;
+		bPaused = FALSE;
 		if (InBlendOutSeconds >= 0.0f)
 		{
 			BlendOutSeconds = EMath::Max(InBlendOutSeconds, 0.001f);
@@ -291,7 +355,12 @@ namespace PigeonEngine
 			return;
 		}
 		bPaused = FALSE;
-		ClipPlayer.Play();
+		// A blend-out keeps the layer sampling its held pose while the weight falls; only a
+		// normal playback resumes the clip clock.
+		if (!bStopping)
+		{
+			ClipPlayer.Play();
+		}
 	}
 
 	BOOL32 EAnimMontageInstance::IsPlaying()const
@@ -317,6 +386,46 @@ namespace PigeonEngine
 	const EAnimationClipPlayer& EAnimMontageInstance::GetClipPlayer()const
 	{
 		return ClipPlayer;
+	}
+
+	const EAnimMontageSection* EAnimMontageInstance::GetCurrentSection()const
+	{
+		if ((!Montage) || (SectionIndex < 0) || (SectionIndex >= Montage->Sections.Num()))
+		{
+			return nullptr;
+		}
+		return &Montage->Sections[SectionIndex];
+	}
+
+	BOOL32 EAnimMontageInstance::HasPendingSectionTransition()const
+	{
+		return (((!bFinished) && (!bPaused) && (PendingSectionIndex >= 0)) ? TRUE : FALSE);
+	}
+
+	BOOL32 EAnimMontageInstance::ApplyPendingSectionTransition()
+	{
+		if ((!Montage) || (bPaused) || (PendingSectionIndex < 0)
+			|| (PendingSectionIndex >= Montage->Sections.Num())
+			|| (SectionIndex < 0) || (SectionIndex >= Montage->Sections.Num()))
+		{
+			return FALSE;
+		}
+
+		const INT32 TargetSectionIndex = PendingSectionIndex;
+		const EString PreviousSectionName = Montage->Sections[SectionIndex].Name;
+		const EString NextSectionName = Montage->Sections[TargetSectionIndex].Name;
+		if (!StartSection(TargetSectionIndex, TRUE))
+		{
+			// Keep the failed target out of the pending slot so a bad chain stops instead of
+			// retrying on every frame.
+			PendingSectionIndex = -1;
+			Stop(BlendOutSeconds);
+			return FALSE;
+		}
+
+		PE_LOG_LOG(EString("Montage '") + Montage->Name + EString("' section '") + PreviousSectionName
+			+ EString("' -> '") + NextSectionName + EString("'."));
+		return TRUE;
 	}
 
 	BOOL32 EAnimMontageInstance::CompileBoneMask(const ESkeleton* InSkeleton)

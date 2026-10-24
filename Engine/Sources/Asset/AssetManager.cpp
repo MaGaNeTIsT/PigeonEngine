@@ -2,6 +2,7 @@
 #if _EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
 #include "Editor/AnimationEditor/AnimationEditor.h"
+#include "Editor/AnimationMontageEditor/AnimationMontageEditor.h"
 #include "Editor/AnimationStateMachineEditor/AnimationStateMachineEditor.h"
 #include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
@@ -186,6 +187,11 @@ namespace PigeonEngine
 			delete StateMachineEditor;
 			StateMachineEditor = nullptr;
 		}
+		if (MontageEditor)
+		{
+			delete MontageEditor;
+			MontageEditor = nullptr;
+		}
 		if (MeshEditor)
 		{
 			delete MeshEditor;
@@ -232,6 +238,11 @@ namespace PigeonEngine
 		{
 			StateMachineEditor = new EAnimStateMachineEditor();
 			StateMachineEditor->EditorInit();
+		}
+		if (!MontageEditor)
+		{
+			MontageEditor = new EAnimMontageEditor();
+			MontageEditor->EditorInit();
 		}
 		if (!MeshEditor)
 		{
@@ -357,6 +368,10 @@ namespace PigeonEngine
 		{
 			StateMachineEditor->EditorUpdate();
 		}
+		if (MontageEditor)
+		{
+			MontageEditor->EditorUpdate();
+		}
 		if (MeshEditor)
 		{
 			MeshEditor->EditorUpdate();
@@ -412,6 +427,14 @@ namespace PigeonEngine
 							if (ImGui::Button("Open State Machine Editor"))
 							{
 								StateMachineEditor->OpenStateMachineAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Montage Editor"))
+							{
+								MontageEditor->OpenMontageAsset(SelectedFile->GetPath());
 							}
 						}
 						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
@@ -481,6 +504,10 @@ namespace PigeonEngine
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{
 								StateMachineEditor->OpenStateMachineAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								MontageEditor->OpenMontageAsset(elem->GetPath());
 							}
 							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 							{

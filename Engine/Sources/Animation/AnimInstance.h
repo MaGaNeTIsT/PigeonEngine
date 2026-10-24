@@ -130,6 +130,8 @@ namespace PigeonEngine
 		void CancelCrossFade();
 		// Fires the notify events crossed by InPlayer's last Advance.
 		void DispatchNotifies(const EAnimationClipPlayer& InPlayer);
+		// Fires the current montage section's authored events over the same time window.
+		void DispatchMontageSectionNotifies();
 		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
