@@ -13,6 +13,8 @@ namespace PigeonEngine
 	class ESkeletonAnimationAsset;
 	class EAnimStateMachine;
 	class EAnimStateMachineInstance;
+	class EAnimMontage;
+	class EAnimMontageInstance;
 	struct ESkeletonAnimationClip;
 
 	/*
@@ -88,6 +90,21 @@ namespace PigeonEngine
 		PE_NODISCARD EAnimStateMachineInstance* GetStateMachineInstance()const;
 		// State machine END
 
+		// Montage START
+	public:
+		/*
+		* Plays one montage section over the current base pose. The section's clip is resolved
+		* against the bound animation asset; its bone mask decides which bones the layer
+		* writes. A previously active montage is replaced.
+		*/
+		BOOL32 PlayMontage(const EAnimMontage* InMontage, const EString& InSectionName = EString(), FLOAT InPlayRate = 1.0f);
+		void StopMontage(FLOAT InBlendOutSeconds = -1.0f);
+		void PauseMontage();
+		void ResumeMontage();
+		PE_NODISCARD BOOL32 IsMontagePlaying()const;
+		PE_NODISCARD EAnimMontageInstance* GetMontageInstance()const;
+		// Montage END
+
 		/*
 		* Rebuilds the binding after the component's skeleton changed. When the previously
 		* playing clip still exists in the new binding, its position, rate, loop mode and
@@ -111,8 +128,8 @@ namespace PigeonEngine
 		BOOL32 BindAnimation();
 		BOOL32 PlayInternal(INT32 InClipIndex, EAnimationLoopMode InLoopMode, FLOAT InPlayRate, FLOAT InFadeSeconds);
 		void CancelCrossFade();
-		// Fires the notify events crossed by the current player's last Advance.
-		void DispatchNotifies();
+		// Fires the notify events crossed by InPlayer's last Advance.
+		void DispatchNotifies(const EAnimationClipPlayer& InPlayer);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
@@ -126,6 +143,9 @@ namespace PigeonEngine
 		// itself is owned by the asset manager; this object only holds parameters and the
 		// current state.
 		TUniquePtr<EAnimStateMachineInstance>	StateMachineInstance;
+		// Only one montage section is active at a time in this first version. The instance
+		// owns its clip player and compiled bone mask.
+		TUniquePtr<EAnimMontageInstance>		MontageInstance;
 		// The clip being blended out, and the pose it produced this frame. The pose array is
 		// only allocated while a crossfade is in progress.
 		EAnimationClipPlayer			PreviousClipPlayer;

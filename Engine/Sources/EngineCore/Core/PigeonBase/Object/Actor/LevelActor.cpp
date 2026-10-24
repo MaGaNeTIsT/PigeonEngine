@@ -4,6 +4,7 @@
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #if _EDITOR_ONLY
+#include <AnimationMontageAsset/AnimationMontageAsset.h>
 #include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
 #endif
 #include <ShaderAsset/ShaderAsset.h>
@@ -225,6 +226,41 @@ namespace PigeonEngine
 			if (StateMachineAsset)
 			{
 				NewSkeletalMeshComp->SetStateMachine(StateMachineAsset->GetStoragedResource());
+			}
+
+			// Montage: the sample upper-body section is played once the animation asset is
+			// bound, so it layers on top of the state machine instead of racing it.
+			const EString MontageAssetName(PE_TEXT("Boss_UpperBody_Attack"));
+			const EAnimMontageAsset* MontageAsset = nullptr;
+			if (!(EAnimMontageManager::GetManagerSingleton()->LoadMontageAsset(
+				EBaseSettings::ENGINE_MONTAGE_PATH, MontageAssetName, MontageAsset)))
+			{
+				const EString MontageJsonPath = AssetBasePath
+					+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/Boss_Montage.json"));
+				if (EAnimMontageManager::GetManagerSingleton()->ImportMontage(
+					MontageAssetName, MontageJsonPath, EBaseSettings::ENGINE_MONTAGE_PATH))
+				{
+					MontageAsset = nullptr;
+					EAnimMontageManager::GetManagerSingleton()->LoadMontageAsset(
+						EBaseSettings::ENGINE_MONTAGE_PATH, MontageAssetName, MontageAsset);
+				}
+			}
+			if (MontageAsset)
+			{
+				PSkeletalMeshComponent* Component = NewSkeletalMeshComp;
+				TFunction<BOOL32()> MontageStep = [Component, MontageAsset]() -> BOOL32
+				{
+					if (!Component->GetAnimationAsset())
+					{
+						return FALSE;
+					}
+					Component->PlayMontage(MontageAsset->GetStoragedResource(), EString(PE_TEXT("Attack")));
+					return TRUE;
+				};
+				if (MontageStep() == FALSE)
+				{
+					NewSkeletalMeshComp->AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(MontageStep));
+				}
 			}
 #endif
 

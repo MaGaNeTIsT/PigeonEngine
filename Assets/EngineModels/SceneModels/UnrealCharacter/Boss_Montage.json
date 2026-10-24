@@ -1,0 +1,50 @@
+{
+  "name": "Boss_UpperBody_Attack",
+  "description": "Sample montage: the upper-body bone mask overlays a section on the base state machine.",
+  "skeleton": "SK_Mannequin_UE4_WithWeapon_Skeleton",
+  "animation": "Boss_Idle",
+  "slotGroups": [
+    {
+      "name": "Default",
+      "slots": [
+        "Default"
+      ]
+    },
+    {
+      "name": "UpperBody",
+      "slots": [
+        "UpperBody"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "name": "Attack",
+      "clip": "Unreal Take",
+      "slot": "UpperBody",
+      "loop": "Once",
+      "rate": 1.0,
+      "blendIn": 0.1,
+      "blendOut": 0.2,
+      "boneMask": {
+        "name": "UpperBody",
+        "bones": [
+          "spine_01",
+          "spine_02",
+          "spine_03",
+          "neck_01",
+          "head",
+          "clavicle_l",
+          "upperarm_l",
+          "lowerarm_l",
+          "hand_l",
+          "clavicle_r",
+          "upperarm_r",
+          "lowerarm_r",
+          "hand_r"
+        ],
+        "weight": 1.0
+      }
+    }
+  ]
+}
