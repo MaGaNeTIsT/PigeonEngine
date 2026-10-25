@@ -386,6 +386,31 @@ namespace PigeonEngine
 	}
 	// Montage END
 
+	// Root motion START
+	void PSkeletalMeshComponent::SetRootMotionEnabled(BOOL32 bInEnabled)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetRootMotionEnabled(bInEnabled);
+		}
+	}
+	BOOL32 PSkeletalMeshComponent::IsRootMotionEnabled()const
+	{
+		return (AnimInstance ? AnimInstance->IsRootMotionEnabled() : FALSE);
+	}
+	void PSkeletalMeshComponent::SetRootMotionBoneIndex(INT32 InBoneIndex)
+	{
+		if (AnimInstance)
+		{
+			AnimInstance->SetRootMotionBoneIndex(InBoneIndex);
+		}
+	}
+	INT32 PSkeletalMeshComponent::GetRootMotionBoneIndex()const
+	{
+		return (AnimInstance ? AnimInstance->GetRootMotionBoneIndex() : 0);
+	}
+	// Root motion END
+
 	const ESkeletonBoneMemoryPool& PSkeletalMeshComponent::GetBoneMemoryPool()const
 	{
 		return BoneMemoryPool;
