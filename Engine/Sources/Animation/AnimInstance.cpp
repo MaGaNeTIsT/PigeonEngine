@@ -6,6 +6,7 @@
 
 #include <AnimationAsset/AnimationAsset.h>
 #include <Editor/EditorLogManager.h>
+#include <PigeonBase/Object/Actor.h>
 #include <PigeonBase/Object/Component/Primitive/SkeletalMeshComponent.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 
@@ -69,6 +70,7 @@ namespace PigeonEngine
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
 		ClearAllMontages();
+		ResetRootMotionState();
 		Component = InComponent;
 		Binding.Unbind();
 		ClipPlayer.Reset();
@@ -87,6 +89,7 @@ namespace PigeonEngine
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
 		ClearAllMontages();
+		ResetRootMotionState();
 		const EAnimStateMachine* ActiveMachine = (StateMachineInstance ? StateMachineInstance->GetMachine() : nullptr);
 		const BOOL32 bKeepStateMachine = ((ActiveMachine != nullptr) && (InAnimationAsset != nullptr)
 			&& ((ActiveMachine->AnimationAssetName.Length() <= 0u)
@@ -184,6 +187,7 @@ namespace PigeonEngine
 		// The outgoing clip's state windows end before its data stops being the active
 		// timeline. This also covers restarting the same clip.
 		EndNotifyStates(ActiveBaseNotifyStates);
+		ResetRootMotionState();
 
 		// Hand the outgoing clip to the previous player before the new one takes over. A
 		// same-clip restart has nothing to blend, so it switches immediately.
@@ -233,6 +237,7 @@ namespace PigeonEngine
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
 		ClearAllMontages();
+		ResetRootMotionState();
 		ClipPlayer.Reset();
 		CancelCrossFade();
 		CurrentClipIndex = -1;
@@ -277,6 +282,7 @@ namespace PigeonEngine
 		// the new position is inside them.
 		CancelCrossFade();
 		EndNotifyStates(ActiveBaseNotifyStates);
+		ResetRootMotionState();
 		ClipPlayer.SetPositionSeconds(InPositionSeconds);
 		bPoseDirty = TRUE;
 	}
@@ -525,10 +531,33 @@ namespace PigeonEngine
 		return MontageInstances[InIndex].get();
 	}
 
+	void EAnimInstance::SetRootMotionEnabled(BOOL32 bInEnabled)
+	{
+		bRootMotionEnabled = (bInEnabled ? TRUE : FALSE);
+		ResetRootMotionState();
+	}
+
+	BOOL32 EAnimInstance::IsRootMotionEnabled()const
+	{
+		return bRootMotionEnabled;
+	}
+
+	void EAnimInstance::SetRootMotionBoneIndex(INT32 InBoneIndex)
+	{
+		RootMotionBoneIndex = EMath::Max(InBoneIndex, 0);
+		ResetRootMotionState();
+	}
+
+	INT32 EAnimInstance::GetRootMotionBoneIndex()const
+	{
+		return RootMotionBoneIndex;
+	}
+
 	void EAnimInstance::OnSkeletonChanged()
 	{
 		EndNotifyStates(ActiveBaseNotifyStates);
 		ClearAllMontages();
+		ResetRootMotionState();
 		const BOOL32 bWasPlaying = ClipPlayer.IsPlaying();
 		const INT32 PreviousClipIndex = CurrentClipIndex;
 		const FLOAT PreviousPositionSeconds = ClipPlayer.GetPositionSeconds();
@@ -693,6 +722,9 @@ namespace PigeonEngine
 			}
 		}
 
+		// Root motion consumes the root bone delta before the pose-to-root matrices are
+		// rebuilt, so the mesh renders at the bind root while the actor carries the motion.
+		ApplyRootMotion(Component->GetBoneMemoryPool().GetBoneRelativeTransforms(), InDeltaSeconds);
 		Component->GetBoneMemoryPool().RecursionToRootTransforms();
 		if (bAdvancing)
 		{
@@ -934,6 +966,63 @@ namespace PigeonEngine
 			}
 		}
 		InOutActive.Empty();
+	}
+
+	void EAnimInstance::ResetRootMotionState()
+	{
+		bHasPreviousRootTransform = FALSE;
+		PreviousRootTransform = EBoneTransform::Identity();
+	}
+
+	void EAnimInstance::ApplyRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds)
+	{
+		if ((!bRootMotionEnabled) || (InDeltaSeconds <= 0.0f) || (!Component) || (!Binding.IsValid()))
+		{
+			return;
+		}
+		if ((RootMotionBoneIndex < 0) || (RootMotionBoneIndex >= InOutPose.Num()))
+		{
+			return;
+		}
+
+		const EBoneTransform CurrentRoot = InOutPose[RootMotionBoneIndex];
+		if ((bHasPreviousRootTransform) && (!ClipPlayer.HasLoopedLastAdvance()))
+		{
+			const Vector3 DeltaPosition(CurrentRoot.Position.x - PreviousRootTransform.Position.x
+				, CurrentRoot.Position.y - PreviousRootTransform.Position.y
+				, CurrentRoot.Position.z - PreviousRootTransform.Position.z);
+			const Quaternion DeltaRotation = Quaternion::MultiplyQuaternion(CurrentRoot.Rotation
+				, Quaternion::Inverse(PreviousRootTransform.Rotation));
+
+			if (PActor* OwnerActor = Component->GetOwnerActor())
+			{
+				if (DeltaPosition.Length() > 1e-6f)
+				{
+					OwnerActor->SetActorLocation(OwnerActor->GetActorLocation() + DeltaPosition);
+				}
+				OwnerActor->SetActorRotation(Quaternion::MultiplyQuaternion(DeltaRotation, OwnerActor->GetActorRotation()));
+			}
+			else
+			{
+				const ETransform& CurrentTransform = Component->GetTransform();
+				ETransform NewTransform(CurrentTransform.GetLocation_Local() + DeltaPosition
+					, Quaternion::MultiplyQuaternion(DeltaRotation, CurrentTransform.GetRotation_Local())
+					, CurrentTransform.GetScaling_Local());
+				Component->SetComponentTransform(NewTransform);
+			}
+		}
+
+		PreviousRootTransform = CurrentRoot;
+		bHasPreviousRootTransform = TRUE;
+
+		// The actor/component consumed the motion; keep the mesh at its bind root so it is
+		// not displaced a second time by the sampled clip.
+		const ESkeleton* Skeleton = Binding.GetSkeleton();
+		if ((Skeleton) && (RootMotionBoneIndex < Skeleton->GetBoneCount()))
+		{
+			const EBoneData& Bone = Skeleton->GetBonePart()[RootMotionBoneIndex];
+			InOutPose[RootMotionBoneIndex] = EBoneTransform(Bone.DefaultPosition, Bone.DefaultRotation, Bone.DefaultScaling);
+		}
 	}
 
 	BOOL32 EAnimInstance::BindAnimation()

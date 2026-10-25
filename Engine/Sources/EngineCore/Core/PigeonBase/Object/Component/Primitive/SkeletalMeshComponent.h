@@ -113,6 +113,14 @@ namespace PigeonEngine
 		PE_NODISCARD EAnimMontageInstance*          GetMontageInstanceAt(INT32 InIndex)const;
 		// Montage END
 
+		// Root motion START
+	public:
+		void                                        SetRootMotionEnabled(BOOL32 bInEnabled);
+		PE_NODISCARD BOOL32                         IsRootMotionEnabled()const;
+		void                                        SetRootMotionBoneIndex(INT32 InBoneIndex);
+		PE_NODISCARD INT32                          GetRootMotionBoneIndex()const;
+		// Root motion END
+
 	protected:
 		const ESkinnedMeshAsset*        MeshAsset;
 		const ESkeletonAsset*           SkeletonAsset;

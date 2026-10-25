@@ -117,6 +117,19 @@ namespace PigeonEngine
 		PE_NODISCARD EAnimMontageInstance* GetMontageInstanceAt(INT32 InIndex)const;
 		// Montage END
 
+		// Root motion START
+	public:
+		/*
+		* Opt-in root motion. When enabled, the root bone's per-frame delta is applied to
+		* the owner actor (or to this component when there is no owner), and the root bone
+		* is reset to its bind transform so the mesh is not displaced twice.
+		*/
+		void SetRootMotionEnabled(BOOL32 bInEnabled);
+		PE_NODISCARD BOOL32 IsRootMotionEnabled()const;
+		void SetRootMotionBoneIndex(INT32 InBoneIndex);
+		PE_NODISCARD INT32 GetRootMotionBoneIndex()const;
+		// Root motion END
+
 		/*
 		* Rebuilds the binding after the component's skeleton changed. When the previously
 		* playing clip still exists in the new binding, its position, rate, loop mode and
@@ -159,6 +172,8 @@ namespace PigeonEngine
 		// transitions, not by a normal blend-out.
 		void ClearAllMontages();
 		void SortMontagesByLayerPriority();
+		void ApplyRootMotion(TArray<EBoneTransform>& InOutPose, FLOAT InDeltaSeconds);
+		void ResetRootMotionState();
 		void ApplyDefaultPose(const ESkeleton* InSkeleton);
 		void ApplyDefaultPose(const ESkeleton* InSkeleton, TArray<EBoneTransform>& InOutPose);
 		PE_NODISCARD INT32 GetAnimationClipNum()const;
@@ -181,6 +196,10 @@ namespace PigeonEngine
 		TArray<EBoneTransform>			CrossFadePose;
 		// Base-clip state windows. Each montage layer owns its own list on its instance.
 		TArray<FActiveAnimNotifyState>	ActiveBaseNotifyStates;
+		BOOL32							bRootMotionEnabled = FALSE;
+		INT32							RootMotionBoneIndex = 0;
+		BOOL32							bHasPreviousRootTransform = FALSE;
+		EBoneTransform					PreviousRootTransform;
 		FLOAT							CrossFadeDuration = 0.0f;
 		FLOAT							CrossFadeRemaining = 0.0f;
 		INT32							CurrentClipIndex = -1;
