@@ -182,6 +182,7 @@ namespace PigeonEngine
 		LayerPose.Empty();
 		LayerWeight = 0.0f;
 		LayerPriority = 0;
+		bAdditive = FALSE;
 		ActiveNotifyStates.Empty();
 		InstancePlayRate = 1.0f;
 		BlendInSeconds = 0.1f;
@@ -212,6 +213,7 @@ namespace PigeonEngine
 
 		SectionIndex = InSectionIndex;
 		PendingSectionIndex = -1;
+		bAdditive = Section.bAdditive;
 		// The skeleton owns the slot order so every montage agrees which layer is on top.
 		const INT32 SlotGroupIndex = BoundSkeleton->FindSlotGroup(Section.SlotName);
 		LayerPriority = ((SlotGroupIndex >= 0) ? SlotGroupIndex : 0);
@@ -307,11 +309,32 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
+		const ESkeleton::EBonePart* BindBones = ((bAdditive && BoundSkeleton) ? &BoundSkeleton->GetBonePart() : nullptr);
 		if (LayerPose.Num() != InOutPose.Num())
 		{
 			LayerPose.SetNum(InOutPose.Num());
 		}
-		LayerPose = InOutPose;
+		if (BindBones)
+		{
+			// The bind pose is the additive reference for this first version. Sampling
+			// starts from it so bones without curves contribute a zero delta.
+			for (INT32 BoneIndex = 0; BoneIndex < LayerPose.Num(); BoneIndex++)
+			{
+				if (BoneIndex < BindBones->Num())
+				{
+					const EBoneData& BindData = (*BindBones)[BoneIndex];
+					LayerPose[BoneIndex] = EBoneTransform(BindData.DefaultPosition, BindData.DefaultRotation, BindData.DefaultScaling);
+				}
+				else
+				{
+					LayerPose[BoneIndex] = EBoneTransform::Identity();
+				}
+			}
+		}
+		else
+		{
+			LayerPose = InOutPose;
+		}
 		if (!ClipPlayer.Evaluate(InBinding, LayerPose))
 		{
 			return FALSE;
@@ -327,9 +350,27 @@ namespace PigeonEngine
 			}
 			EBoneTransform& CurrentTransform = InOutPose[BoneIndex];
 			const EBoneTransform& LayerTransform = LayerPose[BoneIndex];
-			CurrentTransform.Position = Vector3::Lerp(CurrentTransform.Position, LayerTransform.Position, Alpha);
-			CurrentTransform.Rotation = Quaternion::SLerp(CurrentTransform.Rotation, LayerTransform.Rotation, Alpha);
-			CurrentTransform.Scaling = Vector3::Lerp(CurrentTransform.Scaling, LayerTransform.Scaling, Alpha);
+			if ((BindBones) && (BoneIndex < BindBones->Num()))
+			{
+				// Additive: layer - bind for translation/scale, and a local-space
+				// rotation delta. The reference is the bind pose, not a reference clip.
+				const EBoneData& BindData = (*BindBones)[BoneIndex];
+				CurrentTransform.Position.x += (LayerTransform.Position.x - BindData.DefaultPosition.x) * Alpha;
+				CurrentTransform.Position.y += (LayerTransform.Position.y - BindData.DefaultPosition.y) * Alpha;
+				CurrentTransform.Position.z += (LayerTransform.Position.z - BindData.DefaultPosition.z) * Alpha;
+				CurrentTransform.Scaling.x += (LayerTransform.Scaling.x - BindData.DefaultScaling.x) * Alpha;
+				CurrentTransform.Scaling.y += (LayerTransform.Scaling.y - BindData.DefaultScaling.y) * Alpha;
+				CurrentTransform.Scaling.z += (LayerTransform.Scaling.z - BindData.DefaultScaling.z) * Alpha;
+				const Quaternion DeltaRotation = Quaternion::MultiplyQuaternion(LayerTransform.Rotation
+					, Quaternion::Inverse(BindData.DefaultRotation));
+				CurrentTransform.Rotation = Quaternion::MultiplyQuaternion(CurrentTransform.Rotation, DeltaRotation);
+			}
+			else
+			{
+				CurrentTransform.Position = Vector3::Lerp(CurrentTransform.Position, LayerTransform.Position, Alpha);
+				CurrentTransform.Rotation = Quaternion::SLerp(CurrentTransform.Rotation, LayerTransform.Rotation, Alpha);
+				CurrentTransform.Scaling = Vector3::Lerp(CurrentTransform.Scaling, LayerTransform.Scaling, Alpha);
+			}
 		}
 		return TRUE;
 	}

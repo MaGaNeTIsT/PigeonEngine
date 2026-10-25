@@ -308,9 +308,10 @@ namespace PigeonEngine
 							const EAnimMontageSection& Section = Montage->Sections[SectionIndex];
 							const EString NextName = ((Section.NextSectionName.Length() > 0u)
 								? Section.NextSectionName : EString("(end)"));
-							ImGui::BulletText("%s -> %s | clip: %s | slot: %s | %s | notifies: %d"
+							ImGui::BulletText("%s -> %s | clip: %s | slot: %s | %s%s | notifies: %d"
 								, *Section.Name, *NextName, *Section.ClipName, *Section.SlotName
-								, GetLoopModeLabel(Section.LoopMode), Section.Notifies.Num());
+								, GetLoopModeLabel(Section.LoopMode), (Section.bAdditive ? " | additive" : "")
+								, Section.Notifies.Num());
 						}
 						ImGui::TreePop();
 					}
