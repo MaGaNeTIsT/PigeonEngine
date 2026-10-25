@@ -459,6 +459,9 @@ namespace PigeonEngine
 				{
 					Section.BlendOutSeconds = BlendOut;
 				}
+				BOOL8 bAdditive = FALSE;
+				SectionObject->GetBoolField(PE_TEXT("additive"), bAdditive);
+				Section.bAdditive = ((bAdditive != FALSE) ? TRUE : FALSE);
 
 				CJsonObject MaskObject;
 				if (SectionObject->GetObjectField(PE_TEXT("boneMask"), MaskObject))

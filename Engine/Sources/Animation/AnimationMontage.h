@@ -49,6 +49,9 @@ namespace PigeonEngine
 		FLOAT					PlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
 		FLOAT					BlendOutSeconds = 0.2f;
+		// Additive sections apply their sampled pose minus the bind pose on top of the
+		// current pose instead of overriding it.
+		BOOL32					bAdditive = FALSE;
 		ESkeletonBoneMask		BoneMask;
 		TArray<FAnimNotifyEvent>	Notifies;
 	};
@@ -140,6 +143,7 @@ namespace PigeonEngine
 		TArray<EBoneTransform>	LayerPose;
 		FLOAT					LayerWeight = 0.0f;
 		INT32					LayerPriority = 0;
+		BOOL32					bAdditive = FALSE;
 		TArray<FActiveAnimNotifyState> ActiveNotifyStates;
 		FLOAT					InstancePlayRate = 1.0f;
 		FLOAT					BlendInSeconds = 0.1f;
