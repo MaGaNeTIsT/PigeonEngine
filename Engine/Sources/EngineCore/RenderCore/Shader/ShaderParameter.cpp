@@ -40,7 +40,11 @@ namespace PigeonEngine
 	}
 	PE_INLINE Matrix4x4 TranslateUploadTransposeMatrixType(const Matrix4x4& InData)
 	{
+#if 0
 		return InData;
+#else
+		return Matrix4x4(InData.GetDirectXTransposeValue4x4());
+#endif
 	}
 	PE_INLINE Vector3 TranslateUploadVectorType(const Vector3& InData)
 	{

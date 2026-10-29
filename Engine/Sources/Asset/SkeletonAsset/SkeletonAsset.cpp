@@ -458,8 +458,8 @@ namespace PigeonEngine
 			NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX] = new Matrix4x4[InMatrixNum];
 			for (UINT32 i = 0u; i < InMatrixNum; i++)
 			{
-				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX])[i] = TranslateUploadTransposeMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i].Inverse());
-				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i] = TranslateUploadMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i]);
+				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_INVERSE_TRANSPOSE_MATRIX])[i] = TranslateUploadMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i].Inverse());
+				(NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i] = TranslateUploadTransposeMatrixType((NewMatrices[ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_MATRIX])[i]);
 			}
 			IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 			for (UINT32 i = 0u, n = ESkeletonRenderResourceType::SKELETON_RENDER_RESOURCE_COUNT; i < n; i++)
