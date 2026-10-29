@@ -46,6 +46,9 @@ namespace PigeonEngine
 		BOOL32 UpdateTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex
 			, INT32 InParameterIndex, const EString& InOp, FLOAT InValue);
 		BOOL32 RemoveTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex);
+		// Validates and commits serialized JSON through the asset manager, then replaces the
+		// editor buffer. A rejected graph leaves the live machine and buffer untouched.
+		BOOL32 CommitJsonText(const EString& InJsonText);
 		void ReplaceJsonBuffer(const EString& InJsonText);
 
 	private:

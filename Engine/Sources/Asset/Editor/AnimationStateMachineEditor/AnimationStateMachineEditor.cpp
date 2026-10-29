@@ -8,11 +8,7 @@
 #include <Base/DataStructure/Text/Path.h>
 #include <Editor/EditorLogManager.h>
 #include <RapidJson/Headers/JsonObject.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
 #include <cmath>
-#include <cstring>
 
 namespace PigeonEngine
 {
@@ -76,43 +72,39 @@ namespace PigeonEngine
 			}
 		}
 
-		EString GetJsonStringField(const rapidjson::Value& InObject, const CHAR* InFieldName)
+		// GetObjectArrayField hands out heap copies; this guard is the single owner for the
+		// duration of one edit. New objects added to an array are owned here too.
+		struct FJsonObjectArrayOwner
 		{
-			if (!InObject.IsObject())
+			explicit FJsonObjectArrayOwner(TArray<CJsonObject*>& InObjects) : Objects(InObjects) {}
+			~FJsonObjectArrayOwner()
 			{
-				return EString();
+				for (INT32 Index = 0; Index < Objects.Num(); Index++)
+				{
+					delete Objects[Index];
+				}
+				Objects.Empty();
 			}
-			auto It = InObject.FindMember(InFieldName);
-			if ((It != InObject.MemberEnd()) && (It->value.IsString()))
-			{
-				return EString(It->value.GetString());
-			}
-			return EString();
+			TArray<CJsonObject*>& Objects;
+		};
+
+		EString GetJsonObjectString(CJsonObject& InObject, const EString& InFieldName)
+		{
+			EString Result;
+			InObject.GetStringField(InFieldName, Result);
+			return Result;
 		}
 
-		BOOL32 JsonStateNameExists(const rapidjson::Value& InStates, const EString& InName)
+		BOOL32 JsonStateNameExists(const TArray<CJsonObject*>& InStates, const EString& InName)
 		{
-			if (!InStates.IsArray())
+			for (INT32 StateIndex = 0; StateIndex < InStates.Num(); StateIndex++)
 			{
-				return FALSE;
-			}
-			for (auto& State : InStates.GetArray())
-			{
-				if (GetJsonStringField(State, "name") == InName)
+				if ((InStates[StateIndex]) && (GetJsonObjectString(*InStates[StateIndex], EString("name")) == InName))
 				{
 					return TRUE;
 				}
 			}
 			return FALSE;
-		}
-
-		BOOL32 SerializeJsonDocument(const rapidjson::Document& InDocument, EString& OutText)
-		{
-			rapidjson::StringBuffer Buffer;
-			rapidjson::Writer<rapidjson::StringBuffer> Writer(Buffer);
-			InDocument.Accept(Writer);
-			OutText = EString(Buffer.GetString());
-			return TRUE;
 		}
 	}
 
@@ -450,36 +442,30 @@ namespace PigeonEngine
 			return;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			return;
 		}
-		auto StatesIt = Doc.FindMember("states");
-		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		TArray<CJsonObject*> StateObjects;
+		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		FJsonObjectArrayOwner StateOwner(StateObjects);
+		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
-			return;
-		}
-		for (auto& StateValue : StatesIt->value.GetArray())
-		{
-			if (!StateValue.IsObject())
+			CJsonObject* StateObject = StateObjects[StateIndex];
+			if (!StateObject)
 			{
 				continue;
 			}
-			auto NameIt = StateValue.FindMember("name");
-			auto XIt = StateValue.FindMember("nodeX");
-			auto YIt = StateValue.FindMember("nodeY");
-			if ((NameIt == StateValue.MemberEnd()) || (!NameIt->value.IsString())
-				|| (XIt == StateValue.MemberEnd()) || (!XIt->value.IsNumber())
-				|| (YIt == StateValue.MemberEnd()) || (!YIt->value.IsNumber()))
+			EString StateName;
+			FLOAT NodeX = 0.0f;
+			FLOAT NodeY = 0.0f;
+			if (StateObject->GetStringField(PE_TEXT("name"), StateName)
+				&& StateObject->GetFloatField(PE_TEXT("nodeX"), NodeX)
+				&& StateObject->GetFloatField(PE_TEXT("nodeY"), NodeY)
+				&& (StateName.Length() > 0u))
 			{
-				continue;
-			}
-			const EString StateName(NameIt->value.GetString());
-			if (StateName.Length() > 0u)
-			{
-				m_NodePositions.Add(StateName, ImVec2(XIt->value.GetFloat(), YIt->value.GetFloat()));
+				m_NodePositions.Add(StateName, ImVec2(NodeX, NodeY));
 			}
 		}
 	}
@@ -505,69 +491,36 @@ namespace PigeonEngine
 			return;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			return;
 		}
-		auto StatesIt = Doc.FindMember("states");
-		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		TArray<CJsonObject*> StateObjects;
+		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		FJsonObjectArrayOwner StateOwner(StateObjects);
+		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
-			return;
-		}
-		for (auto& StateValue : StatesIt->value.GetArray())
-		{
-			if (!StateValue.IsObject())
+			CJsonObject* StateObject = StateObjects[StateIndex];
+			if (!StateObject)
 			{
 				continue;
 			}
-			auto NameIt = StateValue.FindMember("name");
-			if ((NameIt == StateValue.MemberEnd()) || (!NameIt->value.IsString()))
+			EString StateName;
+			if (!StateObject->GetStringField(PE_TEXT("name"), StateName))
 			{
 				continue;
 			}
-			const EString StateName(NameIt->value.GetString());
 			const ImVec2* Position = m_NodePositions.FindValueAsPtr(StateName);
 			if (!Position)
 			{
 				continue;
 			}
-
-			auto XIt = StateValue.FindMember("nodeX");
-			if (XIt == StateValue.MemberEnd())
-			{
-				rapidjson::Value XValue(static_cast<double>(Position->x));
-				StateValue.AddMember("nodeX", XValue, Doc.GetAllocator());
-			}
-			else
-			{
-				XIt->value.SetDouble(static_cast<double>(Position->x));
-			}
-			auto YIt = StateValue.FindMember("nodeY");
-			if (YIt == StateValue.MemberEnd())
-			{
-				rapidjson::Value YValue(static_cast<double>(Position->y));
-				StateValue.AddMember("nodeY", YValue, Doc.GetAllocator());
-			}
-			else
-			{
-				YIt->value.SetDouble(static_cast<double>(Position->y));
-			}
+			StateObject->SetFloatField(PE_TEXT("nodeX"), Position->x);
+			StateObject->SetFloatField(PE_TEXT("nodeY"), Position->y);
 		}
-
-		rapidjson::StringBuffer Buffer;
-		rapidjson::Writer<rapidjson::StringBuffer> Writer(Buffer);
-		Doc.Accept(Writer);
-		const EString Updated(Buffer.GetString());
-		m_JsonBuffer.Empty();
-		const INT32 Length = static_cast<INT32>(Updated.Length()) + StateMachineEditorBufferHeadroom + 1;
-		m_JsonBuffer.SetNum(Length);
-		::memset(m_JsonBuffer.GetData(), 0, static_cast<size_t>(Length));
-		if (Updated.Length() > 0u)
-		{
-			::memcpy_s(m_JsonBuffer.GetData(), static_cast<rsize_t>(Length), *Updated, Updated.Length());
-		}
+		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
+		ReplaceJsonBuffer(Root.ToString());
 	}
 
 	void EAnimStateMachineEditor::DrawStructureControls(const EAnimStateMachine& InMachine)
@@ -844,62 +797,35 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
-			|| (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
+		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
 			m_LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
-		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
-		if (!Transition.IsObject())
-		{
-			m_LastError = EString("JSON transition is not an object.");
-			return FALSE;
-		}
 
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		auto ConditionsIt = Transition.FindMember("conditions");
-		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray()))
-		{
-			rapidjson::Value EmptyConditions(rapidjson::kArrayType);
-			if (ConditionsIt == Transition.MemberEnd())
-			{
-				Transition.AddMember("conditions", EmptyConditions, Allocator);
-			}
-			else
-			{
-				ConditionsIt->value.Swap(EmptyConditions);
-			}
-			ConditionsIt = Transition.FindMember("conditions");
-		}
-
+		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
+		TArray<CJsonObject*> ConditionObjects;
+		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
 		const EAnimStateMachineParameter& Parameter = Machine->Parameters[InParameterIndex];
-		rapidjson::Value Condition(rapidjson::kObjectType);
-		Condition.AddMember("param", rapidjson::Value(*Parameter.Name, static_cast<rapidjson::SizeType>(Parameter.Name.Length()), Allocator), Allocator);
-		const CHAR* DefaultOp = GetDefaultConditionOp(Parameter.Type);
-		Condition.AddMember("op", rapidjson::Value(DefaultOp, static_cast<rapidjson::SizeType>(strlen(DefaultOp)), Allocator), Allocator);
-		Condition.AddMember("value", rapidjson::Value(0.0), Allocator);
-		ConditionsIt->value.PushBack(Condition, Allocator);
+		CJsonObject* Condition = new CJsonObject();
+		Condition->SetStringField(PE_TEXT("param"), Parameter.Name);
+		Condition->SetStringField(PE_TEXT("op"), EString(GetDefaultConditionOp(Parameter.Type)));
+		Condition->SetFloatField(PE_TEXT("value"), 0.0f);
+		ConditionObjects.Add(Condition);
 
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
-		{
-			m_LastError = Error;
-			return FALSE;
-		}
-		ReplaceJsonBuffer(NewText);
-		m_LastError = EString();
-		return TRUE;
+		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::UpdateTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex
@@ -917,76 +843,39 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
-			|| (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
+		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
 			m_LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
-		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
-		auto ConditionsIt = Transition.FindMember("conditions");
-		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray())
-			|| (InConditionIndex < 0) || (InConditionIndex >= static_cast<INT32>(ConditionsIt->value.Size())))
+
+		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
+		TArray<CJsonObject*> ConditionObjects;
+		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
+		if ((InConditionIndex < 0) || (InConditionIndex >= ConditionObjects.Num()) || (!ConditionObjects[InConditionIndex]))
 		{
 			m_LastError = EString("JSON condition index is invalid.");
 			return FALSE;
 		}
-		rapidjson::Value& Condition = ConditionsIt->value[InConditionIndex];
-		if (!Condition.IsObject())
-		{
-			m_LastError = EString("JSON condition is not an object.");
-			return FALSE;
-		}
 
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		const EString& ParameterName = Machine->Parameters[InParameterIndex].Name;
-		auto ParameterIt = Condition.FindMember("param");
-		if (ParameterIt == Condition.MemberEnd())
-		{
-			Condition.AddMember("param", rapidjson::Value(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator), Allocator);
-		}
-		else
-		{
-			ParameterIt->value.SetString(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator);
-		}
-		auto OpIt = Condition.FindMember("op");
-		if (OpIt == Condition.MemberEnd())
-		{
-			Condition.AddMember("op", rapidjson::Value(*InOp, static_cast<rapidjson::SizeType>(InOp.Length()), Allocator), Allocator);
-		}
-		else
-		{
-			OpIt->value.SetString(*InOp, static_cast<rapidjson::SizeType>(InOp.Length()), Allocator);
-		}
-		auto ValueIt = Condition.FindMember("value");
-		if (ValueIt == Condition.MemberEnd())
-		{
-			Condition.AddMember("value", rapidjson::Value(static_cast<double>(InValue)), Allocator);
-		}
-		else
-		{
-			ValueIt->value.SetDouble(static_cast<double>(InValue));
-		}
+		CJsonObject* Condition = ConditionObjects[InConditionIndex];
+		Condition->SetStringField(PE_TEXT("param"), Machine->Parameters[InParameterIndex].Name);
+		Condition->SetStringField(PE_TEXT("op"), InOp);
+		Condition->SetFloatField(PE_TEXT("value"), InValue);
 
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
-		{
-			m_LastError = Error;
-			return FALSE;
-		}
-		ReplaceJsonBuffer(NewText);
-		m_LastError = EString();
-		return TRUE;
+		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::RemoveTransitionCondition(INT32 InTransitionIndex, INT32 InConditionIndex)
@@ -995,53 +884,38 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
-			|| (InTransitionIndex < 0) || (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
+		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()) || (!TransitionObjects[InTransitionIndex]))
 		{
 			m_LastError = EString("JSON transition index is invalid.");
 			return FALSE;
 		}
-		rapidjson::Value& Transition = TransitionsIt->value[InTransitionIndex];
-		auto ConditionsIt = Transition.FindMember("conditions");
-		if ((ConditionsIt == Transition.MemberEnd()) || (!ConditionsIt->value.IsArray())
-			|| (InConditionIndex < 0) || (InConditionIndex >= static_cast<INT32>(ConditionsIt->value.Size())))
+
+		CJsonObject* Transition = TransitionObjects[InTransitionIndex];
+		TArray<CJsonObject*> ConditionObjects;
+		Transition->GetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
+		if ((InConditionIndex < 0) || (InConditionIndex >= ConditionObjects.Num()))
 		{
 			m_LastError = EString("JSON condition index is invalid.");
 			return FALSE;
 		}
 
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		rapidjson::Value NewConditions(rapidjson::kArrayType);
-		rapidjson::Value& Conditions = ConditionsIt->value;
-		for (rapidjson::SizeType Index = 0; Index < Conditions.Size(); Index++)
-		{
-			if (static_cast<INT32>(Index) == InConditionIndex)
-			{
-				continue;
-			}
-			NewConditions.PushBack(Conditions[Index], Allocator);
-		}
-		ConditionsIt->value.Swap(NewConditions);
+		CJsonObject* Removed = ConditionObjects[InConditionIndex];
+		ConditionObjects.RemoveAt(InConditionIndex);
+		delete Removed;
 
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
-		{
-			m_LastError = Error;
-			return FALSE;
-		}
-		ReplaceJsonBuffer(NewText);
-		m_LastError = EString();
-		return TRUE;
+		Transition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::AddState(const EAnimStateMachine& InMachine)
@@ -1052,64 +926,53 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto StatesIt = Doc.FindMember("states");
-		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		TArray<CJsonObject*> StateObjects;
+		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		FJsonObjectArrayOwner StateOwner(StateObjects);
+		if (StateObjects.Num() <= 0)
 		{
 			m_LastError = EString("JSON has no states array.");
 			return FALSE;
 		}
-		rapidjson::Value& States = StatesIt->value;
-		INT32 Suffix = static_cast<INT32>(States.Size());
+
+		INT32 Suffix = StateObjects.Num();
 		EString NewName;
 		do
 		{
 			NewName = EString("State") + ToString(Suffix++);
-		} while (JsonStateNameExists(States, NewName));
+		} while (JsonStateNameExists(StateObjects, NewName));
 
 		EString ClipName;
-		if (States.Size() > 0)
+		if (StateObjects[0])
 		{
-			ClipName = GetJsonStringField(States[0], "clip");
+			StateObjects[0]->GetStringField(PE_TEXT("clip"), ClipName);
+		}
+		CJsonObject* NewState = new CJsonObject();
+		NewState->SetStringField(PE_TEXT("name"), NewName);
+		NewState->SetStringField(PE_TEXT("clip"), ClipName);
+		NewState->SetStringField(PE_TEXT("loop"), EString("Repeat"));
+		NewState->SetFloatField(PE_TEXT("rate"), 1.0f);
+		NewState->SetFloatField(PE_TEXT("blend"), 0.2f);
+		StateObjects.Add(NewState);
+
+		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
+		EString EntryName;
+		if ((StateObjects.Num() == 1)
+			&& ((!Root.GetStringField(PE_TEXT("entry"), EntryName)) || (EntryName.Length() == 0u)))
+		{
+			Root.SetStringField(PE_TEXT("entry"), NewName);
 		}
 
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		rapidjson::Value State(rapidjson::kObjectType);
-		State.AddMember("name", rapidjson::Value(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator), Allocator);
-		State.AddMember("clip", rapidjson::Value(*ClipName, static_cast<rapidjson::SizeType>(ClipName.Length()), Allocator), Allocator);
-		State.AddMember("loop", rapidjson::Value("Repeat", 6, Allocator), Allocator);
-		State.AddMember("rate", rapidjson::Value(1.0), Allocator);
-		State.AddMember("blend", rapidjson::Value(0.2), Allocator);
-		States.PushBack(State, Allocator);
-
-		auto EntryIt = Doc.FindMember("entry");
-		if ((States.Size() == 1) && ((EntryIt == Doc.MemberEnd()) || (GetJsonStringField(Doc, "entry").Length() == 0u)))
+		if (!CommitJsonText(Root.ToString()))
 		{
-			if (EntryIt == Doc.MemberEnd())
-			{
-				Doc.AddMember("entry", rapidjson::Value(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator), Allocator);
-			}
-			else
-			{
-				EntryIt->value.SetString(*NewName, static_cast<rapidjson::SizeType>(NewName.Length()), Allocator);
-			}
-		}
-
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
-		{
-			m_LastError = Error;
 			return FALSE;
 		}
-		ReplaceJsonBuffer(NewText);
 		const EAnimStateMachine* Rebuilt = m_Asset->GetStoragedResource();
 		m_SelectedStateIndex = (Rebuilt ? Rebuilt->FindState(NewName) : 0);
 		m_TransitionFromIndex = -1;
@@ -1134,77 +997,73 @@ namespace PigeonEngine
 		// rebuild replaces that array before we touch the name again.
 		const EString DeletedStateName = InStateName;
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto StatesIt = Doc.FindMember("states");
-		if ((StatesIt == Doc.MemberEnd()) || (!StatesIt->value.IsArray()))
+		TArray<CJsonObject*> StateObjects;
+		Root.GetObjectArrayField(PE_TEXT("states"), StateObjects);
+		FJsonObjectArrayOwner StateOwner(StateObjects);
+		INT32 RemovedStateIndex = -1;
+		for (INT32 StateIndex = 0; StateIndex < StateObjects.Num(); StateIndex++)
 		{
-			m_LastError = EString("JSON has no states array.");
+			if ((StateObjects[StateIndex]) && (GetJsonObjectString(*StateObjects[StateIndex], EString("name")) == DeletedStateName))
+			{
+				RemovedStateIndex = StateIndex;
+				break;
+			}
+		}
+		if (RemovedStateIndex < 0)
+		{
+			m_LastError = EString("State not found in JSON: ") + DeletedStateName;
 			return FALSE;
 		}
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		rapidjson::Value NewStates(rapidjson::kArrayType);
-		for (auto& State : StatesIt->value.GetArray())
-		{
-			if (GetJsonStringField(State, "name") != DeletedStateName)
-			{
-				NewStates.PushBack(State, Allocator);
-			}
-		}
-		StatesIt->value.Swap(NewStates);
+		CJsonObject* RemovedState = StateObjects[RemovedStateIndex];
+		StateObjects.RemoveAt(RemovedStateIndex);
+		delete RemovedState;
 
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt != Doc.MemberEnd()) && (TransitionsIt->value.IsArray()))
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
+		TArray<CJsonObject*> KeptTransitions;
+		for (INT32 TransitionIndex = 0; TransitionIndex < TransitionObjects.Num(); TransitionIndex++)
 		{
-			rapidjson::Value NewTransitions(rapidjson::kArrayType);
-			for (auto& Transition : TransitionsIt->value.GetArray())
+			CJsonObject* Transition = TransitionObjects[TransitionIndex];
+			if (!Transition)
 			{
-				if ((GetJsonStringField(Transition, "from") == DeletedStateName)
-					|| (GetJsonStringField(Transition, "to") == DeletedStateName))
-				{
-					continue;
-				}
-				NewTransitions.PushBack(Transition, Allocator);
+				continue;
 			}
-			TransitionsIt->value.Swap(NewTransitions);
+			if ((GetJsonObjectString(*Transition, EString("from")) == DeletedStateName)
+				|| (GetJsonObjectString(*Transition, EString("to")) == DeletedStateName))
+			{
+				continue;
+			}
+			KeptTransitions.Add(Transition);
 		}
+		Root.SetObjectArrayField(PE_TEXT("states"), StateObjects);
+		Root.SetObjectArrayField(PE_TEXT("transitions"), KeptTransitions);
 
-		const EString EntryName = GetJsonStringField(Doc, "entry");
-		if ((EntryName == DeletedStateName) || (EntryName.Length() == 0u))
+		EString EntryName;
+		if ((!Root.GetStringField(PE_TEXT("entry"), EntryName))
+			|| (EntryName == DeletedStateName) || (EntryName.Length() == 0u))
 		{
 			EString FirstStateName;
-			if ((StatesIt->value.IsArray()) && (StatesIt->value.Size() > 0))
+			if ((StateObjects.Num() > 0) && (StateObjects[0]))
 			{
-				FirstStateName = GetJsonStringField(StatesIt->value[0], "name");
+				StateObjects[0]->GetStringField(PE_TEXT("name"), FirstStateName);
 			}
-			auto EntryIt = Doc.FindMember("entry");
 			if (FirstStateName.Length() > 0u)
 			{
-				if (EntryIt == Doc.MemberEnd())
-				{
-					Doc.AddMember("entry", rapidjson::Value(*FirstStateName, static_cast<rapidjson::SizeType>(FirstStateName.Length()), Allocator), Allocator);
-				}
-				else
-				{
-					EntryIt->value.SetString(*FirstStateName, static_cast<rapidjson::SizeType>(FirstStateName.Length()), Allocator);
-				}
+				Root.SetStringField(PE_TEXT("entry"), FirstStateName);
 			}
 		}
 
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		if (!CommitJsonText(Root.ToString()))
 		{
-			m_LastError = Error;
 			return FALSE;
 		}
-		ReplaceJsonBuffer(NewText);
 		m_NodePositions.Remove(DeletedStateName);
 		m_SelectedStateIndex = 0;
 		m_SelectedTransitionIndex = -1;
@@ -1222,30 +1081,18 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray()))
-		{
-			rapidjson::Value EmptyTransitions(rapidjson::kArrayType);
-			if (TransitionsIt == Doc.MemberEnd())
-			{
-				Doc.AddMember("transitions", EmptyTransitions, Allocator);
-			}
-			else
-			{
-				TransitionsIt->value.Swap(EmptyTransitions);
-			}
-			TransitionsIt = Doc.FindMember("transitions");
-		}
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
 
-		rapidjson::Value Conditions(rapidjson::kArrayType);
+		TArray<CJsonObject*> ConditionObjects;
+		FJsonObjectArrayOwner ConditionOwner(ConditionObjects);
 		const EAnimStateMachine* Machine = m_Asset->GetStoragedResource();
 		if (Machine)
 		{
@@ -1255,35 +1102,30 @@ namespace PigeonEngine
 				{
 					continue;
 				}
-				const EString& ParameterName = Machine->Parameters[ParameterIndex].Name;
-				rapidjson::Value Condition(rapidjson::kObjectType);
-				Condition.AddMember("param", rapidjson::Value(*ParameterName, static_cast<rapidjson::SizeType>(ParameterName.Length()), Allocator), Allocator);
-				Condition.AddMember("op", rapidjson::Value(">", 1, Allocator), Allocator);
-				Condition.AddMember("value", rapidjson::Value(1000000000.0), Allocator);
-				Conditions.PushBack(Condition, Allocator);
+				CJsonObject* Condition = new CJsonObject();
+				Condition->SetStringField(PE_TEXT("param"), Machine->Parameters[ParameterIndex].Name);
+				Condition->SetStringField(PE_TEXT("op"), EString(">"));
+				Condition->SetFloatField(PE_TEXT("value"), 1000000000.0f);
+				ConditionObjects.Add(Condition);
 				break;
 			}
 		}
 
-		const BOOL32 bHasDefaultCondition = ((Conditions.Size() > 0) ? TRUE : FALSE);
-		rapidjson::Value Transition(rapidjson::kObjectType);
-		Transition.AddMember("from", rapidjson::Value(*InFromStateName, static_cast<rapidjson::SizeType>(InFromStateName.Length()), Allocator), Allocator);
-		Transition.AddMember("to", rapidjson::Value(*InToStateName, static_cast<rapidjson::SizeType>(InToStateName.Length()), Allocator), Allocator);
-		Transition.AddMember("priority", rapidjson::Value(0), Allocator);
-		Transition.AddMember("blend", rapidjson::Value(0.2), Allocator);
-		Transition.AddMember("conditions", Conditions, Allocator);
-		TransitionsIt->value.PushBack(Transition, Allocator);
+		CJsonObject* NewTransition = new CJsonObject();
+		NewTransition->SetStringField(PE_TEXT("from"), InFromStateName);
+		NewTransition->SetStringField(PE_TEXT("to"), InToStateName);
+		NewTransition->SetIntField(PE_TEXT("priority"), 0);
+		NewTransition->SetFloatField(PE_TEXT("blend"), 0.2f);
+		NewTransition->SetObjectArrayField(PE_TEXT("conditions"), ConditionObjects);
+		TransitionObjects.Add(NewTransition);
+		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
 
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		if (!CommitJsonText(Root.ToString()))
 		{
-			m_LastError = Error;
 			return FALSE;
 		}
-		ReplaceJsonBuffer(NewText);
-		m_LastError = ((bHasDefaultCondition) ? EString() : EString("Transition added without conditions; edit the JSON before it runs."));
+		m_LastError = ((ConditionObjects.Num() > 0)
+			? EString() : EString("Transition added without conditions; edit the JSON before it runs."));
 		return TRUE;
 	}
 
@@ -1293,45 +1135,26 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		auto TransitionsIt = Doc.FindMember("transitions");
-		if ((TransitionsIt == Doc.MemberEnd()) || (!TransitionsIt->value.IsArray())
-			|| (InTransitionIndex < 0) || (InTransitionIndex >= static_cast<INT32>(TransitionsIt->value.Size())))
+		TArray<CJsonObject*> TransitionObjects;
+		Root.GetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		FJsonObjectArrayOwner TransitionOwner(TransitionObjects);
+		if ((InTransitionIndex < 0) || (InTransitionIndex >= TransitionObjects.Num()))
 		{
 			m_LastError = EString("Transition index is invalid.");
 			return FALSE;
 		}
 
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		rapidjson::Value NewTransitions(rapidjson::kArrayType);
-		rapidjson::Value& Transitions = TransitionsIt->value;
-		for (rapidjson::SizeType Index = 0; Index < Transitions.Size(); Index++)
-		{
-			if (static_cast<INT32>(Index) == InTransitionIndex)
-			{
-				continue;
-			}
-			NewTransitions.PushBack(Transitions[Index], Allocator);
-		}
-		TransitionsIt->value.Swap(NewTransitions);
-
-		EString NewText;
-		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
-		{
-			m_LastError = Error;
-			return FALSE;
-		}
-		ReplaceJsonBuffer(NewText);
-		m_LastError = EString();
-		return TRUE;
+		CJsonObject* Removed = TransitionObjects[InTransitionIndex];
+		TransitionObjects.RemoveAt(InTransitionIndex);
+		delete Removed;
+		Root.SetObjectArrayField(PE_TEXT("transitions"), TransitionObjects);
+		return CommitJsonText(Root.ToString());
 	}
 
 	BOOL32 EAnimStateMachineEditor::SetEntryState(const EString& InStateName)
@@ -1341,33 +1164,25 @@ namespace PigeonEngine
 			m_LastError = EString("No entry state selected.");
 			return FALSE;
 		}
-		rapidjson::Document Doc;
-		Doc.Parse(m_JsonBuffer.GetData());
-		if ((Doc.HasParseError()) || (!Doc.IsObject()))
+		CJsonObject Root(m_JsonBuffer.GetData());
+		if (!Root.IsValid())
 		{
 			m_LastError = EString("JSON cannot be parsed.");
 			return FALSE;
 		}
-		rapidjson::Document::AllocatorType& Allocator = Doc.GetAllocator();
-		auto EntryIt = Doc.FindMember("entry");
-		if (EntryIt == Doc.MemberEnd())
-		{
-			Doc.AddMember("entry", rapidjson::Value(*InStateName, static_cast<rapidjson::SizeType>(InStateName.Length()), Allocator), Allocator);
-		}
-		else
-		{
-			EntryIt->value.SetString(*InStateName, static_cast<rapidjson::SizeType>(InStateName.Length()), Allocator);
-		}
+		Root.SetStringField(PE_TEXT("entry"), InStateName);
+		return CommitJsonText(Root.ToString());
+	}
 
-		EString NewText;
+	BOOL32 EAnimStateMachineEditor::CommitJsonText(const EString& InJsonText)
+	{
 		EString Error;
-		SerializeJsonDocument(Doc, NewText);
-		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, NewText, Error))
+		if (!EAnimStateMachineManager::GetManagerSingleton()->RebuildStateMachineAsset(m_Asset, InJsonText, Error))
 		{
 			m_LastError = Error;
 			return FALSE;
 		}
-		ReplaceJsonBuffer(NewText);
+		ReplaceJsonBuffer(InJsonText);
 		m_LastError = EString();
 		return TRUE;
 	}
