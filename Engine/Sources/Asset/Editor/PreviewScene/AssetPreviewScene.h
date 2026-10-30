@@ -68,6 +68,14 @@ namespace PigeonEngine
 		void UpdateCameraTransform();
 		void ApplyAnimation(FLOAT InDeltaSeconds);
 		const EMesh* GetPreviewMeshResource() const;
+		// Skeletal assets are authored Y-up and are rotated into the engine's Z-up space. The
+		// component rotation and the placement maths have to use this one value: computing the
+		// AABB centre in mesh space while drawing the mesh rotated is what offsets the preview.
+		Quaternion GetPreviewMeshRotation() const;
+		// The mesh point that is pinned to the preview zone origin. Static meshes use their
+		// geometry centre; skinned meshes use the skeleton root so every character stands on the
+		// same spot regardless of weapons or pose bounds.
+		Vector3 GetPreviewPivot(const Vector3& InBoundsCenter) const;
 
 	private:
 		BOOL8					m_Initialized = FALSE;
@@ -82,6 +90,9 @@ namespace PigeonEngine
 		FLOAT				m_OrbitRadians = 0.0f;
 		FLOAT				m_PlaybackTimeSeconds = 0.0f;
 		FLOAT				m_CameraDistance = 200.0f;
+		// Offset from the zone origin to the framing centre in preview space. The pivot sits on
+		// the zone origin, while the camera still needs to look at the whole mesh.
+		Vector3				m_CameraFocusOffset = Vector3::Zero();
 		EString				m_DebugLabel;
 		Vector3				m_ZoneOrigin = Vector3::Zero();
 		PActor* 				m_CameraActor = nullptr;
