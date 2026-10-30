@@ -682,6 +682,15 @@ namespace PigeonEngine
 			if (m_PlayAnimation)
 			{
 				m_PlaybackTimeSeconds += InDeltaSeconds * m_PlaybackRate;
+
+				// Wrap the editor clock too, not just the sampled key time: otherwise the
+				// Position slider sticks at the clip end while the mesh keeps looping, and the
+				// accumulated seconds slowly lose float precision.
+				const FLOAT DurationSeconds = GetClipDurationSeconds();
+				if (DurationSeconds > 0.0f)
+				{
+					m_PlaybackTimeSeconds = std::fmod(m_PlaybackTimeSeconds, DurationSeconds);
+				}
 			}
 
 			const FLOAT TicksPerSecond = (m_AnimationClip->TicksPerSecond > 1e-3f) ? m_AnimationClip->TicksPerSecond : EEngineSettings::ENGINE_ANIMATION_DEFAULT_TICKS_PER_SECOND;
