@@ -32,13 +32,14 @@ namespace PigeonEngine
 		// Skeletal assets are authored Y-up; the preview turns them into the engine's Z-up
 		// world, matching what the runtime skeletal mesh actors do.
 		PE_CONSTEXPR_STATIC const FLOAT PreviewSkeletalMeshPitchDegrees = 90.0f;
-		// Framing: the distance is a multiple of the largest world extent. The floor keeps
-		// tiny props from ending up inside the camera; the height factor is the existing
-		// three-quarter view.
+		// Framing: the distance is a multiple of the largest world extent, so every asset fills
+		// the same portion of the viewport regardless of its authored scale. The camera's clip
+		// planes scale with that distance as well: the world default near plane (5) is far
+		// outside a metre-scale character and would clip it completely.
 		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraDistanceExtentScale = 3.0f;
-		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraMinDistance = 120.0f;
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraNearRatio = 0.01f;
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraFarRatio = 10.0f;
 		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraHeightScale = 0.35f;
-		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraMinHeight = 40.0f;
 
 		class RAssetPreviewSceneRenderer final : public RSceneRenderer
 		{
@@ -592,7 +593,9 @@ namespace PigeonEngine
 		const Vector3 LocalBoundsCenter = (LocalBound.AABBMin + LocalBound.AABBMax) * 0.5f;
 		const Vector3 WorldBoundsCenter = (WorldBound.AABBMin + WorldBound.AABBMax) * 0.5f;
 		const Vector3 WorldExtent = (WorldBound.AABBMax - WorldBound.AABBMin) * 0.5f;
-		const FLOAT MaxExtent = EMath::Max(WorldExtent.x, EMath::Max(WorldExtent.y, WorldExtent.z));
+		const FLOAT MaxExtent = EMath::Max(
+			EMath::Max(WorldExtent.x, EMath::Max(WorldExtent.y, WorldExtent.z)),
+			EEngineSettings::ENGINE_BOUND_MINIMUM_HALF);
 
 		// Pin the pivot (skeleton root for skinned meshes, bounds centre for static ones) to the
 		// zone origin. Auto Rotate turns the camera around the vertical line through that pivot:
@@ -602,11 +605,30 @@ namespace PigeonEngine
 		const Vector3 PreviewPivot = GetPreviewPivot(LocalBoundsCenter);
 		const Vector3 RotatedPivot = QuaternionTransformVector(PreviewRotation, PreviewPivot);
 		m_CameraFocusOffset = Vector3(0.0f, WorldBoundsCenter.y - RotatedPivot.y, 0.0f);
-		m_CameraDistance = EMath::Max(MaxExtent * PreviewCameraDistanceExtentScale, PreviewCameraMinDistance);
+		m_CameraDistance = MaxExtent * PreviewCameraDistanceExtentScale;
 
 		m_PreviewActor->SetActorLocation(m_ZoneOrigin - RotatedPivot);
 		m_PreviewActor->SetActorScale(Vector3::One());
+		UpdateCameraProjection();
 		UpdateCameraTransform();
+	}
+
+	void EAssetPreviewScene::UpdateCameraProjection()
+	{
+		if (!m_CameraComponent)
+		{
+			return;
+		}
+
+		// The preview world contains only the mesh and this camera, so the clip planes can track
+		// the framing distance instead of the world defaults. The 1:1000 near/far ratio keeps
+		// depth precision sane for both centimetre characters and tiny props.
+		const FLOAT NearDist = EMath::Max(m_CameraDistance * PreviewCameraNearRatio, 1e-4f);
+		const FLOAT FarDist = EMath::Max(m_CameraDistance * PreviewCameraFarRatio, NearDist * 100.0f);
+		const FLOAT FovAngleY = m_CameraComponent->GetCameraViewInfo().FovAngleY;
+		m_CameraComponent->SetCameraViewInfo(0.0f, 0.0f
+			, static_cast<FLOAT>(m_ViewportWidth), static_cast<FLOAT>(m_ViewportHeight)
+			, FovAngleY, FarDist, NearDist);
 	}
 
 	Quaternion EAssetPreviewScene::GetPreviewMeshRotation() const
@@ -653,7 +675,7 @@ namespace PigeonEngine
 		}
 
 		const Vector3 FocusPoint = m_ZoneOrigin + m_CameraFocusOffset;
-		const FLOAT CameraHeight = EMath::Max(m_CameraDistance * PreviewCameraHeightScale, PreviewCameraMinHeight);
+		const FLOAT CameraHeight = m_CameraDistance * PreviewCameraHeightScale;
 		const Vector3 CameraPosition(
 			FocusPoint.x + std::cos(m_OrbitRadians) * m_CameraDistance,
 			FocusPoint.y + CameraHeight,
