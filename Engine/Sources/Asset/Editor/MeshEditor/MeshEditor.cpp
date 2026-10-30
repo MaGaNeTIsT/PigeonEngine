@@ -6,6 +6,7 @@
 
 #include <IO/FileHelper.h>
 #include <BaseAsset.h>
+#include <Config/EngineConfig.h>
 #include <MeshAsset/MeshAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
 #include <Base/DataStructure/Text/Path.h>
@@ -101,6 +102,43 @@ namespace PigeonEngine
 			const EString AssetDirectory = NormalizeAssetDirectory(EPath::GetFileFolderPath(InAssetFullPath));
 			return (AssetName.Length() > 0u) && (AssetDirectory.Length() > 0u) && ESkeletonAssetManager::GetManagerSingleton()->LoadSkeletonAsset(AssetDirectory, AssetName, OutSkeletonAsset) && (!!OutSkeletonAsset);
 		}
+
+		UINT32 CommonPrefixLength(const EString& InValue0, const EString& InValue1)
+		{
+			const UINT32 Count = EMath::Min(InValue0.Length(), InValue1.Length());
+			UINT32 Index = 0u;
+			while ((Index < Count) && (InValue0[Index] == InValue1[Index]))
+			{
+				Index++;
+			}
+			return Index;
+		}
+
+		// A mesh asset does not record the skeleton it was imported against, so the preview
+		// picks the skeleton whose asset name shares the longest prefix with the mesh name.
+		// This pairs "Foo_Mesh" with "Foo_Skeleton" without naming any specific asset; the
+		// author can still choose another skeleton in the combo.
+		INT32 FindClosestSkeletonIndex(const TArray<EString>& InSkeletonPaths, const EString& InMeshName)
+		{
+			if (InSkeletonPaths.Num() <= 0)
+			{
+				return -1;
+			}
+
+			INT32 BestIndex = 0;
+			UINT32 BestPrefixLength = 0u;
+			for (INT32 SkeletonIndex = 0; SkeletonIndex < InSkeletonPaths.Num(); SkeletonIndex++)
+			{
+				const EString SkeletonName = EPath::GetFileNameWithoutExtension(InSkeletonPaths[SkeletonIndex]);
+				const UINT32 PrefixLength = CommonPrefixLength(SkeletonName, InMeshName);
+				if (PrefixLength > BestPrefixLength)
+				{
+					BestPrefixLength = PrefixLength;
+					BestIndex = SkeletonIndex;
+				}
+			}
+			return BestIndex;
+		}
 	}
 
 	void EMeshEditor::EditorInit()
@@ -182,7 +220,7 @@ namespace PigeonEngine
 						}
 						else
 						{
-							ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "No skeleton asset found in current folder.");
+							ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "No skeleton asset found in the skeleton asset folder.");
 						}
 					}
 
@@ -319,9 +357,12 @@ namespace PigeonEngine
 			return;
 		}
 
+		// Skeleton assets live in the engine's skeleton folder, not next to the mesh. Scanning
+		// the mesh folder only ever found meshes, which is why skinned previews reported no
+		// skeleton at all.
 		TArray<EString> FolderPaths;
 		TArray<EString> FilePaths;
-		if (!(EFileHelper::ScanDirectory(NormalizeAssetDirectory(EPath::GetFileFolderPath(m_OpenedAssetFullPath)), FolderPaths, FilePaths, TRUE)))
+		if (!(EFileHelper::ScanDirectory(NormalizeAssetDirectory(EBaseSettings::ENGINE_SKELETON_PATH), FolderPaths, FilePaths, TRUE)))
 		{
 			return;
 		}
@@ -343,7 +384,8 @@ namespace PigeonEngine
 
 		if (m_AvailableSkeletonAssetPaths.Num() > 0)
 		{
-			m_SelectedPreviewSkeletonIndex = 0;
+			const EString MeshName = EPath::GetFileNameWithoutExtension(m_OpenedAssetFullPath);
+			m_SelectedPreviewSkeletonIndex = FindClosestSkeletonIndex(m_AvailableSkeletonAssetPaths, MeshName);
 		}
 	}
 
