@@ -262,8 +262,12 @@ namespace PigeonEngine
 		{
 			if (m_AvailablePreviewMeshPaths.Num() > 0)
 			{
-				const CHAR* CurrentMeshLabel = (m_SelectedPreviewMeshIndex >= 0) ? *EPath::GetFileNameWithoutExtension(m_AvailablePreviewMeshPaths[m_SelectedPreviewMeshIndex]) : "None";
-				if (ImGui::BeginCombo("Preview Mesh", CurrentMeshLabel))
+				// The label has to stay alive for the whole BeginCombo call: taking the pointer
+				// from a temporary EString leaves ImGui reading freed text, which flickers.
+				const EString CurrentMeshName = (m_SelectedPreviewMeshIndex >= 0)
+					? EPath::GetFileNameWithoutExtension(m_AvailablePreviewMeshPaths[m_SelectedPreviewMeshIndex])
+					: EString("None");
+				if (ImGui::BeginCombo("Preview Mesh", *CurrentMeshName))
 				{
 					for (INT32 MeshIndex = 0, MeshNum = m_AvailablePreviewMeshPaths.Num(); MeshIndex < MeshNum; MeshIndex++)
 					{
@@ -289,8 +293,10 @@ namespace PigeonEngine
 
 			if (m_AvailablePreviewSkeletonPaths.Num() > 0)
 			{
-				const CHAR* CurrentSkeletonLabel = (m_SelectedPreviewSkeletonIndex >= 0) ? *EPath::GetFileNameWithoutExtension(m_AvailablePreviewSkeletonPaths[m_SelectedPreviewSkeletonIndex]) : "None";
-				if (ImGui::BeginCombo("Preview Skeleton", CurrentSkeletonLabel))
+				const EString CurrentSkeletonName = (m_SelectedPreviewSkeletonIndex >= 0)
+					? EPath::GetFileNameWithoutExtension(m_AvailablePreviewSkeletonPaths[m_SelectedPreviewSkeletonIndex])
+					: EString("None");
+				if (ImGui::BeginCombo("Preview Skeleton", *CurrentSkeletonName))
 				{
 					for (INT32 SkeletonIndex = 0, SkeletonNum = m_AvailablePreviewSkeletonPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
 					{

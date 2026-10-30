@@ -198,8 +198,12 @@ namespace PigeonEngine
 
 						if (m_AvailableSkeletonAssetPaths.Num() > 0)
 						{
-							const CHAR* CurrentSkeletonLabel = (m_SelectedPreviewSkeletonIndex >= 0) ? *EPath::GetFileNameWithoutExtension(m_AvailableSkeletonAssetPaths[m_SelectedPreviewSkeletonIndex]) : "None";
-							if (ImGui::BeginCombo("Preview Skeleton", CurrentSkeletonLabel))
+							// Keep the label string alive through BeginCombo; a pointer into a
+							// temporary EString is freed before ImGui draws the preview text.
+							const EString CurrentSkeletonName = (m_SelectedPreviewSkeletonIndex >= 0)
+								? EPath::GetFileNameWithoutExtension(m_AvailableSkeletonAssetPaths[m_SelectedPreviewSkeletonIndex])
+								: EString("None");
+							if (ImGui::BeginCombo("Preview Skeleton", *CurrentSkeletonName))
 							{
 								for (INT32 SkeletonIndex = 0, SkeletonNum = m_AvailableSkeletonAssetPaths.Num(); SkeletonIndex < SkeletonNum; SkeletonIndex++)
 								{
