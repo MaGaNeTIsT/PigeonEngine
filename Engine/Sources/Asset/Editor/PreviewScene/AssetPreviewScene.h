@@ -66,6 +66,9 @@ namespace PigeonEngine
 		void DestroyPreviewActor();
 		void UpdatePreviewPlacement();
 		void UpdateCameraTransform();
+		// Preview-only clip planes: they follow the framing distance so assets authored at
+		// different scales (metres vs centimetres) are neither clipped nor lost in the distance.
+		void UpdateCameraProjection();
 		void ApplyAnimation(FLOAT InDeltaSeconds);
 		const EMesh* GetPreviewMeshResource() const;
 		// Skeletal assets are authored Y-up and are rotated into the engine's Z-up space. The
