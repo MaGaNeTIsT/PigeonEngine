@@ -359,8 +359,6 @@ namespace PigeonEngine
 	// ----------------------------------------------------------------------
 	// Process a single ImTextureData create/destroy/update request from the
 	// RendererHasTextures pipeline. Called once per texture at the top of Render.
-	// WantUpdates (partial update) is not yet supported; ImGui falls back to
-	// full rebuild when we leave the status untouched.
 	// ----------------------------------------------------------------------
 	void EImGuiRenderer::UpdateTexture(::ImTextureData* Tex)
 	{
@@ -415,10 +413,21 @@ namespace PigeonEngine
 		}
 		else if (Tex->Status == ImTextureStatus_WantUpdates)
 		{
-			static UINT32 WantUpdatesCount = 0u;
-			if ((++WantUpdatesCount & 0xFFu) == 0u)
+			// ImGui 1.92 rasterizes glyphs lazily, so a glyph first used after the atlas was
+			// created arrives as an update instead of a new texture. It must be uploaded or the
+			// glyph stays blank (for example the 'N' in a panel opened later). The update
+			// rectangles only name newly used regions, but the pixel buffer is the whole atlas,
+			// so re-uploading the full subresource is correct and simplest.
+			IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
+			if ((Device) && (Tex == ImGui::GetIO().Fonts->TexData)
+				&& (FontTextureResource.Texture) && (Tex->Pixels)
+				&& (Tex->Width > 0) && (Tex->Height > 0))
 			{
-				PE_LOG_WARN(EString("ImGui partial update (WantUpdates) not yet supported; ImGui falling back to full rebuild. Count: ") + EString::FromInt(WantUpdatesCount));
+				const UINT32 RowPitch = static_cast<UINT32>(Tex->Width) * 4u;
+				const UINT32 SlicePitch = RowPitch * static_cast<UINT32>(Tex->Height);
+				RRHISubresourceData SubData(static_cast<const UINT8*>(Tex->Pixels), SlicePitch, RowPitch, SlicePitch);
+				Device->UploadTexture(FontTextureResource.Texture, &SubData, 1u, 0u);
+				Tex->SetStatus(ImTextureStatus_OK);
 			}
 		}
 	}
