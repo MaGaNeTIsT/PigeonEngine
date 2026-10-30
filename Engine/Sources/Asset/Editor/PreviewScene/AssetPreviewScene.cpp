@@ -29,6 +29,17 @@ namespace PigeonEngine
 {
 	namespace
 	{
+		// Skeletal assets are authored Y-up; the preview turns them into the engine's Z-up
+		// world, matching what the runtime skeletal mesh actors do.
+		PE_CONSTEXPR_STATIC const FLOAT PreviewSkeletalMeshPitchDegrees = 90.0f;
+		// Framing: the distance is a multiple of the largest world extent. The floor keeps
+		// tiny props from ending up inside the camera; the height factor is the existing
+		// three-quarter view.
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraDistanceExtentScale = 3.0f;
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraMinDistance = 120.0f;
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraHeightScale = 0.35f;
+		PE_CONSTEXPR_STATIC const FLOAT PreviewCameraMinHeight = 40.0f;
+
 		class RAssetPreviewSceneRenderer final : public RSceneRenderer
 		{
 		public:
@@ -538,7 +549,7 @@ namespace PigeonEngine
 			m_PreviewActor->AddComponent(m_SkeletalMeshComponent);
 			m_SkeletalMeshComponent->SetMeshAsset(m_SkinnedMeshAsset);
 			m_SkeletalMeshComponent->SetSkeletonAsset(m_SkeletonAsset);
-			m_SkeletalMeshComponent->SetComponentRotation(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
+			m_SkeletalMeshComponent->SetComponentRotation(GetPreviewMeshRotation());
 		}
 
 		UpdatePreviewPlacement();
@@ -563,15 +574,72 @@ namespace PigeonEngine
 			return;
 		}
 
-		const EBoundAABB& Bound = PreviewMesh->GetBoundAABB();
-		const Vector3 Center = (Bound.AABBMin + Bound.AABBMax) * 0.5f;
-		const Vector3 Extent = (Bound.AABBMax - Bound.AABBMin) * 0.5f;
-		const FLOAT MaxExtent = EMath::Max(Extent.x, EMath::Max(Extent.y, Extent.z));
-		m_CameraDistance = EMath::Max(MaxExtent * 3.0f, 120.0f);
+		// Placement works in the same rotated space as the component. Bounds are transformed
+		// corner by corner: rotating the centre alone leaves the extent axes unswapped, which
+		// is what made 90 degree skeletal previews look offset by mesh.
+		const Quaternion PreviewRotation = GetPreviewMeshRotation();
+		// CalculateBoundWithSpace writes into the bound, so the asset's bound is copied first.
+		EBoundAABB LocalBound = PreviewMesh->GetBoundAABB();
+		TArray<Vector3> BoundCorners;
+		LocalBound.CalculateBoundWithSpace(Vector3::Zero(), PreviewRotation, Vector3::One(), BoundCorners);
 
-		m_PreviewActor->SetActorLocation(m_ZoneOrigin - Center);
+		EBoundAABB WorldBound(BoundCorners[0], BoundCorners[0], TRUE);
+		for (INT32 CornerIndex = 1; CornerIndex < BoundCorners.Num(); CornerIndex++)
+		{
+			WorldBound += EBoundAABB(BoundCorners[CornerIndex], BoundCorners[CornerIndex], TRUE);
+		}
+
+		const Vector3 LocalBoundsCenter = (LocalBound.AABBMin + LocalBound.AABBMax) * 0.5f;
+		const Vector3 WorldBoundsCenter = (WorldBound.AABBMin + WorldBound.AABBMax) * 0.5f;
+		const Vector3 WorldExtent = (WorldBound.AABBMax - WorldBound.AABBMin) * 0.5f;
+		const FLOAT MaxExtent = EMath::Max(WorldExtent.x, EMath::Max(WorldExtent.y, WorldExtent.z));
+
+		// Pin the pivot (skeleton root for skinned meshes, bounds centre for static ones) to the
+		// zone origin, then aim the camera at the geometry centre so weapons or asymmetric
+		// bounds still fit in the view.
+		const Vector3 PreviewPivot = GetPreviewPivot(LocalBoundsCenter);
+		const Vector3 RotatedPivot = QuaternionTransformVector(PreviewRotation, PreviewPivot);
+		m_CameraFocusOffset = WorldBoundsCenter - RotatedPivot;
+		m_CameraDistance = EMath::Max(MaxExtent * PreviewCameraDistanceExtentScale, PreviewCameraMinDistance);
+
+		m_PreviewActor->SetActorLocation(m_ZoneOrigin - RotatedPivot);
 		m_PreviewActor->SetActorScale(Vector3::One());
 		UpdateCameraTransform();
+	}
+
+	Quaternion EAssetPreviewScene::GetPreviewMeshRotation() const
+	{
+		if ((m_SkeletalMeshComponent) && (m_SkeletonAsset))
+		{
+			return MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(PreviewSkeletalMeshPitchDegrees));
+		}
+		return Quaternion::Identity();
+	}
+
+	Vector3 EAssetPreviewScene::GetPreviewPivot(const Vector3& InBoundsCenter) const
+	{
+		if ((!m_SkeletalMeshComponent) || (!m_SkeletonAsset))
+		{
+			return InBoundsCenter;
+		}
+
+		const ESkeleton* SkeletonResource = m_SkeletonAsset->GetStoragedResource();
+		if (!SkeletonResource)
+		{
+			return InBoundsCenter;
+		}
+
+		const ESkeleton::EBonePart& BonePart = SkeletonResource->GetBonePart();
+		for (INT32 BoneIndex = 0; BoneIndex < BonePart.Num(); BoneIndex++)
+		{
+			// The root is the bone without a parent. Its bind position is already in mesh
+			// space, so it needs no parent chain composition.
+			if (BonePart[BoneIndex].Parent < 0)
+			{
+				return BonePart[BoneIndex].DefaultPosition;
+			}
+		}
+		return InBoundsCenter;
 	}
 
 	void EAssetPreviewScene::UpdateCameraTransform()
@@ -582,8 +650,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		const Vector3 FocusPoint = m_ZoneOrigin;
-		const FLOAT CameraHeight = EMath::Max(m_CameraDistance * 0.35f, 40.0f);
+		const Vector3 FocusPoint = m_ZoneOrigin + m_CameraFocusOffset;
+		const FLOAT CameraHeight = EMath::Max(m_CameraDistance * PreviewCameraHeightScale, PreviewCameraMinHeight);
 		const Vector3 CameraPosition(
 			FocusPoint.x + std::cos(m_OrbitRadians) * m_CameraDistance,
 			FocusPoint.y + CameraHeight,
