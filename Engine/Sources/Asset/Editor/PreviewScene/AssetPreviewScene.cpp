@@ -595,11 +595,13 @@ namespace PigeonEngine
 		const FLOAT MaxExtent = EMath::Max(WorldExtent.x, EMath::Max(WorldExtent.y, WorldExtent.z));
 
 		// Pin the pivot (skeleton root for skinned meshes, bounds centre for static ones) to the
-		// zone origin, then aim the camera at the geometry centre so weapons or asymmetric
-		// bounds still fit in the view.
+		// zone origin. Auto Rotate turns the camera around the vertical line through that pivot:
+		// using the bounds centre as the orbit axis lets weapon geometry shift the axis sideways,
+		// so the body sweeps around the view and reads as a spin in the wrong direction. Only the
+		// vertical centre is kept for framing.
 		const Vector3 PreviewPivot = GetPreviewPivot(LocalBoundsCenter);
 		const Vector3 RotatedPivot = QuaternionTransformVector(PreviewRotation, PreviewPivot);
-		m_CameraFocusOffset = WorldBoundsCenter - RotatedPivot;
+		m_CameraFocusOffset = Vector3(0.0f, WorldBoundsCenter.y - RotatedPivot.y, 0.0f);
 		m_CameraDistance = EMath::Max(MaxExtent * PreviewCameraDistanceExtentScale, PreviewCameraMinDistance);
 
 		m_PreviewActor->SetActorLocation(m_ZoneOrigin - RotatedPivot);
