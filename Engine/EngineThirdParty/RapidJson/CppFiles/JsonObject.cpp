@@ -287,7 +287,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = In;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetInt64Field(const EString& FieldName, const INT64& In)
@@ -298,7 +299,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetUIntField(const EString& FieldName, const UINT32& In)
@@ -309,7 +311,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetUInt64Field(const EString& FieldName, const UINT64& In)
@@ -320,7 +323,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetFloatField(const EString& FieldName, const FLOAT& In)
@@ -331,7 +335,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetDoubleField(const EString& FieldName, const DOUBLE& In)
@@ -342,7 +347,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetStringField(const EString& FieldName, const EString& In)
@@ -355,7 +361,8 @@ namespace PigeonEngine
 		}
 
 		Val.SetString(*In, Doc->GetAllocator());
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetBoolField(const EString& FieldName, const BOOL8& In)
@@ -366,7 +373,8 @@ namespace PigeonEngine
 			return;
 		}
 
-		Doc->AddMember(StringRef(*FieldName), In, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, In, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetObjectField(const EString& FieldName, const CJsonObject* In)
@@ -377,14 +385,16 @@ namespace PigeonEngine
 		{
 			rapidjson::Value Temp;
 			Temp.CopyFrom(it->value, Doc->GetAllocator());
-			Val.AddMember(StringRef(it->name.GetString()), Temp, Doc->GetAllocator());
+			rapidjson::Value MemberNameValue(it->name.GetString(), Doc->GetAllocator());
+			Val.AddMember(MemberNameValue, Temp, Doc->GetAllocator());
 		}
 		if (HasField(FieldName))
 		{
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetIntArrayField(const EString& FieldName, const TArray<INT32>& In)
@@ -402,7 +412,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetInt64ArrayField(const EString& FieldName, const TArray<INT64>& In)
@@ -420,7 +431,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetUIntArrayField(const EString& FieldName, const TArray<UINT32>& In)
@@ -438,7 +450,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetUInt64ArrayField(const EString& FieldName, const TArray<UINT64>& In)
@@ -456,7 +469,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetFloatArrayField(const EString& FieldName, const TArray<FLOAT>& In)
@@ -474,7 +488,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetDoubleArrayField(const EString& FieldName, const TArray<DOUBLE>& In)
@@ -492,7 +507,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetStringArrayField(const EString& FieldName, const TArray<EString>& In)
@@ -510,7 +526,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetBoolArrayField(const EString& FieldName, const TArray<BOOL8>& In)
@@ -527,7 +544,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 	void CJsonObject::SetObjectArrayField(const EString& FieldName, const TArray<CJsonObject*>& In)
@@ -541,7 +559,8 @@ namespace PigeonEngine
 			{
 				rapidjson::Value Temp;
 				Temp.CopyFrom(it->value, Doc->GetAllocator());
-				TempObj.AddMember(StringRef(it->name.GetString()), Temp, Doc->GetAllocator());
+				rapidjson::Value MemberNameValue(it->name.GetString(), Doc->GetAllocator());
+				TempObj.AddMember(MemberNameValue, Temp, Doc->GetAllocator());
 			}
 			Val.PushBack(TempObj, Doc->GetAllocator());
 		}
@@ -550,7 +569,8 @@ namespace PigeonEngine
 			(*Doc)[*FieldName] = Val;
 			return;
 		}
-		Doc->AddMember(StringRef(*FieldName), Val, Doc->GetAllocator());
+		rapidjson::Value FieldNameValue(*FieldName, Doc->GetAllocator());
+		Doc->AddMember(FieldNameValue, Val, Doc->GetAllocator());
 	}
 
 };

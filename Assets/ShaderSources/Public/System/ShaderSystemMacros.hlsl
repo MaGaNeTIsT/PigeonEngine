@@ -23,16 +23,23 @@
 #include "Public/System/ShaderBindless.hlsl"
 
 // ---------------------------------------------------------------------------
-// Platform
+// Compile target
+//
+// The back end and the shader model are a variant axis, so they arrive as compiler
+// definitions instead of as defaults written here. PE_PLATFORM and PE_SHADER_MODEL carry the
+// numeric value of the target, and PE_PLATFORM_D3D11, PE_PLATFORM_D3D12,
+// PE_SHADER_MODEL_5_0, PE_SHADER_MODEL_6_0 and PE_SHADER_MODEL_6_6 are the complete flag
+// set, with exactly one flag of each axis set to 1.
+//
+// The names are declared in Components/C_EngineSystem.json, next to the rest of the system
+// layer, so the vocabulary a shader may read is visible where a shader is written. The value
+// a compilation actually gets is the one the compiler passes: it is applied after that json
+// and therefore wins over the value the json declares.
+//
+// Nothing is defaulted on this side on purpose. A fallback value would keep a stale target
+// alive instead of failing, and a flag a shader tests has to describe the target it was
+// really built for.
 // ---------------------------------------------------------------------------
-
-#ifndef PE_PLATFORM_D3D12
-#define PE_PLATFORM_D3D12					1
-#endif	//PE_PLATFORM_D3D12
-
-#ifndef PE_PLATFORM_D3D11
-#define PE_PLATFORM_D3D11					0
-#endif	//PE_PLATFORM_D3D11
 
 // ---------------------------------------------------------------------------
 // Quality level

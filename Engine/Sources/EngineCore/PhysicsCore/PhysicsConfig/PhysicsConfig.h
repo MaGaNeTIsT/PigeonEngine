@@ -8,7 +8,7 @@ namespace PigeonEngine
 	class FPhysicsCommonSettings
 	{
 	public:
-		//Initialized Parameters		
+		//Initialized Parameters
 		PE_CONSTEXPR_STATIC UINT32 PHYSICS_PRE_ALLOCATED_SIZE		= 70 * 1024 * 1024;			//pre-allocated memory for simulation.
 		PE_CONSTEXPR_STATIC UINT32 PHYSICS_MAX_BODIES				= 65535;					//Max amount of rigid bodies.
 		PE_CONSTEXPR_STATIC UINT32 PHYSICS_NUM_BODY_MUTEXES			= 0;						//Mutexes count,0 to default setting.
@@ -18,18 +18,25 @@ namespace PigeonEngine
 		//Runtime Parameters
 		PE_CONSTEXPR_STATIC INT32 PHYSICS_COLLISION_STEPS			= 1;						// Do n collision step per cDeltaTime
 #if _EDITOR_ONLY
-		PE_CONSTEXPR_STATIC BOOL32 PHYSICS_DRAW_DEBUG_PRIMITIVE		= TRUE;
+		// Editor only: draws every physics body's collision shape through the debug wireframe
+		// primitives. Off by default because a scene with many bodies fills the view with
+		// boxes; the Display Settings panel owns the checkbox.
+		BOOL32						bDrawCollision					= TRUE;
 #endif
 	public:
 		static FPhysicsCommonSettings* GetSingleton()
 		{
-			static FPhysicsCommonSettings _StaticSingletonObject;
-			return (&_StaticSingletonObject);
+			static FPhysicsCommonSettings StaticSingletonObject;
+			return (&StaticSingletonObject);
 		}
 		FPhysicsCommonSettings(const FPhysicsCommonSettings&) = delete;
 		FPhysicsCommonSettings& operator=(const FPhysicsCommonSettings&) = delete;
 	private:
-		FPhysicsCommonSettings() {}
-		~FPhysicsCommonSettings() {}
+		FPhysicsCommonSettings()
+		{
+		}
+		~FPhysicsCommonSettings()
+		{
+		}
 	};
 }

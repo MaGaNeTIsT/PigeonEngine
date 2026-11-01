@@ -11,11 +11,21 @@
 #include <Renderer/SceneRenderer.h>
 #include <Renderer/ScenePass.h>
 #include <Main/MainManager.h>
+#include <Core/Config/EngineConfig.h>
 #include "MeshSceneProxy.h"
 #include <Development/Profiler.h>
 
 namespace PigeonEngine
 {
+
+	// The environment cube is claimed by two modules on purpose: the sky dome publishes it for
+	// its own draw, and the environment SH bake publishes the same cube as its input. Each draw
+	// provides its own value, so neither is the other's fallback.
+	static const FShaderBindingClaim g_SkyBindingClaims[] =
+	{
+		{ EName(PE_TEXT("EnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_SkyBindingClaims, EName(SHADER_BINDING_SCOPE_SKY));
 
 	static void RegisterClassTypes()
 	{
@@ -101,20 +111,24 @@ namespace PigeonEngine
 
 	RSkyLightSceneProxy::RSkyLightSceneProxy(PSkyLightComponent* InComponent)
 		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f)
+		, CubeMeanLuminance(0.f), PrefilterResolutionExponent(EEngineSettings::ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT)
 		, PipelineState(nullptr), Component(InComponent)
 	{
 		CreateSkyAssets();
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create directional light scene proxy failed"), (!!Component));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create directional light scene proxy failed")), (!!Component));
 	}
 	RSkyLightSceneProxy::RSkyLightSceneProxy()
 		: TextureCubeAsset(nullptr), AdjustColor(Color3::White()), AdjustIntensity(1.f)
+		, CubeMeanLuminance(0.f), PrefilterResolutionExponent(EEngineSettings::ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT)
 		, PipelineState(nullptr), Component(nullptr)
 	{
 		CreateSkyAssets();
 	}
 	RSkyLightSceneProxy::RSkyLightSceneProxy(const RSkyLightSceneProxy& Other)
 		: RBaseSceneProxy(Other), TextureCubeAsset(Other.TextureCubeAsset), AdjustColor(Other.AdjustColor)
-		, AdjustIntensity(Other.AdjustIntensity), PipelineState(Other.PipelineState), Component(Other.Component)
+		, AdjustIntensity(Other.AdjustIntensity), CubeMeanLuminance(Other.CubeMeanLuminance)
+		, PrefilterResolutionExponent(Other.PrefilterResolutionExponent)
+		, PipelineState(Other.PipelineState), Component(Other.Component)
 	{
 		CreateSkyAssets();
 	}
@@ -154,10 +168,20 @@ namespace PigeonEngine
 	{
 		return AdjustIntensity;
 	}
+	FLOAT RSkyLightSceneProxy::GetCubeMeanLuminance() const noexcept
+	{
+		return CubeMeanLuminance;
+	}
+	UINT32 RSkyLightSceneProxy::GetPrefilterResolutionExponent() const noexcept
+	{
+		return PrefilterResolutionExponent;
+	}
 	void RSkyLightSceneProxy::UpdateSkyLightParams(const ERenderSkyLightParams& InSkyLightParams)
 	{
-		AdjustColor		= InSkyLightParams.LightAdjustColor;
-		AdjustIntensity	= InSkyLightParams.LightAdjustIntensity;
+		AdjustColor					= InSkyLightParams.LightAdjustColor;
+		AdjustIntensity				= InSkyLightParams.LightAdjustIntensity;
+		CubeMeanLuminance			= InSkyLightParams.CubeMeanLinearLuminance;
+		PrefilterResolutionExponent	= InSkyLightParams.PrefilterResolutionExponent;
 	}
 	void RSkyLightSceneProxy::UpdateMatrices(const ERenderSkyLightMatrices& InMatrices)
 	{
@@ -185,6 +209,10 @@ namespace PigeonEngine
 		WriteShaderVector4(Parameters, BlockName, EName(SHADER_FIELD_LIGHT_ADJUST_COLOR)
 			, Vector4(AdjustColor.r, AdjustColor.g, AdjustColor.b, 1.f));
 		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_LIGHT_ADJUST_INTENSITY), AdjustIntensity);
+		// The normalisation divisor. A cube whose mean could not be computed falls back to one,
+		// which leaves the environment at its stored scale rather than dividing by a near zero.
+		const FLOAT MeanLuminanceDivisor = ((CubeMeanLuminance > 0.0001f) ? CubeMeanLuminance : 1.f);
+		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_CUBE_MEAN_LUMINANCE), MeanLuminanceDivisor);
 		SkyLightParameterBlock.Upload(RenderDevice);
 	}
 	BOOL32 RSkyLightSceneProxy::IsRenderValid()const
@@ -365,6 +393,7 @@ namespace PigeonEngine
 		// the register the compiler assigned rather than on a literal slot.
 		EShaderParameterSet Parameters;
 		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), CubeRenderResource->GetResolvedRHITexture());
-		BindShaderParameterResources(InCommandList, Parameters, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+		BindShaderResources(InCommandList, Parameters, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
+			, EName(SHADER_BINDING_SCOPE_SKY));
 	}
 };

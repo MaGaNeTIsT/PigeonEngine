@@ -195,6 +195,13 @@ namespace PigeonEngine
 	protected:
 		UINT8				UpdateState;
 		// Render proxy functions END
+
+	// ImGui
+#if _EDITOR_ONLY
+	public:
+		virtual void	GenerateComponentDetail() override;
+#endif
+
 	protected:
 		// for frame, 
 		void BeginAddedToScene(PWorld* World) override;

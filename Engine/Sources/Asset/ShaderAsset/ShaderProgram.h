@@ -10,12 +10,6 @@ namespace PigeonEngine
 
 	class EShaderStageAsset;
 
-	// Engine macro the compile layer injects for the bindless target. The binding
-	// mode is therefore read from data (the variant defines reported by the
-	// manifest), and the runtime never has to second guess the shader model. It must
-	// match the macro the shader architecture defines for its bindless path.
-	static constexpr const CHAR* SHADER_VARIANT_DEFINE_BINDLESS = "PE_SHADER_BINDLESS";
-
 	/*
 	* ShaderAsset - one compiled variant of one shader.
 	*
@@ -88,14 +82,10 @@ namespace PigeonEngine
 		PE_NODISCARD const EShaderVariantDefine*	GetDefineByIndex(const UINT32 InIndex) const;
 		// Defines of the variant, exactly as the manifest reported them. They are the
 		// keyword set the render layer uses to pick a variant, and they carry the
-		// engine macros that were injected for this target (e.g. the bindless switch).
+		// engine macros that were injected for this target.
 		PE_NODISCARD const TArray<EShaderVariantDefine>&	GetDefines() const { return Defines; }
 		PE_NODISCARD BOOL32			HasDefine(const EName& InDefineName) const;
 		PE_NODISCARD BOOL32			FindDefineValue(const EName& InDefineName, INT32& OutValue) const;
-		// TRUE when the variant was compiled for the engine bindless path. Resolved
-		// once while the variant defines are applied (loading thread), so the runtime
-		// only ever reads a flag.
-		PE_NODISCARD BOOL32			IsBindlessVariant() const { return bBindless; }
 	public:
 		void	SetVariantSource(const TArray<EShaderVariantDefine>& InDefines, const EString& InDefineHash, const EString& InReplaceHash);
 		// Creates the entry when the stage is new, otherwise overwrites it in place.
@@ -116,9 +106,6 @@ namespace PigeonEngine
 		PE_NODISCARD UINT32	GetCulledFieldNum() const;
 		PE_NODISCARD UINT32	GetExposedFieldNum() const;
 	private:
-		// Resolved while the variant defines are applied, never from the runtime path.
-		PE_NODISCARD static BOOL32	ResolveBindlessFlag(const TArray<EShaderVariantDefine>& InDefines);
-	private:
 		EName						ShaderName;
 		EName						VariantName;
 		UINT32						VariantIndex;
@@ -127,8 +114,6 @@ namespace PigeonEngine
 		// strings for logging and cache keys.
 		EString						DefineHash;
 		EString						ReplaceHash;
-		// Resolved from the defines once, the runtime only reads it.
-		BOOL32						bBindless;
 		TArray<EShaderStageEntry>	StageEntries;
 
 	public:

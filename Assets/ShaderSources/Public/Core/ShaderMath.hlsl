@@ -14,105 +14,166 @@
 
 #include "Public/Core/ShaderConstants.hlsl"
 
-// ---------------------------------------------------------------------------
-// Component-wise select
-//
-// The legacy library spelled out 75 hand written overloads; one line each is
-// enough, and the ternary is what every one of them ends in. Deliberately not
-// the HLSL select() intrinsic: that one belongs to HLSL 2021, and the D3D11
-// path compiles this library with FXC, which has no such function (error
-// X3004). The ternary is the same operation - component-wise for a vector
-// condition exactly as for a scalar one - and both compilers take it.
-// ---------------------------------------------------------------------------
-
 float	SelectInternal(bool InCondition, float InTrueValue, float InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float2	SelectInternal(bool InCondition, float2 InTrueValue, float2 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float3	SelectInternal(bool InCondition, float3 InTrueValue, float3 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float4	SelectInternal(bool InCondition, float4 InTrueValue, float4 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float2	SelectInternal(bool2 InCondition, float2 InTrueValue, float2 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float3	SelectInternal(bool3 InCondition, float3 InTrueValue, float3 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float4	SelectInternal(bool4 InCondition, float4 InTrueValue, float4 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float2	SelectInternal(bool2 InCondition, float InTrueValue, float InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float3	SelectInternal(bool3 InCondition, float InTrueValue, float InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 float4	SelectInternal(bool4 InCondition, float InTrueValue, float InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 int		SelectInternal(bool InCondition, int InTrueValue, int InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 int2	SelectInternal(bool2 InCondition, int2 InTrueValue, int2 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 int3	SelectInternal(bool3 InCondition, int3 InTrueValue, int3 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 int4	SelectInternal(bool4 InCondition, int4 InTrueValue, int4 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 uint	SelectInternal(bool InCondition, uint InTrueValue, uint InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 uint2	SelectInternal(bool2 InCondition, uint2 InTrueValue, uint2 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 uint3	SelectInternal(bool3 InCondition, uint3 InTrueValue, uint3 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 uint4	SelectInternal(bool4 InCondition, uint4 InTrueValue, uint4 InFalseValue)
 {
+#if PE_SHADER_MODEL_5_0
 	return (InCondition ? InTrueValue : InFalseValue);
+#else
+	return select(InCondition, InTrueValue, InFalseValue);
+#endif
 }
 
 // ---------------------------------------------------------------------------

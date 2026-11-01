@@ -58,51 +58,46 @@ namespace PigeonEngine
 	// its aim is authored - the same convention the shadow view setup already used. A
 	// directional light stores the direction the light travels, which is the negation of the
 	// axis it points along.
-	extern void	EncodeDirectionalLight(const ELightData& InData, const Quaternion& InWorldRotation, EDirectionalLightsGPU& OutElement) noexcept;
+	//
+	// InShadowSlot is the index into the per view shadow slot table, or zero for a light that
+	// casts no shadow in this frame - zero is the table's "no shadow" sentinel, which is why real
+	// slots start at one. The renderer assigns it; the light only carries the address.
+	extern void	EncodeDirectionalLight(const ELightData& InData, const Quaternion& InWorldRotation
+		, const UINT32 InShadowSlot, const UINT32 InCascadeCount, EDirectionalLightsGPU& OutElement) noexcept;
 	// A local light needs the world position as well, because its falloff is measured from it.
 	// A point light stores a direction of zero and a cosine pair of -1; nothing reads either,
 	// because the type field is what the shading code branches on.
-	extern void	EncodeLocalLight(const ELightData& InData, const Vector3& InWorldLocation, const Quaternion& InWorldRotation, ELocalLightsGPU& OutElement) noexcept;
+	extern void	EncodeLocalLight(const ELightData& InData, const Vector3& InWorldLocation, const Quaternion& InWorldRotation
+		, const UINT32 InShadowSlot, ELocalLightsGPU& OutElement) noexcept;
 
 	class RDirectionalLightSceneProxy : public RBaseSceneProxy
 	{
 	public:
-		using RViewSetType				= TSet<const RViewProxy*>;
-		using RPerViewDomainInfoType	= TMap<ObjectIdentityType, TArray<EViewDomainInfo>>;
-		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
-		using RPerViewVisibilityMapType	= TMap<ObjectIdentityType, TArray<RVisibilityMapType>>;
-	public:
 		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent);
 		void	SetupProxy(const ERenderDirectionalLightMatrices& InMatrices, const ERenderLightParams& InParams, const ECascadeShadowData* InCascadeShadowData);
 	public:
-		void	GenerateViewInfo(const RViewProxy* InViewProxy);
+		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const override;
+		virtual BOOL32	BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
+			, const UINT32 InResolution, EViewDomainInfo& OutDomain
+			, Vector3& OutAnchor, Quaternion& OutRotation)const override;
 	public:
-		const RPerViewVisibilityMapType&	GetVisibilityMap()const;
-		RPerViewVisibilityMapType&			GetVisibilityMap();
 		const ELightData&					GetLightData()const;
-		RPerViewDomainInfoType&				GetViewDomainInfos();
-		const RPerViewDomainInfoType&		GetViewDomainInfos()const;
 		const ECascadeShadowData*			GetCascadeShadowData()const;
 		BOOL32								IsLightCastShadow()const;
 		BOOL32								IsLightUseCascadeShadow()const;
 		void								MarkNeedUpdateParams()const;
 		BOOL32								IsNeedUpdateParams()const;
-		RViewSetType&						GetViews();
-		const RViewSetType&					GetViews()const;
 	public:
 		void	UpdateMatrices(const ERenderDirectionalLightMatrices& InMatrices);
 		void	UpdateLightParams(const ERenderLightParams& InParams);
 		void	UpdateCascadeData(const ECascadeShadowData* InCascadeShadowData);
 	protected:
-		PE_MUTABLE BOOL32					NeedUpdateParams;
-		RPerViewVisibilityMapType			VisibilityMap;
+		PE_MUTABLE BOOL32					NeedUpdateParams	= FALSE;
 	protected:
 		ELightData							LightData;
-		RPerViewDomainInfoType				ViewDomainInfos;
 		ECascadeShadowData*					CascadeShadowData;
 	protected:
 		BOOL32								IsCascadeShadow;
-		RViewSetType						Views;
 		const PDirectionalLightComponent*	Component;
 
 		RENDER_PROXY_CLASS_BODY(RDirectionalLightSceneProxy)
@@ -114,10 +109,6 @@ namespace PigeonEngine
 	* field says. One proxy type for both, because they share one gpu list and one set of scene
 	* calls - the shading side reads the type out of the element, so the renderer never has to
 	* know which it is holding.
-	*
-	* There is no view info and no culling here yet. A directional light generates shadow domains
-	* because it has cascades; a local light has neither a shadow view nor a per view split until
-	* shadows land, and inventing either now would be a layout to keep in step with no reader.
 	*/
 	class RLocalLightSceneProxy : public RBaseSceneProxy
 	{
@@ -125,7 +116,16 @@ namespace PigeonEngine
 		RLocalLightSceneProxy(const PLocalLightComponent* InComponent);
 		void	SetupProxy(const ERenderTransformInfo& InTransform, const ELightData& InData);
 	public:
+		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const override;
+		virtual BOOL32	BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
+			, const UINT32 InResolution, EViewDomainInfo& OutDomain
+			, Vector3& OutAnchor, Quaternion& OutRotation)const override;
+	public:
 		const ELightData&	GetLightData() const;
+		// How much of the given view this light covers, as the approximate pixel radius of its
+		// attenuation sphere on screen. The renderer ranks shadow candidates by it, so a light
+		// whose shadow the frame cannot afford to keep is always the smallest one on screen.
+		PE_NODISCARD FLOAT	ComputeScreenCoverage(const RViewProxy& InView)const;
 		void				MarkNeedUpdateParams() const;
 		BOOL32				IsNeedUpdateParams() const;
 	public:

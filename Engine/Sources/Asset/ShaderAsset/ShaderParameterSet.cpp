@@ -487,6 +487,26 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	BOOL32 EShaderParameterSet::SetTextureUAV(const EName& InBlockName, const EName& InFieldName, const IRRHITextureUAVView* InView)
+	{
+		if (IsParameterCulled(InBlockName, InFieldName))
+		{
+			return TRUE;
+		}
+		EShaderParameterValue* Value = FindOrAddOverride(InBlockName, InFieldName);
+		if (!Value)
+		{
+			return FALSE;
+		}
+		// A subresource view is a UAV by construction; the kind is what the binding side uses
+		// to pick the unordered-access path, and the view pointer is what it binds.
+		Value->Kind = EShaderParameterValueKindType::SHADER_PARAMETER_VALUE_KIND_UAV;
+		Value->ScalarNum = 0u;
+		Value->TextureUAV = InView;
+		MarkDirty();
+		return TRUE;
+	}
+
 	BOOL32 EShaderParameterSet::SetSampler(const EName& InBlockName, const EName& InFieldName, const EShaderSamplerDesc& InSampler)
 	{
 		if (IsParameterCulled(InBlockName, InFieldName))

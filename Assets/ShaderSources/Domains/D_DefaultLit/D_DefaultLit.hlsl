@@ -31,6 +31,12 @@
 #if SHADER_STAGE_PIXEL
 #include "Public/Lighting/ShaderDirectLighting.hlsl"
 #include "Public/Lighting/ShaderIndirectDiffuse.hlsl"
+// The specular half is the deferred lighting pass's, not the base pass's: the base pass
+// compiles this domain to derive a surface, and pulling the prefiltered cube and the BRDF LUT
+// into it would declare resources it never reads. The lighting program sets the define.
+#if SHADER_LIGHTING_PASS
+#include "Public/Lighting/ShaderIndirectSpecular.hlsl"
+#endif	//SHADER_LIGHTING_PASS
 #endif	//SHADER_STAGE_PIXEL
 
 // ---------------------------------------------------------------------------
@@ -136,7 +142,7 @@ void ShadeSurface(in SurfaceData InSurface, in MaterialPixelInput InInput, out S
 	const float3 AnisotropicB = float3(0.0, 0.0, 1.0);
 	const float Anisotropy = 0.0;
 
-	ShadeDirectionalLights(InSurface, InInput.WorldPosition, InInput.ViewDirection, InSurface.F0,
+	ShadeDirectionalLights(InSurface, InInput.WorldPosition, InInput.ScreenPosition.xy, InInput.ViewDirection, InSurface.F0,
 		IsAnisotropic, AnisotropicT, AnisotropicB, Anisotropy, OutResult);
 	ShadeLocalLights(InSurface, InInput.WorldPosition, InInput.ViewDirection, InSurface.F0,
 		IsAnisotropic, AnisotropicT, AnisotropicB, Anisotropy, OutResult);
@@ -145,6 +151,11 @@ void ShadeSurface(in SurfaceData InSurface, in MaterialPixelInput InInput, out S
 	// it is summed here with the rest rather than written into the GBuffer by the base pass -
 	// which is also what keeps a material from having to declare an ambient input.
 	ShadeIndirectDiffuse(InSurface, OutResult);
+	// The environment's specular reflection. Only the deferred lighting pass compiles it; a
+	// forward pass that wants the same term includes this domain with the define set.
+#if SHADER_LIGHTING_PASS
+	ShadeIndirectSpecular(InSurface, InInput.ViewDirection, OutResult);
+#endif	//SHADER_LIGHTING_PASS
 }
 #endif	//SHADER_STAGE_PIXEL
 #endif	//D_DEFAULT_LIT_HLSL

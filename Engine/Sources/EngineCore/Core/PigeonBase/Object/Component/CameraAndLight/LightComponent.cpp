@@ -3,6 +3,10 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
 
@@ -173,5 +177,51 @@ namespace PigeonEngine
 		this->GetWorld()->GetRenderScene()->UpdateLocalLight(this);
 	}
 	// Render proxy functions END
+
+#if _EDITOR_ONLY
+	void PLightComponent::GenerateComponentDetail()
+	{
+		PSceneComponent::GenerateComponentDetail();
+
+		if (ImGui::TreeNodeEx("Light"))
+		{
+			// Normalized chromaticity rather than a magnitude: how bright the light is belongs to
+			// its own unit-explicit field, which each type draws below.
+			const Color3& Color = GetLightColor();
+			FLOAT TempColor[3] = { Color.r, Color.g, Color.b };
+			if (ImGui::ColorEdit3("Color", TempColor))
+			{
+				SetLightColor(Color3(TempColor[0], TempColor[1], TempColor[2]));
+			}
+			ImGui::TreePop();
+		}
+	}
+	void PLocalLightComponent::GenerateComponentDetail()
+	{
+		PLightComponent::GenerateComponentDetail();
+
+		if (ImGui::TreeNodeEx("Local Light"))
+		{
+			// No upper clamp: passing 0 for both bounds is ImGui's "unbounded" idiom (it treats
+			// min == max == 0 as no range), and the setter still refuses a negative value. A local
+			// light is physically far below the sun at daylight exposure, so a scene that wants it
+			// visible has to be able to author a larger number here.
+			FLOAT TempIntensity = GetLuminousIntensityCandela();
+			if (ImGui::DragFloat("Luminous intensity", &TempIntensity, 10.f, 0.f, 0.f, "%.0f cd"))
+			{
+				SetLuminousIntensityCandela(TempIntensity);
+			}
+
+			// The cutoff that bounds the shading cost, not the light's size: the falloff is inverse
+			// square out to here and zero past it.
+			FLOAT TempRadius = GetAttenuationRadiusMeters();
+			if (ImGui::DragFloat("Attenuation radius", &TempRadius, 1.f, 0.001f, 5000.f, "%.1f m"))
+			{
+				SetAttenuationRadiusMeters(TempRadius);
+			}
+			ImGui::TreePop();
+		}
+	}
+#endif
 
 }   // namespace PigeonEngine

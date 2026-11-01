@@ -65,6 +65,11 @@ namespace PigeonEngine
 		BOOL32						IsMainView;
 		RVisibilityMapType			VisibilityMap;
 	protected:
+		// A subclass that installs its own domain - a shadow view, whose projection comes from a
+		// light - writes it directly and then calls this, which is what the next publish watches.
+		// The camera path reaches the same flag through UpdateMatrices/UpdateViewParams.
+		void	MarkViewParametersDirty() { bParameterValuesDirty = TRUE; }
+	protected:
 		ECameraViewInfo				CameraViewInfo;
 		EViewDomainInfo				ViewDomainInfo;
 	protected:

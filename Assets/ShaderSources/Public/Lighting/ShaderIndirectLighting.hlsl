@@ -5,15 +5,12 @@
 // Environment sampling.
 //
 // This file is the cube read and nothing else: it is what the sky pass uses for
-// its own background, and what a prefiltered chain will sample once the specular
-// half lands. A surface's indirect *diffuse* term is the other direction of the
+// its own background. A surface's indirect *diffuse* term is the other direction of the
 // same feature and lives in Public/Lighting/ShaderIndirectDiffuse.hlsl - the two
 // are separate files because they have separate bindings, and a pass that only
-// draws a sky must not be made to declare what a shading pass reads.
-//
-// What the second stage adds here: a prefiltered mip chain plus a DFG lookup
-// table, which turns the split sum into a single fetch. The interface does not
-// change.
+// draws a sky must not be made to declare what a shading pass reads. The
+// *specular* half is Public/Lighting/ShaderIndirectSpecular.hlsl, which samples the
+// prefiltered chain and the DFG table instead of this cube.
 //
 // The environment cube is declared by C_Lighting.json. A pass that never samples
 // it culls it.

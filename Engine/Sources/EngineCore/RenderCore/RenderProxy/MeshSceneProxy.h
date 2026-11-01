@@ -46,6 +46,10 @@ namespace PigeonEngine
 		PE_NODISCARD virtual BOOL32	HasSkinVertexStreams()const;
 	protected:
 		virtual const EShaderInstance*	ResolveFallbackInstance(const UINT32 InSlotIndex)const override;
+		// The mesh asset's own AABB, transformed into world space. It is the conservative bound a
+		// shadow caster cull needs; a skinned mesh uses its bind pose bound, which can only be
+		// smaller than the posed one, so the caller keeps a small safety margin in mind.
+		virtual BOOL32	GetWorldBound(Vector3& OutMin, Vector3& OutMax)const override;
 		virtual const RInputLayoutDesc*	GetPipelineStateInputLayouts(UINT32& OutCount)const override;
 		virtual UINT32	GetDrawGroupNum()const override;
 		virtual BOOL32	GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex)const override;

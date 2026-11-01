@@ -36,6 +36,10 @@
 {VF_VERTEX_FACTORY}
 {PROGRAMMABLE}
 {LIGHTING}
+// The atlas and the slot table the local light shadow term samples. Declared here rather than in
+// the lighting component because they are the shadow system's bindings: the pass that samples
+// them is the one that has to declare them.
+{SHADOWS}
 
 MaterialPixelInput BuildDeferredPixelInput(in VFVarying InVarying)
 {
@@ -65,6 +69,9 @@ MaterialPixelInput BuildDeferredPixelInput(in VFVarying InVarying)
 	Result.ScreenUV = InVarying.Position.xy * InvScreenSize;
 	Result.PrimitiveID = 0u;
 	Result.IsFrontFace = true;
+	// The lighting pass runs on a full screen quad, so there is no back side to report; the
+	// sign stays the identity value a domain that reads it expects.
+	Result.FaceSign = 1.0;
 	return Result;
 }
 
@@ -91,8 +98,15 @@ void PSMain(in VFVarying InVarying,
 	// declared out of the lighting system: an unlit surface, or a cleared pixel.
 	// Its colour is the emission the base pass wrote into the target, and this
 	// pass blends additively, so adding anything here would add it twice.
+	//
+	// The zero write is not redundant: returning with this output unwritten leaves
+	// an undefined value in the register, and the ONE / ONE blend still adds that
+	// value to the target. That is what tinted the sky red when the lighting pass
+	// ran, while the sky pass itself had written black. Zero is the identity of an
+	// additive blend, so the base pass contribution survives unchanged.
 	if (Surface.LightChannelMask == 0u)
 	{
+		OutSceneColor = float4(0.0, 0.0, 0.0, 0.0);
 		return;
 	}
 

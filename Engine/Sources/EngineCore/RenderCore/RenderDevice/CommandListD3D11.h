@@ -74,6 +74,7 @@ namespace PigeonEngine
 		virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot)override;
 		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)override;
 		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)override;
+		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView)override;
 		virtual void ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot)override;
 		virtual void SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler)override;
 

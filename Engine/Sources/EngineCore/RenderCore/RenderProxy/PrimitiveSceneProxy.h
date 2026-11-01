@@ -41,6 +41,10 @@ namespace PigeonEngine
 		const EShaderAsset*			MaterialAsset	= nullptr;
 		const EShaderProgram*		Program			= nullptr;
 		IRRHIPipelineState*			PipelineState	= nullptr;
+		// The instance revision the pipeline state above was built from. It moves when the
+		// material's render traits change and when the instance re-resolves its program after a
+		// reload; both make what the pipeline was built from stale.
+		UINT32						InstanceRevision	= 0u;
 		RShaderParameterBuffers		MaterialBuffers;
 	};
 
@@ -66,6 +70,10 @@ namespace PigeonEngine
 		BOOL32			IsSceneProxyMovable()const;
 		BOOL32			IsSceneProxyCastShadow()const;
 		BOOL32			IsSceneProxyReceiveShadow()const;
+		// World space bounds of the geometry this proxy draws, used to cull it against a view
+		// frustum (the shadow views are the first caller). FALSE means the proxy cannot state one;
+		// callers treat that as "may be visible" rather than hiding it.
+		virtual BOOL32	GetWorldBound(Vector3& OutMin, Vector3& OutMax)const;
 	public:
 		void			SetPrimitiveSettings(const BOOL32 InIsMovable, const BOOL32 InIsCastShadow, const BOOL32 InIsReceiveShadow);
 		void			UpdatePrimitiveMatrices(const ERenderPrimitiveMatrices& InMatrices);

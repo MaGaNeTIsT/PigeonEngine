@@ -1,0 +1,32 @@
+{
+	"Name": "Shadows",
+	"Template": "Components/C_Shadows.hlsl",
+	"Defines": [
+		{ "Name": "PE_SHADOW_PCF_RADIUS", "Value": 1 }
+	],
+	"Textures": [
+		{
+			"Name": "ShadowMapAtlas",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerShadow",
+			"Slot": 0
+		}
+	],
+	"Resources": [
+		{
+			"Name": "ShadowSlots",
+			"Type": "StructuredBuffer",
+			"Slot": 0,
+			"Struct": [
+				{ "Name": "ViewProjectionRow0", "Format": "float4" },
+				{ "Name": "ViewProjectionRow1", "Format": "float4" },
+				{ "Name": "ViewProjectionRow2", "Format": "float4" },
+				{ "Name": "ViewProjectionRow3", "Format": "float4" },
+				{ "Name": "AtlasTile", "Format": "float4" },
+				{ "Name": "ShadowParams", "Format": "float4" },
+				{ "Name": "BiasParams", "Format": "float4" }
+			]
+		}
+	]
+}

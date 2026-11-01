@@ -765,9 +765,14 @@ namespace PigeonEngine
 		{
 			Texture = FindTexture(InParameterName, TRUE);
 		}
+		// A bindless resource is absent from the compiled shader's binding list - it is reached
+		// through the descriptor heap - so the compiler marks it culled. It is still read by the
+		// shader, so it is an active target: treating it as culled would make every setter drop the
+		// value, and the heap index it is bound through would keep its default, which samples
+		// whatever descriptor happens to sit there instead of reporting anything.
 		if (Texture != nullptr)
 		{
-			return (Texture->bCompilerCulled
+			return (((Texture->bCompilerCulled != FALSE) && (Texture->Bindless == FALSE))
 				? EShaderParameterTargetType::SHADER_PARAMETER_TARGET_CULLED
 				: EShaderParameterTargetType::SHADER_PARAMETER_TARGET_ACTIVE);
 		}
@@ -779,7 +784,7 @@ namespace PigeonEngine
 		}
 		if (Resource != nullptr)
 		{
-			return (Resource->bCompilerCulled
+			return (((Resource->bCompilerCulled != FALSE) && (Resource->Bindless == FALSE))
 				? EShaderParameterTargetType::SHADER_PARAMETER_TARGET_CULLED
 				: EShaderParameterTargetType::SHADER_PARAMETER_TARGET_ACTIVE);
 		}
@@ -787,7 +792,7 @@ namespace PigeonEngine
 		const EShaderReflectionSampler* Sampler = FindSampler(InParameterName);
 		if (Sampler != nullptr)
 		{
-			return (Sampler->bCompilerCulled
+			return (((Sampler->bCompilerCulled != FALSE) && (Sampler->Bindless == FALSE))
 				? EShaderParameterTargetType::SHADER_PARAMETER_TARGET_CULLED
 				: EShaderParameterTargetType::SHADER_PARAMETER_TARGET_ACTIVE);
 		}
@@ -1113,6 +1118,32 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
+	/*
+	* The bindless triple a declaration section carries: whether the source asked for the heap
+	* path, whether this compilation took it, and which block holds the heap index it is bound
+	* through. The compiler writes all three for a declared resource and only for the sections it
+	* emits, so a key that is absent means a reflection older than the flags - nothing was
+	* declared and nothing was taken, which is exactly what the defaults say.
+	*/
+	template<typename _TReflection>
+	static void ParseReflectionBindless(CJsonObject& InJson, _TReflection& InOutReflection)
+	{
+		BOOL8 bValue = FALSE;
+		if (InJson.GetBoolField(EString("PreferBindless"), bValue))
+		{
+			InOutReflection.PreferBindless = (bValue ? TRUE : FALSE);
+		}
+		if (InJson.GetBoolField(EString("Bindless"), bValue))
+		{
+			InOutReflection.Bindless = (bValue ? TRUE : FALSE);
+		}
+		EString BindConstantBufferName;
+		if (InJson.GetStringField(EString("BindConstantBuffer"), BindConstantBufferName))
+		{
+			InOutReflection.BindConstantBuffer = EName(BindConstantBufferName);
+		}
+	}
+
 	static BOOL32 ParseReflectionTextures(const EString& InFieldName, CJsonObject& InJson, const BOOL32 InIsRW, EShaderReflection& OutReflection)
 	{
 		TArray<CJsonObject*> TextureArray;
@@ -1178,6 +1209,7 @@ namespace PigeonEngine
 			{
 				Texture.bCompilerCulled = (bValue ? TRUE : FALSE);
 			}
+			ParseReflectionBindless(*TexJson, Texture);
 
 			if (InIsRW)
 			{
@@ -1234,6 +1266,7 @@ namespace PigeonEngine
 			{
 				Resource.bCompilerCulled = (bValue ? TRUE : FALSE);
 			}
+			ParseReflectionBindless(*ResJson, Resource);
 
 			// A structured buffer declares its struct fields and no element format;
 			// every other buffer kind declares an element format instead.
@@ -1360,6 +1393,7 @@ namespace PigeonEngine
 			{
 				Sampler.bCompilerCulled = (bValue ? TRUE : FALSE);
 			}
+			ParseReflectionBindless(*SamplerJson, Sampler);
 
 			OutReflection.Samplers.Add(Sampler);
 			delete SamplerJson;

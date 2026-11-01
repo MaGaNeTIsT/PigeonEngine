@@ -1,0 +1,13 @@
+{
+	"Name": "ShadowMask",
+	"Template": "Components/C_ShadowMask.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "ShadowMaskParams",
+			"Slot": 4,
+			"Fields": [
+				{ "Name": "InvMaskSize", "Format": "float2" }
+			]
+		}
+	]
+}

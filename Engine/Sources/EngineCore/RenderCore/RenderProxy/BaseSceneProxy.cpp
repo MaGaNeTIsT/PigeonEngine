@@ -1,4 +1,9 @@
 #include "BaseSceneProxy.h"
+// The default CollectShadowViews takes a TArray<FShadowViewRequest>& parameter, and instantiating
+// the array's allocator needs the element type complete. The header can only forward declare it -
+// ShadowViewProxy.h includes ViewProxy.h, which includes this header - so the definition lives
+// here, in the translation unit that instantiates the array.
+#include "ShadowViewProxy.h"
 
 namespace PigeonEngine
 {
@@ -28,6 +33,24 @@ namespace PigeonEngine
 	}
 	RBaseSceneProxy::~RBaseSceneProxy()
 	{
+	}
+	BOOL32 RBaseSceneProxy::CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const
+	{
+		(void)InView;
+		(void)OutRequests;
+		return FALSE;
+	}
+	BOOL32 RBaseSceneProxy::BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
+		, const UINT32 InResolution, EViewDomainInfo& OutDomain
+		, Vector3& OutAnchor, Quaternion& OutRotation)const
+	{
+		(void)InView;
+		(void)InRequest;
+		(void)InResolution;
+		(void)OutDomain;
+		(void)OutAnchor;
+		(void)OutRotation;
+		return FALSE;
 	}
 	const Vector3& RBaseSceneProxy::GetWorldLocation()const
 	{

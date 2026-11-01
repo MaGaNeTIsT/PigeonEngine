@@ -303,7 +303,8 @@ namespace PigeonEngine
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferC.IsRenderResourceValid())));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferD.IsRenderResourceValid())));
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferE.IsRenderResourceValid())));
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene textures release failed."), (!(GBufferF.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer scene textures release failed.")), (!(GBufferF.IsRenderResourceValid())));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer scene textures release failed.")), (!(DirectionalShadowMask.IsRenderResourceValid())));
 	}
 	void RSceneTextures::InitResources(const Vector2Int& InTextureSize, const BOOL32 IsNeedStencil)
 	{
@@ -434,7 +435,20 @@ namespace PigeonEngine
 					RFormatType::FORMAT_R8_UNORM));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
 #if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create scene textures failed."), (Result));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check create scene textures failed.")), (Result));
+#endif
+
+			// The directional shadow mask: one unsigned normalized channel per light, one means
+			// fully lit. Eight bits per channel is enough because the value is a filtered term in
+			// [0, 1] that the lighting pass multiplies by an already HDR illuminance - the mask
+			// does not carry radiance, so it does not need the scene colour target's precision.
+			Result = DirectionalShadowMask.InitFromRHI(RenderDevice,
+				RTextureDesc(TextureWidth, TextureHeight,
+					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
+					RFormatType::FORMAT_R8G8B8A8_UNORM));
+			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
+#if _EDITOR_ONLY
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check create scene textures failed.")), (Result));
 #endif
 		}
 
@@ -460,6 +474,7 @@ namespace PigeonEngine
 		GBufferD.ReleaseRenderResource();
 		GBufferE.ReleaseRenderResource();
 		GBufferF.ReleaseRenderResource();
+		DirectionalShadowMask.ReleaseRenderResource();
 	}
 	const Vector2Int& RSceneTextures::GetTextureSize()const
 	{
@@ -468,63 +483,6 @@ namespace PigeonEngine
 	BOOL32 RSceneTextures::IsNeedStencil()const
 	{
 		return NeedStencil;
-	}
-
-	RShadowTexture::RShadowTexture()
-	{
-	}
-	RShadowTexture::~RShadowTexture()
-	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow texture release failed."), (ShadowMaps.Num() == 0));
-	}
-	void RShadowTexture::InitResources(const TArray<Vector2Int>& InTextureSizes)
-	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Init shadow texture's num can not smaller than 0."), (InTextureSizes.Num() > 0));
-		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		for (INT32 i = 0, n = InTextureSizes.Num(); i < n; i++)
-		{
-			const Vector2Int TextureSize(EMath::Max(2, InTextureSizes[i].x), EMath::Max(2, InTextureSizes[i].y));
-			if (i >= TextureSizes.Num())
-			{
-				TextureSizes.Add(Vector2Int::Zero());
-			}
-			if (i >= ShadowMaps.Num())
-			{
-				ShadowMaps.AddDefaultGetRef();
-			}
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Num() == ShadowMaps.Num()));
-			if ((TextureSizes[i].x == TextureSize.x) && (TextureSizes[i].y == TextureSize.y))
-			{
-				continue;
-			}
-			TextureSizes[i] = TextureSize;
-			const UINT32 TextureWidth = static_cast<UINT32>(TextureSize.x);
-			const UINT32 TextureHeight = static_cast<UINT32>(TextureSize.y);
-
-#if _EDITOR_ONLY
-			const BOOL32 Result =
-#endif
-				ShadowMaps[i].InitFromRHI(RenderDevice,
-					RTextureDesc(TextureWidth, TextureHeight,
-						RBindFlagType::BIND_DEPTH_STENCIL | RBindFlagType::BIND_SHADER_RESOURCE,
-						RFormatType::FORMAT_UNKNOWN, nullptr, nullptr, nullptr, RCommonSettings::RENDER_SHADOW_MAP_DEPTH_BIT));
-#if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check create shadow texture failed."), (Result));
-#endif
-		}
-	}
-	void RShadowTexture::ReleaseResources()
-	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check shadow map num failed."), (TextureSizes.Num() == ShadowMaps.Num()));
-		if (const INT32 ShadowMapNum = ShadowMaps.Num(); ShadowMapNum > 0)
-		{
-			for (INT32 i = 0; i < ShadowMapNum; i++)
-			{
-				ShadowMaps[i].ReleaseRenderResource();
-			}
-			ShadowMaps.Empty();
-			TextureSizes.Empty();
-		}
 	}
 
 };

@@ -39,6 +39,83 @@ namespace PigeonEngine
 		SHADER_BINDING_KIND_COUNT,
 	};
 
+	/*
+	* Three-state ownership of one resource binding, resolved once when the plan is built.
+	*
+	*   CLAIMED    a C++ module registered the name, so exactly that module is expected to
+	*              publish a value. A publisher that is the only claimant reports a missing
+	*              value; a publisher that is not one of the claimants stays silent.
+	*   EXPOSURE   nothing claims the name, but the reflection marked it exposed. That is the
+	*              compiler's statement that the declaration belongs to the editor side (a
+	*              material's texture, an artist authored parameter), which has no static
+	*              claim table because its names cannot be enumerated from C++. A missing
+	*              value is a legal intermediate state and falls back to an engine default.
+	*   UNCLAIMED  neither. No module can ever publish it, so the plan build reports it as a
+	*              defect and asserts.
+	*/
+	enum EShaderBindingClaimStateType : UINT8
+	{
+		SHADER_BINDING_CLAIM_STATE_UNCLAIMED	= 0,
+		SHADER_BINDING_CLAIM_STATE_CLAIMED		= 1,
+		SHADER_BINDING_CLAIM_STATE_EXPOSURE		= 2,
+		SHADER_BINDING_CLAIM_STATE_COUNT,
+	};
+
+	// What a claim allows. ONLY_ONE says the name has exactly one owner in the whole engine;
+	// OVERLAPPING says several modules legitimately publish the same name for different draws
+	// (a mesh's bones and a procedural factory's bones, an instance value and its fallback),
+	// so the runtime cannot tell which one a given draw was supposed to provide.
+	enum EShaderBindingClaimPolicyType : UINT8
+	{
+		SHADER_BINDING_CLAIM_ONLY_ONE		= 0,
+		SHADER_BINDING_CLAIM_OVERLAPPING	= 1,
+		SHADER_BINDING_CLAIM_POLICY_COUNT,
+	};
+
+	// One name a module promises to publish. Scope identity is the module's own EName, so the
+	// same name claimed by two modules is representable without a shared owner enumeration.
+	struct FShaderBindingClaim
+	{
+	public:
+		EName							Name;
+		EShaderBindingClaimPolicyType	Policy	= EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE;
+	};
+
+	// The answer the plan build stores for one binding. ClaimScopeNum counts distinct claiming
+	// scopes; SoleClaimScope is valid only when that count is one, which is what the runtime
+	// compares a publisher against.
+	struct FShaderBindingClaimResolution
+	{
+	public:
+		EShaderBindingClaimStateType	State			= EShaderBindingClaimStateType::SHADER_BINDING_CLAIM_STATE_UNCLAIMED;
+		UINT32							ClaimScopeNum	= 0u;
+		UINT32							OnlyOneClaimNum	= 0u;
+		EName							SoleClaimScope;
+	};
+
+	// Registration is static initialization: every module's claim table is a namespace scope
+	// array in its own translation unit, and the registrar object below runs before main. The
+	// registry itself is a function local static, so it is built on first use and does not
+	// depend on the order the compiler initializes translation units in.
+	extern void	RegisterShaderBindingClaims(const FShaderBindingClaim* InClaims, const UINT32 InClaimNum, const EName& InScopeName);
+	// Resolves one name against every registered table and combines the answer with the
+	// reflection's Exposure flag. Called once per resource binding by the plan build.
+	PE_NODISCARD extern FShaderBindingClaimResolution	ResolveShaderBindingClaim(const EName& InName, const BOOL32 InIsExposure);
+
+	class FShaderBindingClaimRegistrar
+	{
+	public:
+		FShaderBindingClaimRegistrar(const FShaderBindingClaim* InClaims, const UINT32 InClaimNum, const EName& InScopeName)
+		{
+			RegisterShaderBindingClaims(InClaims, InClaimNum, InScopeName);
+		}
+	};
+
+#define PE_SHADER_BINDING_CLAIM_CONCAT_INNER(__Left, __Right)	__Left##__Right
+#define PE_SHADER_BINDING_CLAIM_CONCAT(__Left, __Right)			PE_SHADER_BINDING_CLAIM_CONCAT_INNER(__Left, __Right)
+#define PE_REGISTER_SHADER_BINDING_CLAIMS(__Claims, __ScopeName) \
+	static const ::PigeonEngine::FShaderBindingClaimRegistrar PE_SHADER_BINDING_CLAIM_CONCAT(ShaderBindingClaimRegistrar, __LINE__)(__Claims, PE_ARRAYSIZE(__Claims), (__ScopeName))
+
 	// How a constant buffer block reaches the shader. Derived from the reflection's
 	// RootConstant flag; kept as its own enum because the binding side branches on the
 	// mode, not on the reflection field.
@@ -99,6 +176,23 @@ namespace PigeonEngine
 		EShaderTextureType			TextureType		= EShaderTextureType::SHADER_TEXTURE_TYPE_2D;
 		EShaderResourceKindType		ResourceKind	= EShaderResourceKindType::SHADER_RESOURCE_KIND_BUFFER;
 		EShaderSamplerDesc			SamplerDesc;
+		// TRUE for a texture declaration, FALSE for a structured or byte address buffer. Textures
+		// and buffers share the SRV / UAV tables, so the binding kind alone cannot say which
+		// engine default resource an exposed binding without a value falls back to.
+		BOOL32						bIsTexture		= FALSE;
+		// Three-state ownership, filled by BuildFromReflection. Runtime reporting and the default
+		// resource fallback read these fields; Exposure is consumed there and not stored twice.
+		EShaderBindingClaimStateType	ClaimState		= EShaderBindingClaimStateType::SHADER_BINDING_CLAIM_STATE_UNCLAIMED;
+		UINT32							ClaimScopeNum	= 0u;
+		EName							SoleClaimScope;
+		// TRUE when this resource is index driven: the shader reaches it through
+		// ResourceDescriptorHeap / SamplerDescriptorHeap with the index the compiler stored in
+		// the "<Name>_BindlessIdx" member of BindlessConstantBuffer, so the binding side writes
+		// that index instead of binding a view at the table slot. The flag is per binding rather
+		// than per plan because a bindless program mixes index driven resources with register
+		// bound ones - the resources that did not declare it keep their slot.
+		BOOL32						bBindless				= FALSE;
+		EName						BindlessConstantBuffer;
 	};
 
 	class EShaderBindingPlan
@@ -109,8 +203,11 @@ namespace PigeonEngine
 	public:
 		void	Reset();
 		// Builds the plan from one stage's reflection. Culled constant buffers and
-		// culled variables are skipped, everything else is taken verbatim.
-		BOOL32	BuildFromReflection(const EShaderReflection& InReflection, const BOOL32 InIsBindless);
+		// culled variables are skipped, everything else is taken verbatim, whether the stage
+		// is bindless is read off the reflection instead of being passed in, and every resource
+		// binding is resolved to its claim state: the per-resource flags are the compiler's
+		// statement about the stage, so the plan cannot disagree with the shader it describes.
+		BOOL32	BuildFromReflection(const EShaderReflection& InReflection);
 	public:
 		PE_NODISCARD EShaderStageType	GetStage() const { return Stage; }
 		PE_NODISCARD BOOL32				IsBindless() const { return bBindless; }

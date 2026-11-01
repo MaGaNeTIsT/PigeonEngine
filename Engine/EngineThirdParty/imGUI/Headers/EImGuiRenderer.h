@@ -86,6 +86,11 @@ namespace PigeonEngine
 		void	ReleaseImGuiMaterialInstance();
 		void	SetIdentityDrawParams();
 		BOOL8	BuildPipelineState();
+		// Counts one frame of "not ready yet" and answers FALSE. Waiting is a normal state on the
+		// frames between the material assembly finishing and the render thread publishing the
+		// stage assets' device objects, so it is not reported - until it outlives the budget, at
+		// which point it is reported once, because a pass that never draws must not stay silent.
+		BOOL8	NotePendingInitialize();
 		void	UpdateTexture(ImTextureData* Tex);
 		BOOL8	EnsureBuffers(UINT32 InVertexNum, UINT32 InIndexNum);
 		void	ReleaseDynamicBuffers();
@@ -93,6 +98,12 @@ namespace PigeonEngine
 
 	private:
 		BOOL8							bInitialized			= FALSE;
+		// TRUE when the attempt that just failed did so because something is still being produced.
+		// Set by the step that found the state, read by Initialize, cleared at the start of each
+		// attempt - it is the answer to "retry or report", not a mode of operation.
+		BOOL32							bInitializePending		= FALSE;
+		// Frames spent waiting in a row. Reset by a successful initialization and by ShutDown.
+		UINT32							PendingInitializeFrames	= 0u;
 		// The ImGui shader instance. Non-owning: it comes from the process wide instance cache, which
 		// is also what makes a shader reload reach this renderer - the cache re-points the instance to
 		// the rebuilt asset, and this renderer's next program read follows it.

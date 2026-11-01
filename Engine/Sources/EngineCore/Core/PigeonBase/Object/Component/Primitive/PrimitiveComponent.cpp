@@ -19,8 +19,11 @@ namespace PigeonEngine
 	PPrimitiveComponent::PPrimitiveComponent()
 		: PSceneComponent()
 		, bMaterialDirty(FALSE)
-		, bCastShadow(FALSE)
-		, bReceiveShadow(FALSE)
+		// A primitive casts shadows unless it says otherwise. The alternative - opt in per mesh -
+		// leaves every scene the engine builds without a single caster, which reads as "the shadow
+		// system does not work" rather than as "nothing was authored to cast".
+		, bCastShadow(TRUE)
+		, bReceiveShadow(TRUE)
 	{
 		POBJ_DEBUGNAME_SET(this, "PrimitiveComponent");
 	}

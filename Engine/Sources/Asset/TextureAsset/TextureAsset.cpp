@@ -1,5 +1,6 @@
 #include "TextureAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <Base/DataStructure/Text/Path.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
@@ -298,6 +299,296 @@ namespace PigeonEngine
 		return bDeclared;
 	}
 
+	// ----------------------------------------------------------------------
+	// TGA
+	//
+	// WIC has no TGA codec, so the format a large part of the repository's art ships in has to be
+	// read here. TGA is an 18 byte header followed by rows of BGR(A) bytes, optionally run length
+	// encoded, and (in its 2.0 revision) a 26 byte footer that points at an extension area.
+	//
+	// This is a byte mover, not a colour converter: the channels keep the order the file wrote
+	// them in, the reported format names that order, and the sRGB reading is a flag rather than a
+	// transform. The bytes are assumed to already be what the caller's colour space says they are,
+	// which is the same assumption the WIC path makes.
+	//
+	// Only the true colour variants are read. A colour mapped or greyscale TGA is declined here
+	// and falls through to WIC, which refuses it in turn, so the import reports the file instead
+	// of storing something half decoded.
+	// ----------------------------------------------------------------------
+	PE_CONSTEXPR_STATIC UINT8	TGA_HEADER_BYTE_NUM						= 18u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_FOOTER_BYTE_NUM						= 26u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_IMAGE_TYPE_UNCOMPRESSED_TRUE_COLOR	= 2u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_IMAGE_TYPE_RUN_LENGTH_TRUE_COLOR	= 10u;
+	PE_CONSTEXPR_STATIC UINT32	TGA_EXTENSION_AREA_BYTE_NUM				= 495u;
+	// Size(2) + author(41) + comments(324) + date/time(12) + job name(41) + job time(6) +
+	// software id(41) + software version(3) + key colour(4) + pixel aspect ratio(4).
+	PE_CONSTEXPR_STATIC UINT32	TGA_EXTENSION_GAMMA_OFFSET				= 478u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_DESCRIPTOR_RIGHT_TO_LEFT			= 0x10u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_DESCRIPTOR_TOP_TO_BOTTOM			= 0x20u;
+	PE_CONSTEXPR_STATIC UINT8	TGA_ATTRIBUTE_BIT_MASK					= 0x0Fu;
+
+	static UINT16 ReadLittleEndian16(const BYTE* InBytes) noexcept
+	{
+		return static_cast<UINT16>(static_cast<UINT16>(InBytes[0u]) | static_cast<UINT16>(static_cast<UINT16>(InBytes[1u]) << 8u));
+	}
+	static UINT32 ReadLittleEndian32(const BYTE* InBytes) noexcept
+	{
+		return (static_cast<UINT32>(InBytes[0u])
+			| (static_cast<UINT32>(InBytes[1u]) << 8u)
+			| (static_cast<UINT32>(InBytes[2u]) << 16u)
+			| (static_cast<UINT32>(InBytes[3u]) << 24u));
+	}
+
+	// Whether the path names a TGA, which is what decides that this reader is tried before WIC.
+	// The extension is lower cased because the file was saved by whatever tool the artist used,
+	// and a ".TGA" reaching WIC would fail with nothing in the log to say why.
+	static BOOL32 IsTgaPath(const EString& InPathName) noexcept
+	{
+		return ((EPath::GetExtension(InPathName).ToLower() == EString(PE_TEXT("tga"))) ? TRUE : FALSE);
+	}
+
+	// What the file says about its own colour space, if it says anything.
+	//
+	// A TGA 2.0 file ends in a footer that locates an extension area, and that area carries a
+	// gamma value as a fixed point pair. It is the only colour space statement the format has:
+	// 2.2 is the sRGB transfer curve, 1.0 means the file is linear, and anything else (or no
+	// footer at all) declares nothing - which is the case the caller's fallback answers for.
+	//
+	// TRUE means the file declared something and OutIsSRGB holds it; FALSE means it kept quiet.
+	static BOOL32 ReadTgaColorSpaceDeclaration(const BYTE* InFileBytes, const ULONG InFileSize, BOOL32& OutIsSRGB) noexcept
+	{
+		OutIsSRGB = FALSE;
+		if ((InFileBytes == nullptr) || (InFileSize < (static_cast<ULONG>(TGA_HEADER_BYTE_NUM) + TGA_FOOTER_BYTE_NUM)))
+		{
+			return FALSE;
+		}
+
+		const BYTE* Footer = InFileBytes + (InFileSize - TGA_FOOTER_BYTE_NUM);
+		const CHAR FooterSignature[] = PE_TEXT("TRUEVISION-XFILE.");
+		for (UINT32 SignatureIndex = 0u; SignatureIndex < (PE_ARRAYSIZE(FooterSignature) - 1u); SignatureIndex++)
+		{
+			if (Footer[8u + SignatureIndex] != static_cast<BYTE>(FooterSignature[SignatureIndex]))
+			{
+				return FALSE;
+			}
+		}
+		if (Footer[8u + (PE_ARRAYSIZE(FooterSignature) - 1u)] != 0u)
+		{
+			return FALSE;
+		}
+
+		const UINT32 ExtensionOffset = ReadLittleEndian32(Footer);
+		// Stated as "is there room for the whole area after this offset" so a malformed offset
+		// cannot wrap past the check.
+		if ((ExtensionOffset == 0u) || (static_cast<ULONG>(ExtensionOffset) >= InFileSize)
+			|| ((InFileSize - static_cast<ULONG>(ExtensionOffset)) < TGA_EXTENSION_AREA_BYTE_NUM))
+		{
+			return FALSE;
+		}
+		const BYTE* ExtensionArea = InFileBytes + ExtensionOffset;
+		if (ReadLittleEndian16(ExtensionArea) < static_cast<UINT16>(TGA_EXTENSION_AREA_BYTE_NUM))
+		{
+			return FALSE;
+		}
+
+		const UINT16 GammaNumerator = ReadLittleEndian16(ExtensionArea + TGA_EXTENSION_GAMMA_OFFSET);
+		const UINT16 GammaDenominator = ReadLittleEndian16(ExtensionArea + TGA_EXTENSION_GAMMA_OFFSET + 2u);
+		if ((GammaNumerator == 0u) || (GammaDenominator == 0u))
+		{
+			return FALSE;
+		}
+		const FLOAT Gamma = (static_cast<FLOAT>(GammaNumerator) / static_cast<FLOAT>(GammaDenominator));
+		// Two named answers and nothing else: a gamma between them is a statement this reader does
+		// not know how to read, so the file counts as having declared nothing.
+		if ((Gamma > 2.0f) && (Gamma < 2.4f))
+		{
+			OutIsSRGB = TRUE;
+			return TRUE;
+		}
+		if ((Gamma > 0.9f) && (Gamma < 1.1f))
+		{
+			OutIsSRGB = FALSE;
+			return TRUE;
+		}
+		return FALSE;
+	}
+
+	// Decodes the bytes of one TGA file into the layout the render layer stores: four bytes per
+	// pixel in B, G, R, A order, top row first. TGA itself is either orientation, so a file that
+	// declares bottom-up is flipped here; nothing else about the pixels changes.
+	static BOOL32 DecodeTgaImage(const BYTE* InFileBytes, const ULONG InFileSize, const BOOL32 InFallbackSRGB
+		, BYTE*& OutByteCode, UINT32& OutWidth, UINT32& OutHeight, UINT32& OutPixelByteCount, RFormatType& OutFormat, BOOL32& OutSRGB)
+	{
+		if ((InFileBytes == nullptr) || (InFileSize < TGA_HEADER_BYTE_NUM))
+		{
+			return FALSE;
+		}
+
+		const UINT8 IdentifierLength	= InFileBytes[0u];
+		const UINT8 ColorMapType		= InFileBytes[1u];
+		const UINT8 ImageType			= InFileBytes[2u];
+		const UINT32 Width				= ReadLittleEndian16(InFileBytes + 12u);
+		const UINT32 Height				= ReadLittleEndian16(InFileBytes + 14u);
+		const UINT8 PixelBits			= InFileBytes[16u];
+		const UINT8 Descriptor			= InFileBytes[17u];
+
+		// A palette is a second indirection this reader does not implement, and a mode it does not
+		// name (greyscale, or a version before the true colour ones) is not one it can move.
+		if ((ColorMapType != 0u) || ((ImageType != TGA_IMAGE_TYPE_UNCOMPRESSED_TRUE_COLOR) && (ImageType != TGA_IMAGE_TYPE_RUN_LENGTH_TRUE_COLOR)))
+		{
+			return FALSE;
+		}
+		if ((PixelBits != 24u) && (PixelBits != 32u))
+		{
+			return FALSE;
+		}
+		if ((Width == 0u) || (Height == 0u))
+		{
+			return FALSE;
+		}
+
+		const UINT32 SourcePixelByteNum = (static_cast<UINT32>(PixelBits) / 8u);
+		const UINT32 DestinationPixelByteNum = 4u;
+		const SIZE_T DestinationByteSize = (static_cast<SIZE_T>(Width) * static_cast<SIZE_T>(Height) * DestinationPixelByteNum);
+		const BYTE* StreamBegin = InFileBytes + TGA_HEADER_BYTE_NUM + IdentifierLength;
+		const BYTE* StreamEnd = InFileBytes + InFileSize;
+		if (StreamBegin >= StreamEnd)
+		{
+			return FALSE;
+		}
+		// Byte counts rather than an end pointer: a run length header can claim more pixels than
+		// the file holds, and "is what is left at least this big" is the form that cannot overflow.
+		const SIZE_T StreamByteNum = static_cast<SIZE_T>(StreamEnd - StreamBegin);
+		SIZE_T StreamOffset = 0u;
+
+		const BOOL32 bTopToBottom = ((Descriptor & TGA_DESCRIPTOR_TOP_TO_BOTTOM) != 0u) ? TRUE : FALSE;
+		const BOOL32 bRightToLeft = ((Descriptor & TGA_DESCRIPTOR_RIGHT_TO_LEFT) != 0u) ? TRUE : FALSE;
+		// The attribute bits say whether the fourth byte of a 32 bit pixel is an alpha channel or
+		// padding no exporter bothered to define. Where it is padding, an opaque pixel is the only
+		// reading that is not an invention.
+		const BOOL32 bHasAlpha = (((Descriptor & TGA_ATTRIBUTE_BIT_MASK) != 0u) && (SourcePixelByteNum == 4u)) ? TRUE : FALSE;
+
+		BYTE* Destination = new BYTE[DestinationByteSize];
+		const UINT32 PixelNum = (Width * Height);
+		UINT32 WrittenPixelNum = 0u;
+
+		const auto HasStreamByte = [&](const SIZE_T InByteNum) ->BOOL32
+		{
+			return (((StreamOffset + InByteNum) <= StreamByteNum) ? TRUE : FALSE);
+		};
+
+		// TGA's pixel order is the stream's order, which is what makes the origin flags a
+		// destination mapping rather than a decode order: every path below hands one file order
+		// pixel here and this writes it where the render layer expects it.
+		const auto PlacePixel = [&](const BYTE* InSource) ->void
+		{
+			const UINT32 StreamX = (WrittenPixelNum % Width);
+			const UINT32 StreamY = (WrittenPixelNum / Width);
+			const UINT32 DestinationX = ((bRightToLeft != FALSE) ? ((Width - 1u) - StreamX) : StreamX);
+			const UINT32 DestinationY = ((bTopToBottom != FALSE) ? StreamY : ((Height - 1u) - StreamY));
+			BYTE* Target = Destination + ((static_cast<SIZE_T>(DestinationY) * Width) + DestinationX) * DestinationPixelByteNum;
+			Target[0u] = InSource[0u];
+			Target[1u] = InSource[1u];
+			Target[2u] = InSource[2u];
+			Target[3u] = ((bHasAlpha != FALSE) ? InSource[3u] : 255u);
+			WrittenPixelNum++;
+		};
+
+		if (ImageType == TGA_IMAGE_TYPE_UNCOMPRESSED_TRUE_COLOR)
+		{
+			if ((static_cast<SIZE_T>(PixelNum) * SourcePixelByteNum) > StreamByteNum)
+			{
+				delete[]Destination;
+				return FALSE;
+			}
+			for (UINT32 PixelIndex = 0u; PixelIndex < PixelNum; PixelIndex++)
+			{
+				PlacePixel(StreamBegin + (static_cast<SIZE_T>(PixelIndex) * SourcePixelByteNum));
+			}
+		}
+		else
+		{
+			// Run length: a packet header byte holds a length in its low seven bits and says in its
+			// high bit whether one pixel follows (repeat it) or a run of distinct pixels does.
+			while (WrittenPixelNum < PixelNum)
+			{
+				if (HasStreamByte(1u) == FALSE)
+				{
+					delete[]Destination;
+					return FALSE;
+				}
+				const UINT8 PacketHeader = StreamBegin[StreamOffset];
+				StreamOffset += 1u;
+				const UINT32 PacketPixelNum = (static_cast<UINT32>(PacketHeader & 0x7Fu) + 1u);
+				if ((PacketHeader & 0x80u) != 0u)
+				{
+					if (HasStreamByte(SourcePixelByteNum) == FALSE)
+					{
+						delete[]Destination;
+						return FALSE;
+					}
+					for (UINT32 RepeatIndex = 0u; (RepeatIndex < PacketPixelNum) && (WrittenPixelNum < PixelNum); RepeatIndex++)
+					{
+						PlacePixel(StreamBegin + StreamOffset);
+					}
+					StreamOffset += SourcePixelByteNum;
+				}
+				else
+				{
+					for (UINT32 RunIndex = 0u; (RunIndex < PacketPixelNum) && (WrittenPixelNum < PixelNum); RunIndex++)
+					{
+						if (HasStreamByte(SourcePixelByteNum) == FALSE)
+						{
+							delete[]Destination;
+							return FALSE;
+						}
+						PlacePixel(StreamBegin + StreamOffset);
+						StreamOffset += SourcePixelByteNum;
+					}
+				}
+			}
+		}
+
+		BOOL32 DeclaredSRGB = FALSE;
+		const BOOL32 bColorSpaceDeclared = ReadTgaColorSpaceDeclaration(InFileBytes, InFileSize, DeclaredSRGB);
+		const BOOL32 ResolvedSRGB = ((bColorSpaceDeclared != FALSE) ? DeclaredSRGB : InFallbackSRGB);
+
+		OutByteCode = Destination;
+		OutWidth = Width;
+		OutHeight = Height;
+		OutPixelByteCount = DestinationPixelByteNum;
+		// The bytes above are B, G, R, A in that order, so the format naming them is the BGR one:
+		// the channels are moved, never swapped.
+		OutFormat = RFormatType::FORMAT_B8G8R8A8_UNORM;
+		// The same rule the WIC path applies: an sRGB reading only exists for a format family that
+		// has an sRGB member.
+		OutSRGB = (((ResolvedSRGB != FALSE) && (RFormatTraits::GetSRGBCounterpart(OutFormat) != RFormatType::FORMAT_UNKNOWN)) ? TRUE : FALSE);
+		return TRUE;
+	}
+
+	// The file side of the reader above: the whole file is small enough to read in one go, and the
+	// alternative - a streaming parser for an 18 byte header - would be more code for less clarity.
+	static BOOL32 ReadAndDecodingTga(const EString& InPathName, BYTE*& OutByteCode, UINT32& OutWidth, UINT32& OutHeight
+		, UINT32& OutPixelByteCount, RFormatType& OutFormat, BOOL32 InFallbackSRGB, BOOL32& OutSRGB)
+	{
+		void* FileMem = nullptr;
+		ULONG FileSize = 0u;
+		if (EFileHelper::ReadFileAsBinary(InPathName, FileMem, FileSize) == FALSE)
+		{
+			return FALSE;
+		}
+
+		BOOL32 bSucceed = FALSE;
+		if (FileMem != nullptr)
+		{
+			bSucceed = DecodeTgaImage(static_cast<const BYTE*>(FileMem), FileSize, InFallbackSRGB
+				, OutByteCode, OutWidth, OutHeight, OutPixelByteCount, OutFormat, OutSRGB);
+			// The helper allocates with new char[], which is also what the rest of this file frees.
+			delete[]static_cast<CHAR*>(FileMem);
+		}
+		return bSucceed;
+	}
+
 	static BOOL32 ReadAndDecodingDigitalImage(const EString& InPathName, BYTE*& OutByteCode, UINT32& OutWidth, UINT32& OutHeight, UINT32& OutPixelByteCount, RFormatType& OutFormat, BOOL32 InFallbackSRGB, BOOL32& OutSRGB)
 	{
 		// Initialize output values
@@ -313,6 +604,15 @@ namespace PigeonEngine
 			OutFormat = RFormatType::FORMAT_UNKNOWN;
 			// The importer's choice stands until the file says otherwise.
 			OutSRGB = InFallbackSRGB;
+		}
+
+		// TGA before WIC: WIC has no codec for it, and the extension is the only thing that has to
+		// decide, because this reader declines anything it does not implement and falls through to
+		// the decoder below - which then reports the file it could not read.
+		if ((IsTgaPath(InPathName) != FALSE)
+			&& (ReadAndDecodingTga(InPathName, OutByteCode, OutWidth, OutHeight, OutPixelByteCount, OutFormat, InFallbackSRGB, OutSRGB) != FALSE))
+		{
+			return TRUE;
 		}
 
 		HRESULT hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -740,6 +1040,127 @@ namespace PigeonEngine
 		SetTextureData(InByteCode, ETextureResourceProperty(InWidth, InWidth, 6u, InPixelByteCount, InFormat), InSRGB);
 	}
 
+	namespace
+	{
+		FLOAT SRGBToLinear(const FLOAT InValue)
+		{
+			return ((InValue <= 0.04045f) ? (InValue / 12.92f) : EMath::Pow((InValue + 0.055f) / 1.055f, 2.4f));
+		}
+
+		// Decodes one stored texel to linear RGB. Only the formats the cube importer can produce
+		// for a colour cube are covered; an unsupported one answers FALSE and the caller reports
+		// that the mean is unavailable rather than inventing a number.
+		BOOL32 DecodeTextureCubeTexelToLinear(const BYTE* InPixel, const RFormatType InFormat
+			, const BOOL32 InIsSRGB, FLOAT& OutRed, FLOAT& OutGreen, FLOAT& OutBlue)
+		{
+			BOOL32 bIsUnorm = FALSE;
+			switch (InFormat)
+			{
+			case RFormatType::FORMAT_R8G8B8A8_UNORM:
+			case RFormatType::FORMAT_R8G8B8A8_UNORM_SRGB:
+			case RFormatType::FORMAT_R8G8B8A8_TYPELESS:
+				OutRed		= static_cast<FLOAT>(InPixel[0u]) / 255.f;
+				OutGreen	= static_cast<FLOAT>(InPixel[1u]) / 255.f;
+				OutBlue		= static_cast<FLOAT>(InPixel[2u]) / 255.f;
+				bIsUnorm = TRUE;
+				break;
+			case RFormatType::FORMAT_B8G8R8A8_UNORM:
+			case RFormatType::FORMAT_B8G8R8A8_UNORM_SRGB:
+			case RFormatType::FORMAT_B8G8R8A8_TYPELESS:
+				OutBlue		= static_cast<FLOAT>(InPixel[0u]) / 255.f;
+				OutGreen	= static_cast<FLOAT>(InPixel[1u]) / 255.f;
+				OutRed		= static_cast<FLOAT>(InPixel[2u]) / 255.f;
+				bIsUnorm = TRUE;
+				break;
+			case RFormatType::FORMAT_R32G32B32A32_FLOAT:
+			{
+				const FLOAT* Values = reinterpret_cast<const FLOAT*>(InPixel);
+				OutRed		= Values[0u];
+				OutGreen	= Values[1u];
+				OutBlue		= Values[2u];
+				break;
+			}
+			case RFormatType::FORMAT_R32G32B32_FLOAT:
+			{
+				const FLOAT* Values = reinterpret_cast<const FLOAT*>(InPixel);
+				OutRed		= Values[0u];
+				OutGreen	= Values[1u];
+				OutBlue		= Values[2u];
+				break;
+			}
+			default:
+				return FALSE;
+			}
+			if ((bIsUnorm != FALSE) && (InIsSRGB != FALSE))
+			{
+				OutRed		= SRGBToLinear(OutRed);
+				OutGreen	= SRGBToLinear(OutGreen);
+				OutBlue		= SRGBToLinear(OutBlue);
+			}
+			return TRUE;
+		}
+	}
+
+	BOOL32 ComputeTextureCubeMeanLinearLuminance(const ETextureCube& InCube, FLOAT& OutLuminance, Color3& OutColor)
+	{
+		OutLuminance = 0.f;
+		OutColor = Color3::Black();
+		if ((InCube.ByteCode == nullptr) || (InCube.ResourceProperties.Width < 1u) || (InCube.ResourceProperties.Height < 1u)
+			|| (InCube.ResourceProperties.PixelByteCount < 1u))
+		{
+			return FALSE;
+		}
+
+		const UINT32 FaceWidth		= InCube.ResourceProperties.Width;
+		const UINT32 FaceHeight		= InCube.ResourceProperties.Height;
+		const UINT32 PixelByteCount	= InCube.ResourceProperties.PixelByteCount;
+		const UINT32 FaceByteSize	= FaceWidth * FaceHeight * PixelByteCount;
+
+		// Solid angle weighted: a cube texel near a face corner covers less sphere than one at the
+		// centre, so a plain pixel average would over-weight the corners. The weight below is the
+		// standard cube map solid angle element 1 / (1 + u^2 + v^2)^(3/2).
+		double SumRed = 0.0;
+		double SumGreen = 0.0;
+		double SumBlue = 0.0;
+		double SumWeight = 0.0;
+		for (UINT32 FaceIndex = 0u; FaceIndex < 6u; FaceIndex++)
+		{
+			const BYTE* FaceData = InCube.ByteCode + static_cast<SIZE_T>(FaceByteSize) * FaceIndex;
+			for (UINT32 Y = 0u; Y < FaceHeight; Y++)
+			{
+				const FLOAT V = (2.f * (static_cast<FLOAT>(Y) + 0.5f) / static_cast<FLOAT>(FaceHeight)) - 1.f;
+				for (UINT32 X = 0u; X < FaceWidth; X++)
+				{
+					const FLOAT U = (2.f * (static_cast<FLOAT>(X) + 0.5f) / static_cast<FLOAT>(FaceWidth)) - 1.f;
+					const BYTE* Pixel = FaceData + static_cast<SIZE_T>((Y * FaceWidth) + X) * PixelByteCount;
+					FLOAT Red = 0.f;
+					FLOAT Green = 0.f;
+					FLOAT Blue = 0.f;
+					if (DecodeTextureCubeTexelToLinear(Pixel, InCube.ResourceProperties.Format, InCube.SRGB, Red, Green, Blue) == FALSE)
+					{
+						return FALSE;
+					}
+					const FLOAT Weight = 1.f / EMath::Pow(1.f + (U * U) + (V * V), 1.5f);
+					SumRed		+= static_cast<double>(Red) * Weight;
+					SumGreen	+= static_cast<double>(Green) * Weight;
+					SumBlue		+= static_cast<double>(Blue) * Weight;
+					SumWeight	+= Weight;
+				}
+			}
+		}
+		if (SumWeight <= 0.0)
+		{
+			return FALSE;
+		}
+
+		const FLOAT MeanRed		= static_cast<FLOAT>(SumRed / SumWeight);
+		const FLOAT MeanGreen	= static_cast<FLOAT>(SumGreen / SumWeight);
+		const FLOAT MeanBlue	= static_cast<FLOAT>(SumBlue / SumWeight);
+		OutColor = Color3(MeanRed, MeanGreen, MeanBlue);
+		OutLuminance = (0.2126f * MeanRed) + (0.7152f * MeanGreen) + (0.0722f * MeanBlue);
+		return TRUE;
+	}
+
 	ETexture2DAsset::ETexture2DAsset(const EString& InAssetPath, const EString& InAssetName
 #if _EDITOR_ONLY
 		, const EString& InDebugName
@@ -922,6 +1343,25 @@ namespace PigeonEngine
 				PE_LOG_ERROR(EString("[TextureCubeAsset] '") + GetAssetName()
 					+ EString("' carries an all-zero payload (") + ToString(PayloadSize)
 					+ EString(" bytes for six faces): the sky and the environment bake will both read black."));
+			}
+
+			// The divisor the environment is normalized by. Printed here as well as on the
+			// component because this is the one place the payload and its colour space are both
+			// in hand.
+			FLOAT MeanLuminance = 0.f;
+			Color3 MeanColor = Color3::Black();
+			if (ComputeTextureCubeMeanLinearLuminance(*InResource, MeanLuminance, MeanColor) != FALSE)
+			{
+				PE_LOG_LOG(EString(PE_TEXT("[TextureCubeAsset] '")) + GetAssetName()
+					+ EString(PE_TEXT("' mean linear luminance = ")) + ToString(MeanLuminance)
+					+ EString(PE_TEXT(" (mean linear RGB ")) + ToString(MeanColor.x) + EString(PE_TEXT(", "))
+					+ ToString(MeanColor.y) + EString(PE_TEXT(", ")) + ToString(MeanColor.z)
+					+ EString(PE_TEXT("). Every consumer divides the cube by it before applying the sky light's luminance.")));
+			}
+			else
+			{
+				PE_LOG_WARN(EString(PE_TEXT("[TextureCubeAsset] '")) + GetAssetName()
+					+ EString(PE_TEXT("' mean linear luminance is unavailable: the stored format is not decoded by the editor helper.")));
 			}
 		}
 #endif	// _EDITOR_ONLY

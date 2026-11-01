@@ -32,7 +32,6 @@ RCommandListD3D12::RCommandListD3D12(RDeviceD3D12* InOwnerDevice)
 	, bTableRegionKnown(FALSE)
 	, CurrentPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
 	, HasBoundPipeline(FALSE)
-	, bBindlessSRVBindingsEnabled(FALSE)
 	, BoundRenderTargetFormats{}
 	, BoundRenderTargetCount(0u)
 	, BoundDepthStencilFormat(RFormatType::FORMAT_UNKNOWN)
@@ -63,8 +62,6 @@ void RCommandListD3D12::SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
 	bTableRegionKnown          = FALSE;
 	CurrentPrimitiveTopology   = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	HasBoundPipeline           = FALSE;
-	// A fresh recording starts in slot-binding mode; see SetBindlessSRVBindingsEnabled.
-	bBindlessSRVBindingsEnabled = FALSE;
 	// Nothing is bound before the recording begins a pass, and the format comparison reads these
 	// as "unknown" until one does.
 	BoundRenderTargetCount     = 0u;
@@ -209,6 +206,10 @@ BOOL32 RCommandListD3D12::OpenResourceSet(const RRHIPipelineLayoutInfo& InLayout
 	SetArenaNext += SRVWidth;
 	CurrentUAVTableBase = SetArenaNext;
 	SetArenaNext += UAVWidth;
+	// The device keeps the session's high water mark, which is what the arena budget is
+	// sized from and what the shutdown report prints. The base is this frame's own slice,
+	// so the difference is exactly what the frame has handed out so far.
+	OwnerDevice->NoteSlotSetArenaUsage(SetArenaNext - OwnerDevice->GetSlotSetArenaBase());
 	LiveSetSRVWidth = SRVWidth;
 	LiveSetUAVWidth = UAVWidth;
 	bResourceSetLive = TRUE;
@@ -404,7 +405,7 @@ void RCommandListD3D12::BeginRenderPass(const RRHIRenderPassDesc& InDesc)
 			// unbound and every draw of the pass would land nowhere - and handing the API a
 			// null view is an error on its own. The pass is named so the missing view can be
 			// traced back to whatever created the texture.
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D12: a render pass target carries no render target view."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: a render pass target carries no render target view.")));
 			continue;
 		}
 		RTVHandles[i] = TargetView;
@@ -953,18 +954,17 @@ void RCommandListD3D12::SetShaderResourceView(ERHIShaderStage InStage, UINT32 In
 	}
 
 	// API-level bound: a D3D12 shader addresses at most
-	// D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT input-resource slots in the classic
-	// (non-bindless) binding model. The engine's tighter per-frame table layout is the
-	// shader system's contract, enforced where the slots are authored.
-	if (!bBindlessSRVBindingsEnabled)
+	// D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT input-resource slots in the classic binding
+	// model, and this entry point is the classic one: a resource that is index driven is written
+	// into a constant buffer by the binding side instead of being bound at a slot here. The
+	// engine's tighter per-frame table layout is the shader system's contract, enforced where the
+	// slots are authored.
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+		(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
+		(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+	if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR),
-			(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
-			(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
-		if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
-		{
-			return;
-		}
+		return;
 	}
 
 	IRD3D12Texture* Tex = static_cast<IRD3D12Texture*>(InTexture);
@@ -994,15 +994,12 @@ void RCommandListD3D12::SetShaderResourceView(ERHIShaderStage InStage, UINT32 In
 	}
 
 	// Same API bound as the texture overload above.
-	if (!bBindlessSRVBindingsEnabled)
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+		(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
+		(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+	if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR),
-			(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
-			(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
-		if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
-		{
-			return;
-		}
+		return;
 	}
 
 	IRD3D12Buffer* Buf = static_cast<IRD3D12Buffer*>(InBuffer);
@@ -1030,15 +1027,13 @@ void RCommandListD3D12::ClearShaderResourceView(ERHIShaderStage InStage, UINT32 
 	{
 		return;
 	}
-	if (!bBindlessSRVBindingsEnabled)
+	// Same API bound as the two SRV overloads above: clearing a slot is a classic binding too.
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+		(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
+		(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+	if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR),
-			(PE_TEXT("D3D12: SRV slot exceeds the API's input-resource slot count.")),
-			(InSlot < D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
-		if (InSlot >= D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
-		{
-			return;
-		}
+		return;
 	}
 	if (!EnsureResourceSet(InStage, InSlot, FALSE))
 	{
@@ -1116,6 +1111,41 @@ void RCommandListD3D12::SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 I
 
 	IRD3D12Buffer* Buf = static_cast<IRD3D12Buffer*>(InBuffer);
 	D3D12_CPU_DESCRIPTOR_HANDLE Src = Buf->GetD3D12UAVHandle();
+	if (Src.ptr == 0u)
+	{
+		return;
+	}
+	if (!EnsureResourceSet(InStage, InSlot, TRUE))
+	{
+		return;
+	}
+
+	D3D12_CPU_DESCRIPTOR_HANDLE Dst = OffsetCPUHandle(
+		OwnerDevice->GetCBVSRVUAVHeapStart(),
+		static_cast<INT32>(CurrentUAVTableBase + InSlot),
+		static_cast<INT32>(OwnerDevice->GetCBVSRVUAVDescriptorSize()));
+
+	OwnerDevice->GetD3D12Device()->CopyDescriptorsSimple(1u, Dst, Src, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+}
+
+void RCommandListD3D12::SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView)
+{
+	if (!CommandList || !OwnerDevice || !InView || !bTableRegionKnown)
+	{
+		return;
+	}
+
+	// Same API bound as the texture and buffer overloads above.
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+		(PE_TEXT("D3D12: UAV slot exceeds the API's UAV register count.")),
+		(InSlot < D3D12_PS_CS_UAV_REGISTER_COUNT));
+	if (InSlot >= D3D12_PS_CS_UAV_REGISTER_COUNT)
+	{
+		return;
+	}
+
+	RD3D12TextureUAVView* View = static_cast<RD3D12TextureUAVView*>(InView);
+	D3D12_CPU_DESCRIPTOR_HANDLE Src = View->Handle;
 	if (Src.ptr == 0u)
 	{
 		return;

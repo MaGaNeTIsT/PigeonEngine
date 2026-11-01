@@ -13,6 +13,7 @@ namespace PigeonEngine
 	class IRCommandList;
 	class IRRHIDevice;
 	class IRRHIPipelineState;
+	struct EShaderRenderTraits;
 
 	/*
 	* RenderCore/Pipeline - the pipeline states a pass draws with.
@@ -51,6 +52,14 @@ namespace PigeonEngine
 		// layout cannot be generated, or when the back-end refused the create; the caller then
 		// has nothing to bind and should skip the draw.
 		PE_NODISCARD IRRHIPipelineState*	GetOrCreateGraphics(const RGraphicsPipelineStateDesc& InDesc);
+
+		// Turns a material's render traits into the fixed function state of a graphics desc.
+		// This is the one place a material overrides what the pass states: the pass table keeps
+		// describing the pass, the shader keeps compiling the same stages, and a future trait -
+		// depth bias, fill mode, blending - is added here rather than in either. The caller
+		// fills the desc from the pass first and then applies the material's traits to it, so a
+		// pass that already states the same value is left exactly as it is.
+		static void	ApplyMaterialRenderTraits(const EShaderRenderTraits& InTraits, RGraphicsPipelineStateDesc& InOutDesc);
 
 		// Compute pipeline for a program. Same contract as the graphics entry point; a compute
 		// program carries one stage, so there is no fixed-function state to decide.

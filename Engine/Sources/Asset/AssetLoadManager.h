@@ -84,6 +84,10 @@ namespace PigeonEngine
 		EString	ImportFileType;
 		// Mesh import only: fold the source's submeshes into the mesh's slot table.
 		BOOL32	bIsCombineSubmeshes	= TRUE;
+		// Mesh import only: let the importer merge meshes that share a material. That is right for
+		// a runtime asset that wants few draw ranges and wrong for an import that has to keep one
+		// object per authored object, so it is the caller's decision rather than the default.
+		BOOL32	bIsOptimizeMeshes	= TRUE;
 		// Texture import only: answers for an image that declares no colour space of its own.
 		BOOL32	bFallbackSRGB		= FALSE;
 	public:

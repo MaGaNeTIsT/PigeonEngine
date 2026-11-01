@@ -16,6 +16,8 @@ namespace PigeonEngine
 	class EShaderProgram;
 	class EShaderInstance;
 	class RViewProxy;
+	class RLocalLightSceneProxy;
+	class RViewShadowState;
 	class IRCommandList;
 
 	class RSceneRenderer : public EManagerBase
@@ -23,36 +25,79 @@ namespace PigeonEngine
 	public:
 		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
 		using RViewSceneTextureType		= TMap<ObjectIdentityType, RSceneTextures*>;
-		using RShadowMapType			= TMap<ObjectIdentityType, RShadowTexture*>;
-		using RViewShadowMapType		= TMap<ObjectIdentityType, RShadowMapType>;
-	public:
 		/*
-		* The two gpu light lists, the cpu staging they are filled from, and the counts that
-		* go with them.
+		* Where a light's shadow views landed in one view's slot table.
 		*
-		* One set for the frame rather than one per view: a light list is a global fact, and
-		* what a view owns is a cascade's projection - which is exactly why a light element
-		* carries a shadow map index and no matrix. Two views therefore share the lists, and
-		* the counts published in GlobalParams address the same buffers for both.
+		* Keyed by the light proxy's identity because that is what the light list is built from,
+		* and a range rather than a count because a directional light's cascades and a point
+		* light's six faces are consecutive: the receiver reaches the others from the first slot.
+		* FirstSlot zero means the frame allocated no shadow view for the light, which is the
+		* "casts no shadow" address the slot table's sentinel occupies.
+		*/
+		struct FShadowLightAddress
+		{
+			UINT32	FirstSlot	= 0u;
+			UINT32	ViewNum		= 0u;
+		};
+		using RShadowLightAddressMapType	= TMap<ObjectIdentityType, FShadowLightAddress>;
+		using RViewShadowStateMapType		= TMap<ObjectIdentityType, RViewShadowState*>;
+		// One address table per main view. A light's first slot is an index into that view's own
+		// slot table, so two views can place the same light at different addresses: their atlases
+		// allocate independently, and their local light candidates are ranked by their own screen
+		// coverage. The table is what the light list is encoded from, per view.
+		using RViewShadowAddressMapType		= TMap<ObjectIdentityType, RShadowLightAddressMapType>;
+		/*
+		* One view's pair of light list buffers.
 		*
-		* The buffers are sized once at the maximum and only the used prefix is uploaded.
+		* Every main view owns a pair, because the shadow address a light element carries is an
+		* index into that view's slot table: the same light sits at different slots in two views,
+		* so the two views cannot share the bytes. It has to be a buffer per view rather than one
+		* buffer rewritten between views, because the device records an upload into its own upload
+		* command list and executes all of it before the frame's list - two uploads into one buffer
+		* would leave only the last one visible to every view.
+		*
+		* A pair is a few kilobytes, sized once at the maximum, and only the used prefix is written.
 		* Sizing to fit each frame would mean recreating the resource, and with it the shader
 		* resource view that was built at creation, every time a light was added or removed.
+		*/
+		struct RViewLightBuffers
+		{
+			// Builds both buffers at their maximum capacity. Idempotent: a second call after the
+			// device is up is what a device reset needs, and it is a no-op otherwise.
+			void	EnsureBuffers(IRRHIDevice* InRenderDevice);
+			RStructuredBuffer	DirectionalLightBuffer;
+			RStructuredBuffer	LocalLightBuffer;
+		};
+		using RViewLightBuffersMapType		= TMap<ObjectIdentityType, RViewLightBuffers*>;
+	public:
+		/*
+		* The cpu staging the two light lists are filled from, and the counts that go with them.
+		*
+		* The staging is frame wide: a light list is a fact about the scene, and what a view owns
+		* is a cascade's projection - which is exactly why a light element carries a shadow map
+		* index and no matrix. What the *encoding* depends on is the view, because that index
+		* addresses the view's slot table, so the staging is filled once per frame and then encoded
+		* into each view's own buffers.
 		*/
 		class RLightLists
 		{
 		public:
-			// Builds both buffers at their maximum capacity. Idempotent: a second call after
-			// the device is up is what a device reset needs, and it is a no-op otherwise.
-			void	EnsureBuffers(IRRHIDevice* InRenderDevice);
-			// Pushes the used prefix of both staging arrays. The counts are what the shading
-			// loop reads, so a shorter upload is a shorter loop rather than a wrong one.
-			void	Upload(IRRHIDevice* InRenderDevice);
+			// Reserves both staging arrays at their maximum capacity. Idempotent.
+			void	ReserveStaging();
+			// Encodes every staged element's shadow address from InShadowAddresses, writes the used
+			// prefix into the given view's buffers and uploads. An empty table encodes every light
+			// as "casts no shadow", which is what a view whose shadow data is not usable receives:
+			// the receiver then skips the shadow term without needing a per view shader flag.
+			void	UploadForView(IRRHIDevice* InRenderDevice, RViewLightBuffers& InOutBuffers
+				, const RShadowLightAddressMapType& InShadowAddresses);
 		public:
-			RStructuredBuffer				DirectionalLightBuffer;
-			RStructuredBuffer				LocalLightBuffer;
 			TArray<EDirectionalLightsGPU>	DirectionalLightStaging;
 			TArray<ELocalLightsGPU>			LocalLightStaging;
+			// The proxy identity of each staged element, in staging order. The gather fills them
+			// beside the elements because UploadForView has to look up an address per element,
+			// and the staging element itself carries no identity.
+			TArray<ObjectIdentityType>		DirectionalLightIdentities;
+			TArray<ObjectIdentityType>		LocalLightIdentities;
 			UINT32							DirectionalLightCount = 0u;
 			UINT32							LocalLightCount = 0u;
 		};
@@ -116,6 +161,36 @@ namespace PigeonEngine
 		void			RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		void			RenderSky(const RViewProxy* InViewProxy);
 		void			RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
+		/*
+		* Resolves every directional light's cascade shadow into the view's mask target, before the
+		* lighting pass that samples it. Every main view has its own state, its own atlas and its own
+		* mask, so the pass runs once per view and never reads another view's data.
+		*
+		* It is skipped for a view whose shadow data is not usable this frame. That view's light list
+		* is then encoded with no shadow addresses, so its lighting skips the shadow term entirely
+		* rather than reading a mask that was never written.
+		*
+		* The mask is cleared to one, so a channel no light claims reads as "fully lit" rather than
+		* as a shadow, and the target is left in a shader readable state for the lighting pass.
+		*/
+		void			RenderDirectionalShadowMask(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
+		/*
+		* Whether this view has a directional shadow mask the lighting pass may trust. It is what
+		* RenderDirectionalShadowMask gates on and what decides whether the view's light list carries
+		* shadow addresses at all, so a view that cannot produce a mask is shaded unshadowed instead
+		* of reading a target that was never written.
+		*/
+		PE_NODISCARD BOOL32	IsDirectionalShadowMaskAvailable(const ObjectIdentityType InViewIdentity);
+		/*
+		* Encodes the frame's light staging into every main view's own buffers and uploads them.
+		* Called once per frame after the gather, before the frame records: a slot index is an index
+		* into one view's slot table, so each view needs its own bytes, and the device executes
+		* uploads before the frame's command list - which is why the per view split is buffers and
+		* not a rewrite between views.
+		*/
+		void			UploadLightListsForViews();
+		// The buffer pair of a view, created on first use. Ownership stays with the renderer.
+		RViewLightBuffers*	EnsureViewLightBuffers(const ObjectIdentityType InViewIdentity);
 	protected:
 		// Puts a texture into a state a pixel shader may sample, unless it already is in one.
 		// A resource a previous pass wrote as a render target has to be transitioned before a
@@ -129,10 +204,38 @@ namespace PigeonEngine
 		// level and not per view: the lists are shared, and a count is only meaningful together
 		// with the list it addresses, so both are produced by this one call.
 		void			InitLights();
-		// The per view half of what used to be one function: each shadow domain of each light
-		// gets its own culling pass, because a cascade's frustum belongs to the view whose
-		// frustum it was derived from.
-		void			InitDirectionalLightShadowDomains(RViewProxy* InViewProxy);
+		/*
+		* Builds one view's shadow views for this frame.
+		*
+		* The order is the whole design in one place: rank the local lights that are visible in the
+		* main camera, ask every surviving light for the views it needs, hand those requests to the
+		* atlas, build a view per request and cull the casters against it, then write the slot table
+		* the shading side indexes. Nothing here knows a light type - the requests do, through the
+		* kind they carry.
+		*/
+		void			InitShadowViews(RViewProxy* InViewProxy);
+		// Records the depth atlas of every view that owns shadow views, before the base pass that
+		// samples it. One pass per view, one viewport per allocated tile, and one caster list per
+		// shadow view.
+		void			RenderShadowViews();
+		/*
+		* The local lights that may keep a shadow this frame, ranked by how much of the view they
+		* cover. A light that is outside the main camera, casts no shadow, or is of a type without a
+		* shadow projection is not a candidate at all, and no tile or slot is spent on it. The two
+		* output arrays are split by type because their caps are independent, and each is ordered by
+		* coverage descending with the identity ascending as the tie break, so an unchanged scene
+		* ranks the same way every frame.
+		*/
+		void			SelectLocalShadowCandidates(const RViewProxy& InView
+			, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates)const;
+		// The shadow state of a view, created on first use. Ownership stays with the renderer.
+		RViewShadowState*	EnsureViewShadowState(const ObjectIdentityType InViewIdentity);
+		// Releases the states of views the scene no longer has. A view that merely stopped being the
+		// main one keeps its atlas: the atlas is sized by options, not by the view's resolution, so
+		// recreating it for the next frame that shades that view would cost a full resource rebuild.
+		void			PruneViewShadowStates();
+		// Releases every atlas and slot buffer. Called on shutdown, before the device goes.
+		void			ReleaseViewShadowStates();
 		void			ProcessOcclusionCull(RViewProxy* InViewProxy);
 		void			InitRenderPasses(RViewProxy* InViewProxy);
 		// The proxy of one view, by identity. A view is reached through its identity rather than
@@ -169,8 +272,24 @@ namespace PigeonEngine
 		// coefficients hold the environment's shape and the scale is applied here - and they are the
 		// same pair the sky pass multiplies its cube by.
 		void			BindIndirectLightingParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram);
+		// Specular IBL: the prefiltered environment cube and the DFG lookup table.
+		//
+		// The prefilter runs once per (cube, resolution exponent) pair, after the SH bake and
+		// before the lighting pass that samples its output. The LUT is independent of the
+		// environment and is generated once.
+		void			RenderEnvironmentPrefilter();
+		BOOL32			EnsureEnvironmentPrefilterPipelineState();
+		// Creates or recreates the prefiltered cube and its per-mip UAV views when the exponent
+		// changed. The texture is returned to the caller through the members; FALSE means the
+		// device refused a resource and the pass must be skipped.
+		BOOL32			EnsurePrefilteredEnvironmentResources(IRRHIDevice* InRenderDevice, const UINT32 InResolutionExponent);
+		void			RenderEnvironmentBRDFLUT();
+		BOOL32			EnsureEnvironmentBRDFPipelineState();
+		BOOL32			EnsureBRDFLUTResources(IRRHIDevice* InRenderDevice);
+		// Releases the prefiltered cube, the LUT, and every subresource view they own. Called on
+		// shutdown and whenever the prefiltered cube is recreated.
+		void			ReleaseSpecularIBLResources();
 	protected:
-		void			InitShadowTextures(RViewProxy* InViewProxy);
 		void			OctreeCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
 		void			PrimitiveCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
 	protected:
@@ -216,6 +335,7 @@ namespace PigeonEngine
 			PIPELINE_STATE_SKY,								// (env) Sky (cull FRONT, depth LESS_EQUAL)
 			PIPELINE_STATE_FORWARD,							// (env) Forward / debug primitives
 			PIPELINE_STATE_FINAL_OUTPUT,					// (full) Full-screen blit to back buffer
+			PIPELINE_STATE_DIRECTIONAL_SHADOW_MASK,			// (full) Full-screen directional shadow mask
 			PIPELINE_STATE_COUNT
 		};
 	protected:
@@ -252,16 +372,32 @@ namespace PigeonEngine
 		// the render thread, where a resolution that missed the cache would load.
 		const EShaderInstance*		FullScreenProgramInstance = nullptr;
 		const EShaderInstance*		SceneLightingProgramInstance = nullptr;
+		const EShaderInstance*		ShadowMaskProgramInstance = nullptr;
 		const EShaderInstance*		EnvironmentSHProgramInstance = nullptr;
 		const EShaderProgram*		FullScreenProgram;
 		const EShaderProgram*		SceneLightingProgram;
+		const EShaderProgram*		ShadowMaskProgram;
 	protected:
 		ObjectIdentityType			FinalOutputView;
 		BOOL32						NeedStencil;
 		RViewSceneTextureType		ViewSceneTextures;
-		RViewShadowMapType			ViewShadowMaps;
-		// The frame's two light lists. Global by design: a light is not a property of a view.
+		// Per main view shadow state: the depth atlas, the slot table, and the shadow views that
+		// feed them. Keyed by view identity because a cascade belongs to the view it was derived
+		// from; a view that is not the main one has no entry.
+		RViewShadowStateMapType		ViewShadowStates;
+		// Where this frame's lights landed in each view's slot table, filled by InitShadowViews
+		// and read when that view's light list is encoded. One table per view because a slot index
+		// only means something against the slot table it came from: a rear view mirror view has its
+		// own atlas, its own candidates and therefore its own addresses for the same lights.
+		RViewShadowAddressMapType	ViewShadowAddresses;
+		// TRUE once the budget's first drop has been reported. A frame that has to drop shadow
+		// views would otherwise log every frame, which is noise rather than a report.
+		BOOL32						bShadowDropReported = FALSE;
+		// The frame's light staging. Global by design: a light is not a property of a view. What a
+		// view owns is the encoding - the shadow addresses - and that lives in ViewLightBuffers.
 		RLightLists					LightLists;
+		// Each main view's own light list buffers, created on first use and freed with the view.
+		RViewLightBuffersMapType	ViewLightBuffers;
 	protected:
 		// The environment's diffuse representation: nine SH radiance coefficients the bake writes
 		// with a compute dispatch and the lighting pass reads as irradiance. One buffer for the
@@ -279,10 +415,41 @@ namespace PigeonEngine
 		// renderer's own rather than the sky's: the sky publishes its pair for its own draw, and
 		// this one travels with the coefficients the renderer bakes and binds.
 		RShaderParameterBlock	IndirectLightingParameterBlock{ EName(SHADER_BLOCK_INDIRECT_LIGHTING_PARAMS) };
+		// The directional shadow mask's block: the reciprocal of the mask's pixel size, and
+		// nothing else. Every other value the resolver needs is per cascade and arrives in the
+		// slot table, which is why this block stays this small - a second copy here would be a
+		// second source of truth for a value the slot already carries.
+		RShaderParameterBlock	ShadowMaskParameterBlock{ EName(SHADER_BLOCK_SHADOW_MASK_PARAMS) };
 		// Whether the pair above has been reported once. It answers "what is the indirect term
 		// multiplied by" for a session where the environment looks black, which is otherwise the
 		// hardest kind of question to answer from a picture.
 		BOOL32					bIndirectLightingParamsReported;
+	protected:
+		// ---- Specular IBL ----
+		// The prefiltered environment: a six slice 2D array whose levels carry the GGX filtered
+		// environment shape (mean one). It is deliberately not a cube resource: D3D11 has no
+		// cube UAV dimension, while a 2D array works on both back ends with the same shader.
+		// The lighting pass maps a reflection direction to (face, uv) itself.
+		RRHITexture2D			PrefilteredEnvironmentCube;
+		TArray<IRRHITextureUAVView*>	PrefilteredEnvironmentUAVViews;
+		UINT32					PrefilteredEnvironmentMipCount;
+		UINT32					PrefilteredEnvironmentResolutionExponent;
+		// What the current chain was built from. Comparing these is what keeps the bake off the
+		// frame path: a different cube, a different mean, or a different exponent rebuilds it.
+		const IRRHITexture*		EnvironmentPrefilterBakedSource;
+		FLOAT					EnvironmentPrefilterBakedMean;
+		// The DFG table: one 2D texture, independent of the environment, generated once.
+		RRHITexture2D			EnvironmentBRDFLUT;
+		IRRHITextureUAVView*	EnvironmentBRDFLUTUAVView;
+		BOOL32					bEnvironmentBRDFLUTBaked;
+		IRRHIPipelineState*		EnvironmentPrefilterPipelineState;
+		IRRHIPipelineState*		EnvironmentBRDFPipelineState;
+		const EShaderProgram*	EnvironmentPrefilterProgram;
+		const EShaderProgram*	EnvironmentBRDFProgram;
+		const EShaderInstance*	EnvironmentPrefilterProgramInstance;
+		const EShaderInstance*	EnvironmentBRDFProgramInstance;
+		RShaderParameterBlock	EnvironmentPrefilterParameterBlock{ EName(PE_TEXT("PrefilterParams")) };
+		RShaderParameterBlock	EnvironmentBRDFParameterBlock{ EName(PE_TEXT("BRDFLUTParams")) };
 	public:
 		RSceneRenderer();
 		virtual ~RSceneRenderer();

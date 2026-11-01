@@ -431,7 +431,7 @@ namespace PigeonEngine
 		TArray<TElementType, _TOtherSizeType, _TOtherAllocator> Reverse()const
 		{
 			TArray<TElementType, _TOtherSizeType, _TOtherAllocator> NewReverseArray;
-			const _TOtherSizeType UsedElementNum = (_TOtherIndexType)(ElementNum);
+			const _TOtherSizeType UsedElementNum = (_TOtherSizeType)(ElementNum);
 			NewReverseArray.Reserve<_TOtherSizeType>(UsedElementNum);
 
 			//TODO

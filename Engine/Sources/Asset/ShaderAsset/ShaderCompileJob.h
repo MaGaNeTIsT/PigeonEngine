@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 #include <ShaderAsset/ShaderProgram.h>
+#include <ShaderAsset/ShaderTarget.h>
 
 namespace PigeonEngine
 {
@@ -24,7 +25,9 @@ namespace PigeonEngine
 	*
 	* Output layout (the compile description is a build time intermediate, it is
 	* rewritten from the request on demand and is not part of the source tree):
-	*     <OutputDir>/<BuildConfig>/<ShaderModel>/
+	*     <OutputDir>/<BuildConfig>/<Platform>_ShaderModel_<Model>/
+	*         For example D3D12_ShaderModel_6_6. The files below carry no target in their
+	*         names, so the directory is the only thing that keeps two targets apart.
 	*         <ShaderName>_<StageSuffix>.Compile.json
 	*         <ShaderName>_<StageSuffix>.Manifest.json
 	*         <ShaderName>_<VariantName>_<StageSuffix>.dxil | .dxbc
@@ -44,16 +47,14 @@ namespace PigeonEngine
 		// Include search path. Empty means RootDir.
 		EString				ShaderIncludeDir;
 		EShaderStageType	Stage			= EShaderStageType::SHADER_STAGE_VERTEX;
-		EShaderModelType	ShaderModel		= EShaderModelType::SHADER_MODEL_6_6;
+		// Which device consumes the artifacts and which shader model they are built at. The
+		// caller resolves it; the compile layer never reads the configuration itself.
+		EShaderTarget		Target;
 		EShaderVariantDesc	Variant;
 		BOOL32				bDebug			= FALSE;
 		BOOL32				bDumpHlsl		= FALSE;
 		// Compile even when an up to date manifest already exists.
 		BOOL32				bForceRecompile	= FALSE;
-		// Requests the engine bindless path. When the target can express it, the engine
-		// macro declared in ShaderProgram.h is injected into this variant's defines, and
-		// the runtime reads the binding mode back from the compiled manifest.
-		BOOL32				bBindlessPath	= FALSE;
 	};
 
 	/*

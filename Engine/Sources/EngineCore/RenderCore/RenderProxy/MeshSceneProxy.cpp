@@ -89,6 +89,38 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 		(void)InSlotIndex;
 		return GetFallbackMeshShader(GetMeshColdData());
 	}
+	BOOL32 RMeshSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax)const
+	{
+		const EMesh* Mesh = GetMeshColdData();
+		if (!Mesh)
+		{
+			return FALSE;
+		}
+		const EBoundAABB& LocalBound = Mesh->GetBoundAABB();
+		if (LocalBound.IsValid == FALSE)
+		{
+			return FALSE;
+		}
+		// The asset bound is in mesh local space, so it is transformed corner by corner: rotating
+		// the two corners alone would describe the bounding box of the rotated box, which for a
+		// mesh turned 45 degrees is half the size it should be.
+		const Matrix4x4& LocalToWorld = GetLocalToWorldMatrix();
+		Vector3 WorldMin(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+		Vector3 WorldMax(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+		for (UINT32 CornerIndex = 0u; CornerIndex < 8u; CornerIndex++)
+		{
+			const Vector3 LocalCorner(
+				((CornerIndex & 1u) ? LocalBound.AABBMax.x : LocalBound.AABBMin.x),
+				((CornerIndex & 2u) ? LocalBound.AABBMax.y : LocalBound.AABBMin.y),
+				((CornerIndex & 4u) ? LocalBound.AABBMax.z : LocalBound.AABBMin.z));
+			const Vector3 WorldCorner = Matrix4x4TransformPosition(LocalToWorld, LocalCorner);
+			WorldMin = MinVector3(WorldMin, WorldCorner);
+			WorldMax = MaxVector3(WorldMax, WorldCorner);
+		}
+		OutMin = WorldMin;
+		OutMax = WorldMax;
+		return TRUE;
+	}
 	const RInputLayoutDesc* RMeshSceneProxy::GetPipelineStateInputLayouts(UINT32& OutCount)const
 	{
 		// The skin index stream is UINT16 x 4 bytes in the vertex data while the shader

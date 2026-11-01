@@ -613,7 +613,13 @@ namespace PigeonEngine
 		virtual void	Uninit()override;
 	public:
 #if _EDITOR_ONLY
-		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
+		/*
+		* InIsOptimizeMeshes is passed through to the importer: it decides whether meshes that share
+		* a material are merged, which is a property of what the caller wants from the import rather
+		* than of the source. A scene that keeps one object per authored object passes FALSE.
+		*/
+		BOOL32	ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
+			, const BOOL32 InIsCombineSubmeshes, const BOOL32 InIsOptimizeMeshes = TRUE);
 		BOOL32	ImportSkinnedMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes);
 #endif
 		BOOL32	LoadStaticMeshAsset(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutStaticMeshAsset, const BOOL32 bTryLoad = FALSE);
@@ -659,7 +665,7 @@ namespace PigeonEngine
 	extern void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName,
 		const EStaticMeshAsset*& OutAsset,
 		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr,
-		const BOOL32 IsCombineSubmeshes = TRUE);
+		const BOOL32 InIsCombineSubmeshes = TRUE, const BOOL32 InIsOptimizeMeshes = TRUE);
 	extern void TryLoadSkinnedMesh(const EString& InLoadPath, const EString& InLoadName,
 		const ESkinnedMeshAsset*& OutAsset,
 		const EString* InImportPath = nullptr, const EString* InImportName = nullptr, const EString* InImportFileType = nullptr,

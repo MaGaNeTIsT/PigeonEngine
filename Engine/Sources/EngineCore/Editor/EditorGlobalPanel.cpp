@@ -4,6 +4,8 @@
 
 #include <Base/RTTI/RTTIManager.h>
 #include <imgui.h>
+#include <PhysicsConfig/PhysicsConfig.h>
+#include <RenderProxy/RenderSingletonObject.h>
 #include "../Main/MainManager.h"
 
 namespace PigeonEngine
@@ -31,7 +33,7 @@ namespace PigeonEngine
 	{
 	}
 
-	void EEditorGlobalPanel::DrawResolutionPanel()
+	void EEditorGlobalPanel::DrawDisplaySettings()
 	{
 		EMainManager* MainManager = EMainManager::GetManagerSingleton();
 		if (!MainManager)
@@ -47,12 +49,12 @@ namespace PigeonEngine
 		if (ResolutionCount > 0)
 		{
 			// Clamp index in case resolution list changed
-			if (m_SelectedResolutionIndex >= ResolutionCount)
+			if (SelectedResolutionIndex >= ResolutionCount)
 			{
-				m_SelectedResolutionIndex = ResolutionCount - 1;
+				SelectedResolutionIndex = ResolutionCount - 1;
 			}
 
-			const RResolutionItem& CurrentItem = Resolutions[m_SelectedResolutionIndex];
+			const RResolutionItem& CurrentItem = Resolutions[SelectedResolutionIndex];
 			char PreviewBuffer[32];
 			::sprintf_s(PreviewBuffer, sizeof(PreviewBuffer), "%ux%u", CurrentItem.Width, CurrentItem.Height);
 
@@ -64,10 +66,10 @@ namespace PigeonEngine
 					char ItemBuffer[32];
 					::sprintf_s(ItemBuffer, sizeof(ItemBuffer), "%ux%u", Item.Width, Item.Height);
 
-					const BOOL32 bSelected = (Index == m_SelectedResolutionIndex);
+					const BOOL32 bSelected = (Index == SelectedResolutionIndex);
 					if (ImGui::Selectable(ItemBuffer, bSelected != FALSE))
 					{
-						m_SelectedResolutionIndex = Index;
+						SelectedResolutionIndex = Index;
 					}
 					if (bSelected)
 					{
@@ -82,17 +84,39 @@ namespace PigeonEngine
 			ImGui::TextDisabled("No resolutions available");
 		}
 
-		bool bFullscreen = (m_bIsFullscreen != FALSE);
+		bool bFullscreen = (bIsFullscreen != FALSE);
 		ImGui::Checkbox("Fullscreen (Borderless)", &bFullscreen);
-		m_bIsFullscreen = bFullscreen ? TRUE : FALSE;
+		bIsFullscreen = bFullscreen ? TRUE : FALSE;
+
+		ImGui::Separator();
+
+		// The collision shapes a physics body draws are queued as debug wireframe primitives of
+		// their own, so this decides whether they are queued at all. Off by default: a scene full
+		// of bodies otherwise fills the view with boxes.
+		FPhysicsCommonSettings* PhysicsSettings = FPhysicsCommonSettings::GetSingleton();
+		bool bShowCollision = (PhysicsSettings->bDrawCollision != FALSE);
+		if (ImGui::Checkbox("Show Collision", &bShowCollision))
+		{
+			PhysicsSettings->bDrawCollision = bShowCollision ? TRUE : FALSE;
+		}
+
+		// Everything the debug wireframe manager owns - the built in primitive preview, the
+		// selection gizmo, object bounds and the collision shapes when enabled - is one overlay,
+		// so one checkbox hides all of it.
+		RDebugWireframePrimitiveManager* DebugWireframeManager = RDebugWireframePrimitiveManager::GetManagerSingleton();
+		bool bShowDebugWireframe = (DebugWireframeManager->IsDebugWireframeVisible() != FALSE);
+		if (ImGui::Checkbox("Show Debug Wireframe", &bShowDebugWireframe))
+		{
+			DebugWireframeManager->SetDebugWireframeVisible(bShowDebugWireframe ? TRUE : FALSE);
+		}
 
 		if (ImGui::Button("Apply") && ResolutionCount > 0)
 		{
 			EMainManager* Manager = EMainManager::GetManagerSingleton();
 			if (Manager)
 			{
-				const RResolutionItem& Selected = Resolutions[m_SelectedResolutionIndex];
-				Manager->ApplyResolution(Selected.Width, Selected.Height, m_bIsFullscreen);
+				const RResolutionItem& Selected = Resolutions[SelectedResolutionIndex];
+				Manager->ApplyResolution(Selected.Width, Selected.Height, bIsFullscreen);
 			}
 		}
 

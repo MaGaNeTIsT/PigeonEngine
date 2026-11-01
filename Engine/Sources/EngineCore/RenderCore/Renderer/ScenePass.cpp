@@ -98,8 +98,11 @@ namespace PigeonEngine
 				0u, {}, 32u, FALSE, FALSE,
 				0u, 0u, 1u
 			},
-			// RENDER_PASS_TYPE_SHADOW - reserved. Described so the table and the enum are
-			// complete; nothing records it yet.
+			// RENDER_PASS_TYPE_SHADOW - the shadow caster pass. One depth target (the view's
+			// shadow atlas), no colour target, front faces culled so back faces write the depth
+			// the receiver compares against. The program is the depth only one, which every
+			// material derives an instance of; the renderer copies the atlas's real depth bit
+			// count into the desc it records with, so the pipeline state matches the bound target.
 			{
 				ERenderPassType::RENDER_PASS_TYPE_SHADOW, "ShadowDepth", "DepthOnly", FALSE, TRUE,
 				RENDER_PASS_STAGE_MASK_GRAPHICS, RENDER_PASS_INVALID_PIPELINE_SLOT,
@@ -253,6 +256,26 @@ namespace PigeonEngine
 				0u, {}, 0u, FALSE, FALSE,
 				8u, 8u, 1u
 			},
+			// RENDER_PASS_TYPE_DIRECTIONAL_SHADOW_MASK - the directional shadow resolver. One
+			// full screen triangle reads the view's depth and normal, walks the cascade slots of
+			// every directional light and writes one shadow term per light channel. No depth
+			// target, because the pass compares against the atlas in the shader rather than
+			// against the view's depth, and no blending: every channel is written.
+			{
+				ERenderPassType::RENDER_PASS_TYPE_DIRECTIONAL_SHADOW_MASK, PE_TEXT("DirectionalShadowMask"), PE_TEXT("ShadowMask"),
+				FALSE, FALSE, RENDER_PASS_STAGE_MASK_GRAPHICS, 7u,
+				RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID),
+				RBlendState(RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+					RBlendOptionType::BLEND_ZERO, RBlendOptionType::BLEND_ONE, RBlendOperationType::BLEND_OP_ADD,
+					RColorWriteMaskType::COLOR_WRITE_MASK_ALL, FALSE),
+				RDepthState(RComparisonFunctionType::COMPARISON_ALWAYS, RDepthWriteMaskType::DEPTH_WRITE_MASK_ZERO, FALSE),
+				RStencilState(0xffu, 0xffu,
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP),
+					RStencilStateType(RComparisonFunctionType::COMPARISON_ALWAYS, RStencilOperationType::STENCIL_OP_KEEP), FALSE),
+				RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST,
+				1u, { RFormatType::FORMAT_R8G8B8A8_UNORM }, 0u, FALSE, TRUE,
+				0u, 0u, 1u
+			},
 		};
 		return PassTable;
 	}
@@ -292,6 +315,10 @@ namespace PigeonEngine
 	void FRenderPassRegistry::FillPipelineStateDesc(const FRenderPassDesc& InPassDesc, const EShaderProgram* InProgram, RGraphicsPipelineStateDesc& OutDesc)
 	{
 		OutDesc.Program				= InProgram;
+		// A pass that states a vertex only stage mask draws without a pixel shader, which is how
+		// the shadow pass skips that stage. A material trait can clear the pixel bit further down
+		// (see the pass slot build), so the mask travels with the desc rather than being assumed.
+		OutDesc.StageMask			= ((InPassDesc.StageMask != 0u) ? InPassDesc.StageMask : RGraphicsPipelineStateDesc::STAGE_MASK_GRAPHICS);
 		OutDesc.Rasterizer			= InPassDesc.Rasterizer;
 		OutDesc.Blend				= InPassDesc.Blend;
 		OutDesc.Depth				= InPassDesc.Depth;

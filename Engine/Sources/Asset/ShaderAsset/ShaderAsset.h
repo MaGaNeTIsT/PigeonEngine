@@ -210,8 +210,14 @@ namespace PigeonEngine
 		// binaries it references. A full shader is imported by calling this once per
 		// stage; earlier stages stay in the PAsset because the existing cold backup is
 		// read back before folding.
+		//
+		// InOnlyVariantName, when given, folds only that variant. A manifest describes a stage
+		// source rather than one assembly, so it can carry variants this shader was never
+		// assembled for; folding those would leave the shader holding program variants with one
+		// stage that nothing can draw. Null folds every variant, which is what the stage asset's
+		// own import wants.
 		BOOL32	ImportShaderAssetFromManifest(const EString& InManifestFullPath
-			, const EString& InSavePath, const EString& InSaveName);
+			, const EString& InSavePath, const EString& InSaveName, const EName* InOnlyVariantName = nullptr);
 #endif	// _EDITOR_ONLY
 	private:
 		BOOL32	LoadShaderAssetData(const EString& InFullPathName, EShaderAssetData& OutAssetData);

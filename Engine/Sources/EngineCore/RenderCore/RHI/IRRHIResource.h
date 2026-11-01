@@ -31,13 +31,35 @@ namespace PigeonEngine
 		RHI_RESOURCE_TYPE_COUNT
 	};
 
+	/*
+	* Identity allocator for the resource hierarchy, defined by RHI/RRHIBindlessManager.cpp.
+	*
+	* A free function rather than a manager call, so a GPU object can be born with its identity
+	* without this interface header depending on the registry that also hands out the bindless
+	* index derived from it. The value it returns is never 0, which is what lets every reader use
+	* 0 for "no identity".
+	*/
+	PE_NODISCARD extern UINT64 AllocRHIResourceUniqueID() noexcept;
+
 	class IRRHIResource
 	{
 	public:
-		IRRHIResource() noexcept = default;
+		IRRHIResource() noexcept
+			: UniqueID(AllocRHIResourceUniqueID())
+		{
+		}
 		virtual ~IRRHIResource() noexcept = default;
 
 		virtual ERHIResourceTypeTag GetResourceType() const noexcept = 0;
+
+		// Identity of this GPU object, handed out when it is constructed and never reused: an ID
+		// that outlives its object names a destroyed resource rather than a different one under
+		// the same number.
+		//
+		// The bindless registry keys on it (RHI/RRHIBindlessManager.h), which is what makes one
+		// resource keep one descriptor heap index for its whole life, and what lets a caller that
+		// holds nothing but the ID find its way back to the object.
+		PE_NODISCARD UINT64	GetUniqueID() const noexcept { return UniqueID; }
 
 		// Track resource state for D3D12 barrier insertion. D3D11 ignores this.
 		ERHIResourceState GetCurrentState() const noexcept
@@ -69,6 +91,7 @@ namespace PigeonEngine
 		IRRHIResource& operator=(IRRHIResource&&) = delete;
 
 	protected:
+		UINT64					UniqueID			= 0ull;
 		ERHIResourceState		CurrentState		= ERHIResourceState::RHI_RESOURCE_STATE_COMMON;
 #if _EDITOR_ONLY
 		EString					DebugName;
@@ -130,6 +153,27 @@ namespace PigeonEngine
 			(void)(InView);
 			return RFormatType::FORMAT_UNKNOWN;
 		}
+	};
+
+	/*
+	* A UAV view of one texture subresource. Opaque to engine code: the back-end owns the
+	* descriptor (D3D12) or the native view (D3D11), and the command list knows how to bind it.
+	* The texture pointer is kept so a command list can report what a slot holds and so a view
+	* cannot outlive the resource silently.
+	*/
+	class IRRHITextureUAVView
+	{
+	public:
+		IRRHITextureUAVView() noexcept = default;
+		virtual ~IRRHITextureUAVView() noexcept = default;
+
+		PE_NODISCARD virtual IRRHITexture* GetTexture() const noexcept = 0;
+
+	public:
+		IRRHITextureUAVView(const IRRHITextureUAVView&) = delete;
+		IRRHITextureUAVView(IRRHITextureUAVView&&) = delete;
+		IRRHITextureUAVView& operator=(const IRRHITextureUAVView&) = delete;
+		IRRHITextureUAVView& operator=(IRRHITextureUAVView&&) = delete;
 	};
 
 	class IRRHIShader : public IRRHIResource

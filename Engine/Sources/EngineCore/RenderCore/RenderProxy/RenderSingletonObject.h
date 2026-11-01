@@ -3,6 +3,7 @@
 #include <CoreMinimal.h>
 #include <Base/RegisterBase.h>
 #include <EngineCommon.h>
+#include <MultiThread/Atomic.h>
 #include <RenderResource.h>
 #include <Shader/ShaderEngineParameters.h>
 
@@ -77,6 +78,11 @@ namespace PigeonEngine
 		void			InitNewFrame();
 		void			SwapCommandSlots();
 		void			RenderPrimitives_RenderThread(const class RViewProxy* InView);
+		// Game thread: the editor's Display Settings checkbox. The render thread reads the flag
+		// when it records the overlay, so it is atomic; the change takes effect on the next
+		// frame and hides every debug primitive this manager owns, collision shapes included.
+		void			SetDebugWireframeVisible(BOOL32 InVisible) noexcept;
+		PE_NODISCARD BOOL32	IsDebugWireframeVisible() const noexcept;
 		// Render thread: the debug wireframe shader was replaced. The instance is the stable handle
 		// (the process wide cache owns it and re-pointed it), so only the program it resolves and
 		// the draw block that was laid out from the previous one move.
@@ -128,6 +134,9 @@ namespace PigeonEngine
 		RCommand							RequireCommands[2];
 		UINT32								BackSlotIndex  = 0u;
 		UINT32								FrontSlotIndex = 1u;
+		// Set from the editor, read by the render thread when it records the overlay. TRUE is
+		// the behavior every build had before the toggle existed.
+		TAtomic<BOOL32>						bDebugWireframeVisible;
 		RStructuredBuffer					PrimitiveTransformsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		RStructuredBuffer					PrimitiveColorsBuffer[RDebugWireframeType::DEBUG_WIREFRAME_ENGINE_COUNT - 1u];
 		TMap<EString, RStructuredBuffer>	CustomPrimitiveTransformsBuffer;

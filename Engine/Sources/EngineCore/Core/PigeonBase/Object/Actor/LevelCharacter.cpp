@@ -94,7 +94,8 @@ PigeonEngine::PMovementComponent* PigeonEngine::PCharacter::GetMovementComponent
 #if _EDITOR_ONLY
 void PigeonEngine::PCharacter::EditorTick(FLOAT deltaTime)
 {
-	if (Character->GetShape() && FPhysicsCommonSettings::GetSingleton()->PHYSICS_DRAW_DEBUG_PRIMITIVE)
+	if ((Character->GetShape() != nullptr)
+		&& (FPhysicsCommonSettings::GetSingleton()->bDrawCollision != FALSE))
 	{
 		RDebugWireframePrimitiveManager* Manager = RDebugWireframePrimitiveManager::GetManagerSingleton();
 		const Vector3 Pos = GetActorLocation();

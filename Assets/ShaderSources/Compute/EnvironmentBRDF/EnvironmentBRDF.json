@@ -1,0 +1,20 @@
+{
+	"Name": "EnvironmentBRDF",
+	"Template": "Compute/EnvironmentBRDF/EnvironmentBRDF.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "BRDFLUTParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "Resolution", "Format": "uint" },
+				{ "Name": "SampleCount", "Format": "uint" }
+			]
+		}
+	],
+	"RWTextures": [
+		{ "Name": "EnvironmentBRDFLUT", "Type": "2D", "Format": "float2", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/EnvironmentBRDF/EnvironmentBRDF.hlsl\"" }
+	]
+}

@@ -163,7 +163,7 @@ namespace PigeonEngine
 		m_ImportManager->EditorUpdate();
 		if (m_EditorGlobalPanel)
 		{
-			m_EditorGlobalPanel->DrawResolutionPanel();
+			m_EditorGlobalPanel->DrawDisplaySettings();
 		}
 		if (m_EditorProfilerPanel)
 		{

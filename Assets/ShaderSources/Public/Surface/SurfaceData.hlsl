@@ -52,7 +52,10 @@ struct SurfaceData
 	float3	EmissiveColor;
 
 	// ---- geometry ----
-	float3	Normal;					// world space, normalized
+	// World space, normalized. A domain derives it from the geometry-space frame the material
+	// was given; the caller applies the facing adjustment (MaterialPixelInput.FaceSign) once
+	// after DeriveSurface, before the encoder or the shading code reads it.
+	float3	Normal;
 
 	// ---- roughness, both forms ----
 	float	PerceptualRoughness;

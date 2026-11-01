@@ -6,9 +6,15 @@
 			"Name": "IndirectLightingParams",
 			"Slot": 3,
 			"Fields": [
-				{ "Name": "SkyLightColorLuminance", "Format": "float4" }
+				{ "Name": "SkyLightColorLuminance", "Format": "float4" },
+				{ "Name": "SkyCubeMeanLuminance", "Format": "float" },
+				{ "Name": "PrefilterMipCount", "Format": "float" }
 			]
 		}
+	],
+	"Textures": [
+		{ "Name": "PrefilteredEnvironmentCube", "Type": "Cube", "Format": "float4", "SamplerName": "SamplerMaterialCube", "Slot": 1 },
+		{ "Name": "EnvironmentBRDFLUT", "Type": "2D", "Format": "float2", "SamplerName": "SamplerLinearClamp", "Slot": 2 }
 	],
 	"Resources": [
 		{

@@ -1,0 +1,60 @@
+{
+	"Name": "M_SponzaMask",
+	"Template": "Projects/Demo/M_SponzaMask/M_SponzaMask.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "BaseColorTint", "Format": "color4", "Default": [1.0, 1.0, 1.0, 1.0], "Exposure": true },
+				{ "Name": "Roughness", "Format": "float", "Default": [0.7], "Exposure": true },
+				{ "Name": "Metallic", "Format": "float", "Default": [0.0], "Exposure": true },
+				{ "Name": "Reflectance", "Format": "float", "Default": [0.5], "Exposure": true },
+				{ "Name": "AmbientOcclusion", "Format": "float", "Default": [1.0], "Exposure": true },
+				{ "Name": "HasBaseColorMap", "Format": "float", "Default": [1.0] },
+				{ "Name": "HasNormalMap", "Format": "float", "Default": [0.0] },
+				{ "Name": "HasMaskMap", "Format": "float", "Default": [1.0] },
+				{ "Name": "MaskThreshold", "Format": "float", "Default": [0.5], "Exposure": true }
+			]
+		}
+	],
+	"Textures": [
+		{
+			"Name": "BaseColorMap",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerMaterial2D",
+			"Slot": 0,
+			"Exposure": true,
+			"PreferBindless": true,
+			"BindConstantBuffer": "MaterialParams"
+		},
+		{
+			"Name": "NormalMap",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerMaterial2D",
+			"Slot": 1,
+			"Exposure": true,
+			"PreferBindless": true,
+			"BindConstantBuffer": "MaterialParams"
+		},
+		{
+			"Name": "MaskMap",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerMaterial2D",
+			"Slot": 2,
+			"Exposure": true,
+			"PreferBindless": true,
+			"BindConstantBuffer": "MaterialParams"
+		}
+	],
+	"PEMaterial": {
+		"Domain": "DefaultLit",
+		"SurfaceMode": "Mask",
+		"TwoSided": true,
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

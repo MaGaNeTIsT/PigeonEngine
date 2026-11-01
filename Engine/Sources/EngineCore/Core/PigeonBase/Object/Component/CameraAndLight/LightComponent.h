@@ -66,6 +66,12 @@ namespace PigeonEngine
 		ELightData	LightData;
 		UINT8		UpdateState;
 
+	// ImGui
+#if _EDITOR_ONLY
+	public:
+		virtual void	GenerateComponentDetail() override;
+#endif
+
 		CLASS_VIRTUAL_NOCOPY_BODY(PLightComponent)
 	};
 
@@ -110,6 +116,12 @@ namespace PigeonEngine
 		virtual void	AddToRenderScene() override;
 		virtual void	RemoveFromRenderScene() override;
 		virtual void	UpdateInRenderScene() override;
+
+	// ImGui
+#if _EDITOR_ONLY
+	public:
+		virtual void	GenerateComponentDetail() override;
+#endif
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PLocalLightComponent)
 	};

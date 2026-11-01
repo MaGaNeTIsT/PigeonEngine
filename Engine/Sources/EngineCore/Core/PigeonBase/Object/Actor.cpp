@@ -81,11 +81,16 @@ namespace PigeonEngine
 				Component->Tick(deltaTime);
 			}
 		}
-		for (const auto& child : ChildrenActors)
+		// By index rather than by reference: a tick may spawn actors - a scene builder does exactly
+		// that - and appending to ChildrenActors reallocates the array, so a range over it would keep
+		// a reference into the buffer the reallocation freed. An index into the live array cannot
+		// dangle, and re-reading the count lets an actor spawned during this tick be ticked by it.
+		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
-			if(child && child->IsTickable())
+			PActor* Child = ChildrenActors[ChildIndex];
+			if (Child && Child->IsTickable())
 			{
-				child->Tick(deltaTime);
+				Child->Tick(deltaTime);
 			}
 		}
 		UserTick(deltaTime);
@@ -104,11 +109,13 @@ namespace PigeonEngine
 				Component->FixedTick(deltaTime);
 			}
 		}
-		for(const auto& child : ChildrenActors)
+		// Same reason as Tick: a fixed tick may spawn actors too, so the list is walked by index.
+		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
-			if (child && child->IsTickable())
+			PActor* Child = ChildrenActors[ChildIndex];
+			if (Child && Child->IsTickable())
 			{
-				child->FixedTick(deltaTime);
+				Child->FixedTick(deltaTime);
 			}
 		}
 	}
@@ -128,11 +135,14 @@ namespace PigeonEngine
 				Component->EditorTick(deltaTime);
 			}
 		}
-		for(const auto& child : ChildrenActors)
+		// Same reason as Tick: the editor tick is the one a scene builder runs inside, so this is
+		// exactly the loop that can be reallocated under itself.
+		for (UINT32 ChildIndex = 0u, NumChildren = ChildrenActors.Num<UINT32>(); ChildIndex < NumChildren; ChildIndex++)
 		{
-			if (child && child->IsTickable())
+			PActor* Child = ChildrenActors[ChildIndex];
+			if (Child && Child->IsTickable())
 			{
-				child->EditorTick(deltaTime);
+				Child->EditorTick(deltaTime);
 			}
 		}
 	}

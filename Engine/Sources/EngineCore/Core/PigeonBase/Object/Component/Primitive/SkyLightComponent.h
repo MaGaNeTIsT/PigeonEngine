@@ -36,20 +36,30 @@ namespace PigeonEngine
 	public:
 		Color3		LightAdjustColor;
 		FLOAT		LightAdjustIntensity;
+		// The cube's mean linear luminance, which the render side divides every sample by
+		// before applying the intensity: the pair is what makes a tint/brightness edit free.
+		FLOAT		CubeMeanLinearLuminance;
+		// Base resolution exponent of the prefiltered environment cube (8 = 256).
+		UINT32		PrefilterResolutionExponent;
 	public:
-		ERenderSkyLightParams(const Color3& InLightAdjustColor, const FLOAT InLightAdjustIntensity)
+		ERenderSkyLightParams(const Color3& InLightAdjustColor, const FLOAT InLightAdjustIntensity
+			, const FLOAT InCubeMeanLinearLuminance, const UINT32 InPrefilterResolutionExponent)
 			: LightAdjustColor(InLightAdjustColor), LightAdjustIntensity(InLightAdjustIntensity)
+			, CubeMeanLinearLuminance(InCubeMeanLinearLuminance), PrefilterResolutionExponent(InPrefilterResolutionExponent)
 		{
 		}
 		ERenderSkyLightParams() = default;
 		ERenderSkyLightParams(const ERenderSkyLightParams& Other)
 			: LightAdjustColor(Other.LightAdjustColor), LightAdjustIntensity(Other.LightAdjustIntensity)
+			, CubeMeanLinearLuminance(Other.CubeMeanLinearLuminance), PrefilterResolutionExponent(Other.PrefilterResolutionExponent)
 		{
 		}
 		ERenderSkyLightParams& operator=(const ERenderSkyLightParams& Other)
 		{
-			LightAdjustColor		= Other.LightAdjustColor;
-			LightAdjustIntensity	= Other.LightAdjustIntensity;
+			LightAdjustColor				= Other.LightAdjustColor;
+			LightAdjustIntensity			= Other.LightAdjustIntensity;
+			CubeMeanLinearLuminance			= Other.CubeMeanLinearLuminance;
+			PrefilterResolutionExponent		= Other.PrefilterResolutionExponent;
 			return (*this);
 		}
 	};
@@ -59,10 +69,12 @@ namespace PigeonEngine
 	public:
 		const ETextureCubeAsset*	GetCubeMapAsset()const;
 		const Color3&				GetLightAdjust()const;
-		// The sky's luminance in cd/m2, which is the scale that puts the environment cube on the
-		// same physical footing as the lights. A clear sky is around 8000 and an overcast one
-		// around 2000; the cube itself only carries the shape of the sky.
+		// The mean luminance in cd/m2 the environment is adjusted to. The render side normalizes
+		// the cube by its own mean first, so this is a physical mean rather than a scale.
 		FLOAT						GetIntensity()const;
+		// The prefiltered environment cube's base resolution, as a power of two. 8 means 256.
+		PE_NODISCARD UINT32			GetPrefilterResolutionExponent()const noexcept;
+		PE_NODISCARD FLOAT			GetCubeMeanLinearLuminance()const noexcept;
 	public:
 		void	SetCubeMapAsset(const ETextureCubeAsset* InCubeMapAsset);
 		/*
@@ -74,10 +86,16 @@ namespace PigeonEngine
 		void	RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource = nullptr);
 		void	SetLightAdjust(const Color3& InColor);
 		void	SetIntensity(const FLOAT InLuminanceInCandelaPerSquareMeter);
+		void	SetPrefilterResolutionExponent(const UINT32 InExponent);
 	protected:
 		const ETextureCubeAsset*	CubeMapAsset;
 		Color3						LightAdjust;
 		FLOAT						Intensity;
+		UINT32						PrefilterResolutionExponent;
+		// The cube's solid angle weighted mean linear luminance, computed when the asset is set.
+		// The render side divides every environment sample by it, which is what makes Intensity
+		// a true mean rather than a scale.
+		FLOAT						CubeMeanLinearLuminance;
 
 		// Render proxy functions START
 	public:
@@ -104,6 +122,12 @@ namespace PigeonEngine
 	protected:
 		UINT8							UpdateState;
 		// Render proxy functions END
+
+	// ImGui
+#if _EDITOR_ONLY
+	public:
+		virtual void	GenerateComponentDetail() override;
+#endif
 
 		CLASS_VIRTUAL_NOCOPY_BODY(PSkyLightComponent)
 	};

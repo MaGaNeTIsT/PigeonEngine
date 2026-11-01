@@ -1,0 +1,111 @@
+{
+	"Name": "ShadowMask",
+	"Stages": [
+		{
+			"Stage": "VS",
+			"Entry": "VSMain",
+			"Template": "Templates/FullScreen_VS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_VERTEX",
+					"Value": 1
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "FullScreen/C_FullScreenVertexFactory.json"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "Programmable",
+					"Replace": "PROGRAMMABLE",
+					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				}
+			]
+		},
+		{
+			"Stage": "PS",
+			"Entry": "PSMain",
+			"Template": "Templates/ShadowMask_PS.tmpl.hlsl",
+			"Defines": [
+				{
+					"Name": "SHADER_STAGE_PIXEL",
+					"Value": 1
+				},
+				{
+					"Name": "SHADER_SHADOW_RECEIVER",
+					"Value": 1
+				},
+				{
+					"Name": "PE_SHADOW_MASK_SET_NUM",
+					"Value": 1
+				}
+			],
+			"Textures": [
+				{
+					"Name": "DepthTexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerLinearClamp",
+					"Slot": 0
+				},
+				{
+					"Name": "GBufferBTexture",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerLinearClamp",
+					"Slot": 1
+				}
+			],
+			"Components": [
+				{
+					"Index": 0,
+					"Type": "General",
+					"Name": "EngineSystem",
+					"Replace": "SYSTEM_MACROS",
+					"JsonFile": "Components/C_EngineSystem.json"
+				},
+				{
+					"Index": 1,
+					"Type": "VertexFactory",
+					"Name": "VertexFactory",
+					"Replace": "VF_VERTEX_FACTORY",
+					"JsonFile": "FullScreen/C_FullScreenVertexFactory.json"
+				},
+				{
+					"Index": 2,
+					"Type": "General",
+					"Name": "Lighting",
+					"Replace": "LIGHTING",
+					"JsonFile": "Components/C_Lighting.json"
+				},
+				{
+					"Index": 3,
+					"Type": "General",
+					"Name": "Shadows",
+					"Replace": "SHADOWS",
+					"JsonFile": "Components/C_Shadows.json"
+				},
+				{
+					"Index": 4,
+					"Type": "General",
+					"Name": "ShadowMask",
+					"Replace": "SHADOW_MASK",
+					"JsonFile": "Components/C_ShadowMask.json"
+				}
+			]
+		}
+	]
+}

@@ -14,35 +14,56 @@
 
 namespace PigeonEngine
 {
+	// A UAV view of one texture subresource. The native view is owned here; the command list
+	// binds it straight to the compute stage.
+	class RD3D11TextureUAVView final : public IRRHITextureUAVView
+	{
+	public:
+		IRRHITexture*										Texture = nullptr;
+		Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView>	UAV;
+
+		RD3D11TextureUAVView() noexcept
+		{
+		}
+		virtual ~RD3D11TextureUAVView() noexcept override
+		{
+		}
+
+		virtual IRRHITexture* GetTexture() const noexcept override { return Texture; }
+	};
+
 	// D3D11 timestamp heap (Phase P.c). The struct lives in the header so
 	// both RDeviceD3D11 (creation / resolve / disjoint framing) and
 	// RCommandListD3D11 (per-slot End() writes) can reach into the same
 	// TimestampQueries[] array without an extra opaque-handle layer.
 	//
-	// Note: TimestampQueries is a raw ID3D11Query** owned by this struct
-	// (manual AddRef/Release in the dtor). Could be a TArray<ComPtr<...>>
-	// now that Array.h's placement-new is operator&-safe, but the direct
-	// pointer array makes the queries' lifetime explicit and avoids one
-	// indirection in the hot WriteTimestamp / ResolveTimestamps paths.
+	// TimestampQueries is a raw ID3D11Query** owned by this struct (manual
+	// AddRef/Release in the dtor). The direct pointer array makes the
+	// queries' lifetime explicit and avoids one indirection in the hot
+	// WriteTimestamp / ResolveTimestamps paths.
 	struct RRHITimestampHeapD3D11 : public RRHITimestampHeap
 	{
 		ID3D11Query**									TimestampQueries	= nullptr;
-		Microsoft::WRL::ComPtr<ID3D11Query>				DisjointQuery;
-		BOOL8											DisjointOpen		= FALSE;
-		BOOL8											DisjointLatched		= FALSE;	// last EndTimestampFrame produced a valid disjoint
-		BOOL8											LastFrameValid		= FALSE;	// !Disjoint flag from last resolve
-		UINT64											LastFrequency		= 0u;
+		// One disjoint query per frame slice. A single disjoint cannot describe
+		// two frames that are in flight at once, and the delayed readback
+		// resolves an older frame while a newer one is still being recorded.
+		TArray<Microsoft::WRL::ComPtr<ID3D11Query>>		DisjointQueries;
+		TArray<BOOL8>									DisjointOpen;
+		// Frequency reported by the most recent successful resolve. D3D11 can
+		// clock-throttle, so it is latched per frame rather than treated as a
+		// device constant.
+		UINT64											LastResolvedFrequency	= 0u;
 
-		virtual ~RRHITimestampHeapD3D11()override
+		virtual ~RRHITimestampHeapD3D11() override
 		{
 			if (TimestampQueries)
 			{
-				for (UINT32 i = 0u; i < Capacity; i++)
+				for (UINT32 Index = 0u; Index < Capacity; Index++)
 				{
-					if (TimestampQueries[i])
+					if (TimestampQueries[Index])
 					{
-						TimestampQueries[i]->Release();
-						TimestampQueries[i] = nullptr;
+						TimestampQueries[Index]->Release();
+						TimestampQueries[Index] = nullptr;
 					}
 				}
 				delete[] TimestampQueries;
@@ -265,6 +286,8 @@ namespace PigeonEngine
 		virtual BOOL8 CreateComputePipelineState(const RRHIComputePipelineDesc& InDesc, IRRHIPipelineState** OutPipelineState) noexcept override;
 		virtual BOOL8 CreateSampler(const RSamplerState& InDesc, IRRHISampler** OutSampler) noexcept override;
 		virtual void  DestroyResource(IRRHIResource* InResource) noexcept override;
+		virtual BOOL8 CreateTextureUAVView(IRRHITexture* InTexture, const RRHITextureUAVDesc& InDesc, IRRHITextureUAVView** OutView) noexcept override;
+		virtual void  DestroyTextureUAVView(IRRHITextureUAVView* InView) noexcept override;
 
 		// Bindless (D3D11 maintains virtual handle tables; the actual
 		// descriptor heap exists only on D3D12.)
@@ -290,12 +313,12 @@ namespace PigeonEngine
 		virtual UINT32          GetFrameInFlightCount()const noexcept override { return FrameInFlightCount; }
 
 		// GPU timestamp queries (Phase P.c)
-		virtual BOOL8   CreateTimestampHeap(UINT32 InCapacity, RRHITimestampHeap** OutHeap) noexcept override;
+		virtual BOOL8   CreateTimestampHeap(UINT32 InCapacity, UINT32 InFrameInFlight, RRHITimestampHeap** OutHeap) noexcept override;
 		virtual void    DestroyTimestampHeap(RRHITimestampHeap* InHeap) noexcept override;
-		virtual void    BeginTimestampFrame(RRHITimestampHeap* InHeap) noexcept override;
-		virtual void    EndTimestampFrame(RRHITimestampHeap* InHeap) noexcept override;
-		virtual BOOL8   ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept override;
-		virtual UINT64  GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap)const noexcept override;
+		virtual void    BeginTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept override;
+		virtual void    EndTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept override;
+		virtual BOOL8   ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InFrameSlot, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept override;
+		virtual UINT64  GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap) const noexcept override;
 	private:
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>		GetRenderDeviceContext() const { return m_ImmediateContext; }
 		Microsoft::WRL::ComPtr<ID3D11Device>			GetRenderDevice() const { return m_Device; }

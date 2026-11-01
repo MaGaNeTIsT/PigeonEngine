@@ -55,6 +55,11 @@ namespace PigeonEngine
 		// cannot disagree about how bright the sky is.
 		const Color3&	GetAdjustColor() const noexcept;
 		FLOAT			GetAdjustIntensity() const noexcept;
+		// The cube's mean linear luminance. The sky pass, the indirect diffuse term and the
+		// prefilter all divide their samples by it, so the intensity above is a true mean.
+		FLOAT			GetCubeMeanLuminance() const noexcept;
+		// The prefiltered environment cube's base resolution exponent (8 = 256).
+		UINT32			GetPrefilterResolutionExponent() const noexcept;
 	public:
 		BOOL32			IsRenderValid()const;
 		// The renderer calls this before Draw. The dome binds everything inside Draw, right
@@ -99,6 +104,8 @@ namespace PigeonEngine
 		const ETextureCubeAsset*	TextureCubeAsset;
 		Color3						AdjustColor;
 		FLOAT						AdjustIntensity;
+		FLOAT						CubeMeanLuminance;
+		UINT32						PrefilterResolutionExponent;
 		// Non-owning: the frame's pipeline state cache created it and invalidates it with the
 		// rest at shutdown.
 		IRRHIPipelineState*			PipelineState;

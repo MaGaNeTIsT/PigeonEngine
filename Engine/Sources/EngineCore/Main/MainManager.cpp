@@ -143,12 +143,20 @@ namespace PigeonEngine
 			DeviceInitDesc.RefreshRateHz	= m_FrameRate;
 			DeviceInitDesc.bIsWindowed		= (m_Windowed != FALSE);
 #if _EDITOR_ONLY
-			// Surface D3D12 validation messages in the VS Output window so
-			// PSO / resource creation failures are diagnosable.
-			DeviceInitDesc.bEnableDebugLayer = FALSE;
+			// Surface D3D12 validation messages so PSO / resource creation failures are
+			// diagnosable. The device drains the layer's queue into the engine log where a call
+			// fails (RDeviceD3D12::LogD3D12DebugMessages), and turns the layer's own break off so
+			// a message does not stop the run before the engine's failure path sees it.
+			DeviceInitDesc.bEnableDebugLayer = TRUE;
 #endif
 			RenderDevice->Initialize(DeviceInitDesc);
 		}
+
+		// Explicit even though the GPU timestamp heap is created lazily on the
+		// first BeginFrame: this is the point where both profilers get a clean
+		// slate, and the render thread that feeds them starts further down.
+		EProfiler::GetManagerSingleton()->Initialize();
+		EGPUProfiler::GetManagerSingleton()->Initialize();
 
 		GatherSupportedResolutions();
 
@@ -378,10 +386,21 @@ namespace PigeonEngine
 	}
 	void EMainManager::Update()
 	{
+		// Whole-frame wall clock, including the WaitForRenderIdle below. This is
+		// the number the panel's FPS is computed from, so it has to cover the
+		// hand-off to the render thread rather than the game work alone.
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_GAME_THREAD);
+
 		// Async with render thread
 		m_GameTimer->Update();
 		m_WorldManager->GetWorld()->Tick(static_cast<FLOAT>(m_GameTimer->GetDeltaTime()));
-		m_PhysicsManager->Update();
+		{
+			// Physics runs on the game thread today, so this bracket nests inside
+			// GameThread. The scope stays on the call, not on the thread: moving
+			// physics to its own loop keeps this measurement without a rewrite.
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_PHYSICS_THREAD);
+			m_PhysicsManager->Update();
+		}
 
 		/*
 		* Asset loads run here, on the game thread, which is the load thread of this build (a

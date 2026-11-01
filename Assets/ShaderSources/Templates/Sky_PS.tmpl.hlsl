@@ -53,9 +53,11 @@ void PSMain(in VFVarying InVarying,
 	float3 SkyRadiance = SampleEnvironmentRadiance(SkyDirection, 0.0, 0.0);
 
 	// The cube is sampled as radiance, so its texels carry the shape of the sky and not its
-	// brightness. This is what puts them on the same physical scale as the lights: the scene
-	// colour target holds luminance in cd/m2, and an unscaled cube would land around 1 cd/m2,
-	// which any daylight exposure turns black.
+	// absolute brightness. Dividing by the cube's own mean first is what turns the shape into
+	// a unit mean environment; the mean luminance below then puts it on the physical scale the
+	// scene colour target uses (cd/m2). The indirect diffuse and prefiltered specular terms
+	// divide by the same mean, so the camera and a surface cannot disagree about the sky.
+	SkyRadiance /= max(CubeMeanLuminance, 0.0001);
 	SkyRadiance *= LightAdjustColor.rgb * LightAdjustIntensity;
 
 	OutSceneColor = float4(SkyRadiance, 1.0);

@@ -1,4 +1,5 @@
 #include "AssetLoadManager.h"
+#include <Development/Profiler.h>
 
 namespace PigeonEngine
 {
@@ -88,6 +89,11 @@ namespace PigeonEngine
 
 	void EAssetLoadManager::DoLoads()
 	{
+		// The queue drain is what a dedicated load thread would run, so the
+		// measurement stays valid if this call moves to its own thread. Today
+		// it nests inside GameThread.
+		PE_PROFILE_SCOPE(PROFILER_SCOPE_LOAD_THREAD);
+
 		Requests.DequeueAll([this](FAssetLoadRequest&& InRequest) -> void
 		{
 			BOOL32 bLoaded = FALSE;

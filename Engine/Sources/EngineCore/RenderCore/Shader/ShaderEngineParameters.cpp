@@ -199,8 +199,9 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		// Re-evaluates what moved and leaves it dirty; the upload walks the dirty mirrors
-		// and retires their flags, so an unchanged block costs one revision compare.
+		// Re-evaluates what moved and leaves it dirty. The upload creates the gpu buffer of a
+		// mirror that has none and re-uploads the dirty ones, so a table that was just rebuilt
+		// while its set did not move still ends up bound.
 		Parameters.PrepareBuffers();
 		return (Buffers.UploadFromParameterSet(InRenderDevice, Parameters));
 	}

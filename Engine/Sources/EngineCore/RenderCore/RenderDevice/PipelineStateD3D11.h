@@ -47,6 +47,10 @@ namespace PigeonEngine
 		// Graphics state (only valid if bIsCompute == FALSE)
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>		VertexShader;
 		Microsoft::WRL::ComPtr<ID3D11PixelShader>		PixelShader;
+		// RGraphicsPipelineStateDesc stage bits (vertex = 1, pixel = 2). A state that clears the
+		// pixel bit is a VS only pass, and binding it must explicitly unbind the pixel shader:
+		// D3D11 keeps the previous one bound otherwise.
+		UINT32											StageMask	= 3u;
 		Microsoft::WRL::ComPtr<ID3D11InputLayout>		InputLayout;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState>	RasterizerState;
 		Microsoft::WRL::ComPtr<ID3D11BlendState>		BlendState;

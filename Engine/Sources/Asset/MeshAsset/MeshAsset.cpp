@@ -7,6 +7,7 @@
 #if _EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
+#include "../../../EngineThirdParty/RapidJson/Headers/JsonManager.h"
 #endif
 
 namespace PigeonEngine
@@ -1718,7 +1719,68 @@ namespace PigeonEngine
 		ClearSkinnedMeshes();
 	}
 #if _EDITOR_ONLY
-	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath, const BOOL32 IsCombineSubmeshes)
+	// The file a scene builder reads instead of enumerating the asset directories: which asset holds
+	// which authored object, the material that object was authored with, and the texture files that
+	// material names. The mesh assets themselves carry geometry and a name only, and the PAsset
+	// layout is a plain byte sequence with no room for either answer, so the pairing is written
+	// beside them at import time - which is the one moment both halves are in hand.
+	static void SaveStaticMeshSceneManifest(const EString& InSavePath, const EString& InAssetName
+		, const TArray<EStaticMesh>& InMeshes, const TArray<FImportedMeshMaterial>& InMaterials)
+	{
+		CJsonObject* RootObject = CJsonManager::ConstructJsonObject();
+		RootObject->SetStringField(EString(PE_TEXT("Name")), InAssetName);
+
+		TArray<CJsonObject*> MeshObjects;
+		for (UINT32 MeshIndex = 0u; MeshIndex < InMeshes.Num<UINT32>(); MeshIndex++)
+		{
+			CJsonObject* MeshObject = CJsonManager::ConstructJsonObject();
+			// The name the mesh was saved under: the first keeps the requested name and every later
+			// one carries an index suffix, which is the same rule the save loop above applies.
+			EString MeshAssetName(InAssetName);
+			if (MeshIndex > 0u)
+			{
+				MeshAssetName += EString(PE_TEXT("_"));
+				MeshAssetName += ToString(MeshIndex);
+			}
+			MeshObject->SetStringField(EString(PE_TEXT("Asset")), MeshAssetName);
+			MeshObject->SetStringField(EString(PE_TEXT("Mesh")), InMeshes[MeshIndex].GetMeshName());
+			if (MeshIndex < InMaterials.Num<UINT32>())
+			{
+				const FImportedMeshMaterial& Material = InMaterials[MeshIndex];
+				TArray<FLOAT> DiffuseColor;
+				DiffuseColor.Add(Material.DiffuseColor.r);
+				DiffuseColor.Add(Material.DiffuseColor.g);
+				DiffuseColor.Add(Material.DiffuseColor.b);
+				MeshObject->SetStringField(EString(PE_TEXT("Material")), Material.MaterialName);
+				MeshObject->SetFloatArrayField(EString(PE_TEXT("DiffuseColor")), DiffuseColor);
+				MeshObject->SetStringField(EString(PE_TEXT("DiffuseMap")), Material.DiffuseMapPath);
+				MeshObject->SetStringField(EString(PE_TEXT("NormalMap")), Material.NormalMapPath);
+				MeshObject->SetStringField(EString(PE_TEXT("MaskMap")), Material.MaskMapPath);
+			}
+			MeshObjects.Add(MeshObject);
+		}
+		RootObject->SetObjectArrayField(EString(PE_TEXT("Meshes")), MeshObjects);
+
+		const std::string ManifestText = CJsonManager::Serialize(RootObject);
+		EString ManifestPath(InSavePath);
+		ManifestPath += InAssetName;
+		ManifestPath += EString(PE_TEXT(".Scene.json"));
+		if (EFileHelper::SaveStringToFile(ManifestPath, EString(ManifestText.c_str())) == FALSE)
+		{
+			PE_LOG_WARN(EString(PE_TEXT("[MeshAssetManager] The scene manifest '")) + ManifestPath
+				+ EString(PE_TEXT("' could not be written; a scene built from this import has no object list.")));
+		}
+
+		// The array setter deep copies, so these belong to this function alone.
+		for (UINT32 MeshIndex = 0u; MeshIndex < MeshObjects.Num<UINT32>(); MeshIndex++)
+		{
+			delete MeshObjects[MeshIndex];
+		}
+		delete RootObject;
+	}
+
+	BOOL32 EMeshAssetManager::ImportStaticMesh(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
+		, const BOOL32 InIsCombineSubmeshes, const BOOL32 InIsOptimizeMeshes)
 	{
 		EString TempSaveFullPathName(InSavePath);
 		TempSaveFullPathName = TempSaveFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -1759,7 +1821,8 @@ namespace PigeonEngine
 		}
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		TArray<EStaticMesh> AssimpMeshes;
-		if ((AssimpManager->ReadStaticMeshFile(InImportFullPathName, AssimpMeshes, IsCombineSubmeshes)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
+		TArray<FImportedMeshMaterial> AssimpMaterials;
+		if ((AssimpManager->ReadStaticMeshFile(InImportFullPathName, AssimpMeshes, InIsCombineSubmeshes, InIsOptimizeMeshes, &AssimpMaterials)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
 		{
 #if _EDITOR_ONLY
 			{
@@ -1785,6 +1848,10 @@ namespace PigeonEngine
 				continue;
 			}
 			SavedMeshCount++;
+		}
+		if (SavedMeshCount > 0u)
+		{
+			SaveStaticMeshSceneManifest(InSavePath, InAssetName, AssimpMeshes, AssimpMaterials);
 		}
 		return (SavedMeshCount > 0u);
 	}
@@ -1957,7 +2024,8 @@ namespace PigeonEngine
 					// The editor form: load, and when the PAsset is not on disk yet, import from the
 					// raw source and load again. Both halves run here, on the load thread.
 					TryLoadStaticMesh(InLoadPath, InLoadName, LoadedAsset, &ImportSource.ImportPath
-						, &ImportSource.ImportName, &ImportSource.ImportFileType, ImportSource.bIsCombineSubmeshes);
+						, &ImportSource.ImportName, &ImportSource.ImportFileType, ImportSource.bIsCombineSubmeshes
+						, ImportSource.bIsOptimizeMeshes);
 				}
 				else
 				{
@@ -2671,7 +2739,9 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType, const BOOL32 IsCombineSubmeshes)
+	void TryLoadStaticMesh(const EString& InLoadPath, const EString& InLoadName, const EStaticMeshAsset*& OutAsset
+		, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType
+		, const BOOL32 InIsCombineSubmeshes, const BOOL32 InIsOptimizeMeshes)
 	{
 		EMeshAssetManager* MeshAssetManager = EMeshAssetManager::GetManagerSingleton();
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output static mesh asset pointer is initialized failed."), (!OutAsset));
@@ -2701,7 +2771,8 @@ namespace PigeonEngine
 				InLoadName,
 				TempImportFullPath,
 				InLoadPath,
-				IsCombineSubmeshes
+				InIsCombineSubmeshes,
+				InIsOptimizeMeshes
 			);
 			if (Result)
 			{

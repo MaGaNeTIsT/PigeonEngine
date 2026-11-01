@@ -23,6 +23,15 @@
 
 namespace PigeonEngine
 {
+	// The debug overlay binds the two instance buffers and nothing else; the material it draws
+	// with publishes its own values under the material scope.
+	static const FShaderBindingClaim g_DebugWireframeBindingClaims[] =
+	{
+		{ EName(PE_TEXT("DebugPrimitiveTransforms")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("DebugPrimitiveColors")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_DebugWireframeBindingClaims, EName(SHADER_BINDING_SCOPE_DEBUG_WIREFRAME));
+
 	static RBufferResource _GFullScreenTriangleVertexBuffer;
 	static RBufferResource _GFullScreenTriangleIndexBuffer;
 
@@ -47,7 +56,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			if (!Result)
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create full screen triangle vertex buffer failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create full screen triangle vertex buffer failed.")));
 			}
 #else
 			(void)Result;
@@ -77,7 +86,7 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 			if (!Result)
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Create full screen triangle index buffer failed."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Create full screen triangle index buffer failed.")));
 			}
 #else
 			(void)Result;
@@ -160,6 +169,13 @@ namespace PigeonEngine
 	// pass has to be able to reach the instance's parameter buffers - the program alone cannot
 	// answer for values.
 	const EShaderInstance* _GDebugWireframePrimitiveInstance = nullptr;
+	// Whether this program turned out not to declare the per draw block. The debug vertex stage
+	// takes its object to world step from the per instance buffer rather than from the draw
+	// block, and no stage reads the block, so the compiler culls it outright. That makes the
+	// block optional for this pass, and once the answer is known there is no reason to walk the
+	// reflection for it again - the state is a property of the compiled stage asset, not of a
+	// frame.
+	static BOOL32 _GDebugWireframeDrawBlockAbsent = FALSE;
 
 	static const EShaderInstance* GetDebugWireframeProgramInstance()
 	{
@@ -367,10 +383,19 @@ namespace PigeonEngine
 	}
 
 	RDebugWireframePrimitiveManager::RDebugWireframePrimitiveManager()
+		: bDebugWireframeVisible(FALSE)
 	{
 	}
 	RDebugWireframePrimitiveManager::~RDebugWireframePrimitiveManager()
 	{
+	}
+	void RDebugWireframePrimitiveManager::SetDebugWireframeVisible(const BOOL32 InVisible) noexcept
+	{
+		bDebugWireframeVisible.Store(InVisible);
+	}
+	BOOL32 RDebugWireframePrimitiveManager::IsDebugWireframeVisible() const noexcept
+	{
+		return bDebugWireframeVisible.Load();
 	}
 	void RDebugWireframePrimitiveManager::Initialize()
 	{
@@ -516,7 +541,8 @@ namespace PigeonEngine
 		EShaderParameterSet InstanceParameters;
 		InstanceParameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DebugPrimitiveTransforms")), &InTransformsBuffer);
 		InstanceParameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DebugPrimitiveColors")), &InColorsBuffer);
-		BindShaderParameterResources(InCommandList, InstanceParameters, InVertexPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX);
+		BindShaderResources(InCommandList, InstanceParameters, InVertexPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX
+			, EName(SHADER_BINDING_SCOPE_DEBUG_WIREFRAME));
 
 		const UINT32 Stride = sizeof(FLOAT) * 3u;
 		const UINT32 Offset = 0u;
@@ -530,6 +556,13 @@ namespace PigeonEngine
 	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
 	{
 		(void)InView;
+		// The overlay is hidden as a whole. The primitives are still queued and folded into this
+		// frame's arrays by InitNewFrame; only the recording is skipped, so the toggle takes
+		// effect on the next frame and costs one branch when on.
+		if (bDebugWireframeVisible.Load() == FALSE)
+		{
+			return;
+		}
 		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if ((!CmdList) || (!RenderDevice))
@@ -568,32 +601,35 @@ namespace PigeonEngine
 
 			// Then the blocks the pass's program reads, because the state above voided whatever an
 			// earlier pass had left bound: the renderer's shared blocks (the wireframe vertex stage
-			// transforms through ViewParams.ViewProjectionMatrix), and this pass's own draw block.
-			// A draw whose roots are left unset reads zeros, which for a transform means every
-			// vertex collapses into one point - the overlay silently disappears instead of drawing
-			// something wrong.
+			// transforms through ViewParams.ViewProjectionMatrix), and - when the program declares
+			// it - this pass's own draw block. A draw whose roots are left unset reads zeros, which
+			// for a transform means every vertex collapses into one point - the overlay silently
+			// disappears instead of drawing something wrong.
 			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
 			if (PassRenderer)
 			{
 				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram);
 			}
-			if (!DrawParameterBlock.IsInitialized())
+			if ((!DrawParameterBlock.IsInitialized()) && (_GDebugWireframeDrawBlockAbsent == FALSE))
 			{
-				if (!DrawParameterBlock.EnsureInitialized(RenderDevice, *_GDebugWireframePrimitiveProgram))
+				if (DrawParameterBlock.EnsureInitialized(RenderDevice, *_GDebugWireframePrimitiveProgram))
 				{
-					// The program cannot describe the block, so the state that is already set
-					// cannot be drawn into correctly. Skipping the overlay is the honest answer,
-					// and saying so is what keeps the skip from being an unexplained absence.
-					ReportSkippedDraw(EString(PE_TEXT("the debug wireframe overlay")), EString(PE_TEXT("the program cannot describe its per draw block")));
-					return;
+					FLOAT Identity[16] = {};
+					FlattenShaderMatrix(Matrix4x4::Identity(), Identity);
+					EShaderParameterSet& Parameters = DrawParameterBlock.GetParameters();
+					const EName& BlockName = DrawParameterBlock.GetBlockName();
+					Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_MATRIX), Identity, 16u);
+					Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_MATRIX), Identity, 16u);
+					Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_TRANSPOSE_MATRIX), Identity, 16u);
 				}
-				FLOAT Identity[16] = {};
-				FlattenShaderMatrix(Matrix4x4::Identity(), Identity);
-				EShaderParameterSet& Parameters = DrawParameterBlock.GetParameters();
-				const EName& BlockName = DrawParameterBlock.GetBlockName();
-				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_MATRIX), Identity, 16u);
-				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_MATRIX), Identity, 16u);
-				Parameters.SetFloatArray(BlockName, EName(SHADER_FIELD_WORLD_INV_TRANSPOSE_MATRIX), Identity, 16u);
+				else
+				{
+					// A program that does not declare the block is complete without it: this pass
+					// places its instances from their own transforms, so there is no per draw transform
+					// to be missing. Upload and Bind below are no-ops for an uninitialized block, which
+					// is what makes "absent" a state this pass can simply draw through.
+					_GDebugWireframeDrawBlockAbsent = TRUE;
+				}
 			}
 			DrawParameterBlock.Upload(RenderDevice);
 			DrawParameterBlock.Bind(CmdList, *_GDebugWireframePrimitiveProgram);
@@ -608,9 +644,12 @@ namespace PigeonEngine
 				RShaderParameterBuffers* MaterialBuffers = ResolveShaderParameterBuffers(*_GDebugWireframePrimitiveInstance);
 				if (MaterialBuffers)
 				{
-					MaterialBuffers->UploadFromParameterSet(RenderDevice, _GDebugWireframePrimitiveInstance->GetParameters());
-					BindShaderParameterBuffers(CmdList, *MaterialBuffers, *_GDebugWireframePrimitiveProgram
-						, EShaderStageType::SHADER_STAGE_PIXEL, FALSE);
+					// Pixel only, matching what this overlay binds: the material's block is declared by
+					// the pixel stage, and the vertex stage's plan belongs to the primitive factory.
+					(void)PublishShaderParameters(CmdList, RenderDevice
+						, const_cast<EShaderParameterSet&>(_GDebugWireframePrimitiveInstance->GetParameters())
+						, *MaterialBuffers, *_GDebugWireframePrimitiveProgram
+						, ENGINE_SHADER_STAGE_MASK_PIXEL, EName(SHADER_BINDING_SCOPE_MATERIAL));
 				}
 			}
 
@@ -1153,7 +1192,7 @@ namespace PigeonEngine
 		break;
 		default:
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Error type for debug wireframe primitive."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Error type for debug wireframe primitive.")));
 		}
 		break;
 		}

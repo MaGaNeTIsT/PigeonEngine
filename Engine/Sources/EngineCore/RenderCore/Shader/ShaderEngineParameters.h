@@ -133,6 +133,8 @@ namespace PigeonEngine
 	// the sky owns its own block for its own draw, and this one is read where the baked
 	// coefficients are consumed.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_BLOCK_INDIRECT_LIGHTING_PARAMS = "IndirectLightingParams";
+	// The directional shadow mask's block, published by the pass that resolves the mask.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BLOCK_SHADOW_MASK_PARAMS = "ShadowMaskParams";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_BLOCK_DRAW_PARAMS	= "DrawParams";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_BLOCK_MATERIAL_PARAMS = "MaterialParams";
 
@@ -155,6 +157,12 @@ namespace PigeonEngine
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_DELTA_TIME					= "DeltaTime";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_FRAME_INDEX				= "FrameIndex";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_RENDER_FLAGS				= "RenderFlags";
+	// RenderFlags bit 0: the shadow mask resolver has device objects this frame, so a light whose
+	// shadow address is not zero has a mask to sample. Whether a particular view produced one is
+	// per view and travels in that view's light list: a light the resolver did not serve keeps the
+	// slot table's "casts no shadow" address. The bit stays frame wide on purpose - it states a
+	// fact about the program, not about a camera.
+	PE_CONSTEXPR_STATIC UINT32		SHADER_RENDER_FLAG_DIRECTIONAL_SHADOW_MASK_VALID = (1u << 0u);
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_DIRECTIONAL_LIGHT_COUNT	= "DirectionalLightCount";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_LOCAL_LIGHT_COUNT			= "LocalLightCount";
 
@@ -174,14 +182,28 @@ namespace PigeonEngine
 	// ISO, so the value that turns scene luminance into a display signal is per view.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_EXPOSURE_PARAMS			= "ExposureParams";
 
+	// The directional shadow mask's block. One field: the reciprocal of the mask's pixel size,
+	// which is what the resolver converts its own pixel coordinate with. Everything else the
+	// mask needs is per cascade and lives in the shadow slot table.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_INV_MASK_SIZE			= "InvMaskSize";
+
 	// The sky is the one light with a block of its own rather than a slot in a light list:
 	// it is a fullscreen pass with a single instance, so it needs no array and no index.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_LIGHT_ADJUST_COLOR			= "LightAdjustColor";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_LIGHT_ADJUST_INTENSITY		= "LightAdjustIntensity";
+	// The environment cube's mean linear luminance. Every consumer divides its samples by it
+	// before applying LightAdjustIntensity, which is what makes the intensity a true mean.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_CUBE_MEAN_LUMINANCE			= "CubeMeanLuminance";
 
 	// rgb is the sky's tint and w its mean luminance in cd/m2: the pair the bake leaves out of
 	// the coefficients on purpose, so that changing either one costs no dispatch.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_SKY_LIGHT_COLOR_LUMINANCE	= "SkyLightColorLuminance";
+	// The same mean, carried beside the coefficients so the indirect diffuse term can normalize
+	// the raw SH projection before applying the intensity.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_SKY_CUBE_MEAN_LUMINANCE		= "SkyCubeMeanLuminance";
+	// Mip count of the prefiltered environment cube, so a pixel shader can map perceptual
+	// roughness onto the chain without querying the texture dimensions.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_PREFILTER_MIP_COUNT			= "PrefilterMipCount";
 
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_WORLD_MATRIX				= "WorldMatrix";
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_FIELD_WORLD_INV_MATRIX			= "WorldInvMatrix";

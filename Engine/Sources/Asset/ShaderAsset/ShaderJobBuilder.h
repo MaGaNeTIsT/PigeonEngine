@@ -4,6 +4,7 @@
 #include <EngineCommon.h>
 #include <ShaderAsset/ShaderCompileJob.h>
 #include <ShaderAsset/ShaderProgram.h>
+#include <ShaderAsset/ShaderTarget.h>
 
 namespace PigeonEngine
 {
@@ -35,14 +36,20 @@ namespace PigeonEngine
 	*                        neutral vertex material is injected for everyone), $Domain
 	*                        qualifies by the domain name. Same name <=> same content.
 	*
-	*   variant name         V<VF>_P<Profile>_D<Domain>_S<SurfaceMode>
-	*                        It carries every variant axis define. The axis never travels
-	*                        in the entry json, so no define name is declared in both
-	*                        places and no compilation depends on which side would win.
+	*   variant name         V<VF>_P<Profile>_D<Domain>_S<SurfaceMode>_<Platform>_SM<Model>
+	*                        It carries every variant axis define, the compile target
+	*                        included: the same mesh axis built for another back end or
+	*                        shader model is a different compilation with a different
+	*                        artifact. The axis never travels in the entry json, so no
+	*                        define name is declared in both places and no compilation
+	*                        depends on which side would win.
 	*
 	*   "Base"               Reserved. It is the compilation the compiler runs with no
-	*                        passed in define at all, so any compilation that has an axis
-	*                        uses a name of its own and always passes bIsVariant = TRUE.
+	*                        passed in define at all. The compile target is an axis like
+	*                        any other and is always passed, so the engine never asks for
+	*                        it: the base variant a build actually uses is its own target
+	*                        variant, "<axis>_<Platform>_SM<Model>". A compilation that
+	*                        has an axis uses a name of its own and passes bIsVariant = TRUE.
 	*
 	* Cache order (design C1/C3): an assembly is only worked on when the loaded asset does
 	* not already answer for every (variant, stage) pair the caller asked for. In order:
@@ -167,7 +174,9 @@ namespace PigeonEngine
 		EString						OutputRoot;				// empty = ENGINE_SHADER_OUTPUT_ROOT_DIR
 		// Compile even when the stage artifacts are already on disk (see the request field).
 		BOOL32						bForceRecompile	= FALSE;
-		EShaderModelType			ShaderModel		= EShaderModelType::SHADER_MODEL_6_6;
+		// Which device consumes the artifacts and which shader model they are built at.
+		// Resolved once in MakeAssembly, so nothing downstream reads the configuration.
+		EShaderTarget				Target;
 		BOOL32						bDebug			= TRUE;
 		BOOL32						bDumpHlsl		= FALSE;
 	public:
@@ -180,6 +189,12 @@ namespace PigeonEngine
 		// other material gets the neutral provider, which is what makes the shared
 		// VS_<Program> source shareable across materials.
 		BOOL32						bMaterialVertexOps	= FALSE;
+		// The material's declared rasterizer trait, carried for the instance the assembly
+		// produces. It deliberately shapes no part of the compilation: the stage sources, the
+		// defines and the variant name are identical for a one sided and a two sided material,
+		// because the shader handles back faces for every material. Only the pipeline state the
+		// draw builds from this flag differs.
+		BOOL32						bTwoSided		= FALSE;
 		TArray<EShaderVariantDefine>	MaterialVariantDefines;
 		TArray<EShaderStageJobDesc>	Stages;
 	};
@@ -198,8 +213,12 @@ namespace PigeonEngine
 		// (Position, or a skin pair whose influence count the factory declares).
 		PE_NODISCARD static BOOL32	ResolveVertexAxis(const EMesh* InMesh
 			, EShaderVertexFactoryType& OutVertexFactory, EShaderVertexProfile& OutProfile);
-		PE_NODISCARD static EString	MakeVariantName(const EShaderAssemblyDesc& InDesc);
-		static void					MakeAxisDefines(const EShaderAssemblyDesc& InDesc, TArray<EShaderVariantDefine>& OutDefines);
+		// FALSE when the desc's target cannot supply the tokens the name is built from, which
+		// only a hand built desc whose target nobody filled in can do.
+		PE_NODISCARD static BOOL32	MakeVariantName(const EShaderAssemblyDesc& InDesc, EString& OutVariantName);
+		// FALSE when the target axis cannot be expressed. The defines are written into
+		// OutDefines, which the caller owns and has to discard when this fails.
+		PE_NODISCARD static BOOL32	MakeAxisDefines(const EShaderAssemblyDesc& InDesc, TArray<EShaderVariantDefine>& OutDefines);
 
 		// ---- generation ---------------------------------------------------------
 		// Reads the program descriptor and the material, resolves every `$` token, names
@@ -216,14 +235,17 @@ namespace PigeonEngine
 		// <ShaderName>.PAsset and loads it. Every requested (variant, stage) pair is
 		// verified before the asset is handed out.
 		PE_NODISCARD static BOOL32	EnsureAssembled(const EShaderAssemblyDesc& InDesc, const EShaderAsset*& OutAsset);
-		// MakeAssembly + EnsureAssembled. OutVariantName is the variant the asset holds,
-		// so the caller can build its instance without recomputing the axis.
-		PE_NODISCARD static BOOL32	EnsureAssembly(const EShaderAssemblyRequest& InRequest, const EShaderAsset*& OutAsset, EName& OutVariantName);
+		// MakeAssembly + EnsureAssembled. OutVariantName is the variant the asset holds, so the
+		// caller can build its instance without recomputing the axis. OutIsTwoSided is the
+		// material's rasterizer trait, which the caller stores on the instance; it stays FALSE
+		// for an assembly that names no material.
+		PE_NODISCARD static BOOL32	EnsureAssembly(const EShaderAssemblyRequest& InRequest
+			, const EShaderAsset*& OutAsset, EName& OutVariantName, BOOL32& OutIsTwoSided);
 
-		// The only rule the compile layer has about variant names, applied in one place:
-		// "Base" is the compilation the compiler runs with nothing passed in, so it may not
-		// carry a define or a replace; every other name is a real variant and is flagged as
-		// one, with whatever defines the caller passed.
+		// Turns a name and the axis content into the descriptor the compile layer hands over.
+		// The name is the only thing that decides bIsVariant, because that is how the
+		// compiler's format pairs them; a name that carries content it should not is reported
+		// rather than refused here, so the compiler stays the one authority over its own rule.
 		PE_NODISCARD static BOOL32	MakeVariantDesc(const EName& InVariantName
 			, const TArray<EShaderVariantDefine>& InDefines
 			, const TArray<EShaderVariantReplace>& InReplaces

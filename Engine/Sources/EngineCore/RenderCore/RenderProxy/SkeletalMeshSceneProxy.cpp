@@ -9,6 +9,15 @@
 namespace PigeonEngine
 {
 
+	// The bones are the vertex factory's binding surface, and this proxy is the only publisher
+	// of these two names (the material's vertex stage never writes them).
+	static const FShaderBindingClaim g_SkeletalBindingClaims[] =
+	{
+		{ EName(PE_TEXT("BoneMatrices")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("BoneInverseTransposeMatrices")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_SkeletalBindingClaims, EName(SHADER_BINDING_SCOPE_SKELETAL));
+
 	static void RegisterClassTypes()
 	{
 		RegisterClassType<RSkeletalMeshSceneProxy, RMeshSceneProxy>();
@@ -139,7 +148,8 @@ namespace PigeonEngine
 		Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("BoneMatrices")), &MatrixBuffer);
 		Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("BoneInverseTransposeMatrices")), &InverseTransposeBuffer);
 
-		BindShaderParameterResources(InCommandList, Parameters, VertexEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX);
+		BindShaderResources(InCommandList, Parameters, VertexEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX
+			, EName(SHADER_BINDING_SCOPE_SKELETAL));
 	}
 	void RSkeletalMeshSceneProxy::ApplyRuntimePayload(const FPrimitiveRenderSnapshot& InSnapshot)
 	{

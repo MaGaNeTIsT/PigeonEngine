@@ -80,7 +80,10 @@ struct MaterialVertexInput
 
 struct MaterialPixelInput
 {
-	// world space, interpolated
+	// world space, interpolated. These are the mesh's own geometry-space axes as the vertex
+	// stage produced them: no facing adjustment is applied here, so a material can use them for
+	// its own math. A tangent-space normal the material writes is transformed with this frame,
+	// and the engine applies FaceSign to the resulting world normal exactly once.
 	float3	WorldPosition;
 	float3	WorldNormal;			// interpolated geometric normal, unit length
 	float3	WorldTangent;
@@ -105,7 +108,13 @@ struct MaterialPixelInput
 
 	// identity
 	uint	PrimitiveID;
-	bool	IsFrontFace;
+	bool	IsFrontFace;			// raw rasterizer answer
+	// +1 on a front face, -1 on a back face. The engine multiplies the world-space normal it
+	// derives after DeriveSurface by this, exactly once; a material that writes a tangent-space
+	// normal does not apply it. A material that converts a direction to world space itself should
+	// multiply the result by it to match the rest of the pipeline. It is the float form of
+	// IsFrontFace, so a material does not have to branch on a bool.
+	float	FaceSign;
 };
 
 // ---------------------------------------------------------------------------

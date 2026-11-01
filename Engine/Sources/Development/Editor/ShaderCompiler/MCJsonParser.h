@@ -164,6 +164,13 @@ namespace MC
 		MCTextureSamplerComparisonFuncType		ComparisonFunc		= MCTextureSamplerComparisonFuncType::Tex_ComparisonFunc_Never;
 		std::string								Name				= "";
 		bool									bExposure			= false;
+		// Bindless: this resource asks for a descriptor heap index field of its own, declared in
+		// the constant buffer it names. Both are recorded as declared, and whether an index field
+		// is emitted at all is the compile target's decision (see the bindless emission in the
+		// parse). A static sampler simply leaves both at their defaults, which is what the engine
+		// samplers and the passes that never index a heap do.
+		bool									bPreferBindless		= false;
+		std::string								BindConstantBuffer	= "";
 	};
 
 	struct MCTextureSamplerTemplate
@@ -192,6 +199,9 @@ namespace MC
 		std::string				Name			= "";
 		std::string				SamplerName		= "";
 		bool					bExposure		= false;
+		// See MCTextureSampler: the same declaration, for a texture.
+		bool					bPreferBindless		= false;
+		std::string				BindConstantBuffer	= "";
 	};
 
 	struct MCTextureTemplate
@@ -216,6 +226,9 @@ namespace MC
 		std::vector<MCVariableInput>		StructFields		= {};
 		bool								bHasStruct			= false;
 		bool								bExposure			= false;
+		// See MCTextureSampler: the same declaration, for a buffer.
+		bool								bPreferBindless		= false;
+		std::string							BindConstantBuffer	= "";
 	};
 
 	struct MCShaderResourceTemplate
@@ -304,7 +317,7 @@ namespace MC
 		std::string		OutFileName			= "";			// File name of the reflection output, decided by the caller.
 		std::string		DefHash				= "";			// Reserved: build identity, meant for future ShaderMap / logging.
 		std::string		RplHash				= "";			// Reserved: build identity, meant for future ShaderMap / logging.
-		bool			bSM66				= false;		// Reserved: SM66 dedicated features are not consumed by the parser yet.
+		bool			bSM66				= false;		// Consumption started with the bindless path: a resource that declares it gets its heap index field only when this build targets 6.6.
 	};
 
 	bool ParseShader(const MCLoadParam& InLoadParam, std::vector<MCDefine>& InOutDefs, const std::vector<MCReplace>& InRpls, std::string& OutHlsl);

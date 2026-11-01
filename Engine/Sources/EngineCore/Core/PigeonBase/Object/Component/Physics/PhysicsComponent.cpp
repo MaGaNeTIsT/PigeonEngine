@@ -7,7 +7,7 @@
 #include <RenderProxy/RenderSingletonObject.h>
 #endif
 
-namespace PigeonEngine 
+namespace PigeonEngine
 {
 	static void RegisterClassTypes()
 	{
@@ -120,8 +120,10 @@ namespace PigeonEngine
 #if _EDITOR_ONLY
 	void PPhysicsComponent::EditorTick(FLOAT deltaTime)
 	{
-		if(FPhysicsCommonSettings::GetSingleton()->PHYSICS_DRAW_DEBUG_PRIMITIVE)
+		if (FPhysicsCommonSettings::GetSingleton()->bDrawCollision != FALSE)
+		{
 			DrawPrimitive();
+		}
 	}
 	void PPhysicsComponent::DrawPrimitive()
 	{

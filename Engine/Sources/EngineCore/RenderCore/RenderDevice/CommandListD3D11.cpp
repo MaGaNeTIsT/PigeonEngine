@@ -187,7 +187,7 @@ namespace PigeonEngine
 		ID3D11RenderTargetView* RawRTVs[RHI_MAX_RENDER_TARGETS] = { nullptr };
 		const UINT32 RenderTargetCount = (InDesc.RenderTargetCount < D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT) ? InDesc.RenderTargetCount : static_cast<UINT32>(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT);
 		// The clamp would silently serve fewer targets than the caller asked for.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: RenderTargetCount exceeds the simultaneous render-target limit."), (InDesc.RenderTargetCount <= D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: RenderTargetCount exceeds the simultaneous render-target limit.")), (InDesc.RenderTargetCount <= D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT));
 		for (UINT32 i = 0u; i < RenderTargetCount; i++)
 		{
 			RawRTVs[i] = ExtractD3D11RTV(InDesc.RenderTargets[i].Target);
@@ -294,7 +294,13 @@ namespace PigeonEngine
 		{
 			ImmediateContext->VSSetShader(PipelineState->VertexShader.Get(), nullptr, 0u);
 		}
-		if (PipelineState->PixelShader)
+		if ((PipelineState->StageMask & (1u << 1u)) == 0u)
+		{
+			// The state explicitly has no pixel stage (a depth only shadow pass): unbind the pixel
+			// shader the previous draw left bound, or the rasterizer would keep running it.
+			ImmediateContext->PSSetShader(nullptr, nullptr, 0u);
+		}
+		else if (PipelineState->PixelShader)
 		{
 			ImmediateContext->PSSetShader(PipelineState->PixelShader.Get(), nullptr, 0u);
 		}
@@ -441,7 +447,7 @@ namespace PigeonEngine
 		}
 		// D3D11 has no root indices: the RHI interprets InRootIndex as a constant-buffer
 		// slot here, so the bound is the API's CB slot count.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: constant-buffer slot exceeds the API's CB slot count."), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: constant-buffer slot exceeds the API's CB slot count.")), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
 		if (InRootIndex >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
 		{
 			return;
@@ -453,7 +459,7 @@ namespace PigeonEngine
 
 	void RCommandListD3D11::SetGraphicsRoot32BitConstants(UINT32 /*InRootIndex*/, const void* /*InData*/, UINT32 /*InNum32BitValues*/, UINT32 /*InOffsetIn32BitValues*/)
 	{
-		PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11 backend does not implement SetGraphicsRoot32BitConstants; use a CPU-mapped CB instead."));
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11 backend does not implement SetGraphicsRoot32BitConstants; use a CPU-mapped CB instead.")));
 	}
 
 	void RCommandListD3D11::SetComputeRootConstantBuffer(UINT32 InRootIndex, IRRHIBuffer* InBuffer, SIZE_T /*InOffset*/)
@@ -463,7 +469,7 @@ namespace PigeonEngine
 			return;
 		}
 		// Same API bound as the graphics variant above (slot, not root index).
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: constant-buffer slot exceeds the API's CB slot count."), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: constant-buffer slot exceeds the API's CB slot count.")), (InRootIndex < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT));
 		if (InRootIndex >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT)
 		{
 			return;
@@ -474,7 +480,7 @@ namespace PigeonEngine
 
 	void RCommandListD3D11::SetComputeRoot32BitConstants(UINT32 /*InRootIndex*/, const void* /*InData*/, UINT32 /*InNum32BitValues*/, UINT32 /*InOffsetIn32BitValues*/)
 	{
-		PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11 backend does not implement SetComputeRoot32BitConstants; use a CPU-mapped CB instead."));
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11 backend does not implement SetComputeRoot32BitConstants; use a CPU-mapped CB instead.")));
 	}
 
 	// --------------------------------------------------------
@@ -494,7 +500,7 @@ namespace PigeonEngine
 			return;
 		}
 		// API-level bound: D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT SRVs per shader stage.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: SRV slot exceeds the API's input-resource slot count.")), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
 		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 		{
 			return;
@@ -516,7 +522,7 @@ namespace PigeonEngine
 			return;
 		}
 		// Same API bound as the texture overload above.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: SRV slot exceeds the API's input-resource slot count.")), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
 		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 		{
 			return;
@@ -538,7 +544,7 @@ namespace PigeonEngine
 			return;
 		}
 		// Same API bound as the bind path: the clear names the same slot register.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: SRV slot exceeds the API's input-resource slot count."), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: SRV slot exceeds the API's input-resource slot count.")), (InSlot < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT));
 		if (InSlot >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)
 		{
 			return;
@@ -560,7 +566,7 @@ namespace PigeonEngine
 			return;
 		}
 		// API-level bound: D3D11_PS_CS_UAV_REGISTER_COUNT UAVs per shader stage.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UAV slot exceeds the API's UAV register count.")), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
 		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
 		{
 			return;
@@ -569,9 +575,9 @@ namespace PigeonEngine
 		if (!NativeUAV)
 		{
 			// Same trap as the buffer overload below: an unbound slot swallows the writes silently.
-			PE_LOG_ERROR(EString("[D3D11] A texture bound as a UAV at slot ") + ToString(InSlot)
-				+ EString(" has no unordered access view: the shader's writes through it go nowhere."));
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11: a texture bound as a UAV has no unordered access view."));
+			PE_LOG_ERROR(EString(PE_TEXT("[D3D11] A texture bound as a UAV at slot ")) + ToString(InSlot)
+				+ EString(PE_TEXT(" has no unordered access view: the shader's writes through it go nowhere.")));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: a texture bound as a UAV has no unordered access view.")));
 			return;
 		}
 		UINT InitialCount = 0u;
@@ -586,7 +592,7 @@ namespace PigeonEngine
 			return;
 		}
 		// Same API bound as the texture overload above.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UAV slot exceeds the API's UAV register count.")), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
 		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
 		{
 			return;
@@ -600,14 +606,41 @@ namespace PigeonEngine
 			// outside. The engine side only binds a UAV for a value its parameter set marked as one,
 			// so a resource without the view is a creation path that dropped the flag rather than a
 			// caller asking to clear the slot.
-			PE_LOG_ERROR(EString("[D3D11] A buffer bound as a UAV at slot ") + ToString(InSlot)
-				+ EString(" has no unordered access view: the shader's writes through it go nowhere."));
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("D3D11: a buffer bound as a UAV has no unordered access view."));
+			PE_LOG_ERROR(EString(PE_TEXT("[D3D11] A buffer bound as a UAV at slot ")) + ToString(InSlot)
+				+ EString(PE_TEXT(" has no unordered access view: the shader's writes through it go nowhere.")));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: a buffer bound as a UAV has no unordered access view.")));
 			return;
 		}
 		UINT InitialCount = 0u;
 		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NativeUAV, &InitialCount);
 		BoundComputeUAVs[InSlot] = InBuffer;
+	}
+
+	void RCommandListD3D11::SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView)
+	{
+		if (!ImmediateContext || (InStage != ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE) || (!InView))
+		{
+			return;
+		}
+		// Same API bound as the texture and buffer overloads above.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UAV slot exceeds the API's UAV register count.")), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
+		{
+			return;
+		}
+		RD3D11TextureUAVView* View = static_cast<RD3D11TextureUAVView*>(InView);
+		ID3D11UnorderedAccessView* NativeUAV = View->UAV.Get();
+		if (!NativeUAV)
+		{
+			// The same trap the resource overloads report: an unbound slot swallows the writes.
+			PE_LOG_ERROR(EString(PE_TEXT("[D3D11] A texture subresource bound as a UAV at slot ")) + ToString(InSlot)
+				+ EString(PE_TEXT(" has no unordered access view: the shader's writes through it go nowhere.")));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: a texture subresource bound as a UAV has no unordered access view.")));
+			return;
+		}
+		UINT InitialCount = 0u;
+		ImmediateContext->CSSetUnorderedAccessViews(InSlot, 1u, &NativeUAV, &InitialCount);
+		BoundComputeUAVs[InSlot] = View->GetTexture();
 	}
 
 	void RCommandListD3D11::ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot)
@@ -617,7 +650,7 @@ namespace PigeonEngine
 			return;
 		}
 		// Same API bound as the bind path: the clear names the same UAV register.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: UAV slot exceeds the API's UAV register count."), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UAV slot exceeds the API's UAV register count.")), (InSlot < D3D11_PS_CS_UAV_REGISTER_COUNT));
 		if (InSlot >= D3D11_PS_CS_UAV_REGISTER_COUNT)
 		{
 			return;
@@ -635,7 +668,7 @@ namespace PigeonEngine
 			return;
 		}
 		// API-level bound: D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT samplers per shader stage.
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("D3D11: sampler slot exceeds the API's sampler slot count."), (InSlot < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: sampler slot exceeds the API's sampler slot count.")), (InSlot < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT));
 		if (InSlot >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
 		{
 			return;

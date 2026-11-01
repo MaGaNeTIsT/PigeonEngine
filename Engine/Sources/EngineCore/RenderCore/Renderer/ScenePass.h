@@ -33,8 +33,10 @@ namespace PigeonEngine
 		RENDER_PASS_TYPE_BASE_GRASS,		// BezierGrass, GBuffer MRT, cull none
 		RENDER_PASS_TYPE_BASE_GRASS_WIRE,	// BezierGrass, GBuffer MRT, cull none, wireframe
 		RENDER_PASS_TYPE_DEPTH,				// DepthOnly, depth only, no colour target
-		// Graphics, per primitive, reserved: no program yet.
-		RENDER_PASS_TYPE_SHADOW,			// shadow map array
+		// Graphics, per primitive, into a tile of a view's shadow atlas. The material's depth
+		// only program is derived for it, so the pass carries no program of its own beyond the
+		// one it names as the derivation target.
+		RENDER_PASS_TYPE_SHADOW,			// ShadowDepth, depth only, cull front
 		// Graphics, engine driven. The pass owns its program, so a material is not involved.
 		RENDER_PASS_TYPE_FORWARD,			// reserved: forward geometry / editor primitives
 		RENDER_PASS_TYPE_SKY,				// Sky, cull front, depth less equal
@@ -47,6 +49,11 @@ namespace PigeonEngine
 		RENDER_PASS_TYPE_SWE_INTEGRATE,		// SWEIntegrateHeight / SWEIntegrateVelocity, per primitive
 		RENDER_PASS_TYPE_SWE_MODIFIER,		// SWEModifier / SWEModifierWave / SWEModifierWhirlpool, per primitive
 		RENDER_PASS_TYPE_COLOR_GRADE,		// ColorGrade, full screen
+		// Graphics, engine driven: the directional shadow resolver. It reads the view's depth and
+		// normal, walks the cascade slots of every directional light and writes one shadow term
+		// per light channel into the screen space mask the lighting pass samples. Appended last
+		// because the enum is append only - a value addresses a row of the pass table.
+		RENDER_PASS_TYPE_DIRECTIONAL_SHADOW_MASK,	// ShadowMask, full screen, 1x RGBA8
 		RENDER_PASS_TYPE_COUNT
 	};
 

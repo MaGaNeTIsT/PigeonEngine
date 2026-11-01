@@ -1,5 +1,6 @@
 #include "MCJsonParser.h"
 #include "MCLogger.h"
+#include <Config/EngineShaderConfig.h>
 #include <prettywriter.h>
 #include <stringbuffer.h>
 #include <iomanip>
@@ -1494,6 +1495,17 @@ namespace MC
 		{
 			OutTmpl.Sampler.bExposure = true;
 		}
+		// Bindless: the sampler asks for a descriptor heap index field of its own, declared in the
+		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
+		// the target whether the field is emitted, and the reflection reports both either way.
+		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
+		{
+			OutTmpl.Sampler.bPreferBindless = true;
+		}
+		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
+		{
+			OutTmpl.Sampler.BindConstantBuffer = InJson["BindConstantBuffer"].GetString();
+		}
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
 		{
@@ -1611,6 +1623,17 @@ namespace MC
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
 			OutTmpl.Texture.bExposure = true;
+		}
+		// Bindless: the texture asks for a descriptor heap index field of its own, declared in the
+		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
+		// the target whether the field is emitted, and the reflection reports both either way.
+		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
+		{
+			OutTmpl.Texture.bPreferBindless = true;
+		}
+		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
+		{
+			OutTmpl.Texture.BindConstantBuffer = InJson["BindConstantBuffer"].GetString();
 		}
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
@@ -1819,6 +1842,17 @@ namespace MC
 		if (InJson.HasMember(ExposureTxt) && InJson[ExposureTxt].IsBool() && InJson[ExposureTxt].GetBool())
 		{
 			OutTmpl.Resource.bExposure = true;
+		}
+		// Bindless: the buffer asks for a descriptor heap index field of its own, declared in the
+		// constant buffer it names. Both are recorded exactly as declared; the engine decides from
+		// the target whether the field is emitted, and the reflection reports both either way.
+		if (InJson.HasMember("PreferBindless") && InJson["PreferBindless"].IsBool() && InJson["PreferBindless"].GetBool())
+		{
+			OutTmpl.Resource.bPreferBindless = true;
+		}
+		if (InJson.HasMember("BindConstantBuffer") && InJson["BindConstantBuffer"].IsString())
+		{
+			OutTmpl.Resource.BindConstantBuffer = InJson["BindConstantBuffer"].GetString();
 		}
 
 		if (!ParseConditionField(InJson, OutTmpl.Condition))
@@ -2639,14 +2673,14 @@ namespace MC
 		{
 			int NumRootConstantCBuffers = 0;
 			std::string RootConstantCBufferNames = "";
-			for (const auto& IterCBuffer : FinalBindings.CBuffers)
+			for (const auto& RootConstantCandidate : FinalBindings.CBuffers)
 			{
-				if (!IterCBuffer.bRootConstant)
+				if (!RootConstantCandidate.bRootConstant)
 				{
 					continue;
 				}
 				NumRootConstantCBuffers++;
-				RootConstantCBufferNames += ((RootConstantCBufferNames.empty() ? "" : ", ") + IterCBuffer.Name);
+				RootConstantCBufferNames += ((RootConstantCBufferNames.empty() ? "" : ", ") + RootConstantCandidate.Name);
 			}
 			if (NumRootConstantCBuffers > 1)
 			{
@@ -2656,6 +2690,118 @@ namespace MC
 			if (NumRootConstantCBuffers == 1)
 			{
 				MCLog.Info("ParseShader '" + Shader.Name + "' root constant buffer: " + RootConstantCBufferNames);
+			}
+		}
+
+		// Bindless index fields. A resource that declares 'PreferBindless' gets a descriptor heap
+		// index of its own, and that index has to be a constant buffer member: the engine writes it
+		// and the reflection reports it, which is what makes the field visible to both sides. The
+		// declared buffer is resolved here because this is the first point where the whole component
+		// chain is merged, and the declaration is validated on every target - a declaration that
+		// cannot be honoured is a source error - while the field itself is only emitted for a build
+		// whose target can express the path.
+		{
+			const bool bBindlessCompiledShader = InLoadParam.bSM66;
+
+			auto EmitBindlessIndexField = [&MCLog, &Shader, &FinalBindings, bBindlessCompiledShader](const std::string& InKindName
+				, const std::string& InResourceName, const bool InPreferBindless, const std::string& InBindConstantBufferName)->bool
+			{
+				if (!InPreferBindless)
+				{
+					return true;
+				}
+				const std::string Where = (InKindName + " '" + InResourceName + "'");
+				if (InBindConstantBufferName.empty())
+				{
+					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " declares 'PreferBindless' without 'BindConstantBuffer'");
+					return false;
+				}
+
+				MCConstantBuffer* IndexConstantBuffer = nullptr;
+				for (auto& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
+				{
+					if (IndexCandidateConstantBuffer.Name == InBindConstantBufferName)
+					{
+						IndexConstantBuffer = &IndexCandidateConstantBuffer;
+						break;
+					}
+				}
+				if (IndexConstantBuffer == nullptr)
+				{
+					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " names 'BindConstantBuffer' = '" + InBindConstantBufferName + "', which this stage does not declare");
+					return false;
+				}
+				if (IndexConstantBuffer->bRootConstant)
+				{
+					// The engine pushes the root constant block itself, per draw, so an index the
+					// material owns has no place inside it.
+					MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " names the root constant buffer '" + IndexConstantBuffer->Name + "' as its index buffer");
+					return false;
+				}
+				if (!bBindlessCompiledShader)
+				{
+					// Declared, but this target cannot express the path: the reflection reports
+					// Bindless = false for the resource and the shader keeps using its register slot,
+					// so a build for an earlier shader model stays correct rather than half switched.
+					MCLog.Info("ParseShader '" + Shader.Name + "' " + Where + " declares 'PreferBindless' but the target cannot express it, so its register slot is kept");
+					return true;
+				}
+
+				MCVariableInput IndexField;
+				IndexField.Name = (InResourceName + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX);
+				IndexField.Format.Prefix = MCVarFormatPrefixType::Var_Uint;
+				IndexField.Format.Suffix = MCVarFormatSuffixType::Var_1;
+				IndexField.Default.assign(1u, 0u);
+				IndexField.bExposure = false;
+				for (const auto& IterField : IndexConstantBuffer->Fields)
+				{
+					if (IterField.Name == IndexField.Name)
+					{
+						MCLog.Error("ParseShader '" + Shader.Name + "' " + Where + " needs the index field '" + IndexField.Name + "' in '" + IndexConstantBuffer->Name + "', which already declares a field with that name");
+						return false;
+					}
+				}
+
+				const std::string IndexFieldName = IndexField.Name;
+				IndexConstantBuffer->Fields.emplace_back(std::move(IndexField));
+				MCLog.Info("ParseShader '" + Shader.Name + "' " + Where + " indexes the descriptor heap through '" + IndexConstantBuffer->Name + "." + IndexFieldName + "'");
+				return true;
+			};
+
+			for (const auto& Texture : FinalBindings.Textures)
+			{
+				if (!EmitBindlessIndexField("texture", Texture.Name, Texture.bPreferBindless, Texture.BindConstantBuffer))
+				{
+					return false;
+				}
+			}
+			for (const auto& Resource : FinalBindings.Resources)
+			{
+				if (!EmitBindlessIndexField("resource", Resource.Name, Resource.bPreferBindless, Resource.BindConstantBuffer))
+				{
+					return false;
+				}
+			}
+			for (const auto& Texture : FinalBindings.RWTextures)
+			{
+				if (!EmitBindlessIndexField("rw texture", Texture.Name, Texture.bPreferBindless, Texture.BindConstantBuffer))
+				{
+					return false;
+				}
+			}
+			for (const auto& Resource : FinalBindings.RWResources)
+			{
+				if (!EmitBindlessIndexField("rw resource", Resource.Name, Resource.bPreferBindless, Resource.BindConstantBuffer))
+				{
+					return false;
+				}
+			}
+			for (const auto& Sampler : FinalBindings.TexSamplers)
+			{
+				if (!EmitBindlessIndexField("sampler", Sampler.Name, Sampler.bPreferBindless, Sampler.BindConstantBuffer))
+				{
+					return false;
+				}
 			}
 		}
 
@@ -2703,20 +2849,20 @@ namespace MC
 
 		{
 			std::string Header = "\n";
-			for (const auto& IterCBuffer : FinalBindings.CBuffers)
+			for (const auto& IndexCandidateConstantBuffer : FinalBindings.CBuffers)
 			{
-				Header += "cbuffer " + IterCBuffer.Name + " : register(b" + std::to_string(IterCBuffer.Slot) + ")\n{\n";
-				for (const auto& Field : IterCBuffer.Fields)
+				Header += "cbuffer " + IndexCandidateConstantBuffer.Name + " : register(b" + std::to_string(IndexCandidateConstantBuffer.Slot) + ")\n{\n";
+				for (const auto& Field : IndexCandidateConstantBuffer.Fields)
 				{
 					std::string FieldPrefixStr, FieldSuffixStr;
 					if (!ParseVariableFormatPrefixEnum(Field.Format.Prefix, FieldPrefixStr))
 					{
-						MCLog.Error("ParseShader Resource '" + IterCBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Field.Format.Prefix)));
+						MCLog.Error("ParseShader Resource '" + IndexCandidateConstantBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatPrefix Enum=" + std::to_string(static_cast<int>(Field.Format.Prefix)));
 						return false;
 					}
 					if (!ParseVariableFormatSuffixEnum(Field.Format.Suffix, FieldSuffixStr))
 					{
-						MCLog.Error("ParseShader Resource '" + IterCBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Field.Format.Suffix)));
+						MCLog.Error("ParseShader Resource '" + IndexCandidateConstantBuffer.Name + "' ConstantBuffer '" + Field.Name + "' unknown FormatSuffix Enum=" + std::to_string(static_cast<int>(Field.Format.Suffix)));
 						return false;
 					}
 					Header += "\t" + FieldPrefixStr + FieldSuffixStr + " " + Field.Name;
@@ -2729,6 +2875,174 @@ namespace MC
 				Header += "};\n";
 			}
 			Header += "\n";
+
+			// Whether this compilation took the bindless path at all. The library needs to know,
+			// because the access functions that carry a heap index cannot even be parsed by every
+			// compiler the engine targets - a 5.0 build gets the register path, written out without
+			// them - so the flag is emitted before every binding name and every declaration.
+			Header += ("#define PE_BINDLESS_COMPILED " + std::string((InLoadParam.bSM66) ? "1" : "0") + "\n\n");
+
+			// One access name per declared resource, so no shader ever spells the index suffix and one
+			// source serves both paths: a resource this build made index driven resolves to its heap
+			// index cast to the type the JSON declared, everything else resolves to itself. The cast
+			// macro names and their argument order are the contract with ShaderBindless.hlsl.
+			{
+				auto MakeTextureCastMacroName = [](MCTextureType InType)->std::string
+				{
+					switch (InType)
+					{
+					case MCTextureType::Tex_1D:			return "PE_BINDLESS_TEX1D_CAST";
+					case MCTextureType::Tex_2D:			return "PE_BINDLESS_TEX2D_CAST";
+					case MCTextureType::Tex_3D:			return "PE_BINDLESS_TEX3D_CAST";
+					case MCTextureType::Tex_Cube:		return "PE_BINDLESS_TEXCUBE_CAST";
+					case MCTextureType::Tex_2DArray:	return "PE_BINDLESS_TEX2DARRAY_CAST";
+					default:							return "";
+					}
+				};
+				auto MakeResourceCastMacroName = [](MCShaderResourceType InType)->std::string
+				{
+					switch (InType)
+					{
+					case MCShaderResourceType::Buff_Buffer:				return "PE_BINDLESS_BUFFER_CAST";
+					case MCShaderResourceType::Buff_StructuredBuffer:	return "PE_BINDLESS_STRUCTURED_BUFFER_CAST";
+					case MCShaderResourceType::Buff_ByteAddressBuffer:	return "PE_BINDLESS_BYTE_ADDRESS_BUFFER_CAST";
+					default:											return "";
+					}
+				};
+				// The element type as HLSL spells it, from the declared format. It is what makes the
+				// access match the declaration instead of a type guessed here.
+				auto MakeFormatTypeToken = [](const MCVarFormat& InFormat, std::string& OutTypeToken)->bool
+				{
+					std::string PrefixStr, SuffixStr;
+					if (!ParseVariableFormatPrefixEnum(InFormat.Prefix, PrefixStr))
+					{
+						return false;
+					}
+					if (!ParseVariableFormatSuffixEnum(InFormat.Suffix, SuffixStr))
+					{
+						return false;
+					}
+					OutTypeToken = (PrefixStr + SuffixStr);
+					return true;
+				};
+				auto AppendBindingMacro = [&Header, &InLoadParam](const std::string& InResourceName
+					, const bool InPreferBindless, const std::string& InCastExpression)->void
+				{
+					Header += ("#define PE_BINDING_" + InResourceName + " ");
+					if (InPreferBindless && InLoadParam.bSM66)
+					{
+						Header += InCastExpression;
+					}
+					else
+					{
+						Header += InResourceName;
+					}
+					Header += "\n";
+				};
+				// A bindless declaration is only usable when its type has a cast macro and the JSON
+				// said what the element type is; either missing is a source error, not a shader that
+				// silently reads the wrong thing.
+				auto EmitTextureBinding = [&MCLog, &Shader, &InLoadParam, &MakeTextureCastMacroName
+					, &MakeFormatTypeToken, &AppendBindingMacro](const std::string& InKindName, const MCTexture& InTexture)->bool
+				{
+					if (!(InTexture.bPreferBindless && InLoadParam.bSM66))
+					{
+						AppendBindingMacro(InTexture.Name, false, "");
+						return true;
+					}
+					const std::string CastMacroName = MakeTextureCastMacroName(InTexture.Type);
+					if (CastMacroName.empty())
+					{
+						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InTexture.Name + "' cannot be index driven: ShaderBindless.hlsl declares no cast macro for its type");
+						return false;
+					}
+					std::string TypeToken;
+					if (!MakeFormatTypeToken(InTexture.Format, TypeToken))
+					{
+						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + "'" + InTexture.Name + "' cannot be index driven: its declared format does not name an HLSL type");
+						return false;
+					}
+					AppendBindingMacro(InTexture.Name, true
+						, (CastMacroName + "(" + TypeToken + ", " + InTexture.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
+					return true;
+				};
+				auto EmitResourceBinding = [&MCLog, &Shader, &InLoadParam, &MakeResourceCastMacroName
+					, &MakeFormatTypeToken, &AppendBindingMacro](const std::string& InKindName, const MCShaderResource& InResource)->bool
+				{
+					if (!(InResource.bPreferBindless && InLoadParam.bSM66))
+					{
+						AppendBindingMacro(InResource.Name, false, "");
+						return true;
+					}
+					const std::string CastMacroName = MakeResourceCastMacroName(InResource.Type);
+					if (CastMacroName.empty())
+					{
+						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InResource.Name + "' cannot be index driven: ShaderBindless.hlsl declares no cast macro for its type");
+						return false;
+					}
+					// A byte address buffer carries no element type, every other kind takes one: the
+					// generated struct for a struct element, the declared element format otherwise.
+					if (InResource.Type == MCShaderResourceType::Buff_ByteAddressBuffer)
+					{
+						AppendBindingMacro(InResource.Name, true
+							, (CastMacroName + "(" + InResource.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
+						return true;
+					}
+					std::string TypeTokenForBuffer;
+					if (InResource.bHasStruct)
+					{
+						TypeTokenForBuffer = (InResource.Name + "_Struct");
+					}
+					else if (!MakeFormatTypeToken(InResource.ElemFmt, TypeTokenForBuffer))
+					{
+						MCLog.Error("ParseShader '" + Shader.Name + "' " + InKindName + " '" + InResource.Name + "' cannot be index driven: its declared element format does not name an HLSL type");
+						return false;
+					}
+					AppendBindingMacro(InResource.Name, true
+						, (CastMacroName + "(" + TypeTokenForBuffer + ", " + InResource.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
+					return true;
+				};
+
+				for (const auto& Texture : FinalBindings.Textures)
+				{
+					if (!EmitTextureBinding("texture", Texture))
+					{
+						return false;
+					}
+				}
+				for (const auto& Texture : FinalBindings.RWTextures)
+				{
+					if (!EmitTextureBinding("rw texture", Texture))
+					{
+						return false;
+					}
+				}
+				for (const auto& Resource : FinalBindings.Resources)
+				{
+					if (!EmitResourceBinding("resource", Resource))
+					{
+						return false;
+					}
+				}
+				for (const auto& Resource : FinalBindings.RWResources)
+				{
+					if (!EmitResourceBinding("rw resource", Resource))
+					{
+						return false;
+					}
+				}
+				for (const auto& Sampler : FinalBindings.TexSamplers)
+				{
+					AppendBindingMacro(Sampler.Name, Sampler.bPreferBindless
+						, ("PE_BINDLESS_SAMPLER_CAST(" + Sampler.Name + "_" + MC_SHADER_BINDLESS_INDEX_SUFFIX + ")"));
+				}
+			}
+
+			// Slot space needs no check here, and that is a property rather than an omission:
+			// CombineShaderBindings assigns every texture, buffer and sampler of a stage a sequential
+			// slot in declaration order, with textures and buffers of one direction sharing one
+			// offset, so two declarations cannot land on the same slot. A 'Slot' the JSON declares is
+			// nominal - that assignment overwrites it.
 			auto ProcessResourceBindings = [&MCLog, &Header](const std::string& InTypePrefixStr, const std::string& InShaderTypePrefixStr, const std::vector<MCTexture>& InTexArr, const std::vector<MCShaderResource>& InResArr)->bool
 			{
 				for (const auto& Tex : InTexArr)
@@ -2990,7 +3304,12 @@ namespace MC
 				ReflectionDoc.AddMember("CBuffers", CBArray, ReflectionAllocator);
 			}
 
-			auto ParseReflectionTexture = [&MCLog, &ReflectionAllocator](const std::string& InPrefixStr, const MCTexture& InTex, rapidjson::Value& OutObj)->bool
+			// Whether this compilation took the bindless path at all. It is the deterministic half
+			// of the pair the reflection reports: the declared flag is what the author asked for,
+			// this is what the compiled stage actually carries, and it is false whenever the target
+			// could not express the path - a 5.0 or 6.0 build of a resource that asked for it.
+			const bool bBindlessCompiled = InLoadParam.bSM66;
+			auto ParseReflectionTexture = [&MCLog, &ReflectionAllocator, bBindlessCompiled](const std::string& InPrefixStr, const MCTexture& InTex, rapidjson::Value& OutObj)->bool
 			{
 				OutObj.AddMember("Name", rapidjson::Value(InTex.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
 				std::string FormatPrefixStr;
@@ -3017,6 +3336,13 @@ namespace MC
 				OutObj.AddMember("Slot", InTex.Slot, ReflectionAllocator);
 				OutObj.AddMember("Sampler", rapidjson::Value(InTex.SamplerName.c_str(), ReflectionAllocator), ReflectionAllocator);
 				OutObj.AddMember("Exposure", InTex.bExposure, ReflectionAllocator);
+				// Bindless, reported twice on purpose: PreferBindless is what the resource declared,
+				// Bindless is what this compilation did with it. The runtime reads the second one -
+				// it needs no inference and no culled flag, and a build whose target cannot express
+				// the path simply reports false and stays runnable.
+				OutObj.AddMember("PreferBindless", InTex.bPreferBindless, ReflectionAllocator);
+				OutObj.AddMember("Bindless", (InTex.bPreferBindless && bBindlessCompiled), ReflectionAllocator);
+				OutObj.AddMember("BindConstantBuffer", rapidjson::Value(InTex.BindConstantBuffer.c_str(), ReflectionAllocator), ReflectionAllocator);
 				OutObj.AddMember("CompilerCulled", false, ReflectionAllocator);
 				return true;
 			};
@@ -3037,7 +3363,7 @@ namespace MC
 				ReflectionDoc.AddMember("Textures", TexArray, ReflectionAllocator);
 			}
 
-			auto ParseReflectionResource = [&MCLog, &ReflectionAllocator, &ParseReflectionVariableInput](const std::string& InPrefixStr, const MCShaderResource& InRes, rapidjson::Value& OutObj)->bool
+			auto ParseReflectionResource = [&MCLog, &ReflectionAllocator, &ParseReflectionVariableInput, bBindlessCompiled](const std::string& InPrefixStr, const MCShaderResource& InRes, rapidjson::Value& OutObj)->bool
 			{
 				OutObj.AddMember("Name", rapidjson::Value(InRes.Name.c_str(), ReflectionAllocator), ReflectionAllocator);
 				std::string ResTypeStr;
@@ -3092,6 +3418,11 @@ namespace MC
 					}
 				}
 				OutObj.AddMember("Exposure", InRes.bExposure, ReflectionAllocator);
+				// Bindless: see ParseReflectionTexture. The declared flag and the effective one are
+				// both reported, and the runtime reads the effective one.
+				OutObj.AddMember("PreferBindless", InRes.bPreferBindless, ReflectionAllocator);
+				OutObj.AddMember("Bindless", (InRes.bPreferBindless && bBindlessCompiled), ReflectionAllocator);
+				OutObj.AddMember("BindConstantBuffer", rapidjson::Value(InRes.BindConstantBuffer.c_str(), ReflectionAllocator), ReflectionAllocator);
 				OutObj.AddMember("CompilerCulled", false, ReflectionAllocator);
 				return true;
 			};
@@ -3167,6 +3498,12 @@ namespace MC
 					}
 					SamplerObj.AddMember("BorderColor", BorderColorArray, ReflectionAllocator);
 					SamplerObj.AddMember("CompilerCulled", false, ReflectionAllocator);
+					// Bindless: a sampler that declares it is index driven like a resource, and the
+					// ones that do not are the static samplers the tables still carry. The runtime
+					// reads the effective flag, exactly as it does for a texture or a buffer.
+					SamplerObj.AddMember("PreferBindless", Sampler.bPreferBindless, ReflectionAllocator);
+					SamplerObj.AddMember("Bindless", (Sampler.bPreferBindless && bBindlessCompiled), ReflectionAllocator);
+					SamplerObj.AddMember("BindConstantBuffer", rapidjson::Value(Sampler.BindConstantBuffer.c_str(), ReflectionAllocator), ReflectionAllocator);
 					SamplerArray.PushBack(SamplerObj, ReflectionAllocator);
 				}
 				ReflectionDoc.AddMember("Samplers", SamplerArray, ReflectionAllocator);

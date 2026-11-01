@@ -4,6 +4,7 @@
 #include <RHI/IRRHIDevice.h>
 #include <RHI/IRRHIResource.h>
 #include <Shader/ShaderAssetBinding.h>
+#include <Shader/ShaderRenderTraits.h>
 #include <ShaderAsset/ShaderProgram.h>
 #include <Editor/EditorLogManager.h>
 
@@ -113,6 +114,9 @@ namespace PigeonEngine
 		// The parameter layout is part of the pipeline: two descs on the same program always
 		// share it, and including it keeps the key honest if a program is ever laid out twice.
 		HashCombine(InLayoutHash);
+		// The stage mask decides whether the built pipeline carries a pixel shader, so a desc
+		// that names the same program with and without that stage must not share an entry.
+		HashCombine(static_cast<UINT64>(InDesc.StageMask));
 
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.CullMode));
 		HashCombine(static_cast<UINT64>(InDesc.Rasterizer.FillMode));
@@ -172,6 +176,18 @@ namespace PigeonEngine
 		return Hash;
 	}
 
+	void RPipelineStateCache::ApplyMaterialRenderTraits(const EShaderRenderTraits& InTraits, RGraphicsPipelineStateDesc& InOutDesc)
+	{
+		if (InTraits.bTwoSided != FALSE)
+		{
+			// Both windings belong to a two sided surface, so neither may be discarded. Assigning
+			// rather than testing the pass's own mode leaves a pass that already states CULL_NONE
+			// exactly as it is, and the pass table stays a description of the pass rather than a
+			// table of per material exceptions.
+			InOutDesc.Rasterizer.CullMode = RCullModeType::CULL_NONE;
+		}
+	}
+
 	IRRHIPipelineState* RPipelineStateCache::GetOrCreateGraphics(const RGraphicsPipelineStateDesc& InDesc)
 	{
 		if ((!Device) || (!InDesc.Program))
@@ -193,7 +209,7 @@ namespace PigeonEngine
 		}
 
 		RRHIGraphicsPipelineDesc RHIDesc;
-		if (!FillGraphicsPipelineShaders(*InDesc.Program, RHIDesc))
+		if (!FillGraphicsPipelineShaders(*InDesc.Program, InDesc.StageMask, RHIDesc))
 		{
 			// The program is missing a stage the pipeline needs. The caller has nothing to draw
 			// with, so this is a refusal rather than an empty pipeline state.
@@ -203,6 +219,7 @@ namespace PigeonEngine
 		// the object it hands back carries the zero layout and no native signature, and the device
 		// substitutes its own, which is what a null here would mean too.
 		RHIDesc.RootSignature = Layout->RootSignature;
+		RHIDesc.StageMask = InDesc.StageMask;
 		RHIDesc.Rasterizer = InDesc.Rasterizer;
 		RHIDesc.Blend = InDesc.Blend;
 		RHIDesc.Depth = InDesc.Depth;

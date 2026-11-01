@@ -366,9 +366,22 @@ namespace PigeonEngine
 		// ---- Turn the union into a root parameter list. ----
 		RRHIRootSignatureDesc Desc;
 		Desc.bAllowInputAssembler = bHasVertexStage;
-		// A bindless variant indexes the descriptor heaps directly, so it gets the flags but no
-		// tables at all (see RRHIRootSignatureDesc::bHeapDirectlyIndexed).
-		Desc.bHeapDirectlyIndexed = InProgram.IsBindlessVariant();
+		// A stage is bindless when the compiler index drove at least one of its resources, which is
+		// what each stage's binding plan records from its reflection: a bindless stage's signature
+		// carries the heap flags. The tables are still built (see below): the flags permit direct
+		// indexing, they do not replace the tables, and a program that mixes resources indexing the
+		// heap with resources staying register bound needs both.
+		BOOL32 bHeapDirectlyIndexed = FALSE;
+		for (UINT32 StageIndex = 0u, StageNum = InProgram.GetStageEntryNum(); StageIndex < StageNum; StageIndex++)
+		{
+			const EShaderStageEntry* StageEntry = InProgram.GetStageEntryByIndex(StageIndex);
+			if ((StageEntry) && (StageEntry->BindingPlan.IsBindless()))
+			{
+				bHeapDirectlyIndexed = TRUE;
+				break;
+			}
+		}
+		Desc.bHeapDirectlyIndexed = bHeapDirectlyIndexed;
 
 		FLayoutRootIndices Roots;
 		UINT32 RootCost = 0u;
@@ -413,31 +426,31 @@ namespace PigeonEngine
 			Desc.Parameters.Add(Parameter);
 		}
 
-		// Descriptor tables last.
-		if (!Desc.bHeapDirectlyIndexed)
+		// Descriptor tables last. They are built for every program, bindless or not, because the
+		// heap flags only permit direct indexing: a resource that stays register bound is still
+		// bound through its table, and the sampler tables in particular serve the samplers that
+		// are deliberately not index driven.
+		for (UINT32 TableIndex = 0u; TableIndex < LAYOUT_TABLE_COUNT; TableIndex++)
 		{
-			for (UINT32 TableIndex = 0u; TableIndex < LAYOUT_TABLE_COUNT; TableIndex++)
+			const FLayoutTableSlot& Table = Tables[TableIndex];
+			if (!Table.bUsed)
 			{
-				const FLayoutTableSlot& Table = Tables[TableIndex];
-				if (!Table.bUsed)
-				{
-					continue;
-				}
-
-				RRHIRootParameterDesc Parameter;
-				Parameter.Type = ERHIRootParameterType::RHI_ROOT_PARAMETER_TABLE;
-				Parameter.Range.Type = TranslateTableKind(static_cast<ELayoutTableKind>(TableIndex));
-				// A table that starts at register 0 and is as wide as the highest register used
-				// is what makes a resource's offset inside it equal to its register slot.
-				Parameter.Range.BaseShaderRegister = 0u;
-				Parameter.Range.RegisterSpace = 0u;
-				Parameter.Range.NumDescriptors = (Table.MaxSlot + 1u);
-				TranslateStageMaskVisibility(Table.StageMask, Parameter.Visibility);
-
-				Roots.TableRoot[TableIndex] = Desc.Parameters.Num<UINT32>();
-				RootCost += 1u;
-				Desc.Parameters.Add(Parameter);
+				continue;
 			}
+
+			RRHIRootParameterDesc Parameter;
+			Parameter.Type = ERHIRootParameterType::RHI_ROOT_PARAMETER_TABLE;
+			Parameter.Range.Type = TranslateTableKind(static_cast<ELayoutTableKind>(TableIndex));
+			// A table that starts at register 0 and is as wide as the highest register used
+			// is what makes a resource's offset inside it equal to its register slot.
+			Parameter.Range.BaseShaderRegister = 0u;
+			Parameter.Range.RegisterSpace = 0u;
+			Parameter.Range.NumDescriptors = (Table.MaxSlot + 1u);
+			TranslateStageMaskVisibility(Table.StageMask, Parameter.Visibility);
+
+			Roots.TableRoot[TableIndex] = Desc.Parameters.Num<UINT32>();
+			RootCost += 1u;
+			Desc.Parameters.Add(Parameter);
 		}
 
 		// Root parameter budget. The back-end checks its own limit before creating anything;

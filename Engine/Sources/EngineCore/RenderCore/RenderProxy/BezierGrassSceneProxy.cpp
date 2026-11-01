@@ -21,6 +21,26 @@
 // compiled, no proxy of this class is created, and the renderer no longer calls
 // it. Read the shaders, not this file, when the rebuild starts.
 // ---------------------------------------------------------------------------
+
+// The grass resources are declared by the procedural vertex factory and written by the construct
+// compute pass, so one module owns all of them. The claims stay registered while the proxy below
+// is parked: a rebuilt pass starts from the correct ownership instead of tripping the plan audit.
+namespace PigeonEngine
+{
+	static const FShaderBindingClaim g_BezierGrassBindingClaims[] =
+	{
+		{ EName(PE_TEXT("LandscapeHeightTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("BezierGrassLayerIndexTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("BezierGrassDensityTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("TileShuffleBuffer")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("LayerTypeDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("PackedInstanceDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("DispatchDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("DrawIndirectDatas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_BezierGrassBindingClaims, EName(SHADER_BINDING_SCOPE_BEZIER_GRASS));
+}
+
 #if 0
 namespace PigeonEngine
 {

@@ -52,6 +52,11 @@ namespace PigeonEngine
 		// ran the queued creation and after the instance gave it back.
 		PE_NODISCARD FRenderResourceRef	GetParameterBuffersRef() const { return ParameterBuffersRef; }
 	public:
+		// The traits a draw reads when it builds its pipeline state. Set them before the
+		// instance is handed to a component: the render thread reads them while recording, and a
+		// change made afterwards is picked up on the next draw as a pass slot rebuild. A trait
+		// that differs per user of one material belongs on an owned copy of the instance, not on
+		// the shared one.
 		void	SetTraits(const EShaderRenderTraits& InTraits);
 		void	ResetTraits();
 		void	MarkDirty();

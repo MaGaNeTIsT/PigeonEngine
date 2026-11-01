@@ -6,10 +6,10 @@
 			<Item Name="[Num]" ExcludeView="simple">ElementNum</Item>
 			<Item Name="[Capacity]" ExcludeView="simple">(Allocator.Heap.HeapSize / sizeof($T1))</Item>
 			<Item Name="[Allocator]" ExcludeView="simple">Allocator</Item>
-			<ArrayItem>
+			<ArrayItems>
 				<Size>ElementNum</Size>
-				<ValuePointer>($T1*)Allocator.HeapPtr._Mypair._Myval2</ValuePointer>
-			</ArrayItem>
+				<ValuePointer>($T1*)Allocator.Heap.HeapPtr._Mypair._Myval2</ValuePointer>
+			</ArrayItems>
 		</Expand>
 	</Type>
 </AutoVisualizer>

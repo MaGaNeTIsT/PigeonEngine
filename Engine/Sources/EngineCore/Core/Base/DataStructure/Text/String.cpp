@@ -208,9 +208,18 @@ namespace PigeonEngine
 
 	BOOL32 EString::IsNumeric() const
 	{
-		for(const auto& elem : Str)
+		// Both bounds are inclusive: '0' and '9' are digits. The check this replaces compared
+		// with strict inequalities, which rejected every string containing either of them - so
+		// "0", "10" and "9" were not numeric while "5" was - and that verdict is what AtoI and
+		// AtoF below turn into -1. An empty string is not a number either, and saying so here
+		// keeps those two from reading a digit string that is not there.
+		if (Str.empty())
 		{
-			if(!(elem < '9' && elem > '0'))
+			return FALSE;
+		}
+		for (const auto& elem : Str)
+		{
+			if (!((elem <= '9') && (elem >= '0')))
 			{
 				return FALSE;
 			}

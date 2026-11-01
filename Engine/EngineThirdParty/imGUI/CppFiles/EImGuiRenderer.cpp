@@ -22,6 +22,21 @@
 namespace PigeonEngine
 {
 
+	// The font atlas is the overlay renderer's own binding: it uploads the texture and binds it
+	// directly at the plan's slot in Render(), outside the parameter set path. The claim is what
+	// keeps the plan audit from reading that as a name no C++ module owns.
+	static const FShaderBindingClaim g_ImGuiBindingClaims[] =
+	{
+		{ EName(PE_TEXT("FontTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_ImGuiBindingClaims, EName(SHADER_BINDING_SCOPE_IMGUI));
+
+	// Frames the renderer may spend waiting before the wait is worth saying out loud. A cold start
+	// spends a handful - the material assembly first, then the render thread's device objects for
+	// the stage assets - so the budget only has to be long enough that the normal case never
+	// reaches it, and short enough that a real hang is named while the session is still new.
+	PE_CONSTEXPR_STATIC UINT32 IMGUI_INITIALIZE_PENDING_FRAME_BUDGET = 240u;
+
 	// ----------------------------------------------------------------------
 	// A matrix reaches a constant buffer as it is: the shader side matrix is the
 	// transpose of the cpu matrix, which is what the library's mul(Matrix, Vector)
@@ -57,23 +72,48 @@ namespace PigeonEngine
 	{
 		if (bInitialized) { return TRUE; }
 
+		// Per attempt: whichever step below finds a not-yet state owns the answer.
+		bInitializePending = FALSE;
+
 		if (!LoadImGuiMaterial())
 		{
-			// The overlay is the editor's only output, so a renderer that never comes up is
-			// reported rather than left absent: this runs every frame until it succeeds, and the
-			// report is deduplicated per reason.
+			if (bInitializePending != FALSE)
+			{
+				return NotePendingInitialize();
+			}
+			// Anything else is the renderer never coming up, which is reported: this runs every frame
+			// until it succeeds, and the report is deduplicated per reason.
 			ReportSkippedDraw(EString(PE_TEXT("the ImGui overlay")), EString(PE_TEXT("its renderer could not load the ImGui material")));
 			return FALSE;
 		}
 		if (!BuildPipelineState())
 		{
+			if (bInitializePending != FALSE)
+			{
+				return NotePendingInitialize();
+			}
 			ReportSkippedDraw(EString(PE_TEXT("the ImGui overlay")), EString(PE_TEXT("its renderer could not build the pipeline state")));
 			ReleaseImGuiMaterialInstance();
 			return FALSE;
 		}
 
+		PendingInitializeFrames = 0u;
 		bInitialized = TRUE;
 		return TRUE;
+	}
+
+	BOOL8 EImGuiRenderer::NotePendingInitialize()
+	{
+		PendingInitializeFrames++;
+		if (PendingInitializeFrames == IMGUI_INITIALIZE_PENDING_FRAME_BUDGET)
+		{
+			// Said once, and only when the wait has stopped looking like a wait: an assembly or a
+			// stage asset that never arrives would otherwise leave the overlay absent with nothing
+			// in the log to explain it.
+			ReportSkippedDraw(EString(PE_TEXT("the ImGui overlay")), EString(PE_TEXT("its material and pipeline state are still not ready after "))
+				+ ToString(PendingInitializeFrames) + EString(PE_TEXT(" frames")));
+		}
+		return FALSE;
 	}
 
 	void EImGuiRenderer::ShutDown()
@@ -110,9 +150,11 @@ namespace PigeonEngine
 		// The instance is the cache's, so only this renderer's hold on it goes; what was derived from
 		// its program was released above.
 		ReleaseImGuiMaterialInstance();
-		bInitialized          = FALSE;
-		FontTextureSlot       = 0u;
-		LastBoundTextureIndex = 0xFFFFFFFFu;
+		bInitialized			= FALSE;
+		bInitializePending		= FALSE;
+		PendingInitializeFrames	= 0u;
+		FontTextureSlot			= 0u;
+		LastBoundTextureIndex	= 0xFFFFFFFFu;
 	}
 
 	void EImGuiRenderer::ReleaseFontTexture()
@@ -206,6 +248,10 @@ namespace PigeonEngine
 		ImGuiMaterialInstance = REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(Request);
 		if (!ImGuiMaterialInstance)
 		{
+			// Not a failure: the cache answers null while the assembly is still being produced, and
+			// this renderer is loaded lazily and retried every frame. Saying so is what keeps the
+			// caller from reporting a normal cold start as a broken overlay.
+			bInitializePending = TRUE;
 			return FALSE;
 		}
 		const EShaderProgram* Program = ImGuiMaterialInstance->GetProgram();
@@ -309,6 +355,17 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		Pipelines.SetDevice(Device);
+
+		// The stage assets publish their device objects from a command the render thread drains,
+		// so between the assembly finishing and that drain the program is complete while its
+		// shaders are not - and the pipeline state cache answers a missing shader with a silent
+		// null. Asking first is what lets this frame be "not yet" instead of a failed build.
+		if ((ResolveShaderStageResource(*Program, EShaderStageType::SHADER_STAGE_VERTEX) == nullptr)
+			|| (ResolveShaderStageResource(*Program, EShaderStageType::SHADER_STAGE_PIXEL) == nullptr))
+		{
+			bInitializePending = TRUE;
+			return FALSE;
+		}
 
 		// One interleaved ImDrawVert, and its colour is the only element whose data layout
 		// differs from the shader's declaration: four normalized bytes (R8G8B8A8_UNORM,

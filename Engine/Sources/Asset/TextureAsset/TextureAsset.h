@@ -104,6 +104,14 @@ namespace PigeonEngine
 		CLASS_VIRTUAL_COPY_BODY(ETextureCube)
 	};
 
+	// Solid angle weighted mean linear luminance of a cube's six faces, and the mean linear
+	// colour next to it. The cube carries the environment's shape rather than an absolute
+	// brightness, so this is the number a sky light normalizes by before applying its mean
+	// luminance. Walks the CPU payload once, at load. FALSE when the stored format is one this
+	// helper does not decode yet.
+	PE_NODISCARD extern BOOL32	ComputeTextureCubeMeanLinearLuminance(const ETextureCube& InCube
+		, FLOAT& OutLuminance, Color3& OutColor);
+
 	/// <summary>
 	/// A texture type that contains only 1 member. Shader resource view is texture2d.
 	/// </summary>

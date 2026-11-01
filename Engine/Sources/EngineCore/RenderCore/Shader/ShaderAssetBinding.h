@@ -12,6 +12,7 @@ namespace PigeonEngine
 {
 
 	class IRCommandList;
+	class IRRHIDevice;
 	class EShaderInstance;
 	class RShaderParameterBuffers;
 
@@ -35,8 +36,13 @@ namespace PigeonEngine
 
 	// Fills the shader half of a graphics pipeline description: vertex shader, pixel
 	// shader and the input layout the vertex shader was compiled with. Returns FALSE
-	// when either stage is missing so the caller can skip creating the PSO.
-	PE_NODISCARD extern BOOL32	FillGraphicsPipelineShaders(const EShaderProgram& InProgram, RRHIGraphicsPipelineDesc& OutDesc);
+	// when a stage the caller asked for is missing so the caller can skip creating the PSO.
+	//
+	// InStageMask is RGraphicsPipelineStateDesc::STAGE_MASK_*. A pass that draws with no
+	// pixel work (a depth only shadow pass) clears the pixel bit, and the pipeline is built
+	// with a null pixel shader: the rasterizer then skips that stage entirely instead of
+	// running an empty one. The program may still carry a pixel stage; it is simply not used.
+	PE_NODISCARD extern BOOL32	FillGraphicsPipelineShaders(const EShaderProgram& InProgram, UINT32 InStageMask, RRHIGraphicsPipelineDesc& OutDesc);
 	// Compute counterpart of FillGraphicsPipelineShaders.
 	PE_NODISCARD extern BOOL32	FillComputePipelineShader(const EShaderProgram& InProgram, RRHIComputePipelineDesc& OutDesc);
 
@@ -45,8 +51,34 @@ namespace PigeonEngine
 	* compile layer takes one stage per request, so the builder asks for each requested
 	* stage and folds the resulting manifests into one PAsset per shader name.
 	*/
-	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_GRAPHICS	= (1u << 0u) | (1u << 1u);
+	// One bit per EShaderStageType. The compile layer names the stages it needs, and the
+	// publishing entry points below name the stages a publisher feeds, so a mask and a stage
+	// entry line up without a translation table.
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_VERTEX		= (1u << 0u);
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_PIXEL		= (1u << 1u);
 	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_COMPUTE		= (1u << 2u);
+	PE_CONSTEXPR_STATIC UINT32 ENGINE_SHADER_STAGE_MASK_GRAPHICS		= ENGINE_SHADER_STAGE_MASK_VERTEX | ENGINE_SHADER_STAGE_MASK_PIXEL;
+
+	/*
+	* Claim scope names of the modules that publish resource bindings. The scope is the module's
+	* identity in the claim registry, so it is spelled once here and shared by the registration
+	* and the publish call rather than written as a literal at both ends. Modules that own only
+	* constant buffers (the global and view blocks) have no entry: the claim surface is resources.
+	*/
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKY					= PE_TEXT("Sky");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_SH		= PE_TEXT("EnvironmentSH");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER = PE_TEXT("EnvironmentPrefilter");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF		= PE_TEXT("EnvironmentBRDF");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_LIGHTING			= PE_TEXT("Lighting");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SHADOW_MASK		= PE_TEXT("ShadowMask");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_COPY				= PE_TEXT("Copy");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_SKELETAL			= PE_TEXT("Skeletal");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_DEBUG_WIREFRAME	= PE_TEXT("DebugWireframe");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_BEZIER_GRASS		= PE_TEXT("BezierGrass");
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_IMGUI				= PE_TEXT("ImGui");
+	// The material / shader instance publisher. Its bindings are Exposure driven rather than
+	// statically claimed, but a value it does publish and then cannot use is still its defect.
+	PE_CONSTEXPR_STATIC const CHAR* SHADER_BINDING_SCOPE_MATERIAL			= PE_TEXT("Material");
 
 	// Variant the engine internal shaders ship with when the caller has no preference.
 	PE_CONSTEXPR_STATIC const CHAR* ENGINE_SHADER_DEFAULT_VARIANT_NAME = "Base";
@@ -87,10 +119,61 @@ namespace PigeonEngine
 
 	// Binds the resource values of a parameter set through the binding plan: the slot inside
 	// each table comes from the plan, never from the reflection directly, so a resource and the
-	// pipeline state it is bound for cannot disagree. A resource the set holds no value for is
-	// skipped, so a previously bound view stays where it is.
+	// pipeline state it is bound for cannot disagree. A resource the set holds no value for binds
+	// the engine default when the plan resolved it as exposed, reports it when this scope is its
+	// single claimant, and otherwise leaves the previous view in place.
 	extern void	BindShaderParameterResources(IRCommandList* InCommandList, const EShaderParameterSet& InParameters
-		, const EShaderBindingPlan& InBindingPlan, const ERHIShaderStage InStage);
+		, const EShaderBindingPlan& InBindingPlan, const ERHIShaderStage InStage, const EName& InScopeName);
+
+	/*
+	* Publishing: the one place that makes a parameter set reachable by a program.
+	*
+	* Two shapes, because a publisher owns either both halves or only one:
+	*
+	*   PublishShaderParameters  the publisher owns the set's constant buffers and its resources
+	*                            (a material, an instance). Resolves the descriptor heap index of
+	*                            every index driven resource, uploads the blocks, then binds both
+	*                            through the plan of each stage InStageMask selects.
+	*   BindShaderResources      the publisher owns resources only (the sky's cube, the lighting
+	*                            pass's targets, the skeletal bones). Binds them, and refuses a
+	*                            set that publishes an index driven resource: an index is a
+	*                            constant buffer value, and a publisher with no blocks has
+	*                            nowhere to carry it.
+	*
+	* Ordering is the contract, not a convention. The index of an index driven resource travels as
+	* a member of the constant buffer the resource named, so it has to be inside the bytes that
+	* upload. That is why resolving it cannot be a separate step a caller could order after the
+	* upload, and why these exist as one call each rather than as three.
+	*
+	* InStageMask is one bit per EShaderStageType (ENGINE_SHADER_STAGE_MASK_GRAPHICS / _COMPUTE).
+	* A stage the program does not carry, or that the mask leaves out, is skipped.
+	*
+	* InScopeName is the module identity of the publisher. A binding's plan entry carries the
+	* three-state claim resolution (see ShaderBindingPlan.h): a claimed binding is reported as
+	* missing only when this scope is its single claimant, an exposed binding falls back to the
+	* engine default resource and stays silent, and an unclaimed binding was already reported at
+	* plan build. A module that owns no resource bindings - the global and view blocks are
+	* constant buffers only - therefore needs no claim table at all.
+	*
+	* FALSE means an index could not be produced or published - the target cannot express the
+	* heap path, the device refused the allocation, or the set publishes an index driven resource
+	* it cannot carry an index for. The caller may treat that as a draw worth skipping. A program
+	* with nothing index driven publishes nothing and answers TRUE.
+	*/
+	PE_NODISCARD extern BOOL32	PublishShaderParameters(IRCommandList* InCommandList, IRRHIDevice* InRenderDevice
+		, EShaderParameterSet& InOutParameters, RShaderParameterBuffers& InOutBuffers
+		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName);
+	// The result is advisory: a failure has already been logged by name where it was detected, so
+	// a caller that cannot act on it may ignore it. Only a caller that is able to skip its draw
+	// has a reason to look.
+	extern BOOL32	BindShaderResources(IRCommandList* InCommandList
+		, const EShaderParameterSet& InParameters, const EShaderProgram& InProgram, const UINT32 InStageMask
+		, const EName& InScopeName);
+	// The same for a publisher that already holds one stage's plan rather than the program - the
+	// debug wireframe's per primitive instance buffers arrive that way.
+	extern BOOL32	BindShaderResources(IRCommandList* InCommandList
+		, const EShaderParameterSet& InParameters, const EShaderBindingPlan& InBindingPlan, const ERHIShaderStage InStage
+		, const EName& InScopeName);
 
 	// TRUE when the stage entry carries a usable reflection. Programs loaded from a
 	// stage asset that failed to parse reflection report FALSE.

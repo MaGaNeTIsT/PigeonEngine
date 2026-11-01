@@ -11,10 +11,10 @@ namespace PigeonEngine
 	public:
 		void Initialize() override;
 		void ShutDown() override;
-		void DrawResolutionPanel();
+		void DrawDisplaySettings();
 	private:
-		INT32  m_SelectedResolutionIndex = 0;
-		BOOL32 m_bIsFullscreen = FALSE;
+		INT32	SelectedResolutionIndex	= 0;
+		BOOL32	bIsFullscreen			= FALSE;
 	};
 #endif
 };

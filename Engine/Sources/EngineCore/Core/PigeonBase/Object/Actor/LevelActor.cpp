@@ -1,5 +1,6 @@
 #include "LevelActor.h"
 #include <Base/Timer/Timer.h>
+#include <Demo/SponzaScene.h>
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
@@ -29,6 +30,21 @@
 
 namespace PigeonEngine
 {
+	// The demo's material, named by the path of its own folder. A material that lives in a folder is
+	// asked for that way, and the builder resolves the json named after that folder
+	// (Projects/Demo/M_DemoUnlit/M_DemoUnlit.json): the json, the hlsl and the textures of one
+	// material stay in one directory.
+	PE_CONSTEXPR_STATIC const CHAR* MATERIAL_DEMO_FOLDER			= "Projects/Demo/M_DemoUnlit";
+	// The emission map the material samples, imported from its own folder on first use. The file
+	// name is the asset's identity, which is why it carries the material's name, and the file has
+	// to be a format the importer's WIC codecs understand (see BindMaterialDemoTexture).
+	PE_CONSTEXPR_STATIC const CHAR* MATERIAL_DEMO_EMISSIVE_ASSET	= "M_DemoUnlit_Emissive";
+	// The material's own names as the shader side declares them: the block its parameters live in
+	// and the texture it reads. They are the compiler's vocabulary, so the demo spells exactly what
+	// the material json declared.
+	PE_CONSTEXPR_STATIC const CHAR* MATERIAL_DEMO_BLOCK				= "MaterialParams";
+	PE_CONSTEXPR_STATIC const CHAR* MATERIAL_DEMO_EMISSIVE_TEXTURE	= "EmissiveMap";
+
 	/*
 	* The MaterialDemo material. The job builder generates and compiles the stage sources of
 	* (material x program x vertex axis), then the instance holds the values; the component keeps
@@ -48,13 +64,17 @@ namespace PigeonEngine
 		}
 
 		OutRequest = EShaderAssemblyRequest();
-		OutRequest.ShaderName = EName(PE_TEXT("M_EngineDefaultLit"));
-		OutRequest.MaterialName = EString(PE_TEXT("M_EngineDefaultLit"));
+		// The asset is named after the material, the request is named by the material's folder: two
+		// namespaces, one material. The shader name is what the compiled asset is stored and looked
+		// up under, the material name is what the builder resolves the source files from.
+		OutRequest.ShaderName = EName(PE_TEXT("M_DemoUnlit"));
+		OutRequest.MaterialName = EString(PE_TEXT(MATERIAL_DEMO_FOLDER));
 		OutRequest.ProgramName = EName(PE_TEXT("BasePass"));
 		OutRequest.VertexFactory = VertexFactory;
 		OutRequest.Profile = Profile;
 		return TRUE;
 	}
+
 	/*
 	* Any thread: the instance for the demo material when it is already assembled, otherwise null
 	* after recording one assembly request for the load thread - the caller asks again on its next
@@ -78,13 +98,70 @@ namespace PigeonEngine
 	* that import as part of serving the request, so nothing here touches the disk on a frame - which
 	* is the whole reason the demo asks for its assets instead of loading them.
 	*/
-	static FAssetImportSource MakeImportSource(const EString& InImportPath, const EString& InImportName, const EString& InImportFileType)
+	static FAssetImportSource MakeImportSource(const EString& InImportPath, const EString& InImportName, const EString& InImportFileType
+		, const BOOL32 InIsFallbackSRGB = FALSE)
 	{
 		FAssetImportSource ImportSource;
 		ImportSource.ImportPath = InImportPath;
 		ImportSource.ImportName = InImportName;
 		ImportSource.ImportFileType = InImportFileType;
+		// Answers only for an image that declares no colour space of its own: a colour map wants
+		// sRGB, a data map (roughness, a height) wants linear, and the importer cannot tell a
+		// colour map from a data map by looking at the file.
+		ImportSource.bFallbackSRGB = InIsFallbackSRGB;
 		return ImportSource;
+	}
+
+	/*
+	* The demo material's base colour texture, published into the instance's parameter set before
+	* anything draws with that instance.
+	*
+	* Asked for rather than loaded, like every other asset here: the first call records a request
+	* that imports the tga in the material's own folder on the load thread, and the caller tries
+	* again on its next tick. The value goes into the parameter set because that is where a
+	* material's runtime resources live - the render side reads them when it binds the material, and
+	* a bindless build turns this texture into the descriptor heap index the material's constant
+	* buffer carries.
+	*
+	* Ordering is what makes this safe: it runs before the instance is handed to a component, so the
+	* set is never written while a draw reads it.
+	*/
+	static BOOL32 BindMaterialDemoTexture(const EShaderInstance* InInstance)
+	{
+		if (!InInstance)
+		{
+			return FALSE;
+		}
+		// The importer reads the image through WIC, whose built-in codecs cover jpg and png but not
+		// tga: the file in the material's folder has to be one of those, and the same name is what
+		// the asset ends up stored under.
+		//
+		// The fallback colour space stays linear, and that is a decision rather than an omission:
+		// this map is the shape of an emission, not a colour to be displayed. The material states
+		// the emission in physical units and the map only scales it, so a texel is a 0..1 level -
+		// and a WIC export carries no colour space of its own for the importer to read anyway.
+		const FAssetImportSource ImportSource = MakeImportSource(
+			EString(EBaseSettings::ENGINE_SHADER_SOURCE_DIRECTORY) + EString(PE_TEXT(MATERIAL_DEMO_FOLDER)) + EString(PE_TEXT("/"))
+			, EString(PE_TEXT(MATERIAL_DEMO_EMISSIVE_ASSET)), EString(PE_TEXT("jpg")), FALSE);
+		const ETexture2DAsset* TextureAsset = nullptr;
+		if (!ETextureAssetManager::GetManagerSingleton()->RequireLoadTexture2DAsset(
+			EBaseSettings::ENGINE_TEXTURE_PATH, EString(PE_TEXT(MATERIAL_DEMO_EMISSIVE_ASSET)), TextureAsset, &ImportSource))
+		{
+			return FALSE;	// not imported yet: the component asks again on its next tick
+		}
+		const RTexture2DResource* TextureResource = (TextureAsset ? TextureAsset->GetRenderResource() : nullptr);
+		if (!TextureResource)
+		{
+			// Imported, but the render thread has not built its gpu object yet: the creation runs as
+			// a queued command, so this is the same "ask again" state as a missing asset.
+			return FALSE;
+		}
+		// The instance arrives const because the process wide cache hands it out that way; what this
+		// call owns is the value layer, and the render side const_casts the same object for the same
+		// reason.
+		EShaderParameterSet& Parameters = const_cast<EShaderParameterSet&>(InInstance->GetParameters());
+		return Parameters.SetTexture(EName(PE_TEXT(MATERIAL_DEMO_BLOCK)), EName(PE_TEXT(MATERIAL_DEMO_EMISSIVE_TEXTURE))
+			, TextureResource->GetResolvedRHITexture());
 	}
 
 	/*
@@ -139,25 +216,6 @@ namespace PigeonEngine
 
 	void PLevelActor::UserBeginPlay()
 	{
-#if 0
-		{
-			PActor* New = new PActor();
-			New->SetIsTickable(TRUE);
-			POBJ_DEBUGNAME_SET(New, "StaticMeshActor");
-			this->GetWorld()->AddActor(New);
-			PStaticMeshComponent* NewStaticMeshComp = new PStaticMeshComponent();
-			NewStaticMeshComp->SetIsTickable(TRUE);
-			New->AddComponent(NewStaticMeshComp);
-			const EString AssetBasePath(EBaseSettings::ENGINE_ASSET_DIRECTORY);
-			const FAssetImportSource ImportSource = MakeImportSource(
-				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/Sponza/"))
-				, EString(PE_TEXT("sponza")), EString(PE_TEXT("obj")));
-			NewStaticMeshComp->RequestMeshAsset(EString(PE_TEXT("Sponza")), &ImportSource);
-
-			New->SetActorScale(Vector3(1.0f, 1.0f, 1.0f));
-		}
-#endif	// 0
-
 		{
 			PActor* New = new PActor();
 			New->SetIsTickable(TRUE);
@@ -210,10 +268,22 @@ namespace PigeonEngine
 			// exposure, which is Sunny-16 outdoors.
 			LightComp->SetIlluminanceLux(EEngineSettings::ENGINE_DEFAULT_ILLUMINANCE_LUX);
 			LightComp->SetSourceAngleDegrees(EEngineSettings::ENGINE_DEFAULT_SOURCE_ANGLE_DEGREES);
+			// The sun casts shadows. The flag is off on a fresh light because a light that has not
+			// opted in should not cost an atlas, and this is where the demo opts in: the shadow
+			// map size is the placeholder the component still carries and the renderer clamps the
+			// real resolution against RShadowSettings, so any positive pair works here.
+			LightComp->SetShadowMapSize(TRUE, Vector2Int(2048, 2048));
 			New->AddComponent(LightComp);
-			Quaternion Quat = Quaternion(0.5f, 0.5f, 0.0f, 1.0f);
-			Quat.Normalize();
-			New->SetActorRotation(Quat);
+			// The sun: up, behind the default camera and leaning to its left, so the face of every
+			// object that points at the viewer is the lit one.
+			//
+			// A directional light's forward axis points back at its emitter rather than along the
+			// light it casts - the render side stores its negation as the direction of travel and the
+			// shading does dot(normal, forward) - so pointing this axis down instead makes the sun
+			// shine upwards and leaves every up-facing surface unlit. Only the direction of this
+			// position matters; the distance is read by nothing.
+			const Vector3 SunLocation(-4500.0f, 7200.0f, -5300.0f);
+			New->SetActorRotation(LookAtTargetQuaternionRotation(SunLocation, Vector3::Zero(), Vector3::YVector()));
 		}
 
 		{
@@ -224,10 +294,12 @@ namespace PigeonEngine
 			this->GetWorld()->AddActor(New);
 			PPointLightComponent* PointLightComp = new PPointLightComponent();
 			PointLightComp->SetLightColor(Color3(1.0f, 0.85f, 0.6f));
-			// Authored the way a lamp is sold, in lumen. Against the default exposure this is a
-			// small contribution next to a sun, which is the physical answer rather than a bug:
-			// indoor and outdoor light are about five stops apart. Lower the camera's EV100 to
-			// see it on its own.
+			// Authored the way a lamp is sold, in lumen: 12566 lm over a whole sphere is about a
+			// thousand candela, which is five stops below a sun. That is the physical answer rather
+			// than a bug, and it means the sun and the sky swamp this light at every exposure that
+			// does not blow them out - no placement fixes that. To see it on its own, take the sun's
+			// IlluminanceLux and the sky's luminance down with their own controls, then lower the
+			// camera's EV100 until the pool reads.
 			PointLightComp->SetLuminousFluxLumen(12566.0f);
 			// The cutoff that bounds the shading cost. It is not the light's size: the falloff
 			// is inverse square out to here and zero past it.
@@ -235,8 +307,15 @@ namespace PigeonEngine
 			// A real emitter has a size, which is what gives its specular highlight a size
 			// rather than a point.
 			PointLightComp->SetSourceRadiusMeters(0.05f);
+			// Enables the local shadow path for verification: the light owns six consecutive atlas
+			// slots, one per cube face. Its shadow is invisible at the default exposure for the
+			// reason above, so dimming the sun and the sky is what makes it show.
+			PointLightComp->SetShadowMapSize(TRUE, Vector2Int(512, 512));
 			New->AddComponent(PointLightComp);
-			New->SetActorLocation(Vector3(400.0f, 200.0f, 200.0f));
+			// Hung over open floor in the right half of the default view, clear of the material cube
+			// (which ends at z = 50) and of the mannequin (x = 500), so the pool it casts is
+			// unmistakably its own. A point light stores no cone, so its rotation is read by nothing.
+			New->SetActorLocation(Vector3(300.0f, 220.0f, 220.0f));
 		}
 
 		{
@@ -252,12 +331,22 @@ namespace PigeonEngine
 			// the cone's edge a penumbra rather than a step.
 			SpotLightComp->SetSpotConeAnglesDegrees(20.f, 30.f);
 			SpotLightComp->SetAttenuationRadiusMeters(600.f);
+			// The local shadow path's spot case: one atlas slot for the single perspective view.
+			SpotLightComp->SetShadowMapSize(TRUE, Vector2Int(1024, 1024));
 			New->AddComponent(SpotLightComp);
-			// The aim is the component's forward axis, so the rotation is the aim. Left at the
-			// identity here, which points the cone along whatever the engine's forward is - the
-			// point of the actor is to have a spot in the scene to look at, not to aim it at
-			// something in particular.
-			New->SetActorLocation(Vector3(-400.0f, -200.0f, 300.0f));
+			// Hung over open floor in the left half of the default view and aimed at the ground, so
+			// the inner cone lands as one disc, a little nearer to the viewer than the light is. The
+			// lean off vertical is deliberate: the aim helper rejects a forward axis inside eighteen
+			// degrees of straight up or down.
+			//
+			// A spot points its forward axis at what it lights, which is the opposite of the
+			// directional light above, whose forward axis points back at its own emitter. It used to
+			// sit at y = -200, below the ground plane's top face at y = 0, aimed horizontally: it was
+			// underground and could not light anything.
+			const Vector3 SpotLocation(-300.0f, 250.0f, 100.0f);
+			const Vector3 SpotTarget(-300.0f, 0.0f, -45.0f);
+			New->SetActorLocation(SpotLocation);
+			New->SetActorRotation(LookAtTargetQuaternionRotation(SpotTarget, SpotLocation, Vector3::YVector()));
 		}
 
 		{
@@ -308,7 +397,9 @@ namespace PigeonEngine
 			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
 			New->SkeletalMeshComponent->SetComponentRotation(DefaultRot);
 
-			New->SetActorLocation(Vector3(-20.0f, 0.0f, 50.0f));
+			// Inside the Sponza hall, at the centre of its footprint: the scene is appended to this level,
+			// so the controllable character is what the building is walked through with.
+			New->SetActorLocation(Vector3(-60.0f, 0.0f, -39.0f));
 
 			PCharacterController* CharacterController = new PCharacterController();
 			CharacterController->SetIsTickable(TRUE);
@@ -395,6 +486,12 @@ namespace PigeonEngine
 				{
 					return FALSE;	// not assembled yet: the component asks again on its next tick
 				}
+				// The material's texture before the material: the instance is shared through the
+				// process wide cache, so its values are published while nothing draws with it yet.
+				if (!BindMaterialDemoTexture(MatInstance))
+				{
+					return FALSE;	// the texture is still being imported: ask again next tick
+				}
 				NewStaticMeshComp->SetMaterialInstance(MatInstance);
 				return TRUE;
 			});
@@ -404,6 +501,11 @@ namespace PigeonEngine
 			New->SetActorLocation(Vector3(250.0f, 50.0f, 0.0f));
 			New->SetActorScale(Vector3(100.0f, 100.0f, 100.0f));
 		}
+
+		// The Sponza scene, added to the level rather than replacing it: its own objects are placed at
+		// the source's world space, so the content above stays where it is and the building grows
+		// around it. The build waits on assets, so it continues across frames on its own.
+		BuildDemoSponzaScene(*GetWorld());
 	}
 
 	void PLevelActor::UserEndPlay()

@@ -7,7 +7,8 @@
 			"Slot": 2,
 			"Fields": [
 				{ "Name": "LightAdjustColor", "Format": "float4" },
-				{ "Name": "LightAdjustIntensity", "Format": "float" }
+				{ "Name": "LightAdjustIntensity", "Format": "float" },
+				{ "Name": "CubeMeanLuminance", "Format": "float" }
 			]
 		}
 	]

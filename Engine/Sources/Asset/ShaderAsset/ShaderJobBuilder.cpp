@@ -47,10 +47,6 @@ namespace PigeonEngine
 	// Paths
 	// ---------------------------------------------------------------------------
 
-	// Defined with the assembly pipeline below; declared here because MakeAssembly, which
-	// sits between the two, already needs the target's shader model.
-	static EShaderModelType GetShaderModelForActiveBackend();
-
 	static EString MakeTrailingSlash(const EString& InPath)
 	{
 		if ((InPath.Length() == 0u) || (InPath[InPath.Length() - 1u] == '/'))
@@ -176,6 +172,7 @@ namespace PigeonEngine
 		EString							DomainName;
 		INT32							SurfaceMode		= 0;
 		BOOL32							bVertexOps		= FALSE;
+		BOOL32							bTwoSided		= FALSE;
 		TArray<EShaderVariantDefine>	VariantDefines;
 	};
 
@@ -237,6 +234,13 @@ namespace PigeonEngine
 		{
 			OutInfo.bVertexOps = (PEMaterialValue["VertexOps"].GetBool() ? TRUE : FALSE);
 		}
+		// A rasterizer trait, not a compilation axis: it is carried on the assembly desc for the
+		// instance, never into the variant name or the axis defines. A material json that omits
+		// it is single sided, which is what every material that predates the flag is.
+		if ((PEMaterialValue.HasMember("TwoSided")) && (PEMaterialValue["TwoSided"].IsBool()))
+		{
+			OutInfo.bTwoSided = (PEMaterialValue["TwoSided"].GetBool() ? TRUE : FALSE);
+		}
 		if ((PEMaterialValue.HasMember("VariantDefines")) && (PEMaterialValue["VariantDefines"].IsArray()))
 		{
 			for (const auto& DefineValue : PEMaterialValue["VariantDefines"].GetArray())
@@ -256,9 +260,15 @@ namespace PigeonEngine
 
 	static BOOL32 ResolveMaterialJson(const EString& InMaterialName, EString& OutMaterialJsonPath)
 	{
-		// Artist templates live in Materials/Templates/, engine materials directly in
-		// Materials/; the first one that exists wins, which is how the validation driver
-		// resolved them too.
+		// Three shapes, first hit wins:
+		//   Materials/Templates/<Name>.json   the artist facing templates
+		//   Materials/<Name>.json             the engine's own materials
+		//   <Name>/<Leaf>.json                a material that lives in its own folder, asked for by
+		//                                     that folder's path and with its json named after the
+		//                                     folder: Projects/Demo/M_DemoUnlit resolves to
+		//                                     Projects/Demo/M_DemoUnlit/M_DemoUnlit.json. It is the
+		//                                     shape a project uses, so that the json, the hlsl and the
+		//                                     textures of one material stay in one directory.
 		const EString SourceRoot = GetShaderSourceRoot();
 		const EString TemplateJsonPath = EString(PE_TEXT("Materials/Templates/")) + InMaterialName + EString(PE_TEXT(".json"));
 		if (EFileHelper::IsFileExists(SourceRoot + TemplateJsonPath))
@@ -272,8 +282,44 @@ namespace PigeonEngine
 			OutMaterialJsonPath = MaterialJsonPath;
 			return TRUE;
 		}
+		// The leaf of the path, which is what the folder's json is named: a path that ends in a
+		// separator names no folder to resolve.
+		const INT32 LeafIndex = InMaterialName.RightFind(EString(PE_TEXT("/")));
+		const EString LeafName = ((LeafIndex >= 0)
+			? InMaterialName.Right(InMaterialName.Length() - static_cast<UINT32>(LeafIndex) - 1u)
+			: InMaterialName);
+		if (LeafName.Length() > 0u)
+		{
+			const EString FolderJsonPath = InMaterialName + EString(PE_TEXT("/")) + LeafName + EString(PE_TEXT(".json"));
+			if (EFileHelper::IsFileExists(SourceRoot + FolderJsonPath))
+			{
+				OutMaterialJsonPath = FolderJsonPath;
+				return TRUE;
+			}
+		}
 		PE_LOG_ERROR(EString(PE_TEXT("[ShaderJobBuilder] No material json for: ")) + InMaterialName);
 		return FALSE;
+	}
+
+	// The token a material contributes to a stage source name. A material that lives in its own
+	// folder is named by path, and that path is what tells it apart from a material of the same
+	// leaf name elsewhere, but an artifact file name cannot hold the separators: they would turn one
+	// artifact into a directory tree. They are folded into '_', the character the rest of the name
+	// already uses.
+	//
+	// Folding is not an escape, so two materials could only meet if one were named exactly what
+	// another one's path folds to - which is why the convention is one or the other: a material in
+	// a folder is asked for by the folder's path, and a material in Materials/ is asked for by its
+	// name alone.
+	PE_NODISCARD static EString MakeMaterialNameToken(const EString& InMaterialName)
+	{
+		EString Token;
+		for (UINT32 Index = 0u; Index < InMaterialName.Length(); Index++)
+		{
+			const CHAR Character = InMaterialName[Index];
+			Token += EString::FromChar((((Character == '/') || (Character == '\\')) ? '_' : Character));
+		}
+		return Token;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -423,10 +469,11 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	EString EShaderJobBuilder::MakeVariantName(const EShaderAssemblyDesc& InDesc)
+	BOOL32 EShaderJobBuilder::MakeVariantName(const EShaderAssemblyDesc& InDesc, EString& OutVariantName)
 	{
-		// V<VF>_P<Profile>_D<Domain>_S<SurfaceMode> - design Section14.6, with the profile kept in
-		// decimal so it decodes against the attribute constants in the header.
+		// V<VF>_P<Profile>_D<Domain>_S<SurfaceMode>_<Platform>_SM<Model> - design Section14.6 plus
+		// the compile target, with the profile kept in decimal so it decodes against the
+		// attribute constants in the header.
 		EString Name(PE_TEXT("V"));
 		Name += ToString(static_cast<UINT32>(InDesc.VertexFactory));
 		Name += EString(PE_TEXT("_P"));
@@ -435,12 +482,29 @@ namespace PigeonEngine
 		Name += ToString(InDesc.DomainNumber);
 		Name += EString(PE_TEXT("_S"));
 		Name += ToString(InDesc.SurfaceMode);
-		return Name;
+
+		// The target is an axis like the others, so it is in the name: the name is what every
+		// stage artifact of this variant is keyed on, and the same mesh axis built for another
+		// back end or shader model is a different compilation.
+		EString PlatformToken;
+		EString ShaderModelToken;
+		if (!GetShaderTargetTokens(InDesc.Target, PlatformToken, ShaderModelToken))
+		{
+			return FALSE;
+		}
+		OutVariantName = Name + EString(PE_TEXT("_")) + PlatformToken + EString(PE_TEXT("_SM")) + ShaderModelToken;
+		return TRUE;
 	}
 
-	void EShaderJobBuilder::MakeAxisDefines(const EShaderAssemblyDesc& InDesc, TArray<EShaderVariantDefine>& OutDefines)
+	BOOL32 EShaderJobBuilder::MakeAxisDefines(const EShaderAssemblyDesc& InDesc, TArray<EShaderVariantDefine>& OutDefines)
 	{
 		OutDefines.Empty();
+		// The compile target comes first: it is the outermost axis, and every other axis is
+		// compiled into a target rather than the other way round.
+		if (!MakeShaderTargetDefines(InDesc.Target, OutDefines))
+		{
+			return FALSE;
+		}
 		AddAxisDefine(OutDefines, "VF_TYPE", static_cast<INT32>(InDesc.VertexFactory));
 		AddAxisDefine(OutDefines, "VF_STREAM_PROFILE", static_cast<INT32>(InDesc.Profile.StreamProfile));
 		// Always the complete VF_HAS_* set: a flag that is missing instead of 0 evaluates
@@ -460,6 +524,7 @@ namespace PigeonEngine
 		{
 			OutDefines.Add(InDesc.MaterialVariantDefines[Index]);
 		}
+		return TRUE;
 	}
 
 	// ---------------------------------------------------------------------------
@@ -478,7 +543,13 @@ namespace PigeonEngine
 		OutDesc.ShaderName		= InRequest.ShaderName;
 		OutDesc.GeneratedRoot	= GetShaderGeneratedRoot();
 		OutDesc.OutputRoot		= GetShaderOutputRoot();
-		OutDesc.ShaderModel		= GetShaderModelForActiveBackend();
+		// The target the artifacts are built for, from the configuration and nowhere else, so
+		// the name, the defines, the compile request and the output directory below all read
+		// one value.
+		if (!ResolveActiveShaderTarget(OutDesc.Target))
+		{
+			return FALSE;
+		}
 		OutDesc.bDumpHlsl		= InRequest.bDumpHlsl;
 		OutDesc.bForceRecompile = InRequest.bForceRecompile;
 		OutDesc.VertexFactory	= InRequest.VertexFactory;
@@ -506,12 +577,18 @@ namespace PigeonEngine
 
 		OutDesc.SurfaceMode			= ((InRequest.SurfaceModeOverride >= 0) ? InRequest.SurfaceModeOverride : MaterialInfo.SurfaceMode);
 		OutDesc.bMaterialVertexOps	= MaterialInfo.bVertexOps;
+		OutDesc.bTwoSided			= MaterialInfo.bTwoSided;
 		OutDesc.MaterialVariantDefines = MaterialInfo.VariantDefines;
 		if (!TranslateDomainToNumber(MaterialInfo.DomainName, OutDesc.DomainNumber))
 		{
 			return FALSE;
 		}
-		OutDesc.VariantName = EName(MakeVariantName(OutDesc));
+		EString VariantName;
+		if (!MakeVariantName(OutDesc, VariantName))
+		{
+			return FALSE;
+		}
+		OutDesc.VariantName = EName(VariantName);
 
 		rapidjson::Document ProgramDocument;
 		if (!ReadProgramDocument(InRequest.ProgramName, ProgramDocument))
@@ -552,11 +629,13 @@ namespace PigeonEngine
 			}
 
 			// The qualifier is present exactly when the generated content depends on it, so
-			// the name is a cache key: same name <=> same content (see the header).
+			// the name is a cache key: same name <=> same content (see the header). A material that
+			// is named by path contributes the folded form of that path, because the name travels
+			// into artifact file names.
 			EString StageSourceName = StageName + EString(PE_TEXT("_")) + InRequest.ProgramName.ToString();
 			if ((Tokens.bMaterial) || ((Tokens.bMaterialVertex) && (MaterialInfo.bVertexOps)))
 			{
-				StageSourceName += EString(PE_TEXT("_")) + InRequest.MaterialName;
+				StageSourceName += EString(PE_TEXT("_")) + MakeMaterialNameToken(InRequest.MaterialName);
 			}
 			else if (Tokens.bDomain)
 			{
@@ -826,20 +905,13 @@ namespace PigeonEngine
 	// Assembly pipeline
 	// ---------------------------------------------------------------------------
 
-	static EShaderModelType GetShaderModelForActiveBackend()
-	{
-		// D3D11 cannot consume SM6.x DXIL, and the artifact directory is keyed by the
-		// shader model, so the two back ends never share a compiled set by accident.
-		return ((EEngineSettings::ENGINE_GRAPHICS_API == 1u) ? EShaderModelType::SHADER_MODEL_5_0 : EShaderModelType::SHADER_MODEL_6_6);
-	}
-
-	static void MakeAssemblyBaseRequest(const EShaderAssemblyDesc& InDesc, EShaderCompileRequest& OutRequest)
+	static BOOL32 MakeAssemblyBaseRequest(const EShaderAssemblyDesc& InDesc, EShaderCompileRequest& OutRequest)
 	{
 		OutRequest = EShaderCompileRequest();
 		OutRequest.RootDir			= GetShaderSourceRoot();
 		OutRequest.OutputDir		= ((InDesc.OutputRoot.Length() > 0u) ? InDesc.OutputRoot : GetShaderOutputRoot());
 		OutRequest.ShaderIncludeDir	= EString();	// empty falls back to RootDir
-		OutRequest.ShaderModel		= InDesc.ShaderModel;
+		OutRequest.Target			= InDesc.Target;
 		OutRequest.bDebug			= InDesc.bDebug;
 		OutRequest.bDumpHlsl		= InDesc.bDumpHlsl;
 		OutRequest.bForceRecompile = InDesc.bForceRecompile;
@@ -847,14 +919,19 @@ namespace PigeonEngine
 		// asks the compiler for the reserved "Base" compilation; MakeVariantDesc is still
 		// the single place that decides what a variant name means.
 		TArray<EShaderVariantDefine> AxisDefines;
-		EShaderJobBuilder::MakeAxisDefines(InDesc, AxisDefines);
+		if (!EShaderJobBuilder::MakeAxisDefines(InDesc, AxisDefines))
+		{
+			return FALSE;
+		}
 		const TArray<EShaderVariantReplace> NoReplaces;
 		if (!EShaderJobBuilder::MakeVariantDesc(InDesc.VariantName, AxisDefines, NoReplaces, OutRequest.Variant))
 		{
-			// Unreachable by construction: a builder variant name always carries the axis
-			// prefix, so it is never "Base" and the rule cannot reject it.
+			// Unreachable by construction: the builder always passes a name it just built, so
+			// there is nothing here that MakeVariantDesc could refuse.
 			PE_LOG_ERROR(EString(PE_TEXT("[ShaderJobBuilder] Cannot build the variant descriptor.")));
+			return FALSE;
 		}
+		return TRUE;
 	}
 
 #if _EDITOR_ONLY
@@ -880,6 +957,30 @@ namespace PigeonEngine
 		return (EFileHelper::IsFileExists(InOutputDirectory + InStageAssetName + EString(EEngineSettings::ENGINE_ASSET_NAME_TYPE)) ? TRUE : FALSE);
 	}
 
+	// Whether the manifest on disk describes the variant an assembly needs.
+	//
+	// The compiled artifact is per variant while the manifest is per stage source, and every
+	// compile rewrites that manifest with the variants it just produced. A stage compiled for one
+	// profile therefore has an artifact (so it looks compiled) and a manifest that mentions some
+	// other variant, and folding that manifest would hand this shader a stage for an axis nobody
+	// asked for - which surfaces only as "the assembly is incomplete", with no stage named.
+	//
+	// A missing, unreadable or variant-less manifest answers FALSE, which is the recompile path:
+	// the compiler writes the manifest for the variant it builds.
+	static BOOL32 StageManifestCarriesVariant(const EString& InManifestPath, const EName& InVariantName)
+	{
+		if (!EFileHelper::IsFileExists(InManifestPath))
+		{
+			return FALSE;
+		}
+		EShaderManifest Manifest;
+		if (!ParseShaderManifestJson(InManifestPath, Manifest))
+		{
+			return FALSE;
+		}
+		return ((Manifest.FindVariant(InVariantName) != nullptr) ? TRUE : FALSE);
+	}
+
 #endif	// _EDITOR_ONLY
 
 	// The variant has to be the one the axis asked for. A same named variant with other
@@ -888,7 +989,10 @@ namespace PigeonEngine
 	static BOOL32 DoesProgramMatchAxis(const EShaderProgram& InProgram, const EShaderAssemblyDesc& InDesc)
 	{
 		TArray<EShaderVariantDefine> AxisDefines;
-		EShaderJobBuilder::MakeAxisDefines(InDesc, AxisDefines);
+		if (!EShaderJobBuilder::MakeAxisDefines(InDesc, AxisDefines))
+		{
+			return FALSE;
+		}
 		for (UINT32 Index = 0u; Index < AxisDefines.Num<UINT32>(); Index++)
 		{
 			INT32 DefineValue = 0;
@@ -948,7 +1052,10 @@ namespace PigeonEngine
 		// The output directory is a function of the target rather than of a stage, so it is
 		// resolved once and every stage artifact is looked for next to its siblings.
 		EShaderCompileRequest TemplateRequest;
-		MakeAssemblyBaseRequest(InDesc, TemplateRequest);
+		if (!MakeAssemblyBaseRequest(InDesc, TemplateRequest))
+		{
+			return FALSE;
+		}
 		EString OutputDirectory;
 		if (!GetShaderOutputDirectory(TemplateRequest, OutputDirectory))
 		{
@@ -1008,8 +1115,10 @@ namespace PigeonEngine
 
 			// L3: the compiled stage artifacts (binary, reflection, manifest) are on disk
 			// already - another material compiled the same stage source - so only the fold
-			// into this shader is left. L4 is the compiler.
-			if ((InDesc.bForceRecompile) || (!IsStageCompiled(OutputDirectory, StageAssetName)) || (!EFileHelper::IsFileExists(ManifestPath)))
+			// into this shader is left. L4 is the compiler. The manifest has to be asked which
+			// variant it carries first: see StageManifestCarriesVariant.
+			if ((InDesc.bForceRecompile) || (!IsStageCompiled(OutputDirectory, StageAssetName))
+				|| (!StageManifestCarriesVariant(ManifestPath, InDesc.VariantName)))
 			{
 				EString CompiledManifestPath;
 				if (!EShaderCompileJob::CompileShader(Request, CompiledManifestPath))
@@ -1018,7 +1127,9 @@ namespace PigeonEngine
 				}
 				ManifestPath = CompiledManifestPath;
 			}
-			if (!AssetManager->ImportShaderAssetFromManifest(ManifestPath, OutputDirectory, ShaderName))
+			// Only this assembly's variant is folded: the manifest describes the stage source, and
+			// the variants it lists for other profiles are not stages of this shader.
+			if (!AssetManager->ImportShaderAssetFromManifest(ManifestPath, OutputDirectory, ShaderName, &InDesc.VariantName))
 			{
 				PE_LOG_ERROR(EString(PE_TEXT("[ShaderJobBuilder] Cannot fold the stage into the shader: ")) + ShaderName);
 				return FALSE;
@@ -1050,7 +1161,8 @@ namespace PigeonEngine
 #endif
 	}
 
-	BOOL32 EShaderJobBuilder::EnsureAssembly(const EShaderAssemblyRequest& InRequest, const EShaderAsset*& OutAsset, EName& OutVariantName)
+	BOOL32 EShaderJobBuilder::EnsureAssembly(const EShaderAssemblyRequest& InRequest
+		, const EShaderAsset*& OutAsset, EName& OutVariantName, BOOL32& OutIsTwoSided)
 	{
 		EShaderAssemblyDesc Desc;
 		if (!MakeAssembly(InRequest, Desc))
@@ -1058,24 +1170,61 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		OutVariantName = Desc.VariantName;
+		// The desc's rasterizer trait travels with the instance the caller builds from this
+		// assembly; nothing downstream of the compilation reads it.
+		OutIsTwoSided = Desc.bTwoSided;
 		return EnsureAssembled(Desc, OutAsset);
 	}
 
 	// Mirrors the compiler's reserved base variant name and ENGINE_SHADER_DEFAULT_VARIANT_NAME
 	// in the render layer header; the asset layer does not include a render layer header, so
-	// the name is spelled once here.
+	// the name is spelled once here. It is a name this layer recognizes, not a rule it applies:
+	// the compiler owns the rule that pairs the name with an empty compilation, and
+	// MakeVariantDesc only reports what it hands on.
 	PE_CONSTEXPR_STATIC const CHAR* SHADER_JOB_BASE_VARIANT_NAME = "Base";
+
+#if !(_SHIPPING_MODE)
+	// The content of a variant, spelled out for the one message that has to show it. Nothing
+	// else reads a variant's defines as text: they travel as data and the compiler writes them
+	// into the manifest. Editor only, like the log line it feeds - in a shipping build the log
+	// macros compile away, and a helper only they reference would be the unused function the
+	// compiler warns about.
+	PE_NODISCARD static EString MakeVariantContentText(const TArray<EShaderVariantDefine>& InDefines
+		, const TArray<EShaderVariantReplace>& InReplaces)
+	{
+		EString Text(PE_TEXT("Defines["));
+		for (UINT32 Index = 0u, Num = InDefines.Num<UINT32>(); Index < Num; Index++)
+		{
+			Text += ((Index > 0u) ? EString(PE_TEXT(", ")) : EString());
+			Text += InDefines[Index].Name.ToString() + EString(PE_TEXT("=")) + ToString(InDefines[Index].Value);
+		}
+		Text += EString(PE_TEXT("] Replaces["));
+		for (UINT32 Index = 0u, Num = InReplaces.Num<UINT32>(); Index < Num; Index++)
+		{
+			Text += ((Index > 0u) ? EString(PE_TEXT(", ")) : EString());
+			Text += InReplaces[Index].Name.ToString() + EString(PE_TEXT("=")) + InReplaces[Index].Element;
+		}
+		Text += EString(PE_TEXT("]"));
+		return Text;
+	}
+#endif	// !(_SHIPPING_MODE)
 
 	BOOL32 EShaderJobBuilder::MakeVariantDesc(const EName& InVariantName
 		, const TArray<EShaderVariantDefine>& InDefines
 		, const TArray<EShaderVariantReplace>& InReplaces
 		, EShaderVariantDesc& OutVariantDesc)
 	{
-		// The one rule about variant names, applied in a single place: "Base" is the
-		// compilation the compiler runs with nothing passed in, so it may not carry a
-		// define or a replace; every other name is a real variant and is flagged as one,
-		// with whatever defines the caller passed (an empty set is allowed - the compiler
-		// warns that such a variant is a duplicate of Base).
+		// A variant name is a name and nothing else. The compiler's description format has one
+		// rule about it - the compilation that passes nothing in is the one named "Base", and no
+		// other compilation may carry that name - and the compiler applies that rule to the
+		// description it is handed. This layer therefore does not refuse the combination, it
+		// reports the content it handed on, so a compilation that goes out under the reserved
+		// name is visible together with the defines and replaces that made it one instead of
+		// only being refused further down, where the reason is harder to see.
+		//
+		// bIsVariant goes with the name rather than with the content, because that is how the
+		// compiler's format pairs them: the flag says "this is the compilation that carries
+		// nothing", so the name is what decides it.
 		OutVariantDesc = EShaderVariantDesc();
 		if (!InVariantName.IsValid())
 		{
@@ -1083,19 +1232,17 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		OutVariantDesc.Name = InVariantName;
-		if (InVariantName == EName(SHADER_JOB_BASE_VARIANT_NAME))
-		{
-			if ((InDefines.Num<UINT32>() > 0u) || (InReplaces.Num<UINT32>() > 0u))
-			{
-				PE_LOG_ERROR(EString(PE_TEXT("[ShaderJobBuilder] The reserved variant 'Base' cannot carry defines or replaces.")));
-				return FALSE;
-			}
-			OutVariantDesc.bIsVariant = FALSE;
-			return TRUE;
-		}
-		OutVariantDesc.bIsVariant = TRUE;
+		OutVariantDesc.bIsVariant = ((InVariantName == EName(SHADER_JOB_BASE_VARIANT_NAME)) ? FALSE : TRUE);
 		OutVariantDesc.Defines = InDefines;
 		OutVariantDesc.Replaces = InReplaces;
+#if !(_SHIPPING_MODE)
+		const BOOL32 bCarriesContent = ((InDefines.Num<UINT32>() > 0u) || (InReplaces.Num<UINT32>() > 0u));
+		if ((!OutVariantDesc.bIsVariant) && (bCarriesContent))
+		{
+			PE_LOG_LOG(EString(PE_TEXT("[ShaderJobBuilder] The reserved variant name 'Base' was given content, which the compiler refuses (a name is not an axis). "))
+				+ MakeVariantContentText(InDefines, InReplaces));
+		}
+#endif	// !(_SHIPPING_MODE)
 		return TRUE;
 	}
 

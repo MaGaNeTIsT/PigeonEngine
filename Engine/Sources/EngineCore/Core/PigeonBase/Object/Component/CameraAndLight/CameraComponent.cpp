@@ -4,6 +4,7 @@
 #include <Renderer/RenderInterface.h>
 #if _EDITOR_ONLY
 #include <Editor/EditorLogManager.h>
+#include <imgui.h>
 #endif
 
 
@@ -243,5 +244,48 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions END
+
+#if _EDITOR_ONLY
+	void PCameraComponent::GenerateComponentDetail()
+	{
+		PSceneComponent::GenerateComponentDetail();
+
+		if (ImGui::TreeNodeEx("Exposure"))
+		{
+			// Exposure belongs to the display boundary: these three numbers decide which scene
+			// luminance maps to display white, and none of them changes the luminance the scene
+			// itself stores.
+			FLOAT TempExposureValue100 = GetExposureValue100();
+			if (ImGui::DragFloat("EV100", &TempExposureValue100, 0.01f, 0.f, 24.f, "%.2f"))
+			{
+				SetExposureValue100(TempExposureValue100);
+			}
+
+			FLOAT TempISO = GetISO();
+			if (ImGui::DragFloat("ISO", &TempISO, 1.f, 25.f, 6400.f, "%.0f"))
+			{
+				SetISO(TempISO);
+			}
+
+			// In stops. Positive values brighten, which is the direction a photographer expects.
+			FLOAT TempCompensation = GetExposureCompensation();
+			if (ImGui::DragFloat("Compensation", &TempCompensation, 0.1f, -5.f, 5.f, "%.2f EV"))
+			{
+				SetExposureCompensation(TempCompensation);
+			}
+
+			ImGui::Text("Display white at %.1f cd/m2", GetSaturationLuminance());
+			ImGui::Text("Gain %.6e", GetExposureGain());
+
+			if (ImGui::Button("Reset"))
+			{
+				SetExposureValue100(EEngineSettings::ENGINE_CAMERA_EV100);
+				SetISO(EEngineSettings::ENGINE_CAMERA_ISO);
+				SetExposureCompensation(EEngineSettings::ENGINE_CAMERA_EXPOSURE_COMPENSATION);
+			}
+			ImGui::TreePop();
+		}
+	}
+#endif
 
 };

@@ -5,6 +5,10 @@
 #include <PigeonBase/Object/World/World.h>
 #include <Renderer/RenderInterface.h>
 
+#if _EDITOR_ONLY
+#include <imgui.h>
+#endif
+
 namespace PigeonEngine
 {
 
@@ -16,7 +20,9 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	PSkyLightComponent::PSkyLightComponent()
-		: CubeMapAsset(nullptr), LightAdjust(Color3::White()), Intensity(EEngineSettings::ENGINE_SKY_LUMINANCE), SceneProxy(nullptr), UpdateState(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_NONE)
+		: CubeMapAsset(nullptr), LightAdjust(Color3::White()), Intensity(EEngineSettings::ENGINE_SKY_LUMINANCE)
+		, PrefilterResolutionExponent(EEngineSettings::ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT)
+		, CubeMeanLinearLuminance(0.f), SceneProxy(nullptr), UpdateState(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_NONE)
 	{
 		POBJ_DEBUGNAME_SET(this, "SkyLightComponent");
 	}
@@ -36,10 +42,33 @@ namespace PigeonEngine
 	{
 		return Intensity;
 	}
+	UINT32 PSkyLightComponent::GetPrefilterResolutionExponent()const noexcept
+	{
+		return PrefilterResolutionExponent;
+	}
+	FLOAT PSkyLightComponent::GetCubeMeanLinearLuminance()const noexcept
+	{
+		return CubeMeanLinearLuminance;
+	}
 	void PSkyLightComponent::SetCubeMapAsset(const ETextureCubeAsset* InCubeMapAsset)
 	{
 		CubeMapAsset = InCubeMapAsset;
+		// Cached here rather than recomputed in the details panel: the panel runs every frame,
+		// while the asset's CPU payload is fixed for its lifetime. The render side needs the
+		// number too, because it normalizes the cube before applying the mean luminance.
+		CubeMeanLinearLuminance = 0.f;
+		if ((CubeMapAsset != nullptr) && (CubeMapAsset->GetStoragedResource() != nullptr))
+		{
+			Color3 MeanColor = Color3::Black();
+			if (ComputeTextureCubeMeanLinearLuminance(*CubeMapAsset->GetStoragedResource(), CubeMeanLinearLuminance, MeanColor) == FALSE)
+			{
+				CubeMeanLinearLuminance = 0.f;
+			}
+		}
 		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_TEXTURE);
+		// The mean is part of the published params: a cube that just arrived is also the first
+		// time the render side can normalize by it.
+		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS);
 	}
 	void PSkyLightComponent::RequestCubeMapAsset(const EString& InAssetName, const FAssetImportCubeSource* InImportSource)
 	{
@@ -77,6 +106,17 @@ namespace PigeonEngine
 	{
 		Intensity = EMath::Max(0.001f, InLuminanceInCandelaPerSquareMeter);
 		MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS);
+	}
+	void PSkyLightComponent::SetPrefilterResolutionExponent(const UINT32 InExponent)
+	{
+		// 4 (16) through 10 (1024): the low end is where the prefilter stops resolving a
+		// reflection at all, the high end is where a one-shot bake starts to cost real memory.
+		const UINT32 ClampedExponent = EMath::Clamp(InExponent, 4u, 10u);
+		if (PrefilterResolutionExponent != ClampedExponent)
+		{
+			PrefilterResolutionExponent = ClampedExponent;
+			MarkAsDirty(PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS);
+		}
 	}
 
 	// Render proxy functions START
@@ -138,5 +178,64 @@ namespace PigeonEngine
 		PSceneComponent::CleanMarkRenderStateDirty();
 	}
 	// Render proxy functions END
+
+#if _EDITOR_ONLY
+	void PSkyLightComponent::GenerateComponentDetail()
+	{
+		PSceneComponent::GenerateComponentDetail();
+
+		if (ImGui::TreeNodeEx("Sky Light"))
+		{
+			// Linear tint and the environment's mean luminance. Both are applied where the
+			// environment is consumed - the sky pass, the indirect diffuse and the prefiltered
+			// specular - and neither is baked into the coefficients or the prefiltered chain, so
+			// a drag here costs a constant buffer and no dispatch.
+			const Color3& Tint = GetLightAdjust();
+			FLOAT TempTint[3] = { Tint.r, Tint.g, Tint.b };
+			if (ImGui::ColorEdit3("Tint", TempTint))
+			{
+				SetLightAdjust(Color3(TempTint[0], TempTint[1], TempTint[2]));
+			}
+
+			// A true mean: the render side divides the cube by its own mean linear luminance
+			// before applying this value, so 5000 here is 5000 cd/m2 of environment regardless
+			// of how the cube's texels happen to be scaled.
+			FLOAT TempIntensity = GetIntensity();
+			if (ImGui::DragFloat("Mean luminance", &TempIntensity, 10.f, 0.f, 20000.f, "%.1f cd/m2"))
+			{
+				SetIntensity(TempIntensity);
+			}
+
+			// The reference the normalisation uses. It is divided out, not multiplied in: a
+			// different cube with a different mean produces the same mean luminance.
+			if (CubeMeanLinearLuminance > 0.f)
+			{
+				ImGui::Text("Cube mean linear luminance: %.4f (divided out)", CubeMeanLinearLuminance);
+			}
+			else
+			{
+				ImGui::TextUnformatted("Cube mean linear luminance: unavailable (no cube or unsupported format).");
+			}
+
+			// The prefiltered chain's base resolution. Exposed as an exponent because the mip
+			// chain has to be a power of two; the resolution is shown next to it.
+			INT32 TempExponent = static_cast<INT32>(GetPrefilterResolutionExponent());
+			if (ImGui::DragInt("Prefilter resolution exponent", &TempExponent, 1, 4, 10, "2^%d"))
+			{
+				SetPrefilterResolutionExponent(static_cast<UINT32>(TempExponent));
+			}
+			const UINT32 PrefilterExponent = GetPrefilterResolutionExponent();
+			ImGui::Text("Prefiltered cube: %u x %u, %u mips", (1u << PrefilterExponent), (1u << PrefilterExponent), (PrefilterExponent + 1u));
+
+			if (ImGui::Button("Reset"))
+			{
+				SetLightAdjust(Color3::White());
+				SetIntensity(EEngineSettings::ENGINE_SKY_LUMINANCE);
+				SetPrefilterResolutionExponent(EEngineSettings::ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT);
+			}
+			ImGui::TreePop();
+		}
+	}
+#endif
 
 };

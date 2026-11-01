@@ -11,6 +11,7 @@ namespace PigeonEngine
 	class ETexture;
 	class EShaderProgram;
 	class IRRHITexture;
+	class IRRHITextureUAVView;
 
 	/*
 	* ShaderAsset - value layer. Cpu only: nothing in this file creates, uploads or
@@ -62,6 +63,10 @@ namespace PigeonEngine
 		// Runtime texture object, not an asset: the value layer never reaches into
 		// the cold data tier, and the render layer binds exactly what it finds here.
 		const IRRHITexture*				Texture		= nullptr;
+		// A subresource view (one mip, an array/cube slice range) for a pass that writes one
+		// level at a time. When set, it wins over Texture for a UAV binding: the descriptor is
+		// the view's, not the whole resource's.
+		const IRRHITextureUAVView*		TextureUAV	= nullptr;
 		const RStructuredBuffer*		StructuredBuffer = nullptr;
 		EShaderSamplerDesc				Sampler;
 	public:
@@ -122,8 +127,8 @@ namespace PigeonEngine
 		// Value revision of the whole parent chain the cpu bytes were last built from. The
 		// set compares it against the current chain revision, which is what keeps an
 		// unchanged buffer from being re-evaluated. The render side does not read it: it
-		// uploads the buffers IsDirty() reports and clears the flag once the upload went
-		// through.
+		// uploads a mirror whose gpu entry is missing and one whose IsDirty() reports a
+		// change, then clears the flag.
 		PE_NODISCARD UINT32	GetUploadedChainRevision() const { return UploadedChainRevision; }
 		void	SetUploadedChainRevision(const UINT32 InRevision) { UploadedChainRevision = InRevision; }
 	private:
@@ -194,6 +199,7 @@ namespace PigeonEngine
 		BOOL32	SetIntArray(const EName& InBlockName, const EName& InFieldName, const INT32* InValues, const UINT32 InScalarNum);
 		BOOL32	SetUIntArray(const EName& InBlockName, const EName& InFieldName, const UINT32* InValues, const UINT32 InScalarNum);
 		BOOL32	SetTexture(const EName& InBlockName, const EName& InFieldName, const IRRHITexture* InTexture);
+		BOOL32	SetTextureUAV(const EName& InBlockName, const EName& InFieldName, const IRRHITextureUAVView* InView);
 		BOOL32	SetSampler(const EName& InBlockName, const EName& InFieldName, const EShaderSamplerDesc& InSampler);
 		BOOL32	SetStructuredBuffer(const EName& InBlockName, const EName& InFieldName, const RStructuredBuffer* InBuffer, const BOOL32 InIsUAV = FALSE);
 	public:

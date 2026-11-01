@@ -43,6 +43,18 @@
 				{
 					"Name": "SHADER_STAGE_PIXEL",
 					"Value": 1
+				},
+				{
+					"Name": "SHADER_LIGHTING_PASS",
+					"Value": 1
+				},
+				{
+					"Name": "SHADER_SHADOW_RECEIVER",
+					"Value": 1
+				},
+				{
+					"Name": "PE_SHADOW_MASK_SET_NUM",
+					"Value": 1
 				}
 			],
 			"Textures": [
@@ -87,6 +99,13 @@
 					"Format": "float4",
 					"SamplerName": "SamplerMaterial2D",
 					"Slot": 5
+				},
+				{
+					"Name": "DirectionalShadowMask0",
+					"Type": "2D",
+					"Format": "float4",
+					"SamplerName": "SamplerLinearClamp",
+					"Slot": 6
 				}
 			],
 			"Components": [
@@ -138,6 +157,13 @@
 					"Name": "Programmable",
 					"Replace": "PROGRAMMABLE",
 					"JsonFile": "Surfaces/ProgrammableShaderTemplate.json"
+				},
+				{
+					"Index": 7,
+					"Type": "General",
+					"Name": "Shadows",
+					"Replace": "SHADOWS",
+					"JsonFile": "Components/C_Shadows.json"
 				}
 			]
 		}

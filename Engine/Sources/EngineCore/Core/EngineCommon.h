@@ -373,31 +373,141 @@ namespace PigeonEngine
 		}
 		void GeneratePlaneWorldSpace(const Vector3& InLocation, const Quaternion& InRotation, const Vector3& InScaling = Vector3::One())
 		{
+			Matrix4x4 TempLocalToWorld(MakeMatrix4x4(InLocation, InRotation, InScaling));
+			for (UINT32 i = 0u; i < 8u; i++)
 			{
-				Matrix4x4 TempLocalToWorld(MakeMatrix4x4(InLocation, InRotation, InScaling));
-				for (UINT32 i = 0u; i < 8u; i++)
+				FarNearPlanePoint[i] = Matrix4x4TransformPosition(TempLocalToWorld, FarNearPlanePoint[i]);
+			}
+			GeneratePlanesFromCornersWorldSpace();
+		}
+		/*
+		* Rebuilds the four side planes from the eight corner points, which are already in world
+		* space. Each normal is the cross product of two edges of its plane, which points inward for
+		* the corner order this struct uses, and the constant is taken from a corner that lies on
+		* the plane. A degenerate plane (a zero normal) is stored as zero: the inside tests below
+		* skip a zero plane rather than culling everything.
+		*
+		* This exists separately from GeneratePlaneWorldSpace because a shadow view builds its
+		* corners directly in world space and has no rigid transform to apply.
+		*/
+		void GeneratePlanesFromCornersWorldSpace()
+		{
+			const Vector3 PlaneNormals[4] =
+			{
+				Vector3::Cross(NearPlaneTopRight - NearPlaneTopLeft, FarPlaneTopLeft - NearPlaneTopLeft),
+				Vector3::Cross(FarPlaneBottomLeft - NearPlaneBottomLeft, NearPlaneBottomRight - NearPlaneBottomLeft),
+				Vector3::Cross(FarPlaneTopLeft - NearPlaneTopLeft, NearPlaneBottomLeft - NearPlaneTopLeft),
+				Vector3::Cross(FarPlaneBottomRight - NearPlaneBottomRight, NearPlaneTopRight - NearPlaneBottomRight)
+			};
+			const Vector3 PlaneAnchors[4] =
+			{
+				NearPlaneTopLeft,
+				NearPlaneBottomLeft,
+				NearPlaneTopLeft,
+				NearPlaneBottomRight
+			};
+			for (UINT32 PlaneIndex = 0u; PlaneIndex < 4u; PlaneIndex++)
+			{
+				const FLOAT NormalLength = Vector3::Length(PlaneNormals[PlaneIndex]);
+				if (NormalLength < 1e-6f)
 				{
-					FarNearPlanePoint[i] = Matrix4x4TransformPosition(TempLocalToWorld, FarNearPlanePoint[i]);
+					Plane[PlaneIndex] = Vector4::Zero();
+					continue;
+				}
+				const Vector3 Normal = PlaneNormals[PlaneIndex] * (1.f / NormalLength);
+				Plane[PlaneIndex] = MakeVector4(Normal, Vector3::Dot(PlaneAnchors[PlaneIndex], Normal));
+			}
+		}
+		/*
+		* Builds the near and far planes from the corner points. They are not stored: only the four
+		* side planes are members, and the two caps are cheap enough to derive per test.
+		*/
+		BOOL32 BuildNearFarPlanesWorldSpace(Vector4& OutNearPlane, Vector4& OutFarPlane)const
+		{
+			const Vector3 NearNormalRaw = Vector3::Cross(NearPlaneBottomLeft - NearPlaneTopLeft, NearPlaneTopRight - NearPlaneTopLeft);
+			const Vector3 FarNormalRaw = Vector3::Cross(FarPlaneTopRight - FarPlaneTopLeft, FarPlaneBottomLeft - FarPlaneTopLeft);
+			const FLOAT NearNormalLength = Vector3::Length(NearNormalRaw);
+			const FLOAT FarNormalLength = Vector3::Length(FarNormalRaw);
+			if ((NearNormalLength < 1e-6f) || (FarNormalLength < 1e-6f))
+			{
+				return FALSE;
+			}
+			const Vector3 NearNormal = NearNormalRaw * (1.f / NearNormalLength);
+			const Vector3 FarNormal = FarNormalRaw * (1.f / FarNormalLength);
+			OutNearPlane = MakeVector4(NearNormal, Vector3::Dot(NearPlaneTopLeft, NearNormal));
+			OutFarPlane = MakeVector4(FarNormal, Vector3::Dot(FarPlaneTopLeft, FarNormal));
+			return TRUE;
+		}
+		/*
+		* Collects the six world space planes into OutPlanes and returns how many are usable. The
+		* caps are appended only when they could be built, so a caller's loop over the returned
+		* count is always valid.
+		*/
+		UINT32 BuildWorldPlanes(Vector4 OutPlanes[6])const
+		{
+			OutPlanes[0] = Plane[0];
+			OutPlanes[1] = Plane[1];
+			OutPlanes[2] = Plane[2];
+			OutPlanes[3] = Plane[3];
+			UINT32 PlaneNum = 4u;
+			Vector4 NearPlane;
+			Vector4 FarPlane;
+			if (BuildNearFarPlanesWorldSpace(NearPlane, FarPlane) != FALSE)
+			{
+				OutPlanes[4] = NearPlane;
+				OutPlanes[5] = FarPlane;
+				PlaneNum = 6u;
+			}
+			return PlaneNum;
+		}
+		/*
+		* Conservative AABB test. An axis aligned box is outside the frustum only when the corner
+		* farthest along a plane's inward normal is behind that plane; every other corner is then
+		* behind it too. Zero planes (degenerate) are skipped, which leans towards "visible".
+		*/
+		BOOL32 IntersectsWorldAABB(const Vector3& InMin, const Vector3& InMax)const
+		{
+			Vector4 Planes[6] = {};
+			const UINT32 PlaneNum = BuildWorldPlanes(Planes);
+			for (UINT32 PlaneIndex = 0u; PlaneIndex < PlaneNum; PlaneIndex++)
+			{
+				const FLOAT NormalX = Planes[PlaneIndex].x;
+				const FLOAT NormalY = Planes[PlaneIndex].y;
+				const FLOAT NormalZ = Planes[PlaneIndex].z;
+				if ((NormalX == 0.f) && (NormalY == 0.f) && (NormalZ == 0.f))
+				{
+					continue;
+				}
+				const Vector3 PositiveVertex(
+					((NormalX >= 0.f) ? InMax.x : InMin.x),
+					((NormalY >= 0.f) ? InMax.y : InMin.y),
+					((NormalZ >= 0.f) ? InMax.z : InMin.z));
+				if ((Vector3::Dot(Vector3(NormalX, NormalY, NormalZ), PositiveVertex) - Planes[PlaneIndex].w) < 0.f)
+				{
+					return FALSE;
 				}
 			}
+			return TRUE;
+		}
+		// Sphere counterpart of IntersectsWorldAABB: a sphere is outside when its center is more
+		// than one radius behind any plane.
+		BOOL32 IntersectsSphere(const Vector3& InCenter, FLOAT InRadius)const
+		{
+			Vector4 Planes[6] = {};
+			const UINT32 PlaneNum = BuildWorldPlanes(Planes);
+			for (UINT32 PlaneIndex = 0u; PlaneIndex < PlaneNum; PlaneIndex++)
 			{
-				Vector3 TempPlaneNormal[4] =
+				const Vector3 Normal(Planes[PlaneIndex].x, Planes[PlaneIndex].y, Planes[PlaneIndex].z);
+				if ((Normal.x == 0.f) && (Normal.y == 0.f) && (Normal.z == 0.f))
 				{
-					Vector3(Plane[0].x, Plane[0].y, Plane[0].z),
-					Vector3(Plane[1].x, Plane[1].y, Plane[1].z),
-					Vector3(Plane[2].x, Plane[2].y, Plane[2].z),
-					Vector3(Plane[3].x, Plane[3].y, Plane[3].z)
-				};
-				for (UINT32 i = 0u; i < 4u; i++)
-				{
-					TempPlaneNormal[i] = QuaternionTransformVector(InRotation, TempPlaneNormal[i]);
-					TempPlaneNormal[i].Normalize();
+					continue;
 				}
-				Plane[0] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneTopLeft, TempPlaneNormal[0]));
-				Plane[1] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneBottomRight, TempPlaneNormal[0]));
-				Plane[2] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneTopLeft, TempPlaneNormal[0]));
-				Plane[3] = MakeVector4(TempPlaneNormal[0], Vector3::Dot(NearPlaneBottomRight, TempPlaneNormal[0]));
+				if ((Vector3::Dot(Normal, InCenter) - Planes[PlaneIndex].w) < -InRadius)
+				{
+					return FALSE;
+				}
 			}
+			return TRUE;
 		}
 		void GenerateSeparatingProjectionWorldSpace()
 		{
@@ -732,6 +842,20 @@ namespace PigeonEngine
 			//TODO Orthographic projection can not use far or near directly.
 			ProjectionPart.DeviceZToViewZMulAdd = Vector2(0.0f, 0.0f);
 		}
+		/*
+		* Orthographic projection from explicit bounds. The viewport overload above packs the bounds
+		* into an EViewport, which reads as a pixel rectangle everywhere else; a caller that has the
+		* bounds as numbers (a shadow cascade fitted in light space) states them as numbers instead.
+		* The argument order matches Matrix4x4::OrthographicMatrix: left, top, right, bottom.
+		*/
+		void GenerateOrthographicProjectPart(FLOAT InLeft, FLOAT InTop, FLOAT InRight, FLOAT InBottom, FLOAT InNear, FLOAT InFar)
+		{
+			ProjectionPart.ProjectionMatrix = Matrix4x4::OrthographicMatrix(InLeft, InTop, InRight, InBottom, InNear, InFar);
+			ProjectionPart.InverseProjectionMatrix = ProjectionPart.ProjectionMatrix.Inverse();
+
+			//TODO Orthographic projection can not use far or near directly.
+			ProjectionPart.DeviceZToViewZMulAdd = Vector2(0.0f, 0.0f);
+		}
 		void GenerateFinalMatrix()
 		{
 			ViewProjectionMatrix = ViewPart.ViewMatrix * ProjectionPart.ProjectionMatrix;
@@ -896,7 +1020,10 @@ namespace PigeonEngine
 			{
 				return;
 			}
-			PE_CHECK((ENGINE_WORLD_ERROR), ("Check CSM failed that layer or border or cascade num is invalid."), ((InLayers.Num() > 0) && (InLayers.Num() == (InLayers.Num() + 1))));
+			// One border per seam, so an N layer ladder carries N - 1 of them. The old test
+			// compared the layer count against itself plus one, which is never true: it made every
+			// light with cascade data fail the check the first time one was set up.
+			PE_CHECK((ENGINE_WORLD_ERROR), (PE_TEXT("Check CSM failed that layer or border or cascade num is invalid.")), ((InLayers.Num() > 0) && (InLayers.Num() == (InBorders.Num() + 1))));
 			Layers	= InLayers;
 			Borders	= InBorders;
 		}

@@ -38,6 +38,12 @@ namespace PigeonEngine
 		// what turns an intensity back into a flux and the reverse.
 		virtual void	SetLuminousFluxLumen(const FLOAT InLuminousFluxLumen) override;
 
+	// ImGui
+#if _EDITOR_ONLY
+	public:
+		virtual void	GenerateComponentDetail() override;
+#endif
+
 		CLASS_VIRTUAL_NOCOPY_BODY(PSpotLightComponent)
 	};
 

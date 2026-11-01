@@ -50,6 +50,15 @@ namespace PigeonEngine
 		RHI_BACKEND_COUNT
 	};
 
+	enum ERHIShaderModelType : UINT8
+	{
+		RHI_SM_NONE		= 0u,
+		RHI_SM_5_0		= 1u,
+		RHI_SM_6_0		= 2u,
+		RHI_SM_6_6		= 3u,
+		RHI_SM_COUNT
+	};
+
 	/*
 	* Shader stage as the RHI sees it. The asset layer has its own stage enum
 	* (EShaderStageType) which carries more values than a pipeline can consume;
@@ -366,6 +375,11 @@ namespace PigeonEngine
 		IRRHIRootSignature*			RootSignature;
 		IRRHIShader*				VertexShader;
 		IRRHIShader*				PixelShader;
+		// Which stages the pipeline has. A depth only pass clears the pixel bit, and a back end
+		// that binds stages separately (D3D11) must then unbind the pixel shader the previous draw
+		// left behind: otherwise the rasterizer keeps running it. Bit order matches
+		// RGraphicsPipelineStateDesc::STAGE_MASK_*: vertex = 1, pixel = 2.
+		UINT32						StageMask;
 		const RInputLayoutDesc*		InputLayouts;
 		UINT32						InputLayoutCount;
 		RRasterizerState			Rasterizer;
@@ -388,6 +402,7 @@ namespace PigeonEngine
 			: RootSignature{ nullptr }
 			, VertexShader{ nullptr }
 			, PixelShader{ nullptr }
+			, StageMask{ 3u }
 			, InputLayouts{ nullptr }
 			, InputLayoutCount{ 0u }
 			, Rasterizer{}
@@ -449,6 +464,22 @@ namespace PigeonEngine
 			, SlicePitch{ InSlicePitch }
 		{
 		}
+	};
+
+	/*
+	* One view of a texture subresource, for a pass that writes a single mip (and, for an
+	* array or cube, a slice range) rather than the whole resource. The back-end picks the
+	* view dimension from the texture itself: depth > 1 is a 3D view, array size > 1 is a
+	* 2D array view (a cube is an array of six faces), and anything else is a 2D view. The
+	* fields for the dimensions the texture does not use are ignored.
+	*/
+	struct RRHITextureUAVDesc
+	{
+		UINT32	MipSlice		= 0u;
+		UINT32	FirstArraySlice	= 0u;
+		UINT32	ArraySize		= 1u;
+		UINT32	FirstWSlice		= 0u;
+		UINT32	WSize			= 0u;
 	};
 
 };	// PigeonEngine

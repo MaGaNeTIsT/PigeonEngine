@@ -17,7 +17,10 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_WINDOWED														= TRUE;
 
 		// 1 = D3D11, 2 = D3D12 (matches ERHIBackendType enum)
-		PE_CONSTEXPR_STATIC		UINT8			ENGINE_GRAPHICS_API													= 1u;
+		PE_CONSTEXPR_STATIC		UINT8			ENGINE_GRAPHICS_API													= 2u;
+
+		// 1 = SM5_0, 2 = SM6_0, 3 = SM6_6 (matches ERHIShaderModelType enum)
+		PE_CONSTEXPR_STATIC		UINT8			ENGINE_SHADERMODEL_VERSION											= 3u;
 
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM												= 1.0f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_HALF											= ENGINE_BOUND_MINIMUM * 0.5f;
@@ -43,10 +46,16 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_ISO													= 100.f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CAMERA_EXPOSURE_COMPENSATION									= 0.f;
 
-		// Sky luminance in cd/m2. The environment cube is sampled as radiance, so this is what
-		// puts it on the same physical scale as the lights: a clear sky is around 8000 cd/m2
-		// and an overcast one around 2000.
-		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SKY_LUMINANCE												= 8000.f;
+		// The sky light's mean luminance in cd/m2. The environment cube carries the shape of the
+		// sky rather than an absolute brightness, so the render side divides every sample by the
+		// cube's own mean linear luminance before applying this value. A clear sky is around
+		// 5000 cd/m2 (the physical match for a 15000 lx horizontal sky illuminance is 4775).
+		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_SKY_LUMINANCE												= 5000.f;
+
+		// The prefiltered environment cube's base resolution as a power of two: 8 means
+		// 256 x 256, and the mip chain runs down to 1 x 1. Per light configurable; this is what
+		// a new sky light starts with.
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SKY_PREFILTER_RESOLUTION_EXPONENT							= 8u;
 
 		// Light defaults. These are physical quantities and not multipliers, so a light and a
 		// camera only look right together: the default exposure is Sunny-16 outdoors, which is
@@ -83,7 +92,15 @@ namespace PigeonEngine
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_LAYER[ENGINE_CASCADE_SHADOW_LAYER_NUM]		= { 1000.f, 3000.f, 5000.f };
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_CASCADE_SHADOW_BORDER[ENGINE_CASCADE_SHADOW_LAYER_NUM - 1u]	= { 100.f, 200.f };
 
-		PE_CONSTEXPR_STATIC		UINT32			ENGINE_PROFILER_AVERAGE_NUM											= 4u;
+		// Samples kept per trace. At 60 fps a window of 32 covers roughly half a second, which is
+		// long enough for the average to stop jumping without hiding a spike.
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_PROFILER_AVERAGE_NUM											= 32u;
+
+		// D3D11 only: frames between a timestamp write and its readback attempt. D3D11 has no
+		// frame fence we can wait on without stalling, so the profiler reads a slice a fixed
+		// number of frames later and retries if the GPU is not done. Clamped by the GPU profiler
+		// to [1, MAX_FRAMES_IN_FLIGHT - 2], because the heap keeps delay + current + retry slices.
+		PE_CONSTEXPR_STATIC		UINT32			ENGINE_PROFILER_GPU_D3D11_READBACK_DELAY							= 2u;
 	public:
 		static EEngineSettings* GetSingleton()
 		{

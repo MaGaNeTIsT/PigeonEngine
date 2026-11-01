@@ -1,0 +1,27 @@
+{
+	"Name": "EnvironmentPrefilter",
+	"Template": "Compute/EnvironmentPrefilter/EnvironmentPrefilter.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "PrefilterParams",
+			"Slot": 0,
+			"Fields": [
+				{ "Name": "MipIndex", "Format": "uint" },
+				{ "Name": "MipCount", "Format": "uint" },
+				{ "Name": "MipResolution", "Format": "uint" },
+				{ "Name": "SourceCubeResolution", "Format": "uint" },
+				{ "Name": "SampleCount", "Format": "uint" },
+				{ "Name": "CubeMeanLuminance", "Format": "float" }
+			]
+		}
+	],
+	"Textures": [
+		{ "Name": "EnvironmentCube", "Type": "Cube", "Format": "float4", "SamplerName": "SamplerMaterialCube", "Slot": 0 }
+	],
+	"RWTextures": [
+		{ "Name": "PrefilteredEnvironmentCube", "Type": "2DArray", "Format": "float4", "Slot": 0 }
+	],
+	"Replaces": [
+		{ "Name": "COMPUTE_BODY", "Element": "#include \"Compute/EnvironmentPrefilter/EnvironmentPrefilter.hlsl\"" }
+	]
+}

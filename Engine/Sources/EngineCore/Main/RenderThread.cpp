@@ -3,6 +3,7 @@
 #include <Renderer/RenderScene.h>
 #include <Renderer/SceneRenderer.h>
 #include <RenderResourceLifetime.h>
+#include <Development/Profiler.h>
 
 namespace PigeonEngine
 {
@@ -89,6 +90,11 @@ namespace PigeonEngine
 			// commands run: a proxy added in the same frame then finds the resource its
 			// asset asked for already built.
 			RRenderResourceManager::GetManagerSingleton()->DoCommands();
+
+			// Covers the rendered frame from command playback through Present:
+			// scene passes, the ImGui replay and the frame's submission. The
+			// guard lives to the end of the loop body.
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_THREAD);
 
 			// SceneRenderer drains FrontSlot commands, builds passes,
 			// records draws via the IRCommandList, and presents.

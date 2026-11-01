@@ -80,6 +80,7 @@ public:
 	virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot)override;
 	virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture)override;
 	virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer)override;
+	virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView)override;
 	virtual void ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot)override;
 	virtual void SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler)override;
 
@@ -109,14 +110,6 @@ public:
 
 	// Native access
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> GetNativeCommandList()const { return CommandList; }
-
-	// Bindless SRV mode. While FALSE - the only mode the engine produces today, since every
-	// variant is compiled with PE_SHADER_BINDLESS = 0 - the slot-based SRV helper asserts its
-	// slot against the API's input-resource slot count. Once a bound program is a bindless
-	// variant its shaders index ResourceDescriptorHeap directly, the slot helpers are unused,
-	// and the assertion is skipped.
-	void SetBindlessSRVBindingsEnabled(BOOL8 InEnabled) { bBindlessSRVBindingsEnabled = (InEnabled != FALSE); }
-	BOOL8 IsBindlessSRVBindingsEnabled() const { return bBindlessSRVBindingsEnabled; }
 
 private:
 	// What one shader stage's root signature binding currently is. D3D12 keeps the graphics
@@ -197,8 +190,6 @@ private:
 	// transition). DrawIndexed / Draw skip silently when FALSE so the proxy
 	// migration can keep recording bindings without producing D3D12 errors.
 	BOOL8											HasBoundPipeline;
-	// See SetBindlessSRVBindingsEnabled: gates the slot-based SRV range assertion.
-	BOOL8											bBindlessSRVBindingsEnabled;
 	// The view formats of the targets the live pass bound, as the textures declare them (see
 	// IRRHITexture::GetViewFormat). SetPipelineState compares them against the state's declared
 	// formats; a texture that reports FORMAT_UNKNOWN is skipped, because a back-end that does not

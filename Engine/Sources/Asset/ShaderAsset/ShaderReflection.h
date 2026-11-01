@@ -311,6 +311,14 @@ namespace PigeonEngine
 		BOOL32				bIsRW			= FALSE;
 		// Declared but not present in the compiled shader: not bound, not bindable.
 		BOOL32				bCompilerCulled	= FALSE;
+		// Bindless, reported by the compiler twice on purpose: PreferBindless is what the source
+		// declared, Bindless is what this compilation did with it - false when the target could
+		// not express the path, which is what keeps "declared but not taken" visible. The runtime
+		// reads Bindless and nothing else, and BindConstantBuffer names the block whose
+		// "<Name>_BindlessIdx" member carries the heap index this resource is bound through.
+		BOOL32				PreferBindless	= FALSE;
+		BOOL32				Bindless		= FALSE;
+		EName				BindConstantBuffer;
 	};
 
 	struct EShaderReflectionResource
@@ -326,6 +334,12 @@ namespace PigeonEngine
 		BOOL32							bIsRW			= FALSE;
 		// Declared but not present in the compiled shader: not bound, not bindable.
 		BOOL32							bCompilerCulled	= FALSE;
+		// Bindless: see EShaderReflectionTexture. A buffer carries the same pair of flags and the
+		// same index block, because it is index driven through the descriptor heap exactly like a
+		// texture is.
+		BOOL32							PreferBindless	= FALSE;
+		BOOL32							Bindless		= FALSE;
+		EName							BindConstantBuffer;
 	};
 
 	struct EShaderReflectionSampler
@@ -337,6 +351,12 @@ namespace PigeonEngine
 		BOOL32				Exposure	= FALSE;
 		// Declared but not present in the compiled shader: not bound, not bindable.
 		BOOL32				bCompilerCulled	= FALSE;
+		// Bindless: see EShaderReflectionTexture. A sampler that declares it is index driven
+		// through SamplerDescriptorHeap; the ones that do not stay in the sampler table, which is
+		// what every engine sampler does.
+		BOOL32				PreferBindless	= FALSE;
+		BOOL32				Bindless	= FALSE;
+		EName				BindConstantBuffer;
 	};
 
 	struct EShaderReflectionInputLayout

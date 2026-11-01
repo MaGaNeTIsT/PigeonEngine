@@ -3,7 +3,7 @@
 // This file is intentionally free of any includes so that standalone tool
 // projects (e.g. MaterialCompiler) can include it without pulling in engine
 // headers.  Add Engine/Sources/EngineCore/Core to the tool's include paths
-// and use: #include <Config/EngineShaderNaming.h>
+// and use: #include <Config/EngineShaderConfig.h>
 
 // -- Shader binary suffixes ------------------------------------------------
 // The token only, no separator: a name is composed as <Name>_<Token>, so whoever
@@ -14,6 +14,16 @@
 #define MC_SHADER_VS_SUFFIX		"PEVS"
 #define MC_SHADER_PS_SUFFIX		"PEPS"
 #define MC_SHADER_CS_SUFFIX		"PECS"
+
+// -- Bindless index naming ------------------------------------------------
+// The descriptor heap index of a resource that declares 'PreferBindless' is
+// declared as <Name>_<Token>, the same composition rule the binary suffixes
+// above follow: the token carries no separator. The compiler stitches it into
+// the generated shader header, which is why the shader library never spells the
+// name, and the engine uses the same token to find the field it writes the heap
+// index into. It lives in this header rather than in a render side one because
+// this is the one header the engine and the standalone shader compiler share.
+#define MC_SHADER_BINDLESS_INDEX_SUFFIX	"BindlessIdx"
 
 // -- Material Compiler build-time paths -----------------------------------
 // Relative to the engine working directory.  Override in project-specific

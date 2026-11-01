@@ -20,8 +20,11 @@ namespace PigeonEngine
 *
 * The (stage, block) key comes from the mirror itself, so this never reaches into the
 * set's container: it walks the read only accessors the set exposes. A dirty flag is
-* the whole staleness protocol - the asset side marks a mirror dirty when it writes a
-* value, the render side uploads the dirty ones and clears the flag.
+* the staleness protocol - the asset side marks a mirror dirty when it writes a value,
+* the render side uploads the dirty ones and clears the flag. A mirror whose entry is
+* missing is uploaded regardless of the flag: a table that was copied or rebuilt starts
+* empty while the set it mirrors may already be clean, and a block left unbound keeps
+* the previous draw's buffer at its root.
 *
 * A lookup by (stage, block) falls back to a buffer of the same block in another stage,
 * because the stage set of a block is a property of the program that first declared it,

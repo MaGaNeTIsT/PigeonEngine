@@ -1,0 +1,40 @@
+{
+	"Name": "M_DemoUnlit",
+	"Template": "Projects/Demo/M_DemoUnlit/M_DemoUnlit.hlsl",
+	"ConstantBuffers": [
+		{
+			"Name": "MaterialParams",
+			"Slot": 0,
+			"Fields": [
+				{
+					"Name": "EmissiveExcitation",
+					"Format": "float3",
+					"Default": [
+						15000.0,
+						15000.0,
+						15000.0
+					],
+					"Exposure": true
+				}
+			]
+		}
+	],
+	"Textures": [
+		{
+			"Name": "EmissiveMap",
+			"Type": "2D",
+			"Format": "float4",
+			"SamplerName": "SamplerMaterial2D",
+			"Slot": 0,
+			"Exposure": true,
+			"PreferBindless": true,
+			"BindConstantBuffer": "MaterialParams"
+		}
+	],
+	"PEMaterial": {
+		"Domain": "Unlit",
+		"SurfaceMode": "Opaque",
+		"VertexOps": false,
+		"VariantDefines": []
+	}
+}

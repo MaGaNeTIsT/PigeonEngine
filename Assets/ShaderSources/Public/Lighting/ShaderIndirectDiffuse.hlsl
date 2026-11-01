@@ -66,9 +66,11 @@ float3 ComputeEnvironmentIrradiance(in float3 InNormal)
 	// A cbuffer publishes its members, not its name: the field is read bare, and
 	// "IndirectLightingParams.SkyLightColorLuminance" would not compile.
 	const float4 SkyColorLuminance = SkyLightColorLuminance;
-	// The tint scales radiance, and irradiance is linear in radiance, so the same pair of
-	// numbers is what the sky pass multiplies its cube by.
-	return EvaluateIrradianceSH(Coefficients, InNormal) * (SkyColorLuminance.rgb * SkyColorLuminance.w);
+	// The bake projects raw cube radiance, whose mean is the cube's, not one. Dividing by that
+	// mean here turns the coefficients into the unit mean shape the tint and luminance are
+	// meant to multiply; the sky pass and the prefilter divide the same cube by the same value.
+	const float CubeMeanLuminance = max(SkyCubeMeanLuminance, 0.0001);
+	return EvaluateIrradianceSH(Coefficients, InNormal) * (SkyColorLuminance.rgb * SkyColorLuminance.w) / CubeMeanLuminance;
 }
 
 // Adds the environment's diffuse contribution to a surface.

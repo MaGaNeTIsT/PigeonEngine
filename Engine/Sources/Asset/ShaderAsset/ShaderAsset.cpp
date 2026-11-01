@@ -466,7 +466,7 @@ namespace PigeonEngine
 				// The reflection (and with it the input layout) travels inside the stage
 				// asset, so composing a stage is copying it into the entry.
 				StageEntry->Reflection = StageAsset->GetReflection();
-				StageEntry->BindingPlan.BuildFromReflection(StageEntry->Reflection, Program->IsBindlessVariant());
+				StageEntry->BindingPlan.BuildFromReflection(StageEntry->Reflection);
 				StageEntry->bValid = ((StageAsset->IsValid()) ? TRUE : FALSE);
 				if (StageEntry->bValid)
 				{
@@ -999,7 +999,7 @@ namespace PigeonEngine
 	}
 
 	BOOL32 EShaderAssetManager::ImportShaderAssetFromManifest(const EString& InManifestFullPath
-		, const EString& InSavePath, const EString& InSaveName)
+		, const EString& InSavePath, const EString& InSaveName, const EName* InOnlyVariantName)
 	{
 		EShaderManifest Manifest;
 		if (!ParseShaderManifestJson(InManifestFullPath, Manifest))
@@ -1044,6 +1044,13 @@ namespace PigeonEngine
 		for (UINT32 VariantIdx = 0u, VariantNum = Manifest.Variants.Num<UINT32>(); VariantIdx < VariantNum; VariantIdx++)
 		{
 			const EShaderManifestVariant& Variant = Manifest.Variants[VariantIdx];
+			// A manifest can describe every variant that exists for its stage source; an assembly
+			// asks for exactly one of them, and folding the rest would add program variants to this
+			// shader that hold a single stage and can never be drawn.
+			if ((InOnlyVariantName != nullptr) && (Variant.Name != *InOnlyVariantName))
+			{
+				continue;
+			}
 			if (!Variant.bSuccess)
 			{
 				// A failed variant is not imported; the caller sees it in the compiler log.

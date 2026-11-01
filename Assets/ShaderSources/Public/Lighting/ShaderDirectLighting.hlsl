@@ -132,14 +132,22 @@ void ShadeOneLight(in SurfaceData InSurface, in float3 InWorldPosition, in float
 // The light buffers are declared by C_Lighting.json, so they are plain globals
 // here. A pixel stage that never calls this culls both buffers, which is why a
 // depth only pass pays nothing for the lighting declaration.
-void ShadeDirectionalLights(in SurfaceData InSurface, in float3 InWorldPosition, in float3 InViewDirection,
+void ShadeDirectionalLights(in SurfaceData InSurface, in float3 InWorldPosition, in float2 InScreenTexel, in float3 InViewDirection,
 	in float3 InF0, in bool InIsAnisotropic, in float3 InAnisotropicT, in float3 InAnisotropicB,
 	in float InAnisotropy, inout ShadingResult InOutResult)
 {
 	for (uint LightIndex = 0u; LightIndex < DirectionalLightCount; ++LightIndex)
 	{
 		DirectionalLightData StoredLight = DecodeDirectionalLight(DirectionalLights[LightIndex]);
-		LightData Light = BuildDirectionalLightData(StoredLight, SampleDirectionalLightShadow(StoredLight, InWorldPosition));
+		// The directional shadow term is the screen space mask's channel for this light. A
+		// compilation that is not the deferred lighting pass has no mask to read it from - the
+		// base pass only derives a surface and never shades - so it keeps the term at one rather
+		// than naming a binding it does not declare.
+		float Shadow = 1.0;
+#if SHADER_LIGHTING_PASS
+		Shadow = ReadDirectionalShadowMask(StoredLight, LightIndex, InScreenTexel);
+#endif
+		LightData Light = BuildDirectionalLightData(StoredLight, Shadow);
 		ShadeOneLight(InSurface, InWorldPosition, InViewDirection, Light, InF0,
 			InIsAnisotropic, InAnisotropicT, InAnisotropicB, InAnisotropy, InOutResult);
 	}
@@ -153,7 +161,8 @@ void ShadeLocalLights(in SurfaceData InSurface, in float3 InWorldPosition, in fl
 	for (uint LightIndex = 0u; LightIndex < LocalLightCount; ++LightIndex)
 	{
 		LocalLightData StoredLight = DecodeLocalLight(LocalLights[LightIndex]);
-		LightData Light = BuildLocalLightData(StoredLight, InWorldPosition, SampleLocalLightShadow(StoredLight, InWorldPosition));
+		LightData Light = BuildLocalLightData(StoredLight, InWorldPosition
+			, SampleLocalLightShadow(StoredLight, InWorldPosition, InSurface.Normal));
 		ShadeOneLight(InSurface, InWorldPosition, InViewDirection, Light, InF0,
 			InIsAnisotropic, InAnisotropicT, InAnisotropicB, InAnisotropy, InOutResult);
 	}

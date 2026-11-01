@@ -78,15 +78,16 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		EString ShaderModelDirectoryName;
-		if (!GetShaderModelDirectoryName(InRequest.ShaderModel, ShaderModelDirectoryName))
+		EString TargetDirectoryName;
+		if (!GetShaderTargetDirectoryName(InRequest.Target, TargetDirectoryName))
 		{
 			return FALSE;
 		}
 
-		// Two targets must never share one directory: the reflection and the manifest
-		// file names do not carry the shader model, so they would overwrite each other.
-		OutDirectory = OutputRoot + BuildConfigName + EString("/") + ShaderModelDirectoryName + EString("/");
+		// Two targets must never share one directory: the reflection and the manifest file
+		// names do not carry the target, so they would overwrite each other. The directory
+		// carries both axes for exactly that reason.
+		OutDirectory = OutputRoot + BuildConfigName + EString(PE_TEXT("/")) + TargetDirectoryName + EString(PE_TEXT("/"));
 		return TRUE;
 	}
 
@@ -220,14 +221,27 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		// Target flags. Dx11 wins when both are set, matching the compiler.
-		const BOOL32 bDx11 = ((InRequest.ShaderModel == EShaderModelType::SHADER_MODEL_5_0) ? TRUE : FALSE);
-		const BOOL32 bSm66 = ((InRequest.ShaderModel == EShaderModelType::SHADER_MODEL_6_6) ? TRUE : FALSE);
+		// Target flags, one per axis: the back end picks the compiler and the bytecode format,
+		// the shader model picks the profile. The compiler's rule is that Dx11 wins when both
+		// are set, and the pairs the target tables allow never set both.
+		EShaderModelType CompileModel = EShaderModelType::SHADER_MODEL_5_0;
+		if (!TranslateShaderTargetToCompileModel(InRequest.Target, CompileModel))
+		{
+			return FALSE;
+		}
+		const BOOL32 bDx11 = ((InRequest.Target.Backend == ERHIBackendType::RHI_BACKEND_D3D11) ? TRUE : FALSE);
+		const BOOL32 bSm66 = ((CompileModel == EShaderModelType::SHADER_MODEL_6_6) ? TRUE : FALSE);
 
-		EString VariantName = InRequest.Variant.Name.ToString();
+		// The request names its variant; nothing here invents one. Inventing "Base" is what used
+		// to turn a request that named no variant into the reserved compilation - and, when such
+		// a request also carried defines, into a description whose name and content contradict
+		// each other, which the compiler then had to refuse. A nameless request is a caller
+		// mistake and is reported as one, here, before the compiler is asked to run.
+		const EString VariantName = InRequest.Variant.Name.ToString();
 		if (VariantName.Length() == 0u)
 		{
-			VariantName = EString("Base");
+			PE_LOG_ERROR(EString(PE_TEXT("[ShaderCompileJob] The compile request carries no variant name.")));
+			return FALSE;
 		}
 
 		EString CompileJson;
@@ -259,19 +273,6 @@ namespace PigeonEngine
 			}
 			CompileJson += EString("\n                { \"Name\": \"") + EscapeJsonString(Define.Name.ToString())
 				+ EString("\", \"Value\": ") + ToString(Define.Value) + EString(" }");
-			bHasPreviousDefine = TRUE;
-		}
-		// The bindless switch is an engine macro, so it travels with the variant and
-		// shows up in the manifest: the runtime reads the binding mode from data
-		// instead of guessing it from the shader model.
-		if ((InRequest.bBindlessPath) && (InRequest.ShaderModel != EShaderModelType::SHADER_MODEL_5_0))
-		{
-			if (bHasPreviousDefine)
-			{
-				CompileJson += EString(",");
-			}
-			CompileJson += EString("\n                { \"Name\": \"") + EString(SHADER_VARIANT_DEFINE_BINDLESS)
-				+ EString("\", \"Value\": 1 }");
 			bHasPreviousDefine = TRUE;
 		}
 		CompileJson += (bHasPreviousDefine ? EString("\n            ]") : EString("]"));
@@ -306,17 +307,40 @@ namespace PigeonEngine
 
 	static void LogCompilerLine(const EString& InLine)
 	{
-		if ((InLine.Find(EString("error")) >= 0) || (InLine.Find(EString("Error")) >= 0))
+		// The compiler tags its own lines; DXC's diagnostics arrive untagged. A tag, when there is
+		// one, is the level: the old keyword search never saw the compiler's "[WARN]" - that is not
+		// the word "Warning" - and it did see a shader named "M_EngineError" inside an info line.
+		if (InLine.Find(EString(PE_TEXT("[ERROR]"))) >= 0)
 		{
 			PE_LOG_ERROR(InLine);
 			return;
 		}
-		if ((InLine.Find(EString("warning")) >= 0) || (InLine.Find(EString("Warning")) >= 0))
+		if (InLine.Find(EString(PE_TEXT("[WARN]"))) >= 0)
 		{
 			PE_LOG_WARN(InLine);
 			return;
 		}
-		PE_LOG_LOG(InLine);
+		if ((InLine.Find(EString(PE_TEXT("[INFO]"))) >= 0)
+			|| (InLine.Find(EString(PE_TEXT("[VERBOSE]"))) >= 0)
+			|| (InLine.Find(EString(PE_TEXT("[STAGE]"))) >= 0))
+		{
+			// Progress notes: they belong in the file and not in the window, which keeps every
+			// line of the session and lays all of them out again on every frame.
+			PE_LOG_FILE_ONLY(InLine);
+			return;
+		}
+		// Untagged lines are raw compiler diagnostics, so the keyword search is the fallback.
+		if ((InLine.Find(EString(PE_TEXT("error"))) >= 0) || (InLine.Find(EString(PE_TEXT("Error"))) >= 0))
+		{
+			PE_LOG_ERROR(InLine);
+			return;
+		}
+		if ((InLine.Find(EString(PE_TEXT("warning"))) >= 0) || (InLine.Find(EString(PE_TEXT("Warning"))) >= 0))
+		{
+			PE_LOG_WARN(InLine);
+			return;
+		}
+		PE_LOG_FILE_ONLY(InLine);
 	}
 
 	BOOL32 EShaderCompileJob::RunShaderCompiler(const EString& InCompileJsonPath)
@@ -447,17 +471,15 @@ namespace PigeonEngine
 	}
 
 	// What a compile attempt is identified by: which stage source, into which target, for
-	// which variant. Two requests that share a variant name are the same variant by
-	// contract - the builder rejects an axis the name does not match - so the name is the
-	// whole of the variant half.
+	// which variant. Two requests that share a variant name share the axis that name was built
+	// from - the builder derives the name from the axis, and the loaded variant is checked
+	// against it - so the name is the whole of the variant half.
 	static EString MakeShaderCompileKey(const EString& InCompileJsonPath, const EShaderCompileRequest& InRequest)
 	{
-		EString VariantName = InRequest.Variant.Name.ToString();
-		if (VariantName.Length() == 0u)
-		{
-			VariantName = EString(PE_TEXT("Base"));
-		}
-		return (InCompileJsonPath + EString(PE_TEXT("|")) + VariantName);
+		// The name the request carries, as it is: a request that names no variant never reaches
+		// this function, because the compile description is written first and writing it refuses
+		// one.
+		return (InCompileJsonPath + EString(PE_TEXT("|")) + InRequest.Variant.Name.ToString());
 	}
 
 	// The attempts the compiler has already rejected in this process, so that none of them

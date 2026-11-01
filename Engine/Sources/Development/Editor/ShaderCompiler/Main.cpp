@@ -1176,6 +1176,82 @@ static bool CompileShaderVariant(
 // ---------------------------------------------------------------------------
 // Build manifest - the tool's whole result, written even when variants failed.
 // ---------------------------------------------------------------------------
+
+// Whether the variant array already carries a variant of this name. The manifest is rewritten by
+// every compile, so the name is what decides whether an entry is this compile's or an earlier one's.
+static bool ManifestHasVariant(const rapidjson::Value& InVariants, const std::string& InName) noexcept
+{
+	for (auto& Variant : InVariants.GetArray())
+	{
+		const auto NameIt = Variant.FindMember("Name");
+		if ((NameIt != Variant.MemberEnd()) && (NameIt->value.IsString()) && (InName == NameIt->value.GetString()))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+// Folds the variants an earlier compile of the same stage source left in the manifest into this
+// one.
+//
+// The artifacts are per variant while the manifest is per stage source: the engine folds a stage
+// into a shader by looking its variant up here, so a manifest that only remembered the last
+// compile would hand an assembly another variant's defines - a shader with a stage for an axis
+// nobody asked for. Appending instead of replacing keeps the file a description of everything
+// that exists on disk.
+//
+// Anything unreadable or describing another stage source is left alone: a fresh manifest is
+// always correct.
+static void AppendExistingManifestVariants(rapidjson::Document& InOutManifest, const std::string& InManifestPath) noexcept
+{
+	std::string ExistingText;
+	if (!ReadTextFile(InManifestPath, ExistingText))
+	{
+		return;
+	}
+
+	rapidjson::Document ExistingDoc;
+	ExistingDoc.Parse(ExistingText.c_str());
+	if (ExistingDoc.HasParseError() || (!ExistingDoc.IsObject()) || (!InOutManifest.IsObject()))
+	{
+		return;
+	}
+
+	const auto ExistingName = ExistingDoc.FindMember("Name");
+	const auto NewName = InOutManifest.FindMember("Name");
+	const auto ExistingVariants = ExistingDoc.FindMember("Variants");
+	const auto NewVariants = InOutManifest.FindMember("Variants");
+	if ((ExistingName == ExistingDoc.MemberEnd()) || (NewName == InOutManifest.MemberEnd())
+		|| (ExistingVariants == ExistingDoc.MemberEnd()) || (NewVariants == InOutManifest.MemberEnd())
+		|| (!ExistingName->value.IsString()) || (!NewName->value.IsString())
+		|| (!ExistingVariants->value.IsArray()) || (!NewVariants->value.IsArray()))
+	{
+		return;
+	}
+	if (std::string(ExistingName->value.GetString()) != std::string(NewName->value.GetString()))
+	{
+		return;
+	}
+
+	auto& ManifestAllocator = InOutManifest.GetAllocator();
+	for (auto& ExistingVariant : ExistingVariants->value.GetArray())
+	{
+		const auto NameIt = ExistingVariant.FindMember("Name");
+		if ((NameIt == ExistingVariant.MemberEnd()) || (!NameIt->value.IsString()))
+		{
+			continue;
+		}
+		if (ManifestHasVariant(NewVariants->value, std::string(NameIt->value.GetString())))
+		{
+			continue;
+		}
+		rapidjson::Value VariantCopy;
+		VariantCopy.CopyFrom(ExistingVariant, ManifestAllocator);
+		NewVariants->value.PushBack(VariantCopy, ManifestAllocator);
+	}
+}
+
 static bool WriteManifest(
 	const MCCompileArgs&				InArgs,
 	MCShaderStageType					InStage,
@@ -1226,6 +1302,10 @@ static bool WriteManifest(
 		VariantArray.PushBack(VariantObj, ManifestAllocator);
 	}
 	ManifestDoc.AddMember("Variants", VariantArray, ManifestAllocator);
+
+	// The variants earlier compiles of this stage source already produced stay in the file: they
+	// name artifacts that are still on disk, and an assembly of another profile folds them.
+	AppendExistingManifestVariants(ManifestDoc, InManifestPath);
 
 	rapidjson::StringBuffer StrBuff;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> StrBuffWriter(StrBuff);

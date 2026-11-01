@@ -47,7 +47,14 @@ void PSMain(in VFVarying InVarying,
 
 	EvaluateMaterialSurface(MatInput, Material);
 	DeriveSurface(Material, MatInput, Surface);
+	// The domain derived a world-space normal from the geometry-space frame the material was
+	// given. The facing adjustment belongs to the engine and is applied here, exactly once, before
+	// the encoder reads it - the same step EvaluateSurface applies on the forward path.
+	Surface.Normal = Surface.Normal * MatInput.FaceSign;
 
+	// The mask discard is compiled in only for the mask mode: a discard disables early depth
+	// rejection for the shader, so the opaque variant must not carry one. The test runs after the
+	// programmable surface produced its coverage, which is what makes the mask the material's.
 #if MATERIAL_SURFACE_MODE == MATERIAL_SURFACE_MODE_MASK
 	if (IsAlphaDiscarded(Surface.Opacity, Surface.AlphaCutoff))
 	{

@@ -7,22 +7,42 @@ namespace PigeonEngine
 {
 #if _EDITOR_ONLY
 
-	// ImGui panel that snapshots EProfiler's three rings (CPU scope, CPU
-	// counter, GPU scope) and renders them as sortable tables. Lives next
-	// to EEditorGlobalPanel; EditorManager drives the per-frame Draw call.
+	// One row of either profiler table. A plain value on purpose: a snapshot can
+	// be cached while the panel is paused, so the tables never reach back into
+	// the profiler on the frames they draw from a frozen copy.
+	struct EProfilerTableRow
+	{
+		EName				Name;
+		EProfileScopeStat	Stat;
+		// Share of the GPU frame total. bHasShare is FALSE for the frame row
+		// itself, and for every pass when no frame total was recorded.
+		DOUBLE				ShareRatio	= 0.0;
+		BOOL8				bHasShare	= FALSE;
+	};
+
+	// ImGui panel over EProfiler and EGPUProfiler. Two tabs: the four CPU thread
+	// brackets, and the GPU frame total followed by one row per pass.
+	// EditorManager drives the per-frame Draw call.
 	//
-	// When _CPU_ENABLE_PROFILER / _GPU_ENABLE_PROFILER are off the
-	// corresponding Snapshot APIs return empty arrays, and the matching tab
-	// shows a disabled-state placeholder instead of a table.
+	// Pause freezes what the panel reads, not what the engine records: the rows
+	// are rebuilt from a fresh snapshot when the pause is released. Clear All
+	// drops the traces and the cached rows together, so a cleared panel cannot
+	// show a table built from samples that no longer exist.
 	class EEditorProfilerPanel : public EManagerBase
 	{
 		CLASS_MANAGER_VIRTUAL_SINGLETON_BODY(EEditorProfilerPanel)
 	public:
-		virtual void	Initialize()override;
-		virtual void	ShutDown()override;
+		virtual void	Initialize() override;
+		virtual void	ShutDown() override;
 		void			DrawPanel();
 	private:
-		BOOL32	bWindowOpen			= TRUE;
+		void			RefreshRows();
+	private:
+		BOOL32						bWindowOpen		= TRUE;
+		BOOL32						bPaused			= FALSE;
+		BOOL32						bRowsValid		= FALSE;
+		TArray<EProfilerTableRow>	CpuRows;
+		TArray<EProfilerTableRow>	GpuRows;
 	};
 
 #endif

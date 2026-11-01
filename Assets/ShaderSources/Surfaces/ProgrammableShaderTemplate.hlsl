@@ -152,9 +152,16 @@ MaterialPixelInput BuildMaterialPixelInput(in VFVarying InVarying, in float3 InV
 {
 	MaterialPixelInput Result;
 	Result.WorldPosition = InVarying.WorldPosition;
+	// The material gets the geometry-space frame the vertex stage interpolated, not a pre-flipped
+	// one: the mesh's own basis is what a material needs for its own math. A tangent-space normal
+	// the material writes is transformed with this frame by the domain, and the facing adjustment
+	// is applied by the engine to the resulting world normal exactly once - see EvaluateSurface
+	// and the base pass. A material that converts a direction to world space itself multiplies the
+	// result by FaceSign to match that step.
 	Result.WorldNormal = InVarying.WorldNormal;
 	Result.WorldTangent = InVarying.WorldTangent;
 	Result.WorldBitangent = InVarying.WorldBitangent;
+	Result.FaceSign = (InIsFrontFace ? 1.0 : -1.0);
 	Result.UV0 = InVarying.UV0;
 	Result.UV1 = InVarying.UV1;
 	Result.VertexColor = InVarying.Color;
@@ -222,6 +229,12 @@ void EvaluateSurface(in MaterialPixelInput InInput, out SurfaceData OutSurface, 
 	MaterialSurface Material;
 	EvaluateMaterialSurface(InInput, Material);
 	DeriveSurface(Material, InInput, OutSurface);
+	// A back face is the same surface seen from the other side: the domain derived a world-space
+	// normal from the geometry-space frame the material was given, and the facing adjustment is
+	// the engine's step, applied here exactly once before anything reads the normal. A single
+	// sided material never rasterizes a back face, so the multiply is free for it; a pass that
+	// states CULL_NONE (grass, a two sided material) gets the same correction as the base pass.
+	OutSurface.Normal = OutSurface.Normal * InInput.FaceSign;
 	ShadeSurface(OutSurface, InInput, OutResult);
 }
 

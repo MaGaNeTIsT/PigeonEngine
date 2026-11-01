@@ -108,10 +108,7 @@ if(MSVC)
 		$<$<CONFIG:Develop>:/INCREMENTAL /DEBUG>
 		$<$<CONFIG:DevelopEditor>:/INCREMENTAL /DEBUG>
 		$<$<CONFIG:Shipping>:/INCREMENTAL:NO>
-	)
-	target_link_options(ShaderCompiler PRIVATE
-		$<$<CONFIG:Develop>:/LTCG>
-		$<$<CONFIG:DevelopEditor>:/LTCG>
+		# Only Shipping compiles with /GL, so only Shipping can use /LTCG.
 		$<$<CONFIG:Shipping>:/LTCG>
 	)
 	# Copy dxcompiler.dll + dxil.dll next to the exe after build

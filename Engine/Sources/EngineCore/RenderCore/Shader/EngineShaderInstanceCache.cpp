@@ -2,6 +2,7 @@
 
 #include <Asset/AssetLoadManager.h>
 #include <Main/MainManager.h>
+#include <Renderer/ScenePass.h>
 #include <Renderer/SceneRenderer.h>
 #include <Shader/ShaderAssetBinding.h>
 #include <ShaderAsset/ShaderAsset.h>
@@ -73,6 +74,13 @@ namespace PigeonEngine
 				}
 			}
 			Instances.Empty();
+			// The copies of a material go with the material they were made from: they own constant
+			// buffers on the same terms the table's instances do.
+			for (UINT32 Index = 0u, Num = OwnedExtraInstances.Num<UINT32>(); Index < Num; Index++)
+			{
+				ReleasedInstances.Add(OwnedExtraInstances[Index]);
+			}
+			OwnedExtraInstances.Empty();
 		}
 		for (UINT32 Index = 0u, Num = ReleasedInstances.Num<UINT32>(); Index < Num; Index++)
 		{
@@ -178,6 +186,72 @@ namespace PigeonEngine
 		return nullptr;
 	}
 
+	const EShaderInstance* REngineShaderInstanceCache::RequirePassInstance(const EShaderInstance& InPrimary, const EName& InPassName)
+	{
+		// The primary's request is what the derived assembly is built from, so it is copied out
+		// once, under the lock that guards the table.
+		EShaderAssemblyRequest PrimaryRequest;
+		{
+			EScopedLock ScopedLock(TableMutex);
+			BOOL32 bFound = FALSE;
+			for (UINT32 Index = 0u, Num = Instances.Num<UINT32>(); Index < Num; Index++)
+			{
+				if (Instances[Index].Instance == &InPrimary)
+				{
+					PrimaryRequest	= Instances[Index].Request;
+					bFound			= TRUE;
+					break;
+				}
+			}
+			if (bFound == FALSE)
+			{
+				return nullptr;
+			}
+		}
+		const FRenderPassDesc* PassDesc = FRenderPassRegistry::FindDescByPassName(InPassName);
+		if ((!PassDesc) || (!PassDesc->ProgramName))
+		{
+			return nullptr;
+		}
+		EShaderAssemblyRequest DerivedRequest = PrimaryRequest;
+		DerivedRequest.ProgramName = EName(PassDesc->ProgramName);
+		// A different program needs a different shader name: the assembly cache keys on it, and
+		// the two programs carry different stage sources.
+		EString DerivedName = PrimaryRequest.ShaderName.ToString();
+		DerivedName += EString(PE_TEXT("_"));
+		DerivedName += InPassName.ToString();
+		DerivedRequest.ShaderName = EName(DerivedName);
+		DerivedRequest.StageMask = ((PassDesc->StageMask != 0u)
+			? PassDesc->StageMask : (SHADER_STAGE_MASK_VERTEX | SHADER_STAGE_MASK_PIXEL));
+
+		if (const EShaderInstance* Cached = TryFindInstance(DerivedRequest))
+		{
+			// The parent link is what makes a value or a texture set on the material reach its pass
+			// instance without being copied. It is re-applied on every call because the cached
+			// instance may predate a material swap.
+			EShaderInstance* MutableInstance = const_cast<EShaderInstance*>(Cached);
+			const EShaderParameterSet& PrimaryParameters = const_cast<EShaderInstance&>(InPrimary).GetParameters();
+			if (MutableInstance->GetParameters().GetParent() != &PrimaryParameters)
+			{
+				MutableInstance->GetParameters().SetParent(&PrimaryParameters);
+			}
+			return Cached;
+		}
+		// Not assembled yet: record the work for the load thread and answer with nothing, the same
+		// contract RequireInstance has. The draw that asked is skipped this frame.
+		EAssetLoadManager::GetManagerSingleton()->RequestLoad(MakeInstanceRequestKey(DerivedRequest)
+			, [DerivedRequest]() -> BOOL32
+			{
+				return ((REngineShaderInstanceCache::GetManagerSingleton()->CreateInstanceForRequest(DerivedRequest) != nullptr) ? TRUE : FALSE);
+			}
+			, [DerivedRequest](const BOOL32 InIsLoaded) -> void
+			{
+				(void)InIsLoaded;
+				REngineShaderInstanceCache::GetManagerSingleton()->PublishShaderAssetSwap(DerivedRequest.ShaderName);
+			});
+		return nullptr;
+	}
+
 	const EShaderInstance* REngineShaderInstanceCache::FindOrCreate(const EShaderAssemblyRequest& InRequest)
 	{
 		// The load thread's synchronous form, for the callers that resolve a program during engine
@@ -230,7 +304,8 @@ namespace PigeonEngine
 
 		const EShaderAsset* Asset = nullptr;
 		EName VariantName;
-		if (!EShaderJobBuilder::EnsureAssembly(InRequest, Asset, VariantName))
+		BOOL32 bIsTwoSided = FALSE;
+		if (!EShaderJobBuilder::EnsureAssembly(InRequest, Asset, VariantName, bIsTwoSided))
 		{
 			return nullptr;
 		}
@@ -238,20 +313,53 @@ namespace PigeonEngine
 		// behind this shader name, and moving the readers onto it is the caller's step - the
 		// requested form does it in the request's completion, the synchronous form right after this
 		// returns. Both run on this thread, right after the load.
-		const EShaderInstance* Instance = CreateShaderInstance(Asset, VariantName.ToString());
-		if (!Instance)
+		EShaderInstance* NewInstance = CreateShaderInstance(Asset, VariantName.ToString());
+		if (!NewInstance)
 		{
 			// Not cached on purpose: the callers that retry until their shader is available rely
 			// on the next request trying again.
 			return nullptr;
 		}
+		// The material's rasterizer trait is part of what the draw reads from the instance, so it
+		// is set before the entry is published below. A material with no such flag keeps the
+		// default trait, which is the single sided one.
+		EShaderRenderTraits Traits;
+		Traits.bTwoSided = bIsTwoSided;
+		NewInstance->SetTraits(Traits);
 
 		FEntry NewEntry;
+		NewEntry.Request	= InRequest;
 		NewEntry.RequestKey	= MakeInstanceRequestKey(InRequest);
 		NewEntry.ShaderName	= InRequest.ShaderName;
-		NewEntry.Instance	= Instance;
+		NewEntry.Instance	= NewInstance;
 		EScopedLock ScopedLock(TableMutex);
 		Instances.Add(NewEntry);
+		return NewInstance;
+	}
+
+	EShaderInstance* REngineShaderInstanceCache::CreateOwnedInstance(const EShaderInstance& InSource)
+	{
+		const EShaderAsset* SourceAsset = InSource.GetAsset();
+		if (!SourceAsset)
+		{
+			return nullptr;
+		}
+		// Same asset, same variant, so this resolves the program the source already resolved;
+		// what the copy gains is its own parameter set, which is the whole point.
+		EShaderInstance* Instance = CreateShaderInstance(SourceAsset, InSource.GetVariantName().ToString());
+		if (!Instance)
+		{
+			return nullptr;
+		}
+		// The copy is a different instance of the same material, so it starts with the source's
+		// render traits - the pipeline state a material asks for, not its values. A caller that
+		// wants one material drawn both ways sets the trait on its own copy rather than on the
+		// shared instance every other user of the material sees.
+		Instance->SetTraits(InSource.GetTraits());
+		// Recorded so ShutDown releases it with the rest. The caller keeps the pointer without
+		// owning it, exactly like an instance the table hands out.
+		EScopedLock ScopedLock(TableMutex);
+		OwnedExtraInstances.Add(Instance);
 		return Instance;
 	}
 

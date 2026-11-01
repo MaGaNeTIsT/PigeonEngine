@@ -87,6 +87,10 @@ namespace PigeonEngine
 		virtual void ClearShaderResourceView(ERHIShaderStage InStage, UINT32 InSlot) = 0;
 		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITexture* InTexture) = 0;
 		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHIBuffer* InBuffer) = 0;
+		// A view of one texture subresource (one mip, an array/cube slice range). Bound like the
+		// texture overload, but the descriptor is the view's own, so a pass can write one mip
+		// while another view of the same texture covers a different one.
+		virtual void SetUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot, IRRHITextureUAVView* InView) = 0;
 		virtual void ClearUnorderedAccessView(ERHIShaderStage InStage, UINT32 InSlot) = 0;
 		virtual void SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHISampler* InSampler) = 0;
 

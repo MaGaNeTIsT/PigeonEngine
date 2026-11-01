@@ -35,11 +35,13 @@ void PSMain(in VFVarying InVarying,
 {
 	MaterialPixelInput MatInput = BuildMaterialPixelInput(InVarying, ViewPosition.xyz, InPrimitiveID, InIsFrontFace);
 
+	// The discard is compiled in only for the mask mode. A discard disables early depth rejection
+	// for the whole shader on most GPUs, so an opaque variant must not contain one at all; the
+	// coverage query and the test therefore live together behind the same macro.
+#if MATERIAL_SURFACE_MODE == MATERIAL_SURFACE_MODE_MASK
 	float Opacity;
 	float AlphaCutoff;
 	CalcMaterialOpacity(MatInput, Opacity, AlphaCutoff);
-
-#if MATERIAL_SURFACE_MODE == MATERIAL_SURFACE_MODE_MASK
 	if (IsAlphaDiscarded(Opacity, AlphaCutoff))
 	{
 		discard;

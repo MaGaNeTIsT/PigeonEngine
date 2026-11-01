@@ -2,8 +2,13 @@
 	"Name": "EngineSystem",
 	"Template": "Components/C_EngineSystem.hlsl",
 	"Defines": [
-		{ "Name": "PE_SHADER_BINDLESS", "Value": 0 },
-		{ "Name": "PE_PLATFORM_D3D12", "Value": 1 },
+		{ "Name": "PE_PLATFORM", "Value": 0 },
+		{ "Name": "PE_PLATFORM_D3D11", "Value": 0 },
+		{ "Name": "PE_PLATFORM_D3D12", "Value": 0 },
+		{ "Name": "PE_SHADER_MODEL", "Value": 0 },
+		{ "Name": "PE_SHADER_MODEL_5_0", "Value": 0 },
+		{ "Name": "PE_SHADER_MODEL_6_0", "Value": 0 },
+		{ "Name": "PE_SHADER_MODEL_6_6", "Value": 0 },
 		{ "Name": "PE_SHADER_QUALITY_LEVEL", "Value": 15 },
 		{ "Name": "PE_WITH_EDITOR", "Value": 1 },
 		{ "Name": "PE_EDITOR_CHECKER_GRID_CM", "Value": 2000 }

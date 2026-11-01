@@ -339,6 +339,13 @@ namespace PigeonEngine
 		virtual ID3D11Resource*				GetD3D11Resource()const noexcept override { return Buffer.Get(); }
 		virtual ID3D11ShaderResourceView*	GetD3D11SRV()const noexcept override { return ShaderResourceView.Get(); }
 
+		// The RHI texture behind this resource, whichever back-end created it: this wrapper is the
+		// object itself on D3D11 (it is an IRRHITexture through IRD3D11Texture), while D3D12 stores
+		// the object InitFromRHI was given. The cube and render target resources answer the same
+		// way, so a caller holding a 2D resource does not have to know which back-end made it.
+		IRRHITexture*		GetResolvedRHITexture() { return (RHITexture ? RHITexture : static_cast<IRRHITexture*>(this)); }
+		const IRRHITexture*	GetResolvedRHITexture() const { return (RHITexture ? RHITexture : static_cast<const IRRHITexture*>(this)); }
+
 		// Phase 1 transition helper: create the underlying texture through
 		// IRRHIDevice::CreateTexture. D3D11 backend unwraps the returned
 		// IRRHITexture into the ComPtr fields; D3D12 backend stores the
@@ -660,6 +667,12 @@ namespace PigeonEngine
 		RRenderTexture2D	GBufferD;
 		RRenderTexture2D	GBufferE;
 		RRenderTexture2D	GBufferF;
+		// The directional shadow mask: one channel per directional light, one means fully lit.
+		// The shadow mask pass resolves the cascade shadows into it and the lighting pass reads a
+		// channel per light. Its resolution is the view's (RShadowSettings::MaskResolutionScale is
+		// one today), which is why it is created with the same size as the targets above rather
+		// than with a size of its own.
+		RRenderTexture2D	DirectionalShadowMask;
 	public:
 		const Vector2Int&	GetTextureSize()const;
 		BOOL32				IsNeedStencil()const;
@@ -671,21 +684,6 @@ namespace PigeonEngine
 		~RSceneTextures();
 		RSceneTextures(const RSceneTextures&) = delete;
 		RSceneTextures& operator=(const RSceneTextures&) = delete;
-	};
-	class RShadowTexture final
-	{
-	public:
-		void	InitResources(const TArray<Vector2Int>& InTextureSizes);
-		void	ReleaseResources();
-	public:
-		TArray<RRenderTexture2D>	ShadowMaps;
-	private:
-		TArray<Vector2Int>			TextureSizes;
-	public:
-		RShadowTexture();
-		~RShadowTexture();
-		RShadowTexture(const RShadowTexture&) = delete;
-		RShadowTexture& operator=(const RShadowTexture&) = delete;
 	};
 
 };

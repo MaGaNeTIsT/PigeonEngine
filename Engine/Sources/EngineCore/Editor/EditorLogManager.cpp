@@ -14,11 +14,12 @@ namespace PigeonEngine
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 
-	ELog::ELog(ELogType InType, const EString& InLog, const EngineSystemTime::ESystemTime& InTimeStamp)
+	ELog::ELog(ELogType InType, const EString& InLog, const EngineSystemTime::ESystemTime& InTimeStamp, const BOOL32 InIsShowInImGui)
 		:
 	Type(InType),
 	Log(InLog),
-	TimeStamp(InTimeStamp)
+	TimeStamp(InTimeStamp),
+	bShowInImGui(InIsShowInImGui)
 	{
 	}
 
@@ -89,30 +90,81 @@ namespace PigeonEngine
 
 	void EEditorLogManager::EditorUpdate()
 	{
+		// Keeps the pending tail short without paying an append per line; a burst inside one frame
+		// is bounded by the batch size in AddALog.
+		{
+			EScopedLock LogScope(LogMutex);
+			this->WriteLogsToFile();
+		}
+
 		ImGui::Begin("PigeonLogs");
 		ImGui::BeginChild("PigeonLogsContent", ImVec2(0, 0), TRUE, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 		{
 			// The render thread may be appending while this draws, so the list is walked
 			// under the same lock AddALog takes.
 			EScopedLock LogScope(LogMutex);
-			for(const auto& elem : Logs)
+
+			// Only the rows on screen are laid out. The window keeps the whole session, and laying
+			// all of it out on every frame is what made a verbose session cost tens of
+			// milliseconds per frame for the rest of its life.
+			const INT32 VisibleLogNum = this->VisibleLogIndices.Num<INT32>();
+
+			// A clipped row contributes no width, so the content width is accumulated as lines
+			// arrive: the horizontal scrollbar has to describe the log, not the visible slab.
+			for (INT32 Index = this->NumMeasuredVisibleLogs; Index < VisibleLogNum; Index++)
 			{
-				elem->PrintLog();
+				const EString Text = this->Logs[this->VisibleLogIndices[Index]]->AsString();
+				const FLOAT LineWidth = ImGui::CalcTextSize(*Text).x;
+				if (LineWidth > this->MaxVisibleLogWidth)
+				{
+					this->MaxVisibleLogWidth = LineWidth;
+				}
 			}
+			this->NumMeasuredVisibleLogs = VisibleLogNum;
+
+			ImGuiListClipper Clipper;
+			Clipper.Begin(VisibleLogNum, ImGui::GetTextLineHeightWithSpacing());
+			while (Clipper.Step())
+			{
+				for (INT32 Index = Clipper.DisplayStart; Index < Clipper.DisplayEnd; Index++)
+				{
+					this->Logs[this->VisibleLogIndices[Index]]->PrintLog();
+				}
+			}
+			Clipper.End();
 		}
+
+		// The rows above were clipped away before they could widen the content area.
+		ImGui::Dummy(ImVec2(this->MaxVisibleLogWidth, 0.0f));
 
 		ImGui::EndChild();
 		ImGui::End();
 	}
 
-	void EEditorLogManager::AddALog(ELogType Type, const EString& NewLog)
+	// A block of lines costs one append instead of one per line. The shader compiler prints about
+	// 160 lines per stage, and an append opens, writes and closes the file, so a cold cook spent
+	// seconds on the log alone. The batch bounds what a killed process can lose.
+	PE_CONSTEXPR_STATIC INT32 EDITOR_LOG_FLUSH_BATCH_LINE_NUM = 64;
+
+	void EEditorLogManager::AddALog(ELogType Type, const EString& NewLog, const BOOL32 InIsShowInImGui)
 	{
 		// TSharedPtr<ELogType> NewLog = EMemory::MakeShared<ELogType>(Type, NewLog);
 		EScopedLock LogScope(LogMutex);
-		this->Logs.Add(EMemory::MakeShared<ELog>(Type, NewLog, EngineSystemTime::Now()));
-		// Write through: the log is the editor's only diagnostic channel, and a process that
-		// is killed shows nothing unless the lines are already on disk.
-		this->WriteLogsToFile();
+		this->Logs.Add(EMemory::MakeShared<ELog>(Type, NewLog, EngineSystemTime::Now(), InIsShowInImGui));
+		if (InIsShowInImGui)
+		{
+			// The window's own list, by index: a file only line never enters it, so the rows the
+			// clipper walks are exactly the rows it draws.
+			this->VisibleLogIndices.Add(this->Logs.Num<INT32>() - 1);
+		}
+
+		// Write through, in batches: the log is the editor's only diagnostic channel, so an error
+		// is on disk at once, while ordinary lines cost one append per batch rather than per line.
+		const INT32 PendingLogNum = this->Logs.Num<INT32>() - this->NumFlushedLogs;
+		if ((Type == ELogType::ELT_ERROR) || (PendingLogNum >= EDITOR_LOG_FLUSH_BATCH_LINE_NUM))
+		{
+			this->WriteLogsToFile();
+		}
 	}
 
 	void EEditorLogManager::WriteLogsToFile()

@@ -183,7 +183,8 @@ namespace PigeonEngine
 			InComponent->GetComponentWorldLocation(),
 			InComponent->GetComponentWorldRotation(),
 			InComponent->GetComponentWorldScale());
-		ERenderSkyLightParams* TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity());
+		ERenderSkyLightParams* TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity()
+			, InComponent->GetCubeMeanLinearLuminance(), InComponent->GetPrefilterResolutionExponent());
 		const ETextureCubeAsset* TempCubeMapAsset = InComponent->GetCubeMapAsset();
 
 		EnqueueAddCommand(
@@ -225,7 +226,8 @@ namespace PigeonEngine
 		ERenderSkyLightParams* TempParams = nullptr;
 		if ((UpdateState & PSkyLightComponent::PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_PARAMS) != 0u)
 		{
-			TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity());
+			TempParams = new ERenderSkyLightParams(InComponent->GetLightAdjust(), InComponent->GetIntensity()
+				, InComponent->GetCubeMeanLinearLuminance(), InComponent->GetPrefilterResolutionExponent());
 		}
 		const ETextureCubeAsset* TempCubeMapAsset = nullptr;
 		if ((UpdateState & PSkyLightComponent::PSkyLightUpdateState::SKY_LIGHT_UPDATE_STATE_TEXTURE) != 0u)

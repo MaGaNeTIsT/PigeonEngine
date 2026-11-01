@@ -254,13 +254,22 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		BOOL32 bResult = TRUE;
-		// Walked from the end: an upload retires one dirty flag, which shifts the entries
-		// that follow it. The ones still to be visited keep their index, so no mirror is
-		// skipped and none is uploaded twice.
-		for (UINT32 DirtyIdx = InParameters.GetDirtyBufferNum(); DirtyIdx > 0u; DirtyIdx--)
+		// Every mirror is walked, not only the dirty ones. A pass slot's table starts empty by
+		// design - the copy that installs a slot does not take the buffers over - and a slot that
+		// shares an instance with an already uploaded set finds those mirrors clean. A dirty-only
+		// walk would then leave the table empty, and an unbound root keeps the previous draw's
+		// buffer: the material block would silently hold another material's values, which for an
+		// index driven resource means the wrong texture. A missing entry is therefore created and
+		// uploaded here; an existing one is only uploaded again when its mirror is dirty.
+		for (UINT32 BufferIdx = 0u, BufferNum = InParameters.GetParameterBufferNum(); BufferIdx < BufferNum; BufferIdx++)
 		{
-			const EShaderParameterBuffer* Mirror = InParameters.GetDirtyBufferByIndex(DirtyIdx - 1u);
+			const EShaderParameterBuffer* Mirror = InParameters.GetParameterBufferByIndex(BufferIdx);
 			if (!Mirror)
+			{
+				continue;
+			}
+			const BOOL32 bHasEntry = ((FindEntry(Mirror->GetStage(), Mirror->GetBlockName()) != nullptr) ? TRUE : FALSE);
+			if ((bHasEntry != FALSE) && (Mirror->IsDirty() == FALSE))
 			{
 				continue;
 			}

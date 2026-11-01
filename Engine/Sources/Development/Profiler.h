@@ -43,6 +43,24 @@ namespace PigeonEngine
 	class IRCommandList;
 
 	// -----------------------------------------------------------------------
+	// Trace names shared by the instrumentation sites and the Profiler panel.
+	// Both ends spell the name through these constants, so a rename cannot
+	// leave the panel looking for a trace nothing records.
+	//
+	// The thread scopes are whole-thread brackets rather than subsystem
+	// timers: each frames one pass of its thread's main loop. Physics and the
+	// asset loads currently run on the game thread, so their brackets nest
+	// inside GameThread; when either moves to its own thread the bracket keeps
+	// reporting the same way without a call-site change.
+	// -----------------------------------------------------------------------
+
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GAME_THREAD		= PE_TEXT("GameThread");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_THREAD	= PE_TEXT("RenderThread");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_PHYSICS_THREAD	= PE_TEXT("PhysicsThread");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_LOAD_THREAD		= PE_TEXT("LoadThread");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GPU_FRAME		= PE_TEXT("GPU Frame");
+
+	// -----------------------------------------------------------------------
 	// Snapshot result types returned by the EProfiler query API
 	// -----------------------------------------------------------------------
 

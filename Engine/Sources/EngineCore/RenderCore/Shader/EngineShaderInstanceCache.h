@@ -75,6 +75,18 @@ namespace PigeonEngine
 		*/
 		PE_NODISCARD const EShaderInstance* FindOrCreateMaterial(const EShaderAssemblyRequest& InRequest);
 		/*
+		* Load thread only. A second instance of an assembled material: the same program, its own
+		* values. A scene that draws one material with several texture sets - one instance per
+		* source material, for instance - needs exactly this, and the cache is the owner that
+		* releases it in ShutDown.
+		*
+		* It exists here because an instance kept in a file scope static leaves the constant buffers
+		* it allocates in the render resource registry with nobody to release them, which the
+		* shutdown backstop reports as an owner that was never torn down. Null only when the source
+		* carries no asset, which is the one way the copy cannot be made.
+		*/
+		PE_NODISCARD EShaderInstance* CreateOwnedInstance(const EShaderInstance& InSource);
+		/*
 		* Any thread: the instance for InRequest when it is already assembled, otherwise null.
 		* Pure memory read - this is what a draw calls.
 		*/
@@ -89,6 +101,22 @@ namespace PigeonEngine
 		// Any thread: the material form of RequireInstance, including the engine error material
 		// substitution and the once-per-material failure report.
 		PE_NODISCARD const EShaderInstance* RequireMaterialInstance(const EShaderAssemblyRequest& InRequest);
+		/*
+		* Any thread: the instance of an already assembled material for another pass.
+		*
+		* A material is assembled once, for the pass that authored it; a pass that draws the same
+		* geometry with a different program - a depth only shadow pass is the first one - derives
+		* its own instance from that material instead of requiring the author to configure a second
+		* assembly. The derived request keeps the material, its vertex axis and its surface mode and
+		* swaps only the program and the shader name (the name must differ: the assembly cache keys
+		* on it and the two programs must not collide).
+		*
+		* The derived instance's parameter set is parented to the primary's, so a value or texture
+		* the game sets on the material reaches the pass instance without being copied. Null while
+		* the derived assembly is not there yet - the caller skips that draw this frame, the same
+		* contract RequireInstance has.
+		*/
+		PE_NODISCARD const EShaderInstance* RequirePassInstance(const EShaderInstance& InPrimary, const EName& InPassName);
 		/*
 		* Load thread only: a NEW asset object was just published behind this shader name - an assembly
 		* that folded a variant in, a reload, or a republish that a replaced stage asset forced - and
@@ -119,6 +147,9 @@ namespace PigeonEngine
 			// behind a shader name, and this is what finds every instance that has to be re-pointed
 			// when that happens.
 			EName					ShaderName;
+			// The request that produced it. Kept so a derived pass instance can be built from the
+			// same material without the caller having to remember how it was assembled.
+			EShaderAssemblyRequest	Request;
 			const EShaderInstance*	Instance = nullptr;
 		};
 	private:
@@ -132,6 +163,10 @@ namespace PigeonEngine
 		PE_NODISCARD static EString	MakeInstanceRequestKey(const EShaderAssemblyRequest& InRequest);
 	private:
 		TArray<FEntry>	Instances;
+		// Copies of an assembled material, made for a caller that needs several value sets of one
+		// program. Not keyed by a request - the request resolves to the material and these are the
+		// copies of it - so they are released with the table rather than looked up by it.
+		TArray<EShaderInstance*>	OwnedExtraInstances;
 		// Written by the load thread, read by whoever holds a pointer to an instance (the render
 		// thread inside a draw).
 		mutable EMutex	TableMutex;

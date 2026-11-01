@@ -428,8 +428,36 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
+	// The handedness sign a stored tangent needs, one per vertex: +1 when the bitangent assimp
+	// generated for the vertex agrees with cross(normal, tangent), -1 when it does not.
+	//
+	// The engine stores a tangent as four floats and rebuilds the bitangent as
+	// cross(normal, tangent) * w (VertexFactoryCommon.hlsl), so that fourth float is not padding:
+	// assimp hands the bitangent as its own three component array, and this is the sign that folds
+	// it back into the one float the vertex layout has room for. Without it the fourth float keeps
+	// whatever the allocation left behind, so each surface's tangent frame is handed at random -
+	// invisible until a normal map is sampled.
+	static void GatherTangentSigns(const aiMesh* InMesh, TArray<FLOAT>& OutSigns)
+	{
+		OutSigns.Empty();
+		if ((InMesh == nullptr) || (!InMesh->HasTangentsAndBitangents()) || (!InMesh->HasNormals()))
+		{
+			return;
+		}
+		OutSigns.SetNum(InMesh->mNumVertices);
+		for (UINT32 VertexIndex = 0u; VertexIndex < InMesh->mNumVertices; VertexIndex++)
+		{
+			const aiVector3D& Normal = InMesh->mNormals[VertexIndex];
+			const aiVector3D& Tangent = InMesh->mTangents[VertexIndex];
+			const aiVector3D& Bitangent = InMesh->mBitangents[VertexIndex];
+			// aiVector3D's operator^ is the cross product and operator* the dot product.
+			const aiVector3D Cross = (Normal ^ Tangent);
+			OutSigns[VertexIndex] = (((Cross * Bitangent) < 0.0f) ? -1.f : 1.f);
+		}
+	}
+
 	template<typename TDataType, typename TMeshType>
-	static void TryAddMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT32>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT32* InStoredLayoutSlots, const UINT32 InStoredLayoutNum, const UINT32 InStrideIn32Bits, const UINT32 InSuccessAddMaxNum, TMeshType& OutMesh)
+	static void TryAddMeshVertexPart(const TArray<const TDataType*>& InDatas, const TArray<UINT32>& InDataElementNum, const EVertexLayoutType InStoredLayoutBaseType, const UINT32* InStoredLayoutSlots, const UINT32 InStoredLayoutNum, const UINT32 InStrideIn32Bits, const UINT32 InSuccessAddMaxNum, TMeshType& OutMesh, const FLOAT* InStrideWValues = nullptr)
 	{
 		UINT32 AddElementCounter = 0u;
 		for (UINT32 TryStoredSlotIndex = 0u; TryStoredSlotIndex < InStoredLayoutNum; TryStoredSlotIndex++)
@@ -450,6 +478,15 @@ namespace PigeonEngine
 			TempVertexData.Stride = InStrideIn32Bits * sizeof(FLOAT);
 			TempVertexData.Datas = new FLOAT[InStrideIn32Bits * DataElementNum];
 			StoreVertexData(InDatas[AddElementCounter], DataElementNum, InStrideIn32Bits, TempVertexData.Datas);
+			// A three component source stored with a fourth component in the layout: the tangent's
+			// handedness sign, which the source array cannot carry (see GatherTangentSigns).
+			if ((InStrideWValues != nullptr) && (InStrideIn32Bits > 3u))
+			{
+				for (UINT32 ElementIndex = 0u; ElementIndex < DataElementNum; ElementIndex++)
+				{
+					TempVertexData.Datas[(ElementIndex * InStrideIn32Bits) + 3u] = InStrideWValues[ElementIndex];
+				}
+			}
 			if (OutMesh.AddVertexElement(&TempVertexData))
 			{
 				AddElementCounter += 1u;
@@ -1119,13 +1156,28 @@ namespace PigeonEngine
 			OutMesh.AddSubmesh(&NewMeshSubmeshData);
 		}
 	}
+	// Whether a source mesh becomes an engine mesh at all.
+	//
+	// Both translations below skip a mesh with no usable geometry, which is what makes the output
+	// array shorter than the input one. Anything zipped with the output - the material side of an
+	// import, for instance - has to apply the same rule, or it drifts one entry out of step per
+	// skipped mesh and every later pairing names the wrong material.
+	static BOOL32 IsTranslatableMesh(const aiMesh* InMesh)
+	{
+		if ((!InMesh) || ((InMesh->mNumVertices) < 3u) || (!(InMesh->HasFaces())) || ((InMesh->mNumFaces) < 3u))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
+
 	static void TranslateAssimpMeshToEngineMeshInternal(const RShaderSemanticType* InEngineLayouts, const UINT32 InEngineLayoutNum, const TArray<const aiMesh*>& InMeshes, TArray<EStaticMesh>& OutMeshes)
 	{
 		TArray<StoredMeshLayoutDesc> ShouldStoredLayoutDescriptions = GetShouldStoredMeshLayoutDescriptions(InEngineLayouts, InEngineLayoutNum);
 		for (INT32 MeshIndex = 0, MeshNum = InMeshes.Num(); MeshIndex < MeshNum; MeshIndex++)
 		{
 			const aiMesh* AssimpMesh = InMeshes[MeshIndex];
-			if ((!AssimpMesh) || ((AssimpMesh->mNumVertices) < 3u) || (!(AssimpMesh->HasFaces())) || ((AssimpMesh->mNumFaces) < 3u))
+			if (IsTranslatableMesh(AssimpMesh) == FALSE)
 			{
 				continue;
 			}
@@ -1207,7 +1259,9 @@ namespace PigeonEngine
 						TArray<UINT32> TempTangentNum;
 						TempTangentDatas.Add(AssimpMesh->mTangents);
 						TempTangentNum.Add(AssimpMesh->mNumVertices);
-						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh);
+						TArray<FLOAT> TempTangentSigns;
+						GatherTangentSigns(AssimpMesh, TempTangentSigns);
+						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh, TempTangentSigns.GetData());
 					}
 				}
 				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_COLOR) != 0u)
@@ -1252,7 +1306,7 @@ namespace PigeonEngine
 		for (INT32 MeshIndex = 0, MeshNum = InMeshes.Num(); MeshIndex < MeshNum; MeshIndex++)
 		{
 			const aiMesh* AssimpMesh = InMeshes[MeshIndex];
-			if ((!AssimpMesh) || ((AssimpMesh->mNumVertices) < 3u) || (!(AssimpMesh->HasFaces())) || ((AssimpMesh->mNumFaces) < 3u))
+			if (IsTranslatableMesh(AssimpMesh) == FALSE)
 			{
 				continue;
 			}
@@ -1334,7 +1388,9 @@ namespace PigeonEngine
 						TArray<UINT32> TempTangentNum;
 						TempTangentDatas.Add(AssimpMesh->mTangents);
 						TempTangentNum.Add(AssimpMesh->mNumVertices);
-						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh);
+						TArray<FLOAT> TempTangentSigns;
+						GatherTangentSigns(AssimpMesh, TempTangentSigns);
+						TryAddMeshVertexPart(TempTangentDatas, TempTangentNum, TempTryStoredLayoutBaseType, StoredLayoutDesc.TryStoredLayoutSlot, StoredLayoutDesc.TryStoredLayoutNum, TangentStrideIn32Bits, SuccessAddTangentMaxNum, OutMesh, TempTangentSigns.GetData());
 					}
 				}
 				else if ((TempTryStoredLayoutBaseType & EVertexLayoutType::MESH_COLOR) != 0u)
@@ -1639,7 +1695,66 @@ namespace PigeonEngine
 			_GAssetImporter = nullptr;
 		}
 	}
-	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes, const BOOL32 IsCombineSubmeshes)
+	// The first texture path a material declares for one role, in the source's own spelling.
+	static EString GetFirstTexturePath(const aiMaterial* InMaterial, const aiTextureType InTextureType)
+	{
+		if (InMaterial == nullptr)
+		{
+			return EString();
+		}
+		aiString TexturePath;
+		if (InMaterial->GetTexture(InTextureType, 0u, &TexturePath) == aiReturn::AI_SUCCESS)
+		{
+			return EString(TexturePath.C_Str());
+		}
+		return EString();
+	}
+
+	// Resolves the material one source mesh was authored with. The shape map is looked up under
+	// three roles because the same file is filed differently depending on which importer wrote it:
+	// an OBJ's map_Disp reaches assimp as DISPLACEMENT, an older one as HEIGHT, and a format that
+	// really declares normals as NORMALS.
+	static void GatherMeshMaterial(const aiScene* InScene, const aiMesh* InMesh, FImportedMeshMaterial& OutMaterial)
+	{
+		OutMaterial = FImportedMeshMaterial();
+		if ((InScene == nullptr) || (InMesh == nullptr) || (InMesh->mMaterialIndex >= InScene->mNumMaterials))
+		{
+			return;
+		}
+		const aiMaterial* Material = InScene->mMaterials[InMesh->mMaterialIndex];
+		if (Material == nullptr)
+		{
+			return;
+		}
+
+		aiString MaterialName;
+		if (Material->Get(AI_MATKEY_NAME, MaterialName) == aiReturn::AI_SUCCESS)
+		{
+			OutMaterial.MaterialName = EString(MaterialName.C_Str());
+		}
+		aiColor3D DiffuseColor;
+		if (Material->Get(AI_MATKEY_COLOR_DIFFUSE, DiffuseColor) == aiReturn::AI_SUCCESS)
+		{
+			OutMaterial.DiffuseColor = Color3(DiffuseColor.r, DiffuseColor.g, DiffuseColor.b);
+		}
+		OutMaterial.DiffuseMapPath = GetFirstTexturePath(Material, aiTextureType::aiTextureType_DIFFUSE);
+		OutMaterial.NormalMapPath = GetFirstTexturePath(Material, aiTextureType::aiTextureType_NORMALS);
+		if (OutMaterial.NormalMapPath.Length() == 0u)
+		{
+			OutMaterial.NormalMapPath = GetFirstTexturePath(Material, aiTextureType::aiTextureType_DISPLACEMENT);
+		}
+		if (OutMaterial.NormalMapPath.Length() == 0u)
+		{
+			OutMaterial.NormalMapPath = GetFirstTexturePath(Material, aiTextureType::aiTextureType_HEIGHT);
+		}
+		// An obj's map_d reaches assimp as OPACITY. The path is carried as the marker of a masked
+		// material even when the file is absent, which is the state the Sponza source is in: its
+		// mask files are missing, while the albedo alpha already holds the cutout.
+		OutMaterial.MaskMapPath = GetFirstTexturePath(Material, aiTextureType::aiTextureType_OPACITY);
+	}
+
+	CAssimpManager::CReadFileStateType CAssimpManager::ReadStaticMeshFile(const EString& InPath, TArray<EStaticMesh>& OutMeshes
+		, const BOOL32 InIsCombineSubmeshes, const BOOL32 InIsOptimizeMeshes, TArray<FImportedMeshMaterial>* OutMaterials)
 	{
 		CReadFileStateType Result = CReadFileStateType::ASSIMP_READ_FILE_STATE_FAILED;
 
@@ -1666,25 +1781,31 @@ namespace PigeonEngine
 		// Use SetPropertyInteger to modify config of importer
 		//Assimp::Importer::SetProperty###();
 
-		const UINT32 ReadFlags =
-			(UINT32)(aiProcess_CalcTangentSpace |
-				aiProcess_JoinIdenticalVertices |
-				aiProcess_MakeLeftHanded |
-				aiProcess_Triangulate |
-				aiProcess_RemoveComponent |
-				aiProcess_GenSmoothNormals |
-				aiProcess_SplitLargeMeshes |
-				/*aiProcess_ImproveCacheLocality |*/
-				aiProcess_RemoveRedundantMaterials |
-				aiProcess_FixInfacingNormals |
-				aiProcess_SortByPType |
-				aiProcess_FindInvalidData |
-				aiProcess_GenUVCoords |
-				aiProcess_OptimizeMeshes |
-				aiProcess_OptimizeGraph |
-				aiProcess_FlipUVs |
-				aiProcess_FlipWindingOrder |
-				aiProcess_GenBoundingBoxes);
+		// Optimizing meshes is the one flag here that changes what the source means rather than how
+		// it is read: it merges meshes that share a material, which is right for a runtime asset and
+		// wrong for an importer that wants one object per authored object. So it is the caller's
+		// decision, and everything else stays unconditional.
+		UINT32 ReadFlags =
+			(static_cast<UINT32>(aiPostProcessSteps::aiProcess_CalcTangentSpace)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_JoinIdenticalVertices)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_MakeLeftHanded)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_Triangulate)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_RemoveComponent)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_GenSmoothNormals)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_SplitLargeMeshes)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_RemoveRedundantMaterials)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_FixInfacingNormals)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_SortByPType)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_FindInvalidData)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_GenUVCoords)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_OptimizeGraph)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_FlipUVs)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_FlipWindingOrder)
+				| static_cast<UINT32>(aiPostProcessSteps::aiProcess_GenBoundingBoxes));
+		if (InIsOptimizeMeshes)
+		{
+			ReadFlags |= static_cast<UINT32>(aiPostProcessSteps::aiProcess_OptimizeMeshes);
+		}
 		const aiScene* Scene = AssImporter->ReadFile(*InPath, ReadFlags);
 
 		// If the import failed, report it
@@ -1734,7 +1855,25 @@ namespace PigeonEngine
 		GetEngineDefaultMeshInputLayouts(EngineLayouts, EngineLayoutNum);
 
 		TArray<EStaticMesh> TempOutMeshes;
-		if (IsCombineSubmeshes)
+		// The material side of the same source, in the order of the meshes it describes: one entry
+		// per mesh that becomes an engine mesh, which is the order the translation below produces
+		// and therefore the order the manifest records. Filled before the scene is freed, because
+		// the names it copies live in the scene.
+		if (OutMaterials != nullptr)
+		{
+			OutMaterials->Empty();
+			for (UINT32 MeshIndex = 0u; MeshIndex < Meshes.Num<UINT32>(); MeshIndex++)
+			{
+				if (IsTranslatableMesh(Meshes[MeshIndex]) == FALSE)
+				{
+					continue;
+				}
+				FImportedMeshMaterial NewMaterial;
+				GatherMeshMaterial(Scene, Meshes[MeshIndex], NewMaterial);
+				OutMaterials->Add(NewMaterial);
+			}
+		}
+		if (InIsCombineSubmeshes)
 		{
 			TranslateAssimpMeshToEngineMeshInternal(EngineLayouts, EngineLayoutNum, Meshes, TempOutMeshes);
 

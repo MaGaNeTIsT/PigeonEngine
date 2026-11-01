@@ -11,16 +11,34 @@ namespace PigeonEngine
 {
 
 	// Opaque base for GPU timestamp scratch storage. Backends derive (D3D11
-	// = ID3D11Query pool + disjoint, D3D12 = ID3D12QueryHeap + readback) and
-	// engine code only ever holds the base pointer. Capacity is fixed at
-	// creation time so writes are O(1) and bookkeeping is just a slot ring
-	// maintained at a higher layer (Phase P.e wires the renderer).
+	// = ID3D11Query pool + per-slice disjoint, D3D12 = ID3D12QueryHeap +
+	// readback) and engine code only ever holds the base pointer. Capacity is
+	// fixed at creation time so writes are O(1) and bookkeeping is just a
+	// slot ring maintained at a higher layer (Phase P.e wires the renderer).
 	struct RRHITimestampHeap
 	{
 		RRHITimestampHeap()					= default;
 		virtual ~RRHITimestampHeap()		= default;
 
 		UINT32		Capacity		= 0u;
+		// Number of independent frame slices the heap is split into. D3D12
+		// ignores it (its query heap is one allocation sliced by slot range);
+		// D3D11 keeps one disjoint query per slice, because two frames can be
+		// in flight while an older one is being read back.
+		UINT32		FrameInFlight	= 1u;
+	};
+
+	// The shapes the engine keeps one black default resource of. A binding the reflection marks
+	// as exposed can legally have no value yet (a shader written before the artist assigned its
+	// texture), and the binding side binds one of these instead of leaving an undefined
+	// descriptor behind.
+	enum RDefaultBindingTextureType : UINT8
+	{
+		DEFAULT_BINDING_TEXTURE_2D			= 0,
+		DEFAULT_BINDING_TEXTURE_CUBE		= 1,
+		DEFAULT_BINDING_TEXTURE_3D			= 2,
+		DEFAULT_BINDING_TEXTURE_2D_ARRAY	= 3,
+		DEFAULT_BINDING_TEXTURE_COUNT,
 	};
 
 	/*
@@ -125,6 +143,30 @@ namespace PigeonEngine
 		BOOL8				CreateRenderTexture2DResource(const RTextureDesc& InDesc, const Color4& InClearColor, RRHIRenderTexture2D& OutResource) noexcept;
 		BOOL8				CreateSamplerResource(const RSamplerState& InDesc, RRHISamplerHandle& OutResource) noexcept;
 
+		// ---------- Engine default resources ----------
+		// One black resource per shape, created on first use and shared for the lifetime of the
+		// device. A binding whose reflection marks it as exposed can be published without a value
+		// (the artist has not assigned anything yet), and these are what the binding side fills
+		// that hole with so the draw reads a defined zero instead of a leftover descriptor.
+		PE_NODISCARD IRRHITexture*	GetDefaultTexture(const RDefaultBindingTextureType InTextureType) noexcept;
+		// A zero filled buffer for an exposed binding that declares a structured or byte address
+		// buffer. The structured variant carries a 16 byte stride so a float4 read stays in one
+		// element rather than walking a stride the shader does not expect. The read and write
+		// variants are separate objects because a buffer can only be in one resource state at a
+		// time: an SRV default is uploaded into the shader-resource state, a UAV default into the
+		// unordered-access state, and a single object could not serve both correctly.
+		PE_NODISCARD IRRHIBuffer*	GetDefaultBuffer(const BOOL8 InIsStructured, const BOOL8 InIsUnorderedAccess) noexcept;
+		// Releases the objects above. Back-ends call this from Shutdown after waiting for the GPU,
+		// so nothing is destroyed while a recorded frame can still reference it.
+		void						ReleaseDefaultResources() noexcept;
+
+		// ---------- Texture subresource views ----------
+		// A UAV view of one mip (and one array/cube slice range). Passes that write one mip of a
+		// mip chain at a time need it: the environment prefilter and the BRDF LUT are the first
+		// users. The view is owned by the caller and released through DestroyTextureUAVView.
+		virtual BOOL8	CreateTextureUAVView(IRRHITexture* InTexture, const RRHITextureUAVDesc& InDesc, IRRHITextureUAVView** OutView) noexcept = 0;
+		virtual void	DestroyTextureUAVView(IRRHITextureUAVView* InView) noexcept = 0;
+
 		// ---------- Bindless descriptor management ----------
 		virtual UINT32		RegisterBindlessSRV(IRRHITexture* InTexture) noexcept		= 0;
 		virtual UINT32		RegisterBindlessSRV(IRRHIBuffer* InBuffer) noexcept			= 0;
@@ -163,15 +205,36 @@ namespace PigeonEngine
 		// calls BeginTimestampFrame / EndTimestampFrame per frame, writes
 		// into slots via IRCommandList::WriteTimestamp, then once the GPU
 		// has retired the work calls ResolveTimestamps to read raw ticks.
-		// GetGPUTicksPerSecond reports the frequency last latched by the
-		// most recent EndTimestampFrame (D3D11 may report a different
-		// value per frame if the GPU was disjoint; D3D12 is constant).
-		virtual BOOL8		CreateTimestampHeap(UINT32 InCapacity, RRHITimestampHeap** OutHeap) noexcept									= 0;
-		virtual void		DestroyTimestampHeap(RRHITimestampHeap* InHeap) noexcept														= 0;
-		virtual void		BeginTimestampFrame(RRHITimestampHeap* InHeap) noexcept															= 0;
-		virtual void		EndTimestampFrame(RRHITimestampHeap* InHeap) noexcept															= 0;
-		virtual BOOL8		ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept		= 0;
+		//
+		// InFrameSlot names the heap slice the frame owns. D3D12 ignores it -
+		// its query heap is addressed by the absolute slot range and its
+		// frame fencing already protects the readback. D3D11 uses it to pick
+		// the disjoint query that framed that slice, so a frame being written
+		// and an older frame being resolved never share one disjoint.
+		//
+		// InFrameInFlight is the number of slices the heap is split into.
+		// D3D11 creates one disjoint query per slice; D3D12 ignores it.
+		//
+		// GetGPUTicksPerSecond reports the frequency of the most recent
+		// ResolveTimestamps. D3D11 can clock-throttle, so the frequency is
+		// per frame rather than a device constant; D3D12 is constant.
+		virtual BOOL8		CreateTimestampHeap(UINT32 InCapacity, UINT32 InFrameInFlight, RRHITimestampHeap** OutHeap) noexcept			= 0;
+		virtual void		DestroyTimestampHeap(RRHITimestampHeap* InHeap) noexcept															= 0;
+		virtual void		BeginTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept										= 0;
+		virtual void		EndTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept										= 0;
+		virtual BOOL8		ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InFrameSlot, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept	= 0;
 		virtual UINT64		GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap) const noexcept											= 0;
+
+	private:
+		// Created lazily by the accessors above. Raw pointers on purpose: the device owns them
+		// until ReleaseDefaultResources, they are never shared with an engine side wrapper, and
+		// the back-end's DestroyResource path may be unavailable while its own members are being
+		// torn down.
+		IRRHITexture*	DefaultTextures[RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_COUNT] = {};
+		IRRHIBuffer*	DefaultStructuredBuffer					= nullptr;
+		IRRHIBuffer*	DefaultByteAddressBuffer				= nullptr;
+		IRRHIBuffer*	DefaultStructuredUnorderedAccessBuffer	= nullptr;
+		IRRHIBuffer*	DefaultByteAddressUnorderedAccessBuffer	= nullptr;
 
 	public:
 		IRRHIDevice(const IRRHIDevice&) = delete;

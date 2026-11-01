@@ -20,10 +20,10 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		const UINT32 ByteWidth = InVertexCount * InStride;
-		const RBufferDesc Desc{ ByteWidth, RBindFlagType::BIND_VERTEX_BUFFER, InStride };
+		const RBufferDesc BufferDesc{ ByteWidth, RBindFlagType::BIND_VERTEX_BUFFER, InStride };
 		const RRHISubresourceData SubData{ (InVertexData.IsEmpty()) ? nullptr : (InVertexData.GetData()), (InVertexData.IsEmpty()) ? 0ull : (InVertexData.Num<UINT64>()), 0u, 0u };
 		IRRHIBuffer* OutBuffer{ nullptr };
-		if (!CreateBuffer(Desc, SubData, &OutBuffer) || (!OutBuffer))
+		if (!CreateBuffer(BufferDesc, SubData, &OutBuffer) || (!OutBuffer))
 		{
 			return FALSE;
 		}
@@ -42,10 +42,10 @@ namespace PigeonEngine
 		}
 		const UINT32 Stride = (InFormat == ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16) ? 2u : 4u;
 		const UINT32 ByteWidth = InIndexCount * Stride;
-		const RBufferDesc Desc{ ByteWidth, RBindFlagType::BIND_INDEX_BUFFER, Stride };
+		const RBufferDesc BufferDesc{ ByteWidth, RBindFlagType::BIND_INDEX_BUFFER, Stride };
 		const RRHISubresourceData SubData{ (InIndexData.IsEmpty()) ? nullptr : (InIndexData.GetData()), (InIndexData.IsEmpty()) ? 0ull : (InIndexData.Num<UINT64>()), 0u, 0u };
 		IRRHIBuffer* OutBuffer{ nullptr };
-		if (!CreateBuffer(Desc, SubData, &OutBuffer) || (!OutBuffer))
+		if (!CreateBuffer(BufferDesc, SubData, &OutBuffer) || (!OutBuffer))
 		{
 			return FALSE;
 		}
@@ -60,10 +60,10 @@ namespace PigeonEngine
 		OutResource = RRHIConstantBuffer{};
 		// Round size up to 16-byte alignment (D3D11/D3D12 constant buffer rule).
 		const UINT64 AlignedSize = (InInitialData.Num<UINT64>() + 15ull) & (~(15ull));
-		RBufferDesc Desc{ AlignedSize, RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(float) };
+		RBufferDesc BufferDesc{ AlignedSize, RBindFlagType::BIND_CONSTANT_BUFFER, sizeof(float) };
 		const RRHISubresourceData SubData{ (InInitialData.IsEmpty()) ? nullptr : (InInitialData.GetData()), (InInitialData.IsEmpty()) ? 0ull : (InInitialData.Num<UINT64>()), 0u, 0u };
 		IRRHIBuffer* OutBuffer{ nullptr };
-		if (!CreateBuffer(Desc, SubData, &OutBuffer) || (!OutBuffer))
+		if (!CreateBuffer(BufferDesc, SubData, &OutBuffer) || (!OutBuffer))
 		{
 			return FALSE;
 		}
@@ -80,10 +80,10 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		const UINT32 ByteWidth = InElementCount * InStride;
-		RBufferDesc Desc{ ByteWidth, InBindFlags, InStride };
+		RBufferDesc BufferDesc{ ByteWidth, InBindFlags, InStride };
 		const RRHISubresourceData SubData{ (InInitialData.IsEmpty()) ? nullptr : (InInitialData.GetData()), (InInitialData.IsEmpty()) ? 0ull : (InInitialData.Num<UINT64>()), 0u, 0u };
 		IRRHIBuffer* OutBuffer{ nullptr };
-		if (!CreateBuffer(Desc, SubData, &OutBuffer) || (!OutBuffer))
+		if (!CreateBuffer(BufferDesc, SubData, &OutBuffer) || (!OutBuffer))
 		{
 			return FALSE;
 		}
@@ -163,6 +163,136 @@ namespace PigeonEngine
 		}
 		OutResource.Sampler = OutSampler;
 		return TRUE;
+	}
+
+	// =====================================================================
+	// IRRHIDevice engine default resources
+	// =====================================================================
+	// These exist for one consumer: a binding whose reflection says it is exposed to the
+	// editor, but that no value has been published for yet. That is a legal intermediate state
+	// (the shader exists before the artist assigns its texture), so the binding side needs a
+	// defined object to fall back to rather than an undefined descriptor slot.
+
+	IRRHITexture* IRRHIDevice::GetDefaultTexture(const RDefaultBindingTextureType InTextureType) noexcept
+	{
+		const UINT32 TextureIndex = static_cast<UINT32>(InTextureType);
+		if (TextureIndex >= static_cast<UINT32>(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_COUNT))
+		{
+			return nullptr;
+		}
+		if (DefaultTextures[TextureIndex])
+		{
+			return DefaultTextures[TextureIndex];
+		}
+
+		// One black pixel per element. Every shape uses the same payload; the cube and array
+		// upload below repeats it once per face / slice.
+		const UINT8 BlackPixels[8] = {};
+		RTextureDesc TextureDesc(1u, 1u, static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE)
+			, RFormatType::FORMAT_R8G8B8A8_UNORM);
+		UINT32 SubresourceNum = 1u;
+		switch (InTextureType)
+		{
+		case RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_CUBE:
+			TextureDesc.ArraySize = 6u;
+			TextureDesc.MiscFlags = static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE);
+			SubresourceNum = 6u;
+			break;
+		case RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_3D:
+			// The back-ends decide between 2D and 3D from Depth > 1; a 1x1x1 volume cannot be
+			// expressed through the shared desc convention.
+			TextureDesc.Depth = 2u;
+			break;
+		case RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_2D_ARRAY:
+			// Two slices so the SRV is created as a texture array rather than a 2D texture.
+			TextureDesc.ArraySize = 2u;
+			SubresourceNum = 2u;
+			break;
+		default:
+			break;
+		}
+
+		IRRHITexture* CreatedTexture = nullptr;
+		if ((!CreateTexture(TextureDesc, Color4::Black(), RRHISubresourceData(), &CreatedTexture)) || (!CreatedTexture))
+		{
+			return nullptr;
+		}
+
+		RRHISubresourceData Subresources[6];
+		for (UINT32 SubresourceIndex = 0u; SubresourceIndex < SubresourceNum; SubresourceIndex++)
+		{
+			// A 1x1 element is one row; SlicePitch covers the two depth slices of the 3D shape.
+			Subresources[SubresourceIndex] = RRHISubresourceData(BlackPixels, sizeof(BlackPixels), 4u, 4u);
+		}
+		UploadTexture(CreatedTexture, Subresources, SubresourceNum, 0u);
+
+		DefaultTextures[TextureIndex] = CreatedTexture;
+		return CreatedTexture;
+	}
+
+	IRRHIBuffer* IRRHIDevice::GetDefaultBuffer(const BOOL8 InIsStructured, const BOOL8 InIsUnorderedAccess) noexcept
+	{
+		IRRHIBuffer*& DefaultBuffer = ((InIsUnorderedAccess != FALSE)
+			? ((InIsStructured != FALSE) ? DefaultStructuredUnorderedAccessBuffer : DefaultByteAddressUnorderedAccessBuffer)
+			: ((InIsStructured != FALSE) ? DefaultStructuredBuffer : DefaultByteAddressBuffer));
+		if (DefaultBuffer)
+		{
+			return DefaultBuffer;
+		}
+
+		// Sixteen bytes is one float4 element, enough for the smallest structured or byte
+		// address declaration to read a full element of zeros. The bind flag is the one the
+		// binding needs: the upload path leaves the buffer in that state, and a single object
+		// cannot be parked in both the shader-resource and unordered-access states at once.
+		const UINT8 ZeroBytes[16] = {};
+		const UINT32 StructureByteStride = (InIsStructured != FALSE) ? 16u : 0u;
+		const UINT8 BindFlags = ((InIsUnorderedAccess != FALSE)
+			? static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS)
+			: static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE));
+		const RBufferDesc BufferDesc(static_cast<UINT64>(sizeof(ZeroBytes)), BindFlags
+			, StructureByteStride
+			, ((InIsStructured != FALSE) ? RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED : RResourceMiscFlagType::RESOURCE_MISC_NONE));
+		IRRHIBuffer* CreatedBuffer = nullptr;
+		const RRHISubresourceData InitialData(ZeroBytes, sizeof(ZeroBytes), 0u, 0u);
+		if ((!CreateBuffer(BufferDesc, InitialData, &CreatedBuffer)) || (!CreatedBuffer))
+		{
+			return nullptr;
+		}
+
+		DefaultBuffer = CreatedBuffer;
+		return DefaultBuffer;
+	}
+
+	void IRRHIDevice::ReleaseDefaultResources() noexcept
+	{
+		for (UINT32 TextureIndex = 0u; TextureIndex < static_cast<UINT32>(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_COUNT); TextureIndex++)
+		{
+			if (DefaultTextures[TextureIndex])
+			{
+				DestroyResource(DefaultTextures[TextureIndex]);
+				DefaultTextures[TextureIndex] = nullptr;
+			}
+		}
+		if (DefaultStructuredBuffer)
+		{
+			DestroyResource(DefaultStructuredBuffer);
+			DefaultStructuredBuffer = nullptr;
+		}
+		if (DefaultByteAddressBuffer)
+		{
+			DestroyResource(DefaultByteAddressBuffer);
+			DefaultByteAddressBuffer = nullptr;
+		}
+		if (DefaultStructuredUnorderedAccessBuffer)
+		{
+			DestroyResource(DefaultStructuredUnorderedAccessBuffer);
+			DefaultStructuredUnorderedAccessBuffer = nullptr;
+		}
+		if (DefaultByteAddressUnorderedAccessBuffer)
+		{
+			DestroyResource(DefaultByteAddressUnorderedAccessBuffer);
+			DefaultByteAddressUnorderedAccessBuffer = nullptr;
+		}
 	}
 
 // Macro to keep all the trivial Release implementations consistent.

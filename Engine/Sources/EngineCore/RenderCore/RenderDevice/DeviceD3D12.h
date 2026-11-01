@@ -123,6 +123,26 @@ namespace PigeonEngine
 		virtual D3D12_RESOURCE_STATES			GetD3D12DefaultState() const noexcept override { return DefaultState; }
 	};
 
+	// A UAV view of one texture subresource. The descriptor lives in the device's persistent
+	// staging region; the command list copies it into the per-set table when the view is bound.
+	class RD3D12TextureUAVView final : public IRRHITextureUAVView
+	{
+	public:
+		IRRHITexture*				Texture		= nullptr;
+		D3D12_CPU_DESCRIPTOR_HANDLE	Handle		= {};
+		UINT32						HeapIndex	= 0u;
+
+		RD3D12TextureUAVView() noexcept
+			: Handle{ 0 }
+		{
+		}
+		virtual ~RD3D12TextureUAVView() noexcept override
+		{
+		}
+
+		virtual IRRHITexture* GetTexture() const noexcept override { return Texture; }
+	};
+
 	class RD3D12Shader final : public IRD3D12Shader
 	{
 	public:
@@ -290,6 +310,8 @@ namespace PigeonEngine
 		virtual void				WaitForGPUIdle() noexcept override;
 
 		// IRRHIDevice - Resource creation
+		virtual BOOL8				CreateTextureUAVView(IRRHITexture* InTexture, const RRHITextureUAVDesc& InDesc, IRRHITextureUAVView** OutView) noexcept override;
+		virtual void				DestroyTextureUAVView(IRRHITextureUAVView* InView) noexcept override;
 		virtual BOOL8				CreateBuffer(const RBufferDesc& InDesc, const RRHISubresourceData& InInitialData, IRRHIBuffer** OutBuffer) noexcept override;
 		virtual BOOL8				CreateTexture(const RTextureDesc& InDesc, const Color4& InClearColor, const RRHISubresourceData& InInitialSubresources, IRRHITexture** OutTexture) noexcept override;
 		virtual BOOL8				CreateShader(const RRHIShaderDesc& InDesc, IRRHIShader** OutShader) noexcept override;
@@ -323,15 +345,19 @@ namespace PigeonEngine
 		virtual UINT32				GetFrameInFlightCount() const noexcept override { return FrameInFlightCount; }
 
 		// GPU timestamp queries (Phase P.d - stubbed in P.c)
-		virtual BOOL8				CreateTimestampHeap(UINT32 InCapacity, RRHITimestampHeap** OutHeap) noexcept override;
+		virtual BOOL8				CreateTimestampHeap(UINT32 InCapacity, UINT32 InFrameInFlight, RRHITimestampHeap** OutHeap) noexcept override;
 		virtual void				DestroyTimestampHeap(RRHITimestampHeap* InHeap) noexcept override;
-		virtual void				BeginTimestampFrame(RRHITimestampHeap* InHeap) noexcept override;
-		virtual void				EndTimestampFrame(RRHITimestampHeap* InHeap) noexcept override;
-		virtual BOOL8				ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept override;
+		virtual void				BeginTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept override;
+		virtual void				EndTimestampFrame(RRHITimestampHeap* InHeap, UINT32 InFrameSlot) noexcept override;
+		virtual BOOL8				ResolveTimestamps(RRHITimestampHeap* InHeap, UINT32 InFrameSlot, UINT32 InBeginSlot, UINT32 InCount, UINT64* OutTicks) noexcept override;
 		virtual UINT64				GetGPUTicksPerSecond(const RRHITimestampHeap* InHeap) const noexcept override;
 
 		// Native access for command list
 		Microsoft::WRL::ComPtr<ID3D12Device>		GetD3D12Device() const { return Device; }
+		// Drains whatever the D3D12 debug layer stored since the last drain into the engine log,
+		// each line prefixed with InContext. A device whose layer is off answers immediately: the
+		// queue this reports belongs to the layer, and there is none without it.
+		void										ReportDebugLayerMessages(const EString& InContext);
 		D3D12_CPU_DESCRIPTOR_HANDLE					GetRTVHeapStart() const { return RTVHeap->GetCPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE					GetDSVHeapStart() const { return DSVHeap->GetCPUDescriptorHandleForHeapStart(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE					GetCBVSRVUAVHeapStart() const { return CBVSRVUAVHeap->GetCPUDescriptorHandleForHeapStart(); }
@@ -363,6 +389,9 @@ namespace PigeonEngine
 		UINT32				GetSlotSetArenaBase() const;
 		UINT32				GetSlotSetArenaCapacity() const;
 		UINT32				GetSlotSamplerTableBase() const;
+		// Render thread: records one frame's arena use. The device reports the resulting high
+		// water mark once at shutdown, which is the number a budget decision should read.
+		void				NoteSlotSetArenaUsage(UINT32 InUsedDescriptorNum) noexcept;
 
 		// Writes a null view into the CBV_SRV_UAV heap at the given descriptor index. The
 		// command list starts every resource set from these, so a register a program declares
@@ -410,6 +439,9 @@ namespace PigeonEngine
 		static UINT64		HashPipelineStateDesc(const RRHIGraphicsPipelineDesc& InDesc, UINT64 InLayoutHash) noexcept;
 
 		BOOL8				CreateDeviceAndQueue();
+		// The shader model the build is configured for has to be one this device can consume;
+		// the definition says what that means and what a device that cannot do it reports.
+		BOOL8				CheckShaderModelSupport() noexcept;
 		BOOL8				CreateSwapChain(HWND InWindowHandle);
 		BOOL8				CreateDescriptorHeaps();
 		BOOL8				CreateFrameFence();
@@ -421,6 +453,9 @@ namespace PigeonEngine
 	private:
 		// Core D3D12
 		Microsoft::WRL::ComPtr<ID3D12Device>			Device;
+		// The debug layer's message queue, present only when the layer is on. Null otherwise, which
+		// is what makes ReportDebugLayerMessages a no-op on a build without validation.
+		Microsoft::WRL::ComPtr<ID3D12InfoQueue>		DebugInfoQueue;
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>		CommandQueue;
 
 		// Swap chain
@@ -436,28 +471,49 @@ namespace PigeonEngine
 		TArray<RD3D12Texture*>							BackBuffers;
 
 		// CBV_SRV_UAV heap sub-region layout (descriptor count offsets within heap):
-		//   [0,    512)      Frame 0 set arena: the root tables of every set it binds
-		//     +0   .. +64    reserved: the fixed slot table bases the arena replaced
-		//     +64  .. +512   sets, one SRV/UAV table pair each, allocated by the command list
-		//   [512, 1024)      Frame 1 set arena (same split)
-		//   [1024, 16384)    Bindless SRV pool       (HLSL ResourceDescriptorHeap[idx])
-		//   [16384, 32768)   Bindless UAV pool
+		//   [0, 64)          Null sentinel region. Primed with null SRVs at device creation; slot 0
+		//                    is the value every generated bindless index field defaults to, so a
+		//                    binding that was never published reads a defined zero instead of an
+		//                    uninitialized descriptor.
+		//   [64, 24576)      Bindless SRV pool       (HLSL ResourceDescriptorHeap[idx])
+		//   [24576, 32768)   Bindless UAV pool
 		//   [32768, 65536)   Persistent resource-creation descriptors
+		//   [65536, 73728)   The two frame set arenas: the root tables of every resource set a
+		//                    frame binds, one SRV/UAV table pair per set, allocated by the
+		//                    command list. They live above the pools rather than at the bottom
+		//                    of the heap because they are per frame scratch while the pools hold
+		//                    descriptors for a resource's lifetime: growing the arena must not
+		//                    take descriptors away from a resource that already holds one.
 		// Sampler heap layout:
 		//   [0,  8)          Frame 0 sampler table (the renderer wide samplers, s0..s6)
 		//   [16, 24)         Frame 1 sampler table
 		//   [32, 256)        Persistent samplers
-		static constexpr UINT32		CBVSRVUAV_HEAP_SIZE					= 65536u;
+		static constexpr UINT32		CBVSRVUAV_HEAP_SIZE					= 73728u;
 		static constexpr UINT32		SAMPLER_HEAP_SIZE					= 256u;
 		static constexpr UINT32		RTV_HEAP_SIZE						= 64u;
 		static constexpr UINT32		DSV_HEAP_SIZE						= 32u;
-		static constexpr UINT32		SLOT_TABLE_STRIDE_PER_FRAME			= 512u;
+		// One frame's share of the set arena. Every draw that publishes a parameter set takes an
+		// SRV table and a UAV table here, so the budget is what a frame's draw count times that
+		// width has to fit in: a scene of a few hundred objects needs a few thousand. A frame
+		// that outgrows it wraps and re-hands out the first sets' descriptors, which changes what
+		// the draws already recorded read - the warning it logs is a resource bug, not tuning.
+		static constexpr UINT32		SLOT_TABLE_STRIDE_PER_FRAME			= 4096u;
+		static constexpr UINT32		SLOT_SET_ARENA_REGION_BASE			= 65536u;
+		// The prefix of a frame's slice the arena does not hand out. It is kept as headroom so a
+		// stray index into the arena's first descriptors lands in front of the sets instead of
+		// inside the first one.
 		static constexpr UINT32		SLOT_SET_ARENA_OFFSET				= 64u;
 		static constexpr UINT32		SLOT_SAMPLER_STRIDE_PER_FRAME		= 16u;
-		static constexpr UINT32		BINDLESS_SRV_BASE_INDEX				= 1024u;
-		static constexpr UINT32		BINDLESS_SRV_CAPACITY				= 15360u;
-		static constexpr UINT32		BINDLESS_UAV_BASE_INDEX				= 16384u;
-		static constexpr UINT32		BINDLESS_UAV_CAPACITY				= 16384u;
+		// The bindless pools take the whole region between the sentinel and the persistent
+		// descriptors. SRV is the larger half because every texture and buffer a material
+		// samples becomes index driven much sooner than a storage resource does: the UAV pool
+		// only holds resources a pass writes, and their count is a small fraction of the
+		// sampled set.
+		static constexpr UINT32		NULL_SENTINEL_CAPACITY				= 64u;
+		static constexpr UINT32		BINDLESS_SRV_BASE_INDEX				= NULL_SENTINEL_CAPACITY;
+		static constexpr UINT32		BINDLESS_SRV_CAPACITY				= 24512u;
+		static constexpr UINT32		BINDLESS_UAV_BASE_INDEX				= 24576u;
+		static constexpr UINT32		BINDLESS_UAV_CAPACITY				= 8192u;
 		static constexpr UINT32		PERSISTENT_DESC_BASE_INDEX			= 32768u;
 		static constexpr UINT32		PERSISTENT_DESC_CAPACITY			= 32768u;
 		static constexpr UINT32		PERSISTENT_SAMPLER_BASE_INDEX		= 32u;
@@ -465,6 +521,18 @@ namespace PigeonEngine
 
 		// Frame resources (2 frames in flight)
 		static constexpr UINT32		FRAME_IN_FLIGHT						= 2u;
+
+		// The regions above have to tile the heap exactly: a gap is capacity nobody can use, and
+		// an overlap hands one descriptor to two owners. These assert the tiling, so a later
+		// layout edit cannot silently break it.
+		static_assert((BINDLESS_SRV_BASE_INDEX + BINDLESS_SRV_CAPACITY) == BINDLESS_UAV_BASE_INDEX,
+			"D3D12: the bindless SRV pool must end where the bindless UAV pool begins.");
+		static_assert((BINDLESS_UAV_BASE_INDEX + BINDLESS_UAV_CAPACITY) == PERSISTENT_DESC_BASE_INDEX,
+			"D3D12: the bindless UAV pool must end where the persistent region begins.");
+		static_assert((PERSISTENT_DESC_BASE_INDEX + PERSISTENT_DESC_CAPACITY) == SLOT_SET_ARENA_REGION_BASE,
+			"D3D12: the persistent region must end where the frame set arenas begin.");
+		static_assert((SLOT_SET_ARENA_REGION_BASE + (SLOT_TABLE_STRIDE_PER_FRAME * FRAME_IN_FLIGHT)) == CBVSRVUAV_HEAP_SIZE,
+			"D3D12: the frame set arenas must exactly fill the top of the CBV_SRV_UAV heap.");
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		RTVHeap;
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		DSVHeap;
@@ -489,6 +557,9 @@ namespace PigeonEngine
 		UINT32												DSVDescriptorOffset;
 		UINT32												PersistentDescriptorOffset;
 		UINT32												PersistentSamplerOffset;
+		// The largest number of descriptors a single frame's set arena handed out. Written by the
+		// render thread, read once at shutdown.
+		UINT32												SlotSetArenaHighWater;
 
 		// Root signatures. Every signature the device hands out lives in the pool for
 		// the device's whole lifetime and is reachable through the cache by layout hash,

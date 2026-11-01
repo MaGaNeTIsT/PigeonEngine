@@ -12,7 +12,6 @@ namespace PigeonEngine
 		, Defines{}
 		, DefineHash{}
 		, ReplaceHash{}
-		, bBindless(FALSE)
 		, StageEntries{}
 	{
 	}
@@ -59,34 +58,11 @@ namespace PigeonEngine
 		return FALSE;
 	}
 
-	BOOL32 EShaderProgram::ResolveBindlessFlag(const TArray<EShaderVariantDefine>& InDefines)
-	{
-		// Called once per program while the loading thread applies the variant source.
-		// Resolving the flag here keeps EName construction out of the runtime path.
-		const EName BindlessDefineName(SHADER_VARIANT_DEFINE_BINDLESS);
-		if (BindlessDefineName.IsNone())
-		{
-			return FALSE;
-		}
-		for (UINT32 DefIdx = 0u, DefNum = InDefines.Num<UINT32>(); DefIdx < DefNum; DefIdx++)
-		{
-			if (InDefines[DefIdx].Name != BindlessDefineName)
-			{
-				continue;
-			}
-			return ((InDefines[DefIdx].Value != 0) ? TRUE : FALSE);
-		}
-		// The engine macro was not injected, so this variant was compiled for the
-		// register bound path.
-		return FALSE;
-	}
-
 	void EShaderProgram::SetVariantSource(const TArray<EShaderVariantDefine>& InDefines, const EString& InDefineHash, const EString& InReplaceHash)
 	{
 		Defines = InDefines;
 		DefineHash = InDefineHash;
 		ReplaceHash = InReplaceHash;
-		bBindless = ResolveBindlessFlag(InDefines);
 	}
 
 	EShaderStageEntry* EShaderProgram::EnsureStageEntry(const EShaderStageType InStage)

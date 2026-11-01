@@ -10,6 +10,9 @@
 #include <Shader/EngineShaderInstanceCache.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
 #include <RenderProxy/ViewProxy.h>
+#include <RenderProxy/ShadowViewProxy.h>
+#include <Renderer/ShadowAtlas.h>
+#include <RenderConfig/ShadowConfig.h>
 #include <Development/GPUProfiler.h>
 #include <RenderProxy/SkyLightProxy.h>
 #include <RenderProxy/PrimitiveSceneProxy.h>
@@ -29,6 +32,82 @@
 
 namespace PigeonEngine
 {
+
+	// The passes this file drives own their resource bindings by name, so the claim tables live
+	// next to the drawing code. EnvironmentCube overlaps with the sky dome (each publishes its own
+	// cube); everything else here has exactly one publisher.
+	static const FShaderBindingClaim g_EnvironmentSHBindingClaims[] =
+	{
+		{ EName(PE_TEXT("EnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("EnvironmentSHOutput")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentSHBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
+
+	static const FShaderBindingClaim g_LightingBindingClaims[] =
+	{
+		// The depth buffer, the normal target and the light list are also published by the shadow
+		// mask pass for its own draw. A name two scopes publish has to be OVERLAPPING in both - a
+		// mixed pair is what the plan audit reports as a source defect.
+		{ EName(PE_TEXT("DepthTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("GBufferATexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("GBufferBTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("GBufferCTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("GBufferDTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("GBufferETexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("DirectionalLights")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("LocalLights")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		{ EName(PE_TEXT("EnvironmentSH")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		// The specular pair is produced by their own passes and read here; two scopes own each
+		// name, so the claim overlaps and neither publisher is accused of the other's hole.
+		{ EName(PE_TEXT("PrefilteredEnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("EnvironmentBRDFLUT")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		// Produced by the shadow mask pass this frame and read here. The resolver writes it as a
+		// render target rather than publishing it as a binding, so the lighting pass is its only
+		// publisher.
+		{ EName(PE_TEXT("DirectionalShadowMask0")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+		// The local light shadow term samples the atlas and the slot table from the same list this
+		// pass binds, and the mask pass publishes the same two names for its own draw.
+		{ EName(PE_TEXT("ShadowMapAtlas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("ShadowSlots")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_LightingBindingClaims, EName(SHADER_BINDING_SCOPE_LIGHTING));
+
+	static const FShaderBindingClaim g_ShadowMaskBindingClaims[] =
+	{
+		// Read from the base pass's targets and the light list the lighting pass also reads; both
+		// passes publish them for their own draw, so the claim overlaps.
+		{ EName(PE_TEXT("DepthTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("GBufferBTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("DirectionalLights")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		// The atlas and the slot table are published by this pass and by the lighting pass, which
+		// samples them for the local light shadow term. Two scopes own each name.
+		{ EName(PE_TEXT("ShadowMapAtlas")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		{ EName(PE_TEXT("ShadowSlots")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_ShadowMaskBindingClaims, EName(SHADER_BINDING_SCOPE_SHADOW_MASK));
+
+	static const FShaderBindingClaim g_EnvironmentPrefilterBindingClaims[] =
+	{
+		// The raw cube is read by the sky dome, the SH bake and this pass; each publishes its
+		// own value for its own draw.
+		{ EName(PE_TEXT("EnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+		// Written by this pass and read by the lighting pass.
+		{ EName(PE_TEXT("PrefilteredEnvironmentCube")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentPrefilterBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER));
+
+	static const FShaderBindingClaim g_EnvironmentBRDFBindingClaims[] =
+	{
+		// Generated here and sampled by the lighting pass.
+		{ EName(PE_TEXT("EnvironmentBRDFLUT")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_OVERLAPPING },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_EnvironmentBRDFBindingClaims, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF));
+
+	static const FShaderBindingClaim g_CopyBindingClaims[] =
+	{
+		{ EName(PE_TEXT("CopySourceTexture")), EShaderBindingClaimPolicyType::SHADER_BINDING_CLAIM_ONLY_ONE },
+	};
+	PE_REGISTER_SHADER_BINDING_CLAIMS(g_CopyBindingClaims, EName(SHADER_BINDING_SCOPE_COPY));
 
 	static void RegisterClassTypes()
 	{
@@ -70,6 +149,23 @@ namespace PigeonEngine
 		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
 	}
 	/*
+	* The directional shadow resolver. It declares no domain and no material: the pass reads the
+	* GBuffer for a world normal and the light list for the cascade slots, and every shading
+	* decision it makes is the shadow test itself, so nothing of the material path is compiled
+	* into it.
+	*/
+	static const EShaderInstance* GetShadowMaskProgramInstance()
+	{
+		EShaderAssemblyRequest Request;
+		Request.ShaderName = EName(PE_TEXT("M_EngineShadowMask"));
+		Request.ProgramName = EName(PE_TEXT("ShadowMask"));
+		Request.VertexFactory = EShaderVertexFactoryType::FULLSCREEN;
+		Request.Profile.StreamProfile = SHADER_VERTEX_ATTRIBUTE_UV0;
+		Request.StageMask = ENGINE_SHADER_STAGE_MASK_GRAPHICS;
+
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+	}
+	/*
 	* The environment SH bake. A compute program, so it declares no vertex axis and no domain -
 	* the request's axis still has to be some value because the cache keys a variant on it, and
 	* since the program compiles none of the VF machinery the value only labels the variant.
@@ -79,6 +175,28 @@ namespace PigeonEngine
 		EShaderAssemblyRequest Request;
 		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentSH"));
 		Request.ProgramName = EName(PE_TEXT("EnvironmentSH"));
+		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
+
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+	}
+	/*
+	* The specular IBL pair. Both are compute programs; the prefilter takes the raw cube and a
+	* per-mip output view, the BRDF pass takes no environment and writes the DFG table.
+	*/
+	static const EShaderInstance* GetEnvironmentPrefilterProgramInstance()
+	{
+		EShaderAssemblyRequest Request;
+		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentPrefilter"));
+		Request.ProgramName = EName(PE_TEXT("EnvironmentPrefilter"));
+		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
+
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+	}
+	static const EShaderInstance* GetEnvironmentBRDFProgramInstance()
+	{
+		EShaderAssemblyRequest Request;
+		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentBRDF"));
+		Request.ProgramName = EName(PE_TEXT("EnvironmentBRDF"));
 		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
 
 		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
@@ -100,7 +218,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	return (((InTexture.GetBindFlags() & static_cast<UINT8>(RBindFlagType::BIND_RENDER_TARGET)) != 0u) ? TRUE : FALSE);
 }
 
-	void RSceneRenderer::RLightLists::EnsureBuffers(IRRHIDevice* InRenderDevice)
+	void RSceneRenderer::RViewLightBuffers::EnsureBuffers(IRRHIDevice* InRenderDevice)
 	{
 		if (!InRenderDevice)
 		{
@@ -114,7 +232,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 					, RBindFlagType::BIND_SHADER_RESOURCE
 					, ElementSize
 					, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED));
-			DirectionalLightStaging.Reserve(RCommonSettings::RENDER_DIRECTIONAL_LIGHT_NUM_MAX);
 		}
 		if (LocalLightBuffer.IsRenderResourceValid() == FALSE)
 		{
@@ -124,32 +241,78 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 					, RBindFlagType::BIND_SHADER_RESOURCE
 					, ElementSize
 					, RResourceMiscFlagType::RESOURCE_MISC_BUFFER_STRUCTURED));
-			LocalLightStaging.Reserve(RCommonSettings::RENDER_LOCAL_LIGHT_NUM_MAX);
 		}
 	}
-	void RSceneRenderer::RLightLists::Upload(IRRHIDevice* InRenderDevice)
+	void RSceneRenderer::RLightLists::ReserveStaging()
+	{
+		DirectionalLightStaging.Reserve(RCommonSettings::RENDER_DIRECTIONAL_LIGHT_NUM_MAX);
+		LocalLightStaging.Reserve(RCommonSettings::RENDER_LOCAL_LIGHT_NUM_MAX);
+	}
+	void RSceneRenderer::RLightLists::UploadForView(IRRHIDevice* InRenderDevice
+		, RSceneRenderer::RViewLightBuffers& InOutBuffers
+		, const RSceneRenderer::RShadowLightAddressMapType& InShadowAddresses)
 	{
 		if (!InRenderDevice)
 		{
 			return;
 		}
+		// The staging prefix is re-encoded from this view's table, then uploaded. A light the
+		// table does not name keeps slot zero, which is the slot table's "casts no shadow"
+		// sentinel - that is what makes a view without usable shadow data shade unshadowed
+		// rather than sample an atlas it does not own.
+		const UINT32 DirectionalNum = EMath::Min(DirectionalLightCount, DirectionalLightStaging.Num<UINT32>());
+		for (UINT32 LightIndex = 0u; LightIndex < DirectionalNum; LightIndex++)
+		{
+			UINT32 ShadowSlot	= 0u;
+			UINT32 CascadeCount	= 0u;
+			const FShadowLightAddress* ShadowAddress = InShadowAddresses.FindValueAsPtr(DirectionalLightIdentities[LightIndex]);
+			if (ShadowAddress)
+			{
+				ShadowSlot		= ShadowAddress->FirstSlot;
+				CascadeCount	= ShadowAddress->ViewNum;
+			}
+			DirectionalLightStaging[LightIndex].ShadowAddressing = Vector4Int(
+				static_cast<INT32>(ShadowSlot), static_cast<INT32>(CascadeCount), 0, 0);
+		}
+
+		const UINT32 LocalNum = EMath::Min(LocalLightCount, LocalLightStaging.Num<UINT32>());
+		for (UINT32 LightIndex = 0u; LightIndex < LocalNum; LightIndex++)
+		{
+			UINT32 ShadowSlot = 0u;
+			const FShadowLightAddress* ShadowAddress = InShadowAddresses.FindValueAsPtr(LocalLightIdentities[LightIndex]);
+			if (ShadowAddress)
+			{
+				ShadowSlot = ShadowAddress->FirstSlot;
+			}
+			// Only the shadow slot moves; the type, the cone cosines and the photometric values
+			// were encoded once for the frame.
+			LocalLightStaging[LightIndex].SpotAndTypeParams.w = static_cast<INT32>(ShadowSlot);
+		}
+
 		if ((DirectionalLightCount > 0u) && (DirectionalLightStaging.Num() >= static_cast<INT32>(DirectionalLightCount)))
 		{
-			DirectionalLightBuffer.UploadDataViaRHI(InRenderDevice, DirectionalLightStaging.GetData()
+			InOutBuffers.DirectionalLightBuffer.UploadDataViaRHI(InRenderDevice, DirectionalLightStaging.GetData()
 				, static_cast<UINT32>(sizeof(EDirectionalLightsGPU)) * DirectionalLightCount, 0u);
 		}
 		if ((LocalLightCount > 0u) && (LocalLightStaging.Num() >= static_cast<INT32>(LocalLightCount)))
 		{
-			LocalLightBuffer.UploadDataViaRHI(InRenderDevice, LocalLightStaging.GetData()
+			InOutBuffers.LocalLightBuffer.UploadDataViaRHI(InRenderDevice, LocalLightStaging.GetData()
 				, static_cast<UINT32>(sizeof(ELocalLightsGPU)) * LocalLightCount, 0u);
 		}
 	}
 
 	RSceneRenderer::RSceneRenderer()
 		: Scene(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr), SceneLightingProgram(nullptr)
+		, ShadowMaskProgram(nullptr)
 		, FinalOutputView(0u), NeedStencil(FALSE)
 		, EnvironmentSHPipelineState(nullptr), EnvironmentSHProgram(nullptr), EnvironmentSHBakedSource(nullptr)
 		, bIndirectLightingParamsReported(FALSE)
+		, PrefilteredEnvironmentMipCount(0u), PrefilteredEnvironmentResolutionExponent(0u)
+		, EnvironmentPrefilterBakedSource(nullptr), EnvironmentPrefilterBakedMean(0.f)
+		, EnvironmentBRDFLUTUAVView(nullptr), bEnvironmentBRDFLUTBaked(FALSE)
+		, EnvironmentPrefilterPipelineState(nullptr), EnvironmentBRDFPipelineState(nullptr)
+		, EnvironmentPrefilterProgram(nullptr), EnvironmentBRDFProgram(nullptr)
+		, EnvironmentPrefilterProgramInstance(nullptr), EnvironmentBRDFProgramInstance(nullptr)
 	{
 		for (UINT32 i = 0u; i < RPipelineStateType::PIPELINE_STATE_COUNT; i++)
 		{
@@ -163,7 +326,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 	RSceneRenderer::~RSceneRenderer()
 	{
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check render scene is not normally released.")), (!Scene));
 	}
 	void RSceneRenderer::Initialize()
 	{
@@ -291,8 +454,17 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			SceneLightingProgramInstance = GetSceneLightingProgramInstance();
 			SceneLightingProgram = (SceneLightingProgramInstance ? SceneLightingProgramInstance->GetProgram() : nullptr);
 
+			ShadowMaskProgramInstance = GetShadowMaskProgramInstance();
+			ShadowMaskProgram = (ShadowMaskProgramInstance ? ShadowMaskProgramInstance->GetProgram() : nullptr);
+
 			EnvironmentSHProgramInstance = GetEnvironmentSHProgramInstance();
 			EnvironmentSHProgram = (EnvironmentSHProgramInstance ? EnvironmentSHProgramInstance->GetProgram() : nullptr);
+
+			EnvironmentPrefilterProgramInstance = GetEnvironmentPrefilterProgramInstance();
+			EnvironmentPrefilterProgram = (EnvironmentPrefilterProgramInstance ? EnvironmentPrefilterProgramInstance->GetProgram() : nullptr);
+
+			EnvironmentBRDFProgramInstance = GetEnvironmentBRDFProgramInstance();
+			EnvironmentBRDFProgram = (EnvironmentBRDFProgramInstance ? EnvironmentBRDFProgramInstance->GetProgram() : nullptr);
 		}
 
 		// Build the engine driven pass states from the pass table. Each pass states its own
@@ -308,7 +480,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// which is also where that state gets its signature from.
 		EnsureEnginePassPipelineStates();
 
-		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check render scene is not normally released."), (!Scene));
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check render scene is not normally released.")), (!Scene));
 		Scene = new RScene();
 	}
 	void RSceneRenderer::OnShaderAssetReplaced(const EName& InShaderName)
@@ -330,7 +502,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// load, and this runs on the render thread.
 		FullScreenProgram = (FullScreenProgramInstance ? FullScreenProgramInstance->GetProgram() : nullptr);
 		SceneLightingProgram = (SceneLightingProgramInstance ? SceneLightingProgramInstance->GetProgram() : nullptr);
+		ShadowMaskProgram = (ShadowMaskProgramInstance ? ShadowMaskProgramInstance->GetProgram() : nullptr);
 		EnvironmentSHProgram = (EnvironmentSHProgramInstance ? EnvironmentSHProgramInstance->GetProgram() : nullptr);
+		EnvironmentPrefilterProgram = (EnvironmentPrefilterProgramInstance ? EnvironmentPrefilterProgramInstance->GetProgram() : nullptr);
+		EnvironmentBRDFProgram = (EnvironmentBRDFProgramInstance ? EnvironmentBRDFProgramInstance->GetProgram() : nullptr);
 
 		// The pass states latch on those programs, and the environment bake latches its own: all of
 		// them are rebuilt from the programs above on the next frame that needs them.
@@ -340,9 +515,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 		bEnginePassStatesReady = FALSE;
 		EnvironmentSHPipelineState = nullptr;
+		EnvironmentPrefilterPipelineState = nullptr;
+		EnvironmentBRDFPipelineState = nullptr;
 
 		/*
-		* The two blocks of the renderer's own. They latch the program their layout was read from,
+		* The blocks of the renderer's own. They latch the program their layout was read from,
 		* and a block does not remember which shader that was - so they are released whenever any
 		* shader is replaced. A block with no layout binds nothing and re-initializes from the
 		* program it is next used with, so the cost of being wrong here is one rebuild and never a
@@ -350,6 +527,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		*/
 		GlobalParameterBlock.ReleaseRenderResources();
 		IndirectLightingParameterBlock.ReleaseRenderResources();
+		ShadowMaskParameterBlock.ReleaseRenderResources();
+		EnvironmentPrefilterParameterBlock.ReleaseRenderResources();
+		EnvironmentBRDFParameterBlock.ReleaseRenderResources();
 
 		/*
 		* The modules below cache a program of their own. Each one re-derives it from the instance
@@ -389,6 +569,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			EnginePassPrograms.Add(EName(PE_TEXT("Copy")), FullScreenProgram);
 		}
+		if (ShadowMaskProgram)
+		{
+			EnginePassPrograms.Add(EName(PE_TEXT("ShadowMask")), ShadowMaskProgram);
+		}
 
 		BOOL32 bAllReady = TRUE;
 		for (UINT32 PassIndex = 0u, PassNum = FRenderPassRegistry::GetPassNum(); PassIndex < PassNum; PassIndex++)
@@ -416,9 +600,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				continue;
 			}
 
-			RGraphicsPipelineStateDesc Desc;
-			FRenderPassRegistry::FillPipelineStateDesc(PassDesc, PassProgram, Desc);
-			PipelineStates[PassDesc.PipelineStateSlot] = PipelineStateCache.GetOrCreateGraphics(Desc);
+			RGraphicsPipelineStateDesc PipelineStateDesc;
+			FRenderPassRegistry::FillPipelineStateDesc(PassDesc, PassProgram, PipelineStateDesc);
+			PipelineStates[PassDesc.PipelineStateSlot] = PipelineStateCache.GetOrCreateGraphics(PipelineStateDesc);
 			if (!(PipelineStates[PassDesc.PipelineStateSlot]))
 			{
 				bAllReady = FALSE;
@@ -428,6 +612,21 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 	void RSceneRenderer::ShutDown()
 	{
+		// The specular IBL resources and their subresource views go before the device does: the
+		// views hand their descriptors back and the textures queue through the device's
+		// deferred delete path.
+		ReleaseSpecularIBLResources();
+		// The cache invalidates the states below; a renderer that comes back up must not keep
+		// the pointers from the previous device.
+		EnvironmentSHPipelineState = nullptr;
+		EnvironmentPrefilterPipelineState = nullptr;
+		EnvironmentBRDFPipelineState = nullptr;
+
+		// The shadow atlases and their slot buffers go with the views that own them, and before the
+		// device does: the textures are released through it so the destroy lands after the frames
+		// that still reference them.
+		ReleaseViewShadowStates();
+
 		if (ViewSceneTextures.Num() > 0)
 		{
 			for (auto It = ViewSceneTextures.Begin(); It != ViewSceneTextures.End(); It++)
@@ -439,28 +638,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				}
 				delete (TempPtr);
 				TempPtr = nullptr;
-			}
-			ViewSceneTextures.Empty();
-		}
-		if (ViewShadowMaps.Num() > 0)
-		{
-			for (auto It = ViewShadowMaps.Begin(); It != ViewShadowMaps.End(); It++)
-			{
-				RShadowMapType& TempShadowMaps = It->second;
-				if (TempShadowMaps.Num() > 0)
-				{
-					for (auto ItSM = TempShadowMaps.Begin(); ItSM != TempShadowMaps.End(); ItSM++)
-					{
-						RShadowTexture*& TempPtr = ItSM->second;
-						if (TempPtr)
-						{
-							TempPtr->ReleaseResources();
-						}
-						delete (TempPtr);
-						TempPtr = nullptr;
-					}
-					TempShadowMaps.Empty();
-				}
 			}
 			ViewSceneTextures.Empty();
 		}
@@ -560,6 +737,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// attempt (renderer Initialize) runs before the shader device objects exist.
 		EnsureEnginePassPipelineStates();
 
+		// The per view light lists, encoded and uploaded once the pass states above are known:
+		// whether a view's shadow data is usable depends on the resolver's state, and a list
+		// encoded for a view the resolver cannot serve would have to be uploaded twice.
+		UploadLightListsForViews();
+
 		// Bind the renderer wide sampler table across stages, one entry per register: the
 		// shaders declare their samplers by these registers (s0..s6, see RSamplerType), and the
 		// table is written once per frame because no draw changes it. A sampler a shader
@@ -583,9 +765,20 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// cubemap having changed, so most frames spend one pointer comparison here.
 		RenderEnvironmentSH();
 
+		// The specular half, also before the lighting pass that samples it. The LUT is
+		// independent of the environment and records a single dispatch for the session; the
+		// prefilter re-runs only when the cube, its mean, or the resolution exponent changed.
+		RenderEnvironmentBRDFLUT();
+		RenderEnvironmentPrefilter();
+
 		// Per frame values. A no-op until the first draw gives the block a layout, which is
 		// also why the first frame that binds it publishes from EnsureGlobalParameterBlock.
 		UpdateGlobalParameters();
+
+		// The shadow depth atlases, before the base pass whose lighting samples them. They are a
+		// per view resource, but one that has to exist before the pass that reads it, so this is
+		// the last point at which the frame can still record them into the same command list.
+		RenderShadowViews();
 
 		BasePass();
 
@@ -648,9 +841,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		const UINT32 FrameIndex = RenderDevice ? RenderDevice->GetCurrentFrameIndex() : 0u;
 		WriteShaderUIntArray(Parameters, BlockName, EName(SHADER_FIELD_FRAME_INDEX), &FrameIndex, 1u);
 
-		// Reserved: nothing reads the flag word yet, and a neutral exposure is the identity
-		// for the tone mapping that will.
-		const UINT32 RenderFlags[4] = { 0u, 0u, 0u, 0u };
+		// The frame's flag word. Bit 0 says the shadow mask program has device objects this frame,
+		// so the resolver runs for every view that has shadow data. Whether one particular view
+		// actually produced a mask is a per view fact and travels in that view's light list: a
+		// light with no shadow address is skipped before any mask is sampled, which is what keeps
+		// this one frame wide bit honest for any number of views. The rest of the word is
+		// reserved and written as zero.
+		UINT32 RenderFlags[4] = { 0u, 0u, 0u, 0u };
+		if ((ShadowMaskProgram != nullptr)
+			&& (PipelineStates[RPipelineStateType::PIPELINE_STATE_DIRECTIONAL_SHADOW_MASK] != nullptr))
+		{
+			RenderFlags[0] |= SHADER_RENDER_FLAG_DIRECTIONAL_SHADOW_MASK_VALID;
+		}
 		WriteShaderUIntArray(Parameters, BlockName, EName(SHADER_FIELD_RENDER_FLAGS), RenderFlags, 4u);
 
 		// Exposure is not here: it belongs to the view and is published by RViewProxy, because
@@ -695,7 +897,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
 			if (!ViewProxy)
 			{
 				continue;
@@ -731,6 +933,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			RenderBasePass(SceneTextures);
 
 			RenderSky(ViewProxy);
+
+			// The directional shadows resolved into the view's mask, between the passes that write
+			// what it reads and the pass that samples it. It is skipped for a view that has no
+			// mask, and the lighting pass then leaves every directional light unshadowed.
+			RenderDirectionalShadowMask(ViewProxy, SceneTextures);
 
 			RenderLighting(ViewProxy, SceneTextures);
 
@@ -816,13 +1023,14 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 					{
 						EShaderParameterSet Parameters;
 						Parameters.SetTexture(EName(), EName(PE_TEXT("CopySourceTexture")), FinalSource);
-						BindShaderParameterResources(CurrentCommandList, Parameters
-							, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+						BindShaderResources(CurrentCommandList, Parameters
+							, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
+							, EName(SHADER_BINDING_SCOPE_COPY));
 					}
 				}
 				else
 				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("FinalOutput: the scene colour source is not a usable texture."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("FinalOutput: the scene colour source is not a usable texture.")));
 				}
 			}
 			CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
@@ -928,7 +1136,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			if (!IsUsableColorTarget(*BasePassTargets[TargetIndex]))
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("BasePass: a scene colour target is not a usable render target."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("BasePass: a scene colour target is not a usable render target.")));
 				return;
 			}
 		}
@@ -984,12 +1192,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #if _EDITOR_ONLY
 				if (!Primitive)
 				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null primitive scene proxy."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null primitive scene proxy.")));
 					continue;
 				}
 				if (!(Primitive->IsRenderValid()))
 				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid primitive scene proxy."));
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid primitive scene proxy.")));
 					continue;
 				}
 #endif
@@ -1012,12 +1220,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #if _EDITOR_ONLY
 			if (!BezierGrass)
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null bezier grass proxy."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null bezier grass proxy.")));
 				continue;
 			}
 			if (!(BezierGrass->IsRenderValid()))
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid bezier grass proxy."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid bezier grass proxy.")));
 				continue;
 			}
 #endif
@@ -1049,14 +1257,19 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			return;
 		}
-		(void)InViewProxy;
+
+		// The mask this pass reads is this view's own. A view without one is shaded unshadowed:
+		// its light list carries no shadow addresses, so the shader never samples, and binding
+		// nothing here leaves the plan's null fill in a register nothing reads.
+		const BOOL32 bHasShadowMask = ((InViewProxy != nullptr)
+			&& (IsDirectionalShadowMaskAvailable(InViewProxy->GetUniqueID()) != FALSE)) ? TRUE : FALSE;
 
 		// The pass blends into the scene colour target the base pass filled, so that target has
 		// to be usable: a pass recorded against a target it cannot write would add nothing and
 		// the frame would come out unlit.
 		if (!IsUsableColorTarget(InSceneTextures->SceneColor))
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Lighting: the scene colour target is not a usable render target."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Lighting: the scene colour target is not a usable render target.")));
 			return;
 		}
 
@@ -1116,26 +1329,225 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				Parameters.SetTexture(EName(), EName(PE_TEXT("GBufferCTexture")), InSceneTextures->GBufferC.GetResolvedRHITexture());
 				Parameters.SetTexture(EName(), EName(PE_TEXT("GBufferDTexture")), InSceneTextures->GBufferD.GetResolvedRHITexture());
 				Parameters.SetTexture(EName(), EName(PE_TEXT("GBufferETexture")), InSceneTextures->GBufferE.GetResolvedRHITexture());
-				// The two light lists. They are frame wide resources like the per frame block
-				// is: every view reads the same buffers, and the counts that bound their loops
-				// travel in GlobalParams. A pass binds them through its own plan, which is why
-				// nothing else in the frame has to care whether the lighting pass ran.
-				Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DirectionalLights")), &LightLists.DirectionalLightBuffer);
-				Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("LocalLights")), &LightLists.LocalLightBuffer);
+				// This view's two light lists. The staging is frame wide, but the shadow address
+				// each element carries indexes this view's slot table, so the encoded bytes are
+				// this view's own. The counts that bound the loops travel in GlobalParams and are
+				// the same for every view. Looked up rather than created: the buffers are built
+				// before the frame records, and creating one here would create a device resource
+				// in the middle of a command list.
+				RViewLightBuffers** ViewBuffersPtr = ((InViewProxy != nullptr)
+					? ViewLightBuffers.FindValueAsPtr(InViewProxy->GetUniqueID()) : nullptr);
+				if ((ViewBuffersPtr != nullptr) && (*ViewBuffersPtr != nullptr))
+				{
+					Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DirectionalLights")), &(*ViewBuffersPtr)->DirectionalLightBuffer);
+					Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("LocalLights")), &(*ViewBuffersPtr)->LocalLightBuffer);
+				}
 				// The environment's coefficients, written by the bake this frame and read here as the
 				// indirect term's irradiance. A pass that has no sky, or a frame where the bake could
 				// not be recorded, leaves the slot to the resource set's null fill - a null view reads
 				// as zero coefficients, which is the environment contributing nothing, rather than as
 				// whatever a previous pass left there.
 				Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("EnvironmentSH")), &EnvironmentSHBuffer);
-				BindShaderParameterResources(CurrentCommandList, Parameters
-					, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+				// The split sum's two halves. Until the prefilter and the LUT have run, the engine
+				// defaults stand in: a black cube and a black table mean the specular term is zero,
+				// which is a defined "no environment reflection yet" rather than a stale descriptor.
+				// The cube default is the one the shader's TextureCube can sample: a 2D array
+				// default would be a view whose dimension the declaration cannot use.
+				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+				if (RenderDevice)
+				{
+					IRRHITexture* PrefilteredTexture = RenderDevice->GetDefaultTexture(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_CUBE);
+					if ((EnvironmentPrefilterBakedSource != nullptr) && (PrefilteredEnvironmentCube.IsRenderResourceValid() != FALSE))
+					{
+						PrefilteredTexture = PrefilteredEnvironmentCube.Texture;
+					}
+					IRRHITexture* BRDFLUTTexture = RenderDevice->GetDefaultTexture(RDefaultBindingTextureType::DEFAULT_BINDING_TEXTURE_2D);
+					if ((bEnvironmentBRDFLUTBaked != FALSE) && (EnvironmentBRDFLUT.IsRenderResourceValid() != FALSE))
+					{
+						BRDFLUTTexture = EnvironmentBRDFLUT.Texture;
+					}
+					Parameters.SetTexture(EName(), EName(PE_TEXT("PrefilteredEnvironmentCube")), PrefilteredTexture);
+					Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentBRDFLUT")), BRDFLUTTexture);
+				}
+				// This view's directional shadow mask. A view without one leaves the name out:
+				// its light list carries no shadow address, so the shader never samples the
+				// channel and the plan's null fill lands in a register nothing reads.
+				if ((bHasShadowMask != FALSE)
+					&& (InSceneTextures->DirectionalShadowMask.IsRenderResourceValid() != FALSE))
+				{
+					Parameters.SetTexture(EName(), EName(PE_TEXT("DirectionalShadowMask0"))
+						, InSceneTextures->DirectionalShadowMask.GetResolvedRHITexture());
+				}
+				// The atlas and the slot table the local light shadow term samples. Bound from
+				// this view's state, like the mask: a slot index addresses one view's table, and
+				// the atlas is the one that view's caster pass filled. A view without usable
+				// shadow data leaves both unbound, and its light list has no address to sample.
+				RViewShadowState** ShadowStatePtr = ((InViewProxy != nullptr)
+					? ViewShadowStates.FindValueAsPtr(InViewProxy->GetUniqueID()) : nullptr);
+				if ((bHasShadowMask != FALSE) && (ShadowStatePtr != nullptr) && (*ShadowStatePtr != nullptr))
+				{
+					IRRHITexture* AtlasTexture = (*ShadowStatePtr)->Atlas.GetTexture();
+					if (AtlasTexture)
+					{
+						Parameters.SetTexture(EName(), EName(PE_TEXT("ShadowMapAtlas")), AtlasTexture);
+						Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("ShadowSlots")), &(*ShadowStatePtr)->SlotBuffer);
+					}
+				}
+				BindShaderResources(CurrentCommandList, Parameters
+					, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
+					, EName(SHADER_BINDING_SCOPE_LIGHTING));
 			}
 		}
 
 		CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
 
 		CurrentCommandList->EndRenderPass();
+	}
+	BOOL32 RSceneRenderer::IsDirectionalShadowMaskAvailable(const ObjectIdentityType InViewIdentity)
+	{
+		if ((!Scene) || (!ShadowMaskProgram)
+			|| (!PipelineStates[RPipelineStateType::PIPELINE_STATE_DIRECTIONAL_SHADOW_MASK]))
+		{
+			return FALSE;
+		}
+
+		// Every input is per view, and every one of them can legitimately be missing: the view may
+		// cast no shadow this frame, its atlas may not exist yet, or its mask target may have
+		// failed to create. A false answer is not an error - it makes the view shade unshadowed.
+		if (ViewShadowStates.ContainsKey(InViewIdentity) == FALSE)
+		{
+			return FALSE;
+		}
+		RViewShadowState* ShadowState = ViewShadowStates[InViewIdentity];
+		if ((!ShadowState) || (ShadowState->bBuiltThisFrame == FALSE)
+			|| (ShadowState->SlotNum <= 1u) || (ShadowState->Atlas.GetTexture() == nullptr))
+		{
+			return FALSE;
+		}
+
+		// The resolver reads the view's depth and normal and writes the view's mask target, so
+		// all three have to be usable.
+		if (ViewSceneTextures.ContainsKey(InViewIdentity) == FALSE)
+		{
+			return FALSE;
+		}
+		RSceneTextures* SceneTextures = ViewSceneTextures[InViewIdentity];
+		if ((!SceneTextures) || (SceneTextures->DirectionalShadowMask.IsRenderResourceValid() == FALSE)
+			|| (SceneTextures->GBufferB.IsRenderResourceValid() == FALSE)
+			|| (SceneTextures->SceneDepthStencil.IsRenderResourceValid() == FALSE))
+		{
+			return FALSE;
+		}
+		return TRUE;
+	}
+	void RSceneRenderer::RenderDirectionalShadowMask(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
+	{
+		if ((!CurrentCommandList) || (!InViewProxy) || (!InSceneTextures))
+		{
+			return;
+		}
+		const ObjectIdentityType ViewIdentity = InViewProxy->GetUniqueID();
+		if (IsDirectionalShadowMaskAvailable(ViewIdentity) == FALSE)
+		{
+			return;
+		}
+
+		const EShaderProgram* MaskProgram = ShadowMaskProgram;
+		IRRHIPipelineState* MaskState = PipelineStates[RPipelineStateType::PIPELINE_STATE_DIRECTIONAL_SHADOW_MASK];
+		if ((!MaskProgram) || (!MaskState))
+		{
+			return;
+		}
+		RViewShadowState* ShadowState = ViewShadowStates[ViewIdentity];
+		if (!ShadowState)
+		{
+			return;
+		}
+
+		IRRHITexture* AtlasTexture	= ShadowState->Atlas.GetTexture();
+		IRRHITexture* MaskTarget	= InSceneTextures->DirectionalShadowMask.GetResolvedRHITexture();
+		IRRHITexture* NormalTarget	= InSceneTextures->GBufferB.GetResolvedRHITexture();
+		IRRHITexture* DepthTarget	= InSceneTextures->SceneDepthStencil.GetResolvedRHITexture();
+		if ((!AtlasTexture) || (!MaskTarget) || (!NormalTarget) || (!DepthTarget))
+		{
+			return;
+		}
+
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount				= 1u;
+		Pass.RenderTargets[0].Target		= MaskTarget;
+		Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+		// Cleared to one so a channel no directional light claims reads as fully lit. The pass
+		// writes every pixel it covers, so the clear is only what a skipped or partial frame
+		// leaves behind - and that value has to be the identity of the shadow term.
+		Pass.RenderTargets[0].ClearColor	= Color4(1.f, 1.f, 1.f, 1.f);
+		Pass.RenderTargets[0].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.DepthStencil.Target			= nullptr;
+		Pass.PassName						= PE_TEXT("DirectionalShadowMask");
+		CurrentCommandList->BeginRenderPass(Pass);
+
+		CurrentCommandList->SetPipelineState(MaskState);
+
+		// The shared blocks belong to the pass that draws it: the state above brought its own
+		// signature, which voided anything an earlier pass had left bound.
+		BindEngineParameters(CurrentCommandList, *MaskProgram);
+
+		// The mask block: the reciprocal of the mask's pixel size, which is what the shader
+		// converts its own pixel coordinate with. The size is the scene textures' own, because
+		// the mask is created at the view's resolution.
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if ((RenderDevice) && (ShadowMaskParameterBlock.EnsureInitialized(RenderDevice, *MaskProgram) != FALSE))
+		{
+			const Vector2Int& MaskSize = InSceneTextures->GetTextureSize();
+			const FLOAT InvMaskSize[2] =
+			{
+				1.f / static_cast<FLOAT>(EMath::Max(MaskSize.x, 2)),
+				1.f / static_cast<FLOAT>(EMath::Max(MaskSize.y, 2)),
+			};
+			WriteShaderFloatArray(ShadowMaskParameterBlock.GetParameters()
+				, EName(SHADER_BLOCK_SHADOW_MASK_PARAMS), EName(SHADER_FIELD_INV_MASK_SIZE), InvMaskSize, 2u);
+			ShadowMaskParameterBlock.Upload(RenderDevice);
+			ShadowMaskParameterBlock.Bind(CurrentCommandList, *MaskProgram);
+		}
+
+		FullScreenTriangle.BindPrimitiveBuffers(CurrentCommandList, *MaskProgram);
+
+		// The depth and the normal were render targets until now, so the pass has to put them
+		// into a state a pixel shader may read before it binds them.
+		TransitionToShaderReadable(NormalTarget);
+		TransitionDepthToShaderReadable(DepthTarget);
+
+		// Every name lands on the register the mask program's own reflection put it at. The atlas
+		// and the slot table are the shadow state's; the light list is the frame's, like every
+		// other pass that reads it.
+		const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*MaskProgram, EShaderStageType::SHADER_STAGE_PIXEL);
+		if (PixelEntry)
+		{
+			EShaderParameterSet Parameters;
+			Parameters.SetTexture(EName(), EName(PE_TEXT("DepthTexture")), DepthTarget);
+			Parameters.SetTexture(EName(), EName(PE_TEXT("GBufferBTexture")), NormalTarget);
+			Parameters.SetTexture(EName(), EName(PE_TEXT("ShadowMapAtlas")), AtlasTexture);
+			// This view's light list: the shadow addresses the resolver follows are the ones this
+			// view's slot table was built with. The buffers are built before the frame records,
+			// so this is a lookup and not a creation.
+			RViewLightBuffers** ViewBuffersPtr = ViewLightBuffers.FindValueAsPtr(ViewIdentity);
+			if ((ViewBuffersPtr != nullptr) && (*ViewBuffersPtr != nullptr))
+			{
+				Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("DirectionalLights")), &(*ViewBuffersPtr)->DirectionalLightBuffer);
+			}
+			Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("ShadowSlots")), &ShadowState->SlotBuffer);
+			BindShaderResources(CurrentCommandList, Parameters
+				, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
+				, EName(SHADER_BINDING_SCOPE_SHADOW_MASK));
+		}
+
+		CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
+
+		CurrentCommandList->EndRenderPass();
+
+		// The lighting pass samples the mask next, so it leaves the pass readable rather than
+		// leaving each consumer to state the same transition.
+		TransitionToShaderReadable(MaskTarget);
 	}
 	void RSceneRenderer::RenderSky(const RViewProxy* InViewProxy)
 	{
@@ -1150,6 +1562,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// difference is rasterizer state (cull FRONT for inside-the-dome).
 		// The dome carries its own pipeline state, built from the sky pass and
 		// the engine sky program, and sets it inside its draw.
+		PE_GPU_PROFILER_PASS_BEGIN(CurrentCommandList, PE_TEXT("Sky"));
 
 		for (UINT32 SkyLightIndex = 0u; SkyLightIndex < SkyLightNum; SkyLightIndex++)
 		{
@@ -1157,12 +1570,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #if _EDITOR_ONLY
 			if (!SkyLight)
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a null sky light proxy."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null sky light proxy.")));
 				continue;
 			}
 			if (!(SkyLight->IsRenderValid()))
 			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Exist a render invalid sky light proxy."));
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid sky light proxy.")));
 				continue;
 			}
 #endif
@@ -1172,6 +1585,8 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			break;
 #endif
 		}
+
+		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
 	}
 	void RSceneRenderer::RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
 	{
@@ -1179,7 +1594,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// colour it reads back, so a target it cannot write would drop the whole pass.
 		if (!IsUsableColorTarget(InSceneTextures->SceneColor))
 		{
-			PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Forward: the scene colour target is not a usable render target."));
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Forward: the scene colour target is not a usable render target.")));
 			return;
 		}
 
@@ -1228,13 +1643,27 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		// Reset view proxies per frame datas
 		FinalOutputView = 0u;
+		// The light lists are re-encoded from scratch in InitLights, so the per view addresses they
+		// read have to be this frame's. Clearing them here rather than at the end of the frame
+		// leaves the encoding reading a table that only ever holds views built for the frame.
+		ViewShadowAddresses.Empty();
+		// A view that stopped being a main view keeps its shadow state, and InitShadowViews never
+		// reaches its BeginFrame again. Clearing the flag here is what keeps RenderShadowViews from
+		// recording that stale atlas for a view nothing shades.
+		for (RViewShadowStateMapType::TIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
+		{
+			if (StateIt->second)
+			{
+				StateIt->second->bBuiltThisFrame = FALSE;
+			}
+		}
 		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		{
 			for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
 			{
 				RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
 				if (!ViewProxy)
 				{
 					continue;
@@ -1252,7 +1681,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
 #if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that view proxy can not be null"), (!!ViewProxy));
+			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
 			if (!ViewProxy)
 			{
 				continue;
@@ -1260,17 +1689,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #endif
 			const EFrustum& ViewFrustum = ViewProxy->GetViewFrustum();
 
-			// The per view half of the light work: each shadow domain of each light is culled
-			// against its own cascade frustum, which was derived from this view's frustum and
-			// therefore belongs to it. The light lists themselves are frame wide and are
-			// gathered once in InitLights.
+			// This view's shadow views. Built before the view's own culling because a shadow view
+			// carries its own frustum and its own caster list, and before InitLights because the
+			// light lists carry the slot each light landed in.
 			{
-				InitDirectionalLightShadowDomains(ViewProxy);
-			}
-
-			// Shadow maps
-			{
-				InitShadowTextures(ViewProxy);
+				InitShadowViews(ViewProxy);
 			}
 
 			// Visible culling
@@ -1290,6 +1713,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				InitRenderPasses(ViewProxy);
 			}
 		}
+
+		// Views that no longer exist take their atlas and slot buffer with them. Doing it after the
+		// loop is what makes "the scene still has this view" a single lookup per state rather than
+		// a flag kept in step with the loop.
+		PruneViewShadowStates();
 	}
 	void RSceneRenderer::InitLights()
 	{
@@ -1297,25 +1725,76 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			return;
 		}
-		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		LightLists.EnsureBuffers(RenderDevice);
+		LightLists.ReserveStaging();
 
 		GatherDirectionalLights();
 		GatherLocalLights();
 
 		// The buffers travel with the counts that address them: a count is only meaningful
 		// together with the list it indexes, so the two are produced and published together.
-		// The uploads are prefix writes, so a frame with fewer lights uploads fewer bytes
-		// rather than leaving stale ones the loop would read.
-		LightLists.Upload(RenderDevice);
+		// The per view upload happens at the start of Render, after the pass states are built:
+		// whether a view's shadow data is usable depends on them, and encoding addresses the
+		// resolver cannot honour would make the frame inconsistent.
 
 #if _EDITOR_ONLY
 		ValidateLightBufferLayout();
 #endif
 	}
+	void RSceneRenderer::UploadLightListsForViews()
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if ((!RenderDevice) || (!Scene))
+		{
+			return;
+		}
+
+		// One upload per main view, into that view's own buffers. A view whose shadow data is not
+		// usable gets the empty address table, which encodes every light as "casts no shadow" -
+		// the per view half of the frame wide flag the shader reads.
+		const RShadowLightAddressMapType EmptyAddresses;
+		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
+		for (UINT32 ViewIndex = 0u, ViewNum = ViewProxies.Num<UINT32>(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+			if ((ViewProxy == nullptr) || (ViewProxy->IsMainRenderView() == FALSE))
+			{
+				continue;
+			}
+			const ObjectIdentityType ViewIdentity = ViewProxy->GetUniqueID();
+			RViewLightBuffers* ViewBuffers = EnsureViewLightBuffers(ViewIdentity);
+			if (!ViewBuffers)
+			{
+				continue;
+			}
+			const RShadowLightAddressMapType* ViewAddresses = nullptr;
+			if (IsDirectionalShadowMaskAvailable(ViewIdentity) != FALSE)
+			{
+				ViewAddresses = ViewShadowAddresses.FindValueAsPtr(ViewIdentity);
+			}
+			LightLists.UploadForView(RenderDevice, *ViewBuffers
+				, ((ViewAddresses != nullptr) ? *ViewAddresses : EmptyAddresses));
+		}
+	}
+	RSceneRenderer::RViewLightBuffers* RSceneRenderer::EnsureViewLightBuffers(const ObjectIdentityType InViewIdentity)
+	{
+		if (ViewLightBuffers.ContainsKey(InViewIdentity) == FALSE)
+		{
+			ViewLightBuffers.Add(InViewIdentity, nullptr);
+		}
+		RViewLightBuffers* ViewBuffers = ViewLightBuffers[InViewIdentity];
+		if (!ViewBuffers)
+		{
+			ViewBuffers = new RViewLightBuffers();
+			IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+			ViewBuffers->EnsureBuffers(RenderDevice);
+			ViewLightBuffers[InViewIdentity] = ViewBuffers;
+		}
+		return ViewBuffers;
+	}
 	void RSceneRenderer::GatherDirectionalLights()
 	{
 		LightLists.DirectionalLightStaging.Empty();
+		LightLists.DirectionalLightIdentities.Empty();
 		LightLists.DirectionalLightCount = 0u;
 
 		RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
@@ -1340,13 +1819,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			}
 #endif
 			EDirectionalLightsGPU& Element = LightLists.DirectionalLightStaging.AddDefaultGetRef();
-			EncodeDirectionalLight(LightProxy->GetLightData(), LightProxy->GetWorldRotation(), Element);
+			// No shadow address here. The address indexes one view's slot table, so it is filled
+			// per view by UploadLightListsForViews rather than once for the frame; the identity is
+			// recorded beside the element so that upload can find it again.
+			EncodeDirectionalLight(LightProxy->GetLightData(), LightProxy->GetWorldRotation(), 0u, 0u, Element);
+			LightLists.DirectionalLightIdentities.Add(LightProxy->GetUniqueID());
 			LightLists.DirectionalLightCount += 1u;
 		}
 	}
 	void RSceneRenderer::GatherLocalLights()
 	{
 		LightLists.LocalLightStaging.Empty();
+		LightLists.LocalLightIdentities.Empty();
 		LightLists.LocalLightCount = 0u;
 
 		// Point and spot share this one list, so the capacity is their sum and the type field in
@@ -1374,7 +1858,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			}
 #endif
 			ELocalLightsGPU& Element = LightLists.LocalLightStaging.AddDefaultGetRef();
-			EncodeLocalLight(LightProxy->GetLightData(), LightProxy->GetWorldLocation(), LightProxy->GetWorldRotation(), Element);
+			// No shadow address, for the same reason the directional gather leaves it out: the
+			// first slot of a light's views belongs to one view's slot table, and it is written
+			// per view before that view records.
+			EncodeLocalLight(LightProxy->GetLightData(), LightProxy->GetWorldLocation(), LightProxy->GetWorldRotation()
+				, 0u, Element);
+			LightLists.LocalLightIdentities.Add(LightProxy->GetUniqueID());
 			LightLists.LocalLightCount += 1u;
 		}
 	}
@@ -1468,6 +1957,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			CurrentCommandList->ResourceBarrier(CoefficientBuffer, StateBefore, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS);
 		}
 
+		// A bake is a one-shot compute pass; it gets a profiler bracket of its
+		// own so its cost is not folded into whichever frame happens to trigger
+		// it. Every early out above leaves before this point.
+		PE_GPU_PROFILER_PASS_BEGIN(CurrentCommandList, PE_TEXT("EnvironmentSH"));
+
 		CurrentCommandList->SetPipelineState(EnvironmentSHPipelineState);
 
 		// Bound by name through the compute stage's own plan, so neither a register nor a slot is
@@ -1475,12 +1969,15 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		EShaderParameterSet Parameters;
 		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), SourceTexture);
 		Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("EnvironmentSHOutput")), &EnvironmentSHBuffer, TRUE);
-		BindShaderParameterResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE);
+		BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE
+			, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
 
 		// One threadgroup: the kernel hands one coefficient to each of nine lanes and lets each
 		// scan the whole sample set itself, so there is no reduction, no group shared memory and
 		// nothing here to size against the cubemap's resolution.
 		CurrentCommandList->Dispatch(1u, 1u, 1u);
+
+		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
 
 		CurrentCommandList->ResourceBarrier(CoefficientBuffer, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
 
@@ -1489,7 +1986,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// One line per bake and a bake only happens when the cube behind the sky changes, so this
 		// is the record that the dispatch ran rather than that the pass was skipped.
 #if _EDITOR_ONLY
-		PE_LOG_LOG(EString("[SceneRenderer] Baked the environment SH from the sky's cube."));
+		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Baked the environment SH from the sky's cube.")));
 #endif	// _EDITOR_ONLY
 	}
 	BOOL32 RSceneRenderer::EnsureEnvironmentSHPipelineState()
@@ -1507,6 +2004,386 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// pairs it with the root signature the program's reflection generated.
 		EnvironmentSHPipelineState = PipelineStateCache.GetOrCreateCompute(*EnvironmentSHProgram);
 		return ((EnvironmentSHPipelineState != nullptr) ? TRUE : FALSE);
+	}
+	BOOL32 RSceneRenderer::EnsureEnvironmentPrefilterPipelineState()
+	{
+		if (EnvironmentPrefilterPipelineState)
+		{
+			return TRUE;
+		}
+		if (!EnvironmentPrefilterProgram)
+		{
+			return FALSE;
+		}
+		EnvironmentPrefilterPipelineState = PipelineStateCache.GetOrCreateCompute(*EnvironmentPrefilterProgram);
+		return ((EnvironmentPrefilterPipelineState != nullptr) ? TRUE : FALSE);
+	}
+	BOOL32 RSceneRenderer::EnsureEnvironmentBRDFPipelineState()
+	{
+		if (EnvironmentBRDFPipelineState)
+		{
+			return TRUE;
+		}
+		if (!EnvironmentBRDFProgram)
+		{
+			return FALSE;
+		}
+		EnvironmentBRDFPipelineState = PipelineStateCache.GetOrCreateCompute(*EnvironmentBRDFProgram);
+		return ((EnvironmentBRDFPipelineState != nullptr) ? TRUE : FALSE);
+	}
+	void RSceneRenderer::ReleaseSpecularIBLResources()
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+
+		if (EnvironmentBRDFLUTUAVView)
+		{
+			if (RenderDevice)
+			{
+				RenderDevice->DestroyTextureUAVView(EnvironmentBRDFLUTUAVView);
+			}
+			EnvironmentBRDFLUTUAVView = nullptr;
+		}
+		for (UINT32 ViewIndex = 0u; ViewIndex < PrefilteredEnvironmentUAVViews.Num<UINT32>(); ViewIndex++)
+		{
+			if ((RenderDevice) && (PrefilteredEnvironmentUAVViews[ViewIndex]))
+			{
+				RenderDevice->DestroyTextureUAVView(PrefilteredEnvironmentUAVViews[ViewIndex]);
+			}
+		}
+		PrefilteredEnvironmentUAVViews.Empty();
+
+		if (RenderDevice)
+		{
+			PrefilteredEnvironmentCube.Release(RenderDevice);
+			EnvironmentBRDFLUT.Release(RenderDevice);
+		}
+		else
+		{
+			PrefilteredEnvironmentCube.ReleaseRenderResource();
+			EnvironmentBRDFLUT.ReleaseRenderResource();
+		}
+
+		PrefilteredEnvironmentMipCount = 0u;
+		PrefilteredEnvironmentResolutionExponent = 0u;
+		EnvironmentPrefilterBakedSource = nullptr;
+		EnvironmentPrefilterBakedMean = 0.f;
+		bEnvironmentBRDFLUTBaked = FALSE;
+	}
+	BOOL32 RSceneRenderer::EnsurePrefilteredEnvironmentResources(IRRHIDevice* InRenderDevice, const UINT32 InResolutionExponent)
+	{
+		if ((!InRenderDevice) || (InResolutionExponent < 4u) || (InResolutionExponent > 10u))
+		{
+			return FALSE;
+		}
+		if ((PrefilteredEnvironmentResolutionExponent == InResolutionExponent)
+			&& (PrefilteredEnvironmentCube.IsRenderResourceValid() != FALSE))
+		{
+			return TRUE;
+		}
+
+		// The exponent defines the base level; the chain runs down to 1 x 1, so a 256 base has
+		// nine levels. Roughness maps linearly onto that chain at sample time.
+		const UINT32 BaseResolution = (1u << InResolutionExponent);
+		const UINT32 MipCount = (InResolutionExponent + 1u);
+
+		for (UINT32 ViewIndex = 0u; ViewIndex < PrefilteredEnvironmentUAVViews.Num<UINT32>(); ViewIndex++)
+		{
+			if (PrefilteredEnvironmentUAVViews[ViewIndex])
+			{
+				InRenderDevice->DestroyTextureUAVView(PrefilteredEnvironmentUAVViews[ViewIndex]);
+			}
+		}
+		PrefilteredEnvironmentUAVViews.Empty();
+		PrefilteredEnvironmentCube.Release(InRenderDevice);
+		EnvironmentPrefilterBakedSource = nullptr;
+		EnvironmentPrefilterBakedMean = 0.f;
+
+		RTextureDesc TextureDesc(BaseResolution, BaseResolution
+			, static_cast<UINT8>(static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE) | static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS))
+			, RFormatType::FORMAT_R16G16B16A16_FLOAT);
+		TextureDesc.MipLevels = MipCount;
+		// Six faces carrying the cube flag: the resource is written one mip at a time through
+		// 2D array UAV views, since no D3D version has a cube UAV dimension, and it is read back
+		// through a cube SRV. That read side is the reason for the flag: a cube view gives the
+		// sampling side hardware direction lookup and the seamless filtering across face borders
+		// that a 2D array view cannot express. D3D11 needs the flag on the resource; D3D12 takes
+		// cube-ness from the view alone, so the same desc serves both.
+		TextureDesc.ArraySize = 6u;
+		TextureDesc.MiscFlags = static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE);
+		if (InRenderDevice->CreateTexture2DResource(TextureDesc, Color4::Black(), RRHISubresourceData(), PrefilteredEnvironmentCube) == FALSE)
+		{
+			PrefilteredEnvironmentResolutionExponent = 0u;
+			return FALSE;
+		}
+
+		for (UINT32 MipIndex = 0u; MipIndex < MipCount; MipIndex++)
+		{
+			RRHITextureUAVDesc UAVDesc;
+			UAVDesc.MipSlice = MipIndex;
+			UAVDesc.FirstArraySlice = 0u;
+			UAVDesc.ArraySize = 6u;
+			IRRHITextureUAVView* View = nullptr;
+			if ((InRenderDevice->CreateTextureUAVView(PrefilteredEnvironmentCube.Texture, UAVDesc, &View) == FALSE) || (!View))
+			{
+				for (UINT32 CreatedIndex = 0u; CreatedIndex < PrefilteredEnvironmentUAVViews.Num<UINT32>(); CreatedIndex++)
+				{
+					if (PrefilteredEnvironmentUAVViews[CreatedIndex])
+					{
+						InRenderDevice->DestroyTextureUAVView(PrefilteredEnvironmentUAVViews[CreatedIndex]);
+					}
+				}
+				PrefilteredEnvironmentUAVViews.Empty();
+				PrefilteredEnvironmentCube.Release(InRenderDevice);
+				PrefilteredEnvironmentResolutionExponent = 0u;
+				return FALSE;
+			}
+			PrefilteredEnvironmentUAVViews.Add(View);
+		}
+
+		PrefilteredEnvironmentMipCount = MipCount;
+		PrefilteredEnvironmentResolutionExponent = InResolutionExponent;
+		return TRUE;
+	}
+	BOOL32 RSceneRenderer::EnsureBRDFLUTResources(IRRHIDevice* InRenderDevice)
+	{
+		if (!InRenderDevice)
+		{
+			return FALSE;
+		}
+		if ((EnvironmentBRDFLUT.IsRenderResourceValid() != FALSE) && (EnvironmentBRDFLUTUAVView != nullptr))
+		{
+			return TRUE;
+		}
+		if (EnvironmentBRDFLUTUAVView)
+		{
+			InRenderDevice->DestroyTextureUAVView(EnvironmentBRDFLUTUAVView);
+			EnvironmentBRDFLUTUAVView = nullptr;
+		}
+		EnvironmentBRDFLUT.Release(InRenderDevice);
+		bEnvironmentBRDFLUTBaked = FALSE;
+
+		// 256 x 256 is the usual size for a DFG table: the function is smooth, and the table is
+		// generated once. R16G16_FLOAT keeps the pair exact enough that the fit error is gone.
+		RTextureDesc TextureDesc(256u, 256u
+			, static_cast<UINT8>(static_cast<UINT8>(RBindFlagType::BIND_SHADER_RESOURCE) | static_cast<UINT8>(RBindFlagType::BIND_UNORDERED_ACCESS))
+			, RFormatType::FORMAT_R16G16_FLOAT);
+		if (InRenderDevice->CreateTexture2DResource(TextureDesc, Color4::Black(), RRHISubresourceData(), EnvironmentBRDFLUT) == FALSE)
+		{
+			return FALSE;
+		}
+
+		RRHITextureUAVDesc UAVDesc;
+		UAVDesc.MipSlice = 0u;
+		UAVDesc.FirstArraySlice = 0u;
+		UAVDesc.ArraySize = 1u;
+		if ((InRenderDevice->CreateTextureUAVView(EnvironmentBRDFLUT.Texture, UAVDesc, &EnvironmentBRDFLUTUAVView) == FALSE)
+			|| (!EnvironmentBRDFLUTUAVView))
+		{
+			EnvironmentBRDFLUT.Release(InRenderDevice);
+			return FALSE;
+		}
+		return TRUE;
+	}
+	void RSceneRenderer::RenderEnvironmentBRDFLUT()
+	{
+		if ((!CurrentCommandList) || (bEnvironmentBRDFLUTBaked != FALSE))
+		{
+			return;
+		}
+		if (!EnvironmentBRDFProgram)
+		{
+			return;
+		}
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return;
+		}
+		if ((EnsureEnvironmentBRDFPipelineState() == FALSE) || (EnsureBRDFLUTResources(RenderDevice) == FALSE))
+		{
+			// This bake runs once and leaves no other trace, so a failure that only skipped it
+			// would look from the picture exactly like a feature nobody implemented: the specular
+			// term would sample a black table and contribute zero.
+			ReportSkippedDraw(EString(PE_TEXT("the environment BRDF LUT")), EString(PE_TEXT("its pipeline state or lookup table could not be created")));
+			return;
+		}
+		const EShaderStageEntry* ComputeEntry = ResolveShaderStageEntry(*EnvironmentBRDFProgram, EShaderStageType::SHADER_STAGE_COMPUTE);
+		if (!ComputeEntry)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment BRDF LUT")), EString(PE_TEXT("its compute program has no compute stage entry")));
+			return;
+		}
+		if (EnvironmentBRDFParameterBlock.EnsureInitialized(RenderDevice, *EnvironmentBRDFProgram) == FALSE)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment BRDF LUT")), EString(PE_TEXT("its parameter block is not declared by its own program")));
+			return;
+		}
+		IRRHITexture* LUTTexture = EnvironmentBRDFLUT.Texture;
+		if (!LUTTexture)
+		{
+			return;
+		}
+
+		const UINT32 Resolution = 256u;
+		const UINT32 SampleCount = 512u;
+		const EName BlockName(PE_TEXT("BRDFLUTParams"));
+		EShaderParameterSet& BlockParameters = EnvironmentBRDFParameterBlock.GetParameters();
+		WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("Resolution")), &Resolution, 1u);
+		WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("SampleCount")), &SampleCount, 1u);
+		EnvironmentBRDFParameterBlock.Upload(RenderDevice);
+
+		const ERHIResourceState StateBefore = LUTTexture->GetCurrentState();
+		if (StateBefore != ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			CurrentCommandList->ResourceBarrier(LUTTexture, StateBefore, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS);
+		}
+
+		// One-shot bake, bracketed like the SH bake. Every early out above
+		// leaves before this point.
+		PE_GPU_PROFILER_PASS_BEGIN(CurrentCommandList, PE_TEXT("EnvironmentBRDF"));
+
+		CurrentCommandList->SetPipelineState(EnvironmentBRDFPipelineState);
+		EnvironmentBRDFParameterBlock.Bind(CurrentCommandList, *EnvironmentBRDFProgram);
+
+		EShaderParameterSet Parameters;
+		Parameters.SetTextureUAV(EName(), EName(PE_TEXT("EnvironmentBRDFLUT")), EnvironmentBRDFLUTUAVView);
+		BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
+			, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF));
+
+		const UINT32 GroupNum = ((Resolution + 7u) / 8u);
+		CurrentCommandList->Dispatch(GroupNum, GroupNum, 1u);
+
+		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
+
+		CurrentCommandList->ResourceBarrier(LUTTexture
+			, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
+		bEnvironmentBRDFLUTBaked = TRUE;
+
+#if _EDITOR_ONLY
+		// The counterpart of the prefilter's line: the two halves of the split sum each say they
+		// were produced, so a session that shows no reflection can be told from a session that
+		// never baked one.
+		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Baked the environment BRDF LUT at "))
+			+ ToString(Resolution) + EString(PE_TEXT(" with ")) + ToString(SampleCount) + EString(PE_TEXT(" samples.")));
+#endif	// _EDITOR_ONLY
+	}
+	void RSceneRenderer::RenderEnvironmentPrefilter()
+	{
+		if ((!Scene) || (!CurrentCommandList))
+		{
+			return;
+		}
+		if (!EnvironmentPrefilterProgram)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its compute program did not assemble")));
+			return;
+		}
+		const RSkyLightSceneProxy* SkyLight = FindPrimarySkyLight();
+		const IRRHITexture* SourceTexture = ((SkyLight != nullptr) ? SkyLight->GetEnvironmentTexture() : nullptr);
+		if (!SourceTexture)
+		{
+			return;
+		}
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!RenderDevice)
+		{
+			return;
+		}
+
+		const UINT32 ResolutionExponent = SkyLight->GetPrefilterResolutionExponent();
+		const FLOAT CubeMeanLuminance = ((SkyLight->GetCubeMeanLuminance() > 0.0001f)
+			? SkyLight->GetCubeMeanLuminance() : 1.f);
+		// One comparison for "nothing moved", a swapped cube, a changed mean and a changed
+		// resolution alike: each of them is a different bake.
+		if ((SourceTexture == EnvironmentPrefilterBakedSource)
+			&& (ResolutionExponent == PrefilteredEnvironmentResolutionExponent)
+			&& (CubeMeanLuminance == EnvironmentPrefilterBakedMean))
+		{
+			return;
+		}
+
+		if ((EnsureEnvironmentPrefilterPipelineState() == FALSE) || (EnsurePrefilteredEnvironmentResources(RenderDevice, ResolutionExponent) == FALSE))
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its pipeline state or prefiltered cube could not be created")));
+			return;
+		}
+		const EShaderStageEntry* ComputeEntry = ResolveShaderStageEntry(*EnvironmentPrefilterProgram, EShaderStageType::SHADER_STAGE_COMPUTE);
+		if (!ComputeEntry)
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its compute program has no compute stage entry")));
+			return;
+		}
+		if (EnvironmentPrefilterParameterBlock.EnsureInitialized(RenderDevice, *EnvironmentPrefilterProgram) == FALSE)
+		{
+			return;
+		}
+		IRRHITexture* PrefilteredTexture = PrefilteredEnvironmentCube.Texture;
+		if (!PrefilteredTexture)
+		{
+			return;
+		}
+
+		const ERHIResourceState StateBefore = PrefilteredTexture->GetCurrentState();
+		if (StateBefore != ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			CurrentCommandList->ResourceBarrier(PrefilteredTexture, StateBefore, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS);
+		}
+
+		// One pass covers every mip: the bracket stays outside the loop so the
+		// frame shows a single "EnvironmentPrefilter" cost rather than a
+		// same-named row per mip. The loop only breaks, never returns, so the
+		// End below is always reached.
+		PE_GPU_PROFILER_PASS_BEGIN(CurrentCommandList, PE_TEXT("EnvironmentPrefilter"));
+
+		CurrentCommandList->SetPipelineState(EnvironmentPrefilterPipelineState);
+
+		const EName BlockName(PE_TEXT("PrefilterParams"));
+		const UINT32 BaseResolution = (1u << ResolutionExponent);
+		const UINT32 SourceCubeResolution = EMath::Max(SourceTexture->GetWidth(), 1u);
+		EShaderParameterSet Parameters;
+		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), SourceTexture);
+		for (UINT32 MipIndex = 0u; MipIndex < PrefilteredEnvironmentMipCount; MipIndex++)
+		{
+			if ((MipIndex >= PrefilteredEnvironmentUAVViews.Num<UINT32>()) || (!PrefilteredEnvironmentUAVViews[MipIndex]))
+			{
+				break;
+			}
+			const UINT32 MipResolution = EMath::Max(BaseResolution >> MipIndex, 1u);
+			// Rough mips have fewer pixels but need more samples to smooth the kernel; the cap
+			// keeps a one-shot bake bounded.
+			const UINT32 SampleCount = EMath::Min(128u + (MipIndex * 64u), 512u);
+
+			EShaderParameterSet& BlockParameters = EnvironmentPrefilterParameterBlock.GetParameters();
+			WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("MipIndex")), &MipIndex, 1u);
+			WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("MipCount")), &PrefilteredEnvironmentMipCount, 1u);
+			WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("MipResolution")), &MipResolution, 1u);
+			WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("SourceCubeResolution")), &SourceCubeResolution, 1u);
+			WriteShaderUIntArray(BlockParameters, BlockName, EName(PE_TEXT("SampleCount")), &SampleCount, 1u);
+			WriteShaderScalar(BlockParameters, BlockName, EName(PE_TEXT("CubeMeanLuminance")), CubeMeanLuminance);
+			EnvironmentPrefilterParameterBlock.Upload(RenderDevice);
+			EnvironmentPrefilterParameterBlock.Bind(CurrentCommandList, *EnvironmentPrefilterProgram);
+
+			Parameters.SetTextureUAV(EName(), EName(PE_TEXT("PrefilteredEnvironmentCube")), PrefilteredEnvironmentUAVViews[MipIndex]);
+			BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
+				, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER));
+
+			const UINT32 GroupNum = ((MipResolution + 7u) / 8u);
+			CurrentCommandList->Dispatch(GroupNum, GroupNum, 6u);
+		}
+
+		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
+
+		CurrentCommandList->ResourceBarrier(PrefilteredTexture
+			, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
+
+		EnvironmentPrefilterBakedSource = SourceTexture;
+		EnvironmentPrefilterBakedMean = CubeMeanLuminance;
+
+#if _EDITOR_ONLY
+		PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] Prefiltered the environment cube at "))
+			+ ToString(BaseResolution) + EString(PE_TEXT(" base with ")) + ToString(PrefilteredEnvironmentMipCount)
+			+ EString(PE_TEXT(" mips, cube mean ")) + ToString(CubeMeanLuminance) + EString(PE_TEXT(" (divided out).")));
+#endif	// _EDITOR_ONLY
 	}
 	RSkyLightSceneProxy* RSceneRenderer::FindPrimarySkyLight() noexcept
 	{
@@ -1552,6 +2429,13 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// without a sky looks like a scene without a sky.
 		const Color3 AdjustColor = ((SkyLight != nullptr) ? SkyLight->GetAdjustColor() : Color3::Black());
 		const FLOAT AdjustIntensity = ((SkyLight != nullptr) ? SkyLight->GetAdjustIntensity() : 0.f);
+		// The normalisation divisor and the prefiltered chain's level count. The first is what
+		// makes AdjustIntensity a true mean; the second is what lets the specular term map
+		// perceptual roughness onto the chain without querying the texture.
+		const FLOAT CubeMeanLuminance = ((SkyLight != nullptr)
+			? ((SkyLight->GetCubeMeanLuminance() > 0.0001f) ? SkyLight->GetCubeMeanLuminance() : 1.f) : 1.f);
+		const FLOAT PrefilterMipCount = ((PrefilteredEnvironmentMipCount > 0u)
+			? static_cast<FLOAT>(PrefilteredEnvironmentMipCount) : 1.f);
 
 		// Said once, because this pair is the number the whole indirect term is multiplied by: an
 		// environment that shades nothing is either zero coefficients (the bake wrote nothing) or a
@@ -1559,10 +2443,10 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		if ((bIndirectLightingParamsReported == FALSE) && (SkyLight != nullptr))
 		{
 			bIndirectLightingParamsReported = TRUE;
-			PE_LOG_LOG(EString("[SceneRenderer] The indirect term is scaled by the sky light's tint (")
-				+ ToString(AdjustColor.r) + EString(", ") + ToString(AdjustColor.g) + EString(", ")
-				+ ToString(AdjustColor.b) + EString(") times intensity ") + ToString(AdjustIntensity)
-				+ EString("."));
+			PE_LOG_LOG(EString(PE_TEXT("[SceneRenderer] The indirect term is scaled by the sky light's tint ("))
+				+ ToString(AdjustColor.r) + EString(PE_TEXT(", ")) + ToString(AdjustColor.g) + EString(PE_TEXT(", "))
+				+ ToString(AdjustColor.b) + EString(PE_TEXT(") times intensity ")) + ToString(AdjustIntensity)
+				+ EString(PE_TEXT(".")));
 		}
 
 		// Written every frame and uploaded only when something moved: the block reports which
@@ -1571,6 +2455,8 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		EShaderParameterSet& Parameters = IndirectLightingParameterBlock.GetParameters();
 		WriteShaderVector4(Parameters, BlockName, EName(SHADER_FIELD_SKY_LIGHT_COLOR_LUMINANCE)
 			, Vector4(AdjustColor.r, AdjustColor.g, AdjustColor.b, AdjustIntensity));
+		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_SKY_CUBE_MEAN_LUMINANCE), CubeMeanLuminance);
+		WriteShaderScalar(Parameters, BlockName, EName(SHADER_FIELD_PREFILTER_MIP_COUNT), PrefilterMipCount);
 		IndirectLightingParameterBlock.Upload(RenderDevice);
 		IndirectLightingParameterBlock.Bind(InCommandList, InProgram);
 	}
@@ -1595,10 +2481,24 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// statement about the order of the list rather than about packing rules.
 		const EName ResourceNames[] = { EName(PE_TEXT("DirectionalLights")), EName(PE_TEXT("LocalLights")) };
 		const UINT32 CppStrides[] = { static_cast<UINT32>(sizeof(EDirectionalLightsGPU)), static_cast<UINT32>(sizeof(ELocalLightsGPU)) };
+		// Every view has its own pair, built from the same descriptors, so one of them stands for
+		// all: the first entry that exists is the one compared. A frame with no view has no pair
+		// to check, and the stride comparison is skipped rather than reported as a mismatch.
+		const RViewLightBuffers* SampledBuffers = nullptr;
+		for (RViewLightBuffersMapType::TConstIterator BufferIt = ViewLightBuffers.Begin(); BufferIt != ViewLightBuffers.End(); BufferIt++)
+		{
+			if (BufferIt->second)
+			{
+				SampledBuffers = BufferIt->second;
+				break;
+			}
+		}
 		const UINT32 GpuStrides[] =
 		{
-			(LightLists.DirectionalLightBuffer.IsRenderResourceValid() != FALSE) ? LightLists.DirectionalLightBuffer.GetStructureByteStride() : 0u,
-			(LightLists.LocalLightBuffer.IsRenderResourceValid() != FALSE) ? LightLists.LocalLightBuffer.GetStructureByteStride() : 0u
+			((SampledBuffers != nullptr) && (SampledBuffers->DirectionalLightBuffer.IsRenderResourceValid() != FALSE))
+				? SampledBuffers->DirectionalLightBuffer.GetStructureByteStride() : 0u,
+			((SampledBuffers != nullptr) && (SampledBuffers->LocalLightBuffer.IsRenderResourceValid() != FALSE))
+				? SampledBuffers->LocalLightBuffer.GetStructureByteStride() : 0u
 		};
 
 		for (UINT32 NameIndex = 0u; NameIndex < PE_ARRAYSIZE(ResourceNames); NameIndex++)
@@ -1662,6 +2562,35 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				}
 			}
 		}
+
+		// The shadow slot table is the same contract in another file: Components/C_Shadows.json
+		// declares the element and RenderProxy/ShadowViewProxy.h mirrors it. Checked here because
+		// this is the one place that already holds a program reflection and reports drift as a
+		// warning; a mismatched slot table would read as a shadow in the wrong place rather than
+		// as a failure.
+		if (ShadowMaskProgram)
+		{
+			const EShaderStageEntry* MaskPixelEntry = ResolveShaderStageEntry(*ShadowMaskProgram, EShaderStageType::SHADER_STAGE_PIXEL);
+			const EShaderReflectionResource* ShadowSlotResource = (MaskPixelEntry
+				? MaskPixelEntry->Reflection.FindResource(EName(PE_TEXT("ShadowSlots")), FALSE) : nullptr);
+			if (ShadowSlotResource)
+			{
+				UINT32 ShaderStride = 0u;
+				for (UINT32 FieldIndex = 0u; FieldIndex < ShadowSlotResource->StructFields.Num<UINT32>(); FieldIndex++)
+				{
+					const EShaderReflectionField& Field = ShadowSlotResource->StructFields[FieldIndex];
+					ShaderStride += (Field.Format.GetElementSlotBytes() * Field.GetElementNum());
+				}
+				const UINT32 CppStride = static_cast<UINT32>(sizeof(EShadowSlotGPU));
+				if (ShaderStride != CppStride)
+				{
+					PE_LOG_WARN(EString(PE_TEXT("[SceneRenderer] 'ShadowSlots': the shader declares an element of "))
+						+ ToString(ShaderStride) + EString(PE_TEXT(" bytes but the c++ mirror is "))
+						+ ToString(CppStride)
+						+ EString(PE_TEXT(" bytes. Components/C_Shadows.json and ShadowViewProxy.h have drifted apart.")));
+				}
+			}
+		}
 #endif	// _EDITOR_ONLY
 	}
 	void RSceneRenderer::ProcessOcclusionCull(RViewProxy* InViewProxy)
@@ -1702,99 +2631,716 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			SceneTextures->InitResources(Vector2Int(RenderViewport.Width, RenderViewport.Height), NeedStencil);
 		}
 	}
-	void RSceneRenderer::InitDirectionalLightShadowDomains(RViewProxy* InViewProxy)
+	// ---------------------------------------------------------------------------
+	// Shadow views
+	// ---------------------------------------------------------------------------
+
+	/*
+	* One shadow view the frame is about to build: a light's request, the tile the atlas gave it,
+	* and the light it came from.
+	*
+	* The array of these is built in slot order - each light's requests consecutive - because that
+	* is what lets one light reach all of its views from a single address in the light list.
+	*/
+	struct FShadowViewBuild
 	{
-		RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
-		for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
+		FShadowViewRequest		Request;
+		const RBaseSceneProxy*	LightProxy		= nullptr;
+		ObjectIdentityType		LightIdentity	= 0u;
+		FShadowTile				Tile;
+		UINT32					TileSize		= 0u;
+		BOOL32					bIsAllocated	= FALSE;
+	};
+
+	/*
+	* How many builds one light contributed, and where its block starts.
+	*
+	* Allocation and drop decisions are made per block rather than per request because a light is
+	* all or nothing: a point light's six faces are addressed as one range, so keeping five of them
+	* would hand the sixth face's projection to whichever light took that slot.
+	*/
+	struct FShadowLightBlock
+	{
+		UINT32	StartIndex	= 0u;
+		UINT32	ViewNum		= 0u;
+	};
+
+	// A local light that may keep a shadow this frame, with the number that ranks it.
+	struct FLocalShadowCandidate
+	{
+		RLocalLightSceneProxy*	LightProxy	= nullptr;
+		ObjectIdentityType		Identity	= 0u;
+		FLOAT					Coverage	= 0.f;
+	};
+
+	/*
+	* Identity of a shadow view across frames, which is what lets the renderer rebuild a view
+	* instead of allocating a new one (and with it a new ViewParams block) every frame.
+	*
+	* A frame's state is already per camera view, so the light and the view it asked for identify
+	* it completely. The widths are what those values can use: at most four cascades and six point
+	* faces, and the kinds are the three the enum states.
+	*/
+	static UINT64 MakeShadowViewKey(const ObjectIdentityType InLightIdentity, const EShadowViewKindType InKind, const UINT32 InIndex)
+	{
+		return ((InLightIdentity & 0x000000FFFFFFFFFFull)
+			| (static_cast<UINT64>(InIndex & 0xFFu) << 40u)
+			| (static_cast<UINT64>(InKind) << 48u));
+	}
+	// Places one tile, halving the request until the atlas accepts it. A refusal is a budget
+	// signal rather than an error: the ladder is 2048, 1024, 512, 256 before a view is dropped.
+	static BOOL32 TryAllocateShadowTile(RShadowAtlas& InAtlas, const UINT32 InRequestedSize
+		, FShadowTile& OutTile, UINT32& OutSize)
+	{
+		UINT32 Size = EMath::Max(InRequestedSize, 256u);
+		while (Size >= 256u)
 		{
-			RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
-#if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+			if (InAtlas.AllocateTile(Size, OutTile) != FALSE)
+			{
+				OutSize = Size;
+				return TRUE;
+			}
+			Size >>= 1u;
+		}
+		return FALSE;
+	}
+	/*
+	* Fills a shadow view's caster list.
+	*
+	* Only casters are tested, and a proxy that cannot state a bound is kept: a bound that cannot
+	* be computed is not evidence of invisibility, and a caster dropped on a guess is a shadow that
+	* silently disappears from the frame.
+	*/
+	static void CullShadowCasters(const EFrustum& InFrustum, const TArray<RPrimitiveSceneProxy*>& InPrimitives
+		, RSceneRenderer::RVisibilityMapType& OutVisibilityMap)
+	{
+		for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = InPrimitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+		{
+			RPrimitiveSceneProxy* Primitive = InPrimitives[PrimitiveIndex];
+			if (!Primitive)
+			{
+				continue;
+			}
+			if (Primitive->IsSceneProxyCastShadow() == FALSE)
+			{
+				continue;
+			}
+			Vector3 BoundMin;
+			Vector3 BoundMax;
+			if ((Primitive->GetWorldBound(BoundMin, BoundMax) != FALSE)
+				&& (InFrustum.IntersectsWorldAABB(BoundMin, BoundMax) == FALSE))
+			{
+				continue;
+			}
+			OutVisibilityMap[Primitive->GetUniqueID()] = TRUE;
+		}
+	}
+	/*
+	* World size of one shadow texel, which is what turns the receiver's normal offset into metres.
+	*
+	* An orthographic cascade has one size everywhere, so its near plane's width answers exactly. A
+	* perspective view's texel grows with distance, so one number can only be a reference: the
+	* midpoint between the two planes is used, which makes the offset right at the middle of the
+	* light's range and slightly conservative at either end of it.
+	*/
+	static FLOAT ComputeShadowWorldTexelSize(const EShadowViewKindType InKind, const EViewDomainInfo& InDomain
+		, const Vector3& InViewAnchor, const UINT32 InTileSize)
+	{
+		const FLOAT TileSize = static_cast<FLOAT>(EMath::Max(InTileSize, 1u));
+		const EFrustum& Frustum = InDomain.ViewFrustum;
+		if (InKind == EShadowViewKindType::SHADOW_VIEW_KIND_DIRECTIONAL_CASCADE)
+		{
+			const FLOAT OrthographicWidth = Vector3::Length(Frustum.NearPlaneTopLeft - Frustum.NearPlaneTopRight);
+			return (OrthographicWidth / TileSize);
+		}
+		const FLOAT FarWidth		= Vector3::Length(Frustum.FarPlaneTopLeft - Frustum.FarPlaneTopRight);
+		const FLOAT FarDistance		= Vector3::Length(Frustum.FarPlaneTopLeft - InViewAnchor);
+		const FLOAT NearDistance	= Vector3::Length(Frustum.NearPlaneTopLeft - InViewAnchor);
+		if (FarDistance < 1e-4f)
+		{
+			return 0.f;
+		}
+		// The frustum's far corners are the ones that carry the field of view, so the width there
+		// scaled by the reference distance is the width the reference plane sees.
+		const FLOAT ReferenceDistance = 0.5f * (NearDistance + FarDistance);
+		return ((FarWidth * (ReferenceDistance / FarDistance)) / TileSize);
+	}
+	/*
+	* Writes one element of the slot table.
+	*
+	* The matrix travels as its four rows because a parameter cannot carry sixteen scalars in one
+	* field; the shader reassembles float4x4(Row0..Row3) and applies mul(Position, ViewProjection),
+	* which is the same product the cpu-side matrix states.
+	*/
+	static void FillShadowSlot(const RShadowViewProxy& InView, const FShadowViewBuild& InBuild
+		, const UINT32 InAtlasSize, const RShadowSettings& InSettings, EShadowSlotGPU& OutSlot)
+	{
+		const Matrix4x4& ViewProjection = InView.GetViewMatrix().ViewProjectionMatrix;
+		OutSlot.ViewProjectionRow0 = Vector4(ViewProjection(0u, 0u), ViewProjection(0u, 1u), ViewProjection(0u, 2u), ViewProjection(0u, 3u));
+		OutSlot.ViewProjectionRow1 = Vector4(ViewProjection(1u, 0u), ViewProjection(1u, 1u), ViewProjection(1u, 2u), ViewProjection(1u, 3u));
+		OutSlot.ViewProjectionRow2 = Vector4(ViewProjection(2u, 0u), ViewProjection(2u, 1u), ViewProjection(2u, 2u), ViewProjection(2u, 3u));
+		OutSlot.ViewProjectionRow3 = Vector4(ViewProjection(3u, 0u), ViewProjection(3u, 1u), ViewProjection(3u, 2u), ViewProjection(3u, 3u));
+
+		const FLOAT AtlasSize = static_cast<FLOAT>(EMath::Max(InAtlasSize, 1u));
+		const FLOAT TileUV = static_cast<FLOAT>(InBuild.Tile.Size) / AtlasSize;
+		OutSlot.AtlasTile = Vector4(TileUV, TileUV
+			, InBuild.Tile.Rect.TopLeftX / AtlasSize, InBuild.Tile.Rect.TopLeftY / AtlasSize);
+
+		// The valid flag is what a receiver tests before it reads the projection: a slot whose view
+		// could not be built keeps the zeroed staging element and must not be sampled with it.
+		const FLOAT TileSize = static_cast<FLOAT>(EMath::Max(InBuild.TileSize, 1u));
+		OutSlot.ShadowParams = Vector4(InBuild.Request.SplitDistance, 1.f / TileSize
+			, static_cast<FLOAT>(InBuild.Request.Index), 1.f);
+
+		// Only a cascade that has a next one blends; the last cascade has nothing to blend into,
+		// and a local light's view has no neighbour at all.
+		const BOOL32 bBlends = ((InBuild.Request.Kind == EShadowViewKindType::SHADOW_VIEW_KIND_DIRECTIONAL_CASCADE)
+			&& ((InBuild.Request.Index + 1u) < InBuild.Request.Count)) ? TRUE : FALSE;
+		const FLOAT BlendFraction = ((bBlends != FALSE) ? InSettings.CascadeBlendFraction : 0.f);
+		const FLOAT WorldTexelSize = ComputeShadowWorldTexelSize(InBuild.Request.Kind
+			, InView.GetShadowDomainInfo(), InView.GetWorldLocation(), InBuild.TileSize);
+		OutSlot.BiasParams = Vector4(InSettings.ConstantDepthBias, InSettings.SlopeScaledDepthBias
+			, InSettings.NormalOffsetTexels * WorldTexelSize, BlendFraction);
+	}
+	// Appends one light's requests as a block of builds. The block is what keeps the light's views
+	// consecutive, which is the property the light list address relies on.
+	static void AppendShadowBuilds(const RBaseSceneProxy& InLightProxy, const TArray<FShadowViewRequest>& InRequests
+		, TArray<FShadowViewBuild>& OutBuilds, TArray<FShadowLightBlock>& OutBlocks)
+	{
+		if (InRequests.Num<UINT32>() == 0u)
+		{
+			return;
+		}
+		FShadowLightBlock Block;
+		Block.StartIndex	= OutBuilds.Num<UINT32>();
+		Block.ViewNum		= InRequests.Num<UINT32>();
+		for (UINT32 RequestIndex = 0u, RequestNum = InRequests.Num<UINT32>(); RequestIndex < RequestNum; RequestIndex++)
+		{
+			FShadowViewBuild Build;
+			Build.Request		= InRequests[RequestIndex];
+			Build.LightProxy	= &InLightProxy;
+			Build.LightIdentity	= InLightProxy.GetUniqueID();
+			OutBuilds.Add(Build);
+		}
+		OutBlocks.Add(Block);
+	}
+	// Inserts a candidate in rank order: coverage descending, then identity ascending. Insertion
+	// rather than a sort call because the tie break has to be explicit and stable - two equally
+	// covered lights that swap places between frames are a shadow that flickers on and off.
+	static void InsertShadowCandidate(TArray<FLocalShadowCandidate>& InOutCandidates, const FLocalShadowCandidate& InCandidate)
+	{
+		const UINT32 CandidateNum = InOutCandidates.Num<UINT32>();
+		UINT32 InsertIndex = CandidateNum;
+		for (UINT32 CandidateIndex = 0u; CandidateIndex < CandidateNum; CandidateIndex++)
+		{
+			const FLocalShadowCandidate& Existing = InOutCandidates[CandidateIndex];
+			const BOOL32 bRanksBefore = ((InCandidate.Coverage > Existing.Coverage)
+				|| ((InCandidate.Coverage == Existing.Coverage) && (InCandidate.Identity < Existing.Identity))) ? TRUE : FALSE;
+			if (bRanksBefore != FALSE)
+			{
+				InsertIndex = CandidateIndex;
+				break;
+			}
+		}
+		InOutCandidates.Add(InCandidate);
+		for (UINT32 MoveIndex = CandidateNum; MoveIndex > InsertIndex; MoveIndex--)
+		{
+			InOutCandidates[MoveIndex] = InOutCandidates[MoveIndex - 1u];
+		}
+		InOutCandidates[InsertIndex] = InCandidate;
+	}
+	// Asks a light for its views and appends them. A light that answers FALSE is one the frame
+	// does not shadow - disabled, not a caster, or of a type without a shadow projection.
+	static void AppendLocalShadowBuilds(const TArray<RLocalLightSceneProxy*>& InCandidates, const RViewProxy& InView
+		, TArray<FShadowViewBuild>& OutBuilds, TArray<FShadowLightBlock>& OutBlocks)
+	{
+		for (UINT32 CandidateIndex = 0u, CandidateNum = InCandidates.Num<UINT32>(); CandidateIndex < CandidateNum; CandidateIndex++)
+		{
+			RLocalLightSceneProxy* LightProxy = InCandidates[CandidateIndex];
 			if (!LightProxy)
 			{
 				continue;
 			}
-#endif
-			LightProxy->GenerateViewInfo(InViewProxy);
-
-			RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
-			RDirectionalLightSceneProxy::RPerViewVisibilityMapType& VisibilityMaps = LightProxy->GetVisibilityMap();
-			if (!(VisibilityMaps.ContainsKey(InViewProxy->GetUniqueID())))
+			TArray<FShadowViewRequest> Requests;
+			if ((LightProxy->CollectShadowViews(InView, Requests) == FALSE) || (Requests.Num<UINT32>() == 0u))
 			{
-				VisibilityMaps.Add(InViewProxy->GetUniqueID(), TArray<RDirectionalLightSceneProxy::RVisibilityMapType>());
+				continue;
 			}
-
-			TArray<RDirectionalLightSceneProxy::RVisibilityMapType>&	LayerVisibilityMap	= VisibilityMaps[InViewProxy->GetUniqueID()];
-			const TArray<EViewDomainInfo>&								DomainInfos			= ViewDomainInfos[InViewProxy->GetUniqueID()];
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check light view domain invalid."), ((ViewDomainInfos.Num() > 0) && ((!(LightProxy->IsLightUseCascadeShadow())) || ((LightProxy->IsLightUseCascadeShadow()) && (!!(LightProxy->GetCascadeShadowData())) && ((LightProxy->GetCascadeShadowData()->Layers.Num()) == (ViewDomainInfos.Num()))))));
-			for (INT32 DomainIndex = 0, DomainNum = DomainInfos.Num(); DomainIndex < DomainNum; DomainIndex++)
-			{
-				if (DomainIndex >= LayerVisibilityMap.Num())
-				{
-					LayerVisibilityMap.Add(RDirectionalLightSceneProxy::RVisibilityMapType());
-				}
-				RDirectionalLightSceneProxy::RVisibilityMapType&	VisibilityMap	= LayerVisibilityMap[DomainIndex];
-				const EViewDomainInfo&								DomainInfo		= DomainInfos[DomainIndex];
-				OctreeCull(DomainInfo.ViewFrustum, VisibilityMap);
-				PrimitiveCull(DomainInfo.ViewFrustum, VisibilityMap);
-			}
+			AppendShadowBuilds(*LightProxy, Requests, OutBuilds, OutBlocks);
 		}
-
 	}
-	void RSceneRenderer::InitShadowTextures(RViewProxy* InViewProxy)
+	void RSceneRenderer::SelectLocalShadowCandidates(const RViewProxy& InView
+		, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates)const
 	{
-		if (!(ViewShadowMaps.ContainsKey(InViewProxy->GetUniqueID())))
+		OutSpotCandidates.Empty();
+		OutPointCandidates.Empty();
+		if (!Scene)
 		{
-			ViewShadowMaps.Add(InViewProxy->GetUniqueID(), RShadowMapType());
+			return;
 		}
-		RShadowMapType& ShadowMaps = ViewShadowMaps[InViewProxy->GetUniqueID()];
-		TMap<ObjectIdentityType, TArray<Vector2Int>>  LightProxyInfos;
-
-		// Directional lights' shadow maps
+		const RShadowSettings* Settings = RShadowSettings::GetSingleton();
+		if (Settings->bEnableLocalShadow == FALSE)
 		{
-			RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLightSceneProxies = Scene->GetDirectionalLightSceneProxies();
-			for (UINT32 DirectionalLightIndex = 0u, DirectionalLightNum = DirectionalLightSceneProxies.GetSceneProxyCount(); DirectionalLightIndex < DirectionalLightNum; DirectionalLightIndex++)
+			return;
+		}
+
+		TArray<FLocalShadowCandidate> SpotCandidates;
+		TArray<FLocalShadowCandidate> PointCandidates;
+		const EFrustum& ViewFrustum = InView.GetViewFrustum();
+		RSceneProxyMapping<RLocalLightSceneProxy>& LocalLights = Scene->GetLocalLightSceneProxies();
+		for (UINT32 LightIndex = 0u, LightNum = LocalLights.GetSceneProxyCount(); LightIndex < LightNum; LightIndex++)
+		{
+			RLocalLightSceneProxy* LightProxy = LocalLights.SceneProxies[LightIndex];
+			if (!LightProxy)
 			{
-				RDirectionalLightSceneProxy* LightProxy = DirectionalLightSceneProxies.SceneProxies[DirectionalLightIndex];
-#if _EDITOR_ONLY
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy can not be null"), (!!LightProxy));
+				continue;
+			}
+			const ELightData& LightData = LightProxy->GetLightData();
+			if (LightData.CastShadow == FALSE)
+			{
+				continue;
+			}
+			// Only the two types with a projection of their own. A directional light is not in this
+			// list, and anything else has no shadow view to build.
+			const BOOL32 bIsPoint = ((LightData.LightType == ELightType::LIGHT_TYPE_POINT) ? TRUE : FALSE);
+			if ((bIsPoint == FALSE) && (LightData.LightType != ELightType::LIGHT_TYPE_SPOT))
+			{
+				continue;
+			}
+			// A light whose attenuation sphere misses the camera cannot shadow anything this view
+			// sees. Rejecting it here is what keeps it from costing a tile and six caster passes.
+			const FLOAT Radius = EMath::Max(LightData.AttenuationRadiusMeters, 1.f);
+			if (ViewFrustum.IntersectsSphere(LightProxy->GetWorldLocation(), Radius) == FALSE)
+			{
+				continue;
+			}
+			FLocalShadowCandidate Candidate;
+			Candidate.LightProxy	= LightProxy;
+			Candidate.Identity		= LightProxy->GetUniqueID();
+			Candidate.Coverage		= LightProxy->ComputeScreenCoverage(InView);
+			if (bIsPoint != FALSE)
+			{
+				InsertShadowCandidate(PointCandidates, Candidate);
+			}
+			else
+			{
+				InsertShadowCandidate(SpotCandidates, Candidate);
+			}
+		}
+
+		for (UINT32 CandidateIndex = 0u, CandidateNum = SpotCandidates.Num<UINT32>(); CandidateIndex < CandidateNum; CandidateIndex++)
+		{
+			OutSpotCandidates.Add(SpotCandidates[CandidateIndex].LightProxy);
+		}
+		for (UINT32 CandidateIndex = 0u, CandidateNum = PointCandidates.Num<UINT32>(); CandidateIndex < CandidateNum; CandidateIndex++)
+		{
+			OutPointCandidates.Add(PointCandidates[CandidateIndex].LightProxy);
+		}
+	}
+	void RSceneRenderer::InitShadowViews(RViewProxy* InViewProxy)
+	{
+		if ((!Scene) || (!InViewProxy))
+		{
+			return;
+		}
+		// Only a main render view is shaded through the deferred pipeline, so only it has a pass
+		// that samples a shadow. A secondary view - an editor camera, a preview - would otherwise
+		// pay for a full atlas and a caster pass that nothing in the frame reads.
+		if (InViewProxy->IsMainRenderView() == FALSE)
+		{
+			return;
+		}
+
+		const RShadowSettings* Settings = RShadowSettings::GetSingleton();
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		RViewShadowState* ShadowState = EnsureViewShadowState(InViewProxy->GetUniqueID());
+		if (!ShadowState)
+		{
+			return;
+		}
+		ShadowState->BeginFrame();
+		// Marked before anything can fail: a view that is a main view this frame owns this
+		// frame's state even if the budget later refuses every tile, and RenderShadowViews reads
+		// this to tell "rebuilt and empty" apart from "not rebuilt at all".
+		ShadowState->bBuiltThisFrame = TRUE;
+
+		// The requests, in slot order: directional cascades, then spot lights, then point lights,
+		// each local group ranked by screen coverage. Slot order is also allocation order, so the
+		// fixed budget is spent in the order the design states.
+		TArray<FShadowViewBuild> Builds;
+		TArray<FShadowLightBlock> Blocks;
+		{
+			RSceneProxyMapping<RDirectionalLightSceneProxy>& DirectionalLights = Scene->GetDirectionalLightSceneProxies();
+			for (UINT32 LightIndex = 0u, LightNum = DirectionalLights.GetSceneProxyCount(); LightIndex < LightNum; LightIndex++)
+			{
+				RDirectionalLightSceneProxy* LightProxy = DirectionalLights.SceneProxies[LightIndex];
 				if (!LightProxy)
 				{
 					continue;
 				}
-#endif
-				TArray<Vector2Int> ShadowTextureSizes;
-				RDirectionalLightSceneProxy::RPerViewDomainInfoType& ViewDomainInfos = LightProxy->GetViewDomainInfos();
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer failed that light proxy view domain infos can not be empty."), (ViewDomainInfos.ContainsKey(InViewProxy->GetUniqueID())));
-				const TArray<EViewDomainInfo>& DomainInfos = ViewDomainInfos[InViewProxy->GetUniqueID()];
-				for (INT32 DomainIndex = 0, DomainNum = DomainInfos.Num(); DomainIndex < DomainNum; DomainIndex++)
+				TArray<FShadowViewRequest> Requests;
+				if ((LightProxy->CollectShadowViews(*InViewProxy, Requests) == FALSE) || (Requests.Num<UINT32>() == 0u))
 				{
-					const EViewDomainInfo& DomainInfo = DomainInfos[DomainIndex];
-					ShadowTextureSizes.Add(Vector2Int(DomainInfo.RenderViewport.Width, DomainInfo.RenderViewport.Height));
+					continue;
 				}
-				LightProxyInfos.Add(LightProxy->GetUniqueID(), ShadowTextureSizes);
+				AppendShadowBuilds(*LightProxy, Requests, Builds, Blocks);
 			}
 		}
-
-		// Init shadow maps
-		for (auto It = LightProxyInfos.Begin(); It != LightProxyInfos.End(); It++)
+		// The per type caps and the drop count are applied here, where the two numbers are in
+		// scope: the candidate lists are ranked but not yet trimmed, so the overflow is exactly
+		// the difference between the two.
+		UINT32 CappedLocalNum = 0u;
 		{
-			const ObjectIdentityType& LightProxyID				= It->first;
-			const TArray<Vector2Int>& LightProxyShadowMapSizes	= It->second;
+			TArray<RLocalLightSceneProxy*> SpotCandidates;
+			TArray<RLocalLightSceneProxy*> PointCandidates;
+			SelectLocalShadowCandidates(*InViewProxy, SpotCandidates, PointCandidates);
+			const UINT32 SpotNum	= EMath::Min(SpotCandidates.Num<UINT32>(), Settings->LocalSpotShadowMaxCount);
+			const UINT32 PointNum	= EMath::Min(PointCandidates.Num<UINT32>(), Settings->LocalPointShadowMaxCount);
+			CappedLocalNum			= (SpotCandidates.Num<UINT32>() - SpotNum) + (PointCandidates.Num<UINT32>() - PointNum);
 
-			if (!(ShadowMaps.ContainsKey(LightProxyID)))
+			TArray<RLocalLightSceneProxy*> SelectedSpots;
+			TArray<RLocalLightSceneProxy*> SelectedPoints;
+			for (UINT32 CandidateIndex = 0u; CandidateIndex < SpotNum; CandidateIndex++)
 			{
-				ShadowMaps.Add(LightProxyID, nullptr);
+				SelectedSpots.Add(SpotCandidates[CandidateIndex]);
 			}
-			RShadowTexture* ShadowTexture = ShadowMaps[LightProxyID];
-			if (!ShadowTexture)
+			for (UINT32 CandidateIndex = 0u; CandidateIndex < PointNum; CandidateIndex++)
 			{
-				ShadowTexture = new RShadowTexture();
-				ShadowMaps[LightProxyID] = ShadowTexture;
+				SelectedPoints.Add(PointCandidates[CandidateIndex]);
 			}
-			ShadowTexture->InitResources(LightProxyShadowMapSizes);
+			AppendLocalShadowBuilds(SelectedSpots, *InViewProxy, Builds, Blocks);
+			AppendLocalShadowBuilds(SelectedPoints, *InViewProxy, Builds, Blocks);
 		}
+
+		if (Builds.Num<UINT32>() == 0u)
+		{
+			// Nothing to render this frame. The views of the previous frame are pruned rather than
+			// kept: a light that was deleted must not leave its depth behind for a slot to point at.
+			ShadowState->PruneShadowViews();
+			return;
+		}
+
+		const UINT32 AtlasSize = Settings->GetAtlasSize();
+		if ((!RenderDevice)
+			|| (ShadowState->Atlas.EnsureResources(RenderDevice, AtlasSize, Settings->ShadowDepthBits) == FALSE))
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the shadow atlas")), EString(PE_TEXT("its depth texture could not be created")));
+			ShadowState->PruneShadowViews();
+			return;
+		}
+
+		// Tiles, one block at a time. A block that cannot be placed in full is dropped in full.
+		UINT32 DroppedDirectionalNum	= 0u;
+		UINT32 DroppedLocalNum			= 0u;
+		for (UINT32 BlockIndex = 0u, BlockNum = Blocks.Num<UINT32>(); BlockIndex < BlockNum; BlockIndex++)
+		{
+			const FShadowLightBlock& Block = Blocks[BlockIndex];
+			BOOL32 bBlockFits = TRUE;
+			for (UINT32 ViewIndex = 0u; ViewIndex < Block.ViewNum; ViewIndex++)
+			{
+				FShadowViewBuild& Build = Builds[Block.StartIndex + ViewIndex];
+				if (TryAllocateShadowTile(ShadowState->Atlas, Build.Request.RequestedSize
+					, Build.Tile, Build.TileSize) == FALSE)
+				{
+					bBlockFits = FALSE;
+					break;
+				}
+			}
+			if (bBlockFits != FALSE)
+			{
+				for (UINT32 ViewIndex = 0u; ViewIndex < Block.ViewNum; ViewIndex++)
+				{
+					Builds[Block.StartIndex + ViewIndex].bIsAllocated = TRUE;
+				}
+				continue;
+			}
+			// The tiles this block already placed stay reserved: the shelf has no free, and the only
+			// frame that reaches this line is one whose budget is exhausted already. The whole block
+			// is dropped so a light's slots stay one contiguous range.
+			if (Builds[Block.StartIndex].Request.Kind == EShadowViewKindType::SHADOW_VIEW_KIND_DIRECTIONAL_CASCADE)
+			{
+				DroppedDirectionalNum += Block.ViewNum;
+			}
+			else
+			{
+				DroppedLocalNum += Block.ViewNum;
+			}
+		}
+
+		// The slot table is sized from what the atlas accepted, before any light is told where its
+		// views live: a frame whose table cannot be created must hand every light the "no shadow"
+		// address rather than an index into a buffer that does not exist.
+		UINT32 TotalSlotNum = 1u;
+		for (UINT32 BlockIndex = 0u, BlockNum = Blocks.Num<UINT32>(); BlockIndex < BlockNum; BlockIndex++)
+		{
+			if (Builds[Blocks[BlockIndex].StartIndex].bIsAllocated != FALSE)
+			{
+				TotalSlotNum += Blocks[BlockIndex].ViewNum;
+			}
+		}
+		if ((TotalSlotNum > 1u) && (ShadowState->EnsureSlotBuffer(RenderDevice, TotalSlotNum) == FALSE))
+		{
+			ReportSkippedDraw(EString(PE_TEXT("the shadow slot table")), EString(PE_TEXT("its structured buffer could not be created")));
+			ShadowState->SlotNum = 0u;
+			ShadowState->PruneShadowViews();
+			return;
+		}
+
+		// The views and the slot table. Slot zero is the "casts no shadow" sentinel, so the first
+		// real slot is one; a block only consumes slots when its tiles were placed.
+		ShadowState->SlotStaging.AddDefaultGetRef();
+		UINT32 NextSlot = 1u;
+		// This view's address table. Filled as the slots are handed out and published at the end,
+		// so a view that cannot get a usable atlas leaves no half built table behind: an absent
+		// table is what makes its light list say "casts no shadow" everywhere.
+		RShadowLightAddressMapType LightAddresses;
+		for (UINT32 BlockIndex = 0u, BlockNum = Blocks.Num<UINT32>(); BlockIndex < BlockNum; BlockIndex++)
+		{
+			const FShadowLightBlock& Block = Blocks[BlockIndex];
+			if (Builds[Block.StartIndex].bIsAllocated == FALSE)
+			{
+				continue;
+			}
+			FShadowLightAddress ShadowAddress;
+			ShadowAddress.FirstSlot	= NextSlot;
+			ShadowAddress.ViewNum	= Block.ViewNum;
+			for (UINT32 ViewIndex = 0u; ViewIndex < Block.ViewNum; ViewIndex++)
+			{
+				FShadowViewBuild& Build = Builds[Block.StartIndex + ViewIndex];
+				EShadowSlotGPU& Slot = ShadowState->SlotStaging.AddDefaultGetRef();
+
+				const UINT64 ViewKey = MakeShadowViewKey(Build.LightIdentity, Build.Request.Kind, Build.Request.Index);
+				RShadowViewProxy* ShadowView = ShadowState->FindShadowView(ViewKey);
+				if (!ShadowView)
+				{
+					ShadowView = new RShadowViewProxy();
+					ShadowView->SetShadowViewKey(ViewKey);
+					ShadowState->AddShadowView(ShadowView);
+				}
+				EViewDomainInfo DomainInfo;
+				Vector3 ViewAnchor;
+				Quaternion ViewRotation;
+				if ((!Build.LightProxy)
+					|| (Build.LightProxy->BuildShadowViewDomain(*InViewProxy, Build.Request, Build.TileSize
+						, DomainInfo, ViewAnchor, ViewRotation) == FALSE))
+				{
+					// The slot was already counted, so it keeps its zeroed element and reads as
+					// invalid; renumbering here would move every later light's address.
+					ShadowView->ClearUsed();
+					NextSlot += 1u;
+					continue;
+				}
+				// The domain's viewport is the atlas tile, filled by the renderer rather than the
+				// light: the light knows the projection, the atlas knows where it may be written.
+				DomainInfo.RenderViewport = Build.Tile.Rect;
+				ShadowView->SetupShadowView(Build.Request.Kind, Build.LightProxy, NextSlot
+					, Build.Request.Index, Build.Request.Count, DomainInfo, ViewAnchor, ViewRotation);
+				// After SetupShadowView, which resets the map: the cull fills the list the draw of
+				// this view will read.
+				CullShadowCasters(ShadowView->GetViewFrustum(), Scene->GetPrimitives(), ShadowView->GetVisibilityMap());
+				FillShadowSlot(*ShadowView, Build, AtlasSize, *Settings, Slot);
+				NextSlot += 1u;
+			}
+			LightAddresses.Add(Builds[Block.StartIndex].LightIdentity, ShadowAddress);
+		}
+		ViewShadowAddresses.Add(InViewProxy->GetUniqueID(), LightAddresses);
+		ShadowState->SlotNum = NextSlot;
+		if (NextSlot > 1u)
+		{
+			ShadowState->UploadSlots(RenderDevice);
+		}
+
+		const UINT32 DroppedViewNum = DroppedDirectionalNum + DroppedLocalNum;
+		ShadowState->DroppedShadowNum = DroppedViewNum;
+		if (((DroppedViewNum > 0u) || (CappedLocalNum > 0u)) && (bShadowDropReported == FALSE))
+		{
+			// Once per session rather than once per frame: a scene that is permanently over budget
+			// would otherwise write this line sixty times a second, which buries the first one.
+			bShadowDropReported = TRUE;
+			PE_LOG_WARN(EString(PE_TEXT("[SceneRenderer] Shadows were dropped this frame: "))
+				+ ToString(DroppedViewNum) + EString(PE_TEXT(" view(s) over budget (directional "))
+				+ ToString(DroppedDirectionalNum) + EString(PE_TEXT(", local "))
+				+ ToString(DroppedLocalNum) + EString(PE_TEXT(")) and "))
+				+ ToString(CappedLocalNum) + EString(PE_TEXT(" local light(s) over the per type caps.")));
+		}
+
+		ShadowState->PruneShadowViews();
+	}
+	void RSceneRenderer::RenderShadowViews()
+	{
+		if ((!Scene) || (!CurrentCommandList))
+		{
+			return;
+		}
+		// The pass's depth format has to be the atlas's, because a pipeline state only accepts the
+		// depth format it was created for. The table states 32 bits as the default; the setting is
+		// what the atlas was actually created with, so it is copied in here rather than baked into
+		// the table - and the copy is what the per primitive state is built from.
+		FRenderPassDesc ShadowPassDesc = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_SHADOW);
+		ShadowPassDesc.DepthBits = RShadowSettings::GetSingleton()->ShadowDepthBits;
+		const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
+
+		for (RViewShadowStateMapType::TIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
+		{
+			RViewShadowState* ShadowState = StateIt->second;
+			if ((!ShadowState) || (ShadowState->SlotNum <= 1u))
+			{
+				continue;
+			}
+			// Only a view that rebuilt its shadow views this frame has a consumer for its atlas.
+			// Every main view does - a rear view mirror or a stereo eye is a full view of its own -
+			// so each one's atlas is rendered here, and a state whose view stopped being main is
+			// left alone: InitShadowViews never reached its BeginFrame, and its slot table still
+			// describes a frame nobody shades.
+			if (ShadowState->bBuiltThisFrame == FALSE)
+			{
+				continue;
+			}
+			IRRHITexture* AtlasTexture = ShadowState->Atlas.GetTexture();
+			if (!AtlasTexture)
+			{
+				continue;
+			}
+
+			// One pass for the whole atlas, cleared once: the tiles are disjoint rectangles inside
+			// it, and a clear per tile would be a full atlas clear repeated once per tile.
+			RRHIRenderPassDesc Pass;
+			Pass.RenderTargetCount						= 0u;
+			Pass.DepthStencil.Target					= AtlasTexture;
+			Pass.DepthStencil.DepthLoadOp				= ERHILoadOp::RHI_LOAD_OP_CLEAR;
+			Pass.DepthStencil.DepthStoreOp				= ERHIStoreOp::RHI_STORE_OP_STORE;
+			Pass.DepthStencil.StencilLoadOp				= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
+			Pass.DepthStencil.StencilStoreOp			= ERHIStoreOp::RHI_STORE_OP_DONT_CARE;
+			Pass.DepthStencil.ClearDepth				= RCommonSettings::RENDER_DEPTH_FAR;
+			Pass.PassName								= PE_TEXT("ShadowAtlas");
+			CurrentCommandList->BeginRenderPass(Pass);
+
+			for (UINT32 ViewIndex = 0u, ViewNum = ShadowState->ShadowViews.Num<UINT32>(); ViewIndex < ViewNum; ViewIndex++)
+			{
+				RShadowViewProxy* ShadowView = ShadowState->ShadowViews[ViewIndex];
+				if ((!ShadowView) || (ShadowView->IsUsedThisFrame() == FALSE))
+				{
+					continue;
+				}
+				// The tile is both the viewport and the scissor: the viewport places the projection
+				// inside the atlas, the scissor keeps a caster whose bound was conservative from
+				// writing over its neighbour's tile.
+				const EViewport& Tile = ShadowView->GetAtlasTile();
+				CurrentCommandList->SetViewports(&Tile, 1u);
+				const ERect TileScissor(Tile.TopLeftX, Tile.TopLeftY
+					, Tile.TopLeftX + Tile.Width, Tile.TopLeftY + Tile.Height);
+				CurrentCommandList->SetScissorRects(&TileScissor, 1u);
+
+				CurrentViewProxy = ShadowView;
+				ShadowView->UpdateRenderResource();
+
+				const RViewProxy::RVisibilityMapType& Casters = ShadowView->GetVisibilityMap();
+				for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = Primitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+				{
+					RPrimitiveSceneProxy* Primitive = Primitives[PrimitiveIndex];
+					if (!Primitive)
+					{
+						continue;
+					}
+					if (Casters.ContainsKey(Primitive->GetUniqueID()) == FALSE)
+					{
+						continue;
+					}
+					Primitive->Draw(CurrentCommandList, ShadowPassDesc);
+				}
+			}
+			CurrentViewProxy = nullptr;
+
+			CurrentCommandList->EndRenderPass();
+
+			// The tiles were depth targets for the pass above and are shader reads for every pass
+			// that samples them afterwards. Leaving the transition to each consumer would work, but
+			// every one of them needs exactly this state, so it is stated once, here.
+			TransitionDepthToShaderReadable(AtlasTexture);
+		}
+	}
+	RViewShadowState* RSceneRenderer::EnsureViewShadowState(const ObjectIdentityType InViewIdentity)
+	{
+		if (!ViewShadowStates.ContainsKey(InViewIdentity))
+		{
+			ViewShadowStates.Add(InViewIdentity, nullptr);
+		}
+		RViewShadowState* ShadowState = ViewShadowStates[InViewIdentity];
+		if (!ShadowState)
+		{
+			ShadowState = new RViewShadowState();
+			ViewShadowStates[InViewIdentity] = ShadowState;
+		}
+		return ShadowState;
+	}
+	void RSceneRenderer::PruneViewShadowStates()
+	{
+		// Collected first, because a map cannot be modified while it is being walked.
+		TArray<ObjectIdentityType> StaleViewIdentities;
+		for (RViewShadowStateMapType::TConstIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
+		{
+			if (FindViewProxy(StateIt->first) == nullptr)
+			{
+				StaleViewIdentities.Add(StateIt->first);
+			}
+		}
+		if (StaleViewIdentities.Num<UINT32>() == 0u)
+		{
+			return;
+		}
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		for (UINT32 IdentityIndex = 0u, IdentityNum = StaleViewIdentities.Num<UINT32>(); IdentityIndex < IdentityNum; IdentityIndex++)
+		{
+			RViewShadowState* ShadowState = ViewShadowStates[StaleViewIdentities[IdentityIndex]];
+			if (ShadowState)
+			{
+				ShadowState->Release(RenderDevice);
+				delete ShadowState;
+			}
+			ViewShadowStates.Remove(StaleViewIdentities[IdentityIndex]);
+			// The view's address table dies with its state: an address is an index into that
+			// state's slot table, and keeping it for a view that is gone would let a later view
+			// with a recycled identity read another view's slots.
+			ViewShadowAddresses.Remove(StaleViewIdentities[IdentityIndex]);
+			// Its light list buffers go with it, for the same reason.
+			RViewLightBuffers* ViewBuffers = ViewLightBuffers[StaleViewIdentities[IdentityIndex]];
+			if (ViewBuffers)
+			{
+				ViewBuffers->DirectionalLightBuffer.ReleaseRenderResource();
+				ViewBuffers->LocalLightBuffer.ReleaseRenderResource();
+				delete ViewBuffers;
+			}
+			ViewLightBuffers.Remove(StaleViewIdentities[IdentityIndex]);
+		}
+	}
+	void RSceneRenderer::ReleaseViewShadowStates()
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		for (RViewShadowStateMapType::TIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
+		{
+			RViewShadowState* ShadowState = StateIt->second;
+			if (ShadowState)
+			{
+				ShadowState->Release(RenderDevice);
+				delete ShadowState;
+			}
+		}
+		ViewShadowStates.Empty();
+		ViewShadowAddresses.Empty();
+		for (RViewLightBuffersMapType::TIterator BufferIt = ViewLightBuffers.Begin(); BufferIt != ViewLightBuffers.End(); BufferIt++)
+		{
+			RViewLightBuffers* ViewBuffers = BufferIt->second;
+			if (ViewBuffers)
+			{
+				ViewBuffers->DirectionalLightBuffer.ReleaseRenderResource();
+				ViewBuffers->LocalLightBuffer.ReleaseRenderResource();
+				delete ViewBuffers;
+			}
+		}
+		ViewLightBuffers.Empty();
+		// A renderer that comes back up has allocated nothing yet, so the first drop is worth
+		// reporting again rather than being swallowed by the previous session's report.
+		bShadowDropReported = FALSE;
 	}
 	void RSceneRenderer::OctreeCull(const EFrustum& InViewFrustum, RSceneRenderer::RVisibilityMapType& InOutVisibilityMap)
 	{
@@ -1813,13 +3359,13 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		SceneOctree.BackwardRecursionNode(0, TempDeep,
 			[&InOutVisibilityMap, &OctreeElements](ROctreeNode& InNode, INT32 InDeep)->INT32
 			{
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check element index of octree node is valid failed."), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < (OctreeElements.Num()))));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check element index of octree node is valid failed.")), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < (OctreeElements.Num()))));
 				const ROctreeElement& OctreeElement = OctreeElements[InNode.ElementIndex];
 				for (INT32 PrimitiveIndex = 0, PrimitiveNum = OctreeElement.Primitives.Num(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
 				{
 					const RPrimitiveSceneProxy* PrimitiveSceneProxy = OctreeElement.Primitives[PrimitiveIndex];
 #if _EDITOR_ONLY
-					PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check primitive scene proxy is null."), (!!PrimitiveSceneProxy));
+					PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check primitive scene proxy is null.")), (!!PrimitiveSceneProxy));
 					if (!PrimitiveSceneProxy)
 					{
 						continue;
@@ -1833,7 +3379,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			},
 			[&TempAxis, &InViewFrustum, &OctreeLayerInfos, &OctreeLayerNum](ROctreeNode& InNode, INT32 InDeep)->BOOL32
 			{
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Check renderer scene octree deep with layer infos failed."), (InDeep < OctreeLayerNum));
+				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer scene octree deep with layer infos failed.")), (InDeep < OctreeLayerNum));
 				const Vector3 NodeOrigin = InNode.Origin;
 				const Vector3 NodeExtent = OctreeLayerInfos[InDeep].Extent;
 				const FLOAT AxisExtent[3] = { NodeExtent.x, NodeExtent.y, NodeExtent.z };
