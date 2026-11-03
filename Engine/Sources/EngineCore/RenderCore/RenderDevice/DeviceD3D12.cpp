@@ -1822,6 +1822,7 @@ namespace PigeonEngine
 		// index used one of these allocators and has retired by now.
 		for (UINT32 RecorderIndex = 0u; RecorderIndex < MAX_RECORDERS; RecorderIndex++)
 		{
+			SlotSetArenaUsed[CurrentFrameIndex][RecorderIndex] = 0u;
 			CommandAllocators[CurrentFrameIndex][RecorderIndex]->Reset();
 
 			// Release pooled command-list ComPtrs so AcquireCommandList rebuilds them
@@ -3886,6 +3887,24 @@ namespace PigeonEngine
 		return (SLOT_TABLE_STRIDE_PER_FRAME - SLOT_SET_ARENA_OFFSET);
 	}
 
+	UINT32 RDeviceD3D12::GetSlotSetArenaUsed(const UINT32 InRecorderIndex)const
+	{
+		const UINT32 RecorderIndex = ((InRecorderIndex < MAX_RECORDERS) ? InRecorderIndex : 0u);
+		return SlotSetArenaUsed[CurrentFrameIndex % FRAME_IN_FLIGHT][RecorderIndex];
+	}
+
+	void RDeviceD3D12::CommitSlotSetArenaUsed(const UINT32 InRecorderIndex, const UINT32 InUsedDescriptorNum)
+	{
+		const UINT32 RecorderIndex = ((InRecorderIndex < MAX_RECORDERS) ? InRecorderIndex : 0u);
+		UINT32& UsedDescriptorNum = SlotSetArenaUsed[CurrentFrameIndex % FRAME_IN_FLIGHT][RecorderIndex];
+		// A list commits when it closes, and the lists of one recorder close in record order.
+		// The max keeps a late commit of an earlier list from moving the cursor backwards.
+		if (InUsedDescriptorNum > UsedDescriptorNum)
+		{
+			UsedDescriptorNum = InUsedDescriptorNum;
+		}
+	}
+
 	void RDeviceD3D12::NoteSlotSetArenaUsage(const UINT32 InUsedDescriptorNum) noexcept
 	{
 		// The arena wraps within a frame, so the number a budget decision needs is the largest
@@ -3990,6 +4009,7 @@ namespace PigeonEngine
 		, PersistentDescriptorOffset(0u)
 		, PersistentSamplerOffset(0u)
 		, SlotSetArenaHighWater(0u)
+		, SlotSetArenaUsed{}
 		, FrameFenceEvent(nullptr)
 		, CurrentFrameIndex(0u)
 		, FrameInFlightCount(FRAME_IN_FLIGHT)

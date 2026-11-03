@@ -29,16 +29,21 @@ namespace PigeonEngine
 		Items.SetNum(0);
 	}
 
-	void RViewPrimitiveList::Add(RPrimitiveSceneProxy* InPrimitive, const EShaderInstance* InShaderInstance)
+	void RViewPrimitiveList::Add(RPrimitiveSceneProxy* InPrimitive, const EShaderInstance* InShaderInstanceOverride)
 	{
 		if (!InPrimitive)
 		{
 			return;
 		}
 		RViewPrimitiveItem& Item = Items.AddDefaultGetRef();
-		Item.Primitive		= InPrimitive;
-		Item.Identity		= InPrimitive->GetUniqueID();
-		Item.ShaderInstance	= InShaderInstance;
+		Item.Primitive				= InPrimitive;
+		Item.Identity				= InPrimitive->GetUniqueID();
+		Item.ShaderInstanceOverride	= InShaderInstanceOverride;
+		// The sort groups by the instance the view actually uses. A view override wins;
+		// otherwise the primitive's primary report is the key, which is the instance every
+		// slot of an un-overridden item groups around.
+		Item.SortKey				= ((InShaderInstanceOverride != nullptr)
+			? InShaderInstanceOverride : InPrimitive->GetReportedPrimaryMaterial());
 	}
 
 	UINT32 RViewPrimitiveList::Num() const

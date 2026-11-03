@@ -3191,7 +3191,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			{
 				continue;
 			}
-			OutPrimitiveList.Add(Primitive, Primitive->GetReportedPrimaryMaterial());
+			OutPrimitiveList.Add(Primitive);
 			if (OutBounds)
 			{
 				if (bHasBound != FALSE)
@@ -3262,8 +3262,8 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		std::sort(Items.GetData(), Items.GetData() + Items.Num<UINT32>()
 			, [](const RViewPrimitiveItem& InLeft, const RViewPrimitiveItem& InRight) -> bool
 			{
-				const UINT64 LeftKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InLeft.ShaderInstance));
-				const UINT64 RightKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InRight.ShaderInstance));
+				const UINT64 LeftKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InLeft.SortKey));
+				const UINT64 RightKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InRight.SortKey));
 				if (LeftKey != RightKey)
 				{
 					return (LeftKey < RightKey);

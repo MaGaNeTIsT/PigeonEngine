@@ -52,6 +52,13 @@ namespace PigeonEngine
 		// The instance the primitive reported for the primary pass of its first slot. A view
 		// primitive list groups by it; the value is the same under every view.
 		PE_NODISCARD const EShaderInstance* GetReportedPrimaryMaterial() const { return ReportedPrimaryMaterial; }
+		// The base a pass specific instance derives from for one slot: the view's override
+		// when it selected one, otherwise the instance the primitive reported for that slot's
+		// primary pass. Null is a valid answer and means the pass data resolves the engine
+		// fallback for the slot. The slot is explicit because the report is per slot: one
+		// pointer at the item level would make slot 0 answer for every other slot.
+		PE_NODISCARD const EShaderInstance* ResolveBaseShaderInstance(const UINT32 InSlotIndex
+			, const EShaderInstance* InViewShaderInstanceOverride) const;
 	public:
 		// Filter inputs. A proxy states its category once; the central filter registry reads
 		// it together with the view and pass masks. The virtuals below are the object's own
@@ -76,8 +83,10 @@ namespace PigeonEngine
 		// Prepare: resolve and publish one pass's data. This is the only entry point the
 		// frame data registry calls; it resolves the pass specific instance, the pipeline
 		// state, the geometry binding and the shared shader instance data.
+		// InViewShaderInstanceOverride is the view's selection for the whole item, or null
+		// when the primitive's own per slot report is authoritative.
 		FPrimitivePassData*	EnsurePublishedPassData(const UINT32 InSlotIndex, const EName& InPassName
-			, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance, FFrameRenderData& InFrameData);
+			, const FRenderPassDesc& InPassDesc, const EShaderInstance* InViewShaderInstanceOverride, FFrameRenderData& InFrameData);
 	public:
 		// Record: replay one prepared item. The command list and the pass instance come from
 		// the context; nothing here reads a renderer or manager global.
@@ -112,9 +121,9 @@ namespace PigeonEngine
 		// Pass data. Built on demand per (slot, pass), invalidated when the assets change.
 		PE_NODISCARD const FPrimitivePassData*	FindPrimitivePassData(const UINT32 InSlotIndex, const EName& InPassName) const;
 		PE_NODISCARD BOOL32						IsPrimitivePassDataCurrent(const FPrimitivePassData& InData
-			, const EShaderInstance* InPrimaryInstance, const BOOL32 InIsPrimaryPass) const;
+			, const EShaderInstance* InBaseInstance, const BOOL32 InIsPrimaryPass) const;
 		FPrimitivePassData*						EnsurePrimitivePassData(const UINT32 InSlotIndex, const EName& InPassName
-			, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance);
+			, const FRenderPassDesc& InPassDesc, const EShaderInstance* InViewShaderInstanceOverride);
 		void									DropPassSlot(const UINT32 InSlotIndex, const EName& InPassName);
 		void									ReleasePassSlots();
 	protected:

@@ -23,15 +23,19 @@ namespace PigeonEngine
 	*/
 	struct RViewPrimitiveItem
 	{
-		RPrimitiveSceneProxy*	Primitive		= nullptr;
-		ObjectIdentityType		Identity		= 0u;
-		// The shader instance this view selected for the primitive. It normally equals the
-		// primitive's reported primary instance; a view level override (LOD, alternate material)
-		// writes a different one here, and the pass data key includes it.
-		const EShaderInstance*	ShaderInstance	= nullptr;
+		RPrimitiveSceneProxy*	Primitive				= nullptr;
+		ObjectIdentityType		Identity				= 0u;
+		// The instance this view selected as an override for the primitive, or null when the
+		// view uses the primitive's own report. A pass must not treat it as the primitive's
+		// material: the override answers for the whole item, while the report is per slot.
+		const EShaderInstance*	ShaderInstanceOverride	= nullptr;
+		// Grouping key for the view's material sort: the override when the view selected one,
+		// otherwise the primitive's reported primary instance. Filled by Add so the sort reads
+		// one field instead of resolving the primitive again per comparison.
+		const EShaderInstance*	SortKey					= nullptr;
 		// View dependent flags a pass may read. The collection filter and the passes agree on
 		// the meaning per bit; no engine wide bit is defined here.
-		UINT64					ViewFlags		= 0u;
+		UINT64					ViewFlags				= 0u;
 	};
 
 	/*
@@ -72,7 +76,9 @@ namespace PigeonEngine
 		// Drops every entry while keeping the storage, so a view that is filtered to nothing
 		// every frame does not reallocate its list every frame.
 		void	Reset();
-		void	Add(RPrimitiveSceneProxy* InPrimitive, const EShaderInstance* InShaderInstance);
+		// InShaderInstanceOverride is the view's selection for the whole item, not the
+		// primitive's report; the default null keeps the per slot report authoritative.
+		void	Add(RPrimitiveSceneProxy* InPrimitive, const EShaderInstance* InShaderInstanceOverride = nullptr);
 	public:
 		PE_NODISCARD UINT32		Num() const;
 		PE_NODISCARD BOOL32		IsEmpty() const;

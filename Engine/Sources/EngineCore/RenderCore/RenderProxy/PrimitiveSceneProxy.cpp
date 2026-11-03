@@ -166,6 +166,18 @@ namespace PigeonEngine
 	{
 		return Assets.FindMaterialInstance(InSlotIndex, InPassName);
 	}
+	const EShaderInstance* RPrimitiveSceneProxy::ResolveBaseShaderInstance(const UINT32 InSlotIndex
+		, const EShaderInstance* InViewShaderInstanceOverride) const
+	{
+		// The view's selection is a whole item choice and outranks the primitive's report. The
+		// report is read per slot on purpose: one item level pointer cannot stand for a mesh
+		// whose submeshes have different materials.
+		if (InViewShaderInstanceOverride)
+		{
+			return InViewShaderInstanceOverride;
+		}
+		return Assets.FindMaterialInstance(InSlotIndex, GetPrimaryPassName());
+	}
 	void RPrimitiveSceneProxy::ApplyValues(const FShaderValueReport& InValues)
 	{
 		LastDrawValues = InValues;
@@ -318,7 +330,7 @@ namespace PigeonEngine
 		return nullptr;
 	}
 	BOOL32 RPrimitiveSceneProxy::IsPrimitivePassDataCurrent(const FPrimitivePassData& InData
-		, const EShaderInstance* InPrimaryInstance, const BOOL32 InIsPrimaryPass) const
+		, const EShaderInstance* InBaseInstance, const BOOL32 InIsPrimaryPass) const
 	{
 		if (!InData.ResolvedShaderInstance)
 		{
@@ -332,6 +344,21 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
+		// The base belongs to the slot, and a view override belongs to the item. Either one
+		// changing selects a different instance, so the resolved instance is stale even for a
+		// primary pass.
+		if (InBaseInstance)
+		{
+			if ((InData.BaseShaderInstance != InBaseInstance)
+				|| (InData.BaseShaderInstanceAsset != InBaseInstance->GetAsset()))
+			{
+				return FALSE;
+			}
+		}
+		else if (InData.BaseShaderInstance != nullptr)
+		{
+			return FALSE;
+		}
 		if (InIsPrimaryPass != FALSE)
 		{
 			return TRUE;
@@ -342,15 +369,10 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
-		if (InPrimaryInstance)
-		{
-			return ((InData.PrimaryShaderInstance == InPrimaryInstance)
-				&& (InData.PrimaryShaderInstanceAsset == InPrimaryInstance->GetAsset())) ? TRUE : FALSE;
-		}
-		return ((InData.PrimaryShaderInstance == nullptr) ? TRUE : FALSE);
+		return TRUE;
 	}
 	FPrimitivePassData* RPrimitiveSceneProxy::EnsurePrimitivePassData(const UINT32 InSlotIndex, const EName& InPassName
-		, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance)
+		, const FRenderPassDesc& InPassDesc, const EShaderInstance* InViewShaderInstanceOverride)
 	{
 		// A shader instance is assembled once, for the pass it authored. A different pass - the
 		// depth only shadow pass is the first one - derives its own instance from the base one,
@@ -358,6 +380,12 @@ namespace PigeonEngine
 		const EName& PrimaryPassName = GetPrimaryPassName();
 		const BOOL32 bIsPrimaryPass = ((InPassName == PrimaryPassName) ? TRUE : FALSE);
 		REngineShaderInstanceCache* InstanceCache = REngineShaderInstanceCache::GetManagerSingleton();
+
+		// The base is per slot. The view override, when it selected one, answers for the whole
+		// item; otherwise the slot's own reported primary is the base, which is what keeps slot
+		// 0's material from being derived into every other slot. Null means "no material in
+		// this slot", and the fallback below answers for it.
+		const EShaderInstance* BaseInstance = ResolveBaseShaderInstance(InSlotIndex, InViewShaderInstanceOverride);
 
 		if (FPrimitivePassData* Existing = const_cast<FPrimitivePassData*>(FindPrimitivePassData(InSlotIndex, InPassName)))
 		{
@@ -367,20 +395,30 @@ namespace PigeonEngine
 			{
 				return Existing;
 			}
-			if (IsPrimitivePassDataCurrent(*Existing, (bIsPrimaryPass == FALSE ? &InBaseShaderInstance : nullptr), bIsPrimaryPass) != FALSE)
+			if (IsPrimitivePassDataCurrent(*Existing, BaseInstance, bIsPrimaryPass) != FALSE)
 			{
 				return Existing;
 			}
 			DropPassSlot(InSlotIndex, InPassName);
 		}
 
-		const EShaderInstance* PrimaryInstance = ((bIsPrimaryPass == FALSE) ? &InBaseShaderInstance : nullptr);
-		const EShaderInstance* Instance = Assets.FindMaterialInstance(InSlotIndex, InPassName);
-		const EShaderInstance* SlotPrimary = ((bIsPrimaryPass != FALSE) ? Instance : PrimaryInstance);
-		BOOL32 bInstancePending = FALSE;
-		if ((!Instance) && (bIsPrimaryPass == FALSE) && (PrimaryInstance))
+		// The primary pass runs the base instance itself: a view override when there is one,
+		// otherwise the slot's own report. A non-primary pass uses an instance the slot
+		// reported for that pass; a view override replaces that report, so the derivation
+		// below runs from the override instead.
+		const EShaderInstance* Instance = nullptr;
+		if (bIsPrimaryPass != FALSE)
 		{
-			Instance = InstanceCache->RequirePassInstance(*PrimaryInstance, InPassName);
+			Instance = BaseInstance;
+		}
+		else if (InViewShaderInstanceOverride == nullptr)
+		{
+			Instance = Assets.FindMaterialInstance(InSlotIndex, InPassName);
+		}
+		BOOL32 bInstancePending = FALSE;
+		if ((!Instance) && (bIsPrimaryPass == FALSE) && (BaseInstance))
+		{
+			Instance = InstanceCache->RequirePassInstance(*BaseInstance, InPassName);
 			if (!Instance)
 			{
 				bInstancePending = TRUE;
@@ -389,7 +427,8 @@ namespace PigeonEngine
 		if (!Instance)
 		{
 			// A slot with no reported instance falls back to this primitive's engine material, so
-			// geometry is never dropped merely because nothing was authored.
+			// geometry is never dropped merely because nothing was authored. The fallback is a
+			// primary pass instance, so a non primary pass derives from it on the same terms.
 			const EShaderInstance* Fallback = ResolveFallbackInstance(InSlotIndex);
 			if ((Fallback) && (bIsPrimaryPass == FALSE))
 			{
@@ -398,10 +437,6 @@ namespace PigeonEngine
 			else
 			{
 				Instance = Fallback;
-			}
-			if (bIsPrimaryPass != FALSE)
-			{
-				SlotPrimary = Fallback;
 			}
 		}
 		if (!Instance)
@@ -427,7 +462,6 @@ namespace PigeonEngine
 		NewData.SlotIndex					= InSlotIndex;
 		NewData.PassDesc					= &InPassDesc;
 		NewData.PassName					= InPassName;
-		NewData.BaseShaderInstance			= &InBaseShaderInstance;
 		NewData.ResolvedShaderInstance		= Instance;
 		NewData.DisplayName					= GetShaderInstanceDisplayName(Instance);
 		// The object the program below was resolved from, not the one the instance is bound to
@@ -435,8 +469,8 @@ namespace PigeonEngine
 		NewData.ShaderInstanceAsset			= Instance->GetResolvedAsset();
 		NewData.Program						= Program;
 		NewData.ShaderInstanceRevision		= Instance->GetRevision();
-		NewData.PrimaryShaderInstance		= SlotPrimary;
-		NewData.PrimaryShaderInstanceAsset	= ((SlotPrimary != nullptr) ? SlotPrimary->GetAsset() : nullptr);
+		NewData.BaseShaderInstance			= BaseInstance;
+		NewData.BaseShaderInstanceAsset		= ((BaseInstance != nullptr) ? BaseInstance->GetAsset() : nullptr);
 		NewData.bShaderInstancePending		= bInstancePending;
 		NewData.PendingRetryFrame			= ((bInstancePending != FALSE) ? GetRenderFrameIndex() : 0u);
 
@@ -468,9 +502,9 @@ namespace PigeonEngine
 		return PassSlots[PassSlots.Num<UINT32>() - 1u].get();
 	}
 	FPrimitivePassData* RPrimitiveSceneProxy::EnsurePublishedPassData(const UINT32 InSlotIndex, const EName& InPassName
-		, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance, FFrameRenderData& InFrameData)
+		, const FRenderPassDesc& InPassDesc, const EShaderInstance* InViewShaderInstanceOverride, FFrameRenderData& InFrameData)
 	{
-		FPrimitivePassData* Data = EnsurePrimitivePassData(InSlotIndex, InPassName, InPassDesc, InBaseShaderInstance);
+		FPrimitivePassData* Data = EnsurePrimitivePassData(InSlotIndex, InPassName, InPassDesc, InViewShaderInstanceOverride);
 		if ((!Data) || (!Data->ResolvedShaderInstance) || (!Data->Program))
 		{
 			return nullptr;

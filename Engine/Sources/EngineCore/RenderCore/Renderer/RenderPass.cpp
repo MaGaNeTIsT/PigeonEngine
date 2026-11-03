@@ -93,12 +93,10 @@ namespace PigeonEngine
 				continue;
 			}
 
-			const EShaderInstance* BaseShaderInstance = ((ViewItem.ShaderInstance)
-				? ViewItem.ShaderInstance : ViewItem.Primitive->GetReportedPrimaryMaterial());
-			if (!BaseShaderInstance)
-			{
-				continue;
-			}
+			// The item carries a view selection only when the view overrode the primitive's
+			// material. Null is the common case: the pass data then reads the slot's own
+			// reported instance, so one slot's material never answers for another slot.
+			const EShaderInstance* ViewShaderInstanceOverride = ViewItem.ShaderInstanceOverride;
 
 			FPrimitiveRenderData* PrimitiveData = InContext.FrameData->EnsurePrimitive(*ViewItem.Primitive);
 			if (!PrimitiveData)
@@ -118,7 +116,7 @@ namespace PigeonEngine
 				}
 
 				FPrimitivePassData* PassData = InContext.FrameData->EnsurePrimitivePass(*ViewItem.Primitive
-					, GetPassDesc(), *BaseShaderInstance, SlotIndex);
+					, GetPassDesc(), ViewShaderInstanceOverride, SlotIndex);
 				if ((!PassData) || (!PassData->Program) || (!PassData->PipelineState))
 				{
 					continue;

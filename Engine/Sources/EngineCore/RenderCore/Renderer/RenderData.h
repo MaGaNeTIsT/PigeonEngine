@@ -84,9 +84,12 @@ namespace PigeonEngine
 	/*
 	* L4: one primitive's resolved data for one pass.
 	*
-	* Keyed by (primitive, pass, base shader instance). The base instance comes from the
-	* view's primitive item; the resolved instance is the pass specific one the material
-	* layer derives from it (a depth only instance for the shadow pass, for example).
+	* Keyed by (primitive, pass, base shader instance). The base instance is the view's
+	* override when it selected one, otherwise the instance the primitive reported for the
+	* slot's primary pass. The resolved instance is the pass specific one the material layer
+	* derives from that base (a depth only instance for the shadow pass, for example). A null
+	* base means the slot has no material of its own, and the engine fallback (or a pass
+	* instance derived from it) answers for that slot.
 	*/
 	struct FPrimitivePassData
 	{
@@ -96,15 +99,17 @@ namespace PigeonEngine
 		EName						PassName;
 		const EShaderProgram*		Program						= nullptr;
 		IRRHIPipelineState*			PipelineState				= nullptr;
-		const EShaderInstance*		BaseShaderInstance			= nullptr;
+		// The instance actually bound, which is the base instance for a primary pass and the
+		// pass specific instance derived from it (or from the fallback) otherwise.
 		const EShaderInstance*		ResolvedShaderInstance		= nullptr;
 		const EShaderAsset*			ShaderInstanceAsset			= nullptr;
 		UINT32						ShaderInstanceRevision		= 0u;
-		// The primary instance the slot was derived from, and the asset object it answered
-		// with. A non-primary slot is reusable while this pair is unchanged, which is what
-		// lets a later view answer from the cache instead of deriving again.
-		const EShaderInstance*		PrimaryShaderInstance		= nullptr;
-		const EShaderAsset*			PrimaryShaderInstanceAsset	= nullptr;
+		// The base selected for this slot: the view override when it selected one, otherwise
+		// the instance the primitive reported for the slot. Null means the slot has no
+		// material, and the fallback answers. The slot is reusable while this pair is
+		// unchanged, which is what lets a later view answer from the cache.
+		const EShaderInstance*		BaseShaderInstance			= nullptr;
+		const EShaderAsset*			BaseShaderInstanceAsset		= nullptr;
 		BOOL32						bShaderInstancePending		= FALSE;
 		UINT32						PendingRetryFrame			= 0u;
 		EString						DisplayName;
@@ -185,8 +190,10 @@ namespace PigeonEngine
 	public:
 		PE_NODISCARD FViewRenderData*			EnsureView(RViewProxy& InView);
 		PE_NODISCARD FPrimitiveRenderData*		EnsurePrimitive(RPrimitiveSceneProxy& InPrimitive);
+		// InViewShaderInstanceOverride is the view's selection for the whole item, or null
+		// when the primitive's own per slot report is authoritative.
 		PE_NODISCARD FPrimitivePassData*		EnsurePrimitivePass(RPrimitiveSceneProxy& InPrimitive, const FRenderPassDesc& InPassDesc
-			, const EShaderInstance& InBaseShaderInstance, UINT32 InSlotIndex);
+			, const EShaderInstance* InViewShaderInstanceOverride, UINT32 InSlotIndex);
 		PE_NODISCARD FShaderInstanceRenderData*	EnsureShaderInstance(const EShaderInstance& InShaderInstance, const EShaderProgram& InProgram);
 		PE_NODISCARD FBindingSet*				EnsureBindingSet(const FPrimitivePassData& InPrimitivePassData, const FViewRenderData& InViewData);
 

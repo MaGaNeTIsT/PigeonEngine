@@ -124,7 +124,7 @@ namespace PigeonEngine
 	}
 
 	FPrimitivePassData* FFrameRenderData::EnsurePrimitivePass(RPrimitiveSceneProxy& InPrimitive, const FRenderPassDesc& InPassDesc
-		, const EShaderInstance& InBaseShaderInstance, const UINT32 InSlotIndex)
+		, const EShaderInstance* InViewShaderInstanceOverride, const UINT32 InSlotIndex)
 	{
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("RenderData: EnsurePrimitivePass ran outside the Prepare phase.")), (bPreparing != FALSE));
 		// The pass slot cache lives on the primitive, because that is where its lifetime and
@@ -132,7 +132,7 @@ namespace PigeonEngine
 		// specific instance, the pipeline state, the geometry binding and the shared instance
 		// data, all once per frame.
 		return InPrimitive.EnsurePublishedPassData(InSlotIndex, FRenderPassRegistry::GetPassNameId(InPassDesc)
-			, InPassDesc, InBaseShaderInstance, *this);
+			, InPassDesc, InViewShaderInstanceOverride, *this);
 	}
 
 	FShaderInstanceRenderData* FFrameRenderData::EnsureShaderInstance(const EShaderInstance& InShaderInstance, const EShaderProgram& InProgram)

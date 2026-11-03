@@ -108,9 +108,13 @@ void RCommandListD3D12::SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
 		// The frame's descriptor arena, on the other hand, is a device constant and is known
 		// before any signature is: a descriptor write only needs the arena, and becomes
 		// visible once a pipeline state points its tables at the set holding it. The arena
-		// follows the frame index, so two frames in flight never share descriptors.
-		SetArenaNext               = OwnerDevice->GetSlotSetArenaBase(RecorderIndex);
-		SetArenaEnd                = SetArenaNext + OwnerDevice->GetSlotSetArenaCapacity();
+		// follows the frame index and the recorder, and it continues where the recorder's
+		// previous list in this frame stopped: every list of a frame is executed in one
+		// batch, so a list that restarted at the slice base would overwrite descriptors an
+		// earlier list already pointed its draws at.
+		const UINT32 ArenaBase = OwnerDevice->GetSlotSetArenaBase(RecorderIndex);
+		SetArenaNext               = ArenaBase + OwnerDevice->GetSlotSetArenaUsed(RecorderIndex);
+		SetArenaEnd                = ArenaBase + OwnerDevice->GetSlotSetArenaCapacity();
 		CurrentSRVTableBase        = SetArenaNext;
 		CurrentUAVTableBase        = SetArenaNext;
 		CurrentSamplerTableBase    = OwnerDevice->GetSlotSamplerTableBase();
@@ -356,6 +360,14 @@ void RCommandListD3D12::Reset()
 
 void RCommandListD3D12::Close()
 {
+	if (CommandList && OwnerDevice && bTableRegionKnown)
+	{
+		// The next list this recorder records in the frame starts after the sets this one
+		// handed out. Committed at close, which happens before the next list is acquired.
+		const UINT32 ArenaBase = OwnerDevice->GetSlotSetArenaBase(RecorderIndex);
+		const UINT32 ArenaUsed = ((SetArenaNext > ArenaBase) ? (SetArenaNext - ArenaBase) : 0u);
+		OwnerDevice->CommitSlotSetArenaUsed(RecorderIndex, ArenaUsed);
+	}
 	if (CommandList)
 	{
 		CommandList->Close();

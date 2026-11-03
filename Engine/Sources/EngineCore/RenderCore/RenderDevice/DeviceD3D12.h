@@ -390,6 +390,13 @@ namespace PigeonEngine
 		// slice so two recording threads never hand out the same descriptor.
 		UINT32				GetSlotSetArenaBase(UINT32 InRecorderIndex) const;
 		UINT32				GetSlotSetArenaCapacity() const;
+		// Descriptors one (frame, recorder) has handed out so far, across every list that
+		// recorder recorded in the frame. A frame records several lists per recorder - one
+		// per stage - and all of them are submitted in one batch, so the arena cursor has to
+		// continue across the lists: a list that restarted at the slice base would hand out
+		// the descriptors an earlier list already pointed its draws at.
+		PE_NODISCARD UINT32	GetSlotSetArenaUsed(UINT32 InRecorderIndex) const;
+		void				CommitSlotSetArenaUsed(UINT32 InRecorderIndex, UINT32 InUsedDescriptorNum);
 		UINT32				GetSlotSamplerTableBase() const;
 		// Render thread: records one frame's arena use. The device reports the resulting high
 		// water mark once at shutdown, which is the number a budget decision should read.
@@ -566,6 +573,10 @@ namespace PigeonEngine
 		// The largest number of descriptors a single frame's set arena handed out. Written by the
 		// render thread, read once at shutdown.
 		UINT32												SlotSetArenaHighWater;
+		// Descriptors handed out per (frame, recorder) so far. Reset when the frame slot starts
+		// and advanced by every list that recorder records in the frame, so the stage lists do
+		// not hand out the same arena range.
+		UINT32												SlotSetArenaUsed[FRAME_IN_FLIGHT][MAX_RECORDERS];
 
 		// Root signatures. Every signature the device hands out lives in the pool for
 		// the device's whole lifetime and is reachable through the cache by layout hash,
