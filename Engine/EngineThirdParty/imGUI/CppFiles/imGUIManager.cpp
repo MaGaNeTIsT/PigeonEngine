@@ -1399,7 +1399,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		IRCommandList* Cmd = Device->AcquireCommandList();
+		IRCommandList* Cmd = Device->AcquireCommandList(0u);
 		if (!Cmd)
 		{
 			return;

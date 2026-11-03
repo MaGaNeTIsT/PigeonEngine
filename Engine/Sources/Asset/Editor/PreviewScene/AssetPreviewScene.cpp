@@ -59,8 +59,6 @@ namespace PigeonEngine
 					return;
 				}
 
-				CurrentCommandList = RenderDevice->AcquireCommandList();
-				EMainManager::GetManagerSingleton()->SetActiveCommandList(CurrentCommandList);
 				// The primitives this pass draws reach the engine blocks through whichever
 				// renderer publishes itself here, and they must reach this one: their
 				// BindEngineParameters binds the view of the renderer it finds, and this pass
@@ -78,43 +76,86 @@ namespace PigeonEngine
 				// Publishes this frame's commands, culls against the preview camera, builds the
 				// per-view targets. A viewport change is picked up here.
 				InitNewFrame();
+
+				FrameData.BeginFrame(RenderDevice->GetCurrentFrameIndex());
+				FrameData.SetRenderDevice(RenderDevice);
+				RecordScheduler.BeginFrame(FrameData);
+
 				EnsureEnginePassPipelineStates();
-
-				BindSamplerTable(CurrentCommandList);
-				// A preview world has no sky, which is exactly what this publishes: no
-				// environment, so the indirect term contributes nothing.
-				RenderEnvironmentSH();
 				UpdateGlobalParameters();
-				BasePass();
 
-				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(TRUE);
+				PassStatePlan.Reset();
+				TArray<FPassViewInstance> PassInstances;
+				BuildPassInstances(PassInstances);
+				PreparePassInstances(PassInstances);
+				FrameData.EndPrepare();
 
-				// The base pass leaves the scene colour as a render target. The display copy
-				// reads it, so it has to be readable first - the main renderer makes the same
-				// transition in its final output pass.
-				if (RViewProxy* PreviewView = FindViewProxy(FinalOutputView))
-				{
-					RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
-					if (SceneTextures && (*SceneTextures))
+				// A preview has only the base stage: no shadow casters to record and no window
+				// tail. The sync list carries the renderer wide sampler table and the environment
+				// bake, because that list is submitted before the stage's item lists - the same
+				// place the main renderer records them for its first stage.
+				TArray<FRecordTask> BaseTasks;
+				BuildStageTasks(PassInstances, ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks);
+				RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks
+					, [this](IRCommandList* InList) -> void
 					{
-						TransitionToShaderReadable((*SceneTextures)->SceneColor.GetResolvedRHITexture());
-					}
-				}
+						CurrentCommandList = InList;
+						BindSamplerTable(InList);
+						// A preview world has no sky, which is exactly what this publishes: no
+						// environment, so the indirect term contributes nothing.
+						RenderEnvironmentSH();
+						CurrentCommandList = nullptr;
+						RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_BASE, InList);
+					});
 
-				// Scene colour is scene referred and its alpha is not a display alpha: the base
-				// pass writes the emissive with alpha 0 and the lighting pass preserves the
-				// destination alpha. The engine's final output pass is what turns that into
-				// something an image can show - exposure, tone mapping, alpha 1 - so the preview
-				// runs it into an offscreen target instead of into the window.
-				RenderDisplayTarget();
+				// The display copy runs on its own list, submitted after the base stage lists, so
+				// it reads the scene colour they wrote. The index is the one the main renderer
+				// reserves for its own tail passes.
+				const UINT32 TailListIndex = ((RenderDevice->GetMaxRecordThreadNum() <= 1u)
+					? 0u : (RHI_MAX_RECORD_LIST_NUM - 1u));
+				IRCommandList* TailList = RenderDevice->AcquireCommandList(TailListIndex);
+				if (TailList)
+				{
+					TailList->SetRecordMode(ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE);
+					CurrentCommandList = TailList;
+
+					// The base pass leaves the scene colour as a render target. The display copy
+					// reads it, so it has to be readable first - the main renderer makes the same
+					// transition in its final output pass.
+					if (RViewProxy* PreviewView = FindViewProxy(FinalOutputView))
+					{
+						RSceneTextures** SceneTextures = ViewSceneTextures.FindValueAsPtr(PreviewView->GetUniqueID());
+						if (SceneTextures && (*SceneTextures))
+						{
+							TransitionToShaderReadable((*SceneTextures)->SceneColor.GetResolvedRHITexture());
+						}
+					}
+
+					// Scene colour is scene referred and its alpha is not a display alpha: the base
+					// pass writes the emissive with alpha 0 and the lighting pass preserves the
+					// destination alpha. The engine's final output pass is what turns that into
+					// something an image can show - exposure, tone mapping, alpha 1 - so the preview
+					// runs it into an offscreen target instead of into the window.
+					RenderDisplayTarget();
+
+					TailList->Close();
+					CurrentCommandList = nullptr;
+				}
 
 				// Resolved once per recorded frame and read by the editor on the next one.
 				UpdateTextureId();
 
-				RenderDevice->SubmitCommandList(CurrentCommandList);
-				CurrentCommandList = nullptr;
-				EMainManager::GetManagerSingleton()->SetActiveCommandList(nullptr);
+				EGPUProfiler::GetManagerSingleton()->SetPassRecordingEnabled(TRUE);
 				EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(nullptr);
+
+				TArray<IRCommandList*> AllLists = RecordScheduler.GetRecordedLists();
+				if (TailList)
+				{
+					AllLists.Add(TailList);
+				}
+				RenderDevice->SubmitCommandLists(AllLists.GetData(), AllLists.Num<UINT32>());
+				RecordScheduler.EndFrame();
+				FrameData.EndFrame();
 			}
 
 			ImTextureID GetTextureId() const
@@ -220,8 +261,9 @@ namespace PigeonEngine
 				{
 					EShaderParameterSet Parameters;
 					Parameters.SetTexture(EName(), EName(PE_TEXT("CopySourceTexture")), (*SceneTextures)->SceneColor.GetResolvedRHITexture());
-					BindShaderParameterResources(CurrentCommandList, Parameters
-						, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL);
+					BindShaderResources(CurrentCommandList, Parameters
+						, PixelEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_PIXEL
+						, EName(SHADER_BINDING_SCOPE_COPY));
 				}
 
 				CurrentCommandList->DrawIndexed(FullScreenTriangle.GetIndexCount(), 1u, 0u, 0, 0u);
