@@ -1,5 +1,7 @@
 #pragma once
 
+#if _EDITOR_ONLY
+
 #include <CoreMinimal.h>
 #include <EngineCommon.h>
 
@@ -10,7 +12,6 @@ namespace PigeonEngine
 
 	extern class PSceneComponent* SelectObjectInViewport(const class PCameraComponent* InCamera, TArray<class PSceneComponent*>& InActors, const FLOAT InMouseX, const FLOAT InMouseY, const ERect& InScreenRect);
 
-#if _EDITOR_ONLY
 	extern void DrawObjectBounds(TArray<class PActor*>& InObjects);
 
 	// Gizmo axis enum
@@ -44,6 +45,7 @@ namespace PigeonEngine
 		const FLOAT InMouseX, const FLOAT InMouseY,
 		const ERect& InScreenRect
 	);
-#endif
 
 };
+
+#endif
