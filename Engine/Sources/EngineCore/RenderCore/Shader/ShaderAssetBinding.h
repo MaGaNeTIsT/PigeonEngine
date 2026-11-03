@@ -163,6 +163,24 @@ namespace PigeonEngine
 	PE_NODISCARD extern BOOL32	PublishShaderParameters(IRCommandList* InCommandList, IRRHIDevice* InRenderDevice
 		, EShaderParameterSet& InOutParameters, RShaderParameterBuffers& InOutBuffers
 		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName);
+
+	/*
+	* The two halves of PublishShaderParameters, split so the renderer can publish during the
+	* serial Prepare phase and bind during a parallel Record phase.
+	*
+	* PublishShaderParameterValues writes the bindless indices into the set, re-evaluates the
+	* CPU mirrors and uploads the dirty buffers. It takes no command list, so it is legal
+	* exactly where FFrameRenderData is allowed to run: on the render thread, once per frame.
+	*
+	* BindPublishedShaderParameters replays the blocks and resources of an already published
+	* set. It records commands and touches no value, which is what a worker list needs.
+	*/
+	PE_NODISCARD extern BOOL32	PublishShaderParameterValues(IRRHIDevice* InRenderDevice
+		, EShaderParameterSet& InOutParameters, RShaderParameterBuffers& InOutBuffers
+		, const EShaderProgram& InProgram, const EName& InScopeName);
+	extern void	BindPublishedShaderParameters(IRCommandList* InCommandList
+		, const EShaderParameterSet& InParameters, RShaderParameterBuffers& InOutBuffers
+		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName);
 	// The result is advisory: a failure has already been logged by name where it was detected, so
 	// a caller that cannot act on it may ignore it. Only a caller that is able to skip its draw
 	// has a reason to look.

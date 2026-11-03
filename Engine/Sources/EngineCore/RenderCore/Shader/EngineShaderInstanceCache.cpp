@@ -74,13 +74,13 @@ namespace PigeonEngine
 				}
 			}
 			Instances.Empty();
-			// The copies of a material go with the material they were made from: they own constant
-			// buffers on the same terms the table's instances do.
-			for (UINT32 Index = 0u, Num = OwnedExtraInstances.Num<UINT32>(); Index < Num; Index++)
-			{
-				ReleasedInstances.Add(OwnedExtraInstances[Index]);
-			}
-			OwnedExtraInstances.Empty();
+			// The indices address the array they were built against, so they go with it. Every
+			// instance is owned by an entry now, including the copies of a material.
+			InstanceIndicesByHash.Empty();
+			EntryIndexByInstance.Empty();
+			// A cache that comes back up starts its clone keys over. Nothing from the previous
+			// table can survive to collide with them.
+			NextOwnedInstanceKey = 1ull;
 		}
 		for (UINT32 Index = 0u, Num = ReleasedInstances.Num<UINT32>(); Index < Num; Index++)
 		{
@@ -93,6 +93,27 @@ namespace PigeonEngine
 		}
 	}
 
+	// FNV-1a over the request fields, in the same order MakeInstanceRequestKey serializes them.
+	// The hash is what a lookup compares first; the fields are compared only inside one bucket,
+	// so two requests that share a bucket but not a field still answer correctly.
+	static UINT64 HashRequestString(UINT64 InHash, const EString& InString) noexcept
+	{
+		const CHAR* Data = *InString;
+		while (*Data != '\0')
+		{
+			InHash ^= static_cast<UINT64>(static_cast<UINT8>(*Data));
+			InHash *= 1099511628211ull;
+			Data++;
+		}
+		return InHash;
+	}
+	static UINT64 MixRequestHash(UINT64 InHash, const UINT64 InValue) noexcept
+	{
+		InHash ^= InValue;
+		InHash *= 1099511628211ull;
+		return InHash;
+	}
+
 	EString REngineShaderInstanceCache::MakeInstanceRequestKey(const EShaderAssemblyRequest& InRequest)
 	{
 		/*
@@ -103,7 +124,8 @@ namespace PigeonEngine
 		*
 		* Pure string work on purpose. This runs inside a draw, where reading the program or the
 		* material json to resolve the desc would be a file read the frame cannot afford - and
-		* exactly what this refactor exists to keep out of a draw.
+		* exactly what this refactor exists to keep out of a draw. A lookup does not call this:
+		* it hashes the same fields (ComputeAssemblyRequestHash) and only a miss builds the key.
 		*/
 		EString RequestKey(PE_TEXT("Instance|"));
 		RequestKey = RequestKey + InRequest.ShaderName.ToString();
@@ -114,18 +136,71 @@ namespace PigeonEngine
 		RequestKey = RequestKey + EString(PE_TEXT("|")) + ToString(InRequest.Profile.StreamProfile);
 		RequestKey = RequestKey + EString(PE_TEXT("|")) + ToString(InRequest.StageMask);
 		RequestKey = RequestKey + EString(PE_TEXT("|")) + ToString(InRequest.SurfaceModeOverride);
+		RequestKey = RequestKey + EString(PE_TEXT("|")) + ToString(InRequest.InstanceKey);
 		return RequestKey;
+	}
+
+	UINT64 REngineShaderInstanceCache::ComputeAssemblyRequestHash(const EShaderAssemblyRequest& InRequest) noexcept
+	{
+		// A name is hashed by its interned index: equal names share the index, and reading the
+		// index avoids both a pool read and a second hash of the text.
+		UINT64 Hash = 14695981039346656037ull;
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(InRequest.ShaderName.GetIndex()));
+		Hash = HashRequestString(Hash, InRequest.MaterialName);
+		Hash = HashRequestString(Hash, InRequest.DomainName);
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(InRequest.ProgramName.GetIndex()));
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(InRequest.VertexFactory));
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(InRequest.Profile.StreamProfile));
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(InRequest.StageMask));
+		Hash = MixRequestHash(Hash, static_cast<UINT64>(static_cast<UINT32>(InRequest.SurfaceModeOverride)));
+		Hash = MixRequestHash(Hash, InRequest.InstanceKey);
+		return Hash;
+	}
+
+	BOOL32 REngineShaderInstanceCache::IsSameAssemblyRequest(const EShaderAssemblyRequest& InLeft
+		, const EShaderAssemblyRequest& InRight) noexcept
+	{
+		return ((InLeft.ShaderName == InRight.ShaderName)
+			&& (InLeft.MaterialName == InRight.MaterialName)
+			&& (InLeft.DomainName == InRight.DomainName)
+			&& (InLeft.ProgramName == InRight.ProgramName)
+			&& (InLeft.VertexFactory == InRight.VertexFactory)
+			&& (InLeft.Profile.StreamProfile == InRight.Profile.StreamProfile)
+			&& (InLeft.StageMask == InRight.StageMask)
+			&& (InLeft.SurfaceModeOverride == InRight.SurfaceModeOverride)
+			&& (InLeft.InstanceKey == InRight.InstanceKey)) ? TRUE : FALSE;
+	}
+
+	BOOL32 REngineShaderInstanceCache::FindEntryIndexLocked(const EShaderInstance* InInstance, UINT32& OutIndex) const
+	{
+		if (!InInstance)
+		{
+			return FALSE;
+		}
+		const UINT32* EntryIndex = EntryIndexByInstance.FindValuePtr(InInstance);
+		if (!EntryIndex)
+		{
+			return FALSE;
+		}
+		OutIndex = *EntryIndex;
+		return TRUE;
 	}
 
 	const EShaderInstance* REngineShaderInstanceCache::TryFindInstance(const EShaderAssemblyRequest& InRequest) const
 	{
-		const EString RequestKey = MakeInstanceRequestKey(InRequest);
+		const UINT64 RequestHash = ComputeAssemblyRequestHash(InRequest);
 		EScopedLock ScopedLock(TableMutex);
-		for (UINT32 Index = 0u, Num = Instances.Num<UINT32>(); Index < Num; Index++)
+		const TArray<UINT32>* Bucket = InstanceIndicesByHash.FindValuePtr(RequestHash);
+		if (!Bucket)
 		{
-			if (Instances[Index].RequestKey == RequestKey)
+			return nullptr;
+		}
+		for (UINT32 Index = 0u, Num = Bucket->Num<UINT32>(); Index < Num; Index++)
+		{
+			const FEntry& Entry = Instances[(*Bucket)[Index]];
+			if ((Entry.bIsLookupable != FALSE) && (IsSameAssemblyRequest(Entry.Request, InRequest) != FALSE))
 			{
-				return Instances[Index].Instance;
+				return Entry.Instance;
 			}
 		}
 		return nullptr;
@@ -188,25 +263,38 @@ namespace PigeonEngine
 
 	const EShaderInstance* REngineShaderInstanceCache::RequirePassInstance(const EShaderInstance& InPrimary, const EName& InPassName)
 	{
-		// The primary's request is what the derived assembly is built from, so it is copied out
-		// once, under the lock that guards the table.
+		// Fast path: the primary's entry and the pass instances already derived from it are both
+		// addressed by identity. A draw that repeats a material for another view therefore costs
+		// one hash lookup and a short scan of the passes, with no request string built.
 		EShaderAssemblyRequest PrimaryRequest;
 		{
 			EScopedLock ScopedLock(TableMutex);
-			BOOL32 bFound = FALSE;
-			for (UINT32 Index = 0u, Num = Instances.Num<UINT32>(); Index < Num; Index++)
-			{
-				if (Instances[Index].Instance == &InPrimary)
-				{
-					PrimaryRequest	= Instances[Index].Request;
-					bFound			= TRUE;
-					break;
-				}
-			}
-			if (bFound == FALSE)
+			UINT32 PrimaryIndex = 0u;
+			if (FindEntryIndexLocked(&InPrimary, PrimaryIndex) == FALSE)
 			{
 				return nullptr;
 			}
+			FEntry& PrimaryEntry = Instances[PrimaryIndex];
+			for (UINT32 Index = 0u, Num = PrimaryEntry.PassInstances.Num<UINT32>(); Index < Num; Index++)
+			{
+				const FPassInstance& PassInstance = PrimaryEntry.PassInstances[Index];
+				if ((PassInstance.PassName == InPassName) && (PassInstance.Instance))
+				{
+					// The parent link is what makes a value or a texture set on the material reach
+					// its pass instance without being copied. It is re-applied here because a
+					// material swap may have replaced the set the primary answers with.
+					EShaderInstance* MutableInstance = const_cast<EShaderInstance*>(PassInstance.Instance);
+					const EShaderParameterSet& PrimaryParameters = const_cast<EShaderInstance&>(InPrimary).GetParameters();
+					if (MutableInstance->GetParameters().GetParent() != &PrimaryParameters)
+					{
+						MutableInstance->GetParameters().SetParent(&PrimaryParameters);
+					}
+					return PassInstance.Instance;
+				}
+			}
+			// The request is what the derived assembly is built from. Copied here, under the lock
+			// that guards the entry, and only on the miss path that is about to build a key.
+			PrimaryRequest = PrimaryEntry.Request;
 		}
 		const FRenderPassDesc* PassDesc = FRenderPassRegistry::FindDescByPassName(InPassName);
 		if ((!PassDesc) || (!PassDesc->ProgramName))
@@ -226,9 +314,36 @@ namespace PigeonEngine
 
 		if (const EShaderInstance* Cached = TryFindInstance(DerivedRequest))
 		{
+			// The instance is assembled; record it on the primary so the next request is a
+			// pointer compare. The table may have gained the instance between the lookup and
+			// this insert, so the scan is repeated rather than assumed empty.
+			{
+				EScopedLock ScopedLock(TableMutex);
+				UINT32 PrimaryIndex = 0u;
+				if (FindEntryIndexLocked(&InPrimary, PrimaryIndex) != FALSE)
+				{
+					FEntry& PrimaryEntry = Instances[PrimaryIndex];
+					BOOL32 bAlreadyCached = FALSE;
+					for (UINT32 Index = 0u, Num = PrimaryEntry.PassInstances.Num<UINT32>(); Index < Num; Index++)
+					{
+						if (PrimaryEntry.PassInstances[Index].PassName == InPassName)
+						{
+							PrimaryEntry.PassInstances[Index].Instance = Cached;
+							bAlreadyCached = TRUE;
+							break;
+						}
+					}
+					if (bAlreadyCached == FALSE)
+					{
+						FPassInstance& PassInstance = PrimaryEntry.PassInstances.AddDefaultGetRef();
+						PassInstance.PassName = InPassName;
+						PassInstance.Instance = Cached;
+					}
+				}
+			}
 			// The parent link is what makes a value or a texture set on the material reach its pass
-			// instance without being copied. It is re-applied on every call because the cached
-			// instance may predate a material swap.
+			// instance without being copied. It is re-applied here because a material swap may have
+			// replaced the set the primary answers with.
 			EShaderInstance* MutableInstance = const_cast<EShaderInstance*>(Cached);
 			const EShaderParameterSet& PrimaryParameters = const_cast<EShaderInstance&>(InPrimary).GetParameters();
 			if (MutableInstance->GetParameters().GetParent() != &PrimaryParameters)
@@ -292,9 +407,9 @@ namespace PigeonEngine
 		* material json reads, the generated sources, the compiler and the PAsset loads all hang
 		* off this call, which is why no draw may reach it.
 		*
-		* The key is recomputed from the request rather than passed in, so the two ends of the
-		* request cannot disagree about the string. A second request for the same assembly can
-		* arrive while this one is queued, so the table is checked once more and the entry is
+		* The request hash is recomputed from the request rather than passed in, so the two ends
+		* of the request cannot disagree about the fields. A second request for the same assembly
+		* can arrive while this one is queued, so the table is checked once more and the entry is
 		* published once.
 		*/
 		if (const EShaderInstance* Existing = TryFindInstance(InRequest))
@@ -329,11 +444,15 @@ namespace PigeonEngine
 
 		FEntry NewEntry;
 		NewEntry.Request	= InRequest;
-		NewEntry.RequestKey	= MakeInstanceRequestKey(InRequest);
 		NewEntry.ShaderName	= InRequest.ShaderName;
 		NewEntry.Instance	= NewInstance;
+		NewEntry.bIsLookupable = TRUE;
 		EScopedLock ScopedLock(TableMutex);
+		const UINT64 RequestHash = ComputeAssemblyRequestHash(InRequest);
+		const UINT32 NewIndex = Instances.Num<UINT32>();
 		Instances.Add(NewEntry);
+		InstanceIndicesByHash[RequestHash].Add(NewIndex);
+		EntryIndexByInstance.Add(NewInstance, NewIndex);
 		return NewInstance;
 	}
 
@@ -341,6 +460,26 @@ namespace PigeonEngine
 	{
 		const EShaderAsset* SourceAsset = InSource.GetAsset();
 		if (!SourceAsset)
+		{
+			return nullptr;
+		}
+		// The source's request is what a pass instance is derived from, so a copy of an instance
+		// that did not come from this cache cannot be registered as one: it has no request to
+		// derive and no shader name to be re-pointed under a reload.
+		EShaderAssemblyRequest SourceRequest;
+		EName SourceShaderName;
+		BOOL32 bHasSourceEntry = FALSE;
+		{
+			EScopedLock ScopedLock(TableMutex);
+			UINT32 SourceIndex = 0u;
+			if (FindEntryIndexLocked(&InSource, SourceIndex) != FALSE)
+			{
+				SourceRequest	= Instances[SourceIndex].Request;
+				SourceShaderName = Instances[SourceIndex].ShaderName;
+				bHasSourceEntry	= TRUE;
+			}
+		}
+		if (bHasSourceEntry == FALSE)
 		{
 			return nullptr;
 		}
@@ -356,10 +495,25 @@ namespace PigeonEngine
 		// wants one material drawn both ways sets the trait on its own copy rather than on the
 		// shared instance every other user of the material sees.
 		Instance->SetTraits(InSource.GetTraits());
-		// Recorded so ShutDown releases it with the rest. The caller keeps the pointer without
-		// owning it, exactly like an instance the table hands out.
+		// Recorded in the same table as the shared instances so ShutDown releases it with the
+		// rest and a shader reload re-points it too. It is not lookupable by request: every copy
+		// of a material answers to the same request fields, so only the instance pointer names it.
 		EScopedLock ScopedLock(TableMutex);
-		OwnedExtraInstances.Add(Instance);
+		FEntry NewEntry;
+		NewEntry.ShaderName	= SourceShaderName;
+		NewEntry.Request	= SourceRequest;
+		NewEntry.Request.InstanceKey = NextOwnedInstanceKey;
+		NewEntry.Instance	= Instance;
+		NewEntry.bIsLookupable = FALSE;
+		NextOwnedInstanceKey++;
+		if (NextOwnedInstanceKey == 0ull)
+		{
+			// Zero is the "shared instance" key, so the counter never hands it out again.
+			NextOwnedInstanceKey = 1ull;
+		}
+		const UINT32 NewIndex = Instances.Num<UINT32>();
+		Instances.Add(NewEntry);
+		EntryIndexByInstance.Add(Instance, NewIndex);
 		return Instance;
 	}
 

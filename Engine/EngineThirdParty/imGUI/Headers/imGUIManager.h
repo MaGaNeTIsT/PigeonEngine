@@ -43,10 +43,13 @@ namespace PigeonEngine
 		// Main-thread step: finalize ImGui frame and produce ImDrawData. Must
 		// be called between NewFrame (in Update()) and the next Update().
 		void                    PrepareDrawData();
-		// Render-thread step: replay the prepared ImDrawData through the
-		// active IRCommandList. Caller (SceneRenderer::ImGuiPass) is
-		// responsible for BeginRenderPass / EndRenderPass.
+		// Render-thread step: replay the prepared ImDrawData through the active
+		// IRCommandList. Caller (SceneRenderer::ImGuiPass) is responsible for
+		// BeginRenderPass / EndRenderPass.
 		void                    RenderDrawData();
+		// The explicit-list form. The render pass and the list both belong to the
+		// caller, so no manager global is consulted.
+		void                    RenderDrawData(class IRCommandList* InCommandList);
 
 		// Render thread: a shader the renderer draws with was replaced. It records a game thread command
 		// that tears the renderer down, and the lazy initialization in Update() rebuilds it from the

@@ -342,32 +342,52 @@ namespace PigeonEngine
 	public:
 		PE_CONSTEXPR_STATIC UINT32 MeshVertexLayoutPartMaxNum = 4u;
 	public:
-		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	IsResourceValid() const override;
 		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
 		EMesh& operator=(const EMesh& Other);
 	public:
-		BOOL32				CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex)const;
-		const EString&		GetMeshName()const;
-		const EBoundAABB&	GetBoundAABB()const;
-		UINT32				GetVertexLayout()const;
-		const EIndexPart&	GetIndexPart()const;
-		const EVertexPart&	GetVertexPart()const;
-		const ESubmeshPart&	GetSubmeshPart()const;
+		BOOL32				CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex) const;
+		const EString&		GetMeshName() const;
+		const EBoundAABB&	GetBoundAABB() const;
+		/*
+		* The imported bound is what the asset was authored around, but it is not always what
+		* the shader draws: a skinned mesh can leave its bind pose, and a static mesh with a
+		* world position offset can move geometry outside it. The cull volume is therefore an
+		* author's statement rather than a measurement - the imported bound's full extent, grown
+		* by BoundExtend and scaled by BoundScale, around the imported center. A vertex program
+		* that offsets positions is the one that has to keep the pair conservative.
+		*
+		* The values live on the mesh asset rather than on a component, so every component that
+		* references the same mesh shares one bound and no per placement tuning is needed.
+		*/
+		PE_NODISCARD FLOAT			GetBoundScale() const;
+		PE_NODISCARD const Vector3&	GetBoundExtend() const;
+		void						SetBoundScale(const FLOAT InBoundScale);
+		void						SetBoundExtend(const Vector3& InBoundExtend);
+		// The mesh space bound after the authored adjustment. The center stays the imported
+		// bound's center, because growing an extent around it is what an artist means by
+		// enlarging the volume; a bound at another anchor would move the cull volume away from
+		// the object.
+		PE_NODISCARD EBoundAABB		GetAdjustedBoundAABB() const;
+		UINT32				GetVertexLayout() const;
+		const EIndexPart&	GetIndexPart() const;
+		const EVertexPart&	GetVertexPart() const;
+		const ESubmeshPart&	GetSubmeshPart() const;
 	public:
 		void	SetMeshName(const EString& InMeshName);
 		void	SetBoxToBoundAABB(const Vector3& InOrigin, const Vector3& InExtent);
 		void	SetBoundAABB(const Vector3& InMin, const Vector3& InMax);
 		BOOL32	AddIndexElement(EIndexData* InIndexData);
 		BOOL32	RemoveIndexElement();
-		BOOL32	GetIndexElement(const EIndexData*& OutIndexData)const;
+		BOOL32	GetIndexElement(const EIndexData*& OutIndexData) const;
 		BOOL32	AddVertexElement(EVertexData* InVertexData, UINT32* OutLayoutIndex = nullptr);
 		BOOL32	RemoveVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex);
-		BOOL32	GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData)const;
+		BOOL32	GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData) const;
 		BOOL32	AddSubmesh(const ESubmeshData* InSubmeshData, UINT32* OutSubmeshIndex = nullptr);
 		BOOL32	RemoveSubmesh(UINT32 InSubmeshIndex);
-		BOOL32	GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const;
+		BOOL32	GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData) const;
 	public:
 		void	UnsafeReleaseIndexPart();
 		void	UnsafeReleaseVertexPart();
@@ -377,6 +397,10 @@ namespace PigeonEngine
 	protected:
 		EString					MeshName;
 		EBoundAABB				BoundAABB;
+		// The authored cull volume adjustment, applied to the imported bound by
+		// GetAdjustedBoundAABB. Defaults keep the imported bound exactly.
+		FLOAT					BoundScale		= 1.f;
+		Vector3					BoundExtend		= Vector3::Zero();
 		UINT32					VertexLayout;
 		EIndexPart				Indices;
 		EVertexPart				Vertices;
@@ -393,7 +417,7 @@ namespace PigeonEngine
 	class EStaticMesh : public EMesh
 	{
 	public:
-		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	IsResourceValid() const override;
 		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
@@ -414,7 +438,7 @@ namespace PigeonEngine
 		using EBindPoseIndex	= TMap<EString, USHORT>;
 		using ESkinPart			= TArray<ESkinData>;
 	public:
-		virtual BOOL32	IsResourceValid()const override;
+		virtual BOOL32	IsResourceValid() const override;
 		virtual BOOL32	InitResource()override;
 		virtual void	ReleaseResource()override;
 	public:
@@ -424,14 +448,14 @@ namespace PigeonEngine
 		BOOL32					RemoveBindPose(const EString& InBoneName);
 		void					ClearBindPose();
 		void					GenerateBindPoseIndex();
-		const EBindPoseValue&	GetBindPoseValue()const;
-		const EBindPoseIndex&	GetBindPoseIndex()const;
+		const EBindPoseValue&	GetBindPoseValue() const;
+		const EBindPoseIndex&	GetBindPoseIndex() const;
 		void					SetEffectBoneNum(const USHORT InEffectBoneNum);
-		USHORT					GetEffectBoneNum()const;
+		USHORT					GetEffectBoneNum() const;
 		BOOL32					AddSkinElement(ESkinData* InSkinData, UINT32* OutLayoutIndex = nullptr);
 		BOOL32					RemoveSkinElement(UINT32 InLayoutIndex);
-		BOOL32					GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData)const;
-		const ESkinPart&		GetSkinPart()const;
+		BOOL32					GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData) const;
+		const ESkinPart&		GetSkinPart() const;
 	public:
 		void	UnsafeReleaseSkinPart();
 	protected:
@@ -453,10 +477,10 @@ namespace PigeonEngine
 	public:
 		using TVertexResourceType = TMap<UINT8, TArray<RVertexBufferResource*>>;
 	public:
-		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	IsRenderResourceValid() const noexcept override;
 		virtual void	ReleaseRenderResource()noexcept override;
-		const RIndexBufferResource*				GetIndexRenderResource()const;
-		const TArray<RVertexBufferResource*>*	GetVertexRenderResource(const UINT8 InType)const;
+		const RIndexBufferResource*				GetIndexRenderResource() const;
+		const TArray<RVertexBufferResource*>*	GetVertexRenderResource(const UINT8 InType) const;
 	public:
 		EMeshRenderResource();
 		EMeshRenderResource(const EMeshRenderResource& Other);
@@ -473,7 +497,7 @@ namespace PigeonEngine
 	class EStaticMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	IsRenderResourceValid() const noexcept override;
 		virtual BOOL32	InitRenderResource()noexcept override;
 		virtual void	ReleaseRenderResource()noexcept override;
 	public:
@@ -490,10 +514,10 @@ namespace PigeonEngine
 	class ESkinnedMeshRenderResource : public EMeshRenderResource
 	{
 	public:
-		virtual BOOL32	IsRenderResourceValid()const noexcept override;
+		virtual BOOL32	IsRenderResourceValid() const noexcept override;
 		virtual BOOL32	InitRenderResource()noexcept override;
 		virtual void	ReleaseRenderResource()noexcept override;
-		const TArray<RVertexBufferResource>&	GetSkinRenderResource()const;
+		const TArray<RVertexBufferResource>&	GetSkinRenderResource() const;
 	public:
 		ESkinnedMeshRenderResource& operator=(const ESkinnedMeshRenderResource& Other);
 	public:
@@ -528,15 +552,30 @@ namespace PigeonEngine
 		{
 		}
 	public:
-		EMeshType	GetMeshType()const { return MeshType; }
+		EMeshType	GetMeshType() const { return MeshType; }
+		/*
+		* Tools only: the authored cull volume every component that references this mesh shares.
+		* The values are stored on the mesh resource, so they travel with the asset when it is
+		* saved and no placement needs its own adjustment.
+		*/
+		void	SetBoundAdjustment(const FLOAT InBoundScale, const Vector3& InBoundExtend)
+		{
+			TMeshResourceType* MeshResource = const_cast<TMeshResourceType*>(this->GetStoragedResource());
+			if (!MeshResource)
+			{
+				return;
+			}
+			MeshResource->SetBoundScale(InBoundScale);
+			MeshResource->SetBoundExtend(InBoundExtend);
+		}
 	public:
 		// Render thread only: the proxy this asset's cold data was turned into, or null while
 		// the creation command is still queued.
-		PE_NODISCARD const TMeshRenderResourceType*	GetRenderResource()const
+		PE_NODISCARD const TMeshRenderResourceType*	GetRenderResource() const
 		{
 			return static_cast<const TMeshRenderResourceType*>(RenderBinding.Resolve());
 		}
-		PE_NODISCARD BOOL32	IsRenderResourceValid()const
+		PE_NODISCARD BOOL32	IsRenderResourceValid() const
 		{
 			const TMeshRenderResourceType* Resource = GetRenderResource();
 			return ((!!Resource) && (Resource->IsRenderResourceValid()));
@@ -589,8 +628,8 @@ namespace PigeonEngine
 	public:
 		virtual BOOL32	InitResource()override;
 	public:
-		void	SetSkeleton(const class ESkeleton* InSkeleton)const;
-		const class ESkeleton*	GetSkeleton()const;
+		void	SetSkeleton(const class ESkeleton* InSkeleton) const;
+		const class ESkeleton*	GetSkeleton() const;
 	protected:
 		ESkinnedMeshRenderResource*	CreateMeshResource(ESkinnedMesh* InResource);
 	protected:

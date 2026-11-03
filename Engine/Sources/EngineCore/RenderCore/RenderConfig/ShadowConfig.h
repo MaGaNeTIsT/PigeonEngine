@@ -57,8 +57,9 @@ namespace PigeonEngine
 		EShadowQualityType	DirectionalQuality			= SHADOW_QUALITY_MEDIUM;
 		// Fraction of a cascade's far range over which it blends into the next one.
 		FLOAT			CascadeBlendFraction			= 0.1f;
-		// Metres added to the near side of every cascade's orthographic box, so a caster outside
-		// the slice but projecting into it is still rendered.
+		// World units subtracted from a cascade's slice near edge before the frame's caster
+		// bounds are applied. The bounds are what reach an occluder between the light and the
+		// slice; this is the safety margin on top of them.
 		FLOAT			DepthPadding					= 200.f;
 
 		// ---- local lights ----
@@ -90,7 +91,7 @@ namespace PigeonEngine
 		}
 	public:
 		// The atlas edge the budget implies: sqrt(budget) rounded up to 256, clamped to the cap.
-		PE_NODISCARD UINT32 GetAtlasSize()const
+		PE_NODISCARD UINT32 GetAtlasSize() const
 		{
 			UINT32 Edge = static_cast<UINT32>(EMath::Sqrt(static_cast<FLOAT>(TotalPixelBudget)));
 			Edge = (((Edge + 255u) / 256u) * 256u);
@@ -103,16 +104,16 @@ namespace PigeonEngine
 		{
 			return ((InQuality == EShadowQualityType::SHADOW_QUALITY_HIGH) ? 2u : 1u);
 		}
-		PE_NODISCARD UINT32 GetDirectionalFilterRadius()const
+		PE_NODISCARD UINT32 GetDirectionalFilterRadius() const
 		{
 			return GetFilterRadius(DirectionalQuality);
 		}
-		PE_NODISCARD UINT32 GetLocalFilterRadius()const
+		PE_NODISCARD UINT32 GetLocalFilterRadius() const
 		{
 			return GetFilterRadius(LocalQuality);
 		}
 		// Cascade resolution for a cascade index: the base size halved per level, floored at 256.
-		PE_NODISCARD UINT32 GetCascadeResolution(const UINT32 InCascadeIndex)const
+		PE_NODISCARD UINT32 GetCascadeResolution(const UINT32 InCascadeIndex) const
 		{
 			const UINT32 Shift = EMath::Min(InCascadeIndex, 8u);
 			return EMath::Max(DirectionalTileBaseSize >> Shift, 256u);

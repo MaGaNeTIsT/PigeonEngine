@@ -21,10 +21,12 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy()
 		: MeshAsset(nullptr)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_STATIC);
 	}
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(const PStaticMeshComponent* InComponent)
 		: MeshAsset(nullptr)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_STATIC);
 		// The component is not stored: everything this proxy needs arrives through the
 		// snapshot, so no game thread object is reachable from here. The argument stays so the
 		// existing create path keeps its meaning while the scene moves to the factory.
@@ -33,6 +35,7 @@ namespace PigeonEngine
 	RStaticMeshSceneProxy::RStaticMeshSceneProxy(const RStaticMeshSceneProxy& Other)
 		: RMeshSceneProxy(Other), MeshAsset(Other.MeshAsset)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_STATIC);
 	}
 	RStaticMeshSceneProxy::~RStaticMeshSceneProxy()
 	{

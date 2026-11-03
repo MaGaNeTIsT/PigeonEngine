@@ -143,11 +143,13 @@ namespace PigeonEngine
 			DeviceInitDesc.RefreshRateHz	= m_FrameRate;
 			DeviceInitDesc.bIsWindowed		= (m_Windowed != FALSE);
 #if _EDITOR_ONLY
-			// Surface D3D12 validation messages so PSO / resource creation failures are
-			// diagnosable. The device drains the layer's queue into the engine log where a call
-			// fails (RDeviceD3D12::LogD3D12DebugMessages), and turns the layer's own break off so
-			// a message does not stop the run before the engine's failure path sees it.
-			DeviceInitDesc.bEnableDebugLayer = TRUE;
+			// Opt-in through the engine setting: the validation layer turns every recorded
+			// command into a checked CPU call, which is exactly what makes a PSO / resource
+			// failure readable - and what makes a frame with a shadow pass unusably slow. The
+			// device drains the layer's queue into the engine log where a call fails
+			// (RDeviceD3D12::LogD3D12DebugMessages), and turns the layer's own break off so a
+			// message does not stop the run before the engine's failure path sees it.
+			DeviceInitDesc.bEnableDebugLayer = EEngineSettings::ENGINE_RHI_ENABLE_DEBUG_LAYER;
 #endif
 			RenderDevice->Initialize(DeviceInitDesc);
 		}
@@ -369,6 +371,16 @@ namespace PigeonEngine
 	}
 	void EMainManager::Uninit()
 	{
+		// The last Update kicked a frame and does not wait for it. That frame records draws from
+		// the proxies and assets released below, so it has to retire before any of them is
+		// destroyed. Waiting here rather than relying on ShutDown is what closes the window:
+		// ShutDown stops the render thread, but it runs after this method has already torn the
+		// world and the render scene down.
+		if (RenderThread)
+		{
+			RenderThread->WaitForRenderIdle();
+		}
+
 		m_WorldTickManager->UnregisterPrePhysicsTick(m_PrePhysicsFixedTickHandler);
 		m_WorldTickManager->UnregisterPhysicsTick(m_PhysicsFixedTickHandler);
 		m_WorldTickManager->UnregisterPostPhysicsTick(m_PostPhysicsFixedTickHandler);
@@ -418,7 +430,14 @@ namespace PigeonEngine
 		// asset was just set publishes that change as part of this frame rather than the next one.
 		EGameThreadCommandQueue::GetManagerSingleton()->DoCommands();
 
-		RenderThread->WaitForRenderIdle();
+		{
+			// The wait is backpressure, not game work: the previous render frame has to finish
+			// before this thread may swap the command slots. Kept as its own child scope so the
+			// panel can separate "the game is slow" from "the render thread is the frame rate",
+			// which is what a GameThread total that exceeds RenderThread would otherwise hide.
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_GAME_WAIT_RENDER);
+			RenderThread->WaitForRenderIdle();
+		}
 
 		// Retired assets are released here: the render thread has just gone idle, so no queued
 		// creation command can still be reading their cold data.

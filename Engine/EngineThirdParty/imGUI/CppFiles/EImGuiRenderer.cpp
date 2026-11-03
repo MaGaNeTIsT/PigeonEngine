@@ -70,7 +70,10 @@ namespace PigeonEngine
 	// ----------------------------------------------------------------------
 	BOOL8 EImGuiRenderer::Initialize()
 	{
-		if (bInitialized) { return TRUE; }
+		if (bInitialized)
+		{
+			return TRUE;
+		}
 
 		// Per attempt: whichever step below finds a not-yet state owns the answer.
 		bInitializePending = FALSE;
@@ -198,7 +201,10 @@ namespace PigeonEngine
 	void EImGuiRenderer::ReleaseDynamicBuffers()
 	{
 		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		if (!Device) { return; }
+		if (!Device)
+		{
+			return;
+		}
 		if (DynamicVB.Buffer)
 		{
 			Device->DestroyResource(DynamicVB.Buffer);
@@ -416,68 +422,159 @@ namespace PigeonEngine
 	// ----------------------------------------------------------------------
 	// Process a single ImTextureData create/destroy/update request from the
 	// RendererHasTextures pipeline. Called once per texture at the top of Render.
-	// WantUpdates (partial update) is not yet supported; ImGui falls back to
-	// full rebuild when we leave the status untouched.
+	// The atlas is the only texture this renderer owns: the UI's image textures
+	// travel as bindless indices inside ImDrawCmd, so they never reach here as
+	// ImTextureData and there is no device object for this path to create.
 	// ----------------------------------------------------------------------
-	void EImGuiRenderer::UpdateTexture(::ImTextureData* Tex)
+	void EImGuiRenderer::UpdateTexture(::ImTextureData* InTextureData)
 	{
-		if (!Tex) { return; }
+		if (!InTextureData)
+		{
+			return;
+		}
 
-		if (Tex->Status == ImTextureStatus_WantCreate)
+		if (InTextureData->Status == ImTextureStatus_WantCreate)
 		{
 			IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
-			if (!Device) { return; }
+			if (!Device)
+			{
+				return;
+			}
+			if (InTextureData != ImGui::GetIO().Fonts->TexData)
+			{
+				// A create this renderer cannot own would have no one to destroy it, so the
+				// request is left pending rather than answered with a leaked object.
+				return;
+			}
 
-				if (Tex->Pixels && Tex->Width > 0 && Tex->Height > 0)
+			if ((InTextureData->Pixels != nullptr) && (InTextureData->Width > 0) && (InTextureData->Height > 0))
+			{
+				const UINT32 TextureWidth = static_cast<UINT32>(InTextureData->Width);
+				const UINT32 TextureHeight = static_cast<UINT32>(InTextureData->Height);
+				const UINT32 RowPitch = static_cast<UINT32>(InTextureData->GetPitch());
+				const UINT32 SlicePitch = RowPitch * TextureHeight;
+				const RRHISubresourceData SubresourceData(static_cast<const UINT8*>(InTextureData->Pixels), SlicePitch, RowPitch, SlicePitch);
+				const RTextureDesc Desc(
+					TextureWidth, TextureHeight,
+					RBindFlagType::BIND_SHADER_RESOURCE,
+					RFormatType::FORMAT_R8G8B8A8_UNORM);
+				RRHITexture2D NewTexture;
+				if (Device->CreateTexture2DResource(Desc, Color4(0.f, 0.f, 0.f, 0.f), SubresourceData, NewTexture) && NewTexture.Texture)
 				{
-					const UINT32 RowPitch   = static_cast<UINT32>(Tex->Width) * 4u;
-					const UINT32 SlicePitch = RowPitch * static_cast<UINT32>(Tex->Height);
-					RRHISubresourceData SubData(static_cast<const UINT8*>(Tex->Pixels), SlicePitch, RowPitch, SlicePitch);
-					RTextureDesc Desc(
-						static_cast<UINT32>(Tex->Width), static_cast<UINT32>(Tex->Height),
-						RBindFlagType::BIND_SHADER_RESOURCE,
-						RFormatType::FORMAT_R8G8B8A8_UNORM);
-					RRHITexture2D NewTex;
-					if (Device->CreateTexture2DResource(Desc, Color4(0.f, 0.f, 0.f, 0.f), SubData, NewTex) && NewTex.Texture)
+					const UINT32 NewBindlessIndex = Device->RegisterBindlessSRV(NewTexture.Texture);
+					InTextureData->SetTexID(static_cast<ImTextureID>(NewBindlessIndex + 1u));
+					if (FontTextureResource.Texture)
 					{
-						UINT32 NewIdx = Device->RegisterBindlessSRV(NewTex.Texture);
-						Tex->SetTexID(static_cast<ImTextureID>(NewIdx + 1u));
-						if (Tex == ImGui::GetIO().Fonts->TexData)
-						{
-							if (FontTextureResource.Texture)
-								Device->DestroyResource(FontTextureResource.Texture);
-							// The index the replaced texture was registered under goes back as well: an
-							// index whose slot still names a destroyed texture is a leak of the slot and a
-							// live looking pointer to a dead object at the same time, and a texture id that
-							// still names it would resolve to exactly that.
-							if (FontBindlessSRVIndex != RHI_INVALID_BINDLESS_INDEX)
-							{
-								Device->ReleaseBindlessIndex(FontBindlessSRVIndex);
-							}
-							FontTextureResource  = NewTex;
-							FontBindlessSRVIndex = NewIdx;
-						}
-						Tex->SetStatus(ImTextureStatus_OK);
+						Device->DestroyResource(FontTextureResource.Texture);
 					}
+					// The index the replaced texture was registered under goes back as well: an
+					// index whose slot still names a destroyed texture is a leak of the slot and a
+					// live looking pointer to a dead object at the same time, and a texture id that
+					// still names it would resolve to exactly that.
+					if (FontBindlessSRVIndex != RHI_INVALID_BINDLESS_INDEX)
+					{
+						Device->ReleaseBindlessIndex(FontBindlessSRVIndex);
+					}
+					FontTextureResource = NewTexture;
+					FontBindlessSRVIndex = NewBindlessIndex;
+					InTextureData->SetStatus(ImTextureStatus_OK);
 				}
-			else if (Tex == ImGui::GetIO().Fonts->TexData && FontBindlessSRVIndex != RHI_INVALID_BINDLESS_INDEX)
+			}
+			else if (FontBindlessSRVIndex != RHI_INVALID_BINDLESS_INDEX)
 			{
-				Tex->SetTexID(static_cast<ImTextureID>(FontBindlessSRVIndex + 1u));
-				Tex->SetStatus(ImTextureStatus_OK);
+				// The pixels are gone but the device object behind the registered index is
+				// not: answering with it keeps the UI from asking again for a texture that
+				// is still usable.
+				InTextureData->SetTexID(static_cast<ImTextureID>(FontBindlessSRVIndex + 1u));
+				InTextureData->SetStatus(ImTextureStatus_OK);
 			}
 		}
-		else if (Tex->Status == ImTextureStatus_WantDestroy)
+		else if (InTextureData->Status == ImTextureStatus_WantDestroy)
 		{
-			Tex->SetStatus(ImTextureStatus_Destroyed);
+			// The device object stays until the next create replaces it or shutdown releases
+			// it: a recorded frame may still name it, and the deferred-delete queue is what
+			// makes destroying it here safe.
+			InTextureData->SetStatus(ImTextureStatus_Destroyed);
 		}
-		else if (Tex->Status == ImTextureStatus_WantUpdates)
+		else if (InTextureData->Status == ImTextureStatus_WantUpdates)
 		{
-			static UINT32 WantUpdatesCount = 0u;
-			if ((++WantUpdatesCount & 0xFFu) == 0u)
+			UploadTextureUpdates(InTextureData);
+		}
+	}
+
+	// ----------------------------------------------------------------------
+	// Publishes the rects ImGui queued for the font atlas. Each rect becomes one
+	// RHI region update, so a newly baked glyph is patched into the texture
+	// instead of forcing the whole atlas to be re-created.
+	// ----------------------------------------------------------------------
+	BOOL8 EImGuiRenderer::UploadTextureUpdates(::ImTextureData* InTextureData)
+	{
+		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (!Device)
+		{
+			return FALSE;
+		}
+		if (InTextureData != ImGui::GetIO().Fonts->TexData)
+		{
+			return FALSE;
+		}
+		if ((!FontTextureResource.Texture) || (!InTextureData->Pixels))
+		{
+			return FALSE;
+		}
+
+		const UINT32 BytesPerPixel = static_cast<UINT32>(InTextureData->BytesPerPixel);
+		const UINT32 RowPitch = static_cast<UINT32>(InTextureData->GetPitch());
+		const UINT32 SlicePitch = RowPitch * static_cast<UINT32>(InTextureData->Height);
+		const UINT8* Pixels = static_cast<const UINT8*>(InTextureData->Pixels);
+
+		// Updates[] is the exact dirty set; UpdateRect is only its bounding box and would
+		// re-upload untouched rows between two glyphs. The atlas fills the list, so the
+		// bounding box is the fallback for a producer that fills only it.
+		const ImTextureRect* UpdateRects = InTextureData->Updates.Data;
+		INT32 UpdateNum = InTextureData->Updates.Size;
+		ImTextureRect BoundingRect = InTextureData->UpdateRect;
+		if ((UpdateNum <= 0) && (BoundingRect.w > 0u) && (BoundingRect.h > 0u))
+		{
+			UpdateRects = &BoundingRect;
+			UpdateNum = 1;
+		}
+
+		for (INT32 UpdateIndex = 0; UpdateIndex < UpdateNum; UpdateIndex++)
+		{
+			const ImTextureRect& UpdateRect = UpdateRects[UpdateIndex];
+			if ((UpdateRect.w == 0u) || (UpdateRect.h == 0u))
 			{
-				PE_LOG_WARN(EString("ImGui partial update (WantUpdates) not yet supported; ImGui falling back to full rebuild. Count: ") + EString::FromInt(WantUpdatesCount));
+				continue;
+			}
+
+			RRHITextureRegionUpdate Region;
+			Region.Data = Pixels
+				+ (static_cast<UINT64>(UpdateRect.y) * RowPitch)
+				+ (static_cast<UINT64>(UpdateRect.x) * BytesPerPixel);
+			Region.DataSize = (static_cast<UINT64>(RowPitch) * static_cast<UINT64>(UpdateRect.h - 1u))
+				+ (static_cast<UINT64>(UpdateRect.w) * BytesPerPixel);
+			Region.RowPitch = RowPitch;
+			Region.SlicePitch = SlicePitch;
+			Region.MipLevel = 0u;
+			Region.ArraySlice = 0u;
+			Region.DestinationX = UpdateRect.x;
+			Region.DestinationY = UpdateRect.y;
+			Region.DestinationZ = 0u;
+			Region.Width = UpdateRect.w;
+			Region.Height = UpdateRect.h;
+			Region.Depth = 1u;
+
+			// Reporting the failure keeps the status at WantUpdates, so the same rects are
+			// offered again next frame instead of being dropped as if they had landed.
+			if (!Device->UpdateTextureRegion(FontTextureResource.Texture, Region))
+			{
+				return FALSE;
 			}
 		}
+
+		InTextureData->SetStatus(ImTextureStatus_OK);
+		return TRUE;
 	}
 
 	// ----------------------------------------------------------------------
@@ -488,7 +585,10 @@ namespace PigeonEngine
 	BOOL8 EImGuiRenderer::EnsureBuffers(UINT32 InVertexNum, UINT32 InIndexNum)
 	{
 		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		if (!Device) { return FALSE; }
+		if (!Device)
+		{
+			return FALSE;
+		}
 
 		// Both dynamic buffers start empty and are filled per frame through
 		// UploadBuffer, so the factories are handed an empty initial payload.
@@ -574,8 +674,14 @@ namespace PigeonEngine
 	// ----------------------------------------------------------------------
 	void EImGuiRenderer::Render(IRCommandList* InCmd, ImDrawData* InDrawData)
 	{
-		if (!bInitialized || !InCmd || !InDrawData) { return; }
-		if (InDrawData->TotalVtxCount <= 0 || InDrawData->TotalIdxCount <= 0) { return; }
+		if ((!bInitialized) || (!InCmd) || (!InDrawData))
+		{
+			return;
+		}
+		if ((InDrawData->TotalVtxCount <= 0) || (InDrawData->TotalIdxCount <= 0))
+		{
+			return;
+		}
 
 		IRRHIDevice* Device = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if ((!Device) || (!PipelineState) || (!ImGuiMaterialInstance))
@@ -600,8 +706,10 @@ namespace PigeonEngine
 		// requests before issuing any draw calls.
 		if (InDrawData->Textures)
 		{
-			for (ImTextureData* Tex : *InDrawData->Textures)
-				UpdateTexture(Tex);
+			for (INT32 TextureIndex = 0, TextureNum = InDrawData->Textures->Size; TextureIndex < TextureNum; TextureIndex++)
+			{
+				UpdateTexture((*InDrawData->Textures)[TextureIndex]);
+			}
 		}
 
 		// Grow / allocate VB/IB on demand. Failure here means we can't draw

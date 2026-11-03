@@ -14,6 +14,7 @@ namespace PigeonEngine
 
 	RShadowViewProxy::RShadowViewProxy()
 	{
+		SetViewKind(EViewKindType::VIEW_KIND_SHADOW);
 	}
 	RShadowViewProxy::RShadowViewProxy(const RShadowViewProxy& Other)
 		: RViewProxy(Other)
@@ -48,10 +49,24 @@ namespace PigeonEngine
 		// by the light from its own projection.
 		SetProxyWorldTransform(InViewAnchor, InViewRotation, Vector3::One());
 		IsMainView			= FALSE;
+		SetViewKind(EViewKindType::VIEW_KIND_SHADOW);
+		// A shadow view never collects debug, collision or editor only geometry, regardless
+		// of whether the editor currently draws those in a camera view.
+		SetPrimitiveCategoryMask(~(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_DEBUG | ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_COLLISION
+			| ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_EDITOR_ONLY));
 		ViewDomainInfo		= InDomainInfo;
 		MarkViewParametersDirty();
-		ResetVisibilityMap();
+		// The collection fills the list after this; a view that is reused from the previous
+		// frame must not keep the previous frame's primitives.
+		ResetPrimitiveList();
 		bUsedThisFrame		= TRUE;
+	}
+	void RShadowViewProxy::UpdateShadowViewDomain(const EViewDomainInfo& InDomainInfo)
+	{
+		// The refit changes the projection around the same view, so the anchor and orientation
+		// stay as SetupShadowView installed them and the collected draw list stays valid.
+		ViewDomainInfo = InDomainInfo;
+		MarkViewParametersDirty();
 	}
 
 } // namespace PigeonEngine

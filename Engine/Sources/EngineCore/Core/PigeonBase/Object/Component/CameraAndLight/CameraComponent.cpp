@@ -35,12 +35,13 @@ namespace PigeonEngine
 		CameraMatrix.GenerateViewPart(GetComponentWorldLocation(), GetComponentWorldRotation());
 		CameraMatrix.GenerateFinalMatrix();
 
-		CameraFrustum.GeneratePerspectiveFrustumInfo(CameraViewInfo.FovAngleY, CameraViewInfo.Viewport.Width / CameraViewInfo.Viewport.Height, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
+		RefreshCameraFrustum();
 		POBJ_DEBUGNAME_SET(this, "CameraComponent");
 	}
 	PCameraComponent::PCameraComponent()
 		: ViewProxy(nullptr), UpdateState(PCameraUpdateState::CAMERA_UPDATE_STATE_NONE)
 	{
+		RefreshCameraFrustum();
 	}
 	PCameraComponent::~PCameraComponent()
 	{
@@ -58,6 +59,7 @@ namespace PigeonEngine
 		CameraViewInfo.FarDist		= InFarDist;
 		CameraViewInfo.NearDist		= InNearDist;
 
+		RefreshCameraFrustum();
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
 
@@ -73,6 +75,7 @@ namespace PigeonEngine
 		CameraViewInfo.Viewport.MinDepth = RCommonSettings::RENDER_DEPTH_NEAR;
 		CameraViewInfo.Viewport.MaxDepth = RCommonSettings::RENDER_DEPTH_FAR;
 
+		RefreshCameraFrustum();
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
 
@@ -83,6 +86,7 @@ namespace PigeonEngine
 	{
 		CameraViewInfo.FovAngleY = InFovAngleY;
 
+		RefreshCameraFrustum();
 		CameraMatrix.GeneratePerspectiveProjectPart(CameraViewInfo.Viewport, CameraViewInfo.FovAngleY, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 		CameraMatrix.GenerateFinalMatrix();
 
@@ -109,29 +113,29 @@ namespace PigeonEngine
 
 		MarkAsDirty(PCameraUpdateState::CAMERA_UPDATE_STATE_VIEW);
 	}
-	Vector3 PCameraComponent::TransformScreenToWorld(const Vector3& InScreenCoordWithZ)const
+	Vector3 PCameraComponent::TransformScreenToWorld(const Vector3& InScreenCoordWithZ) const
 	{
 		Vector3 Result;
 		CameraMatrix.TransformScreenPointToWorld(CameraViewInfo.Viewport, InScreenCoordWithZ, Result);
 		return Result;
 	}
-	BOOL32 PCameraComponent::TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const
+	BOOL32 PCameraComponent::TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ) const
 	{
 		return (CameraMatrix.TransformWorldPointToScreen(CameraViewInfo.Viewport, InWorldLocation, OutScreenCoordWithZ));
 	}
-	Vector3 PCameraComponent::TransformWorldToView(const Vector3& InWorldLocation)const
+	Vector3 PCameraComponent::TransformWorldToView(const Vector3& InWorldLocation) const
 	{
 		Vector3 Result;
 		CameraMatrix.TransformWorldPointToView(InWorldLocation, Result);
 		return Result;
 	}
-	Vector3 PCameraComponent::TransformViewToWorld(const Vector3& InViewLocation)const
+	Vector3 PCameraComponent::TransformViewToWorld(const Vector3& InViewLocation) const
 	{
 		Vector3 Result;
 		CameraMatrix.TransformViewPointToWorld(InViewLocation, Result);
 		return Result;
 	}
-	BOOL32 PCameraComponent::IsMainCamera()const
+	BOOL32 PCameraComponent::IsMainCamera() const
 	{
 		return bMainCamera;	//TODO
 	}
@@ -149,7 +153,7 @@ namespace PigeonEngine
 	}
 
 	// Render proxy functions START
-	UINT8 PCameraComponent::GetUpdateRenderState()const
+	UINT8 PCameraComponent::GetUpdateRenderState() const
 	{
 		return UpdateState;
 	}
@@ -205,6 +209,16 @@ namespace PigeonEngine
 			}
 		}
 		PSceneComponent::SendUpdateRenderState();
+	}
+	void PCameraComponent::RefreshCameraFrustum()
+	{
+		// The view space frustum is derived from the projection inputs, never patched in place:
+		// the render side transforms its corner points into world space, and an input that kept
+		// a previous generation would describe a camera that no longer exists.
+		const EViewport& Viewport = CameraViewInfo.Viewport;
+		const FLOAT AspectRatio = ((Viewport.Height != 0.f) ? (Viewport.Width / Viewport.Height) : 1.f);
+		CameraFrustum.GeneratePerspectiveFrustumInfo(CameraViewInfo.FovAngleY, AspectRatio
+			, CameraViewInfo.NearDist, CameraViewInfo.FarDist);
 	}
 	void PCameraComponent::MarkAsDirty(PCameraUpdateState InState)
 	{

@@ -10,6 +10,7 @@
 #include <RHI/IRCommandList.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
+#include <Config/EngineConfig.h>
 #include <Development/Profiler.h>
 
 namespace PigeonEngine
@@ -20,53 +21,72 @@ namespace PigeonEngine
 		RegisterClassType<RPrimitiveSceneProxy, RBaseSceneProxy>();
 	}
 
-	void RPrimitiveSceneProxy::ReportSkippedDraw(const EName& InPassName, const EString& InReason)const
+	// The pass a shader instance is authored for. A different pass derives its own instance
+	// from the base instance the view selected, so this name is the input of every derivation.
+	static const EName& GetPrimaryPassName()
 	{
-		// The component's identity rather than this proxy's address: a proxy is rebuilt from a
-		// snapshot, and the identity is what a reader can match against the scene. The report
-		// itself is the draw path's shared one, which is what deduplicates it by owner and reason.
-		PigeonEngine::ReportSkippedDraw(EString(PE_TEXT("primitive "))
-			+ ToString(static_cast<UINT64>(GetPrimitiveIdentity()))
-			+ EString(PE_TEXT(" pass '")) + InPassName.ToString() + EString(PE_TEXT("'")), InReason);
+		static const EName PrimaryPassName =
+			((FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE).PassName != nullptr)
+				? EName(FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE).PassName)
+				: EName(PE_TEXT("BasePass")));
+		return PrimaryPassName;
+	}
+
+	// The frame the renderer is recording. A pending pass slot retries its instance once per
+	// frame, and the device's own counter is the frame boundary without any state to reset.
+	static UINT32 GetRenderFrameIndex()
+	{
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		return ((RenderDevice != nullptr) ? RenderDevice->GetCurrentFrameIndex() : 0u);
 	}
 
 	PE_REGISTER_CLASS_TYPE(&RegisterClassTypes);
 
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy()
-		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE), bHasDrawValues(FALSE)
+		: IsMovable(FALSE), IsCastShadow(FALSE), IsReceiveShadow(FALSE), PrimitiveCategoryMask(0ull), bHasDrawValues(FALSE)
 	{
 	}
 	RPrimitiveSceneProxy::RPrimitiveSceneProxy(const RPrimitiveSceneProxy& Other)
 		: RBaseSceneProxy(Other), IsMovable(Other.IsMovable), IsCastShadow(Other.IsCastShadow)
-		, IsReceiveShadow(Other.IsReceiveShadow), Assets(Other.Assets), bHasDrawValues(FALSE)
+		, IsReceiveShadow(Other.IsReceiveShadow), PrimitiveCategoryMask(Other.PrimitiveCategoryMask)
+		, Assets(Other.Assets), ReportedPrimaryMaterial(Other.ReportedPrimaryMaterial), bHasDrawValues(FALSE)
 		, DrawParameterBlock(Other.DrawParameterBlock)
 	{
 		// The pass slots own render tier buffers and the draw block owns a constant buffer of
 		// its own, so neither is copied: a copy rebuilds them from the reported assets the
 		// first time it draws. The block's name travels with the copy, so the rebuilt buffers
-		// land on the same block the prototype published. The value report is per component, so
-		// a prototype's report is not the copy's to publish.
+		// land on the same block the prototype published.
 	}
 	RPrimitiveSceneProxy::~RPrimitiveSceneProxy()
 	{
 	}
-	BOOL32 RPrimitiveSceneProxy::IsRenderValid()const
+	BOOL32 RPrimitiveSceneProxy::IsRenderValid() const
 	{
 		return FALSE;
 	}
-	BOOL32 RPrimitiveSceneProxy::IsSceneProxyMovable()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyMovable() const
 	{
 		return IsMovable;
 	}
-	BOOL32 RPrimitiveSceneProxy::IsSceneProxyCastShadow()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyCastShadow() const
 	{
 		return IsCastShadow;
 	}
-	BOOL32 RPrimitiveSceneProxy::IsSceneProxyReceiveShadow()const
+	BOOL32 RPrimitiveSceneProxy::IsSceneProxyReceiveShadow() const
 	{
 		return IsReceiveShadow;
 	}
-	BOOL32 RPrimitiveSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax)const
+	BOOL32 RPrimitiveSceneProxy::ShouldCollectInView(const RViewProxy& InView) const
+	{
+		(void)InView;
+		return TRUE;
+	}
+	BOOL32 RPrimitiveSceneProxy::ShouldDrawInPass(const FRenderPassDesc& InPassDesc) const
+	{
+		(void)InPassDesc;
+		return TRUE;
+	}
+	BOOL32 RPrimitiveSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax) const
 	{
 		// A proxy without geometry of a known extent - a procedural primitive, a debug draw -
 		// states no bound. The cull keeps it rather than dropping it on a guess.
@@ -103,7 +123,6 @@ namespace PigeonEngine
 	}
 	void RPrimitiveSceneProxy::ApplyRuntimePayload(const FPrimitiveRenderSnapshot& InSnapshot)
 	{
-		// A primitive with no runtime payload of its own has nothing to do here.
 		(void)InSnapshot;
 	}
 	void RPrimitiveSceneProxy::ApplyAssets(const FPrimitiveRenderAssetReport& InAssets)
@@ -113,10 +132,13 @@ namespace PigeonEngine
 		// The pass slots were resolved from the previous report, so they are gone.
 		ReleasePassSlots();
 
+		// The primary instance is a view independent fact of the primitive: a view primitive
+		// list groups by it, and every view sees the same value.
+		ReportedPrimaryMaterial = Assets.FindMaterialInstance(0u, GetPrimaryPassName());
+
 		// The per draw block takes its layout from the program that will read it, so the first
 		// reported instance that resolves to a program supplies it. A report with no instance
-		// at all leaves the block uninitialized rather than latching an empty layout, and a
-		// later report can still supply one.
+		// at all leaves the block uninitialized rather than latching an empty layout.
 		for (UINT32 SlotIndex = 0u, SlotNum = Assets.GetMaterialSlotNum(); SlotIndex < SlotNum; SlotIndex++)
 		{
 			const FPrimitiveMaterialSlotReport* SlotReport = Assets.GetMaterialSlot(SlotIndex);
@@ -140,19 +162,17 @@ namespace PigeonEngine
 			}
 		}
 	}
+	const EShaderInstance* RPrimitiveSceneProxy::FindReportedMaterialInstance(const UINT32 InSlotIndex, const EName& InPassName) const
+	{
+		return Assets.FindMaterialInstance(InSlotIndex, InPassName);
+	}
 	void RPrimitiveSceneProxy::ApplyValues(const FShaderValueReport& InValues)
 	{
-		// The report is kept whether or not the block can take it yet: a primitive that draws
-		// through the engine fallback only learns the layout at draw time, and this is what the
-		// block is published from then.
 		LastDrawValues = InValues;
 		bHasDrawValues = ((InValues.IsEmpty() != FALSE) ? FALSE : TRUE);
 
 		if (!DrawParameterBlock.IsInitialized())
 		{
-			// A set with no mirrors cannot hold a value, and the layout comes from a program
-			// the primitive has not reported yet. Nothing is lost: the report above is what
-			// the block is published from as soon as that layout exists.
 			return;
 		}
 
@@ -172,13 +192,9 @@ namespace PigeonEngine
 			if (Entry->BlockName != DrawBlockName)
 			{
 				// The draw block is the only block this proxy publishes, so a value addressed to
-				// another one belongs to whoever owns that block (a proxy that grows a block of
-				// its own gives it an RShaderParameterBlock and reports through that). Writing it
-				// here would land in an override no mirror can take, which is why it is dropped.
+				// another one belongs to whoever owns that block.
 				continue;
 			}
-			// The kind decides the setter; the names are the ones the shader source declares,
-			// so a name this program does not have becomes a write that binds nothing.
 			switch (Entry->Kind)
 			{
 			case EPrimitiveValueKindType::PRIMITIVE_VALUE_SCALAR:
@@ -224,9 +240,7 @@ namespace PigeonEngine
 			return FALSE;
 		}
 		// The block has just acquired a layout, so the values recorded while it had none have
-		// never reached a buffer; this publishes them for the first time. The transform is the
-		// default, and a report that did arrive is written on top of it, because a value the
-		// game side authored outranks the transform it reported alongside.
+		// never reached a buffer; this publishes them for the first time.
 		UpdateDrawParameters();
 		PublishDrawParametersFromTransform();
 		if (bHasDrawValues != FALSE)
@@ -235,17 +249,19 @@ namespace PigeonEngine
 		}
 		return TRUE;
 	}
-	void RPrimitiveSceneProxy::UpdateDrawParameters()
+	void RPrimitiveSceneProxy::UpdateDrawParameters() const
 	{
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		DrawParameterBlock.Upload(RenderDevice);
+		const_cast<RShaderParameterBlock&>(DrawParameterBlock).Upload(RenderDevice);
+	}
+	void RPrimitiveSceneProxy::EnsurePublishedDrawParameters() const
+	{
+		UpdateDrawParameters();
 	}
 	void RPrimitiveSceneProxy::PublishDrawParametersFromTransform()
 	{
 		if (!DrawParameterBlock.IsInitialized())
 		{
-			// No program has declared the block yet, so there is no layout to write into. The
-			// next update publishes from the value report, which is the normal source.
 			return;
 		}
 
@@ -254,8 +270,7 @@ namespace PigeonEngine
 		const Matrix4x4 InverseWorld(LocalToWorld.Inverse());
 
 		// The same convention the component side uses: written as the CPU holds them, never
-		// transposed, because the shader side matrix is the transpose of these. The inverse
-		// transpose carries a transpose in its value, which is what the normal transform is.
+		// transposed, because the shader side matrix is the transpose of these.
 		const EName BlockName(SHADER_BLOCK_DRAW_PARAMS);
 		WriteShaderMatrix(Parameters, BlockName, EName(SHADER_FIELD_WORLD_MATRIX), LocalToWorld);
 		WriteShaderMatrix(Parameters, BlockName, EName(SHADER_FIELD_WORLD_INV_MATRIX), InverseWorld);
@@ -264,7 +279,8 @@ namespace PigeonEngine
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		DrawParameterBlock.Upload(RenderDevice);
 	}
-	void RPrimitiveSceneProxy::BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram)const
+	void RPrimitiveSceneProxy::BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram
+		, const RViewProxy* InView, const BOOL32 InBindSharedEngineBlocks) const
 	{
 		if (!InCommandList)
 		{
@@ -272,86 +288,108 @@ namespace PigeonEngine
 		}
 		// Everything here runs after SetPipelineState on purpose: a pipeline state brings its
 		// own root signature, and switching a root signature voids every root binding made
-		// before it. Each block looks its root up in the program's binding plan, so none of
-		// these calls carries a root index of its own. The shared blocks are the renderer's, so
-		// the renderer binds them and this draw adds its own block on top.
+		// before it.
 		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
-		if (Renderer)
+		if ((Renderer) && (InBindSharedEngineBlocks != FALSE))
 		{
-			Renderer->BindEngineParameters(InCommandList, InProgram);
+			Renderer->BindGlobalParameters(InCommandList, InProgram);
+			if (InView)
+			{
+				InView->BindParameters(InCommandList, InProgram);
+			}
 		}
 		DrawParameterBlock.Bind(InCommandList, InProgram);
 	}
-	BOOL32 RPrimitiveSceneProxy::BindMaterial(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const
-	{
-		if ((!InCommandList) || (!InSlot.Material) || (!InSlot.Program))
-		{
-			return FALSE;
-		}
-		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		if (!RenderDevice)
-		{
-			return FALSE;
-		}
-
-		// The values are re-evaluated on the asset side first, then publishing resolves the heap
-		// indices, pushes the dirty mirrors and binds blocks and resources through the program's
-		// own plans. The cast is the same one the buffer upload uses - the render side owns the
-		// gpu half of an instance the game thread handed over as const.
-		RShaderParameterBuffers& ParameterBuffers = const_cast<RShaderParameterBuffers&>(InSlot.MaterialBuffers);
-		InSlot.Material->Prepare();
-		// A resource the shader reaches through the heap with no index to reach it would read
-		// whatever descriptor sits there, so publishing refuses and the draw is skipped; the
-		// caller reports it.
-		return PublishShaderParameters(InCommandList, RenderDevice
-			, const_cast<EShaderParameterSet&>(InSlot.Material->GetParameters()), ParameterBuffers
-			, *InSlot.Program, ENGINE_SHADER_STAGE_MASK_GRAPHICS
-			, EName(SHADER_BINDING_SCOPE_MATERIAL));
-	}
 
 	// ---------------------------------------------------------------------------
-	// Pass slots
+	// Pass data
 	// ---------------------------------------------------------------------------
 
-	const RShaderPassSlot* RPrimitiveSceneProxy::FindPassSlot(const UINT32 InSlotIndex, const EName& InPassName)const
+	const FPrimitivePassData* RPrimitiveSceneProxy::FindPrimitivePassData(const UINT32 InSlotIndex, const EName& InPassName) const
 	{
 		for (UINT32 Index = 0u, Num = PassSlots.Num<UINT32>(); Index < Num; Index++)
 		{
-			if ((PassSlots[Index].SlotIndex == InSlotIndex) && (PassSlots[Index].PassName == InPassName))
+			const FPrimitivePassData* Data = PassSlots[Index].get();
+			if ((Data) && (Data->SlotIndex == InSlotIndex) && (Data->PassName == InPassName))
 			{
-				return &(PassSlots[Index]);
+				return Data;
 			}
 		}
 		return nullptr;
 	}
-	const RShaderPassSlot* RPrimitiveSceneProxy::EnsurePassSlot(const UINT32 InSlotIndex, const EName& InPassName, const FRenderPassDesc& InPassDesc)
+	BOOL32 RPrimitiveSceneProxy::IsPrimitivePassDataCurrent(const FPrimitivePassData& InData
+		, const EShaderInstance* InPrimaryInstance, const BOOL32 InIsPrimaryPass) const
 	{
-		// The material this slot would resolve to, its fallback included, is resolved before the
-		// cache lookup: the instance and its traits are part of what tells a built slot apart
-		// from the one this draw needs.
-		//
-		// A material is assembled once, for the pass it authored. A different pass - the depth
-		// only shadow pass is the first one - derives its own instance from that primary one,
-		// keeping the material and swapping only the program. That is what makes every material
-		// usable by every pass without the author configuring one assembly per pass.
-		const FRenderPassDesc& PrimaryPassDesc = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE);
-		const BOOL32 bIsPrimaryPass = (((PrimaryPassDesc.PassName) && (InPassName == EName(PrimaryPassDesc.PassName))) ? TRUE : FALSE);
-		REngineShaderInstanceCache* InstanceCache = REngineShaderInstanceCache::GetManagerSingleton();
-		const EShaderInstance* Instance = Assets.FindMaterialInstance(InSlotIndex, InPassName);
-		if ((!Instance) && (bIsPrimaryPass == FALSE))
+		if (!InData.ResolvedShaderInstance)
 		{
-			const EShaderInstance* PrimaryInstance = ((PrimaryPassDesc.PassName)
-				? Assets.FindMaterialInstance(InSlotIndex, EName(PrimaryPassDesc.PassName)) : nullptr);
-			if (PrimaryInstance)
+			return FALSE;
+		}
+		// The instance moves the moment a reload is published; the revision moves when a trait
+		// or the resolved program changes. Either makes the pipeline state, the binding plan
+		// and the buffers this slot built stale.
+		if ((InData.ShaderInstanceAsset != InData.ResolvedShaderInstance->GetAsset())
+			|| (InData.ShaderInstanceRevision != InData.ResolvedShaderInstance->GetRevision()))
+		{
+			return FALSE;
+		}
+		if (InIsPrimaryPass != FALSE)
+		{
+			return TRUE;
+		}
+		// A pending slot exists only to keep the object drawn while its pass instance is
+		// assembled. It answers no cache hit, so the next draw rebuilds it.
+		if (InData.bShaderInstancePending != FALSE)
+		{
+			return FALSE;
+		}
+		if (InPrimaryInstance)
+		{
+			return ((InData.PrimaryShaderInstance == InPrimaryInstance)
+				&& (InData.PrimaryShaderInstanceAsset == InPrimaryInstance->GetAsset())) ? TRUE : FALSE;
+		}
+		return ((InData.PrimaryShaderInstance == nullptr) ? TRUE : FALSE);
+	}
+	FPrimitivePassData* RPrimitiveSceneProxy::EnsurePrimitivePassData(const UINT32 InSlotIndex, const EName& InPassName
+		, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance)
+	{
+		// A shader instance is assembled once, for the pass it authored. A different pass - the
+		// depth only shadow pass is the first one - derives its own instance from the base one,
+		// keeping the material and swapping only the program.
+		const EName& PrimaryPassName = GetPrimaryPassName();
+		const BOOL32 bIsPrimaryPass = ((InPassName == PrimaryPassName) ? TRUE : FALSE);
+		REngineShaderInstanceCache* InstanceCache = REngineShaderInstanceCache::GetManagerSingleton();
+
+		if (FPrimitivePassData* Existing = const_cast<FPrimitivePassData*>(FindPrimitivePassData(InSlotIndex, InPassName)))
+		{
+			// A pending slot keeps the object drawn with the fallback, and its retry is once per
+			// frame: a slow assembly must not rebuild this slot for every view and every caster.
+			if ((Existing->bShaderInstancePending != FALSE) && (Existing->PendingRetryFrame == GetRenderFrameIndex()))
 			{
-				Instance = InstanceCache->RequirePassInstance(*PrimaryInstance, InPassName);
+				return Existing;
+			}
+			if (IsPrimitivePassDataCurrent(*Existing, (bIsPrimaryPass == FALSE ? &InBaseShaderInstance : nullptr), bIsPrimaryPass) != FALSE)
+			{
+				return Existing;
+			}
+			DropPassSlot(InSlotIndex, InPassName);
+		}
+
+		const EShaderInstance* PrimaryInstance = ((bIsPrimaryPass == FALSE) ? &InBaseShaderInstance : nullptr);
+		const EShaderInstance* Instance = Assets.FindMaterialInstance(InSlotIndex, InPassName);
+		const EShaderInstance* SlotPrimary = ((bIsPrimaryPass != FALSE) ? Instance : PrimaryInstance);
+		BOOL32 bInstancePending = FALSE;
+		if ((!Instance) && (bIsPrimaryPass == FALSE) && (PrimaryInstance))
+		{
+			Instance = InstanceCache->RequirePassInstance(*PrimaryInstance, InPassName);
+			if (!Instance)
+			{
+				bInstancePending = TRUE;
 			}
 		}
 		if (!Instance)
 		{
 			// A slot with no reported instance falls back to this primitive's engine material, so
-			// geometry is never dropped merely because nothing was authored. The fallback itself is
-			// a primary pass instance, so a non primary pass derives from it on the same terms.
+			// geometry is never dropped merely because nothing was authored.
 			const EShaderInstance* Fallback = ResolveFallbackInstance(InSlotIndex);
 			if ((Fallback) && (bIsPrimaryPass == FALSE))
 			{
@@ -361,36 +399,18 @@ namespace PigeonEngine
 			{
 				Instance = Fallback;
 			}
-		}
-		if (const RShaderPassSlot* Existing = FindPassSlot(InSlotIndex, InPassName))
-		{
-			// Everything a slot holds was derived from the material it was built from: the program,
-			// the pipeline state (which carries the rasterizer state the material's traits asked
-			// for), the binding plan inside it, the constant buffers laid out from it. A reload
-			// publishes a NEW object for the same material, and a per instance trait - a two sided
-			// material, for one - changes the pipeline state, so the slot is only reusable while
-			// the instance, the asset object behind it and its instance revision are all the same.
-			if ((Instance != nullptr)
-				&& (Existing->Material == Instance)
-				&& (Existing->MaterialAsset == Instance->GetAsset())
-				&& (Existing->InstanceRevision == Instance->GetRevision()))
+			if (bIsPrimaryPass != FALSE)
 			{
-				return Existing;
+				SlotPrimary = Fallback;
 			}
-			DropPassSlot(InSlotIndex, InPassName);
 		}
 		if (!Instance)
 		{
-			// Quiet: this is the "nothing assigned yet, and the fallback is not assembled yet"
-			// state, which is what every primitive looks like for the first frames of a load.
 			return nullptr;
 		}
 		const EShaderProgram* Program = Instance->GetProgram();
 		if (!Program)
 		{
-			// Not quiet, because the instance exists: the asset has no usable program for this
-			// variant, which is what a replaced stage or a failed assembly leaves behind, and the
-			// object it belongs to would otherwise just stop appearing.
 			ReportSkippedDraw(InPassName, EString(PE_TEXT("its material instance resolved to no usable program")));
 			return nullptr;
 		}
@@ -402,159 +422,178 @@ namespace PigeonEngine
 			return nullptr;
 		}
 
-		RShaderPassSlot NewSlot;
-		NewSlot.SlotIndex	= InSlotIndex;
-		NewSlot.PassName	= InPassName;
-		NewSlot.Material	= Instance;
-		// The object the program below was resolved from, not the one the instance is bound to right
-		// now: a rebind on the load thread could land between the two reads, and a slot that mixed
-		// the two would look current while holding the replaced program.
-		NewSlot.MaterialAsset = Instance->GetResolvedAsset();
-		NewSlot.Program		= Program;
-		NewSlot.InstanceRevision = Instance->GetRevision();
+		FPrimitivePassData NewDataValue;
+		FPrimitivePassData& NewData = NewDataValue;
+		NewData.SlotIndex					= InSlotIndex;
+		NewData.PassDesc					= &InPassDesc;
+		NewData.PassName					= InPassName;
+		NewData.BaseShaderInstance			= &InBaseShaderInstance;
+		NewData.ResolvedShaderInstance		= Instance;
+		NewData.DisplayName					= GetShaderInstanceDisplayName(Instance);
+		// The object the program below was resolved from, not the one the instance is bound to
+		// right now: a rebind on the load thread could land between the two reads.
+		NewData.ShaderInstanceAsset			= Instance->GetResolvedAsset();
+		NewData.Program						= Program;
+		NewData.ShaderInstanceRevision		= Instance->GetRevision();
+		NewData.PrimaryShaderInstance		= SlotPrimary;
+		NewData.PrimaryShaderInstanceAsset	= ((SlotPrimary != nullptr) ? SlotPrimary->GetAsset() : nullptr);
+		NewData.bShaderInstancePending		= bInstancePending;
+		NewData.PendingRetryFrame			= ((bInstancePending != FALSE) ? GetRenderFrameIndex() : 0u);
 
 		// The per draw block takes its layout from the program this draw runs, which is the
-		// only place a primitive without an authored material can supply one: its slot resolves
-		// to the engine fallback here, and a block that never got a layout binds nothing, so
-		// the draw would run with the world matrix its statement defaults to.
+		// only place a primitive without an authored material can supply one.
 		EnsureDrawParameterBlock(*Program);
 
 		// The pipeline state carries the pass's fixed function state, this program's shaders
-		// and the roots generated from this program's own reflection. The extra input layout
-		// declarations are the data side of the vertex streams, which is what a stream whose
-		// real format differs from what the shader declared needs.
+		// and the roots generated from this program's own reflection.
 		RGraphicsPipelineStateDesc Desc;
 		FRenderPassRegistry::FillPipelineStateDesc(InPassDesc, Program, Desc);
-		// The pass states what every material of the pass draws with; the material's own
-		// rasterizer trait is applied on top in the pipeline layer, so a two sided material gets
-		// its own pipeline state without the pass table or the shader knowing about it.
 		RPipelineStateCache::ApplyMaterialRenderTraits(Instance->GetTraits(), Desc);
 		UINT32 InputLayoutNum = 0u;
 		Desc.InputLayouts = GetPipelineStateInputLayouts(InputLayoutNum);
 		Desc.InputLayoutCount = InputLayoutNum;
-		NewSlot.PipelineState = Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
-		if (!NewSlot.PipelineState)
+		NewData.PipelineState = Renderer->GetPipelineStateCache().GetOrCreateGraphics(Desc);
+		if (!NewData.PipelineState)
 		{
-			// The other way a program with a missing stage shows up: the pipeline state cannot be
-			// built, so the primitive stops appearing and nothing else in the frame says so. It can
-			// be a single frame while a device object is still queued, which the report survives --
-			// one line per primitive and reason, not one per frame.
 			ReportSkippedDraw(InPassName, EString(PE_TEXT("its pipeline state could not be built for program '"))
 				+ Program->GetShaderName().ToString() + EString(PE_TEXT("'")));
 			return nullptr;
 		}
 
-		// The values stay on the asset side; these are the buffers they are uploaded into.
-		Instance->Prepare();
-		NewSlot.MaterialBuffers.CreateFromParameterSet(RenderDevice, Instance->GetParameters());
+		// Geometry is resolved here, in Prepare, so the record path never walks an input layout
+		// or a mesh stream table. A primitive without geometry leaves the binding empty.
+		ResolveGeometryBinding(NewData);
 
-		PassSlots.Add(NewSlot);
-		// The returned pointer stays valid until the next EnsurePassSlot call, which is all a
-		// caller needs: the slot is consumed by the draw it was resolved for.
-		return &(PassSlots[PassSlots.Num<UINT32>() - 1u]);
+		PassSlots.Add(EMemory::MakeUnique<FPrimitivePassData>(NewDataValue));
+		return PassSlots[PassSlots.Num<UINT32>() - 1u].get();
+	}
+	FPrimitivePassData* RPrimitiveSceneProxy::EnsurePublishedPassData(const UINT32 InSlotIndex, const EName& InPassName
+		, const FRenderPassDesc& InPassDesc, const EShaderInstance& InBaseShaderInstance, FFrameRenderData& InFrameData)
+	{
+		FPrimitivePassData* Data = EnsurePrimitivePassData(InSlotIndex, InPassName, InPassDesc, InBaseShaderInstance);
+		if ((!Data) || (!Data->ResolvedShaderInstance) || (!Data->Program))
+		{
+			return nullptr;
+		}
+		if (Data->ResolvedFrame != InFrameData.GetFrameIndex())
+		{
+			Data->ShaderInstanceData = InFrameData.EnsureShaderInstance(*Data->ResolvedShaderInstance, *Data->Program);
+			Data->ResolvedFrame = InFrameData.GetFrameIndex();
+		}
+		return ((Data->ShaderInstanceData) ? Data : nullptr);
 	}
 	void RPrimitiveSceneProxy::DropPassSlot(const UINT32 InSlotIndex, const EName& InPassName)
 	{
 		for (UINT32 Index = 0u, Num = PassSlots.Num<UINT32>(); Index < Num; Index++)
 		{
-			if ((PassSlots[Index].SlotIndex != InSlotIndex) || (PassSlots[Index].PassName != InPassName))
+			const FPrimitivePassData* Data = PassSlots[Index].get();
+			if ((!Data) || (Data->SlotIndex != InSlotIndex) || (Data->PassName != InPassName))
 			{
 				continue;
 			}
-			// RemoveAt destroys the element it removes, and that is what releases the material
-			// buffers the slot owned - they were laid out from the program being replaced.
-			//
-			// The per draw block goes with it: its layout was read from the same program's
-			// reflection, and the rebuild that follows this call re-initializes it against the
-			// current one.
-			DrawParameterBlock.ReleaseRenderResources();
 			PassSlots.RemoveAt(Index);
 			return;
 		}
 	}
 	void RPrimitiveSceneProxy::ReleasePassSlots()
 	{
-		// The slots own render tier constant buffers, so emptying the array releases them on
-		// this thread, which is the only thread that may touch them.
 		PassSlots.Empty();
 	}
 
 	// ---------------------------------------------------------------------------
-	// Draw
+	// Record
 	// ---------------------------------------------------------------------------
 
-	void RPrimitiveSceneProxy::BindRenderResource()const
+	BOOL32 RPrimitiveSceneProxy::BindShaderInstanceData(IRCommandList* InCommandList, const FPassItem& InItem) const
 	{
-		// Everything a draw binds is bound inside Draw, right after the pipeline state that
-		// would otherwise void it. The hook stays because the renderer calls it first.
+		if ((!InCommandList) || (!InItem.PrimitivePassData) || (!InItem.ShaderInstanceData))
+		{
+			return FALSE;
+		}
+		FShaderInstanceRenderData* InstanceData = InItem.ShaderInstanceData;
+		if ((!InstanceData->Parameters) || (!InstanceData->ParameterBuffers))
+		{
+			return FALSE;
+		}
+		BindPublishedShaderParameters(InCommandList, *InstanceData->Parameters, *InstanceData->ParameterBuffers
+			, *InItem.PrimitivePassData->Program, ENGINE_SHADER_STAGE_MASK_GRAPHICS, EName(SHADER_BINDING_SCOPE_MATERIAL));
+		return TRUE;
 	}
-	void RPrimitiveSceneProxy::Draw()
+	void RPrimitiveSceneProxy::ReportSkippedDraw(const EName& InPassName, const EString& InReason) const
 	{
-		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
-		if (!CmdList)
+		// The component's identity rather than this proxy's address: a proxy is rebuilt from a
+		// snapshot, and the identity is what a reader can match against the scene.
+		PigeonEngine::ReportSkippedDraw(EString(PE_TEXT("primitive "))
+			+ ToString(static_cast<UINT64>(GetPrimitiveIdentity()))
+			+ EString(PE_TEXT(" pass '")) + InPassName.ToString() + EString(PE_TEXT("'")), InReason);
+	}
+	void RPrimitiveSceneProxy::RecordPassItem(FPassRecordContext& InContext, const FPassItem& InItem) const
+	{
+		IRCommandList* CommandList = InContext.CommandList;
+		const FPrimitivePassData* Data = InItem.PrimitivePassData;
+		const FPassViewInstance* Instance = InContext.Instance;
+		if ((!CommandList) || (!Data) || (!Instance))
 		{
 			return;
 		}
-		Draw(CmdList, FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE));
-	}
-	void RPrimitiveSceneProxy::Draw(IRCommandList* InCommandList, const FRenderPassDesc& InPassDesc)
-	{
-		if ((!InCommandList) || (InPassDesc.PassName == nullptr))
+		if ((!Data->PipelineState) || (!Data->Program))
 		{
 			return;
 		}
-		const EName PassName(InPassDesc.PassName);
-		for (UINT32 GroupIndex = 0u, GroupNum = GetDrawGroupNum(); GroupIndex < GroupNum; GroupIndex++)
+
+		PE_GPU_EVENT_SCOPE_IF(CommandList, Data->DisplayName, EEngineSettings::ENGINE_RHI_ENABLE_DRAW_MARKERS);
+
+		const BOOL32 bPipelineAlreadyBound = ((CommandList->GetBoundPipelineState() == Data->PipelineState) ? TRUE : FALSE);
+		if (bPipelineAlreadyBound == FALSE)
 		{
-			UINT32 SlotIndex = 0u;
-			UINT32 IndexCount = 0u;
-			UINT32 StartIndex = 0u;
-			if (!GetDrawGroup(GroupIndex, SlotIndex, IndexCount, StartIndex))
-			{
-				// Quiet on purpose: a group that cannot be read is the "its geometry is not loaded
-				// yet" state, which every primitive passes through once on the frame its asset
-				// lands. Reporting it would bury the reasons that mean something.
-				continue;
-			}
-			const RShaderPassSlot* Slot = EnsurePassSlot(SlotIndex, PassName, InPassDesc);
-			if ((!Slot) || (!Slot->PipelineState) || (!Slot->Program))
-			{
-				if (Slot)
-				{
-					// EnsurePassSlot reports the reasons it can see; a slot that exists but is
-					// incomplete is the one it hands back, so this is where that one is reported.
-					ReportSkippedDraw(PassName, EString(PE_TEXT("its pass slot has no program or no pipeline state")));
-				}
-				continue;
-			}
+			CommandList->SetPipelineState(Data->PipelineState);
+		}
 
-			const EString EventName = GetShaderInstanceDisplayName(Slot->Material);
-			PE_GPU_EVENT_SCOPE(InCommandList, EventName);
+		const BOOL32 bShaderInstanceBound = ((bPipelineAlreadyBound != FALSE)
+			&& (InContext.StateCache.ShaderInstance == Data->ResolvedShaderInstance)
+			&& (InContext.StateCache.PipelineState == Data->PipelineState)) ? TRUE : FALSE;
+		if (bShaderInstanceBound == FALSE)
+		{
+			InContext.StateCache.ShaderInstance = nullptr;
+			InContext.StateCache.PipelineState = nullptr;
+			if (!BindShaderInstanceData(CommandList, InItem))
+			{
+				ReportSkippedDraw(Data->PassName, EString(PE_TEXT("its material parameters could not be bound")));
+				return;
+			}
+			InContext.StateCache.ShaderInstance = Data->ResolvedShaderInstance;
+			InContext.StateCache.PipelineState = Data->PipelineState;
+		}
 
-			InCommandList->SetPipelineState(Slot->PipelineState);
-			if (!BindMaterial(InCommandList, *Slot))
-			{
-				ReportSkippedDraw(PassName, EString(PE_TEXT("its material parameters could not be bound")));
-				continue;
-			}
-			BindEngineParameters(InCommandList, *Slot->Program);
-			if (!BindGeometry(InCommandList, *Slot))
-			{
-				// Reported by the hook rather than here: that is where the reason is known, and
-				// the mesh proxy names the stage or the mesh resource it could not bind.
-				continue;
-			}
-			BindExtraResources(InCommandList, *Slot);
-			if (!DrawGeometry(InCommandList, *Slot, IndexCount, StartIndex))
-			{
-				ReportSkippedDraw(PassName, EString(PE_TEXT("its geometry could not be submitted")));
-				continue;
-			}
+		const BOOL32 bSharedEngineBound = ((bPipelineAlreadyBound != FALSE)
+			&& (InContext.StateCache.Program == Data->Program)
+			&& (InContext.StateCache.View == Instance->View)) ? TRUE : FALSE;
+		BindEngineParameters(CommandList, *Data->Program, Instance->View, ((bSharedEngineBound != FALSE) ? FALSE : TRUE));
+		if (bSharedEngineBound == FALSE)
+		{
+			InContext.StateCache.Program = Data->Program;
+			InContext.StateCache.View = Instance->View;
+		}
+
+		if (!BindGeometry(CommandList, *Data))
+		{
+			return;
+		}
+		if (BindExtraResources(CommandList, *Data) != FALSE)
+		{
+			// The extra binding wrote a descriptor table of its own, which may have opened a
+			// fresh set. The material's descriptors are not in that set, so no following draw
+			// may treat them as still bound.
+			InContext.StateCache.ShaderInstance = nullptr;
+			InContext.StateCache.PipelineState = nullptr;
+		}
+		if (!DrawGeometry(CommandList, *Data, InItem.IndexCount, InItem.StartIndex))
+		{
+			ReportSkippedDraw(Data->PassName, EString(PE_TEXT("its geometry could not be submitted")));
 		}
 	}
-	BOOL32 RPrimitiveSceneProxy::RecordCompute(IRCommandList* InCommandList, const FRenderPassDesc& InPassDesc)const
+	BOOL32 RPrimitiveSceneProxy::RecordCompute(IRCommandList* InCommandList, const FRenderPassDesc& InPassDesc) const
 	{
-		// A graphics only primitive submits no compute work.
 		(void)InCommandList;
 		(void)InPassDesc;
 		return FALSE;
@@ -564,21 +603,29 @@ namespace PigeonEngine
 	// Hooks: a primitive that overrides none of these draws nothing.
 	// ---------------------------------------------------------------------------
 
-	const EShaderInstance* RPrimitiveSceneProxy::ResolveFallbackInstance(const UINT32 InSlotIndex)const
+	UINT32 RPrimitiveSceneProxy::GetDrawGroupCount() const
+	{
+		return GetDrawGroupNum();
+	}
+	BOOL32 RPrimitiveSceneProxy::GetDrawGroupDesc(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex) const
+	{
+		return GetDrawGroup(InGroupIndex, OutSlotIndex, OutIndexCount, OutStartIndex);
+	}
+	const EShaderInstance* RPrimitiveSceneProxy::ResolveFallbackInstance(const UINT32 InSlotIndex) const
 	{
 		(void)InSlotIndex;
 		return nullptr;
 	}
-	const RInputLayoutDesc* RPrimitiveSceneProxy::GetPipelineStateInputLayouts(UINT32& OutCount)const
+	const RInputLayoutDesc* RPrimitiveSceneProxy::GetPipelineStateInputLayouts(UINT32& OutCount) const
 	{
 		OutCount = 0u;
 		return nullptr;
 	}
-	UINT32 RPrimitiveSceneProxy::GetDrawGroupNum()const
+	UINT32 RPrimitiveSceneProxy::GetDrawGroupNum() const
 	{
 		return 0u;
 	}
-	BOOL32 RPrimitiveSceneProxy::GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex)const
+	BOOL32 RPrimitiveSceneProxy::GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex) const
 	{
 		(void)InGroupIndex;
 		OutSlotIndex = 0u;
@@ -586,29 +633,35 @@ namespace PigeonEngine
 		OutStartIndex = 0u;
 		return FALSE;
 	}
-	BOOL32 RPrimitiveSceneProxy::BindGeometry(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const
+	BOOL32 RPrimitiveSceneProxy::ResolveGeometryBinding(FPrimitivePassData& InOutData) const
 	{
-		(void)InCommandList;
-		(void)InSlot;
+		(void)InOutData;
 		return FALSE;
 	}
-	void RPrimitiveSceneProxy::BindExtraResources(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const
+	BOOL32 RPrimitiveSceneProxy::BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData) const
 	{
 		(void)InCommandList;
-		(void)InSlot;
+		(void)InData;
+		return FALSE;
 	}
-	BOOL32 RPrimitiveSceneProxy::DrawGeometry(IRCommandList* InCommandList, const RShaderPassSlot& InSlot, const UINT32 InIndexCount, const UINT32 InStartIndex)const
+	BOOL32 RPrimitiveSceneProxy::BindExtraResources(IRCommandList* InCommandList, const FPrimitivePassData& InData) const
 	{
-		(void)InSlot;
+		(void)InCommandList;
+		(void)InData;
+		return FALSE;
+	}
+	BOOL32 RPrimitiveSceneProxy::DrawGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData
+		, const UINT32 InIndexCount, const UINT32 InStartIndex) const
+	{
+		(void)InData;
 		if (!InCommandList)
 		{
 			return FALSE;
 		}
-		// One indexed draw of the group. BaseVertex MUST stay 0: the mesh import path writes
-		// absolute vertex indices into the merged index buffer, so the start index alone
-		// picks the right slice and a base vertex would double offset it.
+		// One indexed draw. BaseVertex stays 0: the import path writes absolute vertex indices
+		// into the merged index buffer, so the start index alone picks the right slice.
 		InCommandList->DrawIndexed(InIndexCount, 1u, InStartIndex, 0, 0u);
 		return TRUE;
 	}
 
-};
+}	// namespace PigeonEngine

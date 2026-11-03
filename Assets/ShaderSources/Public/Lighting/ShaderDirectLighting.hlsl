@@ -136,7 +136,11 @@ void ShadeDirectionalLights(in SurfaceData InSurface, in float3 InWorldPosition,
 	in float3 InF0, in bool InIsAnisotropic, in float3 InAnisotropicT, in float3 InAnisotropicB,
 	in float InAnisotropy, inout ShadingResult InOutResult)
 {
-	for (uint LightIndex = 0u; LightIndex < DirectionalLightCount; ++LightIndex)
+	// [loop]: the count is a constant-buffer value, and an unrolled copy of this body per possible
+	// light is what FXC's SM5 compilation cannot afford. The attribute keeps the loop dynamic on
+	// both compilers instead of leaving the choice to the optimizer's unroll heuristics.
+	[loop]
+	for (uint LightIndex = 0u; LightIndex < DirectionalLightCount; LightIndex++)
 	{
 		DirectionalLightData StoredLight = DecodeDirectionalLight(DirectionalLights[LightIndex]);
 		// The directional shadow term is the screen space mask's channel for this light. A
@@ -158,7 +162,10 @@ void ShadeLocalLights(in SurfaceData InSurface, in float3 InWorldPosition, in fl
 	in float3 InF0, in bool InIsAnisotropic, in float3 InAnisotropicT, in float3 InAnisotropicB,
 	in float InAnisotropy, inout ShadingResult InOutResult)
 {
-	for (uint LightIndex = 0u; LightIndex < LocalLightCount; ++LightIndex)
+	// Same reason as the directional loop above: the PCF taps make this body far too large to
+	// unroll, and the count only exists at draw time.
+	[loop]
+	for (uint LightIndex = 0u; LightIndex < LocalLightCount; LightIndex++)
 	{
 		LocalLightData StoredLight = DecodeLocalLight(LocalLights[LightIndex]);
 		LightData Light = BuildLocalLightData(StoredLight, InWorldPosition

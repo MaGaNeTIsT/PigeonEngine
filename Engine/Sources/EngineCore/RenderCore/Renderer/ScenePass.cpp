@@ -299,6 +299,30 @@ namespace PigeonEngine
 		return Table[Index];
 	}
 
+	const EName& FRenderPassRegistry::GetPassNameId(const FRenderPassDesc& InPassDesc)
+	{
+		// One interned name per pass row, built on first use. The table is process wide and
+		// immutable after construction, so the array is stable for the session; the function
+		// local static is what makes the one-time fill safe against a caller on another thread.
+		static EName PassNameIds[ERenderPassType::RENDER_PASS_TYPE_COUNT];
+		static const BOOL32 bNamesBuilt = []() -> BOOL32
+		{
+			const FRenderPassDesc* Table = GetTable();
+			for (UINT32 Index = 0u, Num = GetPassNum(); Index < Num; Index++)
+			{
+				if (Table[Index].PassName != nullptr)
+				{
+					PassNameIds[Index] = EName(Table[Index].PassName);
+				}
+			}
+			return TRUE;
+		}();
+		(void)bNamesBuilt;
+
+		const UINT32 Index = static_cast<UINT32>(InPassDesc.Type);
+		return ((Index < GetPassNum()) ? PassNameIds[Index] : PassNameIds[0u]);
+	}
+
 	const FRenderPassDesc* FRenderPassRegistry::FindDescByPassName(const EName& InPassName)
 	{
 		const FRenderPassDesc* Table = GetTable();

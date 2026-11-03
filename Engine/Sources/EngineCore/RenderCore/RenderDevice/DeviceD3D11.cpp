@@ -422,7 +422,19 @@ namespace PigeonEngine
 			{
 				::ZeroMemory(&srvd, sizeof(srvd));
 				srvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.SRV);
-				if (textureDesc.ArraySize > 1u)
+				const BOOL8 bIsCube = (static_cast<UINT8>(textureDesc.MiscFlags) & static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE)) != 0u;
+				if (bIsCube != FALSE)
+				{
+					// Six array slices are not automatically a cube: a shader declaring
+					// TextureCube can only read a cube view, and the hardware direction
+					// lookup and seamless filtering across face borders exist only there.
+					// D3D12 derives the SRV dimension from the desc alone, so a cube that
+					// came through this factory has to be viewed as one here as well.
+					srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURECUBE;
+					srvd.TextureCube.MostDetailedMip = 0u;
+					srvd.TextureCube.MipLevels = td.MipLevels;
+				}
+				else if (textureDesc.ArraySize > 1u)
 				{
 					// A 2D array has to be viewed as one, otherwise a shader declaring
 					// Texture2DArray gets a view for a single 2D texture.
@@ -685,8 +697,8 @@ namespace PigeonEngine
 				::ZeroMemory(&srvd, sizeof(srvd));
 				srvd.Format = RDXGIFormatTranslate::ToDXGIOrUnknown(FormatSet.SRV);
 				srvd.ViewDimension = D3D_SRV_DIMENSION::D3D11_SRV_DIMENSION_TEXTURECUBE;
-				srvd.Texture2D.MostDetailedMip = 0u;
-				srvd.Texture2D.MipLevels = textureDesc.MipLevels;
+				srvd.TextureCube.MostDetailedMip = 0u;
+				srvd.TextureCube.MipLevels = textureDesc.MipLevels;
 			}
 			HRESULT hr = m_Device->CreateShaderResourceView(output.Buffer.Get(), &srvd, output.ShaderResourceView.ReleaseAndGetAddressOf());
 			if (FAILED(hr))
@@ -1143,7 +1155,13 @@ namespace PigeonEngine
 			rd.DepthBiasClamp = D3D11_DEFAULT_DEPTH_BIAS_CLAMP;
 			rd.SlopeScaledDepthBias = D3D11_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
 			rd.DepthClipEnable = TRUE;
-			rd.ScissorEnable = FALSE;
+			// D3D12 always applies the scissor rectangle; D3D11 makes it a rasterizer state
+			// flag. The renderer establishes a scissor before every graphics draw (the view
+			// rectangle for a camera pass, the tile for a shadow view, the clip rect for each
+			// ImGui command), so the flag has to be on or those rectangles are silently
+			// ignored. The ImGui clipping was the visible symptom: a table scrolled inside
+			// its window drew past the window edge because no scissor reached the rasterizer.
+			rd.ScissorEnable = TRUE;
 			rd.MultisampleEnable = FALSE;
 			rd.AntialiasedLineEnable = FALSE;
 		}
@@ -2106,7 +2124,20 @@ namespace PigeonEngine
 
 	void RDeviceD3D11::BeginFrame() noexcept
 	{
-		// D3D11 has no per-frame fence wait; nothing to do.
+		// D3D11 has no per-frame fence wait. It does have a default scissor rectangle, and
+		// after CreateRasterizerState enabled the scissor test that rectangle has to cover the
+		// frame: the context starts with an empty one, so a draw recorded before the first
+		// SetScissorRects (a pass that owns no view, for instance) would be clipped away.
+		// A view, a shadow tile and an ImGui command each replace it before their own draws.
+		if ((m_ImmediateContext) && (BackBufferWrapper.Width > 0u) && (BackBufferWrapper.Height > 0u))
+		{
+			D3D11_RECT FullRect = {};
+			FullRect.left	= 0;
+			FullRect.top	= 0;
+			FullRect.right	= static_cast<LONG>(BackBufferWrapper.Width);
+			FullRect.bottom	= static_cast<LONG>(BackBufferWrapper.Height);
+			m_ImmediateContext->RSSetScissorRects(1u, &FullRect);
+		}
 	}
 
 	void RDeviceD3D11::EndFrame() noexcept
@@ -2261,8 +2292,8 @@ namespace PigeonEngine
 		// resource's clear-value hint. D3D11 has no per-resource clear value, so the
 		// engine's explicit ClearRenderTargetView calls stay authoritative.
 
-		const BOOL8 IsCube = (static_cast<UINT8>(InDesc.MiscFlags) & static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE)) != 0u;
-		if (IsCube)
+		const BOOL8 bIsCube = (static_cast<UINT8>(InDesc.MiscFlags) & static_cast<UINT8>(RResourceMiscFlagType::RESOURCE_MISC_TEXTURECUBE)) != 0u;
+		if (bIsCube != FALSE)
 		{
 			// The RHI hands over a single subresource, while the legacy cube factory
 			// wants one desc per face. The provided payload seeds face 0; the
@@ -2743,26 +2774,87 @@ namespace PigeonEngine
 
 	void RDeviceD3D11::UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource) noexcept
 	{
-		if (!InDest || !InSubresources || InSubresourceCount == 0u)
+		if ((!InDest) || (!InSubresources) || (InSubresourceCount == 0u))
 		{
 			return;
 		}
-		auto* NativeResource = static_cast<IRD3D11Texture*>(InDest)->GetD3D11Resource();
+		ID3D11Resource* NativeResource = static_cast<IRD3D11Texture*>(InDest)->GetD3D11Resource();
 		if (!NativeResource)
 		{
 			return;
 		}
-		for (UINT32 i = 0u; i < InSubresourceCount; i++)
+		for (UINT32 SubresourceIndex = 0u, SubresourceNum = InSubresourceCount; SubresourceIndex < SubresourceNum; SubresourceIndex++)
 		{
-			m_ImmediateContext->UpdateSubresource(NativeResource, InFirstSubresource + i, nullptr,
-				InSubresources[i].Data, InSubresources[i].RowPitch, InSubresources[i].SlicePitch);
+			m_ImmediateContext->UpdateSubresource(NativeResource, InFirstSubresource + SubresourceIndex, nullptr,
+				InSubresources[SubresourceIndex].Data, InSubresources[SubresourceIndex].RowPitch, InSubresources[SubresourceIndex].SlicePitch);
 		}
+	}
+
+	// A mip level's own dimension: the base size shifted down, with a chain that has run
+	// past the size clamping to 1 rather than to 0.
+	static UINT32 MipDimension(const UINT32 InBaseSize, const UINT32 InMipLevel) noexcept
+	{
+		const UINT32 ShiftedSize = InBaseSize >> InMipLevel;
+		return ((ShiftedSize != 0u) ? ShiftedSize : 1u);
+	}
+
+	BOOL8 RDeviceD3D11::UpdateTextureRegion(IRRHITexture* InDest, const RRHITextureRegionUpdate& InRegion) noexcept
+	{
+		if ((!InDest) || (!InRegion.Data) || (InRegion.Width == 0u) || (InRegion.Height == 0u) || (InRegion.Depth == 0u))
+		{
+			return FALSE;
+		}
+		ID3D11Resource* NativeResource = static_cast<IRD3D11Texture*>(InDest)->GetD3D11Resource();
+		if (!NativeResource)
+		{
+			return FALSE;
+		}
+
+		// A region is stated in the texels of the level it writes, so the bounds belong to
+		// that level's own size and not to the resource's. Refusing an oversized region is
+		// what keeps a mistake visible: the API would otherwise clamp it in silence and the
+		// patch would land somewhere other than where the caller put it.
+		const UINT32 MipLevels = InDest->GetMipLevels();
+		if ((InRegion.MipLevel >= MipLevels) || (InRegion.ArraySlice >= InDest->GetArraySize()))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UpdateTextureRegion names a mip level or array slice the texture does not have.")));
+			return FALSE;
+		}
+		const UINT32 MipWidth = MipDimension(InDest->GetWidth(), InRegion.MipLevel);
+		const UINT32 MipHeight = MipDimension(InDest->GetHeight(), InRegion.MipLevel);
+		const UINT32 MipDepth = MipDimension(InDest->GetDepth(), InRegion.MipLevel);
+		if ((static_cast<UINT64>(InRegion.DestinationX) + InRegion.Width > MipWidth)
+			|| (static_cast<UINT64>(InRegion.DestinationY) + InRegion.Height > MipHeight)
+			|| (static_cast<UINT64>(InRegion.DestinationZ) + InRegion.Depth > MipDepth))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: UpdateTextureRegion region does not fit the mip level it names.")));
+			return FALSE;
+		}
+
+		const UINT32 Subresource = D3D11CalcSubresource(InRegion.MipLevel, InRegion.ArraySlice, MipLevels);
+		D3D11_BOX DestinationBox = {};
+		DestinationBox.left = InRegion.DestinationX;
+		DestinationBox.top = InRegion.DestinationY;
+		DestinationBox.front = InRegion.DestinationZ;
+		DestinationBox.right = InRegion.DestinationX + InRegion.Width;
+		DestinationBox.bottom = InRegion.DestinationY + InRegion.Height;
+		DestinationBox.back = InRegion.DestinationZ + InRegion.Depth;
+
+		// UpdateSubresource is a CPU side copy into a default usage resource: it needs no
+		// staging buffer and no GPU wait, and the rows the caller describes are exactly what
+		// the box reads.
+		m_ImmediateContext->UpdateSubresource(NativeResource, Subresource, &DestinationBox,
+			InRegion.Data, InRegion.RowPitch, InRegion.SlicePitch);
+		return TRUE;
 	}
 
 	// ----- Command lists -----
 
-	IRCommandList* RDeviceD3D11::AcquireCommandList()
+	IRCommandList* RDeviceD3D11::AcquireCommandList(const UINT32 InRecorderIndex)
 	{
+		// One immediate context has exactly one recorder. A caller that asks for a worker
+		// index is a renderer configuration bug, not a request this back-end can serve.
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D11: only recorder 0 exists.")), (InRecorderIndex == 0u));
 		RCommandListD3D11* CommandList = nullptr;
 		if (CommandListFreeList.Num() > 0)
 		{

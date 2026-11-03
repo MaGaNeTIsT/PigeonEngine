@@ -319,9 +319,9 @@ namespace PigeonEngine
 		}
 		return (PipelineState != nullptr) ? TRUE : FALSE;
 	}
-	void RSkyLightSceneProxy::Draw()
+	void RSkyLightSceneProxy::Draw(IRCommandList* InCommandList, const RViewProxy* InView)
 	{
-		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
+		IRCommandList* CmdList = InCommandList;
 		if (!CmdList) { return; }
 		if (!EnsurePipelineState())
 		{
@@ -334,7 +334,7 @@ namespace PigeonEngine
 			return;
 		}
 
-		PE_GPU_EVENT_SCOPE(CmdList, EString(PE_TEXT("SkyLight")));
+		PE_GPU_EVENT_SCOPE_IF(CmdList, EString(PE_TEXT("SkyLight")), EEngineSettings::ENGINE_RHI_ENABLE_DRAW_MARKERS);
 
 		// Order matters: the pipeline state voids every root binding made before it, so it goes
 		// first, then the blocks the shader reads, and the geometry last.
@@ -345,7 +345,7 @@ namespace PigeonEngine
 		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
 		if (Renderer)
 		{
-			Renderer->BindEngineParameters(CmdList, *SkyProgram);
+			Renderer->BindEngineParameters(CmdList, *SkyProgram, InView);
 		}
 
 		// The sky's own block is bound here rather than by the renderer because it belongs to

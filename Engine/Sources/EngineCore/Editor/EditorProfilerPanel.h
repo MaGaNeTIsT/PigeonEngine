@@ -20,9 +20,21 @@ namespace PigeonEngine
 		BOOL8				bHasShare	= FALSE;
 	};
 
-	// ImGui panel over EProfiler and EGPUProfiler. Two tabs: the four CPU thread
-	// brackets, and the GPU frame total followed by one row per pass.
-	// EditorManager drives the per-frame Draw call.
+	// One node of the CPU scope tree. The tree comes from the scope names themselves:
+	// "RenderThread.Record" is a child of "RenderThread", and a deeper name such as
+	// "RenderThread.Record.ShadowViews" nests one more level. That convention already
+	// carries the grouping, so a trace does not have to declare a parent.
+	struct EProfilerTreeNode
+	{
+		EProfilerTableRow	Row;
+		// FALSE for a synthetic node: a name that only exists as a prefix of another scope.
+		BOOL8				bHasRow		= FALSE;
+		TArray<INT32>		Children;
+	};
+
+	// ImGui panel over EProfiler and EGPUProfiler. Three tabs: the CPU thread brackets and their
+	// sub-brackets, the GPU frame total followed by one row per pass, and the per-frame counters
+	// (draw calls in particular). EditorManager drives the per-frame Draw call.
 	//
 	// Pause freezes what the panel reads, not what the engine records: the rows
 	// are rebuilt from a fresh snapshot when the pause is released. Clear All
@@ -37,12 +49,19 @@ namespace PigeonEngine
 		void			DrawPanel();
 	private:
 		void			RefreshRows();
+		void			BuildCpuTree();
 	private:
 		BOOL32						bWindowOpen		= TRUE;
 		BOOL32						bPaused			= FALSE;
 		BOOL32						bRowsValid		= FALSE;
 		TArray<EProfilerTableRow>	CpuRows;
+		TArray<EProfilerTreeNode>	CpuTree;
+		// Roots in thread order: the four thread brackets first, then any scope whose name
+		// does not start with a thread bracket. Kept separately so collapsing a thread does
+		// not change the order the other threads are drawn in.
+		TArray<INT32>				CpuRootNodes;
 		TArray<EProfilerTableRow>	GpuRows;
+		TArray<TPair<EName, EProfileCounterStat>>	CounterRows;
 	};
 
 #endif

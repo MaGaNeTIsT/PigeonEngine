@@ -1106,7 +1106,7 @@ namespace PigeonEngine
 		{
 			// The arenas live at the top of the heap, so what is primed here is that region. The
 			// bottom of the heap is the separate null sentinel region primed just below.
-			const UINT32 ArenaSlotNum = SLOT_TABLE_STRIDE_PER_FRAME * FRAME_IN_FLIGHT;
+			const UINT32 ArenaSlotNum = SLOT_TABLE_STRIDE_PER_FRAME * FRAME_IN_FLIGHT * MAX_RECORDERS;
 			for (UINT32 SlotIndex = 0u; SlotIndex < ArenaSlotNum; SlotIndex++)
 			{
 				WriteNullShaderResourceView(SLOT_SET_ARENA_REGION_BASE + SlotIndex);
@@ -1655,12 +1655,15 @@ namespace PigeonEngine
 			return FALSE;
 		}
 
-		for (UINT32 i = 0u; i < FRAME_IN_FLIGHT; i++)
+		for (UINT32 FrameIndex = 0u; FrameIndex < FRAME_IN_FLIGHT; FrameIndex++)
 		{
-			if (FAILED(Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-				IID_PPV_ARGS(CommandAllocators[i].ReleaseAndGetAddressOf()))))
+			for (UINT32 RecorderIndex = 0u; RecorderIndex < MAX_RECORDERS; RecorderIndex++)
 			{
-				return FALSE;
+				if (FAILED(Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+					IID_PPV_ARGS(CommandAllocators[FrameIndex][RecorderIndex].ReleaseAndGetAddressOf()))))
+				{
+					return FALSE;
+				}
 			}
 		}
 
@@ -1720,8 +1723,8 @@ namespace PigeonEngine
 		PipelineStateCache.Empty();
 
 		// Clear command list pool
-		CommandListFreeList.Empty();
-		CommandListPool.Empty();
+		CommandListFreeList->Empty();
+		CommandListPool->Empty();
 
 		// Release back buffers
 		ReleaseBackBufferViews();
@@ -1745,9 +1748,12 @@ namespace PigeonEngine
 		RootSignatureCache.Empty();
 
 		// Release frame resources
-		for (UINT32 i = 0u; i < FRAME_IN_FLIGHT; i++)
+		for (UINT32 FrameIndex = 0u; FrameIndex < FRAME_IN_FLIGHT; FrameIndex++)
 		{
-			CommandAllocators[i].Reset();
+			for (UINT32 RecorderIndex = 0u; RecorderIndex < MAX_RECORDERS; RecorderIndex++)
+			{
+				CommandAllocators[FrameIndex][RecorderIndex].Reset();
+			}
 		}
 		FrameFence.Reset();
 		if (FrameFenceEvent)
@@ -1811,14 +1817,19 @@ namespace PigeonEngine
 			}
 		}
 
-		// Reset the command allocator now that the GPU is done with it.
-		CommandAllocators[CurrentFrameIndex]->Reset();
-
-		// Release pooled command-list ComPtrs so AcquireCommandList rebuilds
-		// against the current frame's allocator.
-		for (RCommandListD3D12* List : CommandListFreeList)
+		// Reset every recorder's command allocator now that the GPU is done with the slot.
+		// The fence wait above covers the whole slot: every list submitted from this frame
+		// index used one of these allocators and has retired by now.
+		for (UINT32 RecorderIndex = 0u; RecorderIndex < MAX_RECORDERS; RecorderIndex++)
 		{
-			List->SetNativeList(nullptr, CommandAllocators[CurrentFrameIndex]);
+			CommandAllocators[CurrentFrameIndex][RecorderIndex]->Reset();
+
+			// Release pooled command-list ComPtrs so AcquireCommandList rebuilds them
+			// against the current frame's allocator for that recorder.
+			for (RCommandListD3D12* List : CommandListFreeList[RecorderIndex])
+			{
+				List->SetNativeList(nullptr, CommandAllocators[CurrentFrameIndex][RecorderIndex], RecorderIndex);
+			}
 		}
 	}
 
@@ -2138,7 +2149,8 @@ namespace PigeonEngine
 		//
 		// The renderer clears the seven scene colour targets to (0,0,0,0) and the depth buffer to
 		// RENDER_DEPTH_FAR, which is what the two branches below register. A target cleared to
-		// anything else would have to state it here too.
+		// anything else states its colour at creation instead: the directional shadow mask is
+		// created with (1,1,1,1), the identity of the shadow term its pass clears it to.
 		//
 		// The format is the VIEW's, never the content format: a depth resource is created
 		// typeless, and D3D12 refuses a typeless clear value; a colour target clears through the
@@ -3388,32 +3400,199 @@ namespace PigeonEngine
 		InDest->SetCurrentState(PostStateRHI);
 	}
 
+	// A mip level's own dimension: the base size shifted down, with a chain that has run
+	// past the size clamping to 1 rather than to 0.
+	static UINT32 MipDimension(const UINT32 InBaseSize, const UINT32 InMipLevel) noexcept
+	{
+		const UINT32 ShiftedSize = InBaseSize >> InMipLevel;
+		return ((ShiftedSize != 0u) ? ShiftedSize : 1u);
+	}
+
+	BOOL8 RDeviceD3D12::UpdateTextureRegion(IRRHITexture* InDest, const RRHITextureRegionUpdate& InRegion) noexcept
+	{
+		if ((!InDest) || (!InRegion.Data) || (InRegion.Width == 0u) || (InRegion.Height == 0u) || (InRegion.Depth == 0u))
+		{
+			return FALSE;
+		}
+
+		IRD3D12Texture* DestinationTexture = static_cast<IRD3D12Texture*>(InDest);
+		ID3D12Resource* DestinationResource = DestinationTexture->GetD3D12Resource();
+		if (!DestinationResource)
+		{
+			return FALSE;
+		}
+
+		// A region is stated in the texels of the level it writes, so the bounds belong to
+		// that level's own size and not to the resource's. Refusing an oversized region is
+		// what keeps a mistake visible: the copy would otherwise be dropped or land where
+		// the caller did not put it.
+		const UINT32 MipLevels = InDest->GetMipLevels();
+		if ((InRegion.MipLevel >= MipLevels) || (InRegion.ArraySlice >= InDest->GetArraySize()))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: UpdateTextureRegion names a mip level or array slice the texture does not have.")));
+			return FALSE;
+		}
+		const UINT32 MipWidth = MipDimension(InDest->GetWidth(), InRegion.MipLevel);
+		const UINT32 MipHeight = MipDimension(InDest->GetHeight(), InRegion.MipLevel);
+		const UINT32 MipDepth = MipDimension(InDest->GetDepth(), InRegion.MipLevel);
+		if ((static_cast<UINT64>(InRegion.DestinationX) + InRegion.Width > MipWidth)
+			|| (static_cast<UINT64>(InRegion.DestinationY) + InRegion.Height > MipHeight)
+			|| (static_cast<UINT64>(InRegion.DestinationZ) + InRegion.Depth > MipDepth))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: UpdateTextureRegion region does not fit the mip level it names.")));
+			return FALSE;
+		}
+
+		const UINT32 Subresource = InRegion.MipLevel + (InRegion.ArraySlice * MipLevels);
+
+		// The staging layout is the subresource's own: the row pitch has to be the one the
+		// API would have chosen (256 byte aligned) even though only the region's rows are
+		// filled in. Bytes per texel follows from the same footprint, which is exact for an
+		// uncompressed format - the row size is the width times the texel size. A block
+		// compressed format has no texel sized row, and a partial block has no meaning as
+		// a row aligned patch, so those are refused instead of approximated.
+		D3D12_RESOURCE_DESC ResourceDesc = DestinationResource->GetDesc();
+		const BOOL8 bIsBlockCompressed = ((ResourceDesc.Format >= DXGI_FORMAT_BC1_TYPELESS)
+			&& (ResourceDesc.Format <= DXGI_FORMAT_BC7_UNORM_SRGB));
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT SubresourceLayout = {};
+		UINT32 SubresourceRowNum = 0u;
+		UINT64 SubresourceRowSizeInBytes = 0ull;
+		UINT64 SubresourceTotalBytes = 0ull;
+		Device->GetCopyableFootprints(&ResourceDesc, Subresource, 1u, 0ull, &SubresourceLayout,
+			&SubresourceRowNum, &SubresourceRowSizeInBytes, &SubresourceTotalBytes);
+		if ((SubresourceLayout.Footprint.Width == 0u) || (bIsBlockCompressed != FALSE))
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: UpdateTextureRegion does not support block compressed textures.")));
+			return FALSE;
+		}
+		const UINT32 BytesPerTexel = static_cast<UINT32>(SubresourceRowSizeInBytes / SubresourceLayout.Footprint.Width);
+		const UINT32 RegionRowSizeInBytes = BytesPerTexel * InRegion.Width;
+		if (InRegion.RowPitch < RegionRowSizeInBytes)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: UpdateTextureRegion source RowPitch is smaller than one row of the region.")));
+			return FALSE;
+		}
+
+		const UINT32 StagingRowPitch = SubresourceLayout.Footprint.RowPitch;
+		const UINT64 StagingSlicePitch = static_cast<UINT64>(StagingRowPitch) * static_cast<UINT64>(InRegion.Height);
+		const UINT64 StagingSize = StagingSlicePitch * static_cast<UINT64>(InRegion.Depth);
+
+		void* CPUBase = nullptr;
+		D3D12_GPU_VIRTUAL_ADDRESS GPUBase = 0;
+		const UINT32 UploadStartOffset = AllocateUploadMemory(StagingSize,
+			D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT, &CPUBase, &GPUBase);
+		if (!CPUBase)
+		{
+			PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: Upload heap exhausted for texture region update.")));
+			return FALSE;
+		}
+
+		// CPU side: copy the region's rows into the staging footprint. The caller's pitch is
+		// honored per row, so a region taken out of a full texture buffer keeps working.
+		for (UINT32 SliceIndex = 0u, SliceNum = InRegion.Depth; SliceIndex < SliceNum; SliceIndex++)
+		{
+			BYTE* DestinationSlice = static_cast<BYTE*>(CPUBase) + (StagingSlicePitch * SliceIndex);
+			const BYTE* SourceSlice = InRegion.Data + (static_cast<UINT64>(InRegion.SlicePitch) * SliceIndex);
+			for (UINT32 RowIndex = 0u, RowNum = InRegion.Height; RowIndex < RowNum; RowIndex++)
+			{
+				memcpy(DestinationSlice + (static_cast<UINT64>(StagingRowPitch) * RowIndex),
+					SourceSlice + (static_cast<UINT64>(InRegion.RowPitch) * RowIndex),
+					static_cast<SIZE_T>(RegionRowSizeInBytes));
+			}
+		}
+
+		// Open the dedicated upload command list lazily.
+		if (!bUploadCommandListOpen)
+		{
+			if (LastUploadFenceValue > 0ull && FrameFence->GetCompletedValue() < LastUploadFenceValue)
+			{
+				FrameFence->SetEventOnCompletion(LastUploadFenceValue, FrameFenceEvent);
+				WaitForSingleObject(FrameFenceEvent, INFINITE);
+			}
+			UploadCommandAllocator->Reset();
+			if (FAILED(UploadCommandList->Reset(UploadCommandAllocator.Get(), nullptr)))
+			{
+				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: Upload command list Reset failed.")));
+				return FALSE;
+			}
+			bUploadCommandListOpen = TRUE;
+		}
+
+		// Transition: current -> COPY_DEST. The state is captured rather than assumed so the
+		// barrier back below restores exactly what the rest of the frame recorded against.
+		D3D12_RESOURCE_STATES BeforeState = D3D12_RESOURCE_STATE_COMMON;
+		RDeviceD3D12::TranslateResourceStates(BeforeState, InDest->GetCurrentState());
+		if (BeforeState != D3D12_RESOURCE_STATE_COPY_DEST)
+		{
+			D3D12_RESOURCE_BARRIER BeforeBarrier = {};
+			BeforeBarrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			BeforeBarrier.Transition.pResource   = DestinationResource;
+			BeforeBarrier.Transition.StateBefore = BeforeState;
+			BeforeBarrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_COPY_DEST;
+			BeforeBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			UploadCommandList->ResourceBarrier(1u, &BeforeBarrier);
+		}
+
+		D3D12_TEXTURE_COPY_LOCATION SourceLocation = {};
+		SourceLocation.pResource                          = UploadHeap.Get();
+		SourceLocation.Type                               = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+		SourceLocation.PlacedFootprint.Offset             = UploadStartOffset;
+		SourceLocation.PlacedFootprint.Footprint.Format   = SubresourceLayout.Footprint.Format;
+		SourceLocation.PlacedFootprint.Footprint.Width    = InRegion.Width;
+		SourceLocation.PlacedFootprint.Footprint.Height   = InRegion.Height;
+		SourceLocation.PlacedFootprint.Footprint.Depth    = InRegion.Depth;
+		SourceLocation.PlacedFootprint.Footprint.RowPitch = StagingRowPitch;
+
+		D3D12_TEXTURE_COPY_LOCATION DestinationLocation = {};
+		DestinationLocation.pResource        = DestinationResource;
+		DestinationLocation.Type             = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+		DestinationLocation.SubresourceIndex = Subresource;
+
+		UploadCommandList->CopyTextureRegion(&DestinationLocation,
+			InRegion.DestinationX, InRegion.DestinationY, InRegion.DestinationZ, &SourceLocation, nullptr);
+
+		if (BeforeState != D3D12_RESOURCE_STATE_COPY_DEST)
+		{
+			D3D12_RESOURCE_BARRIER AfterBarrier = {};
+			AfterBarrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			AfterBarrier.Transition.pResource   = DestinationResource;
+			AfterBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+			AfterBarrier.Transition.StateAfter  = BeforeState;
+			AfterBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			UploadCommandList->ResourceBarrier(1u, &AfterBarrier);
+		}
+
+		return TRUE;
+	}
+
 	// =========================================================================
 	// IRRHIDevice - Command lists
 	// =========================================================================
 
-	IRCommandList* RDeviceD3D12::AcquireCommandList() noexcept
+	IRCommandList* RDeviceD3D12::AcquireCommandList(const UINT32 InRecorderIndex) noexcept
 	{
+		const UINT32 RecorderIndex = ((InRecorderIndex < MAX_RECORDERS) ? InRecorderIndex : 0u);
 		RCommandListD3D12* CommandList = nullptr;
 
-		if (CommandListFreeList.Num() > 0)
+		if (CommandListFreeList[RecorderIndex].Num() > 0)
 		{
-			CommandList = CommandListFreeList[CommandListFreeList.Num() - 1];
-			CommandListFreeList.RemoveAt(CommandListFreeList.Num() - 1);
+			CommandList = CommandListFreeList[RecorderIndex][CommandListFreeList[RecorderIndex].Num() - 1];
+			CommandListFreeList[RecorderIndex].RemoveAt(CommandListFreeList[RecorderIndex].Num() - 1);
 		}
 		else
 		{
 			RDeviceD3D12* DeviceD3D12 = this;
 			TUniquePtr<RCommandListD3D12> NewList = EMemory::MakeUnique<RCommandListD3D12>(DeviceD3D12);
 			CommandList = EMemory::GetPtr(NewList);
-			CommandListPool.Add(std::move(NewList));
+			CommandListPool[RecorderIndex].Add(std::move(NewList));
 		}
 
-		// Create or reset native command list
+		// Create or reset native command list. The allocator belongs to (frame, recorder):
+		// two recording threads never share one, which is what D3D12 requires.
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> NativeList;
-		Device->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocators[CurrentFrameIndex].Get(),
+		Device->CreateCommandList(0u, D3D12_COMMAND_LIST_TYPE_DIRECT, CommandAllocators[CurrentFrameIndex][RecorderIndex].Get(),
 			nullptr, IID_PPV_ARGS(NativeList.ReleaseAndGetAddressOf()));
-		CommandList->SetNativeList(NativeList, CommandAllocators[CurrentFrameIndex]);
+		CommandList->SetNativeList(NativeList, CommandAllocators[CurrentFrameIndex][RecorderIndex], RecorderIndex);
 
 		return CommandList;
 	}
@@ -3440,8 +3619,8 @@ namespace PigeonEngine
 		CommandQueue->Signal(FrameFence.Get(), GlobalFenceCounter);
 		FrameFenceValues[CurrentFrameIndex] = GlobalFenceCounter;
 
-		// Return to pool
-		CommandListFreeList.Add(CL);
+		// Return to the pool the list was acquired from.
+		CommandListFreeList[CL->GetRecorderIndex()].Add(CL);
 	}
 
 	void RDeviceD3D12::SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept
@@ -3453,12 +3632,14 @@ namespace PigeonEngine
 
 		FlushPendingUploads();
 
+		// The recorders close their own lists. This batch is one ExecuteCommandLists call,
+		// which is where the stage order is frozen: the sync list of each stage comes before
+		// that stage's recorder lists, and stage N comes before stage N + 1.
 		TArray<ID3D12CommandList*> NativeLists;
-		for (UINT32 i = 0u; i < InCount; i++)
+		for (UINT32 ListIndex = 0u; ListIndex < InCount; ListIndex++)
 		{
-			RCommandListD3D12* CL = static_cast<RCommandListD3D12*>(InCommandLists[i]);
-			CL->Close();
-			NativeLists.Add(CL->GetNativeCommandList().Get());
+			RCommandListD3D12* CommandList = static_cast<RCommandListD3D12*>(InCommandLists[ListIndex]);
+			NativeLists.Add(CommandList->GetNativeCommandList().Get());
 		}
 
 		CommandQueue->ExecuteCommandLists(InCount, NativeLists.GetData());
@@ -3467,9 +3648,10 @@ namespace PigeonEngine
 		CommandQueue->Signal(FrameFence.Get(), GlobalFenceCounter);
 		FrameFenceValues[CurrentFrameIndex] = GlobalFenceCounter;
 
-		for (UINT32 i = 0u; i < InCount; i++)
+		for (UINT32 ListIndex = 0u; ListIndex < InCount; ListIndex++)
 		{
-			CommandListFreeList.Add(static_cast<RCommandListD3D12*>(InCommandLists[i]));
+			RCommandListD3D12* CommandList = static_cast<RCommandListD3D12*>(InCommandLists[ListIndex]);
+			CommandListFreeList[CommandList->GetRecorderIndex()].Add(CommandList);
 		}
 	}
 
@@ -3690,12 +3872,13 @@ namespace PigeonEngine
 		return HeapIndex;
 	}
 
-	UINT32 RDeviceD3D12::GetSlotSetArenaBase()const
+	UINT32 RDeviceD3D12::GetSlotSetArenaBase(const UINT32 InRecorderIndex)const
 	{
-		// The frame's own arena, so two frames in flight never write the same descriptors. It
-		// sits in a region of its own above the pools: per frame scratch and resource lifetime
-		// descriptors are sized independently, so neither can starve the other.
-		return (SLOT_SET_ARENA_REGION_BASE + ((CurrentFrameIndex % FRAME_IN_FLIGHT) * SLOT_TABLE_STRIDE_PER_FRAME) + SLOT_SET_ARENA_OFFSET);
+		// One arena slice per (frame, recorder). Two frames in flight never write the same
+		// descriptors, and two recorders in one frame never hand out the same descriptor.
+		const UINT32 RecorderIndex = ((InRecorderIndex < MAX_RECORDERS) ? InRecorderIndex : 0u);
+		const UINT32 SliceIndex = (CurrentFrameIndex % FRAME_IN_FLIGHT) * MAX_RECORDERS + RecorderIndex;
+		return (SLOT_SET_ARENA_REGION_BASE + (SliceIndex * SLOT_TABLE_STRIDE_PER_FRAME) + SLOT_SET_ARENA_OFFSET);
 	}
 
 	UINT32 RDeviceD3D12::GetSlotSetArenaCapacity()const

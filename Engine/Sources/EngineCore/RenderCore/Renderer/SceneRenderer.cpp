@@ -1,6 +1,8 @@
 #include "SceneRenderer.h"
 #include "ScenePass.h"
+#include "ViewPrimitiveList.h"
 #include <RenderCommon.h>
+#include <algorithm>
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRRHIDevice.h>
 #include <Main/MainManager.h>
@@ -20,6 +22,7 @@
 #include <RenderProxy/StaticMeshSceneProxy.h>
 #include <RenderProxy/SkeletalMeshSceneProxy.h>
 #include <RenderProxy/BezierGrassSceneProxy.h>
+#include <MultiThread/Thread.h>
 // The diagnostics this file reports are written from code that runs in every configuration, and
 // the header itself is a no-op under _SHIPPING_MODE, which is what keeps this include out of the
 // editor-only block below.
@@ -169,37 +172,64 @@ namespace PigeonEngine
 	* The environment SH bake. A compute program, so it declares no vertex axis and no domain -
 	* the request's axis still has to be some value because the cache keys a variant on it, and
 	* since the program compiles none of the VF machinery the value only labels the variant.
+	*
+	* The request is built by its own function because two callers name it: the start up path that
+	* resolves it synchronously and the per frame retry that may not load. Both must ask for the
+	* same assembly, and one shared request is what keeps them from drifting apart.
 	*/
-	static const EShaderInstance* GetEnvironmentSHProgramInstance()
+	static EShaderAssemblyRequest MakeEnvironmentSHRequest()
 	{
 		EShaderAssemblyRequest Request;
 		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentSH"));
 		Request.ProgramName = EName(PE_TEXT("EnvironmentSH"));
 		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
-
-		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+		return Request;
+	}
+	static const EShaderInstance* GetEnvironmentSHProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(MakeEnvironmentSHRequest());
+	}
+	// Any thread: a cache hit or nothing, with a request recorded for the load thread. This is the
+	// retry a bake runs when its program was not assembled at start up.
+	static const EShaderInstance* RequireEnvironmentSHProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(MakeEnvironmentSHRequest());
 	}
 	/*
 	* The specular IBL pair. Both are compute programs; the prefilter takes the raw cube and a
 	* per-mip output view, the BRDF pass takes no environment and writes the DFG table.
 	*/
-	static const EShaderInstance* GetEnvironmentPrefilterProgramInstance()
+	static EShaderAssemblyRequest MakeEnvironmentPrefilterRequest()
 	{
 		EShaderAssemblyRequest Request;
 		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentPrefilter"));
 		Request.ProgramName = EName(PE_TEXT("EnvironmentPrefilter"));
 		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
-
-		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+		return Request;
 	}
-	static const EShaderInstance* GetEnvironmentBRDFProgramInstance()
+	static const EShaderInstance* GetEnvironmentPrefilterProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(MakeEnvironmentPrefilterRequest());
+	}
+	static const EShaderInstance* RequireEnvironmentPrefilterProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(MakeEnvironmentPrefilterRequest());
+	}
+	static EShaderAssemblyRequest MakeEnvironmentBRDFRequest()
 	{
 		EShaderAssemblyRequest Request;
 		Request.ShaderName = EName(PE_TEXT("CS_EnvironmentBRDF"));
 		Request.ProgramName = EName(PE_TEXT("EnvironmentBRDF"));
 		Request.StageMask = ENGINE_SHADER_STAGE_MASK_COMPUTE;
-
-		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(Request);
+		return Request;
+	}
+	static const EShaderInstance* GetEnvironmentBRDFProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->FindOrCreate(MakeEnvironmentBRDFRequest());
+	}
+	static const EShaderInstance* RequireEnvironmentBRDFProgramInstance()
+	{
+		return REngineShaderInstanceCache::GetManagerSingleton()->RequireInstance(MakeEnvironmentBRDFRequest());
 	}
 
 	/*
@@ -302,7 +332,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 
 	RSceneRenderer::RSceneRenderer()
-		: Scene(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr), SceneLightingProgram(nullptr)
+		: Scene(nullptr), CurrentCommandList(nullptr), CurrentViewProxy(nullptr), FullScreenProgram(nullptr), SceneLightingProgram(nullptr)
 		, ShadowMaskProgram(nullptr)
 		, FinalOutputView(0u), NeedStencil(FALSE)
 		, EnvironmentSHPipelineState(nullptr), EnvironmentSHProgram(nullptr), EnvironmentSHBakedSource(nullptr)
@@ -482,6 +512,28 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check render scene is not normally released.")), (!Scene));
 		Scene = new RScene();
+
+		// The item pass objects and the recorder pool. The pool size leaves one core for the
+		// game thread and one for the render thread; the device clamps it to what it can
+		// actually record, and D3D11 answers one.
+		BasePassObject = EMemory::MakeUnique<FBasePass>(this);
+		ShadowPassObject = EMemory::MakeUnique<FShadowPass>(this);
+		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
+		if (RenderDevice)
+		{
+			UINT32 RecorderNum = EThread::GetHardwareThreadNum();
+			RecorderNum = ((RecorderNum > 2u) ? (RecorderNum - 1u) : 1u);
+			if (RecorderNum > RHI_MAX_RECORD_THREAD_NUM)
+			{
+				RecorderNum = RHI_MAX_RECORD_THREAD_NUM;
+			}
+			if (RecorderNum > RenderDevice->GetMaxRecordThreadNum())
+			{
+				RecorderNum = RenderDevice->GetMaxRecordThreadNum();
+			}
+			RecordScheduler.Initialize(RenderDevice, RecorderNum);
+			FrameData.SetRenderDevice(RenderDevice);
+		}
 	}
 	void RSceneRenderer::OnShaderAssetReplaced(const EName& InShaderName)
 	{
@@ -517,6 +569,22 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		EnvironmentSHPipelineState = nullptr;
 		EnvironmentPrefilterPipelineState = nullptr;
 		EnvironmentBRDFPipelineState = nullptr;
+
+		// The bakes remember what produced them, and a replaced environment program is a new
+		// producer: keeping the latch would leave a cube or table written by the previous
+		// program in place for the rest of the session. A material reload does not move these
+		// programs, so the latch is only dropped for the three names that own the bakes.
+		const BOOL32 bEnvironmentBakeReplaced =
+			((InShaderName == EName(PE_TEXT("CS_EnvironmentSH")))
+			|| (InShaderName == EName(PE_TEXT("CS_EnvironmentPrefilter")))
+			|| (InShaderName == EName(PE_TEXT("CS_EnvironmentBRDF")))) ? TRUE : FALSE;
+		if (bEnvironmentBakeReplaced != FALSE)
+		{
+			EnvironmentSHBakedSource = nullptr;
+			EnvironmentPrefilterBakedSource = nullptr;
+			EnvironmentPrefilterBakedMean = 0.f;
+			bEnvironmentBRDFLUTBaked = FALSE;
+		}
 
 		/*
 		* The blocks of the renderer's own. They latch the program their layout was read from,
@@ -612,6 +680,14 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	}
 	void RSceneRenderer::ShutDown()
 	{
+		// The recorder pool goes first: a worker that is still parked must not observe the
+		// device or the frame data after they are released.
+		RecordScheduler.Shutdown();
+		BasePassObject.reset();
+		ShadowPassObject.reset();
+		FrameData.EndFrame();
+		FrameData.ReleaseAll();
+
 		// The specular IBL resources and their subresource views go before the device does: the
 		// views hand their descriptors back and the textures queue through the device's
 		// deferred delete path.
@@ -722,83 +798,528 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	void RSceneRenderer::Render()
 	{
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		CurrentCommandList = RenderDevice->AcquireCommandList();
-		// Publish to MainManager so scene proxies and other render-thread
-		// callers can reach the active list without taking it as an arg.
-		EMainManager::GetManagerSingleton()->SetActiveCommandList(CurrentCommandList);
-
-		// Open the GPU profile frame: lazy-init the timestamp heap on first
-		// call, resolve the slice this frame's slot is about to overwrite,
-		// reset slot tracking. Auto-instrumented BeginRenderPass / EndRenderPass
-		// brackets land into this frame's slice.
-		PE_GPU_PROFILER_BEGIN_FRAME(CurrentCommandList);
-
-		// The engine driven pass states are retried here, once per frame, because the first
-		// attempt (renderer Initialize) runs before the shader device objects exist.
-		EnsureEnginePassPipelineStates();
-
-		// The per view light lists, encoded and uploaded once the pass states above are known:
-		// whether a view's shadow data is usable depends on the resolver's state, and a list
-		// encoded for a view the resolver cannot serve would have to be uploaded twice.
-		UploadLightListsForViews();
-
-		// Bind the renderer wide sampler table across stages, one entry per register: the
-		// shaders declare their samplers by these registers (s0..s6, see RSamplerType), and the
-		// table is written once per frame because no draw changes it. A sampler a shader
-		// declares that this table does not cover is a sampler nobody binds.
-		for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
+		if (!RenderDevice)
 		{
-			// Samplers[] are RSamplerResource (D3D11 wrapper) with a dual-mode
-			// RHISampler field. In D3D12 mode the actual back-end sampler is
-			// in RHISampler; the D3D11 ComPtr is null. Pick the right one so
-			// CommandList's static_cast<IRD3D12Sampler*> lands on a real
-			// RD3D12Sampler instance.
-			IRRHISampler* SamplerPtr = Samplers[SamplerIndex].RHISampler
-				? Samplers[SamplerIndex].RHISampler
-				: static_cast<IRRHISampler*>(&Samplers[SamplerIndex]);
-			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_VERTEX, SamplerIndex, SamplerPtr);
-			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, SamplerIndex, SamplerPtr);
-			CurrentCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, SamplerIndex, SamplerPtr);
+			return;
 		}
 
-		// The environment bake, before anything reads it. Its dispatch is conditional on the sky's
-		// cubemap having changed, so most frames spend one pointer comparison here.
-		RenderEnvironmentSH();
+		FrameData.BeginFrame(RenderDevice->GetCurrentFrameIndex());
+		FrameData.SetRenderDevice(RenderDevice);
+		RecordScheduler.BeginFrame(FrameData);
 
-		// The specular half, also before the lighting pass that samples it. The LUT is
-		// independent of the environment and records a single dispatch for the session; the
-		// prefilter re-runs only when the cube, its mean, or the resolution exponent changed.
-		RenderEnvironmentBRDFLUT();
-		RenderEnvironmentPrefilter();
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_SETUP);
 
-		// Per frame values. A no-op until the first draw gives the block a layout, which is
-		// also why the first frame that binds it publishes from EnsureGlobalParameterBlock.
-		UpdateGlobalParameters();
+			// The engine driven pass states are retried here, once per frame, because the first
+			// attempt (renderer Initialize) runs before the shader device objects exist.
+			EnsureEnginePassPipelineStates();
 
-		// The shadow depth atlases, before the base pass whose lighting samples them. They are a
-		// per view resource, but one that has to exist before the pass that reads it, so this is
-		// the last point at which the frame can still record them into the same command list.
-		RenderShadowViews();
+			// The per view light lists, encoded and uploaded once the pass states above are known.
+			UploadLightListsForViews();
 
-		BasePass();
+			// Per frame values. A no-op until the first draw gives the block a layout.
+			UpdateGlobalParameters();
+		}
+
+		// Prepare: build the pass instances, then collect and publish every item they consume.
+		PassStatePlan.Reset();
+		TArray<FPassViewInstance> PassInstances;
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_INIT_FRAME);
+			BuildPassInstances(PassInstances);
+			PreparePassInstances(PassInstances);
+			FrameData.EndPrepare();
+		}
+
+		// Record the shadow stage: its sync list carries the frame's GPU setup and the atlas
+		// transitions, then every recorder runs its share of the caster items.
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_SHADOWS);
+			TArray<FRecordTask> ShadowTasks;
+			BuildStageTasks(PassInstances, ERenderPassStageType::RENDER_PASS_STAGE_SHADOW, ShadowTasks);
+			RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_SHADOW, ShadowTasks
+				, [this](IRCommandList* InList) -> void
+				{
+					RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_SHADOW, InList);
+				});
+		}
+
+		// Record the base stage: the GBuffer transitions and clears, then the base items.
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_BASE_PASS);
+			TArray<FRecordTask> BaseTasks;
+			BuildStageTasks(PassInstances, ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks);
+			RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks
+				, [this](IRCommandList* InList) -> void
+				{
+					RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_BASE, InList);
+				});
+		}
+
+		// The engine driven tail records on its own list index and executes after every item
+		// list. A separate allocator is what lets the tail list be recorded before the batch
+		// that already holds the shadow and base lists is submitted. D3D11 has a single
+		// immediate context, so every list there is the same wrapper and index 0 is the only
+		// valid one.
+		const UINT32 TailListIndex = ((RenderDevice->GetMaxRecordThreadNum() <= 1u)
+			? 0u : (RHI_MAX_RECORD_LIST_NUM - 1u));
+		IRCommandList* MainList = RenderDevice->AcquireCommandList(TailListIndex);
+		if (MainList)
+		{
+			MainList->SetRecordMode(ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE);
+			CurrentCommandList = MainList;
+			{
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_FINAL_OUTPUT);
+				RecordTailPasses(MainList);
+			}
+
+			// Close the GPU profile frame before submit so the readback is queued to fill in by
+			// the time the frame's fence retires.
+			PE_GPU_PROFILER_END_FRAME(MainList);
+			MainList->Close();
+			CurrentCommandList = nullptr;
+		}
+
+		TArray<IRCommandList*> AllLists = RecordScheduler.GetRecordedLists();
+		if (MainList)
+		{
+			AllLists.Add(MainList);
+		}
+		{
+			PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_SUBMIT);
+			RenderDevice->SubmitCommandLists(AllLists.GetData(), AllLists.Num<UINT32>());
+		}
+
+		RecordScheduler.EndFrame();
+		FrameData.EndFrame();
+	}
+	FBasePass::FBasePass(RSceneRenderer* InRenderer)
+		: FRenderPass(FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_BASE))
+		, Renderer(InRenderer)
+	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("FBasePass: a pass needs its renderer.")), (Renderer != nullptr));
+	}
+	BOOL32 FBasePass::ShouldUseView(const RViewProxy& InView) const
+	{
+		return (((InView.GetViewKind() == EViewKindType::VIEW_KIND_CAMERA) && (InView.IsMainRenderView() != FALSE)) ? TRUE : FALSE);
+	}
+	void FBasePass::BeginPass(FPassRecordContext& InContext) const
+	{
+		Renderer->BeginItemPass(InContext);
+	}
+	void FBasePass::RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, const UINT32 InBegin, const UINT32 InEnd) const
+	{
+		Renderer->RecordItemRange(InContext, InItems, InBegin, InEnd);
+	}
+
+	FShadowPass::FShadowPass(RSceneRenderer* InRenderer)
+		: FRenderPass(FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_SHADOW))
+		, Renderer(InRenderer)
+	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("FShadowPass: a pass needs its renderer.")), (Renderer != nullptr));
+	}
+	BOOL32 FShadowPass::ShouldUseView(const RViewProxy& InView) const
+	{
+		return ((InView.GetViewKind() == EViewKindType::VIEW_KIND_SHADOW) ? TRUE : FALSE);
+	}
+	void FShadowPass::BeginPass(FPassRecordContext& InContext) const
+	{
+		Renderer->BeginItemPass(InContext);
+	}
+	void FShadowPass::RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, const UINT32 InBegin, const UINT32 InEnd) const
+	{
+		Renderer->RecordItemRange(InContext, InItems, InBegin, InEnd);
+	}
+
+	void RSceneRenderer::BuildPassInstances(TArray<FPassViewInstance>& OutInstances)
+	{
+		OutInstances.SetNum(0);
+		if (!Scene)
+		{
+			return;
+		}
+
+		// Shadow views: one pass instance per used shadow view. The atlas transition and clear
+		// are stage state, declared once per atlas, not once per tile.
+		for (RViewShadowStateMapType::TIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
+		{
+			RViewShadowState* ShadowState = StateIt->second;
+			if ((!ShadowState) || (ShadowState->SlotNum <= 1u) || (ShadowState->bBuiltThisFrame == FALSE))
+			{
+				continue;
+			}
+			IRRHITexture* AtlasTexture = ShadowState->Atlas.GetTexture();
+			if (!AtlasTexture)
+			{
+				continue;
+			}
+			PassStatePlan.AddTransition(ERenderPassStageType::RENDER_PASS_STAGE_SHADOW, AtlasTexture
+				, ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
+			FRHIClear AtlasClear;
+			AtlasClear.Resource		= AtlasTexture;
+			AtlasClear.ClearFlags	= 0x1u;
+			AtlasClear.ClearDepth	= RCommonSettings::RENDER_DEPTH_FAR;
+			PassStatePlan.AddClear(ERenderPassStageType::RENDER_PASS_STAGE_SHADOW, AtlasClear);
+
+			for (UINT32 ViewIndex = 0u, ViewNum = ShadowState->ShadowViews.Num<UINT32>(); ViewIndex < ViewNum; ViewIndex++)
+			{
+				RShadowViewProxy* ShadowView = ShadowState->ShadowViews[ViewIndex];
+				if ((!ShadowView) || (ShadowView->IsUsedThisFrame() == FALSE))
+				{
+					continue;
+				}
+				FPassViewInstance Instance;
+				Instance.Pass		= ShadowPassObject.get();
+				Instance.View		= ShadowView;
+				Instance.ViewData	= FrameData.EnsureView(*ShadowView);
+				Instance.Targets.DepthTarget	= AtlasTexture;
+				Instance.Targets.Viewport		= ShadowView->GetAtlasTile();
+				const EViewport& Tile = Instance.Targets.Viewport;
+				Instance.Targets.Scissor		= ERect(Tile.TopLeftX, Tile.TopLeftY, Tile.TopLeftX + Tile.Width, Tile.TopLeftY + Tile.Height);
+				Instance.Targets.ClearDepth		= RCommonSettings::RENDER_DEPTH_FAR;
+				OutInstances.Add(Instance);
+			}
+		}
+
+		// Main camera views: one base pass instance each.
+		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
+		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+			if ((!ViewProxy) || (ViewProxy->IsMainRenderView() == FALSE))
+			{
+				continue;
+			}
+			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
+			if (!SceneTextures)
+			{
+				continue;
+			}
+			FPassViewInstance Instance;
+			Instance.Pass		= BasePassObject.get();
+			Instance.View		= ViewProxy;
+			Instance.ViewData	= FrameData.EnsureView(*ViewProxy);
+			Instance.Targets.Viewport = ViewProxy->GetRenderViewport();
+			const EViewport& Viewport = Instance.Targets.Viewport;
+			Instance.Targets.Scissor = ERect(Viewport.TopLeftX, Viewport.TopLeftY, Viewport.TopLeftX + Viewport.Width, Viewport.TopLeftY + Viewport.Height);
+			Instance.Targets.ClearDepth = 1.0f;
+
+				IRRHITexture* BaseTargets[7] =
+				{
+					SceneTextures->SceneColor.GetResolvedRHITexture(),
+					SceneTextures->GBufferA.GetResolvedRHITexture(),
+					SceneTextures->GBufferB.GetResolvedRHITexture(),
+					SceneTextures->GBufferC.GetResolvedRHITexture(),
+					SceneTextures->GBufferD.GetResolvedRHITexture(),
+					SceneTextures->GBufferE.GetResolvedRHITexture(),
+					SceneTextures->GBufferF.GetResolvedRHITexture()
+				};
+				BOOL32 bTargetsUsable = TRUE;
+				for (UINT32 TargetIndex = 0u; TargetIndex < 7u; TargetIndex++)
+				{
+					if (!BaseTargets[TargetIndex])
+					{
+						bTargetsUsable = FALSE;
+						break;
+					}
+				}
+				if ((bTargetsUsable == FALSE) || (!SceneTextures->SceneDepthStencil.GetResolvedRHITexture()))
+				{
+					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("BasePass: a scene target is not a usable render target.")));
+					continue;
+				}
+				Instance.Targets.RenderTargetCount = 7u;
+			for (UINT32 TargetIndex = 0u; TargetIndex < 7u; TargetIndex++)
+			{
+				Instance.Targets.RenderTargets[TargetIndex] = BaseTargets[TargetIndex];
+				Instance.Targets.ClearColors[TargetIndex] = Color4(0.f, 0.f, 0.f, 0.f);
+				PassStatePlan.AddTransition(ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTargets[TargetIndex]
+					, ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET);
+				FRHIClear ColorClear;
+				ColorClear.Resource		= BaseTargets[TargetIndex];
+				ColorClear.ClearFlags	= 0u;
+				ColorClear.ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
+				PassStatePlan.AddClear(ERenderPassStageType::RENDER_PASS_STAGE_BASE, ColorClear);
+			}
+			Instance.Targets.DepthTarget = SceneTextures->SceneDepthStencil.GetResolvedRHITexture();
+			PassStatePlan.AddTransition(ERenderPassStageType::RENDER_PASS_STAGE_BASE, Instance.Targets.DepthTarget
+				, ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE);
+			FRHIClear DepthClear;
+			DepthClear.Resource		= Instance.Targets.DepthTarget;
+			DepthClear.ClearFlags	= 0x1u;
+			DepthClear.ClearDepth	= 1.0f;
+			PassStatePlan.AddClear(ERenderPassStageType::RENDER_PASS_STAGE_BASE, DepthClear);
+
+			OutInstances.Add(Instance);
+		}
+	}
+
+	void RSceneRenderer::PreparePassInstances(TArray<FPassViewInstance>& InOutInstances)
+	{
+		UINT32 ShadowItemNum = 0u;
+		UINT32 BaseItemNum = 0u;
+		UINT32 ShadowViewNum = 0u;
+		for (UINT32 InstanceIndex = 0u, InstanceNum = InOutInstances.Num<UINT32>(); InstanceIndex < InstanceNum; InstanceIndex++)
+		{
+			FPassViewInstance& Instance = InOutInstances[InstanceIndex];
+			if ((!Instance.Pass) || (!Instance.View) || (!Instance.ViewData))
+			{
+				continue;
+			}
+			FPassViewContext Context;
+			Context.View		= Instance.View;
+			Context.ViewData	= Instance.ViewData;
+			Context.FrameData	= &FrameData;
+			Context.PassDesc	= &(Instance.Pass->GetPassDesc());
+			Context.Targets		= Instance.Targets;
+			Instance.Pass->CollectItems(Context, Instance.View->GetPrimitiveList(), Instance.Items);
+			Instance.Pass->PrepareItems(FrameData, Instance.Items);
+
+			// The view and global blocks are consumed by the engine tail as well as by the item
+			// draws. An empty view produces no item, so the block is ensured here against the
+			// engine program that declares it. Both calls are no-ops once the layout exists.
+			IRRHIDevice* RenderDevice = FrameData.GetRenderDevice();
+			const EShaderProgram* FallbackProgram = ((SceneLightingProgram) ? SceneLightingProgram : FullScreenProgram);
+			if ((RenderDevice) && (FallbackProgram))
+			{
+				EnsureGlobalParameterBlock(RenderDevice, *FallbackProgram);
+				Instance.View->EnsureParameterBlock(RenderDevice, *FallbackProgram);
+			}
+			if (Instance.Pass->GetStage() == ERenderPassStageType::RENDER_PASS_STAGE_SHADOW)
+			{
+				ShadowItemNum += Instance.Items.Num<UINT32>();
+				ShadowViewNum += 1u;
+			}
+			else if (Instance.Pass->GetStage() == ERenderPassStageType::RENDER_PASS_STAGE_BASE)
+			{
+				BaseItemNum += Instance.Items.Num<UINT32>();
+			}
+		}
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_SHADOW_DRAW_CALLS, ShadowItemNum);
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_BASE_DRAW_CALLS, BaseItemNum);
+		PE_PROFILE_COUNTER(PROFILER_COUNTER_SHADOW_VIEW_NUM, ShadowViewNum);
+	}
+
+	void RSceneRenderer::BuildStageTasks(const TArray<FPassViewInstance>& InInstances, const ERenderPassStageType InStage
+		, TArray<FRecordTask>& OutTasks) const
+	{
+		// A task is a half open item range. A view with many casters is split so one huge view
+		// cannot leave every other recorder idle; a small view stays one task.
+		const UINT32 ItemChunk = 256u;
+		for (UINT32 InstanceIndex = 0u, InstanceNum = InInstances.Num<UINT32>(); InstanceIndex < InstanceNum; InstanceIndex++)
+		{
+			const FPassViewInstance& Instance = InInstances[InstanceIndex];
+			if ((!Instance.Pass) || (Instance.Pass->GetStage() != InStage))
+			{
+				continue;
+			}
+			const UINT32 ItemNum = Instance.Items.Num<UINT32>();
+			if (ItemNum == 0u)
+			{
+				continue;
+			}
+			if ((Instance.Pass->IsItemParallel() == FALSE) || (ItemNum <= ItemChunk))
+			{
+				FRecordTask Task;
+				Task.Pass		= Instance.Pass;
+				Task.Instance	= &InInstances[InstanceIndex];
+				Task.ItemBegin	= 0u;
+				Task.ItemEnd	= ItemNum;
+				OutTasks.Add(Task);
+				continue;
+			}
+			for (UINT32 ItemBegin = 0u; ItemBegin < ItemNum; ItemBegin += ItemChunk)
+			{
+				FRecordTask Task;
+				Task.Pass		= Instance.Pass;
+				Task.Instance	= &InInstances[InstanceIndex];
+				Task.ItemBegin	= ItemBegin;
+				Task.ItemEnd	= EMath::Min(ItemBegin + ItemChunk, ItemNum);
+				OutTasks.Add(Task);
+			}
+		}
+	}
+
+	void RSceneRenderer::RecordStageSync(const ERenderPassStageType InStage, IRCommandList* InCommandList)
+	{
+		if ((!InCommandList) || (!Scene))
+		{
+			return;
+		}
+
+		if (InStage == ERenderPassStageType::RENDER_PASS_STAGE_SHADOW)
+		{
+			// The first executed list opens the GPU profile frame. The environment bakes and the
+			// renderer wide sampler table are recorded here too: they must run before any draw
+			// that samples them, and this list executes before the whole frame's item lists.
+			PE_GPU_PROFILER_BEGIN_FRAME(InCommandList);
+			CurrentCommandList = InCommandList;
+			for (UINT32 SamplerIndex = 0u; SamplerIndex < RSamplerType::SAMPLER_TYPE_COUNT; SamplerIndex++)
+			{
+				IRRHISampler* SamplerPtr = Samplers[SamplerIndex].RHISampler
+					? Samplers[SamplerIndex].RHISampler
+					: static_cast<IRRHISampler*>(&Samplers[SamplerIndex]);
+				InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_VERTEX, SamplerIndex, SamplerPtr);
+				InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_PIXEL, SamplerIndex, SamplerPtr);
+				InCommandList->SetSampler(ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, SamplerIndex, SamplerPtr);
+			}
+			RenderEnvironmentSH();
+			RenderEnvironmentBRDFLUT();
+			RenderEnvironmentPrefilter();
+			CurrentCommandList = nullptr;
+		}
+
+		const FPassStageState& StageState = PassStatePlan.GetStages()[static_cast<UINT32>(InStage)];
+		for (UINT32 TransitionIndex = 0u, TransitionNum = StageState.Transitions.Num<UINT32>(); TransitionIndex < TransitionNum; TransitionIndex++)
+		{
+			const FRHITransition& Transition = StageState.Transitions[TransitionIndex];
+			if ((!Transition.Resource) || (Transition.Resource->GetCurrentState() == Transition.After))
+			{
+				continue;
+			}
+			InCommandList->ResourceBarrier(Transition.Resource, Transition.Resource->GetCurrentState(), Transition.After);
+		}
+		for (UINT32 ClearIndex = 0u, ClearNum = StageState.Clears.Num<UINT32>(); ClearIndex < ClearNum; ClearIndex++)
+		{
+			const FRHIClear& Clear = StageState.Clears[ClearIndex];
+			IRRHITexture* Target = static_cast<IRRHITexture*>(Clear.Resource);
+			if ((!Target) || (Target->GetResourceType() != ERHIResourceTypeTag::RHI_RESOURCE_TYPE_TEXTURE))
+			{
+				continue;
+			}
+			if (Clear.ClearFlags == 0u)
+			{
+				InCommandList->ClearRenderTarget(Target, Clear.ClearColor);
+			}
+			else
+			{
+				InCommandList->ClearDepthStencil(Target, Clear.ClearFlags, Clear.ClearDepth, Clear.ClearStencil);
+			}
+		}
+	}
+
+	void RSceneRenderer::BeginItemPass(FPassRecordContext& InContext) const
+	{
+		if ((!InContext.CommandList) || (!InContext.Instance))
+		{
+			return;
+		}
+		const FPassTargets& Targets = InContext.Instance->Targets;
+		RRHIRenderPassDesc Pass;
+		Pass.RenderTargetCount = Targets.RenderTargetCount;
+		for (UINT32 TargetIndex = 0u; TargetIndex < Targets.RenderTargetCount; TargetIndex++)
+		{
+			Pass.RenderTargets[TargetIndex].Target		= Targets.RenderTargets[TargetIndex];
+			Pass.RenderTargets[TargetIndex].LoadOp		= ERHILoadOp::RHI_LOAD_OP_LOAD;
+			Pass.RenderTargets[TargetIndex].StoreOp		= ERHIStoreOp::RHI_STORE_OP_STORE;
+			Pass.RenderTargets[TargetIndex].ClearColor	= Targets.ClearColors[TargetIndex];
+		}
+		Pass.DepthStencil.Target		= Targets.DepthTarget;
+		Pass.DepthStencil.DepthLoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+		Pass.DepthStencil.DepthStoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+		Pass.DepthStencil.StencilLoadOp	= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
+		Pass.DepthStencil.StencilStoreOp = ERHIStoreOp::RHI_STORE_OP_DONT_CARE;
+		Pass.DepthStencil.ClearDepth	= Targets.ClearDepth;
+		Pass.DepthStencil.ClearStencil	= Targets.ClearStencil;
+		// A worker list must not enter the shared GPU profiler pass stack. The stage sync list
+		// carries the frame bracket; the CPU scopes carry the per pass attribution.
+		Pass.PassName					= nullptr;
+		Pass.bStatePrepared				= TRUE;
+		InContext.CommandList->BeginRenderPass(Pass);
+		InContext.CommandList->SetViewports(&Targets.Viewport, 1u);
+		InContext.CommandList->SetScissorRects(&Targets.Scissor, 1u);
+	}
+
+	void RSceneRenderer::EndItemPass(FPassRecordContext& InContext) const
+	{
+		if (InContext.CommandList)
+		{
+			InContext.CommandList->EndRenderPass();
+		}
+	}
+
+	void RSceneRenderer::RecordItemRange(FPassRecordContext& InContext, const TArray<FPassItem>& InItems
+		, const UINT32 InBegin, const UINT32 InEnd) const
+	{
+		for (UINT32 ItemIndex = InBegin; ItemIndex < InEnd; ItemIndex++)
+		{
+			const FPassItem& Item = InItems[ItemIndex];
+			if (Item.Primitive)
+			{
+				Item.Primitive->RecordPassItem(InContext, Item);
+			}
+		}
+	}
+
+	void RSceneRenderer::RecordTailPasses(IRCommandList* InCommandList)
+	{
+		if ((!InCommandList) || (!Scene))
+		{
+			return;
+		}
+		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
+		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
+		{
+			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
+			if ((!ViewProxy) || (ViewProxy->IsMainRenderView() == FALSE))
+			{
+				continue;
+			}
+			const EViewport& Viewport = ViewProxy->GetRenderViewport();
+			const EViewport NewViewport(Viewport.TopLeftX, Viewport.TopLeftY, Viewport.Width, Viewport.Height, Viewport.MinDepth, Viewport.MaxDepth);
+			InCommandList->SetViewports(&NewViewport, 1u);
+			const ERect ViewScissor(Viewport.TopLeftX, Viewport.TopLeftY, Viewport.TopLeftX + Viewport.Width, Viewport.TopLeftY + Viewport.Height);
+			InCommandList->SetScissorRects(&ViewScissor, 1u);
+
+			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
+			CurrentViewProxy = ViewProxy;
+
+			// The sky writes into the base pass MRT. In a single list the base pass left those
+			// targets bound; here the base items live on other lists, so the tail binds the
+			// same targets again before the sky draw. The stage sync list already transitioned
+			// them, hence bStatePrepared.
+			if (SceneTextures)
+			{
+				RRHIRenderPassDesc SkyPass;
+				SkyPass.RenderTargetCount = 7u;
+				IRRHITexture* SkyTargets[7] =
+				{
+					SceneTextures->SceneColor.GetResolvedRHITexture(),
+					SceneTextures->GBufferA.GetResolvedRHITexture(),
+					SceneTextures->GBufferB.GetResolvedRHITexture(),
+					SceneTextures->GBufferC.GetResolvedRHITexture(),
+					SceneTextures->GBufferD.GetResolvedRHITexture(),
+					SceneTextures->GBufferE.GetResolvedRHITexture(),
+					SceneTextures->GBufferF.GetResolvedRHITexture()
+				};
+				for (UINT32 TargetIndex = 0u; TargetIndex < 7u; TargetIndex++)
+				{
+					SkyPass.RenderTargets[TargetIndex].Target	= SkyTargets[TargetIndex];
+					SkyPass.RenderTargets[TargetIndex].LoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+					SkyPass.RenderTargets[TargetIndex].StoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+				}
+				SkyPass.DepthStencil.Target		= SceneTextures->SceneDepthStencil.GetResolvedRHITexture();
+				SkyPass.DepthStencil.DepthLoadOp	= ERHILoadOp::RHI_LOAD_OP_LOAD;
+				SkyPass.DepthStencil.DepthStoreOp	= ERHIStoreOp::RHI_STORE_OP_STORE;
+				SkyPass.PassName				= nullptr;
+				SkyPass.bStatePrepared			= TRUE;
+				InCommandList->BeginRenderPass(SkyPass);
+				RenderSky(ViewProxy);
+				InCommandList->EndRenderPass();
+			}
+
+			RenderDirectionalShadowMask(ViewProxy, SceneTextures);
+			RenderLighting(ViewProxy, SceneTextures);
+			RenderForward(ViewProxy, SceneTextures);
+		}
+		CurrentViewProxy = nullptr;
 
 		FinalOutputPass();
-
 #if _EDITOR_ONLY
-		// Editor UI overlays the framebuffer between FinalOutput and Present.
-		// Skipped in non-editor builds (the manager + renderer don't exist).
 		ImGuiPass();
 #endif
-
-		// Close the GPU profile frame: emit ResolveTimestampHeap (D3D12) or
-		// close disjoint (D3D11) before SubmitCommandList so the readback
-		// is queued to fill in by the time the frame's fence retires.
-		PE_GPU_PROFILER_END_FRAME(CurrentCommandList);
-
-		RenderDevice->SubmitCommandList(CurrentCommandList);
-		CurrentCommandList = nullptr;
-		EMainManager::GetManagerSingleton()->SetActiveCommandList(nullptr);
 	}
+
 	BOOL32 RSceneRenderer::EnsureGlobalParameterBlock(IRRHIDevice* InRenderDevice, const EShaderProgram& InProgram)
 	{
 		if (GlobalParameterBlock.IsInitialized())
@@ -875,75 +1396,19 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 	{
 		GlobalParameterBlock.Bind(InCommandList, InProgram);
 	}
-	void RSceneRenderer::BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram)
+	void RSceneRenderer::BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram, const RViewProxy* InView)
 	{
 		if (!InCommandList)
 		{
 			return;
 		}
-		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
-		EnsureGlobalParameterBlock(RenderDevice, InProgram);
+		// The blocks are published during Prepare. This call only replays the bind, which is
+		// what keeps a worker record path free of value writes.
 		BindGlobalParameters(InCommandList, InProgram);
-		if (CurrentViewProxy)
+		if (InView)
 		{
-			CurrentViewProxy->EnsureParameterBlock(RenderDevice, InProgram);
-			CurrentViewProxy->BindParameters(InCommandList, InProgram);
+			InView->BindParameters(InCommandList, InProgram);
 		}
-	}
-	void RSceneRenderer::BasePass()
-	{
-		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
-		for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
-		{
-			RViewProxy* ViewProxy = ViewProxies[ViewIndex];
-#if _EDITOR_ONLY
-			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer failed that view proxy can not be null")), (!!ViewProxy));
-			if (!ViewProxy)
-			{
-				continue;
-			}
-#endif
-			// Only render the main render view through the deferred pipeline.
-			// Secondary views (e.g. editor camera) must not be rendered here -
-			// they lack scene geometry passes and would clobber FinalOutputView.
-			if (!ViewProxy->IsMainRenderView())
-			{
-				continue;
-			}
-			const EViewport& Viewport = ViewProxy->GetRenderViewport();
-			const EViewport NewViewport(Viewport.TopLeftX, Viewport.TopLeftY, Viewport.Width, Viewport.Height, Viewport.MinDepth, Viewport.MaxDepth);
-			CurrentCommandList->SetViewports(&NewViewport, 1u);
-			// D3D12 always runs the scissor test (D3D11 keeps it disabled by
-			// default). Without an explicit SetScissorRects all draws would
-			// have a zero scissor rectangle and get rejected wholesale.
-			const ERect ViewScissor(
-				Viewport.TopLeftX,
-				Viewport.TopLeftY,
-				Viewport.TopLeftX + Viewport.Width,
-				Viewport.TopLeftY + Viewport.Height);
-			CurrentCommandList->SetScissorRects(&ViewScissor, 1u);
-
-			RSceneTextures* SceneTextures = ViewSceneTextures[ViewProxy->GetUniqueID()];
-			// The view block is refreshed here and bound by each draw: a root signature
-			// switch voids every root binding, so a view bound once per frame would be lost
-			// the moment a material swaps in its own pipeline state.
-			ViewProxy->UpdateRenderResource();
-			CurrentViewProxy = ViewProxy;
-
-			RenderBasePass(SceneTextures);
-
-			RenderSky(ViewProxy);
-
-			// The directional shadows resolved into the view's mask, between the passes that write
-			// what it reads and the pass that samples it. It is skipped for a view that has no
-			// mask, and the lighting pass then leaves every directional light unshadowed.
-			RenderDirectionalShadowMask(ViewProxy, SceneTextures);
-
-			RenderLighting(ViewProxy, SceneTextures);
-
-			RenderForward(ViewProxy, SceneTextures);
-		}
-		CurrentViewProxy = nullptr;
 	}
 	void RSceneRenderer::FinalOutputPass()
 	{
@@ -988,10 +1453,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// set - and an unbound ViewParams reads as whatever the last user of that root left
 		// behind, which for exposure is a stale gain rather than a neutral one.
 		CurrentViewProxy = FindViewProxy(FinalOutputView);
-		if (CurrentViewProxy)
-		{
-			CurrentViewProxy->UpdateRenderResource();
-		}
 
 		// The state carries the copy program's signature, so the blocks the shader reads are
 		// bound after it, never before.
@@ -999,7 +1460,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		if ((FinalOutputState) && (FullScreenProgram))
 		{
 			CurrentCommandList->SetPipelineState(FinalOutputState);
-			BindEngineParameters(CurrentCommandList, *FullScreenProgram);
+			BindEngineParameters(CurrentCommandList, *FullScreenProgram, CurrentViewProxy);
 
 			FullScreenTriangle.BindPrimitiveBuffers(CurrentCommandList, *FullScreenProgram);
 			if (FinalOutputView != 0u)
@@ -1078,7 +1539,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// main thread by PrepareDrawData) and replays it through the active
 		// IRCommandList. Failure modes (uninitialized renderer, empty draw
 		// list) are silent no-ops.
-		CImGUIManager::GetManagerSingleton()->RenderDrawData();
+		CImGUIManager::GetManagerSingleton()->RenderDrawData(CurrentCommandList);
 
 		CurrentCommandList->EndRenderPass();
 
@@ -1120,131 +1581,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			return;
 		}
 		CurrentCommandList->ResourceBarrier(InTexture, CurrentState, ReadState);
-	}
-	void RSceneRenderer::RenderBasePass(RSceneTextures* InSceneTextures)
-	{
-		// The pass writes into seven colour targets, so every one of them has to be a usable
-		// render target: one that is not would leave its slot unbound and the pixels the base
-		// pass meant to write there would be missing from the frame entirely.
-		const RRenderTexture2D* const BasePassTargets[7] =
-		{
-			&InSceneTextures->SceneColor, &InSceneTextures->GBufferA, &InSceneTextures->GBufferB,
-			&InSceneTextures->GBufferC, &InSceneTextures->GBufferD, &InSceneTextures->GBufferE,
-			&InSceneTextures->GBufferF,
-		};
-		for (UINT32 TargetIndex = 0u; TargetIndex < PE_ARRAYSIZE(BasePassTargets); TargetIndex++)
-		{
-			if (!IsUsableColorTarget(*BasePassTargets[TargetIndex]))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("BasePass: a scene colour target is not a usable render target.")));
-				return;
-			}
-		}
-
-		// MRT pass: 7 colour render targets + depth-stencil, one per entry of the GBuffer
-		// contract table. The pass clears them through its own LoadOp=CLEAR rather than
-		// through a separate clear of each texture.
-		// Resolve each texture's actual back-end IRRHITexture pointer
-		// (D3D11 path returns `this`; D3D12 path returns the RD3D12Texture
-		// stored in RHITexture). Phase 4 collapses both paths once the
-		// D3D11 wrapper class is retired from engine-side code.
-		RRHIRenderPassDesc Pass;
-		Pass.RenderTargetCount				= 7u;
-		Pass.RenderTargets[0].Target		= InSceneTextures->SceneColor.GetResolvedRHITexture();
-		Pass.RenderTargets[0].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[0].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[1].Target		= InSceneTextures->GBufferA.GetResolvedRHITexture();
-		Pass.RenderTargets[1].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[1].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[2].Target		= InSceneTextures->GBufferB.GetResolvedRHITexture();
-		Pass.RenderTargets[2].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[2].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[3].Target		= InSceneTextures->GBufferC.GetResolvedRHITexture();
-		Pass.RenderTargets[3].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[3].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[4].Target		= InSceneTextures->GBufferD.GetResolvedRHITexture();
-		Pass.RenderTargets[4].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[4].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[5].Target		= InSceneTextures->GBufferE.GetResolvedRHITexture();
-		Pass.RenderTargets[5].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[5].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.RenderTargets[6].Target		= InSceneTextures->GBufferF.GetResolvedRHITexture();
-		Pass.RenderTargets[6].LoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.RenderTargets[6].ClearColor	= Color4(0.f, 0.f, 0.f, 0.f);
-		Pass.DepthStencil.Target			= InSceneTextures->SceneDepthStencil.GetResolvedRHITexture();
-		Pass.DepthStencil.DepthLoadOp		= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-		Pass.DepthStencil.ClearDepth		= 1.f;
-		Pass.PassName						= PE_TEXT("BasePass");
-		CurrentCommandList->BeginRenderPass(Pass);
-
-		// No pipeline state is bound here: this pass is per primitive, so the object that draws
-		// owns the state, builds it from this pass and its own program, and binds it inside its
-		// draw. The pass itself only frames the render targets and the loop.
-
-		// Every registered primitive draws itself. The pass decides when, the primitive decides
-		// how: its own program, its own geometry, its own bindings. Which kind of primitive it is
-		// never enters this loop, so adding one does not touch the renderer.
-		{
-			const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
-			for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = Primitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
-			{
-				RPrimitiveSceneProxy* Primitive = Primitives[PrimitiveIndex];
-#if _EDITOR_ONLY
-				if (!Primitive)
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null primitive scene proxy.")));
-					continue;
-				}
-				if (!(Primitive->IsRenderValid()))
-				{
-					PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid primitive scene proxy.")));
-					continue;
-				}
-#endif
-				Primitive->BindRenderResource();
-				Primitive->Draw();
-			}
-		}
-
-		// BezierGrass - parked with the rest of the grass render path, which is rebuilt from
-		// the grass shaders in a task of its own. The loop stays so the place the pass ran in
-		// is still visible, but nothing is recorded for it.
-#if 0
-		// BezierGrass - swaps in its own pipeline (wireframe / solid-none) per
-		// proxy. Restore base PSO afterwards so subsequent meshes get the
-		// expected raster mode back.
-		RSceneProxyMapping<RBezierGrassSceneProxy>& BezierGrasses = Scene->GetBezierGrassSceneProxies();
-		for (UINT32 BezierGrassIndex = 0u, NumBezierGrasses = BezierGrasses.GetSceneProxyCount(); BezierGrassIndex < NumBezierGrasses; BezierGrassIndex++)
-		{
-			RBezierGrassSceneProxy* BezierGrass = BezierGrasses.SceneProxies[BezierGrassIndex];
-#if _EDITOR_ONLY
-			if (!BezierGrass)
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a null bezier grass proxy.")));
-				continue;
-			}
-			if (!(BezierGrass->IsRenderValid()))
-			{
-				PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Exist a render invalid bezier grass proxy.")));
-				continue;
-			}
-#endif
-#if 0
-			if (BezierGrass->Property.bWireframe)
-			{
-				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_WIREFRAME]);
-			}
-			else
-#endif
-			{
-				CurrentCommandList->SetPipelineState(PipelineStates[PIPELINE_STATE_BASE_PASS_GRASS_SOLID]);
-			}
-			BezierGrass->DispatchComputeShader();
-			BezierGrass->BindRenderResource();
-			BezierGrass->Draw();
-		}
-#endif
-		CurrentCommandList->EndRenderPass();
 	}
 	void RSceneRenderer::RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures)
 	{
@@ -1288,7 +1624,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// state above brought its own signature, which voided anything an earlier pass had left
 		// bound. The light counts travel in the per frame block, so they land with the rest of
 		// it instead of at a root written down here.
-		BindEngineParameters(CurrentCommandList, *LightingProgram);
+		BindEngineParameters(CurrentCommandList, *LightingProgram, InViewProxy);
 
 		// The environment's brightness and tint, which are this renderer's block and not the sky's:
 		// they travel with the coefficients the bake produced, and the pass that shades reads them
@@ -1490,7 +1826,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		// The shared blocks belong to the pass that draws it: the state above brought its own
 		// signature, which voided anything an earlier pass had left bound.
-		BindEngineParameters(CurrentCommandList, *MaskProgram);
+		BindEngineParameters(CurrentCommandList, *MaskProgram, InViewProxy);
 
 		// The mask block: the reciprocal of the mask's pixel size, which is what the shader
 		// converts its own pixel coordinate with. The size is the scene textures' own, because
@@ -1580,7 +1916,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			}
 #endif
 			SkyLight->BindRenderResource();
-			SkyLight->Draw();
+			SkyLight->Draw(CurrentCommandList, InViewProxy);
 #if _EDITOR_ONLY
 			break;
 #endif
@@ -1616,13 +1952,17 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 #if _EDITOR_ONLY
 		{
 			CurrentCommandList->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_LINELIST);
-			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(InViewProxy);
+			DebugWireframePrimitiveManager->RenderPrimitives_RenderThread(CurrentCommandList, InViewProxy);
 			CurrentCommandList->SetPrimitiveTopology(RPrimitiveTopologyType::PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		}
 #endif
 
 		CurrentCommandList->EndRenderPass();
 	}
+	// Defined with the shadow views below. The base pass list uses the same grouping, and the
+	// definition sits there because both callers share it.
+	static void SortViewPrimitiveListByShaderInstance(RViewPrimitiveList& InOutDrawList);
+
 	void RSceneRenderer::InitViews()
 	{
 		// Add, Update, Remove requires
@@ -1657,6 +1997,9 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				StateIt->second->bBuiltThisFrame = FALSE;
 			}
 		}
+		// The frame's caster union, before the shadow views that consume it. The scene commands
+		// above are what make it this frame's set of proxies.
+		CollectSceneCasterBounds();
 		TArray<RViewProxy*>& ViewProxies = Scene->GetViewProxies().SceneProxies;
 		{
 			for (INT32 ViewIndex = 0, ViewNum = ViewProxies.Num(); ViewIndex < ViewNum; ViewIndex++)
@@ -1669,7 +2012,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 					continue;
 				}
 #endif
-				ViewProxy->ResetVisibilityMap();
+				ViewProxy->ResetPrimitiveList();
 				if (ViewProxy->IsMainRenderView())
 				{
 					FinalOutputView = ViewProxy->GetUniqueID();
@@ -1687,8 +2030,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				continue;
 			}
 #endif
-			const EFrustum& ViewFrustum = ViewProxy->GetViewFrustum();
-
 			// This view's shadow views. Built before the view's own culling because a shadow view
 			// carries its own frustum and its own caster list, and before InitLights because the
 			// light lists carry the slot each light landed in.
@@ -1696,11 +2037,17 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				InitShadowViews(ViewProxy);
 			}
 
-			// Visible culling
+			// The view's own list. A secondary view - an editor camera, a preview - is not shaded
+			// through the deferred pipeline, so its list would be built and never read.
+			if (ViewProxy->IsMainRenderView() != FALSE)
 			{
-				RSceneRenderer::RVisibilityMapType& VisibilityMap = ViewProxy->GetVisibilityMap();
-				OctreeCull(ViewFrustum, VisibilityMap);
-				PrimitiveCull(ViewFrustum, VisibilityMap);
+				CollectViewPrimitiveList(*ViewProxy, ViewProxy->GetPrimitiveList());
+				// Opaque geometry is order independent, so the base pass list is grouped the same
+				// way a shadow view groups its casters: one material run costs one material bind,
+				// and on D3D12 the root / descriptor work then scales with the material count
+				// rather than with the draw count. The shadow path has always done this; the main
+				// view list was the one still arriving in scene order.
+				SortViewPrimitiveListByShaderInstance(ViewProxy->GetPrimitiveList());
 			}
 
 			// Occlusion query
@@ -1878,8 +2225,21 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			// The whole indirect term is missing when this happens, and an absence is the hardest
 			// thing to attribute from the picture alone, so it is reported rather than skipped
 			// quietly. The report is deduplicated, so a session without the program costs one line.
-			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its compute program did not assemble")));
-			return;
+			//
+			// Asked for again before that report: the synchronous resolution at start up is the
+			// only other caller, and if it ran before the shader's device objects existed the
+			// program would stay missing for the session. RequireInstance is the any-thread form -
+			// a cache hit once assembled, and a recorded request otherwise.
+			if (const EShaderInstance* SHInstance = RequireEnvironmentSHProgramInstance())
+			{
+				EnvironmentSHProgramInstance = SHInstance;
+				EnvironmentSHProgram = SHInstance->GetProgram();
+			}
+			if (!EnvironmentSHProgram)
+			{
+				ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its compute program did not assemble")));
+				return;
+			}
 		}
 
 		// What to project: the sky's environment cube. A frame with no sky has nothing to bake, and
@@ -1969,18 +2329,28 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		EShaderParameterSet Parameters;
 		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), SourceTexture);
 		Parameters.SetStructuredBuffer(EName(), EName(PE_TEXT("EnvironmentSHOutput")), &EnvironmentSHBuffer, TRUE);
-		BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE
-			, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
+		const BOOL32 bShaderResourcesBound = BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
+			, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_SH));
 
 		// One threadgroup: the kernel hands one coefficient to each of nine lanes and lets each
 		// scan the whole sample set itself, so there is no reduction, no group shared memory and
 		// nothing here to size against the cubemap's resolution.
-		CurrentCommandList->Dispatch(1u, 1u, 1u);
+		if (bShaderResourcesBound != FALSE)
+		{
+			CurrentCommandList->Dispatch(1u, 1u, 1u);
+		}
 
 		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
 
 		CurrentCommandList->ResourceBarrier(CoefficientBuffer, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
 
+		if (bShaderResourcesBound == FALSE)
+		{
+			// The dispatch would have read an unbound cube and written zero coefficients, and the
+			// bake would then be marked done - the indirect term would stay black for the session.
+			ReportSkippedDraw(EString(PE_TEXT("the environment SH bake")), EString(PE_TEXT("its bindings could not be published")));
+			return;
+		}
 		EnvironmentSHBakedSource = SourceTexture;
 
 		// One line per bake and a bake only happens when the cube behind the sky changes, so this
@@ -2192,7 +2562,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 		if (!EnvironmentBRDFProgram)
 		{
-			return;
+			// Same retry as the SH bake: the start up resolution is sync, and a program that was
+			// not assembled then would never be asked for again, because this bake is one shot.
+			if (const EShaderInstance* BRDFInstance = RequireEnvironmentBRDFProgramInstance())
+			{
+				EnvironmentBRDFProgramInstance = BRDFInstance;
+				EnvironmentBRDFProgram = BRDFInstance->GetProgram();
+			}
+			if (!EnvironmentBRDFProgram)
+			{
+				ReportSkippedDraw(EString(PE_TEXT("the environment BRDF LUT")), EString(PE_TEXT("its compute program did not assemble")));
+				return;
+			}
 		}
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if (!RenderDevice)
@@ -2247,16 +2628,27 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 
 		EShaderParameterSet Parameters;
 		Parameters.SetTextureUAV(EName(), EName(PE_TEXT("EnvironmentBRDFLUT")), EnvironmentBRDFLUTUAVView);
-		BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
+		const BOOL32 bShaderResourcesBound = BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
 			, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_BRDF));
 
 		const UINT32 GroupNum = ((Resolution + 7u) / 8u);
-		CurrentCommandList->Dispatch(GroupNum, GroupNum, 1u);
+		if (bShaderResourcesBound != FALSE)
+		{
+			CurrentCommandList->Dispatch(GroupNum, GroupNum, 1u);
+		}
 
 		PE_GPU_PROFILER_PASS_END(CurrentCommandList);
 
 		CurrentCommandList->ResourceBarrier(LUTTexture
 			, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
+
+		if (bShaderResourcesBound == FALSE)
+		{
+			// Same failure the prefilter guards against: a one-shot bake that dispatched against
+			// an unbound table would write nothing and then be marked done.
+			ReportSkippedDraw(EString(PE_TEXT("the environment BRDF LUT")), EString(PE_TEXT("its bindings could not be published")));
+			return;
+		}
 		bEnvironmentBRDFLUTBaked = TRUE;
 
 #if _EDITOR_ONLY
@@ -2275,13 +2667,28 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 		if (!EnvironmentPrefilterProgram)
 		{
-			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its compute program did not assemble")));
-			return;
+			// Same retry as the SH bake. Without this, a program the start up resolution missed
+			// stays null for the session and the prefilter never records its dispatch - which
+			// leaves the prefiltered cube at its creation contents and reads as "no environment
+			// reflection" for every material.
+			if (const EShaderInstance* PrefilterInstance = RequireEnvironmentPrefilterProgramInstance())
+			{
+				EnvironmentPrefilterProgramInstance = PrefilterInstance;
+				EnvironmentPrefilterProgram = PrefilterInstance->GetProgram();
+			}
+			if (!EnvironmentPrefilterProgram)
+			{
+				ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its compute program did not assemble")));
+				return;
+			}
 		}
 		const RSkyLightSceneProxy* SkyLight = FindPrimarySkyLight();
 		const IRRHITexture* SourceTexture = ((SkyLight != nullptr) ? SkyLight->GetEnvironmentTexture() : nullptr);
 		if (!SourceTexture)
 		{
+			// A scene without a sky is legal, but it is also the first gate that produces a black
+			// prefiltered cube, so it is named once per session rather than left to the picture.
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("the scene has no sky light with an environment cube")));
 			return;
 		}
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
@@ -2315,11 +2722,17 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 		if (EnvironmentPrefilterParameterBlock.EnsureInitialized(RenderDevice, *EnvironmentPrefilterProgram) == FALSE)
 		{
+			// Silent before: a block the program does not declare means the dispatch would run
+			// with every MipResolution/SampleCount at zero, which writes at most one texel per
+			// face and then marks the bake as done. Naming it here is what keeps that from
+			// reading as "the prefilter produced nothing".
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its parameter block is not declared by its own program")));
 			return;
 		}
 		IRRHITexture* PrefilteredTexture = PrefilteredEnvironmentCube.Texture;
 		if (!PrefilteredTexture)
 		{
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its prefiltered cube has no render texture")));
 			return;
 		}
 
@@ -2342,10 +2755,12 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		const UINT32 SourceCubeResolution = EMath::Max(SourceTexture->GetWidth(), 1u);
 		EShaderParameterSet Parameters;
 		Parameters.SetTexture(EName(), EName(PE_TEXT("EnvironmentCube")), SourceTexture);
+		BOOL32 bAllMipsDispatched = TRUE;
 		for (UINT32 MipIndex = 0u; MipIndex < PrefilteredEnvironmentMipCount; MipIndex++)
 		{
 			if ((MipIndex >= PrefilteredEnvironmentUAVViews.Num<UINT32>()) || (!PrefilteredEnvironmentUAVViews[MipIndex]))
 			{
+				bAllMipsDispatched = FALSE;
 				break;
 			}
 			const UINT32 MipResolution = EMath::Max(BaseResolution >> MipIndex, 1u);
@@ -2364,8 +2779,15 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			EnvironmentPrefilterParameterBlock.Bind(CurrentCommandList, *EnvironmentPrefilterProgram);
 
 			Parameters.SetTextureUAV(EName(), EName(PE_TEXT("PrefilteredEnvironmentCube")), PrefilteredEnvironmentUAVViews[MipIndex]);
-			BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
-				, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER));
+			if (BindShaderResources(CurrentCommandList, Parameters, ComputeEntry->BindingPlan
+				, ERHIShaderStage::RHI_SHADER_STAGE_COMPUTE, EName(SHADER_BINDING_SCOPE_ENVIRONMENT_PREFILTER)) == FALSE)
+			{
+				// The binding side refuses a set whose index driven resources have no index
+				// fields. Dispatching anyway would write nothing and then mark the bake as done,
+				// which is exactly the "prefiltered cube is black" state.
+				bAllMipsDispatched = FALSE;
+				break;
+			}
 
 			const UINT32 GroupNum = ((MipResolution + 7u) / 8u);
 			CurrentCommandList->Dispatch(GroupNum, GroupNum, 6u);
@@ -2376,6 +2798,14 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		CurrentCommandList->ResourceBarrier(PrefilteredTexture
 			, ERHIResourceState::RHI_RESOURCE_STATE_UNORDERED_ACCESS, ERHIResourceState::RHI_RESOURCE_STATE_SHADER_RESOURCE);
 
+		if ((bAllMipsDispatched == FALSE) || (PrefilteredEnvironmentMipCount == 0u))
+		{
+			// Every mip has to be written before the cube is readable: a partial chain would
+			// leave the levels the sampling side reaches at their creation contents. The bake
+			// is not marked done, so the next frame tries the whole chain again.
+			ReportSkippedDraw(EString(PE_TEXT("the environment prefilter")), EString(PE_TEXT("its mip chain could not be dispatched in full")));
+			return;
+		}
 		EnvironmentPrefilterBakedSource = SourceTexture;
 		EnvironmentPrefilterBakedMean = CubeMeanLuminance;
 
@@ -2705,35 +3135,165 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		return FALSE;
 	}
 	/*
-	* Fills a shadow view's caster list.
+	* Fills one view's primitive list.
 	*
-	* Only casters are tested, and a proxy that cannot state a bound is kept: a bound that cannot
-	* be computed is not evidence of invisibility, and a caster dropped on a guess is a shadow that
+	* The list is the cull's output and every pass that draws the view consumes it. A shadow
+	* view adds the caster filter, because a primitive that does not cast is not part of that
+	* view's work at all. A proxy that cannot state a bound is kept: a bound that cannot be
+	* computed is not evidence of invisibility, and a caster dropped on a guess is a shadow that
 	* silently disappears from the frame.
 	*/
-	static void CullShadowCasters(const EFrustum& InFrustum, const TArray<RPrimitiveSceneProxy*>& InPrimitives
-		, RSceneRenderer::RVisibilityMapType& OutVisibilityMap)
+	void RSceneRenderer::CollectViewPrimitiveList(const RViewProxy& InView, RViewPrimitiveList& OutPrimitiveList
+		, RViewPrimitiveBounds* OutBounds) const
 	{
-		for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = InPrimitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+		if (!Scene)
 		{
-			RPrimitiveSceneProxy* Primitive = InPrimitives[PrimitiveIndex];
+			return;
+		}
+		const EFrustum& InViewFrustum = InView.GetViewFrustum();
+		// The frustum's own world AABB, used only to clip what a kept primitive contributes to
+		// the union. A caster larger than the shadow view (the ground plane is the usual one)
+		// would otherwise dominate the fit with geometry no receiver in this view can see.
+		Vector3 FrustumWorldMin(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+		Vector3 FrustumWorldMax(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+		if (OutBounds)
+		{
+			for (UINT32 CornerIndex = 0u; CornerIndex < 8u; CornerIndex++)
+			{
+				FrustumWorldMin = MinVector3(FrustumWorldMin, InViewFrustum.FarNearPlanePoint[CornerIndex]);
+				FrustumWorldMax = MaxVector3(FrustumWorldMax, InViewFrustum.FarNearPlanePoint[CornerIndex]);
+			}
+		}
+		const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
+		for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = Primitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+		{
+			RPrimitiveSceneProxy* Primitive = Primitives[PrimitiveIndex];
 			if (!Primitive)
 			{
 				continue;
 			}
-			if (Primitive->IsSceneProxyCastShadow() == FALSE)
+			// The view's kind, the view's masks, the primitive's own hooks and the global
+			// policy are one decision, made in the central filter. The frustum test below is
+			// the only part the filter leaves to the caller.
+			FRenderFilterContext FilterContext;
+			FilterContext.View		= &InView;
+			FilterContext.Primitive	= Primitive;
+			FilterContext.FrameIndex = FrameData.GetFrameIndex();
+			if (FRenderFilterRegistry::ShouldCollect(FilterContext) == FALSE)
 			{
 				continue;
 			}
 			Vector3 BoundMin;
 			Vector3 BoundMax;
-			if ((Primitive->GetWorldBound(BoundMin, BoundMax) != FALSE)
-				&& (InFrustum.IntersectsWorldAABB(BoundMin, BoundMax) == FALSE))
+			const BOOL32 bHasBound = Primitive->GetWorldBound(BoundMin, BoundMax);
+			if ((bHasBound != FALSE)
+				&& (InViewFrustum.IntersectsWorldAABB(BoundMin, BoundMax) == FALSE))
 			{
 				continue;
 			}
-			OutVisibilityMap[Primitive->GetUniqueID()] = TRUE;
+			OutPrimitiveList.Add(Primitive, Primitive->GetReportedPrimaryMaterial());
+			if (OutBounds)
+			{
+				if (bHasBound != FALSE)
+				{
+					// The intersection of the primitive's bound and the frustum's own AABB. It
+					// contains every part of the primitive the view can reach, and it cannot be
+					// larger than the view itself.
+					const Vector3 ClippedMin = MaxVector3(BoundMin, FrustumWorldMin);
+					const Vector3 ClippedMax = MinVector3(BoundMax, FrustumWorldMax);
+					OutBounds->Add(ClippedMin, ClippedMax);
+				}
+				else
+				{
+					OutBounds->MarkUnknown();
+				}
+			}
 		}
+	}
+	/*
+	* The world space union of this frame's casters, and whether it covers all of them.
+	*
+	* One pass over the scene's primitives, before any shadow view is built: the union is what a
+	* directional cascade's depth range has to reach so an occluder between the light and the
+	* slice is in the caster list. The completeness flag is separate from the bound because a
+	* primitive that cannot state a bound still casts; the renderer then falls back to the
+	* camera's reach rather than trusting a union that does not contain it.
+	*/
+	void RSceneRenderer::CollectSceneCasterBounds()
+	{
+		SceneCasterBounds			= EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE);
+		bSceneCasterBoundsComplete	= TRUE;
+		if (!Scene)
+		{
+			return;
+		}
+		const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
+		for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = Primitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
+		{
+			RPrimitiveSceneProxy* Primitive = Primitives[PrimitiveIndex];
+			if ((!Primitive) || (Primitive->IsSceneProxyCastShadow() == FALSE))
+			{
+				continue;
+			}
+			Vector3 BoundMin;
+			Vector3 BoundMax;
+			if (Primitive->GetWorldBound(BoundMin, BoundMax) != FALSE)
+			{
+				SceneCasterBounds += EBoundAABB(BoundMin, BoundMax, TRUE);
+			}
+			else
+			{
+				bSceneCasterBoundsComplete = FALSE;
+			}
+		}
+	}
+	/*
+	* Orders a view's list so a run of primitives that share a material stays together. A depth
+	* only pass does not depend on draw order, so the reorder is free and is what lets the draw
+	* path keep one material binding for the run.
+	*/
+	static void SortViewPrimitiveListByShaderInstance(RViewPrimitiveList& InOutDrawList)
+	{
+		TArray<RViewPrimitiveItem>& Items = InOutDrawList.GetItems();
+		if (Items.Num<UINT32>() <= 1u)
+		{
+			return;
+		}
+		std::sort(Items.GetData(), Items.GetData() + Items.Num<UINT32>()
+			, [](const RViewPrimitiveItem& InLeft, const RViewPrimitiveItem& InRight) -> bool
+			{
+				const UINT64 LeftKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InLeft.ShaderInstance));
+				const UINT64 RightKey = static_cast<UINT64>(reinterpret_cast<SIZE_T>(InRight.ShaderInstance));
+				if (LeftKey != RightKey)
+				{
+					return (LeftKey < RightKey);
+				}
+				return (InLeft.Identity < InRight.Identity);
+			});
+	}
+	/*
+	* Whether a point light's cube face can contain a receiver the camera sees.
+	*
+	* The face covers the half space in front of its own direction. If all eight corners of the
+	* camera frustum are behind that plane, the whole frustum is behind it (it is convex), so no
+	* visible surface lies in that face and the casters for it do not have to be drawn. The slot
+	* and its cleared tile stay in the table: the shader maps a point light's face to
+	* (first slot + face), and dropping a request would renumber the faces after it.
+	*/
+	static BOOL32 DoesViewFrustumReachPointFace(const RViewProxy& InView, const Vector3& InLightLocation
+		, const EViewDomainInfo& InFaceDomain)
+	{
+		const Matrix4x4& InverseView = InFaceDomain.ViewMatrix.ViewPart.InverseViewMatrix;
+		const Vector3 FaceForward(InverseView(2u, 0u), InverseView(2u, 1u), InverseView(2u, 2u));
+		const EFrustum& CameraFrustum = InView.GetViewFrustum();
+		for (UINT32 CornerIndex = 0u; CornerIndex < 8u; CornerIndex++)
+		{
+			if (Vector3::Dot(CameraFrustum.FarNearPlanePoint[CornerIndex] - InLightLocation, FaceForward) > 0.f)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
 	}
 	/*
 	* World size of one shadow texel, which is what turns the receiver's normal offset into metres.
@@ -2870,7 +3430,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 	}
 	void RSceneRenderer::SelectLocalShadowCandidates(const RViewProxy& InView
-		, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates)const
+		, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates) const
 	{
 		OutSpotCandidates.Empty();
 		OutPointCandidates.Empty();
@@ -3122,6 +3682,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				Quaternion ViewRotation;
 				if ((!Build.LightProxy)
 					|| (Build.LightProxy->BuildShadowViewDomain(*InViewProxy, Build.Request, Build.TileSize
+						, SceneCasterBounds, bSceneCasterBoundsComplete
 						, DomainInfo, ViewAnchor, ViewRotation) == FALSE))
 				{
 					// The slot was already counted, so it keeps its zeroed element and reads as
@@ -3135,9 +3696,37 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 				DomainInfo.RenderViewport = Build.Tile.Rect;
 				ShadowView->SetupShadowView(Build.Request.Kind, Build.LightProxy, NextSlot
 					, Build.Request.Index, Build.Request.Count, DomainInfo, ViewAnchor, ViewRotation);
-				// After SetupShadowView, which resets the map: the cull fills the list the draw of
-				// this view will read.
-				CullShadowCasters(ShadowView->GetViewFrustum(), Scene->GetPrimitives(), ShadowView->GetVisibilityMap());
+				// After SetupShadowView, which resets the list: the cull fills the list this
+				// view's draws will read. A point face the camera cannot reach keeps that list
+				// empty: the slot is still valid with a cleared tile, so a receiver that somehow
+				// selected it reads "lit" rather than a stale caster.
+				const BOOL32 bFaceReachesCamera = ((Build.Request.Kind != EShadowViewKindType::SHADOW_VIEW_KIND_POINT_FACE)
+					|| (Build.LightProxy == nullptr)
+					|| (DoesViewFrustumReachPointFace(*InViewProxy, Build.LightProxy->GetWorldLocation(), DomainInfo) != FALSE)) ? TRUE : FALSE;
+				if (bFaceReachesCamera != FALSE)
+				{
+					// The list is filled here, once for this view, instead of being scanned
+					// again by the pass that records its draws. Only a directional cascade asks
+					// for the drawn bounds: an orthographic light is the one whose tile can be
+					// fitted to the casters without changing which shadows reach the slice.
+					const BOOL32 bIsDirectionalCascade =
+						((Build.Request.Kind == EShadowViewKindType::SHADOW_VIEW_KIND_DIRECTIONAL_CASCADE) ? TRUE : FALSE);
+					RViewPrimitiveBounds DrawnBounds;
+					CollectViewPrimitiveList(*ShadowView, ShadowView->GetPrimitiveList(), &DrawnBounds);
+					if ((bIsDirectionalCascade != FALSE) && (DrawnBounds.Bounds.IsValid) && (DrawnBounds.bComplete))
+					{
+						// The conservative box reached every caster; the cull kept the ones that
+						// can reach this slice. Fitting the projection to them spends the tile on
+						// casters instead of on empty space. The view keeps the domain otherwise:
+						// an incomplete union could clip a primitive the cull deliberately kept.
+						if (Build.LightProxy->RefitShadowViewDomain(*InViewProxy, Build.Request, Build.TileSize
+							, DrawnBounds.Bounds, DomainInfo) != FALSE)
+						{
+							ShadowView->UpdateShadowViewDomain(DomainInfo);
+						}
+					}
+					SortViewPrimitiveListByShaderInstance(ShadowView->GetPrimitiveList());
+				}
 				FillShadowSlot(*ShadowView, Build, AtlasSize, *Settings, Slot);
 				NextSlot += 1u;
 			}
@@ -3165,99 +3754,6 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 
 		ShadowState->PruneShadowViews();
-	}
-	void RSceneRenderer::RenderShadowViews()
-	{
-		if ((!Scene) || (!CurrentCommandList))
-		{
-			return;
-		}
-		// The pass's depth format has to be the atlas's, because a pipeline state only accepts the
-		// depth format it was created for. The table states 32 bits as the default; the setting is
-		// what the atlas was actually created with, so it is copied in here rather than baked into
-		// the table - and the copy is what the per primitive state is built from.
-		FRenderPassDesc ShadowPassDesc = FRenderPassRegistry::GetDesc(ERenderPassType::RENDER_PASS_TYPE_SHADOW);
-		ShadowPassDesc.DepthBits = RShadowSettings::GetSingleton()->ShadowDepthBits;
-		const TArray<RPrimitiveSceneProxy*>& Primitives = Scene->GetPrimitives();
-
-		for (RViewShadowStateMapType::TIterator StateIt = ViewShadowStates.Begin(); StateIt != ViewShadowStates.End(); StateIt++)
-		{
-			RViewShadowState* ShadowState = StateIt->second;
-			if ((!ShadowState) || (ShadowState->SlotNum <= 1u))
-			{
-				continue;
-			}
-			// Only a view that rebuilt its shadow views this frame has a consumer for its atlas.
-			// Every main view does - a rear view mirror or a stereo eye is a full view of its own -
-			// so each one's atlas is rendered here, and a state whose view stopped being main is
-			// left alone: InitShadowViews never reached its BeginFrame, and its slot table still
-			// describes a frame nobody shades.
-			if (ShadowState->bBuiltThisFrame == FALSE)
-			{
-				continue;
-			}
-			IRRHITexture* AtlasTexture = ShadowState->Atlas.GetTexture();
-			if (!AtlasTexture)
-			{
-				continue;
-			}
-
-			// One pass for the whole atlas, cleared once: the tiles are disjoint rectangles inside
-			// it, and a clear per tile would be a full atlas clear repeated once per tile.
-			RRHIRenderPassDesc Pass;
-			Pass.RenderTargetCount						= 0u;
-			Pass.DepthStencil.Target					= AtlasTexture;
-			Pass.DepthStencil.DepthLoadOp				= ERHILoadOp::RHI_LOAD_OP_CLEAR;
-			Pass.DepthStencil.DepthStoreOp				= ERHIStoreOp::RHI_STORE_OP_STORE;
-			Pass.DepthStencil.StencilLoadOp				= ERHILoadOp::RHI_LOAD_OP_DONT_CARE;
-			Pass.DepthStencil.StencilStoreOp			= ERHIStoreOp::RHI_STORE_OP_DONT_CARE;
-			Pass.DepthStencil.ClearDepth				= RCommonSettings::RENDER_DEPTH_FAR;
-			Pass.PassName								= PE_TEXT("ShadowAtlas");
-			CurrentCommandList->BeginRenderPass(Pass);
-
-			for (UINT32 ViewIndex = 0u, ViewNum = ShadowState->ShadowViews.Num<UINT32>(); ViewIndex < ViewNum; ViewIndex++)
-			{
-				RShadowViewProxy* ShadowView = ShadowState->ShadowViews[ViewIndex];
-				if ((!ShadowView) || (ShadowView->IsUsedThisFrame() == FALSE))
-				{
-					continue;
-				}
-				// The tile is both the viewport and the scissor: the viewport places the projection
-				// inside the atlas, the scissor keeps a caster whose bound was conservative from
-				// writing over its neighbour's tile.
-				const EViewport& Tile = ShadowView->GetAtlasTile();
-				CurrentCommandList->SetViewports(&Tile, 1u);
-				const ERect TileScissor(Tile.TopLeftX, Tile.TopLeftY
-					, Tile.TopLeftX + Tile.Width, Tile.TopLeftY + Tile.Height);
-				CurrentCommandList->SetScissorRects(&TileScissor, 1u);
-
-				CurrentViewProxy = ShadowView;
-				ShadowView->UpdateRenderResource();
-
-				const RViewProxy::RVisibilityMapType& Casters = ShadowView->GetVisibilityMap();
-				for (UINT32 PrimitiveIndex = 0u, PrimitiveNum = Primitives.Num<UINT32>(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
-				{
-					RPrimitiveSceneProxy* Primitive = Primitives[PrimitiveIndex];
-					if (!Primitive)
-					{
-						continue;
-					}
-					if (Casters.ContainsKey(Primitive->GetUniqueID()) == FALSE)
-					{
-						continue;
-					}
-					Primitive->Draw(CurrentCommandList, ShadowPassDesc);
-				}
-			}
-			CurrentViewProxy = nullptr;
-
-			CurrentCommandList->EndRenderPass();
-
-			// The tiles were depth targets for the pass above and are shader reads for every pass
-			// that samples them afterwards. Leaving the transition to each consumer would work, but
-			// every one of them needs exactly this state, so it is stated once, here.
-			TransitionDepthToShaderReadable(AtlasTexture);
-		}
 	}
 	RViewShadowState* RSceneRenderer::EnsureViewShadowState(const ObjectIdentityType InViewIdentity)
 	{
@@ -3342,67 +3838,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		// reporting again rather than being swallowed by the previous session's report.
 		bShadowDropReported = FALSE;
 	}
-	void RSceneRenderer::OctreeCull(const EFrustum& InViewFrustum, RSceneRenderer::RVisibilityMapType& InOutVisibilityMap)
-	{
-		ROctree& SceneOctree = Scene->GetSceneOctree();
-		if (SceneOctree.GetPrimitiveNum() == 0u)
-		{
-			return;
-		}
-
-		const Vector3						TempAxis[3]			= { Vector3::XVector(), Vector3::YVector(), Vector3::ZVector() };
-		const TArray<ROctreeElement>&		OctreeElements		= SceneOctree.GetElements();
-		const TArray<ROctreeLayerInfo>&		OctreeLayerInfos	= SceneOctree.GetLayerInfos();
-		const INT32							OctreeLayerNum		= OctreeLayerInfos.Num();
-
-		INT32 TempDeep = 0;
-		SceneOctree.BackwardRecursionNode(0, TempDeep,
-			[&InOutVisibilityMap, &OctreeElements](ROctreeNode& InNode, INT32 InDeep)->INT32
-			{
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check element index of octree node is valid failed.")), ((InNode.ElementIndex >= 0) && (InNode.ElementIndex < (OctreeElements.Num()))));
-				const ROctreeElement& OctreeElement = OctreeElements[InNode.ElementIndex];
-				for (INT32 PrimitiveIndex = 0, PrimitiveNum = OctreeElement.Primitives.Num(); PrimitiveIndex < PrimitiveNum; PrimitiveIndex++)
-				{
-					const RPrimitiveSceneProxy* PrimitiveSceneProxy = OctreeElement.Primitives[PrimitiveIndex];
-#if _EDITOR_ONLY
-					PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check primitive scene proxy is null.")), (!!PrimitiveSceneProxy));
-					if (!PrimitiveSceneProxy)
-					{
-						continue;
-					}
-#endif
-					//TODO We can use primitive bounds for more precise culling results.
-					//TODO May use C++17 function for map type
-					InOutVisibilityMap[PrimitiveSceneProxy->GetUniqueID()] = TRUE;
-				}
-				return (InDeep + 1);
-			},
-			[&TempAxis, &InViewFrustum, &OctreeLayerInfos, &OctreeLayerNum](ROctreeNode& InNode, INT32 InDeep)->BOOL32
-			{
-				PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check renderer scene octree deep with layer infos failed.")), (InDeep < OctreeLayerNum));
-				const Vector3 NodeOrigin = InNode.Origin;
-				const Vector3 NodeExtent = OctreeLayerInfos[InDeep].Extent;
-				const FLOAT AxisExtent[3] = { NodeExtent.x, NodeExtent.y, NodeExtent.z };
-				for (UINT32 i = 0u; i < 3u; i++)
-				{
-					const FLOAT NodeProjectOrigin = Vector3::Dot(TempAxis[i], NodeOrigin);
-					if ((InViewFrustum.SeparateProjection[i].x > (NodeProjectOrigin + AxisExtent[i])) || (InViewFrustum.SeparateProjection[i].y < (NodeProjectOrigin - AxisExtent[i])))
-					{
-						return FALSE;
-					}
-				}
-				return TRUE;
-			});
-	}
-	void RSceneRenderer::PrimitiveCull(const EFrustum& InViewFrustum, RSceneRenderer::RVisibilityMapType& InOutVisibilityMap)
-	{
-		//Scene->GetSkeletalMeshSceneProxies;
-	}
 	void RSceneRenderer::InitRendererSettings()
 	{
 		NeedStencil = IsNeedStencil();
 	}
-	BOOL32 RSceneRenderer::IsNeedStencil()const
+	BOOL32 RSceneRenderer::IsNeedStencil() const
 	{
 		//TODO
 		return FALSE;

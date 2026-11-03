@@ -32,11 +32,15 @@ namespace PigeonEngine
 
 	RSkeletalMeshSceneProxy::RSkeletalMeshSceneProxy()
 		: MeshAsset(nullptr), SkeletonAsset(nullptr)
+		, SkinnedLocalBound(Vector3::Zero(), Vector3::Zero(), FALSE)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_SKELETAL);
 	}
 	RSkeletalMeshSceneProxy::RSkeletalMeshSceneProxy(const PSkeletalMeshComponent* InComponent)
 		: MeshAsset(nullptr), SkeletonAsset(nullptr)
+		, SkinnedLocalBound(Vector3::Zero(), Vector3::Zero(), FALSE)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_SKELETAL);
 		// The component is not stored: everything this proxy needs arrives through the snapshot,
 		// so no game thread object is reachable from here. The argument stays so the create path
 		// keeps its meaning while the scene finishes moving onto the factory.
@@ -44,20 +48,71 @@ namespace PigeonEngine
 	}
 	RSkeletalMeshSceneProxy::RSkeletalMeshSceneProxy(const RSkeletalMeshSceneProxy& Other)
 		: RMeshSceneProxy(Other), MeshAsset(Other.MeshAsset), SkeletonAsset(Other.SkeletonAsset)
+		, SkinnedLocalBound(Other.SkinnedLocalBound)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_SKELETAL);
 	}
 	RSkeletalMeshSceneProxy::~RSkeletalMeshSceneProxy()
 	{
 	}
-	BOOL32 RSkeletalMeshSceneProxy::IsRenderValid()const
+	BOOL32 RSkeletalMeshSceneProxy::IsRenderValid() const
 	{
 		//TODO
 		return TRUE;
+	}
+	BOOL32 RSkeletalMeshSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax) const
+	{
+		if (SkinnedLocalBound.IsValid == FALSE)
+		{
+			return FALSE;
+		}
+		const Matrix4x4& LocalToWorld = GetLocalToWorldMatrix();
+		Vector3 WorldMin(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
+		Vector3 WorldMax(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
+		for (UINT32 CornerIndex = 0u; CornerIndex < 8u; CornerIndex++)
+		{
+			const Vector3 LocalCorner(
+				(((CornerIndex & 1u) != 0u) ? SkinnedLocalBound.AABBMax.x : SkinnedLocalBound.AABBMin.x),
+				(((CornerIndex & 2u) != 0u) ? SkinnedLocalBound.AABBMax.y : SkinnedLocalBound.AABBMin.y),
+				(((CornerIndex & 4u) != 0u) ? SkinnedLocalBound.AABBMax.z : SkinnedLocalBound.AABBMin.z));
+			const Vector3 WorldCorner = Matrix4x4TransformPosition(LocalToWorld, LocalCorner);
+			WorldMin = MinVector3(WorldMin, WorldCorner);
+			WorldMax = MaxVector3(WorldMax, WorldCorner);
+		}
+		OutMin = WorldMin;
+		OutMax = WorldMax;
+		return TRUE;
+	}
+	void RSkeletalMeshSceneProxy::UpdateSkinnedLocalBoundFromBones(const ESkinnedMesh& InMesh)
+	{
+		// The authored bound is the base: a bone whose matrix has not been reported yet keeps the
+		// mesh at least inside it, and the accumulation below can only grow the result.
+		const EBoundAABB BaseBound = InMesh.GetAdjustedBoundAABB();
+		SkinnedLocalBound = BaseBound;
+		if (BaseBound.IsValid == FALSE)
+		{
+			return;
+		}
+		for (UINT32 BoneIndex = 0u, BoneNum = BoneValues.Num<UINT32>(); BoneIndex < BoneNum; BoneIndex++)
+		{
+			const Matrix4x4& BoneMatrix = BoneValues[BoneIndex];
+			for (UINT32 CornerIndex = 0u; CornerIndex < 8u; CornerIndex++)
+			{
+				const Vector3 LocalCorner(
+					(((CornerIndex & 1u) != 0u) ? BaseBound.AABBMax.x : BaseBound.AABBMin.x),
+					(((CornerIndex & 2u) != 0u) ? BaseBound.AABBMax.y : BaseBound.AABBMin.y),
+					(((CornerIndex & 4u) != 0u) ? BaseBound.AABBMax.z : BaseBound.AABBMin.z));
+				const Vector3 SkinnedCorner = Matrix4x4TransformPosition(BoneMatrix, LocalCorner);
+				SkinnedLocalBound += EBoundAABB(SkinnedCorner, SkinnedCorner, TRUE);
+			}
+		}
 	}
 	void RSkeletalMeshSceneProxy::ApplyAssets(const FPrimitiveRenderAssetReport& InAssets)
 	{
 		MeshAsset = static_cast<const ESkinnedMeshAsset*>(InAssets.GetMeshAsset());
 		SkeletonAsset = static_cast<const ESkeletonAsset*>(InAssets.GetSkeletonAsset());
+		// A different mesh invalidates the bound the previous one accumulated.
+		SkinnedLocalBound = EBoundAABB(Vector3::Zero(), Vector3::Zero(), FALSE);
 
 		// The bone buffers are sized from the mesh's bind pose count, which is an asset level
 		// fact, so it is settled here rather than per frame.
@@ -73,7 +128,17 @@ namespace PigeonEngine
 					if (BoneNum != BoneValues.Num<INT32>())
 					{
 						BoneValues.SetNum(BoneNum);
+						// A bone the first snapshot does not map yet must not transform a corner
+						// with an all zero matrix; the bind pose is the conservative placeholder.
+						for (UINT32 BoneIndex = 0u, BoneCount = BoneValues.Num<UINT32>(); BoneIndex < BoneCount; BoneIndex++)
+						{
+							BoneValues[BoneIndex] = Matrix4x4::Identity();
+						}
 					}
+					// Until the first skeleton update the authored bound is the bound. It keeps the
+					// primitive cullable and is the shipping answer; the measured variant below is
+					// opt in because it costs a transform per bone.
+					SkinnedLocalBound = SkinnedMesh->GetAdjustedBoundAABB();
 				}
 			}
 		}
@@ -87,15 +152,15 @@ namespace PigeonEngine
 	// The shared mesh draw path's view of this primitive
 	// ---------------------------------------------------------------------------
 
-	const EMesh* RSkeletalMeshSceneProxy::GetMeshColdData()const
+	const EMesh* RSkeletalMeshSceneProxy::GetMeshColdData() const
 	{
 		return (MeshAsset ? MeshAsset->GetStoragedResource() : nullptr);
 	}
-	const EMeshRenderResource* RSkeletalMeshSceneProxy::GetMeshRenderResource()const
+	const EMeshRenderResource* RSkeletalMeshSceneProxy::GetMeshRenderResource() const
 	{
 		return (MeshAsset ? MeshAsset->GetRenderResource() : nullptr);
 	}
-	const RVertexBufferResource* RSkeletalMeshSceneProxy::GetSkinVertexStream(const BOOL32 InIsIndexStream)const
+	const RVertexBufferResource* RSkeletalMeshSceneProxy::GetSkinVertexStream(const BOOL32 InIsIndexStream) const
 	{
 		const ESkinnedMeshRenderResource* MeshRenderResource = static_cast<const ESkinnedMeshRenderResource*>(GetMeshRenderResource());
 		if (!MeshRenderResource)
@@ -112,7 +177,7 @@ namespace PigeonEngine
 		}
 		return &(SkinRenderResources[StreamIndex]);
 	}
-	BOOL32 RSkeletalMeshSceneProxy::HasSkinVertexStreams()const
+	BOOL32 RSkeletalMeshSceneProxy::HasSkinVertexStreams() const
 	{
 		const ESkinnedMeshRenderResource* MeshRenderResource = static_cast<const ESkinnedMeshRenderResource*>(GetMeshRenderResource());
 		if (!MeshRenderResource)
@@ -124,16 +189,16 @@ namespace PigeonEngine
 		// exactly what the pipeline state has to be told.
 		return ((MeshRenderResource->GetSkinRenderResource().Num<UINT32>() >= 2u) ? TRUE : FALSE);
 	}
-	void RSkeletalMeshSceneProxy::BindExtraResources(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const
+	BOOL32 RSkeletalMeshSceneProxy::BindExtraResources(IRCommandList* InCommandList, const FPrimitivePassData& InData) const
 	{
-		if ((!InCommandList) || (!InSlot.Program))
+		if ((!InCommandList) || (!InData.Program))
 		{
-			return;
+			return FALSE;
 		}
-		const EShaderStageEntry* VertexEntry = ResolveShaderStageEntry(*InSlot.Program, EShaderStageType::SHADER_STAGE_VERTEX);
+		const EShaderStageEntry* VertexEntry = ResolveShaderStageEntry(*InData.Program, EShaderStageType::SHADER_STAGE_VERTEX);
 		if (!VertexEntry)
 		{
-			return;
+			return FALSE;
 		}
 
 		// The bones are named exactly as the shader source declares them and bound through the
@@ -150,6 +215,9 @@ namespace PigeonEngine
 
 		BindShaderResources(InCommandList, Parameters, VertexEntry->BindingPlan, ERHIShaderStage::RHI_SHADER_STAGE_VERTEX
 			, EName(SHADER_BINDING_SCOPE_SKELETAL));
+		// Even a refused publish may have written part of the table, so the caller has to treat
+		// the material bindings as stale either way.
+		return TRUE;
 	}
 	void RSkeletalMeshSceneProxy::ApplyRuntimePayload(const FPrimitiveRenderSnapshot& InSnapshot)
 	{
@@ -212,6 +280,19 @@ namespace PigeonEngine
 						PE_FAILED((ENGINE_RENDER_CORE_ERROR), ("Skeleton render resource is not valid."));
 					}
 #endif
+				}
+				// Off by default: the authored BoundScale / BoundExtend pair is the shipping
+				// bound, and this per bone accumulation is a validation aid rather than a cost
+				// every animated character pays.
+				if PE_CONSTEXPR (EEngineSettings::ENGINE_SKELETAL_BOUND_FROM_BONES != FALSE)
+				{
+					UpdateSkinnedLocalBoundFromBones(*SkinnedMesh);
+				}
+				else
+				{
+					// The authored pair is O(1) to apply and reading it here keeps the proxy in
+					// step with an asset whose adjustment changed after it was installed.
+					SkinnedLocalBound = SkinnedMesh->GetAdjustedBoundAABB();
 				}
 #if _EDITOR_ONLY
 				if (CheckBoneUpdate)

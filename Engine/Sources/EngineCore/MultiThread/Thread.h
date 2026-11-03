@@ -44,6 +44,11 @@ namespace PigeonEngine
 		BOOL8 IsJoinable() const;
 		BOOL8 IsStarted() const;
 
+		// Number of hardware threads the process may use. Wrapped here so the rest of the
+		// engine never reaches for std::thread directly; a back-end without a useful answer
+		// reports 1.
+		static UINT32 GetHardwareThreadNum() noexcept;
+
 		const EString& GetName() const
 		{
 			return ThreadName;

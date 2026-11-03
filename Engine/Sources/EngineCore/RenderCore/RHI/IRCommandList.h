@@ -11,6 +11,20 @@ namespace PigeonEngine
 	struct RRHITimestampHeap;
 
 	/*
+	* How one command list treats resource state.
+	*
+	* The immediate mode is the original single list behavior: the list owns the state
+	* machine and emits the barrier a pass needs. External mode is for lists that a stage
+	* state plan has already framed: they bind and record, and a transition request is a bug
+	* rather than a command.
+	*/
+	enum ERHIRecordModeType : UINT8
+	{
+		RHI_RECORD_MODE_IMMEDIATE = 0,
+		RHI_RECORD_MODE_EXTERNAL = 1
+	};
+
+	/*
 	* Pure-virtual command list. Concrete back-ends (D3D12: native command
 	* list; D3D11: deferred-context wrapper) implement these methods and
 	* are submitted via IRRHIDevice::SubmitCommandList.
@@ -39,6 +53,19 @@ namespace PigeonEngine
 		virtual void Reset() = 0;
 		virtual void Close() = 0;
 
+		// ---------- Resource state policy ----------
+		// IMMEDIATE: the list reads and writes IRRHIResource::CurrentState and inserts the
+		// barriers its render passes need. This is the single recorder path and the stage
+		// sync list.
+		//
+		// EXTERNAL: the caller has already recorded every transition the list depends on.
+		// The list does not read or write resource state, and ResourceBarrier / the direct
+		// Clear calls assert. Every worker list in a parallel stage runs this way.
+		//
+		// SetRecordMode is only legal before the first command is recorded.
+		virtual void SetRecordMode(ERHIRecordModeType InMode) = 0;
+		PE_NODISCARD virtual ERHIRecordModeType GetRecordMode() const noexcept = 0;
+
 		// ---------- Render passes ----------
 		virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc) = 0;
 		virtual void EndRenderPass() = 0;
@@ -49,6 +76,10 @@ namespace PigeonEngine
 
 		// ---------- Pipeline / fixed-function ----------
 		virtual void SetPipelineState(IRRHIPipelineState* InPipelineState) = 0;
+		// The state the list currently has applied, or null after Reset and after a manual
+		// SetPrimitiveTopology (both make the pipeline state's fixed function setup no longer
+		// complete). Callers use it to avoid re-setting the state a draw already runs with.
+		PE_NODISCARD virtual IRRHIPipelineState* GetBoundPipelineState() const noexcept = 0;
 		virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology) = 0;
 		virtual void SetViewports(const EViewport* InViewports, UINT32 InCount) = 0;
 		virtual void SetScissorRects(const ERect* InRects, UINT32 InCount) = 0;

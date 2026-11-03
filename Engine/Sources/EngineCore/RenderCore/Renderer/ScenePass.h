@@ -107,6 +107,10 @@ namespace PigeonEngine
 		UINT32				ThreadGroupX	= 0u;
 		UINT32				ThreadGroupY	= 0u;
 		UINT32				ThreadGroupZ	= 1u;
+		// Filter inputs for the central registry. Zero means "no restriction"; a non zero
+		// category mask requires an intersection with the primitive's category.
+		UINT64				PrimitiveCategoryMask = 0ull;
+		UINT64				FilterFlags		= 0ull;
 	};
 
 	class FRenderPassRegistry
@@ -117,6 +121,10 @@ namespace PigeonEngine
 		// Lookup by name for callers that carry a pass name rather than an enum value, such as
 		// the material pass table. Null when no pass carries that name.
 		PE_NODISCARD static const FRenderPassDesc*	FindDescByPassName(const EName& InPassName);
+		// The pass name as an interned EName, built once per pass. The draw path keys every pass
+		// slot by this name, and interning the same literal per draw is a pool lock and a hash
+		// lookup that the draw loop does not have to pay.
+		PE_NODISCARD static const EName&	GetPassNameId(const FRenderPassDesc& InPassDesc);
 		// Fills the pass facing pipeline state description of a pass. The program is an
 		// argument because the two cases differ: a pass that owns its shaders passes the one
 		// the register names, a per primitive pass passes the material's.

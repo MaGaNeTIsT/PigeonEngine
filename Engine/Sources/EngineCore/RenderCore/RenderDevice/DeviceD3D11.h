@@ -301,9 +301,13 @@ namespace PigeonEngine
 		// Upload
 		virtual void UploadBuffer(IRRHIBuffer* InDest, const UINT8* InData, UINT64 InSize, UINT64 InDestOffset = 0u) noexcept override;
 		virtual void UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource = 0u) noexcept override;
+		virtual BOOL8 UpdateTextureRegion(IRRHITexture* InDest, const RRHITextureRegionUpdate& InRegion) noexcept override;
 
 		// Command lists
-		virtual IRCommandList*  AcquireCommandList() override;
+		// D3D11 records on one immediate context, so only recorder 0 exists. Acquire with any
+		// other index asserts and returns the recorder 0 list.
+		virtual UINT32          GetMaxRecordThreadNum() const noexcept override { return 1u; }
+		virtual IRCommandList*  AcquireCommandList(UINT32 InRecorderIndex) override;
 		virtual void            SubmitCommandList(IRCommandList* InCommandList) noexcept override;
 		virtual void            SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept override;
 

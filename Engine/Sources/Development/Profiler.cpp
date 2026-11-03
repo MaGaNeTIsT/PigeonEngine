@@ -194,17 +194,22 @@ namespace PigeonEngine
 
 	// ----------------------------------------------------------------------
 	// GPU event scope: opens / closes a debug marker bracket on the command
-	// list. The implementation sits in this TU so Profiler.h can keep
-	// IRCommandList.h out of CPU-only call sites.
+	// list. The ctor / dtor live inline in Profiler.h so a disabled marker
+	// costs no call; these two are the only paths that touch IRCommandList.
 	// ----------------------------------------------------------------------
-	EGPUEventScope::EGPUEventScope(IRCommandList* InCmd, const EString& InName)noexcept
-		: Cmd(InCmd)
+	void EGPUEventScope::BeginEvent(const EString& InName) noexcept
 	{
-		if (Cmd) { Cmd->BeginGPUEvent(InName); }
+		if (Cmd)
+		{
+			Cmd->BeginGPUEvent(InName);
+		}
 	}
-	EGPUEventScope::~EGPUEventScope()
+	void EGPUEventScope::EndEvent() noexcept
 	{
-		if (Cmd) { Cmd->EndGPUEvent(); }
+		if (Cmd)
+		{
+			Cmd->EndGPUEvent();
+		}
 	}
 
 #endif

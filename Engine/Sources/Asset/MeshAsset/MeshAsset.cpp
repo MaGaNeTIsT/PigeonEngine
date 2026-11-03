@@ -285,6 +285,8 @@ namespace PigeonEngine
 	EMesh::EMesh(const EMesh& Other)
 		: MeshName(Other.MeshName)
 		, BoundAABB(Other.BoundAABB)
+		, BoundScale(Other.BoundScale)
+		, BoundExtend(Other.BoundExtend)
 		, VertexLayout(Other.VertexLayout)
 		, Indices(Other.Indices)
 	{
@@ -314,7 +316,7 @@ namespace PigeonEngine
 		CopyBaseDataFromOtherInternal(Other);
 		return (*this);
 	}
-	BOOL32 EMesh::IsResourceValid()const
+	BOOL32 EMesh::IsResourceValid() const
 	{
 		if (Vertices.Num() > 0)
 		{
@@ -344,7 +346,7 @@ namespace PigeonEngine
 		Submeshes.Empty();
 		VertexLayout = 0u;
 	}
-	BOOL32 EMesh::CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex)const
+	BOOL32 EMesh::CheckVertexLayoutPartExist(UINT32 InVertexLayoutType, UINT32 InPartIndex) const
 	{
 		const EVertexLayoutType TempLayout = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if ((TempLayout & EVertexLayoutType::MESH_INDEX_FULL) != 0u)
@@ -364,27 +366,27 @@ namespace PigeonEngine
 			return ((VertexLayout & (TempLayout << InPartIndex)) != 0u);
 		}
 	}
-	const EString& EMesh::GetMeshName()const
+	const EString& EMesh::GetMeshName() const
 	{
 		return MeshName;
 	}
-	const EBoundAABB& EMesh::GetBoundAABB()const
+	const EBoundAABB& EMesh::GetBoundAABB() const
 	{
 		return BoundAABB;
 	}
-	UINT32 EMesh::GetVertexLayout()const
+	UINT32 EMesh::GetVertexLayout() const
 	{
 		return VertexLayout;
 	}
-	const EMesh::EIndexPart& EMesh::GetIndexPart()const
+	const EMesh::EIndexPart& EMesh::GetIndexPart() const
 	{
 		return Indices;
 	}
-	const EMesh::EVertexPart& EMesh::GetVertexPart()const
+	const EMesh::EVertexPart& EMesh::GetVertexPart() const
 	{
 		return Vertices;
 	}
-	const EMesh::ESubmeshPart& EMesh::GetSubmeshPart()const
+	const EMesh::ESubmeshPart& EMesh::GetSubmeshPart() const
 	{
 		return Submeshes;
 	}
@@ -459,7 +461,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL32 EMesh::GetIndexElement(const EIndexData*& OutIndexData)const
+	BOOL32 EMesh::GetIndexElement(const EIndexData*& OutIndexData) const
 	{
 		if ((Indices.PartType != 0u)
 #if _EDITOR_ONLY
@@ -596,7 +598,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL32 EMesh::GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData)const
+	BOOL32 EMesh::GetVertexElement(UINT32 InVertexLayoutType, UINT32 InLayoutIndex, const EVertexData*& OutVertexData) const
 	{
 		const EVertexLayoutType InLayoutType = TranslateVertexPartTypeToVertexBaseLayout(InVertexLayoutType);
 		if (((InLayoutType & EVertexLayoutType::MESH_INDEX_FULL) != 0u) ||
@@ -655,7 +657,7 @@ namespace PigeonEngine
 		Submeshes.RemoveAt(InSubmeshIndex);
 		return TRUE;
 	}
-	BOOL32 EMesh::GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData)const
+	BOOL32 EMesh::GetSubmesh(UINT32 InSubmeshIndex, const ESubmeshData*& OutSubmeshData) const
 	{
 		if (UINT32 TempSubmeshNum = Submeshes.Num<UINT32>(); (TempSubmeshNum == 0u) || (InSubmeshIndex >= Submeshes.Num<UINT32>()))
 		{
@@ -681,6 +683,8 @@ namespace PigeonEngine
 	{
 		MeshName		= Other.MeshName;
 		BoundAABB		= Other.BoundAABB;
+		BoundScale		= Other.BoundScale;
+		BoundExtend		= Other.BoundExtend;
 		VertexLayout	= Other.VertexLayout;
 
 		Indices.Release();
@@ -764,7 +768,7 @@ namespace PigeonEngine
 	EStaticMesh::~EStaticMesh()
 	{
 	}
-	BOOL32 EStaticMesh::IsResourceValid()const
+	BOOL32 EStaticMesh::IsResourceValid() const
 	{
 		return (EMesh::IsResourceValid());
 	}
@@ -818,7 +822,7 @@ namespace PigeonEngine
 			Skins[Index].Release();
 		}
 	}
-	BOOL32 ESkinnedMesh::IsResourceValid()const
+	BOOL32 ESkinnedMesh::IsResourceValid() const
 	{
 		if (Skins.Num() > 0)
 		{
@@ -946,11 +950,11 @@ namespace PigeonEngine
 			}
 		}
 	}
-	const ESkinnedMesh::EBindPoseValue& ESkinnedMesh::GetBindPoseValue()const
+	const ESkinnedMesh::EBindPoseValue& ESkinnedMesh::GetBindPoseValue() const
 	{
 		return BindPoseValue;
 	}
-	const ESkinnedMesh::EBindPoseIndex& ESkinnedMesh::GetBindPoseIndex()const
+	const ESkinnedMesh::EBindPoseIndex& ESkinnedMesh::GetBindPoseIndex() const
 	{
 		return BindPoseIndex;
 	}
@@ -959,9 +963,42 @@ namespace PigeonEngine
 		Check(((InEffectBoneNum <= static_cast<USHORT>(EEngineSettings::ENGINE_BONE_WEIGHT_NUM_MAXIMUM)) && (InEffectBoneNum > 0u)), (ENGINE_ASSET_ERROR));
 		EffectBoneNum = InEffectBoneNum;
 	}
-	USHORT ESkinnedMesh::GetEffectBoneNum()const
+	USHORT ESkinnedMesh::GetEffectBoneNum() const
 	{
 		return EffectBoneNum;
+	}
+	FLOAT EMesh::GetBoundScale() const
+	{
+		return BoundScale;
+	}
+	const Vector3& EMesh::GetBoundExtend() const
+	{
+		return BoundExtend;
+	}
+	void EMesh::SetBoundScale(const FLOAT InBoundScale)
+	{
+		// A negative scale would mirror the extent through the center, which is not a bound.
+		BoundScale = EMath::Max(InBoundScale, 0.f);
+	}
+	void EMesh::SetBoundExtend(const Vector3& InBoundExtend)
+	{
+		BoundExtend = InBoundExtend;
+	}
+	EBoundAABB EMesh::GetAdjustedBoundAABB() const
+	{
+		const EBoundAABB& SourceBound = GetBoundAABB();
+		if (SourceBound.IsValid == FALSE)
+		{
+			return SourceBound;
+		}
+		const Vector3 Center = (SourceBound.AABBMin + SourceBound.AABBMax) * 0.5f;
+		const Vector3 FullExtent = SourceBound.AABBMax - SourceBound.AABBMin;
+		// The authored adjustment is stated in the same space as the bound's own size: the full
+		// per axis extent is grown first and scaled afterwards. A negative result would invert
+		// the box, so each axis is clamped at zero before the half extent is taken.
+		const Vector3 AdjustedFullExtent = MaxVector3((FullExtent + BoundExtend) * BoundScale, Vector3::Zero());
+		const Vector3 HalfExtent = AdjustedFullExtent * 0.5f;
+		return EBoundAABB(Center - HalfExtent, Center + HalfExtent, TRUE);
 	}
 	BOOL32 ESkinnedMesh::AddSkinElement(ESkinData* InSkinData, UINT32* OutLayoutIndex)
 	{
@@ -1041,7 +1078,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	BOOL32 ESkinnedMesh::GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData)const
+	BOOL32 ESkinnedMesh::GetSkinElement(UINT32 InLayoutIndex, const ESkinData*& OutSkinData) const
 	{
 		if ((Skins.Num() > 0) && CheckVertexLayoutPartExist(EVertexLayoutType::MESH_SKIN, InLayoutIndex))
 		{
@@ -1060,7 +1097,7 @@ namespace PigeonEngine
 #endif
 		return FALSE;
 	}
-	const ESkinnedMesh::ESkinPart& ESkinnedMesh::GetSkinPart()const
+	const ESkinnedMesh::ESkinPart& ESkinnedMesh::GetSkinPart() const
 	{
 		return Skins;
 	}
@@ -1084,7 +1121,7 @@ namespace PigeonEngine
 	{
 		ReleaseRenderResource();
 	}
-	BOOL32 EMeshRenderResource::IsRenderResourceValid()const noexcept
+	BOOL32 EMeshRenderResource::IsRenderResourceValid() const noexcept
 	{
 		if ((IndexRenderResource.IsRenderResourceValid()) && (VertexRenderResources.Num() > 0))
 		{
@@ -1132,11 +1169,11 @@ namespace PigeonEngine
 			VertexRenderResources.Empty();
 		}
 	}
-	const RIndexBufferResource* EMeshRenderResource::GetIndexRenderResource()const
+	const RIndexBufferResource* EMeshRenderResource::GetIndexRenderResource() const
 	{
 		return (&IndexRenderResource);
 	}
-	const TArray<RVertexBufferResource*>* EMeshRenderResource::GetVertexRenderResource(const UINT8 InType)const
+	const TArray<RVertexBufferResource*>* EMeshRenderResource::GetVertexRenderResource(const UINT8 InType) const
 	{
 		return (VertexRenderResources.FindValueAsPtr(InType));
 	}
@@ -1321,7 +1358,7 @@ namespace PigeonEngine
 		CopyRenderResourcesInternal(&Other);
 		return (*this);
 	}
-	BOOL32 EStaticMeshRenderResource::IsRenderResourceValid()const noexcept
+	BOOL32 EStaticMeshRenderResource::IsRenderResourceValid() const noexcept
 	{
 		return ((!!StaticMesh) && (EMeshRenderResource::IsRenderResourceValid()));
 	}
@@ -1376,7 +1413,7 @@ namespace PigeonEngine
 		CopySkinRenderResourcesInternal(&Other);
 		return (*this);
 	}
-	BOOL32 ESkinnedMeshRenderResource::IsRenderResourceValid()const noexcept
+	BOOL32 ESkinnedMeshRenderResource::IsRenderResourceValid() const noexcept
 	{
 		if (SkinRenderResources.Num() > 0)
 		{
@@ -1422,7 +1459,7 @@ namespace PigeonEngine
 		}
 		EMeshRenderResource::ReleaseRenderResource();
 	}
-	const TArray<RVertexBufferResource>& ESkinnedMeshRenderResource::GetSkinRenderResource()const
+	const TArray<RVertexBufferResource>& ESkinnedMeshRenderResource::GetSkinRenderResource() const
 	{
 		return SkinRenderResources;
 	}
@@ -1660,14 +1697,14 @@ namespace PigeonEngine
 		}
 		return FALSE;
 	}
-	void ESkinnedMeshAsset::SetSkeleton(const ESkeleton* InSkeleton)const
+	void ESkinnedMeshAsset::SetSkeleton(const ESkeleton* InSkeleton) const
 	{
 		if (!!InSkeleton)
 		{
 			Skeleton = InSkeleton;
 		}
 	}
-	const ESkeleton* ESkinnedMeshAsset::GetSkeleton()const
+	const ESkeleton* ESkinnedMeshAsset::GetSkeleton() const
 	{
 		return Skeleton;
 	}
@@ -2500,6 +2537,16 @@ namespace PigeonEngine
 				}
 			}
 		}
+		// The authored cull bound adjustment is appended after the type specific data. A file
+		// written before the pair existed ends there, so the check on the remaining bytes is
+		// what lets the old format load with the defaults instead of reading past its end.
+		if (RstMemSize >= static_cast<LONGLONG>(sizeof(FLOAT) + sizeof(Vector3)))
+		{
+			LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempBoundScale);
+			LOAD_ASSET_MEMORY(Vector3, sizeof(Vector3), TempBoundExtend);
+			LoadedMeshResource->SetBoundScale(TempBoundScale);
+			LoadedMeshResource->SetBoundExtend(TempBoundExtend);
+		}
 
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check read mesh resource rest memory already failed."), (RstMemSize == 0));
 
@@ -2579,6 +2626,10 @@ namespace PigeonEngine
 					}
 				}
 			}
+			// The authored cull bound adjustment, appended to both mesh types so a file written
+			// before it existed still loads and simply keeps the defaults.
+			Result += sizeof(FLOAT);	// Bound scale
+			Result += sizeof(Vector3);	// Bound extend
 			return Result;
 		};
 
@@ -2721,6 +2772,11 @@ namespace PigeonEngine
 				}
 			};
 		}
+
+		// The authored cull bound adjustment. Appended after the type specific data so a file
+		// written before the pair existed still loads and keeps the defaults.
+		SAVE_ASSET_MEMORY(FLOAT, InMeshResource->GetBoundScale());
+		SAVE_ASSET_MEMORY(Vector3, InMeshResource->GetBoundExtend());
 
 		PE_CHECK((ENGINE_ASSET_ERROR), ("Check write mesh resource rest memory already failed."), (RstMemSize == 0));
 

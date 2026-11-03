@@ -444,14 +444,17 @@ namespace PigeonEngine
 #endif
 		}
 		PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create bezier grass scene proxy failed"), (!!Component));
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_GRASS);
 	}
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy()
 		: GraphicsProgram(nullptr), ComputeProgram(nullptr), Component(nullptr)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_GRASS);
 	}
 	RBezierGrassSceneProxy::RBezierGrassSceneProxy(const RBezierGrassSceneProxy& Other)
 		: RPrimitiveSceneProxy(Other), GraphicsProgram(Other.GraphicsProgram), ComputeProgram(Other.ComputeProgram), Component(Other.Component)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_GRASS);
 	}
 	RBezierGrassSceneProxy::~RBezierGrassSceneProxy()
 	{

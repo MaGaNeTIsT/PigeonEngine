@@ -133,6 +133,12 @@ namespace PigeonEngine
 
 	PE_CONSTEXPR_STATIC UINT32 RHI_MAX_RENDER_TARGETS			= 16u;
 	PE_CONSTEXPR_STATIC UINT32 RHI_MAX_VERTEX_BUFFERS			= 32u;
+	// Record threads, not counting the per stage sync lists or the engine tail list. Every
+	// list a frame records needs its own command allocator, so the device's list index space
+	// is larger than the worker count: task recorders are 0..N-1, sync lists start at
+	// RHI_MAX_RECORD_THREAD_NUM, and RHI_MAX_RECORD_LIST_NUM - 1 is the engine tail list.
+	PE_CONSTEXPR_STATIC UINT32 RHI_MAX_RECORD_THREAD_NUM		= 4u;
+	PE_CONSTEXPR_STATIC UINT32 RHI_MAX_RECORD_LIST_NUM			= 16u;
 	PE_CONSTEXPR_STATIC UINT32 RHI_INVALID_BINDLESS_INDEX		= 0xffffffffu;
 
 	/*
@@ -330,12 +336,17 @@ namespace PigeonEngine
 		// on for every Debug / Develop configuration and off for Shipping (Profiler.h). A build
 		// with the profiler on and the editor off is one the guard would have broken.
 		const CHAR*					PassName;
+		// TRUE when the caller has already recorded the resource transitions this pass needs,
+		// which is what a worker list in EXTERNAL state mode does. BeginRenderPass then binds
+		// the targets without reading or writing IRRHIResource::CurrentState.
+		BOOL32						bStatePrepared;
 
 		RRHIRenderPassDesc() noexcept
 			: RenderTargets{}
 			, RenderTargetCount{ 0u }
 			, DepthStencil{}
 			, PassName(nullptr)
+			, bStatePrepared{ FALSE }
 		{
 		}
 	};
@@ -462,6 +473,52 @@ namespace PigeonEngine
 			, DataSize{ InDataSize }
 			, RowPitch{ InRowPitch }
 			, SlicePitch{ InSlicePitch }
+		{
+		}
+	};
+
+	/*
+	* One rectangular write into an existing texture subresource. The payload holds the
+	* region's own rows, RowPitch bytes apart, not the subresource's: a caller that only
+	* has a patch to publish - ImGui queueing newly baked font glyphs is the first user -
+	* does not have to stage the whole mip to say so.
+	*
+	* Coordinates and sizes are in texels of the mip named by MipLevel. A region that does
+	* not fit that mip is refused rather than clamped: a silent clamp would publish the
+	* patch to the wrong place, and a caller that cannot see it has no way to notice.
+	*
+	* The format is not carried here - the destination texture already states it - and
+	* block compressed textures are not supported, because a partial block has no meaning
+	* as a row aligned patch.
+	*/
+	struct RRHITextureRegionUpdate
+	{
+		const UINT8*		Data;
+		UINT64				DataSize;
+		UINT32				RowPitch;
+		UINT32				SlicePitch;
+		UINT32				MipLevel;
+		UINT32				ArraySlice;
+		UINT32				DestinationX;
+		UINT32				DestinationY;
+		UINT32				DestinationZ;
+		UINT32				Width;
+		UINT32				Height;
+		UINT32				Depth;
+
+		RRHITextureRegionUpdate() noexcept
+			: Data{ nullptr }
+			, DataSize{ 0ull }
+			, RowPitch{ 0u }
+			, SlicePitch{ 0u }
+			, MipLevel{ 0u }
+			, ArraySlice{ 0u }
+			, DestinationX{ 0u }
+			, DestinationY{ 0u }
+			, DestinationZ{ 0u }
+			, Width{ 0u }
+			, Height{ 0u }
+			, Depth{ 1u }
 		{
 		}
 	};

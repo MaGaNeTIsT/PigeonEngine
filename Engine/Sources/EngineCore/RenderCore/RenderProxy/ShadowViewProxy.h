@@ -85,9 +85,9 @@ namespace PigeonEngine
 	* A shadow view: a view whose projection comes from a light rather than a camera.
 	*
 	* It is a plain RViewProxy so every existing path applies unchanged - ViewParams publishing
-	* and binding, the per view visibility map, and the per primitive draw that reads the current
-	* view. What it adds is where the view came from, which the renderer needs to rebuild it and
-	* which the atlas needs to know where it writes.
+	* and binding, the per view draw list the cull fills, and the per primitive draw that reads
+	* the current view. What it adds is where the view came from, which the renderer needs to
+	* rebuild it and which the atlas needs to know where it writes.
 	*/
 	class RShadowViewProxy final : public RViewProxy
 	{
@@ -102,27 +102,36 @@ namespace PigeonEngine
 			, const UINT32 InShadowSlot, const UINT32 InCascadeIndex, const UINT32 InCascadeCount
 			, const EViewDomainInfo& InDomainInfo
 			, const Vector3& InViewAnchor, const Quaternion& InViewRotation);
+		/*
+		* Replaces the domain the light built for this view, without touching the caster list.
+		*
+		* A directional cascade is culled against a conservative box and then re-fitted to the
+		* casters that cull kept; that second fit changes the projection and the frustum but not
+		* the view's anchor, orientation, or the draw list already collected. SetupShadowView is
+		* the wrong tool for it because it resets exactly that list.
+		*/
+		void	UpdateShadowViewDomain(const EViewDomainInfo& InDomainInfo);
 		// Renderer owned identity: one view per (light, kind, index) per camera view, so a frame
 		// rebuild can find the proxy it built last frame instead of allocating a new one (and with
 		// it a new ViewParams block) every frame.
 		void	SetShadowViewKey(const UINT64 InKey) { ShadowViewKey = InKey; }
-		PE_NODISCARD UINT64 GetShadowViewKey()const { return ShadowViewKey; }
+		PE_NODISCARD UINT64 GetShadowViewKey() const { return ShadowViewKey; }
 		// Marks the view as in use this frame. The renderer clears it before rebuilding and
 		// deletes whatever stayed clear, which is what keeps a removed light from leaving a view
 		// behind.
-		void	MarkUsed()const { bUsedThisFrame = TRUE; }
-		void	ClearUsed()const { bUsedThisFrame = FALSE; }
-		PE_NODISCARD BOOL32 IsUsedThisFrame()const { return bUsedThisFrame; }
+		void	MarkUsed() const { bUsedThisFrame = TRUE; }
+		void	ClearUsed() const { bUsedThisFrame = FALSE; }
+		PE_NODISCARD BOOL32 IsUsedThisFrame() const { return bUsedThisFrame; }
 	public:
-		PE_NODISCARD EShadowViewKindType	GetShadowKind()const { return Kind; }
-		PE_NODISCARD const RBaseSceneProxy*	GetLightProxy()const { return LightProxy; }
-		PE_NODISCARD UINT32					GetShadowSlot()const { return ShadowSlot; }
-		PE_NODISCARD UINT32					GetCascadeIndex()const { return CascadeIndex; }
-		PE_NODISCARD UINT32					GetCascadeCount()const { return CascadeCount; }
-		PE_NODISCARD const EViewDomainInfo&	GetShadowDomainInfo()const { return ShadowDomainInfo; }
+		PE_NODISCARD EShadowViewKindType	GetShadowKind() const { return Kind; }
+		PE_NODISCARD const RBaseSceneProxy*	GetLightProxy() const { return LightProxy; }
+		PE_NODISCARD UINT32					GetShadowSlot() const { return ShadowSlot; }
+		PE_NODISCARD UINT32					GetCascadeIndex() const { return CascadeIndex; }
+		PE_NODISCARD UINT32					GetCascadeCount() const { return CascadeCount; }
+		PE_NODISCARD const EViewDomainInfo&	GetShadowDomainInfo() const { return ShadowDomainInfo; }
 		// Atlas tile this view renders into, as a pixel rectangle. The domain's viewport is set to
 		// the same rectangle, so the two cannot disagree.
-		PE_NODISCARD const EViewport&		GetAtlasTile()const { return ShadowDomainInfo.RenderViewport; }
+		PE_NODISCARD const EViewport&		GetAtlasTile() const { return ShadowDomainInfo.RenderViewport; }
 	private:
 		EShadowViewKindType		Kind			= EShadowViewKindType::SHADOW_VIEW_KIND_DIRECTIONAL_CASCADE;
 		const RBaseSceneProxy*	LightProxy		= nullptr;

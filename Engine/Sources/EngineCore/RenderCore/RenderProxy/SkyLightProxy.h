@@ -66,7 +66,7 @@ namespace PigeonEngine
 		// after the pipeline state that would otherwise void it, so there is nothing to do
 		// here; the hook stays because the renderer calls it first.
 		void			BindRenderResource()const;
-		void			Draw();
+		void			Draw(class IRCommandList* InCommandList, const class RViewProxy* InView);
 		/*
 		* Render thread: the sky shader was replaced, so the process wide program is re-derived here
 		* and every proxy drops the state it built from the previous one (each proxy notices by

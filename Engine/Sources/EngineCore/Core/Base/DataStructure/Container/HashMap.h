@@ -255,7 +255,10 @@ namespace PigeonEngine
 	template <typename K, typename V, class Hash, class Pred, class Alloc>
 	V* THashMap<K, V, Hash, Pred, Alloc>::FindValuePtr(const K& Key) const
 	{
-		return (FindValuePtr(Key));
+		// The table is not mutated by a lookup, so the const form walks the same storage. Calling
+		// the unqualified name here would resolve to this overload again - the receiver is const -
+		// and recurse until the stack ends; the cast is what reaches the implementation.
+		return (const_cast<THashMap<K, V, Hash, Pred, Alloc>*>(this)->FindValuePtr(Key));
 	}
 
 	template <typename K, typename V, class Hash, class Pred, class Alloc>

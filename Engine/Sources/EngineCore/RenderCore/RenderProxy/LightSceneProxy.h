@@ -76,17 +76,23 @@ namespace PigeonEngine
 		RDirectionalLightSceneProxy(const PDirectionalLightComponent* InComponent);
 		void	SetupProxy(const ERenderDirectionalLightMatrices& InMatrices, const ERenderLightParams& InParams, const ECascadeShadowData* InCascadeShadowData);
 	public:
-		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const override;
+		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests) const override;
 		virtual BOOL32	BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
-			, const UINT32 InResolution, EViewDomainInfo& OutDomain
-			, Vector3& OutAnchor, Quaternion& OutRotation)const override;
+			, const UINT32 InResolution, const EBoundAABB& InCasterBounds, const BOOL32 InAreCasterBoundsComplete
+			, EViewDomainInfo& OutDomain, Vector3& OutAnchor, Quaternion& OutRotation) const override;
+		// A cascade is orthographic, so the drawn casters' light space x and y bound every
+		// shadow they can cast. This is the one proxy kind whose projection the renderer re-fits
+		// after the cull has said what it actually draws.
+		virtual BOOL32	RefitShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
+			, const UINT32 InResolution, const EBoundAABB& InDrawnBounds
+			, EViewDomainInfo& InOutDomain) const override;
 	public:
-		const ELightData&					GetLightData()const;
-		const ECascadeShadowData*			GetCascadeShadowData()const;
-		BOOL32								IsLightCastShadow()const;
-		BOOL32								IsLightUseCascadeShadow()const;
-		void								MarkNeedUpdateParams()const;
-		BOOL32								IsNeedUpdateParams()const;
+		const ELightData&					GetLightData() const;
+		const ECascadeShadowData*			GetCascadeShadowData() const;
+		BOOL32								IsLightCastShadow() const;
+		BOOL32								IsLightUseCascadeShadow() const;
+		void								MarkNeedUpdateParams() const;
+		BOOL32								IsNeedUpdateParams() const;
 	public:
 		void	UpdateMatrices(const ERenderDirectionalLightMatrices& InMatrices);
 		void	UpdateLightParams(const ERenderLightParams& InParams);
@@ -116,16 +122,16 @@ namespace PigeonEngine
 		RLocalLightSceneProxy(const PLocalLightComponent* InComponent);
 		void	SetupProxy(const ERenderTransformInfo& InTransform, const ELightData& InData);
 	public:
-		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const override;
+		virtual BOOL32	CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests) const override;
 		virtual BOOL32	BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
-			, const UINT32 InResolution, EViewDomainInfo& OutDomain
-			, Vector3& OutAnchor, Quaternion& OutRotation)const override;
+			, const UINT32 InResolution, const EBoundAABB& InCasterBounds, const BOOL32 InAreCasterBoundsComplete
+			, EViewDomainInfo& OutDomain, Vector3& OutAnchor, Quaternion& OutRotation) const override;
 	public:
 		const ELightData&	GetLightData() const;
 		// How much of the given view this light covers, as the approximate pixel radius of its
 		// attenuation sphere on screen. The renderer ranks shadow candidates by it, so a light
 		// whose shadow the frame cannot afford to keep is always the smallest one on screen.
-		PE_NODISCARD FLOAT	ComputeScreenCoverage(const RViewProxy& InView)const;
+		PE_NODISCARD FLOAT	ComputeScreenCoverage(const RViewProxy& InView) const;
 		void				MarkNeedUpdateParams() const;
 		BOOL32				IsNeedUpdateParams() const;
 	public:

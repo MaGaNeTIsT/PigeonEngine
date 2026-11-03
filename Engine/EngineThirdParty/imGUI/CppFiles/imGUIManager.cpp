@@ -142,12 +142,15 @@ namespace PigeonEngine
 	}
 	void CImGUIManager::RenderDrawData()
 	{
-		// Replay through the RHI-abstracted renderer. The caller (SceneRenderer::
-		// ImGuiPass) has already opened the appropriate render pass on the
-		// active IRCommandList.
-		IRCommandList* Cmd = EMainManager::GetManagerSingleton()->GetActiveCommandList();
-		if (!Cmd) { return; }
-		Renderer.Render(Cmd, ImGui::GetDrawData());
+		RenderDrawData(EMainManager::GetManagerSingleton()->GetActiveCommandList());
+	}
+	void CImGUIManager::RenderDrawData(IRCommandList* InCommandList)
+	{
+		if (!InCommandList)
+		{
+			return;
+		}
+		Renderer.Render(InCommandList, ImGui::GetDrawData());
 	}
 	void CImGUIManager::InitWnd()
 	{

@@ -55,10 +55,42 @@ namespace PigeonEngine
 	// -----------------------------------------------------------------------
 
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GAME_THREAD		= PE_TEXT("GameThread");
+	// The part of GameThread spent waiting for the previous render frame. A child by name, so
+	// the panel nests it under GameThread without a second grouping declaration.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GAME_WAIT_RENDER	= PE_TEXT("GameThread.WaitRender");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_THREAD	= PE_TEXT("RenderThread");
+	// Render-thread work that runs before the RenderThread bracket opens: the resource
+	// commands the game thread queued. The game thread waits for it through RenderDoneEvent,
+	// so without this row its cost shows up as GameThread wait and is attributed to nobody.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_RESOURCE_COMMANDS	= PE_TEXT("RenderThread.ResourceCommands");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_PHYSICS_THREAD	= PE_TEXT("PhysicsThread");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_LOAD_THREAD		= PE_TEXT("LoadThread");
 	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_GPU_FRAME		= PE_TEXT("GPU Frame");
+
+	// Render-thread sub-brackets. The whole-thread row above says how long the frame took;
+	// these say where it went. They are separate rows rather than nested children because the
+	// profiler records each scope as an independent trace.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_BEGIN_FRAME	= PE_TEXT("RenderThread.BeginFrame");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_INIT_FRAME	= PE_TEXT("RenderThread.InitFrame");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_RECORD		= PE_TEXT("RenderThread.Record");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_AFTER			= PE_TEXT("RenderThread.AfterRender");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_PRESENT		= PE_TEXT("RenderThread.Present");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_SETUP			= PE_TEXT("RenderThread.Setup");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_SHADOWS		= PE_TEXT("RenderThread.ShadowViews");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_BASE_PASS		= PE_TEXT("RenderThread.BasePass");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_FINAL_OUTPUT	= PE_TEXT("RenderThread.FinalOutput");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_IMGUI			= PE_TEXT("RenderThread.ImGui");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_SUBMIT		= PE_TEXT("RenderThread.Submit");
+	// One recorder thread's share of a stage. All workers share the name, so the panel shows
+	// the aggregate of the pool; the per-recorder split is visible in the task counters.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_SCOPE_RENDER_RECORD_WORKER	= PE_TEXT("RenderThread.Record.Worker");
+
+	// Per-frame counters. Counts rather than timings: the first question about a slow render
+	// thread is how much work it was asked to record, and a shadow pass multiplies that number
+	// by its view count.
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_BASE_DRAW_CALLS	= PE_TEXT("BaseDrawCalls");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_SHADOW_DRAW_CALLS	= PE_TEXT("ShadowDrawCalls");
+	PE_CONSTEXPR_STATIC const CHAR*	PROFILER_COUNTER_SHADOW_VIEW_NUM	= PE_TEXT("ShadowViewNum");
 
 	// -----------------------------------------------------------------------
 	// Snapshot result types returned by the EProfiler query API
@@ -220,21 +252,49 @@ namespace PigeonEngine
 	class EGPUEventScope final
 	{
 	public:
-		EGPUEventScope(IRCommandList* InCmd, const EString& InName)noexcept;
-		~EGPUEventScope();
+		// InEnabled lets a draw decide at run time whether its own marker is emitted. Pass level
+		// markers always pass TRUE; a per draw marker is the one an editor can turn off, because
+		// a shadow pass emits one per caster per view.
+		//
+		// The ctor / dtor are forced inline so the disabled case costs a pointer and a bool
+		// compare at the call site: a draw that does not emit a marker must not pay two
+		// out-of-line calls for it. The command list calls stay in Profiler.cpp, which is the
+		// only place that includes IRCommandList.h.
+		PE_FORCEINLINE EGPUEventScope(IRCommandList* InCmd, const EString& InName, const BOOL32 InEnabled = TRUE) noexcept
+			: Cmd(InCmd), bEnabled(InEnabled)
+		{
+			if ((Cmd) && (bEnabled != FALSE))
+			{
+				BeginEvent(InName);
+			}
+		}
+		PE_FORCEINLINE ~EGPUEventScope() noexcept
+		{
+			if ((Cmd) && (bEnabled != FALSE))
+			{
+				EndEvent();
+			}
+		}
 	public:
 		EGPUEventScope(const EGPUEventScope&) = delete;
 		EGPUEventScope& operator=(const EGPUEventScope&) = delete;
 	private:
+		void	BeginEvent(const EString& InName) noexcept;
+		void	EndEvent() noexcept;
+	private:
 		IRCommandList* Cmd;
+		BOOL32 bEnabled;
 	};
 
 	#define PE_GPU_EVENT_SCOPE(InCmd, InName) \
 		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((InCmd), (InName))
+	#define PE_GPU_EVENT_SCOPE_IF(InCmd, InName, InEnabled) \
+		::PigeonEngine::EGPUEventScope PE_PROFILER_CONCAT(_PEGPUEvent_, __LINE__)((InCmd), (InName), (InEnabled))
 
 #else
 
 	#define PE_GPU_EVENT_SCOPE(InCmd, InName)
+	#define PE_GPU_EVENT_SCOPE_IF(InCmd, InName, InEnabled)
 
 #endif
 

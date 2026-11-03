@@ -40,6 +40,13 @@ namespace PigeonEngine
 		virtual void Reset()override;
 		virtual void Close()override;
 
+		// IRCommandList record mode -------------------------------------------
+		// D3D11 ignores state tracking entirely: the immediate context has no barrier call
+		// and the back-end never reads IRRHIResource::CurrentState. The mode is stored so a
+		// caller can assert the single recorder contract, but it changes no command.
+		virtual void SetRecordMode(ERHIRecordModeType InMode)override;
+		virtual ERHIRecordModeType GetRecordMode() const noexcept override { return RecordMode; }
+
 		// IRCommandList render passes -----------------------------------------
 		virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc)override;
 		virtual void EndRenderPass()override;
@@ -49,6 +56,7 @@ namespace PigeonEngine
 
 		// IRCommandList pipeline / fixed-function ------------------------------
 		virtual void SetPipelineState(IRRHIPipelineState* InPipelineState)override;
+		virtual IRRHIPipelineState* GetBoundPipelineState() const noexcept override { return BoundPipelineState; }
 		virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology)override;
 		virtual void SetViewports(const EViewport* InViewports, UINT32 InCount)override;
 		virtual void SetScissorRects(const ERect* InRects, UINT32 InCount)override;
@@ -118,6 +126,20 @@ namespace PigeonEngine
 		Color4												CurrentBlendFactor;
 		UINT32												CurrentSampleMask;
 		UINT32												CurrentStencilRef;
+
+		// The state most recently applied through SetPipelineState, or null. A caller about to
+		// set the same state again can skip it; a manual topology change clears this because the
+		// state's own topology is no longer what the input assembler runs with.
+		IRRHIPipelineState*									BoundPipelineState;
+
+		// The state policy this list was asked to run with. D3D11 has no barrier call to
+		// suppress, so the value only documents the contract and lets callers assert it.
+		ERHIRecordModeType									RecordMode = ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE;
+
+		// TRUE once BeginRenderPass opened a GPU profiler pass on this list. EndRenderPass
+		// only closes a record this list opened; a pass with a null PassName must not pop
+		// another pass's profiler record.
+		BOOL8												bProfilerPassOpen = FALSE;
 
 		// The compute unordered access view each slot currently holds, as this command list bound
 		// it. A resource bound for write may not be read while that binding stands - D3D11 drops the

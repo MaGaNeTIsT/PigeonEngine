@@ -22,12 +22,29 @@ namespace PigeonEngine
 		// 1 = SM5_0, 2 = SM6_0, 3 = SM6_6 (matches ERHIShaderModelType enum)
 		PE_CONSTEXPR_STATIC		UINT8			ENGINE_SHADERMODEL_VERSION											= 3u;
 
+		// D3D12 validation layer. The layer checks every recorded command and every descriptor
+		// on the CPU, which is what makes a device failure readable - and also what turns a
+		// shadow pass that multiplies the draw count into a frame of tens of milliseconds. It is
+		// therefore opt-in: turn it on when a PSO / resource failure has to be traced, not for
+		// normal editing. No effect on D3D11.
+		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_RHI_ENABLE_DEBUG_LAYER										= FALSE;
+
+		// Per draw PIX / RenderDoc markers. Each marker is a BeginEvent/EndEvent pair around a
+		// draw, and a shadow pass emits one per caster per view - thousands per frame. The pass
+		// level markers are unaffected and stay on. Turn this on for a capture, not for play.
+		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_RHI_ENABLE_DRAW_MARKERS										= TRUE;
+
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM												= 1.0f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_HALF											= ENGINE_BOUND_MINIMUM * 0.5f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_LENGTH											= 1.73205080f;
 		PE_CONSTEXPR_STATIC		FLOAT			ENGINE_BOUND_MINIMUM_LENGTH_HALF									= ENGINE_BOUND_MINIMUM_LENGTH * 0.5f;
 
 		PE_CONSTEXPR_STATIC		UINT32			ENGINE_BONE_WEIGHT_NUM_MAXIMUM										= 16u;
+		// Derives a skinned mesh's cull bound from its current bone matrices instead of the
+		// authored BoundScale / BoundExtend pair. The per bone transform cost is proportional to
+		// the skeleton, so this is a validation aid and not a shipping path: off means the
+		// authored bound is used and nothing is computed per bone.
+		PE_CONSTEXPR_STATIC		BOOL32			ENGINE_SKELETAL_BOUND_FROM_BONES									= FALSE;
 
 		PE_CONSTEXPR_STATIC		UINT32			ENGINE_MESH_NAME_LENGTH_MAX											= 1024u;
 		PE_CONSTEXPR_STATIC		UINT32			ENGINE_SKELETON_NAME_LENGTH_MAX										= 1024u;

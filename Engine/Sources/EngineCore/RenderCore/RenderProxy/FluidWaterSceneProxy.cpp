@@ -31,16 +31,19 @@ namespace PigeonEngine
 	: MaterialAsset(nullptr), Component(InComponent)
 	{
 	PE_CHECK((ENGINE_RENDER_CORE_ERROR), ("Create fluid water scene proxy failed"), (!!Component));
+	SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_WATER);
 	}
 
 	RFluidWaterSceneProxy::RFluidWaterSceneProxy()
 	: MaterialAsset(nullptr), Component(nullptr)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_WATER);
 	}
 
 	RFluidWaterSceneProxy::RFluidWaterSceneProxy(const RFluidWaterSceneProxy& Other)
 		: RPrimitiveSceneProxy(Other), MaterialAsset(Other.MaterialAsset), Component(Other.Component)
 	{
+		SetPrimitiveCategoryMask(ERenderPrimitiveCategoryType::RENDER_PRIMITIVE_CATEGORY_WATER);
 	}
 
 	RFluidWaterSceneProxy::~RFluidWaterSceneProxy()

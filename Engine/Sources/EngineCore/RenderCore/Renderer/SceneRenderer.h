@@ -9,6 +9,9 @@
 #include <Shader/ShaderParameter.h>
 #include <RenderProxy/RenderSingletonObject.h>
 #include <RenderProxy/LightSceneProxy.h>
+#include <Renderer/RenderData.h>
+#include <Renderer/RenderPass.h>
+#include <Renderer/RenderRecordScheduler.h>
 
 namespace PigeonEngine
 {
@@ -16,14 +19,17 @@ namespace PigeonEngine
 	class EShaderProgram;
 	class EShaderInstance;
 	class RViewProxy;
+	class RViewPrimitiveList;
+	struct RViewPrimitiveBounds;
 	class RLocalLightSceneProxy;
 	class RViewShadowState;
 	class IRCommandList;
+	class FBasePass;
+	class FShadowPass;
 
 	class RSceneRenderer : public EManagerBase
 	{
 	public:
-		using RVisibilityMapType		= TMap<ObjectIdentityType, BOOL32>;
 		using RViewSceneTextureType		= TMap<ObjectIdentityType, RSceneTextures*>;
 		/*
 		* Where a light's shadow views landed in one view's slot table.
@@ -128,6 +134,10 @@ namespace PigeonEngine
 		// The view the frame is currently recording. ViewParams belongs to the view, not to
 		// the primitive, so a primitive draw publishes and binds it through this handle.
 		PE_NODISCARD RViewProxy*			GetCurrentViewProxy() const { return CurrentViewProxy; }
+		// The frame's publish registry. Passes and proxies ask it for the data they consume;
+		// only the Prepare phase may resolve or upload through it.
+		PE_NODISCARD FFrameRenderData&		GetFrameRenderData() { return FrameData; }
+		PE_NODISCARD const FFrameRenderData&	GetFrameRenderData() const { return FrameData; }
 	public:
 		// Builds the GlobalParams mirrors from the first program that declares the block.
 		BOOL32	EnsureGlobalParameterBlock(IRRHIDevice* InRenderDevice, const EShaderProgram& InProgram);
@@ -142,8 +152,27 @@ namespace PigeonEngine
 		// at the roots the given program's plan reports. Callers run it after their own pipeline
 		// state on purpose: switching a signature voids every root binding, so a pass that bound
 		// its blocks before its state would lose them.
-		void	BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram);
+		void	BindEngineParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram, const RViewProxy* InView = nullptr);
 	protected:
+		// Builds the pass instances for this frame: one per (item pass, view). ShadowPass and
+		// BasePass are the two item passes; every later pass keeps the same shape.
+		void			BuildPassInstances(TArray<FPassViewInstance>& OutInstances);
+		// Prepare: select each instance's items and publish the data they consume.
+		void			PreparePassInstances(TArray<FPassViewInstance>& InOutInstances);
+		// Prepare: turn the instances of one stage into record tasks.
+		void			BuildStageTasks(const TArray<FPassViewInstance>& InInstances, ERenderPassStageType InStage
+			, TArray<FRecordTask>& OutTasks) const;
+		// Record: the stage sync list. It owns transitions, clears, the frame's GPU profiler
+		// bracket on the first stage, and the engine's per frame GPU setup on the same list.
+		void			RecordStageSync(ERenderPassStageType InStage, IRCommandList* InCommandList);
+		// Record: binds one item pass instance's targets and viewport.
+		void			BeginItemPass(FPassRecordContext& InContext) const;
+		void			EndItemPass(FPassRecordContext& InContext) const;
+		// Record: replays a range of prepared items.
+		void			RecordItemRange(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const;
+		// Record: the engine driven tail that runs after every item pass: sky, shadow mask,
+		// lighting, forward, final output and the editor overlay.
+		void			RecordTailPasses(IRCommandList* InCommandList);
 		void			InitViews();
 		// Builds the pipeline states of the passes the renderer drives itself (lighting and the
 		// final blit). It is called once per frame and returns as soon as every state exists: a
@@ -151,13 +180,11 @@ namespace PigeonEngine
 		// commands its asset load queued, and the first call happens before that thread exists,
 		// so a one shot build would latch those passes as permanently unbuildable.
 		void			EnsureEnginePassPipelineStates();
-		void			BasePass();
 		void			FinalOutputPass();
 #if _EDITOR_ONLY
 		void			ImGuiPass();
 #endif
 	protected:
-		void			RenderBasePass(RSceneTextures* InSceneTextures);
 		void			RenderLighting(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
 		void			RenderSky(const RViewProxy* InViewProxy);
 		void			RenderForward(const RViewProxy* InViewProxy, RSceneTextures* InSceneTextures);
@@ -214,10 +241,6 @@ namespace PigeonEngine
 		* kind they carry.
 		*/
 		void			InitShadowViews(RViewProxy* InViewProxy);
-		// Records the depth atlas of every view that owns shadow views, before the base pass that
-		// samples it. One pass per view, one viewport per allocated tile, and one caster list per
-		// shadow view.
-		void			RenderShadowViews();
 		/*
 		* The local lights that may keep a shadow this frame, ranked by how much of the view they
 		* cover. A light that is outside the main camera, casts no shadow, or is of a type without a
@@ -227,7 +250,7 @@ namespace PigeonEngine
 		* ranks the same way every frame.
 		*/
 		void			SelectLocalShadowCandidates(const RViewProxy& InView
-			, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates)const;
+			, TArray<RLocalLightSceneProxy*>& OutSpotCandidates, TArray<RLocalLightSceneProxy*>& OutPointCandidates) const;
 		// The shadow state of a view, created on first use. Ownership stays with the renderer.
 		RViewShadowState*	EnsureViewShadowState(const ObjectIdentityType InViewIdentity);
 		// Releases the states of views the scene no longer has. A view that merely stopped being the
@@ -290,8 +313,34 @@ namespace PigeonEngine
 		// shutdown and whenever the prefiltered cube is recreated.
 		void			ReleaseSpecularIBLResources();
 	protected:
-		void			OctreeCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
-		void			PrimitiveCull(const EFrustum& InViewFrustum, RVisibilityMapType& InOutVisibilityMap);
+		/*
+		* Fills one view's primitive list.
+		*
+		* This is the only place that walks the scene's primitives for a view: the cull decides
+		* visibility against the view's own frustum, and every pass that draws the view reads the
+		* list that comes out. A shadow view adds the caster filter, because a primitive that does
+		* not cast is not part of that view's work at all.
+		*
+		* A primitive whose bound cannot be computed is kept: a missing bound is not evidence of
+		* invisibility, and a caster dropped on a guess is a shadow that silently disappears.
+		*
+		* OutBounds is optional. When it is given it accumulates the world space union of the
+		* primitives the cull kept, clipped to the frustum's own world AABB so a large caster
+		* contributes only the part that can matter here. A kept primitive without a bound marks
+		* the union incomplete, because a fit built from it could clip that primitive.
+		*/
+		void			CollectViewPrimitiveList(const RViewProxy& InView, RViewPrimitiveList& OutPrimitiveList
+			, RViewPrimitiveBounds* OutBounds = nullptr) const;
+		/*
+		* Computes the world space union of every primitive this frame can draw as a caster, and
+		* whether that union covers all of them. A directional cascade's conservative box uses it
+		* for the near side of its depth range: the camera slice bounds the receivers, and an
+		* occluder between the light and a receiver shadows it from anywhere in front of it.
+		*
+		* Run once per frame, after the scene commands have been applied and before the shadow
+		* views are built.
+		*/
+		void			CollectSceneCasterBounds();
 	protected:
 		// Debug only: compares the C++ element stride of each light list against the field list
 		// the shader reflected, which is the only thing that can catch a layout that drifted
@@ -301,7 +350,7 @@ namespace PigeonEngine
 		void			ValidateLightBufferLayout();
 	protected:
 		void			InitRendererSettings();
-		BOOL32			IsNeedStencil()const;
+		BOOL32			IsNeedStencil() const;
 	public:
 		// The renderer wide sampler table, in the register order the shaders declare it:
 		// s0..s3 are the system layer's samplers (Components/C_EngineSystem.json) and s4..s6 the
@@ -347,9 +396,17 @@ namespace PigeonEngine
 	protected:
 		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];
 		IRRHIPipelineState*			PipelineStates[RPipelineStateType::PIPELINE_STATE_COUNT];
-		// Active command list for the frame currently being recorded.
-		// Acquired in Render() and submitted at the end; sub-passes share it.
+		// Active command list for the frame currently being recorded. It is the recorder 0 list
+		// the engine driven tail runs on; item passes receive their list through
+		// FPassRecordContext and never read this member.
 		IRCommandList*				CurrentCommandList;
+		// The frame's data registry and the recorder scheduler. Both are owned by the renderer
+		// and live for its lifetime.
+		FFrameRenderData			FrameData;
+		FRenderRecordScheduler		RecordScheduler;
+		FPassStatePlan				PassStatePlan;
+		TUniquePtr<FBasePass>		BasePassObject;
+		TUniquePtr<FShadowPass>		ShadowPassObject;
 		// Pipeline states of the frame, created on demand from a program and its layout.
 		RPipelineStateCache			PipelineStateCache;
 		// TRUE once every engine driven pass state exists, so the per frame retry in
@@ -398,6 +455,13 @@ namespace PigeonEngine
 		RLightLists					LightLists;
 		// Each main view's own light list buffers, created on first use and freed with the view.
 		RViewLightBuffersMapType	ViewLightBuffers;
+		// This frame's caster union, computed before the shadow views are built. A directional
+		// cascade uses it to reach every occluder between the light and its slice; completeness
+		// says whether every caster could state a bound, which is what a projection fit may rely
+		// on. Authored as a member rather than recomputed per cascade because it is a fact about
+		// the frame, not about one light.
+		EBoundAABB					SceneCasterBounds;
+		BOOL32						bSceneCasterBoundsComplete = TRUE;
 	protected:
 		// The environment's diffuse representation: nine SH radiance coefficients the bake writes
 		// with a compute dispatch and the lighting pass reads as irradiance. One buffer for the
@@ -426,10 +490,12 @@ namespace PigeonEngine
 		BOOL32					bIndirectLightingParamsReported;
 	protected:
 		// ---- Specular IBL ----
-		// The prefiltered environment: a six slice 2D array whose levels carry the GGX filtered
-		// environment shape (mean one). It is deliberately not a cube resource: D3D11 has no
-		// cube UAV dimension, while a 2D array works on both back ends with the same shader.
-		// The lighting pass maps a reflection direction to (face, uv) itself.
+		// The prefiltered environment: a cube resource whose levels carry the GGX filtered
+		// environment shape (mean one). The resource is created with six array slices and the
+		// cube misc flag, so the read side is a TextureCube SRV on both back ends - the lighting
+		// pass samples it by reflection direction and lets the hardware select the face. Only the
+		// write side is an array: no D3D version has a cube UAV, so the bake fills one mip at a
+		// time through a six slice 2D array UAV view.
 		RRHITexture2D			PrefilteredEnvironmentCube;
 		TArray<IRRHITextureUAVView*>	PrefilteredEnvironmentUAVViews;
 		UINT32					PrefilteredEnvironmentMipCount;
@@ -456,6 +522,46 @@ namespace PigeonEngine
 	public:
 		RSceneRenderer(const RSceneRenderer&) = delete;
 		RSceneRenderer& operator=(const RSceneRenderer&) = delete;
+
+		friend class FBasePass;
+		friend class FShadowPass;
+
+	};
+
+	/*
+	* The deferred GBuffer pass. It is one implementation of FRenderPass: it consumes a main
+	* camera view's primitive list, writes the view's GBuffer, and records every prepared item
+	* through RPrimitiveSceneProxy::RecordPassItem. Nothing about the shadow pass appears here.
+	*/
+	class FBasePass final : public FRenderPass
+	{
+	public:
+		explicit FBasePass(RSceneRenderer* InRenderer);
+	public:
+		virtual ERenderPassStageType	GetStage() const override { return ERenderPassStageType::RENDER_PASS_STAGE_BASE; }
+		virtual BOOL32					ShouldUseView(const RViewProxy& InView) const override;
+		virtual void					BeginPass(FPassRecordContext& InContext) const override;
+		virtual void					RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const override;
+	private:
+		RSceneRenderer*	Renderer;
+	};
+
+	/*
+	* The shadow depth pass. It is the same interface as FBasePass over a shadow view: the
+	* view supplies the frustum and the caster list, the pass supplies the atlas tile and the
+	* depth target. The only shadow specific code is the target setup and the item record loop.
+	*/
+	class FShadowPass final : public FRenderPass
+	{
+	public:
+		explicit FShadowPass(RSceneRenderer* InRenderer);
+	public:
+		virtual ERenderPassStageType	GetStage() const override { return ERenderPassStageType::RENDER_PASS_STAGE_SHADOW; }
+		virtual BOOL32					ShouldUseView(const RViewProxy& InView) const override;
+		virtual void					BeginPass(FPassRecordContext& InContext) const override;
+		virtual void					RecordItems(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const override;
+	private:
+		RSceneRenderer*	Renderer;
 	};
 
 };

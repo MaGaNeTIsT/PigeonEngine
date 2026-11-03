@@ -553,7 +553,7 @@ namespace PigeonEngine
 		InCommandList->DrawIndexed(InPrimitive.GetIndexCount(), InInstanceNum, 0u, 0, 0u);
 	}
 
-	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(const RViewProxy* InView)
+	void RDebugWireframePrimitiveManager::RenderPrimitives_RenderThread(IRCommandList* InCommandList, const RViewProxy* InView)
 	{
 		(void)InView;
 		// The overlay is hidden as a whole. The primitives are still queued and folded into this
@@ -563,7 +563,7 @@ namespace PigeonEngine
 		{
 			return;
 		}
-		IRCommandList* CmdList = EMainManager::GetManagerSingleton()->GetActiveCommandList();
+		IRCommandList* CmdList = InCommandList;
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		if ((!CmdList) || (!RenderDevice))
 		{
@@ -608,7 +608,7 @@ namespace PigeonEngine
 			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
 			if (PassRenderer)
 			{
-				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram);
+				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram, InView);
 			}
 			if ((!DrawParameterBlock.IsInitialized()) && (_GDebugWireframeDrawBlockAbsent == FALSE))
 			{

@@ -134,9 +134,9 @@ namespace PigeonEngine
 	public:
 
 		PCameraComponent(FLOAT InViewportLeftTopX, FLOAT InViewportLeftTopY, FLOAT InViewportWidth, FLOAT InViewportHeight, FLOAT InFovAngleY = EEngineSettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
-		const ECameraViewInfo&	GetCameraViewInfo()const { return CameraViewInfo; }
-		const EViewMatrix&		GetCameraMatrix()const { return CameraMatrix; }
-		const EFrustum&			GetCameraFrustum()const { return CameraFrustum; }
+		const ECameraViewInfo&	GetCameraViewInfo() const { return CameraViewInfo; }
+		const EViewMatrix&		GetCameraMatrix() const { return CameraMatrix; }
+		const EFrustum&			GetCameraFrustum() const { return CameraFrustum; }
 	public:
 		void	SetCameraViewInfo(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight, FLOAT InFovAngleY = EEngineSettings::ENGINE_CAMERA_FOV, FLOAT InFarDist = RCommonSettings::RENDER_CAMERA_FAR, FLOAT InNearDist = RCommonSettings::RENDER_CAMERA_NEAR);
 		void	SetViewport(FLOAT InTopLeftX, FLOAT InTopLeftY, FLOAT InWidth, FLOAT InHeight);
@@ -157,12 +157,12 @@ namespace PigeonEngine
 		// In stops. Positive values brighten, which is the direction a photographer expects.
 		void	SetExposureCompensation(FLOAT InStops);
 	public:
-		Vector3	TransformScreenToWorld(const Vector3& InScreenCoordWithZ)const;
-		BOOL32	TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ)const;
-		Vector3	TransformWorldToView(const Vector3& InWorldLocation)const;
-		Vector3	TransformViewToWorld(const Vector3& InViewLocation)const;
+		Vector3	TransformScreenToWorld(const Vector3& InScreenCoordWithZ) const;
+		BOOL32	TransformWorldToScreen(const Vector3& InWorldLocation, Vector3& OutScreenCoordWithZ) const;
+		Vector3	TransformWorldToView(const Vector3& InWorldLocation) const;
+		Vector3	TransformViewToWorld(const Vector3& InViewLocation) const;
 	public:
-		BOOL32	IsMainCamera()const;
+		BOOL32	IsMainCamera() const;
 		void	UpdateCameraMatrix();
 		void	SetIsMainCamera(BOOL32 IsMain);
 	protected:
@@ -182,16 +182,20 @@ namespace PigeonEngine
 	public:
 		RViewProxy*			ViewProxy;	// ONLY render thread could use this proxy pointer.
 	public:
-		UINT8				GetUpdateRenderState()const;
+		UINT8				GetUpdateRenderState() const;
 		RViewProxy*			CreateSceneProxy();
-		virtual void		CreateRenderState()override;
-		virtual void		DestroyRenderState()override;
-		virtual void		SendUpdateRenderState()override;
+		virtual void		CreateRenderState() override;
+		virtual void		DestroyRenderState() override;
+		virtual void		SendUpdateRenderState() override;
 	protected:
 		void				MarkAsDirty(PCameraUpdateState InState);
-		virtual void		MarkRenderTransformAsDirty()override;
-		virtual void		MarkRenderStateAsDirty()override;
-		virtual void		CleanMarkRenderStateDirty()override;
+		// Rebuilds the view space frustum from CameraViewInfo. The projection inputs are its
+		// only source: keeping an older frustum would leave culling on the previous field of
+		// view and aspect ratio after a lens or viewport change.
+		void				RefreshCameraFrustum();
+		virtual void		MarkRenderTransformAsDirty() override;
+		virtual void		MarkRenderStateAsDirty() override;
+		virtual void		CleanMarkRenderStateDirty() override;
 	protected:
 		UINT8				UpdateState;
 		// Render proxy functions END

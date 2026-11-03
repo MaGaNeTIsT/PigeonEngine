@@ -71,6 +71,12 @@ namespace PigeonEngine
 		return bStarted.Load();
 	}
 
+	UINT32 EThread::GetHardwareThreadNum() noexcept
+	{
+		const UINT32 HardwareThreadNum = static_cast<UINT32>(std::thread::hardware_concurrency());
+		return ((HardwareThreadNum > 0u) ? HardwareThreadNum : 1u);
+	}
+
 	void EThread::EntryTrampoline(const EThreadEntryFunctionType& InEntry)
 	{
 		ApplyDebugName();

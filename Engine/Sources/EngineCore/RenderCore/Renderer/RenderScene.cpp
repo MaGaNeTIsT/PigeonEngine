@@ -154,21 +154,21 @@ namespace PigeonEngine
 			[Scene, SceneProxy, TempIsMainCamera, TempMatrices, TempParams]()->void
 			{
 				SceneProxy->UpdateViewSettings(TempIsMainCamera);
-				BOOL32 NeedUpdateRenderResource = FALSE;
+				BOOL32 bNeedUpdateRenderResource = FALSE;
 				// View params MUST be updating before matrices.
 				if (TempParams)
 				{
 					SceneProxy->UpdateViewParams(*TempParams);
 					delete TempParams;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
 				if (TempMatrices)
 				{
 					SceneProxy->UpdateMatrices(*TempMatrices);
 					delete TempMatrices;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
-				if (NeedUpdateRenderResource)
+				if (bNeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
 				}
@@ -238,24 +238,28 @@ namespace PigeonEngine
 		EnqueueUpdateCommand(
 			[Scene, SceneProxy, TempMatrices, TempParams, TempCubeMapAsset]()->void
 			{
-				BOOL32 NeedUpdateRenderResource = FALSE;
+				BOOL32 bNeedUpdateRenderResource = FALSE;
 				if (TempMatrices)
 				{
 					SceneProxy->UpdateMatrices(*TempMatrices);
 					delete TempMatrices;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
 				if (TempParams)
 				{
 					SceneProxy->UpdateSkyLightParams(*TempParams);
 					delete TempParams;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
 				if (TempCubeMapAsset)
 				{
 					SceneProxy->UpdateTextureCubeAsset(TempCubeMapAsset);
+					// The cube is a render resource the proxy's next publish is built beside:
+					// its first arrival has to rebuild the block, or a sky that was created
+					// before its asset landed keeps whatever values that empty publish wrote.
+					bNeedUpdateRenderResource = TRUE;
 				}
-				if (NeedUpdateRenderResource)
+				if (bNeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
 				}
@@ -637,19 +641,19 @@ namespace PigeonEngine
 		EnqueueUpdateCommand(
 			[Scene, SceneProxy, bMovable, bCastShadow, bReceiveShadow, TempMatrices, TempProperty, TempLayerData, TempTileAnchor, TempTileSize, TempNumTilesX, TempNumTilesZ, TempWindDirection, TempWindStrength]()->void
 			{
-				BOOL32 NeedUpdateRenderResource = FALSE;
+				BOOL32 bNeedUpdateRenderResource = FALSE;
 				SceneProxy->SetPrimitiveSettings(bMovable, bCastShadow, bReceiveShadow);
 				if (TempMatrices)
 				{
 					SceneProxy->UpdatePrimitiveMatrices(*TempMatrices);
 					delete TempMatrices;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
 				if (TempProperty)
 				{
 					SceneProxy->UpdateProperty(*TempProperty);
 					delete TempProperty;
-					NeedUpdateRenderResource = TRUE;
+					bNeedUpdateRenderResource = TRUE;
 				}
 				if (TempLayerData)
 				{
@@ -667,7 +671,7 @@ namespace PigeonEngine
 					SceneProxy->UpdateWindParams(*TempWindDirection, TempWindStrength);
 					delete TempWindDirection;
 				}
-				if (NeedUpdateRenderResource)
+				if (bNeedUpdateRenderResource)
 				{
 					SceneProxy->UpdateRenderResource();
 				}

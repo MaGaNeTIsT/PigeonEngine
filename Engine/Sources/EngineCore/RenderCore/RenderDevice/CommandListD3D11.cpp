@@ -128,6 +128,7 @@ namespace PigeonEngine
 		, CurrentBlendFactor(0.f, 0.f, 0.f, 0.f)
 		, CurrentSampleMask(0xffffffffu)
 		, CurrentStencilRef(0u)
+		, BoundPipelineState(nullptr)
 		, BoundComputeUAVs{}
 	{
 		// D3D11 path uses the device's shared immediate context so legacy
@@ -157,6 +158,8 @@ namespace PigeonEngine
 		CurrentBlendFactor = Color4(0.f, 0.f, 0.f, 0.f);
 		CurrentSampleMask = 0xffffffffu;
 		CurrentStencilRef = 0u;
+		BoundPipelineState = nullptr;
+		bProfilerPassOpen = FALSE;
 	}
 
 	void RCommandListD3D11::Close()
@@ -164,6 +167,13 @@ namespace PigeonEngine
 		// Immediate-mode wrapper: commands have already executed; nothing to
 		// finalize. Phase 3 D3D12 backend will repurpose this hook to call
 		// ID3D12GraphicsCommandList::Close().
+	}
+
+	void RCommandListD3D11::SetRecordMode(const ERHIRecordModeType InMode)
+	{
+		// D3D11 has no state tracker and no barrier call, so every mode records the same
+		// commands. Storing it keeps the contract visible to a debug assertion.
+		RecordMode = InMode;
 	}
 
 	// --------------------------------------------------------
@@ -180,6 +190,7 @@ namespace PigeonEngine
 		// GPU profiler: open event + first timestamp for this pass. No-op
 		// when PassName is null or _GPU_ENABLE_PROFILER is off.
 		PE_GPU_PROFILER_PASS_BEGIN(this, InDesc.PassName);
+		bProfilerPassOpen = ((InDesc.PassName != nullptr) ? TRUE : FALSE);
 
 		// Collect RTVs. OMSetRenderTargets binds at most
 		// D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT views, while the RHI desc allows
@@ -229,9 +240,13 @@ namespace PigeonEngine
 		// implicit. Phase 3 (D3D12) will use this to insert resource state
 		// transitions back to whatever the next pass declared.
 
-		// GPU profiler: close event + second timestamp. No-op when this
-		// pass wasn't auto-instrumented or _GPU_ENABLE_PROFILER is off.
-		PE_GPU_PROFILER_PASS_END(this);
+		// GPU profiler: close event + second timestamp, but only for a pass whose begin
+		// opened a record. A pass with a null PassName must not pop the parent's record.
+		if (bProfilerPassOpen != FALSE)
+		{
+			PE_GPU_PROFILER_PASS_END(this);
+			bProfilerPassOpen = FALSE;
+		}
 	}
 
 	// --------------------------------------------------------
@@ -283,6 +298,7 @@ namespace PigeonEngine
 		if (PipelineState->bIsCompute)
 		{
 			ImmediateContext->CSSetShader(PipelineState->ComputeShader.Get(), nullptr, 0u);
+			BoundPipelineState = InPipelineState;
 			return;
 		}
 
@@ -319,6 +335,7 @@ namespace PigeonEngine
 
 		ImmediateContext->OMSetBlendState(CurrentBlendState, &(CurrentBlendFactor.x), CurrentSampleMask);
 		ImmediateContext->OMSetDepthStencilState(CurrentDepthStencilState, CurrentStencilRef);
+		BoundPipelineState = InPipelineState;
 	}
 
 	void RCommandListD3D11::SetPrimitiveTopology(RPrimitiveTopologyType InTopology)
@@ -326,6 +343,9 @@ namespace PigeonEngine
 		if (ImmediateContext)
 		{
 			ImmediateContext->IASetPrimitiveTopology(TranslateTopology(InTopology));
+			// The bound state no longer carries the complete input assembly setup, so a caller
+			// may not treat it as "already applied" until it sets the state again.
+			BoundPipelineState = nullptr;
 		}
 	}
 

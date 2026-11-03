@@ -50,10 +50,11 @@ namespace PigeonEngine
 		// shadow caster cull needs; a skinned mesh uses its bind pose bound, which can only be
 		// smaller than the posed one, so the caller keeps a small safety margin in mind.
 		virtual BOOL32	GetWorldBound(Vector3& OutMin, Vector3& OutMax)const override;
-		virtual const RInputLayoutDesc*	GetPipelineStateInputLayouts(UINT32& OutCount)const override;
+		virtual const RInputLayoutDesc*	GetPipelineStateInputLayouts(UINT32& OutCount) const override;
 		virtual UINT32	GetDrawGroupNum()const override;
 		virtual BOOL32	GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex)const override;
-		virtual BOOL32	BindGeometry(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const override;
+		virtual BOOL32	ResolveGeometryBinding(FPrimitivePassData& InOutData)const override;
+		virtual BOOL32	BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData)const override;
 
 		RENDER_PROXY_CLASS_BODY(RMeshSceneProxy)
 

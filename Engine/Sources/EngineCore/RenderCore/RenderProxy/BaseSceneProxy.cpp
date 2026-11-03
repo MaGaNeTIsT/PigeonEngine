@@ -34,37 +34,50 @@ namespace PigeonEngine
 	RBaseSceneProxy::~RBaseSceneProxy()
 	{
 	}
-	BOOL32 RBaseSceneProxy::CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests)const
+	BOOL32 RBaseSceneProxy::CollectShadowViews(const RViewProxy& InView, TArray<FShadowViewRequest>& OutRequests) const
 	{
 		(void)InView;
 		(void)OutRequests;
 		return FALSE;
 	}
 	BOOL32 RBaseSceneProxy::BuildShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
-		, const UINT32 InResolution, EViewDomainInfo& OutDomain
-		, Vector3& OutAnchor, Quaternion& OutRotation)const
+		, const UINT32 InResolution, const EBoundAABB& InCasterBounds, const BOOL32 InAreCasterBoundsComplete
+		, EViewDomainInfo& OutDomain, Vector3& OutAnchor, Quaternion& OutRotation) const
 	{
 		(void)InView;
 		(void)InRequest;
 		(void)InResolution;
+		(void)InCasterBounds;
+		(void)InAreCasterBoundsComplete;
 		(void)OutDomain;
 		(void)OutAnchor;
 		(void)OutRotation;
 		return FALSE;
 	}
-	const Vector3& RBaseSceneProxy::GetWorldLocation()const
+	BOOL32 RBaseSceneProxy::RefitShadowViewDomain(const RViewProxy& InView, const FShadowViewRequest& InRequest
+		, const UINT32 InResolution, const EBoundAABB& InDrawnBounds
+		, EViewDomainInfo& InOutDomain) const
+	{
+		(void)InView;
+		(void)InRequest;
+		(void)InResolution;
+		(void)InDrawnBounds;
+		(void)InOutDomain;
+		return FALSE;
+	}
+	const Vector3& RBaseSceneProxy::GetWorldLocation() const
 	{
 		return WorldLocation;
 	}
-	const Quaternion& RBaseSceneProxy::GetWorldRotation()const
+	const Quaternion& RBaseSceneProxy::GetWorldRotation() const
 	{
 		return WorldRotation;
 	}
-	const Vector3& RBaseSceneProxy::GetWorldScaling()const
+	const Vector3& RBaseSceneProxy::GetWorldScaling() const
 	{
 		return WorldScaling;
 	}
-	const Matrix4x4& RBaseSceneProxy::GetLocalToWorldMatrix()const
+	const Matrix4x4& RBaseSceneProxy::GetLocalToWorldMatrix() const
 	{
 		return LocalToWorldMatrix;
 	}
@@ -75,7 +88,7 @@ namespace PigeonEngine
 		WorldScaling		= InWorldScaling;
 		LocalToWorldMatrix	= MakeMatrix4x4(WorldLocation, WorldRotation, WorldScaling);
 	}
-	const RScene* RBaseSceneProxy::GetRenderScene()const
+	const RScene* RBaseSceneProxy::GetRenderScene() const
 	{
 		return Scene;
 	}

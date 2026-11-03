@@ -245,14 +245,14 @@ namespace PigeonEngine
 		return TRUE;
 	}
 
-	BOOL8 RRenderTexture2D::InitFromRHI(IRRHIDevice* InRenderDevice, const RTextureDesc& InDesc)
+	BOOL8 RRenderTexture2D::InitFromRHI(IRRHIDevice* InRenderDevice, const RTextureDesc& InDesc, const Color4& InClearColor)
 	{
 		if (!InRenderDevice)
 		{
 			return FALSE;
 		}
 		IRRHITexture* OutTexture = nullptr;
-		if (!InRenderDevice->CreateTexture(InDesc, Color4(0.f, 0.f, 0.f, 0.f), RRHISubresourceData(), &OutTexture) || !OutTexture)
+		if (!InRenderDevice->CreateTexture(InDesc, InClearColor, RRHISubresourceData(), &OutTexture) || !OutTexture)
 		{
 			return FALSE;
 		}
@@ -442,10 +442,14 @@ namespace PigeonEngine
 			// fully lit. Eight bits per channel is enough because the value is a filtered term in
 			// [0, 1] that the lighting pass multiplies by an already HDR illuminance - the mask
 			// does not carry radiance, so it does not need the scene colour target's precision.
+			// Its clear value is one rather than black because the shadow mask pass clears it to
+			// the identity of the shadow term, and D3D12 measures every clear against the value
+			// the resource was created with.
 			Result = DirectionalShadowMask.InitFromRHI(RenderDevice,
 				RTextureDesc(TextureWidth, TextureHeight,
 					RBindFlagType::BIND_RENDER_TARGET | RBindFlagType::BIND_SHADER_RESOURCE,
-					RFormatType::FORMAT_R8G8B8A8_UNORM));
+					RFormatType::FORMAT_R8G8B8A8_UNORM),
+				Color4(1.f, 1.f, 1.f, 1.f));
 			bAllTargetsCreated = ((bAllTargetsCreated != FALSE) && (Result != FALSE)) ? TRUE : FALSE;
 #if _EDITOR_ONLY
 			PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("Check create scene textures failed.")), (Result));

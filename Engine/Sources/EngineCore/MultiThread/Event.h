@@ -27,6 +27,13 @@ namespace PigeonEngine
 		// Block until signaled. Does not auto-reset.
 		void Wait();
 
+		// Block until signaled, then clear the signaled state as part of the same locked
+		// operation. A Signal() that lands between a Wait() and a separate Reset() wakes the
+		// waiter and is then cleared by that Reset(), which loses the wakeup for the next
+		// round. This form has no such window, and is what a worker loop that is woken once
+		// per published batch uses.
+		void WaitAndReset();
+
 		// Non-blocking probe; returns TRUE if currently signaled.
 		BOOL8 TryWait();
 

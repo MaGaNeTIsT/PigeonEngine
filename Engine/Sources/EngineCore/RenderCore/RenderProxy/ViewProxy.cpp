@@ -1,4 +1,5 @@
 #include "ViewProxy.h"
+#include <Renderer/ScenePass.h>
 #include <RenderDevice/DeviceD3D11.h>
 #include <RHI/IRCommandList.h>
 #include <RHI/IRRHIDevice.h>
@@ -26,8 +27,10 @@ namespace PigeonEngine
 	{
 	}
 	RViewProxy::RViewProxy(const RViewProxy& Other)
-		: RBaseSceneProxy(Other), ViewParameterBlock(Other.ViewParameterBlock), bParameterValuesDirty(TRUE), IsMainView(FALSE), VisibilityMap(Other.VisibilityMap)
-		, CameraViewInfo(Other.CameraViewInfo), ViewDomainInfo(Other.ViewDomainInfo), Component(Other.Component)
+		: RBaseSceneProxy(Other), ViewParameterBlock(Other.ViewParameterBlock), bParameterValuesDirty(TRUE), IsMainView(FALSE)
+		, ViewKind(Other.ViewKind), PrimitiveCategoryMask(Other.PrimitiveCategoryMask), PassMask(Other.PassMask)
+		, FilterFlags(Other.FilterFlags), PrimitiveList(Other.PrimitiveList)
+		, CameraViewInfo(Other.CameraViewInfo), LocalViewFrustum(Other.LocalViewFrustum), ViewDomainInfo(Other.ViewDomainInfo), Component(Other.Component)
 	{
 	}
 	RViewProxy::~RViewProxy()
@@ -43,23 +46,39 @@ namespace PigeonEngine
 		// the values are recorded here and turn into gpu bytes on the first draw of the view.
 		UpdateRenderResource();
 	}
-	BOOL32 RViewProxy::IsMainRenderView()const
+	BOOL32 RViewProxy::IsMainRenderView() const
 	{
 		return IsMainView;
 	}
-	RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()
+	RViewPrimitiveList& RViewProxy::GetPrimitiveList()
 	{
-		return VisibilityMap;
+		return PrimitiveList;
 	}
-	const RViewProxy::RVisibilityMapType& RViewProxy::GetVisibilityMap()const
+	const RViewPrimitiveList& RViewProxy::GetPrimitiveList() const
 	{
-		return VisibilityMap;
+		return PrimitiveList;
+	}
+	BOOL32 RViewProxy::ShouldIncludePrimitive(const RPrimitiveSceneProxy& InPrimitive) const
+	{
+		// The default has no view specific exception. The category mask and the show flags the
+		// central registry reads are the data driven form of the same decision.
+		(void)InPrimitive;
+		return TRUE;
+	}
+	BOOL32 RViewProxy::IsPassVisible(const FRenderPassDesc& InPassDesc) const
+	{
+		if (PassMask == 0ull)
+		{
+			return TRUE;
+		}
+		const UINT64 PassBit = (1ull << static_cast<UINT64>(InPassDesc.Type));
+		return (((PassMask & PassBit) != 0ull) ? TRUE : FALSE);
 	}
 	ECameraViewInfo& RViewProxy::GetViewInfo()
 	{
 		return CameraViewInfo;
 	}
-	const ECameraViewInfo& RViewProxy::GetViewInfo()const
+	const ECameraViewInfo& RViewProxy::GetViewInfo() const
 	{
 		return CameraViewInfo;
 	}
@@ -67,7 +86,7 @@ namespace PigeonEngine
 	{
 		return (ViewDomainInfo.RenderViewport);
 	}
-	const EViewport& RViewProxy::GetRenderViewport()const
+	const EViewport& RViewProxy::GetRenderViewport() const
 	{
 		return (ViewDomainInfo.RenderViewport);
 	}
@@ -75,7 +94,7 @@ namespace PigeonEngine
 	{
 		return (ViewDomainInfo.ViewMatrix);
 	}
-	const EViewMatrix& RViewProxy::GetViewMatrix()const
+	const EViewMatrix& RViewProxy::GetViewMatrix() const
 	{
 		return (ViewDomainInfo.ViewMatrix);
 	}
@@ -83,13 +102,13 @@ namespace PigeonEngine
 	{
 		return (ViewDomainInfo.ViewFrustum);
 	}
-	const EFrustum& RViewProxy::GetViewFrustum()const
+	const EFrustum& RViewProxy::GetViewFrustum() const
 	{
 		return (ViewDomainInfo.ViewFrustum);
 	}
-	void RViewProxy::ResetVisibilityMap()
+	void RViewProxy::ResetPrimitiveList()
 	{
-		VisibilityMap.Empty();
+		PrimitiveList.Reset();
 	}
 	void RViewProxy::UpdateViewSettings(const BOOL32 InIsMainView)
 	{
@@ -100,15 +119,19 @@ namespace PigeonEngine
 		SetProxyWorldTransform(InMatrices.WorldLocation, InMatrices.WorldRotation, Vector3::One());
 		ViewDomainInfo.ViewMatrix = InMatrices.ViewMatrix;
 
-		// Params need update by transform changed
-		ViewDomainInfo.ViewFrustum.GeneratePlaneWorldSpace(WorldLocation, WorldRotation);
-		ViewDomainInfo.ViewFrustum.GenerateSeparatingProjectionWorldSpace();
+		// A camera that moved reports new matrices without new view params, so the world frustum
+		// is always rebuilt from the view space copy. Transforming the previous world frustum
+		// again would apply the camera transform twice and cull against a volume that has
+		// nothing to do with the view.
+		RebuildWorldViewFrustum();
 
 		bParameterValuesDirty = TRUE;
 	}
 	void RViewProxy::UpdateViewParams(const ERenderViewParams& InParams)
 	{
-		ViewDomainInfo.ViewFrustum	= InParams.ViewFrustum;
+		// The component states the frustum in view space; the world space one this proxy culls
+		// with is derived from it and the transform, never from the previous derivation.
+		LocalViewFrustum			= InParams.ViewFrustum;
 		CameraViewInfo				= InParams.CameraViewInfo;
 		{
 			ViewDomainInfo.RenderViewport.TopLeftX	= 0.f;
@@ -118,8 +141,17 @@ namespace PigeonEngine
 			ViewDomainInfo.RenderViewport.MinDepth	= RCommonSettings::RENDER_DEPTH_NEAR;
 			ViewDomainInfo.RenderViewport.MaxDepth	= RCommonSettings::RENDER_DEPTH_FAR;
 		}
+		RebuildWorldViewFrustum();
 
 		bParameterValuesDirty = TRUE;
+	}
+	void RViewProxy::RebuildWorldViewFrustum()
+	{
+		// The corner points are view space in LocalViewFrustum and are transformed in place, so
+		// starting from a fresh copy is what makes the operation repeatable.
+		ViewDomainInfo.ViewFrustum = LocalViewFrustum;
+		ViewDomainInfo.ViewFrustum.GeneratePlaneWorldSpace(WorldLocation, WorldRotation);
+		ViewDomainInfo.ViewFrustum.GenerateSeparatingProjectionWorldSpace();
 	}
 	BOOL32 RViewProxy::EnsureParameterBlock(IRRHIDevice* InRenderDevice, const EShaderProgram& InProgram)
 	{
@@ -192,7 +224,7 @@ namespace PigeonEngine
 		IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
 		ViewParameterBlock.Upload(RenderDevice);
 	}
-	void RViewProxy::BindParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram)const
+	void RViewProxy::BindParameters(IRCommandList* InCommandList, const EShaderProgram& InProgram) const
 	{
 		// Must run after the pipeline state is set: a root signature switch voids every root
 		// binding, so a view bound once per frame would be lost by the next material's PSO.

@@ -235,7 +235,12 @@ namespace PigeonEngine
 		// into the ComPtr fields; D3D12 stores the abstract pointer in
 		// RHITexture so consumers can route to CommandList via
 		// GetResolvedRHITexture() below.
-		BOOL8 InitFromRHI(class IRRHIDevice* InRenderDevice, const RTextureDesc& InDesc);
+		//
+		// InClearColor is the clear value the resource is registered with at creation, and it
+		// has to be the value every clear of this target uses: D3D12 compares the two and
+		// reports EXECUTION WARNING #820 when they differ, then clears by the slower path. A
+		// target the renderer clears to anything but black states its colour here.
+		BOOL8 InitFromRHI(class IRRHIDevice* InRenderDevice, const RTextureDesc& InDesc, const Color4& InClearColor = Color4(0.f, 0.f, 0.f, 0.f));
 
 		// Returns the abstract IRRHITexture to feed into IRCommandList.
 		// In D3D12 mode this is the actual D3D12 texture; in D3D11 mode

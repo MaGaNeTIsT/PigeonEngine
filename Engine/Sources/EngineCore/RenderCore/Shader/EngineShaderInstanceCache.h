@@ -29,21 +29,28 @@ namespace PigeonEngine
 	* what gets those destroys executed.
 	*
 	* Threading, and this is the point of the split below:
-	*   - TryFindInstance / RequireInstance / RequireMaterialInstance may be called from ANY
-	*     thread, including the render thread inside a draw. They only read the table and, on a
-	*     miss, record one request for the load thread. They never read a file, never assemble
-	*     and never wait.
+	*   - TryFindInstance / RequireInstance / RequireMaterialInstance / RequirePassInstance may be
+	*     called from ANY thread, including the render thread inside a draw. They only read the
+	*     table, cache a derived pass instance they built, and, on a miss, record one request for
+	*     the load thread. They never read a file, never assemble and never wait.
 	*   - FindOrCreate / FindOrCreateMaterial, the two Create*Request bodies and
 	*     PublishShaderAssetSwap are the LOAD THREAD's half: they resolve descriptors, read json,
 	*     run the compiler and publish what was loaded. A draw must not reach them.
-	* The table takes a lock (the load thread inserts while a draw reads); the critical section
-	* is one linear scan of a small array of keys.
+	* The table takes a lock (the load thread inserts while a draw reads). A lookup hashes the
+	* request fields and walks the one bucket that hash names; it constructs no string and
+	* allocates nothing, which is what keeps a pass that resolves a material per draw off the
+	* render thread's critical path.
 	*
 	* A request is keyed by the fields that name the assembly, not by the resolved variant: the
 	* resolved key costs a program and material json read to compute, which a draw may not pay.
 	* The consequence is that two different materials that happen to resolve to the same variant
 	* get an instance each instead of sharing one - which is what they want anyway, because the
 	* instance owns the parameter values of the material it was built from.
+	*
+	* A pass instance is derived from the material instance that the primitive reported, and the
+	* derivation is cached on that material's entry. An owned copy of a material takes a unique
+	* InstanceKey, so its derived pass instance is its own rather than the shared one its source
+	* uses: sharing would mean re-parenting one instance between two materials on every draw.
 	*
 	* The instances are owned here but referenced everywhere: callers keep the returned pointer
 	* without owning it, and it stays valid until the cache is shut down.
@@ -138,19 +145,35 @@ namespace PigeonEngine
 			return Instances.Num<UINT32>();
 		}
 	private:
+		// One derived pass instance of a material, cached on the entry it was derived from.
+		//
+		// The pass is the whole key: a material asks for one instance per pass it is drawn in,
+		// and the set is small enough (BasePass, the depth pass, the mask pass) that a linear
+		// scan over it is cheaper than hashing an EName per draw.
+		struct FPassInstance
+		{
+			EName					PassName;
+			const EShaderInstance*	Instance = nullptr;
+		};
+
 		struct FEntry
 		{
-			// Identity of the request this instance answers. Built from the request fields only,
-			// see the class comment.
-			EString					RequestKey;
-			// The shader it belongs to, kept apart from the key: a reload replaces the asset object
-			// behind a shader name, and this is what finds every instance that has to be re-pointed
-			// when that happens.
+			// The shader it belongs to, kept apart from the request: a reload replaces the asset
+			// object behind a shader name, and this is what finds every instance that has to be
+			// re-pointed when that happens.
 			EName					ShaderName;
 			// The request that produced it. Kept so a derived pass instance can be built from the
-			// same material without the caller having to remember how it was assembled.
+			// same material without the caller having to remember how it was assembled. An owned
+			// copy inherits its source's request with its own InstanceKey, so the pass instance
+			// derived from it is a distinct instance rather than a shared one.
 			EShaderAssemblyRequest	Request;
 			const EShaderInstance*	Instance = nullptr;
+			// The pass instances derived from this one, built on first use and kept for the
+			// session. A slot that reuses one is a pointer compare, not a resolution.
+			TArray<FPassInstance>	PassInstances;
+			// FALSE for an owned copy: it shares its request with the source and must not answer
+			// a request lookup, which is what keeps every clone from resolving to the first one.
+			BOOL32					bIsLookupable = TRUE;
 		};
 	private:
 		// The load thread's bodies. Shared by the synchronous and the requested form so the two
@@ -161,12 +184,28 @@ namespace PigeonEngine
 		// ShutDown and Uninit so the two paths cannot drift apart.
 		void	ReleaseAllInstances();
 		PE_NODISCARD static EString	MakeInstanceRequestKey(const EShaderAssemblyRequest& InRequest);
+		// The request hash the lookup index is keyed by. It reads the fields MakeInstanceRequestKey
+		// serializes, in the same order, and allocates nothing: a draw reaches this path, and the
+		// string the key builder produces is only needed for the load queue's dedup.
+		PE_NODISCARD static UINT64	ComputeAssemblyRequestHash(const EShaderAssemblyRequest& InRequest) noexcept;
+		// Field for field comparison of the same fields, used to reject a hash bucket collision.
+		PE_NODISCARD static BOOL32	IsSameAssemblyRequest(const EShaderAssemblyRequest& InLeft
+			, const EShaderAssemblyRequest& InRight) noexcept;
+		// The entry that owns an instance, or FALSE when the instance did not come from this cache.
+		// The caller holds TableMutex.
+		PE_NODISCARD BOOL32	FindEntryIndexLocked(const EShaderInstance* InInstance, UINT32& OutIndex) const;
 	private:
 		TArray<FEntry>	Instances;
-		// Copies of an assembled material, made for a caller that needs several value sets of one
-		// program. Not keyed by a request - the request resolves to the material and these are the
-		// copies of it - so they are released with the table rather than looked up by it.
-		TArray<EShaderInstance*>	OwnedExtraInstances;
+		// Request hash -> entry indices. Owned copies are deliberately absent: they share a
+		// request with their source and are reached by instance pointer instead.
+		THashMap<UINT64, TArray<UINT32>>	InstanceIndicesByHash;
+		// Instance pointer -> entry index. This is what turns RequirePassInstance's search for
+		// the primary from a linear scan into one hash lookup, owned copies included.
+		THashMap<const EShaderInstance*, UINT32>	EntryIndexByInstance;
+		// Distinguishes owned copies of one material. Zero is reserved for a shared instance;
+		// a clone takes the next value so the pass instance derived from it cannot collide
+		// with its source's or with another clone's.
+		UINT64			NextOwnedInstanceKey = 1ull;
 		// Written by the load thread, read by whoever holds a pointer to an instance (the render
 		// thread inside a draw).
 		mutable EMutex	TableMutex;

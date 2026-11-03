@@ -187,9 +187,26 @@ namespace PigeonEngine
 		virtual void				UploadBuffer(IRRHIBuffer* InDest, const UINT8* InData, UINT64 InSize, UINT64 InDestOffset = 0) noexcept													= 0;
 		virtual void				UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource = 0u) noexcept		= 0;
 
+		// Writes one rectangular region of an existing texture subresource and leaves the rest
+		// of it untouched. The region's rows are RowPitch bytes apart and each holds Width
+		// texels; the back-end stages them and copies them into place. Unlike UploadTexture
+		// this keeps the resource usable by frames already recorded against it, which is what
+		// makes it safe mid-frame: the ImGui font atlas publishes newly baked glyphs through
+		// it while the UI for the frame is being built.
+		//
+		// Answers FALSE when the region does not fit the mip or the back-end refused the
+		// write. A caller that still holds the payload treats that as "not published" and
+		// retries, which is why this reports rather than dropping the patch.
+		virtual BOOL8				UpdateTextureRegion(IRRHITexture* InDest, const RRHITextureRegionUpdate& InRegion) noexcept													= 0;
+
 		// ---------- Command lists ----------
-		// Acquired lists are returned to the device's pool when submitted.
-		virtual IRCommandList*		AcquireCommandList() = 0;
+		// Acquired lists are returned to the device's pool when submitted. InRecorderIndex
+		// names the recording thread: 0 is the render thread, 1..N-1 are workers, and indices
+		// from RHI_MAX_RECORD_THREAD_NUM upward are the stage sync lists and the engine tail.
+		// Each index owns its own allocator and descriptor arena, so no two lists a frame
+		// records before the batch is submitted ever share one.
+		virtual UINT32				GetMaxRecordThreadNum() const noexcept = 0;
+		virtual IRCommandList*		AcquireCommandList(UINT32 InRecorderIndex) = 0;
 		virtual void				SubmitCommandList(IRCommandList* InCommandList) noexcept								= 0;
 		virtual void				SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept		= 0;
 

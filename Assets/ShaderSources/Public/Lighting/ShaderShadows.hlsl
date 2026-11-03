@@ -122,7 +122,6 @@ float SampleShadowTile(in ShadowSlotData InSlot, in float2 InTileTexel, in float
 	const float AtlasSize = TileSize / max(InSlot.AtlasTile.x, 1e-6);
 	const int TileSizeInt = (int)round(TileSize);
 	const int2 TileMin = int2(round(InSlot.AtlasTile.zw * AtlasSize));
-	const int2 TileMax = (TileMin + int2(TileSizeInt, TileSizeInt)) - 1;
 	const int2 BaseTexel = int2(floor(InTileTexel));
 
 	float LitNum = 0.0;
@@ -130,7 +129,14 @@ float SampleShadowTile(in ShadowSlotData InSlot, in float2 InTileTexel, in float
 	{
 		for (int OffsetX = -PE_SHADOW_PCF_RADIUS; OffsetX <= PE_SHADOW_PCF_RADIUS; OffsetX++)
 		{
-			const int2 AtlasTexel = clamp(BaseTexel + int2(OffsetX, OffsetY), TileMin, TileMax);
+			// BaseTexel is tile-local: the projection covers exactly one tile and the UV that
+			// produced it starts at the tile's corner. So the taps clamp inside the tile first
+			// and the atlas origin is added afterwards. Clamping against TileMin/TileMax
+			// directly would drag every tap of a tile that does not start at the atlas origin
+			// to that tile's first texel - which is the shadow map equivalent of sampling one
+			// corner of the whole map.
+			const int2 LocalTexel = clamp(BaseTexel + int2(OffsetX, OffsetY), int2(0, 0), int2(TileSizeInt - 1, TileSizeInt - 1));
+			const int2 AtlasTexel = TileMin + LocalTexel;
 			const float StoredDepth = PE_LOAD_TEX2D(ShadowMapAtlas, int3(AtlasTexel, 0)).r;
 			LitNum += (InCompareDepth <= StoredDepth) ? 1.0 : 0.0;
 		}
@@ -248,7 +254,11 @@ float ReadDirectionalShadowMask(in DirectionalLightData InLight, in uint InLight
 	// visible error - which is exactly the kind of mistake that survives a visual check.
 	const float2 MaskUv = InScreenTexel * InvScreenSize;
 #if PE_SHADOW_MASK_SET_NUM == 1
-	float4 ShadowMask = PE_SAMPLE_TEX2D(DirectionalShadowMask0, SamplerLinearClamp, MaskUv);
+	// LOD 0 rather than a gradient sample: the mask has a single mip and is read 1:1 in screen
+	// space, so there is no mip to choose. FXC also refuses a gradient instruction inside a loop
+	// whose trip count is a constant-buffer value - it tries to unroll the light loop and fails
+	// with X3511 - which is what kept the D3D11 lighting program from compiling at all.
+	float4 ShadowMask = PE_SAMPLE_TEX2D_LEVEL(DirectionalShadowMask0, SamplerLinearClamp, MaskUv, 0.0);
 	// Channel selection written out instead of a dynamic subscript: the index is uniform across
 	// the draw in practice, and a compared chain is what every compiler handles unambiguously.
 	if (InLightIndex == 0u)
@@ -271,18 +281,18 @@ float ReadDirectionalShadowMask(in DirectionalLightData InLight, in uint InLight
 	// default build.
 	const uint SetIndex = InLightIndex / 4u;
 	const uint ChannelIndex = InLightIndex % 4u;
-	float4 ShadowMask = PE_SAMPLE_TEX2D(DirectionalShadowMask0, SamplerLinearClamp, MaskUv);
+	float4 ShadowMask = PE_SAMPLE_TEX2D_LEVEL(DirectionalShadowMask0, SamplerLinearClamp, MaskUv, 0.0);
 	if (SetIndex == 1u)
 	{
-		ShadowMask = PE_SAMPLE_TEX2D(DirectionalShadowMask1, SamplerLinearClamp, MaskUv);
+		ShadowMask = PE_SAMPLE_TEX2D_LEVEL(DirectionalShadowMask1, SamplerLinearClamp, MaskUv, 0.0);
 	}
 	else if (SetIndex == 2u)
 	{
-		ShadowMask = PE_SAMPLE_TEX2D(DirectionalShadowMask2, SamplerLinearClamp, MaskUv);
+		ShadowMask = PE_SAMPLE_TEX2D_LEVEL(DirectionalShadowMask2, SamplerLinearClamp, MaskUv, 0.0);
 	}
 	else if (SetIndex == 3u)
 	{
-		ShadowMask = PE_SAMPLE_TEX2D(DirectionalShadowMask3, SamplerLinearClamp, MaskUv);
+		ShadowMask = PE_SAMPLE_TEX2D_LEVEL(DirectionalShadowMask3, SamplerLinearClamp, MaskUv, 0.0);
 	}
 	if (ChannelIndex == 0u)
 	{

@@ -263,6 +263,13 @@ namespace PigeonEngine
 			New->SetIsTickable(TRUE);
 			this->GetWorld()->AddActor(New);
 			PDirectionalLightComponent* LightComp = new PDirectionalLightComponent();
+			ECascadeShadowData* CascadeShadowData = LightComp->GetCascadeShadowData();
+			{
+				TArray<FLOAT> CSMLayers = { 3000.0f, 7000.0f, 10000.0f };
+				TArray<FLOAT> CSMBorders = { 500.0f, 2000.0f };
+				CascadeShadowData->Layers = CSMLayers;
+				CascadeShadowData->Borders = CSMBorders;
+			}
 			LightComp->SetLightColor(Color3(1.0f, 1.0f, 1.0f));
 			// Perpendicular illuminance in lux: a clear noon sun. It pairs with the default
 			// exposure, which is Sunny-16 outdoors.
@@ -282,7 +289,7 @@ namespace PigeonEngine
 			// shading does dot(normal, forward) - so pointing this axis down instead makes the sun
 			// shine upwards and leaves every up-facing surface unlit. Only the direction of this
 			// position matters; the distance is read by nothing.
-			const Vector3 SunLocation(-4500.0f, 7200.0f, -5300.0f);
+			const Vector3 SunLocation(-4500.0f, 7500.0f, 500.0f);
 			New->SetActorRotation(LookAtTargetQuaternionRotation(SunLocation, Vector3::Zero(), Vector3::YVector()));
 		}
 

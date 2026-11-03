@@ -149,6 +149,12 @@ namespace PigeonEngine
 	{
 	public:
 		EName						ShaderName;					// the name the render layer asks for
+		// Distinguishes instances that agree on every other field. A material the game layer
+		// cloned (CreateOwnedInstance) has the same material, program and vertex axis as its
+		// source, so a pass instance derived from it would otherwise resolve to one shared
+		// instance and re-parent that instance on every draw. Zero means "shared instance";
+		// a clone carries the process unique value the cache assigned it.
+		UINT64						InstanceKey			= 0u;
 		EString						MaterialName;				// empty = the program declares no material
 		EString						DomainName;					// used when MaterialName is empty
 		EName						ProgramName;

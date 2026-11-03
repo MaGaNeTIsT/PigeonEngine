@@ -538,6 +538,22 @@ namespace PigeonEngine
 					}
 				}
 
+				const EName IndexFieldName = MakeBindlessIndexFieldName(Binding->Name);
+				// A bindless resource stays in the plan even when the compiler culled it: the
+				// layout's heap flags are driven from the plan, and the index write is what the
+				// heap path would need. When the resource's index field is culled as well, nothing
+				// in this stage reads it - the write below would land in SetUIntArray's culled
+				// no-op, and the idempotence check would then fail on every bind. A depth only
+				// shadow program is the common case: its whole material block is culled, so this
+				// used to allocate an index and emit a log line per material bind, every frame.
+				// Skipping here leaves the field at its default, which is what a stage that never
+				// reads it wants.
+				if (StageEntry->Reflection.FindParameterTarget(Binding->BindlessConstantBuffer, IndexFieldName)
+					== EShaderParameterTargetType::SHADER_PARAMETER_TARGET_CULLED)
+				{
+					continue;
+				}
+
 				const ERHIBindlessIndexKind IndexKind = ((Binding->Kind == EShaderBindingKindType::SHADER_BINDING_KIND_UAV)
 					? ERHIBindlessIndexKind::RHI_BINDLESS_INDEX_UAV
 					: ERHIBindlessIndexKind::RHI_BINDLESS_INDEX_SRV);
@@ -550,7 +566,6 @@ namespace PigeonEngine
 					continue;
 				}
 
-				const EName IndexFieldName = MakeBindlessIndexFieldName(Binding->Name);
 				// Idempotent on purpose: writing the same index every frame would mark the mirror
 				// dirty every frame and upload a constant buffer whose content did not change.
 				const EShaderParameterValue* Existing = InOutParameters.FindOverride(Binding->BindlessConstantBuffer, IndexFieldName);
@@ -757,11 +772,11 @@ namespace PigeonEngine
 		return bAllPublished;
 	}
 
-	BOOL32 PublishShaderParameters(IRCommandList* InCommandList, IRRHIDevice* InRenderDevice
+	BOOL32 PublishShaderParameterValues(IRRHIDevice* InRenderDevice
 		, EShaderParameterSet& InOutParameters, RShaderParameterBuffers& InOutBuffers
-		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName)
+		, const EShaderProgram& InProgram, const EName& InScopeName)
 	{
-		if ((!InCommandList) || (!InRenderDevice))
+		if (!InRenderDevice)
 		{
 			return FALSE;
 		}
@@ -784,7 +799,17 @@ namespace PigeonEngine
 		{
 			return FALSE;
 		}
+		return TRUE;
+	}
 
+	void BindPublishedShaderParameters(IRCommandList* InCommandList
+		, const EShaderParameterSet& InParameters, RShaderParameterBuffers& InOutBuffers
+		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName)
+	{
+		if (!InCommandList)
+		{
+			return;
+		}
 		for (UINT32 StageIndex = 0u, StageCount = InProgram.GetStageEntryNum(); StageIndex < StageCount; StageIndex++)
 		{
 			const EShaderStageEntry* StageEntry = InProgram.GetStageEntryByIndex(StageIndex);
@@ -801,8 +826,23 @@ namespace PigeonEngine
 			// Blocks first, then the register bound resources. Both read their root from the plan,
 			// so neither a root index nor a literal slot is written down here.
 			BindShaderParameterBuffers(InCommandList, InOutBuffers, InProgram, StageEntry->Stage, bIsCompute);
-			BindShaderParameterResources(InCommandList, InOutParameters, StageEntry->BindingPlan, RHIStage, InScopeName);
+			BindShaderParameterResources(InCommandList, InParameters, StageEntry->BindingPlan, RHIStage, InScopeName);
 		}
+	}
+
+	BOOL32 PublishShaderParameters(IRCommandList* InCommandList, IRRHIDevice* InRenderDevice
+		, EShaderParameterSet& InOutParameters, RShaderParameterBuffers& InOutBuffers
+		, const EShaderProgram& InProgram, const UINT32 InStageMask, const EName& InScopeName)
+	{
+		if ((!InCommandList) || (!InRenderDevice))
+		{
+			return FALSE;
+		}
+		if (!PublishShaderParameterValues(InRenderDevice, InOutParameters, InOutBuffers, InProgram, InScopeName))
+		{
+			return FALSE;
+		}
+		BindPublishedShaderParameters(InCommandList, InOutParameters, InOutBuffers, InProgram, InStageMask, InScopeName);
 		return TRUE;
 	}
 

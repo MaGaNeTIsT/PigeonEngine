@@ -77,7 +77,7 @@ namespace PigeonEngine
 		virtual void	ShutDown()override;
 		void			InitNewFrame();
 		void			SwapCommandSlots();
-		void			RenderPrimitives_RenderThread(const class RViewProxy* InView);
+		void			RenderPrimitives_RenderThread(class IRCommandList* InCommandList, const class RViewProxy* InView);
 		// Game thread: the editor's Display Settings checkbox. The render thread reads the flag
 		// when it records the overlay, so it is atomic; the change takes effect on the next
 		// frame and hides every debug primitive this manager owns, collision shapes included.

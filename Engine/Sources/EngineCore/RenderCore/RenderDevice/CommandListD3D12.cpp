@@ -24,6 +24,8 @@ static inline D3D12_GPU_DESCRIPTOR_HANDLE OffsetGPUHandle(D3D12_GPU_DESCRIPTOR_H
 
 RCommandListD3D12::RCommandListD3D12(RDeviceD3D12* InOwnerDevice)
 	: OwnerDevice(InOwnerDevice)
+	, RecorderIndex(0u)
+	, RecordMode(ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE)
 	, GraphicsSignature{}
 	, ComputeSignature{}
 	, CurrentSRVTableBase(0u)
@@ -32,6 +34,8 @@ RCommandListD3D12::RCommandListD3D12(RDeviceD3D12* InOwnerDevice)
 	, bTableRegionKnown(FALSE)
 	, CurrentPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST)
 	, HasBoundPipeline(FALSE)
+	, BoundPipelineState(nullptr)
+	, bProfilerPassOpen(FALSE)
 	, BoundRenderTargetFormats{}
 	, BoundRenderTargetCount(0u)
 	, BoundDepthStencilFormat(RFormatType::FORMAT_UNKNOWN)
@@ -43,10 +47,12 @@ RCommandListD3D12::~RCommandListD3D12()
 }
 
 void RCommandListD3D12::SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> InList,
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> InAllocator)
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> InAllocator, const UINT32 InRecorderIndex)
 {
 	CommandList                = InList;
 	CommandAllocator           = InAllocator;
+	RecorderIndex              = InRecorderIndex;
+	RecordMode                 = ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE;
 	GraphicsSignature          = RBoundSignature{};
 	ComputeSignature           = RBoundSignature{};
 	CurrentSRVTableBase        = 0u;
@@ -60,8 +66,10 @@ void RCommandListD3D12::SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
 	bResourceSetSealed         = FALSE;
 	bSetArenaWrapped           = FALSE;
 	bTableRegionKnown          = FALSE;
+	bProfilerPassOpen          = FALSE;
 	CurrentPrimitiveTopology   = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	HasBoundPipeline           = FALSE;
+	BoundPipelineState         = nullptr;
 	// Nothing is bound before the recording begins a pass, and the format comparison reads these
 	// as "unknown" until one does.
 	BoundRenderTargetCount     = 0u;
@@ -101,7 +109,7 @@ void RCommandListD3D12::SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsComma
 		// before any signature is: a descriptor write only needs the arena, and becomes
 		// visible once a pipeline state points its tables at the set holding it. The arena
 		// follows the frame index, so two frames in flight never share descriptors.
-		SetArenaNext               = OwnerDevice->GetSlotSetArenaBase();
+		SetArenaNext               = OwnerDevice->GetSlotSetArenaBase(RecorderIndex);
 		SetArenaEnd                = SetArenaNext + OwnerDevice->GetSlotSetArenaCapacity();
 		CurrentSRVTableBase        = SetArenaNext;
 		CurrentUAVTableBase        = SetArenaNext;
@@ -191,15 +199,12 @@ BOOL32 RCommandListD3D12::OpenResourceSet(const RRHIPipelineLayoutInfo& InLayout
 
 	if ((SetArenaNext + SRVWidth + UAVWidth) > SetArenaEnd)
 	{
-		// The frame binds more resource sets than the arena holds. Wrapping hands the first
-		// sets' descriptors out again, which makes the draws recorded with them read these
-		// resources instead; the warning is what keeps that from happening silently.
-		if (bSetArenaWrapped == FALSE)
-		{
-			bSetArenaWrapped = TRUE;
-			PE_LOG_WARN(EString(PE_TEXT("[CommandListD3D12] The frame's descriptor set arena is exhausted; resource sets now share descriptors.")));
-		}
-		SetArenaNext = OwnerDevice->GetSlotSetArenaBase();
+		// Wrapping would hand the first sets' descriptors out again, which makes the draws
+		// recorded with them read these resources instead. With several recorders in one
+		// frame that is a silent cross-draw corruption, so the arena is a hard budget: the
+		// caller drops the set and the recorder reports the exhaustion.
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("[CommandListD3D12] The recorder's descriptor set arena is exhausted.")));
+		return FALSE;
 	}
 
 	CurrentSRVTableBase = SetArenaNext;
@@ -207,9 +212,9 @@ BOOL32 RCommandListD3D12::OpenResourceSet(const RRHIPipelineLayoutInfo& InLayout
 	CurrentUAVTableBase = SetArenaNext;
 	SetArenaNext += UAVWidth;
 	// The device keeps the session's high water mark, which is what the arena budget is
-	// sized from and what the shutdown report prints. The base is this frame's own slice,
-	// so the difference is exactly what the frame has handed out so far.
-	OwnerDevice->NoteSlotSetArenaUsage(SetArenaNext - OwnerDevice->GetSlotSetArenaBase());
+	// sized from and what the shutdown report prints. The base is this recorder's own slice,
+	// so the difference is exactly what this list has handed out so far.
+	OwnerDevice->NoteSlotSetArenaUsage(SetArenaNext - OwnerDevice->GetSlotSetArenaBase(RecorderIndex));
 	LiveSetSRVWidth = SRVWidth;
 	LiveSetUAVWidth = UAVWidth;
 	bResourceSetLive = TRUE;
@@ -252,16 +257,27 @@ void RCommandListD3D12::ReserveResourceSetWidth(const RRHIPipelineLayoutInfo& In
 	// read the next set's descriptors. Sizing one here keeps that from depending on binding
 	// discipline, and it only happens when the live set is too narrow: a run of programs with
 	// the same table shape shares a set.
+	//
+	// A sealed set is still readable: sealing only says its descriptors may not be written
+	// again. A program that declares no descriptor table at all cannot read a stale slot, so
+	// its draw can reuse the sealed set - and a depth only pass (the shadow atlas) is exactly
+	// that program. Opening a fresh set for it would make every caster pay a set worth of null
+	// descriptors and root table writes it never uses. A program that does declare a table
+	// still opens a new set here: its unbound slots rely on the null fill, and reusing the
+	// previous draw's descriptors in those slots would bind another draw's resources.
 	if ((bTableRegionKnown == FALSE) || (!OwnerDevice))
 	{
 		return;
 	}
-	if ((bResourceSetLive != FALSE)
-		&& (bResourceSetSealed == FALSE)
-		&& (InLayout.SRVTableSize <= LiveSetSRVWidth)
-		&& (InLayout.UAVTableSize <= LiveSetUAVWidth))
+	if (bResourceSetLive != FALSE)
 	{
-		return;
+		const BOOL32 bTablesFit = ((InLayout.SRVTableSize <= LiveSetSRVWidth) && (InLayout.UAVTableSize <= LiveSetUAVWidth)) ? TRUE : FALSE;
+		if ((bTablesFit != FALSE)
+			&& ((bResourceSetSealed == FALSE)
+				|| ((InLayout.SRVTableSize == 0u) && (InLayout.UAVTableSize == 0u))))
+		{
+			return;
+		}
 	}
 	OpenResourceSet(InLayout, 0u, FALSE);
 }
@@ -326,8 +342,10 @@ void RCommandListD3D12::Reset()
 	bResourceSetSealed       = FALSE;
 	bSetArenaWrapped         = FALSE;
 	bTableRegionKnown        = FALSE;
+	bProfilerPassOpen        = FALSE;
 	CurrentPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	HasBoundPipeline         = FALSE;
+	BoundPipelineState       = nullptr;
 	BoundRenderTargetCount   = 0u;
 	BoundDepthStencilFormat  = RFormatType::FORMAT_UNKNOWN;
 	for (UINT32 i = 0u; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++)
@@ -344,6 +362,16 @@ void RCommandListD3D12::Close()
 	}
 }
 
+void RCommandListD3D12::SetRecordMode(const ERHIRecordModeType InMode)
+{
+	// The mode decides whether every later render pass reads resource state. Switching it
+	// after the first command would leave a half tracked recording, so the contract is that
+	// a caller leases a list, sets the mode, and records. The scheduler follows that order.
+	PE_CHECK((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: the record mode is set after recording started.")),
+		(BoundPipelineState == nullptr));
+	RecordMode = InMode;
+}
+
 // =========================================================================
 // IRCommandList render passes
 // =========================================================================
@@ -356,8 +384,21 @@ void RCommandListD3D12::BeginRenderPass(const RRHIRenderPassDesc& InDesc)
 	}
 
 	// GPU profiler: open event + first timestamp. No-op when PassName is
-	// null or _GPU_ENABLE_PROFILER is off.
+	// null or _GPU_ENABLE_PROFILER is off. The flag is what makes EndRenderPass
+	// close only a record this list opened.
 	PE_GPU_PROFILER_PASS_BEGIN(this, InDesc.PassName);
+	bProfilerPassOpen = ((InDesc.PassName != nullptr) ? TRUE : FALSE);
+
+	// A worker list runs with EXTERNAL state: the stage sync list has already recorded the
+	// transitions this pass depends on. The desc states that contract, so a pass that forgot
+	// it is reported here instead of producing a barrier from a stale CPU state.
+	const BOOL32 bExternalState = ((RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL) ? TRUE : FALSE);
+	if (bExternalState != FALSE)
+	{
+		PE_CHECK((ENGINE_RENDER_CORE_ERROR),
+			(PE_TEXT("D3D12: an EXTERNAL state list began a pass without bStatePrepared.")),
+			(InDesc.bStatePrepared != FALSE));
+	}
 
 	// OMSetRenderTargets (and the barrier array below) only cover
 	// D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT views; the RHI desc allows more, so a caller
@@ -414,7 +455,7 @@ void RCommandListD3D12::BeginRenderPass(const RRHIRenderPassDesc& InDesc)
 		BoundRenderTargetCount = i + 1u;
 
 		ERHIResourceState CurrentState = RT.Target->GetCurrentState();
-		if (CurrentState != ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET)
+		if ((bExternalState == FALSE) && (CurrentState != ERHIResourceState::RHI_RESOURCE_STATE_RENDER_TARGET))
 		{
 			D3D12_RESOURCE_STATES Before, After;
 			RDeviceD3D12::TranslateResourceStates(Before, CurrentState);
@@ -459,7 +500,7 @@ void RCommandListD3D12::BeginRenderPass(const RRHIRenderPassDesc& InDesc)
 			? ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_READ
 			: ERHIResourceState::RHI_RESOURCE_STATE_DEPTH_WRITE;
 		ERHIResourceState CurrentState = InDesc.DepthStencil.Target->GetCurrentState();
-		if (CurrentState != TargetState)
+		if ((bExternalState == FALSE) && (CurrentState != TargetState))
 		{
 			D3D12_RESOURCE_STATES Before, After;
 			RDeviceD3D12::TranslateResourceStates(Before, CurrentState);
@@ -509,9 +550,14 @@ void RCommandListD3D12::EndRenderPass()
 	// No-op on D3D12 (render passes are not natively scoped in basic D3D12).
 	// Future enhancement: use ID3D12GraphicsCommandList4 render pass APIs.
 
-	// GPU profiler: close event + second timestamp. No-op when this pass
-	// wasn't auto-instrumented or _GPU_ENABLE_PROFILER is off.
-	PE_GPU_PROFILER_PASS_END(this);
+	// GPU profiler: close event + second timestamp, but only for a pass whose begin opened
+	// a record. A worker list records with a null PassName and must not pop the render
+	// thread's profiler stack.
+	if (bProfilerPassOpen != FALSE)
+	{
+		PE_GPU_PROFILER_PASS_END(this);
+		bProfilerPassOpen = FALSE;
+	}
 }
 
 // =========================================================================
@@ -522,6 +568,14 @@ void RCommandListD3D12::ResourceBarrier(IRRHIResource* InResource, ERHIResourceS
 {
 	if (!CommandList || !InResource)
 	{
+		return;
+	}
+	if (RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL)
+	{
+		// The stage sync list owns every transition. A worker recording one is a planning
+		// bug: the transition would be recorded after the resources were already used, or
+		// with a Before state the sync list has since changed.
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: an EXTERNAL state list requested a resource barrier.")));
 		return;
 	}
 
@@ -590,6 +644,7 @@ void RCommandListD3D12::SetPipelineState(IRRHIPipelineState* InPipelineState)
 	{
 		CommandList->SetPipelineState(NativePSO);
 		HasBoundPipeline = TRUE;
+		BoundPipelineState = InPipelineState;
 	}
 	else
 	{
@@ -598,6 +653,7 @@ void RCommandListD3D12::SetPipelineState(IRRHIPipelineState* InPipelineState)
 		// unbound so the next DrawIndexed / Draw can skip silently rather
 		// than producing D3D12 errors.
 		HasBoundPipeline = FALSE;
+		BoundPipelineState = nullptr;
 	}
 
 	// The layout always follows the PSO, even when the signature is already bound: it is
@@ -695,6 +751,9 @@ void RCommandListD3D12::SetPrimitiveTopology(RPrimitiveTopologyType InTopology)
 	}
 	RDeviceD3D12::TranslatePrimitiveTopology(CurrentPrimitiveTopology, InTopology);
 	CommandList->IASetPrimitiveTopology(CurrentPrimitiveTopology);
+	// The bound state no longer carries the complete input assembly setup, so a caller may not
+	// treat it as "already applied" until it sets the state again.
+	BoundPipelineState = nullptr;
 }
 
 void RCommandListD3D12::SetViewports(const EViewport* InViewports, UINT32 InCount)
@@ -1233,6 +1292,11 @@ void RCommandListD3D12::SetSampler(ERHIShaderStage InStage, UINT32 InSlot, IRRHI
 
 void RCommandListD3D12::ClearRenderTarget(IRRHITexture* InTarget, const Color4& InColor)
 {
+	if (RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL)
+	{
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: an EXTERNAL state list issued a clear.")));
+		return;
+	}
 	if (!CommandList || !InTarget)
 	{
 		return;
@@ -1251,6 +1315,11 @@ void RCommandListD3D12::ClearRenderTarget(IRRHITexture* InTarget, const Color4& 
 
 void RCommandListD3D12::ClearDepthStencil(IRRHITexture* InTarget, UINT8 InClearFlags, FLOAT InDepth, UINT8 InStencil)
 {
+	if (RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL)
+	{
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: an EXTERNAL state list issued a clear.")));
+		return;
+	}
 	if (!CommandList || !InTarget)
 	{
 		return;
@@ -1274,6 +1343,11 @@ void RCommandListD3D12::ClearDepthStencil(IRRHITexture* InTarget, UINT8 InClearF
 
 void RCommandListD3D12::ClearUnorderedAccessFloat(IRRHITexture* InTarget, const Color4& InValue)
 {
+	if (RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL)
+	{
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: an EXTERNAL state list issued a clear.")));
+		return;
+	}
 	if (!CommandList || !InTarget || !OwnerDevice)
 	{
 		return;
@@ -1302,6 +1376,11 @@ void RCommandListD3D12::ClearUnorderedAccessFloat(IRRHITexture* InTarget, const 
 
 void RCommandListD3D12::ClearUnorderedAccessUint(IRRHITexture* InTarget, const Vector4Int& InValue)
 {
+	if (RecordMode == ERHIRecordModeType::RHI_RECORD_MODE_EXTERNAL)
+	{
+		PE_FAILED((ENGINE_RENDER_CORE_ERROR), (PE_TEXT("D3D12: an EXTERNAL state list issued a clear.")));
+		return;
+	}
 	if (!CommandList || !InTarget || !OwnerDevice)
 	{
 		return;

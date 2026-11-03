@@ -88,8 +88,13 @@ namespace PigeonEngine
 
 			// Render tier resources are created and destroyed here, before the scene
 			// commands run: a proxy added in the same frame then finds the resource its
-			// asset asked for already built.
-			RRenderResourceManager::GetManagerSingleton()->DoCommands();
+			// asset asked for already built. This runs before the RenderThread bracket
+			// below, so it has its own trace: the game thread waits for the frame's
+			// RenderDoneEvent and that wait would otherwise carry this cost unseen.
+			{
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_RESOURCE_COMMANDS);
+				RRenderResourceManager::GetManagerSingleton()->DoCommands();
+			}
 
 			// Covers the rendered frame from command playback through Present:
 			// scene passes, the ImGui replay and the frame's submission. The
@@ -98,15 +103,33 @@ namespace PigeonEngine
 
 			// SceneRenderer drains FrontSlot commands, builds passes,
 			// records draws via the IRCommandList, and presents.
-			RenderDevice->BeginFrame();
-			SceneRenderer->InitNewFrame();
-			SceneRenderer->Render();
+			{
+				// The fence wait lives in here: with two frames in flight this blocks
+				// until the GPU has retired the frame from two frames ago, so a
+				// GPU-bound frame shows up as this scope and not as CPU work.
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_BEGIN_FRAME);
+				RenderDevice->BeginFrame();
+			}
+			{
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_INIT_FRAME);
+				SceneRenderer->InitNewFrame();
+			}
+			{
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_RECORD);
+				SceneRenderer->Render();
+			}
 			if (AfterRenderCallback.IsValid())
 			{
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_AFTER);
 				AfterRenderCallback();
 			}
-			RenderDevice->Present(0u);
-			RenderDevice->EndFrame();
+			{
+				// Present may also block on the swap chain's frame latency; keeping it
+				// separate is what tells a fence wait from a present wait.
+				PE_PROFILE_SCOPE(PROFILER_SCOPE_RENDER_PRESENT);
+				RenderDevice->Present(0u);
+				RenderDevice->EndFrame();
+			}
 
 			RenderDoneEvent.Signal();
 		}

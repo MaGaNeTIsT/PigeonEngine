@@ -17,6 +17,16 @@ namespace PigeonEngine
 		});
 	}
 
+	void EEvent::WaitAndReset()
+	{
+		std::unique_lock<std::mutex> Lock(InternalMutex);
+		InternalCondition.wait(Lock, [this]() -> BOOL8
+		{
+			return (bSignaled);
+		});
+		bSignaled = FALSE;
+	}
+
 	BOOL8 EEvent::TryWait()
 	{
 		std::lock_guard<std::mutex> Lock(InternalMutex);

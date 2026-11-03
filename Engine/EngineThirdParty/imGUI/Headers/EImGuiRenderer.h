@@ -56,7 +56,7 @@ namespace PigeonEngine
 	public:
 		BOOL8	Initialize();
 		void	ShutDown();
-		BOOL8	IsInitialized()const { return bInitialized; }
+		BOOL8	IsInitialized() const { return bInitialized; }
 
 		// Replays ImDrawData via the supplied command list. Caller is
 		// responsible for BeginRenderPass / EndRenderPass.
@@ -65,7 +65,7 @@ namespace PigeonEngine
 		// Bindless index that maps to the font atlas SRV. Used by
 		// EngineTextureToImgui (and any other code) as the default
 		// "ImGui-side texture id".
-		UINT32	GetFontBindlessIndex()const { return FontBindlessSRVIndex; }
+		UINT32	GetFontBindlessIndex() const { return FontBindlessSRVIndex; }
 
 		// Engine shutdown: releases the session scoped device objects - the font atlas texture and the
 		// bindless index it was registered under - and tells ImGui the texture is gone, which is what
@@ -91,7 +91,11 @@ namespace PigeonEngine
 		// stage assets' device objects, so it is not reported - until it outlives the budget, at
 		// which point it is reported once, because a pass that never draws must not stay silent.
 		BOOL8	NotePendingInitialize();
-		void	UpdateTexture(ImTextureData* Tex);
+		void	UpdateTexture(ImTextureData* InTextureData);
+		// Publishes the atlas rects ImGui queued since the last accepted upload. Each rect
+		// becomes one RHI region update, so the texture is patched instead of rebuilt, and
+		// the status is only set to OK when every rect was accepted by the back-end.
+		BOOL8	UploadTextureUpdates(ImTextureData* InTextureData);
 		BOOL8	EnsureBuffers(UINT32 InVertexNum, UINT32 InIndexNum);
 		void	ReleaseDynamicBuffers();
 		void	UpdateViewParams(ImDrawData* InDrawData);

@@ -84,26 +84,27 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 	{
 	}
 
-	const EShaderInstance* RMeshSceneProxy::ResolveFallbackInstance(const UINT32 InSlotIndex)const
+	const EShaderInstance* RMeshSceneProxy::ResolveFallbackInstance(const UINT32 InSlotIndex) const
 	{
 		(void)InSlotIndex;
 		return GetFallbackMeshShader(GetMeshColdData());
 	}
-	BOOL32 RMeshSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax)const
+	BOOL32 RMeshSceneProxy::GetWorldBound(Vector3& OutMin, Vector3& OutMax) const
 	{
 		const EMesh* Mesh = GetMeshColdData();
 		if (!Mesh)
 		{
 			return FALSE;
 		}
-		const EBoundAABB& LocalBound = Mesh->GetBoundAABB();
+		const EBoundAABB LocalBound = Mesh->GetAdjustedBoundAABB();
 		if (LocalBound.IsValid == FALSE)
 		{
 			return FALSE;
 		}
-		// The asset bound is in mesh local space, so it is transformed corner by corner: rotating
+		// The authored bound is in mesh local space, so it is transformed corner by corner: rotating
 		// the two corners alone would describe the bounding box of the rotated box, which for a
-		// mesh turned 45 degrees is half the size it should be.
+		// mesh turned 45 degrees is half the size it should be. The adjustment on top of the
+		// imported bound is what covers a world position offset moving geometry outside it.
 		const Matrix4x4& LocalToWorld = GetLocalToWorldMatrix();
 		Vector3 WorldMin(PE_FLOAT32_MAX, PE_FLOAT32_MAX, PE_FLOAT32_MAX);
 		Vector3 WorldMax(-PE_FLOAT32_MAX, -PE_FLOAT32_MAX, -PE_FLOAT32_MAX);
@@ -121,7 +122,7 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 		OutMax = WorldMax;
 		return TRUE;
 	}
-	const RInputLayoutDesc* RMeshSceneProxy::GetPipelineStateInputLayouts(UINT32& OutCount)const
+	const RInputLayoutDesc* RMeshSceneProxy::GetPipelineStateInputLayouts(UINT32& OutCount) const
 	{
 		// The skin index stream is UINT16 x 4 bytes in the vertex data while the shader
 		// declares uint4, so the back-end has to be told the real format. Without this it
@@ -144,7 +145,7 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 		OutCount = PE_ARRAYSIZE(SkinInputLayouts);
 		return SkinInputLayouts;
 	}
-	UINT32 RMeshSceneProxy::GetDrawGroupNum()const
+	UINT32 RMeshSceneProxy::GetDrawGroupNum() const
 	{
 		const EMesh* Mesh = GetMeshColdData();
 		if (!Mesh)
@@ -156,7 +157,7 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 		// buffer, which is the single submesh semantics the importers follow.
 		return ((SubmeshNum > 0u) ? SubmeshNum : 1u);
 	}
-	BOOL32 RMeshSceneProxy::GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex)const
+	BOOL32 RMeshSceneProxy::GetDrawGroup(const UINT32 InGroupIndex, UINT32& OutSlotIndex, UINT32& OutIndexCount, UINT32& OutStartIndex) const
 	{
 		const EMesh* Mesh = GetMeshColdData();
 		const EMeshRenderResource* MeshRenderResource = GetMeshRenderResource();
@@ -196,13 +197,13 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 		OutStartIndex	= Submesh.StartIndex;
 		return TRUE;
 	}
-	BOOL32 RMeshSceneProxy::BindGeometry(IRCommandList* InCommandList, const RShaderPassSlot& InSlot)const
+	BOOL32 RMeshSceneProxy::ResolveGeometryBinding(FPrimitivePassData& InOutData) const
 	{
-		if ((!InCommandList) || (!InSlot.Program))
+		if (!InOutData.Program)
 		{
 			return FALSE;
 		}
-		const RShaderStageResource*			VertexStage			= ResolveShaderStageResource(*InSlot.Program, EShaderStageType::SHADER_STAGE_VERTEX);
+		const RShaderStageResource*			VertexStage			= ResolveShaderStageResource(*InOutData.Program, EShaderStageType::SHADER_STAGE_VERTEX);
 		const EMeshRenderResource*			MeshRenderResource	= GetMeshRenderResource();
 		if ((!VertexStage) || (!MeshRenderResource))
 		{
@@ -218,43 +219,63 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 				// by then the object behind the pointer has been released. Reading its name is what
 				// made this report abort instead of print - the freed string reports a garbage length
 				// and the allocation its copy asks for fails.
-				const EShaderStageEntry* VertexEntry = ResolveShaderStageEntry(*InSlot.Program, EShaderStageType::SHADER_STAGE_VERTEX);
+				const EShaderStageEntry* VertexEntry = ResolveShaderStageEntry(*InOutData.Program, EShaderStageType::SHADER_STAGE_VERTEX);
 				const EString StageAssetName = ((VertexEntry && (VertexEntry->StageAssetName.Length() > 0u))
 					? VertexEntry->StageAssetName : EString(PE_TEXT("unknown")));
-				ReportSkippedDraw(InSlot.PassName, EString(PE_TEXT("the vertex stage '")) + StageAssetName
-					+ EString(PE_TEXT("' of program '")) + InSlot.Program->GetShaderName().ToString()
+				ReportSkippedDraw(InOutData.PassName, EString(PE_TEXT("the vertex stage '")) + StageAssetName
+					+ EString(PE_TEXT("' of program '")) + InOutData.Program->GetShaderName().ToString()
 					+ EString(PE_TEXT("' has no render resource")));
 			}
 			else if (GetMeshColdData())
 			{
 				// The mesh asset is there and its render resource is not, which is not the "asset
 				// still loading" state: a mesh with no cold data returns above without a report.
-				ReportSkippedDraw(InSlot.PassName, EString(PE_TEXT("its mesh has no render resource")));
+				ReportSkippedDraw(InOutData.PassName, EString(PE_TEXT("its mesh has no render resource")));
 			}
 			return FALSE;
 		}
 		const RIndexBufferResource*			IndexRenderResource	= MeshRenderResource->GetIndexRenderResource();
 		if ((!IndexRenderResource) || (!IndexRenderResource->IsRenderResourceValid()))
 		{
-			ReportSkippedDraw(InSlot.PassName, EString(PE_TEXT("its mesh has no usable index buffer")));
+			ReportSkippedDraw(InOutData.PassName, EString(PE_TEXT("its mesh has no usable index buffer")));
 			return FALSE;
 		}
+		const ERHIIndexFormat IndexFormat = IndexRenderResource->UseShort
+			? ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16
+			: ERHIIndexFormat::RHI_INDEX_FORMAT_UINT32;
+		IRRHIBuffer* IndexBuffer = const_cast<RIndexBufferResource*>(IndexRenderResource)->GetResolvedRHIBuffer();
+
+		// The binding a static mesh resolved does not change between draws. The record path
+		// only replays it, which is what keeps a shadow pass from walking the shader's input
+		// layout and the mesh's streams again once per caster and per view. The mesh resource
+		// and index buffer pointers are compared first: a reload that swaps either one falls
+		// through to the full path and refills the binding.
+		if ((InOutData.bGeometryBindingCached != FALSE)
+			&& (InOutData.CachedGeometryResource == MeshRenderResource)
+			&& (InOutData.Geometry.IndexBuffer == IndexBuffer))
 		{
-			const ERHIIndexFormat IndexFormat = IndexRenderResource->UseShort
-				? ERHIIndexFormat::RHI_INDEX_FORMAT_UINT16
-				: ERHIIndexFormat::RHI_INDEX_FORMAT_UINT32;
-			InCommandList->SetIndexBuffer(
-				const_cast<RIndexBufferResource*>(IndexRenderResource)->GetResolvedRHIBuffer(),
-				IndexFormat, 0u);
+			return TRUE;
 		}
 
 		// The shader's input layout decides which streams to bind and at which slot. Binding
 		// by the array index instead would shift every stream that follows a hole into the
 		// wrong slot, and the optional skin streams are exactly such a hole.
+		IRRHIBuffer*	VertexBuffers[RHI_MAX_VERTEX_BUFFERS] = {};
+		UINT32			VertexStrides[RHI_MAX_VERTEX_BUFFERS] = {};
+		UINT32			VertexOffsets[RHI_MAX_VERTEX_BUFFERS] = {};
+		UINT32			MaxInputSlot = 0u;
+		BOOL32			bHasAnyStream = FALSE;
 		const TArray<RInputLayoutDesc>& Layouts = VertexStage->GetInputLayouts();
 		for (UINT32 LayoutIndex = 0u, LayoutNum = Layouts.Num<UINT32>(); LayoutIndex < LayoutNum; LayoutIndex++)
 		{
 			const RInputLayoutDesc& Layout = Layouts[LayoutIndex];
+			if (Layout.InputSlot >= RHI_MAX_VERTEX_BUFFERS)
+			{
+				continue;
+			}
+			// Declared slots are covered even when the optional stream is absent, so the null
+			// binding explicitly clears a slot an earlier draw may have filled.
+			MaxInputSlot = EMath::Max(MaxInputSlot, Layout.InputSlot);
 
 			const BOOL32 IsSkinIndex = ((Layout.SemanticName >= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES)
 				&& (Layout.SemanticName <= RShaderSemanticType::SHADER_SEMANTIC_BLENDINDICES15));
@@ -282,10 +303,44 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 				// layout slot stays unbound and the shader was compiled for exactly that.
 				continue;
 			}
-			IRRHIBuffer* VertexBuffer = const_cast<RVertexBufferResource*>(VertexRenderResource)->GetResolvedRHIBuffer();
-			const UINT32 Stride = VertexRenderResource->Stride;
-			const UINT32 Offset = 0u;
-			InCommandList->SetVertexBuffers(Layout.InputSlot, 1u, &VertexBuffer, &Stride, &Offset);
+			VertexBuffers[Layout.InputSlot] = const_cast<RVertexBufferResource*>(VertexRenderResource)->GetResolvedRHIBuffer();
+			VertexStrides[Layout.InputSlot] = VertexRenderResource->Stride;
+			VertexOffsets[Layout.InputSlot] = 0u;
+			bHasAnyStream = TRUE;
+		}
+
+		InOutData.Geometry.IndexBuffer			= IndexBuffer;
+		InOutData.Geometry.IndexFormat			= IndexFormat;
+		InOutData.Geometry.VertexBufferCount	= ((bHasAnyStream != FALSE) ? (MaxInputSlot + 1u) : 0u);
+		for (UINT32 BufferIndex = 0u; BufferIndex < InOutData.Geometry.VertexBufferCount; BufferIndex++)
+		{
+			InOutData.Geometry.VertexBuffers[BufferIndex]	= VertexBuffers[BufferIndex];
+			InOutData.Geometry.VertexStrides[BufferIndex]	= VertexStrides[BufferIndex];
+			InOutData.Geometry.VertexOffsets[BufferIndex]	= VertexOffsets[BufferIndex];
+		}
+
+		// A skinned mesh's skin streams can be rebuilt between draws, and the pointer compare
+		// above cannot see a buffer swapped inside the same mesh resource, so only a static
+		// mesh is memoized.
+		if (HasSkinVertexStreams() == FALSE)
+		{
+			InOutData.CachedGeometryResource	= MeshRenderResource;
+			InOutData.bGeometryBindingCached	= TRUE;
+		}
+		return TRUE;
+	}
+
+	BOOL32 RMeshSceneProxy::BindGeometry(IRCommandList* InCommandList, const FPrimitivePassData& InData) const
+	{
+		if ((!InCommandList) || (!InData.Geometry.IndexBuffer))
+		{
+			return FALSE;
+		}
+		InCommandList->SetIndexBuffer(InData.Geometry.IndexBuffer, InData.Geometry.IndexFormat, 0u);
+		if (InData.Geometry.VertexBufferCount > 0u)
+		{
+			InCommandList->SetVertexBuffers(0u, InData.Geometry.VertexBufferCount
+				, InData.Geometry.VertexBuffers, InData.Geometry.VertexStrides, InData.Geometry.VertexOffsets);
 		}
 		return TRUE;
 	}
@@ -294,20 +349,20 @@ const EShaderInstance* GetFallbackMeshShader(const EMesh* InMesh)
 	// Hooks: "no mesh" by default, so an unmigrated mesh proxy draws nothing.
 	// ---------------------------------------------------------------------------
 
-	const EMesh* RMeshSceneProxy::GetMeshColdData()const
+	const EMesh* RMeshSceneProxy::GetMeshColdData() const
 	{
 		return nullptr;
 	}
-	const EMeshRenderResource* RMeshSceneProxy::GetMeshRenderResource()const
+	const EMeshRenderResource* RMeshSceneProxy::GetMeshRenderResource() const
 	{
 		return nullptr;
 	}
-	const RVertexBufferResource* RMeshSceneProxy::GetSkinVertexStream(const BOOL32 InIsIndexStream)const
+	const RVertexBufferResource* RMeshSceneProxy::GetSkinVertexStream(const BOOL32 InIsIndexStream) const
 	{
 		(void)InIsIndexStream;
 		return nullptr;
 	}
-	BOOL32 RMeshSceneProxy::HasSkinVertexStreams()const
+	BOOL32 RMeshSceneProxy::HasSkinVertexStreams() const
 	{
 		return FALSE;
 	}

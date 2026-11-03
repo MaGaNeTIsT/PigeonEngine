@@ -333,9 +333,11 @@ namespace PigeonEngine
 		// IRRHIDevice - Upload
 		virtual void				UploadBuffer(IRRHIBuffer* InDest, const UINT8* InData, UINT64 InSize, UINT64 InDestOffset = 0) noexcept override;
 		virtual void				UploadTexture(IRRHITexture* InDest, const RRHISubresourceData* InSubresources, UINT32 InSubresourceCount, UINT32 InFirstSubresource = 0u) noexcept override;
+		virtual BOOL8				UpdateTextureRegion(IRRHITexture* InDest, const RRHITextureRegionUpdate& InRegion) noexcept override;
 
 		// IRRHIDevice - Command lists
-		virtual IRCommandList*		AcquireCommandList() noexcept override;
+		virtual UINT32				GetMaxRecordThreadNum() const noexcept override { return RHI_MAX_RECORD_THREAD_NUM; }
+		virtual IRCommandList*		AcquireCommandList(UINT32 InRecorderIndex) noexcept override;
 		virtual void				SubmitCommandList(IRCommandList* InCommandList) noexcept override;
 		virtual void				SubmitCommandLists(IRCommandList* const* InCommandLists, UINT32 InCount) noexcept override;
 
@@ -372,7 +374,7 @@ namespace PigeonEngine
 		UINT32										GetBackBufferCount() const { return BackBufferCount; }
 		ID3D12DescriptorHeap*						GetCBVSRVUAVHeap() const { return CBVSRVUAVHeap.Get(); }
 		ID3D12DescriptorHeap*						GetSamplerHeap() const { return SamplerHeap.Get(); }
-		ID3D12CommandAllocator*						GetCurrentCommandAllocator() const { return CommandAllocators[CurrentFrameIndex].Get(); }
+		ID3D12CommandAllocator*						GetCurrentCommandAllocator() const { return CommandAllocators[CurrentFrameIndex][0u].Get(); }
 
 		// Persistent descriptor allocators (non-resetting; resource lifetime).
 		UINT32				AllocatePersistentRTV();
@@ -384,9 +386,9 @@ namespace PigeonEngine
 		// Per-frame descriptor regions. A resource set - the descriptors one draw binds -
 		// is allocated inside the frame's set arena by the command list, because descriptor
 		// contents are not versioned: two draws that share a slot and bind different
-		// resources would both read the last one written. The sampler table is a fixed
-		// region instead, because every program samples through the renderer wide samplers.
-		UINT32				GetSlotSetArenaBase() const;
+		// resources would both read the last one written. Each recorder owns its own arena
+		// slice so two recording threads never hand out the same descriptor.
+		UINT32				GetSlotSetArenaBase(UINT32 InRecorderIndex) const;
 		UINT32				GetSlotSetArenaCapacity() const;
 		UINT32				GetSlotSamplerTableBase() const;
 		// Render thread: records one frame's arena use. The device reports the resulting high
@@ -478,7 +480,7 @@ namespace PigeonEngine
 		//   [64, 24576)      Bindless SRV pool       (HLSL ResourceDescriptorHeap[idx])
 		//   [24576, 32768)   Bindless UAV pool
 		//   [32768, 65536)   Persistent resource-creation descriptors
-		//   [65536, 73728)   The two frame set arenas: the root tables of every resource set a
+		//   [65536, 196608)  The frame set arenas: the root tables of every resource set a
 		//                    frame binds, one SRV/UAV table pair per set, allocated by the
 		//                    command list. They live above the pools rather than at the bottom
 		//                    of the heap because they are per frame scratch while the pools hold
@@ -488,7 +490,7 @@ namespace PigeonEngine
 		//   [0,  8)          Frame 0 sampler table (the renderer wide samplers, s0..s6)
 		//   [16, 24)         Frame 1 sampler table
 		//   [32, 256)        Persistent samplers
-		static constexpr UINT32		CBVSRVUAV_HEAP_SIZE					= 73728u;
+		static constexpr UINT32		CBVSRVUAV_HEAP_SIZE					= 196608u;
 		static constexpr UINT32		SAMPLER_HEAP_SIZE					= 256u;
 		static constexpr UINT32		RTV_HEAP_SIZE						= 64u;
 		static constexpr UINT32		DSV_HEAP_SIZE						= 32u;
@@ -521,6 +523,10 @@ namespace PigeonEngine
 
 		// Frame resources (2 frames in flight)
 		static constexpr UINT32		FRAME_IN_FLIGHT						= 2u;
+		// One list / allocator slot per list a frame records. Two lists can never share an
+		// allocator before the batch is submitted, so task recorders, every stage sync list and
+		// the engine tail each take an index of their own.
+		static constexpr UINT32		MAX_RECORDERS						= RHI_MAX_RECORD_LIST_NUM;
 
 		// The regions above have to tile the heap exactly: a gap is capacity nobody can use, and
 		// an overlap hands one descriptor to two owners. These assert the tiling, so a later
@@ -531,7 +537,7 @@ namespace PigeonEngine
 			"D3D12: the bindless UAV pool must end where the persistent region begins.");
 		static_assert((PERSISTENT_DESC_BASE_INDEX + PERSISTENT_DESC_CAPACITY) == SLOT_SET_ARENA_REGION_BASE,
 			"D3D12: the persistent region must end where the frame set arenas begin.");
-		static_assert((SLOT_SET_ARENA_REGION_BASE + (SLOT_TABLE_STRIDE_PER_FRAME * FRAME_IN_FLIGHT)) == CBVSRVUAV_HEAP_SIZE,
+		static_assert((SLOT_SET_ARENA_REGION_BASE + (SLOT_TABLE_STRIDE_PER_FRAME * FRAME_IN_FLIGHT * MAX_RECORDERS)) == CBVSRVUAV_HEAP_SIZE,
 			"D3D12: the frame set arenas must exactly fill the top of the CBV_SRV_UAV heap.");
 
 		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>		RTVHeap;
@@ -569,7 +575,7 @@ namespace PigeonEngine
 		TArray<RD3D12RootSignature*>						RootSignaturePool;
 		TMap<UINT64, RD3D12RootSignature*>					RootSignatureCache;
 
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>		CommandAllocators[FRAME_IN_FLIGHT];
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>		CommandAllocators[FRAME_IN_FLIGHT][MAX_RECORDERS];
 		Microsoft::WRL::ComPtr<ID3D12Fence>					FrameFence;
 		UINT64												FrameFenceValues[FRAME_IN_FLIGHT];
 		HANDLE												FrameFenceEvent;
@@ -581,9 +587,10 @@ namespace PigeonEngine
 		// the prior occupancy of this slot before reusing its allocator.
 		UINT64												GlobalFenceCounter;
 
-		// Command list pool
-		TArray<TUniquePtr<RCommandListD3D12>>				CommandListPool;
-		TArray<RCommandListD3D12*>							CommandListFreeList;
+		// Command list pools, one per recorder. A recorder is the only thread that touches
+		// its own pool, so no lock is needed on the acquire path.
+		TArray<TUniquePtr<RCommandListD3D12>>				CommandListPool[MAX_RECORDERS];
+		TArray<RCommandListD3D12*>							CommandListFreeList[MAX_RECORDERS];
 
 		// Upload heap (ring buffer, reset per frame)
 		Microsoft::WRL::ComPtr<ID3D12Resource>				UploadHeap;

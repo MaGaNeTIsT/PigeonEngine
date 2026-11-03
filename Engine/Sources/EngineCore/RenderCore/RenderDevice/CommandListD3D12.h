@@ -38,13 +38,19 @@ public:
 	RCommandListD3D12(const RCommandListD3D12&) = delete;
 	RCommandListD3D12& operator=(const RCommandListD3D12&) = delete;
 
-	// Called by RDeviceD3D12 when reusing from pool
+	// Called by RDeviceD3D12 when reusing from pool. InRecorderIndex selects the arena slice
+	// this list allocates descriptors from; it is fixed for the list's lifetime.
 	void SetNativeList(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> InList,
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> InAllocator);
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> InAllocator, UINT32 InRecorderIndex);
 
 	// IRCommandList lifecycle
 	virtual void Reset()override;
 	virtual void Close()override;
+
+	// IRCommandList record mode
+	virtual void SetRecordMode(ERHIRecordModeType InMode)override;
+	virtual ERHIRecordModeType GetRecordMode() const noexcept override { return RecordMode; }
+	PE_NODISCARD UINT32 GetRecorderIndex() const noexcept { return RecorderIndex; }
 
 	// IRCommandList render passes
 	virtual void BeginRenderPass(const RRHIRenderPassDesc& InDesc)override;
@@ -55,6 +61,7 @@ public:
 
 	// IRCommandList pipeline / fixed-function
 	virtual void SetPipelineState(IRRHIPipelineState* InPipelineState)override;
+	virtual IRRHIPipelineState* GetBoundPipelineState() const noexcept override { return BoundPipelineState; }
 	virtual void SetPrimitiveTopology(RPrimitiveTopologyType InTopology)override;
 	virtual void SetViewports(const EViewport* InViewports, UINT32 InCount)override;
 	virtual void SetScissorRects(const ERect* InRects, UINT32 InCount)override;
@@ -160,6 +167,10 @@ private:
 	RDeviceD3D12*									OwnerDevice;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList>	CommandList;
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>	CommandAllocator;
+	// Descriptor arena slice and state policy this list was leased with. Both are fixed for
+	// its lifetime; the device sets them in SetNativeList.
+	UINT32											RecorderIndex;
+	ERHIRecordModeType								RecordMode;
 	// Per stage, see RBoundSignature. Nothing is bound when a recording starts: the first
 	// SetPipelineState binds the signature its program carries (see SetNativeList).
 	RBoundSignature									GraphicsSignature;
@@ -190,6 +201,14 @@ private:
 	// transition). DrawIndexed / Draw skip silently when FALSE so the proxy
 	// migration can keep recording bindings without producing D3D12 errors.
 	BOOL8											HasBoundPipeline;
+	// The state SetPipelineState most recently applied, or null. A caller that is about to set
+	// the same state again can skip it; a manual topology change clears this because the state's
+	// own topology is no longer what the input assembler runs with.
+	IRRHIPipelineState*								BoundPipelineState;
+	// TRUE once BeginRenderPass opened a GPU profiler pass on this list. EndRenderPass only
+	// closes the profiler record when its matching begin was instrumented; a pass with a null
+	// PassName (a parallel worker list) must not pop another pass's record.
+	BOOL8											bProfilerPassOpen;
 	// The view formats of the targets the live pass bound, as the textures declare them (see
 	// IRRHITexture::GetViewFormat). SetPipelineState compares them against the state's declared
 	// formats; a texture that reports FORMAT_UNKNOWN is skipped, because a back-end that does not
