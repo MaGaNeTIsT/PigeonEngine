@@ -48,9 +48,10 @@ namespace PigeonEngine
 			//
 			// The main renderer owns the window, the final blit, the ImGui overlay and the
 			// frame's GPU profiling slice; this renderer owns one offscreen view. So it repeats
-			// the parts of RSceneRenderer::Render that build a view - drain the scene commands,
-			// build the targets, bind the frame wide state, record the base pass - and
-			// deliberately records none of the parts that belong to the window.
+			// the parts of RSceneRenderer::Render that build and shade a view - drain the scene
+			// commands, build the targets, bind the frame wide state, record the base stage and
+			// the per view shading tail - and deliberately records none of the parts that belong
+			// to the window.
 			void RenderPreview_RenderThread()
 			{
 				IRRHIDevice* RenderDevice = EMainManager::GetManagerSingleton()->GetRenderDevice();
@@ -82,6 +83,10 @@ namespace PigeonEngine
 				RecordScheduler.BeginFrame(FrameData);
 
 				EnsureEnginePassPipelineStates();
+				// The shading tail records the lighting pass, which reads this view's light
+				// lists. They have to exist and be uploaded before the frame records, in the
+				// same order the main renderer uses.
+				UploadLightListsForViews();
 				UpdateGlobalParameters();
 
 				PassStatePlan.Reset();
@@ -90,10 +95,11 @@ namespace PigeonEngine
 				PreparePassInstances(PassInstances);
 				FrameData.EndPrepare();
 
-				// A preview has only the base stage: no shadow casters to record and no window
-				// tail. The sync list carries the renderer wide sampler table and the environment
-				// bake, because that list is submitted before the stage's item lists - the same
-				// place the main renderer records them for its first stage.
+				// A preview records the base stage but no shadow stage: it has no shadow casters
+				// to record, and the view then shades unshadowed. The sync list carries the
+				// renderer wide sampler table and the environment bake, because that list is
+				// submitted before the stage's item lists - the same place the main renderer
+				// records them for its first stage.
 				TArray<FRecordTask> BaseTasks;
 				BuildStageTasks(PassInstances, ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks);
 				RecordScheduler.ExecuteStage(ERenderPassStageType::RENDER_PASS_STAGE_BASE, BaseTasks
@@ -108,9 +114,9 @@ namespace PigeonEngine
 						RecordStageSync(ERenderPassStageType::RENDER_PASS_STAGE_BASE, InList);
 					});
 
-				// The display copy runs on its own list, submitted after the base stage lists, so
-				// it reads the scene colour they wrote. The index is the one the main renderer
-				// reserves for its own tail passes.
+				// The shading tail and the display copy run on their own list, submitted after
+				// the base stage lists, so they read the scene colour those lists wrote. The
+				// index is the one the main renderer reserves for its own tail passes.
 				const UINT32 TailListIndex = ((RenderDevice->GetMaxRecordThreadNum() <= 1u)
 					? 0u : (RHI_MAX_RECORD_LIST_NUM - 1u));
 				IRCommandList* TailList = RenderDevice->AcquireCommandList(TailListIndex);
@@ -119,7 +125,16 @@ namespace PigeonEngine
 					TailList->SetRecordMode(ERHIRecordModeType::RHI_RECORD_MODE_IMMEDIATE);
 					CurrentCommandList = TailList;
 
-					// The base pass leaves the scene colour as a render target. The display copy
+					// The visible term of the scene is not in the base stage: for a DefaultLit
+					// material that stage writes only emission into the scene colour, and the
+					// lighting pass adds the shaded result on top. Recording only the base stage
+					// and copying the scene colour is what made the panel black while the
+					// geometry was drawing all along. The tail is the same one the main renderer
+					// records: sky (a preview world has none), directional shadow mask (skipped,
+					// since no shadow stage ran), lighting and forward.
+					RecordViewTailPasses(TailList);
+
+					// The shading tail leaves the scene colour as a render target. The display copy
 					// reads it, so it has to be readable first - the main renderer makes the same
 					// transition in its final output pass.
 					if (RViewProxy* PreviewView = FindViewProxy(FinalOutputView))
@@ -250,10 +265,12 @@ namespace PigeonEngine
 
 				// The copy program reads the view's exposure, so the view block is published and
 				// bound after the state - the same order the main renderer uses, because switching
-				// a signature voids the roots.
+				// a signature voids the roots. The view has to be passed explicitly: the default
+				// argument binds only the frame block, which leaves ExposureParams unbound and
+				// exposes the image by a zero gain, i.e. black regardless of the scene colour.
 				CurrentViewProxy = PreviewView;
 				CurrentViewProxy->UpdateRenderResource();
-				BindEngineParameters(CurrentCommandList, *FullScreenProgram);
+				BindEngineParameters(CurrentCommandList, *FullScreenProgram, PreviewView);
 				FullScreenTriangle.BindPrimitiveBuffers(CurrentCommandList, *FullScreenProgram);
 
 				const EShaderStageEntry* PixelEntry = ResolveShaderStageEntry(*FullScreenProgram, EShaderStageType::SHADER_STAGE_PIXEL);

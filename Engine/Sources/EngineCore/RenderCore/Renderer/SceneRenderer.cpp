@@ -1265,7 +1265,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 	}
 
-	void RSceneRenderer::RecordTailPasses(IRCommandList* InCommandList)
+	void RSceneRenderer::RecordViewTailPasses(IRCommandList* InCommandList)
 	{
 		if ((!InCommandList) || (!Scene))
 		{
@@ -1327,6 +1327,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			RenderForward(ViewProxy, SceneTextures);
 		}
 		CurrentViewProxy = nullptr;
+	}
+
+	void RSceneRenderer::RecordTailPasses(IRCommandList* InCommandList)
+	{
+		if ((!InCommandList) || (!Scene))
+		{
+			return;
+		}
+
+		// The shading belongs to the view, the blit and the overlay belong to the window. A
+		// renderer that draws into an offscreen target records only the first half.
+		RecordViewTailPasses(InCommandList);
 
 		FinalOutputPass();
 #if _EDITOR_ONLY
