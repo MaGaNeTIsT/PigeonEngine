@@ -8,6 +8,12 @@
 
 namespace PigeonEngine
 {
+	class EAnimationEditor;
+	class EAnimStateMachineEditor;
+	class EAnimMontageEditor;
+	class EAnimNotifyEditor;
+	class ESkeletonSlotGroupEditor;
+	class EMeshEditor;
 
 
 	class EAssetFile
@@ -82,6 +88,12 @@ namespace PigeonEngine
 		ImTextureID FolderTextureId;
 		TMap<EAssetType, ImTextureID> TypeThumbNails;
 		TMap<EString, ImTextureID>    TextureThumbNails;
+		EAnimationEditor*            AnimationEditor = nullptr;
+		EAnimStateMachineEditor*     StateMachineEditor = nullptr;
+		EAnimMontageEditor*          MontageEditor = nullptr;
+		EAnimNotifyEditor*           NotifyEditor = nullptr;
+		ESkeletonSlotGroupEditor*    SkeletonSlotEditor = nullptr;
+		EMeshEditor*                 MeshEditor = nullptr;
 
 
 	};

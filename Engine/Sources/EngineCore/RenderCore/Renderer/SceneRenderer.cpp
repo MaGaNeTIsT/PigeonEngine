@@ -749,6 +749,15 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 
 		{
+			// The game side has destroyed its world by the time a renderer is shut down, so the
+			// Remove* commands those actors queued are still sitting in the scene's write slot:
+			// running them is what unregisters (and deletes) the proxies, and the render thread
+			// that would have drained them is gone. Draining both slots here is what makes the
+			// scene's own teardown check mean "a proxy nobody removed" instead of "shutdown
+			// itself left every proxy registered". The main scene happens to be drained earlier,
+			// through RScene::Uninit in EMainManager::Uninit; the asset previews have no such
+			// call, which is why this belongs to the renderer that owns the scene.
+			Scene->ClearAll();
 			delete Scene;
 			Scene = nullptr;
 		}
@@ -802,6 +811,11 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		{
 			return;
 		}
+
+		// The proxies a frame draws bind their engine blocks through the renderer published
+		// here. A secondary renderer (the asset preview) publishes itself while it records, and
+		// the main scene records after it, so this is what makes the main view current again.
+		EMainManager::GetManagerSingleton()->SetActiveSceneRenderer(this);
 
 		FrameData.BeginFrame(RenderDevice->GetCurrentFrameIndex());
 		FrameData.SetRenderDevice(RenderDevice);
@@ -1251,7 +1265,7 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 		}
 	}
 
-	void RSceneRenderer::RecordTailPasses(IRCommandList* InCommandList)
+	void RSceneRenderer::RecordViewTailPasses(IRCommandList* InCommandList)
 	{
 		if ((!InCommandList) || (!Scene))
 		{
@@ -1313,6 +1327,18 @@ static BOOL32 IsUsableColorTarget(const RRenderTexture2D& InTexture)
 			RenderForward(ViewProxy, SceneTextures);
 		}
 		CurrentViewProxy = nullptr;
+	}
+
+	void RSceneRenderer::RecordTailPasses(IRCommandList* InCommandList)
+	{
+		if ((!InCommandList) || (!Scene))
+		{
+			return;
+		}
+
+		// The shading belongs to the view, the blit and the overlay belong to the window. A
+		// renderer that draws into an offscreen target records only the first half.
+		RecordViewTailPasses(InCommandList);
 
 		FinalOutputPass();
 #if _EDITOR_ONLY

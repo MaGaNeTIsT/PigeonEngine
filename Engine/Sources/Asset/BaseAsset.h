@@ -16,6 +16,11 @@ namespace PigeonEngine
 		ASSET_TYPE_SKELETON,
 		ASSET_TYPE_ANIMATION,
 		ASSET_TYPE_SHADER,
+		// New asset families are appended before COUNT so the values already stored in
+		// existing PAssets keep their meaning.
+		ASSET_TYPE_ANIM_STATE_MACHINE,
+		ASSET_TYPE_ANIM_MONTAGE,
+		ASSET_TYPE_ANIM_NOTIFY,
 		ASSET_TYPE_COUNT,
 	};
 

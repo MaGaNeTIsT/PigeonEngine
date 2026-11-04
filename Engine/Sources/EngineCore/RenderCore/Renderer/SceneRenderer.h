@@ -110,6 +110,10 @@ namespace PigeonEngine
 	public:
 		virtual void	Initialize()override;
 		virtual void	ShutDown()override;
+	#if _EDITOR_ONLY
+		void			SetManageDebugWireframe(BOOL32 InManageDebugWireframe) { bManageDebugWireframe = InManageDebugWireframe; }
+		void			SetRenderDebugWireframe(BOOL32 InRenderDebugWireframe) { bRenderDebugWireframe = InRenderDebugWireframe; }
+	#endif
 	public:
 		RScene*			GetRenderScene();
 		void			InitNewFrame();
@@ -170,8 +174,13 @@ namespace PigeonEngine
 		void			EndItemPass(FPassRecordContext& InContext) const;
 		// Record: replays a range of prepared items.
 		void			RecordItemRange(FPassRecordContext& InContext, const TArray<FPassItem>& InItems, UINT32 InBegin, UINT32 InEnd) const;
-		// Record: the engine driven tail that runs after every item pass: sky, shadow mask,
-		// lighting, forward, final output and the editor overlay.
+		// Record: the per view shading tail that runs after every item pass: sky, shadow mask,
+		// lighting and forward, with each main view's viewport. A renderer that owns only an
+		// offscreen view (the asset preview) records this and its own display copy, instead of
+		// the window passes below.
+		void			RecordViewTailPasses(IRCommandList* InCommandList);
+		// Record: the window's engine driven tail - the per view shading above, then the final
+		// output blit into the back buffer and the editor overlay.
 		void			RecordTailPasses(IRCommandList* InCommandList);
 		void			InitViews();
 		// Builds the pipeline states of the passes the renderer drives itself (lighting and the
@@ -392,6 +401,8 @@ namespace PigeonEngine
 		RFullScreenTriangle			FullScreenTriangle;
 #if _EDITOR_ONLY
 		RDebugWireframePrimitiveManager* DebugWireframePrimitiveManager;
+		BOOL32					bManageDebugWireframe = TRUE;
+		BOOL32					bRenderDebugWireframe = TRUE;
 #endif
 	protected:
 		RSamplerResource			Samplers[RSamplerType::SAMPLER_TYPE_COUNT];

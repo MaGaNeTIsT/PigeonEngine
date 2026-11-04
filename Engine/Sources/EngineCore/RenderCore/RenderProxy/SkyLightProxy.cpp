@@ -293,7 +293,7 @@ namespace PigeonEngine
 		{
 			return TRUE;
 		}
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if ((!Renderer) || (!SkyProgram))
 		{
 			return FALSE;
@@ -342,7 +342,7 @@ namespace PigeonEngine
 
 		// The shared blocks belong to this draw: the state above switched the signature, which
 		// voided whatever the pass before had bound.
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if (Renderer)
 		{
 			Renderer->BindEngineParameters(CmdList, *SkyProgram, InView);

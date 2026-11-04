@@ -6,9 +6,8 @@
 #include <Renderer/ScenePass.h>
 #include <Renderer/SceneRenderer.h>
 #include <Main/MainManager.h>
-// The full screen triangle's input slot is read from the vertex stage's reflection, so this
-// header is part of the code every configuration compiles and not of the editor-only block
-// below.
+// The full screen triangle asks the program's reflection for its input slot in every
+// configuration, so the shader binding bridge is not editor-only.
 #include <Shader/ShaderAssetBinding.h>
 #if _EDITOR_ONLY
 #include <RenderConfig/RenderConfig.h>
@@ -505,7 +504,7 @@ namespace PigeonEngine
 		{
 			return nullptr;
 		}
-		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+		RSceneRenderer* Renderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 		if (!Renderer)
 		{
 			return nullptr;
@@ -601,11 +600,11 @@ namespace PigeonEngine
 
 			// Then the blocks the pass's program reads, because the state above voided whatever an
 			// earlier pass had left bound: the renderer's shared blocks (the wireframe vertex stage
-			// transforms through ViewParams.ViewProjectionMatrix), and - when the program declares
-			// it - this pass's own draw block. A draw whose roots are left unset reads zeros, which
-			// for a transform means every vertex collapses into one point - the overlay silently
-			// disappears instead of drawing something wrong.
-			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetSceneRenderer();
+			// transforms through ViewParams.ViewProjectionMatrix), and this pass's own draw block.
+			// A draw whose roots are left unset reads zeros, which for a transform means every
+			// vertex collapses into one point - the overlay silently disappears instead of drawing
+			// something wrong.
+			RSceneRenderer* PassRenderer = EMainManager::GetManagerSingleton()->GetActiveSceneRenderer();
 			if (PassRenderer)
 			{
 				PassRenderer->BindEngineParameters(CmdList, *_GDebugWireframePrimitiveProgram, InView);

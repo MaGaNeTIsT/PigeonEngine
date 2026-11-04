@@ -2,7 +2,6 @@
 #define RAPIDJSON_NOMEMBERITERATORCLASS 
 #include "../../../ThirdParty/rapidjson/document.h"
 #include <CoreMinimal.h>
-using namespace rapidjson;
 
 namespace PigeonEngine
 {
@@ -30,6 +29,12 @@ namespace PigeonEngine
 		void SetDocument(rapidjson::Document* const InDoc);
 
 	public:
+
+		/*Document query*/
+		// TRUE when the document parsed without an error and its root is an object.
+		PE_NODISCARD BOOL8 IsValid()const;
+		// Serializes the document back to compact JSON text.
+		PE_NODISCARD EString ToString()const;
 
 		/*Field query*/
 		BOOL8 HasField(const EString& FieldName);

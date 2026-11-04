@@ -1,5 +1,4 @@
-#include "World.h"
-#include "World.h"
+﻿#include "World.h"
 #include "../../../../Main/MainManager.h"
 #include "../../../../../../EngineThirdParty/JoltPhysics/Headers/PhysicsManager.h"
 #include <Renderer/RenderInterface.h>
@@ -56,7 +55,7 @@ namespace PigeonEngine
 			RootActor = nullptr;
 		}
 
-		this->RootActor = new PLevelActor();
+		this->RootActor = CreateRootActor();
 		this->RootActor->SetActorScale(Vector3(1,1,1));
 		this->RootActor->SetIsTickable(TRUE);
 		if (!this->RootActor->IsInitialized())
@@ -65,29 +64,7 @@ namespace PigeonEngine
 		}
 		this->RootActor->BeginAddedToScene(this);
 
-#if _EDITOR_ONLY
-		this->EditorController = new PEditorController();
-		this->EditorController->SetIsTickable(TRUE);
-		POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
-		// Set transform BEFORE AddActor so that BeginAddedToScene ->
-		// PCameraComponent::CreateRenderState -> RScene::AddCamera captures
-		// the real camera location/rotation when it builds the initial
-		// ERenderViewMatrices. Otherwise SetupProxy is called with identity
-		// and the first frame's view CB stays at identity until the
-		// SetActorLocation-triggered UpdateCamera lambda is drained - which
-		// can be a frame or more late.
-		this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-		this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
-		this->AddActor(EditorController);
-#else
-
-		this->Controller = new PController();
-		this->Controller->SetIsTickable(TRUE);
-		POBJ_DEBUGNAME_SET(this->Controller, "Controller");
-		this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
-		this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
-		this->AddActor(Controller);
-#endif
+		CreateDefaultController();
 
 		ApplyGravitySettings();
 
@@ -114,6 +91,42 @@ namespace PigeonEngine
 		{
 			RootActor->FixedTick(deltaTime);
 		}
+	}
+
+	PActor* PWorld::CreateRootActor()
+	{
+		return new PLevelActor();
+	}
+
+	void PWorld::CreateDefaultController()
+	{
+#if _EDITOR_ONLY
+		this->EditorController = new PEditorController();
+		this->EditorController->SetIsTickable(TRUE);
+		POBJ_DEBUGNAME_SET(this->EditorController, "EditorController");
+		// Set transform BEFORE AddActor so that BeginAddedToScene ->
+		// PCameraComponent::CreateRenderState -> RScene::AddCamera captures
+		// the real camera location/rotation when it builds the initial
+		// ERenderViewMatrices. Otherwise SetupProxy is called with identity
+		// and the first frame's view CB stays at identity until the
+		// SetActorLocation-triggered UpdateCamera lambda is drained - which
+		// can be a frame or more late.
+		this->EditorController->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+		this->EditorController->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
+		this->AddActor(EditorController);
+#else
+		this->Controller = new PController();
+		this->Controller->SetIsTickable(TRUE);
+		POBJ_DEBUGNAME_SET(this->Controller, "Controller");
+		this->Controller->SetActorLocation(Vector3(0.0f, 350.0f, -500.0f));
+		this->Controller->SetActorRotation(MakeQuaternion(Euler(40.0f, 0.0f, 0.0f)));
+		this->AddActor(Controller);
+#endif
+	}
+
+	BOOL32 PWorld::ShouldAffectGlobalPhysics() const
+	{
+		return TRUE;
 	}
 
 	void PWorld::Destroy()
@@ -288,7 +301,10 @@ namespace PigeonEngine
 	void PWorld::ApplyGravitySettings()
 	{
 		const Vector3 WorldGravity = GetGravity();
-		FPhysicsManager::GetManagerSingleton()->SetGravity(WorldGravity);
+		if (ShouldAffectGlobalPhysics())
+		{
+			FPhysicsManager::GetManagerSingleton()->SetGravity(WorldGravity);
+		}
 		OnGravityChanged.Broadcast(WorldGravity);
 	}
 
@@ -356,7 +372,6 @@ namespace PigeonEngine
 
 		this->SetSelectedComponent(DefaultComp);
 	}
-
 	void PWorld::SetSelectedComponent(PActorComponent* Selected)
 	{
 		this->ImguiSelectedComponent = Selected;

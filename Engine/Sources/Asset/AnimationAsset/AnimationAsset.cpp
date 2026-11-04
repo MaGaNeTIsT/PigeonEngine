@@ -1,11 +1,75 @@
 #include "AnimationAsset.h"
 #include <Asset/AssetLoadManager.h>
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
+#include <Editor/EditorLogManager.h>
 #if _EDITOR_ONLY
 #include "../../../EngineThirdParty/assimp/Headers/assimpManager.h"
 #endif
 
 namespace PigeonEngine
 {
+
+	/*
+	* A clip event may reference a standalone notify asset. The asset supplies the class,
+	* state kind and default data; the event's saved inline values are the fallback when the
+	* asset is missing, so a clip stays playable if only the shared definition was removed.
+	*/
+	static BOOL32 ResolveNotifyDefinitionReference(FAnimNotifyEvent& InOutNotify)
+	{
+		if (InOutNotify.NotifyAssetName.Length() <= 0u)
+		{
+			return FALSE;
+		}
+		const EAnimNotifyDefinition* Definition = nullptr;
+		if ((!EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(InOutNotify.NotifyAssetName, Definition))
+			|| (!Definition))
+		{
+			PE_LOG_WARN(EString("Clip notify '") + InOutNotify.NotifyName
+				+ EString("' could not resolve notify asset '") + InOutNotify.NotifyAssetName + EString("'."));
+			return FALSE;
+		}
+		ApplyNotifyDefinitionToEvent(InOutNotify, *Definition);
+		return ((InOutNotify.CachedNotify != nullptr) ? TRUE : FALSE);
+	}
+
+	void EAnimationManager::RefreshNotifyReferences()
+	{
+		TArray<ESkeletonAnimationAsset*> LoadedAssets;
+		SkeletonAnimationAssetManager.GenerateValueArray(LoadedAssets);
+		for (INT32 AssetIndex = 0; AssetIndex < LoadedAssets.Num(); AssetIndex++)
+		{
+			ESkeletonAnimation* Animation = (LoadedAssets[AssetIndex]
+				? const_cast<ESkeletonAnimation*>(LoadedAssets[AssetIndex]->GetStoragedResource()) : nullptr);
+			if (!Animation)
+			{
+				continue;
+			}
+			TArray<ESkeletonAnimationClip>& Clips = Animation->GetAnimationClips();
+			for (INT32 ClipIndex = 0; ClipIndex < Clips.Num(); ClipIndex++)
+			{
+				TArray<FAnimNotifyEvent>& Notifies = Clips[ClipIndex].Notifies;
+				for (INT32 NotifyIndex = 0; NotifyIndex < Notifies.Num(); NotifyIndex++)
+				{
+					FAnimNotifyEvent& Notify = Notifies[NotifyIndex];
+					if (Notify.NotifyAssetName.Length() <= 0u)
+					{
+						continue;
+					}
+					const EAnimNotifyDefinition* Definition = nullptr;
+					if ((EAnimNotifyManager::GetManagerSingleton()->ResolveNotifyDefinition(Notify.NotifyAssetName, Definition))
+						&& Definition)
+					{
+						ApplyNotifyDefinitionToEvent(Notify, *Definition);
+					}
+					else
+					{
+						PE_LOG_WARN(EString("Clip notify '") + Notify.NotifyName
+							+ EString("' could not resolve notify asset '") + Notify.NotifyAssetName + EString("'."));
+					}
+				}
+			}
+		}
+	}
 
 	static void RegisterClassTypes()
 	{
@@ -22,6 +86,8 @@ namespace PigeonEngine
 
 	ESkeletonAnimation::ESkeletonAnimation(const EString& InName)
 		: AnimationName(InName)
+		, SkeletonName(EEngineSettings::ENGINE_DEFAULT_NAME)
+		, RootBoneName(EEngineSettings::ENGINE_DEFAULT_NAME)
 	{
 	}
 	ESkeletonAnimation::~ESkeletonAnimation()
@@ -83,6 +149,43 @@ namespace PigeonEngine
 	const TMap<EString, INT32>& ESkeletonAnimation::GetAnimationClipMapping()const
 	{
 		return AnimationClipMapping;
+	}
+	TArray<ESkeletonAnimationClip>& ESkeletonAnimation::GetAnimationClips()
+	{
+		return AnimationClips;
+	}
+	ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(INT32 InIndex)
+	{
+		if ((InIndex >= 0) && (InIndex < AnimationClips.Num()))
+		{
+			return (&(AnimationClips[InIndex]));
+		}
+		return nullptr;
+	}
+	ESkeletonAnimationClip* ESkeletonAnimation::GetAnimationClip(const EString& InClipName)
+	{
+		INT32 FindIndex = 0;
+		if (AnimationClipMapping.FindValue(InClipName, FindIndex))
+		{
+			return (GetAnimationClip(FindIndex));
+		}
+		return nullptr;
+	}
+	const EString& ESkeletonAnimation::GetSkeletonName()const
+	{
+		return SkeletonName;
+	}
+	const EString& ESkeletonAnimation::GetRootBoneName()const
+	{
+		return RootBoneName;
+	}
+	void ESkeletonAnimation::SetSkeletonName(const EString& InSkeletonName)
+	{
+		SkeletonName = InSkeletonName;
+	}
+	void ESkeletonAnimation::SetRootBoneName(const EString& InRootBoneName)
+	{
+		RootBoneName = InRootBoneName;
 	}
 	void ESkeletonAnimation::RebuildWholeMapping()
 	{
@@ -197,7 +300,8 @@ namespace PigeonEngine
 		ClearSkeletonAnimations();
 	}
 #if _EDITOR_ONLY
-	BOOL32 EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath)
+	BOOL32 EAnimationManager::ImportSkeletonAnimation(const EString& InAssetName, const EString& InImportFullPathName, const EString& InSavePath
+		, const EString& InSkeletonName, const EString& InRootBoneName)
 	{
 		EString TempFullPathName(InSavePath);
 		TempFullPathName = TempFullPathName + InAssetName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -246,6 +350,8 @@ namespace PigeonEngine
 			UsedSkeletonAnimation = InAssetName;
 		}
 		ESkeletonAnimation AssimpSkeletonAnimation(UsedSkeletonAnimation);
+		AssimpSkeletonAnimation.SetSkeletonName(InSkeletonName);
+		AssimpSkeletonAnimation.SetRootBoneName(InRootBoneName);
 		CAssimpManager* AssimpManager = CAssimpManager::GetManagerSingleton();
 		TArray<ESkeletonAnimationClip> AssimpSkeletonAnimationClips;
 		if ((AssimpManager->ReadSkeletonAnimationFile(InImportFullPathName, AssimpSkeletonAnimationClips)) != (CAssimpManager::CReadFileStateType::ASSIMP_READ_FILE_STATE_SUCCEED))
@@ -266,7 +372,8 @@ namespace PigeonEngine
 		return (SaveSkeletonAnimationResource(InSavePath, InAssetName, (&(AssimpSkeletonAnimation))));
 	}
 #endif
-	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset)
+	BOOL32 EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -276,7 +383,7 @@ namespace PigeonEngine
 			OutSkeletonAnimationAsset = ResultAsset;
 			return TRUE;
 		}
-		ResultAsset = LoadSkeletonAnimationAsset(InLoadPath, InLoadName);
+		ResultAsset = LoadSkeletonAnimationAsset(InLoadPath, InLoadName, bTryLoad);
 		if (!ResultAsset)
 		{
 			return FALSE;
@@ -301,7 +408,9 @@ namespace PigeonEngine
 		return TRUE;
 	}
 	BOOL32 EAnimationManager::RequireLoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName
-		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset, EAssetLoadCompleteType InOnLoadComplete)
+		, const ESkeletonAnimationAsset*& OutSkeletonAnimationAsset
+		, const FAssetImportSource* InImportSource
+		, EAssetLoadCompleteType InOnLoadComplete)
 	{
 		const EString FullPathName = MakeAssetFullPathName(InLoadPath, InLoadName);
 		if (ESkeletonAnimationAsset* LoadedAsset = SkeletonAnimationAssetManager.Find(FullPathName))
@@ -310,24 +419,51 @@ namespace PigeonEngine
 			return TRUE;
 		}
 		OutSkeletonAnimationAsset = nullptr;
+		// The import source is copied into the request: a request outlives the frame that made
+		// it, so it may not read the caller's strings.
+		FAssetImportSource ImportSource;
+		if (InImportSource)
+		{
+			ImportSource = *InImportSource;
+		}
 		EAssetLoadManager::GetManagerSingleton()->RequestLoad(
 			MakeAssetLoadRequestKey(PE_TEXT("SkeletonAnimation"), FullPathName),
-			[InLoadPath, InLoadName]() -> BOOL32
+			[InLoadPath, InLoadName, ImportSource]() -> BOOL32
 			{
 				const ESkeletonAnimationAsset* LoadedAsset = nullptr;
-				return EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, LoadedAsset);
+				if (ImportSource.IsValid())
+				{
+					// The editor form: load, and when the PAsset is not on disk yet, import from
+					// the raw source and load again. Both halves run here, on the load thread.
+					TryLoadSkeletonAnimation(InLoadPath, InLoadName, LoadedAsset, &ImportSource.ImportPath
+						, &ImportSource.ImportName, &ImportSource.ImportFileType);
+				}
+				else
+				{
+					EAnimationManager::GetManagerSingleton()->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, LoadedAsset);
+				}
+				return ((LoadedAsset != nullptr) ? TRUE : FALSE);
 			},
 			static_cast<EAssetLoadCompleteType&&>(InOnLoadComplete));
 		return FALSE;
+	}
+	BOOL32 EAnimationManager::SaveSkeletonAnimationAsset(const ESkeletonAnimationAsset* InSkeletonAnimationAsset)
+	{
+		if (!InSkeletonAnimationAsset)
+		{
+			return FALSE;
+		}
+		return SaveSkeletonAnimationAsset(InSkeletonAnimationAsset->GetAssetPath()
+			, InSkeletonAnimationAsset->GetAssetName(), InSkeletonAnimationAsset);
 	}
 	void EAnimationManager::ClearSkeletonAnimations()
 	{
 		SkeletonAnimationAssetManager.Clear();
 	}
-	ESkeletonAnimationAsset* EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName)
+	ESkeletonAnimationAsset* EAnimationManager::LoadSkeletonAnimationAsset(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		ESkeletonAnimationAsset* NewAsset = nullptr;
-		ESkeletonAnimation* LoadedResource = LoadSkeletonAnimationResource(InLoadPath, InLoadName);
+		ESkeletonAnimation* LoadedResource = LoadSkeletonAnimationResource(InLoadPath, InLoadName, bTryLoad);
 		if ((!LoadedResource) || (!(LoadedResource->IsResourceValid())))
 		{
 			return NewAsset;
@@ -365,7 +501,7 @@ namespace PigeonEngine
 		}
 		return (SaveSkeletonAnimationResource(InSavePath, InSaveName, SavedResource));
 	}
-	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName)
+	ESkeletonAnimation* EAnimationManager::LoadSkeletonAnimationResource(const EString& InLoadPath, const EString& InLoadName, const BOOL32 bTryLoad)
 	{
 		EString TempFullPathName(InLoadPath);
 		TempFullPathName = TempFullPathName + InLoadName + EEngineSettings::ENGINE_ASSET_NAME_TYPE;
@@ -396,7 +532,14 @@ namespace PigeonEngine
 				EString ErrorData("Load skeleton animation asset failed (load file path : ");
 				ErrorData += TempFullPathName;
 				ErrorData += ").";
-				PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				if (bTryLoad)
+				{
+					PE_LOG_WARN(ErrorData);
+				}
+				else
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), (*ErrorData));
+				}
 			}
 #endif
 			return LoadedSkeletonAnimationResource;
@@ -478,7 +621,11 @@ namespace PigeonEngine
 			}
 			{
 				LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX, TempAnimationName);
+				LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX, TempSkeletonName);
+				LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX, TempRootBoneName);
 				LoadedSkeletonAnimationResource = new ESkeletonAnimation(TempAnimationName);
+				LoadedSkeletonAnimationResource->SkeletonName = TempSkeletonName;
+				LoadedSkeletonAnimationResource->RootBoneName = TempRootBoneName;
 			}
 			{
 				LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempAnimationClipNum);
@@ -540,6 +687,38 @@ namespace PigeonEngine
 							}
 						}
 					}
+
+					LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyNum);
+					for (UINT32 j = 0u; j < TempNotifyNum; j++)
+					{
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_NAME_LENGTH_MAX, TempNotifyName);
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX, TempNotifyClassName);
+						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyTime);
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX, TempNotifyPayload);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyIsState);
+						LOAD_ASSET_MEMORY(FLOAT, sizeof(FLOAT), TempNotifyStateDuration);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyDurationOverride);
+						LOAD_ASSET_MEMORY(UINT32, sizeof(UINT32), TempNotifyPayloadOverride);
+						LOAD_ASSET_STRING_MEMORY(EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX, TempNotifyAssetName);
+
+						FAnimNotifyEvent& Notify = AnimationClip.Notifies.AddDefaultGetRef();
+						Notify.NotifyName = TempNotifyName;
+						Notify.NotifyClassName = TempNotifyClassName;
+						Notify.NotifyAssetName = TempNotifyAssetName;
+						Notify.Time = TempNotifyTime;
+						Notify.PayloadJson = TempNotifyPayload;
+						Notify.bIsState = ((TempNotifyIsState != 0u) ? TRUE : FALSE);
+						Notify.StateDuration = TempNotifyStateDuration;
+						Notify.bStateDurationOverride = ((TempNotifyDurationOverride != 0u) ? TRUE : FALSE);
+						Notify.bPayloadOverride = ((TempNotifyPayloadOverride != 0u) ? TRUE : FALSE);
+						// Resolve the shared definition when possible; otherwise compile the
+						// inline fallback saved with the clip. Either way playback never
+						// allocates a notify object.
+						if (!ResolveNotifyDefinitionReference(Notify))
+						{
+							Notify.Compile();
+						}
+					}
 				}
 			}
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check read skeleton animation resource rest memory already failed."), (RstMemSize == 0));
@@ -590,6 +769,8 @@ namespace PigeonEngine
 			Result += sizeof(UINT32);		// EAssetType
 			Result += sizeof(UINT32);		// EAnimationType
 			Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX;	// Skeleton animation name
+			Result += sizeof(CHAR) * EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX;	// Bound skeleton name
+			Result += sizeof(CHAR) * EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX;		// Root bone name
 			Result += sizeof(UINT32);		// Animation clip num
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimation->GetAnimationClips();
@@ -622,6 +803,21 @@ namespace PigeonEngine
 						Result += sizeof(EBoneAnimationCurve::TScalingKey) * BoneAnimationCurve.ScalingKeys.Num<UINT32>();		// Bone animation curve scaling key datas
 					}
 				}
+
+				const TArray<FAnimNotifyEvent>& Notifies = AnimationClip.Notifies;
+				Result += sizeof(UINT32);	// Animation clip notify num
+				for (INT32 j = 0, m = Notifies.Num(); j < m; j++)
+				{
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_NAME_LENGTH_MAX;			// Notify name
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX;	// Notify class name
+					Result += sizeof(FLOAT);																		// Notify time
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX;		// Notify payload
+					Result += sizeof(UINT32);																		// Notify is-state flag
+					Result += sizeof(FLOAT);																		// Notify state duration
+					Result += sizeof(UINT32);																		// Notify duration override flag
+					Result += sizeof(UINT32);																		// Notify payload override flag
+					Result += sizeof(CHAR) * EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX;		// Notify asset name
+				}
 			}
 
 			return Result;
@@ -629,6 +825,10 @@ namespace PigeonEngine
 
 		const ULONG OutputMemSize = CalculateSkeletonAnimationBytes(InSkeletonAnimationResource);
 		BYTE* OutputMem = new BYTE[OutputMemSize];
+		// The fixed-width string fields are only partly overwritten by a short name. Clearing
+		// the buffer first makes every unused tail byte deterministic and guarantees that a
+		// field truncated at its maximum still ends in a terminator.
+		::memset(OutputMem, 0, OutputMemSize);
 
 		void* RstMemPtr = OutputMem;
 		LONGLONG RstMemSize = static_cast<LONGLONG>(OutputMemSize);
@@ -650,6 +850,10 @@ namespace PigeonEngine
 			const UINT32 NameLength = EMath::Clamp(static_cast<UINT32>(sizeof(CHAR) * (SavedName.Length() + 1u)), 0u, NameLengthMax);\
 			CHAR* TempPtr = (CHAR*)RstMemPtr;\
 			::memcpy_s(TempPtr, NameLengthMax, (*SavedName), NameLength);\
+			if (NameLength >= NameLengthMax)\
+			{\
+				TempPtr[NameLengthMax - 1u] = '\0';\
+			}\
 			RstMemPtr = &(TempPtr[(__LengthMax)]);\
 			RstMemSize -= NameLengthMax;\
 		}\
@@ -668,6 +872,8 @@ namespace PigeonEngine
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAssetType::ASSET_TYPE_ANIMATION));
 			SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(EAnimationType::ANIMATION_TYPE_SKELETON));
 			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetAnimationName(), EEngineSettings::ENGINE_ANIMATION_NAME_LENGTH_MAX);
+			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetSkeletonName(), EEngineSettings::ENGINE_SKELETON_NAME_LENGTH_MAX);
+			SAVE_ASSET_STRING_MEMORY(InSkeletonAnimationResource->GetRootBoneName(), EEngineSettings::ENGINE_BONE_NAME_LENGTH_MAX);
 
 			const TArray<ESkeletonAnimationClip>& AnimationClips = InSkeletonAnimationResource->GetAnimationClips();
 			const INT32 AnimationClipNum = AnimationClips.Num();
@@ -728,6 +934,23 @@ namespace PigeonEngine
 						}
 					}
 				}
+
+				const TArray<FAnimNotifyEvent>& Notifies = AnimationClip.Notifies;
+				const INT32 NotifyNum = Notifies.Num();
+				SAVE_ASSET_MEMORY(UINT32, static_cast<UINT32>(NotifyNum));
+				for (INT32 j = 0; j < NotifyNum; j++)
+				{
+					const FAnimNotifyEvent& Notify = Notifies[j];
+					SAVE_ASSET_STRING_MEMORY(Notify.NotifyName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_NAME_LENGTH_MAX);
+					SAVE_ASSET_STRING_MEMORY(Notify.NotifyClassName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_CLASS_NAME_LENGTH_MAX);
+					SAVE_ASSET_MEMORY(FLOAT, Notify.Time);
+					SAVE_ASSET_STRING_MEMORY(Notify.PayloadJson, EEngineSettings::ENGINE_ANIMATION_NOTIFY_PAYLOAD_LENGTH_MAX);
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bIsState ? 1u : 0u));
+					SAVE_ASSET_MEMORY(FLOAT, Notify.StateDuration);
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bStateDurationOverride ? 1u : 0u));
+					SAVE_ASSET_MEMORY(UINT32, (Notify.bPayloadOverride ? 1u : 0u));
+					SAVE_ASSET_STRING_MEMORY(Notify.NotifyAssetName, EEngineSettings::ENGINE_ANIMATION_NOTIFY_ASSET_NAME_LENGTH_MAX);
+				}
 			}
 			PE_CHECK((ENGINE_ASSET_ERROR), ("Check write skeleton animation resource rest memory already failed."), (RstMemSize == 0));
 		}
@@ -743,6 +966,47 @@ namespace PigeonEngine
 		}
 		delete[]OutputMem;
 		return FALSE;
+	}
+
+	void TryLoadSkeletonAnimation(const EString& InLoadPath, const EString& InLoadName
+		, const ESkeletonAnimationAsset*& OutAsset
+		, const EString* InImportPath, const EString* InImportName, const EString* InImportFileType)
+	{
+		EAnimationManager* AnimationManager = EAnimationManager::GetManagerSingleton();
+		PE_CHECK((ENGINE_ASSET_ERROR), ("Check output skeleton animation asset pointer is initialized failed."), (!OutAsset));
+		if (AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset, TRUE))
+		{
+			return;
+		}
+#if _EDITOR_ONLY
+		const BOOL32 bHasImport = (!!InImportPath) && (!!InImportName) && (!!InImportFileType);
+		if (bHasImport)
+		{
+			PE_LOG_WARN(EString("Skeleton animation '") + InLoadName + "' not yet on disk; will attempt import.");
+		}
+		else
+		{
+			PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton animation asset failed."));
+		}
+		if (bHasImport)
+		{
+			EString TempImportFullPath(*InImportPath);
+			TempImportFullPath = TempImportFullPath + (*InImportName) + (".") + (*InImportFileType);
+			if (AnimationManager->ImportSkeletonAnimation(InLoadName, TempImportFullPath, InLoadPath))
+			{
+				if (!(AnimationManager->LoadSkeletonAnimationAsset(InLoadPath, InLoadName, OutAsset, TRUE)))
+				{
+					PE_FAILED((ENGINE_ASSET_ERROR), ("Try load skeleton animation asset failed."));
+				}
+			}
+			else
+			{
+				PE_FAILED((ENGINE_ASSET_ERROR), ("Try import skeleton animation asset failed."));
+			}
+		}
+#else
+		PE_FAILED((ENGINE_ASSET_ERROR), ("Load skeleton animation asset failed."));
+#endif
 	}
 
 };

@@ -1,4 +1,6 @@
 #include "../Headers/JsonObject.h"
+#include "../../../ThirdParty/rapidjson/writer.h"
+#include "../../../ThirdParty/rapidjson/stringbuffer.h"
 using namespace rapidjson;
 
 namespace PigeonEngine
@@ -56,6 +58,19 @@ namespace PigeonEngine
 		Doc = InDoc;
 	}
 
+	BOOL8 CJsonObject::IsValid()const
+	{
+		return (((Doc != nullptr) && (!Doc->HasParseError()) && (Doc->IsObject())) ? TRUE : FALSE);
+	}
+
+	EString CJsonObject::ToString()const
+	{
+		rapidjson::StringBuffer Buffer;
+		rapidjson::Writer<rapidjson::StringBuffer> Writer(Buffer);
+		Doc->Accept(Writer);
+		return EString(Buffer.GetString());
+	}
+
 	BOOL8 CJsonObject::HasField(const EString& FieldName)
 	{
 		return Doc->HasMember(*FieldName);
@@ -107,9 +122,12 @@ namespace PigeonEngine
 	BOOL8 CJsonObject::GetFloatField(const EString& FieldName, FLOAT& Out)
 	{
 		Value::ConstMemberIterator itr = Doc->FindMember(*FieldName);
-		if (itr == Doc->MemberEnd() || !itr->value.IsFloat())
+		// RapidJSON parses an ordinary JSON number as int/double; IsFloat() only matches a
+		// value that was explicitly constructed with the float flag. Accept any number and
+		// convert, otherwise authored values such as 0.8 silently fall back to defaults.
+		if (itr == Doc->MemberEnd() || !itr->value.IsNumber())
 			return FALSE;
-		Out = itr->value.GetFloat();
+		Out = static_cast<FLOAT>(itr->value.GetDouble());
 		return TRUE;
 	}
 

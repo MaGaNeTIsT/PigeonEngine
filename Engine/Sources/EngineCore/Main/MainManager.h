@@ -1,5 +1,6 @@
 #pragma once
 #include "Main.h"
+#include "FrameRenderer.h"
 #include <Base/DataStructure/BuiltInType.h>
 #include <Base/DataStructure/BaseType.h>
 #include <Base/Timer/Timer.h>
@@ -38,6 +39,13 @@ namespace PigeonEngine
 		void			RegisterAssetManager(EManagerBase* InManager);
 		void			UnregisterAssetManager(EManagerBase* InManager);
 		/*
+		* Secondary frame renderers. See IEngineFrameRenderer for what the two calls mean and
+		* when they run. The editor asset previews register here in Initialize and unregister
+		* in Shutdown, so the registry never outlives the renderer it names.
+		*/
+		void			RegisterFrameRenderer(IEngineFrameRenderer* InRenderer);
+		void			UnregisterFrameRenderer(IEngineFrameRenderer* InRenderer);
+		/*
 		* TRUE between Initialize and the end of ShutDown. Render resources assert on it: a
 		* resource may not outlive EMainManager. This is an assertion only, it never changes
 		* behaviour - releasing a resource is the same call inside and outside the window.
@@ -66,6 +74,16 @@ namespace PigeonEngine
 		// The frame renderer. Proxies reach the pipeline state cache and the per frame
 		// parameter block through it, so neither has to be a singleton of its own.
 		class RSceneRenderer*		GetSceneRenderer() const { return SceneRenderer; }
+		// The renderer that is recording passes right now. The main scene and the editor's
+		// asset previews are recorded one after another on the render thread, and a proxy
+		// binds the blocks of whichever renderer is drawing it. Reading the main renderer
+		// unconditionally is wrong for a preview: the main renderer's current view is null
+		// until the main scene records, so the preview's ViewParams would never be bound and
+		// every vertex would collapse into one point - a black panel with nothing reported.
+		// Nothing published falls back to the main scene, which is the only renderer there is
+		// for the runtime build and for the frames before the first Render call.
+		class RSceneRenderer*		GetActiveSceneRenderer() const { return (ActiveSceneRenderer != nullptr) ? ActiveSceneRenderer : SceneRenderer; }
+		void						SetActiveSceneRenderer(class RSceneRenderer* InRenderer) { ActiveSceneRenderer = InRenderer; }
 
 		// Phase 2 transition: the per-frame command list set by SceneRenderer
 		// at the start of Render() and cleared at the end. Proxies pick it up
@@ -102,6 +120,7 @@ namespace PigeonEngine
 		class IRCommandList*				ActiveCommandList				= nullptr;
 		class RScene*						RenderScene						= nullptr;
 		class RSceneRenderer*				SceneRenderer					= nullptr;
+		class RSceneRenderer*				ActiveSceneRenderer				= nullptr;
 		class RRenderThread*				RenderThread					= nullptr;
 		// Render region END
 
@@ -128,6 +147,10 @@ namespace PigeonEngine
 		* later may hold references into one registered earlier.
 		*/
 		TArray<class EManagerBase*>			m_AssetManagers;
+		// Secondary frame renderers, in registration order. Read on the render thread inside
+		// the frame callbacks and written on the game thread between frames, never at the same
+		// time - the frame boundary is a handshake between the two threads.
+		TArray<IEngineFrameRenderer*>		m_FrameRenderers;
 		BOOL32								m_bEngineLifetimeActive = FALSE;
 
 		// Releases every registered manager. Split out so Initialize's failure path and

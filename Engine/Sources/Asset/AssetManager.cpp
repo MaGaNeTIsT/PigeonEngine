@@ -1,6 +1,12 @@
 #include "AssetManager.h"
 #if _EDITOR_ONLY
 #include "../EngineCore/IO/FileHelper.h"
+#include "Editor/AnimationEditor/AnimationEditor.h"
+#include "Editor/AnimationMontageEditor/AnimationMontageEditor.h"
+#include "Editor/AnimationNotifyEditor/AnimationNotifyEditor.h"
+#include "Editor/AnimationStateMachineEditor/AnimationStateMachineEditor.h"
+#include "Editor/SkeletonSlotGroupEditor/SkeletonSlotGroupEditor.h"
+#include "Editor/MeshEditor/MeshEditor.h"
 #include <TextureAsset/TextureAsset.h>
 
 #include "../../EngineThirdParty/imGUI/Headers/imGUIManager.h"
@@ -173,6 +179,36 @@ namespace PigeonEngine
 
 	void EAssetManager::ShutDown()
 	{
+		if (AnimationEditor)
+		{
+			delete AnimationEditor;
+			AnimationEditor = nullptr;
+		}
+		if (StateMachineEditor)
+		{
+			delete StateMachineEditor;
+			StateMachineEditor = nullptr;
+		}
+		if (MontageEditor)
+		{
+			delete MontageEditor;
+			MontageEditor = nullptr;
+		}
+		if (NotifyEditor)
+		{
+			delete NotifyEditor;
+			NotifyEditor = nullptr;
+		}
+		if (SkeletonSlotEditor)
+		{
+			delete SkeletonSlotEditor;
+			SkeletonSlotEditor = nullptr;
+		}
+		if (MeshEditor)
+		{
+			delete MeshEditor;
+			MeshEditor = nullptr;
+		}
 
 	}
 
@@ -205,6 +241,37 @@ namespace PigeonEngine
 
 	void EAssetManager::EditorInit()
 	{
+		if (!AnimationEditor)
+		{
+			AnimationEditor = new EAnimationEditor();
+			AnimationEditor->EditorInit();
+		}
+		if (!StateMachineEditor)
+		{
+			StateMachineEditor = new EAnimStateMachineEditor();
+			StateMachineEditor->EditorInit();
+		}
+		if (!MontageEditor)
+		{
+			MontageEditor = new EAnimMontageEditor();
+			MontageEditor->EditorInit();
+		}
+		if (!NotifyEditor)
+		{
+			NotifyEditor = new EAnimNotifyEditor();
+			NotifyEditor->EditorInit();
+		}
+		if (!SkeletonSlotEditor)
+		{
+			SkeletonSlotEditor = new ESkeletonSlotGroupEditor();
+			SkeletonSlotEditor->EditorInit();
+		}
+		if (!MeshEditor)
+		{
+			MeshEditor = new EMeshEditor();
+			MeshEditor->EditorInit();
+		}
+
 		EngineAssetRoot  = EMemory::MakeShared<EFolderTreeNode>(nullptr, EBaseSettings::ENGINE_CONTENT_PATH);
 		ProjectAssetRoot = EMemory::MakeShared<EFolderTreeNode>(nullptr, EEngineSettings::PROJECT_CONTENT_PATH);
 		if(!ScanFolder(EngineAssetRoot))
@@ -315,6 +382,30 @@ namespace PigeonEngine
 	void EAssetManager::EditorUpdate()
 	{
 		GenerateContentBrowser();
+		if (AnimationEditor)
+		{
+			AnimationEditor->EditorUpdate();
+		}
+		if (StateMachineEditor)
+		{
+			StateMachineEditor->EditorUpdate();
+		}
+		if (MontageEditor)
+		{
+			MontageEditor->EditorUpdate();
+		}
+		if (NotifyEditor)
+		{
+			NotifyEditor->EditorUpdate();
+		}
+		if (SkeletonSlotEditor)
+		{
+			SkeletonSlotEditor->EditorUpdate();
+		}
+		if (MeshEditor)
+		{
+			MeshEditor->EditorUpdate();
+		}
 	}
 
 	void EAssetManager::GenerateContentBrowser()
@@ -347,6 +438,62 @@ namespace PigeonEngine
 				ImGui::BeginChild("Content", ImVec2(700, 0), TRUE);
 				if (EMemory::GetPtr(Current))
 				{
+					if (EMemory::GetPtr(SelectedFile))
+					{
+						ImGui::Text("Selected Asset: %s", *SelectedFile->GetDisplayName());
+						ImGui::SameLine();
+						ImGui::TextDisabled("(%s)", *AssetTypeAsString(SelectedFile->GetType()));
+						if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Animation Editor"))
+							{
+								AnimationEditor->OpenAnimationAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open State Machine Editor"))
+							{
+								StateMachineEditor->OpenStateMachineAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Montage Editor"))
+							{
+								MontageEditor->OpenMontageAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Notify Editor"))
+							{
+								NotifyEditor->OpenNotifyAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Edit Slot Groups"))
+							{
+								SkeletonSlotEditor->OpenSkeletonAsset(SelectedFile->GetPath());
+							}
+						}
+						else if ((SelectedFile->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Open Mesh Editor"))
+							{
+								MeshEditor->OpenMeshAsset(SelectedFile->GetPath());
+							}
+						}
+						ImGui::Separator();
+					}
+
 					ImVec2 button_sz(100, 100);
 					auto ChildrenFolder = Current->GetChildrenFolder();
 					FLOAT window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
@@ -396,6 +543,30 @@ namespace PigeonEngine
 						if(bSelected)
 						{
 							SelectedFile = elem;
+							if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIMATION) && AnimationEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								AnimationEditor->OpenAnimationAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_STATE_MACHINE) && StateMachineEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								StateMachineEditor->OpenStateMachineAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_MONTAGE) && MontageEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								MontageEditor->OpenMontageAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_ANIM_NOTIFY) && NotifyEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								NotifyEditor->OpenNotifyAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_SKELETON) && SkeletonSlotEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								SkeletonSlotEditor->OpenSkeletonAsset(elem->GetPath());
+							}
+							else if ((elem->GetType() == EAssetType::ASSET_TYPE_MESH) && MeshEditor && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+							{
+								MeshEditor->OpenMeshAsset(elem->GetPath());
+							}
 							PE_LOG_LOG(EString("ContentBrowser:Select ") + elem->GetDisplayName());
 						}
 						if ( next_button_x2 < window_visible_x2)
@@ -474,6 +645,18 @@ namespace PigeonEngine
 		case ASSET_TYPE_SHADER	:
 			{
 				return "Shader";
+			}
+		case ASSET_TYPE_ANIM_STATE_MACHINE	:
+			{
+				return "AnimStateMachine";
+			}
+		case ASSET_TYPE_ANIM_MONTAGE	:
+			{
+				return "AnimMontage";
+			}
+		case ASSET_TYPE_ANIM_NOTIFY	:
+			{
+				return "AnimNotify";
 			}
 		case ASSET_TYPE_COUNT	:
 			{

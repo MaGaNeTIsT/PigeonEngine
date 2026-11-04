@@ -4,6 +4,11 @@
 #include <MeshAsset/MeshAsset.h>
 #include <TextureAsset/TextureAsset.h>
 #include <SkeletonAsset/SkeletonAsset.h>
+#if _EDITOR_ONLY
+#include <AnimationMontageAsset/AnimationMontageAsset.h>
+#include <AnimationNotifyAsset/AnimationNotifyAsset.h>
+#include <AnimationStateMachineAsset/AnimationStateMachineAsset.h>
+#endif
 #include <ShaderAsset/ShaderAsset.h>
 #include <ShaderAsset/ShaderInstance.h>
 #include <ShaderAsset/ShaderJobBuilder.h>
@@ -249,6 +254,103 @@ namespace PigeonEngine
 				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon")), EString(PE_TEXT("FBX")));
 			NewSkeletalMeshComp->RequestSkeletalMeshAssets(EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Mesh"))
 				, EString(PE_TEXT("SK_Mannequin_UE4_WithWeapon_Skeleton")), &ImportSource);
+
+			// The demo plays the first clip of an animation authored against the same UE4
+			// mannequin skeleton. The request waits for both the animation and the skeleton,
+			// so it can be issued next to the mesh request.
+			const FAssetImportSource AnimationImportSource = MakeImportSource(
+				AssetBasePath + EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+				, EString(PE_TEXT("Boss_Idle")), EString(PE_TEXT("FBX")));
+			NewSkeletalMeshComp->RequestAnimationAsset(EString(PE_TEXT("Boss_Idle")), &AnimationImportSource, TRUE);
+
+#if _EDITOR_ONLY
+			// The state machine is authored as JSON under the source assets. Import it only
+			// when its PAsset is missing, so an editor-edited PAsset is not overwritten by
+			// the sample on every level load.
+			const EString StateMachineAssetName(PE_TEXT("Boss_StateMachine"));
+			const EAnimStateMachineAsset* StateMachineAsset = nullptr;
+			if (!(EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+				EBaseSettings::ENGINE_STATE_MACHINE_PATH, StateMachineAssetName, StateMachineAsset)))
+			{
+				const EString StateMachineJsonPath = AssetBasePath
+					+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/Boss_StateMachine.json"));
+				if (EAnimStateMachineManager::GetManagerSingleton()->ImportStateMachine(
+					StateMachineAssetName, StateMachineJsonPath, EBaseSettings::ENGINE_STATE_MACHINE_PATH))
+				{
+					StateMachineAsset = nullptr;
+					EAnimStateMachineManager::GetManagerSingleton()->LoadStateMachineAsset(
+						EBaseSettings::ENGINE_STATE_MACHINE_PATH, StateMachineAssetName, StateMachineAsset);
+				}
+			}
+			if (StateMachineAsset)
+			{
+				NewSkeletalMeshComp->SetStateMachine(StateMachineAsset->GetStoragedResource());
+			}
+
+			// Standalone notify definitions referenced by the montage. They must be on disk
+			// before the montage is imported so its event references can be resolved.
+			const EString NotifyAssetNames[2] = {
+				EString(PE_TEXT("Boss_AttackWindow")),
+				EString(PE_TEXT("Boss_AttackStarted"))
+			};
+			for (INT32 NotifyIndex = 0; NotifyIndex < 2; NotifyIndex++)
+			{
+				const EAnimNotifyAsset* NotifyAsset = nullptr;
+				if (!(EAnimNotifyManager::GetManagerSingleton()->LoadNotifyAsset(
+					EBaseSettings::ENGINE_NOTIFY_PATH, NotifyAssetNames[NotifyIndex], NotifyAsset)))
+				{
+					const EString NotifyJsonPath = AssetBasePath
+						+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/"))
+						+ NotifyAssetNames[NotifyIndex] + EString(PE_TEXT(".json"));
+					if (EAnimNotifyManager::GetManagerSingleton()->ImportNotify(
+						NotifyAssetNames[NotifyIndex], NotifyJsonPath, EBaseSettings::ENGINE_NOTIFY_PATH))
+					{
+						NotifyAsset = nullptr;
+						EAnimNotifyManager::GetManagerSingleton()->LoadNotifyAsset(
+							EBaseSettings::ENGINE_NOTIFY_PATH, NotifyAssetNames[NotifyIndex], NotifyAsset);
+					}
+				}
+			}
+
+			// Montage: the sample upper-body section is played once the animation asset is
+			// bound, so it layers on top of the state machine instead of racing it.
+			const EString MontageAssetName(PE_TEXT("Boss_UpperBody_Attack"));
+			const EAnimMontageAsset* MontageAsset = nullptr;
+			if (!(EAnimMontageManager::GetManagerSingleton()->LoadMontageAsset(
+				EBaseSettings::ENGINE_MONTAGE_PATH, MontageAssetName, MontageAsset)))
+			{
+				const EString MontageJsonPath = AssetBasePath
+					+ EString(PE_TEXT("EngineModels/SceneModels/UnrealCharacter/Boss_Montage.json"));
+				if (EAnimMontageManager::GetManagerSingleton()->ImportMontage(
+					MontageAssetName, MontageJsonPath, EBaseSettings::ENGINE_MONTAGE_PATH))
+				{
+					MontageAsset = nullptr;
+					EAnimMontageManager::GetManagerSingleton()->LoadMontageAsset(
+						EBaseSettings::ENGINE_MONTAGE_PATH, MontageAssetName, MontageAsset);
+				}
+			}
+			if (MontageAsset)
+			{
+				PSkeletalMeshComponent* Component = NewSkeletalMeshComp;
+				TFunction<BOOL32()> MontageStep = [Component, MontageAsset]() -> BOOL32
+				{
+					if (!Component->GetAnimationAsset())
+					{
+						return FALSE;
+					}
+					// Two different skeleton slots: Default is the base full-body layer,
+					// UpperBody is the attack overlay played on top of it.
+					Component->PlayMontage(MontageAsset->GetStoragedResource(), EString(PE_TEXT("BaseIdle")));
+					Component->PlayMontage(MontageAsset->GetStoragedResource(), EString(PE_TEXT("Attack")));
+					PE_LOG_LOG(EString("Active montage layers: ") + ToString(Component->GetMontageInstanceCount()));
+					return TRUE;
+				};
+				if (MontageStep() == FALSE)
+				{
+					NewSkeletalMeshComp->AddDeferredApply(static_cast<TFunction<BOOL32()>&&>(MontageStep));
+				}
+			}
+#endif
 
 			Quaternion DefaultRot(MakeQuaternion(Vector3::XVector(), EMath::DegreesToRadians(90.0f)));
 			NewSkeletalMeshComp->SetComponentRotation(DefaultRot);

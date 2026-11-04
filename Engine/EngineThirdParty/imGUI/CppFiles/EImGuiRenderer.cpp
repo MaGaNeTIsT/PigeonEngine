@@ -391,7 +391,7 @@ namespace PigeonEngine
 		Desc.InputLayoutCount	= PE_ARRAYSIZE(ImGuiDeclaredElements);
 		// ImGui: no backface culling (UI quads may be CW or CCW depending on
 		// scissor-flip), wireframe disabled, scissor honored per draw.
-		Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID);
+		Desc.Rasterizer				= RRasterizerState(RCullModeType::CULL_NONE, RFillModeType::FILL_SOLID, TRUE);
 		// Premultiplied-alpha-friendly straight-alpha blend, matches the
 		// reference imgui_impl_dx11/dx12 backend defaults.
 		Desc.Blend					= RBlendState(
@@ -766,7 +766,10 @@ namespace PigeonEngine
 		// carries the program's own root signature, and switching a signature voids every root
 		// binding made before it, so a material block bound ahead of it would be lost.
 		InCmd->SetPipelineState(PipelineState);
-		const EViewport VP(0.f, 0.f, InDrawData->DisplaySize.x, InDrawData->DisplaySize.y, 0.f, 1.f);
+		const EViewport VP(0.f, 0.f
+			, InDrawData->DisplaySize.x * InDrawData->FramebufferScale.x
+			, InDrawData->DisplaySize.y * InDrawData->FramebufferScale.y
+			, 0.f, 1.f);
 		InCmd->SetViewports(&VP, 1u);
 
 		// The material's parameter blocks land where the binding plan of each stage
